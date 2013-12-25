@@ -9,7 +9,7 @@
   <ItemDefinitionGroup>
     <ClCompile>
       <ANSIAliasingRules>Off</ANSIAliasingRules>
-      <AdditionalIncludeDirectories>..\..\..\Source;$(VISION_SDK)/Source;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.16/inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\Source;$(VISION_SDK)/Source;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>-ffunction-sections %(AdditionalOptions) %(AdditionalOptions)</AdditionalOptions>
       <AllocationGlobalVariable>UniqueDefinitions</AllocationGlobalVariable>
       <CLanguageDialect>ISO_C99</CLanguageDialect>
@@ -46,13 +46,13 @@
     </ClCompile>
     <Lib>
       <AdditionalDependencies>-lVisionEnginePlugin;-lvHavok;-lvHavokAi;-lvHavokBehavior;-lvFmodEnginePlugin;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\..\Lib\tizen_vs2010_anarchy\dev;$(VISION_SDK)/Lib/tizen_vs2010_anarchy\dev;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.16/lib/tizen</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\..\..\Lib\tizen_vs2010_anarchy\dev;$(VISION_SDK)/Lib/tizen_vs2010_anarchy\dev;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/lib/tizen</AdditionalLibraryDirectories>
       <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
       <LibrarianCommand>-rmc</LibrarianCommand>
     </Lib>
     <Link>
       <AdditionalDependencies>-lVisionEnginePlugin;-lvHavok;-lvHavokAi;-lvHavokBehavior;-lvFmodEnginePlugin;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\..\Lib\tizen_vs2010_anarchy\dev;$(VISION_SDK)/Lib/tizen_vs2010_anarchy\dev;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.16/lib/tizen</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\..\..\Lib\tizen_vs2010_anarchy\dev;$(VISION_SDK)/Lib/tizen_vs2010_anarchy\dev;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/lib/tizen</AdditionalLibraryDirectories>
       <AdditionalLinkerOptions>-nosegments_always_executable</AdditionalLinkerOptions>
       <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
       <AutomaticSDA>No</AutomaticSDA>
@@ -102,6 +102,14 @@
       <StripSymbolStrings>No</StripSymbolStrings>
       <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
     </PostLink>
+    <Deploy>
+      <DeployTool/>
+      <ResDir/>
+      <Manifest/>
+      <Install/>
+      <FileServe/>
+      <Resources/>
+    </Deploy>
   </ItemDefinitionGroup>
   <PropertyGroup>
   </PropertyGroup>

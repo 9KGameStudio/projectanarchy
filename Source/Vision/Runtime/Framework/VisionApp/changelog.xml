@@ -1,0 +1,11 @@
+<?xml version="1.0" ?>
+
+<!DOCTYPE changelog SYSTEM "../../../../../Build/Vision/changelog.dtd">
+
+<?xml-stylesheet type="text/xsl" href="../../../../../Build/Vision/changelog.xsl" ?>
+
+<changelog name="VisionApp">
+  <version major="2013" minor="2" fix="5">
+    <added>Moved application framework into static lib.</added>
+  </version>
+</changelog>

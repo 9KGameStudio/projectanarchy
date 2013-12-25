@@ -45,7 +45,7 @@ hkBool HK_CALL hkTestReport(hkBool32 cond, const char* desc, const char* file, i
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

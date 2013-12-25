@@ -14,9 +14,7 @@
 #ifndef _SerializeBaseEntity_cl_HEADER_
 #define _SerializeBaseEntity_cl_HEADER_
 
-
 #define MSG_SER_CLEANUP VIS_MSG_USER + 1
-
 
 extern VModule g_serializeSampleModule;
 
@@ -27,7 +25,6 @@ enum SerializeType_e
   SERIALIZE_FULL,       // full object serialization
   SERIALIZE_RECREATE    // just store entity params and re-create entity on load
 };
-
 
 //
 // *** SerializeBaseEntity_cl  ***
@@ -55,7 +52,7 @@ IMPLEMENT_OBJ_CLASS(SerializeBaseEntity_cl);
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

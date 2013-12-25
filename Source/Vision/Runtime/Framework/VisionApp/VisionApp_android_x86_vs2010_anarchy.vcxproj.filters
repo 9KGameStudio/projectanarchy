@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Android">
+        <UniqueIdentifier>25F7049A-5F70-4A25-7049-25F7049A25F7</UniqueIdentifier>
+        <DeploymentContent>False</DeploymentContent></Filter>
+    <Filter Include="Modules">
+        <UniqueIdentifier>68AD4DCC-8AD4-4C68-D4DC-68AD4DCC68AD</UniqueIdentifier>
+        <DeploymentContent>False</DeploymentContent></Filter>
+    <Filter Include="Helper">
+        <UniqueIdentifier>1722D1A1-22D1-4722-1A17-2D1A1722D1A1</UniqueIdentifier>
+        <DeploymentContent>False</DeploymentContent></Filter>
+
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="VAppMain.inl">
+        <Filter></Filter>
+        <DeploymentContent>False</DeploymentContent></None>
+    <ClInclude Include="Modules\VDefaultMenu.hpp">
+        <Filter>Modules</Filter>
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClInclude Include="Modules\VFileServe.hpp">
+        <Filter>Modules</Filter>
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClCompile Include="VAppModule.cpp">
+        <Filter></Filter>
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClCompile Include="Helper\VAppHelper.cpp">
+        <Filter>Helper</Filter>
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClInclude Include="Android\VAppAndroid.hpp">
+        <Filter>Android</Filter>
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClInclude Include="Modules\VRestoreScreen.hpp">
+        <Filter>Modules</Filter>
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClInclude Include="Helper\VScreenShotHelper.hpp">
+        <Filter>Helper</Filter>
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClInclude Include="Helper\VDataDirectoryHelper.hpp">
+        <Filter>Helper</Filter>
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClCompile Include="Modules\VCheckOutputFolder.cpp">
+        <Filter>Modules</Filter>
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClCompile Include="Modules\VLogoOverlay.cpp">
+        <Filter>Modules</Filter>
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClInclude Include="Helper\VAppMobile.hpp">
+        <Filter>Helper</Filter>
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClCompile Include="Android\VAppAndroid.cpp">
+        <Filter>Android</Filter>
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClInclude Include="Modules\VDebugOptions.hpp">
+        <Filter>Modules</Filter>
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClInclude Include="Modules\VHelp.hpp">
+        <Filter>Modules</Filter>
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClInclude Include="Helper\VAppHelper.hpp">
+        <Filter>Helper</Filter>
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClInclude Include="Modules\VLogoOverlay.hpp">
+        <Filter>Modules</Filter>
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClCompile Include="Modules\VRestoreScreen.cpp">
+        <Filter>Modules</Filter>
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClInclude Include="VAppModule.hpp">
+        <Filter></Filter>
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClCompile Include="Modules\VCameraHandling.cpp">
+        <Filter>Modules</Filter>
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClInclude Include="VAppBase.hpp">
+        <Filter></Filter>
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClCompile Include="Modules\VLoadingScreen.cpp">
+        <Filter>Modules</Filter>
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClCompile Include="Helper\VAppMobile.cpp">
+        <Filter>Helper</Filter>
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClCompile Include="Modules\VDebugOptions.cpp">
+        <Filter>Modules</Filter>
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClCompile Include="Modules\VHelp.cpp">
+        <Filter>Modules</Filter>
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClCompile Include="VAppBase.cpp">
+        <Filter></Filter>
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClInclude Include="Modules\VCameraHandling.hpp">
+        <Filter>Modules</Filter>
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClCompile Include="Modules\VDefaultMenu.cpp">
+        <Filter>Modules</Filter>
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClCompile Include="VAppImpl.cpp">
+        <Filter></Filter>
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClInclude Include="Modules\VDebugProfiling.hpp">
+        <Filter>Modules</Filter>
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClCompile Include="Modules\VDebugProfiling.cpp">
+        <Filter>Modules</Filter>
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClCompile Include="Modules\VDebugShadingModes.cpp">
+        <Filter>Modules</Filter>
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClInclude Include="VAppImpl.hpp">
+        <Filter></Filter>
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClInclude Include="Modules\VExitHandler.hpp">
+        <Filter>Modules</Filter>
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClInclude Include="Modules\VDebugShadingModes.hpp">
+        <Filter>Modules</Filter>
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClInclude Include="Modules\VLoadingScreen.hpp">
+        <Filter>Modules</Filter>
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClCompile Include="Modules\VExitHandler.cpp">
+        <Filter>Modules</Filter>
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClInclude Include="Modules\VCheckOutputFolder.hpp">
+        <Filter>Modules</Filter>
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClCompile Include="Helper\VDataDirectoryHelper.cpp">
+        <Filter>Helper</Filter>
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClCompile Include="Helper\VScreenShotHelper.cpp">
+        <Filter>Helper</Filter>
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+
+  </ItemGroup>
+</Project>

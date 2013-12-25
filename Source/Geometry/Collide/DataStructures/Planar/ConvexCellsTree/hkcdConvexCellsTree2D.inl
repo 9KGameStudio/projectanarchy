@@ -51,7 +51,7 @@ HK_FORCE_INLINE hkcdConvexCellsTree2D::PlaneId hkcdConvexCellsTree2D::getSupport
 HK_FORCE_INLINE void hkcdConvexCellsTree2D::setSupportPlaneId(PlaneId supportId)				{	m_supportPlaneId = supportId;	}
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

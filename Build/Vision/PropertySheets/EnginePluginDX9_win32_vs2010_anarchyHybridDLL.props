@@ -11,7 +11,7 @@
       <Command>xcopy /Y /D &quot;$(TargetDir)$(TargetFileName)$(TargetEx)&quot; &quot;$(VISION_SDK)/Bin/win32_vs2010_anarchy/hybrid_dll/DX9&quot;</Command>
     </PostBuildEvent>
     <ClCompile>
-      <AdditionalIncludeDirectories>..\..\..\Source;$(VISION_SDK)/Source;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/;$(DXSDK_DIR)/Include;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.16/inc;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\Source;$(VISION_SDK)/Source;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/;$(DXSDK_DIR)/Include;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/Include;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/Src;$(GFXSDK)/;$(GFXSDK)/Include;$(GFXSDK)/Src;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/inc;</AdditionalIncludeDirectories>
       <AdditionalOptions/>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
@@ -42,7 +42,7 @@
       <ProgramDataBaseFileName>$(OutDir)$(TargetName).pdb</ProgramDataBaseFileName>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
-      <SDLCheck>false</SDLCheck>
+      <SDLCheck/>
       <StringPooling>true</StringPooling>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <TreatWarningAsError>false</TreatWarningAsError>
@@ -55,7 +55,7 @@
     </ResourceCompile>
     <Lib>
       <AdditionalDependencies>lua100.lib;d3d9.lib;d3dx9.lib;fmodex_vc.lib;fmod_event_net.lib;Base.lib;Vision.lib;VisionEnginePlugin.lib;vHavok.lib;hkBase.lib;hkCompat.lib;hkSceneData.lib;hkSerialize.lib;hkVisualize.lib;hkInternal.lib;hkGeometryUtilities.lib;hkcdInternal.lib;hkcdCollide.lib;hkpUtilities.lib;hkpVehicle.lib;hkpDynamics.lib;hkpCollide.lib;hkpInternal.lib;hkpConstraintSolver.lib;hkpConstraint.lib;hkaPhysics2012Bridge.lib;hkaInternal.lib;hkaAnimation.lib;hkbBehavior.lib;hkbInternal.lib;hkbUtilities.lib;hkbPhysics2012Bridge.lib;hkbAiBridge.lib;hkbScript.lib;hkaiPathfinding.lib;hkaiInternal.lib;hkaiVisualize.lib;hkaiSpatialAnalysis.lib;hkaiPhysics2012Bridge.lib;vHavokAi.lib;vHavokBehavior.lib;vFmodEnginePlugin.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\..\Lib\win32_vs2010_anarchy\hybrid_dll;$(VISION_SDK)/Lib/win32_vs2010_anarchy\hybrid_dll;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(DXSDK_DIR)/Lib/x86;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.16/lib/win</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\..\..\Lib\win32_vs2010_anarchy\hybrid_dll;$(VISION_SDK)/Lib/win32_vs2010_anarchy\hybrid_dll;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(DXSDK_DIR)/Lib/x86;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/lib/win</AdditionalLibraryDirectories>
       <AdditionalOptions>/ignore:4221</AdditionalOptions>
       <IgnoreAllDefaultLibraries/>
       <SuppressStartupBanner>true</SuppressStartupBanner>
@@ -63,7 +63,7 @@
     </Lib>
     <Link>
       <AdditionalDependencies>lua100.lib;d3d9.lib;d3dx9.lib;fmodex_vc.lib;fmod_event_net.lib;Base.lib;Vision.lib;VisionEnginePlugin.lib;vHavok.lib;hkBase.lib;hkCompat.lib;hkSceneData.lib;hkSerialize.lib;hkVisualize.lib;hkInternal.lib;hkGeometryUtilities.lib;hkcdInternal.lib;hkcdCollide.lib;hkpUtilities.lib;hkpVehicle.lib;hkpDynamics.lib;hkpCollide.lib;hkpInternal.lib;hkpConstraintSolver.lib;hkpConstraint.lib;hkaPhysics2012Bridge.lib;hkaInternal.lib;hkaAnimation.lib;hkbBehavior.lib;hkbInternal.lib;hkbUtilities.lib;hkbPhysics2012Bridge.lib;hkbAiBridge.lib;hkbScript.lib;hkaiPathfinding.lib;hkaiInternal.lib;hkaiVisualize.lib;hkaiSpatialAnalysis.lib;hkaiPhysics2012Bridge.lib;vHavokAi.lib;vHavokBehavior.lib;vFmodEnginePlugin.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\..\Lib\win32_vs2010_anarchy\hybrid_dll;$(VISION_SDK)/Lib/win32_vs2010_anarchy\hybrid_dll;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(DXSDK_DIR)/Lib/x86;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.16/lib/win</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\..\..\Lib\win32_vs2010_anarchy\hybrid_dll;$(VISION_SDK)/Lib/win32_vs2010_anarchy\hybrid_dll;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(DXSDK_DIR)/Lib/x86;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/lib/win</AdditionalLibraryDirectories>
       <AdditionalOptions>/ignore:4221</AdditionalOptions>
       <AssemblyDebug/>
       <EnableCOMDATFolding/>

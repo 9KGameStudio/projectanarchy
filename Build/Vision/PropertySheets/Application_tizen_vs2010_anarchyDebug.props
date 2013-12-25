@@ -9,7 +9,7 @@
   <ItemDefinitionGroup>
     <ClCompile>
       <ANSIAliasingRules>Off</ANSIAliasingRules>
-      <AdditionalIncludeDirectories>..\..\..\Source;$(VISION_SDK)/Source;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.16/inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\Source;$(VISION_SDK)/Source;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>-ffunction-sections -fno-inline -funwind-tables %(AdditionalOptions) %(AdditionalOptions)</AdditionalOptions>
       <AllocationGlobalVariable>UniqueDefinitions</AllocationGlobalVariable>
       <CLanguageDialect>ISO_C99</CLanguageDialect>
@@ -45,14 +45,14 @@
       <Warnings>AllWarnings</Warnings>
     </ClCompile>
     <Lib>
-      <AdditionalDependencies>-lLuaTizen;-lBaseD;-lVisionD;-lVisionEnginePlugin;-lvHavok;-lhkBase;-lhkCompat;-lhkSceneData;-lhkSerialize;-lhkVisualize;-lhkInternal;-lhkGeometryUtilities;-lhkcdInternal;-lhkcdCollide;-lhkpUtilities;-lhkpVehicle;-lhkpDynamics;-lhkpCollide;-lhkpInternal;-lhkpConstraintSolver;-lhkpConstraint;-lhkaPhysics2012Bridge;-lhkaInternal;-lhkaAnimation;-lhkbBehavior;-lhkbInternal;-lhkbUtilities;-lhkbPhysics2012Bridge;-lhkbAiBridge;-lhkbScript;-lhkaiPathfinding;-lhkaiInternal;-lhkaiVisualize;-lhkaiSpatialAnalysis;-lhkaiPhysics2012Bridge;-lvHavokAi;-lvHavokBehavior;-lvFmodEnginePlugin;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\..\Lib\tizen_vs2010_anarchy\debug;$(VISION_SDK)/Lib/tizen_vs2010_anarchy\debug;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.16/lib/tizen</AdditionalLibraryDirectories>
+      <AdditionalDependencies>-lLuaTizen;-lBaseD;-lVisionD;-lVisionEnginePlugin;-lVisionAppD;-lvHavok;-lhkBase;-lhkCompat;-lhkSceneData;-lhkSerialize;-lhkVisualize;-lhkInternal;-lhkGeometryUtilities;-lhkcdInternal;-lhkcdCollide;-lhkpUtilities;-lhkpVehicle;-lhkpDynamics;-lhkpCollide;-lhkpInternal;-lhkpConstraintSolver;-lhkpConstraint;-lhkaPhysics2012Bridge;-lhkaInternal;-lhkaAnimation;-lhkbBehavior;-lhkbInternal;-lhkbUtilities;-lhkbPhysics2012Bridge;-lhkbAiBridge;-lhkbScript;-lhkaiPathfinding;-lhkaiInternal;-lhkaiVisualize;-lhkaiSpatialAnalysis;-lhkaiPhysics2012Bridge;-lvHavokAi;-lvHavokBehavior;-lvFmodEnginePlugin;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\..\..\Lib\tizen_vs2010_anarchy\debug;$(VISION_SDK)/Lib/tizen_vs2010_anarchy\debug;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/lib/tizen</AdditionalLibraryDirectories>
       <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
       <LibrarianCommand>-rmc</LibrarianCommand>
     </Lib>
     <Link>
-      <AdditionalDependencies>-lLuaTizen;-lBaseD;-lVisionD;-lVisionEnginePlugin;-lvHavok;-lhkBase;-lhkCompat;-lhkSceneData;-lhkSerialize;-lhkVisualize;-lhkInternal;-lhkGeometryUtilities;-lhkcdInternal;-lhkcdCollide;-lhkpUtilities;-lhkpVehicle;-lhkpDynamics;-lhkpCollide;-lhkpInternal;-lhkpConstraintSolver;-lhkpConstraint;-lhkaPhysics2012Bridge;-lhkaInternal;-lhkaAnimation;-lhkbBehavior;-lhkbInternal;-lhkbUtilities;-lhkbPhysics2012Bridge;-lhkbAiBridge;-lhkbScript;-lhkaiPathfinding;-lhkaiInternal;-lhkaiVisualize;-lhkaiSpatialAnalysis;-lhkaiPhysics2012Bridge;-lvHavokAi;-lvHavokBehavior;-lvFmodEnginePlugin;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\..\Lib\tizen_vs2010_anarchy\debug;$(VISION_SDK)/Lib/tizen_vs2010_anarchy\debug;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.16/lib/tizen</AdditionalLibraryDirectories>
+      <AdditionalDependencies>-lLuaTizen;-lBaseD;-lVisionD;-lVisionEnginePlugin;-lVisionAppD;-lvHavok;-lhkBase;-lhkCompat;-lhkSceneData;-lhkSerialize;-lhkVisualize;-lhkInternal;-lhkGeometryUtilities;-lhkcdInternal;-lhkcdCollide;-lhkpUtilities;-lhkpVehicle;-lhkpDynamics;-lhkpCollide;-lhkpInternal;-lhkpConstraintSolver;-lhkpConstraint;-lhkaPhysics2012Bridge;-lhkaInternal;-lhkaAnimation;-lhkbBehavior;-lhkbInternal;-lhkbUtilities;-lhkbPhysics2012Bridge;-lhkbAiBridge;-lhkbScript;-lhkaiPathfinding;-lhkaiInternal;-lhkaiVisualize;-lhkaiSpatialAnalysis;-lhkaiPhysics2012Bridge;-lvHavokAi;-lvHavokBehavior;-lvFmodEnginePlugin;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\..\..\Lib\tizen_vs2010_anarchy\debug;$(VISION_SDK)/Lib/tizen_vs2010_anarchy\debug;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/lib/tizen</AdditionalLibraryDirectories>
       <AdditionalLinkerOptions>-nosegments_always_executable</AdditionalLinkerOptions>
       <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
       <AutomaticSDA>No</AutomaticSDA>
@@ -102,6 +102,14 @@
       <StripSymbolStrings>No</StripSymbolStrings>
       <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
     </PostLink>
+    <Deploy>
+      <DeployTool/>
+      <ResDir/>
+      <Manifest/>
+      <Install/>
+      <FileServe/>
+      <Resources/>
+    </Deploy>
   </ItemDefinitionGroup>
   <PropertyGroup>
   </PropertyGroup>

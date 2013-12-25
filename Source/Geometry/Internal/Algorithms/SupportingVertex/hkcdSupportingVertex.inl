@@ -374,7 +374,7 @@ HK_FORCE_INLINE void HK_CALL hkcdSupportingVertexPoints2(
 HK_RESTORE_OPTIMIZATION_VS2008_X64
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

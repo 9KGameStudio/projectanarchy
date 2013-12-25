@@ -10,7 +10,7 @@
   <ItemDefinitionGroup>
     <ClCompile>
       <ANSIAliasingRules>Off</ANSIAliasingRules>
-      <AdditionalIncludeDirectories>..\..\..\Source;$(VISION_SDK)/Source;$(NDKROOT)/sources;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.16/inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\Source;$(VISION_SDK)/Source;$(NDKROOT)/sources;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>-ffunction-sections %(AdditionalOptions) %(AdditionalOptions)</AdditionalOptions>
       <AllocationGlobalVariable>UniqueDefinitions</AllocationGlobalVariable>
       <CLanguageDialect>ISO_C99</CLanguageDialect>
@@ -48,13 +48,13 @@
     </ClCompile>
     <Lib>
       <AdditionalDependencies>-lfmodex;-lfmodevent;-lVisionEnginePlugin;-lvHavok;-lvHavokAi;-lvHavokBehavior;-lvFmodEnginePlugin;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\..\Lib\android_arm_vs2010_anarchy\release;$(VISION_SDK)/Lib/android_arm_vs2010_anarchy\release;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.16/lib/android/armeabi-v7a</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\..\..\Lib\android_arm_vs2010_anarchy\release;$(VISION_SDK)/Lib/android_arm_vs2010_anarchy\release;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/lib/android/armeabi-v7a</AdditionalLibraryDirectories>
       <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
       <LibrarianCommand>-rmc</LibrarianCommand>
     </Lib>
     <Link>
       <AdditionalDependencies>-landroid;-lfmodex;-lfmodevent;-lVisionEnginePlugin;-lvHavok;-lvHavokAi;-lvHavokBehavior;-lvFmodEnginePlugin;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\..\Lib\android_arm_vs2010_anarchy\release;$(VISION_SDK)/Lib/android_arm_vs2010_anarchy\release;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.16/lib/android/armeabi-v7a</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\..\..\Lib\android_arm_vs2010_anarchy\release;$(VISION_SDK)/Lib/android_arm_vs2010_anarchy\release;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/lib/android/armeabi-v7a</AdditionalLibraryDirectories>
       <AdditionalLinkerOptions>-nosegments_always_executable</AdditionalLinkerOptions>
       <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
       <AutomaticSDA>No</AutomaticSDA>
@@ -106,6 +106,22 @@
       <StripSymbolStrings>No</StripSymbolStrings>
       <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
     </PostLink>
+    <Deploy>
+      <DeployTool/>
+      <Install/>
+      <FileServe/>
+      <Internet/>
+      <WriteExternal/>
+      <ResDir/>
+      <Manifest/>
+      <Orientation/>
+      <Libraries/>
+      <ExcludeDirs/>
+      <ExcludeFiles/>
+      <ExcludeExts/>
+      <Assets/>
+      <Copy/>
+    </Deploy>
   </ItemDefinitionGroup>
   <PropertyGroup>
   </PropertyGroup>

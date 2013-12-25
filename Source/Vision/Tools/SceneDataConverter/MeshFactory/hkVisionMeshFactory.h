@@ -111,7 +111,7 @@ class hkVisionMeshFactory : public hkxMeshFactory
 #endif // HK_HKD_VISION_MESH_FACTORY_H
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

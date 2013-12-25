@@ -12,6 +12,7 @@
 /Tools/VisualDebugger
 AndroidTemp/
 /AssetMgmt_data/transformed
+/setup/
 
 Uninstall.app/
 git_*
