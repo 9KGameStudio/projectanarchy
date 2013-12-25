@@ -84,7 +84,7 @@
       <AdditionalOptions>-ffunction-sections -fno-inline -funwind-tables %(AdditionalOptions) %(AdditionalOptions)</AdditionalOptions>
       <PreprocessorDefinitions>HK_PLATFORM_TIZEN;_DEBUG;HK_DEBUG;HK_DEBUG_SLOW;_APP_LOG;HK_ANARCHY;PROFILING;_VISION_POSIX;_VISION_TIZEN;_VISION_NO_WARNING_IMAGE_FORMAT;VBASE_LIB;LINK_WITH_VISION;VISIONDLL_LIB;USE_HAVOK;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <UndefinePreprocessorDefinitions>%(UndefinePreprocessorDefinitions)</UndefinePreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\..\..\..;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.16/inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\..;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ProducesObjectFile>true</ProducesObjectFile>
       <OptimizationLevel>O0</OptimizationLevel>
       <CppInliningLevel></CppInliningLevel>
@@ -116,12 +116,12 @@
       <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
       <LibrarianCommand>-rmc</LibrarianCommand>
       <AdditionalDependencies>-lVisionEnginePlugin;-lvHavok;-lvHavokAi;-lvHavokBehavior;-lvFmodEnginePlugin;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\..\..\..\Lib\tizen_vs2010_anarchy\debug;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.16/lib/tizen</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\..\..\..\..\Lib\tizen_vs2010_anarchy\debug;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/lib/tizen</AdditionalLibraryDirectories>
     </Lib>
     <Link>
       <AdditionalDependencies>-lVisionEnginePlugin;-lvHavok;-lvHavokAi;-lvHavokBehavior;-lvFmodEnginePlugin;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
-      <AdditionalLibraryDirectories>..\..\..\..\..\Lib\tizen_vs2010_anarchy\debug;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.16/lib/tizen</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\..\..\..\..\Lib\tizen_vs2010_anarchy\debug;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/lib/tizen</AdditionalLibraryDirectories>
       <AdditionalLinkerOptions>-nosegments_always_executable</AdditionalLinkerOptions>
       <OptimizationStrategy>general</OptimizationStrategy>
       <SourceRoot>.</SourceRoot>
@@ -172,6 +172,14 @@
       <StripSymbolStrings>No</StripSymbolStrings>
       <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
     </PostLink>
+    <Deploy>
+      <DeployTool></DeployTool>
+      <ResDir></ResDir>
+      <Manifest></Manifest>
+      <Install></Install>
+      <FileServe></FileServe>
+      <Resources></Resources>
+    </Deploy>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Dev|hkTizen'">
     
@@ -187,7 +195,7 @@
       <AdditionalOptions>-ffunction-sections %(AdditionalOptions) %(AdditionalOptions)</AdditionalOptions>
       <PreprocessorDefinitions>HK_PLATFORM_TIZEN;HK_DEBUG;_APP_LOG;HK_ANARCHY;PROFILING;_VISION_POSIX;_VISION_TIZEN;_VISION_NO_WARNING_IMAGE_FORMAT;VBASE_LIB;LINK_WITH_VISION;VISIONDLL_LIB;USE_HAVOK;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <UndefinePreprocessorDefinitions>%(UndefinePreprocessorDefinitions)</UndefinePreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\..\..\..;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.16/inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\..;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ProducesObjectFile>true</ProducesObjectFile>
       <OptimizationLevel>O3</OptimizationLevel>
       <CppInliningLevel></CppInliningLevel>
@@ -219,12 +227,12 @@
       <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
       <LibrarianCommand>-rmc</LibrarianCommand>
       <AdditionalDependencies>-lVisionEnginePlugin;-lvHavok;-lvHavokAi;-lvHavokBehavior;-lvFmodEnginePlugin;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\..\..\..\Lib\tizen_vs2010_anarchy\dev;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.16/lib/tizen</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\..\..\..\..\Lib\tizen_vs2010_anarchy\dev;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/lib/tizen</AdditionalLibraryDirectories>
     </Lib>
     <Link>
       <AdditionalDependencies>-lVisionEnginePlugin;-lvHavok;-lvHavokAi;-lvHavokBehavior;-lvFmodEnginePlugin;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
-      <AdditionalLibraryDirectories>..\..\..\..\..\Lib\tizen_vs2010_anarchy\dev;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.16/lib/tizen</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\..\..\..\..\Lib\tizen_vs2010_anarchy\dev;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/lib/tizen</AdditionalLibraryDirectories>
       <AdditionalLinkerOptions>-nosegments_always_executable</AdditionalLinkerOptions>
       <OptimizationStrategy>general</OptimizationStrategy>
       <SourceRoot>.</SourceRoot>
@@ -275,6 +283,14 @@
       <StripSymbolStrings>No</StripSymbolStrings>
       <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
     </PostLink>
+    <Deploy>
+      <DeployTool></DeployTool>
+      <ResDir></ResDir>
+      <Manifest></Manifest>
+      <Install></Install>
+      <FileServe></FileServe>
+      <Resources></Resources>
+    </Deploy>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|hkTizen'">
     
@@ -290,7 +306,7 @@
       <AdditionalOptions>-ffunction-sections -fomit-frame-pointer -funswitch-loops %(AdditionalOptions) %(AdditionalOptions)</AdditionalOptions>
       <PreprocessorDefinitions>HK_PLATFORM_TIZEN;HK_ANARCHY;PROFILING;_VISION_POSIX;_VISION_TIZEN;_VISION_NO_WARNING_IMAGE_FORMAT;VBASE_LIB;LINK_WITH_VISION;VISIONDLL_LIB;USE_HAVOK;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <UndefinePreprocessorDefinitions>%(UndefinePreprocessorDefinitions)</UndefinePreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\..\..\..;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.16/inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\..;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ProducesObjectFile>true</ProducesObjectFile>
       <OptimizationLevel>O3</OptimizationLevel>
       <CppInliningLevel></CppInliningLevel>
@@ -322,12 +338,12 @@
       <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
       <LibrarianCommand>-rmc</LibrarianCommand>
       <AdditionalDependencies>-lVisionEnginePlugin;-lvHavok;-lvHavokAi;-lvHavokBehavior;-lvFmodEnginePlugin;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\..\..\..\Lib\tizen_vs2010_anarchy\release;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.16/lib/tizen</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\..\..\..\..\Lib\tizen_vs2010_anarchy\release;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/lib/tizen</AdditionalLibraryDirectories>
     </Lib>
     <Link>
       <AdditionalDependencies>-lVisionEnginePlugin;-lvHavok;-lvHavokAi;-lvHavokBehavior;-lvFmodEnginePlugin;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
-      <AdditionalLibraryDirectories>..\..\..\..\..\Lib\tizen_vs2010_anarchy\release;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.16/lib/tizen</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\..\..\..\..\Lib\tizen_vs2010_anarchy\release;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/lib/tizen</AdditionalLibraryDirectories>
       <AdditionalLinkerOptions>-nosegments_always_executable</AdditionalLinkerOptions>
       <OptimizationStrategy>general</OptimizationStrategy>
       <SourceRoot>.</SourceRoot>
@@ -378,6 +394,14 @@
       <StripSymbolStrings>No</StripSymbolStrings>
       <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
     </PostLink>
+    <Deploy>
+      <DeployTool></DeployTool>
+      <ResDir></ResDir>
+      <Manifest></Manifest>
+      <Install></Install>
+      <FileServe></FileServe>
+      <Resources></Resources>
+    </Deploy>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="HighlightableComponent.h">

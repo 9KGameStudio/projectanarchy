@@ -76,9 +76,6 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|hkAndroid'">
     
     
-    <PostBuildEvent>
-      <Command>..\..\..\..\..\Build\StandaloneTools\Deployment\Exe\deployAndroid.exe $(OutputFile) --deployFileName $(ProjectFileName)_$(Configuration).deploy -j $(IntDir)$(JavaOutputDir) -s $(AndroidAPILevel) --resDir ..\..\..\..\..\Data\Common\Anarchy\Android -i -e -l $(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.16/lib/android/armeabi-v7a/libfmodexL.so -l $(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.16/lib/android/armeabi-v7a/libfmodeventL.so --asset ..\..\..\..\../Data/Vision/Base/ Data/Vision/Base/ --asset ..\..\..\..\../Data/Vision/Samples/Engine/Maps/ViewerMap/ Data/Vision/Samples/Engine/Maps/ViewerMap/ --asset ..\..\..\..\../Data/Vision/Samples/Engine/Scaleform/ Data/Vision/Samples/Engine/Scaleform/ --asset ..\..\..\..\../Data/Vision/Samples/Engine/Textures/Touch/ Data/Vision/Samples/Engine/Textures/Touch/</Command>
-    </PostBuildEvent>
     
     <ClCompile>
       <CompileAs>Default</CompileAs>
@@ -90,7 +87,7 @@
       <AdditionalOptions>-ffunction-sections -fno-inline %(AdditionalOptions) %(AdditionalOptions)</AdditionalOptions>
       <PreprocessorDefinitions>_DEBUG;HK_DEBUG;HK_DEBUG_SLOW;HK_ANARCHY;PROFILING;_VISION_POSIX;_VISION_ANDROID;_VISION_NO_WARNING_IMAGE_FORMAT;VBASE_LIB;LINK_WITH_VISION;VISIONDLL_LIB;GFX_ENABLE_SOUND;CURL_STATICLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <UndefinePreprocessorDefinitions>%(UndefinePreprocessorDefinitions)</UndefinePreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(IntDir);..\..\..\..;$(NDKROOT)/sources;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/Include;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/Src;$(GFXSDK)/;$(GFXSDK)/Include;$(GFXSDK)/Src;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.16/inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(IntDir);..\..\..\..;$(NDKROOT)/sources;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/Include;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/Src;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ProducesObjectFile>true</ProducesObjectFile>
       <OptimizationLevel>O0</OptimizationLevel>
       <CppInliningLevel></CppInliningLevel>
@@ -116,19 +113,19 @@
       <AllocationGlobalVariable>UniqueDefinitions</AllocationGlobalVariable>
       <ForcedIncludeFile></ForcedIncludeFile>
       <ConcurrentCompile>False</ConcurrentCompile>
-      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
     </ClCompile>
     <Lib>
       <OutputFile>$(OutDir)\libScaleform.so</OutputFile>
       <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
       <LibrarianCommand>-rmc</LibrarianCommand>
-      <AdditionalDependencies>-lEGL;-lGLESv2;-lGLESv1_CM;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib\LuaAndroid_Debug.a;-lgfx_air;-lgfx_as2;-lgfx_as3;-lgfx;-lgfxexpat;-lgfxplatform;-lgfxrender_gl;-lgfxsound_fmod;-lexpat;-ljpeg;-lpcre;-lpng;-lz;-lfmodexL;-lfmodeventL;-lcurl;-lBaseD;-lVisionD;-lVisionEnginePlugin;-lvFmodEnginePlugin;-lvScaleformPlugin;-lvScaleformUtilsD;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\..\..\..\Lib\android_arm_vs2010_anarchy\debug;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/Lib/Android/armeabi-v7a/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/Lib/Android/armeabi-v7a/Debug_NoRTTI/;$(GFXSDK)/Lib/Android/armeabi-v7a/;$(GFXSDK)/Lib/Android/armeabi-v7a/Debug_NoRTTI/;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.16/lib/android/armeabi-v7a;$(HAVOK_THIRDPARTY_DIR)/redistsdks/curl/7.22.0/Android/armeabi-v7a/Debug</AdditionalLibraryDirectories>
+      <AdditionalDependencies>-lEGL;-lGLESv2;-lGLESv1_CM;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib\LuaAndroid_Debug.a;-lgfx_air;-lgfx_as2;-lgfx_as3;-lgfx;-lgfxexpat;-lgfxplatform;-lgfxrender_gl;-lgfxsound_fmod;-lexpat;-ljpeg;-lpcre;-lpng;-lz;-lfmodexL;-lfmodeventL;-lcurl;-lBaseD;-lVisionD;-lVisionEnginePlugin;-lVisionAppD;-lvFmodEnginePlugin;-lvScaleformPlugin;-lvScaleformUtilsD;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\..\..\..\..\Lib\android_arm_vs2010_anarchy\debug;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/Lib/Android/armeabi-v7a/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/Lib/Android/armeabi-v7a/Debug_NoRTTI/;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/lib/android/armeabi-v7a;$(HAVOK_THIRDPARTY_DIR)/redistsdks/curl/7.22.0/Android/armeabi-v7a/Debug</AdditionalLibraryDirectories>
     </Lib>
     <Link>
-      <AdditionalDependencies>-landroid;-lEGL;-lGLESv2;-lGLESv1_CM;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib\LuaAndroid_Debug.a;-lgfx_air;-lgfx_as2;-lgfx_as3;-lgfx;-lgfxexpat;-lgfxplatform;-lgfxrender_gl;-lgfxsound_fmod;-lexpat;-ljpeg;-lpcre;-lpng;-lz;-lfmodexL;-lfmodeventL;-lcurl;-lBaseD;-lVisionD;-lVisionEnginePlugin;-lvFmodEnginePlugin;-lvScaleformPlugin;-lvScaleformUtilsD;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>-landroid;-lEGL;-lGLESv2;-lGLESv1_CM;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib\LuaAndroid_Debug.a;-lgfx_air;-lgfx_as2;-lgfx_as3;-lgfx;-lgfxexpat;-lgfxplatform;-lgfxrender_gl;-lgfxsound_fmod;-lexpat;-ljpeg;-lpcre;-lpng;-lz;-lfmodexL;-lfmodeventL;-lcurl;-lBaseD;-lVisionD;-lVisionEnginePlugin;-lVisionAppD;-lvFmodEnginePlugin;-lvScaleformPlugin;-lvScaleformUtilsD;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
-      <AdditionalLibraryDirectories>..\..\..\..\..\Lib\android_arm_vs2010_anarchy\debug;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/Lib/Android/armeabi-v7a/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/Lib/Android/armeabi-v7a/Debug_NoRTTI/;$(GFXSDK)/Lib/Android/armeabi-v7a/;$(GFXSDK)/Lib/Android/armeabi-v7a/Debug_NoRTTI/;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.16/lib/android/armeabi-v7a;$(HAVOK_THIRDPARTY_DIR)/redistsdks/curl/7.22.0/Android/armeabi-v7a/Debug</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\..\..\..\..\Lib\android_arm_vs2010_anarchy\debug;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/Lib/Android/armeabi-v7a/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/Lib/Android/armeabi-v7a/Debug_NoRTTI/;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/lib/android/armeabi-v7a;$(HAVOK_THIRDPARTY_DIR)/redistsdks/curl/7.22.0/Android/armeabi-v7a/Debug</AdditionalLibraryDirectories>
       <AdditionalLinkerOptions>-nosegments_always_executable</AdditionalLinkerOptions>
       <OptimizationStrategy>general</OptimizationStrategy>
       <SourceRoot>.</SourceRoot>
@@ -180,13 +177,26 @@
       <StripSymbolStrings>No</StripSymbolStrings>
       <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
     </PostLink>
+    <Deploy>
+      <DeployTool>..\..\..\..\..\Build\StandaloneTools\Deployment\Exe\deployAndroid.exe</DeployTool>
+      <Install>true</Install>
+      <FileServe></FileServe>
+      <Internet></Internet>
+      <WriteExternal>true</WriteExternal>
+      <ResDir>..\..\..\..\..\Data\Common\Anarchy\Android</ResDir>
+      <Manifest></Manifest>
+      <Orientation></Orientation>
+      <Libraries>$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/lib/android/armeabi-v7a/libfmodexL.so;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/lib/android/armeabi-v7a/libfmodeventL.so</Libraries>
+      <ExcludeDirs></ExcludeDirs>
+      <ExcludeFiles></ExcludeFiles>
+      <ExcludeExts></ExcludeExts>
+      <Assets>..\..\..\..\../Data/Vision/Base/ Data/Vision/Base/;..\..\..\..\../Data/Vision/Samples/Engine/Maps/ViewerMap/ Data/Vision/Samples/Engine/Maps/ViewerMap/;..\..\..\..\../Data/Vision/Samples/Engine/Scaleform/ Data/Vision/Samples/Engine/Scaleform/;..\..\..\..\../Data/Vision/Samples/Engine/Textures/Touch/ Data/Vision/Samples/Engine/Textures/Touch/</Assets>
+      <Copy></Copy>
+    </Deploy>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Dev|hkAndroid'">
     
     
-    <PostBuildEvent>
-      <Command>..\..\..\..\..\Build\StandaloneTools\Deployment\Exe\deployAndroid.exe $(OutputFile) --deployFileName $(ProjectFileName)_$(Configuration).deploy -j $(IntDir)$(JavaOutputDir) -s $(AndroidAPILevel) --resDir ..\..\..\..\..\Data\Common\Anarchy\Android -i -l $(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.16/lib/android/armeabi-v7a/libfmodex.so -l $(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.16/lib/android/armeabi-v7a/libfmodevent.so --asset ..\..\..\..\../Data/Vision/Base/ Data/Vision/Base/ --asset ..\..\..\..\../Data/Vision/Samples/Engine/Maps/ViewerMap/ Data/Vision/Samples/Engine/Maps/ViewerMap/ --asset ..\..\..\..\../Data/Vision/Samples/Engine/Scaleform/ Data/Vision/Samples/Engine/Scaleform/ --asset ..\..\..\..\../Data/Vision/Samples/Engine/Textures/Touch/ Data/Vision/Samples/Engine/Textures/Touch/</Command>
-    </PostBuildEvent>
     
     <ClCompile>
       <CompileAs>Default</CompileAs>
@@ -198,7 +208,7 @@
       <AdditionalOptions>-ffunction-sections %(AdditionalOptions) %(AdditionalOptions)</AdditionalOptions>
       <PreprocessorDefinitions>HK_DEBUG;HK_ANARCHY;PROFILING;_VISION_POSIX;_VISION_ANDROID;_VISION_NO_WARNING_IMAGE_FORMAT;VBASE_LIB;LINK_WITH_VISION;VISIONDLL_LIB;GFX_ENABLE_SOUND;CURL_STATICLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <UndefinePreprocessorDefinitions>%(UndefinePreprocessorDefinitions)</UndefinePreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(IntDir);..\..\..\..;$(NDKROOT)/sources;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/Include;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/Src;$(GFXSDK)/;$(GFXSDK)/Include;$(GFXSDK)/Src;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.16/inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(IntDir);..\..\..\..;$(NDKROOT)/sources;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/Include;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/Src;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ProducesObjectFile>true</ProducesObjectFile>
       <OptimizationLevel>Ofast</OptimizationLevel>
       <CppInliningLevel></CppInliningLevel>
@@ -230,13 +240,13 @@
       <OutputFile>$(OutDir)\libScaleform.so</OutputFile>
       <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
       <LibrarianCommand>-rmc</LibrarianCommand>
-      <AdditionalDependencies>-lEGL;-lGLESv2;-lGLESv1_CM;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib\LuaAndroid_Release.a;-lgfx_air;-lgfx_as2;-lgfx_as3;-lgfx;-lgfxexpat;-lgfxplatform;-lgfxrender_gl;-lgfxsound_fmod;-lexpat;-ljpeg;-lpcre;-lpng;-lz;-lfmodex;-lfmodevent;-lcurl;-lBase;-lVision;-lVisionEnginePlugin;-lvFmodEnginePlugin;-lvScaleformPlugin;-lvScaleformUtils;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\..\..\..\Lib\android_arm_vs2010_anarchy\dev;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/Lib/Android/armeabi-v7a/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/Lib/Android/armeabi-v7a/Release_NoRTTI/;$(GFXSDK)/Lib/Android/armeabi-v7a/;$(GFXSDK)/Lib/Android/armeabi-v7a/Release_NoRTTI/;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.16/lib/android/armeabi-v7a;$(HAVOK_THIRDPARTY_DIR)/redistsdks/curl/7.22.0/Android/armeabi-v7a/Release</AdditionalLibraryDirectories>
+      <AdditionalDependencies>-lEGL;-lGLESv2;-lGLESv1_CM;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib\LuaAndroid_Release.a;-lgfx_air;-lgfx_as2;-lgfx_as3;-lgfx;-lgfxexpat;-lgfxplatform;-lgfxrender_gl;-lgfxsound_fmod;-lexpat;-ljpeg;-lpcre;-lpng;-lz;-lfmodex;-lfmodevent;-lcurl;-lBase;-lVision;-lVisionEnginePlugin;-lVisionApp;-lvFmodEnginePlugin;-lvScaleformPlugin;-lvScaleformUtils;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\..\..\..\..\Lib\android_arm_vs2010_anarchy\dev;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/Lib/Android/armeabi-v7a/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/Lib/Android/armeabi-v7a/Release_NoRTTI/;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/lib/android/armeabi-v7a;$(HAVOK_THIRDPARTY_DIR)/redistsdks/curl/7.22.0/Android/armeabi-v7a/Release</AdditionalLibraryDirectories>
     </Lib>
     <Link>
-      <AdditionalDependencies>-landroid;-lEGL;-lGLESv2;-lGLESv1_CM;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib\LuaAndroid_Release.a;-lgfx_air;-lgfx_as2;-lgfx_as3;-lgfx;-lgfxexpat;-lgfxplatform;-lgfxrender_gl;-lgfxsound_fmod;-lexpat;-ljpeg;-lpcre;-lpng;-lz;-lfmodex;-lfmodevent;-lcurl;-lBase;-lVision;-lVisionEnginePlugin;-lvFmodEnginePlugin;-lvScaleformPlugin;-lvScaleformUtils;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>-landroid;-lEGL;-lGLESv2;-lGLESv1_CM;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib\LuaAndroid_Release.a;-lgfx_air;-lgfx_as2;-lgfx_as3;-lgfx;-lgfxexpat;-lgfxplatform;-lgfxrender_gl;-lgfxsound_fmod;-lexpat;-ljpeg;-lpcre;-lpng;-lz;-lfmodex;-lfmodevent;-lcurl;-lBase;-lVision;-lVisionEnginePlugin;-lVisionApp;-lvFmodEnginePlugin;-lvScaleformPlugin;-lvScaleformUtils;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
-      <AdditionalLibraryDirectories>..\..\..\..\..\Lib\android_arm_vs2010_anarchy\dev;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/Lib/Android/armeabi-v7a/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/Lib/Android/armeabi-v7a/Release_NoRTTI/;$(GFXSDK)/Lib/Android/armeabi-v7a/;$(GFXSDK)/Lib/Android/armeabi-v7a/Release_NoRTTI/;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.16/lib/android/armeabi-v7a;$(HAVOK_THIRDPARTY_DIR)/redistsdks/curl/7.22.0/Android/armeabi-v7a/Release</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\..\..\..\..\Lib\android_arm_vs2010_anarchy\dev;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/Lib/Android/armeabi-v7a/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/Lib/Android/armeabi-v7a/Release_NoRTTI/;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/lib/android/armeabi-v7a;$(HAVOK_THIRDPARTY_DIR)/redistsdks/curl/7.22.0/Android/armeabi-v7a/Release</AdditionalLibraryDirectories>
       <AdditionalLinkerOptions>-nosegments_always_executable</AdditionalLinkerOptions>
       <OptimizationStrategy>general</OptimizationStrategy>
       <SourceRoot>.</SourceRoot>
@@ -288,13 +298,26 @@
       <StripSymbolStrings>No</StripSymbolStrings>
       <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
     </PostLink>
+    <Deploy>
+      <DeployTool>..\..\..\..\..\Build\StandaloneTools\Deployment\Exe\deployAndroid.exe</DeployTool>
+      <Install>true</Install>
+      <FileServe></FileServe>
+      <Internet></Internet>
+      <WriteExternal></WriteExternal>
+      <ResDir>..\..\..\..\..\Data\Common\Anarchy\Android</ResDir>
+      <Manifest></Manifest>
+      <Orientation></Orientation>
+      <Libraries>$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/lib/android/armeabi-v7a/libfmodex.so;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/lib/android/armeabi-v7a/libfmodevent.so</Libraries>
+      <ExcludeDirs></ExcludeDirs>
+      <ExcludeFiles></ExcludeFiles>
+      <ExcludeExts></ExcludeExts>
+      <Assets>..\..\..\..\../Data/Vision/Base/ Data/Vision/Base/;..\..\..\..\../Data/Vision/Samples/Engine/Maps/ViewerMap/ Data/Vision/Samples/Engine/Maps/ViewerMap/;..\..\..\..\../Data/Vision/Samples/Engine/Scaleform/ Data/Vision/Samples/Engine/Scaleform/;..\..\..\..\../Data/Vision/Samples/Engine/Textures/Touch/ Data/Vision/Samples/Engine/Textures/Touch/</Assets>
+      <Copy></Copy>
+    </Deploy>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|hkAndroid'">
     
     
-    <PostBuildEvent>
-      <Command>..\..\..\..\..\Build\StandaloneTools\Deployment\Exe\deployAndroid.exe $(OutputFile) --deployFileName $(ProjectFileName)_$(Configuration).deploy -j $(IntDir)$(JavaOutputDir) -s $(AndroidAPILevel) --resDir ..\..\..\..\..\Data\Common\Anarchy\Android -i -l $(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.16/lib/android/armeabi-v7a/libfmodex.so -l $(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.16/lib/android/armeabi-v7a/libfmodevent.so --asset ..\..\..\..\../Data/Vision/Base/ Data/Vision/Base/ --asset ..\..\..\..\../Data/Vision/Samples/Engine/Maps/ViewerMap/ Data/Vision/Samples/Engine/Maps/ViewerMap/ --asset ..\..\..\..\../Data/Vision/Samples/Engine/Scaleform/ Data/Vision/Samples/Engine/Scaleform/ --asset ..\..\..\..\../Data/Vision/Samples/Engine/Textures/Touch/ Data/Vision/Samples/Engine/Textures/Touch/</Command>
-    </PostBuildEvent>
     
     <ClCompile>
       <CompileAs>Default</CompileAs>
@@ -306,7 +329,7 @@
       <AdditionalOptions>-ffunction-sections %(AdditionalOptions) %(AdditionalOptions)</AdditionalOptions>
       <PreprocessorDefinitions>;HK_ANARCHY;PROFILING;_VISION_POSIX;_VISION_ANDROID;_VISION_NO_WARNING_IMAGE_FORMAT;VBASE_LIB;LINK_WITH_VISION;VISIONDLL_LIB;GFX_ENABLE_SOUND;CURL_STATICLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <UndefinePreprocessorDefinitions>%(UndefinePreprocessorDefinitions)</UndefinePreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(IntDir);..\..\..\..;$(NDKROOT)/sources;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/Include;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/Src;$(GFXSDK)/;$(GFXSDK)/Include;$(GFXSDK)/Src;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.16/inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(IntDir);..\..\..\..;$(NDKROOT)/sources;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/Include;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/Src;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ProducesObjectFile>true</ProducesObjectFile>
       <OptimizationLevel>Ofast</OptimizationLevel>
       <CppInliningLevel></CppInliningLevel>
@@ -338,13 +361,13 @@
       <OutputFile>$(OutDir)\libScaleform.so</OutputFile>
       <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
       <LibrarianCommand>-rmc</LibrarianCommand>
-      <AdditionalDependencies>-lEGL;-lGLESv2;-lGLESv1_CM;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib\LuaAndroid_Release.a;-lgfx_air;-lgfx_as2;-lgfx_as3;-lgfx;-lgfxexpat;-lgfxplatform;-lgfxrender_gl;-lgfxsound_fmod;-lexpat;-ljpeg;-lpcre;-lpng;-lz;-lfmodex;-lfmodevent;-lcurl;-lBase;-lVision;-lVisionEnginePlugin;-lvFmodEnginePlugin;-lvScaleformPlugin;-lvScaleformUtils;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\..\..\..\Lib\android_arm_vs2010_anarchy\release;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/Lib/Android/armeabi-v7a/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/Lib/Android/armeabi-v7a/Release_NoRTTI/;$(GFXSDK)/Lib/Android/armeabi-v7a/;$(GFXSDK)/Lib/Android/armeabi-v7a/Release_NoRTTI/;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.16/lib/android/armeabi-v7a;$(HAVOK_THIRDPARTY_DIR)/redistsdks/curl/7.22.0/Android/armeabi-v7a/Release</AdditionalLibraryDirectories>
+      <AdditionalDependencies>-lEGL;-lGLESv2;-lGLESv1_CM;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib\LuaAndroid_Release.a;-lgfx_air;-lgfx_as2;-lgfx_as3;-lgfx;-lgfxexpat;-lgfxplatform;-lgfxrender_gl;-lgfxsound_fmod;-lexpat;-ljpeg;-lpcre;-lpng;-lz;-lfmodex;-lfmodevent;-lcurl;-lBase;-lVision;-lVisionEnginePlugin;-lVisionApp;-lvFmodEnginePlugin;-lvScaleformPlugin;-lvScaleformUtils;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\..\..\..\..\Lib\android_arm_vs2010_anarchy\release;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/Lib/Android/armeabi-v7a/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/Lib/Android/armeabi-v7a/Release_NoRTTI/;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/lib/android/armeabi-v7a;$(HAVOK_THIRDPARTY_DIR)/redistsdks/curl/7.22.0/Android/armeabi-v7a/Release</AdditionalLibraryDirectories>
     </Lib>
     <Link>
-      <AdditionalDependencies>-landroid;-lEGL;-lGLESv2;-lGLESv1_CM;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib\LuaAndroid_Release.a;-lgfx_air;-lgfx_as2;-lgfx_as3;-lgfx;-lgfxexpat;-lgfxplatform;-lgfxrender_gl;-lgfxsound_fmod;-lexpat;-ljpeg;-lpcre;-lpng;-lz;-lfmodex;-lfmodevent;-lcurl;-lBase;-lVision;-lVisionEnginePlugin;-lvFmodEnginePlugin;-lvScaleformPlugin;-lvScaleformUtils;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>-landroid;-lEGL;-lGLESv2;-lGLESv1_CM;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib\LuaAndroid_Release.a;-lgfx_air;-lgfx_as2;-lgfx_as3;-lgfx;-lgfxexpat;-lgfxplatform;-lgfxrender_gl;-lgfxsound_fmod;-lexpat;-ljpeg;-lpcre;-lpng;-lz;-lfmodex;-lfmodevent;-lcurl;-lBase;-lVision;-lVisionEnginePlugin;-lVisionApp;-lvFmodEnginePlugin;-lvScaleformPlugin;-lvScaleformUtils;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
-      <AdditionalLibraryDirectories>..\..\..\..\..\Lib\android_arm_vs2010_anarchy\release;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/Lib/Android/armeabi-v7a/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/Lib/Android/armeabi-v7a/Release_NoRTTI/;$(GFXSDK)/Lib/Android/armeabi-v7a/;$(GFXSDK)/Lib/Android/armeabi-v7a/Release_NoRTTI/;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.16/lib/android/armeabi-v7a;$(HAVOK_THIRDPARTY_DIR)/redistsdks/curl/7.22.0/Android/armeabi-v7a/Release</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\..\..\..\..\Lib\android_arm_vs2010_anarchy\release;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/Lib/Android/armeabi-v7a/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/Lib/Android/armeabi-v7a/Release_NoRTTI/;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/lib/android/armeabi-v7a;$(HAVOK_THIRDPARTY_DIR)/redistsdks/curl/7.22.0/Android/armeabi-v7a/Release</AdditionalLibraryDirectories>
       <AdditionalLinkerOptions>-nosegments_always_executable</AdditionalLinkerOptions>
       <OptimizationStrategy>general</OptimizationStrategy>
       <SourceRoot>.</SourceRoot>
@@ -396,32 +419,39 @@
       <StripSymbolStrings>No</StripSymbolStrings>
       <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
     </PostLink>
+    <Deploy>
+      <DeployTool>..\..\..\..\..\Build\StandaloneTools\Deployment\Exe\deployAndroid.exe</DeployTool>
+      <Install>true</Install>
+      <FileServe></FileServe>
+      <Internet></Internet>
+      <WriteExternal></WriteExternal>
+      <ResDir>..\..\..\..\..\Data\Common\Anarchy\Android</ResDir>
+      <Manifest></Manifest>
+      <Orientation></Orientation>
+      <Libraries>$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/lib/android/armeabi-v7a/libfmodex.so;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/lib/android/armeabi-v7a/libfmodevent.so</Libraries>
+      <ExcludeDirs></ExcludeDirs>
+      <ExcludeFiles></ExcludeFiles>
+      <ExcludeExts></ExcludeExts>
+      <Assets>..\..\..\..\../Data/Vision/Base/ Data/Vision/Base/;..\..\..\..\../Data/Vision/Samples/Engine/Maps/ViewerMap/ Data/Vision/Samples/Engine/Maps/ViewerMap/;..\..\..\..\../Data/Vision/Samples/Engine/Scaleform/ Data/Vision/Samples/Engine/Scaleform/;..\..\..\..\../Data/Vision/Samples/Engine/Textures/Touch/ Data/Vision/Samples/Engine/Textures/Touch/</Assets>
+      <Copy></Copy>
+    </Deploy>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\..\..\Source\Vision\Runtime\Common\VisSampleAppCallbacks.cpp">
-        <PrecompiledHeader>NotUsing</PrecompiledHeader>
-        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClInclude Include="ScaleformPCH.h">
+        <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="ScaleformPCH.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="..\..\..\..\..\Source\Vision\Runtime\Common\VSampleTouchMenu.hpp">
-        <DeploymentContent>False</DeploymentContent></ClInclude>
-    <ClInclude Include="..\..\..\..\..\Source\Vision\Runtime\EnginePlugins\EnginePluginsImport.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="$(NDKROOT)\sources\android\native_app_glue\android_native_app_glue.c">
         <CompileAsWinRT>false</CompileAsWinRT>
         <AdditionalOptions> </AdditionalOptions>
         <DeploymentContent>False</DeploymentContent></ClCompile>
-    <ClInclude Include="ScaleformPCH.h">
-        <DeploymentContent>False</DeploymentContent></ClInclude>
-    <ClInclude Include="..\..\..\..\..\Source\Vision\Runtime\Common\VisSampleApp.hpp">
-        <DeploymentContent>False</DeploymentContent></ClInclude>
-    <ClCompile Include="..\..\..\..\..\Source\Vision\Runtime\Common\VisSampleApp.cpp">
-        <PrecompiledHeader>NotUsing</PrecompiledHeader>
-        <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClCompile Include="..\..\..\..\..\Source\Vision\Runtime\Common\VSampleTouchMenu.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClCompile Include="Scaleform.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
+    <Java Include="..\..\..\..\..\Source\Vision\Runtime\Common\Android\VNativeDialogAndroid.java"><DeploymentContent>False</DeploymentContent></Java>
   </ItemGroup>
   <ItemGroup>
   </ItemGroup>

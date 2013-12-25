@@ -31,6 +31,9 @@
     <ClCompile Include="VScaleformModelPreview.cpp">
         <Filter></Filter>
         <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClCompile Include="VScaleformMovieIME.cpp">
+        <Filter></Filter>
+        <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="ScaleformEnginePlugin.hpp">
         <Filter></Filter>
         <DeploymentContent>False</DeploymentContent></ClInclude>

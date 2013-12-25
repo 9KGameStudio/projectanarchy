@@ -113,7 +113,7 @@
       <AllocationGlobalVariable>UniqueDefinitions</AllocationGlobalVariable>
       <ForcedIncludeFile></ForcedIncludeFile>
       <ConcurrentCompile>False</ConcurrentCompile>
-      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
     </ClCompile>
     <Lib>
       <OutputFile>$(OutDir)\libVisionEnginePlugin.a</OutputFile>
@@ -177,6 +177,22 @@
       <StripSymbolStrings>No</StripSymbolStrings>
       <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
     </PostLink>
+    <Deploy>
+      <DeployTool></DeployTool>
+      <Install></Install>
+      <FileServe></FileServe>
+      <Internet></Internet>
+      <WriteExternal></WriteExternal>
+      <ResDir></ResDir>
+      <Manifest></Manifest>
+      <Orientation></Orientation>
+      <Libraries></Libraries>
+      <ExcludeDirs></ExcludeDirs>
+      <ExcludeFiles></ExcludeFiles>
+      <ExcludeExts></ExcludeExts>
+      <Assets></Assets>
+      <Copy></Copy>
+    </Deploy>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Dev|hkAndroid'">
     
@@ -282,6 +298,22 @@
       <StripSymbolStrings>No</StripSymbolStrings>
       <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
     </PostLink>
+    <Deploy>
+      <DeployTool></DeployTool>
+      <Install></Install>
+      <FileServe></FileServe>
+      <Internet></Internet>
+      <WriteExternal></WriteExternal>
+      <ResDir></ResDir>
+      <Manifest></Manifest>
+      <Orientation></Orientation>
+      <Libraries></Libraries>
+      <ExcludeDirs></ExcludeDirs>
+      <ExcludeFiles></ExcludeFiles>
+      <ExcludeExts></ExcludeExts>
+      <Assets></Assets>
+      <Copy></Copy>
+    </Deploy>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|hkAndroid'">
     
@@ -387,6 +419,22 @@
       <StripSymbolStrings>No</StripSymbolStrings>
       <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
     </PostLink>
+    <Deploy>
+      <DeployTool></DeployTool>
+      <Install></Install>
+      <FileServe></FileServe>
+      <Internet></Internet>
+      <WriteExternal></WriteExternal>
+      <ResDir></ResDir>
+      <Manifest></Manifest>
+      <Orientation></Orientation>
+      <Libraries></Libraries>
+      <ExcludeDirs></ExcludeDirs>
+      <ExcludeFiles></ExcludeFiles>
+      <ExcludeExts></ExcludeExts>
+      <Assets></Assets>
+      <Copy></Copy>
+    </Deploy>
   </ItemDefinitionGroup>
   <ItemGroup>
     <Compile Include="Scripting\Lua\VisApiStaticMeshInstance.i">
@@ -434,11 +482,11 @@
         <DeploymentContent>False</DeploymentContent></Compile>
     <ClInclude Include="GUI\Controls\VItemContainer.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
-    <ClInclude Include="Rendering\Effects\EffectsModule.hpp">
+    <ClInclude Include="Terrain\Geometry\TerrainDecorationInstance.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="Rendering\ShadowMapping\VMobileShadowMapComponentSpotDirectional.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
-    <ClInclude Include="Input\VMouseCamera.hpp">
+    <ClInclude Include="Scene\VGroupInstance.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <Compile Include="Scripting\Lua\VTimedValueComponent.i">
         <DeploymentContent>False</DeploymentContent></Compile>
@@ -465,8 +513,12 @@
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="Components\VFollowPathComponent.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
-    <ClInclude Include="Scripting\Lua\VScriptFileSystem_wrapper.hpp">
-        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <CustomBuild Include="Scripting\Lua\VisionLuaModule.i">
+        <AdditionalInputs>Scripting\Lua\VScriptConstants.hpp;Scripting\Lua\hkvVec2.i;Scripting\Lua\hkvVec3.i;Scripting\Lua\hkvVec4.i;Scripting\Lua\hkvMat3.i;Scripting\Lua\hkvMat4.i;Scripting\Lua\hkvPlane.i;Scripting\Lua\hkvQuat.i;Scripting\Lua\hkvAlignedBBox.i;Scripting\Lua\hkvBoundingSphere.i;Scripting\Lua\VColor.i;Scripting\Lua\VBitmask.i;Scripting\Lua\VTypedObject.i;Scripting\Lua\VisApiTypedEngineObject.i;Scripting\Lua\VisApiObject3D.i;Scripting\Lua\VisApiObjectComponent.i;Scripting\Lua\VisApiBaseEntity.i;Scripting\Lua\ParticleGroupBase.i;Scripting\Lua\VisApiDynamicMesh.i;Scripting\Lua\VisApiLightSource.i;Scripting\Lua\VisApiStaticMeshInstance.i;Scripting\Lua\VisApiSurface.i;Scripting\Lua\VTextureObject.i;Scripting\Lua\VisApiContextCamera.i;Scripting\Lua\VisApiRenderer.i;Scripting\Lua\TriggerBoxEntity.i;Scripting\Lua\VisApiScreenMask.i;Scripting\Lua\IVRendererNode.i;Scripting\Lua\PostProcessBase.i;Scripting\Lua\CubeMapHandle.i;Scripting\Lua\PathCameraEntity.i;Scripting\Lua\VisApiTriggerComponent.i;Scripting\Lua\VTransitionStateMachine.i;Scripting\Lua\VAnimationComponent.i;Scripting\Lua\VTimedValueComponent.i;Scripting\Lua\VGUIManager.i;Scripting\Lua\VWindowBase.i;Scripting\Lua\VDialog.i;Scripting\Lua\VStringInputMap.i;Scripting\Lua\VisApiGame.i;Scripting\Lua\VisionTimer.i;Scripting\Lua\VisionConsoleManager.i;Scripting\Lua\VisApiPersistentData.i</AdditionalInputs>
+        <Outputs>Scripting/Lua/VisionLuaModule_wrapper.cpp</Outputs>
+        <FileType>Document</FileType>
+        <Command>&quot;$(HAVOK_THIRDPARTY_DIR)\redistsdks\swig\2.0.3\swig.exe&quot; -c++ -lua -verbose -o Scripting/Lua/VisionLuaModule_wrapper.cpp -I..\..\..\.. Scripting\Lua\VisionLuaModule.i&#x0D;&#x0A;&quot;..\..\..\..\..\Build\StandaloneTools\Iswig\Exe\iswig.exe&quot; --includePre &quot;Vision/Runtime/EnginePlugins/VisionEnginePlugin/VisionEnginePluginPCH.h&quot; --includePost &quot;Vision/Runtime/Base/System/DisableStaticAnalysis.hpp&quot; --header &quot;VisionLuaModule_wrapper.hpp&quot; Scripting/Lua/VisionLuaModule_wrapper.cpp</Command>
+        <DeploymentContent>False</DeploymentContent></CustomBuild>
     <ClCompile Include="GUI\IVMenuSystemResource.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="Rendering\Effects\CubeMapHandle.hpp">
@@ -511,6 +563,8 @@
         <DeploymentContent>False</DeploymentContent></Compile>
     <ClCompile Include="VisionEnginePluginPCH.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
+    <Compile Include="Scripting\Lua\hkvBoundingSphere.i">
+        <DeploymentContent>False</DeploymentContent></Compile>
     <ClCompile Include="Rendering\Effects\VCoronaManager.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClCompile Include="Particles\ParticleGroupBase.cpp">
@@ -519,6 +573,8 @@
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="GUI\Controls\VMapLookupControl.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
+    <Compile Include="Scripting\Lua\hkvQuat.i">
+        <DeploymentContent>False</DeploymentContent></Compile>
     <ClInclude Include="GUI\VCursor.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="Scripting\Lua\VisionLuaModule_wrapper.cpp">
@@ -527,8 +583,8 @@
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="Terrain\Geometry\TerrainSectorManager.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
-    <ClInclude Include="Particles\ParticleDescriptor.hpp">
-        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <Compile Include="Scripting\Lua\VWindowBase.i">
+        <DeploymentContent>False</DeploymentContent></Compile>
     <ClInclude Include="Rendering\Effects\Mirror.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="Rendering\Postprocessing\SimpleCopyPostprocess.hpp">
@@ -539,6 +595,8 @@
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <Compile Include="Scripting\Lua\VisionConsoleManager.i">
         <DeploymentContent>False</DeploymentContent></Compile>
+    <ClCompile Include="Input\VFreeCamera.cpp">
+        <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClCompile Include="GUI\VCursor.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClCompile Include="Entities\_AnimEntity.cpp">
@@ -559,6 +617,8 @@
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <Compile Include="Scripting\Lua\VStringInputMap.i">
         <DeploymentContent>False</DeploymentContent></Compile>
+    <ClInclude Include="Entities\CameraPositionEntity.hpp">
+        <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="Rendering\Postprocessing\VPostProcessScreenMasks.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClCompile Include="Rendering\PathRendering\IVPathRenderingData\VPathRendererBase.cpp">
@@ -576,23 +636,25 @@
         <DeploymentContent>False</DeploymentContent></Compile>
     <ClInclude Include="Components\VSkeletalBoneProxy.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClInclude Include="GUI\VDialogResource.hpp">
+        <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="Rendering\ForwardRenderer\VSimpleShaderProvider.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
-    <Compile Include="Scripting\Lua\VisionTimer.i">
-        <DeploymentContent>False</DeploymentContent></Compile>
+    <ClCompile Include="Entities\CameraPositionEntity.cpp">
+        <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="Resources\VResourcePreview.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="Rendering\PathRendering\IVPathRenderingData\VDebugPathRenderer.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <Compile Include="Scripting\Lua\VScriptFileSystem_wrapper.i">
         <DeploymentContent>False</DeploymentContent></Compile>
-    <Compile Include="Scripting\Lua\VWindowBase.i">
-        <DeploymentContent>False</DeploymentContent></Compile>
-    <ClCompile Include="Rendering\RenderingHelpers\BufferResolver.cpp">
-        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClInclude Include="Particles\ParticleDescriptor.hpp">
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClInclude Include="Scripting\Lua\VScriptDraw_wrapper.hpp">
+        <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="Rendering\MobileForwardRenderer\VMobileForwardRenderLoop.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
-    <ClInclude Include="Scene\LogWrapper.hpp">
+    <ClInclude Include="Scene\progresswrapper.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="Rendering\ForwardRenderer\VSimpleShaderProvider.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
@@ -604,6 +666,8 @@
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="GUI\VGUIContext.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
+    <Compile Include="Scripting\Lua\VisApiPersistentData.i">
+        <DeploymentContent>False</DeploymentContent></Compile>
     <ClInclude Include="Scripting\VLuaHelpers.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="Scripting\RSDClient\VRSDLuaImplementation.hpp">
@@ -628,7 +692,7 @@
         <DeploymentContent>False</DeploymentContent></Compile>
     <ClCompile Include="Entities\VCustomVolumeManager.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
-    <ClInclude Include="Scripting\Lua\VScriptConstants.hpp">
+    <ClInclude Include="Particles\Curve.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="Terrain\Editing\DecorationDensityChannel.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
@@ -640,10 +704,10 @@
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="Rendering\Effects\Cloth\ClothMesh.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
-    <ClCompile Include="Animation\Transition\IVTransitionEventTrigger.cpp">
-        <DeploymentContent>False</DeploymentContent></ClCompile>
-    <Compile Include="Scripting\Lua\PathCameraEntity.i">
+    <Compile Include="Scripting\Lua\hkvPlane.i">
         <DeploymentContent>False</DeploymentContent></Compile>
+    <ClCompile Include="Rendering\MobileForwardRenderer\VMobileForwardRenderer.cpp">
+        <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClCompile Include="Rendering\Effects\BillboardGroup.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <Compile Include="Scripting\Lua\VScriptUtil_wrapper.i">
@@ -660,8 +724,8 @@
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="Particles\ParticleGroupManager.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
-    <ClCompile Include="Components\VEntityLODComponent.cpp">
-        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <Compile Include="Scripting\Lua\hkvMat4.i">
+        <DeploymentContent>False</DeploymentContent></Compile>
     <ClCompile Include="Rendering\RendererNode\VRendererNodeCommon.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClCompile Include="Scripting\Lua\VArchive_wrapper.cpp">
@@ -674,18 +738,14 @@
         <DeploymentContent>False</DeploymentContent></Compile>
     <ClCompile Include="GUI\VTooltip.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
-    <ClInclude Include="Components\VPlayerCamera.hpp">
-        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClCompile Include="GUI\IVRenderableItem.cpp">
+        <DeploymentContent>False</DeploymentContent></ClCompile>
     <Compile Include="Scripting\Lua\hkvMat3.i">
         <DeploymentContent>False</DeploymentContent></Compile>
     <ClInclude Include="Rendering\PathRendering\VPathRenderingData.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
-    <ClCompile Include="Rendering\Profiling\VGraphManager.cpp">
-        <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="Rendering\Effects\Cloth\_ClothEntity.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
-    <ClCompile Include="Components\VPlayerCamera.cpp">
-        <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClCompile Include="Animation\Transition\VTransitionBase.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClCompile Include="Scripting\VScriptComponent.cpp">
@@ -702,6 +762,8 @@
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="GUI\Controls\VItemContainer.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClInclude Include="Scripting\Lua\VScriptConstants.hpp">
+        <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="Terrain\TerrainModule.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="Rendering\ShadowMapping\VShadowMapGenSpotDir.cpp">
@@ -726,27 +788,21 @@
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="GUI\VGUIManager.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
-    <ClInclude Include="Rendering\Effects\Projector.hpp">
-        <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="Rendering\RenderingHelpers\RenderingOptimizationHelpers.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClCompile Include="Particles\ParticleDescriptor.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="Particles\ParticleConstraint.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
-    <ClCompile Include="Rendering\ShadowMapping\VMobileShadowMapComponentSpotDirectional.cpp">
-        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <Compile Include="Scripting\Lua\hkvVec4.i">
+        <DeploymentContent>False</DeploymentContent></Compile>
     <ClInclude Include="Scripting\Lua\VScriptRenderer_wrapper.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="Rendering\Profiling\VGraphObject.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <None Include="Particles\ParticleDescriptor.inl"><DeploymentContent>False</DeploymentContent></None>
-    <CustomBuild Include="Scripting\Lua\VisionLuaModule.i">
-        <AdditionalInputs>Scripting\Lua\VScriptConstants.hpp;Scripting\Lua\hkvVec3.i;Scripting\Lua\hkvMat3.i;Scripting\Lua\hkvAlignedBBox.i;Scripting\Lua\VColor.i;Scripting\Lua\VBitmask.i;Scripting\Lua\VTypedObject.i;Scripting\Lua\VisApiTypedEngineObject.i;Scripting\Lua\VisApiObject3D.i;Scripting\Lua\VisApiObjectComponent.i;Scripting\Lua\VisApiBaseEntity.i;Scripting\Lua\ParticleGroupBase.i;Scripting\Lua\VisApiDynamicMesh.i;Scripting\Lua\VisApiLightSource.i;Scripting\Lua\VisApiStaticMeshInstance.i;Scripting\Lua\VisApiSurface.i;Scripting\Lua\VTextureObject.i;Scripting\Lua\VisApiContextCamera.i;Scripting\Lua\VisApiRenderer.i;Scripting\Lua\TriggerBoxEntity.i;Scripting\Lua\VisApiScreenMask.i;Scripting\Lua\IVRendererNode.i;Scripting\Lua\PostProcessBase.i;Scripting\Lua\CubeMapHandle.i;Scripting\Lua\PathCameraEntity.i;Scripting\Lua\VisApiTriggerComponent.i;Scripting\Lua\VTransitionStateMachine.i;Scripting\Lua\VAnimationComponent.i;Scripting\Lua\VTimedValueComponent.i;Scripting\Lua\VGUIManager.i;Scripting\Lua\VWindowBase.i;Scripting\Lua\VDialog.i;Scripting\Lua\VStringInputMap.i;Scripting\Lua\VisApiGame.i;Scripting\Lua\VisionTimer.i;Scripting\Lua\VisionConsoleManager.i</AdditionalInputs>
-        <Outputs>Scripting/Lua/VisionLuaModule_wrapper.cpp</Outputs>
-        <FileType>Document</FileType>
-        <Command>&quot;$(HAVOK_THIRDPARTY_DIR)\redistsdks\swig\2.0.3\swig.exe&quot; -c++ -lua -verbose -o Scripting/Lua/VisionLuaModule_wrapper.cpp -I..\..\..\.. Scripting\Lua\VisionLuaModule.i&#x0D;&#x0A;&quot;..\..\..\..\..\Build\StandaloneTools\Iswig\Exe\iswig.exe&quot; --includePre &quot;Vision/Runtime/EnginePlugins/VisionEnginePlugin/VisionEnginePluginPCH.h&quot; --includePost &quot;Vision/Runtime/Base/System/DisableStaticAnalysis.hpp&quot; --header &quot;VisionLuaModule_wrapper.hpp&quot; Scripting/Lua/VisionLuaModule_wrapper.cpp</Command>
-        <DeploymentContent>False</DeploymentContent></CustomBuild>
+    <Compile Include="Scripting\Lua\VisionTimer.i">
+        <DeploymentContent>False</DeploymentContent></Compile>
     <ClCompile Include="GUI\VDialog.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClCompile Include="Terrain\Geometry\SectorVisibilityZone.cpp">
@@ -761,7 +817,7 @@
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="Scripting\RSDClient\VRSDClient.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
-    <ClInclude Include="GUI\VDialogFrame.hpp">
+    <ClInclude Include="Components\VOrbitCamera.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="Rendering\Effects\VWallmarkManager.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
@@ -773,18 +829,22 @@
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="Components\VEnginePluginElementManager.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClCompile Include="Components\VEntityLODComponent.cpp">
+        <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="Scripting\VScriptInstance.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="Components\VTimeOfDayComponent.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="GUI\Controls\VTextControl.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClCompile Include="Components\VOrbitCamera.cpp">
+        <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClCompile Include="Components\VLightClippingVolumeComponent.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="GUI\IVMenuSystemResource.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
-    <ClInclude Include="Scene\VGroupInstance.hpp">
-        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClCompile Include="Entities\TriggerDoorEntity.cpp">
+        <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClCompile Include="Entities\_DanglingEntity.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClCompile Include="Rendering\Effects\Cloth\_ClothEntity.cpp">
@@ -797,6 +857,8 @@
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <Compile Include="Scripting\Lua\VScriptScreen_wrapper.i">
         <DeploymentContent>False</DeploymentContent></Compile>
+    <ClCompile Include="Animation\Transition\IVTransitionEventTrigger.cpp">
+        <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClCompile Include="Rendering\MobileForwardRenderer\VFakeSpecularGenerator.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <Compile Include="Scripting\Lua\PostProcessBase.i">
@@ -843,21 +905,19 @@
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="Rendering\Effects\VCoronaManager.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
-    <ClCompile Include="GUI\IVRenderableItem.cpp">
-        <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="Rendering\Postprocessing\ToneMapping.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="Scripting\VScriptIncludes.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="Input\VVirtualThumbStick.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClInclude Include="Scripting\Lua\VScriptFileSystem_wrapper.hpp">
+        <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="Entities\VCustomVolumeObject.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <Compile Include="Scripting\Lua\VisPath_cl.i">
         <DeploymentContent>False</DeploymentContent></Compile>
-    <ClInclude Include="Scene\progresswrapper.hpp">
-        <DeploymentContent>False</DeploymentContent></ClInclude>
-    <ClInclude Include="Particles\Curve.hpp">
+    <ClInclude Include="Input\VFreeCamera.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="Terrain\Geometry\SectorVisibilityZone.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
@@ -897,7 +957,7 @@
         <DeploymentContent>False</DeploymentContent></Compile>
     <ClInclude Include="Rendering\Postprocessing\VPostProcessScreenMasks.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
-    <ClInclude Include="Terrain\Geometry\SectorTile.hpp">
+    <ClInclude Include="GUI\VDialogFrame.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="Animation\Transition\VTransitionManager.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
@@ -923,8 +983,8 @@
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="Rendering\RenderingHelpers\ScratchTexturePool.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
-    <ClInclude Include="Rendering\Profiling\VGraphManager.hpp">
-        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClCompile Include="GUI\VDlgControlBase.cpp">
+        <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="Scripting\Lua\VBitmask.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="Components\VAnimationEventEffectTrigger.cpp">
@@ -939,10 +999,10 @@
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="GUI\Controls\VModelPreviewControl.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
-    <ClInclude Include="Terrain\Geometry\TerrainDecorationInstance.hpp">
+    <ClInclude Include="Rendering\Effects\EffectsModule.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
-    <ClInclude Include="GUI\VDialogResource.hpp">
-        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <Compile Include="Scripting\Lua\hkvVec2.i">
+        <DeploymentContent>False</DeploymentContent></Compile>
     <ClInclude Include="Rendering\MobileForwardRenderer\VFakeSpecularGenerator.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="Scripting\Lua\VisionLuaModule_wrapper.hpp">
@@ -951,8 +1011,6 @@
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="Scripting\Lua\VScriptScreen_wrapper.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
-    <ClCompile Include="Scripting\Lua\SwigTypeDataAccessor.cpp">
-        <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClCompile Include="Rendering\ShadowMapping\VBaseShadowMapComponentSpotDirectional.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClCompile Include="Particles\ParticleEmitter.cpp">
@@ -985,8 +1043,8 @@
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="Components\VTimeOfDayComponent.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
-    <ClCompile Include="Rendering\MobileForwardRenderer\VMobileForwardRenderer.cpp">
-        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <Compile Include="Scripting\Lua\PathCameraEntity.i">
+        <DeploymentContent>False</DeploymentContent></Compile>
     <ClCompile Include="Entities\VCustomVolumeObject.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="Terrain\Geometry\TerrainCollisionMesh.hpp">
@@ -1011,24 +1069,26 @@
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="Scripting\VScriptManager.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
-    <ClCompile Include="GUI\VDlgControlBase.cpp">
+    <ClCompile Include="Rendering\ShadowMapping\VMobileShadowMapComponentSpotDirectional.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
-    <ClCompile Include="Entities\TriggerDoorEntity.cpp">
-        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClInclude Include="Rendering\Effects\Projector.hpp">
+        <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="GUI\Controls\VDialogStandardControls.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="GUI\VDlgControlBase.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
-    <ClInclude Include="Scripting\Lua\VScriptDraw_wrapper.hpp">
-        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClCompile Include="Rendering\RenderingHelpers\BufferResolver.cpp">
+        <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="GUI\vGUI.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
-    <ClCompile Include="Input\VMouseCamera.cpp">
+    <ClCompile Include="Scripting\Lua\SwigTypeDataAccessor.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <Compile Include="Scripting\Lua\VisApiDynamicMesh.i">
         <DeploymentContent>False</DeploymentContent></Compile>
     <Compile Include="Scripting\Lua\VisApiGame.i">
         <DeploymentContent>False</DeploymentContent></Compile>
+    <ClInclude Include="Terrain\Geometry\SectorTile.hpp">
+        <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="Components\VFollowPathComponent.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <Compile Include="Scripting\Lua\VColor.i">

@@ -50,16 +50,19 @@
     <OutDir>..\..\Bin\android_x86_vs2010_anarchy\$(Configuration)\</OutDir>
     <IntDir>..\..\Obj\android_x86_vs2010_anarchy\$(Configuration)\ProjectTemplate\</IntDir>
     <TargetName>ProjectTemplate</TargetName>
+    <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Dev|hkAndroid'">
     <TargetName>ProjectTemplate</TargetName>
     <OutDir>..\..\Bin\android_x86_vs2010_anarchy\$(Configuration)\</OutDir>
     <IntDir>..\..\Obj\android_x86_vs2010_anarchy\$(Configuration)\ProjectTemplate\</IntDir>
+    <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|hkAndroid'">
     <TargetName>ProjectTemplate</TargetName>
     <OutDir>..\..\Bin\android_x86_vs2010_anarchy\$(Configuration)\</OutDir>
     <IntDir>..\..\Obj\android_x86_vs2010_anarchy\$(Configuration)\ProjectTemplate\</IntDir>
+    <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|hkAndroid'">
     <ClCompile>
@@ -75,13 +78,18 @@
     <ClCompile>
       <PrecompiledHeaderOutputFile>$(IntDir)GameApplicationPCH.pch</PrecompiledHeaderOutputFile>
     </ClCompile>
-    <PostBuildEvent>
-      <Command>"$(VISION_SDK)\Build\StandaloneTools\Deployment\Exe\deployAndroid.exe" $(OutDir)$(TargetName)$(TargetExt) --deployFileName $(ProjectFileName)_$(Configuration).deploy --arch x86 -j $(JavaOutputDir) -s $(AndroidAPILevel) -l $(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.16/lib/android/x86/libfmodexL.so -l $(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.16/lib/android/x86/libfmodeventL.so -e -i --resDir ..\../Data/Common/Android --asset ..\../Data/Vision/Base/ Data/Vision/Base/ --asset ..\../Assets/ Assets/</Command>
-    </PostBuildEvent>
     <Link>
-      <AdditionalDependencies>-lGamePlugin;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>-lVisionAppD;-lGamePlugin;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>..\..\Lib\android_x86_vs2010_anarchy\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
+    <Deploy>
+      <DeployTool>$(VISION_SDK)\Build\StandaloneTools\Deployment\Exe\deployAndroid.exe</DeployTool>
+      <ResDir>..\..\Data\Common\Anarchy\Android</ResDir>
+      <Install>true</Install>
+      <WriteExternal>true</WriteExternal>      
+      <Libraries>$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/lib/android/x86/libfmodexL.so;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/lib/android/x86/libfmodeventL.so</Libraries>
+      <Assets>..\../Data/Vision/Base/ Data/Vision/Base/;..\../Assets/ Assets/</Assets>
+    </Deploy>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Dev|hkAndroid'">
     <ClCompile>
@@ -89,13 +97,18 @@
       <PrecompiledHeaderFile>GameApplicationPCH.h</PrecompiledHeaderFile>
       <PrecompiledHeaderOutputFile>$(IntDir)GameApplicationPCH.pch</PrecompiledHeaderOutputFile>
     </ClCompile>
-    <PostBuildEvent>
-      <Command>"$(VISION_SDK)\Build\StandaloneTools\Deployment\Exe\deployAndroid.exe" $(OutDir)$(TargetName)$(TargetExt) --deployFileName $(ProjectFileName)_$(Configuration).deploy --arch x86 -j $(JavaOutputDir) -s $(AndroidAPILevel) -l $(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.16/lib/android/x86/libfmodex.so -l $(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.16/lib/android/x86/libfmodevent.so -e -i --resDir ..\../Data/Common/Android --asset ..\../Data/Vision/Base/ Data/Vision/Base/ --asset ..\../Assets/ Assets/</Command>
-    </PostBuildEvent>
     <Link>
       <AdditionalLibraryDirectories>..\..\Lib\android_x86_vs2010_anarchy\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>-lGamePlugin;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>-lVisionApp;-lGamePlugin;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <Deploy>
+      <DeployTool>$(VISION_SDK)\Build\StandaloneTools\Deployment\Exe\deployAndroid.exe</DeployTool>
+      <ResDir>..\..\Data\Common\Anarchy\Android</ResDir>
+      <Install>true</Install>
+      <WriteExternal>true</WriteExternal>      
+      <Libraries>$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/lib/android/x86/libfmodex.so;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/lib/android/x86/libfmodevent.so</Libraries>
+      <Assets>..\../Data/Vision/Base/ Data/Vision/Base/;..\../Assets/ Assets/</Assets>
+    </Deploy>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|hkAndroid'">
     <ClCompile>
@@ -103,24 +116,23 @@
       <PrecompiledHeaderFile>GameApplicationPCH.h</PrecompiledHeaderFile>
       <PrecompiledHeaderOutputFile>$(IntDir)GameApplicationPCH.pch</PrecompiledHeaderOutputFile>
     </ClCompile>
-    <PostBuildEvent>
-      <Command>"$(VISION_SDK)\Build\StandaloneTools\Deployment\Exe\deployAndroid.exe" $(OutDir)$(TargetName)$(TargetExt) --deployFileName $(ProjectFileName)_$(Configuration).deploy --arch x86 -j $(JavaOutputDir) -s $(AndroidAPILevel) -l $(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.16/lib/android/x86/libfmodex.so -l $(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.16/lib/android/x86/libfmodevent.so -e -i --resDir ..\../Data/Common/Android --asset ..\../Data/Vision/Base/ Data/Vision/Base/ --asset ..\../Assets/ Assets/</Command>
-    </PostBuildEvent>
     <Link>
       <AdditionalLibraryDirectories>..\..\Lib\android_x86_vs2010_anarchy\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>-lGamePlugin;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>-lVisionApp;-lGamePlugin;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <Deploy>
+      <DeployTool>$(VISION_SDK)\Build\StandaloneTools\Deployment\Exe\deployAndroid.exe</DeployTool>
+      <ResDir>..\..\Data\Common\Anarchy\Android</ResDir>
+      <Install>true</Install>
+      <WriteExternal>true</WriteExternal>      
+      <Libraries>$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/lib/android/x86/libfmodex.so;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/lib/android/x86/libfmodevent.so</Libraries>
+      <Assets>..\../Data/Vision/Base/ Data/Vision/Base/;..\../Assets/ Assets/</Assets>
+    </Deploy>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="$(NDKROOT)\sources\android\native_app_glue\android_native_app_glue.c" />
     <ClCompile Include="GameApplicationPCH.cpp" />
     <ClCompile Include="Main.cpp" />
-    <ClCompile Include="VisSampleApp.cpp" />
-    <ClCompile Include="VisSampleAppCallbacks.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|hkAndroid'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Dev|hkAndroid'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|hkAndroid'">NotUsing</PrecompiledHeader>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GameApplicationPCH.h" />

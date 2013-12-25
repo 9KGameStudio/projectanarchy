@@ -76,9 +76,6 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|hkAndroid'">
     
     
-    <PostBuildEvent>
-      <Command>..\..\..\..\..\Build\StandaloneTools\Deployment\Exe\deployAndroid.exe $(OutputFile) --deployFileName $(ProjectFileName)_$(Configuration).deploy -j $(IntDir)$(JavaOutputDir) -s $(AndroidAPILevel) --resDir ..\..\..\..\..\Data\Common\Anarchy\Android -i -e --asset ..\..\..\..\../Data/Vision/Base/ Data/Vision/Base/ --asset ..\..\..\..\../Data/Vision/Samples/Engine/Common/ Data/Vision/Samples/Engine/Common/ --asset ..\..\..\..\../Data/Vision/Samples/Engine/Maps/SimpleGround/ Data/Vision/Samples/Engine/Maps/SimpleGround/</Command>
-    </PostBuildEvent>
     
     <ClCompile>
       <CompileAs>Default</CompileAs>
@@ -116,17 +113,17 @@
       <AllocationGlobalVariable>UniqueDefinitions</AllocationGlobalVariable>
       <ForcedIncludeFile></ForcedIncludeFile>
       <ConcurrentCompile>False</ConcurrentCompile>
-      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
     </ClCompile>
     <Lib>
       <OutputFile>$(OutDir)\libCharacterLOD.so</OutputFile>
       <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
       <LibrarianCommand>-rmc</LibrarianCommand>
-      <AdditionalDependencies>-lEGL;-lGLESv2;-lGLESv1_CM;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib\LuaAndroid_Debug.a;-lBaseD;-lVisionD;-lVisionEnginePlugin;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>-lEGL;-lGLESv2;-lGLESv1_CM;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib\LuaAndroid_Debug.a;-lBaseD;-lVisionD;-lVisionEnginePlugin;-lVisionAppD;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>..\..\..\..\..\Lib\android_arm_vs2010_anarchy\debug;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib</AdditionalLibraryDirectories>
     </Lib>
     <Link>
-      <AdditionalDependencies>-landroid;-lEGL;-lGLESv2;-lGLESv1_CM;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib\LuaAndroid_Debug.a;-lBaseD;-lVisionD;-lVisionEnginePlugin;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>-landroid;-lEGL;-lGLESv2;-lGLESv1_CM;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib\LuaAndroid_Debug.a;-lBaseD;-lVisionD;-lVisionEnginePlugin;-lVisionAppD;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
       <AdditionalLibraryDirectories>..\..\..\..\..\Lib\android_arm_vs2010_anarchy\debug;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib</AdditionalLibraryDirectories>
       <AdditionalLinkerOptions>-nosegments_always_executable</AdditionalLinkerOptions>
@@ -180,13 +177,26 @@
       <StripSymbolStrings>No</StripSymbolStrings>
       <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
     </PostLink>
+    <Deploy>
+      <DeployTool>..\..\..\..\..\Build\StandaloneTools\Deployment\Exe\deployAndroid.exe</DeployTool>
+      <Install>true</Install>
+      <FileServe></FileServe>
+      <Internet></Internet>
+      <WriteExternal>true</WriteExternal>
+      <ResDir>..\..\..\..\..\Data\Common\Anarchy\Android</ResDir>
+      <Manifest></Manifest>
+      <Orientation></Orientation>
+      <Libraries></Libraries>
+      <ExcludeDirs></ExcludeDirs>
+      <ExcludeFiles></ExcludeFiles>
+      <ExcludeExts></ExcludeExts>
+      <Assets>..\..\..\..\../Data/Vision/Base/ Data/Vision/Base/;..\..\..\..\../Data/Vision/Samples/Engine/Common/ Data/Vision/Samples/Engine/Common/;..\..\..\..\../Data/Vision/Samples/Engine/Maps/SimpleGround/ Data/Vision/Samples/Engine/Maps/SimpleGround/</Assets>
+      <Copy></Copy>
+    </Deploy>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Dev|hkAndroid'">
     
     
-    <PostBuildEvent>
-      <Command>..\..\..\..\..\Build\StandaloneTools\Deployment\Exe\deployAndroid.exe $(OutputFile) --deployFileName $(ProjectFileName)_$(Configuration).deploy -j $(IntDir)$(JavaOutputDir) -s $(AndroidAPILevel) --resDir ..\..\..\..\..\Data\Common\Anarchy\Android -i --asset ..\..\..\..\../Data/Vision/Base/ Data/Vision/Base/ --asset ..\..\..\..\../Data/Vision/Samples/Engine/Common/ Data/Vision/Samples/Engine/Common/ --asset ..\..\..\..\../Data/Vision/Samples/Engine/Maps/SimpleGround/ Data/Vision/Samples/Engine/Maps/SimpleGround/</Command>
-    </PostBuildEvent>
     
     <ClCompile>
       <CompileAs>Default</CompileAs>
@@ -230,11 +240,11 @@
       <OutputFile>$(OutDir)\libCharacterLOD.so</OutputFile>
       <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
       <LibrarianCommand>-rmc</LibrarianCommand>
-      <AdditionalDependencies>-lEGL;-lGLESv2;-lGLESv1_CM;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib\LuaAndroid_Release.a;-lBase;-lVision;-lVisionEnginePlugin;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>-lEGL;-lGLESv2;-lGLESv1_CM;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib\LuaAndroid_Release.a;-lBase;-lVision;-lVisionEnginePlugin;-lVisionApp;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>..\..\..\..\..\Lib\android_arm_vs2010_anarchy\dev;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib</AdditionalLibraryDirectories>
     </Lib>
     <Link>
-      <AdditionalDependencies>-landroid;-lEGL;-lGLESv2;-lGLESv1_CM;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib\LuaAndroid_Release.a;-lBase;-lVision;-lVisionEnginePlugin;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>-landroid;-lEGL;-lGLESv2;-lGLESv1_CM;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib\LuaAndroid_Release.a;-lBase;-lVision;-lVisionEnginePlugin;-lVisionApp;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
       <AdditionalLibraryDirectories>..\..\..\..\..\Lib\android_arm_vs2010_anarchy\dev;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib</AdditionalLibraryDirectories>
       <AdditionalLinkerOptions>-nosegments_always_executable</AdditionalLinkerOptions>
@@ -288,13 +298,26 @@
       <StripSymbolStrings>No</StripSymbolStrings>
       <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
     </PostLink>
+    <Deploy>
+      <DeployTool>..\..\..\..\..\Build\StandaloneTools\Deployment\Exe\deployAndroid.exe</DeployTool>
+      <Install>true</Install>
+      <FileServe></FileServe>
+      <Internet></Internet>
+      <WriteExternal></WriteExternal>
+      <ResDir>..\..\..\..\..\Data\Common\Anarchy\Android</ResDir>
+      <Manifest></Manifest>
+      <Orientation></Orientation>
+      <Libraries></Libraries>
+      <ExcludeDirs></ExcludeDirs>
+      <ExcludeFiles></ExcludeFiles>
+      <ExcludeExts></ExcludeExts>
+      <Assets>..\..\..\..\../Data/Vision/Base/ Data/Vision/Base/;..\..\..\..\../Data/Vision/Samples/Engine/Common/ Data/Vision/Samples/Engine/Common/;..\..\..\..\../Data/Vision/Samples/Engine/Maps/SimpleGround/ Data/Vision/Samples/Engine/Maps/SimpleGround/</Assets>
+      <Copy></Copy>
+    </Deploy>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|hkAndroid'">
     
     
-    <PostBuildEvent>
-      <Command>..\..\..\..\..\Build\StandaloneTools\Deployment\Exe\deployAndroid.exe $(OutputFile) --deployFileName $(ProjectFileName)_$(Configuration).deploy -j $(IntDir)$(JavaOutputDir) -s $(AndroidAPILevel) --resDir ..\..\..\..\..\Data\Common\Anarchy\Android -i --asset ..\..\..\..\../Data/Vision/Base/ Data/Vision/Base/ --asset ..\..\..\..\../Data/Vision/Samples/Engine/Common/ Data/Vision/Samples/Engine/Common/ --asset ..\..\..\..\../Data/Vision/Samples/Engine/Maps/SimpleGround/ Data/Vision/Samples/Engine/Maps/SimpleGround/</Command>
-    </PostBuildEvent>
     
     <ClCompile>
       <CompileAs>Default</CompileAs>
@@ -338,11 +361,11 @@
       <OutputFile>$(OutDir)\libCharacterLOD.so</OutputFile>
       <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
       <LibrarianCommand>-rmc</LibrarianCommand>
-      <AdditionalDependencies>-lEGL;-lGLESv2;-lGLESv1_CM;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib\LuaAndroid_Release.a;-lBase;-lVision;-lVisionEnginePlugin;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>-lEGL;-lGLESv2;-lGLESv1_CM;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib\LuaAndroid_Release.a;-lBase;-lVision;-lVisionEnginePlugin;-lVisionApp;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>..\..\..\..\..\Lib\android_arm_vs2010_anarchy\release;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib</AdditionalLibraryDirectories>
     </Lib>
     <Link>
-      <AdditionalDependencies>-landroid;-lEGL;-lGLESv2;-lGLESv1_CM;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib\LuaAndroid_Release.a;-lBase;-lVision;-lVisionEnginePlugin;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>-landroid;-lEGL;-lGLESv2;-lGLESv1_CM;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib\LuaAndroid_Release.a;-lBase;-lVision;-lVisionEnginePlugin;-lVisionApp;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
       <AdditionalLibraryDirectories>..\..\..\..\..\Lib\android_arm_vs2010_anarchy\release;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib</AdditionalLibraryDirectories>
       <AdditionalLinkerOptions>-nosegments_always_executable</AdditionalLinkerOptions>
@@ -396,36 +419,39 @@
       <StripSymbolStrings>No</StripSymbolStrings>
       <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
     </PostLink>
+    <Deploy>
+      <DeployTool>..\..\..\..\..\Build\StandaloneTools\Deployment\Exe\deployAndroid.exe</DeployTool>
+      <Install>true</Install>
+      <FileServe></FileServe>
+      <Internet></Internet>
+      <WriteExternal></WriteExternal>
+      <ResDir>..\..\..\..\..\Data\Common\Anarchy\Android</ResDir>
+      <Manifest></Manifest>
+      <Orientation></Orientation>
+      <Libraries></Libraries>
+      <ExcludeDirs></ExcludeDirs>
+      <ExcludeFiles></ExcludeFiles>
+      <ExcludeExts></ExcludeExts>
+      <Assets>..\..\..\..\../Data/Vision/Base/ Data/Vision/Base/;..\..\..\..\../Data/Vision/Samples/Engine/Common/ Data/Vision/Samples/Engine/Common/;..\..\..\..\../Data/Vision/Samples/Engine/Maps/SimpleGround/ Data/Vision/Samples/Engine/Maps/SimpleGround/</Assets>
+      <Copy></Copy>
+    </Deploy>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\..\..\Source\Vision\Runtime\Common\VisSampleAppCallbacks.cpp">
-        <PrecompiledHeader>NotUsing</PrecompiledHeader>
-        <DeploymentContent>False</DeploymentContent></ClCompile>
-    <ClInclude Include="DemoCamera.hpp">
-        <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="CharacterLOD.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
-    <ClInclude Include="..\..\..\..\..\Source\Vision\Runtime\EnginePlugins\EnginePluginsImport.hpp">
-        <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="$(NDKROOT)\sources\android\native_app_glue\android_native_app_glue.c">
         <CompileAsWinRT>false</CompileAsWinRT>
         <AdditionalOptions> </AdditionalOptions>
         <DeploymentContent>False</DeploymentContent></ClCompile>
-    <ClCompile Include="DemoCamera.cpp">
-        <DeploymentContent>False</DeploymentContent></ClCompile>
-    <ClCompile Include="GUI\MenuSystem.cpp">
-        <DeploymentContent>False</DeploymentContent></ClCompile>
-    <ClInclude Include="..\..\..\..\..\Source\Vision\Runtime\Common\VisSampleApp.hpp">
+    <ClInclude Include="CharacterLODPCH.h">
         <DeploymentContent>False</DeploymentContent></ClInclude>
-    <ClCompile Include="..\..\..\..\..\Source\Vision\Runtime\Common\VisSampleApp.cpp">
-        <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    <ClCompile Include="GUI\MenuSystem.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClCompile Include="CharacterLODPCH.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="GUI\MenuSystem.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
-    <ClInclude Include="CharacterLODPCH.h">
-        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <Java Include="..\..\..\..\..\Source\Vision\Runtime\Common\Android\VNativeDialogAndroid.java"><DeploymentContent>False</DeploymentContent></Java>
   </ItemGroup>
   <ItemGroup>
   </ItemGroup>

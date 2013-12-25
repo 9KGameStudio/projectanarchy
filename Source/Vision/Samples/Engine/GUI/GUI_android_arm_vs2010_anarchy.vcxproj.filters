@@ -22,9 +22,6 @@
     <Filter Include="External\Source\Vision\Runtime">
         <UniqueIdentifier>5E733E32-E733-425E-33E3-5E733E325E73</UniqueIdentifier>
         <DeploymentContent>False</DeploymentContent></Filter>
-    <Filter Include="External\Source\Vision\Runtime\EnginePlugins">
-        <UniqueIdentifier>AEE910AA-E910-4EE9-0AAE-910AAEE910AA</UniqueIdentifier>
-        <DeploymentContent>False</DeploymentContent></Filter>
     <Filter Include="NDKROOT\sources">
         <UniqueIdentifier>1D502378-D502-481D-0237-1D5023781D50</UniqueIdentifier>
         <DeploymentContent>False</DeploymentContent></Filter>
@@ -37,9 +34,6 @@
 
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\..\..\Source\Vision\Runtime\Common\VisSampleApp.cpp">
-        <Filter>External\Source\Vision\Runtime\Common</Filter>
-        <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClCompile Include="MainMenu.cpp">
         <Filter></Filter>
         <DeploymentContent>False</DeploymentContent></ClCompile>
@@ -49,26 +43,20 @@
     <Java Include="..\..\..\..\..\Source\Vision\Runtime\Common\Android\VirtualKeyboardActivity.java">
         <Filter>External\Source\Vision\Runtime\Common\Android</Filter>
         <DeploymentContent>False</DeploymentContent></Java>
-    <ClCompile Include="..\..\..\..\..\Source\Vision\Runtime\Common\VisSampleAppCallbacks.cpp">
-        <Filter>External\Source\Vision\Runtime\Common</Filter>
-        <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="GUIPCH.h">
         <Filter></Filter>
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="GUIPCH.cpp">
         <Filter></Filter>
         <DeploymentContent>False</DeploymentContent></ClCompile>
-    <ClInclude Include="..\..\..\..\..\Source\Vision\Runtime\EnginePlugins\EnginePluginsImport.hpp">
-        <Filter>External\Source\Vision\Runtime\EnginePlugins</Filter>
-        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <Java Include="..\..\..\..\..\Source\Vision\Runtime\Common\Android\VNativeDialogAndroid.java">
+        <Filter>External\Source\Vision\Runtime\Common\Android</Filter>
+        <DeploymentContent>False</DeploymentContent></Java>
     <ClInclude Include="MonitorContext.hpp">
         <Filter></Filter>
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="MainMenu.hpp">
         <Filter></Filter>
-        <DeploymentContent>False</DeploymentContent></ClInclude>
-    <ClInclude Include="..\..\..\..\..\Source\Vision\Runtime\Common\VisSampleApp.hpp">
-        <Filter>External\Source\Vision\Runtime\Common</Filter>
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="GUI.cpp">
         <Filter></Filter>

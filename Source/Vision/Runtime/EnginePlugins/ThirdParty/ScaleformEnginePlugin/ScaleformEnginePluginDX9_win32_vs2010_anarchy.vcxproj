@@ -17,14 +17,6 @@
       <Configuration>Dev DLL</Configuration>
       <Platform>win32</Platform>
     </ProjectConfiguration>
-    <ProjectConfiguration Include="Hybrid DLL|win32">
-      <Configuration>Hybrid DLL</Configuration>
-      <Platform>win32</Platform>
-    </ProjectConfiguration>
-    <ProjectConfiguration Include="Release DLL|win32">
-      <Configuration>Release DLL</Configuration>
-      <Platform>win32</Platform>
-    </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{BC1E09F1-5777-3067-BD80-4F2829EAE11C}</ProjectGuid>
@@ -47,18 +39,6 @@
     <CLRSupport>false</CLRSupport>
     <UseOfMfc>false</UseOfMfc>
   </PropertyGroup>
-    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Hybrid DLL|win32'" Label="Configuration">
-    <CharacterSet>MultiByte</CharacterSet>
-    <ConfigurationType>DynamicLibrary</ConfigurationType>
-    <CLRSupport>false</CLRSupport>
-    <UseOfMfc>false</UseOfMfc>
-  </PropertyGroup>
-    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release DLL|win32'" Label="Configuration">
-    <CharacterSet>MultiByte</CharacterSet>
-    <ConfigurationType>DynamicLibrary</ConfigurationType>
-    <CLRSupport>false</CLRSupport>
-    <UseOfMfc>false</UseOfMfc>
-  </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
@@ -66,8 +46,6 @@
   <PropertyGroup>
 <TargetExt  Condition="'$(Configuration)|$(Platform)'=='Debug DLL|win32'">.vPluginD</TargetExt>
 <TargetExt  Condition="'$(Configuration)|$(Platform)'=='Dev DLL|win32'">.vPlugin</TargetExt>
-<TargetExt  Condition="'$(Configuration)|$(Platform)'=='Hybrid DLL|win32'">.vPlugin</TargetExt>
-<TargetExt  Condition="'$(Configuration)|$(Platform)'=='Release DLL|win32'">.vPlugin</TargetExt>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug DLL|win32'">..\..\..\..\..\..\Obj\win32_vs2010_anarchy\debug_dll\ScaleformEnginePluginDX9\</IntDir>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug DLL|win32'">..\..\..\..\..\..\Bin\win32_vs2010_anarchy\Debug_DLL\DX9\</OutDir>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug DLL|win32'">vScaleformPlugin</TargetName>
@@ -76,30 +54,20 @@
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Dev DLL|win32'">..\..\..\..\..\..\Bin\win32_vs2010_anarchy\Dev_DLL\DX9\</OutDir>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Dev DLL|win32'">vScaleformPlugin</TargetName>
     <OutputFile Condition="'$(Configuration)|$(Platform)'=='Dev DLL|win32'">..\..\..\..\..\..\Bin\win32_vs2010_anarchy\Dev_DLL\DX9\vScaleformPlugin.vPlugin</OutputFile>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Hybrid DLL|win32'">..\..\..\..\..\..\Obj\win32_vs2010_anarchy\hybrid_dll\ScaleformEnginePluginDX9\</IntDir>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Hybrid DLL|win32'">..\..\..\..\..\..\Bin\win32_vs2010_anarchy\Hybrid_DLL\DX9\</OutDir>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Hybrid DLL|win32'">vScaleformPlugin</TargetName>
-    <OutputFile Condition="'$(Configuration)|$(Platform)'=='Hybrid DLL|win32'">..\..\..\..\..\..\Bin\win32_vs2010_anarchy\Hybrid_DLL\DX9\vScaleformPlugin.vPlugin</OutputFile>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release DLL|win32'">..\..\..\..\..\..\Obj\win32_vs2010_anarchy\release_dll\ScaleformEnginePluginDX9\</IntDir>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release DLL|win32'">..\..\..\..\..\..\Bin\win32_vs2010_anarchy\Release_DLL\DX9\</OutDir>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release DLL|win32'">vScaleformPlugin</TargetName>
-    <OutputFile Condition="'$(Configuration)|$(Platform)'=='Release DLL|win32'">..\..\..\..\..\..\Bin\win32_vs2010_anarchy\Release_DLL\DX9\vScaleformPlugin.vPlugin</OutputFile>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug DLL|win32'">true</LinkIncremental>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Dev DLL|win32'">true</LinkIncremental>
-    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Hybrid DLL|win32'">true</LinkIncremental>
-    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release DLL|win32'">false</LinkIncremental>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug DLL|win32'">
     
     
     
     <ClCompile>
-      <AdditionalIncludeDirectories>..\..\..\..\..;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/;$(DXSDK_DIR)/Include;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/Include;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/Src;$(GFXSDK)/;$(GFXSDK)/Include;$(GFXSDK)/Src;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.16/inc;$(HAVOK_THIRDPARTY_DIR)/redistsdks/curl/7.22.0/include;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\..\..;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/;$(DXSDK_DIR)/Include;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/Include;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/Src;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/inc;$(HAVOK_THIRDPARTY_DIR)/redistsdks/curl/7.22.0/include;</AdditionalIncludeDirectories>
       <AdditionalOptions></AdditionalOptions>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <BufferSecurityCheck>true</BufferSecurityCheck>
-      <SDLCheck>true</SDLCheck>
+      <SDLCheck></SDLCheck>
       <CallingConvention>Cdecl</CallingConvention>
       <CompileAs>Default</CompileAs>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
@@ -140,7 +108,7 @@
     <Lib>
       <IgnoreAllDefaultLibraries></IgnoreAllDefaultLibraries>
       <AdditionalDependencies>lua100D.lib;libgfx.lib;libgfx_air.lib;libgfx_as2.lib;libgfx_as3.lib;libgfxexpat.lib;libgfxsound_fmod.lib;libgfxrender_d3d9.lib;libgfxplatform_d3d9.lib;libjpeg.lib;zlib.lib;pcre.lib;Winmm.lib;ws2_32.lib;imm32.lib;libpng.lib;fmodexL_vc.lib;fmod_event_netL.lib;libcurld.lib;d3d9.lib;d3dx9.lib;BaseD.lib;VisionD.lib;VisionEnginePluginD.lib;vFmodEnginePluginD.lib;vScaleformUtilsD.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\..\..\..\..\Lib\win32_vs2010_anarchy\debug_dll;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(DXSDK_DIR)/Lib/x86;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/Lib/Win32/Msvc10/Debug/;$(GFXSDK)/Lib/Win32/Msvc10/Debug/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/3rdParty/jpeg-8d/Lib/Win32/Msvc10/Release/;$(GFXSDK)/3rdParty/jpeg-8d/Lib/Win32/Msvc10/Release/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/3rdParty/zlib-1.2.7/Lib/Win32/Msvc10/Release/;$(GFXSDK)/3rdParty/zlib-1.2.7/Lib/Win32/Msvc10/Release/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/3rdParty/libpng-1.5.13/Lib/Win32/Msvc10/Release/;$(GFXSDK)/3rdParty/libpng-1.5.13/Lib/Win32/Msvc10/Release/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/3rdParty/expat-2.1.0/lib/Win32/Msvc10/Release/;$(GFXSDK)/3rdParty/expat-2.1.0/lib/Win32/Msvc10/Release/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/3rdParty/pcre/Lib/Win32/Msvc10/Release/;$(GFXSDK)/3rdParty/pcre/Lib/Win32/Msvc10/Release/;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.16/lib/win;$(HAVOK_THIRDPARTY_DIR)/redistsdks/curl/7.22.0/libwin/win32_vs2010</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\..\..\..\..\..\Lib\win32_vs2010_anarchy\debug_dll;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(DXSDK_DIR)/Lib/x86;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/Lib/Win32/Msvc10/Debug/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/3rdParty/jpeg-8d/Lib/Win32/Msvc10/Release/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/3rdParty/zlib-1.2.7/Lib/Win32/Msvc10/Release/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/3rdParty/libpng-1.5.13/Lib/Win32/Msvc10/Release/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/3rdParty/expat-2.1.0/lib/Win32/Msvc10/Release/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/3rdParty/pcre/Lib/Win32/Msvc10/Release/;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/lib/win;$(HAVOK_THIRDPARTY_DIR)/redistsdks/curl/7.22.0/libwin/win32_vs2010</AdditionalLibraryDirectories>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <UseUnicodeResponseFiles>true</UseUnicodeResponseFiles>
@@ -148,7 +116,7 @@
     </Lib>
     <Link>
       <AdditionalDependencies>lua100D.lib;libgfx.lib;libgfx_air.lib;libgfx_as2.lib;libgfx_as3.lib;libgfxexpat.lib;libgfxsound_fmod.lib;libgfxrender_d3d9.lib;libgfxplatform_d3d9.lib;libjpeg.lib;zlib.lib;pcre.lib;Winmm.lib;ws2_32.lib;imm32.lib;libpng.lib;fmodexL_vc.lib;fmod_event_netL.lib;libcurld.lib;d3d9.lib;d3dx9.lib;BaseD.lib;VisionD.lib;VisionEnginePluginD.lib;vFmodEnginePluginD.lib;vScaleformUtilsD.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\..\..\..\..\Lib\win32_vs2010_anarchy\debug_dll;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(DXSDK_DIR)/Lib/x86;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/Lib/Win32/Msvc10/Debug/;$(GFXSDK)/Lib/Win32/Msvc10/Debug/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/3rdParty/jpeg-8d/Lib/Win32/Msvc10/Release/;$(GFXSDK)/3rdParty/jpeg-8d/Lib/Win32/Msvc10/Release/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/3rdParty/zlib-1.2.7/Lib/Win32/Msvc10/Release/;$(GFXSDK)/3rdParty/zlib-1.2.7/Lib/Win32/Msvc10/Release/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/3rdParty/libpng-1.5.13/Lib/Win32/Msvc10/Release/;$(GFXSDK)/3rdParty/libpng-1.5.13/Lib/Win32/Msvc10/Release/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/3rdParty/expat-2.1.0/lib/Win32/Msvc10/Release/;$(GFXSDK)/3rdParty/expat-2.1.0/lib/Win32/Msvc10/Release/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/3rdParty/pcre/Lib/Win32/Msvc10/Release/;$(GFXSDK)/3rdParty/pcre/Lib/Win32/Msvc10/Release/;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.16/lib/win;$(HAVOK_THIRDPARTY_DIR)/redistsdks/curl/7.22.0/libwin/win32_vs2010</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\..\..\..\..\..\Lib\win32_vs2010_anarchy\debug_dll;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(DXSDK_DIR)/Lib/x86;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/Lib/Win32/Msvc10/Debug/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/3rdParty/jpeg-8d/Lib/Win32/Msvc10/Release/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/3rdParty/zlib-1.2.7/Lib/Win32/Msvc10/Release/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/3rdParty/libpng-1.5.13/Lib/Win32/Msvc10/Release/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/3rdParty/expat-2.1.0/lib/Win32/Msvc10/Release/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/3rdParty/pcre/Lib/Win32/Msvc10/Release/;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/lib/win;$(HAVOK_THIRDPARTY_DIR)/redistsdks/curl/7.22.0/libwin/win32_vs2010</AdditionalLibraryDirectories>
       <AdditionalOptions> /ignore:4221</AdditionalOptions>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ImportLibrary>..\..\..\..\..\..\Lib\win32_vs2010_anarchy\debug_dll\$(TargetName)D.lib</ImportLibrary>
@@ -165,12 +133,12 @@
     
     
     <ClCompile>
-      <AdditionalIncludeDirectories>..\..\..\..\..;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/;$(DXSDK_DIR)/Include;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/Include;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/Src;$(GFXSDK)/;$(GFXSDK)/Include;$(GFXSDK)/Src;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.16/inc;$(HAVOK_THIRDPARTY_DIR)/redistsdks/curl/7.22.0/include;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\..\..;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/;$(DXSDK_DIR)/Include;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/Include;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/Src;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/inc;$(HAVOK_THIRDPARTY_DIR)/redistsdks/curl/7.22.0/include;</AdditionalIncludeDirectories>
       <AdditionalOptions></AdditionalOptions>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <BufferSecurityCheck>true</BufferSecurityCheck>
-      <SDLCheck>true</SDLCheck>
+      <SDLCheck></SDLCheck>
       <CallingConvention>Cdecl</CallingConvention>
       <CompileAs>Default</CompileAs>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
@@ -211,7 +179,7 @@
     <Lib>
       <IgnoreAllDefaultLibraries></IgnoreAllDefaultLibraries>
       <AdditionalDependencies>lua100.lib;libgfx.lib;libgfx_air.lib;libgfx_as2.lib;libgfx_as3.lib;libgfxexpat.lib;libgfxsound_fmod.lib;libgfxrender_d3d9.lib;libgfxplatform_d3d9.lib;libjpeg.lib;zlib.lib;pcre.lib;Winmm.lib;ws2_32.lib;imm32.lib;libpng.lib;fmodex_vc.lib;fmod_event_net.lib;libcurl.lib;d3d9.lib;d3dx9.lib;Base.lib;Vision.lib;VisionEnginePlugin.lib;vFmodEnginePlugin.lib;vScaleformUtils.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\..\..\..\..\Lib\win32_vs2010_anarchy\dev_dll;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(DXSDK_DIR)/Lib/x86;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/Lib/Win32/Msvc10/Release/;$(GFXSDK)/Lib/Win32/Msvc10/Release/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/3rdParty/jpeg-8d/Lib/Win32/Msvc10/Release/;$(GFXSDK)/3rdParty/jpeg-8d/Lib/Win32/Msvc10/Release/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/3rdParty/zlib-1.2.7/Lib/Win32/Msvc10/Release/;$(GFXSDK)/3rdParty/zlib-1.2.7/Lib/Win32/Msvc10/Release/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/3rdParty/libpng-1.5.13/Lib/Win32/Msvc10/Release/;$(GFXSDK)/3rdParty/libpng-1.5.13/Lib/Win32/Msvc10/Release/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/3rdParty/expat-2.1.0/lib/Win32/Msvc10/Release/;$(GFXSDK)/3rdParty/expat-2.1.0/lib/Win32/Msvc10/Release/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/3rdParty/pcre/Lib/Win32/Msvc10/Release/;$(GFXSDK)/3rdParty/pcre/Lib/Win32/Msvc10/Release/;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.16/lib/win;$(HAVOK_THIRDPARTY_DIR)/redistsdks/curl/7.22.0/libwin/win32_vs2010</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\..\..\..\..\..\Lib\win32_vs2010_anarchy\dev_dll;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(DXSDK_DIR)/Lib/x86;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/Lib/Win32/Msvc10/Release/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/3rdParty/jpeg-8d/Lib/Win32/Msvc10/Release/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/3rdParty/zlib-1.2.7/Lib/Win32/Msvc10/Release/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/3rdParty/libpng-1.5.13/Lib/Win32/Msvc10/Release/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/3rdParty/expat-2.1.0/lib/Win32/Msvc10/Release/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/3rdParty/pcre/Lib/Win32/Msvc10/Release/;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/lib/win;$(HAVOK_THIRDPARTY_DIR)/redistsdks/curl/7.22.0/libwin/win32_vs2010</AdditionalLibraryDirectories>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <UseUnicodeResponseFiles>true</UseUnicodeResponseFiles>
@@ -219,7 +187,7 @@
     </Lib>
     <Link>
       <AdditionalDependencies>lua100.lib;libgfx.lib;libgfx_air.lib;libgfx_as2.lib;libgfx_as3.lib;libgfxexpat.lib;libgfxsound_fmod.lib;libgfxrender_d3d9.lib;libgfxplatform_d3d9.lib;libjpeg.lib;zlib.lib;pcre.lib;Winmm.lib;ws2_32.lib;imm32.lib;libpng.lib;fmodex_vc.lib;fmod_event_net.lib;libcurl.lib;d3d9.lib;d3dx9.lib;Base.lib;Vision.lib;VisionEnginePlugin.lib;vFmodEnginePlugin.lib;vScaleformUtils.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\..\..\..\..\Lib\win32_vs2010_anarchy\dev_dll;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(DXSDK_DIR)/Lib/x86;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/Lib/Win32/Msvc10/Release/;$(GFXSDK)/Lib/Win32/Msvc10/Release/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/3rdParty/jpeg-8d/Lib/Win32/Msvc10/Release/;$(GFXSDK)/3rdParty/jpeg-8d/Lib/Win32/Msvc10/Release/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/3rdParty/zlib-1.2.7/Lib/Win32/Msvc10/Release/;$(GFXSDK)/3rdParty/zlib-1.2.7/Lib/Win32/Msvc10/Release/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/3rdParty/libpng-1.5.13/Lib/Win32/Msvc10/Release/;$(GFXSDK)/3rdParty/libpng-1.5.13/Lib/Win32/Msvc10/Release/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/3rdParty/expat-2.1.0/lib/Win32/Msvc10/Release/;$(GFXSDK)/3rdParty/expat-2.1.0/lib/Win32/Msvc10/Release/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/3rdParty/pcre/Lib/Win32/Msvc10/Release/;$(GFXSDK)/3rdParty/pcre/Lib/Win32/Msvc10/Release/;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.16/lib/win;$(HAVOK_THIRDPARTY_DIR)/redistsdks/curl/7.22.0/libwin/win32_vs2010</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\..\..\..\..\..\Lib\win32_vs2010_anarchy\dev_dll;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(DXSDK_DIR)/Lib/x86;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/Lib/Win32/Msvc10/Release/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/3rdParty/jpeg-8d/Lib/Win32/Msvc10/Release/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/3rdParty/zlib-1.2.7/Lib/Win32/Msvc10/Release/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/3rdParty/libpng-1.5.13/Lib/Win32/Msvc10/Release/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/3rdParty/expat-2.1.0/lib/Win32/Msvc10/Release/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/3rdParty/pcre/Lib/Win32/Msvc10/Release/;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/lib/win;$(HAVOK_THIRDPARTY_DIR)/redistsdks/curl/7.22.0/libwin/win32_vs2010</AdditionalLibraryDirectories>
       <AdditionalOptions> /ignore:4221</AdditionalOptions>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ImportLibrary>..\..\..\..\..\..\Lib\win32_vs2010_anarchy\dev_dll\$(TargetName).lib</ImportLibrary>
@@ -228,148 +196,6 @@
       <ManifestFile>$(IntDir)Manifest$(TargetExt).intermediate.manifest</ManifestFile>
       <OptimizeReferences></OptimizeReferences>
       <EnableCOMDATFolding></EnableCOMDATFolding>
-     <IgnoreSpecificDefaultLibraries>libc.lib;libcmt.lib;</IgnoreSpecificDefaultLibraries>
-    </Link>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Hybrid DLL|win32'">
-    
-    
-    
-    <ClCompile>
-      <AdditionalIncludeDirectories>..\..\..\..\..;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/;$(DXSDK_DIR)/Include;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/Include;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/Src;$(GFXSDK)/;$(GFXSDK)/Include;$(GFXSDK)/Src;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.16/inc;$(HAVOK_THIRDPARTY_DIR)/redistsdks/curl/7.22.0/include;</AdditionalIncludeDirectories>
-      <AdditionalOptions></AdditionalOptions>
-      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
-      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
-      <BufferSecurityCheck>false</BufferSecurityCheck>
-      <SDLCheck>false</SDLCheck>
-      <CallingConvention>Cdecl</CallingConvention>
-      <CompileAs>Default</CompileAs>
-      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <DisableSpecificWarnings></DisableSpecificWarnings>
-      <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
-      <EnablePREfast></EnablePREfast>
-      <ExceptionHandling>Sync</ExceptionHandling>
-      <FavorSizeOrSpeed>Neither</FavorSizeOrSpeed>
-      <FloatingPointExceptions>false</FloatingPointExceptions>
-      <FloatingPointModel>Fast</FloatingPointModel>
-      <FunctionLevelLinking>false</FunctionLevelLinking>
-      <InlineFunctionExpansion>Default</InlineFunctionExpansion>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
-      <MinimalRebuild>false</MinimalRebuild>
-      <ObjectFileName>$(IntDir)</ObjectFileName>
-      <OmitFramePointers></OmitFramePointers>
-      <Optimization>disabled</Optimization>
-      <PrecompiledHeader>Use</PrecompiledHeader>
-      <PrecompiledHeaderFile>Vision/Runtime/EnginePlugins/ThirdParty/ScaleformEnginePlugin/ScaleformEnginePlugin.hpp</PrecompiledHeaderFile>
-      <PrecompiledHeaderOutputFile>$(IntDir)ScaleformEnginePlugin.pch</PrecompiledHeaderOutputFile>
-      <PreprocessorDefinitions>HK_DEBUG;_WINDOWS;WIN32;_WIN32;_CONSOLE;_ALLOW_ITERATOR_DEBUG_LEVEL_MISMATCH;HK_ANARCHY;PROFILING;_VISION_WIN32;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_VR_DX9;PROFILING;_VISION_WIN32;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_VR_DX9;GFX_ENABLE_SOUND;SCALEFORMPLUGIN_EXPORTS;VISIONDLL_ISPLUGIN;FMODENGINEPLUGIN_IMPORTS;SCRIPTMODULE_IMPORTS;CURL_STATICLIB;HK_CONFIG_SIMD=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <UndefinePreprocessorDefinitions></UndefinePreprocessorDefinitions>
-      <ProgramDataBaseFileName>$(OutDir)$(TargetName).pdb</ProgramDataBaseFileName>
-      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
-      <RuntimeTypeInfo>true</RuntimeTypeInfo>
-      <StringPooling>true</StringPooling>
-      <SuppressStartupBanner>true</SuppressStartupBanner>
-      <TreatWarningAsError>false</TreatWarningAsError>
-      <WarningLevel>Level3</WarningLevel>
-      <CompileAsManaged>false</CompileAsManaged>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
-	  
-    </ClCompile>
-    <ResourceCompile>
-      <ResourceOutputFileName></ResourceOutputFileName>
-      <AdditionalIncludeDirectories>$(IntDir)</AdditionalIncludeDirectories>
-    </ResourceCompile>
-    <Lib>
-      <IgnoreAllDefaultLibraries></IgnoreAllDefaultLibraries>
-      <AdditionalDependencies>lua100.lib;libgfx.lib;libgfx_air.lib;libgfx_as2.lib;libgfx_as3.lib;libgfxexpat.lib;libgfxsound_fmod.lib;libgfxrender_d3d9.lib;libgfxplatform_d3d9.lib;libjpeg.lib;zlib.lib;pcre.lib;Winmm.lib;ws2_32.lib;imm32.lib;libpng.lib;fmodex_vc.lib;fmod_event_net.lib;libcurl.lib;d3d9.lib;d3dx9.lib;Base.lib;Vision.lib;VisionEnginePlugin.lib;vFmodEnginePlugin.lib;vScaleformUtils.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\..\..\..\..\Lib\win32_vs2010_anarchy\hybrid_dll;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(DXSDK_DIR)/Lib/x86;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/Lib/Win32/Msvc10/Release/;$(GFXSDK)/Lib/Win32/Msvc10/Release/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/3rdParty/jpeg-8d/Lib/Win32/Msvc10/Release/;$(GFXSDK)/3rdParty/jpeg-8d/Lib/Win32/Msvc10/Release/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/3rdParty/zlib-1.2.7/Lib/Win32/Msvc10/Release/;$(GFXSDK)/3rdParty/zlib-1.2.7/Lib/Win32/Msvc10/Release/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/3rdParty/libpng-1.5.13/Lib/Win32/Msvc10/Release/;$(GFXSDK)/3rdParty/libpng-1.5.13/Lib/Win32/Msvc10/Release/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/3rdParty/expat-2.1.0/lib/Win32/Msvc10/Release/;$(GFXSDK)/3rdParty/expat-2.1.0/lib/Win32/Msvc10/Release/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/3rdParty/pcre/Lib/Win32/Msvc10/Release/;$(GFXSDK)/3rdParty/pcre/Lib/Win32/Msvc10/Release/;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.16/lib/win;$(HAVOK_THIRDPARTY_DIR)/redistsdks/curl/7.22.0/libwin/win32_vs2010</AdditionalLibraryDirectories>
-      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
-      <SuppressStartupBanner>true</SuppressStartupBanner>
-      <UseUnicodeResponseFiles>true</UseUnicodeResponseFiles>
-      <AdditionalOptions> /ignore:4221</AdditionalOptions>
-    </Lib>
-    <Link>
-      <AdditionalDependencies>lua100.lib;libgfx.lib;libgfx_air.lib;libgfx_as2.lib;libgfx_as3.lib;libgfxexpat.lib;libgfxsound_fmod.lib;libgfxrender_d3d9.lib;libgfxplatform_d3d9.lib;libjpeg.lib;zlib.lib;pcre.lib;Winmm.lib;ws2_32.lib;imm32.lib;libpng.lib;fmodex_vc.lib;fmod_event_net.lib;libcurl.lib;d3d9.lib;d3dx9.lib;Base.lib;Vision.lib;VisionEnginePlugin.lib;vFmodEnginePlugin.lib;vScaleformUtils.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\..\..\..\..\Lib\win32_vs2010_anarchy\hybrid_dll;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(DXSDK_DIR)/Lib/x86;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/Lib/Win32/Msvc10/Release/;$(GFXSDK)/Lib/Win32/Msvc10/Release/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/3rdParty/jpeg-8d/Lib/Win32/Msvc10/Release/;$(GFXSDK)/3rdParty/jpeg-8d/Lib/Win32/Msvc10/Release/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/3rdParty/zlib-1.2.7/Lib/Win32/Msvc10/Release/;$(GFXSDK)/3rdParty/zlib-1.2.7/Lib/Win32/Msvc10/Release/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/3rdParty/libpng-1.5.13/Lib/Win32/Msvc10/Release/;$(GFXSDK)/3rdParty/libpng-1.5.13/Lib/Win32/Msvc10/Release/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/3rdParty/expat-2.1.0/lib/Win32/Msvc10/Release/;$(GFXSDK)/3rdParty/expat-2.1.0/lib/Win32/Msvc10/Release/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/3rdParty/pcre/Lib/Win32/Msvc10/Release/;$(GFXSDK)/3rdParty/pcre/Lib/Win32/Msvc10/Release/;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.16/lib/win;$(HAVOK_THIRDPARTY_DIR)/redistsdks/curl/7.22.0/libwin/win32_vs2010</AdditionalLibraryDirectories>
-      <AdditionalOptions> /ignore:4221</AdditionalOptions>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-      <ImportLibrary>..\..\..\..\..\..\Lib\win32_vs2010_anarchy\hybrid_dll\$(TargetName).lib</ImportLibrary>
-      <AssemblyDebug></AssemblyDebug>
-      <SubSystem>Console</SubSystem>
-      <ManifestFile>$(IntDir)Manifest$(TargetExt).intermediate.manifest</ManifestFile>
-      <OptimizeReferences></OptimizeReferences>
-      <EnableCOMDATFolding></EnableCOMDATFolding>
-     <IgnoreSpecificDefaultLibraries>libc.lib;libcmt.lib;</IgnoreSpecificDefaultLibraries>
-    </Link>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release DLL|win32'">
-    
-    
-    
-    <ClCompile>
-      <AdditionalIncludeDirectories>..\..\..\..\..;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/;$(DXSDK_DIR)/Include;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/Include;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/Src;$(GFXSDK)/;$(GFXSDK)/Include;$(GFXSDK)/Src;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.16/inc;$(HAVOK_THIRDPARTY_DIR)/redistsdks/curl/7.22.0/include;</AdditionalIncludeDirectories>
-      <AdditionalOptions></AdditionalOptions>
-      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
-      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
-      <BufferSecurityCheck>false</BufferSecurityCheck>
-      <SDLCheck>false</SDLCheck>
-      <CallingConvention>Cdecl</CallingConvention>
-      <CompileAs>Default</CompileAs>
-      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <DisableSpecificWarnings></DisableSpecificWarnings>
-      <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
-      <EnablePREfast></EnablePREfast>
-      <ExceptionHandling>Sync</ExceptionHandling>
-      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
-      <FloatingPointExceptions>false</FloatingPointExceptions>
-      <FloatingPointModel>Fast</FloatingPointModel>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
-      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
-      <MinimalRebuild>false</MinimalRebuild>
-      <ObjectFileName>$(IntDir)</ObjectFileName>
-      <OmitFramePointers>true</OmitFramePointers>
-      <Optimization>Full</Optimization>
-      <PrecompiledHeader>Use</PrecompiledHeader>
-      <PrecompiledHeaderFile>Vision/Runtime/EnginePlugins/ThirdParty/ScaleformEnginePlugin/ScaleformEnginePlugin.hpp</PrecompiledHeaderFile>
-      <PrecompiledHeaderOutputFile>$(IntDir)ScaleformEnginePlugin.pch</PrecompiledHeaderOutputFile>
-      <PreprocessorDefinitions>_WINDOWS;WIN32;_WIN32;NDEBUG;_CONSOLE;_ALLOW_ITERATOR_DEBUG_LEVEL_MISMATCH;HK_ANARCHY;PROFILING;_VISION_WIN32;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_VR_DX9;PROFILING;_VISION_WIN32;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_VR_DX9;GFX_ENABLE_SOUND;SCALEFORMPLUGIN_EXPORTS;VISIONDLL_ISPLUGIN;FMODENGINEPLUGIN_IMPORTS;SCRIPTMODULE_IMPORTS;CURL_STATICLIB;HK_CONFIG_SIMD=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <UndefinePreprocessorDefinitions></UndefinePreprocessorDefinitions>
-      <ProgramDataBaseFileName>$(OutDir)$(TargetName).pdb</ProgramDataBaseFileName>
-      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
-      <RuntimeTypeInfo>true</RuntimeTypeInfo>
-      <StringPooling>true</StringPooling>
-      <SuppressStartupBanner>true</SuppressStartupBanner>
-      <TreatWarningAsError>false</TreatWarningAsError>
-      <WarningLevel>Level3</WarningLevel>
-      <CompileAsManaged>false</CompileAsManaged>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
-	  
-    </ClCompile>
-    <ResourceCompile>
-      <ResourceOutputFileName></ResourceOutputFileName>
-      <AdditionalIncludeDirectories>$(IntDir)</AdditionalIncludeDirectories>
-    </ResourceCompile>
-    <Lib>
-      <IgnoreAllDefaultLibraries></IgnoreAllDefaultLibraries>
-      <AdditionalDependencies>lua100.lib;libgfx.lib;libgfx_air.lib;libgfx_as2.lib;libgfx_as3.lib;libgfxexpat.lib;libgfxsound_fmod.lib;libgfxrender_d3d9.lib;libgfxplatform_d3d9.lib;libjpeg.lib;zlib.lib;pcre.lib;Winmm.lib;ws2_32.lib;imm32.lib;libpng.lib;fmodex_vc.lib;fmod_event_net.lib;libcurl.lib;d3d9.lib;d3dx9.lib;Base.lib;Vision.lib;VisionEnginePlugin.lib;vFmodEnginePlugin.lib;vScaleformUtils.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\..\..\..\..\Lib\win32_vs2010_anarchy\release_dll;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(DXSDK_DIR)/Lib/x86;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/Lib/Win32/Msvc10/Release/;$(GFXSDK)/Lib/Win32/Msvc10/Release/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/3rdParty/jpeg-8d/Lib/Win32/Msvc10/Release/;$(GFXSDK)/3rdParty/jpeg-8d/Lib/Win32/Msvc10/Release/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/3rdParty/zlib-1.2.7/Lib/Win32/Msvc10/Release/;$(GFXSDK)/3rdParty/zlib-1.2.7/Lib/Win32/Msvc10/Release/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/3rdParty/libpng-1.5.13/Lib/Win32/Msvc10/Release/;$(GFXSDK)/3rdParty/libpng-1.5.13/Lib/Win32/Msvc10/Release/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/3rdParty/expat-2.1.0/lib/Win32/Msvc10/Release/;$(GFXSDK)/3rdParty/expat-2.1.0/lib/Win32/Msvc10/Release/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/3rdParty/pcre/Lib/Win32/Msvc10/Release/;$(GFXSDK)/3rdParty/pcre/Lib/Win32/Msvc10/Release/;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.16/lib/win;$(HAVOK_THIRDPARTY_DIR)/redistsdks/curl/7.22.0/libwin/win32_vs2010</AdditionalLibraryDirectories>
-      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
-      <SuppressStartupBanner>true</SuppressStartupBanner>
-      <UseUnicodeResponseFiles>true</UseUnicodeResponseFiles>
-      <AdditionalOptions> /ignore:4221</AdditionalOptions>
-    </Lib>
-    <Link>
-      <AdditionalDependencies>lua100.lib;libgfx.lib;libgfx_air.lib;libgfx_as2.lib;libgfx_as3.lib;libgfxexpat.lib;libgfxsound_fmod.lib;libgfxrender_d3d9.lib;libgfxplatform_d3d9.lib;libjpeg.lib;zlib.lib;pcre.lib;Winmm.lib;ws2_32.lib;imm32.lib;libpng.lib;fmodex_vc.lib;fmod_event_net.lib;libcurl.lib;d3d9.lib;d3dx9.lib;Base.lib;Vision.lib;VisionEnginePlugin.lib;vFmodEnginePlugin.lib;vScaleformUtils.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\..\..\..\..\Lib\win32_vs2010_anarchy\release_dll;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(DXSDK_DIR)/Lib/x86;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/Lib/Win32/Msvc10/Release/;$(GFXSDK)/Lib/Win32/Msvc10/Release/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/3rdParty/jpeg-8d/Lib/Win32/Msvc10/Release/;$(GFXSDK)/3rdParty/jpeg-8d/Lib/Win32/Msvc10/Release/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/3rdParty/zlib-1.2.7/Lib/Win32/Msvc10/Release/;$(GFXSDK)/3rdParty/zlib-1.2.7/Lib/Win32/Msvc10/Release/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/3rdParty/libpng-1.5.13/Lib/Win32/Msvc10/Release/;$(GFXSDK)/3rdParty/libpng-1.5.13/Lib/Win32/Msvc10/Release/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/3rdParty/expat-2.1.0/lib/Win32/Msvc10/Release/;$(GFXSDK)/3rdParty/expat-2.1.0/lib/Win32/Msvc10/Release/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/3rdParty/pcre/Lib/Win32/Msvc10/Release/;$(GFXSDK)/3rdParty/pcre/Lib/Win32/Msvc10/Release/;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.16/lib/win;$(HAVOK_THIRDPARTY_DIR)/redistsdks/curl/7.22.0/libwin/win32_vs2010</AdditionalLibraryDirectories>
-      <AdditionalOptions> /ignore:4221</AdditionalOptions>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-      <ImportLibrary>..\..\..\..\..\..\Lib\win32_vs2010_anarchy\release_dll\$(TargetName).lib</ImportLibrary>
-      <AssemblyDebug></AssemblyDebug>
-      <SubSystem>Console</SubSystem>
-      <ManifestFile>$(IntDir)Manifest$(TargetExt).intermediate.manifest</ManifestFile>
-      <OptimizeReferences>true</OptimizeReferences>
-      <EnableCOMDATFolding>true</EnableCOMDATFolding>
      <IgnoreSpecificDefaultLibraries>libc.lib;libcmt.lib;</IgnoreSpecificDefaultLibraries>
     </Link>
   </ItemDefinitionGroup>
@@ -386,12 +212,6 @@
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="Lua\ScaleformLuaModule_wrapper.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
-    <ClCompile Include="ScaleformEnginePlugin.cpp">
-        <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug DLL|win32'">Create</PrecompiledHeader>
-        <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Dev DLL|win32'">Create</PrecompiledHeader>
-        <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Hybrid DLL|win32'">Create</PrecompiledHeader>
-        <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release DLL|win32'">Create</PrecompiledHeader>
-        <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="vScaleformAlloc.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <Compile Include="Lua\vScaleformManager.i">
@@ -403,6 +223,10 @@
     <ClInclude Include="VScaleformTexture.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="VScaleformInternal.cpp">
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClCompile Include="ScaleformEnginePlugin.cpp">
+        <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug DLL|win32'">Create</PrecompiledHeader>
+        <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Dev DLL|win32'">Create</PrecompiledHeader>
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClCompile Include="VScaleformTexture.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
@@ -418,6 +242,8 @@
     <ClInclude Include="vScaleformInternal.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="VScaleformUtil.cpp">
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClCompile Include="VScaleformMovieIME.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <CustomBuild Include="Lua\ScaleformLuaModule.i">
         <AdditionalInputs>Lua\vScaleformManager.i;Lua\vScaleformMovie.i;Lua\VScaleformUtil.i</AdditionalInputs>
@@ -438,14 +264,6 @@
     <CodeAnalysisInputAssembly>$(OutputFile)</CodeAnalysisInputAssembly>
 </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Dev DLL|win32'">
-    <RunCodeAnalysis>false</RunCodeAnalysis>
-    <CodeAnalysisInputAssembly>$(OutputFile)</CodeAnalysisInputAssembly>
-</PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Hybrid DLL|win32'">
-    <RunCodeAnalysis>false</RunCodeAnalysis>
-    <CodeAnalysisInputAssembly>$(OutputFile)</CodeAnalysisInputAssembly>
-</PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release DLL|win32'">
     <RunCodeAnalysis>false</RunCodeAnalysis>
     <CodeAnalysisInputAssembly>$(OutputFile)</CodeAnalysisInputAssembly>
 </PropertyGroup>

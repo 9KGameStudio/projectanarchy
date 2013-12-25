@@ -73,9 +73,6 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|hkTizen'">
     
     
-    <PostBuildEvent>
-      <Command>..\..\..\..\..\Build\StandaloneTools\Deployment\Exe\deployTizen.exe -c $(OutputFile) -i ..\..\..\..\..\Data\Common\Anarchy\Tizen\icons --install --deployFileName $(ProjectFileName)_$(Configuration).deploy -r ..\..\..\..\../Data/Vision/Base/,Data/Vision/Base/ ..\..\..\..\../Data/Vision/Samples/Engine/Textures/,Data/Vision/Samples/Engine/Textures/ ..\..\..\..\../Data/Vision/Samples/Engine/RPG/,Data/Vision/Samples/Engine/RPG/</Command>
-    </PostBuildEvent>
     
     <ClCompile>
       <CompileAs>Default</CompileAs>
@@ -87,7 +84,7 @@
       <AdditionalOptions>-ffunction-sections -fno-inline -funwind-tables %(AdditionalOptions) %(AdditionalOptions)</AdditionalOptions>
       <PreprocessorDefinitions>HK_PLATFORM_TIZEN;_DEBUG;HK_DEBUG;HK_DEBUG_SLOW;_APP_LOG;HK_ANARCHY;PROFILING;_VISION_POSIX;_VISION_TIZEN;_VISION_NO_WARNING_IMAGE_FORMAT;VBASE_LIB;LINK_WITH_VISION;VISIONDLL_LIB;USE_HAVOK;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <UndefinePreprocessorDefinitions>%(UndefinePreprocessorDefinitions)</UndefinePreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(IntDir);..\..\..\..;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/;$(HAVOK_THIRDPARTY_DIR)/redistsdks/curl/7.22.0//libtizen/include;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.16/inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(IntDir);..\..\..\..;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/;$(HAVOK_THIRDPARTY_DIR)/redistsdks/curl/7.22.0//libtizen/include;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ProducesObjectFile>true</ProducesObjectFile>
       <OptimizationLevel>O0</OptimizationLevel>
       <CppInliningLevel></CppInliningLevel>
@@ -118,13 +115,13 @@
       <OutputFile>$(OutDir)\libRPG.exe</OutputFile>
       <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
       <LibrarianCommand>-rmc</LibrarianCommand>
-      <AdditionalDependencies>-lLuaTizen;-lcurl;-lBaseD;-lVisionD;-lVisionEnginePlugin;-lRPGPlugin;-lvHavokAi;-lvHavokBehavior;-lvHavok;-lhkBase;-lhkCompat;-lhkSceneData;-lhkSerialize;-lhkVisualize;-lhkInternal;-lhkGeometryUtilities;-lhkcdInternal;-lhkcdCollide;-lhkpUtilities;-lhkpVehicle;-lhkpDynamics;-lhkpCollide;-lhkpInternal;-lhkpConstraintSolver;-lhkpConstraint;-lhkaPhysics2012Bridge;-lhkaInternal;-lhkaAnimation;-lhkbBehavior;-lhkbInternal;-lhkbUtilities;-lhkbPhysics2012Bridge;-lhkbAiBridge;-lhkbScript;-lhkaiPathfinding;-lhkaiInternal;-lhkaiVisualize;-lhkaiSpatialAnalysis;-lhkaiPhysics2012Bridge;-lvFmodEnginePlugin;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\..\..\..\Lib\tizen_vs2010_anarchy\debug;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(HAVOK_THIRDPARTY_DIR)/redistsdks/curl/7.22.0/libtizen/arm;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.16/lib/tizen</AdditionalLibraryDirectories>
+      <AdditionalDependencies>-lLuaTizen;-lcurl;-lBaseD;-lVisionD;-lVisionEnginePlugin;-lVisionAppD;-lRPGPlugin;-lvHavokAi;-lvHavokBehavior;-lvHavok;-lhkBase;-lhkCompat;-lhkSceneData;-lhkSerialize;-lhkVisualize;-lhkInternal;-lhkGeometryUtilities;-lhkcdInternal;-lhkcdCollide;-lhkpUtilities;-lhkpVehicle;-lhkpDynamics;-lhkpCollide;-lhkpInternal;-lhkpConstraintSolver;-lhkpConstraint;-lhkaPhysics2012Bridge;-lhkaInternal;-lhkaAnimation;-lhkbBehavior;-lhkbInternal;-lhkbUtilities;-lhkbPhysics2012Bridge;-lhkbAiBridge;-lhkbScript;-lhkaiPathfinding;-lhkaiInternal;-lhkaiVisualize;-lhkaiSpatialAnalysis;-lhkaiPhysics2012Bridge;-lvFmodEnginePlugin;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\..\..\..\..\Lib\tizen_vs2010_anarchy\debug;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(HAVOK_THIRDPARTY_DIR)/redistsdks/curl/7.22.0/libtizen/arm;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/lib/tizen</AdditionalLibraryDirectories>
     </Lib>
     <Link>
-      <AdditionalDependencies>-lLuaTizen;-lcurl;-lBaseD;-lVisionD;-lVisionEnginePlugin;-lRPGPlugin;-lvHavokAi;-lvHavokBehavior;-lvHavok;-lhkBase;-lhkCompat;-lhkSceneData;-lhkSerialize;-lhkVisualize;-lhkInternal;-lhkGeometryUtilities;-lhkcdInternal;-lhkcdCollide;-lhkpUtilities;-lhkpVehicle;-lhkpDynamics;-lhkpCollide;-lhkpInternal;-lhkpConstraintSolver;-lhkpConstraint;-lhkaPhysics2012Bridge;-lhkaInternal;-lhkaAnimation;-lhkbBehavior;-lhkbInternal;-lhkbUtilities;-lhkbPhysics2012Bridge;-lhkbAiBridge;-lhkbScript;-lhkaiPathfinding;-lhkaiInternal;-lhkaiVisualize;-lhkaiSpatialAnalysis;-lhkaiPhysics2012Bridge;-lvFmodEnginePlugin;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>-lLuaTizen;-lcurl;-lBaseD;-lVisionD;-lVisionEnginePlugin;-lVisionAppD;-lRPGPlugin;-lvHavokAi;-lvHavokBehavior;-lvHavok;-lhkBase;-lhkCompat;-lhkSceneData;-lhkSerialize;-lhkVisualize;-lhkInternal;-lhkGeometryUtilities;-lhkcdInternal;-lhkcdCollide;-lhkpUtilities;-lhkpVehicle;-lhkpDynamics;-lhkpCollide;-lhkpInternal;-lhkpConstraintSolver;-lhkpConstraint;-lhkaPhysics2012Bridge;-lhkaInternal;-lhkaAnimation;-lhkbBehavior;-lhkbInternal;-lhkbUtilities;-lhkbPhysics2012Bridge;-lhkbAiBridge;-lhkbScript;-lhkaiPathfinding;-lhkaiInternal;-lhkaiVisualize;-lhkaiSpatialAnalysis;-lhkaiPhysics2012Bridge;-lvFmodEnginePlugin;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
-      <AdditionalLibraryDirectories>..\..\..\..\..\Lib\tizen_vs2010_anarchy\debug;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(HAVOK_THIRDPARTY_DIR)/redistsdks/curl/7.22.0/libtizen/arm;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.16/lib/tizen</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\..\..\..\..\Lib\tizen_vs2010_anarchy\debug;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(HAVOK_THIRDPARTY_DIR)/redistsdks/curl/7.22.0/libtizen/arm;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/lib/tizen</AdditionalLibraryDirectories>
       <AdditionalLinkerOptions>-nosegments_always_executable</AdditionalLinkerOptions>
       <OptimizationStrategy>general</OptimizationStrategy>
       <SourceRoot>.</SourceRoot>
@@ -175,13 +172,18 @@
       <StripSymbolStrings>No</StripSymbolStrings>
       <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
     </PostLink>
+    <Deploy>
+      <DeployTool>..\..\..\..\..\Build\StandaloneTools\Deployment\Exe\deployTizen.exe</DeployTool>
+      <ResDir>..\..\..\..\../Data/Vision/Samples/Engine/RPG/Icons/Tizen/icons</ResDir>
+      <Manifest></Manifest>
+      <Install>true</Install>
+      <FileServe></FileServe>
+      <Resources>..\..\..\..\../Data/Vision/Base/,Data/Vision/Base/ ..\..\..\..\../Data/Vision/Samples/Engine/Textures/,Data/Vision/Samples/Engine/Textures/ ..\..\..\..\../Data/Vision/Samples/Engine/RPG/,Data/Vision/Samples/Engine/RPG/</Resources>
+    </Deploy>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Dev|hkTizen'">
     
     
-    <PostBuildEvent>
-      <Command>..\..\..\..\..\Build\StandaloneTools\Deployment\Exe\deployTizen.exe -c $(OutputFile) -i ..\..\..\..\..\Data\Common\Anarchy\Tizen\icons --install --deployFileName $(ProjectFileName)_$(Configuration).deploy -r ..\..\..\..\../Data/Vision/Base/,Data/Vision/Base/ ..\..\..\..\../Data/Vision/Samples/Engine/Textures/,Data/Vision/Samples/Engine/Textures/ ..\..\..\..\../Data/Vision/Samples/Engine/RPG/,Data/Vision/Samples/Engine/RPG/</Command>
-    </PostBuildEvent>
     
     <ClCompile>
       <CompileAs>Default</CompileAs>
@@ -193,7 +195,7 @@
       <AdditionalOptions>-ffunction-sections %(AdditionalOptions) %(AdditionalOptions)</AdditionalOptions>
       <PreprocessorDefinitions>HK_PLATFORM_TIZEN;HK_DEBUG;_APP_LOG;HK_ANARCHY;PROFILING;_VISION_POSIX;_VISION_TIZEN;_VISION_NO_WARNING_IMAGE_FORMAT;VBASE_LIB;LINK_WITH_VISION;VISIONDLL_LIB;USE_HAVOK;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <UndefinePreprocessorDefinitions>%(UndefinePreprocessorDefinitions)</UndefinePreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(IntDir);..\..\..\..;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/;$(HAVOK_THIRDPARTY_DIR)/redistsdks/curl/7.22.0//libtizen/include;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.16/inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(IntDir);..\..\..\..;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/;$(HAVOK_THIRDPARTY_DIR)/redistsdks/curl/7.22.0//libtizen/include;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ProducesObjectFile>true</ProducesObjectFile>
       <OptimizationLevel>O3</OptimizationLevel>
       <CppInliningLevel></CppInliningLevel>
@@ -224,13 +226,13 @@
       <OutputFile>$(OutDir)\libRPG.exe</OutputFile>
       <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
       <LibrarianCommand>-rmc</LibrarianCommand>
-      <AdditionalDependencies>-lLuaTizen;-lcurl;-lBase;-lVision;-lVisionEnginePlugin;-lRPGPlugin;-lvHavokAi;-lvHavokBehavior;-lvHavok;-lhkBase;-lhkCompat;-lhkSceneData;-lhkSerialize;-lhkVisualize;-lhkInternal;-lhkGeometryUtilities;-lhkcdInternal;-lhkcdCollide;-lhkpUtilities;-lhkpVehicle;-lhkpDynamics;-lhkpCollide;-lhkpInternal;-lhkpConstraintSolver;-lhkpConstraint;-lhkaPhysics2012Bridge;-lhkaInternal;-lhkaAnimation;-lhkbBehavior;-lhkbInternal;-lhkbUtilities;-lhkbPhysics2012Bridge;-lhkbAiBridge;-lhkbScript;-lhkaiPathfinding;-lhkaiInternal;-lhkaiVisualize;-lhkaiSpatialAnalysis;-lhkaiPhysics2012Bridge;-lvFmodEnginePlugin;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\..\..\..\Lib\tizen_vs2010_anarchy\dev;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(HAVOK_THIRDPARTY_DIR)/redistsdks/curl/7.22.0/libtizen/arm;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.16/lib/tizen</AdditionalLibraryDirectories>
+      <AdditionalDependencies>-lLuaTizen;-lcurl;-lBase;-lVision;-lVisionEnginePlugin;-lVisionApp;-lRPGPlugin;-lvHavokAi;-lvHavokBehavior;-lvHavok;-lhkBase;-lhkCompat;-lhkSceneData;-lhkSerialize;-lhkVisualize;-lhkInternal;-lhkGeometryUtilities;-lhkcdInternal;-lhkcdCollide;-lhkpUtilities;-lhkpVehicle;-lhkpDynamics;-lhkpCollide;-lhkpInternal;-lhkpConstraintSolver;-lhkpConstraint;-lhkaPhysics2012Bridge;-lhkaInternal;-lhkaAnimation;-lhkbBehavior;-lhkbInternal;-lhkbUtilities;-lhkbPhysics2012Bridge;-lhkbAiBridge;-lhkbScript;-lhkaiPathfinding;-lhkaiInternal;-lhkaiVisualize;-lhkaiSpatialAnalysis;-lhkaiPhysics2012Bridge;-lvFmodEnginePlugin;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\..\..\..\..\Lib\tizen_vs2010_anarchy\dev;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(HAVOK_THIRDPARTY_DIR)/redistsdks/curl/7.22.0/libtizen/arm;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/lib/tizen</AdditionalLibraryDirectories>
     </Lib>
     <Link>
-      <AdditionalDependencies>-lLuaTizen;-lcurl;-lBase;-lVision;-lVisionEnginePlugin;-lRPGPlugin;-lvHavokAi;-lvHavokBehavior;-lvHavok;-lhkBase;-lhkCompat;-lhkSceneData;-lhkSerialize;-lhkVisualize;-lhkInternal;-lhkGeometryUtilities;-lhkcdInternal;-lhkcdCollide;-lhkpUtilities;-lhkpVehicle;-lhkpDynamics;-lhkpCollide;-lhkpInternal;-lhkpConstraintSolver;-lhkpConstraint;-lhkaPhysics2012Bridge;-lhkaInternal;-lhkaAnimation;-lhkbBehavior;-lhkbInternal;-lhkbUtilities;-lhkbPhysics2012Bridge;-lhkbAiBridge;-lhkbScript;-lhkaiPathfinding;-lhkaiInternal;-lhkaiVisualize;-lhkaiSpatialAnalysis;-lhkaiPhysics2012Bridge;-lvFmodEnginePlugin;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>-lLuaTizen;-lcurl;-lBase;-lVision;-lVisionEnginePlugin;-lVisionApp;-lRPGPlugin;-lvHavokAi;-lvHavokBehavior;-lvHavok;-lhkBase;-lhkCompat;-lhkSceneData;-lhkSerialize;-lhkVisualize;-lhkInternal;-lhkGeometryUtilities;-lhkcdInternal;-lhkcdCollide;-lhkpUtilities;-lhkpVehicle;-lhkpDynamics;-lhkpCollide;-lhkpInternal;-lhkpConstraintSolver;-lhkpConstraint;-lhkaPhysics2012Bridge;-lhkaInternal;-lhkaAnimation;-lhkbBehavior;-lhkbInternal;-lhkbUtilities;-lhkbPhysics2012Bridge;-lhkbAiBridge;-lhkbScript;-lhkaiPathfinding;-lhkaiInternal;-lhkaiVisualize;-lhkaiSpatialAnalysis;-lhkaiPhysics2012Bridge;-lvFmodEnginePlugin;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
-      <AdditionalLibraryDirectories>..\..\..\..\..\Lib\tizen_vs2010_anarchy\dev;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(HAVOK_THIRDPARTY_DIR)/redistsdks/curl/7.22.0/libtizen/arm;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.16/lib/tizen</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\..\..\..\..\Lib\tizen_vs2010_anarchy\dev;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(HAVOK_THIRDPARTY_DIR)/redistsdks/curl/7.22.0/libtizen/arm;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/lib/tizen</AdditionalLibraryDirectories>
       <AdditionalLinkerOptions>-nosegments_always_executable</AdditionalLinkerOptions>
       <OptimizationStrategy>general</OptimizationStrategy>
       <SourceRoot>.</SourceRoot>
@@ -281,13 +283,18 @@
       <StripSymbolStrings>No</StripSymbolStrings>
       <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
     </PostLink>
+    <Deploy>
+      <DeployTool>..\..\..\..\..\Build\StandaloneTools\Deployment\Exe\deployTizen.exe</DeployTool>
+      <ResDir>..\..\..\..\../Data/Vision/Samples/Engine/RPG/Icons/Tizen/icons</ResDir>
+      <Manifest></Manifest>
+      <Install>true</Install>
+      <FileServe></FileServe>
+      <Resources>..\..\..\..\../Data/Vision/Base/,Data/Vision/Base/ ..\..\..\..\../Data/Vision/Samples/Engine/Textures/,Data/Vision/Samples/Engine/Textures/ ..\..\..\..\../Data/Vision/Samples/Engine/RPG/,Data/Vision/Samples/Engine/RPG/</Resources>
+    </Deploy>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|hkTizen'">
     
     
-    <PostBuildEvent>
-      <Command>..\..\..\..\..\Build\StandaloneTools\Deployment\Exe\deployTizen.exe -c $(OutputFile) -i ..\..\..\..\..\Data\Common\Anarchy\Tizen\icons --install --deployFileName $(ProjectFileName)_$(Configuration).deploy -r ..\..\..\..\../Data/Vision/Base/,Data/Vision/Base/ ..\..\..\..\../Data/Vision/Samples/Engine/Textures/,Data/Vision/Samples/Engine/Textures/ ..\..\..\..\../Data/Vision/Samples/Engine/RPG/,Data/Vision/Samples/Engine/RPG/</Command>
-    </PostBuildEvent>
     
     <ClCompile>
       <CompileAs>Default</CompileAs>
@@ -299,7 +306,7 @@
       <AdditionalOptions>-ffunction-sections -fomit-frame-pointer -funswitch-loops %(AdditionalOptions) %(AdditionalOptions)</AdditionalOptions>
       <PreprocessorDefinitions>HK_PLATFORM_TIZEN;HK_ANARCHY;PROFILING;_VISION_POSIX;_VISION_TIZEN;_VISION_NO_WARNING_IMAGE_FORMAT;VBASE_LIB;LINK_WITH_VISION;VISIONDLL_LIB;USE_HAVOK;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <UndefinePreprocessorDefinitions>%(UndefinePreprocessorDefinitions)</UndefinePreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(IntDir);..\..\..\..;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/;$(HAVOK_THIRDPARTY_DIR)/redistsdks/curl/7.22.0//libtizen/include;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.16/inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(IntDir);..\..\..\..;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/;$(HAVOK_THIRDPARTY_DIR)/redistsdks/curl/7.22.0//libtizen/include;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ProducesObjectFile>true</ProducesObjectFile>
       <OptimizationLevel>O3</OptimizationLevel>
       <CppInliningLevel></CppInliningLevel>
@@ -330,13 +337,13 @@
       <OutputFile>$(OutDir)\libRPG.exe</OutputFile>
       <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
       <LibrarianCommand>-rmc</LibrarianCommand>
-      <AdditionalDependencies>-lLuaTizen;-lcurl;-lBase;-lVision;-lVisionEnginePlugin;-lRPGPlugin;-lvHavokAi;-lvHavokBehavior;-lvHavok;-lhkBase;-lhkCompat;-lhkSceneData;-lhkSerialize;-lhkVisualize;-lhkInternal;-lhkGeometryUtilities;-lhkcdInternal;-lhkcdCollide;-lhkpUtilities;-lhkpVehicle;-lhkpDynamics;-lhkpCollide;-lhkpInternal;-lhkpConstraintSolver;-lhkpConstraint;-lhkaPhysics2012Bridge;-lhkaInternal;-lhkaAnimation;-lhkbBehavior;-lhkbInternal;-lhkbUtilities;-lhkbPhysics2012Bridge;-lhkbAiBridge;-lhkbScriptRelease;-lhkaiPathfinding;-lhkaiInternal;-lhkaiVisualize;-lhkaiSpatialAnalysis;-lhkaiPhysics2012Bridge;-lvFmodEnginePlugin;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\..\..\..\Lib\tizen_vs2010_anarchy\release;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(HAVOK_THIRDPARTY_DIR)/redistsdks/curl/7.22.0/libtizen/arm;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.16/lib/tizen</AdditionalLibraryDirectories>
+      <AdditionalDependencies>-lLuaTizen;-lcurl;-lBase;-lVision;-lVisionEnginePlugin;-lVisionApp;-lRPGPlugin;-lvHavokAi;-lvHavokBehavior;-lvHavok;-lhkBase;-lhkCompat;-lhkSceneData;-lhkSerialize;-lhkVisualize;-lhkInternal;-lhkGeometryUtilities;-lhkcdInternal;-lhkcdCollide;-lhkpUtilities;-lhkpVehicle;-lhkpDynamics;-lhkpCollide;-lhkpInternal;-lhkpConstraintSolver;-lhkpConstraint;-lhkaPhysics2012Bridge;-lhkaInternal;-lhkaAnimation;-lhkbBehavior;-lhkbInternal;-lhkbUtilities;-lhkbPhysics2012Bridge;-lhkbAiBridge;-lhkbScriptRelease;-lhkaiPathfinding;-lhkaiInternal;-lhkaiVisualize;-lhkaiSpatialAnalysis;-lhkaiPhysics2012Bridge;-lvFmodEnginePlugin;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\..\..\..\..\Lib\tizen_vs2010_anarchy\release;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(HAVOK_THIRDPARTY_DIR)/redistsdks/curl/7.22.0/libtizen/arm;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/lib/tizen</AdditionalLibraryDirectories>
     </Lib>
     <Link>
-      <AdditionalDependencies>-lLuaTizen;-lcurl;-lBase;-lVision;-lVisionEnginePlugin;-lRPGPlugin;-lvHavokAi;-lvHavokBehavior;-lvHavok;-lhkBase;-lhkCompat;-lhkSceneData;-lhkSerialize;-lhkVisualize;-lhkInternal;-lhkGeometryUtilities;-lhkcdInternal;-lhkcdCollide;-lhkpUtilities;-lhkpVehicle;-lhkpDynamics;-lhkpCollide;-lhkpInternal;-lhkpConstraintSolver;-lhkpConstraint;-lhkaPhysics2012Bridge;-lhkaInternal;-lhkaAnimation;-lhkbBehavior;-lhkbInternal;-lhkbUtilities;-lhkbPhysics2012Bridge;-lhkbAiBridge;-lhkbScriptRelease;-lhkaiPathfinding;-lhkaiInternal;-lhkaiVisualize;-lhkaiSpatialAnalysis;-lhkaiPhysics2012Bridge;-lvFmodEnginePlugin;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>-lLuaTizen;-lcurl;-lBase;-lVision;-lVisionEnginePlugin;-lVisionApp;-lRPGPlugin;-lvHavokAi;-lvHavokBehavior;-lvHavok;-lhkBase;-lhkCompat;-lhkSceneData;-lhkSerialize;-lhkVisualize;-lhkInternal;-lhkGeometryUtilities;-lhkcdInternal;-lhkcdCollide;-lhkpUtilities;-lhkpVehicle;-lhkpDynamics;-lhkpCollide;-lhkpInternal;-lhkpConstraintSolver;-lhkpConstraint;-lhkaPhysics2012Bridge;-lhkaInternal;-lhkaAnimation;-lhkbBehavior;-lhkbInternal;-lhkbUtilities;-lhkbPhysics2012Bridge;-lhkbAiBridge;-lhkbScriptRelease;-lhkaiPathfinding;-lhkaiInternal;-lhkaiVisualize;-lhkaiSpatialAnalysis;-lhkaiPhysics2012Bridge;-lvFmodEnginePlugin;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
-      <AdditionalLibraryDirectories>..\..\..\..\..\Lib\tizen_vs2010_anarchy\release;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(HAVOK_THIRDPARTY_DIR)/redistsdks/curl/7.22.0/libtizen/arm;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.16/lib/tizen</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\..\..\..\..\Lib\tizen_vs2010_anarchy\release;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(HAVOK_THIRDPARTY_DIR)/redistsdks/curl/7.22.0/libtizen/arm;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/lib/tizen</AdditionalLibraryDirectories>
       <AdditionalLinkerOptions>-nosegments_always_executable</AdditionalLinkerOptions>
       <OptimizationStrategy>general</OptimizationStrategy>
       <SourceRoot>.</SourceRoot>
@@ -387,26 +394,22 @@
       <StripSymbolStrings>No</StripSymbolStrings>
       <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
     </PostLink>
+    <Deploy>
+      <DeployTool>..\..\..\..\..\Build\StandaloneTools\Deployment\Exe\deployTizen.exe</DeployTool>
+      <ResDir>..\..\..\..\../Data/Vision/Samples/Engine/RPG/Icons/Tizen/icons</ResDir>
+      <Manifest></Manifest>
+      <Install>true</Install>
+      <FileServe></FileServe>
+      <Resources>..\..\..\..\../Data/Vision/Base/,Data/Vision/Base/ ..\..\..\..\../Data/Vision/Samples/Engine/Textures/,Data/Vision/Samples/Engine/Textures/ ..\..\..\..\../Data/Vision/Samples/Engine/RPG/,Data/Vision/Samples/Engine/RPG/</Resources>
+    </Deploy>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\..\..\Source\Vision\Runtime\Common\VisSampleAppCallbacks.cpp">
-        <PrecompiledHeader>NotUsing</PrecompiledHeader>
-        <DeploymentContent>False</DeploymentContent></ClCompile>
-    <ClInclude Include="..\..\..\..\..\Source\Vision\Runtime\EnginePlugins\EnginePluginsImport.hpp">
-        <DeploymentContent>False</DeploymentContent></ClInclude>
-    <ClCompile Include="main.cpp">
-        <DeploymentContent>False</DeploymentContent></ClCompile>
-    <ClInclude Include="..\..\..\..\..\Source\Vision\Runtime\Common\VisSampleApp.hpp">
-        <DeploymentContent>False</DeploymentContent></ClInclude>
-    <ClCompile Include="..\..\..\..\..\Source\Vision\Runtime\Common\VisSampleApp.cpp">
-        <PrecompiledHeader>NotUsing</PrecompiledHeader>
-        <DeploymentContent>False</DeploymentContent></ClCompile>
-    <ClCompile Include="RPGPCH.cpp">
-        <DeploymentContent>False</DeploymentContent></ClCompile>
-    <ClCompile Include="..\..\..\..\..\Source\Vision\Runtime\Common\Tizen\VisTizenGLESApp.cpp">
+    <ClCompile Include="RPG.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="RPGPCH.h">
         <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClCompile Include="RPGPCH.cpp">
+        <DeploymentContent>False</DeploymentContent></ClCompile>
   </ItemGroup>
   <ItemGroup>
   </ItemGroup>

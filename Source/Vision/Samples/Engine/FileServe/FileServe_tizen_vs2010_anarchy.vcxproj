@@ -73,9 +73,6 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|hkTizen'">
     
     
-    <PostBuildEvent>
-      <Command>..\..\..\..\..\Build\StandaloneTools\Deployment\Exe\deployTizen.exe -c $(OutputFile) -i ..\..\..\..\..\Data\Common\Anarchy\Tizen\icons --install -f --deployFileName $(ProjectFileName)_$(Configuration).deploy</Command>
-    </PostBuildEvent>
     
     <ClCompile>
       <CompileAs>Default</CompileAs>
@@ -118,11 +115,11 @@
       <OutputFile>$(OutDir)\libFileServe.exe</OutputFile>
       <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
       <LibrarianCommand>-rmc</LibrarianCommand>
-      <AdditionalDependencies>-lLuaTizen;-lcurl;-lBaseD;-lVisionD;-lVisionEnginePlugin;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>-lLuaTizen;-lcurl;-lBaseD;-lVisionD;-lVisionEnginePlugin;-lVisionAppD;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>..\..\..\..\..\Lib\tizen_vs2010_anarchy\debug;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(HAVOK_THIRDPARTY_DIR)/redistsdks/curl/7.22.0/libtizen/arm</AdditionalLibraryDirectories>
     </Lib>
     <Link>
-      <AdditionalDependencies>-lLuaTizen;-lcurl;-lBaseD;-lVisionD;-lVisionEnginePlugin;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>-lLuaTizen;-lcurl;-lBaseD;-lVisionD;-lVisionEnginePlugin;-lVisionAppD;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
       <AdditionalLibraryDirectories>..\..\..\..\..\Lib\tizen_vs2010_anarchy\debug;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(HAVOK_THIRDPARTY_DIR)/redistsdks/curl/7.22.0/libtizen/arm</AdditionalLibraryDirectories>
       <AdditionalLinkerOptions>-nosegments_always_executable</AdditionalLinkerOptions>
@@ -175,13 +172,18 @@
       <StripSymbolStrings>No</StripSymbolStrings>
       <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
     </PostLink>
+    <Deploy>
+      <DeployTool>..\..\..\..\..\Build\StandaloneTools\Deployment\Exe\deployTizen.exe</DeployTool>
+      <ResDir>..\..\..\..\..\Data\Common\Anarchy\Tizen\icons</ResDir>
+      <Manifest></Manifest>
+      <Install>true</Install>
+      <FileServe>true</FileServe>
+      <Resources></Resources>
+    </Deploy>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Dev|hkTizen'">
     
     
-    <PostBuildEvent>
-      <Command>..\..\..\..\..\Build\StandaloneTools\Deployment\Exe\deployTizen.exe -c $(OutputFile) -i ..\..\..\..\..\Data\Common\Anarchy\Tizen\icons --install -f --deployFileName $(ProjectFileName)_$(Configuration).deploy</Command>
-    </PostBuildEvent>
     
     <ClCompile>
       <CompileAs>Default</CompileAs>
@@ -224,11 +226,11 @@
       <OutputFile>$(OutDir)\libFileServe.exe</OutputFile>
       <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
       <LibrarianCommand>-rmc</LibrarianCommand>
-      <AdditionalDependencies>-lLuaTizen;-lcurl;-lBase;-lVision;-lVisionEnginePlugin;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>-lLuaTizen;-lcurl;-lBase;-lVision;-lVisionEnginePlugin;-lVisionApp;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>..\..\..\..\..\Lib\tizen_vs2010_anarchy\dev;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(HAVOK_THIRDPARTY_DIR)/redistsdks/curl/7.22.0/libtizen/arm</AdditionalLibraryDirectories>
     </Lib>
     <Link>
-      <AdditionalDependencies>-lLuaTizen;-lcurl;-lBase;-lVision;-lVisionEnginePlugin;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>-lLuaTizen;-lcurl;-lBase;-lVision;-lVisionEnginePlugin;-lVisionApp;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
       <AdditionalLibraryDirectories>..\..\..\..\..\Lib\tizen_vs2010_anarchy\dev;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(HAVOK_THIRDPARTY_DIR)/redistsdks/curl/7.22.0/libtizen/arm</AdditionalLibraryDirectories>
       <AdditionalLinkerOptions>-nosegments_always_executable</AdditionalLinkerOptions>
@@ -281,13 +283,18 @@
       <StripSymbolStrings>No</StripSymbolStrings>
       <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
     </PostLink>
+    <Deploy>
+      <DeployTool>..\..\..\..\..\Build\StandaloneTools\Deployment\Exe\deployTizen.exe</DeployTool>
+      <ResDir>..\..\..\..\..\Data\Common\Anarchy\Tizen\icons</ResDir>
+      <Manifest></Manifest>
+      <Install>true</Install>
+      <FileServe>true</FileServe>
+      <Resources></Resources>
+    </Deploy>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|hkTizen'">
     
     
-    <PostBuildEvent>
-      <Command>..\..\..\..\..\Build\StandaloneTools\Deployment\Exe\deployTizen.exe -c $(OutputFile) -i ..\..\..\..\..\Data\Common\Anarchy\Tizen\icons --install -f --deployFileName $(ProjectFileName)_$(Configuration).deploy</Command>
-    </PostBuildEvent>
     
     <ClCompile>
       <CompileAs>Default</CompileAs>
@@ -330,11 +337,11 @@
       <OutputFile>$(OutDir)\libFileServe.exe</OutputFile>
       <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
       <LibrarianCommand>-rmc</LibrarianCommand>
-      <AdditionalDependencies>-lLuaTizen;-lcurl;-lBase;-lVision;-lVisionEnginePlugin;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>-lLuaTizen;-lcurl;-lBase;-lVision;-lVisionEnginePlugin;-lVisionApp;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>..\..\..\..\..\Lib\tizen_vs2010_anarchy\release;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(HAVOK_THIRDPARTY_DIR)/redistsdks/curl/7.22.0/libtizen/arm</AdditionalLibraryDirectories>
     </Lib>
     <Link>
-      <AdditionalDependencies>-lLuaTizen;-lcurl;-lBase;-lVision;-lVisionEnginePlugin;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>-lLuaTizen;-lcurl;-lBase;-lVision;-lVisionEnginePlugin;-lVisionApp;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
       <AdditionalLibraryDirectories>..\..\..\..\..\Lib\tizen_vs2010_anarchy\release;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(HAVOK_THIRDPARTY_DIR)/redistsdks/curl/7.22.0/libtizen/arm</AdditionalLibraryDirectories>
       <AdditionalLinkerOptions>-nosegments_always_executable</AdditionalLinkerOptions>
@@ -387,25 +394,21 @@
       <StripSymbolStrings>No</StripSymbolStrings>
       <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
     </PostLink>
+    <Deploy>
+      <DeployTool>..\..\..\..\..\Build\StandaloneTools\Deployment\Exe\deployTizen.exe</DeployTool>
+      <ResDir>..\..\..\..\..\Data\Common\Anarchy\Tizen\icons</ResDir>
+      <Manifest></Manifest>
+      <Install>true</Install>
+      <FileServe>true</FileServe>
+      <Resources></Resources>
+    </Deploy>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\..\..\Source\Vision\Runtime\Common\VisSampleAppCallbacks.cpp">
-        <PrecompiledHeader>NotUsing</PrecompiledHeader>
-        <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="FileServePCH.h">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="FileServePCH.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
-    <ClInclude Include="..\..\..\..\..\Source\Vision\Runtime\EnginePlugins\EnginePluginsImport.hpp">
-        <DeploymentContent>False</DeploymentContent></ClInclude>
-    <ClCompile Include="main.cpp">
-        <DeploymentContent>False</DeploymentContent></ClCompile>
-    <ClInclude Include="..\..\..\..\..\Source\Vision\Runtime\Common\VisSampleApp.hpp">
-        <DeploymentContent>False</DeploymentContent></ClInclude>
-    <ClCompile Include="..\..\..\..\..\Source\Vision\Runtime\Common\VisSampleApp.cpp">
-        <PrecompiledHeader>NotUsing</PrecompiledHeader>
-        <DeploymentContent>False</DeploymentContent></ClCompile>
-    <ClCompile Include="..\..\..\..\..\Source\Vision\Runtime\Common\Tizen\VisTizenGLESApp.cpp">
+    <ClCompile Include="FileServe.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
   </ItemGroup>
   <ItemGroup>

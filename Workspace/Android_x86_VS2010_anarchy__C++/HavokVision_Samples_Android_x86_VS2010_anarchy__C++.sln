@@ -24,8 +24,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MobileOffroadPlugin", "..\.
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ModelMerging", "..\..\Source\Vision\Samples\Engine\ModelMerging\ModelMerging_android_x86_vs2010_anarchy.vcxproj", "{512835C5-256B-332B-9FAE-6DA90FA9C0F3}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "RPGPlugin", "..\..\Source\Vision\Samples\Engine\RPGPlugin\RPGPlugin_android_x86_vs2010_anarchy.vcxproj", "{D2C9AE4F-0F90-406E-85BA-F9DA83AA90FF}"
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "RenderToTexture", "..\..\Source\Vision\Samples\Engine\RenderToTexture\RenderToTexture_android_x86_vs2010_anarchy.vcxproj", "{F6CF679C-9E2D-37AA-B67E-9C403CC85F21}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Scaleform", "..\..\Source\Vision\Samples\Engine\Scaleform\Scaleform_android_x86_vs2010_anarchy.vcxproj", "{BC8F5E08-3DBD-366F-B03A-CEB47E196D48}"
@@ -91,8 +89,11 @@ Global
 		{8E7B353F-C5F1-32A0-A170-523FA0502138}.Release|hkAndroid.ActiveCfg = Release|hkAndroid
 		{8E7B353F-C5F1-32A0-A170-523FA0502138}.Release|hkAndroid.Build.0 = Release|hkAndroid
 		{17B7CE53-C27D-3428-AEA2-7C7D72B85E36}.Debug|hkAndroid.ActiveCfg = Debug|hkAndroid
+		{17B7CE53-C27D-3428-AEA2-7C7D72B85E36}.Debug|hkAndroid.Build.0 = Debug|hkAndroid
 		{17B7CE53-C27D-3428-AEA2-7C7D72B85E36}.Dev|hkAndroid.ActiveCfg = Dev|hkAndroid
+		{17B7CE53-C27D-3428-AEA2-7C7D72B85E36}.Dev|hkAndroid.Build.0 = Dev|hkAndroid
 		{17B7CE53-C27D-3428-AEA2-7C7D72B85E36}.Release|hkAndroid.ActiveCfg = Release|hkAndroid
+		{17B7CE53-C27D-3428-AEA2-7C7D72B85E36}.Release|hkAndroid.Build.0 = Release|hkAndroid
 		{54D37226-523A-21D3-B646-AB6E3B9C3E71}.Debug|hkAndroid.ActiveCfg = Debug|hkAndroid
 		{54D37226-523A-21D3-B646-AB6E3B9C3E71}.Debug|hkAndroid.Build.0 = Debug|hkAndroid
 		{54D37226-523A-21D3-B646-AB6E3B9C3E71}.Dev|hkAndroid.ActiveCfg = Dev|hkAndroid
@@ -111,12 +112,6 @@ Global
 		{512835C5-256B-332B-9FAE-6DA90FA9C0F3}.Dev|hkAndroid.Build.0 = Dev|hkAndroid
 		{512835C5-256B-332B-9FAE-6DA90FA9C0F3}.Release|hkAndroid.ActiveCfg = Release|hkAndroid
 		{512835C5-256B-332B-9FAE-6DA90FA9C0F3}.Release|hkAndroid.Build.0 = Release|hkAndroid
-		{D2C9AE4F-0F90-406E-85BA-F9DA83AA90FF}.Debug|hkAndroid.ActiveCfg = Debug|hkAndroid
-		{D2C9AE4F-0F90-406E-85BA-F9DA83AA90FF}.Debug|hkAndroid.Build.0 = Debug|hkAndroid
-		{D2C9AE4F-0F90-406E-85BA-F9DA83AA90FF}.Dev|hkAndroid.ActiveCfg = Dev|hkAndroid
-		{D2C9AE4F-0F90-406E-85BA-F9DA83AA90FF}.Dev|hkAndroid.Build.0 = Dev|hkAndroid
-		{D2C9AE4F-0F90-406E-85BA-F9DA83AA90FF}.Release|hkAndroid.ActiveCfg = Release|hkAndroid
-		{D2C9AE4F-0F90-406E-85BA-F9DA83AA90FF}.Release|hkAndroid.Build.0 = Release|hkAndroid
 		{F6CF679C-9E2D-37AA-B67E-9C403CC85F21}.Debug|hkAndroid.ActiveCfg = Debug|hkAndroid
 		{F6CF679C-9E2D-37AA-B67E-9C403CC85F21}.Debug|hkAndroid.Build.0 = Debug|hkAndroid
 		{F6CF679C-9E2D-37AA-B67E-9C403CC85F21}.Dev|hkAndroid.ActiveCfg = Dev|hkAndroid
@@ -178,7 +173,5 @@ Global
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
-	GlobalSection(NestedProjects) = preSolution
-		
-	EndGlobalSection
+	
 EndGlobal

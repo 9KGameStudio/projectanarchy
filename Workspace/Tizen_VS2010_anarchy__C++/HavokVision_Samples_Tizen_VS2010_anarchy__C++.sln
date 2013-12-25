@@ -24,8 +24,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MobileOffroadPlugin", "..\.
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ModelMerging", "..\..\Source\Vision\Samples\Engine\ModelMerging\ModelMerging_tizen_vs2010_anarchy.vcxproj", "{512835C5-256B-332B-9FAE-6DA90FA9C0F3}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "RPGPlugin", "..\..\Source\Vision\Samples\Engine\RPGPlugin\RPGPlugin_tizen_vs2010_anarchy.vcxproj", "{D2C9AE4F-0F90-406E-85BA-F9DA83AA90FF}"
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "RenderToTexture", "..\..\Source\Vision\Samples\Engine\RenderToTexture\RenderToTexture_tizen_vs2010_anarchy.vcxproj", "{F6CF679C-9E2D-37AA-B67E-9C403CC85F21}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Serialization", "..\..\Source\Vision\Samples\Engine\Serialization\Serialization_tizen_vs2010_anarchy.vcxproj", "{AD6F682F-1272-3C90-9636-CEC4395B19DE}"
@@ -89,8 +87,11 @@ Global
 		{8E7B353F-C5F1-32A0-A170-523FA0502138}.Release|hkTizen.ActiveCfg = Release|hkTizen
 		{8E7B353F-C5F1-32A0-A170-523FA0502138}.Release|hkTizen.Build.0 = Release|hkTizen
 		{17B7CE53-C27D-3428-AEA2-7C7D72B85E36}.Debug|hkTizen.ActiveCfg = Debug|hkTizen
+		{17B7CE53-C27D-3428-AEA2-7C7D72B85E36}.Debug|hkTizen.Build.0 = Debug|hkTizen
 		{17B7CE53-C27D-3428-AEA2-7C7D72B85E36}.Dev|hkTizen.ActiveCfg = Dev|hkTizen
+		{17B7CE53-C27D-3428-AEA2-7C7D72B85E36}.Dev|hkTizen.Build.0 = Dev|hkTizen
 		{17B7CE53-C27D-3428-AEA2-7C7D72B85E36}.Release|hkTizen.ActiveCfg = Release|hkTizen
+		{17B7CE53-C27D-3428-AEA2-7C7D72B85E36}.Release|hkTizen.Build.0 = Release|hkTizen
 		{54D37226-523A-21D3-B646-AB6E3B9C3E71}.Debug|hkTizen.ActiveCfg = Debug|hkTizen
 		{54D37226-523A-21D3-B646-AB6E3B9C3E71}.Debug|hkTizen.Build.0 = Debug|hkTizen
 		{54D37226-523A-21D3-B646-AB6E3B9C3E71}.Dev|hkTizen.ActiveCfg = Dev|hkTizen
@@ -109,12 +110,6 @@ Global
 		{512835C5-256B-332B-9FAE-6DA90FA9C0F3}.Dev|hkTizen.Build.0 = Dev|hkTizen
 		{512835C5-256B-332B-9FAE-6DA90FA9C0F3}.Release|hkTizen.ActiveCfg = Release|hkTizen
 		{512835C5-256B-332B-9FAE-6DA90FA9C0F3}.Release|hkTizen.Build.0 = Release|hkTizen
-		{D2C9AE4F-0F90-406E-85BA-F9DA83AA90FF}.Debug|hkTizen.ActiveCfg = Debug|hkTizen
-		{D2C9AE4F-0F90-406E-85BA-F9DA83AA90FF}.Debug|hkTizen.Build.0 = Debug|hkTizen
-		{D2C9AE4F-0F90-406E-85BA-F9DA83AA90FF}.Dev|hkTizen.ActiveCfg = Dev|hkTizen
-		{D2C9AE4F-0F90-406E-85BA-F9DA83AA90FF}.Dev|hkTizen.Build.0 = Dev|hkTizen
-		{D2C9AE4F-0F90-406E-85BA-F9DA83AA90FF}.Release|hkTizen.ActiveCfg = Release|hkTizen
-		{D2C9AE4F-0F90-406E-85BA-F9DA83AA90FF}.Release|hkTizen.Build.0 = Release|hkTizen
 		{F6CF679C-9E2D-37AA-B67E-9C403CC85F21}.Debug|hkTizen.ActiveCfg = Debug|hkTizen
 		{F6CF679C-9E2D-37AA-B67E-9C403CC85F21}.Debug|hkTizen.Build.0 = Debug|hkTizen
 		{F6CF679C-9E2D-37AA-B67E-9C403CC85F21}.Dev|hkTizen.ActiveCfg = Dev|hkTizen
@@ -173,7 +168,5 @@ Global
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
-	GlobalSection(NestedProjects) = preSolution
-		
-	EndGlobalSection
+	
 EndGlobal

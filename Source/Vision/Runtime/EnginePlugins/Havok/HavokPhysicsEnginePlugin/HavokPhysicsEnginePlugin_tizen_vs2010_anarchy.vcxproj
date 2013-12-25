@@ -172,6 +172,14 @@
       <StripSymbolStrings>No</StripSymbolStrings>
       <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
     </PostLink>
+    <Deploy>
+      <DeployTool></DeployTool>
+      <ResDir></ResDir>
+      <Manifest></Manifest>
+      <Install></Install>
+      <FileServe></FileServe>
+      <Resources></Resources>
+    </Deploy>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Dev|hkTizen'">
     
@@ -275,6 +283,14 @@
       <StripSymbolStrings>No</StripSymbolStrings>
       <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
     </PostLink>
+    <Deploy>
+      <DeployTool></DeployTool>
+      <ResDir></ResDir>
+      <Manifest></Manifest>
+      <Install></Install>
+      <FileServe></FileServe>
+      <Resources></Resources>
+    </Deploy>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|hkTizen'">
     
@@ -378,6 +394,14 @@
       <StripSymbolStrings>No</StripSymbolStrings>
       <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
     </PostLink>
+    <Deploy>
+      <DeployTool></DeployTool>
+      <ResDir></ResDir>
+      <Manifest></Manifest>
+      <Install></Install>
+      <FileServe></FileServe>
+      <Resources></Resources>
+    </Deploy>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="vHavokBallAndSocketConstraintChain.cpp">
