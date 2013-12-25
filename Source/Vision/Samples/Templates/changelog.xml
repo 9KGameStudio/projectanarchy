@@ -6,6 +6,10 @@
 
 <changelog name="ProjectTemplates">
 
+  <version major="2013" minor="2" fix="5">
+    <changed>Migrated project templates to new application framework.</changed>
+  </version>
+  
   <version major="2013" minor="2" fix="0">
     <added>The project template links against Behavior, AI, Physics and Fmod, if the products are available.</added>
     <added>Added build step for gameplugin on Windows that copys the resulting plugin file to the Vision bin folder. So you don't have to copy it manually.</added>

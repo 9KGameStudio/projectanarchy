@@ -47,5 +47,8 @@ Instructions for iOS
 
 (4) Build and Run 
 
+NOTE: The project template includes a game plugin, which can be loaded directly from vForge. However, vForge will always load the 'Dev' DLLs, so to get the plugin running in vForge, you need to build it in the 'Dev' configuration.
+You can still use the 'Debug' and 'Release' configurations for the standalone application, of course, but be aware that changes to the plugin will only show up in vForge, when you build the DLL with the 'Dev' configuration.
+
 
 

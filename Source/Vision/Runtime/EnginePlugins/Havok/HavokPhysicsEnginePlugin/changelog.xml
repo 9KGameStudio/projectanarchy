@@ -7,10 +7,14 @@
 
 <changelog name="HavokPhysicsPlugin">
   <!--  Only add NEW features to this section.  Add branch FIXES to the appropriate versions BELOW this one -->
-  <version major="2013" minor="2" fix="0" desc="Anarchy Beta">
-    <changed>The ragdoll component no longer moves the entity to the root bone's location. Instead, the original relation between root bone and entity at the moment of activation is preserved during the time the component is active.</changed>
+  <version major="2013" minor="2" fix="5">
+    <changed>For undersized static meshes no physics object is generated anymore.</changed>
+    <added>New functions to the vHavokRigidBody component: ApplyForce to a specific point, ApplyTorque, ApplyLinearImpulse to a specific point, and ApplyAngularImpulse.</added>
+    <changed>Extended Raycast functionality in Lua scripting.</changed>
+    <changed>Compability of .hkt files of HavokCloth and HavokBehavior for mobile now limited to 2012.1 or later. HavokPhysics for mobile limited to version 660 or later</changed>
   </version>
   <version major="2013" minor="2" fix="0">
+    <changed>The ragdoll component no longer moves the entity to the root bone's location. Instead, the original relation between root bone and entity at the moment of activation is preserved during the time the component is active.</changed>
     <fixed>Terrain Sector HKT file path was the absolute path in the resource snapshot.</fixed>
     <changed>Asynchronous stepping is now disabled by default. It can be enabled by calling vHavokPhysicsModule::SetUseAsynchronousPhysics().</changed>
     <added>Havok Physics Blocker Volume component. Can be attached to Custom Volume objects in order to create invisible walls. </added>

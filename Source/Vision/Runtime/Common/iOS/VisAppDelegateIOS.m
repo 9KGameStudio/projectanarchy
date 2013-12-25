@@ -12,6 +12,8 @@
 
 #import <Vision/Runtime/Base/Graphics/Video/IOSBridge.h>
 
+#import <Vision/Runtime/Common/iOS/VisUncaughtExceptionHandler.h>
+
 #include <unistd.h>
 
 extern char g_szDeviceName[256];
@@ -21,8 +23,16 @@ extern char g_szDeviceName[256];
 @synthesize window;
 @synthesize viewController;
 
+- (void)installUncaughtExceptionHandler
+{
+  InstallUncaughtExceptionHandler();
+}
+
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
 {
+  // Register handling for uncaught exceptions - scheduled!
+  [self performSelector:@selector(installUncaughtExceptionHandler) withObject:nil afterDelay:0];
+  
   // Get documents directory
   NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
   NSString *documentsDirectory = [paths objectAtIndex:0];
@@ -74,7 +84,7 @@ extern char g_szDeviceName[256];
 - (void)applicationDidEnterBackground:(UIApplication *)application
 {
   [self.viewController stopAnimation];
-  
+
   VisionEnterBackgroundFunction();
 }
 
@@ -101,7 +111,7 @@ extern char g_szDeviceName[256];
 @end
 
 /*
- * Havok SDK - Base file, BUILD(#20131021)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

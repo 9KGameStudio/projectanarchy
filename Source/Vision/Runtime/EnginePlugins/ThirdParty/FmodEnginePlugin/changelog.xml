@@ -7,6 +7,10 @@
 
 <changelog name="FmodPlugin">
   <!--  Only add NEW features to this section. Add branch FIXES to the appropriate versions BELOW this one -->
+  <version major="2013" minor="2" fix="5">
+    <changed>Updated Fmod to 4.44.23 [HS#10815]</changed>
+  </version>
+  
   <version major="2013" minor="2" fix="0">
     <fixed>Paused sounds/ events are not anymore automatically disposed. [HS#11482]</fixed>
     <changed>Updated Fmod to 4.44.16 [HS#8829]</changed>

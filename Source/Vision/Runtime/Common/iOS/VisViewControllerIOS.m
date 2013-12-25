@@ -13,7 +13,7 @@
 #import <Vision/Runtime/Common/iOS/VisEAGLViewIOS.h>
 #import <Vision/Runtime/Base/Graphics/Video/IOSBridge.h>
 
-VisionAppSettings g_VisionAppSettings = { NULL, NULL, NULL, 60, VisOrientationAllLandscape };
+VisionAppSettings g_VisionAppSettings = { NULL, NULL, NULL, 60, VisOrientationAll };
 
 @interface VisViewController ()
 @property (nonatomic, assign) CADisplayLink *displayLink;
@@ -65,8 +65,8 @@ VisionAppSettings g_VisionAppSettings = { NULL, NULL, NULL, 60, VisOrientationAl
 - (void)viewDidLoad
 {
   [super viewDidLoad];
-  if (![self shouldAutorotateToInterfaceOrientation:UIInterfaceOrientationPortrait] && 
-      ![self shouldAutorotateToInterfaceOrientation:UIInterfaceOrientationPortraitUpsideDown])
+  
+  if (UIInterfaceOrientationIsLandscape(self.interfaceOrientation))
   {
     IOSSetLandscapeMode(true);
     self.view.bounds = CGRectMake(0.0f, 0.0f, self.view.bounds.size.height, self.view.bounds.size.width);
@@ -198,7 +198,7 @@ VisionAppSettings g_VisionAppSettings = { NULL, NULL, NULL, 60, VisOrientationAl
 @end
 
 /*
- * Havok SDK - Base file, BUILD(#20131021)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok
