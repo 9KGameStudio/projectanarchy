@@ -397,10 +397,6 @@ class VFmodSoundObjectCollection : public VRefCountedCollection<VFmodSoundObject
 {
 public:
   /// \brief
-  ///   Internal function for debug output on screen
-  FMOD_IMPEXP void DebugOutput();
-
-  /// \brief
   ///   Internal function for updating all sound objects in this collection
   FMOD_IMPEXP void Update();
 
@@ -444,7 +440,7 @@ public:
 #endif // VFMODSOUNDOBJECT_HPP_INCLUDED
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

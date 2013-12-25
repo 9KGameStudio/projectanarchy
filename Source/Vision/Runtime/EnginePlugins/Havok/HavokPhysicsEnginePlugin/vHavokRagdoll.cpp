@@ -54,8 +54,7 @@ void vHavokRagdoll::SetOwner(VisTypedEngineObject_cl *pOwner)
   if (vHavokPhysicsModule::GetInstance() == NULL)
   {
     IVObjectComponent::SetOwner(pOwner);
-    Vision::Error.Warning(
-      "Failed to initialize vHavokRagdoll since no Havok Physics module is active");
+    hkvLog::Warning("Failed to initialize vHavokRagdoll since no Havok Physics module is active");
     return;
   }
 
@@ -236,12 +235,11 @@ void vHavokRagdoll::CreateRagdoll()
   {
     if (!VStringUtil::IsEmpty(pDynamicMesh->GetFilename()))
     {
-      Vision::Error.Warning("Havok Ragdoll Component: The model '%s' has no skeleton.",
-        pDynamicMesh->GetFilename());
+      hkvLog::Warning("Havok Ragdoll Component: The model '%s' has no skeleton.", pDynamicMesh->GetFilename());
     }
     else
     {
-      Vision::Error.Warning("Havok Ragdoll Component: The model has no skeleton.");
+      hkvLog::Warning("Havok Ragdoll Component: The model has no skeleton.");
     }
     return;
   }
@@ -342,7 +340,7 @@ void vHavokRagdoll::AddToPhysicsWorld()
 
     if (m_spFinalSkeletalResultRagdoll == NULL)
     {
-      Vision::Error.Warning("Havok Ragdoll Component: Animation config is incompatible.");
+      hkvLog::Warning("Havok Ragdoll Component: Animation config is incompatible.");
       return;
     }
   }
@@ -425,8 +423,7 @@ bool vHavokRagdoll::LoadHktFile()
   vHavokStreamReader *pStreamReader = new vHavokStreamReader(m_sFileResourceName.AsChar());
   if (!pStreamReader->isOk())
   {
-    Vision::Error.Warning("Havok Physics Ragdoll Component: Could not open file: \"%s\"", 
-      m_sFileResourceName.AsChar());
+    hkvLog::Warning("Havok Physics Ragdoll Component: Could not open file: \"%s\"", m_sFileResourceName.AsChar());
     pStreamReader->removeReference();
     return false;
   }
@@ -442,13 +439,11 @@ bool vHavokRagdoll::LoadHktFile()
   {
     if (errRes.id != hkSerializeUtil::ErrorDetails::ERRORID_NONE)
     {
-      Vision::Error.Warning("Havok Physics Ragdoll Component: Could not load \"%s\": %s",
-        m_sFileResourceName.AsChar(), errRes.defaultMessage.cString());
+      hkvLog::Warning("Havok Physics Ragdoll Component: Could not load \"%s\": %s", m_sFileResourceName.AsChar(), errRes.defaultMessage.cString());
     }
     else
     {
-      Vision::Error.Warning("Havok Physics Ragdoll Component: Could not load \"%s\".",
-        m_sFileResourceName.AsChar());
+      hkvLog::Warning("Havok Physics Ragdoll Component: Could not load \"%s\".", m_sFileResourceName.AsChar());
     }
     pResource->removeReference();
     return false;
@@ -469,8 +464,7 @@ bool vHavokRagdoll::LoadHktFile()
 
   if (pRootLevel == NULL || pPhysicsData == NULL)
   {
-    Vision::Error.Warning("Havok Physics Ragdoll Component: No physics data available in \"%s\".",
-      m_sFileResourceName.AsChar());
+    hkvLog::Warning("Havok Physics Ragdoll Component: No physics data available in \"%s\".", m_sFileResourceName.AsChar());
     return false;
   }
 
@@ -640,7 +634,7 @@ bool vHavokRagdoll::MapBonesToRigidBodies()
   // Check if assignment was successful.
   if (m_rigidBodies.isEmpty())
   {
-    Vision::Error.Warning("Havok Ragdoll Component: No bones matching the ragdoll description found.");
+    hkvLog::Warning("Havok Ragdoll Component: No bones matching the ragdoll description found.");
     return false;
   }
 
@@ -704,7 +698,7 @@ bool vHavokRagdoll::ComputeTransformMapping()
       // unmapped bones must always have a parent index
       if (pSkeleton->GetBone(iBoneIdx)->m_iParentIndex < 0)
       {
-        Vision::Error.Warning("Havok Ragdoll Component: Unmapped bones which don't have a parent bone are not allowed.");
+        hkvLog::Warning("Havok Ragdoll Component: Unmapped bones which don't have a parent bone are not allowed.");
         return false;
       }
 
@@ -767,7 +761,7 @@ bool vHavokRagdoll::BakeScalingIntoRigidBodies()
   if (!hkvMath::isFloatEqual(fScaling, vScaling[1], fScaleEpsilon) ||
     !hkvMath::isFloatEqual(fScaling, vScaling[2], fScaleEpsilon))
   {
-    Vision::Error.Warning("Havok Ragdoll Component: Only uniform entity scaling allowed.");
+    hkvLog::Warning("Havok Ragdoll Component: Only uniform entity scaling allowed.");
     return false;
   }
   else if (!bHasScaling)
@@ -1151,9 +1145,9 @@ void vHavokRagdoll::ApplyForceToRigidBody(int iBoneIndex, const hkvVec3& value, 
 	if ((iBoneIndex >=0) && (iBoneIndex < m_rigidBodies.getSize()))
 	{
 	  hkVector4 force; vHavokConversionUtils::VisVecToPhysVecLocal(value,force);
-	  pPhysicsModule->MarkForWrite();
+	  m_pPhysicsWorld->markForWrite();
 	  m_rigidBodies[iBoneIndex].pRigidBody->applyForce(deltaT, force);
-	  pPhysicsModule->UnmarkForWrite();
+	  m_pPhysicsWorld->unmarkForWrite();
 	}
 }
 
@@ -1166,9 +1160,9 @@ void vHavokRagdoll::ApplyLinearImpulseToRigidBody(int iBoneIndex, const hkvVec3&
   if ((iBoneIndex >=0) && (iBoneIndex < m_rigidBodies.getSize()))
   {
     hkVector4 impulse; vHavokConversionUtils::VisVecToPhysVecLocal(value,impulse);
-    pPhysicsModule->MarkForWrite();
+    m_pPhysicsWorld->markForWrite();
     m_rigidBodies[iBoneIndex].pRigidBody->applyLinearImpulse(impulse);
-    pPhysicsModule->UnmarkForWrite();
+    m_pPhysicsWorld->unmarkForWrite();
   }
 }
 
@@ -1199,7 +1193,7 @@ END_VAR_TABLE
 //-----------------------------------------------------------------------------------
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

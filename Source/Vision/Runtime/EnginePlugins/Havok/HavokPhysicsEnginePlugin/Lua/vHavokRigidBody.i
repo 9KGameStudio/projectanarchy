@@ -1,3 +1,10 @@
+/*
+ *
+ * Confidential Information of Telekinesys Research Limited (t/a Havok). Not for disclosure or distribution without Havok's
+ * prior written consent. This software contains code, techniques and know-how which is confidential and proprietary to Havok.
+ * Product and Trade Secret source code contains trade secrets of Havok. Havok Software (C) Copyright 1999-2013 Telekinesys Research Limited t/a Havok. All Rights Reserved. Use of this software is subject to the terms of an end user license agreement.
+ *
+ */
 
 #ifndef VLUA_APIDOC
 
@@ -134,14 +141,21 @@ public:
   hkvVec3 GetAngularVelocity() const;
 
   void ApplyForce(hkvVec3& value, float deltaT);
+  void ApplyForce(hkvVec3& value, hkvVec3& p, float deltaT);
+  void ApplyTorque(hkvVec3& value, float deltaT);
 
   void ApplyLinearImpulse(hkvVec3& value);
+  void ApplyLinearImpulse(hkvVec3& value, hkvVec3& p);
+  void ApplyAngularImpulse(hkvVec3& value);
 
   void SetMass(float fMass);
 
   void SetRestitution(float fRestitution);
 
   void SetFriction(float fFriction);
+
+  void SetActive(bool bStatus);
+  bool GetActive() const;
 
   void SetCollisionInfo(int iLayer, int iGroup, int iSubsystem, int iSubsystemDontCollideWith);
  
@@ -386,7 +400,7 @@ public:
   hkvVec3 GetAngularVelocity();
 
   /// \brief
-  ///   Apply a force to this rigid body for a given time interval.
+  ///   Apply a force to this rigid body for a given time interval. The force is applied to the center of mass.
   ///
   /// \param force
   ///   Force vector.
@@ -396,22 +410,84 @@ public:
   ///
   /// To instantaneously accelerate a rigid body upon a single event (e.g. when struck by an explosion),
   /// it is recommended to use ApplyLinearImpulse. To apply a continuous force to a rigid body (e.g. a changing
-  /// gravity which is evaluated every frame), it is recommended to use ApplyForce and pass the time interval
-  /// between each application for the deltaT parameter.
+  /// gravity which is evaluated every frame), ApplyForce should be used. The time interval passed should
+  /// be the time difference between each application of the force.
   void ApplyForce(hkvVec3 force, float deltaT);
 
   /// \brief
-  ///   Apply a linear impulse to this rigid body.
+  ///   Apply a force to this rigid body for a given time interval. The force is applied to the point p.
+  ///
+  /// \param value
+  ///   Force vector.
+  ///
+  /// \param p
+  ///   Point where the force is applied.
+  ///
+  /// \param deltaT
+  ///   The time interval over which the force is applied.
+  ///
+  /// To instantaneously accelerate a rigid body upon a single event (e.g. when struck by an explosion),
+  /// it is recommended to use ApplyLinearImpulse. To apply a continuous force to a rigid body (e.g. a changing
+  /// gravity which is evaluated every frame), ApplyForce should be used. The time interval passed should
+  /// be the time difference between each application of the force.  
+  void ApplyForce(hkvVec3& value, hkvVec3& p, float deltaT);
+
+  /// \brief
+  ///   Apply the specified torque to the rigid body for the given time interval. The torque is applied around the center of mass.
+  ///  
+  /// \param value
+  ///   Torque vector.
+  ///
+  /// \param deltaT
+  ///   The time interval over which the torque is applied.
+  ///
+  /// The direction of the vector indicates the axis that you want the body to rotate around,
+  /// and the magnitude of the vector indicates the strength of the torque applied. The change in the body's
+  /// angular velocity after torques are applied is proportional to the simulation delta time value and
+  /// inversely proportional to the body's inertia.
+  /// To instantaneously accelerate the rotation of a rigid body upon a single event (e.g. when struck
+  /// by an explosion), it is recommended to use ApplyAngularImpulse. To apply a continuous torque to a
+  /// rigid body, ApplyTorque should be used.
+  void ApplyTorque(hkvVec3& value, float deltaT);
+
+  /// \brief
+  ///   Apply a linear impulse to this rigid body. The impulse is applied to the center of mass.
   ///
   /// \param impulse
   ///   Impulse vector.
   ///
   /// To instantaneously accelerate a rigid body upon a single event (e.g. when struck by an explosion),
   /// it is recommended to use ApplyLinearImpulse. To apply a continuous force to a rigid body (e.g. a changing
-  /// gravity which is evaluated every frame), it is recommended to use ApplyForce and pass the time interval
-  /// between each application for the deltaT parameter.
+  /// gravity which is evaluated every frame), ApplyForce should be used.
   void ApplyLinearImpulse(hkvVec3 impulse);
 
+  /// \brief
+  ///   Apply a linear impulse to this rigid body. The impulse is applied to the point p.
+  ///
+  /// \param value
+  ///   Impulse vector.
+  ///
+  /// \param p
+  ///   Point where the impulse is applied.
+  ///
+  /// To instantaneously accelerate a rigid body upon a single event (e.g. when struck by an explosion),
+  /// it is recommended to use ApplyLinearImpulse. To apply a continuous force to a rigid body (e.g. a changing
+  /// gravity which is evaluated every frame), ApplyForce should be used.
+  void ApplyLinearImpulse(hkvVec3& value, hkvVec3& p);
+
+  /// \brief
+  ///   Apply an instantaneous change in angular velocity to this rigid body. The angular impulse is applied around the center of mass.
+  ///
+  /// \param value
+  ///   Angular impulse vector.
+  ///
+  /// The direction of the vector indicates the axis that you want the body to rotate around,
+  /// and the magnitude of the vector indicates the strength of the torque applied.
+  /// To instantaneously accelerate the rotation of a rigid body upon a single event (e.g. when struck
+  /// by an explosion), it is recommended to use ApplyAngularImpulse. To apply a continuous torque to a
+  /// rigid body, ApplyTorque should be used.
+  void ApplyAngularImpulse(hkvVec3& value);
+  
   /// \brief Set the mass of this rigid body.
   /// \param mass The mass specified in kilo.
   /// \par Example
@@ -430,6 +506,24 @@ public:
   /// \brief Sets the friction of this rigid body.
   /// \param friction The new friction; should be between 0.0 and 1.0.
   void SetFriction(number friction);
+
+  /// \brief
+  ///   Sets the activation status of this object.
+  ///
+  /// If the status is set to false, the rigid body is removed from the Havok Physics World so that
+  /// the collision of this object is ignored. When set to true, the object is added to the 
+  /// Havok Physics World again.
+  ///
+  /// \param status
+  ///   Indicates whether the rigid body should be activated.
+  void SetActive(boolean status);
+
+  /// \brief
+  ///   Returns the activation status of this object.
+  ///
+  /// \return
+  ///   Indicates the rigid body is active.
+  boolean GetActive() const;
 
   /// \brief Sets the collision parameters of this rigid body.
   /// \param layer The collision layer as integer number.
@@ -474,3 +568,18 @@ public:
 };
 
 #endif
+
+/*
+ * Havok SDK - Base file, BUILD(#20131218)
+ * 
+ * Confidential Information of Havok.  (C) Copyright 1999-2013
+ * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok
+ * Logo, and the Havok buzzsaw logo are trademarks of Havok.  Title, ownership
+ * rights, and intellectual property rights in the Havok software remain in
+ * Havok and/or its suppliers.
+ * 
+ * Use of this software for evaluation purposes is subject to and indicates
+ * acceptance of the End User licence Agreement for this product. A copy of
+ * the license is included with this software and is also available from salesteam@havok.com.
+ * 
+ */

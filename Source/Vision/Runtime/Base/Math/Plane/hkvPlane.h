@@ -89,10 +89,6 @@ public:
   ///   Set this to hkvNoInitialization to actually select this constructor.
   HKV_FORCE_INLINE explicit hkvPlane (hkvInit_None init /* = hkvNoInitialization */) { }
 
-  /// \brief
-  ///   Copy-Constructor.
-  HKV_FORCE_INLINE hkvPlane (const hkvPlane& rhs);
-
   // this constructor is evil, because we do not see where the distance is passed through but would need to be negated
   // we can enable this constructor once all the legacy code has been removed, but at the moment it mustn't be available!
   //HKV_FORCE_INLINE hkvPlane (const hkvVec3& vNormal, float fDistance);
@@ -105,10 +101,6 @@ public:
   /// @name Setting Data
   /// @{
   ///
-
-  /// \brief
-  ///   Assignment operator for hkvPlane.
-  HKV_FORCE_INLINE void operator= (const hkvPlane& plane);
 
   /// \brief
   ///   Sets the plane with the given normal, computes the distance through the point on the plane.
@@ -445,7 +437,7 @@ public:
   HKV_FORCE_INLINE hkvPlanePosition::Enum getObjectPosition (const hkvVec3* pPoints, hkUint32 uiNumPoints, float fPlaneHalfThickness, hkUint32 uiStride = sizeof (hkvVec3)) const;
 
   /// \brief
-  ///   Checks on which side(s) of te plane the box is located.
+  ///   Checks on which side(s) of the plane the box is located.
   ///
   /// \param aabb
   ///   The box for which to check the position.
@@ -707,10 +699,10 @@ public:
   /// @{
   ///
 
-  /// \brief Serializes the plane like a VisPlane_cl. This should be the preferred method.
+  /// \brief Serializes the plane like a VisPlane_cl. Do not use this directly, use 'SerializeX' or operator>> / operator<< instead.
   HKV_FORCE_INLINE void SerializeAs_VisPlane (VArchive& ar) { SerializeX (ar, *this); }
 
-  /// \brief Serializes the plane like a VisPlane_cl. This should be the preferred method.
+  /// \brief Serializes the plane like a VisPlane_cl. Do not use this directly, use 'SerializeX' or operator>> / operator<< instead.
   VBASE_IMPEXP void SerializeAs_VPlanef (VArchive& ar);
 
   ///
@@ -898,7 +890,7 @@ bool operator!= (const hkvPlane& p0, const hkvPlane& p1);
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

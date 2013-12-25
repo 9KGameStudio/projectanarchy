@@ -16,7 +16,8 @@
 
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Scripting/VScriptIncludes.hpp>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Scripting/RSDClient/VRSDClient.hpp>
-#include <Vision/Runtime/Base/System/Memory/VMemDbg.hpp>
+
+#include <Vision/Runtime/Base/Container/VScopedPtr.hpp>
 
 
 VRSDClient VRSDClient::g_GlobalClient;
@@ -114,7 +115,7 @@ bool VRSDClient::StartProfiling()
     m_pProfilingStack = new VPListStack<VRSDProfilingSample*>();
     m_bProfilingEnabled = true;
 
-    Vision::Error.SystemMessage("Starting script profiling..");
+    hkvLog::Info("Starting script profiling..");
 
     return true;
   }
@@ -141,11 +142,14 @@ bool VRSDClient::StopProfiling(unsigned int* puiProfilingResultCount /*= NULL*/)
     if(puiProfilingResultCount)
       *puiProfilingResultCount = m_pProfilingInformations.GetValidSize();
 
-    Vision::Error.SystemMessage("Stopped script profiling.");
+    hkvLog::Info("Stopped script profiling.");
     if(!SendProfilingResults())
-      Vision::Error.Warning("Couldn't transmit profiling results!");
+    {
+      if (m_pConnection) // if there is no connection, there is no reason to complain that nothing could be sent!
+        hkvLog::Warning("Couldn't transmit profiling results!");
+    }
     else
-      Vision::Error.SystemMessage("Sent profiling results.");
+      hkvLog::Info("Sent profiling results.");
 
     V_SAFE_DELETE(m_pProfilingStack);
 
@@ -189,36 +193,42 @@ void VRSDClient::OnHandleCallback(IVisCallbackDataObject_cl *pData)
       return;
 
     // wait for debugger on what to do
-    VMessage Msg;
-
+    for(;;)
     {
-      VMutexLocker lock(m_ConnectionMutex);
-      if(!m_pConnection)
-        return;
-      m_pConnection->Recv(&Msg);
-    }
+      VScopedPtr<VMessage> Msg;
 
-    while(Msg.IsValid() && Msg.GetMessageType() != 'CONT')
-    {
-      // check here for profiling messages as well since the async send may lead to them being received here
-      if(Msg.GetMessageType() == 'BRSP')
+      {
+        VMutexLocker lock(m_ConnectionMutex);
+        if(!m_pConnection)
+        {
+          break;
+        }
+
+        Msg = m_pConnection->Recv();
+
+        if(!Msg)
+        {
+          break;
+        }
+      }
+
+      if(Msg->GetMessageType() == 'CONT')
+      {
+        break;
+      }
+      else if(Msg->GetMessageType() == 'BRSP') // check here for profiling messages as well since the async send may lead to them being received here
       {
         StartProfiling();
         break;
       }
-      else if(Msg.GetMessageType() == 'ERSP')
+      else if(Msg->GetMessageType() == 'ERSP')
       {
         StopProfiling();
         break;
       }
 
       // process message (get callstack, get local variables, get global variables etc.)
-      HandleDebuggingMessage(&Msg);
-
-      // get the next message
-      VMutexLocker lock(m_ConnectionMutex);
-      if(!m_pConnection || !m_pConnection->Recv(&Msg))
-        break;
+      HandleDebuggingMessage(Msg);
     }
   }
 
@@ -232,7 +242,7 @@ void VRSDClient::OnHandleCallback(IVisCallbackDataObject_cl *pData)
         m_pConnection = pTCCI->pConnection;
 
         // register message callback
-        Vision::Error.AddCallback(EngineMessageCallback, this);
+        hkvGlobalLog::GetInstance()->AddLogWriter(LogMessageHandler, this);
 
         Vision::Callbacks.OnUpdateSceneBegin += this;
 
@@ -254,8 +264,12 @@ void VRSDClient::OnHandleCallback(IVisCallbackDataObject_cl *pData)
           m_pConnection = NULL;
         }
 
-        // register message callback
-        Vision::Error.RemoveCallback(EngineMessageCallback, this);
+        // de-register message callback
+        // in some error cases it can happen that we get a disconnect without a proper connect
+        // removing a logwriter that has not been added, is an error (assert)
+        // therefore, check whether the logwriter was really added, and only remove it if possible
+        if (hkvGlobalLog::GetInstance()->WasLogWriterAdded(LogMessageHandler, this)) 
+          hkvGlobalLog::GetInstance()->RemoveLogWriter(LogMessageHandler, this);
 
         Vision::Callbacks.OnUpdateSceneBegin -= this;
 
@@ -308,26 +322,23 @@ void VRSDClient::OnHandleCallback(IVisCallbackDataObject_cl *pData)
     if(Vision::Editor.IsInEditor() && !Vision::Editor.IsPlaying() && m_bProfilingEnabled)
       StopProfiling();
   }
-
-
 }
 
-BOOL VRSDClient::EngineMessageCallback(const char* szMessage, VisApiMessageType_e messageType, void* pUserData)
+void VRSDClient::LogMessageHandler(hkvLogMsgType::Enum MsgType, const char* szText, int iIndentation, const char* szTag, void* pPassThrough)
 {
-  if(!pUserData)
-    return TRUE;
+  if (!pPassThrough)
+    return;
 
-  VRSDClient* pClient = (VRSDClient*)pUserData;
-  if(!pClient->m_pConnection)
-    return TRUE;
+  VRSDClient* pClient = (VRSDClient*) pPassThrough;
 
-  VMessage* pMsg = new VMessage('LOGE', 5 + (int)strlen(szMessage));
-  pMsg->Write((int)messageType);
-  pMsg->Write(szMessage);
+  if (!pClient->m_pConnection)
+    return;
+
+  VMessage* pMsg = new VMessage('LOGE', 5 + (int)strlen(szText));
+  pMsg->WriteInt(MsgType);
+  pMsg->WriteString(szText);
 
   pClient->m_pConnection->SendAsync(pMsg);
-
-  return TRUE;
 }
 
 void VRSDClient::HandleScriptReloadMessage(VMessage* pMessage)
@@ -391,20 +402,20 @@ bool VRSDClient::SendProfilingResults()
   VMessage* pMsg = new VMessage('RRSP', uiArraySize * 128 + 4);
   
   // Count of elements
-  pMsg->Write(uiArraySize);
+  pMsg->WriteInt(uiArraySize);
 
   // Write elements
   for(unsigned int i = 0; i < uiArraySize; i++)
   {
     VRSDProfilingInformation* pCurrent = m_pProfilingInformations[i];
 
-    pMsg->Write(pCurrent->m_pFunctionName);
-    pMsg->Write(pCurrent->m_pFileName);
-    pMsg->Write(pCurrent->m_iLineDefined);
-    pMsg->Write(pCurrent->m_iCalls);
-    pMsg->Write((unsigned int)pCurrent->GetAverageTime());
-    pMsg->Write((unsigned int)pCurrent->m_uiMaxTime);
-    pMsg->Write((unsigned int)pCurrent->m_uiMinTime);
+    pMsg->WriteString(pCurrent->m_pFunctionName);
+    pMsg->WriteString(pCurrent->m_pFileName);
+    pMsg->WriteInt(pCurrent->m_iLineDefined);
+    pMsg->WriteInt(pCurrent->m_iCalls);
+    pMsg->WriteInt((unsigned int)pCurrent->GetAverageTime());
+    pMsg->WriteInt((unsigned int)pCurrent->m_uiMaxTime);
+    pMsg->WriteInt((unsigned int)pCurrent->m_uiMinTime);
   }
 
   VMutexLocker lock(m_ConnectionMutex);
@@ -555,7 +566,7 @@ void VRSDClient::HandleDebuggingMessage(VMessage* pMessage)
         if(success)
         {
           VMessage msg('VUDT', (int)strlen(pUserDataTypeName) + 5);
-          msg.Write(pUserDataTypeName);
+          msg.WriteString(pUserDataTypeName);
 
           VMutexLocker lock(m_ConnectionMutex);
           if(m_pConnection)
@@ -565,7 +576,7 @@ void VRSDClient::HandleDebuggingMessage(VMessage* pMessage)
         {
           // if no type is found submit that
           VMessage msg('VUDT', 5);
-          msg.Write("");
+          msg.WriteString("");
 
           VMutexLocker lock(m_ConnectionMutex);
           if(m_pConnection)
@@ -712,13 +723,13 @@ bool VRSDClient::SendScriptEvent(VRSDScriptEvent* pScriptEvent)
 {
   // create a script event message with some memory preallocated for the data of the script event
   VMessage Msg('SEVT', 128);
-  Msg.Write(pScriptEvent->iLineNumber);
-  Msg.Write(pScriptEvent->eEventType);
-  Msg.Write(pScriptEvent->eExecutionType);
-  Msg.Write(pScriptEvent->pFileName);
-  Msg.Write(pScriptEvent->pFunctionName);
-  Msg.Write(pScriptEvent->iLineDefined);
-  Msg.Write(pScriptEvent->pErrorMessage);
+  Msg.WriteInt(pScriptEvent->iLineNumber);
+  Msg.WriteInt(pScriptEvent->eEventType);
+  Msg.WriteInt(pScriptEvent->eExecutionType);
+  Msg.WriteString(pScriptEvent->pFileName);
+  Msg.WriteString(pScriptEvent->pFunctionName);
+  Msg.WriteInt(pScriptEvent->iLineDefined);
+  Msg.WriteString(pScriptEvent->pErrorMessage);
 
   VMutexLocker lock(m_ConnectionMutex);
   bool bSuccess = m_pConnection && m_pConnection->Send(&Msg);
@@ -730,14 +741,14 @@ bool VRSDClient::SendCallstack(DynArray_cl<VRSDClientCallstackEntry> &Callstack,
 {
   // create a callstack message and preallocate some memory for the callstack entries
   VMessage Msg('CAST', CallstackEntryCount * 64);
-  Msg.Write(CallstackEntryCount);
+  Msg.WriteInt(CallstackEntryCount);
 
   for(unsigned int i = 0; i < CallstackEntryCount; i++)
   {
-    Msg.Write(Callstack[i].pFunctionName);
-    Msg.Write(Callstack[i].pFileName);
-    Msg.Write(Callstack[i].iLineNumber);
-    Msg.Write(Callstack[i].iLineDefined);
+    Msg.WriteString(Callstack[i].pFunctionName);
+    Msg.WriteString(Callstack[i].pFileName);
+    Msg.WriteInt(Callstack[i].iLineNumber);
+    Msg.WriteInt(Callstack[i].iLineDefined);
   }
 
   VMutexLocker lock(m_ConnectionMutex);
@@ -753,28 +764,28 @@ bool VRSDClient::SendSymbols(int Type, DynArray_cl<VRSDScriptSymbol>& Symbols, u
 
   // create a symbol collection message
   VMessage Msg(Type, SymbolCount * 64);
-  Msg.Write(SymbolCount);
+  Msg.WriteInt(SymbolCount);
 
   for(unsigned int i = 0; i < SymbolCount; i++)
   {
     // symbol name
-    Msg.Write(Symbols[i].GetSymbolName());
+    Msg.WriteString(Symbols[i].GetSymbolName());
 
     // full symbolname
     if(pParentSymbol)
     {
       VMemoryTempBuffer<512> TempBuffer((int)strlen(pParentSymbol) + (int)strlen(Symbols[i].GetSymbolName()) + 2);
       sprintf(TempBuffer.AsChar(), "%s.%s", pParentSymbol, Symbols[i].GetSymbolName());
-      Msg.Write(TempBuffer.AsChar());
+      Msg.WriteString(TempBuffer.AsChar());
     }
     else
     {
-      Msg.Write(Symbols[i].GetSymbolName());
+      Msg.WriteString(Symbols[i].GetSymbolName());
     }
 
-    Msg.Write(Symbols[i].GetSymbolContent());
-    Msg.Write(Symbols[i].m_eSymbolType);
-    Msg.Write(Symbols[i].IsUpdateableByDebugger() ? 1 : 0);
+    Msg.WriteString(Symbols[i].GetSymbolContent());
+    Msg.WriteInt(Symbols[i].m_eSymbolType);
+    Msg.WriteInt(Symbols[i].IsUpdateableByDebugger() ? 1 : 0);
   }
 
   VMutexLocker lock(m_ConnectionMutex);
@@ -819,7 +830,7 @@ VRSDClient& VRSDClient::GetGlobalClient()
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

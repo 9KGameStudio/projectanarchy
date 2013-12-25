@@ -84,12 +84,12 @@ bool VCablePathRenderer::RebuildModel()
 
   if (iNumLinks < 1)
   {
-    Vision::Error.Warning("VCablePathRenderer::RebuildModel: Can't create cable rendering - constraint chain has no links.");
+    hkvLog::Warning("VCablePathRenderer::RebuildModel: Can't create cable rendering - constraint chain has no links.");
     return false;
   }
   else if (iNumLinks > MAX_NUM_LINKS)
   {
-    Vision::Error.Warning("VCablePathRenderer::RebuildModel: Path chain contains too many links; clamping to %d.", MAX_NUM_LINKS);
+    hkvLog::Warning("VCablePathRenderer::RebuildModel: Path chain contains too many links; clamping to %d.", MAX_NUM_LINKS);
     iNumLinks = MAX_NUM_LINKS;
   }
 
@@ -109,7 +109,7 @@ bool VCablePathRenderer::RebuildModel()
   iNumVertices += (iVerticesPerRing + 1) * 2;
   if (iNumVertices > 65535)
   {
-    Vision::Error.Warning("VCablePathRenderer::RebuildModel: Can't create cable rendering - too many vertexes.");
+    hkvLog::Warning("VCablePathRenderer::RebuildModel: Can't create cable rendering - too many verticess.");
     return false;
   }
 
@@ -475,7 +475,7 @@ void VCableChainEntity::ThinkFunction()
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

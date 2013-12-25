@@ -61,7 +61,7 @@ void AttachedTorch_cl::InitFunction()
 {
   SetVisibleBitmask( 0 );
   SetCastShadows(FALSE);
-  m_pShadowCaster = Vision::Game.CreateEntity("VisBaseEntity_cl", GetPosition(), "Models\\Warrior\\TorchBottom.MODEL");
+  m_pShadowCaster = Vision::Game.CreateEntity("VisBaseEntity_cl", GetPosition(), "Data\\Vision\\Samples\\Engine\\Common\\Models\\Warrior\\TorchBottom.MODEL");
   m_pShadowCaster->AttachToParent(this);
   m_pShadowCaster->SetVisibleBitmask( 0 );
   m_pShadowCaster->SetCastShadows( FALSE );
@@ -114,7 +114,7 @@ void AttachedTorch_cl::Show()
     m_spTorchParticles = NULL;
   }
 
-  m_pTorchFX = VisParticleGroupManager_cl::GlobalManager().LoadFromFile("Models\\Warrior\\TorchFire.xml");
+  m_pTorchFX = VisParticleGroupManager_cl::GlobalManager().LoadFromFile("Data\\Vision\\Samples\\Engine\\Common\\Models\\Warrior\\TorchFire.xml");
   VASSERT(m_pTorchFX);
   m_pTorchFX->SetResourceFlag(VRESOURCEFLAG_AUTODELETE);
 
@@ -156,11 +156,11 @@ bool AttachedTorch_cl::Detach()
 
 
 V_IMPLEMENT_SERIAL( AttachedTorch_cl, BoneAttachedEntity_cl, 0, Vision::GetEngineModule() );
-START_VAR_TABLE(AttachedTorch_cl, BoneAttachedEntity_cl, "An attachable torch with particle effects", VFORGE_HIDECLASS, "Models\\Warrior\\Torch.MODEL")
+START_VAR_TABLE(AttachedTorch_cl, BoneAttachedEntity_cl, "An attachable torch with particle effects", VFORGE_HIDECLASS, "Data\\Vision\\Samples\\Engine\\Common\\Models\\Warrior\\Torch.MODEL")
 END_VAR_TABLE
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

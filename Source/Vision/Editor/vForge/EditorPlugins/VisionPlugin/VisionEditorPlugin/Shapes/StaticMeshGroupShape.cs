@@ -1060,6 +1060,17 @@ namespace VisionEditorPlugin.Shapes
 
       if (e.action == SceneEventArgs.Action.BeforeExport || e.action == SceneEventArgs.Action.BeforePrefabBinaryExport)
       {
+        // If this static mesh group has another *active* static mesh group as a predecessor, don't do anything.
+        // (Otherwise, this group's children would end up both in the parent mesh group *and* in this mesh group.)
+        ShapeBase predecessor = Parent;
+        while (predecessor != null)
+        {
+          StaticMeshGroupShape parentGroup = predecessor as StaticMeshGroupShape;
+          if ( parentGroup != null && parentGroup.Active )
+            return;
+          predecessor = predecessor.Parent;
+        }
+        
         ShapeCollection shapes = GetRelevantShapes();
         if (shapes == null || shapes.Count == 0)
           return;
@@ -1162,8 +1173,12 @@ namespace VisionEditorPlugin.Shapes
       StaticMeshGroupShape group = new StaticMeshGroupShape("StaticMeshGroup");
       group.Position = EditorManager.Scene.CurrentShapeSpawnPosition;
       return group;
-    }  
-  
+    }
+
+    public override Type GetShapeType()
+    {
+      return typeof(StaticMeshGroupShape);
+    }
   }
 
   #endregion
@@ -1171,7 +1186,7 @@ namespace VisionEditorPlugin.Shapes
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

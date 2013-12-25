@@ -8,18 +8,18 @@
 
 using System;
 using System.Collections;
-using System.Collections.Specialized;
 using System.Collections.Generic;
+using System.Collections.Specialized;
+using System.IO;
+using System.Reflection;
 using System.Text;
 using CSharpFramework;
 using CSharpFramework.Actions;
-using CSharpFramework.Shapes;
+using CSharpFramework.Helper;
 using CSharpFramework.Scene;
 using CSharpFramework.Serialization;
-using System.Reflection;
-using CSharpFramework.Helper;
-using System.IO;
-
+using CSharpFramework.Shapes;
+using ManagedBase.LogManaged;
 
 namespace Editor.Shapes
 {
@@ -247,7 +247,8 @@ namespace Editor.Shapes
                 missingProperties += "\n" + key + " : Casing (warning)";
             }
           }
-          EditorManager.EditorConsole.PrintError("The definition contains some invalid properties:\n" + missingProperties);
+
+          Log.Error("The definition contains some invalid properties:\n" + missingProperties);
         }
         //////////////////////////////////
       }
@@ -293,7 +294,7 @@ namespace Editor.Shapes
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

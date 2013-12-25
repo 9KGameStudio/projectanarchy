@@ -74,7 +74,7 @@ class VModuleCleanup;
 VModule variable = {V_SDK_VERSION, moduleVersion, moduleName, moduleVendor, description,\
                     NULL/*modulename*/, 0/*module handle*/, \
                     NULL/*TypeLinkedList*/, NULL/*ActionLinkedList*/, NULL/*CommandLinkedList*/, \
-                    NULL/*LogBroadcaster*/, NULL/*ParamBroadcaster*/, sourceplugin };\
+                    NULL/*ParamBroadcaster*/, sourceplugin };\
 VModuleCleanup variable##cleanup(&variable);
 
 #ifdef WIN32
@@ -116,7 +116,6 @@ public:
   VActionType *m_pActionTypeLinkedList;   ///< action type list for every module
   VCommandType *m_pCommandTypeLinkedList; ///< command type list for every module
 
-  VBroadcaster *m_pLogBroadcaster;       ///< broadcaster for log messages
   VBroadcaster *m_pParameterBroadcaster; ///< broadcaster for parameter messages
   
   IVisPlugin_cl *m_pSourcePlugin; ///< the engine plugin, if any, that is defined in this module
@@ -128,8 +127,7 @@ public:
   }
 
   /// \brief
-  ///   Dumps out some information about the plugin with VTRACE. This function works only in Debug
-  ///   configuration!
+  ///   Dumps out some information about the plugin over the logging system.
   void DumpPlugin() const;
   
   /// \brief
@@ -162,30 +160,9 @@ public:
   ///   Returns the command type linked list.
   VCommandType *GetCommandTypeList() const;
 
-
-  /// \brief
-  ///   Possible values for the VSenderRecevier::OnReceive iMsg variable value
-  enum eLOGBROADCAST_IDS
-  {
-    LOG_MSG_TEXT,       ///< message is a text
-    LOG_MSG_WARNING     ///< message is a warning
-  };
-
-  /// \brief
-  ///   Returns the log broadcaster.
-  VBroadcaster *GetLogBroadcaster();
-
   /// \brief
   ///   Returns the param broadcaster.
   VBroadcaster *GetParamBroadcaster();
-
-  /// \brief
-  ///   printf-like log functions which broadcasts a message.
-  void Print(const char *text, ...);
-
-  /// \brief
-  ///   printf-like log functions which broadcasts a warning.
-  void PrintWarning(const char *text, ...);
 
   /// \brief
   ///   Return TRUE if there are no instances of any of the modules referenced vtypes.
@@ -210,7 +187,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

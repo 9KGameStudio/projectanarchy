@@ -260,7 +260,7 @@ public:
 
   /// \brief
   ///   Overridden IVScriptManager function
-  virtual BOOL ValidateScript(const char *szText, int iLen, IVLog *pLog);
+  virtual BOOL ValidateScript(const char *szText, int iLen, hkvLogInterface* pLog) HKV_OVERRIDE;
 
   /// \brief
   ///   Overridden IVScriptManager function. Returns the script instance of an object if it exists.
@@ -376,7 +376,7 @@ public:
 
   /// \brief
   ///   Helper function to forward LUA error to log
-  SCRIPT_IMPEXP static bool LuaErrorCheck(lua_State *L, int status, IVLog *pLog = NULL);
+  SCRIPT_IMPEXP static bool LuaErrorCheck(lua_State *L, int status, hkvLogInterface* pLog = NULL);
   
   ///
   /// @}
@@ -411,7 +411,7 @@ private:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

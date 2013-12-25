@@ -108,19 +108,19 @@ public:
 
   inline void Log(const char * szLogMsg)
   {
-    Vision::Error.SystemMessage(szLogMsg);
+    hkvLog::Info(szLogMsg);
   }
 
   inline void Error(const char * szError)
   {
-    Vision::Error.FatalError(szError);
+    hkvLog::FatalError(szError);
   }
 };
 
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

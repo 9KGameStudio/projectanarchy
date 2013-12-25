@@ -140,7 +140,7 @@ VisMeshBuffer_cl *VRendererNodeHelper::GetSphereMeshBuffer()
   // copy index buffer
   m_spSphereMeshBuffer->AllocateIndexList(iIndexCount);
   unsigned short *pDestIndices = (unsigned short *)m_spSphereMeshBuffer->LockIndices(VIS_LOCKFLAG_DISCARDABLE);
-  pMesh->CopyMeshIndices(pDestIndices, (VisSurface_cl *)NULL);
+  pMesh->CopyMeshIndices(pDestIndices, (VisSurface_cl*) NULL);
   m_spSphereMeshBuffer->UnLockIndices();
 
   return m_spSphereMeshBuffer;
@@ -388,6 +388,8 @@ VRendererNodeHelper *IVRendererNode::GetRendererNodeHelper()
 
 IVRendererNode* IVRendererNode::ReadFromStream(IVFileInStream *pIn)
 {
+  HKV_LOG_BLOCK("IVRendererNode::ReadFromStream", pIn->GetFileName());
+
   VASSERT(pIn!=NULL);
   VArchive archive(NULL,pIn, Vision::GetTypeManager());
   int iVers;
@@ -467,7 +469,7 @@ VScopedRendererNodeDeinit::~VScopedRendererNodeDeinit()
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

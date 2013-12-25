@@ -13,18 +13,31 @@ using System.Data;
 using System.Drawing;
 using System.Text;
 using System.Windows.Forms;
-using CSharpFramework.Docking;
-using vResourceViewerBase80.Controls;
-using CSharpFramework.View;
 using CSharpFramework;
+using CSharpFramework.Docking;
+using CSharpFramework.View;
+using ManagedBase.LogManaged;
+using vResourceViewerBase80.Controls;
+using CSharpFramework.Controls;
 
 namespace Editor
 {
-  public partial class ResourceViewerPanel : DockableForm, IEditorConsole
+  public partial class ResourceViewerPanel : DockableForm
   {
+    #region Member Variables
+
+    // Help button
+    ToolStripHelpButton _helpbutton = null;
+
+    #endregion
+
     public ResourceViewerPanel(DockingContainer container) : base(container)
     {
       InitializeComponent();
+
+      // Add help button
+      _helpbutton = new ToolStripHelpButton(Text);
+      resourceMasterPanel.ToolStrip.Items.Add(_helpbutton);
 
       // show auto thumbnail button to enable auto thumbnail feature
       resourceMasterPanel.ShowAutoThumbnailButton();
@@ -36,8 +49,23 @@ namespace Editor
 #endif
     }
 
+    public void ShowLogPane()
+    {
+      resourceMasterPanel.ShowLogPane();
+    }
+
+    public void AddOnClearLogMessagesHandler(vResourceViewerBase80.Controls.MasterPanel.ClearLogMessagesDelegate MyDelegate)
+    {
+      resourceMasterPanel.OnClearLogMessages += MyDelegate;
+    }
+
+    public void RemoveOnClearLogMessagesHandler(vResourceViewerBase80.Controls.MasterPanel.ClearLogMessagesDelegate MyDelegate)
+    {
+      resourceMasterPanel.OnClearLogMessages -= MyDelegate;
+    }
+
     /// <summary>
-    /// Clears the asset list in the vResViewer everytime a scene is closed
+    /// Clears the asset list in the vResViewer every time a scene is closed
     /// </summary>
     void EditorManager_SceneClosing(object sender, CancelEventArgs e)
     {
@@ -60,36 +88,11 @@ namespace Editor
       base.WndProc(ref m);
       resourceMasterPanel.ProcessWndProc(ref m);
     }
-
-
-    #region IEditorConsole Members
-
-    public void Print(string s)
-    {
-      EditorManager.EngineManager.LogPrint(s);
-    }
-
-    public void PrintWarning(string s)
-    {
-      EditorManager.EngineManager.LogPrintWarning(s);
-    }
-
-    public void PrintError(string s)
-    {
-      EditorManager.EngineManager.LogPrint("ERROR: " + s);
-    }
-
-    public void ParseMessage(string s)
-    {
-      Print(s);
-    }
-
-    #endregion
   }
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -434,6 +434,7 @@ bool VBillboardGroupInstance::GatherLightmapInfo(VLightmapSceneInfo &sceneInfo)
   pPrim->m_eType = VLightmapPrimitive::INDEXED_MESH;
   pPrim->m_eOwnerType = VLightmapPrimitive::OWNERTYPE_STATICMESH;
   pPrim->m_iUniqueID = GetUniqueID();
+  pPrim->m_sPrimitiveDescription = VString("BillboardGroup key: '") + m_sObjectKey + "'";
   pPrim->m_iFlags = PRIMITIVEFLAG_CASTSHADOWS;
 
   pPrim->AllocateMaterials(1);
@@ -499,7 +500,7 @@ bool VBillboardGroupInstance::GatherLightmapInfo(VLightmapSceneInfo &sceneInfo)
 #endif // SUPPORTS_LIT_FILE_LOADING
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

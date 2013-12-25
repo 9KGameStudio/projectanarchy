@@ -6,12 +6,8 @@
  *
  */
 
-//***********************************************************************
-// GameState_cl Class
-//***********************************************************************
-
-#ifndef _GameState_cl_HEADER_
-#define _GameState_cl_HEADER_
+#ifndef GAMESTATE_HPP_INCLUDED
+#define GAMESTATE_HPP_INCLUDED
 
 enum GAME_STATE
 {
@@ -19,22 +15,13 @@ enum GAME_STATE
   GAME_STATE_RESTART
 };
 
-//
-// *** GameState_cl  ***
-//
-// Synopsis:
-//    - Entity class that holds the game state information
-//
-class GameState_cl : public VisBaseEntity_cl
+class GameState : public VisBaseEntity_cl
 {
 public:
-  // is called upon entity initialization
   virtual void InitFunction();
 
-  // is called upon entity de-initialization
   virtual void DeInitFunction();
 
-  // is called each frame
   virtual void ThinkFunction();
 
   virtual void MessageFunction(int iID, INT_PTR iParamA, INT_PTR iParamB);
@@ -47,15 +34,14 @@ private:
   // private variables
   GAME_STATE m_eState;
   
-
-V_DECLARE_SERIAL( GameState_cl, )
-IMPLEMENT_OBJ_CLASS(GameState_cl);
+  V_DECLARE_SERIAL(GameState, )
+  IMPLEMENT_OBJ_CLASS(GameState);
 };
 
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -11,9 +11,8 @@
 #ifndef MERGEDMODELFACTORY_HPP_INCLUDED
 #define MERGEDMODELFACTORY_HPP_INCLUDED
 
-#include <Vision/Samples/Engine/ModelMerging/KeyControlledTransitionBarbarian.hpp>
-#include <Vision/Samples/Engine/ModelMerging/TransitionBarbarian.hpp>
-#include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Components/VPlayerCamera.hpp>
+class KeyControlledTransitionBarbarian_cl;
+class VOrbitCamera;
 
 enum BODY_PART
 {
@@ -46,11 +45,10 @@ public:
   void DeleteModels();
 
 private:
-
   KeyControlledTransitionBarbarian_cl *m_pMergedModelEntity;
   VisBaseEntity_cl **m_pPreviewModelEntities;
   VisBaseEntity_cl *m_pCameraEntity;
-  VPlayerCamera *m_pPlayerCamera;
+  VOrbitCamera *m_pOrbitCamera;
   int m_iModelsToMerge;
 
   // Position and Orientation
@@ -67,13 +65,12 @@ private:
   bool m_bCloth;
   bool m_bBeard;
   bool m_bAxe;
-
 };
 
 #endif  // MERGEDMODELFACTORY_HPP_INCLUDED
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

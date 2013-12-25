@@ -526,7 +526,7 @@ namespace VisionEditorPlugin.Shapes
     }
 
     [SortedCategory(CAT_ADVANCED, CATORDER_ADVANCED), PropertyOrder(1)]
-    [Description("")]
+    [Description("Specifies the render hook at which the mirror mesh should be rendered.")]
     public RenderOrderBits_e RenderHook
     {
       get { return _renderHook; }
@@ -936,6 +936,11 @@ namespace VisionEditorPlugin.Shapes
       }
       return shape;
     }
+
+    public override Type GetShapeType()
+    {
+      return typeof(MirrorShape);
+    }
   }
 
   #endregion
@@ -943,7 +948,7 @@ namespace VisionEditorPlugin.Shapes
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

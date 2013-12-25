@@ -58,7 +58,7 @@ public:
           case VULPTYPE_BYTE_COLOR4:
             return "VColorRef";
           default:
-            Vision::Error.Warning("Type of property '%s' is unknown in Lua.", propName);
+            hkvLog::Warning("Type of property '%s' is unknown in Lua.", propName);
             return NULL;
       }
     }
@@ -162,7 +162,7 @@ public:
     if (ARGS_OK) {
       VisVariable_cl *pVar = pTypedObject->GetVariable(pszName);
       if (!pVar) {
-        luaL_error(L, "Called getter of unknown property '%s'", pszName);
+        hkvLog::Warning("Called getter of unknown property '%s'", pszName);
         lua_pushnil(L);
         return 1;
       }
@@ -251,7 +251,7 @@ public:
           }
           break;
         default:
-          luaL_error(L, "Called getter of unknown type %d (%s)", pVar->type, pszName);
+          hkvLog::Warning("Called getter of unknown type %d (%s)", pVar->type, pszName);
           lua_pushnil(L);
           break;
       }
@@ -279,9 +279,8 @@ public:
 
       if (!pVar)
       {
-        luaL_error(L, "Called setter of unknown property '%s'", pszName);
-        lua_pushnil(L);
-        return 1;
+        hkvLog::Warning("Called setter of unknown property '%s'", pszName);
+        return 0;
       }
       
       switch (pVar->type) {
@@ -357,7 +356,7 @@ public:
           }
           break;
         default:
-          luaL_error(L, "Called setter of unknown type %d (%s)", pVar->type, pszName);
+          hkvLog::Warning("Called setter of unknown type %d (%s)", pVar->type, pszName);
           break;
       }
     }
@@ -509,7 +508,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -25,9 +25,6 @@ int VFmodManager::PROFILING_FMOD_PURGE = 0;
 extern "C" int luaopen_FireLight(lua_State *);
 
 
-#define _DEBUG_OUTPUT
-#undef _DEBUG_OUTPUT
-
 
 // -------------------------------------------------------------------------- //
 // Constructor/ Destructor                                                 
@@ -303,7 +300,7 @@ void VFmodManager::OnHandleCallback(IVisCallbackDataObject_cl *pData)
         }
       }
       
-      Vision::Error.Warning("Unable to create Lua Fmod Module, lua_State is NULL or cast failed!");
+      hkvLog::Warning("Unable to create Lua Fmod Module, lua_State is NULL or cast failed!");
     }
     return;
   }
@@ -356,7 +353,7 @@ int VFmodManager::GetExistingSourceVoiceCount() const
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -262,45 +262,6 @@ enum VRenderHookPriority_e {
 #define VIS_PERFORM_LODTEST               (VIS_LOD_TEST_CLIPPOSITION|VIS_LOD_TEST_BOUNDINGBOX)
 #define VIS_EXCLUDED_FROM_OCCLUSIONQUERY  16
 
-
-//#ifdef HK_DEBUG_SLOW
-#if 1  
-  #define VULPERROR_0(expression,message)             if (!(expression)) Vision::Error.FatalError(message);
-  #define VULPERROR_1(expression,message,p1)          if (!(expression)) Vision::Error.FatalError(message, p1);
-  #define VULPERROR_2(expression,message,p1, p2)      if (!(expression)) Vision::Error.FatalError(message, p1, p2);
-  #define VULPAPIWARNING_0(expression,message)        if (!(expression)) Vision::Error.Warning(message);
-  #define VULPAPIWARNING_1(expression,message,p1)     if (!(expression)) Vision::Error.Warning(message, p1);
-  #define VULPAPIWARNING_2(expression,message,p1,p2)  if (!(expression)) Vision::Error.Warning(message, p1, p2);
-  #define VULPAPIWARNING_3(expression,message,p1,p2,p3)  if (!(expression)) Vision::Error.Warning(message, p1, p2, p3);
-  #define VULPCRITICALWARNING_0(expression, message)  if (!(expression)) Vision::Error.Warning(message);
-  #define VULPSTATUSMESSAGE_0(message)                Vision::Error.SystemMessage(message);
-  #define VULPSTATUSMESSAGE_1(message,p1)             Vision::Error.SystemMessage(message, p1);
-  #define VULPSTATUSMESSAGE_2(message,p1,p2)          Vision::Error.SystemMessage(message, p1, p2);
-  #define VULPSTATUSMESSAGE_3(message,p1,p2,p3)       Vision::Error.SystemMessage(message, p1, p2, p3);
-  #define VULPSTATUSMESSAGE_4(message,p1,p2,p3,p4)    Vision::Error.SystemMessage(message, p1, p2, p3, p4);
-  #define VULPSTATUSMESSAGE_5(message,p1,p2,p3,p4,p5) Vision::Error.SystemMessage(message, p1, p2, p3, p4, p5);
-  #define VULPDEPRECATED(message)                     Vision::Error.Warning(message);
-
-#else
-  #define VULPERROR_0(expression,message)                 ;    
-  #define VULPERROR_1(expression,message,p1)              ;
-  #define VULPERROR_2(expression,message,p1, p2)          ;
-  #define VULPAPIWARNING_0(expression,message)            ;
-  #define VULPAPIWARNING_1(expression,message,p1)         ;
-  #define VULPAPIWARNING_2(expression,message,p1,p2)      ;
-  #define VULPCRITICALWARNING_0(expression, message)      ;
-  #define VULPSTATUSMESSAGE_0(message)                    ;
-  #define VULPSTATUSMESSAGE_1(message,p1)                 ;
-  #define VULPSTATUSMESSAGE_2(message,p1,p2)              ;
-  #define VULPSTATUSMESSAGE_3(message,p1,p2,p3)           ;
-  #define VULPSTATUSMESSAGE_4(message,p1,p2,p3,p4)        ;
-  #define VULPSTATUSMESSAGE_5(message,p1,p2,p3,p4,p5)     ;
-
-  #define VULPCALLHISTORY_START(number)                   ;
-  #define VULPCALLHISTORY_END(number)                     ;
-
-#endif
-
 // in debug mode, activate profiling
 #ifdef HK_DEBUG_SLOW
   #ifndef PROFILING
@@ -832,7 +793,6 @@ enum VisReportGroupType_e
   VIS_REPORTGROUPTYPE_MISSING_COMPONENT_CLASS,                ///< Error: missing component class
   VIS_REPORTGROUPTYPE_MISSING_FXLIB,                          ///< Error: missing shader effect library
   VIS_REPORTGROUPTYPE_MISSING_PROJECTEDLIGHT_TEXTURE,         ///< Error: missing projected light texture
-  VIS_REPORTGROUPTYPE_MISSING_MODELFILE,                      ///< Error: missing model file
   VIS_REPORTGROUPTYPE_OLD_MODELFILE,                          ///< Warning: 8.1 reuires new model format
   VIS_REPORTGROUPTYPE_MISSING_BITMAP,                         ///< Error: missing bitmap file (VisBitmap_cl class, usually used for color curves)
   VIS_REPORTGROUPTYPE_MISSING_ANIMATION_FILE,                 ///< Error: missing animation file
@@ -840,16 +800,9 @@ enum VisReportGroupType_e
   VIS_REPORTGROUPTYPE_MISSING_LIGHTGRID,                      ///< Error: missing lightgrid file
   VIS_REPORTGROUPTYPE_MISSING_MATERIAL_TEMPLATE,              ///< Error: missing material template file
   VIS_REPORTGROUPTYPE_UNSUPPORTED_VERSION,                    ///< Error: the version is not supported by this build of the engine
-  VIS_REPORTGROUPTYPE_COMPRESSED_BUMPMAP,                     ///< Error: A compressed dds file was tried to convert from bumpmap to normalmap
-  VIS_REPORTGROUPTYPE_NOLIGHTMAPSTREAM,                       ///< Error: A model file does not provide the necessary lightmap streams
 
   // warnings
   VIS_REPORTGROUPTYPE_MISSING_EFFECT,                         ///< Warning: missing shader effect
-  VIS_REPORTGROUPTYPE_CUBEMAP_ENTITIY_NOT_FOUND,              ///< Warning: a cubemap entity referenced by a shader not found
-  VIS_REPORTGROUPTYPE_TEXTURE_INVALID_SIZE,                   ///< Warning: texture has invalid size (not power of 2)
-  VIS_REPORTGROUPTYPE_FILENAME_INVALID_CHAR,                  ///< Warning: a (texture-)filename contains an invalid character, e.g. '%' (will be replaced by '_')
-  VIS_REPORTGROUPTYPE_FILENAME_MISSING_CALLBACK,              ///< Warning: a shader callback function (texture/perframe/perpolygon) is missing
-  VIS_REPORTGROUPTYPE_BUMPINESS,                              ///< Warning: a surface uses bumpmaps instead of normalmaps
   VIS_REPORTGROUPTYPE_OLD_SHADERLIB,                          ///< Warning: the shader library is of an old format and should be recompiled
 
   // information
@@ -1271,7 +1224,7 @@ bool CheckVersion(const char *pszDescr, int iVersion, int iMaxVersion);
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

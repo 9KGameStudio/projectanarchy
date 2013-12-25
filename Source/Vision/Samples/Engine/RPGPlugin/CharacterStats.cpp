@@ -386,7 +386,7 @@ void RPG_CharacterStats::DebugPrintLastCharacterEventLogged() const
     VString msg;
     const RPG_CharacterEvent event = m_recentCharacterEvents.GetLast();
     msg.Format("Event Logged: Type: %i, Time: %f, Value: %i, Message: %s\n", event.m_eventType, event.m_eventTime, event.m_eventValue, "<FIXME: NO MESSAGE>");
-    Vision::Error.SystemMessage(msg.AsChar());
+    hkvLog::Info(msg.AsChar());
   }
 #endif
 }
@@ -399,10 +399,10 @@ void RPG_CharacterStats::DebugPrintCharacterEventLog() const
   {
     const RPG_CharacterEvent event = m_recentCharacterEvents[i];
     msg.Format("EventType: %i, Time: %f, Value: %i, Message: %s\n", event.m_eventType, event.m_eventTime, event.m_eventValue, "<FIXME: NO MESSAGE>");
-    Vision::Error.SystemMessage(msg.AsChar());
+    hkvLog::Info(msg.AsChar());
   }
   msg = "-------------------------------------------------------";
-  Vision::Error.SystemMessage(msg.AsChar());
+  hkvLog::Info(msg.AsChar());
 #endif
 }
 
@@ -485,7 +485,7 @@ void RPG_CharacterEvent::Clear()
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

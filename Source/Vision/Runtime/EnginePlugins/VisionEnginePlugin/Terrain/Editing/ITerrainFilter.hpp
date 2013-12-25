@@ -26,7 +26,7 @@ public:
 	///
 	inline IVTerrainFilter()
   {
-    m_pLog = NULL;
+    //m_pLog = NULL;
     m_pTerrain = NULL;
   }
 
@@ -70,7 +70,6 @@ public:
 public:
 
   // members get set when the filter is applied
-  IVLog *m_pLog;  ///< stores the log instance
   VEditableTerrain *m_pTerrain; ///< Owner terrain
   VLargeBoundingBox m_AffectedArea; ///Stores the affected area
 };
@@ -79,7 +78,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

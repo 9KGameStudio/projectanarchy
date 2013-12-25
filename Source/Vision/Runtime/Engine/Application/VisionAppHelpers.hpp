@@ -53,7 +53,6 @@ public:
   {
     return VBaseAppHelpers::GetApplicationDir(pszAppDir);
   }
-  
 
   /// \brief
   ///   Static helper function to set the EXE directory as the current directory to find files like
@@ -75,12 +74,12 @@ public:
   /// \brief
   ///   Saves the visibility zone/potal setup to an XML file that can be loaded into the scene
   ///   manager via LoadVisibilitySetup for debug purposes.
-  static VISION_APIFUNC bool SaveVisibilitySetup(const char *szFilename, IVFileStreamManager *pFileManager=NULL);
+  static VISION_APIFUNC bool SaveVisibilitySetup(const char *szFilename);
 
   /// \brief
   ///   Loads a visibility setup from XML and adds it to the scene manager. Useful for debug
   ///   purposes.
-  static VISION_APIFUNC bool LoadVisibilitySetup(const char *szFilename, IVFileStreamManager *pFileManager=NULL);
+  static VISION_APIFUNC bool LoadVisibilitySetup(const char *szFilename);
 
   /// \brief
   ///   Displays visibility info, i.e. zone boxes and portals. When used, this function must be
@@ -114,7 +113,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

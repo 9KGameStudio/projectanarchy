@@ -263,7 +263,7 @@ bool vHavokConstraint::Init(vHavokConstraintDesc &desc)
   if(pHavokBody1 == pHavokBody2) pHavokBody2 = NULL;	// If the user attached both anchors to the same entity just ignore the second one. In this case is a Entity-World constraint.
   if (!pHavokBody1)
   {
-    Vision::Error.Warning("First entity has no Havok Rigid Body Component attached!");
+    hkvLog::Warning("vHavokConstraint: First entity has no Havok Rigid Body Component attached!");
     return false;
   }
 
@@ -543,7 +543,7 @@ void vHavokConstraint::SetBreakThreshold(float fThreshold)
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

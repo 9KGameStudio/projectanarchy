@@ -115,7 +115,7 @@ public:
 
   /// \brief
   ///   Constructor; creates the thread. Note that the thread is not started until the Start() method is called.
-  inline VThread(VPlatformThreadFunc pStartFunction, void *pArgument, int iStackSize, VThreadPriority ePriority);
+  inline VThread(VPlatformThreadFunc pStartFunction, void *pArgument, int iStackSize, VThreadPriority ePriority, const char* szThreadName = "VThread");
 
   /// \brief
   ///   Destructor; destroys the thread object.
@@ -177,12 +177,15 @@ private:
     sys_ppu_thread_t m_Thread;
     void* m_pArgument;
 
+    VString m_sName;
+
     inline static void ThreadFunc(uint64_t arg);
 
   #elif defined(_VISION_POSIX)
     pthread_t m_Thread;
     void* m_pArgument;
     friend class VThreadManager;
+    VString m_sName;
 
   #elif defined(_VISION_PSP2)
     SceUID m_Thread;
@@ -226,7 +229,7 @@ private:
 #endif  // VTHREAD_HPP_INCLUDED
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

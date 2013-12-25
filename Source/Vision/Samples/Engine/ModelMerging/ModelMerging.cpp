@@ -17,175 +17,198 @@
 // ***********************************************************************************************
 
 #include <Vision/Samples/Engine/ModelMerging/ModelMergingPCH.h>
-#include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/GUI/VMenuIncludes.hpp>
+#include <Vision/Runtime/Framework/VisionApp/VAppImpl.hpp>
+#include <Vision/Runtime/Framework/VisionApp/Modules/VHelp.hpp>
+#include <Vision/Runtime/Framework/VisionApp/Modules/VLogoOverlay.hpp>
+
+#include <Vision/Runtime/EnginePlugins/EnginePluginsImport.hpp>
+
+#include <Vision/Samples/Engine/ModelMerging/KeyControlledTransitionBarbarian.hpp>
 #include <Vision/Samples/Engine/ModelMerging/GUI/MenuSystem.hpp>
 #include <Vision/Samples/Engine/ModelMerging/MergedModelFactory.hpp>
-#include <Vision/Samples/Engine/ModelMerging/KeyControlledTransitionBarbarian.hpp>
-
-
-VIMPORT IVisPlugin_cl* GetEnginePlugin_vHavok();
-
-VisSampleAppPtr spApp;
-VSmartPtr<MergeModelsMainMenu> spMainDlg;
-VGUIMainContextPtr spGUIContext;
-MergedModelFactory_cl *pMergeModelFactory = NULL;
 
 enum MERGE_MODEL_CONTROL 
 {
-  MERGE_MODEL_SHOW_MENU = CHARACTER_CONTROL_LAST_ELEMENT+1
+  MERGE_MODEL_SHOW_MENU = CHARACTER_CONTROL_LAST_ELEMENT + 1
 };
 
-
-VISION_INIT
+class ModelMergingApp : public VAppImpl
 {
-  VISION_SET_DIRECTORIES( false );
+public:
+  ModelMergingApp() 
+    : m_spMainDlg(NULL)
+    , m_pMergeModelFactory(NULL)
+    , m_bShowGUI(false) 
+  {}
+  virtual ~ModelMergingApp() 
+  {}
 
-  // Include the vision engine plugin
-  VisionAppHelpers::MakeEXEDirCurrent();
-  VisSampleApp::LoadVisionEnginePlugin();
-  VISION_PLUGIN_ENSURE_LOADED(vHavok);
-
-  // Create an application
-  spApp = new VisSampleApp();
-
-  int iX = VVIDEO_DEFAULTWIDTH, iY = VVIDEO_DEFAULTHEIGHT;
-
-#ifdef _VISION_PSP2
-  // Use double resolution, since otherwise the menu doesn't fit
-  iX *= 2, iY *= 2;
-#endif
-
+  virtual void Init() HKV_OVERRIDE
+  {
 #if defined(_VISION_MOBILE) || defined( HK_ANARCHY )
-  const char* szSceneFile = "ground_mobile";
+    const char* szSceneFile = "ground_mobile.vscene";
 #else
-  const char* szSceneFile = "ground";
+    const char* szSceneFile = "ground.vscene";
 #endif
 
-  // Init the application
-  if (!spApp->InitSample("Maps\\SimpleGround" /*DataDir*/, szSceneFile /*SampleScene*/, VSampleFlags::VSAMPLE_INIT_DEFAULTS | VSampleFlags::VSAMPLE_ALIGNLOGOALTERNATIVE, iX, iY ))
-    return false;
+    VisAppLoadSettings settings(szSceneFile);
+    settings.m_customSearchPaths.Append(":havok_sdk/Data/Vision/Samples/Engine/Maps/SimpleGround");
+    settings.m_customSearchPaths.Append(":havok_sdk/Data/Vision/Samples/Engine/Common");
 
-  return true;
-}
- 
-VISION_SAMPLEAPP_AFTER_LOADING
-{
-  // Add Barbarian Model directory
-  spApp->AddSampleDataDir("Models\\Barbarian");
+    LoadScene(settings);
+  }
 
-  // Define help text
-  spApp->AddHelpText("");
-  spApp->AddHelpText("How to use this demo :");
-  spApp->AddHelpText("");
+  virtual void AfterEngineInit() HKV_OVERRIDE
+  {
+    VAppImpl::AfterEngineInit();
 
-#ifdef SUPPORTS_KEYBOARD
+    InitHelp();
 
-  VisSampleApp::GetInputMap()->MapTrigger(MERGE_MODEL_SHOW_MENU, V_KEYBOARD, CT_KB_SPACE, VInputOptions::Once());
+    // Alternative logo placement.
+    VLogoOverlay* pLogo = GetAppModule<VLogoOverlay>();
+    if (pLogo != NULL)
+      pLogo->SetAlignment(VLogoOverlay::ALIGN_TOP);
+  }
 
-  spApp->AddHelpText("KEYBOARD - ARROW UP: Move Forward");
-  spApp->AddHelpText("KEYBOARD - ARROW UP + SHIFT: Run Forward");
-  spApp->AddHelpText("KEYBOARD - ARROW LEFT: Rotate Left");
-  spApp->AddHelpText("KEYBOARD - ARROW RIGHT: Rotate Right");
-  spApp->AddHelpText("KEYBOARD - SPACE : Toggle the menu");
-  spApp->AddHelpText("");
+  virtual void PreloadPlugins() HKV_OVERRIDE
+  {
+    VISION_PLUGIN_ENSURE_LOADED(vHavok);
+  }
 
-#endif
+  virtual void AfterSceneLoaded(bool bLoadingSuccessful) HKV_OVERRIDE
+  {
+    // Create the model merged model factory
+    m_pMergeModelFactory = new MergedModelFactory_cl();
+    m_pMergeModelFactory->MergeModel();
 
-#if defined (_VISION_XENON) || (defined(_VISION_WINRT) && !defined(_VISION_METRO) && !defined(_VISION_APOLLO))
-  VisSampleApp::GetInputMap()->MapTrigger(MERGE_MODEL_SHOW_MENU, V_XENON_PAD(0), CT_PAD_Y, VInputOptions::Once());
+    // Load some GUI resources
+    VGUIManager::GlobalManager().LoadResourceFile("ModelMerging/GUI/MenuSystem.xml");
 
-  spApp->AddHelpText("PAD1 - Left Thumbstick : Move character");
-  spApp->AddHelpText("PAD1 - Left Shoulder  : Run");
-  spApp->AddHelpText("PAD1 - Y               : Toggle the menu");
+    // Start the main menu
+    m_spMainDlg = vstatic_cast<MergeModelsMainMenu*>(GetContext()->ShowDialog("ModelMerging/GUI/MainMenu.xml"));
+    VASSERT(m_spMainDlg != NULL);
+    m_spMainDlg->SetMergeModelFactory(m_pMergeModelFactory);
+    m_bShowGUI = true;
 
-#elif defined (_VISION_PS3)
-  VisSampleApp::GetInputMap()->MapTrigger(MERGE_MODEL_SHOW_MENU, V_PS3_PAD(0), CT_PAD_TRIANGLE, VInputOptions::Once());
-
-  spApp->AddHelpText("PAD1 - Left Thumbstick : Move character");
-  spApp->AddHelpText("PAD1 - Left Shoulder  : Run");
-  spApp->AddHelpText("PAD1 - TRIANGLE        : Toggle the menu");
-
-#elif defined (_VISION_PSP2)
-  VisSampleApp::GetInputMap()->MapTrigger(MERGE_MODEL_SHOW_MENU, V_PSP2_PAD(0), CT_PAD_TRIANGLE, VInputOptions::Once());
-
-  spApp->AddHelpText("Left Thumbstick : Move character");
-  spApp->AddHelpText("Left Shoulder   : Run");
-  spApp->AddHelpText("TRIANGLE        : Toggle the menu");
-
-#elif defined (_VISION_WIIU)
-  VisSampleApp::GetInputMap()->MapTrigger(MERGE_MODEL_SHOW_MENU, VInputManagerWiiU::GetDRC(V_DRC_FIRST), CT_PAD_X, VInputOptions::Once());
-
-  spApp->AddHelpText("DRC - Left Thumbstick : Move character");
-  spApp->AddHelpText("DRC - Left Shoulder   : Run");
-  spApp->AddHelpText("DRC - X               : Toggle the menu");
-
-#endif
-
-
-  // Create the model merged model factory
-  pMergeModelFactory = new MergedModelFactory_cl();
-  pMergeModelFactory->MergeModel();
-
-  // Load some GUI resources
-  VGUIManager::GlobalManager().LoadResourceFile("ModelMerging\\GUI\\MenuSystem.xml");
-  spGUIContext = new VGUIMainContext(NULL);
-
-  // Start the main menu
-  spMainDlg = (MergeModelsMainMenu *)spGUIContext->ShowDialog("ModelMerging\\GUI\\MainMenu.xml");
-  VASSERT(spMainDlg);
-  spMainDlg->SetMergeModelFactory(pMergeModelFactory);
-
-#if defined( _VISION_MOBILE )
-  // Activate GUI
-  spGUIContext->SetActivate(true);
-  spGUIContext->ShowDialog( spMainDlg );
+#if !defined( _VISION_MOBILE )
+    // Deactivate GUI
+    GetContext()->CloseDialog(m_spMainDlg);
+    m_bShowGUI = false;
 #else
-  // Deactivate GUI
-  spGUIContext->SetActivate(false);
+    m_pMergeModelFactory->PreviewModel();
 #endif
-}
 
-VISION_SAMPLEAPP_RUN
-{
-  if (spApp->Run())
+    InitInput();
+  }
+
+  virtual void SetupAppConfig(VisAppConfig_cl& config) HKV_OVERRIDE
+  {
+#if defined(_VISION_PSP2)
+    // Use double resolution on PSVita, since otherwise the menu doesn't fit.
+    config.m_videoConfig.m_iXRes *= 2;
+    config.m_videoConfig.m_iYRes *= 2;
+#endif
+  }
+
+  virtual bool Run() HKV_OVERRIDE
   {
     // Toggle GUI and camera mode
-    if (VisSampleApp::GetInputMap()->GetTrigger(MERGE_MODEL_SHOW_MENU))
+    if (GetInputMap()->GetTrigger(MERGE_MODEL_SHOW_MENU))
     {
-      bool bShowGUI = !spGUIContext->IsActive();
-      spGUIContext->SetActivate(bShowGUI);
-      if (bShowGUI)
-        spGUIContext->ShowDialog(spMainDlg);
+      m_bShowGUI = !GetContext()->IsActive();
+      if (m_bShowGUI)
+      {
+        GetContext()->ShowDialog(m_spMainDlg);
+      }
+      else
+      {
+        GetContext()->CloseDialog(m_spMainDlg);
+      }
     }
 
     return true;
   }
-  return false;
-}
 
-VISION_DEINIT
+  virtual void DeInit() HKV_OVERRIDE
+  {
+    m_spMainDlg->SetMergeModelFactory(NULL);
+
+    // Deinit GUI
+    m_spMainDlg = NULL;
+
+    // Delete Factory
+    V_SAFE_DELETE(m_pMergeModelFactory);
+  }
+
+private:
+  void InitHelp();
+  void InitInput();
+
+  VSmartPtr<MergeModelsMainMenu> m_spMainDlg;
+  MergedModelFactory_cl* m_pMergeModelFactory;
+  bool m_bShowGUI;
+};
+
+VAPP_IMPLEMENT_SAMPLE(ModelMergingApp);
+
+void ModelMergingApp::InitHelp()
 {
-  // Deinit GUI
-  spMainDlg = NULL;
-  spGUIContext->SetActivate(false);
-  spGUIContext = NULL;
-  VGUIManager::GlobalManager().CleanupResources();
+  VArray<const char*> helpText;
 
-  // Delete Factory
-  V_SAFE_DELETE(pMergeModelFactory);
+#if defined(SUPPORTS_KEYBOARD)
+  helpText.Append("KEYBOARD - ARROW UP: Move Forward");
+  helpText.Append("KEYBOARD - ARROW UP + SHIFT: Run Forward");
+  helpText.Append("KEYBOARD - ARROW LEFT: Rotate Left");
+  helpText.Append("KEYBOARD - ARROW RIGHT: Rotate Right");
+  helpText.Append("KEYBOARD - SPACE : Toggle the menu");
+  helpText.Append("");
 
-  // Deinit the application
-  spApp->DeInitSample();
-  spApp = NULL;
+#endif
 
-  Vision::Plugins.UnloadAllEnginePlugins();
-  return 0;
+#if defined (_VISION_XENON) || (defined(_VISION_WINRT) && !defined(_VISION_METRO) && !defined(_VISION_APOLLO))
+  helpText.Append("PAD1 - Left Thumbstick : Move character");
+  helpText.Append("PAD1 - Left Shoulder  : Run");
+  helpText.Append("PAD1 - Y               : Toggle the menu");
+
+#elif defined (_VISION_PS3)
+  helpText.Append("PAD1 - Left Thumbstick : Move character");
+  helpText.Append("PAD1 - Left Shoulder  : Run");
+  helpText.Append("PAD1 - TRIANGLE        : Toggle the menu");
+
+#elif defined (_VISION_PSP2)
+  helpText.Append("Left Thumbstick : Move character");
+  helpText.Append("Left Shoulder   : Run");
+  helpText.Append("TRIANGLE        : Toggle the menu");
+
+#elif defined (_VISION_WIIU)
+  helpText.Append("DRC - Left Thumbstick : Move character");
+  helpText.Append("DRC - Left Shoulder   : Run");
+  helpText.Append("DRC - X               : Toggle the menu");
+
+#endif
+
+  RegisterAppModule(new VHelp(helpText));
 }
 
-VISION_MAIN_DEFAULT
+void ModelMergingApp::InitInput()
+{
+#if defined(SUPPORTS_KEYBOARD)
+  GetInputMap()->MapTrigger(MERGE_MODEL_SHOW_MENU, V_KEYBOARD, CT_KB_SPACE, VInputOptions::Once());
+#endif
+
+#if defined (_VISION_XENON) || (defined(_VISION_WINRT) && !defined(_VISION_METRO) && !defined(_VISION_APOLLO))
+  GetInputMap()->MapTrigger(MERGE_MODEL_SHOW_MENU, V_XENON_PAD(0), CT_PAD_Y, VInputOptions::Once());
+#elif defined (_VISION_PS3)
+  GetInputMap()->MapTrigger(MERGE_MODEL_SHOW_MENU, V_PS3_PAD(0), CT_PAD_TRIANGLE, VInputOptions::Once());
+#elif defined (_VISION_PSP2)
+  GetInputMap()->MapTrigger(MERGE_MODEL_SHOW_MENU, V_PSP2_PAD(0), CT_PAD_TRIANGLE, VInputOptions::Once());
+#elif defined (_VISION_WIIU)
+  GetInputMap()->MapTrigger(MERGE_MODEL_SHOW_MENU, VInputManagerWiiU::GetDRC(V_DRC_FIRST), CT_PAD_X, VInputOptions::Once());
+#endif
+}
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

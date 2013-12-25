@@ -20,6 +20,7 @@ using CSharpFramework;
 using CSharpFramework.Docking;
 using CSharpFramework.Serialization;
 using CSharpFramework.Math;
+using CSharpFramework.Controls;
 
 namespace HavokEditorPlugin
 {
@@ -129,9 +130,13 @@ namespace HavokEditorPlugin
 
     #endregion
 
-    
 
+    #region Member Variables
+
+    ToolStripHelpButton _helpbutton = null;
     private HavokPhysicsSettingsWrapper _settings = null;
+
+    #endregion
 
     #region Constructor
 
@@ -144,6 +149,10 @@ namespace HavokEditorPlugin
       GetHavokPhysicsParams();
       GetWorldRuntimeCollisionParams();
       UpdateStatus();
+
+      // Add help button
+      _helpbutton = new ToolStripHelpButton(Text);
+      ToolStrip.Items.Add(_helpbutton);
 
       EditorManager.EditorModeChanged += new EditorModeChangedEventHandler(EditorManager_EditorModeChanged);
       EditorManager.CustomSceneSerialization += new CustomSceneSerializationEventHandler(EditorManager_CustomSceneSerialization);
@@ -279,12 +288,12 @@ namespace HavokEditorPlugin
       int iRow = 0;
       foreach (HavokCollisionGroups_e rowValue in Enum.GetValues(typeof(HavokCollisionGroups_e)))
       {
-        UInt32 iMask = wr.m_collisionGroupMasks[(int)rowValue];
+        uint uiMask = wr.m_collisionGroupMasks[(int)rowValue];
         int iCell = 0;
         foreach (HavokCollisionGroups_e columnValue in Enum.GetValues(typeof(HavokCollisionGroups_e)))
         {
-          int iBit = 1 << ((int)columnValue);
-          collisionDataGridView.Rows[iRow].Cells[iCell].Value = iMask & iBit;
+          uint uiBit = 1u << ((int)columnValue);
+          collisionDataGridView.Rows[iRow].Cells[iCell].Value = (Boolean)((uiMask & uiBit) != 0);
           iCell++;
         }
         iRow++;
@@ -300,17 +309,17 @@ namespace HavokEditorPlugin
       foreach (HavokCollisionGroups_e rowValue in Enum.GetValues(typeof(HavokCollisionGroups_e)))
       {
         int iCell = 0;
-        int iMask = (int)wr.m_collisionGroupMasks[(int)rowValue];
+        uint uiMask = wr.m_collisionGroupMasks[(int)rowValue];
         foreach (HavokCollisionGroups_e columnValue in Enum.GetValues(typeof(HavokCollisionGroups_e)))
         {
           if ((Boolean)collisionDataGridView.Rows[iRow].Cells[iCell].EditedFormattedValue)
-            iMask |= 1 << ((int)columnValue);
+            uiMask |= 1u << (int)columnValue;
           else
-            iMask &= ~(1 << ((int)columnValue));
+            uiMask &= ~(1u << (int)columnValue);
           iCell++;
         }
         iRow++;
-        wr.m_collisionGroupMasks[(int)rowValue] = (UInt32)iMask;
+        wr.m_collisionGroupMasks[(int)rowValue] = uiMask;
       }
 
       HavokManaged.ManagedModule.SetWorldRuntimeSettings(wr);
@@ -861,7 +870,7 @@ namespace HavokEditorPlugin
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

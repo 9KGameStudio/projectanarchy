@@ -30,13 +30,11 @@ void VTextLabel::Serialize( VArchive &ar )
   }
 }
 
-
 void VTextLabel::OnPaint(VGraphicsInfo &Graphics, const VItemRenderInfo &parentState)
 {
   VItemRenderInfo thisState(parentState,this,1.f);
   m_TextCfg.OnPaint(Graphics,thisState);
 }
-
 
 bool VTextLabel::Build(TiXmlElement *pNode, const char *szPath, bool bWrite)
 {
@@ -76,7 +74,9 @@ void VImageControl::OnPaint(VGraphicsInfo &Graphics, const VItemRenderInfo &pare
 {
   VItemRenderInfo thisState(parentState,this,1.f);
   Graphics.ClippingStack.Push(GetBoundingBox(),true);
+  {
     m_Image.OnPaint(Graphics,thisState);
+  }
   Graphics.ClippingStack.Pop();
 }
 
@@ -95,13 +95,9 @@ void VImageControl::OnBuildFinished()
     m_vSize = m_Image.m_States[VWindowBase::NORMAL].GetSize();
 }
 
-
-
-
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 // VPushButton class
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
-
 
 V_IMPLEMENT_SERIAL( VPushButton, VDlgControlBase, 0, &g_VisionEngineModule );
 void VPushButton::Serialize( VArchive &ar )
@@ -128,8 +124,6 @@ void VPushButton::OnPaint(VGraphicsInfo &Graphics, const VItemRenderInfo &parent
   m_TextCfg.OnPaint(Graphics,thisState);
 }
 
-
-
 bool VPushButton::Build(TiXmlElement *pNode, const char *szPath, bool bWrite) 
 {
   if (!VDlgControlBase::Build(pNode,szPath,bWrite))
@@ -149,7 +143,6 @@ bool VPushButton::Build(TiXmlElement *pNode, const char *szPath, bool bWrite)
   return true;
 }
 
-
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 // VCheckBox class
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -167,7 +160,6 @@ void VCheckBox::OnPaint(VGraphicsInfo &Graphics, const VItemRenderInfo &parentSt
   m_ButtonCfg.OnPaint(Graphics,thisState);
   m_TextCfg.OnPaint(Graphics,thisState);
 }
-
 
 bool VCheckBox::Build(TiXmlElement *pNode, const char *szPath, bool bWrite)
 {
@@ -205,8 +197,6 @@ bool VCheckBox::Build(TiXmlElement *pNode, const char *szPath, bool bWrite)
   return true;
 }
 
-
-
 void VCheckBox::SetChecked(bool bStatus)
 {
   if (bStatus==IsChecked())
@@ -218,12 +208,9 @@ void VCheckBox::SetChecked(bool bStatus)
   SendValueChangedEvent(&data);
 }
 
-
-
 /////////////////////////////////////////////////////////////////////////////////////////////////
 // Dialog Title bar (can move dialog)
 /////////////////////////////////////////////////////////////////////////////////////////////////
-
 
 VDialogTitleBar::VDialogTitleBar()
 {
@@ -247,13 +234,11 @@ void VDialogTitleBar::Serialize( VArchive &ar )
   }
 }
 
-
 void VDialogTitleBar::OnPaint(VGraphicsInfo &Graphics, const VItemRenderInfo &parentState)
 {
   VItemRenderInfo thisState(parentState,this,1.f);
   m_TextCfg.OnPaint(Graphics,thisState);
 }
-
 
 bool VDialogTitleBar::Build(TiXmlElement *pNode, const char *szPath, bool bWrite)
 {
@@ -266,7 +251,6 @@ bool VDialogTitleBar::Build(TiXmlElement *pNode, const char *szPath, bool bWrite
   return true;
 }
 
-  
 void VDialogTitleBar::AdjustBar()
 {
   VASSERT(m_pOwner);
@@ -275,7 +259,6 @@ void VDialogTitleBar::AdjustBar()
   SetSize(v.x-pFrame->GetSizeX(),pFrame->m_fBorderTop);
   SetPosition(pFrame->m_fBorderLeft,0);
 }
-
 
 void VDialogTitleBar::OnActivate()
 {
@@ -288,7 +271,6 @@ void VDialogTitleBar::OnParentChanged(int iFlags)
   VDlgControlBase::OnParentChanged(iFlags);
   AdjustBar();
 }
-
 
 void VDialogTitleBar::OnDragBegin(const hkvVec2 &vMousePos, int iButtonMask)
 {
@@ -316,12 +298,9 @@ void VDialogTitleBar::OnDragEnd(VWindowBase *pOver)
     m_pOwner->OnDragEnd(pOver);
 }
 
-
-
 /////////////////////////////////////////////////////////////////////////////////////////////////
 // Dialog Resize control
 /////////////////////////////////////////////////////////////////////////////////////////////////
-
 
 VDialogResizeCtrl::VDialogResizeCtrl()
 {
@@ -343,19 +322,6 @@ void VDialogResizeCtrl::Serialize( VArchive &ar )
     ar << m_vDragStart << m_vDragPos << m_vStartSize;
   }
 }
-
-
-
-/*
-void VDialogResizeCtrl::OnPaint(VGraphicsInfo &Graphics, const VItemRenderInfo &parentState)
-{
-  hkvVec2 v1 = m_pOwner->GetPosition() + GetPosition();
-  hkvVec2 v2 = v1 + m_vSize;
-
-  VSimpleRenderState_t state = VGUIManager::DefaultGUIRenderState();
-  Graphics.Renderer.DrawSolidQuad(v1,v2,IsStatusSet(ITEMSTATUS_MOUSEOVER) ? V_RGBA_RED:V_RGBA_GREEN, state);
-}
-*/
   
 void VDialogResizeCtrl::AdjustPosition()
 {
@@ -366,7 +332,6 @@ void VDialogResizeCtrl::AdjustPosition()
   hkvVec2 v = m_pOwner->GetSize();
   SetPosition(v.x-m_vSize.x, v.y-m_vSize.y);
 }
-
 
 void VDialogResizeCtrl::OnActivate()
 {
@@ -379,7 +344,6 @@ void VDialogResizeCtrl::OnParentChanged(int iFlags)
   VDlgControlBase::OnParentChanged(iFlags);
   AdjustPosition();
 }
-
 
 void VDialogResizeCtrl::OnDragBegin(const hkvVec2 &vMousePos, int iButtonMask)
 {
@@ -403,11 +367,9 @@ void VDialogResizeCtrl::OnDragEnd(VWindowBase *pOver)
   VDlgControlBase::OnDragEnd(pOver);
 }
 
-
 /////////////////////////////////////////////////////////////////////////////////////////////////
 // Dialog Close button
 /////////////////////////////////////////////////////////////////////////////////////////////////
-
 
 VDialogCloseButton::VDialogCloseButton()
 {
@@ -431,8 +393,6 @@ void VDialogCloseButton::Serialize( VArchive &ar )
   }
 }
 
-
-
 bool VDialogCloseButton::Build(TiXmlElement *pNode, const char *szPath, bool bWrite) 
 {
   if (!VPushButton::Build(pNode,szPath,bWrite))
@@ -455,7 +415,6 @@ void VDialogCloseButton::AdjustPosition()
   SetPosition(v.x-vArea.x+vOfs.x, vOfs.y);
 }
 
-
 void VDialogCloseButton::OnActivate()
 {
   VPushButton::OnActivate();
@@ -469,7 +428,7 @@ void VDialogCloseButton::OnParentChanged(int iFlags)
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

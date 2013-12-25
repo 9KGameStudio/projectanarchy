@@ -597,7 +597,7 @@ void VTransitionStateMachine::SetState(VisAnimSequence_cl *pTargetSequence)
     // Check whether transition table has any transition data ( todo: put this initial )
     if (m_spTransTable->GetNumTransitionDefs() == 0 || m_spTransTable->GetNumTransitionSets() == 0)
     {
-      Vision::Error.Warning("Transition Data is not initialized properly. Check whether the proper Transition File is applied.");
+      hkvLog::Warning("VTransitionStateMachine: Transition Data is not initialized properly. Check whether the proper Transition File is applied.");
       return;
     }
 
@@ -737,7 +737,7 @@ void VTransitionStateMachine::SetState(VisAnimSequence_cl *pTargetSequence)
             VString message = VString("The configuration of the Intermediate Transition indicate that you are using a synced Crossfade");
             message += " as second sub-blending and the follow-up trigger BEFOREENDOFANIM. However no matching synced events for the synced Crossfade";
             message += " could be found. This can cause invalid behavior of the Intermediate transition, e.g. the second sub-blending not starting.";
-            Vision::Error.Warning(message.AsChar());
+            hkvLog::Warning(message.AsChar());
           }
         }
         
@@ -754,7 +754,7 @@ void VTransitionStateMachine::SetState(VisAnimSequence_cl *pTargetSequence)
           message += " and ";
           message += pNewAnimControl->GetAnimSequence()->GetName();
           message += " is set to false and the blending will be aborted as soon as the start time for the final blending has been reached!";
-          Vision::Error.Warning(message.AsChar());
+          hkvLog::Warning(message.AsChar());
         }
         pNewAnimControl->GetEventList()->AddEvent(time, EVENT_TRANSITION_START_REACHED, false);
       }
@@ -1632,7 +1632,7 @@ void VTransitionStateMachineNetworkSyncGroup::Synchronize(const VNetworkViewCont
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -18,10 +18,11 @@ class vHavokCharacterController;
 typedef vHavokCharacterController CharacterController;
 class VVirtualThumbStick;
 
-extern VisSampleAppPtr spApp;
+#include <Vision/Samples/Engine/Serialization/SerializeBaseEntity.hpp>
+#include <Vision/Runtime/Framework/VisionApp/VAppBase.hpp>
 
 enum SERIALIZE_CONTROL {
-  SERIALIZE_SLOT_1 = VISION_INPUT_CONTROL_LAST_ELEMENT+1,
+  SERIALIZE_SLOT_1 = VAPP_INPUT_CONTROL_LAST_ELEMENT + 1,
   SERIALIZE_SLOT_2,
   SERIALIZE_SLOT_3,
   SERIALIZE_SLOT_4,
@@ -50,10 +51,8 @@ enum SERIALIZE_CONTROL {
 //    - A mouse-controlled player entity that supports serialization
 //
 // Description:
-//    - This class represents a mouse-controlled player entity. Most of its
-//      functionality is derived from its base class, VisMouseCamera_cl. The only
-//      addition is the GetSerializeType function (from ISerializeable interface)
-//      that is queried by
+//    - This class represents a mouse-controlled player entity. The only
+//      addition is the GetSerializeType function (from the ISerializeable interface).
 //
 // Notes:
 //    - 
@@ -94,7 +93,7 @@ private:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

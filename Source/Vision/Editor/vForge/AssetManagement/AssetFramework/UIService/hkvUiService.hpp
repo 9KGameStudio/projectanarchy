@@ -36,6 +36,12 @@ public:
     Question    = V_BIT(3),
   };
 
+  enum HelpSystemQuery
+  {
+    HasHelpPageQuery  = V_BIT(0),
+    ShowHelpPageQuery = V_BIT(1),
+  };
+
   /// \brief
   ///   Data object for the OnRunUiServiceCommand callback in hkvUiService.
   class UiMessageBoxData : public hkvCallbackData
@@ -67,26 +73,54 @@ public:
 
     bool m_silentMode;
     bool m_isDevelopmentMachine;
+    hkStringPtr m_projectDir;
+    hkStringPtr m_projectSearchPath;
   };
 
-public: // Data
-  ASSETFRAMEWORK_IMPEXP static void TriggerOnShowMessageBoxCallback(hkvCallbackData* pData);
-  ASSETFRAMEWORK_IMPEXP static void TriggerOnQueryEditorStatusCallback(hkvCallbackData* pData);
+  /// \brief
+  ///   Data object for the OnQuerySilentMode callback in hkvUiService.
+  class QueryHelpSystemData : public hkvCallbackData
+  {
+  public:
+    ASSETFRAMEWORK_IMPEXP QueryHelpSystemData(const hkvCallback* sender, HelpSystemQuery query, const char* key, const char* context)
+      : hkvCallbackData(sender), m_query(query), m_key(key), m_context(context), m_success(false)
+    {
+    }
+
+    // in
+    hkEnum<HelpSystemQuery, hkUint8> m_query;
+    const char* m_key;
+    const char* m_context;
+
+    // out
+    bool m_success;
+  };
 
 public:
+  ASSETFRAMEWORK_IMPEXP static void TriggerOnShowMessageBoxCallback(hkvCallbackData* pData);
+  ASSETFRAMEWORK_IMPEXP static void TriggerOnQueryEditorStatusCallback(hkvCallbackData* pData);
+  ASSETFRAMEWORK_IMPEXP static void TriggerOnQueryHelpSystemCallback(hkvCallbackData* pData);
+
+public: // Data
   ASSETFRAMEWORK_IMPEXP static hkvCallbackWrapper OnShowMessageBox;
   ASSETFRAMEWORK_IMPEXP static hkvCallbackWrapper OnQueryEditorStatus;
+  ASSETFRAMEWORK_IMPEXP static hkvCallbackWrapper OnQueryHelpSystem;
 
 public:
   ASSETFRAMEWORK_IMPEXP static bool isSilentModeEnabled();
   ASSETFRAMEWORK_IMPEXP static bool isDevelopmentMachine();
+  ASSETFRAMEWORK_IMPEXP static const char* getProjectDir(hkStringBuf& out_buffer);
+  ASSETFRAMEWORK_IMPEXP static const char* getProjectSearchPath(hkStringBuf& out_buffer);
   ASSETFRAMEWORK_IMPEXP static MessageBoxButton showMessageBox(const char* title, const char* text, hkFlags<MessageBoxButton, hkUint8> availableButtons = Ok, MessageBoxButton defaultButton = Ok, MessageBoxIcon icon = Information);
+
+  ASSETFRAMEWORK_IMPEXP static bool HasHelpPage(const char* key, const char* contextName = NULL);
+  ASSETFRAMEWORK_IMPEXP static bool ShowHelpPage(const char* key, const char* contextName = NULL);
 };
 
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

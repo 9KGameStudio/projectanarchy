@@ -9,7 +9,6 @@
 #include <Vision/Runtime/Base/BasePCH.h>
 #include <iostream>
 
-#include <Vision/Runtime/Base/IPC/VIPCTrace.hpp>
 #include <Vision/Runtime/Base/IPC/VMessage.hpp>
 #include <Vision/Runtime/Base/IPC/VChannelQueue.hpp>
 #include <Vision/Runtime/Base/IPC/VIOLoop.hpp>
@@ -116,7 +115,6 @@ void IOLoop::Run()
     if (waitRes == WAIT_FAILED)
     {
       DWORD lastError = GetLastError();
-      TRACE1("WaitForMultipleObjects failed with error code %#.8x", lastError);
       std::cout << "WaitForMultipleObjects failed with error code: " << lastError << std::endl;
       continue;
     }
@@ -127,11 +125,9 @@ void IOLoop::Run()
     int eventIndex = waitRes - WAIT_OBJECT_0;
     if (eventIndex >= 0 && eventIndex < numChannels) 
     {
-      TRACE1("IOLoop: Event on channel %d", eventIndex);
       m_channels[eventIndex]->ProcessMessages();
       if (!m_channels[eventIndex]->IsValid())
       {
-        TRACE1("IOLoop: Channel %d has been closed", eventIndex);
         MsgChannelClosed msg(eventIndex);
         msg.SetReceiverId(m_id);
         msg.SetSenderId(1);
@@ -140,7 +136,6 @@ void IOLoop::Run()
     }
     else if (eventIndex < numEvents)
     {
-      TRACE1("IOLoop: Process %d signaled", eventIndex - numChannels);
       HANDLE processHandle = m_processes[eventIndex - numChannels];
 
       MsgPeerIsDead msg(processHandle);
@@ -148,10 +143,9 @@ void IOLoop::Run()
       msg.SetSenderId(1);
       OnMessageReceived(msg);
 
-      m_processesMutex.Lock();
+      VMutexLocker lock(m_processesMutex);
       CloseHandle(processHandle);
       m_processes.Remove(processHandle);
-      m_processesMutex.Unlock();
     }
   }
 }
@@ -176,12 +170,13 @@ void IOLoop::Stop()
 
   m_shouldRun = false;
 
-  m_channelsMutex.Lock();
-  for (int i = 0; i < m_channels.GetLength(); ++i)
   {
-    m_channels[i]->CancelIO();
+    VMutexLocker lock(m_channelsMutex);
+    for (int i = 0; i < m_channels.GetLength(); ++i)
+    {
+      m_channels[i]->CancelIO();
+    }
   }
-  m_channelsMutex.Unlock();
 
   DWORD res = WaitForSingleObject(m_threadHandle, 5000);
   if (res == WAIT_TIMEOUT)
@@ -195,16 +190,14 @@ void IOLoop::Stop()
 
 void IOLoop::AddChannel(Channel* channel)
 {
-  m_channelsMutex.Lock();
+  VMutexLocker lock(m_channelsMutex);
   m_channels.Append(channel);
-  m_channelsMutex.Unlock();
 }
 
 void IOLoop::RemoveChannel(Channel* channel)
 {
-  m_removeChannelsMutex.Lock();
+  VMutexLocker lock(m_removeChannelsMutex);
   m_removeChannels.Append(channel);
-  m_removeChannelsMutex.Unlock();
 }
 
 Channel* IOLoop::GetChannel(int index) const
@@ -214,9 +207,8 @@ Channel* IOLoop::GetChannel(int index) const
 
 void IOLoop::AddProcess(HANDLE process)
 {
-  m_processesMutex.Lock();
+  VMutexLocker lock(m_processesMutex);
   m_processes.Append(process);
-  m_processesMutex.Unlock();
 }
 
 void IOLoop::TerminateAllProcesses()
@@ -228,7 +220,7 @@ void IOLoop::TerminateAllProcesses()
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

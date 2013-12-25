@@ -63,10 +63,13 @@
   #define VISION_THREADLOCAL_DECL_CHARBUFF(SIZE,VAR)  __thread   char VAR[SIZE];
  
 #elif defined(_VISION_POSIX)
-  // uses library functions to access thread specific data. TODO: Use OSThread functions.
-  #define VISION_THREADLOCAL_INST(TYPE,VAR,VAL) TYPE VAR = VAL;
-  #define VISION_THREADLOCAL_DECL(TYPE,VAR)     TYPE VAR;
-  #define VISION_THREADLOCAL_DECL_CHARBUFF(SIZE,VAR) char  VAR[SIZE];
+  #include <Vision/Runtime/Base/System/Threading/Thread/VThreadVariable.hpp>
+  //Creates an instance in the source
+  #define VISION_THREADLOCAL_INST(TYPE,VAR,VAL)   VThreadVariable<TYPE> VAR(VAL);
+  //Declares the variable in the header
+  #define VISION_THREADLOCAL_DECL(TYPE,VAR)       VThreadVariable<TYPE> VAR;
+  //Declares the variable in the header
+  #define VISION_THREADLOCAL_DECL_CHARBUFF(SIZE,VAR) VThreadBuffer<char,SIZE> VAR;    
 
 #else
 
@@ -126,11 +129,6 @@
   #pragma old_friend_lookup on
 #endif
 
-
-//Force our time to be 64-bit to avoid VC2003 and VC2005 issues
-typedef __time64_t vtime_t;
-
-
 #if defined(_USE_32BIT_TIME_T)
   #error("You should not define _USE_32BIT_TIME_T anymore")
 #endif
@@ -187,7 +185,7 @@ typedef int intptr_t;
 #define V_SAFE_DISPOSEOBJECT(x)           { if (x) { if (!(x)->IsDisposed()) (x)->DisposeObject(); (x)=NULL; } }
 #define V_SAFE_REMOVE(x)                  { if (x) { (x)->Remove();           (x)=NULL; } }
 
-#define V_VERIFY_MALLOC(p)                { if (!(p)) Vision::Error.FatalError("malloc failed (variable: %s)",#p); ANALYSIS_ASSUME(p) }
+#define V_VERIFY_MALLOC(p)                { if (!(p)) hkvLog::FatalError("malloc failed (variable: %s)",#p); ANALYSIS_ASSUME(p) }
 
 #define V_BIT(_iBit)                      ( 1U<<(_iBit) )
 #define V_BIT_64(_iBit)                   ( 1ULL<<(_iBit) )
@@ -253,8 +251,6 @@ inline wchar_t* vwStrDup(const wchar_t* the_string)
     return (NULL);
 }
 inline void vStrDupOver(char*& dst, const char* src)  {vStrFree(dst); if(src) dst=vStrDup(src); else dst=NULL;}
-
-V_COMPILE_ASSERT(sizeof(vtime_t)==8);  ///< time_t must be 64-bits (see above)
 
 #ifdef SPU
   #include <Vision/Runtime/Base/Graphics/VColor.hpp>
@@ -372,10 +368,14 @@ V_COMPILE_ASSERT(sizeof(vtime_t)==8);  ///< time_t must be 64-bits (see above)
   #include <Vision/Runtime/Base/Graphics/Video/VVideoCaps.hpp>
   #include <Vision/Runtime/Base/Graphics/Video/VVertexDescriptor.hpp>
 
+  #include <Vision/Runtime/Base/System/IO/FileSystems/VDiskFileSystem.hpp>
+  #include <Vision/Runtime/Base/System/IO/FileSystems/VMemoryFileSystem.hpp>
+  #include <Vision/Runtime/Base/System/IO/FileSystems/VZipFileSystem.hpp>
   #include <Vision/Runtime/Base/System/IO/Stream/VMemoryStream.hpp>
   #include <Vision/Runtime/Base/System/IO/RevisionControl/IVRevisionControlSystem.hpp>
+  #include <Vision/Runtime/Base/System/IO/System/VRCSHelper.hpp>
   #include <Vision/Runtime/Base/System/IO/System/VFileAccessManager.hpp>
-  
+
   #include <Vision/Runtime/Base/Graphics/Textures/VTextureManager.hpp>
   #include <Vision/Runtime/Base/System/Resource/VResourceSnapshot.hpp>
 
@@ -475,7 +475,7 @@ VBASE_IMPEXP void vBaseInterReleaseDebugLinkingCheck();
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

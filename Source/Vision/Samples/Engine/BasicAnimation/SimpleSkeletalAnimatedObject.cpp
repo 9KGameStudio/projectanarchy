@@ -185,7 +185,7 @@ void SimpleSkeletalAnimatedObject_cl::UpdateLookatHeadRotation(float fTimeDelta)
 
 void SimpleSkeletalAnimatedObject_cl::ThinkFunction()
 {
-  // First check whether the object is actually active
+  // Check whether the object is active.
   if (GetAnimConfig() == NULL)
     return;
 
@@ -205,8 +205,8 @@ void SimpleSkeletalAnimatedObject_cl::ThinkFunction()
     VASSERT(m_pLookAtTarget);
 
     // rotate the object around the character
-    m_fLookAtRotationPhase = hkvMath::mod (m_fLookAtRotationPhase + dtime*0.7f, hkvMath::pi() * 2.0f);
-    hkvVec3 vNewPos(100.f*hkvMath::sinRad (m_fLookAtRotationPhase), 100.0f*hkvMath::cosRad(m_fLookAtRotationPhase), 160.0f);
+    m_fLookAtRotationPhase = hkvMath::mod(m_fLookAtRotationPhase + dtime*0.7f, hkvMath::pi() * 2.0f);
+    hkvVec3 vNewPos(100.f*hkvMath::sinRad(m_fLookAtRotationPhase), 100.0f*hkvMath::cosRad(m_fLookAtRotationPhase), 160.0f);
     vNewPos += GetPosition();
     m_pLookAtTarget->SetPosition(vNewPos);
 
@@ -489,17 +489,17 @@ void SimpleSkeletalAnimatedObject_cl::LookAt()
   m_RelativeHeadOrientation.setFromEulerAngles (90, 0, 270);
 
   // create an entity that rotates around the model
-  m_pLookAtTarget = Vision::Game.CreateEntity("VisBaseEntity_cl", hkvVec3(0,0,0), "Models\\MagicBall.model");
+  m_pLookAtTarget = Vision::Game.CreateEntity("VisBaseEntity_cl", hkvVec3::ZeroVector(), "Models/MagicBall.model");
   m_fLookAtRotationPhase = 0.f;
 }
 
 V_IMPLEMENT_SERIAL(SimpleSkeletalAnimatedObject_cl, VisBaseEntity_cl, 0, Vision::GetEngineModule());
 
-START_VAR_TABLE(SimpleSkeletalAnimatedObject_cl, VisBaseEntity_cl, "SimpleSkeletalAnimatedObject_cl", 0, "Models\\Warrior\\Warrior.model")
+START_VAR_TABLE(SimpleSkeletalAnimatedObject_cl, VisBaseEntity_cl, "SimpleSkeletalAnimatedObject_cl", 0, "Models/Warrior/Warrior.model")
 END_VAR_TABLE
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

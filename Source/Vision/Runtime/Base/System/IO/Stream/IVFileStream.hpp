@@ -11,10 +11,11 @@
 #ifndef DC_IVFILESTREAM_HPP
 #define DC_IVFILESTREAM_HPP
 
-#include <Vision/Runtime/Base/System/IO/System/VFileTime.hpp>
 #include <Vision/Runtime/Base/System/VRefCounter.hpp>
 #include <Vision/Runtime/Base/System/IO/Asset/hkvAssetLookUpTable.hpp>
+#include <Vision/Runtime/Base/System/IO/System/VFileAccessManager.hpp>
 #include <Vision/Runtime/Base/System/Threading/SyncPrimitive/VMutex.hpp>
+#include <Vision/Runtime/Base/System/VDateTime.hpp>
 
 #include <Vision/Runtime/Base/Math/hkvMath.h> //for hkvResult
 #include <Vision/Runtime/Base/System/VNameValueListParser.hpp>
@@ -22,7 +23,7 @@
 
 class IVFileInStream;
 class IVFileOutStream;
-class IVFileStreamManager;
+class VFileAccessManager;
 struct VFileHandle;
 
 /// \brief
@@ -40,301 +41,82 @@ struct VAssetInfo
 };
 
 
-/// \brief 
-///   Internal helper class for resolving assets
-struct VAssetResolveContext
+/// \brief
+///   Base class for all input and output streams.
+class IVFileStreamBase
 {
-  /// \brief constructor
-  VAssetResolveContext(IVFileStreamManager* pRootManager = NULL)
-  : m_pRootManager(pRootManager), m_iVariantKeyIndex(0), m_iRecursionDepth(0), m_szInitialDataDir(NULL)
+public:
+  /// \brief
+  ///   Initializes this file stream, optionally passing the file system that created this stream.
+  IVFileStreamBase(IVFileSystem* pFileSystem = NULL)
+  : m_spFileSystem(pFileSystem)
   {
   }
-
-  IVFileStreamManager* m_pRootManager;
-  int m_iVariantKeyIndex;
-  int m_iRecursionDepth;
-  const char* m_szInitialDataDir;
-};
-
-
-/// \brief An IVFileStreamManager creates the proper IVFileStream objects to access a certain type of data stream.
-/// 
-/// This is the base class for all file stream managers. There are different types of managers that enable reading from or writing to different data sources.
-/// Some file stream managers support one or more "data directories" (e.g. a 'folder' in a file system).
-/// 
-/// For example VDiskFileStreamManager enables access to a local file system and can mount several different folders as 'data directories'.
-class IVFileStreamManager : public VRefCounter, public VTypedObject
-{
-  V_DECLARE_DYNAMIC_DLLEXP(IVFileStreamManager, VBASE_IMPEXP);
+private:
+  IVFileStreamBase(const IVFileStreamBase&);
+  IVFileStreamBase& operator=(const IVFileStreamBase&);
+public:
+  virtual ~IVFileStreamBase()
+  {
+  }
 
 public:
-  
-  /// \brief Flags for the 'Create' function
-  enum CreateFlags
-  {
-    CREATE_APPEND         = V_BIT(0),                            ///< Opens a file for writing, but keeps existing data and instead appends new data at its end
-    SHARE_DENY_WRITE      = V_BIT(1),                            ///< unsupported
-    SHARE_DENY_READ       = V_BIT(2),                            ///< unsupported
-    SHARE_DENY_READWRITE  = SHARE_DENY_WRITE | SHARE_DENY_READ   ///< unsupported
-  };
-  
-  /// \brief Flags for the 'Open' function
-  enum OpenFlags
-  {
-    OPEN_NO_CACHE     = V_BIT(0),  ///< Disables the read cache for files. The read cache is only used, if its size was specified via VDiskFileStreamCacheManager::SetReadCacheSize, though.
-    OPEN_NO_RECURSE   = V_BIT(1),  ///< [internal] Don't descend recursively to sub-FileStreamManagers.
-    OPEN_ALLOW_WRITE  = V_BIT(2)   ///< Allow the file to be opened for writing by others. Only supported on WIN32.
-  };  
-
-  /// \brief 
-  ///   Constructor
-  VBASE_IMPEXP IVFileStreamManager();
-
-  /// \brief 
-  ///   Destructor
-  VBASE_IMPEXP virtual ~IVFileStreamManager();
+  /// \brief
+  ///   Returns the file system that created this stream (may be NULL).
+  inline IVFileSystem* GetFileSystem() const { return m_spFileSystem; }
 
   /// \brief
-  ///   Determines whether a specific data directory has support (i.e., a look-up table) for an asset
-  ///   profile.
-  /// \param pszProfileName
-  ///   the asset profile in question
-  /// \param pszDataDirectory
-  ///   the data directory to check
+  ///   Returns the name of the file.
+  virtual const char* GetFileName() = 0;
+
+  /// \brief
+  ///   Sets the absolute path within the VFileAccessManager by which this stream has been opened.
+  /// \param szAbsolutePath
+  ///   the path to set
+  VBASE_IMPEXP void SetAbsolutePath(const char* szAbsolutePath);
+
+  /// \brief
+  ///   Sets the absolute path within the VFileAccessManager by which this stream has been opened.
+  /// \param szRoot
+  ///   the root of path to set
+  /// \param szPathBelowRoot
+  ///   the part below the root of the path to set
+  VBASE_IMPEXP void SetAbsolutePath(const char* szRoot, const char* szPathBelowRoot);
+
+  /// \brief
+  ///   Returns the absolute path within the VFileAccessManager by which this stream has been opened.
   /// \return
-  ///   \c true if the data directory supports the asset profile, \c false if not
-  VBASE_IMPEXP bool IsAssetProfileSupported(const char* pszProfileName, const char* pszDataDirectory);
+  ///   the absolute path. This string may be empty if the stream has not been opened via the
+  ///   VFileAccessManager.
+  VBASE_IMPEXP const char* GetAbsolutePath() const;
 
   /// \brief
-  ///   Initializes the asset library
-  ///
-  /// \return HKV_SUCCESS on success and HKV_FAILURE on failure
-  VBASE_IMPEXP hkvResult InitializeAssetLibrary();
-
-  /// \brief
-  ///   Looks up an asset in the lookup table associated with the file stream manager
-  ///
-  /// \param pszAsset
-  ///   The asset to look up
-  ///
-  /// \return NULL if not found, pointer to the data struct otherwise
-  VBASE_IMPEXP const VAssetInfo* LookUpAsset(const char* pszAsset);
-
-  /// \brief
-  ///   Looks up an asset in the lookup table associated with the file stream manager
-  ///
-  /// \param pszAsset
-  ///   The asset to look up
-  ///
-  /// \param resolveContext
-  ///   The resolve context used to track the current look-up
-  ///
-  /// \return NULL if not found, pointer to the data struct otherwise
-  VBASE_IMPEXP const VAssetInfo* LookUpAsset(const char* pszAsset, VAssetResolveContext& resolveContext);
-
-  /// \brief
-  ///   Get the manager's name.
-  VBASE_IMPEXP virtual const char* GetName() = 0;
-
-  /// \brief
-  ///   Opens an existing file for reading.
-  /// 
-  /// A pointer to an instance of IVFileInStream will be returned.
-  /// 
-  /// If the operation fails, e.g. because the file does not exist, this function returns NULL.
-  /// 
-  /// \param szFileName
-  ///   String of the full path name of the file to open. If it is a relative path, the file will be searched in all data directories.
-  /// 
-  /// \param iFlags
-  ///   see IVFileStreamManager::OpenFlags
-  ///
-  /// \return
-  ///   IVFileInStream* pInFile : File object instance of the opened file (or NULL).
-  VBASE_IMPEXP IVFileInStream* Open(const char* szFileName, int iFlags = 0);
-
-  /// \brief
-  ///   Opens or creates a file for writing.
-  /// 
-  /// If the file exists, it will be overwritten.
-  /// 
-  /// If the operation fails, e.g. because the path does not exist, this function returns NULL.
-  /// 
-  /// \param szFileName
-  ///   String of the full path name of the file to create. If it is a relative path, the file 
-  ///   will be created in the first writable data directory.
-  ///
-  /// \param iFlags
-  ///   see IVFileStreamManager::CreateFlags
-  /// 
-  /// \return
-  ///   IVFileOutStream* pOutFile : File object instance of the new file (or NULL).
-  VBASE_IMPEXP virtual IVFileOutStream* Create(const char* szFileName, int iFlags = 0) = 0;
-
-  /// \brief
-  ///   Checks whether a file of specified filename exists.
-  VBASE_IMPEXP BOOL Exists(const char* szFileName);
-
-
-  /// \brief
-  ///   Fills out the VFileTime structure with the filetime information. Returns FALSE, if the time-stamp could not be retrieved (e.g. because the file does not exist).
-  VBASE_IMPEXP BOOL GetTimeStamp(const char* szFileName, VFileTime& out_destTime);
-
-  /// \brief
-  ///   Returns the maximum number of data directories supported by this manager (in most cases 1).
-  VBASE_IMPEXP virtual int GetNumDataDirectories() = 0;
-
-  /// \brief
-  ///   Sets a data directory. The index must be in valid range.
-  VBASE_IMPEXP bool SetDataDirectory(int idx, const char* szPath);
-
-  /// \brief
-  ///   Returns the path of a data directory. Returns NULL if the index is not valid or the data directory is not set.
-  VBASE_IMPEXP virtual const char* GetDataDirectory(int idx = 0) = 0;
-
-  /// \brief
-  ///   Enables or disables caching of entries in a data directory (where applicable in derived classes). This can speed up file lookups (especially 'Exists' calls).
-  VBASE_IMPEXP virtual void SetEnableDirectoryCaching(bool bStatus, int idx = 0) {}
-
-  /// \brief
-  ///   Checks whether or not directory caching is enabled. If a file stream manager does not implement directory caching, this function will always return false.
-  VBASE_IMPEXP virtual bool IsDirectoryCachingEnabled(int idx = 0) { return false; }
-
-  /// \brief
-  ///   Returns the number of sub-manager slots this file stream manager has.
-  VBASE_IMPEXP virtual int GetNumSubManagerSlots() const { return 0; }
-
-  /// \brief
-  ///   Returns the sub-manager at the specified slot. Caution: Even with a valid slot, the returned manager may be NULL!
-  VBASE_IMPEXP virtual IVFileStreamManager* GetSubManager(int iSlot) const { return NULL; }
-
-  /// \brief
-  ///   Notifies this file stream manager that the structure (data directories, 
-  ///   asset lookup tables) changed in some way. In the base implementation, this clears
-  ///   any cached look-up results.
-  VBASE_IMPEXP virtual void StructureChanged();
-
-protected:
-  /// \brief
-  ///   Helper structure for data exchange between the InternalOpen() method and its callers.
-  struct InternalOpenContext
-  {
-    InternalOpenContext()
-    {
-      m_szOriginalLookupName = NULL;
-    }
-
-    /// The file name that has been looked up originally. This is the name passed to the first
-    /// Open() call, before any asset lookup has taken place.
-    const char* m_szOriginalLookupName;
-  };
-
-  /// \brief
-  ///   Opens an existing file for reading.
-  /// 
-  /// If this manager implementation is potentially used for streaming, this method 
-  /// must be implemented thread-safe. See class VMutex.
-  /// 
-  /// \param szFileName
-  ///   string of the full path name (might be relative) of the file to open.
-  /// 
-  /// \param iFlags
-  ///   see IVFileStreamManager::OpenFlags
-  ///
-  /// \param ioc
-  ///   a context holding additional information about the open/lookup process
-  ///
-  /// \return
-  ///   Pointer to a new instance of a IVFileInStream for the opened file, or NULL, if the file
-  ///   could not be opened.
-  virtual IVFileInStream* InternalOpen(const char* szFileName, int iFlags, const InternalOpenContext& ioc) = 0;
-  
-  IVFileInStream* CallInternalOpen(IVFileStreamManager& other, const char* szFileName, int iFlags, const InternalOpenContext& ioc)
-  {
-    return other.InternalOpen(szFileName, iFlags, ioc);
-  }
-
-  /// \brief
-  ///   Checks whether a file with the specified filename exists.
-  virtual BOOL InternalExists(const char* szFileName) = 0;
-
-  BOOL CallInternalExists(IVFileStreamManager& other, const char* szFileName)
-  {
-    return other.InternalExists(szFileName);
-  }
-
-  /// \brief
-  ///   Fills out the VFileTime structure with the filetime information. Returns FALSE if the information could not be retrieved.
-  virtual BOOL InternalGetTimeStamp(const char* szFileName, VFileTime& out_destTime) = 0;
-
-  /// \brief
-  ///   Helper function to allow file stream managers to call 'InternalGetTimeStamp' of other file stream managers, although the function is not public.
-  BOOL CallInternalGetTimeStamp(IVFileStreamManager& other, const char *szFileName, VFileTime &destTime)
-  {
-    return other.InternalGetTimeStamp(szFileName, destTime);
-  }
-
-  /// \brief
-  ///   Sets a data directory. The index must be in valid range.
-  virtual bool InternalSetDataDirectory(int idx, const char* szPath)  = 0;
-
-  /// \brief
-  ///   Locks the structure of this file manager against concurrent modifications.
-  void LockStructure();
-
-  /// \brief
-  ///   Unlocks the structure modification protection again.
-  void UnlockStructure();
+  ///   This function closes the stream and deallocates its data. The object can not be used anymore after this call.
+  virtual void Close() = 0;
 
 private:
 
-  /// The lookup table used to resolve assets to files that can be opened by the file managers.
-  hkvAssetLookUpTable m_AssetLookUpTable;
-
-  /// A mutex to protect the structure of this file stream manager
-  VMutex m_structureProtect;
-
-  /// The asset queried for in the last successful look-up
-  VString m_sLastAsset;
-
-  /// The result of the last successful asset look-up
-  const VAssetInfo* m_pLastAssetInfo;
-
-  /// The initial data directory of the last successful asset look-up
-  const char* m_szLastAssetDataDir;
+protected:
+  VSmartPtr<IVFileSystem> m_spFileSystem;
+  VStaticString<FS_MAX_PATH> m_sAbsolutePath;
 };
-
-/// \brief Typedef for smart pointer to IVFileStreamManager.
-typedef VSmartPtr<IVFileStreamManager> IVFileStreamManagerPtr;
-
 
 
 /// \brief
 ///   This is the base class for all 'in streams', ie. streams that are used for reading from a data source (e.g. a file or a memory stream).
-class IVFileInStream
+class IVFileInStream : public IVFileStreamBase
 {
 public:
-
   /// \brief
-  ///   The object must be constructed by a IVFileStreamManager, which will pass itself as the parent manager to the instance.
-  IVFileInStream(IVFileStreamManager* pManager)
+  ///   Initializes this file stream, optionally passing the file system that created this stream.
+  IVFileInStream(IVFileSystem* pFileSystem = NULL)
+  : IVFileStreamBase(pFileSystem), m_bEOF(true), m_uiLookupHash(0)
   {
-    m_pParentManager = pManager;
-    m_bEOF = true; // no data till successfully opened
-    m_uiLookupHash = 0;
   }
 
   /// \brief
   ///   Destructor
   virtual ~IVFileInStream() {}
-
-  /// \brief
-  ///   Returns the manager that created this stream.
-  inline IVFileStreamManager* GetManager() const {return m_pParentManager;}
-
-  /// \brief
-  ///   This function closes the stream and deallocates its data. The object can not be used anymore after this call.
-  virtual void Close() = 0;
 
   /// \brief
   ///   Reads up to iLen number of bytes to pBuffer. Returns the exact number of bytes that was read (may be smaller than iLen).
@@ -350,7 +132,7 @@ public:
   virtual size_t Read(void* pBuffer,int iLen) = 0;
 
   /// \brief
-  ///   Read function that performs endianess conversion on the read buffer.
+  ///   Read function that performs endianness conversion on the read buffer.
   /// 
   /// This version of the read function calls the virtual Read function and performs the conversion
   /// on the read block.
@@ -394,16 +176,12 @@ public:
   virtual BOOL SetPos(LONG iPos, int iMode) = 0;
 
   /// \brief
-  ///   Returns the current file posistion. This function will be removed in the future.
+  ///   Returns the current file position.
   virtual LONG GetPos() = 0;
 
   /// \brief
   ///   Returns the size of the file in bytes.
   virtual LONG GetSize() = 0;
-
-  /// \brief
-  ///   Returns the name of the file.
-  virtual const char* GetFileName() = 0;
 
   /// \brief
   ///   Indicates whether the end of file has been reached.
@@ -413,24 +191,28 @@ public:
   }
 
   /// \brief
+  ///  Sets the modification date of the file the stream points to.
+  VBASE_IMPEXP void SetTimeStamp(const VDateTime& timeStamp);
+
+  /// \brief
   ///  Returns the modification date of the file the stream points to.
-  VBASE_IMPEXP virtual bool GetTimeStamp(VFileTime& result);
+  VBASE_IMPEXP bool GetTimeStamp(VDateTime& result) const;
 
   /// \brief
-  ///   Sets the data directory in which the asset for this stream was first successfully looked up.
-  /// \param szDataDir
-  ///   The data directory to set.
-  VBASE_IMPEXP void SetInitialDataDir(const char* szDataDir);
+  ///   Sets the search path in which the asset for this stream was first successfully looked up.
+  /// \param szSearchPath
+  ///   The search path to set.
+  VBASE_IMPEXP void SetInitialSearchPath(const char* szSearchPath);
 
   /// \brief
-  ///   Gets the data directory in which the asset for this stream was first
-  ///   successfully looked up. If the stream was not opened as the result of 
-  ///   an asset look-up, this function returns \c NULL.
+  ///   Gets the search path in which the asset for this stream was first
+  ///   successfully looked up. If the stream was not opened using a relative path,
+  ///   this function returns an empty string, as no look-up has taken place.
   /// \return
-  ///   The initial data directory, or \c NULL if this stream was not opened as a result of an asset look-up.
-  const char* GetInitialDataDir() const
+  ///   The initial search path, or \c NULL if this stream was not opened without look-up.
+  const char* GetInitialSearchPath() const
   {
-    return m_sInitialDataDir;
+    return m_sInitialSearchPath;
   }
 
   /// \brief
@@ -442,7 +224,7 @@ public:
   /// \brief
   ///   Returns the metadata string set for this stream.
   /// \return
-  ///   The metadata set for this stream. May be NULL.
+  ///   The metadata set for this stream. May be empty, but never \c NULL.
   const char* GetMetadata() const
   {
     return m_sMetaData;
@@ -467,10 +249,10 @@ public:
   }
 
 protected:
+  VDateTime m_timeStamp;
   bool m_bEOF;
-  IVFileStreamManager *m_pParentManager;
   VString m_sMetaData;
-  VString m_sInitialDataDir;
+  VString m_sInitialSearchPath;
   unsigned int m_uiLookupHash;
 };
 
@@ -478,29 +260,17 @@ protected:
 
 /// \brief
 ///   This is the base class for all 'out streams', ie. streams that are used for writing to a data stream (e.g. a file or a memory stream).
-class IVFileOutStream
+class IVFileOutStream : public IVFileStreamBase
 {
 public:
-
-  /// \brief
-  ///   The object must be constructed by a IVFileStreamManager, which will pass itself as the parent manager to the instance.
-  IVFileOutStream(IVFileStreamManager *pManager)
+  IVFileOutStream(IVFileSystem* pFileSystem)
+  : IVFileStreamBase(pFileSystem)
   {
-    m_pParentManager = pManager;
   }
 
   /// \brief
   ///   Destructor
   virtual ~IVFileOutStream() {}
-
-
-  /// \brief
-  ///   Get the manager that created this stream.
-  inline IVFileStreamManager* GetManager() const {return m_pParentManager;}
-
-  /// \brief
-  ///   This function closes the stream and deallocates its data. The object can not be used anymore after this call.
-  virtual void Close() = 0;
 
   /// \brief
   ///   Writes up to iLen number of bytes from pBuffer to the stream. Returns the exact number of bytes that were written.
@@ -552,10 +322,6 @@ public:
   ///   Makes sure all data is written to disk (not necessarily supported by all file-systems).
   virtual void Flush() = 0;
 
-  /// \brief
-  ///   Returns the name of the file.
-  virtual const char* GetFileName() = 0;
-
 
   /// \brief
   ///   Helper function to write a string to the stream.
@@ -575,10 +341,6 @@ public:
 
     return Write(szString, strlen(szString));
   }
-
-protected:
-  /// \brief The parent file stream manager.
-  IVFileStreamManager* m_pParentManager;
 };
 
 
@@ -775,14 +537,11 @@ private:
 
 #include <Vision/Runtime/Base/System/IO/System/VFileHelper.hpp>
 
-//Resets the file stream manager and asset management data
+// Initializes file access in VBase
+VBASE_IMPEXP void VBase_InitFileManagement();
+
+// Resets the file access manager and asset management data
 VBASE_IMPEXP void VBase_DeInitFileManagement();
-
-//Retrieves the file stream manager used by vBase
-VBASE_IMPEXP IVFileStreamManager* VBase_GetFileStreamManager();
-
-//Sets the file stream manager used by vBase
-VBASE_IMPEXP void VBase_SetFileStreamManager(IVFileStreamManager* pManager);
 
 
 namespace AssetSettings
@@ -911,7 +670,7 @@ namespace AssetVariantKeys
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

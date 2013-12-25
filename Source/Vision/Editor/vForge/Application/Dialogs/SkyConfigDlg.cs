@@ -96,7 +96,7 @@ namespace Editor.Dialogs
       this.button_Cancel = new System.Windows.Forms.Button();
       this.PropertyGrid_Layer = new CSharpFramework.Controls.PropertyGridNested();
       this.ListView_Layers = new System.Windows.Forms.ListView();
-      this.columnHeader_LayerName = new System.Windows.Forms.ColumnHeader();
+      this.columnHeader_LayerName = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
       this.PropertyGrid_Sky = new CSharpFramework.Controls.PropertyGridNested();
       this.button_AddLayer = new System.Windows.Forms.Button();
       this.button_RemoveLayer = new System.Windows.Forms.Button();
@@ -125,9 +125,9 @@ namespace Editor.Dialogs
       // 
       this.button_OK.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
       this.button_OK.DialogResult = System.Windows.Forms.DialogResult.OK;
-      this.button_OK.Location = new System.Drawing.Point(7, 13);
+      this.button_OK.Location = new System.Drawing.Point(6, 11);
       this.button_OK.Name = "button_OK";
-      this.button_OK.Size = new System.Drawing.Size(96, 37);
+      this.button_OK.Size = new System.Drawing.Size(80, 32);
       this.button_OK.TabIndex = 11;
       this.button_OK.Text = "OK";
       this.button_OK.Click += new System.EventHandler(this.button_OK_Click);
@@ -136,9 +136,9 @@ namespace Editor.Dialogs
       // 
       this.button_Cancel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
       this.button_Cancel.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-      this.button_Cancel.Location = new System.Drawing.Point(110, 13);
+      this.button_Cancel.Location = new System.Drawing.Point(92, 11);
       this.button_Cancel.Name = "button_Cancel";
-      this.button_Cancel.Size = new System.Drawing.Size(96, 37);
+      this.button_Cancel.Size = new System.Drawing.Size(80, 32);
       this.button_Cancel.TabIndex = 12;
       this.button_Cancel.Text = "Cancel";
       // 
@@ -148,9 +148,9 @@ namespace Editor.Dialogs
       this.PropertyGrid_Layer.HelpBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(252)))), ((int)(((byte)(252)))), ((int)(((byte)(252)))));
       this.PropertyGrid_Layer.HelpBackgroundImage = ((System.Drawing.Image)(resources.GetObject("PropertyGrid_Layer.HelpBackgroundImage")));
       this.PropertyGrid_Layer.LineColor = System.Drawing.Color.FromArgb(((int)(((byte)(248)))), ((int)(((byte)(248)))), ((int)(((byte)(248)))));
-      this.PropertyGrid_Layer.Location = new System.Drawing.Point(6, 21);
+      this.PropertyGrid_Layer.Location = new System.Drawing.Point(6, 19);
       this.PropertyGrid_Layer.Name = "PropertyGrid_Layer";
-      this.PropertyGrid_Layer.Size = new System.Drawing.Size(443, 427);
+      this.PropertyGrid_Layer.Size = new System.Drawing.Size(501, 449);
       this.PropertyGrid_Layer.TabIndex = 10;
       this.PropertyGrid_Layer.ToolbarVisible = false;
       // 
@@ -174,19 +174,19 @@ namespace Editor.Dialogs
       // 
       // ListView_Layers
       // 
-      this.ListView_Layers.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
-                  | System.Windows.Forms.AnchorStyles.Left)
-                  | System.Windows.Forms.AnchorStyles.Right)));
+      this.ListView_Layers.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
       this.ListView_Layers.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
             this.columnHeader_LayerName});
       this.ListView_Layers.FullRowSelect = true;
       this.ListView_Layers.GridLines = true;
       this.ListView_Layers.HeaderStyle = System.Windows.Forms.ColumnHeaderStyle.Nonclickable;
       this.ListView_Layers.HideSelection = false;
-      this.ListView_Layers.Location = new System.Drawing.Point(7, 22);
+      this.ListView_Layers.Location = new System.Drawing.Point(6, 19);
       this.ListView_Layers.MultiSelect = false;
       this.ListView_Layers.Name = "ListView_Layers";
-      this.ListView_Layers.Size = new System.Drawing.Size(305, 175);
+      this.ListView_Layers.Size = new System.Drawing.Size(254, 152);
       this.ListView_Layers.TabIndex = 4;
       this.ListView_Layers.UseCompatibleStateImageBehavior = false;
       this.ListView_Layers.View = System.Windows.Forms.View.Details;
@@ -203,10 +203,10 @@ namespace Editor.Dialogs
       this.PropertyGrid_Sky.HelpBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(252)))), ((int)(((byte)(252)))), ((int)(((byte)(252)))));
       this.PropertyGrid_Sky.HelpBackgroundImage = ((System.Drawing.Image)(resources.GetObject("PropertyGrid_Sky.HelpBackgroundImage")));
       this.PropertyGrid_Sky.LineColor = System.Drawing.Color.FromArgb(((int)(((byte)(248)))), ((int)(((byte)(248)))), ((int)(((byte)(248)))));
-      this.PropertyGrid_Sky.Location = new System.Drawing.Point(6, 21);
+      this.PropertyGrid_Sky.Location = new System.Drawing.Point(6, 19);
       this.PropertyGrid_Sky.Name = "PropertyGrid_Sky";
       this.PropertyGrid_Sky.PropertySort = System.Windows.Forms.PropertySort.Categorized;
-      this.PropertyGrid_Sky.Size = new System.Drawing.Size(307, 244);
+      this.PropertyGrid_Sky.Size = new System.Drawing.Size(254, 290);
       this.PropertyGrid_Sky.TabIndex = 2;
       this.PropertyGrid_Sky.ToolbarVisible = false;
       // 
@@ -226,13 +226,14 @@ namespace Editor.Dialogs
       this.PropertyGrid_Sky.ToolStrip.TabStop = true;
       this.PropertyGrid_Sky.ToolStrip.Text = "PropertyGridToolBar";
       this.PropertyGrid_Sky.ToolStrip.Visible = false;
+      this.PropertyGrid_Sky.PropertyValueChanged += new System.Windows.Forms.PropertyValueChangedEventHandler(this.PropertyGrid_Sky_PropertyValueChanged);
       // 
       // button_AddLayer
       // 
       this.button_AddLayer.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-      this.button_AddLayer.Location = new System.Drawing.Point(94, 204);
+      this.button_AddLayer.Location = new System.Drawing.Point(78, 177);
       this.button_AddLayer.Name = "button_AddLayer";
-      this.button_AddLayer.Size = new System.Drawing.Size(105, 28);
+      this.button_AddLayer.Size = new System.Drawing.Size(88, 24);
       this.button_AddLayer.TabIndex = 7;
       this.button_AddLayer.Text = "Add Layer";
       this.button_AddLayer.Click += new System.EventHandler(this.button_AddLayer_Click);
@@ -240,9 +241,9 @@ namespace Editor.Dialogs
       // button_RemoveLayer
       // 
       this.button_RemoveLayer.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-      this.button_RemoveLayer.Location = new System.Drawing.Point(206, 204);
+      this.button_RemoveLayer.Location = new System.Drawing.Point(172, 177);
       this.button_RemoveLayer.Name = "button_RemoveLayer";
-      this.button_RemoveLayer.Size = new System.Drawing.Size(106, 28);
+      this.button_RemoveLayer.Size = new System.Drawing.Size(88, 24);
       this.button_RemoveLayer.TabIndex = 8;
       this.button_RemoveLayer.Text = "Remove Layer";
       this.button_RemoveLayer.Click += new System.EventHandler(this.button_RemoveLayer_Click);
@@ -251,9 +252,9 @@ namespace Editor.Dialogs
       // 
       this.button_LayerUp.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
       this.button_LayerUp.Image = global::Editor.Properties.Resources.arrow_up_blue;
-      this.button_LayerUp.Location = new System.Drawing.Point(7, 204);
+      this.button_LayerUp.Location = new System.Drawing.Point(6, 177);
       this.button_LayerUp.Name = "button_LayerUp";
-      this.button_LayerUp.Size = new System.Drawing.Size(33, 28);
+      this.button_LayerUp.Size = new System.Drawing.Size(27, 24);
       this.button_LayerUp.TabIndex = 5;
       this.button_LayerUp.UseVisualStyleBackColor = true;
       this.button_LayerUp.Click += new System.EventHandler(this.button_LayerUp_Click);
@@ -262,22 +263,22 @@ namespace Editor.Dialogs
       // 
       this.button_LayerDown.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
       this.button_LayerDown.Image = global::Editor.Properties.Resources.arrow_down_blue;
-      this.button_LayerDown.Location = new System.Drawing.Point(47, 204);
+      this.button_LayerDown.Location = new System.Drawing.Point(39, 177);
       this.button_LayerDown.Name = "button_LayerDown";
-      this.button_LayerDown.Size = new System.Drawing.Size(32, 28);
+      this.button_LayerDown.Size = new System.Drawing.Size(27, 24);
       this.button_LayerDown.TabIndex = 6;
       this.button_LayerDown.UseVisualStyleBackColor = true;
       this.button_LayerDown.Click += new System.EventHandler(this.button_LayerDown_Click);
       // 
       // GroupBox_SkyProperties
       // 
-      this.GroupBox_SkyProperties.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
-                  | System.Windows.Forms.AnchorStyles.Left)));
+      this.GroupBox_SkyProperties.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left)));
       this.GroupBox_SkyProperties.Controls.Add(this.PropertyGrid_Sky);
-      this.GroupBox_SkyProperties.Location = new System.Drawing.Point(10, 65);
+      this.GroupBox_SkyProperties.Location = new System.Drawing.Point(8, 56);
       this.GroupBox_SkyProperties.Name = "GroupBox_SkyProperties";
       this.GroupBox_SkyProperties.Padding = new System.Windows.Forms.Padding(6, 6, 6, 7);
-      this.GroupBox_SkyProperties.Size = new System.Drawing.Size(319, 272);
+      this.GroupBox_SkyProperties.Size = new System.Drawing.Size(266, 316);
       this.GroupBox_SkyProperties.TabIndex = 13;
       this.GroupBox_SkyProperties.TabStop = false;
       this.GroupBox_SkyProperties.Text = "Sky Properties";
@@ -290,23 +291,23 @@ namespace Editor.Dialogs
       this.GroupBox_SkyLayer.Controls.Add(this.button_LayerUp);
       this.GroupBox_SkyLayer.Controls.Add(this.button_RemoveLayer);
       this.GroupBox_SkyLayer.Controls.Add(this.ListView_Layers);
-      this.GroupBox_SkyLayer.Location = new System.Drawing.Point(12, 343);
+      this.GroupBox_SkyLayer.Location = new System.Drawing.Point(10, 377);
       this.GroupBox_SkyLayer.Name = "GroupBox_SkyLayer";
-      this.GroupBox_SkyLayer.Size = new System.Drawing.Size(319, 240);
+      this.GroupBox_SkyLayer.Size = new System.Drawing.Size(266, 208);
       this.GroupBox_SkyLayer.TabIndex = 14;
       this.GroupBox_SkyLayer.TabStop = false;
       this.GroupBox_SkyLayer.Text = "Sky Layer";
       // 
       // GroupBox_LayerProperties
       // 
-      this.GroupBox_LayerProperties.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
-                  | System.Windows.Forms.AnchorStyles.Left)
-                  | System.Windows.Forms.AnchorStyles.Right)));
+      this.GroupBox_LayerProperties.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
       this.GroupBox_LayerProperties.Controls.Add(this.PropertyGrid_Layer);
-      this.GroupBox_LayerProperties.Location = new System.Drawing.Point(335, 65);
+      this.GroupBox_LayerProperties.Location = new System.Drawing.Point(279, 56);
       this.GroupBox_LayerProperties.Name = "GroupBox_LayerProperties";
       this.GroupBox_LayerProperties.Padding = new System.Windows.Forms.Padding(6, 6, 6, 7);
-      this.GroupBox_LayerProperties.Size = new System.Drawing.Size(455, 455);
+      this.GroupBox_LayerProperties.Size = new System.Drawing.Size(513, 475);
       this.GroupBox_LayerProperties.TabIndex = 15;
       this.GroupBox_LayerProperties.TabStop = false;
       this.GroupBox_LayerProperties.Text = "Layer Properties";
@@ -316,9 +317,9 @@ namespace Editor.Dialogs
       this.GroupBox_OK.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
       this.GroupBox_OK.Controls.Add(this.button_OK);
       this.GroupBox_OK.Controls.Add(this.button_Cancel);
-      this.GroupBox_OK.Location = new System.Drawing.Point(576, 526);
+      this.GroupBox_OK.Location = new System.Drawing.Point(614, 536);
       this.GroupBox_OK.Name = "GroupBox_OK";
-      this.GroupBox_OK.Size = new System.Drawing.Size(214, 57);
+      this.GroupBox_OK.Size = new System.Drawing.Size(178, 49);
       this.GroupBox_OK.TabIndex = 16;
       this.GroupBox_OK.TabStop = false;
       // 
@@ -326,19 +327,19 @@ namespace Editor.Dialogs
       // 
       this.DialogCaptionBar.BackColor = System.Drawing.SystemColors.Window;
       this.DialogCaptionBar.Caption = "Sky Properties";
-      this.DialogCaptionBar.CompactView = false;
-      this.DialogCaptionBar.Description = 
-        "The sky layer setup, the sky shader and the respective properties for the scene can be specified here.";
+      this.DialogCaptionBar.Description = "The sky layer setup, the sky shader and the respective properties for the scene c" +
+    "an be specified here.";
       this.DialogCaptionBar.Dock = System.Windows.Forms.DockStyle.Top;
+      this.DialogCaptionBar.HelpContext = "dialogs";
+      this.DialogCaptionBar.HelpKey = "Sky Config";
+      this.DialogCaptionBar.HelpManual = "";
       this.DialogCaptionBar.Image = ((System.Drawing.Image)(resources.GetObject("DialogCaptionBar.Image")));
       this.DialogCaptionBar.Location = new System.Drawing.Point(0, 0);
       this.DialogCaptionBar.Name = "DialogCaptionBar";
       this.DialogCaptionBar.SetFontColor = System.Drawing.SystemColors.ControlText;
       this.DialogCaptionBar.ShowBorder = false;
       this.DialogCaptionBar.ShowBottomLine = true;
-      this.DialogCaptionBar.ShowCaptionText = true;
-      this.DialogCaptionBar.ShowImage = true;
-      this.DialogCaptionBar.Size = new System.Drawing.Size(802, 58);
+      this.DialogCaptionBar.Size = new System.Drawing.Size(804, 50);
       this.DialogCaptionBar.TabIndex = 17;
       // 
       // GroupBox_Options
@@ -349,9 +350,9 @@ namespace Editor.Dialogs
       this.GroupBox_Options.Controls.Add(this.button_Save);
       this.GroupBox_Options.Controls.Add(this.button_Paste);
       this.GroupBox_Options.Controls.Add(this.button_Copy);
-      this.GroupBox_Options.Location = new System.Drawing.Point(335, 526);
+      this.GroupBox_Options.Location = new System.Drawing.Point(413, 536);
       this.GroupBox_Options.Name = "GroupBox_Options";
-      this.GroupBox_Options.Size = new System.Drawing.Size(235, 57);
+      this.GroupBox_Options.Size = new System.Drawing.Size(196, 49);
       this.GroupBox_Options.TabIndex = 19;
       this.GroupBox_Options.TabStop = false;
       // 
@@ -359,12 +360,12 @@ namespace Editor.Dialogs
       // 
       this.button_Export.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
       this.button_Export.Image = global::Editor.Properties.Resources.toolbar_export;
-      this.button_Export.Location = new System.Drawing.Point(190, 13);
+      this.button_Export.Location = new System.Drawing.Point(158, 11);
       this.button_Export.Name = "button_Export";
-      this.button_Export.Size = new System.Drawing.Size(38, 37);
+      this.button_Export.Size = new System.Drawing.Size(32, 32);
       this.button_Export.TabIndex = 20;
       this.ToolTip.SetToolTip(this.button_Export, "Export the current setup to a simple engine archive format that can be read by th" +
-              "e engine (VisSky_cl::ReadFromStream)");
+        "e engine (VisSky_cl::ReadFromStream)");
       this.button_Export.UseVisualStyleBackColor = true;
       this.button_Export.Click += new System.EventHandler(this.toolStripButton_Export_Click);
       // 
@@ -372,9 +373,9 @@ namespace Editor.Dialogs
       // 
       this.button_Load.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
       this.button_Load.Image = global::Editor.Properties.Resources.toolbar_open;
-      this.button_Load.Location = new System.Drawing.Point(144, 13);
+      this.button_Load.Location = new System.Drawing.Point(120, 11);
       this.button_Load.Name = "button_Load";
-      this.button_Load.Size = new System.Drawing.Size(38, 37);
+      this.button_Load.Size = new System.Drawing.Size(32, 32);
       this.button_Load.TabIndex = 9;
       this.ToolTip.SetToolTip(this.button_Load, "Load a sky setup from a binary file");
       this.button_Load.UseVisualStyleBackColor = true;
@@ -384,9 +385,9 @@ namespace Editor.Dialogs
       // 
       this.button_Save.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
       this.button_Save.Image = global::Editor.Properties.Resources.toolbar_save;
-      this.button_Save.Location = new System.Drawing.Point(98, 13);
+      this.button_Save.Location = new System.Drawing.Point(82, 11);
       this.button_Save.Name = "button_Save";
-      this.button_Save.Size = new System.Drawing.Size(39, 37);
+      this.button_Save.Size = new System.Drawing.Size(32, 32);
       this.button_Save.TabIndex = 8;
       this.ToolTip.SetToolTip(this.button_Save, "Save the current setup to a binary file that can be loaded later by other scenes");
       this.button_Save.UseVisualStyleBackColor = true;
@@ -396,9 +397,9 @@ namespace Editor.Dialogs
       // 
       this.button_Paste.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
       this.button_Paste.Image = global::Editor.Properties.Resources.toolbar_paste;
-      this.button_Paste.Location = new System.Drawing.Point(53, 13);
+      this.button_Paste.Location = new System.Drawing.Point(44, 11);
       this.button_Paste.Name = "button_Paste";
-      this.button_Paste.Size = new System.Drawing.Size(38, 37);
+      this.button_Paste.Size = new System.Drawing.Size(32, 32);
       this.button_Paste.TabIndex = 7;
       this.ToolTip.SetToolTip(this.button_Paste, "Paste this sky config from clipboard");
       this.button_Paste.UseVisualStyleBackColor = true;
@@ -408,9 +409,9 @@ namespace Editor.Dialogs
       // 
       this.button_Copy.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
       this.button_Copy.Image = global::Editor.Properties.Resources.toolbar_copy;
-      this.button_Copy.Location = new System.Drawing.Point(8, 13);
+      this.button_Copy.Location = new System.Drawing.Point(7, 11);
       this.button_Copy.Name = "button_Copy";
-      this.button_Copy.Size = new System.Drawing.Size(39, 37);
+      this.button_Copy.Size = new System.Drawing.Size(32, 32);
       this.button_Copy.TabIndex = 6;
       this.ToolTip.SetToolTip(this.button_Copy, "Copy this sky config to clipboard");
       this.button_Copy.UseVisualStyleBackColor = true;
@@ -419,10 +420,9 @@ namespace Editor.Dialogs
       // SkyConfigDlg
       // 
       this.AcceptButton = this.button_OK;
-      this.ShowInTaskbar = false;
-      this.AutoScaleBaseSize = new System.Drawing.Size(6, 15);
+      this.AutoScaleBaseSize = new System.Drawing.Size(5, 13);
       this.CancelButton = this.button_Cancel;
-      this.ClientSize = new System.Drawing.Size(802, 595);
+      this.ClientSize = new System.Drawing.Size(804, 602);
       this.Controls.Add(this.GroupBox_Options);
       this.Controls.Add(this.DialogCaptionBar);
       this.Controls.Add(this.GroupBox_OK);
@@ -432,8 +432,9 @@ namespace Editor.Dialogs
       this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
       this.MaximizeBox = false;
       this.MinimizeBox = false;
-      this.MinimumSize = new System.Drawing.Size(820, 640);
+      this.MinimumSize = new System.Drawing.Size(683, 555);
       this.Name = "SkyConfigDlg";
+      this.ShowInTaskbar = false;
       this.SizeGripStyle = System.Windows.Forms.SizeGripStyle.Hide;
       this.Text = "Edit Sky";
       this.GroupBox_SkyProperties.ResumeLayout(false);
@@ -736,6 +737,11 @@ namespace Editor.Dialogs
         EditorManager.ShowMessageBox("The Visibility Bitmask of the Sky is set to 'NONE'. This means your sky will never be visible.", "Sky Configuration", MessageBoxButtons.OK, MessageBoxIcon.Information);
     }
 
+    private void PropertyGrid_Sky_PropertyValueChanged(object s, PropertyValueChangedEventArgs e)
+    {
+      PropertyGrid_Sky.Refresh();
+    }
+
   }
 
   #region Sky Type Editor
@@ -839,7 +845,7 @@ namespace Editor.Dialogs
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

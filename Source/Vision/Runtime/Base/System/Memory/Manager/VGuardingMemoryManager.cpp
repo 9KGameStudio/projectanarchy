@@ -173,6 +173,8 @@ void* VGuardingMemoryManager::AlignedAlloc(size_t iSize, int iAlignment)
   pAllocData->iAlignment = iAlignment;
   pAllocData->iMemSize = iSize;
 
+  memset(pUserData, 0xCD, iSize);
+
   return pUserData;
 }
 
@@ -264,7 +266,7 @@ size_t VGuardingMemoryManager::AlignedMemSize(void* ptr, int iAlignment)
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

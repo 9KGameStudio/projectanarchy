@@ -448,12 +448,12 @@ public:
   /// \brief
   ///   Saves the list to XML file using the filename and the passed file stream manager (which can
   ///   be NULL)
-  VBASE_IMPEXP bool SaveToFile(const char *szFilename,IVFileStreamManager* pManager, IVFilePathResolver *pResolver=NULL);
+  VBASE_IMPEXP bool SaveToFile(const char *szFilename, IVFilePathResolver *pResolver=NULL);
 
   /// \brief
   ///   Saves the list to binary file using the filename and the passed file stream manager (which
   ///   can be NULL)
-  VBASE_IMPEXP bool SaveToBinaryFile(const char *szFilename,IVFileStreamManager* pManager, IVFilePathResolver *pResolver=NULL);
+  VBASE_IMPEXP bool SaveToBinaryFile(const char *szFilename, IVFilePathResolver *pResolver=NULL);
 
   
   /// \brief
@@ -466,7 +466,7 @@ public:
   /// \brief
   ///   Loads the list from XML file. The loading resolves the filenames using the public m_sPath
   ///   member.
-  VBASE_IMPEXP bool LoadFromFile(const char *szFilename,IVFileStreamManager* pManager);
+  VBASE_IMPEXP bool LoadFromFile(const char *szFilename);
 
   /// \brief
   ///   Loads the list from XML file. The loading resolves the filenames using the public m_sPath
@@ -477,7 +477,7 @@ public:
   /// \brief
   ///   Loads the list from a binary file. The loading resolves the filenames using the public
   ///   m_sPath member.
-  VBASE_IMPEXP bool LoadFromBinaryFile(const char *szFilename,IVFileStreamManager* pManager);
+  VBASE_IMPEXP bool LoadFromBinaryFile(const char *szFilename);
 
   /// \brief
   ///   Loads the list from a binary file. The loading resolves the filenames using the public
@@ -511,12 +511,9 @@ public:
   /// \param pLoader
   ///   The memory stream manager that provides the background loading capabilities.
   /// 
-  /// \param pFileManager
-  ///   The filemanager used to open streams for background loading.
-  /// 
   /// \param pLog
   ///   Optional log for output messages (e.g. file not found...)
-  VBASE_IMPEXP void ScheduleResources(IVResourceCreator *pCreator, VMemoryStreamManager *pLoader, IVFileStreamManager *pFileManager, IVLog *pLog=NULL);
+  VBASE_IMPEXP void ScheduleResources(IVResourceCreator *pCreator, VMemoryStreamManager *pLoader, hkvLogInterface* pLog = hkvGlobalLog::GetInstance());
 
   /// \brief
   ///   Simple loop that finishes loading of all resources in this snapshot in the main thread. ScheduleResources needs to be called to start the process.
@@ -660,8 +657,7 @@ protected:
 
   IVResourceCreator *m_pCreator;
   VMemoryStreamManager *m_pLoader;
-  IVFileStreamManager *m_pFileManager;
-  IVLog *m_pLog;
+  hkvLogInterface* m_pLog;
 
   int m_iLoadingIndex;
   VLoadingTaskPtr m_spCurrentLoadingTask;
@@ -741,8 +737,7 @@ public:
   // must be set when using tickfunction:
   IVResourceCreator *m_pCreator;
   VMemoryStreamManager *m_pLoader;
-  IVFileStreamManager *m_pFileManager;
-  IVLog *m_pLog;
+  hkvLogInterface* m_pLog;
 };
 
 
@@ -830,7 +825,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

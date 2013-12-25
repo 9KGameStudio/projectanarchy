@@ -72,6 +72,9 @@
           "able texture can be referenced by the tonemapper in GRADING mode. The screenshot" +
           "s are not needed during runtime";
       this.dialogCaptionBar.Dock = System.Windows.Forms.DockStyle.Top;
+      this.dialogCaptionBar.HelpContext = "dialogs";
+      this.dialogCaptionBar.HelpKey = "Color Grading";
+      this.dialogCaptionBar.HelpManual = "";
       this.dialogCaptionBar.Image = ((System.Drawing.Image)(resources.GetObject("dialogCaptionBar.Image")));
       this.dialogCaptionBar.Location = new System.Drawing.Point(0, 0);
       this.dialogCaptionBar.Name = "dialogCaptionBar";

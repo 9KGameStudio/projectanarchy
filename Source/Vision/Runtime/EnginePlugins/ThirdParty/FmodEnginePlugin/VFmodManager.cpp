@@ -43,9 +43,6 @@ void F_CALLBACK VisionFM_Free(void *ptr, FMOD_MEMORY_TYPE type, const char *sour
 extern "C" int luaopen_FireLight(lua_State *);
 
 
-#define _DEBUG_OUTPUT
-#undef _DEBUG_OUTPUT
-
 
 // -------------------------------------------------------------------------- //
 // Constructor/ Destructor                                                 
@@ -189,7 +186,7 @@ void VFmodManager::InitFmodSystem()
     else
     {
       if(result == FMOD_ERR_INITIALIZED)
-        Vision::Error.Warning("Failed to initialize Fmod memory system, this is most probably because the old Sound Plugin is loaded, too. This should only be done for converting scenes.");
+        hkvLog::Warning("Failed to initialize Fmod memory system, this is most probably because the old Sound Plugin is loaded, too. This should only be done for converting scenes.");
       else
         FMOD_ERRORCHECK(result);
     }
@@ -227,7 +224,7 @@ void VFmodManager::InitFmodSystem()
 
     #ifdef HK_DEBUG_SLOW
       int iBufferSize = iNumblocks*iBlocksize;
-      Vision::Error.Warning("Fmod DSP buffer size increased from %i to %i, in order to get correct sound output", iBufferSize, iBufferSize*2);
+      hkvLog::Warning("Fmod DSP buffer size increased from %i to %i, in order to get correct sound output", iBufferSize, iBufferSize*2);
     #endif
   }
 #endif
@@ -256,7 +253,7 @@ void VFmodManager::InitFmodSystem()
   if(result != FMOD_OK) 
   {
     DeInitFmodSystem();
-    Vision::Error.Warning("The application will run without sound output!");
+    hkvLog::Warning("The application will run without sound output!");
     return;
   }
 
@@ -389,7 +386,7 @@ FMOD::EventProject* VFmodManager::LoadEventProject(const char *szEventProjectPat
       FMOD_WARNINGCHECK(m_pEventSystem->load(sEventProjectPath, 0, &pEventProject));
       if (!pEventProject)
         return NULL;
-      Vision::Error.Warning("Fmod Warning: platform-specific %s.fev could not be loaded, fall back to platform-nonspecific version", sEventProjectPath.AsChar());
+      hkvLog::Warning("Fmod Warning: platform-specific %s.fev could not be loaded, fall back to platform-nonspecific version", sEventProjectPath.AsChar());
     }
   }
 
@@ -554,10 +551,7 @@ void VFmodManager::OnHandleCallback(IVisCallbackDataObject_cl *pData)
   if (pData->m_pSender==&Vision::Callbacks.OnUpdateSceneFinished)
   {
     RunTick(Vision::GetTimer()->GetTimeDifference());
-#ifdef _DEBUG_OUTPUT
-    SoundInstances().DebugOutput();
-    Events().DebugOutput();
-#endif
+
     return;
   }
 
@@ -655,7 +649,7 @@ void VFmodManager::OnHandleCallback(IVisCallbackDataObject_cl *pData)
         }
       }
       
-      Vision::Error.Warning("Unable to create Lua Fmod Module, lua_State is NULL or cast failed!");
+      hkvLog::Warning("Unable to create Lua Fmod Module, lua_State is NULL or cast failed!");
     }
     return;
   }
@@ -958,18 +952,18 @@ void FMOD_ErrorCheck(FMOD_RESULT result, bool bFatal, int line, const char *szFi
 
   if (bFatal)
   {
-    Vision::Error.FatalError("Fmod Error %d in line %i:\n%s", result, line, FMOD_ErrorString(result));
+    hkvLog::FatalError("Fmod Error %d in line %i:\n%s", result, line, FMOD_ErrorString(result));
 
     // it is allowed for certain functions to fail, for example under sound stress-tests Fmod may fail to find a free channel
     // this is NOT an error and thus should not break the code
-    VASSERT(!"Error triggered in Fmod binding. Check log for details");
+    VASSERT_MSG(false, "Error triggered in Fmod binding. Check log for details");
   }
 
-  Vision::Error.Warning("Fmod Error %d in line %i:\n%s", result, line, FMOD_ErrorString(result));
+  hkvLog::Warning("Fmod Error %d in line %i:\n%s", result, line, FMOD_ErrorString(result));
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

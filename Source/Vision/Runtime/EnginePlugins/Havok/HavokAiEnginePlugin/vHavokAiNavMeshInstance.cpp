@@ -74,9 +74,11 @@ void vHavokAiNavMeshInstance::Init()
 
 void vHavokAiNavMeshInstance::CreateInstance()
 {
-	if (m_resource && m_instance == HK_NULL)
+	if (m_resource != NULL && m_instance == NULL)
 	{
 		m_resource->EnsureLoaded();
+    if (!m_resource->IsLoaded())
+      return;
 
 		hkaiNavMesh* navMesh = m_resource->GetNavMesh();
 		VASSERT(navMesh);
@@ -125,7 +127,7 @@ void vHavokAiNavMeshInstance::DisposeObject()
 	// remove navmeshes from world
 	RemoveNavMeshFromWorld();
 
-	VASSERT(m_instance->getReferenceCount() == 1);
+	VASSERT(m_instance == NULL || m_instance->getReferenceCount() == 1);
 	m_instance = HK_NULL;
 
 	// remove reference to navmesh resource
@@ -193,7 +195,7 @@ void vHavokAiNavMeshInstance::OnSerialized(VArchive &ar)
 void vHavokAiNavMeshInstance::GetDependencies(VResourceSnapshot &snapshot)
 {
 	VisTypedEngineObject_cl::GetDependencies(snapshot);
-	if (m_resource)
+	if (m_resource != NULL)
 	{
 		m_resource->GetDependencies(snapshot);
 	}
@@ -202,12 +204,10 @@ void vHavokAiNavMeshInstance::GetDependencies(VResourceSnapshot &snapshot)
 
 void vHavokAiNavMeshInstance::AddNavMeshToWorld(hkaiWorld* aiWorld)
 {
-	if (m_aiWorld == NULL)
+	if (m_aiWorld == NULL && m_resource != NULL && m_resource->IsLoaded())
 	{
 		if (aiWorld == NULL)
-		{
 			aiWorld = vHavokAiModule::GetInstance() ? vHavokAiModule::GetInstance()->GetAiWorld() : HK_NULL;
-		}
 		VASSERT(aiWorld);
 
 		hkaiNavMeshQueryMediator* mediator = m_resource->GetNavMeshQueryMediator();
@@ -282,7 +282,7 @@ void vHavokAiNavMeshInstance::DebugRender(float displayOffsetHavokScale, bool co
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

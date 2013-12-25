@@ -18,11 +18,7 @@ HMDManager::HMDManager()
 
 HMDManager::~HMDManager()
 {
-  RemoveHandlerFromDevices();
-
-  // Clear references to LibOVR objects.
-  m_pSensor.Clear();
-  m_pHMD.Clear();
+  DeInit();
 }
 
 bool HMDManager::Init( int& iWidth_out, int& iHeight_out, float &fResolutionMultiplier_out )
@@ -94,6 +90,17 @@ bool HMDManager::Init( int& iWidth_out, int& iHeight_out, float &fResolutionMult
   return true;
 }
 
+bool HMDManager::DeInit()
+{
+  RemoveHandlerFromDevices();
+
+  // Clear references to LibOVR objects.
+  m_pSensor.Clear();
+  m_pHMD.Clear();
+  m_pManager.Clear();
+
+  return true;
+}
 
 // Process OculusVR messages.
 void HMDManager::OnMessage( const OVR::Message& msg )
@@ -119,7 +126,7 @@ void HMDManager::OnMessage( const OVR::Message& msg )
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

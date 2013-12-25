@@ -31,7 +31,7 @@ namespace
     // Backwards compatibility: If we don't have a scene file containing our asset profile name, use the given file name.
     if ( !Vision::File.Exists( pszFileNameFinal ) )
     {
-      Vision::Error.Warning( "Unable to find vscene file '%s' - using fallback to '%s' instead.", pszFileNameFinal, pszGivenFileName );
+      hkvLog::Info("Unable to find vscene file '%s' - using fallback to '%s' instead.", pszFileNameFinal, pszGivenFileName );
       strcpy( pszFileNameFinal, pszGivenFileName );
     }
   }
@@ -85,10 +85,10 @@ protected:
           sprintf_s(szBuffer,"Object %s class failed to serialize. Object will be ignored.\n\nDetailed error message:\n%s",ex.m_strClassName.GetSafeStr(),szError);
         else
           sprintf_s(szBuffer,"Object %s class failed to serialize. Object will be ignored.",ex.m_strClassName.GetSafeStr());
-        Vision::Error.Warning(szBuffer);
+        hkvLog::Warning(szBuffer);
         // dump the remaining bytes for the failed object into nirvana
         char temp = 0;
-        VASSERT_MSG(uiObjectStartPos + uiObjectSize >= (size_t)GetPos(),"to many bytes read");
+        VASSERT_MSG(uiObjectStartPos + uiObjectSize >= (size_t)GetPos(),"too many bytes read");
         size_t uiObjectBytesRemaining = (uiObjectStartPos + uiObjectSize) - GetPos();
         for(size_t i=0; i<uiObjectBytesRemaining; i++)
         {
@@ -158,12 +158,10 @@ VSceneLoader::~VSceneLoader()
 
 #ifdef WIN32
 
-bool VSceneLoader::EmbedFile(const char *szFilename, IVFileStreamManager* pManager, CHUNKIDTYPE iID)
+bool VSceneLoader::EmbedFile(const char *szFilename, CHUNKIDTYPE iID)
 {
   VASSERT(IsSaving());
-  if (!pManager)
-    pManager = Vision::File.GetManager();
-  IVFileInStream *pIn = pManager->Open(szFilename);
+  IVFileInStream *pIn = VFileAccessManager::GetInstance()->Open(szFilename);
   if (!pIn)
     return false;
   const int iSize = pIn->GetSize();
@@ -187,62 +185,69 @@ bool VSceneLoader::EmbedFile(const char *szFilename, IVFileStreamManager* pManag
 void VSceneLoader::OnError(const char *szError, CHUNKIDTYPE chunkID, int iChunkOfs)
 {
   VChunkFile_cl::OnError(szError,chunkID,iChunkOfs);
-  Vision::Error.Warning("Error loading vscene file: ChunkID:%08x, offs:%i : %s",chunkID,iChunkOfs,szError);
+  hkvLog::Warning("Error loading vscene file: ChunkID:%08x, offs:%i : %s",chunkID,iChunkOfs,szError);
 
 }
 
 void VSceneLoader::OnWarning(const char *szWarning, CHUNKIDTYPE chunkID, int iChunkOfs)
 {
   VChunkFile_cl::OnWarning(szWarning,chunkID,iChunkOfs);
-  Vision::Error.Warning("Warning loading vscene file: ChunkID:%08x, offs:%i : %s",chunkID,iChunkOfs,szWarning);
+  hkvLog::Warning("Warning loading vscene file: ChunkID:%08x, offs:%i : %s",chunkID,iChunkOfs,szWarning);
 }
 
 
 ///////////////////////////////////////////////////////////////////////////////////////
 // LoadScene : opens a scene file and starts processing all chunks
 ///////////////////////////////////////////////////////////////////////////////////////
-bool VSceneLoader::LoadScene(const char *szFilename, int iLoadingFlags)
+bool VSceneLoader::LoadScene(const char *szFilename, unsigned int uiLoadingFlags)
 {
+  HKV_LOG_BLOCK("VSceneLoader::LoadScene", szFilename);
+
   // Incorporate the currently active asset profile name into the file name.
   char szFileNameFinal[ FS_MAX_PATH ];
   DetermineFinalSceneFileName( szFileNameFinal, szFilename );
 
+  hkvLog::Info("Loading scene: '%s'", szFileNameFinal);
+
   m_bAborted = m_bIsFinished = false;
   m_sSceneFilename = szFileNameFinal;
   s_sLastLoadedScene = szFileNameFinal;
-  m_bForceMobileMode = (iLoadingFlags & LF_ForceMobileMode) != 0;
-  m_bUsePrewarming = (iLoadingFlags & LF_UsePrewarming) != 0;
-  m_bInterleavedLoading = (iLoadingFlags & LF_UseInterleavedLoading) != 0;
-  m_bLoadTimeStepSettings = (iLoadingFlags & LF_LoadTimeStepSettings) != 0;
+  m_bForceMobileMode = (uiLoadingFlags & VisAppLoadSettings::LF_ForceMobileMode) != 0;
+  m_bUsePrewarming = (uiLoadingFlags & VisAppLoadSettings::LF_UsePrewarming) != 0;
+  m_bInterleavedLoading = (uiLoadingFlags & VisAppLoadSettings::LF_UseInterleavedLoading) != 0;
+  m_bLoadTimeStepSettings = (uiLoadingFlags & VisAppLoadSettings::LF_LoadTimeStepSettings) != 0;
 
-  if (iLoadingFlags & LF_UseStreamingIfExists)
+  if (uiLoadingFlags & VisAppLoadSettings::LF_UseStreamingIfExists)
   {
     // Load the .vres file if available
     VStaticString<FS_MAX_PATH> resourceName(m_sSceneFilename);
     resourceName += "_data\\resources.vres";
 
     // if .vres file exists use streaming otherwise regular loading
-    m_bStreaming = m_vsceneResources.LoadFromBinaryFile(resourceName, Vision::File.GetManager());
+    m_bStreaming = m_vsceneResources.LoadFromBinaryFile(resourceName);
     if (m_bStreaming)
-    {
-      // Success
-      Vision::Error.SystemMessage("Resource file found: %s", resourceName.AsChar());
-    }
+      hkvLog::Success("Resource file found: %s", resourceName.AsChar());
     else
-    {
-      Vision::Error.Warning("Resource file %s not found, this may affect scene loading performance.", resourceName.AsChar());
-    }
+      hkvLog::Warning("Resource file %s not found, this may affect scene loading performance.", resourceName.AsChar());
   }
-  
+
+  m_iSceneVersion = -1;
+  if (!Open(szFileNameFinal))
+  {
+    hkvLog::Warning("File could not be opened: '%s'", szFileNameFinal);
+    m_bIsFinished = true;
+    return false;
+  }
+
+  if (Vision::World.IsWorldInitialized())
+    Vision::DeInitWorld();
+  Vision::InitWorld();
+
   { // Trigger callback OnBeforeSceneLoaded
     VisSceneLoadedDataObject_cl data(&Vision::Callbacks.OnBeforeSceneLoaded, szFileNameFinal);
     Vision::Callbacks.OnBeforeSceneLoaded.TriggerCallbacks(&data);
   }
 
-  m_iSceneVersion = -1;
-  if (!Open(szFileNameFinal, Vision::File.GetManager()))
-    return false;
-  
   //check the LOADINGPROGRESS already has a stack. if it exists, skip the start/finish function here
   m_bExternalProgress = LOADINGPROGRESS.GetStackPos() > 0;
 
@@ -272,8 +277,7 @@ bool VSceneLoader::LoadScene(const char *szFilename, int iLoadingFlags)
     {
       // if loading was successful trigger the resource streaming here.
       // after that we return here. The 'IsFinished'-Method must be called periodically to advance streaming
-      m_vsceneResources.ScheduleResources(&m_resourceCreator, &Vision::File.GetMemoryStreamManager(),
-        Vision::File.GetManager());
+      m_vsceneResources.ScheduleResources(&m_resourceCreator, &Vision::File.GetMemoryStreamManager());
       LOADINGPROGRESS.PushRange(20.0f,85.0f);
       return true;
     }
@@ -296,6 +300,10 @@ bool VSceneLoader::LoadScene(const char *szFilename, int iLoadingFlags)
     return false;
 
   FinalizeSceneLoading();
+
+  if (IsInErrorState())
+    hkvLog::Warning("Scene loading failed: VSceneLoader is in an error state.");
+
   return !IsInErrorState();
 }
 
@@ -358,6 +366,8 @@ bool VSceneLoader::PrewarmResources()
 {
   if (!m_bUsePrewarming)
     return true;
+
+  HKV_LOG_BLOCK("VSceneLoader::PrewarmResources");
   
   if (!PrewarmingStarted())
   {
@@ -845,6 +855,10 @@ bool VSceneLoader::ReadShapeChunk()
     ar >> vDefaultGlobalAmbientColor;
     Vision::Renderer.SetDefaultGlobalAmbientColor(vDefaultGlobalAmbientColor);
   }
+  else
+  {
+    Vision::Renderer.SetDefaultGlobalAmbientColor(hkvVec4(0.0f, 0.0f, 0.0f, 1.0f));
+  }
 
   // #15: Serialize global LOD Hysteresis settings
   if (m_iSceneVersion>=SCENE_FILE_VERSION15)
@@ -893,8 +907,6 @@ bool VSceneLoader::ReadShapeChunk()
     {
       V_SAFE_DELETE(pUpdateSceneController);
     }
-    VASSERT_MSG(pUpdateSceneController == NULL, 
-      "Fixed Time Stepping Import from vscene is not supported right now. Please re-export the scene");
 
     // Timer
     const float fCurrentTime = Vision::GetTimer()->GetTime();
@@ -910,8 +922,6 @@ bool VSceneLoader::ReadShapeChunk()
     {
       V_SAFE_DELETE(pTimer);
     }
-    VASSERT_MSG(pTimer == NULL, 
-      "Fixed Time Stepping Import from vscene is not supported right now. Please re-export the scene");
 
     // Physics time step
     int iPhysicsTicksPerSecond, iPhysicsMaxTicksPerFrame;
@@ -1158,7 +1168,7 @@ bool VSceneLoader::ReadV3DChunk()
   {
     Read(worldCoordinateReference.data,sizeof(double)*3,"qqq"); // version 6
   }
-
+  Vision::World.GetCoordinateSystem()->SetSceneReferencePosition(worldCoordinateReference);
 
   if (!ReadString(szV3DFilename,FS_MAX_PATH))
   {
@@ -1190,21 +1200,8 @@ bool VSceneLoader::ReadV3DChunk()
     eSRGBMode = (VSRGBMode)iMode;
   }
 
-  // load world+lightgrid only makes the first 20%
-  LOADINGPROGRESS.PushRange(0.f,15.f);
-
-  // Make sure this is off for normal scene loading behavior
-  bool bPrevSetting = Vision::Renderer.GetCreateVisibilityForEmptyWorld();
-  Vision::Renderer.SetCreateVisibilityForEmptyWorld(false);
-
-  Vision::InitWorld();
-  Vision::World.GetCoordinateSystem()->SetSceneReferencePosition(worldCoordinateReference);
-
-  // Turn it back to the previous setting just in case the application uses it
-  Vision::Renderer.SetCreateVisibilityForEmptyWorld(bPrevSetting);
-
-  LOADINGPROGRESS.PopRange();
-  LOADINGPROGRESS.PushRange(15.f,20.f);
+  // load world + lightgrid only makes the first 20%
+  LOADINGPROGRESS.PushRange(0.f,20.f);
 
   // load lightgrid file ref.
   char szLGFilename[FS_MAX_PATH];
@@ -1271,12 +1268,12 @@ bool VSceneLoader::ReadReferencedPluginsChunk(bool bLoadPlugins)
       bLoaded = Vision::Plugins.LoadEnginePlugin(szPluginName);
       if (!bLoaded)
       {
-        Vision::Error.Warning("Plugin '%s' referenced in scene file but failed to load", szPluginName);
+        hkvLog::Warning("Plugin '%s' referenced in scene file but failed to load", szPluginName);
       }
     } 
     else // warnings only
     {
-      Vision::Error.Warning("Plugin '%s' referenced in scene file but not loaded by the engine", szPluginName);
+      hkvLog::Warning("Plugin '%s' referenced in scene file but not loaded by the engine", szPluginName);
     }
   }
 #endif
@@ -1298,7 +1295,7 @@ bool VSceneLoader::ReadEmbeddedFileChunk()
       // load the embedded output lit file
       if (scene.Open(pIn))
       {
-        if (scene.LoadOutputFile(NULL, NULL, &Vision::TextureManager.GetManager()))
+        if (scene.LoadOutputFile(NULL, NULL))
         {
           // if successful, trigger callback
           VLightmapInfoDataObject_cl data(scene, &Vision::Callbacks.OnLightmapFileLoaded);
@@ -1439,15 +1436,17 @@ BOOL VSceneLoader::OnStartChunk(CHUNKIDTYPE chunkID, int iChunkLen)
 
 #if defined(_DLL) && !defined(VISIONDLL_LIB)
 
-bool VSceneLoader::LoadEnginePlugins(const char *szFilename, IVFileStreamManager *pManager)
+bool VSceneLoader::LoadEnginePlugins(const char *szFilename)
 {
+  HKV_LOG_BLOCK("VSceneLoader::LoadEnginePlugins", szFilename);
+
   // Incorporate the currently active asset profile name into the file name.
   char szFileNameFinal[ FS_MAX_PATH ];
   DetermineFinalSceneFileName( szFileNameFinal, szFilename );
 
   m_bLoadPlugins = true;
   m_iSceneVersion = -1;
-  if (!Open(szFileNameFinal, pManager))
+  if (!Open(szFileNameFinal))
     return false;
 
   bool bResult = true;
@@ -1479,7 +1478,7 @@ close_and_return:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

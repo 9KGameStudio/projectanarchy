@@ -123,6 +123,9 @@ namespace Editor.Dialogs
       this.captionBar.Description = "The following changes have been detected. Click \'Accept changes\' to accept change" +
           "s or \'Abort\' to leave the layers unmodified";
       this.captionBar.Dock = System.Windows.Forms.DockStyle.Top;
+      this.captionBar.HelpContext = "dialogs";
+      this.captionBar.HelpKey = "Layer Update";
+      this.captionBar.HelpManual = "";
       this.captionBar.Image = ((System.Drawing.Image)(resources.GetObject("captionBar.Image")));
       this.captionBar.Location = new System.Drawing.Point(0, 0);
       this.captionBar.Name = "captionBar";
@@ -239,7 +242,7 @@ namespace Editor.Dialogs
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -191,7 +191,7 @@ namespace VisionManaged
       m_bCompatible = pRendererNode!=nullptr;
     }
     if (!m_bCompatible)
-      Vision::Error.Warning("This scene contains at least one mirror/water shape. This requires a valid renderer node (Main Layer properties)");
+      hkvLog::Warning("This scene contains at least one mirror/water shape. This requires a valid renderer node (Main Layer properties)");
     UpdateVisibleStatus();
     return m_bCompatible;
   }
@@ -225,7 +225,7 @@ namespace VisionManaged
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

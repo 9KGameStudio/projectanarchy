@@ -93,7 +93,7 @@ void VLightClippingVolumeRenderer::Init()
 
   if (!Vision::Shaders.LoadShaderLibrary("\\Shaders/LightClippingVolumes.ShaderLib", SHADERLIBFLAG_HIDDEN))
   {
-    Vision::Error.Warning("Shader lib file for light clipping volumes could not be loaded!");
+    hkvLog::Warning("Shader lib file for light clipping volumes could not be loaded!");
     return;
   }
 
@@ -129,7 +129,7 @@ void VLightClippingVolumeRenderer::PatchReadDepthStencilState(const VStateGroupD
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

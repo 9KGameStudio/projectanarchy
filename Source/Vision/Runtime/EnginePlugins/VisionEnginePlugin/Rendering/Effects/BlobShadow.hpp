@@ -39,7 +39,7 @@ public:
 
 /// \brief
 ///   An instance of this class defines a single blob shadow instance. It is a component that can be attached to
-///   objects of class VisObject3D_cl
+///   objects of class VisObject3D_cl and VisStaticMeshInstance_cl.
 class VBlobShadow : public IVObjectComponent
 {
 public: 
@@ -123,7 +123,7 @@ public:
   EFFECTS_IMPEXP virtual void SetOwner(VisTypedEngineObject_cl *pOwner);
 
   /// \brief
-  ///   Overridden function. Blob shadows can be attached to VisObject3D_cl instances
+  ///   Overridden function. Blob shadows can be attached to VisObject3D_cl and VisStaticMeshInstance_cl instances
   EFFECTS_IMPEXP virtual BOOL CanAttachToObject(VisTypedEngineObject_cl *pObject, VString &sErrorMsgOut);
 
   /// \brief
@@ -183,7 +183,7 @@ class VBlobShadowCollection : public VRefCountedCollection<VBlobShadow>
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

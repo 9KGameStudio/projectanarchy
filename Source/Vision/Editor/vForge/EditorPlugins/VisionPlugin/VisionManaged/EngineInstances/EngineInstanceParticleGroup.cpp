@@ -487,9 +487,6 @@ namespace VisionManaged
           pRI->RenderCone(vPos, vDir, fConeAngle * 2.0f, 100.f, VColorRef(255,150,0,50), state);
 
         break;
-
-      case EMITTER_TYPE_PATH:
-        break;
       
       default:
         break;
@@ -882,7 +879,7 @@ namespace VisionManaged
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

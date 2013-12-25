@@ -497,7 +497,7 @@ public:
       if (Vision::File.Exists("Shaders\\vInfraredMaterial.Shaderlib"))
         m_spInfraredLib = Vision::Shaders.LoadShaderLibrary("Shaders\\vInfraredMaterial.Shaderlib", SHADERLIBFLAG_HIDDEN);
       else
-        Vision::Error.Warning("Unable to open IR Shaderlib for terrain decoration model rendering");
+        hkvLog::Warning("Unable to open IR Shaderlib for terrain decoration model rendering");
     }
     return m_spInfraredLib;
   }
@@ -535,7 +535,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

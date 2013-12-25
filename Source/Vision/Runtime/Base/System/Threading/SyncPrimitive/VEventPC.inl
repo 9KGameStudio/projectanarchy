@@ -8,27 +8,53 @@
 
 
 
-VEvent::VEvent()
+VEvent::VEvent(VEvent::ResetMode_e eResetMode)
 {
 #ifdef _VISION_WINRT
-  m_hEvent = CreateEventEx(NULL, NULL, 0, STANDARD_RIGHTS_ALL | EVENT_MODIFY_STATE);
+  DWORD dwFlags = STANDARD_RIGHTS_ALL | EVENT_MODIFY_STATE;
+  if(eResetMode == MANUAL_RESET)
+  {
+      dwFlags |= CREATE_EVENT_MANUAL_RESET;
+  }
+  m_hEvent = CreateEventEx(NULL, NULL, 0, dwFlags);
 #else
-  m_hEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+  m_hEvent = CreateEvent(NULL, eResetMode == MANUAL_RESET ? TRUE : FALSE, FALSE, NULL);
 #endif
 }
 
 VEvent::~VEvent()
 {
-  // No destroy function for events...
+  CloseHandle(m_hEvent);
 }
 
 void VEvent::Wait()
 {
 #ifdef _VISION_WINRT
-  WaitForSingleObjectEx(m_hEvent, INFINITE, FALSE);
+  DWORD dwResult = WaitForSingleObjectEx(m_hEvent, INFINITE, FALSE);
 #else 
-  WaitForSingleObject(m_hEvent, INFINITE);
+  DWORD dwResult = WaitForSingleObject(m_hEvent, INFINITE);
 #endif
+
+  VASSERT_MSG(dwResult == WAIT_OBJECT_0, "Wait failed");
+}
+
+VEvent::WaitResult_e VEvent::Wait(VTimeSpan timeOut)
+{
+#ifdef _VISION_WINRT
+  DWORD dwResult = WaitForSingleObjectEx(m_hEvent, static_cast<DWORD>(timeOut.TotalMilliSeconds()), FALSE);
+#else 
+  DWORD dwResult = WaitForSingleObject(m_hEvent, static_cast<DWORD>(timeOut.TotalMilliSeconds()));
+#endif
+
+  if(dwResult == WAIT_TIMEOUT)
+  {
+    return TIMEOUT;
+  }
+  else 
+  {
+    VASSERT_MSG(dwResult == WAIT_OBJECT_0, "Wait failed");
+    return SIGNALED;
+  }
 }
 
 void VEvent::Signal()
@@ -37,8 +63,13 @@ void VEvent::Signal()
   VASSERT(bRes == TRUE);
 }
 
+void VEvent::Reset()
+{
+  ResetEvent(m_hEvent);
+}
+
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

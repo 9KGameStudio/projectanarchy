@@ -72,13 +72,14 @@ public:
   int m_iData;
   VTextStates m_Text;
   VImageStates m_Icon;
+  int m_iCustomHeight;
 
 protected:
   GUI_IMPEXP void CommonInit();
   friend class VListControlItemCollection;
 
   // temp data:
-  bool m_bClipped,m_bFullyVisible,m_bCachedTextRectValid;
+  bool m_bClipped, m_bFullyVisible, m_bCachedTextRectValid;
   int m_iIndex; ///< enumerated by collection
   VTextStates *m_pDefaultStates;
 };
@@ -124,6 +125,8 @@ public:
   GUI_IMPEXP virtual void OnDoubleClick(VMenuEventDataObject *pEvent) HKV_OVERRIDE;
   GUI_IMPEXP virtual void OnPointerDown(VMenuEventDataObject *pEvent) HKV_OVERRIDE;
   GUI_IMPEXP virtual void OnPointerUp(VMenuEventDataObject *pEvent) HKV_OVERRIDE;
+  GUI_IMPEXP virtual void OnMouseEnter(VGUIUserInfo_t &user) HKV_OVERRIDE;
+  GUI_IMPEXP virtual void OnMouseLeave(VGUIUserInfo_t &user) HKV_OVERRIDE;
   GUI_IMPEXP virtual void OnActivate() HKV_OVERRIDE {AdjustScrollBars();}
   GUI_IMPEXP virtual void OnSizeChanged() HKV_OVERRIDE;
   GUI_IMPEXP virtual VWindowBase* TestMouseOver(VGUIUserInfo_t &user, const hkvVec2 &vAbsMouse) HKV_OVERRIDE;
@@ -137,6 +140,7 @@ public:
   GUI_IMPEXP void Reset();
   GUI_IMPEXP void EnsureVisible(VListControlItem *pItem);
   GUI_IMPEXP void SetScrollPosition(float fPos);
+  GUI_IMPEXP void SetBackgroundColor(const VColorRef& color) { m_iBackgroundCol = color; }
 
   /// \brief Grants read access to the sub items.
   GUI_IMPEXP const VListControlItemCollection& Items() const {return m_Items;}
@@ -174,6 +178,23 @@ public:
     return m_vIconOfs;
   }
 
+  inline void SetScrollBar(VSliderControl* pSlider)
+  {
+    m_spVScrollbar = pSlider;
+    m_spVScrollbar->SetParent(this);
+    m_spVScrollbar->SetVertical(true);
+    AdjustScrollBars();
+  }
+
+  inline VSliderControl* GetScrollBar()
+  {
+    return m_spVScrollbar;
+  }
+
+  GUI_IMPEXP virtual void OnDragBegin(const hkvVec2 &vMousePos, int iButtonMask) HKV_OVERRIDE;
+  GUI_IMPEXP virtual void OnDragging(const hkvVec2 &vMouseDelta) HKV_OVERRIDE;
+  GUI_IMPEXP virtual void OnDragEnd(VWindowBase *pOver) HKV_OVERRIDE;
+
 protected:
   GUI_IMPEXP void AdjustScrollBars();
 
@@ -183,9 +204,11 @@ protected:
 // renderable
   GUI_IMPEXP virtual void OnPaint(VGraphicsInfo &Graphics, const VItemRenderInfo &parentState);
   GUI_IMPEXP virtual bool Build(TiXmlElement *pNode, const char *szPath, bool bWrite);
-  GUI_IMPEXP virtual void OnTick(float dtime);
+  GUI_IMPEXP virtual void OnTick(float fDeltaTime);
 
   GUI_IMPEXP void SetMouseOverItem(VGUIUserInfo_t &user, VListControlItem *pItem);
+
+  GUI_IMPEXP void TickScrollbar(float fDeltaTime);
 
   // member vars:
   bool m_bAllowSelection;
@@ -210,7 +233,7 @@ protected:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

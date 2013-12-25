@@ -35,19 +35,6 @@ public:
   // create function
   VBASE_IMPEXP static VReportEntry *CreateNewEntry(VReportType eRepType);
 
-  // get functions
-  inline const char *GetInfoStr() const { return m_vsInformation.AsChar(); }
-  inline const char *GetDecrStr() const { return m_vsDescription.AsChar(); }
-  inline const char *GetDetailStr() const { return m_vsDetails.AsChar(); }
-  inline VReportType GetReportType() const { return m_eReportType; }
-
-  // set functions
-  inline void SetInfoStr(const char *szInfo) { m_vsInformation = szInfo; }
-  inline void SetDescrStr(const char *szDescr) { m_vsDescription = szDescr; }
-  inline void SetDetailStr(const char *szDetail) { m_vsDetails = szDetail; }
-  inline void SetReportType(VReportType eNewType) { m_eReportType = eNewType; }
-    
-private:
   VString m_vsInformation;
   VString m_vsDescription;
   VString m_vsDetails;
@@ -65,7 +52,13 @@ public:
   
   /// \brief
   ///   Adds a report entry.
-  inline void AddEntry(VReportEntry *pEntry) { m_reportList.Append(pEntry); }
+  VBASE_IMPEXP void AddEntry(VReportEntry *pEntry);
+
+  /// \brief Enables or disables this report. If it is disabled, all calls to AddEntry are ignored.
+  inline void SetReportStatus(bool bEnabled) { m_bReportStatus = bEnabled; }
+
+  /// \brief Returns whether the report is enabled at the moment.
+  inline bool GetReportStatus() const { return m_bReportStatus; }
 
 #if defined(WIN32) && !defined(_VISION_WINRT)
   /// \brief
@@ -78,7 +71,7 @@ public:
   ///   parent window handle. If specified, the report dialog is modal.
   /// 
   /// \return
-  ///   VBool: TRUE if succesfully.
+  ///   VBool: TRUE if successful.
   VBASE_IMPEXP VBool ShowDialog(const char *pTitle, VWND hParent = NULL );
 #endif
   
@@ -98,15 +91,17 @@ public:
   
 
 protected:
+  bool m_bReportStatus;
   VPList m_reportList;
 };
+
 
 #endif //_VISION_DOC
 
 #endif //MU_VULPNE_VREPORT_HPP
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

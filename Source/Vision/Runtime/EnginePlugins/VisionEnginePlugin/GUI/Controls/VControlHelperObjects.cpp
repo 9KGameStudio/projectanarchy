@@ -237,102 +237,163 @@ bool VImageStates::Build(VWindowBase *pOwner, TiXmlElement *pNode, const char *s
 
 void VTextState::Paint(VGraphicsInfo *pGraphics, VWindowBase *pParentWnd, VColorRef iColor)
 {
-  m_iNumTextLines = 0;
   const char *szText = GetText();
   if (!m_spFont || !szText || !szText[0])
     return;
 
-  VSimpleRenderState_t state = VGUIManager::DefaultGUIRenderState();
-  if (m_fFontScaling!=1.0f)
-    state.SetFlag(RENDERSTATEFLAG_FILTERING);
+  VRectanglef vParentRect = pParentWnd->GetClientRect(); // clipping box of parent control
 
-  VRectanglef v = pParentWnd->GetBoundingBox(); // clipping box of parent control
-
-  if (m_bTextWrap)
+  if(!m_bCachedLinesValid)
   {
-    float fMaxWidth = v.GetSizeX()/m_fFontScaling;
+    m_lines.Reset();
+    m_lineOffsets.Reset();
+
     float fLineHeight = m_spFont->GetFontHeight() * m_fRelativeFontHeight * m_fFontScaling;
-    hkvVec2 vPos = v.m_vMin;
 
-    const char *szStart = szText;
-    VMemoryTempBuffer<512> tmpBuffer;
-
-    while (szStart[0])
+    if(!m_bTextWrap)
     {
-      // byte offsets
-      int iOffset;
-      int iNextOffset;
-
-      // search for next newline
-      const char *pCR = strchr(szStart, '\n');
-
-      // compute automatic wrap character index
-      int iCharCount = m_spFont->GetCharacterIndexAtPos(szStart, fMaxWidth, -1, false);
-      int iWrapOffset = VString::GetUTF8CharacterOffset(szStart, iCharCount);
-
-      if (pCR != NULL && (pCR - szStart) < iCharCount)
+      const char* szCurrentLine = szText;
+      for (const char* szPtr = szCurrentLine; *szPtr != '\0'; ++szPtr)
       {
-        // newline occurs before automatic text wrap
-        iOffset = static_cast<int>(pCR - szStart);
-        iNextOffset = iOffset + 1;
-      }
-      else
-      {
-        // automatic text wrap
-        iOffset = iWrapOffset;
-        // try to find white space
-        if (iOffset > 0)
+        if (*szPtr == '\n')
         {
-          while (iOffset > 0 && szStart[iOffset] != 0 && szStart[iOffset] != ' ')
-            iOffset--;
-          if (iOffset == 0) // no whitespace found? then wrap inside word
-            iOffset = iWrapOffset;
+          VStaticString<512> line;
+          line.Set(szCurrentLine, szPtr - szCurrentLine);
+
+          m_lines.Add(line.AsChar());
+          szCurrentLine = szPtr + 1;
         }
-        else 
-          iOffset = 1;
-        iNextOffset = iOffset;
       }
 
-      // put together line
-      const int iLineBufferSize = (iOffset+1) * sizeof(char);
-      tmpBuffer.EnsureCapacity(iLineBufferSize);
-      char *szLineBuffer = static_cast<char*>(tmpBuffer.GetBuffer());
-
-      memcpy(szLineBuffer, szStart, iLineBufferSize);
-      szLineBuffer[iOffset] = 0;
-      m_iNumTextLines++;
-
-      // draw line
-      if (pGraphics)
+      // Add the last line
+      if(*szCurrentLine)
       {
-        hkvVec2 vAlignedPos = m_spFont->GetTextPositionOfs(szLineBuffer, v.GetSize(), 
-          m_hAlign, m_vAlign) * m_fFontScaling;
-        vAlignedPos.set(vAlignedPos.x + vPos.x, vPos.y); // only consider the x-ofs
-        m_spFont->PrintText(&pGraphics->Renderer, vAlignedPos, szLineBuffer, iColor, state, 
-          m_fFontScaling, m_pCustomBBox ? m_pCustomBBox : &v);
+        m_lines.Add(szCurrentLine);
       }
-      vPos.y += fLineHeight;
-
-      szStart = &szStart[iNextOffset];
-      while (szStart[0] == ' ')
-        szStart++;
     }
-    return;
+    else
+    {
+      float fMaxLineWidth = vParentRect.GetSizeX() / m_fFontScaling;
+
+      // Wrap text into individual lines
+      {
+        const char *szCurrentLine = szText;
+        while (*szCurrentLine)
+        {
+          // byte offsets
+          int iByteOffsetAtWrapPosition;
+          int iByteOffsetAfterWrapPosition;
+
+          // search for next newline
+          const char *pNextNewLine = strchr(szCurrentLine, '\n');
+
+          // compute automatic wrap character index
+          int iCharCount = m_spFont->GetCharacterIndexAtPos(szCurrentLine, fMaxLineWidth, -1, false);
+          int iWrapOffset = VString::GetUTF8CharacterOffset(szCurrentLine, iCharCount);
+
+          if (pNextNewLine != NULL && (pNextNewLine - szCurrentLine) <= iWrapOffset)
+          {
+            // newline occurs before automatic text wrap
+            iByteOffsetAtWrapPosition = static_cast<int>(pNextNewLine - szCurrentLine);
+            iByteOffsetAfterWrapPosition = iByteOffsetAtWrapPosition + 1;
+          }
+          else if(strlen(szCurrentLine) <= iWrapOffset)
+          {
+            // End of text occurs before automatic text wrap
+            iByteOffsetAtWrapPosition = strlen(szCurrentLine);
+            iByteOffsetAfterWrapPosition = iByteOffsetAtWrapPosition;
+          }
+          else
+          {
+            // automatic text wrap
+            iByteOffsetAtWrapPosition = iWrapOffset;
+            if (iByteOffsetAtWrapPosition > 0)
+            {
+              // Go backwards and try to find white space
+              while (iByteOffsetAtWrapPosition > 0 && !IsWhiteSpace(szCurrentLine[iByteOffsetAtWrapPosition]))
+              {
+                iByteOffsetAtWrapPosition--;
+              }
+
+              // no whitespace found? then wrap inside word
+              if (iByteOffsetAtWrapPosition == 0)
+              {
+                iByteOffsetAtWrapPosition = iWrapOffset;
+              }
+              else
+              {
+                // Find end of next word
+                int iEndOfWord = iByteOffsetAtWrapPosition + 1;
+                while(szCurrentLine[iEndOfWord] && !IsWhiteSpace(szCurrentLine[iEndOfWord]))
+                {
+                  iEndOfWord++;
+                }
+
+                // If the word does not fit into a line by itself, it will be wrapped anyway, so wrap it early to avoid ragged looking line endings
+                VRectanglef nextWordSize;
+                m_spFont->GetTextDimension(szCurrentLine + iByteOffsetAtWrapPosition, nextWordSize, iEndOfWord - iByteOffsetAtWrapPosition);
+                if(nextWordSize.GetSizeX() > fMaxLineWidth)
+                {
+                  iByteOffsetAtWrapPosition = iWrapOffset;
+                }
+              }
+            }
+            else
+            {
+              // First character is already wider than the line
+              iByteOffsetAtWrapPosition = VString::GetUTF8CharacterOffset(szCurrentLine, 1);
+            }
+            iByteOffsetAfterWrapPosition = iByteOffsetAtWrapPosition;
+          }
+
+          // put together line
+          VStaticString<512> line;
+          line.Set(szCurrentLine, iByteOffsetAtWrapPosition);
+
+          m_lines.Add(line.AsChar());
+
+          szCurrentLine = &szCurrentLine[iByteOffsetAfterWrapPosition];
+          while(*szCurrentLine == ' ')
+            szCurrentLine++;
+        }
+      }
+    }
+
+    // Compute offset for each line
+    for(int iLineIdx = 0; iLineIdx < m_lines.GetLength(); iLineIdx++)
+    {
+      hkvVec2 offset = m_vOffset;
+
+      offset.x += m_spFont->GetTextPositionOfs(m_lines[iLineIdx], vParentRect.GetSize(), m_hAlign, m_vAlign, m_fFontScaling).x;
+      offset.y += iLineIdx * fLineHeight;
+
+      if (m_vAlign == VisFont_cl::ALIGN_CENTER)
+      {
+        offset.y += (vParentRect.GetSizeY() - fLineHeight * m_lines.GetSize()) * 0.5f;
+      }
+      else if (m_vAlign == VisFont_cl::ALIGN_BOTTOM)
+      {
+        offset.y += (vParentRect.GetSizeY() - fLineHeight * m_lines.GetSize());
+      }
+
+      m_lineOffsets.Add(offset);
+    }
+
+    m_bCachedLinesValid = true;
   }
 
-  // recompute the alignment offset
-  if (!m_bAlignmentValid)
-  {
-    m_vCurrentOfs = m_vOfs + m_spFont->GetTextPositionOfs(szText, v.GetSize(),
-      m_hAlign,m_vAlign) * m_fFontScaling;
-    m_bAlignmentValid = true;
-  }
-
-  m_iNumTextLines = 1;
+  // Render lines
   if (pGraphics)
   {
-    m_spFont->PrintText(&pGraphics->Renderer, v.m_vMin+m_vCurrentOfs, szText, 
-      iColor, state, m_fFontScaling, m_pCustomBBox ? m_pCustomBBox : &v);
+    VSimpleRenderState_t state = VGUIManager::DefaultGUIRenderState();
+    if (m_fFontScaling!=1.0f)
+      state.SetFlag(RENDERSTATEFLAG_FILTERING);
+
+    for(int iLineIdx = 0; iLineIdx < m_lines.GetLength(); iLineIdx++)
+    {
+      m_spFont->PrintText(&pGraphics->Renderer, vParentRect.m_vMin + m_lineOffsets[iLineIdx], m_lines[iLineIdx], iColor, state, 
+        m_fFontScaling, m_pCustomBBox ? m_pCustomBBox : &vParentRect);
+    }
   }
 }
 
@@ -360,7 +421,8 @@ bool VTextState::Build(VWindowBase *pOwner, TiXmlElement *pNode, const char *szP
 
   // custom text value
   const char *szUTF8 = XMLHelper::Exchange_String(pNode,"text",NULL,bWrite);
-  const char *szText =  pManager->TranslateString(pOwner, szUTF8);  if (szText)
+  const char *szText =  pManager->TranslateString(pOwner, szUTF8);  
+  if (szText)
     SetText(szText, true); // sets custom text
 
   // text color
@@ -382,7 +444,7 @@ bool VTextState::Build(VWindowBase *pOwner, TiXmlElement *pNode, const char *szP
     m_vAlign = VisFont_cl::GetAlignment(szAlign);
 
   // relative offset
-  XMLHelper::Exchange_Floats(pNode,"ofs",m_vOfs.data,2,bWrite);
+  XMLHelper::Exchange_Floats(pNode,"ofs",m_vOffset.data,2,bWrite);
   XMLHelper::Exchange_Bool(pNode,"textwrap",m_bTextWrap,bWrite);
   XMLHelper::Exchange_Float(pNode,"lineheight",m_fRelativeFontHeight,bWrite);
 
@@ -573,7 +635,7 @@ void VTextState::SerializeX( VArchive &ar )
       m_spFont = VGUIManager::GlobalManager().LoadFont(szFontName);
 
     ar >> (int &)m_hAlign >> (int &)m_vAlign;
-    ar >> m_vOfs >> m_bTextWrap >> m_fRelativeFontHeight;
+    ar >> m_vOffset >> m_bTextWrap >> m_fRelativeFontHeight;
     if (iLocalVersion>=1)
       ar >> m_fFontScaling; // vers.1
   } 
@@ -588,7 +650,7 @@ void VTextState::SerializeX( VArchive &ar )
       m_spFont->GetFilename() : NULL;
     ar << szFontName;
     ar << (int)m_hAlign << (int)m_vAlign;
-    ar << m_vOfs << m_bTextWrap << m_fRelativeFontHeight; 
+    ar << m_vOffset << m_bTextWrap << m_fRelativeFontHeight; 
     ar << m_fFontScaling; // vers.1
   }
 }
@@ -613,7 +675,7 @@ void VTextStates::SerializeX( VArchive &ar )
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

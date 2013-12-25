@@ -109,7 +109,7 @@ namespace VisionManaged
     void RenderPreview_VisibilityProperties(int iLayer, VisionViewBase ^view, IVRenderInterface *pRI, ParticleGroupBase_cl *pGroup);
     void RenderPreview_PhysicsProperties(int iLayer, VisionViewBase ^view, IVRenderInterface *pRI, ParticleGroupBase_cl *pGroup);
 
-    // Allows a custom implementation to supply it's own particle instance objects for SetEffectFile()
+    // Allows a custom implementation to supply its own particle instance objects for SetEffectFile()
     // (void* and managed types seem to be required for matching signatures in other libraries.)
     virtual void* CreateParticleEffectInstance(void* pFXFile, Vector3F pos, Vector3F ori, unsigned int uiRandomSeed);
 
@@ -206,7 +206,7 @@ namespace VisionManaged
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -19,10 +19,6 @@ void SimpleVertexAnimatedObject_cl::InitFunction()
   SetSingleAnimationMode();
 }
 
-//
-//                              *** MODE: START SINGLE ANIMATION ***
-//
-
 void SimpleVertexAnimatedObject_cl::SetSingleAnimationMode()
 {
   // start a simple vertex animation
@@ -36,11 +32,11 @@ bool SimpleVertexAnimatedObject_cl::IsAnimationRunning() const
 
 V_IMPLEMENT_SERIAL(SimpleVertexAnimatedObject_cl, VisBaseEntity_cl, 0, Vision::GetEngineModule());
 
-START_VAR_TABLE(SimpleVertexAnimatedObject_cl, VisBaseEntity_cl, "SimpleVertexAnimatedObject_cl", 0, "Models\\ripple.model")
+START_VAR_TABLE(SimpleVertexAnimatedObject_cl, VisBaseEntity_cl, "SimpleVertexAnimatedObject_cl", 0, "Models/Ripple/ripple.model")
 END_VAR_TABLE
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

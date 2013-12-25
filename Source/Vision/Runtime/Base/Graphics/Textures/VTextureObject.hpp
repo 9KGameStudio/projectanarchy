@@ -744,7 +744,7 @@ public:
   VBASE_IMPEXP static const char* GetGLES2DepthStencilExtensionString(VTextureLoader::VTextureFormat_e eFormat);
  
   VBASE_IMPEXP static bool GetPlatformSpecificTextureFileName(const char* pszOriginalFilename, char* pszOutFilename, 
-    IVFileStreamManager* pFileManager, bool &bIsNativeFormat);
+    bool &bIsNativeFormat);
 
 
 #elif defined(_VR_GX2)
@@ -1113,7 +1113,7 @@ typedef VSmartPtr<VTexture3DObject> VTexture3DObjectPtr;
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

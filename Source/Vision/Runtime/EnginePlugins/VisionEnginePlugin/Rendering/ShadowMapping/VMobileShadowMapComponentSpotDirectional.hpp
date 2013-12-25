@@ -18,7 +18,8 @@
 #define MOBILE_MAX_SHADOW_PARTS_COUNT 1
 
 #define SHADOWMAP_COMPONENT_MOBILE_SPOTDIR_VERSION_0           0 // Initial version
-#define SHADOWMAP_COMPONENT_MOBILE_SPOTDIR_CURRENT_VERSION     SHADOWMAP_COMPONENT_MOBILE_SPOTDIR_VERSION_0 // Current version
+#define SHADOWMAP_COMPONENT_MOBILE_SPOTDIR_VERSION_1           1 // Removed MaxIntensity (instead now AmbientColor from IVShadowMapComponent is used)
+#define SHADOWMAP_COMPONENT_MOBILE_SPOTDIR_CURRENT_VERSION     SHADOWMAP_COMPONENT_MOBILE_SPOTDIR_VERSION_1 // Current version
 
 class VMobileShadowMapComponentSpotDirectional;
 typedef VSmartPtr<VMobileShadowMapComponentSpotDirectional> VMobileShadowMapComponentSpotDirectionalPtr;
@@ -111,25 +112,6 @@ public:
   /// @}
   ///
 
-
-  ///
-  /// @name Shadow Properties
-  /// @{
-  ///
-
-  /// \brief
-  ///   Sets the maximum intensity [0.0-1.0] of subtractive shadows.
-  EFFECTS_IMPEXP void SetMaxIntensity(float fMaxIntensity);
-
-  /// \brief
-  ///   Returns the maximum intensity of subtractive shadows.
-  inline float GetMaxIntensity() const { return MaxIntensity; }
-
-  ///
-  /// @}
-  ///
-
-
   ///
   /// @name Update
   /// @{
@@ -152,19 +134,17 @@ public:
 
   #endif
 
-protected:
-  // Vartable Properties
-  float MaxIntensity;  
-
+protected:  
   hkvMat4 m_LightProjection[4];
   float m_fFadeOutStart, m_fFadeOutEnd;
+
 };
 
 
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

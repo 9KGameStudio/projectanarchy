@@ -10,6 +10,8 @@
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/GUI/VMenuIncludes.hpp>
 #include <Vision/Samples/Engine/GUI/MonitorContext.hpp>
 
+#include <Vision/Runtime/Framework/VisionApp/VAppImpl.hpp>
+
   // constructor that takes an entity that it attaches to along with the surface name that it uses for picking and displaying
 VMonitorGUIContext::VMonitorGUIContext(VGUIManager *pManager, VisSurface_cl *pScreenSrf)
   : IVGUIContext(pManager)
@@ -127,9 +129,9 @@ int VMonitorGUIContext::GetButtonMask(VGUIUserInfo_t &user)
   if (!m_bPicked) return 0;
   int iMask = 0;
 
-  if (VisSampleApp::GetInputMap()->GetTrigger(GUI_DEMO_ACTION_1)) iMask |= BUTTON_LMOUSE;
-  if (VisSampleApp::GetInputMap()->GetTrigger(GUI_DEMO_ACTION_2)) iMask |= BUTTON_RMOUSE;
-  if (VisSampleApp::GetInputMap()->GetTrigger(GUI_DEMO_ACTION_3)) iMask |= BUTTON_MMOUSE;
+  if (VAppImpl::GetInputMap()->GetTrigger(GUI_DEMO_ACTION_1)) iMask |= BUTTON_LMOUSE;
+  if (VAppImpl::GetInputMap()->GetTrigger(GUI_DEMO_ACTION_2)) iMask |= BUTTON_RMOUSE;
+  if (VAppImpl::GetInputMap()->GetTrigger(GUI_DEMO_ACTION_3)) iMask |= BUTTON_MMOUSE;
 
 #if defined(_VISION_MOBILE) || defined( _VISION_APOLLO ) || defined( _VISION_METRO )       // TODO: Define _VISION_MOBILE on Apollo.
   if(VInputManager::GetTouchScreen().GetControlValue(CT_TOUCH_ANY, 0.0f) > 0.0f)
@@ -155,7 +157,7 @@ void VMonitorGUIContext::OnHandleCallback(IVisCallbackDataObject_cl *pData)
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

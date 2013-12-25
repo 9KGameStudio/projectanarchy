@@ -11,6 +11,8 @@
 //***********************************************************************
 
 #include <Vision/Samples/Engine/Serialization/SerializationPCH.h>
+#include <Vision/Runtime/Framework/VisionApp/VAppImpl.hpp>
+
 #include <Vision/Samples/Engine/Serialization/SerializeBaseEntity.hpp>
 #include <Vision/Samples/Engine/Serialization/SerializePlayer.hpp>
 
@@ -51,12 +53,12 @@ void SerializePlayer_cl::DeInitFunction()
   if (m_pVirtualThumbStick != NULL)
   {
     // Unmap triggers because input device (thumb stick) is deleted.
-    if (VisSampleApp::GetInputMap() != NULL)
+    if (VAppImpl::GetInputMap() != NULL)
     {
-      VisSampleApp::GetInputMap()->UnmapInput(SERIALIZE_MOVE_FORWARD, 2);
-      VisSampleApp::GetInputMap()->UnmapInput(SERIALIZE_MOVE_BACKWARD, 2);
-      VisSampleApp::GetInputMap()->UnmapInput(SERIALIZE_MOVE_LEFT, 2);
-      VisSampleApp::GetInputMap()->UnmapInput(SERIALIZE_MOVE_RIGHT, 2);
+      VAppImpl::GetInputMap()->UnmapInput(SERIALIZE_MOVE_FORWARD, 2);
+      VAppImpl::GetInputMap()->UnmapInput(SERIALIZE_MOVE_BACKWARD, 2);
+      VAppImpl::GetInputMap()->UnmapInput(SERIALIZE_MOVE_LEFT, 2);
+      VAppImpl::GetInputMap()->UnmapInput(SERIALIZE_MOVE_RIGHT, 2);
     }
 
     V_SAFE_DELETE(m_pVirtualThumbStick);
@@ -100,27 +102,27 @@ void SerializePlayer_cl::BaseInit()
   // Define alternative explicitly because init function can be called multiple times.
   // This way, it won't add up but replace the mappings in the input map.
   VTouchArea* pCameraLookArea = new VTouchArea(VInputManager::GetTouchScreen(), VRectanglef(), -2000.0f);
-  VisSampleApp::GetInputMap()->MapTrigger(SERIALIZE_LOOK_CHANGED,    pCameraLookArea, CT_TOUCH_ANY, VInputOptions::Alternative(2));
-  VisSampleApp::GetInputMap()->MapTrigger(SERIALIZE_HORIZONTAL_LOOK, pCameraLookArea, CT_TOUCH_NORM_DELTA_X, VInputOptions::Sensitivity(2.0f, 2));
-  VisSampleApp::GetInputMap()->MapTrigger(SERIALIZE_VERTICAL_LOOK,   pCameraLookArea, CT_TOUCH_NORM_DELTA_Y, VInputOptions::Sensitivity(2.0f, 2));
+  VAppImpl::GetInputMap()->MapTrigger(SERIALIZE_LOOK_CHANGED,    pCameraLookArea, CT_TOUCH_ANY, VInputOptions::Alternative(2));
+  VAppImpl::GetInputMap()->MapTrigger(SERIALIZE_HORIZONTAL_LOOK, pCameraLookArea, CT_TOUCH_NORM_DELTA_X, VInputOptions::Sensitivity(2.0f, 2));
+  VAppImpl::GetInputMap()->MapTrigger(SERIALIZE_VERTICAL_LOOK,   pCameraLookArea, CT_TOUCH_NORM_DELTA_Y, VInputOptions::Sensitivity(2.0f, 2));
   
   #if defined(SUPPORTS_MULTITOUCH)
     m_pVirtualThumbStick = new VVirtualThumbStick();
   
-    VisSampleApp::GetInputMap()->MapTrigger(SERIALIZE_MOVE_FORWARD,  *m_pVirtualThumbStick,   CT_PAD_LEFT_THUMB_STICK_UP,     VInputOptions::DeadZone(0.2f, false, 2));
-    VisSampleApp::GetInputMap()->MapTrigger(SERIALIZE_MOVE_BACKWARD, *m_pVirtualThumbStick,   CT_PAD_LEFT_THUMB_STICK_DOWN,   VInputOptions::DeadZone(0.2f, false, 2));
-    VisSampleApp::GetInputMap()->MapTrigger(SERIALIZE_MOVE_LEFT,     *m_pVirtualThumbStick,   CT_PAD_LEFT_THUMB_STICK_LEFT,   VInputOptions::DeadZone(0.2f, false, 2));
-    VisSampleApp::GetInputMap()->MapTrigger(SERIALIZE_MOVE_RIGHT,    *m_pVirtualThumbStick,   CT_PAD_LEFT_THUMB_STICK_RIGHT,  VInputOptions::DeadZone(0.2f, false, 2));
+    VAppImpl::GetInputMap()->MapTrigger(SERIALIZE_MOVE_FORWARD,  *m_pVirtualThumbStick,   CT_PAD_LEFT_THUMB_STICK_UP,     VInputOptions::DeadZone(0.2f, false, 2));
+    VAppImpl::GetInputMap()->MapTrigger(SERIALIZE_MOVE_BACKWARD, *m_pVirtualThumbStick,   CT_PAD_LEFT_THUMB_STICK_DOWN,   VInputOptions::DeadZone(0.2f, false, 2));
+    VAppImpl::GetInputMap()->MapTrigger(SERIALIZE_MOVE_LEFT,     *m_pVirtualThumbStick,   CT_PAD_LEFT_THUMB_STICK_LEFT,   VInputOptions::DeadZone(0.2f, false, 2));
+    VAppImpl::GetInputMap()->MapTrigger(SERIALIZE_MOVE_RIGHT,    *m_pVirtualThumbStick,   CT_PAD_LEFT_THUMB_STICK_RIGHT,  VInputOptions::DeadZone(0.2f, false, 2));
   
   #endif
 
   #if defined(_VISION_ANDROID) 
   
     // Additional input possibilities for devices with playstation buttons
-    VisSampleApp::GetInputMap()->MapTrigger(SERIALIZE_MOVE_FORWARD,  VInputManagerAndroid::GetKeyInput(), CT_PAD_UP,    VInputOptions::Alternative(3));
-    VisSampleApp::GetInputMap()->MapTrigger(SERIALIZE_MOVE_BACKWARD, VInputManagerAndroid::GetKeyInput(), CT_PAD_DOWN,  VInputOptions::Alternative(3));
-    VisSampleApp::GetInputMap()->MapTrigger(SERIALIZE_MOVE_LEFT,     VInputManagerAndroid::GetKeyInput(), CT_PAD_LEFT,  VInputOptions::Alternative(3));
-    VisSampleApp::GetInputMap()->MapTrigger(SERIALIZE_MOVE_RIGHT,    VInputManagerAndroid::GetKeyInput(), CT_PAD_RIGHT, VInputOptions::Alternative(3));
+    VAppImpl::GetInputMap()->MapTrigger(SERIALIZE_MOVE_FORWARD,  VInputManagerAndroid::GetKeyInput(), CT_PAD_UP,    VInputOptions::Alternative(3));
+    VAppImpl::GetInputMap()->MapTrigger(SERIALIZE_MOVE_BACKWARD, VInputManagerAndroid::GetKeyInput(), CT_PAD_DOWN,  VInputOptions::Alternative(3));
+    VAppImpl::GetInputMap()->MapTrigger(SERIALIZE_MOVE_LEFT,     VInputManagerAndroid::GetKeyInput(), CT_PAD_LEFT,  VInputOptions::Alternative(3));
+    VAppImpl::GetInputMap()->MapTrigger(SERIALIZE_MOVE_RIGHT,    VInputManagerAndroid::GetKeyInput(), CT_PAD_RIGHT, VInputOptions::Alternative(3));
   
   #endif
 
@@ -135,15 +137,22 @@ void SerializePlayer_cl::BaseInit()
 // ---------------------------------------------------------------------------------
 void SerializePlayer_cl::ThinkFunction()
 {
+  // Stop thinking if the menu is open
+  VAppMenu* pMenu = VAppBase::Get()->GetAppImpl()->GetAppModule<VAppMenu>();
+  if (pMenu && pMenu->IsVisible())
+  {
+    return;
+  }
+
   float fTimeDiff = Vision::GetTimer()->GetTimeDifference();
 
-  float dx = VisSampleApp::GetInputMap()->GetTrigger(SERIALIZE_HORIZONTAL_LOOK)*m_fHalfScreenSizeX;
-  float dy = VisSampleApp::GetInputMap()->GetTrigger(SERIALIZE_VERTICAL_LOOK)*m_fHalfScreenSizeY;
+  float dx = VAppImpl::GetInputMap()->GetTrigger(SERIALIZE_HORIZONTAL_LOOK)*m_fHalfScreenSizeX;
+  float dy = VAppImpl::GetInputMap()->GetTrigger(SERIALIZE_VERTICAL_LOOK)*m_fHalfScreenSizeY;
   
   // check modes
-  if (VisSampleApp::GetInputMap()->GetTrigger(SERIALIZE_RUN))
+  if (VAppImpl::GetInputMap()->GetTrigger(SERIALIZE_RUN))
     m_SpeedMode = 1;
-  else if (VisSampleApp::GetInputMap()->GetTrigger(SERIALIZE_RUN_FASTER))
+  else if (VAppImpl::GetInputMap()->GetTrigger(SERIALIZE_RUN_FASTER))
     m_SpeedMode = 2;
   else
     m_SpeedMode = 0;
@@ -161,10 +170,10 @@ void SerializePlayer_cl::ThinkFunction()
 
   // Accumulate move directions (multiply in order to take analog input into account).
   hkvVec3 vMove(hkvVec3::ZeroVector());
-  vMove += vForward *  VisSampleApp::GetInputMap()->GetTrigger(SERIALIZE_MOVE_FORWARD);
-  vMove -= vForward *  VisSampleApp::GetInputMap()->GetTrigger(SERIALIZE_MOVE_BACKWARD);
-  vMove -= GetObjDir_Right() *  VisSampleApp::GetInputMap()->GetTrigger(SERIALIZE_MOVE_RIGHT);
-  vMove += GetObjDir_Right() *  VisSampleApp::GetInputMap()->GetTrigger(SERIALIZE_MOVE_LEFT);
+  vMove += vForward *  VAppImpl::GetInputMap()->GetTrigger(SERIALIZE_MOVE_FORWARD);
+  vMove -= vForward *  VAppImpl::GetInputMap()->GetTrigger(SERIALIZE_MOVE_BACKWARD);
+  vMove -= GetObjDir_Right() *  VAppImpl::GetInputMap()->GetTrigger(SERIALIZE_MOVE_RIGHT);
+  vMove += GetObjDir_Right() *  VAppImpl::GetInputMap()->GetTrigger(SERIALIZE_MOVE_LEFT);
   vMove *= fMaxSpeed;
 
   // Clamp movement, so that moving diagonally is not faster than moving straight 
@@ -177,7 +186,7 @@ void SerializePlayer_cl::ThinkFunction()
   IncMotionDeltaWorldSpace(vMove);
 
   // handle mouse movement
-  if (VisSampleApp::GetInputMap()->GetTrigger(SERIALIZE_LOOK_CHANGED))
+  if (VAppImpl::GetInputMap()->GetTrigger(SERIALIZE_LOOK_CHANGED))
   {
     IncOrientation(-dx * MOUSE_SENSITIVITY, dy * MOUSE_SENSITIVITY, 0);   
   }
@@ -208,7 +217,7 @@ START_VAR_TABLE(SerializePlayer_cl, SerializeBaseEntity_cl, "SerializePlayer_cl"
 END_VAR_TABLE
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

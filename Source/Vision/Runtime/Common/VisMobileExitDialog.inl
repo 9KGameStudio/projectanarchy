@@ -10,10 +10,7 @@ V_IMPLEMENT_SERIAL(VisMobileExitDialog, VDialog, 0, &VGUIManager::GUIModule());
 
 void VisMobileExitDialog::OnInitDialog()
 {
-  // center the GUI
-  SetPosition(
-    Vision::Video.GetXRes()*0.5f - GetSize().x*0.5f, 
-    Vision::Video.GetYRes()*0.5f - GetSize().y*0.5f);
+  CenterPosition();
   
   m_iExitId = VGUIManager::GetID("ID_EXIT");
   m_iCancelId = VGUIManager::GetID("ID_CANCEL"); 
@@ -47,14 +44,14 @@ void VisMobileExitDialog::CloseDialog()
 {
   GetContext()->CloseDialog(this);
   SetVisible(false);
-  if (GetContext()->m_OpenDialogs.Count() == 0)
+  if (GetContext()->GetOpenDialogs().Count() == 0)
     GetContext()->SetActivate(false);
 
   m_bExitTriggered = false;
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

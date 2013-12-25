@@ -62,6 +62,8 @@ namespace Editor
       ManagedBase.AssetHelper.AddVariantKey("vForge");
       ManagedBase.AssetHelper.AddVariantKey("android-default");
 
+      ManagedBase.FileAccessManager.Initialize();
+
       // add the default shapes from the editor
       EditorManager.ShapeCreatorPlugins.Add(new GroupCreator());
       EditorManager.ShapeCreatorPlugins.Add(new Group3DShapeCreator());
@@ -481,7 +483,7 @@ namespace Editor
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

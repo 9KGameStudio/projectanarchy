@@ -9,8 +9,6 @@
 #include <Vision/Runtime/Common/Tizen/VisTizenGLESApp.hpp>
 #include <FSecurity.h>
 
-#include <Vision/Runtime/Common/VisSampleApp.hpp>
-
 #define printf(...) AppLogTag("Vision", __VA_ARGS__)
 
 #if defined( HK_DEBUG )
@@ -110,7 +108,7 @@ bool VisTizenGLESApp::OnAppInitialized(void)
 bool VisTizenGLESApp::OnAppWillTerminate(void)
 {
 #if defined( DEBUG_VERBOSE )
-  Vision::Error.SystemMessage( "### VisTizenGLESApp::OnAppWillTerminate()" );
+  hkvLog::Info( "### VisTizenGLESApp::OnAppWillTerminate()" );
 #endif
 
   //Vision::Callbacks.OnEnterBackground.TriggerCallbacks();
@@ -122,7 +120,7 @@ bool VisTizenGLESApp::OnAppWillTerminate(void)
 bool VisTizenGLESApp::OnAppTerminating(Tizen::App::AppRegistry& appRegistry, bool forcedTermination)
 {
 #if defined( DEBUG_VERBOSE )
-  Vision::Error.SystemMessage( "### VisTizenGLESApp::OnAppTerminating()" );
+  hkvLog::Info( "### VisTizenGLESApp::OnAppTerminating()" );
 #endif
 
   if (m_pTimer)
@@ -140,7 +138,7 @@ bool VisTizenGLESApp::OnAppTerminating(Tizen::App::AppRegistry& appRegistry, boo
 void VisTizenGLESApp::OnForeground(void)
 {
 #if defined( DEBUG_VERBOSE )
-  Vision::Error.SystemMessage( "### VisTizenGLESApp::OnForeground()" );
+  hkvLog::Info( "### VisTizenGLESApp::OnForeground()" );
 #endif
 
   // ------------------------------------------------------------------------------------------------------
@@ -148,17 +146,17 @@ void VisTizenGLESApp::OnForeground(void)
   //       We still keep this code around - if this works in a later SDK, we can avoid deriving from IFrameEventListener.
   //// Try to disable automatic screen locking. 
   //// Note: The application requires the http://tizen.org/privilege/power privilege for this.
-  //Vision::Error.SystemMessage( "Trying to set screen on state" );
+  //hkvLog::Info( "Trying to set screen on state" );
   //result res = Tizen::System::PowerManager::KeepScreenOnState( true, false );
-  //Vision::Error.SystemMessage( "done..." );
+  //hkvLog::Info( "done..." );
   //if ( res != E_SUCCESS )
   //{
-  //  Vision::Error.Warning( "Unable to keep screen on - error: '%s'",
+  //  hkvLog::Warning( "Unable to keep screen on - error: '%s'",
   //    ( res == E_PRIVILEGE_DENIED ? "PRIVILEGE DENIED" : "SYSTEM ERROR" ) );
   //}
   //else 
   //{
-  //  Vision::Error.SystemMessage( "SUCCESS - PowerManager::KeepScreenOnState( true, false ) returned E_SUCCESS\n" );
+  //  hkvLog::Info( "SUCCESS - PowerManager::KeepScreenOnState( true, false ) returned E_SUCCESS\n" );
   //}
   // ------------------------------------------------------------------------------------------------------
 
@@ -180,7 +178,7 @@ void VisTizenGLESApp::OnForeground(void)
 void VisTizenGLESApp::OnBackground(void)
 {
 #if defined( DEBUG_VERBOSE )
-  Vision::Error.SystemMessage( "### VisTizenGLESApp::OnBackground()" );
+  hkvLog::Info( "### VisTizenGLESApp::OnBackground()" );
 #endif
 
   if (m_pTimer)
@@ -192,7 +190,7 @@ void VisTizenGLESApp::OnBackground(void)
 void VisTizenGLESApp::OnLowMemory(void)
 {
 #if defined( DEBUG_VERBOSE )
-  Vision::Error.SystemMessage( "### VisTizenGLESApp::OnLowMemory()" );
+  hkvLog::Info( "### VisTizenGLESApp::OnLowMemory()" );
 #endif
   Vision::Callbacks.OnMemoryWarning.TriggerCallbacks();
 }
@@ -200,7 +198,7 @@ void VisTizenGLESApp::OnLowMemory(void)
 void VisTizenGLESApp::OnBatteryLevelChanged(Tizen::System::BatteryLevel batteryLevel)
 {
 #if defined( DEBUG_VERBOSE )
-  Vision::Error.SystemMessage( "### VisTizenGLESApp::OnBatteryLevelChanged()" );
+  hkvLog::Info( "### VisTizenGLESApp::OnBatteryLevelChanged()" );
 #endif
   
   if ( batteryLevel == Tizen::System::BATTERY_CRITICAL )
@@ -222,9 +220,9 @@ void VisTizenGLESApp::OnTimerExpired(Tizen::Base::Runtime::Timer& timer)
 
 void VisTizenGLESApp::OnOrientationChanged(const Tizen::Ui::Control &source, Tizen::Ui::OrientationStatus orientationStatus)
 {
-#if defined( DEBUG_VERBOSE )
-  Vision::Error.SystemMessage( "### Received new orientation: %d", orientationStatus );
-#endif
+
+  hkvLog::Info( "### Received new orientation: %d", orientationStatus );
+
 
   if ( Vision::Video.IsInitialized() )
   {
@@ -245,7 +243,7 @@ void VisTizenGLESApp::OnOrientationChanged(const Tizen::Ui::Control &source, Tiz
 void VisTizenGLESApp::OnFrameActivated(const Tizen::Ui::Controls::Frame &source)
 {
 #if defined( DEBUG_VERBOSE )
-  Vision::Error.SystemMessage( "### OnFrameActivated()" );
+  hkvLog::Info( "### OnFrameActivated()" );
 #endif
 
   // Try to disable automatic screen locking.
@@ -258,14 +256,14 @@ void VisTizenGLESApp::OnFrameActivated(const Tizen::Ui::Controls::Frame &source)
     result res = Tizen::System::PowerManager::KeepScreenOnState( true, false );
     if ( res != E_SUCCESS )
     {
-      Vision::Error.Warning( "Unable to keep screen on - error: '%s'",
+      hkvLog::Warning( "Unable to keep screen on - error: '%s'",
         ( res == E_PRIVILEGE_DENIED ? "PRIVILEGE DENIED" : "SYSTEM ERROR" ) );
     }
   }
   else
   {
 #if defined( DEBUG_VERBOSE )
-    Vision::Error.SystemMessage( "Unable to keep screen on - insufficient privileges\n" );
+    hkvLog::Info( "Unable to keep screen on - insufficient privileges\n" );
 #endif
   }
 
@@ -274,28 +272,28 @@ void VisTizenGLESApp::OnFrameActivated(const Tizen::Ui::Controls::Frame &source)
 void VisTizenGLESApp::OnFrameDeactivated(const Tizen::Ui::Controls::Frame &source)
 {
 #if defined( DEBUG_VERBOSE )
-  Vision::Error.SystemMessage( "### OnFrameDeactivated()" );
+  hkvLog::Info( "### OnFrameDeactivated()" );
 #endif
 }
 
 void VisTizenGLESApp::OnFrameMinimized(const Tizen::Ui::Controls::Frame &source)
 {
 #if defined( DEBUG_VERBOSE )
-  Vision::Error.SystemMessage( "### OnFrameMinimized()" );
+  hkvLog::Info( "### OnFrameMinimized()" );
 #endif
 }
 
 void VisTizenGLESApp::OnFrameRestored(const Tizen::Ui::Controls::Frame &source)
 {
 #if defined( DEBUG_VERBOSE )
-  Vision::Error.SystemMessage( "### OnFrameRestored()" );
+  hkvLog::Info( "### OnFrameRestored()" );
 #endif
 }
 
 void VisTizenGLESApp::OnFrameTerminating(const Tizen::Ui::Controls::Frame &source)
 {
 #if defined( DEBUG_VERBOSE )
-  Vision::Error.SystemMessage( "### OnFrameTerminating()" );
+  hkvLog::Info( "### OnFrameTerminating()" );
 #endif
 }
 
@@ -308,7 +306,7 @@ void VisTizenGLESApp::Draw(void)
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

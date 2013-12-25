@@ -62,8 +62,8 @@ public:
   inline VTerrainConfig() {m_bFinalized=false;InitDefaults();}
 
   VString m_sTerrainFolder;             ///< folder for storing terrain related files
-  VString m_sAbsTerrainDir;             ///< terrain directory. Only valid inside vForge, filled in by EngineInstanceTerrain::SetConfig
-  VString m_sAbsProjectDir;             ///< project directory. Only valid inside vForge, filled in by EngineInstanceTerrain::SetConfig
+  VString m_sNativeTerrainDir;             ///< terrain directory. Only valid inside vForge, filled in by EngineInstanceTerrain::SetConfig
+  VString m_sNativeProjectDir;             ///< project directory. Only valid inside vForge, filled in by EngineInstanceTerrain::SetConfig
   mutable bool m_bUseTempFolder;        ///< internal use
   bool m_bSortTextureChannels;          ///< internal use
   bool m_bDistanceBasedLODOnly;         ///< if enabled, the LOD computation is only distance based, not terrain noise based
@@ -413,14 +413,12 @@ public:
   /// \brief
   ///   Ensures relevant sub-directories are created. Requires m_sTerrainFolder to be setup
   ///
-  /// \param szProjectDir
-  ///   absolute path to project
   /// \param bTemp
   ///   determines whether the temp directory should be used
   ///
   /// \return
   ///   true if successful
-  TERRAIN_IMPEXP bool MakeRelevantDirectories(const char *szProjectDir, bool bTemp = false) const;
+  TERRAIN_IMPEXP bool MakeRelevantDirectories(bool bTemp = false) const;
 
   /// \brief
   ///   Retrieves the project local directory where terrain files go
@@ -640,8 +638,8 @@ public:
   inline VTerrainConfig& operator = (const VTerrainConfig& other)
   {
     COPY_MEMBER(m_sTerrainFolder);
-    COPY_MEMBER(m_sAbsTerrainDir);
-    COPY_MEMBER(m_sAbsProjectDir);
+    COPY_MEMBER(m_sNativeTerrainDir);
+    COPY_MEMBER(m_sNativeProjectDir);
 
     COPY_MEMBER(m_iSectorCount[0]);
     COPY_MEMBER(m_iSectorCount[1]);
@@ -723,7 +721,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -8,8 +8,6 @@
 
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/VisionEnginePluginPCH.h>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Scripting/VScriptIncludes.hpp>
-//#include <VisionPhysicsGlobals.hpp>
-//#include <VisionPhysicsObject.hpp>
 #include <Vision/Runtime/Base/String/VStringTokenizerInPlace.hpp>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Scripting/Lua/VisionLuaModule_wrapper.hpp>
 #include <Vision/Runtime/Base/System/Memory/VMemDbg.hpp>
@@ -40,7 +38,6 @@ VScriptInstance::VScriptInstance()
 {
   m_bDisposeOnFinish = false;
   m_bFlagForDisposal = false;
-  //m_bFinished = false;
   m_bHasSuspendedThreads = false;
   m_iCreatedThreads = 0;
 }
@@ -131,25 +128,6 @@ bool VScriptInstance::SetResource(VScriptResource *pRes)
     return true;
 
   VASSERT(m_iCreatedThreads==0);
-/*
-  lua_State *pParentState = m_spResource->GetScriptManager()->GetMasterState();
-  m_MainState.pThread = lua_newthread(pParentState);
-  m_MainState.iRefKey = luaL_ref(pParentState, LUA_REGISTRYINDEX);
-
-  lua_State *pMainState = m_MainState.pThread;
-
-  // open base libraries
-  luaL_openlibs(pMainState);
-  VLUA_OpenLibraries(pMainState);
-
-  // load the string
-  if (!LUA_ERRORCHECK(pMainState, luaL_loadstring(pMainState, m_spResource->m_sScriptText)))
-    return false;
-
-  // run once so function names are known
-  if (!LUA_ERRORCHECK(pMainState, lua_pcall (pMainState, 0, LUA_MULTRET, 0)))
-    return false;
-*/
 
   return true;
 }
@@ -203,7 +181,6 @@ void VScriptInstance::DiscardThread(lua_State *pThread, bool bForReuse)
   else
   {
     // clean up the list
-    lua_State* pParentState = m_spResource->m_pResourceState;
     int iOldCount = m_iCreatedThreads;
     m_iCreatedThreads = 0;
     for (int i=0;i<iOldCount;i++)
@@ -215,7 +192,7 @@ void VScriptInstance::DiscardThread(lua_State *pThread, bool bForReuse)
         //will remain inside the Lua globals
         VScriptResourceManager::DiscardThread(info.pThread);
 
-        luaL_unref(pParentState, LUA_REGISTRYINDEX, info.iRefKey);
+        luaL_unref(info.pParentThread, LUA_REGISTRYINDEX, info.iRefKey);
         info.pThread = NULL;
         continue;
       }
@@ -247,13 +224,13 @@ VScriptInstance::VLuaThreadInfo* VScriptInstance::CreateNewThread()
   // create new thread
 //  lua_State* pParentState = m_MainState.pThread;
   lua_State* pParentState = m_spResource->m_pResourceState;
-  if (pParentState==NULL)
+  if (pParentState == NULL)
     return NULL;
 
   VLuaThreadInfo &info = m_CreatedThreads[m_iCreatedThreads++];
-
-  info.pThread = lua_newthread(pParentState);
-  info.iRefKey = luaL_ref(pParentState, LUA_REGISTRYINDEX); //reference the thread from the registry for GC
+  info.pParentThread = pParentState;
+  info.pThread = lua_newthread(info.pParentThread);
+  info.iRefKey = luaL_ref(info.pParentThread, LUA_REGISTRYINDEX); //reference the thread from the registry for GC
   info.eState = Running;
   info.fWaitTime = 0.f;
 
@@ -291,7 +268,7 @@ void VScriptInstance::Tick(float dtime)
         if (status!=LUA_YIELD)
         {
           pInfo->eState = Reuse; // same as in DiscardThread
-          LUA_ERRORCHECK(pInfo->pThread, status);
+          VScriptResourceManager::LuaErrorCheck(pInfo->pThread, status);
           continue;
         }
         pInfo->eState = Running;
@@ -304,31 +281,13 @@ void VScriptInstance::Tick(float dtime)
 void VScriptInstance::ResumeAll(float dtime)
 {
   VASSERT(!"TODO");
-/*
-  m_bHasSuspendedThreads = false;
-  int iOldCount = m_iYieldStateCount;
-  m_iYieldStateCount = 0;
-  for (int i=0;i<iOldCount;i++)
-  {
-    lua_State *pState = m_YieldStates.GetDataPtr()[i];
-    if (!pState)
-      continue;
-    int status = lua_resume(pState, 0);
-    if (status!=LUA_YIELD)
-    {
-      LUA_ERRORCHECK(pState, status);
-      m_YieldStates.GetDataPtr()[i] = NULL; // remove from yield list
-      DiscardThread(pState,true);
-      continue;
-    }
-    m_iYieldStateCount = i+1;
-  }
-  */
+
 }
 
-#define LUA_WARNING(s)          {Vision::Error.Warning(s);}
-#define LUA_WARNING_1(s,a1)     {Vision::Error.Warning(s,a1);}
-#define LUA_WARNING_2(s,a1,a2)  {Vision::Error.Warning(s,a1,a2);}
+#define LUA_WARNING(s)             {hkvLog::Warning(s);}
+#define LUA_WARNING_1(s,a1)        {hkvLog::Warning(s,a1);}
+#define LUA_WARNING_2(s,a1,a2)     {hkvLog::Warning(s,a1,a2);}
+#define LUA_WARNING_3(s,a1,a2,a3)  {hkvLog::Warning(s,a1,a2,a3);}
 
 BOOL VScriptInstance::HasFunction(const char *szFunction)
 {
@@ -412,7 +371,7 @@ bool VScriptInstance::DoFunctionCall(VLuaThreadInfo *pInfo, int narg)
   } else
   {
     // remove again from list
-    bResult = LUA_ERRORCHECK(pLuaState,status);
+    bResult = VScriptResourceManager::LuaErrorCheck(pLuaState,status);
     pInfo->eState = Reuse;
 
     // Note: upon an error, the thread saves the error state and the instruction pointer of the called
@@ -436,7 +395,7 @@ BOOL VScriptInstance::ExecuteFunctionArgV(const char *szFunction, const char *sz
   VScriptResourceManager::g_iFunctionsCalled++;
 #endif
   
-  int narg, nres;  // number of arguments and results
+  int narg; // number of arguments
 
   //TODO: early out before creating thread?
   //if (!HasFunction(szFunction)) return FALSE;
@@ -492,6 +451,42 @@ BOOL VScriptInstance::ExecuteFunctionArgV(const char *szFunction, const char *sz
             lua_pushnil(pLuaState);
         }
         break;
+      case 't': // something derived from VTypedObject with an existing wrapper and cast
+        LUA_CreateNewWrapper(pLuaState, ppArray==NULL ? va_arg(argPtr, VTypedObject*) : (VTypedObject*)(ppArray[iArrayIndex++])); 
+        break;
+
+        ///   \li 'T' + MODULE + ':' + TYPE + ';': Cast from void* to the specified type (no type check,
+        ///             and a script wrapper and a cast function for this type must exist)
+        ///   	\code
+        ///   	pScriptInst->ExecuteFunctionArg("SetupLevel","TMyLuaModule:LevelInfoType;", (void *)pLevelInfoInstance);
+        ///   	\endcode
+        ///TODO: recalculate number of return values
+      //case 'T': // arbitrary type specified with 'T' MODULENAME + ':' + TYPENAME + ';'
+      //  {
+      //    const char * pColon = Contains(szArgFormat, ":");
+      //    const char * pSemiColon = Contains(szArgFormat, ";");
+
+      //    if(pColon!=NULL && pSemiColon!=NULL)
+      //    {
+      //      char szModuleName[128];
+      //      char szTypeName[128];
+
+      //      vstrncpy(szModuleName, szArgFormat, (size_t)(pColon-szArgFormat)+1);
+      //      vstrncpy(szTypeName, &pColon[1], (size_t)(pSemiColon-pColon));
+
+      //      int iRetParams = LUA_CallStaticFunction(pLuaState, szModuleName, szTypeName, "Cast","v>v", ppArray==NULL ? va_arg(argPtr, unsigned long*) : (ppArray[iArrayIndex++]));
+      //      VASSERT_MSG(iRetParams==1, "LUA_CallStaticFunction returned an unexpected amount of results!");
+
+      //      szArgFormat = &pSemiColon[1]; //advance to the last position
+      //    }
+      //    else
+      //    {
+      //      LUA_WARNING_1("Invalid type specified after T '%s'", szArgFormat);
+      //      lua_pushnil(pLuaState);
+      //      goto endwhile;
+      //    }
+      //  }
+      //  break;
       case 'd':  // double argument
         lua_pushnumber(pLuaState, (lua_Number) (ppArray==NULL ? va_arg(argPtr, double) : *((double *)(ppArray[iArrayIndex++]))));
         break;
@@ -510,14 +505,73 @@ BOOL VScriptInstance::ExecuteFunctionArgV(const char *szFunction, const char *sz
       case 'm': // bitmask argument
         LUA_PushBitmask(pLuaState, ppArray==NULL ? va_arg(argPtr, int) : *((int *)(ppArray[iArrayIndex++])));
         break;
-      case 'v': // vector3 argument
-        LUA_PushObjectProxy(pLuaState, ppArray==NULL ? va_arg(argPtr, hkvVec3*) : (hkvVec3 *)(ppArray[iArrayIndex++]));
+      case 'v': // vector argument 
+        {
+          if (strlen(szArgFormat) > 0)
+          {
+            const char nextChar = *szArgFormat++;
+            switch(nextChar)
+            {
+            case '2':
+              LUA_PushObjectProxy(pLuaState, ppArray==NULL ? va_arg(argPtr, hkvVec2*) : (hkvVec2 *)(ppArray[iArrayIndex++]));
+              break;
+            case '3':
+              LUA_PushObjectProxy(pLuaState, ppArray==NULL ? va_arg(argPtr, hkvVec3*) : (hkvVec3 *)(ppArray[iArrayIndex++]));
+              break;
+            case '4':
+              LUA_PushObjectProxy(pLuaState, ppArray==NULL ? va_arg(argPtr, hkvVec4*) : (hkvVec4 *)(ppArray[iArrayIndex++]));
+              break;
+            default:
+              LUA_PushObjectProxy(pLuaState, ppArray==NULL ? va_arg(argPtr, hkvVec3*) : (hkvVec3 *)(ppArray[iArrayIndex++]));
+              szArgFormat--;
+            }
+          }
+          else
+          {
+            LUA_PushObjectProxy(pLuaState, ppArray==NULL ? va_arg(argPtr, hkvVec3*) : (hkvVec3 *)(ppArray[iArrayIndex++]));
+          }
+        }
+        break;
+      case 'x': // matrix argument 
+        {
+          if (strlen(szArgFormat) > 0)
+          {
+            const char nextChar = *szArgFormat++;
+            switch(nextChar)
+            {
+            case '3':
+              LUA_PushObjectProxy(pLuaState, ppArray==NULL ? va_arg(argPtr, hkvMat3*) : (hkvMat3 *)(ppArray[iArrayIndex++]));
+              break;
+            case '4':
+              LUA_PushObjectProxy(pLuaState, ppArray==NULL ? va_arg(argPtr, hkvMat4*) : (hkvMat4 *)(ppArray[iArrayIndex++]));
+              break;
+            default:
+              LUA_WARNING_1("Invalid type specified after x: '%c'", nextChar);
+              szArgFormat--;
+              lua_pushnil(pLuaState);
+            }
+          }
+          else
+          {
+            LUA_WARNING("No type specified after x");
+            lua_pushnil(pLuaState); 
+          }
+        }
+        break;
+      case 'p': // plane argument
+        LUA_PushObjectProxy(pLuaState, ppArray==NULL ? va_arg(argPtr, hkvPlane*) : (hkvPlane *)(ppArray[iArrayIndex++]));
+        break;
+      case 'q': // quaternion argument
+        LUA_PushObjectProxy(pLuaState, ppArray==NULL ? va_arg(argPtr, hkvQuat*) : (hkvQuat *)(ppArray[iArrayIndex++]));
+        break;
+      case '#': // bounding box argument
+        LUA_PushObjectProxy(pLuaState, ppArray==NULL ? va_arg(argPtr, hkvAlignedBBox*) : (hkvAlignedBBox *)(ppArray[iArrayIndex++]));
+        break;
+      case '@': // bounding sphere argument
+        LUA_PushObjectProxy(pLuaState, ppArray==NULL ? va_arg(argPtr, hkvBoundingSphere*) : (hkvBoundingSphere *)(ppArray[iArrayIndex++]));
         break;
       case 'c': // color argument
         LUA_PushObjectProxy(pLuaState, ppArray==NULL ? va_arg(argPtr, VColorRef*) : (VColorRef *)(ppArray[iArrayIndex++]));
-        break;
-      case '#': // boundingbox argument
-        LUA_PushObjectProxy(pLuaState, ppArray==NULL ? va_arg(argPtr, hkvAlignedBBox*) : (hkvAlignedBBox *)(ppArray[iArrayIndex++]));
         break;
       case '[':
         VASSERT_MSG(ppArray==NULL, "Nested array parameters are not allowed!");
@@ -571,74 +625,153 @@ BOOL VScriptInstance::ExecuteFunctionArgV(const char *szFunction, const char *sz
 endwhile:
   
   VASSERT_MSG(iNestedTable==0, "Nested table structure invalid, check '{' / '[' and '}' / ']' in your argument string!");
-  bool bResult;
-  nres = szArgFormat ? (int)strlen(szArgFormat) : 0;  // number of expected results
+  const bool bResult = DoFunctionCall(pInfo, narg);
+  if (!bResult) 
+    return FALSE;
 
-  // then call function
-  bResult = DoFunctionCall(pInfo, narg);
-  if (!bResult) return FALSE;
+  // calculate number of expected results
+  int numResults = 0;
+  if (szArgFormat != NULL)
+  {
+    const size_t iLength = strlen(szArgFormat);
+    for (size_t i = 0; i < iLength; i++)
+    {
+      if (isdigit(szArgFormat[i]) == 0)
+        numResults++;
+    }
+  } 
+  
+  int iStackIndex = -numResults;
 
   // now read back expected results
-  nres = -nres;  // stack index of first result
-  int iIndex = 0;
+  unsigned int iIndex = 0;
   while (szArgFormat && szArgFormat[0]) 
   {
     char argFormat = *szArgFormat++;
     switch (argFormat) 
     {
       case 'u':  // light user data result
-        if (!lua_islightuserdata(pLuaState, nres))
-          LUA_WARNING_2("Return type 'light user data (void *)' expected for function call '%s', return value #i", szFunction, iIndex)
+        if (!lua_islightuserdata(pLuaState, iStackIndex))
+          LUA_WARNING_2("Return type 'light user data (void *)' expected for function call '%s', return value %i", szFunction, iIndex)
         else
-          *va_arg(argPtr, void **) = lua_touserdata(pLuaState, nres); //there is no lua_tolightuserdata, so lua_touserdata is the only way
+          *va_arg(argPtr, void **) = lua_touserdata(pLuaState, iStackIndex); //there is no lua_tolightuserdata, so lua_touserdata is the only way
         break;
       case 'd':  // double result
-        if (!lua_isnumber(pLuaState, nres))
-          LUA_WARNING_2("Return type 'double' expected for function call '%s', return value #i", szFunction, iIndex)
+        if (!lua_isnumber(pLuaState, iStackIndex))
+          LUA_WARNING_2("Return type 'double' expected for function call '%s', return value %i", szFunction, iIndex)
         else
-          *va_arg(argPtr, double *) = lua_tonumber(pLuaState, nres);
+          *va_arg(argPtr, double *) = lua_tonumber(pLuaState, iStackIndex);
         break;
       case 'f':  // float result
-        if (!lua_isnumber(pLuaState, nres))
-          LUA_WARNING_2("Return type 'float' expected for function call '%s', return value #i", szFunction, iIndex)
+        if (!lua_isnumber(pLuaState, iStackIndex))
+          LUA_WARNING_2("Return type 'float' expected for function call '%s', return value %i", szFunction, iIndex)
         else
-          *va_arg(argPtr, float *) = (float)lua_tonumber(pLuaState, nres);
+          *va_arg(argPtr, float *) = (float)lua_tonumber(pLuaState, iStackIndex);
         break;
 
       case 'i':  // int result
-        if (!lua_isnumber(pLuaState, nres))
-          LUA_WARNING_2("Return type 'int' expected for function call '%s', return value #i", szFunction, iIndex)
+        if (!lua_isnumber(pLuaState, iStackIndex))
+          LUA_WARNING_2("Return type 'int' expected for function call '%s', return value %i", szFunction, iIndex)
         else
-          *va_arg(argPtr, int *) = (int)lua_tonumber(pLuaState, nres);
+          *va_arg(argPtr, int *) = (int)lua_tonumber(pLuaState, iStackIndex);
         break;
 
       case 's':  // string result
-        if (!lua_isstring(pLuaState, nres))
-          LUA_WARNING_2("Return type 'string' expected for function call '%s', return value #i", szFunction, iIndex)
+        if (!lua_isstring(pLuaState, iStackIndex))
+          LUA_WARNING_2("Return type 'string' expected for function call '%s', return value %i", szFunction, iIndex)
         else
-          *va_arg(argPtr, const char **) = lua_tostring(pLuaState, nres);
+          *va_arg(argPtr, const char **) = lua_tostring(pLuaState, iStackIndex);
         break;
 
       case 'v': // vector result
-        if (!LUA_GetValue(pLuaState, nres, *((hkvVec3*)va_arg(argPtr, hkvVec3* ))))
-          LUA_WARNING_2("Return type 'hkvVec3' expected for function call '%s', return value #i", szFunction, iIndex)
+        {
+          const char *szWarning = NULL;
+          if (strlen(szArgFormat) > 0)
+          {
+            const char nextChar = *szArgFormat++;
+            switch(nextChar)
+            {
+            case '2':
+              szWarning = LUA_GetValue(pLuaState, iStackIndex, *((hkvVec2*)va_arg(argPtr, hkvVec2* ))) ? NULL : "hkvVec2";
+              break;
+            case '3':
+              szWarning = LUA_GetValue(pLuaState, iStackIndex, *((hkvVec3*)va_arg(argPtr, hkvVec3* ))) ? NULL : "hkvVec3";
+              break;
+            case '4':
+              szWarning = LUA_GetValue(pLuaState, iStackIndex, *((hkvVec4*)va_arg(argPtr, hkvVec4* ))) ? NULL : "hkvVec4";
+              break;
+            default:
+              szWarning = LUA_GetValue(pLuaState, iStackIndex, *((hkvVec3*)va_arg(argPtr, hkvVec3* ))) ? NULL : "hkvVec3"; 
+              szArgFormat--;
+            }
+          }
+          else
+          {
+            szWarning = LUA_GetValue(pLuaState, iStackIndex, *((hkvVec3*)va_arg(argPtr, hkvVec3* ))) ? NULL : "hkvVec3"; 
+          }
+          if (szWarning != NULL)
+            LUA_WARNING_3("Return type '%s' expected for function call '%s', return value %i", szWarning, szFunction, iIndex)
+        }
+        break;
+
+      case 'x': // matrix result 
+        {
+          const char *szWarning = NULL;
+          if (strlen(szArgFormat) > 0)
+          {
+            const char nextChar = *szArgFormat++;
+            switch(nextChar)
+            {
+            case '3':
+              szWarning = LUA_GetValue(pLuaState, iStackIndex, *((hkvMat3*)va_arg(argPtr, hkvMat3* ))) ? NULL : "hkvMat3";
+              break;
+            case '4':
+              szWarning = LUA_GetValue(pLuaState, iStackIndex, *((hkvMat4*)va_arg(argPtr, hkvMat4* ))) ? NULL : "hkvMat4";
+              break;
+            default:
+              LUA_WARNING_1("Invalid type specified after x: '%c'", nextChar);
+              szArgFormat--;
+            }
+          }
+          else
+          {
+            LUA_WARNING_1("No type specified after x '%s'", szArgFormat);
+          }
+          if (szWarning != NULL)
+            LUA_WARNING_3("Return type '%s' expected for function call '%s', return value %i", szWarning, szFunction, iIndex)
+        }
+        break;
+
+      case 'p': // plane result
+        if (!LUA_GetValue(pLuaState, iStackIndex, *((hkvPlane*)va_arg(argPtr, hkvPlane *))))
+          LUA_WARNING_2("Return type 'hkvPlane' expected for function call '%s', return value %i", szFunction, iIndex)
+        break;
+
+      case 'q': // quaternion result
+        if (!LUA_GetValue(pLuaState, iStackIndex, *((hkvQuat*)va_arg(argPtr, hkvQuat *))))
+          LUA_WARNING_2("Return type 'hkvQuat' expected for function call '%s', return value %i", szFunction, iIndex)
+        break;
+
+      case '#': // bounding box result
+        if (!LUA_GetValue(pLuaState, iStackIndex, *((hkvAlignedBBox*)va_arg(argPtr, hkvAlignedBBox *))))
+          LUA_WARNING_2("Return type 'hkvAlignedBBox' expected for function call '%s', return value %i", szFunction, iIndex)
+        break;
+
+      case '@': // bounding sphere result
+        if (!LUA_GetValue(pLuaState, iStackIndex, *((hkvBoundingSphere*)va_arg(argPtr, hkvBoundingSphere *))))
+          LUA_WARNING_2("Return type 'hkvBoundingSphere' expected for function call '%s', return value %i", szFunction, iIndex)
         break;
 
       case 'b':  // bool result
-        if (!lua_isboolean(pLuaState, nres))
-          LUA_WARNING_2("Return type 'bool' expected for function call '%s', return value #i", szFunction, iIndex)
+        if (!lua_isboolean(pLuaState, iStackIndex))
+          LUA_WARNING_2("Return type 'bool' expected for function call '%s', return value %i", szFunction, iIndex)
         else
-          *va_arg(argPtr, int *) = lua_toboolean(pLuaState, nres) != 0;
+          *va_arg(argPtr, int *) = lua_toboolean(pLuaState, iStackIndex) != 0;
         break;
 
 	    case 'c': // color result
-        if (!LUA_GetValue(pLuaState, nres, *((VColorRef*)va_arg(argPtr, VColorRef *))))
-          LUA_WARNING_2("Return type 'VColorRef' expected for function call '%s', return value #i", szFunction, iIndex)
-        break;
-
-	    case '#': // boundingbox result
-        if (!LUA_GetValue(pLuaState, nres, *((hkvAlignedBBox*)va_arg(argPtr, hkvAlignedBBox *))))
-          LUA_WARNING_2("Return type 'hkvAlignedBBox' expected for function call '%s', return value #i", szFunction, iIndex)
+        if (!LUA_GetValue(pLuaState, iStackIndex, *((VColorRef*)va_arg(argPtr, VColorRef *))))
+          LUA_WARNING_2("Return type 'VColorRef' expected for function call '%s', return value %i", szFunction, iIndex)
         break;
 
       default:
@@ -646,7 +779,7 @@ endwhile:
         
     }
     iIndex++;
-    nres++;
+    iStackIndex++;
   }
 
   lua_settop(pLuaState, 0);  //clear the stack
@@ -743,16 +876,27 @@ void VScriptInstance::GetMembers(LinkedList_cl<VScriptMember> &members)
 {
   VASSERT_MSG(m_spResource, "Script manager not initialized");
 
-  if(!m_pParentComponent) return;
+  if(!m_pParentComponent || m_pParentComponent->GetOwner()==NULL)
+  {
+    return;
+  }
 
   lua_State* m_pLuaState = m_spResource->m_pResourceState;
   VASSERT(m_pLuaState);
 
-  //get the self address in order to figure out the self - assigned vars
-  LUA_PushObjectProxy(m_pLuaState, (VScriptComponent*) m_pParentComponent);  // push self
-  const void *pSelf = lua_topointer(m_pLuaState,-1);
-  lua_pop(m_pLuaState,1);
+  lua_pushliteral(m_pLuaState, "G");                              //stack: ..., 'G', TOP
+  lua_gettable(m_pLuaState, LUA_GLOBALSINDEX);                    //stack: ..., globalTable, TOP
 
+  //LUA_STACK_DUMP(m_pLuaState);
+
+  int iTableIndex = -1;
+
+  if( lua_isnil(m_pLuaState, -1)==1 ) //test if the global table is valid
+  {
+    lua_pop(m_pLuaState, 1);                                      //stack: ..., TOP
+    iTableIndex = LUA_GLOBALSINDEX;
+  }
+                              
   //debug counters
   #ifdef PROFILE_GLOBALS_IN_GET_MEMBERS
     int iGlobalsCount = 0;
@@ -760,7 +904,7 @@ void VScriptInstance::GetMembers(LinkedList_cl<VScriptMember> &members)
   #endif
 
   //start global iter
-  VLuaTableIterator globalsIter(m_pLuaState, LUA_GLOBALSINDEX);
+  VLuaTableIterator globalsIter(m_pLuaState, iTableIndex);
 
   while(globalsIter.HasNext())
   {
@@ -782,7 +926,7 @@ void VScriptInstance::GetMembers(LinkedList_cl<VScriptMember> &members)
       char szVarName[iBufferLength] = "";
       char szBuffer[iBufferLength] = "";
    
-      if(sscanf(szGlobalName, LUA_HIDDEN_GLOBAL_PREFIX"-%p-%s", &pAdr, szVarName)==2 && strlen(szVarName)>0 && pAdr==pSelf)
+      if(sscanf(szGlobalName, LUA_HIDDEN_GLOBAL_PREFIX"-%p-%s", &pAdr, szVarName)==2 && strlen(szVarName)>0 && pAdr==m_pParentComponent->GetOwner())
       {
         #ifdef PROFILE_GLOBALS_IN_GET_MEMBERS
           iMatchCount++;
@@ -850,6 +994,14 @@ void VScriptInstance::GetMembers(LinkedList_cl<VScriptMember> &members)
             {
               members[iIndex].SetValue("nil");
             }
+            else if(type==SWIGTYPE_p_hkvVec2)
+            {
+              //set the pointer as value
+              hkvVec2 *pVec = (hkvVec2 *)pUserData->ptr;
+              sprintf(szBuffer, "Vision.hkvVec2(%0.0f,%0.0f)", pVec->x, pVec->y);
+              //the rest except user data
+              members[iIndex].SetValue(szBuffer);
+            }
             else if(type==SWIGTYPE_p_hkvVec3)
             {
               //set the pointer as value
@@ -858,19 +1010,11 @@ void VScriptInstance::GetMembers(LinkedList_cl<VScriptMember> &members)
               //the rest except user data
               members[iIndex].SetValue(szBuffer);
             }
-            else if(type==SWIGTYPE_p_VColorRef)
+            else if(type==SWIGTYPE_p_hkvVec4)
             {
               //set the pointer as value
-              VColorRef *pColor = (VColorRef *)pUserData->ptr;
-              sprintf(szBuffer, "Vision.VColorRef(%d,%d,%d,%d)", pColor->r, pColor->g, pColor->b, pColor->a);
-              //the rest except user data
-              members[iIndex].SetValue(szBuffer);
-            }
-            else if(type==SWIGTYPE_p_VBitmask)
-            {
-              //set the pointer as value
-              VBitmask *pMask = (VBitmask *)pUserData->ptr;
-              sprintf(szBuffer, "Vision.VBitmask(\"%x\")", pMask->Get());
+              hkvVec4 *pVec = (hkvVec4 *)pUserData->ptr;
+              sprintf(szBuffer, "Vision.hkvVec4(%0.0f,%0.0f,%0.0f,%0.0f)", pVec->x, pVec->y, pVec->z, pVec->w);
               //the rest except user data
               members[iIndex].SetValue(szBuffer);
             }
@@ -879,10 +1023,74 @@ void VScriptInstance::GetMembers(LinkedList_cl<VScriptMember> &members)
               //set the pointer as value
               hkvMat3 *pMat = (hkvMat3 *)pUserData->ptr;
               sprintf(szBuffer,
-                "Vision.hkvMat3(%0.0f,%0.0f,%0.0f,%0.0f,%0.0f,%0.0f,%0.0f,%0.0f,%0.0f,true)",
+                "Vision.hkvMat3(%0.0f,%0.0f,%0.0f, %0.0f,%0.0f,%0.0f, %0.0f,%0.0f,%0.0f, true)",
                 pMat->m_ElementsCM[0], pMat->m_ElementsCM[1], pMat->m_ElementsCM[2],
                 pMat->m_ElementsCM[3], pMat->m_ElementsCM[4], pMat->m_ElementsCM[5],
                 pMat->m_ElementsCM[6], pMat->m_ElementsCM[7], pMat->m_ElementsCM[8]);
+              //the rest except user data
+              members[iIndex].SetValue(szBuffer);
+            }
+            else if(type==SWIGTYPE_p_hkvMat4)
+            {
+              //set the pointer as value
+              hkvMat4 *pMat = (hkvMat4 *)pUserData->ptr;
+              sprintf(szBuffer,
+                "Vision.hkvMat4(%0.0f,%0.0f,%0.0f,%0.0f, %0.0f,%0.0f,%0.0f,%0.0f, %0.0f,%0.0f,%0.0f,%0.0f, %0.0f,%0.0f,%0.0f,%0.0f, true)",
+                pMat->m_ElementsCM[0], pMat->m_ElementsCM[1], pMat->m_ElementsCM[2], pMat->m_ElementsCM[3],
+                pMat->m_ElementsCM[4], pMat->m_ElementsCM[5], pMat->m_ElementsCM[6], pMat->m_ElementsCM[7],
+                pMat->m_ElementsCM[8], pMat->m_ElementsCM[9], pMat->m_ElementsCM[10], pMat->m_ElementsCM[11],
+                pMat->m_ElementsCM[12], pMat->m_ElementsCM[13], pMat->m_ElementsCM[14], pMat->m_ElementsCM[15]);
+              //the rest except user data
+              members[iIndex].SetValue(szBuffer);
+            }
+            else if(type==SWIGTYPE_p_hkvPlane)
+            {
+              //set the pointer as value
+              hkvPlane *pPlane = (hkvPlane *)pUserData->ptr;
+              sprintf(szBuffer, "Vision.hkvPlane(%0.0f,%0.0f,%0.0f,%0.0f)", pPlane->m_vNormal.x, pPlane->m_vNormal.y, 
+                pPlane->m_vNormal.z, pPlane->m_fNegDist);
+              //the rest except user data
+              members[iIndex].SetValue(szBuffer);
+            }
+            else if(type==SWIGTYPE_p_hkvQuat)
+            {
+              //set the pointer as value
+              hkvQuat *pQuat = (hkvQuat *)pUserData->ptr;
+              sprintf(szBuffer, "Vision.hkvQuat(%0.0f,%0.0f,%0.0f,%0.0f)", pQuat->x, pQuat->y, pQuat->z, pQuat->w);
+              //the rest except user data
+              members[iIndex].SetValue(szBuffer);
+            }
+            else if(type==SWIGTYPE_p_hkvAlignedBBox)
+            {
+              //set the pointer as value
+              hkvAlignedBBox *pBBox = (hkvAlignedBBox *)pUserData->ptr;
+              sprintf(szBuffer, "Vision.hkvAlignedBBox(%0.0f,%0.0f,%0.0f, %0.0f,%0.0f,%0.0f)", pBBox->m_vMin.x, pBBox->m_vMin.y, 
+                pBBox->m_vMin.z, pBBox->m_vMax.x, pBBox->m_vMax.y, pBBox->m_vMax.z);
+              //the rest except user data
+              members[iIndex].SetValue(szBuffer);
+            }
+            else if(type==SWIGTYPE_p_hkvBoundingSphere)
+            {
+              //set the pointer as value
+              hkvBoundingSphere *pBSphere = (hkvBoundingSphere *)pUserData->ptr;
+              sprintf(szBuffer, "Vision.hkvBoundingSphere(%0.0f,%0.0f,%0.0f, %0.0f)", pBSphere->m_vCenter.x,  
+                pBSphere->m_vCenter.y, pBSphere->m_vCenter.z, pBSphere->m_fRadius);
+              //the rest except user data
+              members[iIndex].SetValue(szBuffer);
+            }
+            else if(type==SWIGTYPE_p_VColorRef)
+            {
+              //set the pointer as value
+              VColorRef *pColor = (VColorRef *)pUserData->ptr;
+              sprintf(szBuffer, "Vision.VColorRef(%d,%d,%d, %d)", pColor->r, pColor->g, pColor->b, pColor->a);
+              //the rest except user data
+              members[iIndex].SetValue(szBuffer);
+            }
+            else if(type==SWIGTYPE_p_VBitmask)
+            {
+              //set the pointer as value
+              VBitmask *pMask = (VBitmask *)pUserData->ptr;
+              sprintf(szBuffer, "Vision.VBitmask(\"%x\")", pMask->Get());
               //the rest except user data
               members[iIndex].SetValue(szBuffer);
             }
@@ -900,8 +1108,14 @@ void VScriptInstance::GetMembers(LinkedList_cl<VScriptMember> &members)
     } // if
   } // while
 
+  //if we got the global table on position -1 we need to drop it again
+  if(iTableIndex==-1)
+  {
+    lua_pop(m_pLuaState, 1);                          /// ..., TOP
+  }
+
   #ifdef PROFILE_GLOBALS_IN_GET_MEMBERS
-    Vision::Error.SystemMessage("Scripting: VScriptInstance::GetMembers 0x%p Globals: %d, Matching Self: %d", this, iGlobalsCount, iMatchCount);
+    hkvLog::Info("Scripting: VScriptInstance::GetMembers 0x%p Globals: %d, Matching Self: %d", this, iGlobalsCount, iMatchCount);
   #endif
 }
 
@@ -1035,7 +1249,17 @@ void VScriptInstanceCollection::HandleSuspendedObjects(float dtime)
   }
 }
 
-
+void VScriptInstanceCollection::DiscardDependentScriptInstanceThreads(const VScriptResource* pResource)
+{
+  for (int i = 0; i < Count(); i++)
+  {
+    VScriptInstance* pInstance = GetAt(i);
+    if (pInstance->GetResource() == pResource)
+    {
+      pInstance->DiscardCreatedThreads();
+    }
+  }
+}
 
 
 void LUA_CreateVArchive(lua_State* L, VArchive * pArchive);
@@ -1267,7 +1491,7 @@ bool VScriptInstance::ExecuteCollisionFunc(const char *pszFunctionName, VScriptC
 //
 //  if (!bResult)
 //  {
-//    Vision::Error.Warning("ExecuteNativeCallback: Calling Lua '%s' failed!", szLuaFunc);
+//    hkvLog::Warning("ExecuteNativeCallback: Calling Lua '%s' failed!", szLuaFunc);
 //
 //    #ifdef PROFILING
 //      VScriptResourceManager::g_iFunctionsFailed++;
@@ -1278,7 +1502,7 @@ bool VScriptInstance::ExecuteCollisionFunc(const char *pszFunctionName, VScriptC
 //}
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

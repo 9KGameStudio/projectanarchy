@@ -45,7 +45,7 @@ void VFollowPathComponent::Init()
     m_pPath = Vision::Game.SearchPath(PathKey.AsChar());  
 
   if (!m_pPath)
-    Vision::Error.Warning("Follow Path Component: The follow path component does not have any reference to a path object.");
+    hkvLog::Warning("Follow Path Component: The follow path component does not have any reference to a path object.");
 
   // Enable euler angles
   if (m_pOwner)
@@ -277,7 +277,7 @@ START_VAR_TABLE(VFollowPathComponent,IVObjectComponent, "Follow Path Component. 
 END_VAR_TABLE
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

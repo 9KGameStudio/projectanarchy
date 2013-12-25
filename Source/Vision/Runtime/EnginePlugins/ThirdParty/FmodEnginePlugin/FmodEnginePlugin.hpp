@@ -22,12 +22,11 @@
 
 #include <Vision/Runtime/Base/VBase.hpp>
 #include <Vision/Runtime/Engine/System/Vision.hpp>
-#include <Vision/Runtime/Common/VisSampleApp.hpp>
 
 #endif // !defined(AFX_STDAFX_H__88ED07E2_E3E2_4467_9AEF_AF42C5951938__INCLUDED_)
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

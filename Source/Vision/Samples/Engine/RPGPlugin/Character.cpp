@@ -408,7 +408,7 @@ void RPG_Character::DoRangedAttack(hkvVec3 const& targetPoint)
 
         if(boneIndex == -1)
         {
-          Vision::Error.Warning("RPG_Action_RangedAttack::FireAttack - Supplied bone name doesn't exist on this skeleton: %s", boneName.AsChar());
+          hkvLog::Warning("RPG_Action_RangedAttack::FireAttack - Supplied bone name doesn't exist on this skeleton: %s", boneName.AsChar());
           //VASSERT_MSG(boneIndex != -1, "Supplied bone name doesn't exist on this skeleton.");
         }
       }
@@ -592,7 +592,7 @@ int RPG_Character::TakeDamage(const int damageAmount, const hkvVec3& impactVeloc
     // dodged the attack. Take no damage.
 #ifdef _DEBUG
     const VString msg = "Dodged Attack";
-    Vision::Error.SystemMessage(msg.AsChar());
+    hkvLog::Info(msg.AsChar());
     Vision::Message.Add(1, msg.AsChar());
 #endif
     m_stats.LogCharacterEvent(CE_Dodge, Vision::GetTimer()->GetTime());
@@ -604,7 +604,7 @@ int RPG_Character::TakeDamage(const int damageAmount, const hkvVec3& impactVeloc
     // blocked the attack. Reduce damage.
 #ifdef _DEBUG
     const VString msg = "Blocked Attack";
-    Vision::Error.SystemMessage(msg.AsChar());
+    hkvLog::Info(msg.AsChar());
     Vision::Message.Add(1, msg.AsChar());
 #endif
     const float blockDamageReduction = 0.5f;  // @todo: damage reduction factor may be better implemented as a factor of the equipped shield item instead.
@@ -1124,7 +1124,7 @@ void RPG_Character::CreateCharacterEffect(RPG_CharacterEffect_e const effectType
       boneIndex = GetMesh()->GetSkeleton()->GetBoneIndexByName(effectDef.m_vfxBoneName.AsChar());
       if(boneIndex == -1)
       {
-        Vision::Error.Warning("RPG_Character::CreateCharacterEffect - Supplied bone name doesn't exist on this skeleton: %s", effectDef.m_vfxBoneName.AsChar());
+        hkvLog::Warning("RPG_Character::CreateCharacterEffect - Supplied bone name doesn't exist on this skeleton: %s", effectDef.m_vfxBoneName.AsChar());
       }
     }
 
@@ -1356,7 +1356,7 @@ float RPG_CharacterUtil::CalcImpactSpeed(RPG_Character const *character, float c
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

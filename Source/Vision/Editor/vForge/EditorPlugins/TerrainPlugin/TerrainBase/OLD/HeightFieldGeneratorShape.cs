@@ -305,7 +305,7 @@ namespace TerrainBase.Shapes
     [SortedCategory(CAT_BASETEXTURE, CATORDER_BASETEXTURE),
     Description("Basetexture Filename"),
     PropertyOrder(1),
-    EditorAttribute(typeof(BitmapBrowserEditor), typeof(UITypeEditor))]
+    EditorAttribute(typeof(AssetEditor), typeof(UITypeEditor)), AssetDialogFilter(new string[] { "Texture" })]
     public string Basetexturefile {get {return _basetexturefile;} set {_basetexturefile=value;}}
 
     /// <summary>
@@ -648,13 +648,18 @@ namespace TerrainBase.Shapes
       EditorManager.ShowMessageBox("Only one height field generator shape per scene can be set.", "Warning", MessageBoxButtons.OK); 
       return null;
     }
+
+    public override Type GetShapeType()
+    {
+      return typeof(HeightFieldGeneratorShape);
+    }
   }
 
   #endregion
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

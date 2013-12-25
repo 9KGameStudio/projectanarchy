@@ -24,11 +24,27 @@
 /// \brief
 ///   Synchronization object class for events.
 ///
-/// VEvent is a simple synchronization object that allows one thread to wait for another thread
-/// to signal it.
+/// VEvent is a simple synchronization object that allows threads to wait for another thread.
 class VEvent
 {
 public:
+
+  /// \brief
+  ///  Specifies whether an event is reset automatically when it is received by a waiting thread.
+  enum ResetMode_e
+  {
+    AUTO_RESET,
+    MANUAL_RESET
+  };
+
+  /// \brief
+  ///  Specifies the result of waiting for an event with a timeout.
+  enum WaitResult_e
+  {
+    SIGNALED,
+    TIMEOUT
+  };
+
   ///
   /// @name Constructor / Destructor
   /// @{
@@ -36,7 +52,7 @@ public:
 
   /// \brief
   ///   Constructor; creates the event.
-  inline VEvent();
+  inline VEvent(ResetMode_e eResetMode = AUTO_RESET);
 
   /// \brief
   ///   Destructor; destroys the event.
@@ -47,8 +63,16 @@ public:
   inline void Wait();
 
   /// \brief
+  ///   Waits for the event to be signaled
+  inline WaitResult_e Wait(VTimeSpan timeOut);
+
+  /// \brief
   ///   Signals the event
   inline void Signal();
+
+  /// \brief
+  ///  Manually resets the event
+  inline void Reset();
 
 private:
 
@@ -56,15 +80,20 @@ private:
     volatile HANDLE m_hEvent;
 
   #elif defined(_VISION_PS3)
-    sys_semaphore_t m_Semaphore;
+    sys_cond_t m_Condition;
+    sys_mutex_t m_Mutex;
+    volatile bool m_bEventCondition;
+    ResetMode_e m_eResetMode;
 
   #elif defined(_VISION_POSIX)
     pthread_cond_t m_Condition;
     pthread_mutex_t m_Mutex;
     volatile bool m_bEventCondition;
+    ResetMode_e m_eResetMode;
 
   #elif defined(_VISION_PSP2)
     SceUID m_Event;
+    ResetMode_e m_eResetMode;
 
   #elif defined(_VISION_WIIU)
     OSEvent m_Event;
@@ -95,7 +124,7 @@ private:
 #endif  // VEVENT_HPP_INCLUDED
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -321,17 +321,16 @@ public:
 
   /// \brief
   ///   Saves the lightgrid to a binary file. Uses the VLightGridLoader_cl class.
-  VBASE_IMPEXP BOOL SaveToFile(const char* szAbsFilename, const char* szResourceFileName,
-    IVFileStreamManager* pManager=NULL);
+  VBASE_IMPEXP BOOL SaveToFile(const char* szAbsFilename, const char* szResourceFileName);
 
   /// \brief
   ///   Loads the lightgrid from a binary file. Uses the VLightGridLoader_cl class.
-  VBASE_IMPEXP BOOL LoadFromFile(const char *szFilename,IVFileStreamManager* pManager=NULL);
+  VBASE_IMPEXP BOOL LoadFromFile(const char *szFilename);
 
   /// \brief
   ///   Loads a light grid from a binary file and returns a new light grid instance. Uses the
   ///   VLightGridLoader_cl class.
-  static VBASE_IMPEXP VLightGrid_cl* LoadFromFile(const char *szFilename,VResourceManager *pParentManager, IVFileStreamManager* pManager=NULL);
+  static VBASE_IMPEXP VLightGrid_cl* LoadFromFile(const char *szFilename, VResourceManager *pParentManager);
 
   /// \brief
   ///   Creates a dummy light grid with all faces set to white
@@ -1067,7 +1066,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

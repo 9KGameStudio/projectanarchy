@@ -147,7 +147,7 @@ struct HkCylinderGeometry
 /// in Havok Physics which forms the basic building block of a Havok Physics simulation. 
 /// It contains both dynamics (rigid body) and collision (shape) information.
 ///
-class vHavokRigidBody : public IVObjectComponent
+class vHavokRigidBody : public IVisPhysicsObject_cl
 {
 public:
   ///
@@ -685,7 +685,7 @@ public:
   ///   Set the orientation of this rigid body, in world space.
   ///
   /// \param value
-  ///   Orientation is in Euler angles.
+  ///   Orientation is in Euler angles: x=RollDeg y=PitchDeg z=YawDeg
   ///
   VHAVOK_IMPEXP void SetOrientation(const hkvVec3& value);
 
@@ -726,7 +726,7 @@ public:
   VHAVOK_IMPEXP hkvVec3 GetAngularVelocity() const;
 
   /// \brief
-  ///   Apply a force to this rigid body for a given time interval.
+  ///   Apply a force to this rigid body for a given time interval. The force is applied to the center of mass.
   ///
   /// \param value
   ///   Force vector.
@@ -741,19 +741,88 @@ public:
   ///
   VHAVOK_IMPEXP void ApplyForce(const hkvVec3& value, float deltaT);
 
-  ///
   /// \brief
-  ///   Apply a linear impulse to this rigid body.
+  ///   Apply a force to this rigid body for a given time interval. The force is applied to the point p.
   ///
   /// \param value
-  ///   Impulse vector.
+  ///   Force vector.
+  ///
+  /// \param p
+  ///   Point where the force is applied.
+  ///
+  /// \param deltaT
+  ///   The time interval over which the force is applied.
   ///
   /// To instantaneously accelerate a rigid body upon a single event (e.g. when struck by an explosion),
   /// it is recommended to use ApplyLinearImpulse. To apply a continuous force to a rigid body (e.g. a changing
   /// gravity which is evaluated every frame), ApplyForce should be used. The time interval passed should
   /// be the time difference between each application of the force.
   ///
+  VHAVOK_IMPEXP void ApplyForce(const hkvVec3& value, const hkvVec3& p, float deltaT);
+
+  /// 
+  /// \brief
+  ///   Apply the specified torque to the rigid body for the given time interval. The torque is applied around the center of mass.
+  ///  
+  /// \param value
+  ///   Torque vector.
+  ///
+  /// \param deltaT
+  ///   The time interval over which the torque is applied.
+  ///
+  /// The direction of the vector indicates the axis that you want the body to rotate around,
+  /// and the magnitude of the vector indicates the strength of the torque applied. The change in the body's
+  /// angular velocity after torques are applied is proportional to the simulation delta time value and
+  /// inversely proportional to the body's inertia.
+  /// To instantaneously accelerate the rotation of a rigid body upon a single event (e.g. when struck
+  /// by an explosion), it is recommended to use ApplyAngularImpulse. To apply a continuous torque to a
+  /// rigid body, ApplyTorque should be used.
+  ///
+  VHAVOK_IMPEXP void ApplyTorque(const hkvVec3& value, float deltaT);
+
+  ///
+  /// \brief
+  ///   Apply a linear impulse to this rigid body. The impulse is applied to the center of mass.
+  ///
+  /// \param value
+  ///   Impulse vector.
+  ///
+  /// To instantaneously accelerate a rigid body upon a single event (e.g. when struck by an explosion),
+  /// it is recommended to use ApplyLinearImpulse. To apply a continuous force to a rigid body (e.g. a changing
+  /// gravity which is evaluated every frame), ApplyForce should be used.
+  ///
   VHAVOK_IMPEXP void ApplyLinearImpulse(const hkvVec3& value);
+
+  ///
+  /// \brief
+  ///   Apply a linear impulse to this rigid body. The impulse is applied to the point p.
+  ///
+  /// \param value
+  ///   Impulse vector.
+  ///
+  /// \param p
+  ///   Point where the impulse is applied.
+  ///
+  /// To instantaneously accelerate a rigid body upon a single event (e.g. when struck by an explosion),
+  /// it is recommended to use ApplyLinearImpulse. To apply a continuous force to a rigid body (e.g. a changing
+  /// gravity which is evaluated every frame), ApplyForce should be used.
+  ///
+  VHAVOK_IMPEXP void ApplyLinearImpulse(const hkvVec3& value, const hkvVec3& p);
+
+  ///
+  /// \brief
+  ///   Apply an instantaneous change in angular velocity to this rigid body. The angular impulse is applied around the center of mass.
+  ///
+  /// \param value
+  ///   Angular impulse vector.
+  ///
+  /// The direction of the vector indicates the axis that you want the body to rotate around,
+  /// and the magnitude of the vector indicates the strength of the torque applied.
+  /// To instantaneously accelerate the rotation of a rigid body upon a single event (e.g. when struck
+  /// by an explosion), it is recommended to use ApplyAngularImpulse. To apply a continuous torque to a
+  /// rigid body, ApplyTorque should be used.
+  ///
+  VHAVOK_IMPEXP void ApplyAngularImpulse(const hkvVec3& value);
 
   ///
   /// \brief
@@ -830,19 +899,19 @@ public:
   /// \brief
   ///   Sets the activation status of this object.
   ///
-  /// When the status is set to false, the rigid body is removed from the Havok Physics World so that
+  /// If the status is set to false, the rigid body is removed from the Havok Physics World so that
   /// the collision of this object is ignored. When set to true, the object is added to the 
   /// Havok Physics World again.
   ///
   /// \param bStatus
-  ///   Indicates whether the rigid body should be activated or not.
+  ///   Indicates whether the rigid body should be activated.
   VHAVOK_IMPEXP void SetActive(bool bStatus);
 
   /// \brief
   ///   Returns the activation status of this object.
   ///
   /// \return
-  ///   Indicates the rigid body is active or not
+  ///   Indicates the rigid body is active.
   VHAVOK_IMPEXP bool GetActive() const;
 
   ///
@@ -1069,7 +1138,7 @@ public:
 #endif // VHAVOKRIGIDBODY_HPP_INCLUDED
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

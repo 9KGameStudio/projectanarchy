@@ -12,6 +12,7 @@
 #define __VTARGET_INCLUDED__
 
   #include <Vision/Runtime/Base/System/Threading/Thread/VBackgroundThread.hpp>
+  #include <Vision/Runtime/Base/RemoteComm/VSocket.hpp>
 
   #define VTARGET_GET_CONN(Ident) VTargetThread::GetTargetThread() ? VTargetThread::GetTargetThread()->GetTarget() ? VTargetThread::GetTargetThread()->GetTarget()->GetConnectionByIdentifier(Ident) : NULL : NULL
 
@@ -93,6 +94,9 @@
         return m_bBusy;
       }
 
+      /// \brief Rather than waiting for a connection, establish a VTarget connection by explicitly telling a host that we would like it to connect to us.
+      VBASE_IMPEXP VConnection* SolicitConnection(const char* szIpAddress, unsigned short usPort, const char* szDesiredIdentifier);
+
       /// \fn VBASE_IMPEXP VConnection* GetConnectionByIdentifier(const char* pIdentifier)
       ///
       /// \brief  Gets a connection by it's four letter code identifier (e.g. "VRES"). 
@@ -103,15 +107,13 @@
       ///
       VBASE_IMPEXP VConnection* GetConnectionByIdentifier(const char* pIdentifier);
 
-      /// \fn VBASE_IMPEXP VConnection* GetGonnectionBySocket(int iSocket)
-      ///
       /// \brief  Gets a connection by the associated socket. 
       ///
-      /// \param  iSocket The socket identifier. 
+      /// \param  socket The socket. 
       ///
       /// \return null if not found, otherwise the connection for the given socket. 
       ///
-      VBASE_IMPEXP VConnection* GetGonnectionBySocket(int iSocket);
+      VBASE_IMPEXP VConnection* GetGonnectionBySocket(const VSocket& socket);
 
       /// \fn VBASE_IMPEXP void Disconnect(VConnection* pConnection)
       ///
@@ -119,72 +121,7 @@
       ///
       /// \param [in] pConnection The VConnection* to disconnect. 
       ///
-      VBASE_IMPEXP void Disconnect(VConnection* pConnection);
-
-      /// \fn static bool IsValidSocket(int Socket)
-      ///
-      /// \brief  Queries whether 'Socket' is valid socket. 
-      ///
-      /// \param  Socket  The socket. 
-      ///
-      /// \return true if valid socket, false if not. 
-      ///
-      static bool IsValidSocket(int Socket);
-
-      /// \fn static void InvalidateSocket(int& Socket)
-      ///
-      /// \brief  Sets the given socket to an invalid value
-      ///
-      /// \param  Socket  The socket. 
-      ///
-      static void InvalidateSocket(int& Socket);
-
-      /// \fn static void CloseSocket(int Socket)
-      ///
-      /// \brief  Closes the given socket.
-      ///
-      /// \param  Socket  The socket to close. 
-      ///
-      VBASE_IMPEXP static void CloseSocket(int Socket);
-
-      /// \fn static bool RecvOnSocket(int Socket, void* pBuffer, int BufferSize)
-      ///
-      /// \brief  Receives data from the socket.
-      ///
-      /// \param  Socket  The socket where data should be read from. 
-      ///
-      /// \param  pBuffer The target buffer (needs to be at least BufferSize big)
-      ///
-      /// \param BufferSize The size of the receive buffer.
-      ///
-      static bool RecvOnSocket(int Socket, void* pBuffer, int BufferSize);
-
-      /// \fn static bool SendOnSocket(int Socket, const void* pBuffer, int BufferSize)
-      ///
-      /// \brief  Sends data over the socket.
-      ///
-      /// \param  Socket  The socket where data should be sent to. 
-      ///
-      /// \param  pBuffer The source buffer (needs to be at least BufferSize big)
-      ///
-      /// \param BufferSize The size of the data buffer to send.
-      ///     
-      static bool SendOnSocket(int Socket, const void* pBuffer, int BufferSize);
-
-      /// \brief Creates a new socket for UDP broadcasting.
-      VBASE_IMPEXP static int CreateUDPBroadcastSocket();
-
-      /// \brief Broadcasts a message over a previously created UDP socket.
-      ///
-      /// \param iSocket
-      ///   the socket to broadcast over
-      ///
-      /// \param usPort
-      ///    the port to use for the broadcast
-      ///
-      /// \param msg
-      ///   the message to broadcast
-      VBASE_IMPEXP static bool BroadcastMessage(int iSocket, unsigned short usPort, VMessage* msg);
+      VBASE_IMPEXP void Disconnect(VConnection* pConnection);     
 
       //! This callback can be used to be notified when there is a new connection.
       VBASE_IMPEXP static VCallback OnConnection;
@@ -200,9 +137,11 @@
       VBASE_IMPEXP void ForceCleanup();
 
     private:
+      friend class VTargetThread;
 
-      /// \fn void SetupFDSets(fd_set* ReadFDs, fd_set* WriteFDs, fd_set* ExceptFDs, int ListeningSocket)
-      ///
+      /// \brief Performs a handshake on an already connected socket and creates a new VConnection object on success.
+      VConnection* EstablishConnection(VSocket& socket, const char* szRemoteHost);
+
       /// \brief  Sets up the fd sets. 
       ///
       /// \param [in,out] ReadFDs If non-null, the read f ds. 
@@ -210,38 +149,16 @@
       /// \param [in,out] ExceptFDs If non-null, the except f ds. 
       /// \param  ListeningSocket The listening socket. 
       ///
-      void SetupFDSets(fd_set* ReadFDs, fd_set* WriteFDs, fd_set* ExceptFDs, int ListeningSocket);
+      void SetupFDSets(fd_set* ReadFDs, fd_set* WriteFDs, fd_set* ExceptFDs, const VSocket& ListeningSocket);
 
       //! Stores the list of currently active connections.
       VPListT<VConnection> m_Connections;
 
       //! The listening socket. 
-      int m_iListeningSocket;
+      VSocket m_listeningSocket;
 
       //! Internal variable to keep track of the max socket fd in use (necessary for select). 
-      int m_iMaxSocketFD;
-
-      /// \fn bool Receive(VMessage* pMessage, VConnection* pConnection)
-      ///
-      /// \brief  Receives a message from the connection
-      ///
-      /// \param [in] pMessage  The message object to be received into.
-      /// \param [in] pConnection The connection to receive the message on.
-      ///
-      /// \return true if it succeeds, false if it fails. 
-      ///
-      bool Receive(VMessage* pMessage, VConnection* pConnection);
-
-      /// \fn bool Send(VMessage* pMessage, int iSocket)
-      ///
-      /// \brief  Sends a message on the given socket
-      ///
-      /// \param [in,out] pMessage  If non-null, the message. 
-      /// \param  iSocket The socket. 
-      ///
-      /// \return true if it succeeds, false if it fails. 
-      ///
-      bool Send(VMessage* pMessage, int iSocket);
+      VSocket::socket_t m_iMaxSocketFD;
 
       /// \fn bool InitNetwork()
       ///
@@ -249,7 +166,7 @@
       ///
       /// \return true if it succeeds, false if it fails. 
       ///
-      bool InitNetwork();
+      static bool InitNetwork();
 
       /// \fn bool DeinitNetwork()
       ///
@@ -257,7 +174,7 @@
       ///
       /// \return true if it succeeds, false if it fails. 
       ///
-      bool DeinitNetwork();
+      static bool DeinitNetwork();
 
       /// \fn bool CreateListenSocket()
       ///
@@ -282,11 +199,15 @@
       //! Prevents threads from closing / deleting connections simultaneously.
       VMutex m_ConnectionMutex;
 
+      VEvent m_anyConnectionEvent;
+
+      VDateTime m_lastListenAttempt;
+
       #if defined(_VISION_PSP2)
 
-      char* m_pNetworkMemory;
+      static char* s_pNetworkMemory;
 
-      int m_iStateCallbackId;
+      static int s_iStateCallbackId;
 
       #endif
   };
@@ -384,13 +305,15 @@
 
       //! The global target thread. 
       static VTargetThread* s_pTargetThread;
+
+      VEvent m_startedEvent;
   };
 
 
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -10,13 +10,9 @@
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/GUI/VMenuIncludes.hpp>
 #include <Vision/Runtime/Base/System/Memory/VMemDbg.hpp>
 
-
-
-
 ////////////////////////////////////////////////////////////////////////////////////////////
 // VSliderControl
 ////////////////////////////////////////////////////////////////////////////////////////////
-
 
 VSliderControl::VSliderControl()
 {
@@ -29,11 +25,9 @@ VSliderControl::VSliderControl()
   m_BorderSize.Set(0,0,0,0);
 }
 
-
 VSliderControl::~VSliderControl()
 {
 }
-
 
 V_IMPLEMENT_SERIAL( VSliderControl, VDlgControlBase, 0, &g_VisionEngineModule );
 void VSliderControl::Serialize( VArchive &ar )
@@ -59,7 +53,6 @@ void VSliderControl::Serialize( VArchive &ar )
   }
 }
 
-
 VSlider* VSliderControl::GetSlider()
 {
   if (!m_spSlider)
@@ -79,7 +72,7 @@ void VSliderControl::OnClick(VMenuEventDataObject *pEvent)
   hkvVec2 vNewPos = pEvent->m_vMousePos - GetAbsPosition() - GetSlider()->GetSize() * 0.5f;
 
   // calculate the moving range
-  hkvVec2 vMoveRange = GetSize() - GetSlider()->GetSize() - m_BorderSize.m_vMin - m_BorderSize.m_vMax;
+  hkvVec2 vMoveRange = GetMoveRange();
 
   float fRelValue = 0.f;
 
@@ -100,11 +93,15 @@ void VSliderControl::OnClick(VMenuEventDataObject *pEvent)
     if (vMoveRange.x>0.f)
       fRelValue = vNewPos.x/vMoveRange.x;
   }
+
   // map to specified range and set value
   SetValue(m_fRangeMin+fRelValue*(m_fRangeMax-m_fRangeMin), false);
-
 }
 
+hkvVec2 VSliderControl::GetMoveRange()
+{
+  return GetSize() - GetSlider()->GetSize() - m_BorderSize.m_vMin - m_BorderSize.m_vMax;
+}
 
 bool VSliderControl::Build(TiXmlElement *pNode, const char *szPath, bool bWrite)
 {
@@ -143,7 +140,6 @@ bool VSliderControl::Build(TiXmlElement *pNode, const char *szPath, bool bWrite)
   return true;
 }
 
-
 void VSliderControl::OnPaint(VGraphicsInfo &Graphics, const VItemRenderInfo &parentState)
 {
   VSlider *pSlider = GetSlider();
@@ -159,7 +155,7 @@ void VSliderControl::OnPaint(VGraphicsInfo &Graphics, const VItemRenderInfo &par
   }
 
   // evaluate movable range pixels
-  hkvVec2 vMoveRange = GetSize() - pSlider->GetSize() - m_BorderSize.m_vMin - m_BorderSize.m_vMax;
+  hkvVec2 vMoveRange = GetMoveRange();
   VASSERT(vMoveRange.x>=0.f && vMoveRange.y>=0.f);
 
   // set position
@@ -181,7 +177,11 @@ void VSliderControl::OnPaint(VGraphicsInfo &Graphics, const VItemRenderInfo &par
   pSlider->OnPaint(Graphics,thisState);
 }
 
-
+void VSliderControl::OnTick(float dtime)
+{
+  VASSERT(m_spSlider != NULL);
+  m_spSlider->OnTick(dtime);
+}
 
 VWindowBase* VSliderControl::TestMouseOver(VGUIUserInfo_t &user, const hkvVec2 &vAbsMouse)
 {
@@ -195,7 +195,6 @@ VWindowBase* VSliderControl::TestMouseOver(VGUIUserInfo_t &user, const hkvVec2 &
 
   return this;
 }
-
 
 void VSliderControl::OnKeyPressed(int iKey, int iKeyModifier)
 {
@@ -215,7 +214,6 @@ void VSliderControl::OnKeyPressed(int iKey, int iKeyModifier)
   }
 }
 
-
 void VSliderControl::SetSliderRange(float fMin, float fMax, int iTicks)
 {
   m_fRangeMin = fMin;
@@ -224,7 +222,6 @@ void VSliderControl::SetSliderRange(float fMin, float fMax, int iTicks)
   SetValue(GetValue(),false); // check value again
 }
 
-
 void VSliderControl::SetSliderRelSize(float fVal)
 {
   if (fVal>1.f) fVal=1.f;
@@ -232,8 +229,6 @@ void VSliderControl::SetSliderRelSize(float fVal)
   GetSlider()->SetBorderMode(m_fSliderRelWidth>0.f);
 }
 
-
-  
 void VSliderControl::SetValue(float fValue, bool bChanging)
 {
   // clamp and quantize new value
@@ -259,43 +254,44 @@ void VSliderControl::SetValue(float fValue, bool bChanging)
   InvalidateCache();
 }
 
-
-
 void VSliderControl::SetSliderPos(const hkvVec2 &vRelMousePos, bool bChanging)
 {
   hkvVec2 vNewPos = vRelMousePos;
-  hkvVec2 vMoveRange = GetSize() - GetSlider()->GetSize() - m_BorderSize.m_vMin - m_BorderSize.m_vMax;
+  hkvVec2 vMoveRange = GetMoveRange();
 
-  float fRelValue = 0.f;
+  float fRelValue = 0.0f;
 
   // align
   if (m_bVertical)
   {
-    vNewPos.x=0.f; 
-    if (vNewPos.y<0.f) vNewPos.y = 0.f;
-      else if (vNewPos.y>vMoveRange.y) vNewPos.y = vMoveRange.y;
-    if (vMoveRange.y>0.f)
-      fRelValue = vNewPos.y/vMoveRange.y;
+    vNewPos.x = 0.0f; 
+    if (vNewPos.y < 0.0f)
+      vNewPos.y = 0.0f;
+    else if (vNewPos.y > vMoveRange.y)
+      vNewPos.y = vMoveRange.y;
+
+    if (vMoveRange.y > 0.0f)
+      fRelValue = vNewPos.y / vMoveRange.y;
   } 
   else
   {
-    vNewPos.y=0.f;
-    if (vNewPos.x<0.f) vNewPos.x = 0.f;
-      else if (vNewPos.x>vMoveRange.x) vNewPos.x = vMoveRange.x;
-    if (vMoveRange.x>0.f)
-      fRelValue = vNewPos.x/vMoveRange.x;
+    vNewPos.y=0.0f;
+    if (vNewPos.x < 0.0f)
+      vNewPos.x = 0.0f;
+    else if (vNewPos.x > vMoveRange.x)
+      vNewPos.x = vMoveRange.x;
+
+    if (vMoveRange.x > 0.0f)
+      fRelValue = vNewPos.x / vMoveRange.x;
   }
   // map to specified range and set value
   SetValue(m_fRangeMin+fRelValue*(m_fRangeMax-m_fRangeMin), bChanging);
   InvalidateCache();
 }
 
-
-
 ////////////////////////////////////////////////////////////////////////////////////////////
 // VSlider
 ////////////////////////////////////////////////////////////////////////////////////////////
-
 
 void VSlider::OnPaint(VGraphicsInfo &Graphics, const VItemRenderInfo &parentState)
 {
@@ -346,12 +342,17 @@ void VSlider::Serialize( VArchive &ar )
   }
 }
 
+void VSlider::OnDragBegin(const hkvVec2 &vMousePos, int iButtonMask)
+{
+  m_vDragStart = m_vDragPos = vMousePos;
+  m_vDragPos += GetPosition();
 
+  m_vScrollSpeed = hkvVec2(0.0f, 0.0f);
+}
 
 void VSlider::OnDragging(const hkvVec2 &vMouseDelta)
 {
-  m_vDragPos += vMouseDelta;
-  m_pSliderCtrl->SetSliderPos(m_vDragPos-m_vDragStart, true);
+  m_vScrollSpeed = vMouseDelta;
 }
 
 void VSlider::OnDragEnd(VWindowBase *pOver)
@@ -364,8 +365,32 @@ void VSlider::OnDragEnd(VWindowBase *pOver)
   m_pSliderCtrl->SendValueChangedEvent(&data);
 }
 
+void VSlider::OnTick(float dtime)
+{
+  if (hkvMath::isFloatEqual(m_vScrollSpeed.x, 0.0f) && hkvMath::isFloatEqual(m_vScrollSpeed.y, 0.0f))
+    return;
+
+  hkvVec2 vMoveRange = m_pSliderCtrl->GetMoveRange();
+  vMoveRange.x = hkvMath::Max(vMoveRange.x, 0.0f);
+  vMoveRange.y = hkvMath::Max(vMoveRange.y, 0.0f);
+
+  m_vDragPos += m_vScrollSpeed;
+
+  if ((GetContext() != NULL) && GetContext()->GetSmoothScroll())
+  {
+    m_vScrollSpeed *= m_fScrollFactor;
+    m_vDragPos.clampTo(m_vDragStart, vMoveRange + m_vDragStart);
+  }
+  else
+  {
+    m_vScrollSpeed *= 0.0f;
+  }
+
+  m_pSliderCtrl->SetSliderPos(m_vDragPos-m_vDragStart, true);
+}
+
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

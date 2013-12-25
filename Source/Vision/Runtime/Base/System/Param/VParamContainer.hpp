@@ -197,7 +197,7 @@ public:
 
   inline int  GetColor(int id) { return m_pParamBlock->GetColor(id);}
   
-  inline int  GetEnum(int id) { return m_pParamBlock->GetEnum(id);}
+  inline INT_PTR  GetEnum(int id) { return m_pParamBlock->GetEnum(id);}
   
   inline int  GetFlag(int id) { return m_pParamBlock->GetFlag(id);}
   
@@ -236,7 +236,7 @@ public:
   
   inline VBool SetString(int id, const char *pValue, const char *pIndex = NULL){return m_pParamBlock->SetString(id,pValue, pIndex);}
   
-  inline void SetEnum(int id, int val){m_pParamBlock->SetEnum(id,val);}
+  inline void SetEnum(int id, INT_PTR val){m_pParamBlock->SetEnum(id,val);}
   
   inline void SetFlag(int id, int iFlag, VBool bState){m_pParamBlock->SetFlag(id,iFlag,bState);}
   
@@ -268,7 +268,7 @@ DECLARE_LIST(VParamContainerList, VParamContainer, VBASE_IMPEXP )
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

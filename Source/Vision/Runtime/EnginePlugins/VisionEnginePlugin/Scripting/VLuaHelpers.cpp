@@ -276,19 +276,54 @@ void LUA_PushObjectProxy(lua_State* L, VTypedObject *pObj, VisTypedEngineObject_
                                                               // 1 value left on the stack
 }
 
+void LUA_PushObjectProxy(lua_State* L, hkvVec2* pVector)
+{
+  VSWIG_PUSH_PROXY(L, hkvVec2, pVector)
+}
+
 void LUA_PushObjectProxy(lua_State* L, hkvVec3* pVector)
 {
   VSWIG_PUSH_PROXY(L, hkvVec3, pVector)
 }
 
-void LUA_PushObjectProxy(lua_State* L, VColorRef *pColorRef)
+void LUA_PushObjectProxy(lua_State* L, hkvVec4* pVector)
 {
-  VSWIG_PUSH_PROXY(L, VColorRef, pColorRef)
+  VSWIG_PUSH_PROXY(L, hkvVec4, pVector)
+}
+
+void LUA_PushObjectProxy(lua_State* L, hkvMat3* pMatrix)
+{
+  VSWIG_PUSH_PROXY(L, hkvMat3, pMatrix)
+}
+
+void LUA_PushObjectProxy(lua_State* L, hkvMat4* pMatrix)
+{
+  VSWIG_PUSH_PROXY(L, hkvMat4, pMatrix)
+}
+
+void LUA_PushObjectProxy(lua_State* L, hkvPlane* pPlane)
+{
+  VSWIG_PUSH_PROXY(L, hkvPlane, pPlane)
+}
+
+void LUA_PushObjectProxy(lua_State* L, hkvQuat* pQuat)
+{
+  VSWIG_PUSH_PROXY(L, hkvQuat, pQuat)
 }
 
 void LUA_PushObjectProxy(lua_State* L, hkvAlignedBBox *pBox)
 {
   VSWIG_PUSH_PROXY(L, hkvAlignedBBox, pBox)
+}
+
+void LUA_PushObjectProxy(lua_State* L, hkvBoundingSphere *pSphere)
+{
+  VSWIG_PUSH_PROXY(L, hkvBoundingSphere, pSphere)
+}
+
+void LUA_PushObjectProxy(lua_State* L, VColorRef *pColorRef)
+{
+  VSWIG_PUSH_PROXY(L, VColorRef, pColorRef)
 }
 
 void LUA_PushBitmask(lua_State* L, unsigned int iMask)
@@ -371,38 +406,30 @@ void LUA_CreateNewWrapper(lua_State*L, VTypedObject* pObject, VisTypedEngineObje
 }
 
 void LUA_CreateLocalsTable(lua_State* L)
-{
-  lua_newtable( L );    //new globals table
+{                                               // ..., TOP
+  lua_newtable( L );                            // ..., new globals table (=newglob), TOP
   
-  lua_newtable( L );    //metatable
-  lua_pushliteral( L, "__index" );
-  lua_pushvalue( L, LUA_GLOBALSINDEX );  //original globals
-  // -4 = newglobals -3 = metatable, 
-  // -2 = __index    -1 = globals, 
-  lua_settable( L, -3 );  // metatable["__index"] = globals , pop2
+  lua_newtable( L );                            // ..., newglob, metatable, TOP
+  lua_pushliteral( L, "__index" );              // ..., newglob, metatable, '__index', TOP
+  lua_pushvalue( L, LUA_GLOBALSINDEX );         // ..., newglob, metatable, '__index', GLOBAL_IDX, TOP
+
+  lua_settable( L, -3 );                        // ..., newglob, metatable, TOP   ( metatable["__index"] = GLOBAL_IDX ; drops 2 items )
   
-  // -2 = newglobals, -1 = metatable
-  lua_setmetatable( L, -2 ); //newglobals.metatable = metatable ,pop
+  lua_setmetatable( L, -2 );                    // ..., newglob, TOP              ( newglob.metatable = metatable ; drops 1 item )
   
   //add "G" field to new globals table so script can access original globals
   //Scripts can then use G to add variables to the original globals table
-  // -1 = newglobals
-  lua_pushliteral( L, "G" );
-  lua_pushvalue( L, LUA_GLOBALSINDEX );  //original globals
-  // -3 = newglobals, -2 = "G", -1 = globals
-  lua_settable( L, -3 );  // newglobals["G"] = globals
+  lua_pushliteral( L, "G" );                    // ..., newglob, 'G', TOP 
+  lua_pushvalue( L, LUA_GLOBALSINDEX );         // ..., newglob, 'G', GLOBAL_IDX, TOP 
+  lua_settable( L, -3 );                        // ..., newglob, TOP              ( newglob["G"] = GLOBAL_IDX ; drops 2 items )
 
-  // -1 = newglobals
-  lua_pushliteral( L, "LOCAL" );
-  lua_pushvalue( L, -2  );  // newglobals
-  // -3 = newglobals, -2 = "LOCAL", -1 = newglobals
-  lua_settable( L, -3 );  // newglobals["LOCAL"] = newglobals
+  lua_pushliteral( L, "LOCAL" );                // ..., newglob, 'LOCAL', TOP 
+  lua_pushvalue( L, -2  );                      // ..., newglob, 'LOCAL', newglob, TOP 
+  lua_settable( L, -3 );                        // ..., newglob, TOP              ( newglob["LOCAL"] = newglob ; drops 2 items )
 
-  
-  // -1 = newglobals
-  lua_replace( L, LUA_GLOBALSINDEX );    //replace state's globals with newglobals
+  lua_replace( L, LUA_GLOBALSINDEX );           // ..., TOP                       (uses the upper element <-1> newglob to replace it with the current GLOBAL_IDX)
 
-  //register static globals:
+  //register static globals (like Input, Game, Screen, etc.)
   VLUA_CreateGlobalInstances(L);
 }
 
@@ -492,6 +519,24 @@ bool LUA_GetFloatField(lua_State* L, int id, const char *pszField, float &value)
   return bRes;
 }
 
+bool LUA_GetValue(lua_State* L, int id, hkvVec2& value)
+{
+  int iType = lua_type(L,id);
+  if (iType <= LUA_TNIL)
+  {
+    return false;
+  }
+
+  VASSERT(lua_isuserdata(L,id));
+
+  swig_lua_userdata *pUserData = (swig_lua_userdata *)lua_touserdata(L,id);
+  if (pUserData==NULL || VSWIG_TypeCheckStruct(pUserData->type,SWIGTYPE_p_hkvVec2)==NULL)
+    return false;
+
+  value = *((hkvVec2*) pUserData->ptr);
+
+  return true;
+}
 
 bool LUA_GetValue(lua_State* L, int id, hkvVec3& value)
 {
@@ -512,7 +557,7 @@ bool LUA_GetValue(lua_State* L, int id, hkvVec3& value)
   return true;
 }
 
-bool LUA_GetValue(lua_State* L, int id, VColorRef &value)
+bool LUA_GetValue(lua_State* L, int id, hkvVec4& value)
 {
   int iType = lua_type(L,id);
   if (iType <= LUA_TNIL)
@@ -523,10 +568,86 @@ bool LUA_GetValue(lua_State* L, int id, VColorRef &value)
   VASSERT(lua_isuserdata(L,id));
 
   swig_lua_userdata *pUserData = (swig_lua_userdata *)lua_touserdata(L,id);
-  if (pUserData==NULL || VSWIG_TypeCheckStruct(pUserData->type,SWIGTYPE_p_VColorRef)==NULL)
+  if (pUserData==NULL || VSWIG_TypeCheckStruct(pUserData->type,SWIGTYPE_p_hkvVec4)==NULL)
     return false;
 
-  value = *((VColorRef *)pUserData->ptr);
+  value = *((hkvVec4*) pUserData->ptr);
+
+  return true;
+}
+
+bool LUA_GetValue(lua_State* L, int id, hkvMat3& value)
+{
+  int iType = lua_type(L,id);
+  if (iType <= LUA_TNIL)
+  {
+    return false;
+  }
+
+  VASSERT(lua_isuserdata(L,id));
+
+  swig_lua_userdata *pUserData = (swig_lua_userdata *)lua_touserdata(L,id);
+  if (pUserData==NULL || VSWIG_TypeCheckStruct(pUserData->type,SWIGTYPE_p_hkvMat3)==NULL)
+    return false;
+
+  value = *((hkvMat3*) pUserData->ptr);
+
+  return true;
+}
+
+bool LUA_GetValue(lua_State* L, int id, hkvMat4& value)
+{
+  int iType = lua_type(L,id);
+  if (iType <= LUA_TNIL)
+  {
+    return false;
+  }
+
+  VASSERT(lua_isuserdata(L,id));
+
+  swig_lua_userdata *pUserData = (swig_lua_userdata *)lua_touserdata(L,id);
+  if (pUserData==NULL || VSWIG_TypeCheckStruct(pUserData->type,SWIGTYPE_p_hkvMat4)==NULL)
+    return false;
+
+  value = *((hkvMat4*) pUserData->ptr);
+
+  return true;
+}
+
+bool LUA_GetValue(lua_State* L, int id, hkvPlane& value)
+{
+  int iType = lua_type(L,id);
+  if (iType <= LUA_TNIL)
+  {
+    return false;
+  }
+
+  VASSERT(lua_isuserdata(L,id));
+
+  swig_lua_userdata *pUserData = (swig_lua_userdata *)lua_touserdata(L,id);
+  if (pUserData==NULL || VSWIG_TypeCheckStruct(pUserData->type,SWIGTYPE_p_hkvPlane)==NULL)
+    return false;
+
+  value = *((hkvPlane*) pUserData->ptr);
+
+  return true;
+}
+
+bool LUA_GetValue(lua_State* L, int id, hkvQuat& value)
+{
+  int iType = lua_type(L,id);
+  if (iType <= LUA_TNIL)
+  {
+    return false;
+  }
+
+  VASSERT(lua_isuserdata(L,id));
+
+  swig_lua_userdata *pUserData = (swig_lua_userdata *)lua_touserdata(L,id);
+  if (pUserData==NULL || VSWIG_TypeCheckStruct(pUserData->type,SWIGTYPE_p_hkvQuat)==NULL)
+    return false;
+
+  value = *((hkvQuat*) pUserData->ptr);
 
   return true;
 }
@@ -546,6 +667,44 @@ bool LUA_GetValue(lua_State* L, int id, hkvAlignedBBox &value)
     return false;
 
   value = *((hkvAlignedBBox *)pUserData->ptr);
+
+  return true;
+}
+
+bool LUA_GetValue(lua_State* L, int id, hkvBoundingSphere &value)
+{
+  int iType = lua_type(L,id);
+  if (iType <= LUA_TNIL)
+  {
+    return false;
+  }
+
+  VASSERT(lua_isuserdata(L,id));
+
+  swig_lua_userdata *pUserData = (swig_lua_userdata *)lua_touserdata(L,id);
+  if (pUserData==NULL || VSWIG_TypeCheckStruct(pUserData->type,SWIGTYPE_p_hkvBoundingSphere)==NULL)
+    return false;
+
+  value = *((hkvBoundingSphere *)pUserData->ptr);
+
+  return true;
+}
+
+bool LUA_GetValue(lua_State* L, int id, VColorRef &value)
+{
+  int iType = lua_type(L,id);
+  if (iType <= LUA_TNIL)
+  {
+    return false;
+  }
+
+  VASSERT(lua_isuserdata(L,id));
+
+  swig_lua_userdata *pUserData = (swig_lua_userdata *)lua_touserdata(L,id);
+  if (pUserData==NULL || VSWIG_TypeCheckStruct(pUserData->type,SWIGTYPE_p_VColorRef)==NULL)
+    return false;
+
+  value = *((VColorRef *)pUserData->ptr);
 
   return true;
 }
@@ -768,7 +927,7 @@ int LUA_CallStaticFunction(  lua_State* L,
         break;
 
       default:
-        Vision::Error.Warning("Invalid type specifier '%c' for function call '%s'", argFormat, szFunctionName);
+        hkvLog::Warning("Invalid type specifier '%c' for function call '%s'", argFormat, szFunctionName);
         iReturnParams = 0;
         break;
     }
@@ -801,47 +960,47 @@ void LUA_stackDump (lua_State *L)
 
   if(top==0)
   {
-    Vision::Error.SystemMessage("0 elements on the stack");
+    hkvLog::Info("0 elements on the stack");
     return;
   }
 
-  Vision::Error.SystemMessage("%d element(s) on the stack\n====================================",top);
+  hkvLog::Info("%d element(s) on the stack\n====================================", top);
 
   for (i = 1; i <= top; i++) {  // repeat for each level
     int t = lua_type(L, i);
     switch (t) {
 
       case LUA_TSTRING:  // strings
-        Vision::Error.SystemMessage("%2d string: '%s'", -top+i-1, lua_tostring(L, i));
+        hkvLog::Info("%2d string: '%s'", -top+i-1, lua_tostring(L, i));
         break;
 
       case LUA_TBOOLEAN:  // booleans
-        Vision::Error.SystemMessage("%2d bool: %s", -top+i-1, lua_toboolean(L, i) ? "true" : "false");
+        hkvLog::Info("%2d bool: %s", -top+i-1, lua_toboolean(L, i) ? "true" : "false");
         break;
 
       case LUA_TNUMBER:  // numbers
-        Vision::Error.SystemMessage("%2d number: %g", -top+i-1, lua_tonumber(L, i));
+        hkvLog::Info("%2d number: %g", -top+i-1, lua_tonumber(L, i));
         break;
 
       case LUA_TNIL:  // nil
-        Vision::Error.SystemMessage("%2d nil", -top+i-1);
+        hkvLog::Info("%2d nil", -top+i-1);
         break;
 
       case LUA_TLIGHTUSERDATA:  // light user data
-        Vision::Error.SystemMessage("%2d light user data: 0x%p", -top+i-1, (void *)lua_touserdata(L, i));
+        hkvLog::Info("%2d light user data: 0x%p", -top+i-1, (void *)lua_touserdata(L, i));
         break;
 
       case LUA_TFUNCTION:  // function
-        Vision::Error.SystemMessage("%2d %s function: 0x%p", -top+i-1, lua_iscfunction(L, -1)==TRUE?"c":"lua", lua_topointer(L, -1));
+        hkvLog::Info("%2d %s function: 0x%p", -top+i-1, lua_iscfunction(L, i)==TRUE?"c":"lua", lua_topointer(L, i));
         break;
 
       case LUA_TTHREAD:  // thread
-        Vision::Error.SystemMessage("%2d thread: 0x%p", -top+i-1, (void *)lua_tothread(L, i));
+        hkvLog::Info("%2d thread: 0x%p", -top+i-1, (void *)lua_tothread(L, i));
         break;
 
       case LUA_TTABLE:  // table
         {
-          VLuaTableIterator tableIter(L, -1);
+          VLuaTableIterator tableIter(L, i);
           bool bFirst = true;
 
           while(tableIter.HasNext())
@@ -851,19 +1010,19 @@ void LUA_stackDump (lua_State *L)
             if(bFirst)
             {
               bFirst = false;
-              Vision::Error.SystemMessage("%2d table :0x%p {\n    (%s) %s = %s", -top+i-1, lua_topointer(L, i), pVar->GetType(), pVar->GetName(), pVar->GetValue());
+              hkvLog::Info("%2d table :0x%p {\n    (%s) %s = %s", -top+i-1, lua_topointer(L, i), pVar->GetType(), pVar->GetName(), pVar->GetValue());
             }
             else
             {
-              Vision::Error.SystemMessage("    (%s) %s = %s", pVar->GetType(), pVar->GetName(), pVar->GetValue());
+              hkvLog::Info("    (%s) %s = %s", pVar->GetType(), pVar->GetName(), pVar->GetValue());
             }
           }
 
           //was the loop ever executed?
           if(bFirst)
-            Vision::Error.SystemMessage("%2d table :0x%p {}", -top+i-1, lua_topointer(L, i));
+            hkvLog::Info("%2d table :0x%p {}", -top+i-1, lua_topointer(L, i));
           else
-            Vision::Error.SystemMessage("    }");
+            hkvLog::Info("    }");
         }
         
         break;
@@ -878,11 +1037,11 @@ void LUA_stackDump (lua_State *L)
           //it is a swig data type if the result is not NULL
           if(type!=NULL)
           {
-            Vision::Error.SystemMessage("%2d SWIG Type [%s]: 0x%p", -top+i-1, type->str, (void *)type->clientdata);
+            hkvLog::Info("%2d SWIG Type [%s]: 0x%p", -top+i-1, type->str, (void *)type->clientdata);
             break;
           }
         }
-        Vision::Error.SystemMessage("%2d unknown: %s", -top+i-1, lua_typename(L, t));
+        hkvLog::Info("%2d unknown: %s", -top+i-1, lua_typename(L, t));
         break;
 
     }
@@ -1079,7 +1238,7 @@ VScriptMember * VLuaTableIterator::next()
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

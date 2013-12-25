@@ -463,7 +463,7 @@ void VisionVisibilityCollector_cl::HandlePortalOcclusionQueryResults()
         // Portal has passed frustum, but not occlusion test -> reschedule immediately
         if (pPortal->GetOccQueryObject()==NULL)
           continue;
-        int iOQIndex = pPortal->GetOccQueryObject()->GetNumber();
+        unsigned int iOQIndex = pPortal->GetOccQueryObject()->GetNumber();
         m_pOQContext->ScheduleOcclusionTest(iOQIndex);
       }
       else
@@ -472,7 +472,7 @@ void VisionVisibilityCollector_cl::HandlePortalOcclusionQueryResults()
         iPortalStackDepth++;
         if (pPortal->GetOccQueryObject()==NULL)
           continue;
-        int iOQIndex = pPortal->GetOccQueryObject()->GetNumber();
+        unsigned int iOQIndex = pPortal->GetOccQueryObject()->GetNumber();
         if (m_pOQContext->HasOcclusionTestPassed(iOQIndex))
         {
           // Portal has passed frustum and occlusion test -> wait a while, then reschedule
@@ -493,7 +493,7 @@ void VisionVisibilityCollector_cl::HandlePortalOcclusionQueryResults()
       break;
     case VIS_TRAVERSALPROTOCOL_ZONE:
       VisVisibilityZone_cl *pZone = (VisVisibilityZone_cl *)m_TraversalProtocol[iProtocolIndex++];
-      int iOQIndex = pZone->GetOccQueryObject().GetNumber();
+      unsigned int iOQIndex = pZone->GetOccQueryObject().GetNumber();
       int iZoneIndex = pZone->GetIndex();
       if (bVisStatus[iPortalStackDepth] == false)
       {
@@ -586,7 +586,7 @@ void VisionVisibilityCollector_cl::PostProcessVisibilityResults()
     for (i=0; i<iNumZones; i++, pZones++)
     {
       int iZoneIndex = (*pZones)->GetIndex();
-      int iOQIndex = (*pZones)->GetOccQueryObject().GetNumber();
+      unsigned int iOQIndex = (*pZones)->GetOccQueryObject().GetNumber();
 
       if (!m_pOQContext->HasOcclusionTestPassed(iOQIndex) || !(pFlags[iZoneIndex>>3]&(unsigned char)(1<<(iZoneIndex&7))) )
       {
@@ -600,7 +600,7 @@ void VisionVisibilityCollector_cl::PostProcessVisibilityResults()
         VisStaticGeometryInstance_cl **pGI = pStaticGeo->GetDataPtr();
         for (int j=0; j<iNumStaticGeoInst; j++, pGI++)
         {
-          int iNum = (*pGI)->GetNumber();
+          unsigned int iNum = (*pGI)->GetNumber();
           pStaticGeoFlags[iNum>>3] |= (char)(1<<(iNum&7));
         }
       }
@@ -626,7 +626,7 @@ void VisionVisibilityCollector_cl::PostProcessVisibilityResults()
       VisStaticGeometryInstance_cl **pGeomInstances = (VisStaticGeometryInstance_cl**)m_pVisibleStaticGeometryInstances->GetDataPtr();
       for (i=0; i<iNumGeomInstances; i++, pGeomInstances++)
       {
-        int iGeomInstanceIndex = (*pGeomInstances)->GetNumber();
+        unsigned int iGeomInstanceIndex = (*pGeomInstances)->GetNumber();
         if (!(pFlags[iGeomInstanceIndex>>3]&(char)(1<<(iGeomInstanceIndex&7))))
           m_pVisibleStaticGeometryInstances->FlagForRemoval(i);
       }
@@ -646,7 +646,7 @@ void VisionVisibilityCollector_cl::PostProcessVisibilityResults()
     // Remove duplicates / invalid entities
     for (i=0; i<iNumEntities; i++, pEntities++)
     {
-      int iEntityIndex = (*pEntities)->GetNumber();
+      unsigned int iEntityIndex = (*pEntities)->GetNumber();
       if (!(pFlags[iEntityIndex>>3]&(char)(1<<(iEntityIndex&7))))
         pFlags[iEntityIndex>>3]|=(char)(1<<(iEntityIndex&7));
       else
@@ -672,7 +672,7 @@ void VisionVisibilityCollector_cl::PostProcessVisibilityResults()
       {
         if (*pEntities!=NULL && !IsInVisibleZone(*pEntities))
         {
-          int iEntity = (*pEntities)->GetNumber();
+          unsigned int iEntity = (*pEntities)->GetNumber();
           pFlags[iEntity>>3] &= ~(char)(1<<(iEntity&7));
           m_pVisibleEntities->FlagForRemoval(i);
         }
@@ -687,7 +687,7 @@ void VisionVisibilityCollector_cl::PostProcessVisibilityResults()
     VisLightSource_cl **pLights = m_pVisibleLights->GetDataPtr();
     for (i=0; i<iNumLights; i++, pLights++)
     {
-      int iLightIndex = (*pLights)->GetNumber();
+      unsigned int iLightIndex = (*pLights)->GetNumber();
 
       // Remove duplicates
       if (!(pFlags[iLightIndex>>3]&(char)(1<<(iLightIndex&7))))
@@ -695,7 +695,9 @@ void VisionVisibilityCollector_cl::PostProcessVisibilityResults()
         pFlags[iLightIndex>>3]|=(char)(1<<(iLightIndex&7));
       }
       else
+      {
         m_pVisibleLights->FlagForRemoval(i);
+      }
     }
 
     // If a visibility zone was classified as invisible due to occlusion query results, we can
@@ -705,14 +707,15 @@ void VisionVisibilityCollector_cl::PostProcessVisibilityResults()
 #pragma warning(suppress:6246)
       VisLightSource_cl **pLights = m_pVisibleLights->GetDataPtr();
       for (i=0; i<iNumLights; i++, pLights++)
+      {
         if (*pLights!=NULL && !IsInVisibleZone(*pLights) && (*pLights)->GetType() != VIS_LIGHT_DIRECTED)
         {
-          int iLight = (*pLights)->GetNumber();
+          unsigned int iLight = (*pLights)->GetNumber();
           pFlags[iLight>>3] &= ~(char)(1<<(iLight&7));
           m_pVisibleLights->FlagForRemoval(i);
         }
+      }
     }
-
   }
 
   pFlags = (char *)m_VisObjectFlags.GetDataPtr();
@@ -724,24 +727,29 @@ void VisionVisibilityCollector_cl::PostProcessVisibilityResults()
     // Remove duplicates
     for (i=0; i<iNumVisObjects; i++, pVisObjects++)
     {
-      int iVisObjIndex = (*pVisObjects)->GetNumber();
-      if (!(pFlags[iVisObjIndex>>3]&(char)(1<<(iVisObjIndex&7))))
-        pFlags[iVisObjIndex>>3]|=(char)(1<<(iVisObjIndex&7));
-      else
-        m_pVisibleVisObjects->FlagForRemoval(i);
+      // FlagForRemoval sets list elements to NULL, therefore this can happen regularly at this point.
+      if(*pVisObjects != NULL)
+      {
+        unsigned int iVisObjIndex = (*pVisObjects)->GetNumber();
+        VASSERT((iVisObjIndex>>3) < m_VisObjectFlags.GetSize());
+        if (!(pFlags[iVisObjIndex>>3] & (char)(1<<(iVisObjIndex&7))))
+          pFlags[iVisObjIndex>>3] |= (char)(1<<(iVisObjIndex&7));
+        else
+          m_pVisibleVisObjects->FlagForRemoval(i);
+      }
     }
 
     // If a visibility zone was classified as invisible due to occlusion query results, we can
     // remove all scene elements which are ONLY in this zone from the list of visible elements.
     if (m_iBehaviorFlags&VIS_VISCOLLECTOR_USEZONEOCCLUSIONQUERY && Vision::Renderer.GetUseHardwareOcclusion() == VIS_ENABLED)
     {
-#pragma warning(suppress:6246)
-      VisVisibilityObject_cl **pVisObjects = m_pVisibleVisObjects->GetDataPtr();
+      pVisObjects = m_pVisibleVisObjects->GetDataPtr();
+
       for (i=0; i<iNumVisObjects; i++, pVisObjects++)
       {
         if (*pVisObjects!=NULL && !IsInVisibleZone(*pVisObjects))
         {
-          int iVisObj = (*pVisObjects)->GetNumber();
+          unsigned int iVisObj = (*pVisObjects)->GetNumber();
           pFlags[iVisObj>>3] &= ~(char)(1<<(iVisObj&7));
           m_pVisibleVisObjects->FlagForRemoval(i);
         }
@@ -779,8 +787,8 @@ void VisionVisibilityCollector_cl::PostProcessVisibilityResults()
         if ((*pEntities)->GetMesh()==NULL || ( (*pEntities)->GetMesh()->GetNumOfVertices() < m_iOcclusionQueryMinTriangles && (*pEntities)->GetAnimConfig() == NULL ) )
           continue;
 
-        int iEntityIndex = (*pEntities)->GetNumber();
-        int iOccQueryIndex = (*pEntities)->GetOccQueryObject().GetNumber();
+        unsigned int iEntityIndex = (*pEntities)->GetNumber();
+        unsigned int iOccQueryIndex = (*pEntities)->GetOccQueryObject().GetNumber();
 
         // entity has passed both portal and occlusion test. We reschedule it if it is time to schedule this occlusion query again.
         if (m_pOQContext->HasOcclusionTestPassed(iOccQueryIndex))
@@ -824,8 +832,8 @@ void VisionVisibilityCollector_cl::PostProcessVisibilityResults()
           if (!(iFlags&VISTESTFLAGS_HARDWAREOCCLUSIONQUERY))
             continue;
 
-          int iVisObjectIndex = (*pVisObjects)->GetNumber();
-          int iOccQueryIndex = (*pVisObjects)->GetOccQueryObject().GetNumber();
+          unsigned int iVisObjectIndex = (*pVisObjects)->GetNumber();
+          unsigned int iOccQueryIndex = (*pVisObjects)->GetOccQueryObject().GetNumber();
 
           // visobject has passed both portal and occlusion test. We reschedule it if it is time to schedule this occlusion query again.
           if (m_pOQContext->HasOcclusionTestPassed(iOccQueryIndex))
@@ -884,7 +892,7 @@ void VisionVisibilityCollector_cl::PostProcessVisibilityResults()
         m_pVisibleStaticGeometryInstances->FlagForRemoval(i);
         continue;
       }
-      int iGeomInstanceIndex = pInst->GetNumber();
+      unsigned int iGeomInstanceIndex = pInst->GetNumber();
 
       // Initially 'pFlags' is nulled. If an instance is encountered for the first time,
       // its flag is thus 'false' and it will be added to the appropriate array and flagged as 'true', ...
@@ -1036,7 +1044,7 @@ void VisionVisibilityCollector_cl::TraverseScene(VisVisibilityZone_cl *pZone, in
   const int iMaxRecursionDepth = 1024;
   if (iRecursionDepth > iMaxRecursionDepth) // stop recursive vis checks here
   {
-    Vision::Error.Warning("Visibility zone traversal exceeded the maximum recursion depth of %d zones!", iMaxRecursionDepth);
+    hkvLog::Warning("Visibility zone traversal exceeded the maximum recursion depth of %d zones!", iMaxRecursionDepth);
     return;
   }
 
@@ -1631,8 +1639,10 @@ void VisionVisibilityCollector_cl::CollectVisElements(VisVisibilityZone_cl* pZon
     }
 
     if (!(iFlags&VISTESTFLAGS_TESTVISIBLE_NOT_OVERRIDDEN))
+    {
       if (!pVisObject->OnTestVisible(this, pFrustum))
         continue;
+    }
 
     m_pVisibleVisObjects->AppendEntryFast(pVisObject);
   }
@@ -1811,7 +1821,7 @@ recheck:
           }
           else
           {
-            Vision::Error.Warning("CollectEntities_LODHysteresis: Sanity check not passed");
+            hkvLog::Warning("CollectEntities_LODHysteresis: Sanity check not passed");
           }
         }
         else /*if (iClipStatus == -1)*/
@@ -1927,25 +1937,25 @@ bool VisionVisibilityCollector_cl::IsStaticGeometryInstanceVisible(VisStaticGeom
 
 bool VisionVisibilityCollector_cl::IsEntityVisible(const VisBaseEntity_cl *pEntity)
 {
-  int iNum = pEntity->GetNumber();
+  unsigned int iNum = pEntity->GetNumber();
   return (m_EntityFlags[iNum>>3]&(char)(1<<(iNum&7)))?true:false;
 }
 
 bool VisionVisibilityCollector_cl::IsVisObjectVisible(const VisVisibilityObject_cl *pVisObject)
 {
-  int iNum = pVisObject->GetNumber();
+  unsigned int iNum = pVisObject->GetNumber();
   return (m_VisObjectFlags[iNum>>3]&(char)(1<<(iNum&7)))?true:false;
 }
 
 bool VisionVisibilityCollector_cl::IsLightVisible(const VisLightSource_cl *pLight)
 {
-  int iNum = pLight->GetNumber();
+  unsigned int iNum = pLight->GetNumber();
   return (m_LightFlags[iNum>>3]&(char)(1<<(iNum&7)))?true:false;
 }
 
 bool VisionVisibilityCollector_cl::IsVisibilityZoneVisible(const VisVisibilityZone_cl *pZone)
 {
-  int iNum = pZone->GetIndex();
+  unsigned int iNum = pZone->GetIndex();
   return (m_VisibilityZoneFlags[iNum>>3]&(char)(1<<(iNum&7)))?true:false;
 }
 
@@ -2018,7 +2028,7 @@ IVisVisibilityCollectorComponent_cl::~IVisVisibilityCollectorComponent_cl()
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

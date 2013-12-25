@@ -275,11 +275,10 @@ public:
   {
     m_iColor = V_RGBA_WHITE;
     m_hAlign = m_vAlign = VisFont_cl::ALIGN_LEFT;
-    m_bAlignmentValid = false;
+    m_bCachedLinesValid = false;
     m_bTextWrap = false;
     m_pCustomBBox = NULL;
     m_pStringPtr = &m_sText;
-    m_iNumTextLines = 0;
     m_fRelativeFontHeight = 1.f;
     m_fFontScaling = 1.f;
   }
@@ -287,7 +286,7 @@ public:
 
   /// \brief
   ///   Internal function
-  void Paint(VGraphicsInfo *pGraphics, VWindowBase *pParentWnd, VColorRef iColor);
+  GUI_IMPEXP void Paint(VGraphicsInfo *pGraphics, VWindowBase *pParentWnd, VColorRef iColor);
 
   /// \brief
   ///   Internal Paint function
@@ -321,8 +320,8 @@ public:
   ///   Return the text height in pixels (font height * number of lines)
   inline float GetHeight() const 
   {
-    float fHeight = m_spFont->GetFontHeight();
-    if (m_bTextWrap && m_iNumTextLines>0) fHeight *= (float)m_iNumTextLines;
+    float fHeight = m_spFont->GetFontHeight() * m_fRelativeFontHeight;
+    if (m_lines.GetLength() > 0) fHeight *= (float)m_lines.GetLength();
     return fHeight;
   }
 
@@ -344,15 +343,15 @@ public:
 
   /// \brief
   ///   Return the current 2D offset for printing
-  inline hkvVec2 GetTextOfs() const {return m_vOfs;}
+  inline hkvVec2 GetTextOfs() const {return m_vOffset;}
 
   /// \brief
   ///   Set a new 2D offset for printing
-  inline void SetTextOfs(const hkvVec2 &vOfs) {m_vOfs=vOfs;m_bAlignmentValid = false;}
+  inline void SetTextOfs(const hkvVec2 &vOfs) {m_vOffset=vOfs;m_bCachedLinesValid = false;}
 
   /// \brief
   ///   Set text to line wrap mode (i.e. if it does not fit into the size)
-  inline void SetTextWrap(bool bWrap) {m_bTextWrap=bWrap;}
+  inline void SetTextWrap(bool bWrap) {m_bTextWrap=bWrap; UpdateAlignment();}
 
   /// \brief
   ///   Return the current line wrap mode
@@ -380,11 +379,11 @@ public:
 
   /// \brief
   ///   Invalidate the alignment of text
-  inline void UpdateAlignment() {m_bAlignmentValid = false;}
+  inline void UpdateAlignment() {m_bCachedLinesValid = false;}
 
   /// \brief
   ///   Return the number of printed text lines in the last OnPaint call
-  inline int GetNumberOfPrintedLines() const {return m_iNumTextLines;}
+  inline int GetNumberOfPrintedLines() const {return m_lines.GetLength();}
 
   /// \brief
   ///   Return the size of this text box. A rect can be passed to receive the full text box
@@ -401,10 +400,10 @@ public:
     m_spFont = other.m_spFont;
     m_hAlign = other.m_hAlign;
     m_vAlign = other.m_vAlign;
-    m_vOfs = other.m_vOfs;
+    m_vOffset = other.m_vOffset;
     m_bTextWrap = other.m_bTextWrap;
     m_fFontScaling = other.m_fFontScaling;
-    m_bAlignmentValid = false;
+    m_bCachedLinesValid = false;
     m_fRelativeFontHeight = other.m_fRelativeFontHeight;
     return *this;
   }
@@ -419,15 +418,17 @@ protected:
   VString m_sText;
   VisFontPtr m_spFont;
   VisFont_cl::Alignment_e m_hAlign, m_vAlign; ///< horizontal and vertical alignment
-  hkvVec2 m_vOfs, m_vCurrentOfs;
+  hkvVec2 m_vOffset;
   float m_fFontScaling;
+
+  VArray<hkvVec2> m_lineOffsets;
+  VArray<VString> m_lines;
 
   // temp vars:
   VString *m_pStringPtr; ///< points to the VString that has the actual text
-  bool m_bAlignmentValid, m_bTextWrap;
-  float m_fRelativeFontHeight; ///< when textwrap is enabled, this specifies the relative font height
+  bool m_bCachedLinesValid, m_bTextWrap;
+  float m_fRelativeFontHeight;
   const VRectanglef *m_pCustomBBox;
-  int m_iNumTextLines; ///< resulting number of printed lines (output only)
 };
 
 
@@ -472,8 +473,8 @@ public:
   inline VisFont_cl *GetFont() const {return  m_States[VWindowBase::NORMAL].GetFont();}
 
   /// \brief
-  ///   Calls VTextState::SetFont on each of the 4 states
-  inline const hkvVec2& GetTextOfs() const {return  m_States[VWindowBase::NORMAL].m_vOfs;}
+  ///   Return text offset (from normal state)
+  inline const hkvVec2& GetTextOfs() const {return  m_States[VWindowBase::NORMAL].m_vOffset;}
 
   /// \brief
   ///   Calls VTextState::SetTextOfs on each of the 4 states
@@ -490,6 +491,10 @@ public:
   /// \brief
   ///   Calls VTextState::SetScaling on each of the 4 states
   inline void SetScaling(float fScale) {for (int i=0;i<VWindowBase::STATE_COUNT;i++) m_States[i].m_fFontScaling=fScale;}
+
+  /// \brief
+  ///   Return scaling (from normal state)
+  inline float GetScaling() const { return m_States[VWindowBase::NORMAL].m_fFontScaling; }
 
   /// \brief
   ///   Calls VTextState::SetHorizontalAlignment on each of the 4 states
@@ -527,7 +532,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

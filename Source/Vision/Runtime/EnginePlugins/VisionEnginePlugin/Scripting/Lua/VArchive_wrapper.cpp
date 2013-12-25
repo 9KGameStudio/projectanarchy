@@ -193,39 +193,266 @@ static int VArchive_ReadNil(lua_State* L)
   return 0;
 }
 
+static int VArchive_WriteVector2(lua_State* L)
+{
+  bool ARGS_OK = true;
+  VArchive *pArchive = LUA_GetVArchive(L,1);
+  GET_ARG(2, hkvVec2, v);
+  if (pArchive != NULL && ARGS_OK) 
+  {
+    lua_pop(L,2); //remove values
+    *pArchive << VLUA_TVECTOR2;
+    *pArchive << v;
+  }
+  return 0;
+}
+
+static int VArchive_ReadVector2(lua_State* L)
+{
+  VArchive *pArchive = LUA_GetVArchive(L,1);
+  if (pArchive) 
+  {
+    lua_pop(L,1); //remove value
+    hkvVec2 v;
+    *pArchive >> v;
+    hkvVec2* pVec = new hkvVec2(v);
+    VSWIG_Lua_NewPointerObj(L,pVec,SWIGTYPE_p_hkvVec2, VLUA_MANAGE_MEM_BY_LUA);
+    return 1;
+  }
+  return 0;
+}
+
 static int VArchive_WriteVector3(lua_State* L)
 {
   bool ARGS_OK = true;
   VArchive *pArchive = LUA_GetVArchive(L,1);
   GET_ARG(2, hkvVec3, v);
- 
-  if (pArchive != NULL && ARGS_OK) {
+  if (pArchive != NULL && ARGS_OK) 
+  {
     lua_pop(L,2); //remove values
     *pArchive << VLUA_TVECTOR3;
     //*pArchive << v;
     v.SerializeAsVisVector (*pArchive);
   }
- 
   return 0;
 }
 
 static int VArchive_ReadVector3(lua_State* L)
 {
   VArchive *pArchive = LUA_GetVArchive(L,1);
- 
-  if (pArchive) {
+  if (pArchive) 
+  {
     lua_pop(L,1); //remove value
     hkvVec3 v;
     //*pArchive >> v;
     v.SerializeAsVisVector (*pArchive);
-
     hkvVec3* pVec = new hkvVec3(v);
     VSWIG_Lua_NewPointerObj(L,pVec,SWIGTYPE_p_hkvVec3, VLUA_MANAGE_MEM_BY_LUA);
-
-
     return 1;
   }
- 
+  return 0;
+}
+
+static int VArchive_WriteVector4(lua_State* L)
+{
+  bool ARGS_OK = true;
+  VArchive *pArchive = LUA_GetVArchive(L,1);
+  GET_ARG(2, hkvVec4, v);
+  if (pArchive != NULL && ARGS_OK) 
+  {
+    lua_pop(L,2); //remove values
+    *pArchive << VLUA_TVECTOR4;
+    *pArchive << v;
+  }
+  return 0;
+}
+
+static int VArchive_ReadVector4(lua_State* L)
+{
+  VArchive *pArchive = LUA_GetVArchive(L,1);
+  if (pArchive) 
+  {
+    lua_pop(L,1); //remove value
+    hkvVec4 v;
+    *pArchive >> v;
+    hkvVec4* pVec = new hkvVec4(v);
+    VSWIG_Lua_NewPointerObj(L,pVec,SWIGTYPE_p_hkvVec4, VLUA_MANAGE_MEM_BY_LUA);
+    return 1;
+  }
+  return 0;
+}
+
+static int VArchive_WriteMatrix3(lua_State* L)
+{
+  bool ARGS_OK = true;
+  VArchive *pArchive = LUA_GetVArchive(L,1);
+  GET_ARG(2, hkvMat3, m);
+  if (pArchive != NULL && ARGS_OK) 
+  {
+    lua_pop(L,2); //remove values
+    *pArchive << VLUA_TMATRIX3;
+    *pArchive << m;
+  }
+  return 0;
+}
+
+static int VArchive_ReadMatrix3(lua_State* L)
+{
+  VArchive *pArchive = LUA_GetVArchive(L,1);
+  if (pArchive) 
+  {
+    lua_pop(L,1); //remove value
+    hkvMat3 m;
+    *pArchive >> m;
+    hkvMat3* pMat = new hkvMat3(m);
+    VSWIG_Lua_NewPointerObj(L,pMat,SWIGTYPE_p_hkvMat3, VLUA_MANAGE_MEM_BY_LUA);
+    return 1;
+  }
+  return 0;
+}
+
+static int VArchive_WriteMatrix4(lua_State* L)
+{
+  bool ARGS_OK = true;
+  VArchive *pArchive = LUA_GetVArchive(L,1);
+  GET_ARG(2, hkvMat4, m);
+  if (pArchive != NULL && ARGS_OK) 
+  {
+    lua_pop(L,2); //remove values
+    *pArchive << VLUA_TMATRIX4;
+    *pArchive << m;
+  }
+  return 0;
+}
+
+static int VArchive_ReadMatrix4(lua_State* L)
+{
+  VArchive *pArchive = LUA_GetVArchive(L,1);
+  if (pArchive) 
+  {
+    lua_pop(L,1); //remove value
+    hkvMat4 m;
+    *pArchive >> m;
+    hkvMat4* pMat = new hkvMat4(m);
+    VSWIG_Lua_NewPointerObj(L,pMat,SWIGTYPE_p_hkvMat4, VLUA_MANAGE_MEM_BY_LUA);
+    return 1;
+  }
+  return 0;
+}
+
+static int VArchive_WritePlane(lua_State* L)
+{
+  bool ARGS_OK = true;
+  VArchive *pArchive = LUA_GetVArchive(L,1);
+  GET_ARG(2, hkvPlane, p);
+  if (pArchive != NULL && ARGS_OK) 
+  {
+    lua_pop(L,2); //remove values
+    *pArchive << VLUA_TPLANE;
+    SerializeX(*pArchive, p);
+  }
+  return 0;
+}
+
+static int VArchive_ReadPlane(lua_State* L)
+{
+  VArchive *pArchive = LUA_GetVArchive(L,1);
+  if (pArchive) 
+  {
+    lua_pop(L,1); //remove value
+    hkvPlane p;
+    SerializeX(*pArchive, p);
+    hkvPlane* pPlane = new hkvPlane(p);
+    VSWIG_Lua_NewPointerObj(L,pPlane,SWIGTYPE_p_hkvPlane, VLUA_MANAGE_MEM_BY_LUA);
+    return 1;
+  }
+  return 0;
+}
+
+static int VArchive_WriteQuaternion(lua_State* L)
+{
+  bool ARGS_OK = true;
+  VArchive *pArchive = LUA_GetVArchive(L,1);
+  GET_ARG(2, hkvQuat, q);
+  if (pArchive != NULL && ARGS_OK) 
+  {
+    lua_pop(L,2); //remove values
+    *pArchive << VLUA_TQUATERNION;
+    *pArchive << q;
+  }
+  return 0;
+}
+
+static int VArchive_ReadQuaternion(lua_State* L)
+{
+  VArchive *pArchive = LUA_GetVArchive(L,1);
+  if (pArchive) 
+  {
+    lua_pop(L,1); //remove value
+    hkvQuat q;
+    *pArchive >> q;
+    hkvQuat* pQuat = new hkvQuat(q);
+    VSWIG_Lua_NewPointerObj(L,pQuat,SWIGTYPE_p_hkvQuat, VLUA_MANAGE_MEM_BY_LUA);
+    return 1;
+  }
+  return 0;
+}
+
+static int VArchive_WriteBoundingBox(lua_State* L)
+{
+  bool ARGS_OK = true;
+  VArchive *pArchive = LUA_GetVArchive(L,1);
+  GET_ARG(2, hkvAlignedBBox, b);
+  if (pArchive != NULL && ARGS_OK) 
+  {
+    lua_pop(L,2); //remove values
+    *pArchive << VLUA_TBOUNDINGBOX;
+    SerializeX(*pArchive, b);
+  }
+  return 0;
+}
+
+static int VArchive_ReadBoundingBox(lua_State* L)
+{
+  VArchive *pArchive = LUA_GetVArchive(L,1);
+  if (pArchive) 
+  {
+    lua_pop(L,1); //remove value
+    hkvAlignedBBox b;
+    SerializeX(*pArchive, b);
+    hkvAlignedBBox* pBox = new hkvAlignedBBox(b);
+    VSWIG_Lua_NewPointerObj(L,pBox,SWIGTYPE_p_hkvAlignedBBox, VLUA_MANAGE_MEM_BY_LUA);
+    return 1;
+  }
+  return 0;
+}
+
+static int VArchive_WriteBoundingSphere(lua_State* L)
+{
+  bool ARGS_OK = true;
+  VArchive *pArchive = LUA_GetVArchive(L,1);
+  GET_ARG(2, hkvBoundingSphere, s);
+  if (pArchive != NULL && ARGS_OK) 
+  {
+    lua_pop(L,2); //remove values
+    *pArchive << VLUA_TBOUNDINGSPHERE;
+    *pArchive << s;
+  }
+  return 0;
+}
+
+static int VArchive_ReadBoundingSphere(lua_State* L)
+{
+  VArchive *pArchive = LUA_GetVArchive(L,1);
+  if (pArchive) 
+  {
+    lua_pop(L,1); //remove value
+    hkvBoundingSphere s;
+    *pArchive >> s;
+    hkvBoundingSphere* pSphere = new hkvBoundingSphere(s);
+    VSWIG_Lua_NewPointerObj(L,pSphere,SWIGTYPE_p_hkvBoundingSphere, VLUA_MANAGE_MEM_BY_LUA);
+    return 1;
+  }
   return 0;
 }
 
@@ -419,9 +646,49 @@ static int VArchive_Write(lua_State* L)
     pUserData = (swig_lua_userdata *)lua_touserdata(L,2);
   }
 
+  if (LUA_TestUserData(L,2,"hkvVec2") )
+  {
+    VArchive_WriteVector2(L);
+    return 0;
+  }
   if (LUA_TestUserData(L,2,"hkvVec3") )
   {
     VArchive_WriteVector3(L);
+    return 0;
+  }
+  if (LUA_TestUserData(L,2,"hkvVec4") )
+  {
+    VArchive_WriteVector4(L);
+    return 0;
+  }
+  if (LUA_TestUserData(L,2,"hkvMat3") )
+  {
+    VArchive_WriteMatrix3(L);
+    return 0;
+  }
+  if (LUA_TestUserData(L,2,"hkvMat4") )
+  {
+    VArchive_WriteMatrix4(L);
+    return 0;
+  }
+  if (LUA_TestUserData(L,2,"hkvPlane") )
+  {
+    VArchive_WritePlane(L);
+    return 0;
+  }
+  if (LUA_TestUserData(L,2,"hkvQuat") )
+  {
+    VArchive_WriteQuaternion(L);
+    return 0;
+  }
+  if (LUA_TestUserData(L,2,"hkvAlignedBBox") )
+  {
+    VArchive_WriteBoundingBox(L);
+    return 0;
+  }
+  if (LUA_TestUserData(L,2,"hkvBoundingSphere") )
+  {
+    VArchive_WriteBoundingSphere(L);
     return 0;
   }
   if (LUA_TestUserData(L,2,"VColorRef") )
@@ -431,8 +698,6 @@ static int VArchive_Write(lua_State* L)
   }
   if (pUserData != NULL && pUserData->type &&
     //currently we have no support for these data types:
-    !LUA_TestUserData(L,2,"hkvAlignedBBox") &&
-    !LUA_TestUserData(L,2,"hkvMat3") &&
     !LUA_TestUserData(L,2,"VBitmask") )
   {
     //at this point we should have something derived from VisTypedEngineObject_cl
@@ -473,28 +738,68 @@ static int VArchive_Read(lua_State* L)
     int iType;
     *pArchive >> iType;
 
-    if (iType == VLUA_TTYPEDOBJECT) {
+    if (iType == VLUA_TTYPEDOBJECT)
+    {
       return VArchive_ReadObject(L);
     }
-    else if (iType == LUA_TTABLE) {
+    else if (iType == LUA_TTABLE) 
+    {
       return VArchive_ReadTable(L);
     }
-    else if (iType == LUA_TNUMBER) {
+    else if (iType == LUA_TNUMBER) 
+    {
       return VArchive_ReadNumber(L);
     }
-    else if (iType == LUA_TSTRING) {
+    else if (iType == LUA_TSTRING) 
+    {
       return VArchive_ReadString(L);
     }
-    else if (iType == LUA_TBOOLEAN) {
+    else if (iType == LUA_TBOOLEAN)
+    {
       return VArchive_ReadBool(L);
     }
-    else if (iType == VLUA_TVECTOR3) {
+    else if (iType == VLUA_TVECTOR2) 
+    {
+      return VArchive_ReadVector2(L);
+    }
+    else if (iType == VLUA_TVECTOR3) 
+    {
       return VArchive_ReadVector3(L);
     }
-    else if (iType == VLUA_TCOLOR) {
+    else if (iType == VLUA_TVECTOR4) 
+    {
+      return VArchive_ReadVector4(L);
+    } 
+    else if (iType == VLUA_TMATRIX3) 
+    {
+      return VArchive_ReadMatrix3(L);
+    } 
+    else if (iType == VLUA_TMATRIX4) 
+    {
+      return VArchive_ReadMatrix4(L);
+    } 
+    else if (iType == VLUA_TPLANE) 
+    {
+      return VArchive_ReadPlane(L);
+    } 
+    else if (iType == VLUA_TQUATERNION) 
+    {
+      return VArchive_ReadQuaternion(L);
+    } 
+    else if (iType == VLUA_TBOUNDINGBOX) 
+    {
+      return VArchive_ReadBoundingBox(L);
+    } 
+    else if (iType == VLUA_TBOUNDINGSPHERE) 
+    {
+      return VArchive_ReadBoundingSphere(L);
+    } 
+    else if (iType == VLUA_TCOLOR)
+    {
       return VArchive_ReadColor(L);
     }
-    else if (iType == LUA_TNIL) {
+    else if (iType == LUA_TNIL) 
+    {
       return VArchive_ReadNil(L);
     }
     //TODO: add any new types here
@@ -598,7 +903,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

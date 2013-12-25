@@ -63,7 +63,7 @@ VEXPORT IVisPlugin_cl* GetEnginePlugin()
 // Initialize the plugin
 void vHavokBehavior_cl::OnInitEnginePlugin()
 {
-	Vision::Error.SystemMessage( "vHavokBehavior_cl:OnInitEnginePlugin()" );
+	hkvLog::Info( "vHavokBehavior_cl:OnInitEnginePlugin()" );
 
 #if ( (defined _DLL) || (defined _WINDLL) ) && !defined(VBASE_LIB)
 	// This plugin depends on the main Havok Physics plugin being loaded
@@ -98,7 +98,7 @@ void vHavokBehavior_cl::OnInitEnginePlugin()
 // De-initialize the plugin
 void vHavokBehavior_cl::OnDeInitEnginePlugin()
 {
-	Vision::Error.SystemMessage( "vHavokBehavior_cl:OnDeInitEnginePlugin()" );
+	hkvLog::Info( "vHavokBehavior_cl:OnDeInitEnginePlugin()" );
 
 	vHavokBehaviorModule* module = vHavokBehaviorModule::GetInstance();
 	if ( module )
@@ -124,7 +124,7 @@ void vHavokBehavior_cl::OnDeInitEnginePlugin()
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

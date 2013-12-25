@@ -183,8 +183,7 @@ public:
   /// 
   /// \return
   ///   BOOL bResult : TRUE if successful.
-  VBASE_IMPEXP VCompiledEffect *CompileEffect(const char *szParamString, VCompiledShaderManager &instanceManager, 
-    int iFlags=EFFECTCREATEFLAG_NONE, IVLog *pLog=NULL);
+  VBASE_IMPEXP VCompiledEffect *CompileEffect(const char *szParamString, VCompiledShaderManager &instanceManager, int iFlags = EFFECTCREATEFLAG_NONE, hkvLogInterface* pLog = hkvGlobalLog::GetInstance());
 
   /// \brief
   ///   Helper function to find a compiled effect version that has been generated with the passed
@@ -470,7 +469,7 @@ public:
 protected:
   friend class VShaderPassResource;
 #ifdef SUPPORTS_RESOURCE_TIMESTAMP
-  VBASE_IMPEXP VOVERRIDE BOOL GatherTimeStamp(IVFileStreamManager *pManager, VFileTime &destTime);
+  VBASE_IMPEXP virtual BOOL GatherTimeStamp(VDateTime &destTime) HKV_OVERRIDE;
 #endif
   VBASE_IMPEXP VOVERRIDE BOOL Reload();
   VBASE_IMPEXP VOVERRIDE BOOL Unload();
@@ -500,7 +499,7 @@ protected:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

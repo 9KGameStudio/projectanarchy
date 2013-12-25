@@ -239,6 +239,9 @@ public:
   /// \return true if paused, false if not.
   SCALEFORM_IMPEXP bool IsPaused() const;
 
+  /// \brief  Restarts the movie playback.
+  SCALEFORM_IMPEXP void Restart();
+
   /// \brief  Query if this object is focused.
   /// \return true if focused, false if not.
   SCALEFORM_IMPEXP bool IsFocused() const;
@@ -305,7 +308,7 @@ protected:
   void UpdateViewport();
 
   //used in the input handling system (as proposed by SF)
-  Scaleform::KeyModifiers * updateModifiers(bool extendedKeyFlag = false);
+  Scaleform::KeyModifiers* UpdateModifiers(bool extendedKeyFlag = false);
 
   ///
   /// \brief
@@ -318,14 +321,20 @@ protected:
   ///   Process queued scaleform callbacks in main thread.
   void HandleScaleformCallbacks();
 
+#if defined(USE_SF_IME)
   /// \brief
   ///   Initialized the IME manager.
   void InitImeManager();
 
+  /// brief
+  ///   Handles deferred IME state changes. Has to be called from the main thread.
+  void HandleImeStatusChanges();
+#endif
+
 private:
   // GFx members:
-  Scaleform::GFx::Movie * m_pMovieInst;
-  Scaleform::GFx::MovieDisplayHandle * m_phMovieDisplay;
+  Scaleform::GFx::Movie* m_pMovieInst;
+  Scaleform::GFx::MovieDisplayHandle* m_phMovieDisplay;
 
 #if defined(USE_SF_IME)
   //vars required for IME init
@@ -363,7 +372,7 @@ private:
 #endif // VSCALEFORMMOVIE_HPP_INCLUDED
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

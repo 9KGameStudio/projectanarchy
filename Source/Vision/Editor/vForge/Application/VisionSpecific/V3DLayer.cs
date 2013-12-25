@@ -430,7 +430,8 @@ namespace Editor
 
         EditorManager.EngineManager.SetFogParameters(FogSetup);
         EditorManager.EngineManager.SetSRGBMode(newSettings._eSRGBMode);
-        //EditorManager.EngineManager.SetUpdateTicksPerSecond(_currentSettings._iTicksPerSecond, _currentSettings._iMaxTicksPerFrame);
+        EditorManager.EngineManager.SetUpdateTicksPerSecond(_currentSettings._iTicksPerSecond,
+          _currentSettings._iMaxTicksPerFrame, _currentSettings._bLimitFrameRate);
 
         //this event is necessary to update the property flags
         IScene.SendLayerChangedEvent(new LayerChangedArgs(this, null, LayerChangedArgs.Action.PropertyChanged));
@@ -553,7 +554,8 @@ namespace Editor
       }
 
       EditorManager.EngineManager.SetSRGBMode(_currentSettings._eSRGBMode);
-      //EditorManager.EngineManager.SetUpdateTicksPerSecond(_currentSettings._iTicksPerSecond, _currentSettings._iMaxTicksPerFrame);
+      EditorManager.EngineManager.SetUpdateTicksPerSecond(_currentSettings._iTicksPerSecond,
+        _currentSettings._iMaxTicksPerFrame, _currentSettings._bLimitFrameRate);
 
       // Set default global ambient color on renderer node.
       EditorManager.EngineManager.SetDefaultGlobalAmbientColor(VisionColors.Get(_currentSettings._globalAmbientColor));
@@ -698,7 +700,7 @@ namespace Editor
       else if (pd.Name == "EnableTimeOfDay")
       {
         if (!EditorManager.RendererNodeManager.SupportsTimeOfDay() || !HasRendererNode)
-          return PropertyFlags_e.Readonly;
+          return PropertyFlags_e.Hidden;
       }
       else if (pd.Name == "DepthFog") // fog is used from ToD-curves instead
       {
@@ -713,6 +715,11 @@ namespace Editor
       else if (pd.Name == "AssumeSRGB")
       {
         if (!HasRendererNode)
+          return PropertyFlags_e.Hidden;
+      }
+      else if (pd.Name == "LimitFrameRate")
+      {
+        if (TicksPerSecond == 0)
           return PropertyFlags_e.Hidden;
       }
       return flags;
@@ -825,11 +832,11 @@ namespace Editor
     CoordinateSystem _mapProjection = new CoordinateSystem();
     #endregion
 
-    /*#region Time Stepping
+    #region Time Stepping
 
     [SortedCategory(CAT_TIME_STEPPING, CATORDER_TIME_STEPPING), PropertyOrder(1)]
     [RangeCheckAttribute(0, 600)]
-    [Description("Defines the number of fixed update ticks per second (for Vision and Physics).\nSet to 0 to enable variable time stepping.")]
+    [Description("Defines the number of fixed game logic update ticks per second (for Vision and Physics).\nSet to 0 to enable variable time stepping.")]
     public int TicksPerSecond
     {
       get
@@ -840,13 +847,14 @@ namespace Editor
       {
         _currentSettings._iTicksPerSecond = value;
 
-        EditorManager.EngineManager.SetUpdateTicksPerSecond(_currentSettings._iTicksPerSecond, _currentSettings._iMaxTicksPerFrame);
+        EditorManager.EngineManager.SetUpdateTicksPerSecond(_currentSettings._iTicksPerSecond, 
+          _currentSettings._iMaxTicksPerFrame, _currentSettings._bLimitFrameRate);
       }
     }
 
     [SortedCategory(CAT_TIME_STEPPING, CATORDER_TIME_STEPPING), PropertyOrder(2)]
     [RangeCheckAttribute(1, Int32.MaxValue)]
-    [Description("Defines the maximum number of fixed update steps per frame.\nOnly applies if fixed time stepping is used.")]
+    [Description("Defines the maximum number of fixed update steps per frame.\nOnly applies if fixed time stepping is used or frame time is higher than the maximum time step.")]
     public int MaxTicksPerFrame
     {
       get
@@ -857,11 +865,29 @@ namespace Editor
       {
         _currentSettings._iMaxTicksPerFrame = value;
 
-        EditorManager.EngineManager.SetUpdateTicksPerSecond(_currentSettings._iTicksPerSecond, _currentSettings._iMaxTicksPerFrame);
+        EditorManager.EngineManager.SetUpdateTicksPerSecond(_currentSettings._iTicksPerSecond,
+          _currentSettings._iMaxTicksPerFrame, _currentSettings._bLimitFrameRate);
       }
     }
 
-    #endregion*/
+    [SortedCategory(CAT_TIME_STEPPING, CATORDER_TIME_STEPPING), PropertyOrder(3)]
+    [Description("If enabled, the frame rate will be capped at TicksPerSecond.")]
+    public bool LimitFrameRate
+    {
+      get
+      {
+        return _currentSettings._bLimitFrameRate;
+      }
+      set
+      {
+        _currentSettings._bLimitFrameRate = value;
+
+        EditorManager.EngineManager.SetUpdateTicksPerSecond(_currentSettings._iTicksPerSecond,
+          _currentSettings._iMaxTicksPerFrame, _currentSettings._bLimitFrameRate);
+      }
+    }
+
+    #endregion
 
     #region Scripting
 
@@ -924,24 +950,33 @@ namespace Editor
         if (_currentSettings._skyConfig == value)
           return;
 
-        if (_currentSettings._skyConfig != null)
-        {
-          _currentSettings._skyConfig.Dispose();
-        }
-        _currentSettings._skyConfig = value;
+        SkyConfig oldConfig = SwapSkyConfig(value);
 
-        if (_currentSettings._skyConfig != null)
+        if (oldConfig != null)
         {
-          _currentSettings._skyConfig.Parent = this;
-          _currentSettings._skyConfig.Active = true;
+          oldConfig.Dispose();
         }
-        if (_currentSettings._timeOfDay != null)
-          _currentSettings._timeOfDay.SceneSky = this.SkyConfig;
-
       }
     }
 
+    public SkyConfig SwapSkyConfig(SkyConfig skyConfig)
+    {
+      SkyConfig oldConfig = _currentSettings._skyConfig;
+      if (oldConfig != null)
+        oldConfig.Active = false;
 
+      _currentSettings._skyConfig = skyConfig;
+
+      if (_currentSettings._skyConfig != null)
+      {
+        _currentSettings._skyConfig.Parent = this;
+        _currentSettings._skyConfig.Active = true;
+      }
+      if (_currentSettings._timeOfDay != null)
+        _currentSettings._timeOfDay.SceneSky = this.SkyConfig;
+
+      return oldConfig;
+    }
 
     #endregion
 
@@ -2504,7 +2539,7 @@ namespace Editor
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -417,7 +417,7 @@ public:
   /// \param compare
   ///   pointer to the comparison function. This function takes pointers to the two list
   ///   elements and compares their values. It returns:
-  ///   \li 1 if the first element is greather than second one
+  ///   \li 1 if the first element is greater than second one
   /// 
   ///   \li 0 if the elements are equal
   /// 
@@ -615,7 +615,7 @@ void CLASS_NAME::Serialize( VArchive& ar )            \
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

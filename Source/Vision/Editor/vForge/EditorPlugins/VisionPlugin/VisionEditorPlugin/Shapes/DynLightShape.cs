@@ -549,7 +549,7 @@ namespace VisionEditorPlugin.Shapes
 
     [SortedCategory(CAT_APPEARANCE, CATORDER_APPEARANCE), PropertyOrder(4)]
     [Description("The custom light attenuation curve texture (only used when LightAttenuationCurve is set to Custom)\nThe first row of the texture is used to define a gradient from white to black over the radius of the light.")]
-    [EditorAttribute(typeof(BitmapBrowserEditor), typeof(UITypeEditor))]
+    [EditorAttribute(typeof(AssetEditor), typeof(UITypeEditor)), AssetDialogFilter(new string[] { "Texture" })]
     public string CustomAttenuationCurveTexture
     {
       get { return _sLightAttenuationTex; }
@@ -904,7 +904,12 @@ namespace VisionEditorPlugin.Shapes
       set 
       {
         if (_fIntensity==value) return;
-        _fIntensity = value;
+
+        if (value >= 0.0f) 
+			_fIntensity = value;
+        else 
+			_fIntensity = 0.0f;
+        
         if (_engineInstance!=null)
           EngineLight.SetIntensity(FinalRadius);
       }
@@ -1956,6 +1961,11 @@ namespace VisionEditorPlugin.Shapes
       }
       return light;
     }
+
+    public override Type GetShapeType()
+    {
+      return typeof(DynLightShape);
+    }
   }
 
   #endregion 
@@ -2011,6 +2021,11 @@ namespace VisionEditorPlugin.Shapes
       }
       return light;
     }
+
+    public override Type GetShapeType()
+    {
+      return typeof(DynLightShape);
+    }
   }
   #endregion 
 
@@ -2065,6 +2080,11 @@ namespace VisionEditorPlugin.Shapes
         light.CastStaticShadows = true;
       }
       return light;
+    }
+
+    public override Type GetShapeType()
+    {
+      return typeof(DynLightShape);
     }
   }
   #endregion 
@@ -2156,13 +2176,18 @@ namespace VisionEditorPlugin.Shapes
 
       return returnShape;
     }
+
+    public override Type GetShapeType()
+    {
+      return typeof(DynLightShape);
+    }
   }
   #endregion 
 
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

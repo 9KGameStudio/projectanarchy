@@ -85,6 +85,10 @@ namespace VStringUtil
   /// \return
   ///    Returns the index of the first character matching 'c' or -1 if none is found.
   VBASE_IMPEXP int IndexOf(const char *szString, char c, int iStartIndex=0, int iEndIndex=INT_MAX);
+
+
+  /// \brief checks if the string only consists of digits
+  VBASE_IMPEXP bool IsIntegerString(const char* szString);
 };
 
 #define PARAM_STRING_SEP '@'
@@ -292,7 +296,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -14,7 +14,7 @@
 #include <Vision/Runtime/Engine/System/VisApiDefs.hpp>
 
 // Attention: This header is only for internal use, none of the provided macros
-// and defines should be used in the gamecode.
+// and defines should be used in the game code.
 // This header contains information about the serialization archive version of Vision
 // In order to get the current serialization archive version of the VISION.DLL which you are
 // currently using, call the function Vision::GetArchiveVersion. The DLL which
@@ -159,20 +159,10 @@ inline BOOL VisCheckForValidArchive( int iLoadedArchiveVersion, int iEngineArchi
 }
 
 
-// the following macro can additionally be used for sanity checks within Vision
-#define CHECK_FOR_VALID_ARCHIVE( ar ) \
-  if ( ar.GetLoadingVersion() == 1 ) \
-    VULPERROR_0( FALSE, "Failed on loading an archive due to an missing loading version. VArchive::SetLoadingVersion needs to be called on the archive before the serialization of any engine objects can start." ) \
-  if ( !VisCheckForValidArchive( ar.GetLoadingVersion(), Vision::GetArchiveVersion()) ) \
-  { \
-    VULPERROR_2( FALSE, "Failed on loading an archive of the version %d with an engine which only supports archive versions up to %d. This archive has been saved with a newer engine version. Please update to the latest engine version.", ar.GetLoadingVersion(), Vision::GetArchiveVersion() ); \
-  }
-
-
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

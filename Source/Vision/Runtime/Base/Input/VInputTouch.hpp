@@ -318,7 +318,7 @@ protected:
   VTapPoint m_TapPoints[V_MAX_TAPS];
   
   unsigned int m_uiTapTimeout;
-  float m_fMaxTapDistance;
+  float m_fMaxTapDistanceSq;
   
 public:
   
@@ -426,7 +426,7 @@ public:
   ///  Sets the maximum distance in pixel between two taps to detect as a double tap
   inline void SetMaxTapDistance(float fDistance)
   {
-    m_fMaxTapDistance = fDistance * fDistance;
+    m_fMaxTapDistanceSq = fDistance * fDistance;
   }
   
   /// \brief  
@@ -454,7 +454,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -7,28 +7,29 @@
  */
 
 using System;
-using System.IO;
-using System.Drawing;
-using System.Drawing.Design;
 using System.Collections;
 using System.Collections.Generic;
-using System.Text;
+using System.ComponentModel;
+using System.Drawing;
+using System.Drawing.Design;
+using System.IO;
+using System.Reflection;
 using System.Runtime;
 using System.Runtime.Serialization;
-using System.ComponentModel;
+using System.Text;
 using System.Windows;
 using System.Windows.Forms;
 using CSharpFramework;
 using CSharpFramework.Actions;
-using CSharpFramework.Shapes;
-using CSharpFramework.Scene;
-using CSharpFramework.PropertyEditors;
-using CSharpFramework.Serialization;
-using ManagedFramework;
-using CSharpFramework.Math;
-using CSharpFramework.View;
 using CSharpFramework.DynamicProperties;
-using System.Reflection;
+using CSharpFramework.Math;
+using CSharpFramework.PropertyEditors;
+using CSharpFramework.Scene;
+using CSharpFramework.Serialization;
+using CSharpFramework.Shapes;
+using CSharpFramework.View;
+using ManagedBase.LogManaged;
+using ManagedFramework;
 using VisionManaged;
 
 namespace VisionEditorPlugin.Shapes
@@ -412,8 +413,11 @@ namespace VisionEditorPlugin.Shapes
       }  
 
       PrefabDesc.OnPrefabSaved += new EventHandler(PrefabDesc_OnPrefabSaved);
-      IScene.PropertyChanged += new CSharpFramework.PropertyChangedEventHandler(IScene_PropertyChanged);
       IScene.EngineInstancesChanged += new EngineInstancesChangedEventHandler(IScene_EngineInstancesChanged);
+
+      // still not created? E.g. after copy&paste...
+      if (!Editable && _flatShapes3DList == null && _prefabDesc != null)
+        RecreateShapes(false, _prefabDesc);
 
     }
 
@@ -440,7 +444,6 @@ namespace VisionEditorPlugin.Shapes
       base.OnRemoveFromScene();
       IScene.EngineInstancesChanged -= new EngineInstancesChangedEventHandler(IScene_EngineInstancesChanged);
       PrefabDesc.OnPrefabSaved -= new EventHandler(PrefabDesc_OnPrefabSaved);
-      IScene.PropertyChanged -= new CSharpFramework.PropertyChangedEventHandler(IScene_PropertyChanged);
     }
 
 
@@ -519,11 +522,10 @@ namespace VisionEditorPlugin.Shapes
       copy._prefabChildrenList = null;
       copy._mergedLocalBBox = new BoundingBox();
       copy._uniqueIDMatch = null; // force creating new IDs
+      // _perInstanceParameter is still the same reference but it will be cloned in RecreateShapes later
 
-      // instead, recreate the prefab using the same filename (but do not call OnAddedToScene here)
-      // this also clones the per-instance properties
-      if (!Editable && ParentLayer != null)
-        copy.RecreateShapes(true, this.Prefab);
+      // prefab shapes are not created here...RecreateShapes is called later
+
       return copy;
     }
 
@@ -725,7 +727,7 @@ namespace VisionEditorPlugin.Shapes
 
         if (value)
         {
-          EditorManager.EngineManager.LogPrintWarning("Missing or broken prefab file \"" + Filename + "\".");
+          Log.Warning("Missing or broken prefab file \"" + Filename + "\".");
         }
 
         _bBroken = value;
@@ -1209,7 +1211,7 @@ namespace VisionEditorPlugin.Shapes
     }
 
 
-    void ApplyPerInstanceProperty(DynamicProperty prop)
+    public override void ApplyPerInstanceProperty(DynamicProperty prop)
     {
       ISceneObject targetInst;
       object info = PrefabDesc.FindShapeProperty(this, prop.PropertyType.Name, out targetInst);
@@ -1370,6 +1372,7 @@ namespace VisionEditorPlugin.Shapes
         if (_perInstanceParameter != null)
         {
           _perInstanceParameter = (PrefabDesc.PerInstancePropertyCollection)type.CreateMigratedCollection(this._perInstanceParameter);
+          _perInstanceParameter.Owner = this;
           ApplyPerInstanceModifications();
         }
         else
@@ -1399,28 +1402,6 @@ namespace VisionEditorPlugin.Shapes
 
     }
 
-
-    /// <summary>
-    /// Callback to propagate per-instance changes to the shapes
-    /// </summary>
-    /// <param name="sender"></param>
-    /// <param name="e"></param>
-    void IScene_PropertyChanged(object sender, PropertyChangedArgs e)
-    {
-      if (!object.ReferenceEquals(e._component , this._perInstanceParameter))
-        return;
-
-      ArrayList propList = _perInstanceParameter.Properties;
-      foreach (DynamicProperty dp in propList)
-      {
-        if (string.Compare(dp.PropertyType.DisplayName, e._propertyName) != 0)
-          continue;
-        ApplyPerInstanceProperty(dp);
-        this.Modified = true;
-      }
-
-    }
-
     #endregion
 
     #region Relevant Operations
@@ -1432,6 +1413,7 @@ namespace VisionEditorPlugin.Shapes
     const string RO_SAVE_THUMBNAIL = "Save current screenshot as thumbnail";
     const string RO_SAVE_BINARY_VERSION = "Save binary version";
     const string RO_REFRESH = "Refresh shape";
+    const string RO_EDIT_PREFAB_SETTINGS = "Edit Prefab Settings";
 
     public override System.Collections.ArrayList RelevantOperations
     {
@@ -1441,9 +1423,14 @@ namespace VisionEditorPlugin.Shapes
         if (arr == null)
           arr = new ArrayList(4);
         if (Convertible && !Editable && !Broken)
+        {
           arr.Add(RO_MAKEEDITABLE);
+        }
         if (!Editable && !Broken)
+        {
           arr.Add(RO_REFRESH);
+          arr.Add(RO_EDIT_PREFAB_SETTINGS);
+        }
         if (Editable && !Broken && HasChildren())
         {
           arr.Add(RO_RESAVE);
@@ -1461,6 +1448,11 @@ namespace VisionEditorPlugin.Shapes
 
     public override void PerformRelevantOperation(string name, int iShapeIndex, int iShapeCount)
     {
+      if (name == RO_EDIT_PREFAB_SETTINGS)
+      {
+        PrefabManager.EditPrefabDescriptor(_prefabDesc);
+        return;
+      }
       if (name == RO_MAKEEDITABLE)
       {
         System.Diagnostics.Debug.Assert(Convertible && !Editable && !Broken);
@@ -1593,6 +1585,11 @@ namespace VisionEditorPlugin.Shapes
       PrefabShape shape = new PrefabShape("Prefab");
       shape.Position = EditorManager.Scene.CurrentShapeSpawnPosition;
       return shape;
+    }
+
+    public override Type GetShapeType()
+    {
+      return typeof(PrefabShape);
     }
 
     public override string GetPluginDescription()
@@ -2020,7 +2017,7 @@ namespace VisionEditorPlugin.Shapes
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

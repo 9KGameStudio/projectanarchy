@@ -72,7 +72,7 @@ bool hkvPrefabAsset::GenerateThumbnail(const char* libraryPath, const char* asse
   if (pThumbnailNode == NULL)
     return true;
 
-  IVFileOutStream* pFile = VBase_GetFileStreamManager()->Create(thumbnailPath);
+  IVFileOutStream* pFile = VFileAccessManager::GetInstance()->Create(thumbnailPath);
   if (pFile == NULL)
     return true;
 
@@ -81,7 +81,7 @@ bool hkvPrefabAsset::GenerateThumbnail(const char* libraryPath, const char* asse
 
   // Convert base64 encoded data back to binary form
   char* imageData = new char[iSize];
-  hkXmlObjectReader::base64read(hkIstream(pThumbnailNode->GetText(), strlen(pThumbnailNode->GetText())).getStreamReader(), imageData, iSize);
+  hkXmlObjectReader::base64read(hkIstream(pThumbnailNode->GetText(), (int)strlen(pThumbnailNode->GetText())).getStreamReader(), imageData, iSize);
 
   // Write image to disk
   pFile->Write(imageData, iSize);
@@ -136,7 +136,7 @@ void hkvPrefabAsset::setSpecificProperty(const hkvProperty& prop, const hkArray<
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

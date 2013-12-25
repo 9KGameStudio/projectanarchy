@@ -6,15 +6,10 @@
  *
  */
 
-//***********************************************************************
-// GameState_cl Source
-//***********************************************************************
-
 #include <Vision/Samples/Engine/Accelerometer/AccelerometerPCH.h>
 #include <Vision/Samples/Engine/Accelerometer/GameState.hpp>
 
-// InitFunction: Is called upon entity initialization.
-void GameState_cl::InitFunction()
+void GameState::InitFunction()
 {
   // Add target component
   VisTriggerTargetComponent_cl *pTargetComp = new VisTriggerTargetComponent_cl();
@@ -25,17 +20,9 @@ void GameState_cl::InitFunction()
   VASSERT(pTriggerBoxEntity);
 
   // Find source component
-  VisTriggerSourceComponent_cl *pSourceComp = NULL;
-  for (int i=0;i<pTriggerBoxEntity->Components().Count();i++)
-  {
-    IVObjectComponent *pComp = pTriggerBoxEntity->Components().GetAt(i);
-    if(strcmp(pComp->GetComponentName(),"OnObjectEnter")==0)
-    {
-      pSourceComp = (VisTriggerSourceComponent_cl*) pComp;
-      break;
-    }
-  }
-  VASSERT(pSourceComp);
+  VisTriggerSourceComponent_cl* pSourceComp = vstatic_cast<VisTriggerSourceComponent_cl*>(
+    pTriggerBoxEntity->Components().GetComponentOfTypeAndName(VisTriggerSourceComponent_cl::GetClassTypeId(), "OnObjectEnter"));
+  VASSERT(pSourceComp != NULL);
 
   // Link source and target component 
   IVisTriggerBaseComponent_cl::OnLink(pSourceComp, pTargetComp);
@@ -43,17 +30,15 @@ void GameState_cl::InitFunction()
   m_eState = GAME_STATE_RUN;
 }
 
-// DeInitFunction:: Is called upon entity de-initialization.
-void GameState_cl::DeInitFunction()
+void GameState::DeInitFunction()
 {
 }
 
-// ThinkFunction: Is called once per frame.
-void GameState_cl::ThinkFunction()
+void GameState::ThinkFunction()
 {
 }
 
-void GameState_cl::MessageFunction(int iID, INT_PTR iParamA, INT_PTR iParamB)
+void GameState::MessageFunction(int iID, INT_PTR iParamA, INT_PTR iParamB)
 {
   VisObject3D_cl::MessageFunction(iID,iParamA,iParamB);
 
@@ -61,22 +46,23 @@ void GameState_cl::MessageFunction(int iID, INT_PTR iParamA, INT_PTR iParamB)
     m_eState = GAME_STATE_RESTART;
 }
 
-void GameState_cl::SetCurrentState(GAME_STATE eState)
+void GameState::SetCurrentState(GAME_STATE eState)
 {
   m_eState = eState;
 }
 
-GAME_STATE GameState_cl::GetCurrentState() const
+GAME_STATE GameState::GetCurrentState() const
 {
   return m_eState;
 }
 
-V_IMPLEMENT_SERIAL( GameState_cl, VisBaseEntity_cl, 0, Vision::GetEngineModule() );
-START_VAR_TABLE(GameState_cl, VisBaseEntity_cl, "GameState_cl", 0, "")
+V_IMPLEMENT_SERIAL(GameState, VisBaseEntity_cl, 0, Vision::GetEngineModule());
+
+START_VAR_TABLE(GameState, VisBaseEntity_cl, "GameState", 0, "")
 END_VAR_TABLE
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

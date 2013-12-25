@@ -14,17 +14,6 @@
 #include <Vision/Runtime/Base/Math/Matrix/hkvMat4.h>
 #include <Vision/Runtime/Base/Math/BoundingVolume/hkvAlignedBBox.h>
 
-HKV_FORCE_INLINE hkvPlane::hkvPlane (const hkvPlane& rhs)
-{
-  *this = rhs;
-}
-
-HKV_FORCE_INLINE void hkvPlane::operator= (const hkvPlane& plane)
-{
-  m_vNormal  = plane.m_vNormal;
-  m_fNegDist = plane.m_fNegDist;
-}
-
 HKV_FORCE_INLINE void hkvPlane::setFromPointAndNormal (const hkvVec3& vPointOnPlane, const hkvVec3& vNormal)
 {
   HKVMATH_ASSERT (vNormal.isNormalized (HKVMATH_DEFAULT_EPSILON), "vNormal must be normalized.");
@@ -507,7 +496,7 @@ HKV_FORCE_INLINE const hkvVec3 hkvPlane::getMirrored (const hkvVec3& v) const
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

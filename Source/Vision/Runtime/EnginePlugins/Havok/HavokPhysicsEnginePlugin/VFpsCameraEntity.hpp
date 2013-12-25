@@ -8,57 +8,58 @@
 
 /// \file VFpsCameraEntity.hpp
 
-#ifndef FPSCAMERAENTITY_HPP_INCLUDED
-#define FPSCAMERAENTITY_HPP_INCLUDED
+#ifndef VFPSCAMERAENTITY_HPP_INCLUDED
+#define VFPSCAMERAENTITY_HPP_INCLUDED
+
+#include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Input/VFreeCamera.hpp>
 
 class vHavokCharacterController;
 class VInputMap;
 
 ///\brief
 /// Entity class that exposes first-person shooter camera controls to a camera.
-/// NOTE: For now, this only works in conjunction with a VisSampleApp!!!
 ///   
-class VFpsCameraEntity : public VisBaseEntity_cl
+class VFpsCameraEntity : public VFreeCamera
 {
 public:
+  V_DECLARE_SERIAL_DLLEXP(VFpsCameraEntity, VHAVOK_IMPEXP)
+  V_DECLARE_VARTABLE(VFpsCameraEntity, VHAVOK_IMPEXP)
+
   VFpsCameraEntity();
+
   VHAVOK_IMPEXP virtual void InitFunction() HKV_OVERRIDE;
-  VHAVOK_IMPEXP virtual void ThinkFunction() HKV_OVERRIDE;
   VHAVOK_IMPEXP virtual void DeInitFunction() HKV_OVERRIDE;
 
-  V_DECLARE_SERIAL_DLLEXP( VFpsCameraEntity,  VHAVOK_IMPEXP );
-  VHAVOK_IMPEXP VOVERRIDE void Serialize( VArchive &ar );
+  VHAVOK_IMPEXP virtual void Serialize(VArchive &ar) HKV_OVERRIDE;
 
-  // entity
-  IMPLEMENT_OBJ_CLASS(VFpsCameraEntity);
+  VHAVOK_IMPEXP virtual void OnHandleCallback(IVisCallbackDataObject_cl *pData) HKV_OVERRIDE;
+
+  VHAVOK_IMPEXP virtual void OnDeserializationCallback(const VSerializationContext &context) HKV_OVERRIDE;
+  VHAVOK_IMPEXP virtual VBool WantsDeserializationCallback(const VSerializationContext &context) HKV_OVERRIDE
+  {
+    return Vision::Editor.IsInEditor() ? FALSE : TRUE;
+  }
+
+protected:
+  VHAVOK_IMPEXP virtual void GetCurrentMoveAxes(hkvVec3& vForward, hkvVec3& vRight, hkvVec3& vUp) const HKV_OVERRIDE;
+
+  VHAVOK_IMPEXP virtual void OnThinkFunctionStatusChanged() HKV_OVERRIDE;
 
 private:
-  VisBaseEntity_cl *m_pCamera;
-  VInputMap* m_pMouseCamInputMap;   // We hijack / reuse its input for now
-
-  vHavokCharacterController *m_pPhys;
-
-  float m_fInitialFov;              // initial field of view
-  float m_fFov;                     // current field of view
-  float m_fTimeDiff;               // time difference from last frame (in seconds)
-  float m_fHalfScreenSizeX;			//
-  float m_fHalfScreenSizeY;			//
-  hkvAlignedBBox m_bbStand;     // bounding box for standing mode
-
   // private functions
-  void SetupPhysics();            // sets up physics and collision behaviour
-  void HandleInput();             // handles player input
-  bool ContactsGround();          // returns true if player touches the Ground
+  void CommonInit();
 
-  void CommonInit();              // non-virtual replacement for the InitFunction that gets called by InitFunction _and_ Serialization
+  void SetupPhysics();            // Sets up physics and collision behavior.
+  bool TouchesGround();           // Returns true if player touches the ground.
+
+  vHavokCharacterController* m_pCharacterController;
+  hkvAlignedBBox m_bbStand;       // bounding box for standing mode
 };
 
-
-
-#endif
+#endif // VFPSCAMERAENTITY_HPP_INCLUDED
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

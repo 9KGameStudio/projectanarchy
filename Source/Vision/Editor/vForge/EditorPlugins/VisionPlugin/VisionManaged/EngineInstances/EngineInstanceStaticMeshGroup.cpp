@@ -447,12 +447,14 @@ The asssignment would be more complicated, i.e. check per submesh which settings
       if (!iValidCount)
         return;
 
-      IVFileOutStream* pOutStream = Vision::File.Create(sFilename); 
+      VStaticString<FS_MAX_PATH> sNativeFilename(Vision::Editor.GetProjectPath());
+      VFileAccessManager::AppendPath(sNativeFilename, sFilename);
+      IVFileOutStream* pOutStream = Vision::File.Create(sNativeFilename); 
       if (!pOutStream)
         return;
 
       char szColMeshFile[FS_MAX_PATH];
-      VFileHelper::AddExtension(szColMeshFile, sFilename, "vcolmesh");
+      VFileHelper::AddExtension(szColMeshFile, sNativeFilename, "vcolmesh");
       IVFileOutStream* pCollOutStream = Vision::File.Create(szColMeshFile); 
       bool bHasCollisionFile = pCollOutStream!=NULL;
 
@@ -491,19 +493,7 @@ The asssignment would be more complicated, i.e. check per submesh which settings
         if (pCollOutStream)
           meshBackend.AddProcessor(&vc);
 
-        if(meshBackend.RunProcessors(scene))
-        {
-          // delete the physX file (hack, should go through a physics module function)
-          char szCookedMeshFile[FS_MAX_PATH];
-          sprintf(szCookedMeshFile,"%s_data\\cookedMesh_1.00_1.00_1.00.pc.physx",pOutStream->GetFileName());
-          VFileHelper::Delete(szCookedMeshFile);
-          sprintf(szCookedMeshFile,"%s_data\\cookedMesh_1.00_1.00_1.00.xbox360.physx",pOutStream->GetFileName());
-          VFileHelper::Delete(szCookedMeshFile);
-          sprintf(szCookedMeshFile,"%s_data\\cookedMesh_1.00_1.00_1.00.ps3.physx",pOutStream->GetFileName());
-          VFileHelper::Delete(szCookedMeshFile);
-          sprintf(szCookedMeshFile,"%s_data\\cookedMesh_1.00_1.00_1.00.wii.physx",pOutStream->GetFileName());
-          VFileHelper::Delete(szCookedMeshFile);
-        }
+        meshBackend.RunProcessors(scene);
       }
 
       if (pCollOutStream)
@@ -642,7 +632,7 @@ The asssignment would be more complicated, i.e. check per submesh which settings
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

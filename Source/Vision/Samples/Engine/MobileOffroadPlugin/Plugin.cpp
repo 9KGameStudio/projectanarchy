@@ -19,6 +19,13 @@
 VIMPORT IVisPlugin_cl* GetEnginePlugin_vFmodEnginePlugin();
 VIMPORT IVisPlugin_cl* GetEnginePlugin_vHavok();
 
+MobileOffroadPlugin g_mobileOffroadPlugin;
+
+// declare a module for the serialization
+DECLARE_THIS_MODULE(g_mobileOffroadModule, MAKE_VERSION(1,0),
+"Mobile Offroad Plugin", "Havok",
+  "", &g_mobileOffroadPlugin);
+
 // Placeholder class to auto load this plugin from the scene
 class MobileOffroadPluginPlaceholder : public VisBaseEntity_cl { V_DECLARE_SERIAL_DLLEXP(MobileOffroadPluginPlaceholder, MOBILEOFFROAD_PLUGIN_IMPEXP); };
 V_IMPLEMENT_SERIAL(MobileOffroadPluginPlaceholder, VisBaseEntity_cl, 0, &g_mobileOffroadModule);
@@ -63,10 +70,12 @@ void MobileOffroadPlugin::OnDeInitEnginePlugin()
 
   // de-register our module when the plugin is de-initialized
   Vision::UnregisterModule(&g_mobileOffroadModule);
+
+  //VISION_PLUGIN_ENSURE_UNLOADED(vHavok);
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

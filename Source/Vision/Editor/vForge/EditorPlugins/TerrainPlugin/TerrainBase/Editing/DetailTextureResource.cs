@@ -414,7 +414,7 @@ namespace TerrainBase.Editing
     
 
     [SortedCategory("Textures", 2), PropertyOrder(9)]
-    [Description("If this value is >=0 then tis value will be written into the material map for every pixel where this texture is most dominant in the weightmap. The terrain must have a material map.")]
+    [Description("If this value is >=0 then this value will be written into the material map for every pixel where this texture is most dominant in the weightmap. The terrain must have a material map.")]
     public int MaterialID
     {
       get { return _iMaterialID; }
@@ -658,7 +658,7 @@ namespace TerrainBase.Editing
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

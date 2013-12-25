@@ -92,6 +92,15 @@ void VScaleformAdvanceTask::Schedule(float fTimeDelta)
   }
 }
 
+void VScaleformAdvanceTask::ScheduleMinStep()
+{
+  VASSERT(m_pMovieInst != NULL && m_pMovieInst->GetGFxMovieInstance() != NULL);
+  const float fFrameRate =  m_pMovieInst->GetGFxMovieInstance()->GetMovieDef()->GetFrameRate();
+
+  if (fFrameRate > 0.0f)
+    Schedule(1.0f / fFrameRate);
+}
+
 void VScaleformAdvanceTask::WaitUntilFinished()
 {
   if (!VScaleformManager::GlobalManager().IsMultithreadedAdvanceEnabled())
@@ -105,7 +114,7 @@ void VScaleformAdvanceTask::WaitUntilFinished()
 
 void VScaleformAdvanceTask::Run(VManagedThread *pThread)
 {
-  VASSERT_MSG(m_pMovieInst != NULL, "No scaleform movie instance present!");
+  VASSERT_MSG(m_pMovieInst != NULL && m_pMovieInst->GetGFxMovieInstance() != NULL, "No scaleform movie instance present!");
   m_pMovieInst->GetGFxMovieInstance()->SetCaptureThread(Scaleform::GetCurrentThreadId());
 
   // Initialization
@@ -117,7 +126,6 @@ void VScaleformAdvanceTask::Run(VManagedThread *pThread)
   // Advance Movie
   else
   {
-    VASSERT(m_pMovieInst != NULL && m_pMovieInst->GetGFxMovieInstance() != NULL);
     m_pMovieInst->GetGFxMovieInstance()->Advance(m_fTimeDelta);
   }
 }
@@ -126,9 +134,8 @@ void VScaleformAdvanceTask::Run(VManagedThread *pThread)
 //          VScaleformMovieInstance         //
 //////////////////////////////////////////////
 
-VScaleformMovieInstance::VScaleformMovieInstance(const char *szFilename, Scaleform::GFx::Loader* pLoader /*= NULL */,
-                                                 const char *szCandidateMovie /*= NULL */, const char *szImeXml /*= NULL */,
-                                                 int iPosX /*= 0*/, int iPosY /*= 0*/, int iWidth /*= -1*/, int iHeight /*= -1*/)
+VScaleformMovieInstance::VScaleformMovieInstance(const char *szFilename, Scaleform::GFx::Loader* pLoader,
+  const char *szCandidateMovie, const char *szImeXml, int iPosX, int iPosY, int iWidth, int iHeight)
   : m_pMovieInst(NULL)
   , m_phMovieDisplay(NULL)
   , m_referencedScaleformValues()
@@ -155,26 +162,26 @@ VScaleformMovieInstance::VScaleformMovieInstance(const char *szFilename, Scalefo
 {
   m_pAdvanceTask = new VScaleformAdvanceTask(this);
 
-#ifdef WIN32
+#if defined(WIN32)
   m_pKeyModifiers = new Scaleform::KeyModifiers();
 #endif
   Scaleform::Ptr<MovieDef> pMovieDef = *pLoader->CreateMovie(szFilename, Loader::LoadAll|Loader::LoadWaitCompletion);
-  VASSERT_MSG(pMovieDef!=NULL, "Could not create Scaleform Movie Def!");
+  VASSERT_MSG(pMovieDef != NULL, "Could not create Scaleform Movie Def!");
 
   //Scaleform::StringBuffer buffer;
   //Scaleform::Memory::pGlobalHeap->MemReport(buffer, Scaleform::MemoryHeap::MemReportFull);
-  //Vision::Error.Warning("\n-----------------\nCreateMovie report:\n\n%s\n-----------------\n", buffer.ToCStr());
+  //hkvLog::Warning("\n-----------------\nCreateMovie report:\n\n%s\n-----------------\n", buffer.ToCStr());
 
   // get the movie size which was used when authoring the movie
   m_iMovieAuthoredWidth = static_cast<int>(pMovieDef->GetWidth());
   m_iMovieAuthoredHeight = static_cast<int>(pMovieDef->GetHeight());
 
   m_pMovieInst = pMovieDef->CreateInstance(false /*initFirstFrame*/);
-  VASSERT_MSG(m_pMovieInst!=NULL, "Could not create Scaleform Movie Instance!");
+  VASSERT_MSG(m_pMovieInst != NULL, "Could not create Scaleform Movie Instance!");
 
   //Scaleform::StringBuffer buffer2;
   //Scaleform::Memory::pGlobalHeap->MemReport(buffer2, Scaleform::MemoryHeap::MemReportFull);
-  //Vision::Error.Warning("\n-----------------\nCreateInstance report:\n\n%s\n-----------------\n", buffer2.ToCStr());
+  //hkvLog::Warning("\n-----------------\nCreateInstance report:\n\n%s\n-----------------\n", buffer2.ToCStr());
 
   m_phMovieDisplay = new MovieDisplayHandle(m_pMovieInst->GetDisplayHandle());
 
@@ -198,16 +205,14 @@ VScaleformMovieInstance::VScaleformMovieInstance(const char *szFilename, Scalefo
   m_pLastRenderContext = Vision::Contexts.GetCurrentContext();
   UpdateViewport();
 
-#ifdef _VISION_MOBILE
+#if defined(_VISION_MOBILE)
   //setup touch interface
   m_pMovieInst->SetMultitouchInterface(Scaleform::Ptr<MultitouchInterface>(*new VScaleformMultitouch(VScaleformManager::GlobalManager().GetMaxTouchPoints())));
   //setup virtual keyboard
   //m_pMovieInst->SetVirtualKeyboardInterface(Scaleform::Ptr<VirtualKeyboardInterface>(*new VScaleformVirtualKeyboard()));
-
 #endif
 
 #if defined(USE_SF_IME)
-  
   InitImeManager();
 
   // Activate IME Manager if present.
@@ -215,59 +220,16 @@ VScaleformMovieInstance::VScaleformMovieInstance(const char *szFilename, Scalefo
   {
     pLoader->GetIMEManager()->SetActiveMovie(m_pMovieInst);
   }
-
 #endif
 
   // Let the advance task do the initialization.
   m_pAdvanceTask->Init();
 }
 
-
 VScaleformMovieInstance::~VScaleformMovieInstance()
 {
   Invalidate();
 }
-
-#ifdef USE_SF_IME
-
-void VScaleformMovieInstance::InitImeManager()
-{
-  Loader* pLoader = VScaleformManager::GlobalManager().GetLoader();
-  if (pLoader->GetIMEManager() != NULL)
-    return;
-
-  if (m_sCandidateMovie.IsEmpty() || m_sImeXml.IsEmpty())
-    return;
-
-  // Check if window is confgured properly.
-  if (Vision::GetApplication()->m_appConfig.m_windowConfig.CheckWindowSettingForIME() == false)
-  {
-    Vision::Error.Warning("vScaleformPlugin: You are about to initialize the IME Manager with incorrect WindowConfig!");
-  }
-
-  Scaleform::Ptr<Scaleform::GFx::IMEManagerBase> pImeManager = *new Scaleform::GFx::IME::GFxIMEManagerWin32(Vision::Video.GetCurrentConfig()->m_hWnd);
-  VASSERT_MSG(pImeManager, "IME Manager not initialized")
-
-	/*  Parameters:
-	1- Logger used to log IME messages. If not logging is desired, pass NULL
-	2- Fileopener necessary to open the ime.xml file that contains the list of supported IME's. If NULL, a default
-		list will be used instead
-	3- Path for the ime.xml file that contains a list of supported IMEs - creaate an absolute path, otherwise
-     the method will look in the scaleform SDK path for the file!
-	4- Used to set if while loading the candidate list swf, IMEManager should check if the file exists in 
-	   current directory (where the parent swf is located) or not. If false, IMEManager will not check
-	   if the file exists, and if the file is eventually not found, an error message will be printed.
-	   This is useful if you have you own file management system and you want FileOpener::OpenFile to be
-	   called regardless. 
-	*/
-  pImeManager->Init(pLoader->GetLog(), (FileOpener *) pLoader->GetFileOpener().GetPtr(), m_sImeXml, true);
-
-  pImeManager->SetIMEMoviePath(m_sCandidateMovie); //relative to your root movie (IME/IMESample.swf - IME.swf is in the same directory)
-  
-  pLoader->SetIMEManager(pImeManager);  // pLoader keeps the object from this point
-}
-
-#endif
 
 void VScaleformMovieInstance::Invalidate()
 {
@@ -277,7 +239,7 @@ void VScaleformMovieInstance::Invalidate()
   m_pAdvanceTask->WaitUntilFinished();
   V_SAFE_DELETE(m_pAdvanceTask);
 
-  #ifdef WIN32
+  #if defined(WIN32)
     V_SAFE_DELETE(m_pKeyModifiers);
   #endif
 
@@ -285,10 +247,21 @@ void VScaleformMovieInstance::Invalidate()
   {
     delete m_referencedScaleformValues[i];
   }
-  m_referencedScaleformValues.SetSize(0);
+  m_referencedScaleformValues.RemoveAll();
+
+  for (int i = 0; i < m_queuedFSCommands.GetSize(); i++)
+  {
+    delete m_queuedFSCommands[i];
+  }
+  m_queuedFSCommands.RemoveAll();
+
+  for (int i = 0; i < m_queuedExternalCalls.GetSize(); i++)
+  {
+    delete m_queuedExternalCalls[i];
+  }
+  m_queuedExternalCalls.RemoveAll();
 
   V_SAFE_RELEASE(m_pMovieInst);
-
   V_SAFE_DELETE(m_phMovieDisplay); //no ref count for movie display handle
 }
 
@@ -328,191 +301,13 @@ VScaleformValue* VScaleformMovieInstance::GetVariable(const char * szVarName)
   return pWrappedValue;
 }
 
-
 void VScaleformMovieInstance::SetOpacity(float fAlpha)
 {
-  VASSERT_MSG(m_pMovieInst!=NULL, "Movie not loaded");
+  VASSERT_MSG(m_pMovieInst != NULL, "Movie not loaded");
   m_pAdvanceTask->WaitUntilFinished();
 
   m_pMovieInst->SetBackgroundAlpha(fAlpha);
 }
-
-#ifdef WIN32
-
-void VScaleformMovieInstance::HandlePreTranslatedIMEInputMessage(VWindowsMessageDataObject* pObj)
-{
-  if ((pObj->m_Msg.message == WM_KEYDOWN) || (pObj->m_Msg.message == WM_KEYUP) ||
-    ImmIsUIMessage(NULL, pObj->m_Msg.message, pObj->m_Msg.wParam, pObj->m_Msg.lParam))
-  {
-    m_pAdvanceTask->WaitUntilFinished();
-
-    IMEWin32Event ev(IMEEvent::IME_PreProcessKeyboard,
-      (Scaleform::UPInt)pObj->m_Hwnd, pObj->m_Msg.message, pObj->m_Msg.wParam, pObj->m_Msg.lParam);
-	  
-    m_pMovieInst->HandleEvent(ev);
-  }
-}
-
-static  struct
-{
-  WPARAM  winKey;
-  Scaleform::KeyCode appKey;
-} 
-keyCodeMap [] =
-{
-  {VK_BACK,    Scaleform::Key::Backspace},
-  {VK_TAB,     Scaleform::Key::Tab},
-  {VK_CLEAR,   Scaleform::Key::Clear},
-  {VK_RETURN,  Scaleform::Key::Return},
-  {VK_SHIFT,   Scaleform::Key::Shift},
-  {VK_CONTROL, Scaleform::Key::Control},
-  {VK_MENU,    Scaleform::Key::Alt},
-  {VK_PAUSE,   Scaleform::Key::Pause},
-  {VK_CAPITAL, Scaleform::Key::CapsLock},
-  {VK_ESCAPE,  Scaleform::Key::Escape},
-  {VK_SPACE,   Scaleform::Key::Space},
-  {VK_PRIOR,   Scaleform::Key::PageUp},
-  {VK_NEXT,    Scaleform::Key::PageDown},
-  {VK_END,     Scaleform::Key::End},
-  {VK_HOME,    Scaleform::Key::Home},
-  {VK_LEFT,    Scaleform::Key::Left},
-  {VK_UP,      Scaleform::Key::Up},
-  {VK_RIGHT,   Scaleform::Key::Right},
-  {VK_DOWN,    Scaleform::Key::Down},
-  {VK_INSERT,  Scaleform::Key::Insert},
-  {VK_DELETE,  Scaleform::Key::Delete},
-  {VK_HELP,    Scaleform::Key::Help},
-  {VK_NUMLOCK, Scaleform::Key::NumLock},
-  {VK_SCROLL,  Scaleform::Key::ScrollLock},
-
-  {VK_OEM_1,     Scaleform::Key::Semicolon},
-  {VK_OEM_PLUS,  Scaleform::Key::Equal},
-  {VK_OEM_COMMA, Scaleform::Key::Comma},
-  {VK_OEM_MINUS, Scaleform::Key::Minus},
-  {VK_OEM_PERIOD,Scaleform::Key::Period},
-  {VK_OEM_2,     Scaleform::Key::Slash},
-  {VK_OEM_3,     Scaleform::Key::Bar},
-  {VK_OEM_4,     Scaleform::Key::BracketLeft},
-  {VK_OEM_5,     Scaleform::Key::Backslash},
-  {VK_OEM_6,     Scaleform::Key::BracketRight},
-  {VK_OEM_7,     Scaleform::Key::Quote},
-  {VK_OEM_AX,	   Scaleform::Key::OEM_AX},   //  'AX' key on Japanese AX kbd
-  {VK_OEM_102,   Scaleform::Key::OEM_102},  //  "<>" or "\|" on RT 102-key kbd.
-  {VK_ICO_HELP,  Scaleform::Key::ICO_HELP}, //  Help key on ICO
-  {VK_ICO_00,	   Scaleform::Key::ICO_00},	 //  00 key on ICO
-
-  {0,            Scaleform::Key::None }     // Terminator
-};
-
-void VScaleformMovieInstance::HandleWindowsInputMessage(VWindowsMessageDataObject* pObj)
-{
-  m_pAdvanceTask->WaitUntilFinished();
-
-  // mouse buttons are not handled here because of the non uniform input handling across all platforms
-  switch(pObj->m_Msg.message)
-  {
-
-#ifdef USE_SF_IME
-    case WM_IME_STARTCOMPOSITION:
-    case WM_IME_KEYDOWN:
-    case WM_IME_COMPOSITION:   
-    case WM_IME_ENDCOMPOSITION:
-    case WM_IME_NOTIFY:
-      //case WM_INPUTLANGCHANGE:
-    case WM_IME_CHAR:
-      {
-        //Vision::Error.Warning("WM_IME_CHAR (%u) W: 0x%x L: 0x%x", pObj->m_Msg.message, pObj->m_Msg.wParam, pObj->m_Msg.lParam);
-        IMEWin32Event ev(IMEWin32Event::IME_Default,
-          (Scaleform::UPInt)pObj->m_Msg.hwnd, pObj->m_Msg.message, pObj->m_Msg.wParam, pObj->m_Msg.lParam);
-
-        Scaleform::UInt32 handleEvtRetVal = m_pMovieInst->HandleEvent(ev);
-        pObj->m_bProcessed = (handleEvtRetVal & Movie::HE_NoDefaultAction) != 0;
-      }
-      break;
-#endif
-
-    case WM_KILLFOCUS:
-      m_pMovieInst->HandleEvent(Event::KillFocus);
-      break;
-
-    case WM_KEYDOWN: // fall through
-    case WM_KEYUP:
-    case WM_SYSKEYDOWN:
-    case WM_SYSKEYUP:
-      {
-        //helpers
-        unsigned int uiMessage = pObj->m_Msg.message;
-        WPARAM wParam = pObj->m_Msg.wParam;
-
-        //we have to convert the char to SF KeyCode enum
-        Event::EventType eventType = (uiMessage == WM_KEYDOWN || uiMessage == WM_SYSKEYDOWN) ? Event::KeyDown : Event::KeyUp;
-
-        Scaleform::KeyCode keyCode = Scaleform::Key::None;
-
-        if (wParam >= 'A' && wParam <= 'Z')                   keyCode = (Scaleform::KeyCode) ((wParam - 'A') + Scaleform::Key::A);
-        else if (wParam >= VK_F1 && wParam <= VK_F15)         keyCode = (Scaleform::KeyCode) ((wParam - VK_F1) + Scaleform::Key::F1);
-        else if (wParam >= '0' && wParam <= '9')              keyCode = (Scaleform::KeyCode) ((wParam - '0') + Scaleform::Key::Num0);
-        else if (wParam >= VK_NUMPAD0 && wParam <= VK_DIVIDE) keyCode = (Scaleform::KeyCode) ((wParam - VK_NUMPAD0) + Scaleform::Key::KP_0);
-        else
-        {
-          for (int i = 0; keyCodeMap[i].winKey != 0; i++)
-          {
-            if (wParam == keyCodeMap[i].winKey)
-            {
-              keyCode = keyCodeMap[i].appKey;
-              break;
-            }
-          }
-        }
-
-        //forward the event
-        if(keyCode!=Scaleform::Key::None)
-        { 
-          Scaleform::UInt8 scanCode = (pObj->m_Msg.lParam >> 16) & 0xff;
-          bool  extendedKeyFlag = (pObj->m_Msg.lParam & (1 << 24)) != 0;
-          // we need a scanCode to distinguish between left and right shifts
-          if (wParam == VK_SHIFT && scanCode == 54) // right shift code
-          {
-            extendedKeyFlag = true;
-          }
-
-          m_pMovieInst->HandleEvent(KeyEvent(eventType, keyCode, 0, 0, *updateModifiers(extendedKeyFlag)));
-        }
-        break; //do not mark msg as handled, otherwise WM_CHAR will miss the character
-      }
-
-    case WM_CHAR:
-      m_pMovieInst->HandleEvent(CharEvent((Scaleform::UInt32)pObj->m_Msg.wParam));
-      break;
-
-    default:
-      break;
-  }
-}
-
-//keep track of the pressed modifiers like CTRL, SHIRT, etc..
-Scaleform::KeyModifiers * VScaleformMovieInstance::updateModifiers(bool extendedKeyFlag)
-{
-  Scaleform::KeyModifiers mods;
-  if (::GetKeyState(VK_SHIFT) & 0x8000)
-    mods.SetShiftPressed(true);
-  if (::GetKeyState(VK_CONTROL) & 0x8000)
-    mods.SetCtrlPressed(true);
-  if (::GetKeyState(VK_MENU) & 0x8000)
-    mods.SetAltPressed(true);
-  if (::GetKeyState(VK_NUMLOCK) & 0x1)
-    mods.SetNumToggled(true);
-  if (::GetKeyState(VK_CAPITAL) & 0x1)
-    mods.SetCapsToggled(true);
-  if (::GetKeyState(VK_SCROLL) & 0x1)
-    mods.SetScrollToggled(true);
-  if (extendedKeyFlag)
-    mods.SetExtendedKey(true);
-  *m_pKeyModifiers = mods;
-  return m_pKeyModifiers;
-}
-
-#endif
 
 bool VScaleformMovieInstance::IsValid() const
 {
@@ -531,7 +326,7 @@ unsigned int VScaleformMovieInstance::GetVisibleBitmask() const
 
 bool VScaleformMovieInstance::IsVisibleInAnyContext() const
 {
-  return m_iVisibleMask > 0;
+  return (m_iVisibleMask != 0);
 }
 
 void VScaleformMovieInstance::SetPaused(bool bPaused)
@@ -550,6 +345,13 @@ bool VScaleformMovieInstance::IsPaused() const
   return (m_pMovieInst->GetPlayState() != 0);
 }
 
+void VScaleformMovieInstance::Restart()
+{
+  m_pAdvanceTask->WaitUntilFinished();
+
+  m_pMovieInst->Restart();
+}
+
 bool VScaleformMovieInstance::IsFocused() const
 {
   if(m_pMovieInst == NULL) 
@@ -564,7 +366,7 @@ void VScaleformMovieInstance::SetHandleInput(bool bEnabled)
   m_bHandleInput = bEnabled;
 }
 
-const char * VScaleformMovieInstance::GetFileName() const
+const char* VScaleformMovieInstance::GetFileName() const
 {
   return m_sFileName.AsChar();
 }
@@ -597,7 +399,6 @@ void VScaleformMovieInstance::GetDimensions(int& iPosX, int& iPosY, int& iWidth,
   iWidth = m_iWidth;
   iHeight = m_iHeight;
 }
-
 
 void VScaleformMovieInstance::SetPosition(int iPosX, int iPosY)
 {
@@ -824,13 +625,12 @@ VOnExternalInterfaceCall::~VOnExternalInterfaceCall()
   V_SAFE_DELETE_ARRAY(m_ppArgs);
 }
 
-VOnFSCommand::VOnFSCommand(
-  VScaleformMovieInstance *pMovie, const char* szCommand, const char* szArgs) : 
-IVisCallbackDataObject_cl(&VOnFSCommand::OnFSCallback)
+VOnFSCommand::VOnFSCommand(VScaleformMovieInstance *pMovie, const char* szCommand, const char* szArgs) 
+  : IVisCallbackDataObject_cl(&VOnFSCommand::OnFSCallback)
+  , m_pMovie(pMovie)
+  , m_sCommand(szCommand)
+  , m_sArgs(szArgs)
 {
-  m_pMovie = pMovie;
-  m_sCommand = szCommand;
-  m_sArgs = szArgs;
 }
 
 VOnFSCommand::~VOnFSCommand()
@@ -838,7 +638,7 @@ VOnFSCommand::~VOnFSCommand()
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

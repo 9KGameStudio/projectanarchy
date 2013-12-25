@@ -74,7 +74,7 @@ void TransitionBarbarian_cl::InitFunction()
 	VASSERT(pModel);
 
   // Transition table to use
-  VTransitionTable *pTable = VTransitionManager::GlobalManager().LoadTransitionTable(pModel,"Barbarian.vTransition");
+  VTransitionTable *pTable = VTransitionManager::GlobalManager().LoadTransitionTable(pModel,"Models/Barbarian/Barbarian.vTransition");
   VASSERT(pTable && pTable->IsLoaded());
 
 	// Setup the state machine component and pass the filename of the transition file
@@ -180,7 +180,7 @@ V_IMPLEMENT_SERIAL( TransitionBarbarian_cl, VisBaseEntity_cl, 0, Vision::GetEngi
 END_VAR_TABLE
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

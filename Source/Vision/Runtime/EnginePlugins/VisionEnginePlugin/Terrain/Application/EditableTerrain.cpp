@@ -1285,12 +1285,11 @@ void VEditableTerrain::OnSectorUpdateFinished(VUndoableSectorActionCollection* p
 
 
 
-bool VEditableTerrain::ApplyFilter(IVTerrainFilter *pFilter, const VLargeBoundingBox& affectedArea, void *pUserData, IVLog *pLog)
+bool VEditableTerrain::ApplyFilter(IVTerrainFilter *pFilter, const VLargeBoundingBox& affectedArea, void *pUserData)
 {
   VASSERT(pFilter && affectedArea.IsValidated(m_Config));
 
   // initialize the filter members
-  pFilter->m_pLog = pLog;
   pFilter->m_pTerrain = this;
   pFilter->m_AffectedArea = affectedArea;
 
@@ -1300,22 +1299,6 @@ bool VEditableTerrain::ApplyFilter(IVTerrainFilter *pFilter, const VLargeBoundin
     return false;
   }
 
-  // get file locks?
-
-
-  // clamp the sector area
-/*
-  int x1,y1,x2,y2;
-  affectedArea.GetSectorIndices_Clamped(x1,y1,x2,y2);
-
-  // run the filter over all affected sectors
-  for (int y=y1;y<=y2;y++)
-    for (int x=x1;x<=x2;x++)
-    {
-      VTerrainSector *pSector = m_SectorManager.GetSector(x,y);
-      pFilter->ApplyToSector(pSector,pUserData); 
-    }
-  */  
   pFilter->Do(pUserData);
   pFilter->DeInit(pUserData);
   return true;
@@ -1760,6 +1743,7 @@ void VEditableTerrain::GatherLightmapInfo(VLightmapSceneInfo &info)
   pPrim->m_eOwnerType = VLightmapPrimitive::OWNERTYPE_STATICMESH;
   pPrim->m_eType = VLightmapPrimitive::INDEXED_MESH;
   pPrim->m_iUniqueID = GetUniqueID();
+  pPrim->m_sPrimitiveDescription = VString("EditableTerrain filename: '") + GetFilename() + "'";
   pPrim->m_iFlags = 0;
   if (bIsCaster)
     pPrim->m_iFlags |= PRIMITIVEFLAG_CASTSHADOWS;
@@ -2268,7 +2252,7 @@ void VEditableTerrain::UpdateDefaultEffectSettingsInConfig()
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

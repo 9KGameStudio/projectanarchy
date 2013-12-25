@@ -1050,19 +1050,32 @@ SWIGINTERN void  SWIG_Lua_module_add_function(lua_State* L,const char* name,lua_
 SWIGINTERN void VisionLuaClassGet(lua_State *L)
 {
   //solution 1: retrieve element when accessing an user data object from a global $node-POINTER_ADR-NAME_OF_ELEM$
-  //(+): fast and allows user to associate elemets with an instance of an user data object
+  //(+): allows user to associate elemets with an instance of an user data object
   //(-): elements are not stored in a table, so you cannot iterate over all elements of an instance
   
   const char * pKey = lua_tostring(L, 2);
-  const void * pPtr = lua_topointer(L, 1);
+  swig_lua_userdata * pUser = (swig_lua_userdata *) lua_topointer(L, 1);
+                                                                             //stack: userdata, key, ..., TOP
+  lua_pushliteral(L, "G");                                                   //stack: userdata, key, ..., 'G', TOP
+  lua_gettable(L, LUA_GLOBALSINDEX);                                         //stack: userdata, key, ..., globalTable, TOP
 
-  lua_pushfstring(L, "$node-%p-%s$", pPtr, pKey);  //stack: userdata, key, ..., new key, TOP
-  lua_gettable(L, LUA_GLOBALSINDEX); 		      //stack: userdata, key, ..., requested val, TOP
-  
+  if( lua_isnil(L, -1)==1 ) //test if the global table is valid
+  {                                                                          //stack: userdata, key, ..., nil, TOP
+    lua_pop(L, 1);                                                           //stack: userdata, key, ..., TOP
+    lua_pushfstring(L, "$node-%p-%s$", ((pUser==0) ? 0 : pUser->ptr), pKey); //stack: userdata, key, ..., new key, TOP
+    lua_gettable(L, LUA_GLOBALSINDEX);                                       //stack: userdata, key, ..., requested val, TOP
+  }
+  else
+  {                                                                          //stack: userdata, key,  ..., globalTable, TOP
+    lua_pushfstring(L, "$node-%p-%s$", ((pUser==0) ? 0 : pUser->ptr), pKey); //stack: userdata, key,  ..., globalTable, new key, TOP
+    lua_gettable(L, -2);                                                     //stack: userdata, key,  ..., globalTable, requested val, TOP
+    lua_remove(L, -2);                                                       //stack: userdata, key,  ..., requested val, TOP
+  }
+
 /*
   //solution 2: get element from a global table $node-POINTER_ADR$
   //(+): user data object instance behaves like a table (you can iterate on this table)
-  //(-): slower than solution 1
+  //(-): slower than solution 1 when setting the variable
   
   int iPtr = (int) lua_topointer(L, 1);
   lua_pushfstring(L, "$node-%p$", iPtr);          //stack: userdata, key, ..., instance string, TOP
@@ -1085,6 +1098,7 @@ SWIGINTERN int  SWIG_Lua_class_get(lua_State* L)
   (1) userdata (not the meta table)
   (2) string name of the attribute
 */
+
   assert(lua_isuserdata(L,-2));  /* just in case */
   lua_getmetatable(L,-2);    /* get the meta table */
   assert(lua_istable(L,-1));  /* just in case */
@@ -1144,16 +1158,29 @@ SWIGINTERN int  SWIG_Lua_class_get(lua_State* L)
 SWIGINTERN void VisionLuaClassSet(lua_State *L)
 {
   //solution 1: store all elements when accessing an user data objects as a global $node-POINTER_ADR-NAME_OF_ELEM$
-  //(+): fast and allows user to associate elemets with an instance of an user data object
+  //(+): allows user to associate elemets with an instance of an user data object
   //(-): elements are not stored in a table, so you cannot iterate over all elements of an instance
   
   const char * pKey = lua_tostring(L, 2);
-  const void * pPtr = lua_topointer(L, 1);
-  
-  lua_pushfstring(L, "$node-%p-%s$", pPtr, pKey);   //stack: userdata, key, value, ..., new key, TOP
-  
-  lua_pushvalue(L, 3);                              //stack: userdata, key, value, ..., new key, value, TOP
-  lua_settable(L, LUA_GLOBALSINDEX);                //stack: userdata, key, value, ..., TOP
+  swig_lua_userdata * pUser = (swig_lua_userdata *) lua_topointer(L, 1);
+                                                                             //stack: userdata, key, value, ..., TOP
+  lua_pushliteral(L, "G");                                                   //stack: userdata, key, value, ..., 'G', TOP
+  lua_gettable(L, LUA_GLOBALSINDEX);                                         //stack: userdata, key, value, ..., globalTable, TOP
+
+  if( lua_isnil(L, -1)==1 ) //test if the global table is valid
+  {                                                                          //stack: userdata, key, value, ..., nil, TOP
+    lua_pop(L, 1);                                                           //stack: userdata, key, value, ..., TOP
+    lua_pushfstring(L, "$node-%p-%s$", ((pUser==0) ? 0 : pUser->ptr), pKey); //stack: userdata, key, value, ..., new key, TOP
+    lua_pushvalue(L, 3);                                                     //stack: userdata, key, value, ..., new key, value, TOP
+    lua_settable(L, LUA_GLOBALSINDEX);                                       //stack: userdata, key, value, ..., TOP
+  }
+  else
+  {                                                                          //stack: userdata, key, value, ..., globalTable, TOP
+    lua_pushfstring(L, "$node-%p-%s$", ((pUser==0) ? 0 : pUser->ptr), pKey); //stack: userdata, key, value, ..., globalTable, new key, TOP
+    lua_pushvalue(L, 3);                                                     //stack: userdata, key, value, ..., globalTable, new key, value, TOP
+    lua_settable(L, -3);                                                     //stack: userdata, key, value, ..., globalTable, TOP
+    lua_pop(L, 1);                                                           //stack: userdata, key, value, ..., TOP
+  }
 
 /*  
   //solution 2: create a table $node-POINTER_ADR$ and save the element as element of this table
@@ -1193,11 +1220,11 @@ SWIGINTERN int  SWIG_Lua_class_set(lua_State* L)
 /*  there should be 3 params passed in
   (1) table (not the meta table)
   (2) string name of the attribute
-  (3) any for the new value
+  (3) any for the new value  
 printf("SWIG_Lua_class_set %p(%s) '%s' %p(%s)\n",
       lua_topointer(L,1),lua_typename(L,lua_type(L,1)),
       lua_tostring(L,2),
-      lua_topointer(L,3),lua_typename(L,lua_type(L,3)));*/
+      lua_topointer(L,3),lua_typename(L,lua_type(L,3))); */
 
   assert(lua_isuserdata(L,1));  /* just in case */
   lua_getmetatable(L,1);    /* get the meta table */
@@ -1708,7 +1735,7 @@ SWIGINTERN void VScaleformManager_SetAbsoluteCursorPositioning(VScaleformManager
       #ifdef WIN32
         self->SetAbsoluteCursorPositioning(bAbsolutePos);
       #else
-        Vision::Error.SystemMessage("Warning: Calling unsupported method 'SetAbsoluteCursorPositioning'");
+        hkvLog::Info("Warning: Calling unsupported method 'SetAbsoluteCursorPositioning'");
       #endif
     }
 SWIGINTERN int VScaleformManager_GetMovieRenderContextSize(VScaleformManager *self){
@@ -1929,6 +1956,7 @@ static int _wrap_VScaleformManager_EnableMultithreadedAdvance(lua_State* L) {
   bool arg2 ;
   
   SWIG_check_num_args("EnableMultithreadedAdvance",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("EnableMultithreadedAdvance",1,"VScaleformManager *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("EnableMultithreadedAdvance",1,"VScaleformManager *");
   if(!lua_isboolean(L,2)) SWIG_fail_arg("EnableMultithreadedAdvance",2,"bool");
   
@@ -1955,6 +1983,7 @@ static int _wrap_VScaleformManager_IsMultithreadedAdvanceEnabled(lua_State* L) {
   bool result;
   
   SWIG_check_num_args("IsMultithreadedAdvanceEnabled",1,1)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("IsMultithreadedAdvanceEnabled",1,"VScaleformManager *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("IsMultithreadedAdvanceEnabled",1,"VScaleformManager *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScaleformManager,0))){
@@ -1986,6 +2015,7 @@ static int _wrap_VScaleformManager_LoadMovie__SWIG_0(lua_State* L) {
   VScaleformMovieInstance *result = 0 ;
   
   SWIG_check_num_args("LoadMovie",8,8)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("LoadMovie",1,"VScaleformManager *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("LoadMovie",1,"VScaleformManager *");
   if(!SWIG_lua_isnilstring(L,2)) SWIG_fail_arg("LoadMovie",2,"char const *");
   if(!SWIG_lua_isnilstring(L,3)) SWIG_fail_arg("LoadMovie",3,"char const *");
@@ -2030,6 +2060,7 @@ static int _wrap_VScaleformManager_LoadMovie__SWIG_1(lua_State* L) {
   VScaleformMovieInstance *result = 0 ;
   
   SWIG_check_num_args("LoadMovie",7,7)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("LoadMovie",1,"VScaleformManager *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("LoadMovie",1,"VScaleformManager *");
   if(!SWIG_lua_isnilstring(L,2)) SWIG_fail_arg("LoadMovie",2,"char const *");
   if(!SWIG_lua_isnilstring(L,3)) SWIG_fail_arg("LoadMovie",3,"char const *");
@@ -2071,6 +2102,7 @@ static int _wrap_VScaleformManager_LoadMovie__SWIG_2(lua_State* L) {
   VScaleformMovieInstance *result = 0 ;
   
   SWIG_check_num_args("LoadMovie",6,6)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("LoadMovie",1,"VScaleformManager *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("LoadMovie",1,"VScaleformManager *");
   if(!SWIG_lua_isnilstring(L,2)) SWIG_fail_arg("LoadMovie",2,"char const *");
   if(!SWIG_lua_isnilstring(L,3)) SWIG_fail_arg("LoadMovie",3,"char const *");
@@ -2109,6 +2141,7 @@ static int _wrap_VScaleformManager_LoadMovie__SWIG_3(lua_State* L) {
   VScaleformMovieInstance *result = 0 ;
   
   SWIG_check_num_args("LoadMovie",5,5)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("LoadMovie",1,"VScaleformManager *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("LoadMovie",1,"VScaleformManager *");
   if(!SWIG_lua_isnilstring(L,2)) SWIG_fail_arg("LoadMovie",2,"char const *");
   if(!SWIG_lua_isnilstring(L,3)) SWIG_fail_arg("LoadMovie",3,"char const *");
@@ -2144,6 +2177,7 @@ static int _wrap_VScaleformManager_LoadMovie__SWIG_4(lua_State* L) {
   VScaleformMovieInstance *result = 0 ;
   
   SWIG_check_num_args("LoadMovie",4,4)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("LoadMovie",1,"VScaleformManager *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("LoadMovie",1,"VScaleformManager *");
   if(!SWIG_lua_isnilstring(L,2)) SWIG_fail_arg("LoadMovie",2,"char const *");
   if(!SWIG_lua_isnilstring(L,3)) SWIG_fail_arg("LoadMovie",3,"char const *");
@@ -2179,6 +2213,7 @@ static int _wrap_VScaleformManager_LoadMovie__SWIG_5(lua_State* L) {
   VScaleformMovieInstance *result = 0 ;
   
   SWIG_check_num_args("LoadMovie",6,6)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("LoadMovie",1,"VScaleformManager *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("LoadMovie",1,"VScaleformManager *");
   if(!SWIG_lua_isnilstring(L,2)) SWIG_fail_arg("LoadMovie",2,"char const *");
   if(!lua_isnumber(L,3)) SWIG_fail_arg("LoadMovie",3,"int");
@@ -2217,6 +2252,7 @@ static int _wrap_VScaleformManager_LoadMovie__SWIG_6(lua_State* L) {
   VScaleformMovieInstance *result = 0 ;
   
   SWIG_check_num_args("LoadMovie",5,5)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("LoadMovie",1,"VScaleformManager *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("LoadMovie",1,"VScaleformManager *");
   if(!SWIG_lua_isnilstring(L,2)) SWIG_fail_arg("LoadMovie",2,"char const *");
   if(!lua_isnumber(L,3)) SWIG_fail_arg("LoadMovie",3,"int");
@@ -2252,6 +2288,7 @@ static int _wrap_VScaleformManager_LoadMovie__SWIG_7(lua_State* L) {
   VScaleformMovieInstance *result = 0 ;
   
   SWIG_check_num_args("LoadMovie",4,4)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("LoadMovie",1,"VScaleformManager *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("LoadMovie",1,"VScaleformManager *");
   if(!SWIG_lua_isnilstring(L,2)) SWIG_fail_arg("LoadMovie",2,"char const *");
   if(!lua_isnumber(L,3)) SWIG_fail_arg("LoadMovie",3,"int");
@@ -2284,6 +2321,7 @@ static int _wrap_VScaleformManager_LoadMovie__SWIG_8(lua_State* L) {
   VScaleformMovieInstance *result = 0 ;
   
   SWIG_check_num_args("LoadMovie",3,3)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("LoadMovie",1,"VScaleformManager *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("LoadMovie",1,"VScaleformManager *");
   if(!SWIG_lua_isnilstring(L,2)) SWIG_fail_arg("LoadMovie",2,"char const *");
   if(!lua_isnumber(L,3)) SWIG_fail_arg("LoadMovie",3,"int");
@@ -2313,6 +2351,7 @@ static int _wrap_VScaleformManager_LoadMovie__SWIG_9(lua_State* L) {
   VScaleformMovieInstance *result = 0 ;
   
   SWIG_check_num_args("LoadMovie",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("LoadMovie",1,"VScaleformManager *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("LoadMovie",1,"VScaleformManager *");
   if(!SWIG_lua_isnilstring(L,2)) SWIG_fail_arg("LoadMovie",2,"char const *");
   
@@ -2704,6 +2743,7 @@ static int _wrap_VScaleformManager_GetMovie(lua_State* L) {
   VScaleformMovieInstance *result = 0 ;
   
   SWIG_check_num_args("GetMovie",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("GetMovie",1,"VScaleformManager const *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("GetMovie",1,"VScaleformManager const *");
   if(!SWIG_lua_isnilstring(L,2)) SWIG_fail_arg("GetMovie",2,"char const *");
   
@@ -2731,6 +2771,7 @@ static int _wrap_VScaleformManager_UnloadMovie(lua_State* L) {
   bool result;
   
   SWIG_check_num_args("UnloadMovie",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("UnloadMovie",1,"VScaleformManager *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("UnloadMovie",1,"VScaleformManager *");
   if(!SWIG_isptrtype(L,2)) SWIG_fail_arg("UnloadMovie",2,"VScaleformMovieInstance *");
   
@@ -2760,6 +2801,7 @@ static int _wrap_VScaleformManager_UnloadAllMovies(lua_State* L) {
   VScaleformManager *arg1 = (VScaleformManager *) 0 ;
   
   SWIG_check_num_args("UnloadAllMovies",1,1)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("UnloadAllMovies",1,"VScaleformManager *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("UnloadAllMovies",1,"VScaleformManager *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScaleformManager,0))){
@@ -2784,6 +2826,7 @@ static int _wrap_VScaleformManager_SetHandleCursorInput(lua_State* L) {
   bool arg2 ;
   
   SWIG_check_num_args("SetHandleCursorInput",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("SetHandleCursorInput",1,"VScaleformManager *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("SetHandleCursorInput",1,"VScaleformManager *");
   if(!lua_isboolean(L,2)) SWIG_fail_arg("SetHandleCursorInput",2,"bool");
   
@@ -2810,6 +2853,7 @@ static int _wrap_VScaleformManager_SetAbsoluteCursorPositioning(lua_State* L) {
   bool arg2 ;
   
   SWIG_check_num_args("SetAbsoluteCursorPositioning",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("SetAbsoluteCursorPositioning",1,"VScaleformManager *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("SetAbsoluteCursorPositioning",1,"VScaleformManager *");
   if(!lua_isboolean(L,2)) SWIG_fail_arg("SetAbsoluteCursorPositioning",2,"bool");
   
@@ -2836,6 +2880,7 @@ static int _wrap_VScaleformManager_GetMovieRenderContextSize(lua_State* L) {
   int result;
   
   SWIG_check_num_args("GetMovieRenderContextSize",1,1)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("GetMovieRenderContextSize",1,"VScaleformManager *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("GetMovieRenderContextSize",1,"VScaleformManager *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScaleformManager,0))){
@@ -2866,6 +2911,7 @@ static int _wrap_VScaleformManager_SetCursorPos__SWIG_0(lua_State* L) {
   int arg8 ;
   
   SWIG_check_num_args("SetCursorPos",8,8)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("SetCursorPos",1,"VScaleformManager *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("SetCursorPos",1,"VScaleformManager *");
   if(!lua_isnumber(L,2)) SWIG_fail_arg("SetCursorPos",2,"float");
   if(!lua_isnumber(L,3)) SWIG_fail_arg("SetCursorPos",3,"float");
@@ -2909,6 +2955,7 @@ static int _wrap_VScaleformManager_SetCursorPos__SWIG_1(lua_State* L) {
   bool arg7 ;
   
   SWIG_check_num_args("SetCursorPos",7,7)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("SetCursorPos",1,"VScaleformManager *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("SetCursorPos",1,"VScaleformManager *");
   if(!lua_isnumber(L,2)) SWIG_fail_arg("SetCursorPos",2,"float");
   if(!lua_isnumber(L,3)) SWIG_fail_arg("SetCursorPos",3,"float");
@@ -2949,6 +2996,7 @@ static int _wrap_VScaleformManager_SetCursorPos__SWIG_2(lua_State* L) {
   bool arg6 ;
   
   SWIG_check_num_args("SetCursorPos",6,6)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("SetCursorPos",1,"VScaleformManager *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("SetCursorPos",1,"VScaleformManager *");
   if(!lua_isnumber(L,2)) SWIG_fail_arg("SetCursorPos",2,"float");
   if(!lua_isnumber(L,3)) SWIG_fail_arg("SetCursorPos",3,"float");
@@ -2986,6 +3034,7 @@ static int _wrap_VScaleformManager_SetCursorPos__SWIG_3(lua_State* L) {
   bool arg5 ;
   
   SWIG_check_num_args("SetCursorPos",5,5)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("SetCursorPos",1,"VScaleformManager *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("SetCursorPos",1,"VScaleformManager *");
   if(!lua_isnumber(L,2)) SWIG_fail_arg("SetCursorPos",2,"float");
   if(!lua_isnumber(L,3)) SWIG_fail_arg("SetCursorPos",3,"float");
@@ -3020,6 +3069,7 @@ static int _wrap_VScaleformManager_SetCursorPos__SWIG_4(lua_State* L) {
   float arg4 ;
   
   SWIG_check_num_args("SetCursorPos",4,4)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("SetCursorPos",1,"VScaleformManager *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("SetCursorPos",1,"VScaleformManager *");
   if(!lua_isnumber(L,2)) SWIG_fail_arg("SetCursorPos",2,"float");
   if(!lua_isnumber(L,3)) SWIG_fail_arg("SetCursorPos",3,"float");
@@ -3051,6 +3101,7 @@ static int _wrap_VScaleformManager_SetCursorPos__SWIG_5(lua_State* L) {
   float arg3 ;
   
   SWIG_check_num_args("SetCursorPos",3,3)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("SetCursorPos",1,"VScaleformManager *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("SetCursorPos",1,"VScaleformManager *");
   if(!lua_isnumber(L,2)) SWIG_fail_arg("SetCursorPos",2,"float");
   if(!lua_isnumber(L,3)) SWIG_fail_arg("SetCursorPos",3,"float");
@@ -3324,6 +3375,7 @@ static int _wrap_VScaleformManager_IncCursorPos__SWIG_0(lua_State* L) {
   int arg8 ;
   
   SWIG_check_num_args("IncCursorPos",8,8)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("IncCursorPos",1,"VScaleformManager *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("IncCursorPos",1,"VScaleformManager *");
   if(!lua_isnumber(L,2)) SWIG_fail_arg("IncCursorPos",2,"float");
   if(!lua_isnumber(L,3)) SWIG_fail_arg("IncCursorPos",3,"float");
@@ -3367,6 +3419,7 @@ static int _wrap_VScaleformManager_IncCursorPos__SWIG_1(lua_State* L) {
   bool arg7 ;
   
   SWIG_check_num_args("IncCursorPos",7,7)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("IncCursorPos",1,"VScaleformManager *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("IncCursorPos",1,"VScaleformManager *");
   if(!lua_isnumber(L,2)) SWIG_fail_arg("IncCursorPos",2,"float");
   if(!lua_isnumber(L,3)) SWIG_fail_arg("IncCursorPos",3,"float");
@@ -3407,6 +3460,7 @@ static int _wrap_VScaleformManager_IncCursorPos__SWIG_2(lua_State* L) {
   bool arg6 ;
   
   SWIG_check_num_args("IncCursorPos",6,6)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("IncCursorPos",1,"VScaleformManager *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("IncCursorPos",1,"VScaleformManager *");
   if(!lua_isnumber(L,2)) SWIG_fail_arg("IncCursorPos",2,"float");
   if(!lua_isnumber(L,3)) SWIG_fail_arg("IncCursorPos",3,"float");
@@ -3444,6 +3498,7 @@ static int _wrap_VScaleformManager_IncCursorPos__SWIG_3(lua_State* L) {
   bool arg5 ;
   
   SWIG_check_num_args("IncCursorPos",5,5)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("IncCursorPos",1,"VScaleformManager *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("IncCursorPos",1,"VScaleformManager *");
   if(!lua_isnumber(L,2)) SWIG_fail_arg("IncCursorPos",2,"float");
   if(!lua_isnumber(L,3)) SWIG_fail_arg("IncCursorPos",3,"float");
@@ -3478,6 +3533,7 @@ static int _wrap_VScaleformManager_IncCursorPos__SWIG_4(lua_State* L) {
   float arg4 ;
   
   SWIG_check_num_args("IncCursorPos",4,4)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("IncCursorPos",1,"VScaleformManager *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("IncCursorPos",1,"VScaleformManager *");
   if(!lua_isnumber(L,2)) SWIG_fail_arg("IncCursorPos",2,"float");
   if(!lua_isnumber(L,3)) SWIG_fail_arg("IncCursorPos",3,"float");
@@ -3509,6 +3565,7 @@ static int _wrap_VScaleformManager_IncCursorPos__SWIG_5(lua_State* L) {
   float arg3 ;
   
   SWIG_check_num_args("IncCursorPos",3,3)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("IncCursorPos",1,"VScaleformManager *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("IncCursorPos",1,"VScaleformManager *");
   if(!lua_isnumber(L,2)) SWIG_fail_arg("IncCursorPos",2,"float");
   if(!lua_isnumber(L,3)) SWIG_fail_arg("IncCursorPos",3,"float");
@@ -3821,6 +3878,7 @@ static int _wrap_VScaleformMovieInstance_SetOpacity(lua_State* L) {
   float arg2 ;
   
   SWIG_check_num_args("SetOpacity",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("SetOpacity",1,"VScaleformMovieInstance *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("SetOpacity",1,"VScaleformMovieInstance *");
   if(!lua_isnumber(L,2)) SWIG_fail_arg("SetOpacity",2,"float");
   
@@ -3850,6 +3908,7 @@ static int _wrap_VScaleformMovieInstance_SetDimensions__SWIG_0(lua_State* L) {
   int arg5 ;
   
   SWIG_check_num_args("SetDimensions",5,5)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("SetDimensions",1,"VScaleformMovieInstance *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("SetDimensions",1,"VScaleformMovieInstance *");
   if(!lua_isnumber(L,2)) SWIG_fail_arg("SetDimensions",2,"int");
   if(!lua_isnumber(L,3)) SWIG_fail_arg("SetDimensions",3,"int");
@@ -3884,6 +3943,7 @@ static int _wrap_VScaleformMovieInstance_SetDimensions__SWIG_1(lua_State* L) {
   int arg4 ;
   
   SWIG_check_num_args("SetDimensions",4,4)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("SetDimensions",1,"VScaleformMovieInstance *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("SetDimensions",1,"VScaleformMovieInstance *");
   if(!lua_isnumber(L,2)) SWIG_fail_arg("SetDimensions",2,"int");
   if(!lua_isnumber(L,3)) SWIG_fail_arg("SetDimensions",3,"int");
@@ -3915,6 +3975,7 @@ static int _wrap_VScaleformMovieInstance_SetDimensions__SWIG_2(lua_State* L) {
   int arg3 ;
   
   SWIG_check_num_args("SetDimensions",3,3)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("SetDimensions",1,"VScaleformMovieInstance *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("SetDimensions",1,"VScaleformMovieInstance *");
   if(!lua_isnumber(L,2)) SWIG_fail_arg("SetDimensions",2,"int");
   if(!lua_isnumber(L,3)) SWIG_fail_arg("SetDimensions",3,"int");
@@ -3943,6 +4004,7 @@ static int _wrap_VScaleformMovieInstance_SetDimensions__SWIG_3(lua_State* L) {
   int arg2 ;
   
   SWIG_check_num_args("SetDimensions",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("SetDimensions",1,"VScaleformMovieInstance *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("SetDimensions",1,"VScaleformMovieInstance *");
   if(!lua_isnumber(L,2)) SWIG_fail_arg("SetDimensions",2,"int");
   
@@ -3968,6 +4030,7 @@ static int _wrap_VScaleformMovieInstance_SetDimensions__SWIG_4(lua_State* L) {
   VScaleformMovieInstance *arg1 = (VScaleformMovieInstance *) 0 ;
   
   SWIG_check_num_args("SetDimensions",1,1)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("SetDimensions",1,"VScaleformMovieInstance *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("SetDimensions",1,"VScaleformMovieInstance *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScaleformMovieInstance,0))){
@@ -4132,6 +4195,7 @@ static int _wrap_VScaleformMovieInstance_SetPosition(lua_State* L) {
   int arg3 ;
   
   SWIG_check_num_args("SetPosition",3,3)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("SetPosition",1,"VScaleformMovieInstance *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("SetPosition",1,"VScaleformMovieInstance *");
   if(!lua_isnumber(L,2)) SWIG_fail_arg("SetPosition",2,"int");
   if(!lua_isnumber(L,3)) SWIG_fail_arg("SetPosition",3,"int");
@@ -4161,6 +4225,7 @@ static int _wrap_VScaleformMovieInstance_SetSize(lua_State* L) {
   int arg3 ;
   
   SWIG_check_num_args("SetSize",3,3)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("SetSize",1,"VScaleformMovieInstance *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("SetSize",1,"VScaleformMovieInstance *");
   if(!lua_isnumber(L,2)) SWIG_fail_arg("SetSize",2,"int");
   if(!lua_isnumber(L,3)) SWIG_fail_arg("SetSize",3,"int");
@@ -4188,6 +4253,7 @@ static int _wrap_VScaleformMovieInstance_SetAuthoredSize(lua_State* L) {
   VScaleformMovieInstance *arg1 = (VScaleformMovieInstance *) 0 ;
   
   SWIG_check_num_args("SetAuthoredSize",1,1)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("SetAuthoredSize",1,"VScaleformMovieInstance *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("SetAuthoredSize",1,"VScaleformMovieInstance *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScaleformMovieInstance,0))){
@@ -4212,6 +4278,7 @@ static int _wrap_VScaleformMovieInstance_SetVisibleBitmask(lua_State* L) {
   unsigned int arg2 ;
   
   SWIG_check_num_args("SetVisibleBitmask",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("SetVisibleBitmask",1,"VScaleformMovieInstance *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("SetVisibleBitmask",1,"VScaleformMovieInstance *");
   if(!lua_isnumber(L,2)) SWIG_fail_arg("SetVisibleBitmask",2,"unsigned int");
   
@@ -4239,6 +4306,7 @@ static int _wrap_VScaleformMovieInstance_GetVisibleBitmask(lua_State* L) {
   unsigned int result;
   
   SWIG_check_num_args("GetVisibleBitmask",1,1)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("GetVisibleBitmask",1,"VScaleformMovieInstance const *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("GetVisibleBitmask",1,"VScaleformMovieInstance const *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScaleformMovieInstance,0))){
@@ -4263,6 +4331,7 @@ static int _wrap_VScaleformMovieInstance_IsVisibleInAnyContext(lua_State* L) {
   bool result;
   
   SWIG_check_num_args("IsVisibleInAnyContext",1,1)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("IsVisibleInAnyContext",1,"VScaleformMovieInstance const *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("IsVisibleInAnyContext",1,"VScaleformMovieInstance const *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScaleformMovieInstance,0))){
@@ -4287,6 +4356,7 @@ static int _wrap_VScaleformMovieInstance_GetFileName(lua_State* L) {
   char *result = 0 ;
   
   SWIG_check_num_args("GetFileName",1,1)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("GetFileName",1,"VScaleformMovieInstance const *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("GetFileName",1,"VScaleformMovieInstance const *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScaleformMovieInstance,0))){
@@ -4311,6 +4381,7 @@ static int _wrap_VScaleformMovieInstance_SetPaused(lua_State* L) {
   bool arg2 ;
   
   SWIG_check_num_args("SetPaused",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("SetPaused",1,"VScaleformMovieInstance *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("SetPaused",1,"VScaleformMovieInstance *");
   if(!lua_isboolean(L,2)) SWIG_fail_arg("SetPaused",2,"bool");
   
@@ -4337,6 +4408,7 @@ static int _wrap_VScaleformMovieInstance_IsPaused(lua_State* L) {
   bool result;
   
   SWIG_check_num_args("IsPaused",1,1)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("IsPaused",1,"VScaleformMovieInstance const *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("IsPaused",1,"VScaleformMovieInstance const *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScaleformMovieInstance,0))){
@@ -4355,12 +4427,37 @@ fail:
 }
 
 
+static int _wrap_VScaleformMovieInstance_Restart(lua_State* L) {
+  int SWIG_arg = 0;
+  VScaleformMovieInstance *arg1 = (VScaleformMovieInstance *) 0 ;
+  
+  SWIG_check_num_args("Restart",1,1)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("Restart",1,"VScaleformMovieInstance *");
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("Restart",1,"VScaleformMovieInstance *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScaleformMovieInstance,0))){
+    SWIG_fail_ptr("VScaleformMovieInstance_Restart",1,SWIGTYPE_p_VScaleformMovieInstance);
+  }
+  
+  (arg1)->Restart();
+  
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
 static int _wrap_VScaleformMovieInstance_IsFocused(lua_State* L) {
   int SWIG_arg = 0;
   VScaleformMovieInstance *arg1 = (VScaleformMovieInstance *) 0 ;
   bool result;
   
   SWIG_check_num_args("IsFocused",1,1)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("IsFocused",1,"VScaleformMovieInstance const *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("IsFocused",1,"VScaleformMovieInstance const *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScaleformMovieInstance,0))){
@@ -4385,6 +4482,7 @@ static int _wrap_VScaleformMovieInstance_SetHandleInput(lua_State* L) {
   bool arg2 ;
   
   SWIG_check_num_args("SetHandleInput",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("SetHandleInput",1,"VScaleformMovieInstance *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("SetHandleInput",1,"VScaleformMovieInstance *");
   if(!lua_isboolean(L,2)) SWIG_fail_arg("SetHandleInput",2,"bool");
   
@@ -4412,6 +4510,7 @@ static int _wrap_VScaleformMovieInstance_GetVariable(lua_State* L) {
   VScaleformValue *result = 0 ;
   
   SWIG_check_num_args("GetVariable",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("GetVariable",1,"VScaleformMovieInstance *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("GetVariable",1,"VScaleformMovieInstance *");
   if(!SWIG_lua_isnilstring(L,2)) SWIG_fail_arg("GetVariable",2,"char const *");
   
@@ -4449,6 +4548,7 @@ static swig_lua_method swig_VScaleformMovieInstance_methods[] = {
     {"GetFileName", _wrap_VScaleformMovieInstance_GetFileName}, 
     {"SetPaused", _wrap_VScaleformMovieInstance_SetPaused}, 
     {"IsPaused", _wrap_VScaleformMovieInstance_IsPaused}, 
+    {"Restart", _wrap_VScaleformMovieInstance_Restart}, 
     {"IsFocused", _wrap_VScaleformMovieInstance_IsFocused}, 
     {"SetHandleInput", _wrap_VScaleformMovieInstance_SetHandleInput}, 
     {"GetVariable", _wrap_VScaleformMovieInstance_GetVariable}, 
@@ -4467,6 +4567,7 @@ static int _wrap_VScaleformValue_GetBool(lua_State* L) {
   bool result;
   
   SWIG_check_num_args("GetBool",1,1)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("GetBool",1,"VScaleformValue const *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("GetBool",1,"VScaleformValue const *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScaleformValue,0))){
@@ -4491,6 +4592,7 @@ static int _wrap_VScaleformValue_SetBool(lua_State* L) {
   bool arg2 ;
   
   SWIG_check_num_args("SetBool",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("SetBool",1,"VScaleformValue *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("SetBool",1,"VScaleformValue *");
   if(!lua_isboolean(L,2)) SWIG_fail_arg("SetBool",2,"bool");
   
@@ -4517,6 +4619,7 @@ static int _wrap_VScaleformValue_GetString(lua_State* L) {
   char *result = 0 ;
   
   SWIG_check_num_args("GetString",1,1)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("GetString",1,"VScaleformValue const *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("GetString",1,"VScaleformValue const *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScaleformValue,0))){
@@ -4541,6 +4644,7 @@ static int _wrap_VScaleformValue_SetString(lua_State* L) {
   char *arg2 = (char *) 0 ;
   
   SWIG_check_num_args("SetString",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("SetString",1,"VScaleformValue *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("SetString",1,"VScaleformValue *");
   if(!SWIG_lua_isnilstring(L,2)) SWIG_fail_arg("SetString",2,"char const *");
   
@@ -4567,6 +4671,7 @@ static int _wrap_VScaleformValue_GetNumber(lua_State* L) {
   float result;
   
   SWIG_check_num_args("GetNumber",1,1)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("GetNumber",1,"VScaleformValue *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("GetNumber",1,"VScaleformValue *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScaleformValue,0))){
@@ -4591,6 +4696,7 @@ static int _wrap_VScaleformValue_SetNumber(lua_State* L) {
   float arg2 ;
   
   SWIG_check_num_args("SetNumber",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("SetNumber",1,"VScaleformValue *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("SetNumber",1,"VScaleformValue *");
   if(!lua_isnumber(L,2)) SWIG_fail_arg("SetNumber",2,"float");
   
@@ -4617,6 +4723,7 @@ static int _wrap_VScaleformValue_IsUndefined(lua_State* L) {
   bool result;
   
   SWIG_check_num_args("IsUndefined",1,1)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("IsUndefined",1,"VScaleformValue const *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("IsUndefined",1,"VScaleformValue const *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScaleformValue,0))){
@@ -4641,6 +4748,7 @@ static int _wrap_VScaleformValue_IsNull(lua_State* L) {
   bool result;
   
   SWIG_check_num_args("IsNull",1,1)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("IsNull",1,"VScaleformValue const *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("IsNull",1,"VScaleformValue const *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScaleformValue,0))){
@@ -4665,6 +4773,7 @@ static int _wrap_VScaleformValue_IsBool(lua_State* L) {
   bool result;
   
   SWIG_check_num_args("IsBool",1,1)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("IsBool",1,"VScaleformValue const *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("IsBool",1,"VScaleformValue const *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScaleformValue,0))){
@@ -4689,6 +4798,7 @@ static int _wrap_VScaleformValue_IsNumeric(lua_State* L) {
   bool result;
   
   SWIG_check_num_args("IsNumeric",1,1)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("IsNumeric",1,"VScaleformValue const *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("IsNumeric",1,"VScaleformValue const *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScaleformValue,0))){
@@ -4713,6 +4823,7 @@ static int _wrap_VScaleformValue_IsString(lua_State* L) {
   bool result;
   
   SWIG_check_num_args("IsString",1,1)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("IsString",1,"VScaleformValue const *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("IsString",1,"VScaleformValue const *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScaleformValue,0))){
@@ -4737,6 +4848,7 @@ static int _wrap_VScaleformValue_Display_GetX(lua_State* L) {
   float result;
   
   SWIG_check_num_args("Display_GetX",1,1)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("Display_GetX",1,"VScaleformValue const *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("Display_GetX",1,"VScaleformValue const *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScaleformValue,0))){
@@ -4761,6 +4873,7 @@ static int _wrap_VScaleformValue_Display_GetY(lua_State* L) {
   float result;
   
   SWIG_check_num_args("Display_GetY",1,1)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("Display_GetY",1,"VScaleformValue const *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("Display_GetY",1,"VScaleformValue const *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScaleformValue,0))){
@@ -4785,6 +4898,7 @@ static int _wrap_VScaleformValue_Display_GetRotation(lua_State* L) {
   float result;
   
   SWIG_check_num_args("Display_GetRotation",1,1)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("Display_GetRotation",1,"VScaleformValue const *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("Display_GetRotation",1,"VScaleformValue const *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScaleformValue,0))){
@@ -4809,6 +4923,7 @@ static int _wrap_VScaleformValue_Display_GetXScale(lua_State* L) {
   float result;
   
   SWIG_check_num_args("Display_GetXScale",1,1)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("Display_GetXScale",1,"VScaleformValue const *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("Display_GetXScale",1,"VScaleformValue const *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScaleformValue,0))){
@@ -4833,6 +4948,7 @@ static int _wrap_VScaleformValue_Display_GetYScale(lua_State* L) {
   float result;
   
   SWIG_check_num_args("Display_GetYScale",1,1)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("Display_GetYScale",1,"VScaleformValue const *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("Display_GetYScale",1,"VScaleformValue const *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScaleformValue,0))){
@@ -4857,6 +4973,7 @@ static int _wrap_VScaleformValue_Display_GetAlpha(lua_State* L) {
   float result;
   
   SWIG_check_num_args("Display_GetAlpha",1,1)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("Display_GetAlpha",1,"VScaleformValue const *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("Display_GetAlpha",1,"VScaleformValue const *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScaleformValue,0))){
@@ -4881,6 +4998,7 @@ static int _wrap_VScaleformValue_Display_GetVisible(lua_State* L) {
   bool result;
   
   SWIG_check_num_args("Display_GetVisible",1,1)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("Display_GetVisible",1,"VScaleformValue const *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("Display_GetVisible",1,"VScaleformValue const *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScaleformValue,0))){
@@ -4905,6 +5023,7 @@ static int _wrap_VScaleformValue_Display_GetZ(lua_State* L) {
   float result;
   
   SWIG_check_num_args("Display_GetZ",1,1)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("Display_GetZ",1,"VScaleformValue const *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("Display_GetZ",1,"VScaleformValue const *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScaleformValue,0))){
@@ -4929,6 +5048,7 @@ static int _wrap_VScaleformValue_Display_GetXRotation(lua_State* L) {
   float result;
   
   SWIG_check_num_args("Display_GetXRotation",1,1)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("Display_GetXRotation",1,"VScaleformValue const *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("Display_GetXRotation",1,"VScaleformValue const *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScaleformValue,0))){
@@ -4953,6 +5073,7 @@ static int _wrap_VScaleformValue_Display_GetYRotation(lua_State* L) {
   float result;
   
   SWIG_check_num_args("Display_GetYRotation",1,1)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("Display_GetYRotation",1,"VScaleformValue const *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("Display_GetYRotation",1,"VScaleformValue const *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScaleformValue,0))){
@@ -4977,6 +5098,7 @@ static int _wrap_VScaleformValue_Display_GetZScale(lua_State* L) {
   float result;
   
   SWIG_check_num_args("Display_GetZScale",1,1)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("Display_GetZScale",1,"VScaleformValue const *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("Display_GetZScale",1,"VScaleformValue const *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScaleformValue,0))){
@@ -5001,6 +5123,7 @@ static int _wrap_VScaleformValue_Display_GetFOV(lua_State* L) {
   float result;
   
   SWIG_check_num_args("Display_GetFOV",1,1)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("Display_GetFOV",1,"VScaleformValue const *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("Display_GetFOV",1,"VScaleformValue const *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScaleformValue,0))){
@@ -5025,6 +5148,7 @@ static int _wrap_VScaleformValue_Display_SetX(lua_State* L) {
   float arg2 ;
   
   SWIG_check_num_args("Display_SetX",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("Display_SetX",1,"VScaleformValue *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("Display_SetX",1,"VScaleformValue *");
   if(!lua_isnumber(L,2)) SWIG_fail_arg("Display_SetX",2,"float");
   
@@ -5051,6 +5175,7 @@ static int _wrap_VScaleformValue_Display_SetY(lua_State* L) {
   float arg2 ;
   
   SWIG_check_num_args("Display_SetY",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("Display_SetY",1,"VScaleformValue *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("Display_SetY",1,"VScaleformValue *");
   if(!lua_isnumber(L,2)) SWIG_fail_arg("Display_SetY",2,"float");
   
@@ -5078,6 +5203,7 @@ static int _wrap_VScaleformValue_Display_SetXY(lua_State* L) {
   float arg3 ;
   
   SWIG_check_num_args("Display_SetXY",3,3)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("Display_SetXY",1,"VScaleformValue *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("Display_SetXY",1,"VScaleformValue *");
   if(!lua_isnumber(L,2)) SWIG_fail_arg("Display_SetXY",2,"float");
   if(!lua_isnumber(L,3)) SWIG_fail_arg("Display_SetXY",3,"float");
@@ -5106,6 +5232,7 @@ static int _wrap_VScaleformValue_Display_SetRotation(lua_State* L) {
   float arg2 ;
   
   SWIG_check_num_args("Display_SetRotation",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("Display_SetRotation",1,"VScaleformValue *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("Display_SetRotation",1,"VScaleformValue *");
   if(!lua_isnumber(L,2)) SWIG_fail_arg("Display_SetRotation",2,"float");
   
@@ -5132,6 +5259,7 @@ static int _wrap_VScaleformValue_Display_SetXScale(lua_State* L) {
   float arg2 ;
   
   SWIG_check_num_args("Display_SetXScale",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("Display_SetXScale",1,"VScaleformValue *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("Display_SetXScale",1,"VScaleformValue *");
   if(!lua_isnumber(L,2)) SWIG_fail_arg("Display_SetXScale",2,"float");
   
@@ -5158,6 +5286,7 @@ static int _wrap_VScaleformValue_Display_SetYScale(lua_State* L) {
   float arg2 ;
   
   SWIG_check_num_args("Display_SetYScale",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("Display_SetYScale",1,"VScaleformValue *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("Display_SetYScale",1,"VScaleformValue *");
   if(!lua_isnumber(L,2)) SWIG_fail_arg("Display_SetYScale",2,"float");
   
@@ -5185,6 +5314,7 @@ static int _wrap_VScaleformValue_Display_SetXYScale(lua_State* L) {
   float arg3 ;
   
   SWIG_check_num_args("Display_SetXYScale",3,3)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("Display_SetXYScale",1,"VScaleformValue *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("Display_SetXYScale",1,"VScaleformValue *");
   if(!lua_isnumber(L,2)) SWIG_fail_arg("Display_SetXYScale",2,"float");
   if(!lua_isnumber(L,3)) SWIG_fail_arg("Display_SetXYScale",3,"float");
@@ -5213,6 +5343,7 @@ static int _wrap_VScaleformValue_Display_SetAlpha(lua_State* L) {
   float arg2 ;
   
   SWIG_check_num_args("Display_SetAlpha",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("Display_SetAlpha",1,"VScaleformValue *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("Display_SetAlpha",1,"VScaleformValue *");
   if(!lua_isnumber(L,2)) SWIG_fail_arg("Display_SetAlpha",2,"float");
   
@@ -5239,6 +5370,7 @@ static int _wrap_VScaleformValue_Display_SetVisible(lua_State* L) {
   bool arg2 ;
   
   SWIG_check_num_args("Display_SetVisible",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("Display_SetVisible",1,"VScaleformValue *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("Display_SetVisible",1,"VScaleformValue *");
   if(!lua_isboolean(L,2)) SWIG_fail_arg("Display_SetVisible",2,"bool");
   
@@ -5265,6 +5397,7 @@ static int _wrap_VScaleformValue_Display_SetZ(lua_State* L) {
   float arg2 ;
   
   SWIG_check_num_args("Display_SetZ",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("Display_SetZ",1,"VScaleformValue *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("Display_SetZ",1,"VScaleformValue *");
   if(!lua_isnumber(L,2)) SWIG_fail_arg("Display_SetZ",2,"float");
   
@@ -5291,6 +5424,7 @@ static int _wrap_VScaleformValue_Display_SetXRotation(lua_State* L) {
   float arg2 ;
   
   SWIG_check_num_args("Display_SetXRotation",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("Display_SetXRotation",1,"VScaleformValue *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("Display_SetXRotation",1,"VScaleformValue *");
   if(!lua_isnumber(L,2)) SWIG_fail_arg("Display_SetXRotation",2,"float");
   
@@ -5317,6 +5451,7 @@ static int _wrap_VScaleformValue_Display_SetYRotation(lua_State* L) {
   float arg2 ;
   
   SWIG_check_num_args("Display_SetYRotation",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("Display_SetYRotation",1,"VScaleformValue *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("Display_SetYRotation",1,"VScaleformValue *");
   if(!lua_isnumber(L,2)) SWIG_fail_arg("Display_SetYRotation",2,"float");
   
@@ -5344,6 +5479,7 @@ static int _wrap_VScaleformValue_Display_SetXYRotation(lua_State* L) {
   float arg3 ;
   
   SWIG_check_num_args("Display_SetXYRotation",3,3)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("Display_SetXYRotation",1,"VScaleformValue *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("Display_SetXYRotation",1,"VScaleformValue *");
   if(!lua_isnumber(L,2)) SWIG_fail_arg("Display_SetXYRotation",2,"float");
   if(!lua_isnumber(L,3)) SWIG_fail_arg("Display_SetXYRotation",3,"float");
@@ -5372,6 +5508,7 @@ static int _wrap_VScaleformValue_Display_SetZScale(lua_State* L) {
   float arg2 ;
   
   SWIG_check_num_args("Display_SetZScale",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("Display_SetZScale",1,"VScaleformValue *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("Display_SetZScale",1,"VScaleformValue *");
   if(!lua_isnumber(L,2)) SWIG_fail_arg("Display_SetZScale",2,"float");
   
@@ -5398,6 +5535,7 @@ static int _wrap_VScaleformValue_Display_SetFOV(lua_State* L) {
   float arg2 ;
   
   SWIG_check_num_args("Display_SetFOV",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("Display_SetFOV",1,"VScaleformValue *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("Display_SetFOV",1,"VScaleformValue *");
   if(!lua_isnumber(L,2)) SWIG_fail_arg("Display_SetFOV",2,"float");
   

@@ -30,9 +30,10 @@ extern const char* s_pszAuthKey;
 
 VFixStepSceneUpdateController::VFixStepSceneUpdateController(int iTicksPerSec, int iMaxTickCount, bool bDeleteObjectUponUnref)
   : IVisUpdateSceneController_cl(bDeleteObjectUponUnref)
-  , m_iLastUpdateTickCount(0)
   , m_iTicksPerSecond(iTicksPerSec)
   , m_iMaxTickCount(iMaxTickCount)
+  , m_bLimitFrameRate(true)
+  , m_iLastUpdateTickCount(0)
 {
 }
 
@@ -53,26 +54,37 @@ void VFixStepSceneUpdateController::Reset()
 
 int VFixStepSceneUpdateController::GetUpdateTickCount()
 {
-  uint64 iTimeNow = VGLGetTimer();
-  const uint64 iTicksPerSec = VGLGetTimerResolution() / m_iTicksPerSecond;
-  if (m_iLastUpdateTickCount==0)
-    m_iLastUpdateTickCount = iTimeNow;
+  int iCount;
+  const uint64 iTimerTicksPerUpdateStep = VGLGetTimerResolution() / m_iTicksPerSecond;
 
-  VASSERT(m_iLastUpdateTickCount<=iTimeNow);
+  do 
+  {
+    uint64 iTimeNow = VGLGetTimer();
 
-  int iCount = (int)((iTimeNow-m_iLastUpdateTickCount) / iTicksPerSec);
-  m_iLastUpdateTickCount += iTicksPerSec*iCount;
-  if (m_iMaxTickCount>0 && iCount>m_iMaxTickCount)
+    if (m_iLastUpdateTickCount == 0)
+      m_iLastUpdateTickCount = iTimeNow;
+
+    VASSERT(m_iLastUpdateTickCount <= iTimeNow);
+
+    iCount = static_cast<int>((iTimeNow - m_iLastUpdateTickCount) / iTimerTicksPerUpdateStep);
+
+    // Busy wait until we have something to update.
+  } while (m_bLimitFrameRate && iCount <= 0);
+
+  m_iLastUpdateTickCount += iTimerTicksPerUpdateStep * iCount;
+  if (m_iMaxTickCount > 0 && iCount > m_iMaxTickCount)
     return m_iMaxTickCount;
+
   return iCount;
 }
 
 V_IMPLEMENT_SERIAL(VFixStepSceneUpdateController, IVisUpdateSceneController_cl, 0, &g_engineModule)
 
 #define VFIXSTEPSCENEUPDATECONTROLLER_VERSION_0         0
-#define VFIXSTEPSCENEUPDATECONTROLLER_VERSION_CURRENT   VFIXSTEPSCENEUPDATECONTROLLER_VERSION_0
+#define VFIXSTEPSCENEUPDATECONTROLLER_VERSION_1         1 // frame rate limiter
+#define VFIXSTEPSCENEUPDATECONTROLLER_VERSION_CURRENT   VFIXSTEPSCENEUPDATECONTROLLER_VERSION_1
 
-void VFixStepSceneUpdateController::Serialize(VArchive &ar)
+  void VFixStepSceneUpdateController::Serialize(VArchive &ar)
 {
   IVisUpdateSceneController_cl::Serialize(ar);
 
@@ -87,6 +99,9 @@ void VFixStepSceneUpdateController::Serialize(VArchive &ar)
 
     ar >> m_iMaxTickCount;
     ar >> m_iTicksPerSecond;
+
+    if (iVersion >= VFIXSTEPSCENEUPDATECONTROLLER_VERSION_1)
+      ar >> m_bLimitFrameRate;
   }
   else
   {
@@ -95,6 +110,9 @@ void VFixStepSceneUpdateController::Serialize(VArchive &ar)
 
     ar << m_iMaxTickCount;
     ar << m_iTicksPerSecond;
+
+    // Version 1
+    ar << m_bLimitFrameRate;
   }
 }
 
@@ -127,11 +145,11 @@ void VAppProgressStatus::OnStart()
 {
   VProgressStatus::OnStart();
   if (bShowProgress)
-    m_pApp->TriggerLoadSceneStatus(VIS_API_LOADSCENESTATUS_START,0.f,GetProgressStatusString());
+    m_pApp->TriggerLoadSceneStatus(VIS_API_LOADSCENESTATUS_START, 0.0f);
   m_iStartCtr++;
 #ifdef HK_DEBUG_SLOW
   m_fOldPercentage = 0.f;
-//  g_iStartTime = GetTickCount(); // time debugging
+  //  g_iStartTime = GetTickCount(); // time debugging
 #endif
 }
 
@@ -139,7 +157,7 @@ void VAppProgressStatus::OnFinish()
 {
   VProgressStatus::OnFinish();
   if (bShowProgress)
-    m_pApp->TriggerLoadSceneStatus(VIS_API_LOADSCENESTATUS_FINISHED,100.f,GetProgressStatusString());
+    m_pApp->TriggerLoadSceneStatus(VIS_API_LOADSCENESTATUS_FINISHED, 100.0f);
   m_iStartCtr--;
   VASSERT_MSG(m_iStartCtr>=0,"Mismatching number of OnStart/OnFinish calls");
 }
@@ -149,11 +167,11 @@ void VAppProgressStatus::OnProgressChanged()
   VProgressStatus::OnProgressChanged();
 
   float fProgress = GetCurrentProgress();
-  #pragma warning(suppress:6239)
+#pragma warning(suppress:6239)
   if (bShowProgress && m_iStartCtr>0) // only inside a scene loading block
-    m_pApp->TriggerLoadSceneStatus(VIS_API_LOADSCENESTATUS_PROGRESS,fProgress,GetProgressStatusString());
+    m_pApp->TriggerLoadSceneStatus(VIS_API_LOADSCENESTATUS_PROGRESS, fProgress);
 
-/* For debugging purposes
+  /* For debugging purposes
   int iDepth = GetStackPos();
   char indent[128];
   for (int i=0;i<iDepth;i++) indent[i] = '_';
@@ -161,8 +179,8 @@ void VAppProgressStatus::OnProgressChanged()
   float fTimeDiff = (float)(GetTickCount() - g_iStartTime)*0.001f;
   float fSpeed = 0.f;
   if (fTimeDiff>0.f) fSpeed = fProgress/fTimeDiff;
-  Vision::Error.SystemMessage("%sLoadingProgress : %.2f at %.2fs; Speed:%.3f (%s)",indent,fProgress,fTimeDiff,fSpeed,GetProgressStatusString());
-*/
+  hkvLog::Info("%sLoadingProgress : %.2f at %.2fs; Speed:%.3f (%s)",indent,fProgress,fTimeDiff,fSpeed,GetProgressStatusString());
+  */
 
 #ifdef HK_DEBUG_SLOW
   if (m_iStartCtr>0)
@@ -174,30 +192,22 @@ void VAppProgressStatus::OnProgressChanged()
 
 }
 
-void VAppProgressStatus::OnStatusStringChanged()
-{
-  VProgressStatus::OnStatusStringChanged();
-  m_pApp->TriggerLoadSceneStatus(VIS_API_LOADMODELSTATUS_PROGRESS,GetCurrentProgress(),GetProgressStatusString());
-}
-
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // struct VLoadSceneRequest
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 void VLoadSceneRequest::Clear()
 {
-  sSceneFileName = "";
-  iAdditionalLoadingFlags = 0;
-  bAllowProfileFallback = false;
-  bPending = false;
+  m_settings = VisAppLoadSettings();
+  m_bPending = false;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // class VisionApp_cl
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-VisCallback_cl VisionApp_cl::OnUpdateAnimatonBegin(VIS_PROFILE_CALLBACKS_UPDATEANIMATIONBEGIN);
-VisCallback_cl VisionApp_cl::OnUpdateAnimatonFinished(VIS_PROFILE_CALLBACKS_UPDATEANIMATIONFINISHED);
+VisCallback_cl VisionApp_cl::OnUpdateAnimationBegin(VIS_PROFILE_CALLBACKS_UPDATEANIMATIONBEGIN);
+VisCallback_cl VisionApp_cl::OnUpdateAnimationFinished(VIS_PROFILE_CALLBACKS_UPDATEANIMATIONFINISHED);
 VisCallback_cl VisionApp_cl::OnUpdatePhysicsFinished(VIS_PROFILE_CALLBACKS_UPDATEPHYSICSFINISHED);
 
 VisionApp_cl::VisionApp_cl(const char *pszAuthKey) : IVisApp_cl(pszAuthKey)
@@ -206,16 +216,17 @@ VisionApp_cl::VisionApp_cl(const char *pszAuthKey) : IVisApp_cl(pszAuthKey)
   m_bInsideRun = false;
   m_LoadingProgress.m_pApp = this;
   m_bInputInitialized = false;
-  m_iInitializeCount = 0;
 
   m_loadSceneRequest.Clear();
 
   Vision::Game.ResetUpdatedEntitiesList();
+
+  m_bEngineIsIntializedByThisApp = false;
 }
 
 VisionApp_cl::~VisionApp_cl()
 {
-  VASSERT(m_iInitializeCount==0);
+  VASSERT_MSG(!m_bEngineIsIntializedByThisApp, "The app that initialized the engine is destroyed before deinitializing the engine");
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -238,7 +249,7 @@ bool VisionApp_cl::Run()
   if(m_bInsideRun)
   {
     // We can't report this error in a form that could trigger a message box, so reporting a warning and breaking the debugger is the best we can do.
-    Vision::Error.Warning("VisionApp_cl::Run called recursively! This is usually caused by triggering a repaint from inside the game loop.");
+    hkvLog::Warning("VisionApp_cl::Run called recursively! This is usually caused by triggering a repaint from inside the game loop.");
 
 #if defined(HK_DEBUG)
     VDBGBREAK;
@@ -275,28 +286,28 @@ bool VisionApp_cl::Run()
 
   // If in debug build, perform a sanity check - no context registered with the main context should also be registered
   // with a renderer node!
-  #ifdef HK_DEBUG_SLOW
-    static bool bContextErrorShown = false;
-    if (!bContextErrorShown)
+#ifdef HK_DEBUG_SLOW
+  static bool bContextErrorShown = false;
+  if (!bContextErrorShown)
+  {
+    int iContextCount = Vision::Contexts.GetContextCount();
+    for (int iContext = 0; iContext < iContextCount; iContext++)
     {
-      int iContextCount = Vision::Contexts.GetContextCount();
-      for (int iContext = 0; iContext < iContextCount; iContext++)
+      int iRendererNodeCount = Vision::Renderer.GetRendererNodeCount();
+      for (int iRendererNode=0; iRendererNode<iRendererNodeCount; iRendererNode++)
       {
-        int iRendererNodeCount = Vision::Renderer.GetRendererNodeCount();
-        for (int iRendererNode=0; iRendererNode<iRendererNodeCount; iRendererNode++)
+        IVRendererNode *pNode = Vision::Renderer.GetRendererNode(iRendererNode);
+        VisRenderContext_cl* pContext = Vision::Contexts.GetContext(iContext);
+        if (pNode != NULL && pNode->IsContextRegistered(Vision::Contexts.GetContext(iContext)))
         {
-          IVRendererNode *pNode = Vision::Renderer.GetRendererNode(iRendererNode);
-          VisRenderContext_cl* pContext = Vision::Contexts.GetContext(iContext);
-          if (pNode != NULL && pNode->IsContextRegistered(Vision::Contexts.GetContext(iContext)))
-          {
-            Vision::Error.Warning("Context %s (%p) is registered globally AND in renderer node %s (%p). This may be intended, but it is most likely a porting issue introduced by porting from a pre-8.0 version of the Vision Engine.",
-              pContext->GetName(), pContext, pNode->GetTypeId()->m_lpszClassName, pNode);
-            bContextErrorShown = true;
-          }
+          hkvLog::Warning("Context %s (%p) is registered globally AND in renderer node %s (%p). This may be intended, but it is most likely a porting issue introduced by porting from a pre-8.0 version of the Vision Engine.",
+            pContext->GetName(), pContext, pNode->GetTypeId()->m_lpszClassName, pNode);
+          bContextErrorShown = true;
         }
       }
     }
-  #endif
+  }
+#endif
 
   {
     INSERT_PERF_MARKER_SCOPE("BeginRendering");
@@ -306,7 +317,7 @@ bool VisionApp_cl::Run()
     Vision::Callbacks.BeginRendering.TriggerCallbacks();
   }
 
-  
+
   Vision::Renderer.SetCurrentRendererNode(NULL);
   VisRendererNodeDataObject_cl data(&Vision::Callbacks.OnRendererNodeSwitching, NULL);
   Vision::Callbacks.OnRendererNodeSwitching.TriggerCallbacks(&data);
@@ -320,13 +331,13 @@ bool VisionApp_cl::Run()
 
   {
 
-  int iRendererNodeCount = Vision::Renderer.GetRendererNodeCount();  
-  for (int iRendererNode=0; iRendererNode<iRendererNodeCount; iRendererNode++)
-  {
-    IVRendererNode *pNode = Vision::Renderer.GetRendererNode(iRendererNode);
-
-    if (pNode != NULL && pNode->GetRenderingEnabled())
+    int iRendererNodeCount = Vision::Renderer.GetRendererNodeCount();  
+    for (int iRendererNode=0; iRendererNode<iRendererNodeCount; iRendererNode++)
     {
+      IVRendererNode *pNode = Vision::Renderer.GetRendererNode(iRendererNode);
+
+      if (pNode != NULL && pNode->GetRenderingEnabled())
+      {
         char buffer[192];
         sprintf(buffer, "RendererNode %d (%s)", iRendererNode, pNode->GetTypeId()->m_lpszClassName);
         INSERT_PERF_MARKER_SCOPE(buffer);
@@ -339,7 +350,7 @@ bool VisionApp_cl::Run()
 
   {
     INSERT_PERF_MARKER_SCOPE("PostRendererNodeContexts");
-  Vision::Renderer.SetCurrentRendererNode(NULL);
+    Vision::Renderer.SetCurrentRendererNode(NULL);
     Vision::Contexts.RenderContexts(VIS_RENDERCONTEXTPRIORITY_SCENE, FLT_MAX);
   }
 
@@ -354,7 +365,7 @@ bool VisionApp_cl::Run()
   //Finish the scene - the last tick is performed here
   if (m_iUpdateSceneTickCount>0)
     OnFinishScene();
-  
+
   // update everything that has to be done once per loop rather than per simulation steps
   OnFrameUpdatePostRender();
 
@@ -363,7 +374,7 @@ bool VisionApp_cl::Run()
 #ifdef WIN32
   if (m_bUpdateScreen) // only supported on win32
 #endif
-  Vision::Video.UpdateScreen();
+    Vision::Video.UpdateScreen();
 
   if (m_iUpdateSceneTickCount>0) // same as for OnFinishScene
     UpdateTimer();
@@ -380,9 +391,10 @@ bool VisionApp_cl::Run()
 
 bool VisionApp_cl::IsInitialized() const
 {
-  return m_iInitializeCount>0;
+  return s_bEngineIsInitialized;
 }
 
+bool VisionApp_cl::s_bEngineIsInitialized = false;
 
 bool VisionApp_cl::InitEngine(VisAppConfig_cl *pConfig)
 {
@@ -391,140 +403,135 @@ bool VisionApp_cl::InitEngine(VisAppConfig_cl *pConfig)
   // Use default application configuration if none is provided
   if (pConfig != NULL)
     m_appConfig = *pConfig;
-    
-  VASSERT(m_iInitializeCount==0);
-  if (m_iInitializeCount==0)
-  {
-    VULPSTATUSMESSAGE_0("Initializing engine");
-    ////////////////////////////////////////////////
 
-    // Initialize engine  
-    Vision::Init( &m_appConfig.m_engineConfig, s_pszAuthKey ); 
+  VASSERT_MSG(!s_bEngineIsInitialized, "Attempting to initialize the engine more than once");
+  // Initialize engine  
+  Vision::Init( &m_appConfig.m_engineConfig, s_pszAuthKey ); 
 
-    // Initialize video
+  // logging only works after Vision::Init (*sigh*)
+  HKV_LOG_BLOCK("Engine Initialization");
+
+  // Initialize video
 #if defined(WIN32) && !defined(_VISION_WINRT)
-    if(m_appConfig.m_iInitFlags & VAPP_PEEK_ALL_MESSAGES_DEPRECATED)
-      m_appConfig.m_windowConfig.SetPickAllMessage();
-    Vision::Video.Init(&m_appConfig.m_windowConfig);
+  if(m_appConfig.m_uiInitFlags & VAPP_PEEK_ALL_MESSAGES_DEPRECATED)
+    m_appConfig.m_windowConfig.SetPickAllMessage();
+  Vision::Video.Init(&m_appConfig.m_windowConfig);
 
 #elif defined(_VISION_PS3)
-    *Vision::Video.GetGcmConfig() = m_appConfig.m_gcmConfig;
-    Vision::Video.Init();
+  *Vision::Video.GetGcmConfig() = m_appConfig.m_gcmConfig;
+  Vision::Video.Init();
 
 #else
-    Vision::Video.Init();
+  Vision::Video.Init();
 #endif
 
-    if ((m_appConfig.m_iInitFlags & VAPP_FULLSCREEN)!=0)
-      m_appConfig.m_videoConfig.m_bFullScreen = true;
+  if ((m_appConfig.m_uiInitFlags & VAPP_FULLSCREEN)!=0)
+    m_appConfig.m_videoConfig.m_bFullScreen = true;
 
 #if defined(WIN32) && defined(_VR_DX9)
-    if ((m_appConfig.m_iInitFlags & VAPP_USE_NVPERFHUD)!=0)
-      m_appConfig.m_videoConfig.m_bEnableNVPerfHUD = true;
+  if ((m_appConfig.m_uiInitFlags & VAPP_USE_NVPERFHUD)!=0)
+    m_appConfig.m_videoConfig.m_bEnableNVPerfHUD = true;
 #endif
 
-    BOOL rVideoInit = Vision::Video.SetMode( m_appConfig.m_videoConfig);
-    if ( !rVideoInit )
-    {
-      char szError[1024];
-      sprintf(szError,"Unable to initialize video mode\n%s", Vision::Video.GetLastError().AsChar());
-      Vision::Error.Warning (szError);
+  BOOL rVideoInit = Vision::Video.SetMode( m_appConfig.m_videoConfig);
+  if ( !rVideoInit )
+  {
+    hkvLog::Warning ("Unable to initialize video mode!");
 
-      // Keep a reference to ourself so that we don't get deleted during the engine deinit
-      VSmartPtr<VisionApp_cl> keepRef = this;
+    // Keep a reference to ourself so that we don't get deleted during the engine deinit
+    VSmartPtr<VisionApp_cl> keepRef = this;
 
-      Vision::DeInit();
-      Vision::Video.DeInit();
-      SetShaderProvider(NULL);
+    Vision::DeInit();
+    Vision::Video.DeInit();
+    SetShaderProvider(NULL);
 
-      return false;
-    }
+    return false;
+  }
 
-    if ((m_appConfig.m_iInitFlags & VAPP_DEFER_IM_SHADER_CREATION) == 0)
-    {
-      InitShaderPatcher();
-      // Create fixed-function shaders for immediate mode
-      CreateIMShaders();
-    }
-    
-    m_iInitFlags = m_appConfig.m_iInitFlags;
+  if ((m_appConfig.m_uiInitFlags & VAPP_DEFER_IM_SHADER_CREATION) == 0)
+  {
+    InitShaderPatcher();
+    // Create fixed-function shaders for immediate mode
+    CreateIMShaders();
+  }
+
+  m_iInitFlags = m_appConfig.m_uiInitFlags;
 
 #ifdef WIN32
-    if ((m_appConfig.m_iInitFlags & VAPP_USE_NVPERFHUD)!=0)
-      m_iInitFlags &= ~VAPP_USE_DINPUT;
+  if ((m_appConfig.m_uiInitFlags & VAPP_USE_NVPERFHUD)!=0)
+    m_iInitFlags &= ~VAPP_USE_DINPUT;
 #endif
 
-    //Initialize input
-    if (m_appConfig.m_iInitFlags & VAPP_INIT_INPUT)
-    {
-      InitInput();
-      //Vision::Profiling.InitInputMap();
-    }
+  //Initialize input
+  if (m_appConfig.m_uiInitFlags & VAPP_INIT_INPUT)
+    InitInput();
 
-    ////////////////////////////////////////////////
-    Vision::Contexts.GetMainRenderContext()->SetPriority(VIS_RENDERCONTEXTPRIORITY_DISPLAY);
-    Vision::Contexts.GetMainRenderContext()->SetRenderLoop(new VisionRenderLoop_cl());
-	  
-    VSimpleRendererNode* pRenderer = new VSimpleRendererNode(Vision::Contexts.GetMainRenderContext());
-    pRenderer->InitializeRenderer();
+  ////////////////////////////////////////////////
+  Vision::Contexts.GetMainRenderContext()->SetPriority(VIS_RENDERCONTEXTPRIORITY_DISPLAY);
+  Vision::Contexts.GetMainRenderContext()->SetRenderLoop(new VisionRenderLoop_cl());
 
-    Vision::Renderer.SetRendererNode(0, pRenderer);   
+  VSimpleRendererNode* pRenderer = new VSimpleRendererNode(Vision::Contexts.GetMainRenderContext());
+  pRenderer->InitializeRenderer();
 
-    VULPSTATUSMESSAGE_0("Engine initialized");
-    //Init custom data
-    OnInitEngine();    
-  }
-  m_iInitializeCount++;
+  Vision::Renderer.SetRendererNode(0, pRenderer);   
+
+  hkvLog::Success("Engine initialized.");
+  //Init custom data
+  OnInitEngine();    
+
+  s_bEngineIsInitialized = true;
+  m_bEngineIsIntializedByThisApp = true;
   return true;
 }
-  
+
 
 
 void VisionApp_cl::DeInitEngine()
 {
-  if (m_iInitializeCount<=0)
-  {
-    VULPSTATUSMESSAGE_0("Too many calls to engine deinitialize");
-    VASSERT(m_iInitializeCount>=0);
-    return;
-  }
-  m_iInitializeCount--;
-  if (m_iInitializeCount==0)
-  {
-    { // scope to hold app object valid
-      IVisAppPtr spThisPtr = this; // prevent deleting this object inside this function
+  VASSERT_MSG(s_bEngineIsInitialized, "Attempting to deinitialize the engine even though it is not initialized.");
+  VASSERT_MSG(m_bEngineIsIntializedByThisApp, "Attempting to deinitialize the engine from an app different to the one that initialized it.");
 
-      VULPSTATUSMESSAGE_0("Deinitializing engine");
-      OnDeInitEngine();
+  { // scope to hold app object valid
+    IVisAppPtr spThisPtr = this; // prevent deleting this object inside this function
 
-      //DeInit custom data
-      Vision::Contexts.RemoveAllContexts();
+    if (Vision::World.IsWorldInitialized())
+      Vision::DeInitWorld();
 
-      //DeInit input
-      if (m_iInitFlags & VAPP_INIT_INPUT)
-        DeInitInput();
+    hkvLog::Info("Deinitializing engine");
+    OnDeInitEngine();
 
-      DeleteIMShaders();
-      DeInitShaderPatcher();
+    //DeInit custom data
+    Vision::Contexts.RemoveAllContexts();
 
-      //DeInit engine
-      Vision::DeInit();
-      
-      //DeInit video
-      Vision::Video.DeInit();  
-      
-      SetShaderProvider(NULL);
-    } // now this app object can be destroyed
+    //DeInit input
+    if (m_iInitFlags & VAPP_INIT_INPUT)
+      DeInitInput();
 
-    //Free all the plugins. Do this after Vision::DeInit to make sure entities are gone
-    //Vision::Plugins.UnloadAllEnginePlugins();  //Moved to VisionExit so custom App's DLL isn't unloaded.
+    DeleteIMShaders();
+    DeInitShaderPatcher();
 
-    VULPSTATUSMESSAGE_0("Engine Deinitialized");
-  }
+    //DeInit engine
+    Vision::DeInit();
+
+    //DeInit video
+    Vision::Video.DeInit();  
+
+    SetShaderProvider(NULL);
+
+    s_bEngineIsInitialized = false;
+    m_bEngineIsIntializedByThisApp = false;
+  } // now this app object can be destroyed
+
+  //Free all the plugins. Do this after Vision::DeInit to make sure entities are gone
+  //Vision::Plugins.UnloadAllEnginePlugins();  //Moved to VisionExit so custom App's DLL isn't unloaded.
+
+  hkvLog::Info("Engine Deinitialized");
 } 
 
 bool VisionApp_cl::InitInput()
 {
+  HKV_LOG_BLOCK("VisionApp_cl::InitInput");
+
   VVERIFY_OR_RET_VAL(!m_bInputInitialized,false);
 
 #if defined(WIN32) && !defined(_VISION_WINRT)
@@ -537,8 +544,8 @@ bool VisionApp_cl::InitInput()
     eInputModeMouse = VGL_WINDOWSINPUT;
 
   VInputManagerPC::Init(eInputModeKeyboard, eInputModeMouse, (m_iInitFlags&VAPP_MOUSE_HIDECURSOR)!=0, 
-                                          (m_iInitFlags&VAPP_MOUSE_NONEXCLUSIVE)==0,
-                                          (m_iInitFlags&VAPP_KEYBOARD_NONEXCLUSIVE)==0);
+    (m_iInitFlags&VAPP_MOUSE_NONEXCLUSIVE)==0,
+    (m_iInitFlags&VAPP_KEYBOARD_NONEXCLUSIVE)==0);
 #else
   VInputManager::Init();
 #endif
@@ -549,9 +556,9 @@ bool VisionApp_cl::InitInput()
 
 bool VisionApp_cl::DeInitInput()
 {
+  HKV_LOG_BLOCK("VisionApp_cl::DeInitInput");
+
   VVERIFY_OR_RET_VAL(m_bInputInitialized,false);
-  
-  VULPSTATUSMESSAGE_0("Deinitializing input");
 
   VInputManager::DeInit();
 
@@ -575,7 +582,7 @@ VisBaseEntity_cl *VisionApp_cl::OnCreateEntity(const char *pszClassName)
   VType *pType = Vision::GetTypeManager()->GetType(pszClassName);
   if (!pType)
   {
-    Vision::Error.Warning("CreateEntity: Could not create entity of class %s, entity class is not registered", pszClassName);
+    hkvLog::Warning("CreateEntity: Could not create entity of class %s, entity class is not registered", pszClassName);
     Vision::Error.AddReportGroupEntry(VIS_REPORTGROUPTYPE_MISSING_ENTITY_CLASS, pszClassName);
     return NULL;
   }
@@ -595,7 +602,7 @@ VisBaseEntity_cl *VisionApp_cl::OnCreateEntity(const char *pszClassName)
 ////////////////////////////////////////////////////////////////////////////////////////
 
 // Default implementaion initializes the physics after a new world is loaded
-void VisionApp_cl::OnLoadSceneStatus(int iStatus, float fPercentage, const char* pszStatus)
+void VisionApp_cl::OnLoadSceneStatus(int iStatus, float fPercentage)
 {
   if (iStatus==VIS_API_LOADSCENESTATUS_FINISHED)
   {
@@ -614,15 +621,13 @@ VProgressStatus& VisionApp_cl::GetLoadingProgress()
 ////////////////////////////////////////////////////////////////////////////////////////
 // Load scene request handling
 ////////////////////////////////////////////////////////////////////////////////////////
-bool VisionApp_cl::RequestLoadScene(const char* pszSceneName, int iAdditionalLoadingFlags, bool bAllowProfileFallback)
+bool VisionApp_cl::RequestLoadScene(const VisAppLoadSettings& settings)
 {
-  if ( m_loadSceneRequest.bPending )
+  if (m_loadSceneRequest.m_bPending)
     return false;
 
-  m_loadSceneRequest.sSceneFileName = pszSceneName;
-  m_loadSceneRequest.iAdditionalLoadingFlags = iAdditionalLoadingFlags;
-  m_loadSceneRequest.bAllowProfileFallback = bAllowProfileFallback;
-  m_loadSceneRequest.bPending = true;
+  m_loadSceneRequest.m_settings = settings;
+  m_loadSceneRequest.m_bPending = true;
 
   return true;
 }
@@ -664,14 +669,14 @@ void VisionApp_cl::OnDeInitEngine()
 
 BOOL VisionApp_cl::WantsToLeaveEditorPlayMode() const
 {
-  #if defined(WIN32) && !defined(_VISION_WINRT)
-    // default behaviour: the <ESC> key cancels the play-the-game mode
+#if defined(WIN32) && !defined(_VISION_WINRT)
+  // default behaviour: the <ESC> key cancels the play-the-game mode
   //no input map used, because there is only one key in use (ESC)
 
   BOOL bStatus = VInputManagerPC::GetKeyboard().GetControlValue(CT_KB_ESC,0.f)>0.f;
   return bStatus;
 
-  #endif
+#endif
 
   return FALSE;
 }
@@ -762,7 +767,7 @@ void VisionApp_cl::OnUpdateScene()
 
   //Timer is not longer updated here, because it needs to be updated right after the frame flip
   float fElapsedTime = Vision::GetTimer()->GetTimeDifference();
-  
+
   // Advance the scene update counter
   Vision::Game.SetUpdateSceneCount( Vision::Game.GetUpdateSceneCount() + 1 );
 
@@ -777,14 +782,14 @@ void VisionApp_cl::OnUpdateScene()
     VISION_PROFILE_FUNCTION( VIS_PROFILE_GAMELOOP_UPDATELOOP );
     Vision::Game.FreeRemovedEntities();
   }
-  
+
   // Run the pre-physics loop: statistics, prethink, events & animations
   if ( Vision::Editor.IsPlaying() )
     RunPreThink(fElapsedTime);
 
   //Process animation messages after processing animations
   Vision::Game.ProcessMessageQueue();
-  
+
   // Run the physics simulation (if physics simulation is set to synchronous)
   if ( Vision::Editor.IsPlaying() && !bAsyncPhysics)
   {
@@ -793,7 +798,7 @@ void VisionApp_cl::OnUpdateScene()
   }
 
   // Run the post-physics loop: posthink
-  if ( Vision::Editor.IsPlaying() )
+  if (Vision::Editor.IsPlaying())
     RunThink(fElapsedTime);
 
   // for the editor, we call the EditorThinkFunction function in every mode for every entity:
@@ -947,7 +952,7 @@ void VisionApp_cl::RunPreThink(float fElapsedTime)
     }
   }
 
-  OnUpdateAnimatonBegin.TriggerCallbacks();
+  OnUpdateAnimationBegin.TriggerCallbacks();
 
   // run animated entities
   {
@@ -967,7 +972,7 @@ void VisionApp_cl::RunPreThink(float fElapsedTime)
     }
   }
 
-  OnUpdateAnimatonFinished.TriggerCallbacks();
+  OnUpdateAnimationFinished.TriggerCallbacks();
 }
 
 
@@ -1014,7 +1019,7 @@ void VisionApp_cl::RunThink(float fElapsedTime)
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

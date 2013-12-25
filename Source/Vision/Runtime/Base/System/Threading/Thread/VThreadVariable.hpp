@@ -79,7 +79,7 @@ protected:
 #ifdef _VISION_POSIX
   pthread_key_t m_key;
   pthread_once_t key_once;
-#elif _VISION_WIIU
+#elif defined(_VISION_WIIU)
   unsigned int m_uiTLSIndex;
 #else
   // TLS specific
@@ -158,8 +158,12 @@ TYPE* VThreadVariable<TYPE>::CheckForAllocation () const
 #elif defined(_VISION_WIIU)
     VWiiUTLSSet(m_uiTLSIndex, lpvData);
 #else
+
+#pragma warning(push)
+#pragma warning(disable : 6001) // Using uninitialized data (TlsGetValue apparently triggers the static code analysis here, but our code does everything right much earlier)
     if (!TlsSetValue(m_TLSindex, lpvData))
       return NULL;
+#pragma warning(pop)
 #endif
 
     // Set the initialisation value (not a 'criticalsection locked' action) 
@@ -263,7 +267,7 @@ public:
   {
     if ( !TAllocate() )
     {
-      VASSERT_ALWAYS_MSG(FALSE, "Failed to allocate slot for thread-local value. This may result in unpredictable behavior.");
+      assert(!"Failed to allocate slot for thread-local value. This may result in unpredictable behavior.");
     }
   }
 
@@ -337,7 +341,7 @@ protected:
 };
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

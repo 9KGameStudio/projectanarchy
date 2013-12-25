@@ -1448,11 +1448,11 @@ void AnimatedWarrior_cl::UpperBodyAttackingState::OnEvent(int iEvent)
 
 
 V_IMPLEMENT_SERIAL( AnimatedWarrior_cl, VisBaseEntity_cl, 0, Vision::GetEngineModule() );
-START_VAR_TABLE(AnimatedWarrior_cl, VisBaseEntity_cl, "Animated warrior character for the samples", VFORGE_HIDECLASS, "Models\\ElfWarrior.model")
+START_VAR_TABLE(AnimatedWarrior_cl, VisBaseEntity_cl, "Animated warrior character for the samples", VFORGE_HIDECLASS, "Data\\Vision\\Samples\\Engine\\Common\\Models\\ElfWarrior.model")
 END_VAR_TABLE
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

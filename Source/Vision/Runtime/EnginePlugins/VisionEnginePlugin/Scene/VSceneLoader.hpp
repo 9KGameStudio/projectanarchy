@@ -115,26 +115,6 @@ class VSceneLoader : public VChunkFile_cl
 public:
   SCENE_IMPEXP VSceneLoader();
   SCENE_IMPEXP virtual ~VSceneLoader();
-  
-  /// \brief
-  ///   Flags for different loading behavior
-  enum LoadingFlags
-  {
-    LF_UseStreamingIfExists   = V_BIT(0), ///< If there is a corresponding .vres file to the scene, the scene loading is done via streaming. You have to call Tick periodically to advance the streaming.
-    LF_ForceMobileMode        = V_BIT(1), ///< Forces the loader to use a VisionMobileShaderProvider and a simple Lightgrid, regardless of what is set in the vscene file.
-    LF_UsePrewarming          = V_BIT(2), ///< Prewarms all resources by rendering every mesh once with the assigned shader which which forces the graphics driver to create its internal objects. This prevents stuttering after scene loading.
-    LF_UseInterleavedLoading  = V_BIT(3) | LF_UseStreamingIfExists, ///< Does not load the whole scene at once but only a certain amount of chunks per frame. You have to call IsFinished periodically to advance the scene file loading. Also enables LF_UseStreamingIfExists.
-    LF_LoadTimeStepSettings   = V_BIT(4),  ///< Time Stepping settings are loaded by default. Omit this flag if time stepping settings should always be set manually.
-    
-    LF_PlatformDefault = 
-#ifdef NEEDS_SCENE_STREAMING
-    LF_UseStreamingIfExists |
-#endif
-#ifdef NEEDS_SCENE_PREWARMING
-    LF_UsePrewarming |
-#endif
-    LF_LoadTimeStepSettings
-  };
 
   ///
   /// @name Load / unload a vscene
@@ -147,7 +127,7 @@ public:
   /// \param szFilename
   ///   Filename of the exported vscene file.
   ///
-  /// \param iLoadingFlags
+  /// \param uiLoadingFlags
   ///   A combination of LoadingFlags.
   ///
   /// \returns
@@ -163,35 +143,28 @@ public:
 	/// \see
 	///   UnloadScene
   ///   IsFinished
-	SCENE_IMPEXP bool LoadScene(const char *szFilename, int iLoadingFlags = LF_PlatformDefault);
+	SCENE_IMPEXP bool LoadScene(const char *szFilename, unsigned int uiLoadingFlags = VisAppLoadSettings::LF_PlatformDefault);
 
   /// \brief
 	///   Static helper function to unload the scene content. Call this only when you
   ///   are finished with any rendering (e.g. at application shutdown)
 	///
-	static inline void  UnloadScene()   
-  { 
-
-    { // Trigger callback OnBeforeSceneUnloaded
-      IVisCallbackDataObject_cl data(&Vision::Callbacks.OnBeforeSceneUnloaded);
-      Vision::Callbacks.OnBeforeSceneUnloaded.TriggerCallbacks(&data);
-    }
-
-    Vision::DeInitWorld();
-
-    { // Trigger callback OnAfterSceneUnloaded
-      IVisCallbackDataObject_cl data(&Vision::Callbacks.OnAfterSceneUnloaded);
-      Vision::Callbacks.OnAfterSceneUnloaded.TriggerCallbacks(&data);
+	static inline void UnloadScene()   
+  {
+    if (Vision::World.IsWorldInitialized())
+    {
+      HKV_LOG_BLOCK("VSceneLoader::UnloadScene");
+      Vision::DeInitWorld();
     }
   }
 
   /// \brief
   ///   Static helper function to clear the scene content, and prepare empty scene
   ///   for use.	
-  static inline void  ClearScene()   
-  { 
+  static inline void ClearScene()   
+  {
+    HKV_LOG_BLOCK("VSceneLoader::ClearScene");
     UnloadScene();
-
     Vision::InitWorld();
   }
 
@@ -225,21 +198,18 @@ public:
 	/// \param szFilename
 	///   Filename of the exported vscene file
 	///
-	/// \param pManager
-	///   Optional file manager
-	///
 	/// \returns
 	///   true if all plugins could be loaded successfully
 	///
   /// Helper function that parses only the plugins chunk from a scene file and loads the required plugins.
   /// This allows for loading the plugins before the engine initializes and the real scene loading starts.
-  /// Used by the vSceneViewer when loading a scene.
+  /// Used by the app framework when loading a scene.
   /// For the final application you should explicitly load all the plugins you need before you initialize your application
   /// (e.g. Vision::Plugins.LoadEnginePlugin).
 	///
 	/// \see
 	///   LoadScene
-	SCENE_IMPEXP bool                LoadEnginePlugins(const char *szFilename, IVFileStreamManager *pManager=NULL);
+	SCENE_IMPEXP bool                LoadEnginePlugins(const char *szFilename);
 #endif
 
   SCENE_IMPEXP bool                ReadFogChunk();                                 ///< Loads a chunk that contains depth fog information.
@@ -257,7 +227,7 @@ public:
 
 #ifdef WIN32
   // saving:
-  SCENE_IMPEXP bool EmbedFile(const char *szFilename, IVFileStreamManager* pManager, CHUNKIDTYPE iID);
+  SCENE_IMPEXP bool EmbedFile(const char *szFilename, CHUNKIDTYPE iID);
 #endif
 
   ///
@@ -312,6 +282,8 @@ public:
 	///   This overridable is called when loading is aborted. The default implementation calls UnloadScene and sets the m_bAborted flag
   SCENE_IMPEXP virtual void OnAbort()
   {
+    HKV_LOG_BLOCK("VSceneLoader::OnAbort");
+
     m_bAborted = true;
     UnloadScene();
   }
@@ -427,7 +399,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

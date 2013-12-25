@@ -6,8 +6,8 @@
  *
  */
 
-#ifndef __VISION_SIMPLEVERTEXANIMATEDOBJECT_HPP
-#define __VISION_SIMPLEVERTEXANIMATEDOBJECT_HPP
+#ifndef SIMPLEVERTEXANIMATEDOBJECT_HPP_INCLUDED
+#define SIMPLEVERTEXANIMATEDOBJECT_HPP_INCLUDED
 
 // ***********************************************************************************************
 // Class: SimpleVertexAnimatedObject_cl
@@ -18,10 +18,11 @@
 // a vertex animation.
 //
 // ***********************************************************************************************
+
 class SimpleVertexAnimatedObject_cl : public VisBaseEntity_cl
 {
 public:
-  SimpleVertexAnimatedObject_cl(void);
+  SimpleVertexAnimatedObject_cl();
 
   // VisBaseEntity_cl overrides
   virtual void InitFunction() HKV_OVERRIDE;
@@ -29,7 +30,7 @@ public:
   // toggle visibility
   void SetActivate(bool bStatus) 
   {
-    SetVisibleBitmask(bStatus ? 0xffffffff:0);
+    SetVisibleBitmask(bStatus ? 0xffffffff : 0);
     SetCastShadows(bStatus);
   }
 
@@ -49,10 +50,10 @@ public:
   VSmartPtr<VisVertexAnimControl_cl> m_spAnimControl;
 };
 
-#endif //__VISION_SAMPLEVERTEXANIMATEDOBJECT_HPP
+#endif // SIMPLEVERTEXANIMATEDOBJECT_HPP_INCLUDED
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

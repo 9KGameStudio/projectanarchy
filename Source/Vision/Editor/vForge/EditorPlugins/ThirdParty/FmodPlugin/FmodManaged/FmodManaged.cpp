@@ -27,6 +27,13 @@ VIMPORT IVisPlugin_cl* GetEnginePlugin_vFmodEnginePlugin();
 
 namespace FmodManaged
 {
+  static void CheckOutFModFile(const char *dir, const char *filename, VFileData *pFileInfo, void *context)
+  {
+    String^ sPath = gcnew String(Vision::Editor.GetProjectPath().AsChar()) + gcnew String("\\") + gcnew String(dir) + gcnew String("\\") + gcnew String(filename);
+
+    ManagedBase::RCS::GetProvider()->EditFile(sPath);
+  }
+
   public ref class ManagedModule
   {
   public:
@@ -210,6 +217,8 @@ namespace FmodManaged
       memset(&pi, 0, sizeof(PROCESS_INFORMATION));
       si.cb = sizeof(STARTUPINFO);
 
+      VFileHelper::EnumFilesRecursive(Vision::Editor.GetProjectPath(), "*.fdp", CheckOutFModFile, NULL);
+
       VString sCmdLine;
       if (eventProjectPath == nullptr)
       {
@@ -270,7 +279,7 @@ namespace FmodManaged
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

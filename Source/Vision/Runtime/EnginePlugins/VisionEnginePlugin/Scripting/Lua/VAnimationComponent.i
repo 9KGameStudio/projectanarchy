@@ -1,3 +1,10 @@
+/*
+ *
+ * Confidential Information of Telekinesys Research Limited (t/a Havok). Not for disclosure or distribution without Havok's
+ * prior written consent. This software contains code, techniques and know-how which is confidential and proprietary to Havok.
+ * Product and Trade Secret source code contains trade secrets of Havok. Havok Software (C) Copyright 1999-2013 Telekinesys Research Limited t/a Havok. All Rights Reserved. Use of this software is subject to the terms of an end user license agreement.
+ *
+ */
 
 #ifndef VLUA_APIDOC
 
@@ -13,9 +20,12 @@ public:
   bool Pause();
   bool AddAnimationSequence(const char * szAnimSequence);
   bool SetTime(float fTime, bool bRelativeTime = false);
+  float GetTime(bool bRelativeTime = false);
   bool IsPlaying();
+  bool IsPaused();
   const char * GetCurrentAnimation();
-
+  float GetSpeed();
+  void SetSpeed(float fSpeedFactor);
   %extend{
     VSWIG_CREATE_CAST(VAnimationComponent)
   }
@@ -146,10 +156,36 @@ public:
   /// \see Resume
   boolean SetTime(number time, boolean relativeTime = false);
   
+  ///  \brief Get time in current animation.
+  /// Absolute time, the default behavior, returns a value between [0, DURATION].
+  /// Relative time (bRelativeTime == true) returns [0,1].
+  /// If no control is currently active, the value returned is -1.f.
+  /// \param bRelativeTime (\b optional) Controls scale of returned value.
+  float GetTime(bool bRelativeTime = false);
+
   /// \brief Check the animation state.
-  /// \return true if playing, otherwise false.
+  /// \return true if playing, false if paused, and false if no anim controller exists.
+  ///  Please note this behavior is NOT simply the opposite of IsPaused.
   boolean IsPlaying();
   
+  /// \brief Check the animation state.
+  /// \return true if paused, false if playing, and false if no anim controller exists.
+  ///  Please note this behavior is NOT simply the opposite of IsPlaying.
+  boolean IsPaused();
+  
+  /// \brief
+  ///   Get playback speed for current animation.
+  ///   If no control is currently active, the value returned is 0.
+  float GetSpeed();
+
+  /// \brief
+  ///   Set playback speed for current animation.
+  ///   \param fSpeedFactor 1.0 indicates normal forward playback.
+  ///   The fSpeedFactor can also be set to negatives to reverse playback.
+  ///   For example, fSpeedFactor = -2.0f will make the animation play 2x speed in reverse.
+  void SetSpeed(float fSpeedFactor);
+
+
   /// \brief Get the name of the current animation.
   /// \return The name of the animation or nil.
   string GetCurrentAnimation();
@@ -169,3 +205,18 @@ public:
 };
 
 #endif
+
+/*
+ * Havok SDK - Base file, BUILD(#20131218)
+ * 
+ * Confidential Information of Havok.  (C) Copyright 1999-2013
+ * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok
+ * Logo, and the Havok buzzsaw logo are trademarks of Havok.  Title, ownership
+ * rights, and intellectual property rights in the Havok software remain in
+ * Havok and/or its suppliers.
+ * 
+ * Use of this software for evaluation purposes is subject to and indicates
+ * acceptance of the End User licence Agreement for this product. A copy of
+ * the license is included with this software and is also available from salesteam@havok.com.
+ * 
+ */

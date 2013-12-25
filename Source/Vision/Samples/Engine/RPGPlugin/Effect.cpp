@@ -60,7 +60,7 @@ void RPG_Effect::Create(RPG_EffectDefinition const& effectDefinition, VisBaseEnt
       // warn the user if a bad bone name has been supplied.
       VString msg;
       msg.Format("Trying to spawn an RPG_Effect on character %s, at a nonexistent bone: %s.", parentEntity->GetTypeId()->m_lpszClassName, effectDefinition.m_vfxBoneName.AsChar());
-      Vision::Error.Warning(msg.AsChar());
+      hkvLog::Warning(msg.AsChar());
     }
   }
 
@@ -154,7 +154,7 @@ bool RPG_Effect::CreateVisualEffect(RPG_EffectDefinition const& effectDefinition
     }
     msg += "Creating Particle FX: ";
     msg += vfxFilename.AsChar();
-    Vision::Error.SystemMessage(msg.AsChar());
+    hkvLog::Info(msg.AsChar());
     Vision::Message.Add(1, msg.AsChar());
   }
 
@@ -162,7 +162,7 @@ bool RPG_Effect::CreateVisualEffect(RPG_EffectDefinition const& effectDefinition
 
   if (!particleEffect)
   {
-    Vision::Error.Warning("Create Particle Effect failed: %s", vfxFilename.AsChar());
+    hkvLog::Warning("Create Particle Effect failed: %s", vfxFilename.AsChar());
     return false;
   }
 
@@ -195,7 +195,7 @@ bool RPG_Effect::CreateVisualEffect(RPG_EffectDefinition const& effectDefinition
       // a persistent effect was created, but not attached to a parent entity. Make some noise about this and shut it down.
       VString msg;
       msg.Format("Effect: %s is a looping effect, which must be attached to an entity capable of cleaning it up.", vfxFilename.AsChar());
-      Vision::Error.Warning(msg.AsChar());
+      hkvLog::Warning(msg.AsChar());
       //VASSERT_MSG(false, "Effects containing looping particle systems MUST be parented to an entity which can manage their shutdown and cleanup.");
 
       particleEffect->SetFinished();
@@ -274,7 +274,7 @@ bool RPG_Effect::CreateSoundEffect(RPG_EffectDefinition const& effectDefinition,
     msg += effectDefinition.m_fmodEventGroupName.AsChar();
     msg += "/";
     msg += effectDefinition.m_fmodEventName.AsChar();
-    Vision::Error.SystemMessage(msg.AsChar());
+    hkvLog::Info(msg.AsChar());
     Vision::Message.Add(1, msg.AsChar());
   }
 
@@ -292,7 +292,7 @@ bool RPG_Effect::CreateSoundEffect(RPG_EffectDefinition const& effectDefinition,
 
     return true;
   }
-  Vision::Error.Warning("Sound event failed to play: %s/%s", effectDefinition.m_fmodEventGroupName.AsChar(), effectDefinition.m_fmodEventName.AsChar());
+  hkvLog::Warning("Sound event failed to play: %s/%s", effectDefinition.m_fmodEventGroupName.AsChar(), effectDefinition.m_fmodEventName.AsChar());
   return false;
 }
 
@@ -466,7 +466,7 @@ RPG_EffectDefinition::RPG_EffectDefinition()
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

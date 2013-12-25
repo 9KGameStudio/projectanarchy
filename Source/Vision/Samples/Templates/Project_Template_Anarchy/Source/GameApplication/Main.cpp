@@ -6,147 +6,117 @@
  *
  */
 
-
-// Basic template to base a project EXE on.
-//
-//
-
 #include "GameApplicationPCH.h"
+#include <Vision/Runtime/Framework/VisionApp/VAppImpl.hpp>
 
+#include <Vision/Runtime/Framework/VisionApp/Modules/VHelp.hpp>
 
-//============================================================================================================
-// Properties for start up. Some of the settings are not relevant for mobile devices
-//============================================================================================================
-int windowSizeX    = 1024;               // Set the Window size X if not in fullscreen.
-int windowSizeY    = 768;                // Set the Window size Y if not in fullscreen.
-int windowPosX    = 500;                 // Set the Window position X if not in fullscreen.
-int windowPosy    = 50;                  // Set the Window position Y if not in fullscreen.
-
-char name[]      = "StandAlone Project Template";  // Name to be displayed in the windows title bar.
-char StartUpScene[]  = "Scenes\\Default.vscene";   // Set the location of your start up scene.
-
-float cameraInitX = 0;                    //
-float cameraInitY = 0;                    //
-float cameraInitZ = 170;                  // Set our camera above the ground so that we can see 
-                                          // the ground.
-
-// Use the following line to initialize a plugin that is statically linked. 
+// Use the following line to initialize a plugin that is statically linked.
 // Note that only Windows platform links plugins dynamically (on Windows you can comment out this line).
 VIMPORT IVisPlugin_cl* GetEnginePlugin_GamePlugin();
-         
-VisSampleAppPtr spApp;
 
-//---------------------------------------------------------------------------------------------------------
-// Init function. Here we trigger loading our scene
-//---------------------------------------------------------------------------------------------------------
-VISION_INIT
+class ProjectTemplateApp : public VAppImpl
 {
-    // Create our new application.
-  spApp = new VisSampleApp();
+public:
+  ProjectTemplateApp() {}
+  virtual ~ProjectTemplateApp() {}
+
+  virtual void SetupAppConfig(VisAppConfig_cl& config) HKV_OVERRIDE;
+  virtual void PreloadPlugins() HKV_OVERRIDE;
+
+  virtual void Init() HKV_OVERRIDE;
+  virtual void AfterSceneLoaded(bool bLoadingSuccessful) HKV_OVERRIDE;
+  virtual bool Run() HKV_OVERRIDE;
+  virtual void DeInit() HKV_OVERRIDE;
+};
+
+VAPP_IMPLEMENT_SAMPLE(ProjectTemplateApp);
+
+void ProjectTemplateApp::SetupAppConfig(VisAppConfig_cl& config)
+{
+  // Set custom file system root name ("havok_sdk" by default)
+  config.m_sFileSystemRootName = "template_root";
+
+  // Set the initial starting position of our game window and other properties
+  // if not in fullscreen. This is only relevant on windows
+  config.m_videoConfig.m_iXRes = 1280; // Set the Window size X if not in fullscreen.
+  config.m_videoConfig.m_iYRes = 720;  // Set the Window size Y if not in fullscreen.
+  config.m_videoConfig.m_iXPos = 50;   // Set the Window position X if not in fullscreen.
+  config.m_videoConfig.m_iYPos = 50;   // Set the Window position Y if not in fullscreen.
+
+  // Name to be displayed in the windows title bar.
+  config.m_videoConfig.m_szWindowTitle = "StandAlone Project Template";
+
+  config.m_videoConfig.m_bWaitVRetrace = true;
+
+  // Fullscreen mode with current desktop resolution
   
-  // set the initial starting position of our game window
-  // and other properties if not in fullscreen. This is only relevant on windows
 #if defined(WIN32)
-  spApp->m_appConfig.m_videoConfig.m_iXPos = windowPosX;
-  spApp->m_appConfig.m_videoConfig.m_iYPos = windowPosy;
-  spApp->m_appConfig.m_videoConfig.m_szWindowTitle = name;
+  /*
+  DEVMODEA deviceMode;
+  deviceMode = Vision::Video.GetAdapterMode(config.m_videoConfig.m_iAdapter);
+  config.m_videoConfig.m_iXRes = deviceMode.dmPelsWidth;
+  config.m_videoConfig.m_iYRes = deviceMode.dmPelsHeight;
+  config.m_videoConfig.m_bFullScreen = true;
+  */
 #endif
-
-  // Set the executable directory the current directory
-  VisionAppHelpers::MakeEXEDirCurrent();
-
-  // Set the paths to our stand alone version to override the VisSAampleApp paths.
-  // The paths are platform dependent
-#if defined(WIN32)
-  const VString szRoot = "..\\..\\..\\..";
-  Vision::File.AddDataDirectory( szRoot + "\\Assets" );
-  Vision::File.AddDataDirectory( szRoot + "\\Data\\Vision\\Base" );
   
-#elif defined(_VISION_ANDROID)
-  VString szRoot = VisSampleApp::GetApkDirectory();
-  szRoot += "?assets";
-  Vision::File.AddDataDirectory( szRoot + "\\Assets" );
-  // "/Data/Vision/Base" is always added by the sample app
-  
-#elif defined(_VISION_TIZEN)
-  VString szRoot = VisSampleApp::GetDataRootDirectory();
-  Vision::File.AddDataDirectory( szRoot + "\\Assets" );
-  // "/Data/Vision/Base" is always added by the sample app
+}
 
-#elif defined(_VISION_IOS)
-  // setup directories, does nothing on platforms other than iOS,
-  // pass true if you want load from the documents directory
-  VISION_SET_DIRECTORIES(false);
-  VString szRoot = VisSampleApp::GetRootDirectory();
-  // our deploy script always copies the asset data below the "Data" folder
-  Vision::File.AddDataDirectory( szRoot + "/Data/Assets" );
-  // "/Data/Vision/Base" is always added by the sample app
-  
-#endif
-
-#if defined(VISION_OUTPUT_DIR)
-  // Set the output directory manually since VSAMPLE_CUSTOMDATADIRECTORIES was specified
-  // at the initialization.
-  Vision::File.SetOutputDirectory(VISION_OUTPUT_DIR);
-  Vision::File.AddDataDirectory(VISION_OUTPUT_DIR);
-#endif
-
-  spApp->LoadVisionEnginePlugin();
-
+void ProjectTemplateApp::PreloadPlugins()
+{
   // Use the following line to load a plugin. Remember that, except on Windows platform, in addition
   // you still need to statically link your plugin library (e.g. on mobile platforms) through project
   // Properties, Linker, Additional Dependencies.
   VISION_PLUGIN_ENSURE_LOADED(GamePlugin);
+}
 
-  // Init the application and point it to the start up scene.
-  if (!spApp->InitSample( "", StartUpScene, VSampleFlags::VSAMPLE_INIT_DEFAULTS|VSampleFlags::VSAMPLE_CUSTOMDATADIRECTORIES,windowSizeX,windowSizeY))
-    return false;
-
-  return true;
+//---------------------------------------------------------------------------------------------------------
+// Init function. Here we trigger loading our scene
+//---------------------------------------------------------------------------------------------------------
+void ProjectTemplateApp::Init()
+{
+  // Set filename and paths to our stand alone version.
+  // Note: "/Data/Vision/Base" is always added by the sample framework
+  VisAppLoadSettings settings("Scenes/Default.vscene");
+  settings.m_customSearchPaths.Append(":template_root/Assets");
+  LoadScene(settings);
 }
 
 //---------------------------------------------------------------------------------------------------------
 // Gets called after the scene has been loaded
 //---------------------------------------------------------------------------------------------------------
-
-VISION_SAMPLEAPP_AFTER_LOADING
+void ProjectTemplateApp::AfterSceneLoaded(bool bLoadingSuccessful)
 {
-  // define some help text
-  spApp->AddHelpText( "" );
-  spApp->AddHelpText( "How to use this demo :" );
-  spApp->AddHelpText( "" );
+  // Define some help text
+  VArray<const char*> help;
+  help.Append("How to use this demo...");
+  help.Append("");
+  RegisterAppModule(new VHelp(help));
 
-
-  // Create a mouse controlled camera (optionally with gravity)
-  VisBaseEntity_cl *pCamera = spApp->EnableMouseCamera();
-  pCamera->SetPosition( hkvVec3( cameraInitX, cameraInitY, cameraInitZ ));
-
+  // Create a mouse controlled camera (set above the ground so that we can see the ground)
+  Vision::Game.CreateEntity("VisMouseCamera_cl", hkvVec3(0.0f, 0.0f, 170.0f));
 
   // Add other initial game code here
   // [...]
 }
 
 //---------------------------------------------------------------------------------------------------------
-// main loop of the application until we quit
+// Main Loop of the application until we quit
 //---------------------------------------------------------------------------------------------------------
-
-VISION_SAMPLEAPP_RUN
+bool ProjectTemplateApp::Run()
 {
-  return spApp->Run();
-}
-
-VISION_DEINIT
-{
-  // Deinit the application
-  spApp->DeInitSample();
-  spApp = NULL;
   return true;
 }
 
-VISION_MAIN_DEFAULT
+void ProjectTemplateApp::DeInit()
+{
+  // De-Initialization
+  // [...]
+}
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

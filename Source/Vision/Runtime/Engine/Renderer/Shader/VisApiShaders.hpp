@@ -258,10 +258,6 @@ public:
   ///
 
   /// \brief
-  ///   Displays the passed texture as a screen overlay. For debugging purposes.
-  VISION_APIFUNC void DisplayDebugTexture(VTextureObject *pTex);
-
-  /// \brief
   ///   Reloads all (known) shader assignment material files and reassigns the shaders. 
   ///
   /// To respond to changes for custom materials, you can listen to the
@@ -587,7 +583,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

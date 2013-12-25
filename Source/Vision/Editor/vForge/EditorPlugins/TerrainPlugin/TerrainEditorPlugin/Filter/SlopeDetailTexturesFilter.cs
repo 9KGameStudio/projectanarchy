@@ -43,7 +43,7 @@ namespace TerrainEditorPlugin.Filter
     #endregion
 
     [SortedCategory("Input", 1), PropertyOrder(1)]
-    [EditorAttribute(typeof(BitmapBrowserEditor), typeof(UITypeEditor))]
+    [EditorAttribute(typeof(AssetEditor), typeof(UITypeEditor)), AssetDialogFilter(new string[] { "Texture" })]
     [Description("Select which texture should be used as a slope to weight lookup source.")]
     public string SlopeLookup
     {
@@ -199,7 +199,7 @@ namespace TerrainEditorPlugin.Filter
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -214,7 +214,7 @@ private:
 };
 
 class IVFileInStream;
-class IVFileStreamManager;
+class VFileAccessManager;
 
 class Image_cl
 {
@@ -236,8 +236,8 @@ public:
   // Destructor. Every imagemap will be removed from memory and this Image_cl object will be destroyed.
   VTEX_EXPFUNC virtual ~Image_cl();
   
-  //Opens a file with the specified stream manager (or default vBase stream manager)
-  VTEX_EXPFUNC static IVFileInStream* OpenFile(const char* pszFileName , IVFileStreamManager* pMan = NULL);
+  //Opens a file with the specified file access manager (or the default file access manager)
+  VTEX_EXPFUNC static IVFileInStream* OpenFile(const char* pszFileName , VFileAccessManager* pMan = NULL);
 
   //Loads an image from the specified stream
   // All formats, except DEM and TEX usually yield one colormap, with an additional opacitymap if an alpha-channel
@@ -248,10 +248,7 @@ public:
   VTEX_EXPFUNC RETVAL Load(IVFileInStream* pStream);
 
   //New helper function that opens and closes the file stream for you
-  VTEX_EXPFUNC RETVAL Load(const char *pszFileName, IVFileStreamManager* pMan = NULL);
-
-  //Old function for backwards compatibility. Will be removed
-  VTEX_EXPFUNC RETVAL Load(const char *imgFilename, ImageFileType_e imgFileType/* = FILETYPE_ANY*/);
+  VTEX_EXPFUNC RETVAL Load(const char *pszFileName, VFileAccessManager* pMan = NULL);
 
 
   // This function saves the image data in this object to the TEX file with the name in imgFilename.
@@ -285,7 +282,7 @@ public:
   // <imgFilename>_<x tile nr>_<y tile nr><extension>
   // WARNING: opacitymaps aren't supported by this function
   // EXAMPLE: ret = img->SaveSplittedTex("image", ".tex", 32, 64);
-  VTEX_EXPFUNC RETVAL SaveSplittedTEX(const char *imgFilename, char *extention, int max_x, int max_y, IVFileStreamManager* pMan = NULL);
+  VTEX_EXPFUNC RETVAL SaveSplittedTEX(const char *imgFilename, char *extention, int max_x, int max_y, VFileAccessManager* pMan = NULL);
 
   // WARNING: This is an old function that might be removed in the future. Do not use it!
   // This function saves the image data in this object to the TEX file with the name in imgFilename.
@@ -300,88 +297,127 @@ public:
   /////////////////////////////////////////////////////////////////////////////////////////
   //Helpers
   /////////////////////////////////////////////////////////////////////////////////////////
-  inline RETVAL SaveTEX(const char* pszFilename, IVFileStreamManager* pMan = NULL)
+  inline RETVAL SaveTEX(const char* pszFilename, VFileAccessManager* pMan = NULL)
   {
-    if (!pMan) pMan = VBase_GetFileStreamManager();
-    IVFileOutStream* pOut = pMan->Create(pszFilename);
-    int res = SaveTEX( pOut, genMipMaps, sprite, texMorphing, animStartStatus);
-    if (pOut) pOut->Close();
-    return res;
+    if (pMan == NULL)
+    {
+      pMan = VFileAccessManager::GetInstance();
+    }
+    VScopedFileStream<IVFileOutStream> pOut(pMan->Create(pszFilename));
+    if (pOut == NULL)
+    {
+      return VERR_CANTOPEN;
+    }
+    return SaveTEX(pOut, genMipMaps, sprite, texMorphing, animStartStatus);
   }
 
-  inline RETVAL SaveTEX(const char* pszFilename, BOOL genMipMaps, BOOL sprite, BOOL texMorphing, BOOL animStartStatus, IVFileStreamManager* pMan = NULL)
+  inline RETVAL SaveTEX(const char* pszFilename, BOOL genMipMaps, BOOL sprite, BOOL texMorphing, BOOL animStartStatus, VFileAccessManager* pMan = NULL)
   {
-    if (!pMan) pMan = VBase_GetFileStreamManager();
-    IVFileOutStream* pOut = pMan->Create(pszFilename);
-    int res = SaveTEX( pOut, genMipMaps, sprite, texMorphing, animStartStatus);
-    if (pOut) pOut->Close();
-    return res;
+    if (pMan == NULL)
+    {
+      pMan = VFileAccessManager::GetInstance();
+    }
+    VScopedFileStream<IVFileOutStream> pOut(pMan->Create(pszFilename));
+    if (pOut == NULL)
+    {
+      return VERR_CANTOPEN;
+    }
+    return SaveTEX(pOut, genMipMaps, sprite, texMorphing, animStartStatus);
   }
 
-  inline RETVAL SaveJPEG(const char* pszFilename, int jpegQuality = 75, IVFileStreamManager* pMan = NULL)
+  inline RETVAL SaveJPEG(const char* pszFilename, int jpegQuality = 75, VFileAccessManager* pMan = NULL)
   {
-    if (!pMan) pMan = VBase_GetFileStreamManager();
-    IVFileOutStream* pOut = pMan->Create(pszFilename);
-    int res = SaveJPEG( pOut, jpegQuality);
-    if (pOut) pOut->Close();
-    return res;
+    if (pMan == NULL)
+    {
+      pMan = VFileAccessManager::GetInstance();
+    }
+    VScopedFileStream<IVFileOutStream> pOut(pMan->Create(pszFilename));
+    if (pOut == NULL)
+    {
+      return VERR_CANTOPEN;
+    }
+    return SaveJPEG(pOut, jpegQuality);
   }
 
-  inline RETVAL SaveBMP(const char* pszFilename, IVFileStreamManager* pMan = NULL)
+  inline RETVAL SaveBMP(const char* pszFilename, VFileAccessManager* pMan = NULL)
   {
-    if (!pMan) pMan = VBase_GetFileStreamManager();
-    IVFileOutStream* pOut = pMan->Create(pszFilename);
-    int res = SaveBMP( pOut );
-    if (pOut) pOut->Close();
-    return res;
+    if (pMan == NULL)
+    {
+      pMan = VFileAccessManager::GetInstance();
+    }
+    VScopedFileStream<IVFileOutStream> pOut(pMan->Create(pszFilename));
+    if (pOut == NULL)
+    {
+      return VERR_CANTOPEN;
+    }
+    return SaveBMP(pOut);
   }
 
-  inline RETVAL SaveTGA(const char* pszFilename, IVFileStreamManager* pMan = NULL, bool bRunLengthEncoding = false)
+  inline RETVAL SaveTGA(const char* pszFilename, bool bRunLengthEncoding = false, VFileAccessManager* pMan = NULL)
   {
-    if (!pMan) pMan = VBase_GetFileStreamManager();
-    IVFileOutStream* pOut = pMan->Create(pszFilename);
-    int res = SaveTGA( pOut, bRunLengthEncoding );
-    if (pOut) pOut->Close();
-    return res;
+    if (pMan == NULL)
+    {
+      pMan = VFileAccessManager::GetInstance();
+    }
+    VScopedFileStream<IVFileOutStream> pOut(pMan->Create(pszFilename));
+    if (pOut == NULL)
+    {
+      return VERR_CANTOPEN;
+    }
+    return SaveTGA(pOut, bRunLengthEncoding);
   }
 
-  inline RETVAL SaveUncompressedDDS(const char* pszFilename, IVFileStreamManager* pMan = NULL)
+  inline RETVAL SaveUncompressedDDS(const char* pszFilename, VFileAccessManager* pMan = NULL)
   {
-    if (!pMan) pMan = VBase_GetFileStreamManager();
-    IVFileOutStream* pOut = pMan->Create(pszFilename);
-    int res = SaveUncompressedDDS( pOut );
-    if (pOut) pOut->Close();
-    return res;    
+    if (pMan == NULL)
+    {
+      pMan = VFileAccessManager::GetInstance();
+    }
+    VScopedFileStream<IVFileOutStream> pOut(pMan->Create(pszFilename));
+    if (pOut == NULL)
+    {
+      return VERR_CANTOPEN;
+    }
+    return SaveUncompressedDDS(pOut);
   }
 
-  inline RETVAL Save8BitPalettedDDS(const char* pszFilename, bool bNormalize, IVFileStreamManager* pMan = NULL)
+  inline RETVAL Save8BitPalettedDDS(const char* pszFilename, bool bNormalize, VFileAccessManager* pMan = NULL)
   {
-    if (!pMan) pMan = VBase_GetFileStreamManager();
-    IVFileOutStream* pOut = pMan->Create(pszFilename);
-    int res = Save8BitPalettedDDS( pOut, bNormalize );
-    if (pOut) pOut->Close();
-    return res;
+    if (pMan == NULL)
+    {
+      pMan = VFileAccessManager::GetInstance();
+    }
+    VScopedFileStream<IVFileOutStream> pOut(pMan->Create(pszFilename));
+    if (pOut == NULL)
+    {
+      return VERR_CANTOPEN;
+    }
+    return Save8BitPalettedDDS(pOut, bNormalize);
   }
 
-  inline RETVAL Save8BitPalettedTGA(const char* pszFilename, bool bNormalize, IVFileStreamManager* pMan = NULL)
+  inline RETVAL Save8BitPalettedTGA(const char* pszFilename, bool bNormalize, VFileAccessManager* pMan = NULL)
   {
-    if (!pMan) pMan = VBase_GetFileStreamManager();
-    IVFileOutStream* pOut = pMan->Create(pszFilename);
-    int res = Save8BitPalettedTGA( pOut, bNormalize );
-    if (pOut) pOut->Close();
-    return res;
-
+    if (pMan == NULL)
+    {
+      pMan = VFileAccessManager::GetInstance();
+    }
+    VScopedFileStream<IVFileOutStream> pOut(pMan->Create(pszFilename));
+    if (pOut == NULL)
+    {
+      return VERR_CANTOPEN;
+    }
+    return Save8BitPalettedTGA(pOut, bNormalize);
   }
 
   // saves the image to known format according to file extension (bmp, tga, dds, ...)
-  inline RETVAL Save(const char* pszFilename, IVFileStreamManager* pMan = NULL)
+  inline RETVAL Save(const char* pszFilename, VFileAccessManager* pMan = NULL)
   {
     char szExt[FS_MAX_FILE];
     if (!VFileHelper::GetExtension(szExt,pszFilename))
       return VTEX_ERR_FILETYPENOTSUPPORTED;
 
     if (!_stricmp(szExt,"bmp"))  return SaveBMP(pszFilename, pMan);
-    if (!_stricmp(szExt,"tga"))  return SaveTGA(pszFilename, pMan);
+    if (!_stricmp(szExt,"tga"))  return SaveTGA(pszFilename, false, pMan);
     if (!_stricmp(szExt,"dds"))  return SaveUncompressedDDS(pszFilename, pMan);
     if (!_stricmp(szExt,"jpg"))  return SaveJPEG(pszFilename, 75, pMan);
     if (!_stricmp(szExt,"jpeg")) return SaveJPEG(pszFilename, 75, pMan);
@@ -435,6 +471,9 @@ public:
   VTEX_EXPFUNC ImageMap_cl GetColorMap(SLONG frameNr); ///< removed const, because auto-decoding of rawdata sure is not a const operation
   VTEX_EXPFUNC ImageMap_cl GetOpacityMap(SLONG frameNr);
   VTEX_EXPFUNC ImageMap_cl GetHeightMap(SLONG frameNr) const;
+
+  // Returns the data pointer for the given colormap frame.
+  VTEX_EXPFUNC UBYTE* GetColorMapData(SLONG frameNr);
 
   // The Remove... functions remove a certain imagemap at frame position frameNr if an imagemap exists at that position.
   // If not, an error code is returned.
@@ -573,7 +612,7 @@ public:
   VTEX_EXPFUNC static RETVAL LoadDimensions(SLONG *imgWidth, SLONG *imgHeight, SLONG *imgDepth, IVFileInStream* pStream);
 
   //New helper function that opens and closes the file stream for you
-  VTEX_EXPFUNC static RETVAL LoadDimensions(SLONG *imgWidth, SLONG *imgHeight, SLONG *imgDepth, const char* pszFileName, IVFileStreamManager* pMan = NULL);
+  VTEX_EXPFUNC static RETVAL LoadDimensions(SLONG *imgWidth, SLONG *imgHeight, SLONG *imgDepth, const char* pszFileName, VFileAccessManager* pMan = NULL);
 
   //Old function for backwards compatibility
   VTEX_EXPFUNC static RETVAL LoadDimensions(SLONG *imgWidth, SLONG *imgHeight, SLONG *imgDepth, const char* pszFileName ,
@@ -732,7 +771,7 @@ public:
 
   /// \brief
   ///   Loads the texanim from text-based file
-  VTEX_EXPFUNC RETVAL LoadFromFile(const char* pszFileName , IVFileStreamManager* pMan = NULL);
+  VTEX_EXPFUNC RETVAL LoadFromFile(const char* pszFileName , VFileAccessManager* pMan = NULL);
   /// \brief
   ///   Loads the texanim from text-based file
   VTEX_EXPFUNC RETVAL LoadFromFile(IVFileInStream* pStream);
@@ -782,7 +821,7 @@ namespace VTex
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

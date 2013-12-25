@@ -236,12 +236,12 @@ void StaticCollisionEntity_cl::CommonInit()
   IVisPhysicsModule_cl *pPhysMod = Vision::GetApplication()->GetPhysicsModule();
   if (!pPhysMod)
   {
-    Vision::Error.Warning("No physics module set.");
+    hkvLog::Warning("No physics module set.");
     return;
   }
   if (pPhysMod->GetType()!=IVisPhysicsModule_cl::VISION)
   {
-    Vision::Error.Warning("Physics module must be of type Vision");
+    hkvLog::Warning("Physics module must be of type Vision");
     return;
   }
 
@@ -558,7 +558,7 @@ START_VAR_TABLE(VSimpleAnimationComponent, IVObjectComponent, "Component for sim
 END_VAR_TABLE
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

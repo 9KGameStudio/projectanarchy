@@ -78,7 +78,7 @@ VEXPORT IVisPlugin_cl* GetEnginePlugin_GamePlugin(){  return &g_myComponents; }
 //  We add our component initialize data here
 void myPlugin_cl::OnInitEnginePlugin()
 {
-  Vision::Error.SystemMessage("MyPlugin:OnInitEnginePlugin()");
+  hkvLog::Info("MyPlugin:OnInitEnginePlugin()");
   Vision::RegisterModule(&g_myComponentModule);
 
   
@@ -124,7 +124,7 @@ void myPlugin_cl::OnInitEnginePlugin()
 // Called before the plugin is unloaded
 void myPlugin_cl::OnDeInitEnginePlugin()
 {
-  Vision::Error.SystemMessage("MyPlugin:OnDeInitEnginePlugin()");
+  hkvLog::Info("MyPlugin:OnDeInitEnginePlugin()");
     
   // Close our component managers here....
   MyComponent_ComponentManager::GlobalManager().OneTimeDeInit();
@@ -140,7 +140,7 @@ void myPlugin_cl::OnDeInitEnginePlugin()
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -11,103 +11,26 @@
 #ifndef VLOG_HPP_INCLUDED
 #define VLOG_HPP_INCLUDED
 
-/// \brief
-///   Pure virtual interface to output log messages
-class IVLog : public VBaseObject
-{
-public:
-
-  /// \brief
-  ///   Puts a fatal error message into the log
-  virtual void Error(const char *szMessage) = 0;
-
-  /// \brief
-  ///   Puts a warning message into the log
-  virtual void Warning(const char *szMessage) = 0;
-
-  /// \brief
-  ///   Puts an information text message into the log
-  virtual void Info(const char *szMessage) = 0;
-
-  /// \brief
-  ///   Forward incoming message to Error, Warning or Info, i.e. according to message prefix
-  virtual void ParseMessage(const char *szMessage) = 0;
-
-  /// \brief
-  /// If pLog is != NULL, the message is formated and passed to pLog->Error.
-  VBASE_IMPEXP static void Error (IVLog* pLog, const char* szMessageTemplate, ...);
-
-  /// \brief
-  /// If pLog is != NULL, the message is formated and passed to pLog->Warning.
-  VBASE_IMPEXP static void Warning (IVLog* pLog, const char* szMessageTemplate, ...);
-
-  /// \brief
-  /// If pLog is != NULL, the message is formated and passed to pLog->Info.
-  VBASE_IMPEXP static void Info (IVLog* pLog, const char* szMessageTemplate, ...);
-
-  /// \brief
-  /// If pLog is != NULL, the message is formated and passed to pLog->ParseMessage.
-  VBASE_IMPEXP static void ParseMessage (IVLog* pLog, const char* szMessageTemplate, ...);
-};
-
-
+#include <Vision/Runtime/Base/Logging/hkvLog.h>
 
 /// \brief
-///   Implements the IVLog interface and discards log outputs.
-class VLogNull : public IVLog
-{
-public:
-  VBASE_IMPEXP virtual void Error       (const char *szMessage)          { }
-  VBASE_IMPEXP virtual void Warning     (const char *szMessage)          { }
-  VBASE_IMPEXP virtual void Info        (const char *szMessage)          { }
-  VBASE_IMPEXP virtual void ParseMessage(const char *szMessage)          { }
-};
-
-
-
-/// \brief
-///   Implements the IVLog interface and outputs the log to the log window using VGLLogPrint.
-///   ParseMessage will always be forwarded to Info.
-class VLogWindow : public IVLog
-{
-public:
-  VBASE_IMPEXP virtual void Error       (const char *szMessage);
-  VBASE_IMPEXP virtual void Warning     (const char *szMessage);
-  VBASE_IMPEXP virtual void Info        (const char *szMessage);
-  VBASE_IMPEXP virtual void ParseMessage(const char *szMessage) { Info(szMessage); }
-};
-
-
-
-/// \brief
-///   Implements the IVLog interface and stores the log into a linked list.
-///   FlushEntries can be used to flush the stored log to another IVLog.
+///   Implements the hkvLogInterface interface and stores the log into a linked list.
+///   FlushEntries can be used to flush the stored log to another hkvLogInterface.
 ///   This Logger is useful when logging inside a thread.
-class VLogThread : public IVLog
+class VLogThread : public hkvLogInterface
 {
 public:
-  VBASE_IMPEXP virtual void Error(const char *szMessage);
-  VBASE_IMPEXP virtual void Warning(const char *szMessage);
-  VBASE_IMPEXP virtual void Info(const char *szMessage);
-  VBASE_IMPEXP virtual void ParseMessage(const char *szMessage);
+  VBASE_IMPEXP virtual void HandleLogMessage(hkvLogMsgType::Enum MsgType, const char* szText, int iIndentation, const char* szTag) HKV_OVERRIDE;
   
-  VBASE_IMPEXP void FlushEntries(IVLog *pLog);
+  VBASE_IMPEXP void FlushEntries(hkvLogInterface* pLog);
 
 private:
-
-  enum LogType
-  {
-    LogTypeError=0,
-    LogTypeWarning,
-    LogTypeInfo,
-    LogTypeParseMessage,
-    LogTypeCount
-  };
-
   struct LogEntry 
   {
-    LogType type;
-    VString szMessage;
+    hkvLogMsgType::Enum m_Type;
+    VString m_sMessage;
+    VString m_sTag;
+    int m_iIndentation;
   };
 
   VArray<LogEntry> entries;
@@ -116,7 +39,7 @@ private:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

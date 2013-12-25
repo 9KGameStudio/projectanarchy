@@ -20,51 +20,63 @@
   public:
 
     /// \brief  
-    ///   Default constructor. Initializes the variables to default values
+    ///   Default constructor
     VRingBuffer()
-      : m_uiReadIndex(0), m_uiWriteIndex(0), m_uiReadCount(0), m_uiWriteCount(0)
+      : m_uiTail(0), m_uiAvailable(0)
     {
-      memset(m_Buffer, 0, sizeof(T) * Size);
     }
 
-    /// \brief  Reads an entry from the buffer. 
+    /// \brief  Reads entries from the buffer. 
     ///
-    /// \param [out] pTarget The target of the read operation - the value read from the buffer will be stored there.
+    /// \param [out] pTarget The target of the read operation - the values read from the buffer will be stored there.
+    /// \param uiCount The maximum number of elements to read.
     ///
-    /// \return true if an element could be read, false otherwise (e.g. buffer is empty).
+    /// \return The number of elements actually read.
     ///
-    bool Read(T* pTarget)
+    unsigned int Read(T* pTarget, unsigned int uiCount = 1)
     {
-      // if no elements are actually in the buffer return false
-      if(GetCount() == 0 || !pTarget)
-        return false;
+      if (uiCount > 0)
+      {
+        // Don't read past the end of the array or past the amount of available bytes
+        unsigned int uiElementsToRead = hkvMath::Min(hkvMath::Min(uiCount, Size - m_uiTail), m_uiAvailable);
 
-      // read the element
-      memcpy(pTarget, GetPointerFromIndex(m_uiReadIndex), sizeof(T));
-      m_uiReadIndex = GetIncWrappedIndex(m_uiReadIndex);
+        memcpy(pTarget, m_Buffer + m_uiTail, uiElementsToRead * sizeof(T));
 
-      m_uiReadCount++;
+        AdvanceTail(uiElementsToRead);
 
-      return true;
+        // Continue reading in case we need to wrap around the end of the buffer
+        return uiElementsToRead + Read(pTarget + uiElementsToRead, uiCount - uiElementsToRead);
+      }
+      else
+      {
+        return 0;
+      }
     }
 
-    /// \brief  Writes an element to the buffer. 
+    /// \brief  Writes entries to the buffer. 
     ///
-    /// \param [in] pSource The source value which will be written into the buffer.
+    /// \param [in] pSource The source values which will be written into the buffer.
+    /// \param uiCount The number of elements to write.
     ///
-    /// \return true if it the value can be written, false if the buffer is full.
+    /// \return true if it the values could all be written, false if the buffer is full.
     ///
-    bool Write(T* pSource)
+    bool Write(const T* pSource, unsigned int uiCount = 1)
     {
-      // If the buffer is full return false
-      if(GetCount() == Size || !pSource)
-        return false;
+      if (uiCount > 0)
+      {
+        if (uiCount + m_uiAvailable > Size)
+        {
+          return false;
+        }
 
-      // write the element
-      memcpy(GetPointerFromIndex(m_uiWriteIndex), pSource, sizeof(T));
-      m_uiWriteIndex = GetIncWrappedIndex(m_uiWriteIndex);
+        // Don't write past the end of the array
+        int uiElementsToWrite = hkvMath::Min(uiCount, Size - GetHead());
 
-      m_uiWriteCount++;
+        memcpy(m_Buffer + GetHead(), pSource, uiElementsToWrite * sizeof(T));
+        AdvanceHead(uiElementsToWrite);
+
+        return Write(pSource + uiElementsToWrite, uiCount - uiElementsToWrite);
+      }
 
       return true;
     }
@@ -75,7 +87,7 @@
     ///
     unsigned int GetCount()
     {
-      return m_uiWriteCount - m_uiReadCount;
+      return m_uiAvailable;
     }
 
     /// \brief Returns the size of the buffer
@@ -87,48 +99,34 @@
       return Size;
     }
 
-  protected:
+  private:
 
-    /// \brief  Helper function returning an incremented wrapped index corresponding to the size of the buffer.
-    ///
-    /// \param  uiIndex The index to work on.
-    ///
-    /// \return The incremented and possibly wrapped index. 
-    ///
-    inline unsigned int GetIncWrappedIndex(unsigned int uiIndex)
+    void AdvanceTail(unsigned int uiOffset)
     {
-      uiIndex++;
-      return uiIndex % Size;
+      VASSERT(uiOffset <= m_uiAvailable);
+
+      m_uiTail = (m_uiTail + uiOffset) % Size;
+      m_uiAvailable -= uiOffset;
     }
 
-    /// \fn inline void* GetPointerFromIndex(unsigned int uiIndex)
-    ///
-    /// \brief  Gets a pointer from an index to read from / write to. (Helper function)
-    ///
-    /// \param  uiIndex Zero-based index of the element of the buffer. 
-    ///
-    /// \return null The pointer to read from / write to.
-    ///
-    inline void* GetPointerFromIndex(unsigned int uiIndex)
+    void AdvanceHead(unsigned int uiOffset)
     {
-      return static_cast<void*>(&m_Buffer[uiIndex]);
+      VASSERT(uiOffset + m_uiAvailable <= Size);
+
+      m_uiAvailable += uiOffset;
     }
+
+    unsigned int GetHead()
+    {
+      return (m_uiTail + m_uiAvailable) % Size;
+    }
+
 
     //! The data buffer. 
     T m_Buffer[Size];
 
-    //! The current read index. 
-    unsigned int m_uiReadIndex;
-
-    //! The current write index. 
-    unsigned int m_uiWriteIndex;
-
-    //! The count of elements read from the buffer. 
-    unsigned int m_uiReadCount;
-
-    //! The count of elements written to the buffer. 
-    unsigned int m_uiWriteCount;
-
+    unsigned int m_uiTail;
+    unsigned int m_uiAvailable;
   };
 
   /// \class  VThreadSafeRingBuffer
@@ -148,21 +146,15 @@
     /// \brief See: VRingBuffer::Read
     bool Read(T* pTarget)
     {
-      m_LockMutex.Lock();
-      bool bRet = VRingBuffer<T, Size>::Read(pTarget);
-      m_LockMutex.Unlock();
-
-      return bRet;
+      VMutexLocker lock(m_LockMutex);
+      return VRingBuffer<T, Size>::Read(pTarget);
     }
 
     /// \brief See: VRingBuffer::Write
     bool Write(T* pSource)
     {
-      m_LockMutex.Lock();
-      bool bRet = VRingBuffer<T, Size>::Write(pSource);
-      m_LockMutex.Unlock();
-
-      return bRet;      
+      VMutexLocker lock(m_LockMutex);
+      return VRingBuffer<T, Size>::Write(pSource);
     }
 
   private:
@@ -264,7 +256,7 @@
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

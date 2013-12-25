@@ -12,12 +12,13 @@
 #define KEYCONTROLLED_TRANSITIONBARBARIAN_HPP_INCLUDED
 
 #include <Vision/Samples/Engine/ModelMerging/TransitionBarbarian.hpp>
+#include <Vision/Runtime/Framework/VisionApp/VAppImpl.hpp>
 
 #ifndef _VISION_DOC
 
 enum CHARACTER_CONTROL 
 {
-  CHARACTER_MOVE_FORWARD = VISION_INPUT_CONTROL_LAST_ELEMENT + 1,
+  CHARACTER_MOVE_FORWARD = VAPP_INPUT_CONTROL_LAST_ELEMENT + 1,
   CHARACTER_ROTATE_LEFT,
   CHARACTER_ROTATE_RIGHT,
   CHARACTER_RUN,
@@ -55,7 +56,7 @@ public:
 #endif // KEYCONTROLLED_TRANSITIONBARBARIAN_HPP_INCLUDED
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

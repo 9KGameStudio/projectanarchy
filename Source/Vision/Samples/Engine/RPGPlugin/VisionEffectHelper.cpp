@@ -104,11 +104,11 @@ VManagedResource *RPG_VisionEffectHelper::GetEffectResource(const char* resource
     resource = resourceManager->LoadResource(szFilename);
     if (!resource)
     {
-      Vision::Error.Warning("[RPG] Resource is missing: %s", szFilename);      
+      hkvLog::Warning("[RPG] Resource is missing: %s", szFilename);      
       return NULL;
     }
     
-    Vision::Error.SystemMessage("[RPG] Resource is not cached: %s", szFilename);   
+    hkvLog::Info("[RPG] Resource is not cached: %s", szFilename);   
   }
 
   return resource; 
@@ -184,11 +184,11 @@ bool RPG_VisionEffectHelper::LoadMesh(char const* fileName)
     resource = meshManager->LoadDynamicMeshFile(fileName);
     if (!resource)
     {
-      Vision::Error.Warning("[RPG] Resource is missing: %s", fileName);      
+      hkvLog::Warning("[RPG] Resource is missing: %s", fileName);      
       return NULL;
     }
     
-    Vision::Error.SystemMessage("[RPG] Resource is not cached: %s", fileName);   
+    hkvLog::Info("[RPG] Resource is not cached: %s", fileName);   
   }
 
   return resource; 
@@ -224,7 +224,7 @@ bool RPG_VisionEffectHelper::IsLoopedFmodEvent(const VFmodEvent* event)
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

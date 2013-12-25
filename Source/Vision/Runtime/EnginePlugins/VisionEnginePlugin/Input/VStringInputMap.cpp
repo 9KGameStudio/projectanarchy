@@ -15,7 +15,6 @@ V_ENGINE_PLUGIN_ELEMENT_MANAGER_INIT_STATICS(VStringInputMap)
 
 VStringInputMap::VStringInputMap(const char * szMapName, int iNumTriggers, int iNumAlternatives) :
   VInputMap(iNumTriggers, iNumAlternatives),
-  m_pMappedIndices(NULL),
   m_hashMap(iNumTriggers)
 {
   VASSERT_MSG(!VStringUtil::IsEmpty(szMapName), "Specify a valid name!");
@@ -25,8 +24,6 @@ VStringInputMap::VStringInputMap(const char * szMapName, int iNumTriggers, int i
   
   VisObjectKey_cl::SetObjectKey(szMapName);
   AddToElementManager();
-
-  m_pMappedIndices = new int [iNumTriggers];
 }
 
 VStringInputMap::~VStringInputMap()
@@ -34,8 +31,6 @@ VStringInputMap::~VStringInputMap()
   //do a check just in case somebody removed the map manually
   if(ElementManagerIndexOf(this)>=0)
     RemoveFromElementManager();
-
-  V_SAFE_DELETE(m_pMappedIndices);
 }
 
 void VStringInputMap::OneTimeInit()
@@ -74,10 +69,9 @@ void VStringInputMap::OneTimeDeInit()
 int VStringInputMap::MapTrigger(const char* szTriggerName, IVInputDevice &inputDevice, unsigned int uiControl, const VInputOptions &options, int iOptTriggerIndex)
 {
   int iTriggerIndex = 0;
-  int *pTriggerIndex = &iTriggerIndex;
 
   //check if the string key exists in the hash map
-  if(!m_hashMap.Lookup(szTriggerName, pTriggerIndex))
+  if(!m_hashMap.Lookup(szTriggerName, iTriggerIndex))
   {
     if(iOptTriggerIndex!=-1)
     {
@@ -91,26 +85,21 @@ int VStringInputMap::MapTrigger(const char* szTriggerName, IVInputDevice &inputD
         return -1;
     }
 
-    //since there are as many array elements as trigger we can directly map the
-    //indices instead of tracking them separately in an additional counter
-    m_pMappedIndices[iTriggerIndex] = iTriggerIndex;
-
     //store the new trigger index assignment in the hash map and map it
-    m_hashMap.SetAt(szTriggerName, &m_pMappedIndices[iTriggerIndex]);
+    m_hashMap.SetAt(szTriggerName, iTriggerIndex);
     return VInputMap::MapTrigger(iTriggerIndex, inputDevice, uiControl, options);
   }
 
   //we have to de-reference the pointer, since we are interested into the value and the hash map just handles pointers
-  return VInputMap::MapTrigger((int)*pTriggerIndex, inputDevice, uiControl, options);
+  return VInputMap::MapTrigger(iTriggerIndex, inputDevice, uiControl, options);
 }
 
 int VStringInputMap::MapTrigger(const char* szTriggerName, VTouchArea* pArea, unsigned int uiControl, const VInputOptions &options, int iOptTriggerIndex)
 {
   int iTriggerIndex = 0;
-  int *pTriggerIndex = &iTriggerIndex;
 
   //check if the string key exists in the hash map
-  if(!m_hashMap.Lookup(szTriggerName, pTriggerIndex))
+  if(!m_hashMap.Lookup(szTriggerName, iTriggerIndex))
   {
     if(iOptTriggerIndex!=-1)
     {
@@ -124,26 +113,22 @@ int VStringInputMap::MapTrigger(const char* szTriggerName, VTouchArea* pArea, un
         return -1;
     }
 
-    //since there are as many array elements as trigger we can directly map the
-    //indices instead of tracking them separately in an additional counter
-    m_pMappedIndices[iTriggerIndex] = iTriggerIndex;
-    m_hashMap.SetAt(szTriggerName, &m_pMappedIndices[iTriggerIndex]);
+    m_hashMap.SetAt(szTriggerName, iTriggerIndex);
 
     //store the new trigger index assignment in the hash map and map it
     return VInputMap::MapTrigger(iTriggerIndex, pArea, uiControl, options);
   }
 
   //we have to de-reference the pointer, since we are interested into the value and the hash map just handles pointers
-  return VInputMap::MapTrigger((int)*pTriggerIndex, pArea, uiControl, options);
+  return VInputMap::MapTrigger(iTriggerIndex, pArea, uiControl, options);
 }
 
 int VStringInputMap::MapTriggerAxis(const char* szTriggerName, IVInputDevice &inputDevice, unsigned int uiControlNegative, unsigned int uiControlPositive, const VInputOptions &options, int iOptTriggerIndex)
 {
   int iTriggerIndex = 0;
-  int *pTriggerIndex = &iTriggerIndex;
 
   //check if the string key exists in the hash map
-  if(!m_hashMap.Lookup(szTriggerName, pTriggerIndex))
+  if(!m_hashMap.Lookup(szTriggerName, iTriggerIndex))
   {
     if(iOptTriggerIndex!=-1)
     {
@@ -157,17 +142,14 @@ int VStringInputMap::MapTriggerAxis(const char* szTriggerName, IVInputDevice &in
         return -1;
     }
 
-    //since there are as many array elements as trigger we can directly map the
-    //indices instead of tracking them separately in an additional counter
-    m_pMappedIndices[iTriggerIndex] = iTriggerIndex;
-    m_hashMap.SetAt(szTriggerName, &m_pMappedIndices[iTriggerIndex]);
+    m_hashMap.SetAt(szTriggerName, iTriggerIndex);
 
     //store the new trigger index assignment in the hash map and map it
     return VInputMap::MapTriggerAxis(iTriggerIndex, inputDevice, uiControlNegative, uiControlPositive, options);
   }
 
   //we have to de-reference the pointer, since we are interested into the value and the hash map just handles pointers
-  return VInputMap::MapTriggerAxis((int)*pTriggerIndex, inputDevice, uiControlNegative, uiControlPositive, options);
+  return VInputMap::MapTriggerAxis(iTriggerIndex, inputDevice, uiControlNegative, uiControlPositive, options);
 }
 
 int VStringInputMap::GetNextFreeTriggerIndex() const
@@ -196,7 +178,7 @@ int VStringInputMap::GetNextFreeTriggerIndex() const
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

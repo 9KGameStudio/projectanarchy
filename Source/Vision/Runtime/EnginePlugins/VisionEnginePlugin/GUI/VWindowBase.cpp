@@ -118,7 +118,7 @@ bool VWindowBase::Build(TiXmlElement *pNode, const char *szPath, bool bWrite)
 
   XMLHelper::Exchange_Bool(pNode,"enabled", bEnabled, bWrite);    SetStatus(ITEMSTATUS_ENABLED,bEnabled);
   XMLHelper::Exchange_Bool(pNode,"visible", bVisible, bWrite);    SetStatus(ITEMSTATUS_VISIBLE,bVisible);
-  XMLHelper::Exchange_Bool(pNode,"selected", bSelected, bWrite);  SetStatus(ITEMSTATUS_STAYSELECTED,bSelected);
+  XMLHelper::Exchange_Bool(pNode,"selected", bSelected, bWrite);  SetStatus(ITEMSTATUS_SELECTED,bSelected);
   XMLHelper::Exchange_Bool(pNode,"usecaching", bCaching, bWrite);
   // tooltip
   const char *szUTF8 = XMLHelper::Exchange_String(pNode,"tooltiptext", NULL, bWrite);
@@ -303,18 +303,16 @@ void VWindowBase::OnMouseEnter(VGUIUserInfo_t &user)
 {
   SetStatus(ITEMSTATUS_MOUSEOVER_USER0<<user.m_iID); 
   TriggerScriptEvent("OnMouseEnter");
-  //Vision::Message.Add("Enter : %i",user.m_iID);
 }
 
 void VWindowBase::OnMouseLeave(VGUIUserInfo_t &user) 
 {
-  RemoveStatus((ITEMSTATUS_MOUSEOVER_USER0<<user.m_iID)|ITEMSTATUS_SELECTED); 
+  RemoveStatus((ITEMSTATUS_MOUSEOVER_USER0<<user.m_iID)); 
   TriggerScriptEvent("OnMouseLeave");
-  //Vision::Message.Add("Leave : %i",user.m_iID);
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

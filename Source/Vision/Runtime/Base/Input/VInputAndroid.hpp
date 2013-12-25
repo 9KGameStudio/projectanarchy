@@ -17,6 +17,9 @@
 class VInputManagerAndroid;
 typedef VInputManagerAndroid VInputManager;
 
+class VMotionInputAndroid;
+typedef VMotionInputAndroid VMotionInput;
+
 //compatiblity typedefs
 HKV_DEPRECATED_2012_2 typedef VInputManagerAndroid VInputDeviceManager;
 HKV_DEPRECATED_2012_2 typedef VInputManagerAndroid VInputDeviceManagerAndroid;
@@ -54,7 +57,8 @@ enum VInputDeviceModel
 /// \brief Platform specific input control (buttons, keys, touch points, etc) names and values.
 enum VInputControlAndroid
 {
-  CT_PAD_ANDROID_BACK = CT_PAD_CIRCLE
+  CT_PAD_ANDROID_BACK = CT_PAD_CIRCLE,
+  CT_PAD_ANDROID_MENU = CT_PLATFORM_FIRST
 };
 
 /// \class  VMotionInputAndroid
@@ -292,12 +296,6 @@ class VMultiTouchInputAndroid : public IVMultiTouchInput
     };
 
     float m_fTimeDiff;
-
-    float m_fInvX;
-    float m_fInvY;
-
-    int m_iXRatio;
-    int m_iYRatio;
   
     VTouchPoint m_TouchPoints[V_ANDROID_MAX_TOUCH_POINTS];
 
@@ -456,7 +454,7 @@ class VInputManagerAndroid : public VInputManagerBase
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -243,7 +243,7 @@ public:
 
   /// \brief
   ///   Implementations can provide a log for error/warning/info output
-  VBASE_IMPEXP virtual IVLog* GetLoadingLog(VTextureObject *pLoadingRes) {return NULL;}
+  VBASE_IMPEXP virtual hkvLogInterface* GetLoadingLog(VTextureObject *pLoadingRes) {return NULL;}
 
   /// \brief
   ///   Implementations must trigger the texture loading callback after loading a texture
@@ -404,7 +404,7 @@ inline IVTextureFormatProvider& VTextureManager::GetFormatProvider(int iIndex) c
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

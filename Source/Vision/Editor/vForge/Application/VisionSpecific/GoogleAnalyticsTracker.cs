@@ -4,6 +4,7 @@
  * prior written consent. This software contains code, techniques and know-how which is confidential and proprietary to Havok.
  * Product and Trade Secret source code contains trade secrets of Havok. Havok Software (C) Copyright 1999-2013 Telekinesys Research Limited t/a Havok. All Rights Reserved. Use of this software is subject to the terms of an end user license agreement.
  *
+ *
  */
 
 using System;
@@ -17,8 +18,6 @@ using CSharpFramework.Shapes;
 using CSharpFramework.Math;
 using ManagedFramework;
 using System.Collections.Generic;
-
-#if HK_ANARCHY // TODO: Replace with inclusion tag
 
 namespace Editor.Vision
 {
@@ -165,10 +164,8 @@ namespace Editor.Vision
   }
 }
 
-#endif
-
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

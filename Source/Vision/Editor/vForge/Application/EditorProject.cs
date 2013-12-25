@@ -14,6 +14,8 @@ using System.Reflection;
 using CSharpFramework.Helper;
 using CSharpFramework.Dialogs;
 using AssetManagementManaged;
+using System.Diagnostics;
+using Editor.Dialogs;
 
 namespace Editor
 {
@@ -186,8 +188,10 @@ namespace Editor
       EditorApp.Scene = null;
 
       //Remove the project directory from the engine base data directory
-      EditorApp.EngineManager.File_RemoveDataDirectory(ProjectDir);
+      EditorApp.EngineManager.File_RemoveSearchPath(ProjectSearchPath);
       RemoveAllCustomDataDirectories();
+
+      EditorApp.EngineManager.File_RemoveFileSystem("workspace");
 
       // empty all class managers (before engine.DeInit so that native code can be executed)
       EditorManager.EngineManager.RefreshEntityClassManager();
@@ -234,6 +238,7 @@ namespace Editor
       //create the project directory
       if (Directory.CreateDirectory(projdir) == null)
       {
+        EditorManager.ShowMessageBox("Failed to create project directory", "Failed to create project", MessageBoxButtons.OK, MessageBoxIcon.Error);
         return null;
       }
 
@@ -277,8 +282,12 @@ namespace Editor
       if (!File.Exists(filename))
         return false;
 
+      EditorManager.EngineManager.InitFileHandling();
+      EditorManager.EngineManager.SetBaseDataPath(EditorManager.BaseDataDir);
+      EditorManager.EngineManager.SetEditorDataPath(EditorManager.AppDataDir);
+
       m_filename = filename;
-      string projectDirNoEndingSlash = Path.GetDirectoryName(filename);
+      string projectDirNoEndingSlash = Path.GetDirectoryName(filename).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
       ProjectDir = projectDirNoEndingSlash + Path.DirectorySeparatorChar;
 
       //Nothing to read at the moment...
@@ -287,7 +296,7 @@ namespace Editor
       this.FileName = Path.GetFileName(filename);
 
       EditorManager.EngineManager.SetProjectPath(Path.GetDirectoryName(PathName));
-      
+
       // Open MultiUser Editing Dialog
       if (!TestManager.IsRunning && !EditorManager.SilentMode && EditorManager.Settings.OpenMultiUserEditingDialogOnProjectLoad)
       {
@@ -305,27 +314,31 @@ namespace Editor
       // If updating the RCS status fails we break up loading the project.
       if (!UpdateRCSStatus(true))
         return false;
-      
+
+      if (!EnsureValidWorkspace())
+        return false;
+
       // optionally load plugins from sub directory
       string additionalPluginDir = AdditionalPluginDir;
 
       EditorManager.ProfileManager.InitNewProject(ProjectDir);
 
       //Add the project directory to the engine base data directory
-      //EditorManager.EngineManager.File_RemoveAllDataDirectories(); //Don't remove all data directories, or else we lose the base data directory
-      EditorManager.EngineManager.File_AddDataDirectory(ProjectDir);
+      EditorManager.EngineManager.File_AddSearchPath(ProjectSearchPath, SearchPathFlags.Writable | SearchPathFlags.PathMustExist);
 
       // Notify the asset manager of automatically added data directories
-      EditorManager.AssetManager.AddDataDirectory(EditorManager.BaseDataDir, "Base", false, false);
-      EditorManager.AssetManager.AddDataDirectory(ProjectDir, new DirectoryInfo(ProjectDir).Name, false, true);
+      EditorManager.AssetManager.AddDataDirectory(
+        EditorManager.IsCustomBaseDataDir ? ":base_data" : EditorManager.DefaultBaseDataSearchPath, "Base", false, false, true);
+      EditorManager.AssetManager.AddDataDirectory(ProjectSearchPath, new DirectoryInfo(ProjectDir).Name, false, true, true);
 
-      // add the Simulation data dir if that one is available
-      // Make sure this is done after adding the project directory, so that
-      // files with the same filename will be taken out of the project directory.
-      string simDir = Path.Combine(EditorManager.BaseDataDir, @"..\Simulation");
-      simDir = FileHelper.ResolveFilename(simDir);
-      if (Directory.Exists(simDir))
-        this.AddCustomDataDirectory(simDir, "Simulation", false);
+      // If a custom simulation data path has been set, add it as a file system.
+      if (EditorManager.IsCustomSimulationDataDir)
+      {
+        EditorManager.EngineManager.File_AddFileSystem("simulation_data", EditorManager.SimulationDataDir, FileSystemFlags.Writable);
+      }
+      // Add the search path for simulation data
+      this.AddCustomDataDirectory(
+        EditorManager.IsCustomSimulationDataDir ? ":simulation_data" : EditorManager.DefaultSimulationDataSearchPath, "Simulation", true, true);
 
       // Load the project specific editor plugins (install an assembly resolver to load the
       // assemblies from the project directory)
@@ -350,6 +363,79 @@ namespace Editor
       //Initialize the engine
       if (!EditorApp.EngineManager.InitEngine())
         return false;
+
+      return true;
+    }
+
+
+    /// <summary>
+    /// Tries to find a workspace for the current project directory. Failing this, either prompts
+    /// the user where to set the workspace (if permitted by the application state), or assumes the
+    /// project directory to be the workspace directory (if running silently or if executing tests).
+    /// </summary>
+    /// <returns><code>true</code> if a workspaces was either found or has been created; <code>false</code> otherwise.</returns>
+    private bool EnsureValidWorkspace()
+    {
+      // Find the vForge workspace directory. This may be any directory above the
+      // project directory.
+      // If no workspace could be found, either show a dialog (if allowed) or assume the project directory.
+      if (!EditorManager.EngineManager.FindWorkspaceDirectory(ProjectDir, "workspace", out WorkspaceDir, out ProjectSearchPath))
+      {
+        if (!TestManager.IsRunning && !EditorManager.SilentMode)
+        {
+          WorkspaceDlg dlg = new WorkspaceDlg(ProjectDir);
+          if (dlg.ShowDialog() != DialogResult.OK)
+          {
+            return false;
+          }
+
+          WorkspaceDir = dlg.UseProjectDir ? ProjectDir : dlg.SelectedDir.FullName;
+          if (!CreateWorkspaceFile())
+          {
+            return false;
+          }
+          ProjectSearchPath = ":workspace/" + ProjectDir.Substring(WorkspaceDir.Length).Replace('\\', '/').Trim('/');
+        }
+        else
+        {
+          WorkspaceDir = ProjectDir;
+          ProjectSearchPath = ":workspace";
+        }
+      }
+
+      // We have a workspace. Add it as a file system to the Engine.
+      if (!EditorManager.EngineManager.File_AddFileSystem("workspace", WorkspaceDir, FileSystemFlags.Writable))
+      {
+        return false;
+      }
+
+      return true;
+    }
+
+
+    /// <summary>
+    /// Attempts to create a workspace marker file in the folder <code>WorkspaceDir</code>.
+    /// </summary>
+    /// <returns><code>true</code> if the file was successfully created</returns>
+    private bool CreateWorkspaceFile()
+    {
+      String workspaceFile = String.Empty;
+      try
+      {
+        workspaceFile = Path.Combine(WorkspaceDir, WorkspaceFileName);
+        using (File.Create(workspaceFile))
+        {
+          // No action; we just want to create the file.
+        }
+      }
+      catch (System.Exception ex)
+      {
+        EditorManager.ShowMessageBox(String.Format("Failed to create the workspace file at path \"{0}\". Error: {1}", workspaceFile, ex.Message), "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        return false;
+      }
+
+      // Try to add to RCS. Not fatal if this fails.
+      ManagedBase.RCS.GetProvider().AddFile(workspaceFile, false);
 
       return true;
     }
@@ -532,7 +618,7 @@ namespace Editor
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

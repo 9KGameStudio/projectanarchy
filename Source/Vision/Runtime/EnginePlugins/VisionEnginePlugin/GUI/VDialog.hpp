@@ -68,11 +68,11 @@ public:
 
   /// \brief
   ///   Indicates whether this dialog runs in modal mode
-  inline bool IsModal() const {return (m_iDialogFlags&DIALOGFLAGS_MODAL)>0;}
+  inline bool IsModal() const {return (m_uiDialogFlags&DIALOGFLAGS_MODAL)>0;}
 
   /// \brief
   ///   Indicates whether this dialog covers the whole view (e.g. main menu)
-  inline bool IsFullscreen() const {return (m_iDialogFlags&DIALOGFLAGS_FULLSCREEN)>0;}
+  inline bool IsFullscreen() const {return (m_uiDialogFlags&DIALOGFLAGS_FULLSCREEN)>0;}
   
   /// \brief
   ///   Returns the screen coordinates of the default dialog start position (e.g. screen center)
@@ -226,6 +226,15 @@ public:
     for (int i=0;i<m_Items.Count();i++)
       m_Items.GetAt(i)->SetParent(this);
   }
+
+  /// \brief
+  ///   Gets current dialog flags.
+  inline unsigned int GetDialogFlags() const { return m_uiDialogFlags; }
+
+  /// \brief
+  ///   Sets new dialog flags.
+  inline void SetDialogFlags(unsigned int uiFlags) { m_uiDialogFlags = uiFlags; }
+
 protected:
 // serialization
   V_DECLARE_SERIAL_DLLEXP( VDialog, GUI_IMPEXP_DATA );
@@ -238,7 +247,7 @@ protected:
   // base properties
   VDialogResourcePtr m_spResource;
 
-  int m_iDialogFlags;
+  unsigned int m_uiDialogFlags;
   StartPositionType_e m_eStartPos;
 
   VMenuItemCollection m_Items;
@@ -331,7 +340,7 @@ private:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

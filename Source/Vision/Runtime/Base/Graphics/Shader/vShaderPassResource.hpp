@@ -76,7 +76,7 @@ public:
   ///
   /// \param pLog
   ///   Optional log object.
-  VBASE_IMPEXP void* GetCachedShader (VShaderStage_e eShaderStage, VShaderModel_e& eOutDstModel, IVLog *pLog = NULL);
+  VBASE_IMPEXP void* GetCachedShader (VShaderStage_e eShaderStage, VShaderModel_e& eOutDstModel, hkvLogInterface* pLog);
 
   /// \brief
   ///   Releases all the cached shader objects.
@@ -302,7 +302,7 @@ private:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -26,9 +26,9 @@ namespace Editor.Dialogs
       System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(EULA));
       this.EulaTextBox = new System.Windows.Forms.RichTextBox();
       this.tableLayoutPanel2 = new System.Windows.Forms.TableLayoutPanel();
-      this.AcceptEulaButton = new System.Windows.Forms.Button();
-      this.RejectEulaButton = new System.Windows.Forms.Button();
       this.tableLayoutPanel1 = new System.Windows.Forms.TableLayoutPanel();
+      this.RejectEulaButton = new System.Windows.Forms.Button();
+      this.AcceptEulaButton = new System.Windows.Forms.Button();
       this.tableLayoutPanel2.SuspendLayout();
       this.tableLayoutPanel1.SuspendLayout();
       this.SuspendLayout();
@@ -40,7 +40,7 @@ namespace Editor.Dialogs
       this.EulaTextBox.Location = new System.Drawing.Point(3, 3);
       this.EulaTextBox.Name = "EulaTextBox";
       this.EulaTextBox.ReadOnly = true;
-      this.EulaTextBox.Size = new System.Drawing.Size(680, 700);
+      this.EulaTextBox.Size = new System.Drawing.Size(598, 532);
       this.EulaTextBox.TabIndex = 0;
       this.EulaTextBox.Text = "";
       // 
@@ -56,28 +56,8 @@ namespace Editor.Dialogs
       this.tableLayoutPanel2.RowCount = 2;
       this.tableLayoutPanel2.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
       this.tableLayoutPanel2.RowStyles.Add(new System.Windows.Forms.RowStyle());
-      this.tableLayoutPanel2.Size = new System.Drawing.Size(686, 748);
+      this.tableLayoutPanel2.Size = new System.Drawing.Size(604, 580);
       this.tableLayoutPanel2.TabIndex = 4;
-      // 
-      // AcceptEulaButton
-      // 
-      this.AcceptEulaButton.Location = new System.Drawing.Point(521, 3);
-      this.AcceptEulaButton.Name = "AcceptEulaButton";
-      this.AcceptEulaButton.Size = new System.Drawing.Size(75, 23);
-      this.AcceptEulaButton.TabIndex = 1;
-      this.AcceptEulaButton.Text = "Accept";
-      this.AcceptEulaButton.UseVisualStyleBackColor = true;
-      this.AcceptEulaButton.Click += new System.EventHandler(this.AcceptEulaButton_Click);
-      // 
-      // RejectEulaButton
-      // 
-      this.RejectEulaButton.Location = new System.Drawing.Point(602, 3);
-      this.RejectEulaButton.Name = "RejectEulaButton";
-      this.RejectEulaButton.Size = new System.Drawing.Size(75, 23);
-      this.RejectEulaButton.TabIndex = 2;
-      this.RejectEulaButton.Text = "Reject";
-      this.RejectEulaButton.UseVisualStyleBackColor = true;
-      this.RejectEulaButton.Click += new System.EventHandler(this.RejectEulaButton_Click);
       // 
       // tableLayoutPanel1
       // 
@@ -88,25 +68,44 @@ namespace Editor.Dialogs
       this.tableLayoutPanel1.Controls.Add(this.RejectEulaButton, 2, 0);
       this.tableLayoutPanel1.Controls.Add(this.AcceptEulaButton, 1, 0);
       this.tableLayoutPanel1.Dock = System.Windows.Forms.DockStyle.Fill;
-      this.tableLayoutPanel1.Location = new System.Drawing.Point(3, 709);
+      this.tableLayoutPanel1.Location = new System.Drawing.Point(3, 541);
       this.tableLayoutPanel1.Name = "tableLayoutPanel1";
       this.tableLayoutPanel1.RowCount = 1;
       this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 30F));
-      this.tableLayoutPanel1.Size = new System.Drawing.Size(680, 36);
+      this.tableLayoutPanel1.Size = new System.Drawing.Size(598, 36);
       this.tableLayoutPanel1.TabIndex = 3;
+      // 
+      // RejectEulaButton
+      // 
+      this.RejectEulaButton.Location = new System.Drawing.Point(520, 3);
+      this.RejectEulaButton.Name = "RejectEulaButton";
+      this.RejectEulaButton.Size = new System.Drawing.Size(75, 23);
+      this.RejectEulaButton.TabIndex = 2;
+      this.RejectEulaButton.Text = "Reject";
+      this.RejectEulaButton.UseVisualStyleBackColor = true;
+      this.RejectEulaButton.Click += new System.EventHandler(this.RejectEulaButton_Click);
+      // 
+      // AcceptEulaButton
+      // 
+      this.AcceptEulaButton.Location = new System.Drawing.Point(439, 3);
+      this.AcceptEulaButton.Name = "AcceptEulaButton";
+      this.AcceptEulaButton.Size = new System.Drawing.Size(75, 23);
+      this.AcceptEulaButton.TabIndex = 1;
+      this.AcceptEulaButton.Text = "Accept";
+      this.AcceptEulaButton.UseVisualStyleBackColor = true;
+      this.AcceptEulaButton.Click += new System.EventHandler(this.AcceptEulaButton_Click);
       // 
       // EULA
       // 
       this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
       this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-      this.ClientSize = new System.Drawing.Size(686, 748);
+      this.ClientSize = new System.Drawing.Size(604, 580);
       this.Controls.Add(this.tableLayoutPanel2);
-      this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
       this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
       this.MaximizeBox = false;
       this.MinimizeBox = false;
-      this.ShowInTaskbar = false;
       this.Name = "EULA";
+      this.ShowInTaskbar = false;
       this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
       this.Text = "Project Anarchy EULA";
       this.tableLayoutPanel2.ResumeLayout(false);
@@ -126,7 +125,7 @@ namespace Editor.Dialogs
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

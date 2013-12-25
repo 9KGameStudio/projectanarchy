@@ -1,3 +1,11 @@
+/*
+ *
+ * Confidential Information of Telekinesys Research Limited (t/a Havok). Not for disclosure or distribution without Havok's
+ * prior written consent. This software contains code, techniques and know-how which is confidential and proprietary to Havok.
+ * Product and Trade Secret source code contains trade secrets of Havok. Havok Software (C) Copyright 1999-2013 Telekinesys Research Limited t/a Havok. All Rights Reserved. Use of this software is subject to the terms of an end user license agreement.
+ *
+ */
+
 #ifndef VLUA_APIDOC
 
 %nodefaultctor VStringInputMap;
@@ -23,7 +31,7 @@ VSWIG_CREATE_TOSTRING(VStringInputMap, "%s: [%d triggers %d alternatives]", self
 
     if(Vision::Editor.IsInEditor() && Vision::Editor.GetMode()<(int)VisEditorManager_cl::EDITORMODE_PLAYING_IN_GAME)
     {
-      Vision::Error.Warning("MapTrigger will only work when using the 'Play the Game' mode!");
+      hkvLog::Warning("MapTrigger will only work when using the 'Play the Game' mode!");
       lua_pushnumber(L, (lua_Number)-1);     //error
       return 1;
     }
@@ -80,7 +88,7 @@ VSWIG_CREATE_TOSTRING(VStringInputMap, "%s: [%d triggers %d alternatives]", self
           //parse the specified float value: x1, y1, x2, y2, priority
           if(sscanf(pVar->GetValue(), "%f", &pAreaAndPriority[iCounter])!=1)
           {
-            Vision::Error.Warning("[Lua] MapTrigger: Could not interpret number: %s", pVar->GetValue());
+            hkvLog::Warning("[Lua] MapTrigger: Could not interpret number: %s", pVar->GetValue());
           }
             
           iCounter++;
@@ -88,7 +96,7 @@ VSWIG_CREATE_TOSTRING(VStringInputMap, "%s: [%d triggers %d alternatives]", self
           //max allowed is 4 coordinates + 1x priority
           if(iCounter>5)
           {
-            Vision::Error.Warning("[Lua] MapTrigger: Ignoring additional parameters in touch area table!");
+            hkvLog::Warning("[Lua] MapTrigger: Ignoring additional parameters in touch area table!");
             break;
           }
         }
@@ -144,7 +152,7 @@ VSWIG_CREATE_TOSTRING(VStringInputMap, "%s: [%d triggers %d alternatives]", self
           if(sscanf(pVar->GetValue(), "%f", &fValue)==1)
             options.m_fDeadZone = fValue;
           else
-            Vision::Error.Warning("[Lua] MapTrigger: Could not interpret number: %s", pVar->GetValue());
+            hkvLog::Warning("[Lua] MapTrigger: Could not interpret number: %s", pVar->GetValue());
         }
         else if(sName=="timescaled")
         {
@@ -184,7 +192,7 @@ VSWIG_CREATE_TOSTRING(VStringInputMap, "%s: [%d triggers %d alternatives]", self
           if(sscanf(pVar->GetValue(), "%f", &fValue)==1)
             options.m_fHoldTime = fValue;
           else
-            Vision::Error.Warning("[Lua] MapTrigger: Could not interpret number: %s", pVar->GetValue());
+            hkvLog::Warning("[Lua] MapTrigger: Could not interpret number: %s", pVar->GetValue());
         }
         else if(sName=="sensitivity")
         {
@@ -192,7 +200,7 @@ VSWIG_CREATE_TOSTRING(VStringInputMap, "%s: [%d triggers %d alternatives]", self
           if(sscanf(pVar->GetValue(), "%f", &fValue)==1)
             options.m_fSensitivity = fValue;
           else
-            Vision::Error.Warning("[Lua] MapTrigger: Could not interpret number: %s", pVar->GetValue());
+            hkvLog::Warning("[Lua] MapTrigger: Could not interpret number: %s", pVar->GetValue());
         }
         else if(sName=="alternative")
         {
@@ -200,7 +208,7 @@ VSWIG_CREATE_TOSTRING(VStringInputMap, "%s: [%d triggers %d alternatives]", self
           if(sscanf(pVar->GetValue(), "%d", &iValue)==1)
             options.m_iAlternative = iValue;
           else
-            Vision::Error.Warning("[Lua] MapTrigger: Could not interpret number: %s", pVar->GetValue());
+            hkvLog::Warning("[Lua] MapTrigger: Could not interpret number: %s", pVar->GetValue());
         }
         else if(sName=="usetriggerindex")
         {
@@ -208,7 +216,7 @@ VSWIG_CREATE_TOSTRING(VStringInputMap, "%s: [%d triggers %d alternatives]", self
           if(sscanf(pVar->GetValue(), "%d", &iValue)==1)
             iOptTriggerIndex = iValue;
           else
-            Vision::Error.Warning("[Lua] MapTrigger: Could not interpret number: %s", pVar->GetValue());
+            hkvLog::Warning("[Lua] MapTrigger: Could not interpret number: %s", pVar->GetValue());
         }      
       }
       iCurrentIndex++;
@@ -630,3 +638,18 @@ public:
 };
 
 #endif
+
+/*
+ * Havok SDK - Base file, BUILD(#20131218)
+ * 
+ * Confidential Information of Havok.  (C) Copyright 1999-2013
+ * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok
+ * Logo, and the Havok buzzsaw logo are trademarks of Havok.  Title, ownership
+ * rights, and intellectual property rights in the Havok software remain in
+ * Havok and/or its suppliers.
+ * 
+ * Use of this software for evaluation purposes is subject to and indicates
+ * acceptance of the End User licence Agreement for this product. A copy of
+ * the license is included with this software and is also available from salesteam@havok.com.
+ * 
+ */

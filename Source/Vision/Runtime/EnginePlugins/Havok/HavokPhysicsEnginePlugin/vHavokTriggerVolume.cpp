@@ -127,7 +127,7 @@ void vHavokTriggerVolume::CommonInit()
   // Do not initialize the component in case our module is not active
   if (!m_pModule)
   {
-    Vision::Error.Warning("Failed to initialize vHavokTriggerVolume since a non Havok physics module is currently active");
+    hkvLog::Warning("Failed to initialize vHavokTriggerVolume since a non Havok physics module is currently active");
     return;
   }
 
@@ -137,28 +137,15 @@ void vHavokTriggerVolume::CommonInit()
 
   // Get the static mesh from the custom volume object
   VisStaticMesh_cl *pMesh = pCustomVolume->GetStaticMesh();
-  if (pMesh)
-  {
-    // Check whether the static mesh is really there
-    pMesh->EnsureLoaded();
-    if (!pMesh->IsLoaded())
-      pMesh = NULL;
-  }
+  if (pMesh == NULL)
+    return;
+  pMesh->EnsureLoaded();
 
+  if ((!pMesh->IsLoaded()) || (pMesh->GetNumOfTriangles() < 1))
+    return;
+ 
   // Get scaling vector from custom volume object
-  hkvVec3 vScale = pCustomVolume->GetScale();
-
-  if (!pMesh)
-  {
-    Vision::Error.Warning("Initializing vHavokTriggerVolume with a NULL static mesh");
-    return;
-  }
-
-  // Check whether the static mesh has enough vertices
-  if (pMesh->GetNumOfTriangles() < 1)
-  {
-    return;
-  }
+  const hkvVec3 vScale = pCustomVolume->GetScale();
 
   // Check whether the static mesh has valid size
   const hkvAlignedBBox& bbox = pMesh->GetBoundingBox();
@@ -175,7 +162,7 @@ void vHavokTriggerVolume::CommonInit()
   if (notLargeEnough.anyIsSet<hkVector4ComparisonMask::MASK_XYZ>())
   {
     const char *szMeshFilename = (pMesh->GetFilename()!=NULL) ? pMesh->GetFilename() : "Unnamed";
-    Vision::Error.Warning("Initializing vHavokTriggerVolume with a static mesh [%s] with undersized extents (%.4f, %4f, %.4f)", 
+    hkvLog::Warning("Initializing vHavokTriggerVolume with a static mesh [%s] with undersized extents (%.4f, %4f, %.4f)", 
       szMeshFilename, bbox_extent(0), bbox_extent(1), bbox_extent(2));
     return;
   }
@@ -634,7 +621,7 @@ void vHavokTriggerVolume::SetOwner(VisTypedEngineObject_cl *pOwner)
   // Do not initialize the component in case our module is not active
   if (!m_pModule)
   {
-    Vision::Error.Warning("Failed to initialize vHavokTriggerVolume since a non Havok physics module is currently active");
+    hkvLog::Warning("Failed to initialize vHavokTriggerVolume since a non Havok physics module is currently active");
     return;
   }
 
@@ -777,7 +764,7 @@ void vHavokTriggerVolume::Serialize( VArchive &ar )
       // Get shape
       if (m_pTriggerVolume == NULL)
       {
-        Vision::Error.Warning("vHavokTriggerVolume: Internal trigger volume missing on export.");
+        hkvLog::Warning("vHavokTriggerVolume: Internal trigger volume missing on export.");
       }
       else
       {
@@ -832,7 +819,7 @@ START_VAR_TABLE(vHavokTriggerVolume, IVObjectComponent, "Havok Trigger Volume Co
 END_VAR_TABLE
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

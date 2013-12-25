@@ -12,10 +12,10 @@
 #define VISION_VISION_APP_HPP
 
 #if defined( HK_ANARCHY )
-  #define VISION_AUTHENTICITY_KEY      "NO_KEY_REQUIRED"
+#define VISION_AUTHENTICITY_KEY      "NO_KEY_REQUIRED"
 #else
-  //so we can get VISION_AUTHENTICITY_KEY
-  #include <Vision/Runtime/Engine/System/Authenticity/VisionAuthenticity.hpp>
+//so we can get VISION_AUTHENTICITY_KEY
+#include <Vision/Runtime/Engine/System/Authenticity/VisionAuthenticity.hpp>
 #endif
 
 #include <Vision/Runtime/Engine/Application/IVisApp.hpp>
@@ -33,7 +33,6 @@ public:
   VISION_APIFUNC virtual void OnStart();
   VISION_APIFUNC virtual void OnFinish();
   VISION_APIFUNC virtual void OnProgressChanged();
-  VISION_APIFUNC virtual void OnStatusStringChanged();
 
 #ifdef HK_DEBUG_SLOW
   float m_fOldPercentage;
@@ -49,10 +48,8 @@ struct VLoadSceneRequest
 {
   void Clear();
 
-  VString sSceneFileName;
-  int     iAdditionalLoadingFlags;
-  bool    bAllowProfileFallback;
-  bool    bPending;
+  VisAppLoadSettings m_settings;
+  bool m_bPending;
 };
 
 
@@ -115,7 +112,7 @@ public:
   /// \sa VisionApp_cl::InitEngine
   /// \sa VisionApp_cl::DeInitEngine
   VISION_APIFUNC VisionApp_cl(const char *pszAuthKey = VISION_AUTHENTICITY_KEY);
-  
+
 
   /// \brief
   ///   Destructor
@@ -131,7 +128,7 @@ public:
   /// @name Engine Init/Deinit
   /// @{
   ///
-  
+
 
   /// \brief
   ///   Initializes the engine and video mode with the specified configuration
@@ -142,14 +139,14 @@ public:
   /// 
   /// \sa VisionApp_cl::DeInitEngine
   VISION_APIFUNC virtual bool InitEngine(VisAppConfig_cl *pConfig = NULL);
-  
+
 
   /// \brief
   ///   Deinitializes the engine
   /// 
   /// \sa VisionApp_cl::InitEngine
   VISION_APIFUNC virtual void DeInitEngine();
-  
+
 
   /// \brief
   ///   Returns the engine initialization status
@@ -172,7 +169,7 @@ public:
   /// 
   /// \sa VisionApp_cl::OnDeInitEngine
   VISION_APIFUNC virtual void OnInitEngine();
-  
+
 
   /// \brief
   ///   Overridable callback that the application has to call BEFORE the engine gets deinitialized
@@ -200,7 +197,7 @@ public:
   /// \brief
   ///   Default render scene implementation. Just calls Vision::RenderSceneHelper().
   VISION_APIFUNC virtual void OnRenderScene();
-  
+
 
   /// \brief
   ///   Default update scene implementation
@@ -275,7 +272,7 @@ public:
   /// @name Loading
   /// @{
   ///
-  
+
 
   /// \brief
   ///   Overridable callback that the engine calls to update the progress of scene loading
@@ -284,8 +281,7 @@ public:
   /// 
   /// This function also initializes the physics module after a new world is loaded, so make sure
   /// to call this base function if you override it in a derived class. See IVisApp_cl::OnLoadSceneStatus 
-  /// for full description. See VisSampleApp::OnLoadSceneStatus implementation which displays a title
-  /// screen and progress bar. A more flexible way is provided through the VProgressStatus class 
+  /// for full description. A more flexible way is provided through the VProgressStatus class 
   /// (see GetLoadingProgress).
   ///
   /// \param iStatus
@@ -294,12 +290,8 @@ public:
   /// \param fPercentage
   ///  Current status percentage.
   ///
-  /// \param pszStatus
-  ///  Status message.
-  /// 
   /// \sa IVisApp_cl::OnLoadSceneStatus
-  /// \sa VisSampleApp::OnLoadSceneStatus
-  VISION_APIFUNC virtual void OnLoadSceneStatus(int iStatus, float fPercentage, const char* pszStatus);
+  VISION_APIFUNC virtual void OnLoadSceneStatus(int iStatus, float fPercentage);
 
 
   /// \brief
@@ -315,16 +307,9 @@ public:
   /// \return
   ///   False, if there is still a pending load scene request.
   ///
-  /// \param pszSceneName
-  ///   The name of the scene file (.vscene will be added).
-  ///
-  /// \param iAdditionalLoadingFlags
-  ///   Optionally specify additional VSceneLoader flags.
-  ///
-  /// \param bAllowProfileFallback
-  ///   If true LoadScene will try to guess the asset profile to use. By default it will first use the platform specific profile, but it might fall back to 'pcdx9'
-  ///   if there is no platform specific profile, but a pcdx9 profile, and the current platform is compatible with that (regarding texture formats).
-  virtual VISION_APIFUNC bool RequestLoadScene(const char* pszSceneName, int iAdditionalLoadingFlags = 0, bool bAllowProfileFallback = true) HKV_OVERRIDE;
+  /// \param settings
+  ///   Application load settings describing the scene to be loaded.
+  virtual VISION_APIFUNC bool RequestLoadScene(const VisAppLoadSettings& settings) HKV_OVERRIDE;
 
   /// \brief
   ///   Retrieve a currently pending load scene request.
@@ -337,7 +322,7 @@ public:
   ///   Return if there is currently a load scene request pending.
   inline bool IsLoadSceneRequestPending() const 
   { 
-    return m_loadSceneRequest.bPending; 
+    return m_loadSceneRequest.m_bPending; 
   }
 
   /// \brief
@@ -375,7 +360,7 @@ public:
   ///   VisBaseEntity_cl *pEntity : New instance of an entity of specified class.
   VISION_APIFUNC virtual VisBaseEntity_cl *OnCreateEntity(const char *pszClassName);
 
-  
+
   ///
   /// @}
   ///
@@ -421,10 +406,10 @@ public:
   ///
   /// \param pContainer
   ///  The container to perform visibility tests for.
-   inline HKV_DEPRECATED_2013_1 VISION_APIFUNC void PerformVisibilityTestsForContextContainer(IVRenderContextContainer *pContainer)
-   {
-     pContainer->PerformVisibilityTests();
-   }
+  inline HKV_DEPRECATED_2013_1 VISION_APIFUNC void PerformVisibilityTestsForContextContainer(IVRenderContextContainer *pContainer)
+  {
+    pContainer->PerformVisibilityTests();
+  }
 
   /// \brief
   ///   Helper function which renders a range of render contexts inside the passed context container.
@@ -484,7 +469,7 @@ public:
   /// to be triggered manually. See implementation of VisionApp_cl class.
   /// 
   /// \sa VisionApp_cl::RunPreThink()
-  VISION_APIDATA static VisCallback_cl OnUpdateAnimatonBegin;
+  VISION_APIDATA static VisCallback_cl OnUpdateAnimationBegin;
 
   /// \brief
   ///   This callback gets triggered by the scene implementation at the end of a animation update
@@ -494,7 +479,7 @@ public:
   /// to be triggered manually. See implementation of VisionApp_cl class.
   /// 
   /// \sa VisionApp_cl::RunPreThink()
-  VISION_APIDATA static VisCallback_cl OnUpdateAnimatonFinished;
+  VISION_APIDATA static VisCallback_cl OnUpdateAnimationFinished;
 
   /// \brief
   ///   This callback gets triggered by the scene implementation at the end of a physics update
@@ -521,17 +506,17 @@ protected:
   /// @name Protected Helper Functions
   /// @{
   ///
-  
+
 
   /// \brief
   ///   The update loop is responsible for deleting "dead" entities and updating the engine's core variables
   VISION_APIFUNC virtual void RunUpdateLoop();
- 
+
 
   /// \brief
   ///   Pre-physics loop: statistics, entity prethink, events and animations
   VISION_APIFUNC virtual void RunPreThink(float fElapsedTime);
-  
+
 
   /// \brief
   ///   Run the physics simulation
@@ -541,7 +526,7 @@ protected:
   /// \brief
   ///   Fetch the results from the physics simulation
   VISION_APIFUNC virtual void FetchPhysicsResults();
-  
+
 
   /// \brief
   ///   Post-physics loop: Entity (post-)think & module system-notifications
@@ -551,10 +536,11 @@ protected:
   //////////////////////////////////////////////////////////////////
   //  Protected members
   //////////////////////////////////////////////////////////////////
-  
-  int   m_iInitializeCount;
+
+  static bool s_bEngineIsInitialized;
+  bool  m_bEngineIsIntializedByThisApp;
   int   m_iInitFlags;                           ///< Flags that were used to initialize the application.
-  
+
   bool m_bInputInitialized;                     ///< Whether input is initialized.
   bool m_bUpdateScreen;                         ///< Whether UpdateScreen should be called.
   bool m_bInsideRun;                            ///< Whether we are already inside the Run method.
@@ -619,12 +605,35 @@ public:
     return m_iMaxTickCount; 
   }
 
+  /// \brief
+  ///   Determines if frame rate limiting is enabled.
   ///
-  /// @{
+  /// If frame rate limiting is enabled, the update controller will perform
+  /// busy waiting in order to achieve a frame rate that is not higher than the tick rate.
+  ///
+  /// \param bEnabled
+  ///   Set to TRUE to enable the frame rate limiter.
+  ///
+  inline void SetLimitFrameRate(bool bEnabled)
+  {
+    m_bLimitFrameRate = bEnabled;
+  }
+
+  /// \brief
+  ///   Returns whether frame rate limiting is enabled.
+  ///
+  /// \sa SetLimitFrameRate
+  inline bool GetLimitFrameRate() const
+  {
+    return m_bLimitFrameRate;
+  }
+
+  ///
   /// @name Serialization
+  /// @{
   ///
 
-  V_DECLARE_SERIAL_DLLEXP(VFixStepSceneUpdateController, VISION_APIDATA)
+  V_DECLARE_SERIAL_DLLEXP(VFixStepSceneUpdateController, VISION_APIDATA);
 
   VISION_APIFUNC virtual void Serialize(VArchive &ar) HKV_OVERRIDE;
 
@@ -635,7 +644,8 @@ public:
 private:
   int m_iMaxTickCount;
   int m_iTicksPerSecond;
-  
+  bool m_bLimitFrameRate;
+
   uint64 m_iLastUpdateTickCount;
 };
 
@@ -643,7 +653,7 @@ private:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -56,10 +56,10 @@ BOOL VDialogResource::Reload()
     szFilename = szPathName;
   }
 
-  bool bResult = doc.LoadFile(szFilename,Vision::File.GetManager());
+  bool bResult = doc.LoadFile(szFilename);
   if (!bResult)
   {
-    Vision::Error.Warning("GUI dialog resource '%s' failed to load : %s",szFilename,doc.ErrorDesc());
+    hkvLog::Warning("GUI dialog resource '%s' failed to load : %s",szFilename,doc.ErrorDesc());
     return FALSE;
   }
 
@@ -104,8 +104,7 @@ VDialog *VDialogResource::CreateInstance(IVGUIContext *pContext, VDialog *pParen
   VDialog *pDlg = (VDialog *)pType->CreateInstance();
   
   // sanity check
-  if (!pDlg->IsOfType(Vision::GetTypeManager()->GetType("VDialog")))
-    Vision::Error.FatalError("class '%s' is not derived from base class VDialog",szClass);
+  VASSERT_MSG(pDlg->IsOfType(Vision::GetTypeManager()->GetType("VDialog")), "class '%s' is not derived from base class VDialog",szClass);
 
   VASSERT(pParent==NULL || pParent->m_pContext==pContext);
 
@@ -122,7 +121,7 @@ VDialog *VDialogResource::CreateInstance(IVGUIContext *pContext, VDialog *pParen
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

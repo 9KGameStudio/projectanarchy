@@ -177,7 +177,7 @@ bool LightmapManager::LoadLightGridInfo(const char *szFilename)
   pLightGridInfo->ReleaseColors();
 
   VChunkFile loader;
-  if (loader.Open(szFilename, Vision::File.GetManager()))
+  if (loader.Open(szFilename))
   {
     CHUNKIDTYPE iChunkID;
     while (loader.OpenChunk(&iChunkID))
@@ -463,6 +463,12 @@ void LightmapPageTweakInfo::Save(UBYTE *pDestBuffer)
 {
   for (int i=0;i<4;i++)
   {
+    VFileAccessManager::NativePathResult imageNativeRes;
+    if (VFileAccessManager::GetInstance()->MakePathNative(m_spLightmapChannel[i]->GetFilename(), imageNativeRes, VFileSystemAccessMode::READ_NO_REDIRECT, VFileSystemElementType::FILE) != HKV_SUCCESS)
+    {
+      continue;
+    }
+
     if (!MixSingleChannel(i,pDestBuffer,true))
       continue;
 
@@ -471,14 +477,8 @@ void LightmapPageTweakInfo::Save(UBYTE *pDestBuffer)
 
     // use vtex to save dds texture
     Image_cl image;
-    VString sAbsFilename;
-    const char *szFilename = m_spLightmapChannel[i]->GetFilename();
-    String ^absPath = EditorManager::EngineManager->File_MakeAbsolute(ConversionUtils::VStringToString(szFilename));
-    ConversionUtils::StringToVString( absPath, sAbsFilename );
-    if (sAbsFilename.IsEmpty())
-      continue;
     image.AddColorMap( iSizeX, iSizeY, COLORDEPTH_24BPP, (UBYTE *) pDestBuffer );
-    image.Save(sAbsFilename);
+    image.Save(imageNativeRes.m_sNativePath);
   }
 }
 
@@ -505,14 +505,13 @@ void LightmapManager::SaveLightGrid()
     return;
   pLightGridInfo->MixAndUpdate(pGrid);
 
-  VString sAbsFilename;
-  const char *szFilename = pGrid->GetFilename();
-  String ^absPath = EditorManager::EngineManager->File_MakeAbsolute(ConversionUtils::VStringToString(szFilename));
-  ConversionUtils::StringToVString( absPath, sAbsFilename );
-  if (sAbsFilename.IsEmpty())
+  VFileAccessManager::NativePathResult gridNativeRes;
+  if (VFileAccessManager::GetInstance()->MakePathNative(pGrid->GetFilename(), gridNativeRes, VFileSystemAccessMode::READ_NO_REDIRECT, VFileSystemElementType::FILE) != HKV_SUCCESS)
+  {
     return;
+  }
 
-  pGrid->SaveToFile(sAbsFilename, szFilename);
+  pGrid->SaveToFile(gridNativeRes.m_sNativePath, pGrid->GetFilename());
 }
 
 
@@ -576,7 +575,7 @@ void LightGridTweakInfo::MixAndUpdate(VLightGrid_cl *pGrid)
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

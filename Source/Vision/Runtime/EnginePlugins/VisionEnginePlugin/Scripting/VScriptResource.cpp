@@ -107,15 +107,14 @@ BOOL VScriptResource::Reload()
   VASSERT(m_pResourceState != NULL && m_iKey != LUA_NOREF);
   
   // load the string
-  if (!LUA_ERRORCHECK(m_pResourceState, 
-    luaL_loadbuffer(m_pResourceState, szBuffer, iScriptLen, pszFilename)))
+  if (!VScriptResourceManager::LuaErrorCheck(m_pResourceState, luaL_loadbuffer(m_pResourceState, szBuffer, iScriptLen, pszFilename)))
   {
     Unload();   
     return false;
   }
 
   // run once so function names are known
-  if (!LUA_ERRORCHECK(m_pResourceState, lua_pcall (m_pResourceState, 0, LUA_MULTRET, 0)))
+  if (!VScriptResourceManager::LuaErrorCheck(m_pResourceState, lua_pcall (m_pResourceState, 0, LUA_MULTRET, 0)))
   {
     Unload();
     return false;
@@ -166,8 +165,7 @@ void VScriptResource::ReloadAndReplace(char* pNewContent /*= NULL */)
     pNewContent = StripUTF8BOM(szBuffer, iScriptLen);
 
     // load the string
-    if (!LUA_ERRORCHECK(m_pResourceState, 
-      luaL_loadbuffer(m_pResourceState, pNewContent, iScriptLen, pszFilename)))
+    if (!VScriptResourceManager::LuaErrorCheck(m_pResourceState, luaL_loadbuffer(m_pResourceState, pNewContent, iScriptLen, pszFilename)))
     {
       return;
     }
@@ -179,15 +177,14 @@ void VScriptResource::ReloadAndReplace(char* pNewContent /*= NULL */)
     iScriptLen = static_cast<int>(strlen(pNewContent));
 
     // load the string
-    if (!LUA_ERRORCHECK(m_pResourceState, 
-      luaL_loadbuffer(m_pResourceState, pNewContent, iScriptLen, pszFilename)))
+    if (!VScriptResourceManager::LuaErrorCheck(m_pResourceState, luaL_loadbuffer(m_pResourceState, pNewContent, iScriptLen, pszFilename)))
     {
       return;
     }
   }
 
   // run once so function names are known
-  if (!LUA_ERRORCHECK(m_pResourceState, lua_pcall (m_pResourceState, 0, LUA_MULTRET, 0)))
+  if (!VScriptResourceManager::LuaErrorCheck(m_pResourceState, lua_pcall (m_pResourceState, 0, LUA_MULTRET, 0)))
     return;
 
   SetNewMemSize(VRESOURCEMEMORY_SYSTEM, iScriptLen + 1);
@@ -196,6 +193,7 @@ void VScriptResource::ReloadAndReplace(char* pNewContent /*= NULL */)
 BOOL VScriptResource::Unload()
 {
   //clear the light user data entry for this state
+  VScriptResourceManager::GlobalManager().Instances().DiscardDependentScriptInstanceThreads(this);
   VScriptResourceManager::DiscardThread(m_pResourceState);
   m_pResourceState = NULL;
 
@@ -256,7 +254,7 @@ VScriptInstance* VScriptResource::CreateScriptInstance()
 //-----------------------------------------------------------------------------------
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

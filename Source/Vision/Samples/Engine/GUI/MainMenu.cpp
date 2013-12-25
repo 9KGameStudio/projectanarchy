@@ -56,15 +56,15 @@ void MyMainMenu::OnItemClicked(VMenuEventDataObject *pEvent)
 
   IVGUIContext* pContext = GetContext();
 
-  for (int i=0; i<pContext->m_OpenDialogs.Count(); ++i) 
+  for (int i=0; i<pContext->GetOpenDialogs().Count(); ++i) 
   {
-    if (pContext->m_OpenDialogs.GetAt(i) == this)
+    if (pContext->GetOpenDialogs().GetAt(i) == this)
       continue;
 
-    if ((m_pExitDialog != NULL) && (pContext->m_OpenDialogs.GetAt(i) == m_pExitDialog))
+    if ((m_pExitDialog != NULL) && (pContext->GetOpenDialogs().GetAt(i) == m_pExitDialog))
       continue;
     
-    pContext->CloseDialog(pContext->m_OpenDialogs.GetAt(i));
+    pContext->CloseDialog(pContext->GetOpenDialogs().GetAt(i));
   }
 
   // Open push buttons dialog
@@ -353,7 +353,7 @@ public:
 V_IMPLEMENT_SERIAL( MaskedPictureItem, VImageControl, 0, &GUIModule );
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -64,7 +64,7 @@ namespace TerrainManaged
     Image_cl image;
     VString sFilename;
     ConversionUtils::StringToVString(FileName,sFilename);
-    RETVAL ret = image.Load(sFilename,Vision::File.GetManager());
+    RETVAL ret = image.Load(sFilename);
     if (ret!=VERR_NOERROR)
     {
       switch (ret)
@@ -203,7 +203,7 @@ namespace TerrainManaged
     ConversionUtils::StringToVString(FileName,sFilename);
     VTextureLoader loader;
     // Load the texture in GPU format because we'd rather have a raw buffer.
-    if (!loader.Open(sFilename,Vision::File.GetManager(),VTM_FLAG_NO_MIPMAPS|VTM_FLAG_GPU_UPLOADFORMAT))
+    if (!loader.Open(sFilename, VTM_FLAG_NO_MIPMAPS|VTM_FLAG_GPU_UPLOADFORMAT))
     {
       m_pLastError = "Failed to open file";
       return;
@@ -250,7 +250,7 @@ namespace TerrainManaged
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

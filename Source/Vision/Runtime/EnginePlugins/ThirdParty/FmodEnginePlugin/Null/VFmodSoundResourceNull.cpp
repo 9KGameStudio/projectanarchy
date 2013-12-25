@@ -42,7 +42,7 @@ VFmodSoundResource::~VFmodSoundResource()
 // -------------------------------------------------------------------------- //
 VFmodSoundObject *VFmodSoundResource::CreateInstance(const hkvVec3 &vPos, int iFlags, int iPriority)
 {
-  VFmodSoundObject *pInst = new VFmodSoundObject(NULL, this, vPos, iFlags, iPriority);
+  VFmodSoundObject *pInst = new VFmodSoundObject(&VFmodManager::GlobalManager().m_soundInstances, this, vPos, iFlags, iPriority);
   return pInst;
 }
 
@@ -100,7 +100,7 @@ void VFmodSoundResource::GetDependencies(VResourceSnapshot &snapshot)
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

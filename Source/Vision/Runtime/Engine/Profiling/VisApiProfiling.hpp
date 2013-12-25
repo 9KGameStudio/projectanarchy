@@ -397,6 +397,18 @@ public:
   /// \sa ShowChart
   /// \sa HideChart
   VISION_APIFUNC BOOL IsHidden() const;
+
+  /// \brief
+  ///   Returns whether the profiling page in question is currently shown.
+  ///
+  /// \param pageNr
+  ///   Page in question.
+  ///
+  /// \return
+  ///   BOOL: TRUE if given page number is currently beeing shown, FALSE otherwise.
+  ///
+  /// \sa SetPage
+  VISION_APIFUNC BOOL IsPageVisible(unsigned int pageNr) const;
   
   
   /// \brief
@@ -423,7 +435,7 @@ public:
   /// If profiling output is currently not shown, it will automatically be enabled.
   /// 
   /// \param pageNr
-  ///   page to display
+  ///   Page to display
   VISION_APIFUNC void SetPage(unsigned int pageNr);
 
   /// \brief
@@ -695,7 +707,7 @@ private:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

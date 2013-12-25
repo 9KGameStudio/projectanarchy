@@ -145,12 +145,12 @@ void VMobileForwardRenderingSystem::GetTargetSizeFromDeviceDPI(const int *pOrigi
       pTargetSize[i] = ((pTargetSize[i] + iMinStep/2) / iMinStep) * iMinStep;
 
       // Size of the render target should never exceed the size of the original target buffer.
-      pTargetSize[i] = hkvMath::Min(pOriginalSize[i], pTargetSize[i]);
+      pTargetSize[i] = hkvMath::clamp(pTargetSize[i], 16, pOriginalSize[i]);
     }
   }
 
   #if defined(HK_DEBUG)
-    Vision::Error.SystemMessage(
+    hkvLog::Info(
       "Adaptive resolution - display density: %.1f, target density: %.1f, render resolution: %ix%i", 
       fDisplayDpi, DesiredRenderingDpi, pTargetSize[0], pTargetSize[1]);
   #endif
@@ -492,6 +492,12 @@ void VMobileForwardRenderingSystem::OnHandleCallback(IVisCallbackDataObject_cl *
   }
   else if(pData->m_pSender == &Vision::Callbacks.OnEnterForeground)
   {
+    if (IsUsingUpscaling())
+    {
+      // Update upscaling context, so that it renders into the new back buffer.
+      VASSERT(m_spUpscaleTargetContext != NULL);
+      m_spUpscaleTargetContext->SetRenderAndDepthStencilTargets(m_spStoreFinalTargetContext);
+    }
     if (m_bUsesDirectRenderToFinalTargetContext)
     {
       // Reassign render targets (in case they're copied from the main render context).
@@ -642,7 +648,7 @@ START_VAR_TABLE(VMobileForwardRenderingSystem, VRendererNodeCommon, "VMobileForw
 END_VAR_TABLE
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

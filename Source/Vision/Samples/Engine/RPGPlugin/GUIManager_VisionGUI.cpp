@@ -22,7 +22,7 @@ namespace
   // Map a (multi)touch area over the client rect for uiButton
   void MapTouchArea(VPushButton const *uiButton, RPG_PlayerInputs_e input)
   {
-    // Behind scene viewer (-900), in front of primary interaction (-950)
+    // Behind app menu (2000), in front of primary interaction (-950)
     float const depth = -925.0f;
     VRectanglef const clientRect = uiButton->GetClientRect();
     // TODO Hack: button image is 128x128, button onscreen area is 80x80; subtract to cover the difference
@@ -760,7 +760,7 @@ RPG_SkillButtonDefinition::RPG_SkillButtonDefinition()
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

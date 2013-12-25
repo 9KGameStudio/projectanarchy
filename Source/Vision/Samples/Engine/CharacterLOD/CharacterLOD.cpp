@@ -15,64 +15,115 @@
 // ***********************************************************************************************
 
 #include <Vision/Samples/Engine/CharacterLOD/CharacterLODPCH.h>
-#include <Vision/Samples/Engine/CharacterLOD/DemoCamera.hpp>
+
+#include <Vision/Runtime/Framework/VisionApp/VAppImpl.hpp>
+#include <Vision/Runtime/Framework/VisionApp/Modules/VDebugOptions.hpp>
+#include <Vision/Runtime/Framework/VisionApp/Modules/VHelp.hpp>
+#include <Vision/Runtime/Framework/VisionApp/Modules/VLogoOverlay.hpp>
+
 #include <Vision/Samples/Engine/CharacterLOD/GUI/MenuSystem.hpp>
 #include <Vision/Samples/Engine/Common/Entities/StaticCamera.hpp>
 
 #include <Vision/Runtime/Base/System/IO/Stream/VMemoryStream.hpp>
-#include <Vision/Runtime/Base/System/IO/Clipboard/VClipboard.hpp>
 
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/GUI/VMenuIncludes.hpp>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Components/VEntityLODComponent.hpp>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Entities/_AnimEntity.hpp>
+#include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Components/VOrbitCamera.hpp>
 
-#define DONT_SHOW_DEFAULT_COMPANY_LOGO
-
-VisSampleAppPtr spApp;
-VGUIMainContextPtr spGUIContext;
-VDialogPtr spMainDlg;
-
-VISION_INIT
+enum CharacterLODControl
 {
-  VISION_SET_DIRECTORIES(false);
-  // include the vision engine plugin
-  VisionAppHelpers::MakeEXEDirCurrent();
-  VisSampleApp::LoadVisionEnginePlugin();
-#ifdef _VR_GLES2
-  Vision::Renderer.SetUseSingleBufferedStaticMeshes(false);
+  CAMERA_ENABLE_MOVEMENT = VAPP_INPUT_CONTROL_LAST_ELEMENT + 1
+};
+
+class CharacterLODApp : public VAppImpl
+{
+public:
+  CharacterLODApp() 
+    : m_spMainDlg(NULL)
+    , m_pOrbitCamera(NULL)
+  {}
+  virtual ~CharacterLODApp() 
+  {}
+
+  virtual void Init() HKV_OVERRIDE
+  {
+#if defined(_VR_GLES2)
+    Vision::Renderer.SetUseSingleBufferedStaticMeshes(false);
+#endif
+#if defined(_VISION_PS3)
+    // Ensure that we have enough mapped main memory available (to avoid warnings)
+    VAppBase::Get()->m_appConfig.m_gcmConfig.uiMappedMainMemorySize = 10 * 1024 * 1024;
 #endif
 
-  // Create and init an application
-  spApp = new VisSampleApp();
-
-#ifdef _VISION_PS3
-  // Ensure that we have enough mapped main memory available (to avoid warnings)
-  spApp->m_appConfig.m_gcmConfig.uiMappedMainMemorySize = 10 * 1024 * 1024;
-#endif
-  
-#if defined( _VISION_MOBILE ) || defined( HK_ANARCHY )
-  if (!spApp->InitSample("Maps\\SimpleGround" /*DataDir*/, "ground_mobile" /*SampleScene*/, (VSampleFlags::VSAMPLE_INIT_DEFAULTS & ~VSampleFlags::VSAMPLE_HAVOKLOGO) | VSampleFlags::VSAMPLE_FORCEMOBILEMODE ))
+#if defined(_VISION_MOBILE) || defined(_VISION_PSP2) || defined( HK_ANARCHY )
+    const char* szSceneFile = "ground_mobile";
 #else
-  if (!spApp->InitSample("Maps\\SimpleGround" /*DataDir*/, "ground" /*SampleScene*/, VSampleFlags::VSAMPLE_INIT_DEFAULTS & ~VSampleFlags::VSAMPLE_HAVOKLOGO ))
+    const char* szSceneFile = "ground";
 #endif
-    return false;
-  
-  return true;
-}
 
-VISION_SAMPLEAPP_AFTER_LOADING
+    VisAppLoadSettings settings(szSceneFile);
+    settings.m_customSearchPaths.Append(":havok_sdk/Data/Vision/Samples/Engine/Maps/SimpleGround");
+    settings.m_customSearchPaths.Append(":havok_sdk/Data/Vision/Samples/Engine/Common");
+
+    LoadScene(settings);
+  }
+
+  virtual void AfterEngineInit() HKV_OVERRIDE
+  {
+    VAppImpl::AfterEngineInit();
+
+    InitHelp();
+
+    // Alternative logo placement.
+    VLogoOverlay* pLogo = GetAppModule<VLogoOverlay>();
+    if (pLogo != NULL)
+      pLogo->SetAlignment(VLogoOverlay::ALIGN_TOP);
+  }
+
+  virtual void AfterSceneLoaded(bool bLoadingSuccessful) HKV_OVERRIDE;
+
+  virtual bool Run() HKV_OVERRIDE
+  {
+#if defined(WIN32) && (!defined(_VISION_WINRT) || defined(_VISION_METRO))
+    if (GetInputMap()->GetTrigger(CAMERA_ENABLE_MOVEMENT))
+      m_pOrbitCamera->FollowFixed = FALSE;
+    else
+      m_pOrbitCamera->FollowFixed = TRUE;
+#else
+    m_pOrbitCamera->FollowFixed = FALSE;
+#endif
+
+    return (m_spMainDlg->GetDialogResult() == 0);
+  }
+
+  virtual void DeInit() HKV_OVERRIDE
+  {
+    m_spMainDlg = NULL;
+  }
+
+private:
+  void InitInput();
+  void InitHelp();
+
+  VDialogPtr m_spMainDlg;
+  VOrbitCamera* m_pOrbitCamera;
+};
+
+VAPP_IMPLEMENT_SAMPLE(CharacterLODApp);
+
+void CharacterLODApp::AfterSceneLoaded(bool bLoadingSuccessful)
 {
-  spApp->AddSampleDataDir("Common");
-  
-  // setup dynamic light
-  hkvVec3 lightPos(0.f, 0.f, 300.f);
-  VisLightSource_cl *pLight = Vision::Game.CreateLight(lightPos, VIS_LIGHT_POINT, 15000.f);
-  
-  pLight->SetMultiplier( 1.1f );
-  pLight->SetPosition( lightPos );
+  // Setup dynamic light
+  const hkvVec3 vLightPos(0.f, 0.f, 300.f);
+  VisLightSource_cl *pLight = Vision::Game.CreateLight(vLightPos, VIS_LIGHT_POINT, 15000.f);
 
-  //Create the entities
-  VisBaseEntity_cl *pLODObject, *pLookatEntity=NULL;
+  pLight->SetMultiplier(1.1f);
+  pLight->SetPosition(vLightPos);
+
+  // Create the entities.
+  VisBaseEntity_cl* pLODObject = NULL;
+  VisBaseEntity_cl* pLookAtEntity = NULL;
   for (int i = 0; i < ENTITY_COUNT; i++)
   {
     char szKey[64];
@@ -82,21 +133,20 @@ VISION_SAMPLEAPP_AFTER_LOADING
       (static_cast<float>(i / 3) - 1.0f) * 400.f, 
       80.f);
 
-    pLODObject = Vision::Game.CreateEntity("VisBaseEntity_cl", origin,
-      "Models/Soldier/soldier_high.MODEL");
-    
-    if (i == ENTITY_COUNT/2)
-      pLookatEntity = pLODObject;
+    pLODObject = Vision::Game.CreateEntity("VisBaseEntity_cl", origin, "Models/Soldier/soldier_high.MODEL");
+
+    if (i == ENTITY_COUNT / 2)
+      pLookAtEntity = pLODObject;
 
     sprintf(szKey, "Soldier_%i", i);
     pLODObject->SetEntityKey(szKey);
 
-    // Add Animation component first
+    // Add Animation component first.
     VSimpleAnimationComponent* pAnimationComponent = new VSimpleAnimationComponent();
     pAnimationComponent->AnimationName = "Walk";
     pLODObject->AddComponent(pAnimationComponent);
 
-    // Add LOD component
+    // Add LOD component.
     VEntityLODComponent* pLODComponent = new VEntityLODComponent();
     pLODComponent->SetLODLevel(VLOD_AUTO);
     pLODComponent->SetLODLevelCount(3);
@@ -109,121 +159,99 @@ VISION_SAMPLEAPP_AFTER_LOADING
     pLODObject->AddComponent(pLODComponent);
   }
 
-  // Setup the camera
-  hkvVec3 cameraOrigin(0.0f, 0.0f, 0.0f);
-  VisDemoCamera_cl *pCamera = static_cast<VisDemoCamera_cl*>(
-    Vision::Game.CreateEntity("VisDemoCamera_cl", cameraOrigin));
-  pCamera->SetTargetEntity( pLookatEntity );
+  // Set up the camera.
+  m_pOrbitCamera = new VOrbitCamera();
+  m_pOrbitCamera->FollowFixed = TRUE;
+  m_pOrbitCamera->Collides = TRUE;
+  m_pOrbitCamera->CameraDistance = 650.0f;
+  m_pOrbitCamera->MinimalDistance = 50.0f;
+  m_pOrbitCamera->MaximalDistance = 3500.0f;
+  pLookAtEntity->AddComponent(m_pOrbitCamera);
 
   // load some GUI resources
-  VGUIManager::GlobalManager().LoadResourceFile("CharacterLOD\\Dialogs\\MenuSystem.xml");
-  spGUIContext = new VGUIMainContext(NULL);
-  spGUIContext->SetRenderHookConstant(VRH_PRE_SCREENMASKS);
-  spGUIContext->SetActivate(true);
+  VGUIManager::GlobalManager().LoadResourceFile("CharacterLOD/Dialogs/MenuSystem.xml");
 
   // start the main menu
-  spMainDlg = spGUIContext->ShowDialog("CharacterLOD\\Dialogs\\MainMenu.xml");
-  VASSERT(spMainDlg);
+  m_spMainDlg = GetContext()->ShowDialog("CharacterLOD/Dialogs/MainMenu.xml");
+  VASSERT(m_spMainDlg != NULL);
 
-    // define help text
-  spApp->AddHelpText("");
-  spApp->AddHelpText("How to use this demo :");
-
-#if defined(WIN32) && (!defined(_VISION_WINRT) || defined(_VISION_METRO))
-  spApp->AddHelpText("PAGE UP                    : Zoom in");
-  spApp->AddHelpText("PAGE DOWN                  : Zoom Out");
-#endif
-
-#ifdef SUPPORTS_MOUSE
-  spApp->AddHelpText("MOUSE - WHEEL              : Zoom in/out");
-  spApp->AddHelpText("MOUSE - RIGHT MOUSE BUTTON : Rotate scene");
-#endif
-
-#if defined (_VISION_XENON) || (defined(_VISION_WINRT) && !defined(_VISION_METRO) && !defined(_VISION_APOLLO))
-  spApp->AddHelpText(" PAD 1 - LEFT/RIGHT TRIGGER  : Zoom in/out");
-  spApp->AddHelpText(" PAD 1 - DIGITAL CURSOR-KEYS : Rotate scene");
-#elif defined(_VISION_PS3)
-  spApp->AddHelpText(" PAD 1 - LEFT/RIGHT TRIGGER  : Zoom in/out");
-  spApp->AddHelpText(" PAD 1 - DIGITAL CURSOR-KEYS : Rotate scene");
-#elif defined(_VISION_WIIU)
-  spApp->AddHelpText(" DRC - LEFT/RIGHT TRIGGER  : Zoom in/out");
-  spApp->AddHelpText(" DRC - DIGITAL CURSOR-KEYS : Rotate scene");
-#endif
-
-  spApp->AddHelpText("");
-  spApp->AddHelpText("Watch the soldiers (+ the frame rate)");
-  spApp->AddHelpText("and how each model changes according");
-  spApp->AddHelpText("to the distance of the camera. The");
-  spApp->AddHelpText("letters above the soldiers indicate");
-  spApp->AddHelpText("the selected model.");
-  spApp->AddHelpText("");
-  spApp->AddHelpText("(You can also switch to manual model");
-  spApp->AddHelpText("selection via the side menu)");
-  spApp->AddHelpText("");
-  spApp->AddHelpText("Models (C) by Rocketbox Studios GmbH");
-  spApp->AddHelpText("www.rocketbox-libraries.com");
-
-  //show fps
-  spApp->SetShowFrameRate(true);
+  // Show fps
+  VDebugOptions* pDebugOptionsModule = GetAppModule<VDebugOptions>();
+  if (pDebugOptionsModule != NULL)
+    pDebugOptionsModule->SetFrameRateVisible(true);
 
   // deactivate automatic use of @2x resources on high-resolution displays
   bool bAllow2x = Vision::Video.GetAllowAutomaticUseOf2xAssets();
-  Vision::Video.SetAllowAutomaticUseOf2xAssets( false );
+  Vision::Video.SetAllowAutomaticUseOf2xAssets(false);
 
-  //place the overlay
+  // Place the overlay.
   VisScreenMask_cl *pOverlay = new VisScreenMask_cl("Models/Soldier/Textures/rb_cs_logo.dds");
-    
+  int iOverlayWidth, iOverlayHeight;
+  pOverlay->GetTextureSize(iOverlayWidth, iOverlayHeight);
   pOverlay->SetTransparency(VIS_TRANSP_ALPHA);
   pOverlay->SetFiltering(FALSE);
-  pOverlay->SetPos(14.f, (float)(Vision::Video.GetYRes() - 95));
 
-#if !defined(HK_ANARCHY)
-  pOverlay = new VisScreenMask_cl("Textures\\Havok_Logo_128x64.dds");
-    
-  pOverlay->SetTransparency(VIS_TRANSP_ALPHA);
-  pOverlay->SetFiltering(FALSE);
-  pOverlay->SetPos(14.f, (float)(Vision::Video.GetYRes() - 156));
-#endif
+  // Place at the bottom center.
+  const float fScreenWidth = static_cast<float>(Vision::Video.GetXRes());
+  const float fScreenHeight = static_cast<float>(Vision::Video.GetYRes());
+  pOverlay->SetPos(
+    (fScreenWidth - static_cast<float>(iOverlayWidth)) * 0.5f + 0.5f, 
+    fScreenHeight - static_cast<float>(iOverlayHeight) - 13.5f);
 
-  Vision::Video.SetAllowAutomaticUseOf2xAssets( bAllow2x );
+  Vision::Video.SetAllowAutomaticUseOf2xAssets(bAllow2x);
+
+  InitInput();
 }
 
-VISION_SAMPLEAPP_RUN
+void CharacterLODApp::InitInput()
 {
-#if defined(_VISION_MOBILE)
-  if (spMainDlg->GetDialogResult())
-    return false;
-
-  // main loop
-  return spApp->Run();
-
-#else
-  // main loop
-  return spApp->Run() && !spMainDlg->GetDialogResult();
-
+#if defined(WIN32) && (!defined(_VISION_WINRT) || defined(_VISION_METRO))
+  // Only enable camera movement when holding down the right mouse button.
+  GetInputMap()->MapTrigger(CAMERA_ENABLE_MOVEMENT, V_PC_MOUSE, CT_MOUSE_RIGHT_BUTTON);
 #endif
 }
 
-VISION_DEINIT
+void CharacterLODApp::InitHelp()
 {
-  // Deinit GUI
-  spMainDlg = NULL;
-  spGUIContext->SetActivate(false);
-  spGUIContext = NULL;
-  VGUIManager::GlobalManager().CleanupResources();
+  VArray<const char*> helpText;
 
-  // Deinit our application
-  spApp->DeInitSample();
-  spApp = NULL;
+#if defined(WIN32) && (!defined(_VISION_WINRT) || defined(_VISION_METRO))
+  helpText.Append("PAGE UP                    : Zoom in");
+  helpText.Append("PAGE DOWN                  : Zoom Out");
 
-  Vision::Plugins.UnloadAllEnginePlugins();
-  return 0;
+  helpText.Append("MOUSE - WHEEL              : Zoom in/out");
+  helpText.Append("MOUSE - RIGHT MOUSE BUTTON : Rotate scene");
+#endif
+
+#if defined (_VISION_XENON) || (defined(_VISION_WINRT) && !defined(_VISION_METRO) && !defined(_VISION_APOLLO))
+  helpText.Append(" PAD 1 - LEFT/RIGHT TRIGGER  : Zoom in/out");
+  helpText.Append(" PAD 1 - DIGITAL CURSOR-KEYS : Rotate scene");
+#elif defined(_VISION_PS3)
+  helpText.Append(" PAD 1 - LEFT/RIGHT TRIGGER  : Zoom in/out");
+  helpText.Append(" PAD 1 - DIGITAL CURSOR-KEYS : Rotate scene");
+#elif defined(_VISION_WIIU)
+  helpText.Append(" DRC - LEFT/RIGHT TRIGGER  : Zoom in/out");
+  helpText.Append(" DRC - DIGITAL CURSOR-KEYS : Rotate scene");
+#endif
+
+  helpText.Append("");
+  helpText.Append("Watch the soldiers (+ the frame rate)");
+  helpText.Append("and how each model changes according");
+  helpText.Append("to the distance of the camera. The");
+  helpText.Append("letters above the soldiers indicate");
+  helpText.Append("the selected model.");
+  helpText.Append("");
+  helpText.Append("(You can also switch to manual model");
+  helpText.Append("selection via the side menu)");
+  helpText.Append("");
+  helpText.Append("Models (C) by Rocketbox Studios GmbH");
+  helpText.Append("www.rocketbox-libraries.com");
+
+  RegisterAppModule(new VHelp(helpText));
 }
-
-VISION_MAIN_DEFAULT
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

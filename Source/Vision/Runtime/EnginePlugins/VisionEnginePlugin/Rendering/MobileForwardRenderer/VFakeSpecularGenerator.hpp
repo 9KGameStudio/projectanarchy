@@ -11,6 +11,8 @@
 #ifndef VFAKE_SPECULAR_GENERATOR_HPP_INCLUDED
 #define VFAKE_SPECULAR_GENERATOR_HPP_INCLUDED
 
+#include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/Effects/EffectsModule.hpp>
+
 /// \brief
 ///  A Render loop that renders the specular component of each light into a cubemap face.
 ///
@@ -46,7 +48,7 @@ private:
 #endif // VFAKE_SPECULAR_GENERATOR_HPP_INCLUDED
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

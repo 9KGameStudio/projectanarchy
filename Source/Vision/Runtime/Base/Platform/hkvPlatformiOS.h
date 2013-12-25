@@ -32,6 +32,7 @@
   #define NEEDS_SCENE_PREWARMING
   #define V_DEVICE_MAX_TEXTURE_SIZE VVideo::GetMaxTextureSizeSupported()
   #define SUPPORTS_MULTITOUCH
+  #define SUPPORTS_MOTIONINPUT
   #define NATIVE_PATH_SEPARATOR_FWDSLASH
   #define SUPPORTS_PVR
   #define SUPPORTS_MULTITHREADING
@@ -54,7 +55,7 @@
 #endif // HKVPLATFORMDEFINESIOS_H
 
 /*
- * Havok SDK - Base file, BUILD(#20131021)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

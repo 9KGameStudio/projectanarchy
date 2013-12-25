@@ -80,7 +80,7 @@ public:
     VType *pType = Vision::GetTypeManager()->GetType(szComponentType);
     if (pType==NULL)
     {
-      Vision::Error.Warning("[Lua] AddComponentOfType: did not find component of the specified type: %s", szComponentType);
+      hkvLog::Warning("[Lua] AddComponentOfType: did not find component of the specified type: %s", szComponentType);
       lua_settop(L, 0); //remove all items from the stack
       lua_pushnil(L);
       return 1;
@@ -90,7 +90,7 @@ public:
     VSmartPtr<IVObjectComponent> spComponent = (IVObjectComponent *)pType->CreateInstance();
     if (spComponent==NULL)
     {
-      Vision::Error.Warning("[Lua] AddComponentOfType: Failed construction an instance of the specified component type: %s", szComponentType);
+      hkvLog::Warning("[Lua] AddComponentOfType: Failed construction an instance of the specified component type: %s", szComponentType);
       lua_settop(L, 0); //remove all items from the stack
       lua_pushnil(L);
       return 1;
@@ -128,7 +128,7 @@ public:
     VString sCanAddError;
     if (!pSelf->CanAddComponent(spComponent, sCanAddError))
     {
-      Vision::Error.Warning("[Lua] AddComponentOfType: Can't add component of type '%s'. Error: %s", szComponentType, sCanAddError.AsChar());
+      hkvLog::Warning("[Lua] AddComponentOfType: Can't add component of type '%s'. Error: %s", szComponentType, sCanAddError.AsChar());
       lua_settop(L, 0); //remove all items from the stack
       lua_pushnil(L);
       return 1;
@@ -724,7 +724,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

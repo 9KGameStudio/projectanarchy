@@ -16,6 +16,9 @@
 class VInputManagerTizen;
 typedef VInputManagerTizen VInputManager;
 
+class VMotionInputTizen;
+typedef VMotionInputTizen VMotionInput;
+
 // Compatibility typedefs
 HKV_DEPRECATED_2012_2 typedef VInputManagerTizen VInputDeviceManager;
 HKV_DEPRECATED_2012_2 typedef VInputManagerTizen VInputDeviceManagerTizen;
@@ -298,12 +301,6 @@ class VMultiTouchInputTizen : public IVMultiTouchInput, public Tizen::Ui::ITouch
     };
 
     float m_fTimeDiff;
-
-    float m_fInvX;
-    float m_fInvY;
-
-    int m_iXRatio;
-    int m_iYRatio;
   
     VTouchPoint m_TouchPoints[V_TIZEN_MAX_TOUCH_POINTS];
 
@@ -466,7 +463,7 @@ class VInputManagerTizen : public VInputManagerBase
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -6,22 +6,6 @@
  *
  */
 
-#include <Vision/Samples/Engine/Scaleform/ScaleformPCH.h>         // precompiled header
-#include <Vision/Runtime/Common/VisSampleApp.hpp> // Vision headers
-
-#include <Vision/Runtime/EnginePlugins/ThirdParty/ScaleformEnginePlugin/vScaleformManager.hpp>
-#include <Vision/Runtime/EnginePlugins/ThirdParty/ScaleformEnginePlugin/VScaleformMovie.hpp>
-#include <Vision/Runtime/EnginePlugins/ThirdParty/ScaleformEnginePlugin/VScaleformUtil.hpp>
-
-#include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Scene/VSceneLoader.hpp>
-#include <Vision/Runtime/EnginePlugins/EnginePluginsImport.hpp>
-#include <Vision/Runtime/Base/String/VStringTokenizerInPlace.hpp>
-
-#include <Vision/Runtime/EnginePlugins/ThirdParty/FmodEnginePlugin/VFmodManager.hpp>
-#include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Input/VVirtualThumbStick.hpp>
-
-VIMPORT IVisPlugin_cl* GetEnginePlugin_vFmodEnginePlugin();
-
 // ***********************************************************************************************
 // ScaleformSample : Sample binding for Scaleform middleware
 // Copyright (C) Havok.com Inc. All rights reserved.
@@ -40,227 +24,218 @@ VIMPORT IVisPlugin_cl* GetEnginePlugin_vFmodEnginePlugin();
 // to true.
 // ***********************************************************************************************
 
-// switches for this demo
+#include <Vision/Samples/Engine/Scaleform/ScaleformPCH.h>
+#include <Vision/Runtime/Framework/VisionApp/VAppImpl.hpp>
+#include <Vision/Runtime/Framework/VisionApp/Modules/VHelp.hpp>
+
+#include <Vision/Runtime/EnginePlugins/EnginePluginsImport.hpp>
+
+#include <Vision/Runtime/EnginePlugins/ThirdParty/ScaleformEnginePlugin/vScaleformManager.hpp>
+#include <Vision/Runtime/EnginePlugins/ThirdParty/ScaleformEnginePlugin/VScaleformMovie.hpp>
+#include <Vision/Runtime/EnginePlugins/ThirdParty/ScaleformEnginePlugin/VScaleformUtil.hpp>
+
+#include <Vision/Runtime/EnginePlugins/ThirdParty/FmodEnginePlugin/VFmodManager.hpp>
+#include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Input/VVirtualThumbStick.hpp>
+
+#include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Input/VFreeCamera.hpp>
+
 bool g_bShowOnTexture = false; // On PC: command line '-rtt', On other platforms set to true : render scaleform video into a texture rather than as a main HUD overlay
-VString g_sMovieName;
-VisSampleAppPtr g_spApp;
 
-VScaleformMovieInstancePtr g_spMovie;
-VScaleformValue* g_pMainMenuVar = NULL;
-
-bool g_bMute = false;
-#ifdef _VISION_MOBILE
-  VisScreenMask_cl **g_ppTouchPoints;
-#else
-  VisScreenMaskPtr g_spMouse;
-#endif
-
-VisContextCameraPtr g_spCamera;
-VisRenderContextPtr g_spContext;
-
-// this listener is registered to the callback that receives the command callbacks and external interface calls
-// alternatively a class can be derived from VScaleformMovieInstance and override the OnCommand / OnExternalInterfaceCall function
-class ScaleformListener : public IVisCallbackHandler_cl
+class ScaleformApp : public VAppImpl, public IVisCallbackHandler_cl
 {
 public:
-  void OnHandleCallback(IVisCallbackDataObject_cl *pData)
+  ScaleformApp();
+  virtual ~ScaleformApp() {}
+
+  void OnHandleCallback(IVisCallbackDataObject_cl *pData) HKV_OVERRIDE;
+
+  virtual void PreloadPlugins() HKV_OVERRIDE
   {
-    if(pData->m_pSender == &VOnFSCommand::OnFSCallback)
-    { 
-      //this call back is marked as deprecated by scaleform
-      VOnFSCommand *pCommand = (VOnFSCommand *)pData;
-      
-      // output to screen and log
-      VString sCommand("FS COMMAND: ", 128);
-      sCommand += pCommand->m_sCommand + " ARGS:" + pCommand->m_sArgs;
-      Vision::Error.SystemMessage(sCommand.AsChar());
-      Vision::Message.Add(1, sCommand.AsChar());
-    }
-    else if(pData->m_pSender == &VOnExternalInterfaceCall::OnExternalInterfaceCallback)
-    {  
-      VOnExternalInterfaceCall *pExternalCall = (VOnExternalInterfaceCall *)pData;
-
-      //handle volume change
-      if(pExternalCall->m_sMethodName == "SetVolume" && pExternalCall->m_uiArgCount==1)
-      {
-        VFmodManager::GlobalManager().SetVolumeAll(
-          static_cast<float>(pExternalCall->m_ppArgs[0]->GetNumber()));
-        return;
-      }
-      if(pExternalCall->m_sMethodName == "Mute")
-      {
-        g_bMute = !g_bMute;
-        if(g_bMute) Vision::Message.Add(1, "Mute on");
-        else Vision::Message.Add(1, "Mute off");
-        VFmodManager::GlobalManager().SetMuteAll(g_bMute);
-        return;
-      }
-
-      // output to screen and log
-      VString sCommand("EXTERNAL CALL: ", 128);
-      sCommand += pExternalCall->m_sMethodName + "(";
-
-      for(int i=0;i<pExternalCall->m_uiArgCount;i++)
-      {
-        if(i!=0) sCommand += " ";
-        sCommand += pExternalCall->m_ppArgs[i]->ToString();
-        sCommand += ",";
-      }
-      sCommand[sCommand.GetLen()-1] = ')';
-
-      Vision::Error.SystemMessage(sCommand.AsChar());
-      Vision::Message.Add(1, sCommand.AsChar());
-      return;
-    }
+    VISION_PLUGIN_ENSURE_LOADED(vFmodEnginePlugin);
+    VISION_PLUGIN_ENSURE_LOADED(vScaleformPlugin);
   }
+
+  virtual void Init() HKV_OVERRIDE;
+  virtual void AfterSceneLoaded(bool bLoadingSuccessful) HKV_OVERRIDE;
+  virtual bool Run() HKV_OVERRIDE;
+  virtual void DeInit() HKV_OVERRIDE;
+
+private:
+  void ParseCommandLine();
+  VScaleformMovieInstance* LoadMovie(const char* szMovieName);
+
+  VString m_sMovieName;
+
+  VScaleformMovieInstancePtr m_spMovie;
+  VScaleformValue* m_pMainMenuVar;
+
+  bool m_bMute;
+#if defined(_VISION_MOBILE)
+  VisScreenMask_cl **m_ppTouchPoints;
+#else
+  VisScreenMaskPtr m_spMouse;
+#endif
+
+  VisContextCameraPtr m_spCamera;
+  VisRenderContextPtr m_spContext;
+
+  VisBaseEntity_cl* pEntity;
+  VFreeCamera* pFreeCamera;
+
+  static const int TOGGLE_MOUSE_MODE = 1 + VAPP_INPUT_CONTROL_LAST_ELEMENT;
+  static const int TOGGLE_BORDERLESS_FULLSCREEN_MODE = 2 + VAPP_INPUT_CONTROL_LAST_ELEMENT;
+
+  bool m_bPseudoFullScreen;
+
+  int m_iCurrentXRes;
+  int m_iCurrentYRes;
 };
 
-VScaleformMovieInstance* LoadMovie(const char* szMovieName)
+VAPP_IMPLEMENT_SAMPLE(ScaleformApp);
+
+ScaleformApp::ScaleformApp()
+  : m_sMovieName("")
+  , m_spMovie(NULL)
+  , m_pMainMenuVar(NULL)
+  , m_bMute(false)
+#if defined(_VISION_MOBILE)
+  , m_ppTouchPoints(NULL)
+#else
+  , m_spMouse(NULL)
+#endif
+  , m_spCamera(NULL)
+  , m_spContext(NULL)
+  , pEntity(NULL)
+  , pFreeCamera(NULL)
+  , m_bPseudoFullScreen(false)
+  , m_iCurrentXRes(VVIDEO_DEFAULTWIDTH)
+  , m_iCurrentYRes(VVIDEO_DEFAULTHEIGHT)
 {
-  VScaleformMovieInstance* pMovie = VScaleformManager::GlobalManager().LoadMovie(szMovieName);
-  if (pMovie==NULL)
-  {
-    Vision::Error.FatalError("Could not load movie: %s", szMovieName);
-  }
-  return pMovie;
+
 }
 
-VISION_INIT
+// Receive command callbacks and external interface calls.
+// Alternatively a class can be derived from VScaleformMovieInstance and override the OnCommand / OnExternalInterfaceCall function
+void ScaleformApp::OnHandleCallback(IVisCallbackDataObject_cl *pData)
 {
-  VISION_SET_DIRECTORIES(false);
+  if(pData->m_pSender == &VOnFSCommand::OnFSCallback)
+  { 
+    //this call back is marked as deprecated by scaleform
+    VOnFSCommand *pCommand = (VOnFSCommand *)pData;
 
-  // include the vision engine plugin
-  VisionAppHelpers::MakeEXEDirCurrent();
-  VisSampleApp::LoadVisionEnginePlugin();
-
-  VISION_PLUGIN_ENSURE_LOADED(vFmodEnginePlugin);
-
-  // load the scaleform plugin:
-  VISION_PLUGIN_ENSURE_LOADED(vScaleformPlugin);
-  
-  //the default movie
-#ifdef _VISION_MOBILE
-  g_sMovieName = "as3_havok_multitouch.swf";
-#else
-  g_sMovieName = "as2_havok.swf";
-#endif
-  
-#ifdef WIN32
-  VStaticString<1024> copyString = GetCommandLine();
-  if (!copyString.IsEmpty())
-  {
-    // works not for spaces in the path
-    VStringTokenizerInPlace tokenizer(copyString, ' ', true);
-    for (unsigned int i=0;i<tokenizer.GetTokenCount();i++)
-    {
-      VString sArgument = tokenizer.Next();
-      if(!sArgument.IsEmpty())
-      {
-        if (sArgument == "-rtt")
-        {
-          g_bShowOnTexture = true;
-        }
-        else if (sArgument.GetLen()>4 && (sArgument.EndsWith(".gfx")||sArgument.EndsWith(".swf")) )
-        {
-          g_sMovieName = sArgument;
-        }
-      }
-    }
+    // output to screen and log
+    VString sCommand("FS COMMAND: ", 128);
+    sCommand += pCommand->m_sCommand + " ARGS:" + pCommand->m_sArgs;
+    hkvLog::Info(sCommand.AsChar());
+    Vision::Message.Add(1, sCommand.AsChar());
   }
+  else if(pData->m_pSender == &VOnExternalInterfaceCall::OnExternalInterfaceCallback)
+  {  
+    VOnExternalInterfaceCall *pExternalCall = (VOnExternalInterfaceCall *)pData;
+
+    //handle volume change
+    if(pExternalCall->m_sMethodName == "SetVolume" && pExternalCall->m_uiArgCount==1)
+    {
+      VFmodManager::GlobalManager().SetVolumeAll(static_cast<float>(pExternalCall->m_ppArgs[0]->GetNumber()));
+      return;
+    }
+    if(pExternalCall->m_sMethodName == "Mute")
+    {
+      m_bMute = !m_bMute;
+      if(m_bMute) Vision::Message.Add(1, "Mute on");
+      else Vision::Message.Add(1, "Mute off");
+      VFmodManager::GlobalManager().SetMuteAll(m_bMute);
+      return;
+    }
+
+    // output to screen and log
+    VString sCommand("EXTERNAL CALL: ", 128);
+    sCommand += pExternalCall->m_sMethodName + "(";
+
+    for(int i=0;i<pExternalCall->m_uiArgCount;i++)
+    {
+      if(i!=0) sCommand += " ";
+      sCommand += pExternalCall->m_ppArgs[i]->ToString();
+      sCommand += ",";
+    }
+    sCommand[sCommand.GetLen()-1] = ')';
+
+    hkvLog::Info(sCommand.AsChar());
+    Vision::Message.Add(1, sCommand.AsChar());
+    return;
+  }
+}
+
+void ScaleformApp::Init()
+{
+  //the default movie
+#if defined(_VISION_MOBILE)
+  m_sMovieName = "as3_havok_multitouch.swf";
+#else
+  m_sMovieName = "as2_havok.swf";
 #endif
+
+  ParseCommandLine();
 
   if (g_bShowOnTexture)
   {
-    g_sMovieName = "GFx_GDC_06.swf";
+    m_sMovieName = "GFx_GDC_06.swf";
   }
 
-  // Create and init an application
-  g_spApp = new VisSampleApp();
-
-  uint64 iSampleInitFlags = VSampleFlags::VSAMPLE_INIT_DEFAULTS & ~VSampleFlags::VSAMPLE_HAVOKLOGO;
-  int iEngineInitFlags = VAPP_INIT_DEFAULTS;
-
-#ifdef _VISION_MOBILE
-  iSampleInitFlags |= VSampleFlags::VSAMPLE_FORCEMOBILEMODE;
-#endif
-
-  // simple scene when rendering as a HUD overlay
-  if (!g_spApp->InitSample("Maps\\ViewerMap" /*DataDir*/, "ViewerMap" /*SampleScene*/, iSampleInitFlags, VVIDEO_DEFAULTWIDTH, VVIDEO_DEFAULTHEIGHT, iEngineInitFlags))
-    return false;
-
-  return true;
+  // Simple scene when rendering as a HUD overlay
+  VisAppLoadSettings settings("ViewerMap.vscene");
+  settings.m_customSearchPaths.Append(":havok_sdk/Data/Vision/Samples/Engine/Scaleform");
+  settings.m_customSearchPaths.Append(":havok_sdk/Data/Vision/Samples/Engine/Maps/ViewerMap");
+  LoadScene(settings);
 }
 
-VisBaseEntity_cl* pEntity = NULL;
-VisMouseCamera_cl* pMouseCamera = NULL;
-
-const int TOGGLE_MOUSE_MODE = 1+VISION_INPUT_CONTROL_LAST_ELEMENT;
-const int TOGGLE_BORDERLESS_FULLSCREEN_MODE = 2+VISION_INPUT_CONTROL_LAST_ELEMENT;
-
-bool bMouseModeChanged = true;
-bool bPseudoFullScreen = false;
-
-ScaleformListener *pListener = NULL;
-
-bool bEditable = false;
-
-int iCurrentXRes = VVIDEO_DEFAULTWIDTH;
-int iCurrentYRes = VVIDEO_DEFAULTHEIGHT;
-
-VISION_SAMPLEAPP_AFTER_LOADING
-{  
-  g_spApp->AddSampleDataDir("Scaleform");
-
-  // Create a mouse controlled camera (optionally with gravity)
-  g_spApp->EnableMouseCamera();
-
+void ScaleformApp::AfterSceneLoaded(bool bLoadingSuccessful)
+{
   // register a listener to the command callback (optional)
-  pListener = new ScaleformListener();
-  VOnFSCommand::OnFSCallback += *pListener;
-  VOnExternalInterfaceCall::OnExternalInterfaceCallback += *pListener;
+  VOnFSCommand::OnFSCallback += this;
+  VOnExternalInterfaceCall::OnExternalInterfaceCallback += this;
 
-  pMouseCamera = (VisMouseCamera_cl*)g_spApp->GetMouseCamera();
+  pFreeCamera = vstatic_cast<VFreeCamera*>(Vision::Game.CreateEntity("VFreeCamera", hkvVec3::ZeroVector()));
 
 #if defined(SUPPORTS_MULTITOUCH)
-  if (pMouseCamera->GetVirtualThumbStick() != NULL)
-    pMouseCamera->GetVirtualThumbStick()->Hide();
+  if (pFreeCamera->GetVirtualThumbStick() != NULL)
+    pFreeCamera->GetVirtualThumbStick()->Hide();
 #endif
 
-#ifdef _VISION_MOBILE
-
+#if defined(_VISION_MOBILE)
   if (!g_bShowOnTexture)
   {
     int iMaxTouchPoints = VScaleformManager::GlobalManager().GetMaxTouchPoints();
-    g_ppTouchPoints = new VisScreenMask_cl*[iMaxTouchPoints];
+    m_ppTouchPoints = new VisScreenMask_cl*[iMaxTouchPoints];
 
-    for(int i=0;i<iMaxTouchPoints;i++)
+    for(int i = 0; i<iMaxTouchPoints; i++)
     {
-      g_ppTouchPoints[i] = new VisScreenMask_cl("GUI/circle.dds");
+      m_ppTouchPoints[i] = new VisScreenMask_cl("GUI/circle.dds");
       VSimpleRenderState_t renderState(VIS_TRANSP_ALPHA);
       renderState.SetFlags(RENDERSTATEFLAG_FRONTFACE|RENDERSTATEFLAG_FILTERING);
-      g_ppTouchPoints[i]->SetRenderState(renderState);
-      g_ppTouchPoints[i]->SetVisible(true);
-      g_ppTouchPoints[i]->SetPos(-100,-100); //start ouside the visible area
-      g_ppTouchPoints[i]->SetColor(VColorRef(255/((i%4)+1), (25*i)%255, 255/(i/3+1))); //randomize colors
+      m_ppTouchPoints[i]->SetRenderState(renderState);
+      m_ppTouchPoints[i]->SetVisible(false);
+      m_ppTouchPoints[i]->SetPos(0, 0);
+      m_ppTouchPoints[i]->SetColor(VColorRef(255/((i%4)+1), (25*i)%255, 255/(i/3+1))); //randomize colors
     
       //rescale the texture a little bit, so that we get some smoother edges through the filtering
       int iWidth, iHeight;
-      g_ppTouchPoints[i]->GetTextureSize(iWidth, iHeight);
-      g_ppTouchPoints[i]->SetTargetSize(iWidth-2, iHeight-2);
+      m_ppTouchPoints[i]->GetTextureSize(iWidth, iHeight);
+      m_ppTouchPoints[i]->SetTargetSize(iWidth-2, iHeight-2);
     }
   }
 #else
   // display our own mouse cursor (optional)
-  g_spMouse = new VisScreenMask_cl("mouseNorm.TGA");
-  g_spMouse->SetTransparency(VIS_TRANSP_ALPHA);
-  g_spMouse->SetVisible(true);
+  m_spMouse = new VisScreenMask_cl("mouseNorm.TGA");
+  m_spMouse->SetTransparency(VIS_TRANSP_ALPHA);
+  m_spMouse->SetVisible(true);
 #endif
 
-  pMouseCamera->SetThinkFunctionStatus(false);
+  pFreeCamera->SetThinkFunctionStatus(false);
 
   /*
   //Sample code for associating a subset of an input map with scaleform's key events:
-  VInputMap *pInputMap = spApp->GetInputMap();
+  VInputMap *pInputMap = GetInputMap();
   const int iTriggerID[] = {FOV_INCREASE,FOV_DECREASE};
   const int iGFxKey[] = {VScaleformManager::SF_KEY_UP, VScaleformManager::SF_KEY_DOWN};
   const int iTriggerCount = sizeof(iTriggerID)/sizeof(iTriggerID[0]); // 2 elements
@@ -272,212 +247,229 @@ VISION_SAMPLEAPP_AFTER_LOADING
   if (g_bShowOnTexture)
   {
     // apply to simple rotating entity
-    pEntity = Vision::Game.CreateEntity("VisBaseEntity_cl",hkvVec3(30.f,0,-10.f),"\\Models\\MissingModel.MODEL");
+    pEntity = Vision::Game.CreateEntity("VisBaseEntity_cl",hkvVec3(30.f,0,-10.f), "Models/MissingModel.model");
     pEntity->SetScaling(1.6f);
     VDynamicMesh *pMesh = pEntity->GetMesh();
 
     VisSurface_cl* pSurface = pMesh->GetSurfaceByName("blinn1");
     VASSERT(pSurface);
     
-    pSurface->m_spDiffuseTexture = Vision::TextureManager.Load2DTexture(g_sMovieName);
+    pSurface->m_spDiffuseTexture = Vision::TextureManager.Load2DTexture(m_sMovieName);
   }
   else
   {
     // create a movie instance to playback
-    g_spMovie = LoadMovie(g_sMovieName.AsChar());
-
-    if(g_sMovieName=="havok.swf")
-    {
-      g_spApp->AddHelpText ("");
-      g_spApp->AddHelpText ("Adjust the sliders and watch the result");
-      g_spApp->AddHelpText ("");
-    }
-
-    g_pMainMenuVar = g_spMovie->GetVariable("_root.mainMenu");
+    m_spMovie = LoadMovie(m_sMovieName.AsChar());
+    m_pMainMenuVar = m_spMovie->GetVariable("_root.mainMenu");
   }
   
-
+  VArray<const char*> help;
 #if defined(SUPPORTS_KEYBOARD)
-  g_spApp->GetInputMap()->MapTrigger(TOGGLE_MOUSE_MODE,                 V_KEYBOARD, CT_KB_PAUSE, VInputOptions::Once());
-  g_spApp->GetInputMap()->MapTrigger(TOGGLE_BORDERLESS_FULLSCREEN_MODE, V_KEYBOARD, CT_KB_PGDN,  VInputOptions::Once());
-  g_spApp->GetInputMap()->MapTrigger(TOGGLE_BORDERLESS_FULLSCREEN_MODE, V_KEYBOARD, CT_KB_PGUP,  VInputOptions::Once());
-  g_spApp->AddHelpText ("");
-  g_spApp->AddHelpText ("PAUSE - Toggle Mouse Cursor / Mouse Look");
-#ifdef WIN32
-  g_spApp->AddHelpText ("Page Up/Down - FullScreen/Window mode");
-  g_spApp->AddHelpText ("");
-  g_spApp->AddHelpText ("Try to start the sample with command line parameter -rtt or -scifi");
-  #endif
+  GetInputMap()->MapTrigger(TOGGLE_MOUSE_MODE,                 V_KEYBOARD, CT_KB_ENTER, VInputOptions::Once());
+  GetInputMap()->MapTrigger(TOGGLE_BORDERLESS_FULLSCREEN_MODE, V_KEYBOARD, CT_KB_PGDN,  VInputOptions::Once());
+  GetInputMap()->MapTrigger(TOGGLE_BORDERLESS_FULLSCREEN_MODE, V_KEYBOARD, CT_KB_PGUP,  VInputOptions::Once());
+  help.Append("Enter - Toggle Mouse Cursor / Mouse Look");
+# if defined(WIN32)
+  help.Append("Page Up/Down - FullScreen/Window mode");
+  help.Append("");
+  help.Append("Try to start the sample with command line parameter -rtt");
+# endif
 #endif
+
 #if defined(_VISION_PS3) || defined(_VISION_XENON)
-  g_spApp->GetInputMap()->MapTrigger(TOGGLE_MOUSE_MODE, VInputManager::GetPad(0), CT_PAD_LEFT_SHOULDER, VInputOptions::Once());
-  g_spApp->AddHelpText ("PAD1 - Left Trigger : Show/Hide Mouse Cursor");
+  GetInputMap()->MapTrigger(TOGGLE_MOUSE_MODE, VInputManager::GetPad(0), CT_PAD_LEFT_SHOULDER, VInputOptions::Once());
+  help.Append("PAD1 - Left Trigger : Show/Hide Mouse Cursor");
 #endif
+
+  if(help.GetSize() > 0)
+    RegisterAppModule(new VHelp(help));
 }
 
-VISION_SAMPLEAPP_RUN
+bool ScaleformApp::Run()
 {
-  if(g_spApp->Run())
+#if defined(_VISION_PS3) || defined(_VISION_XENON)
+  Vision::Message.Print(1, 10, 20, "Press \"PAD1 - Left Shoulder\" to toggle camera / mouse cursor control");
+#endif
+
+  if (pEntity)
   {
-    #if defined(_VISION_PS3) || defined(_VISION_XENON)
-      Vision::Message.Print(1, 10, 20, "Press \"PAD1 - Left Shoulder\" to toggle camera / mouse cursor control");
-    #endif
-    
-    if (pEntity)
+    pEntity->IncOrientation(Vision::GetTimer()->GetTimeDifference()*10.f,0,0);
+  }
+
+#if !defined(_VISION_MOBILE)
+  if (GetInputMap()->GetTrigger(TOGGLE_MOUSE_MODE))
+  {
+    m_spMouse->SetVisible(! m_spMouse->IsVisible() );
+    bool bMouseInput = m_spMouse->IsVisible()==TRUE;
+    VScaleformManager::GlobalManager().SetHandleCursorInput(bMouseInput);
+    pFreeCamera->SetThinkFunctionStatus(!bMouseInput);
+  }
+#endif
+
+#if defined(WIN32)
+  if (GetInputMap()->GetTrigger(TOGGLE_BORDERLESS_FULLSCREEN_MODE))
+  {
+    if(m_bPseudoFullScreen)
     {
-      pEntity->IncOrientation(Vision::GetTimer()->GetTimeDifference()*10.f,0,0);
+      //Gets the default resolution
+      m_iCurrentXRes = VVIDEO_DEFAULTWIDTH;
+      m_iCurrentYRes = VVIDEO_DEFAULTHEIGHT;
+      m_bPseudoFullScreen = false;
     }
-    
-    #ifndef _VISION_MOBILE
-      if(g_spApp->GetInputMap()->GetTrigger(TOGGLE_MOUSE_MODE))
-      {
-        g_spMouse->SetVisible(! g_spMouse->IsVisible() );
-        bool bMouseInput = g_spMouse->IsVisible()==TRUE;
-        VScaleformManager::GlobalManager().SetHandleCursorInput(bMouseInput);
-        pMouseCamera->SetThinkFunctionStatus(!bMouseInput);
-      }
-    #endif
-    
-    #ifdef WIN32
-    if(g_spApp->GetInputMap()->GetTrigger(TOGGLE_BORDERLESS_FULLSCREEN_MODE))
+    else
     {
-      if(bPseudoFullScreen)
+      //Gets the full screen resolution, note that we'll change resolution only.(It's not the real fullscreen mode)
+      DEVMODEA deviceMode;
+      deviceMode = Vision::Video.GetAdapterMode(VAppBase::Get()->m_appConfig.m_videoConfig.m_iAdapter);
+      m_iCurrentXRes = deviceMode.dmPelsWidth;
+      m_iCurrentYRes = deviceMode.dmPelsHeight;
+      m_bPseudoFullScreen = true;
+    }
+
+    if(!g_bShowOnTexture)
+    {
+      int iOrigX=0, iOrigY=0;
+      m_spMovie->GetAuthoredSize(iOrigX,iOrigY);
+      VASSERT(iOrigX!=0&&iOrigY!=0);
+      float fRatio = (float)iOrigX/(float)iOrigY;
+
+      if(m_iCurrentXRes/fRatio>m_iCurrentYRes)
       {
-        //Gets the default resolution
-        iCurrentXRes = VVIDEO_DEFAULTWIDTH;
-        iCurrentYRes = VVIDEO_DEFAULTHEIGHT;
-        bPseudoFullScreen = false;
+        if(m_sMovieName=="havok.swf")
+        { 
+          //do not "over scale" for the havok movie, otherwise
+          //controls are outside the reachable area
+          m_spMovie->SetPosition((int)((m_iCurrentXRes-m_iCurrentYRes*fRatio)*0.5f),0);
+          m_spMovie->SetSize((int)(m_iCurrentYRes*fRatio), m_iCurrentYRes);
+        }
+        else
+        {
+          //in this case the window is wider than the move
+          //(avoid border by scaling the movie up)
+          m_spMovie->SetPosition(0,(int)(((float)m_iCurrentXRes/fRatio-m_iCurrentYRes)*-0.5f));
+          m_spMovie->SetSize(m_iCurrentXRes, (int)(m_iCurrentXRes/fRatio));
+        }
       }
       else
       {
-        //Gets the full screen resolution, note that we'll change resolution only.(It's not the real fullscreen mode)
-        DEVMODEA deviceMode;
-        deviceMode = Vision::Video.GetAdapterMode(g_spApp->m_appConfig.m_videoConfig.m_iAdapter);
-        iCurrentXRes = deviceMode.dmPelsWidth;
-        iCurrentYRes = deviceMode.dmPelsHeight;
-        bPseudoFullScreen = true;
+        m_spMovie->SetPosition(0,0);
+        m_spMovie->SetSize(m_iCurrentXRes, m_iCurrentYRes);
       }
-
-      if(!g_bShowOnTexture)
-      {
-        int iOrigX=0, iOrigY=0;
-        g_spMovie->GetAuthoredSize(iOrigX,iOrigY);
-        VASSERT(iOrigX!=0&&iOrigY!=0);
-        float fRatio = (float)iOrigX/(float)iOrigY;
-
-        if(iCurrentXRes/fRatio>iCurrentYRes)
-        {
-          if(g_sMovieName=="havok.swf")
-          { 
-            //do not "over scale" for the havok movie, otherwise
-            //controls are outside the reachable area
-            g_spMovie->SetPosition((int)((iCurrentXRes-iCurrentYRes*fRatio)*0.5f),0);
-            g_spMovie->SetSize((int)(iCurrentYRes*fRatio), iCurrentYRes);
-          }
-          else
-          {
-            //in this case the window is wider than the move
-            //(avoid border by scaling the movie up)
-            g_spMovie->SetPosition(0,(int)(((float)iCurrentXRes/fRatio-iCurrentYRes)*-0.5f));
-            g_spMovie->SetSize(iCurrentXRes, (int)(iCurrentXRes/fRatio));
-          }
-        }
-        else
-        {
-          g_spMovie->SetPosition(0,0);
-          g_spMovie->SetSize(iCurrentXRes, iCurrentYRes);
-        }
-      }
-
-      VisionWindowManager::GetActiveWindow()->GetConfig().SetBorderlessWindow(bPseudoFullScreen);       
-      Vision::Video.ChangeScreenResolution(0,0, iCurrentXRes, iCurrentYRes, false, 0);
     }
-    #endif
 
-    #ifdef _VISION_MOBILE
-    if (!g_bShowOnTexture)
+    VisionWindowManager::GetActiveWindow()->GetConfig().SetBorderlessWindow(m_bPseudoFullScreen);       
+    Vision::Video.ChangeScreenResolution(0,0, m_iCurrentXRes, m_iCurrentYRes, false, 0);
+  }
+#endif
+
+#ifdef _VISION_MOBILE
+  if (!g_bShowOnTexture)
+  {
+    for(int i=0;i<VScaleformManager::GlobalManager().GetMaxTouchPoints();i++)
     {
-      for(int i=0;i<VScaleformManager::GlobalManager().GetMaxTouchPoints();i++)
+      float fX, fY;
+      int iWidth, iHeight;
+      int iTextX, iTextY;
+
+      VScaleformManager::GlobalManager().GetCursorPos(fX,fY,i);
+      m_ppTouchPoints[i]->GetTextureSize(iWidth, iHeight);
+
+      if(VInputManager::GetTouchScreen().IsActiveTouch(i))
       {
-        float fX, fY;
-        int iWidth, iHeight;
-        int iTextX, iTextY;
-      
-        VScaleformManager::GlobalManager().GetCursorPos(fX,fY,i);
-        g_ppTouchPoints[i]->GetTextureSize(iWidth, iHeight);
-      
-        if(VInputManager::GetTouchScreen().IsActiveTouch(i))
-        {
-          g_ppTouchPoints[i]->SetPos(fX-iWidth/2, fY-iHeight/2); //update the position when active
-          iTextX = fX-iWidth*0.65f;
-          iTextY = fY-iHeight*0.65f; //display the number outside for active touch points
-        }
-        else
-        {
-          iTextX = fX-iWidth/12;
-          iTextY = fY-iHeight/8; //display the number inside for in-active touch points
-        }
-      
-        Vision::Message.SetTextColor(V_RGBA_BLACK);
-        Vision::Message.Print(1, iTextX+1, iTextY+1, "%d", i); 
-        Vision::Message.SetTextColor(V_RGBA_WHITE);
-        Vision::Message.Print(1, iTextX, iTextY, "%d", i);
+        m_ppTouchPoints[i]->SetVisible(true);
+        m_ppTouchPoints[i]->SetPos(fX-iWidth/2, fY-iHeight/2); //update the position when active
+        iTextX = fX-iWidth*0.65f;
+        iTextY = fY-iHeight*0.65f; //display the number outside for active touch points
       }
+      else
+      {
+        iTextX = fX-iWidth/12;
+        iTextY = fY-iHeight/8; //display the number inside for in-active touch points
+      }
+
+      Vision::Message.SetTextColor(V_RGBA_BLACK);
+      Vision::Message.Print(1, iTextX+1, iTextY+1, "%d", i); 
+      Vision::Message.SetTextColor(V_RGBA_WHITE);
+      Vision::Message.Print(1, iTextX, iTextY, "%d", i);
     }
-    #else
-      if(!pMouseCamera->GetThinkFunctionStatus())
-      {
-        float x,y;
-        VScaleformManager::GlobalManager().GetCursorPos(x,y);
-        g_spMouse->SetPos(x,y);
+  }
+#else
+  if(!pFreeCamera->GetThinkFunctionStatus())
+  {
+    float x,y;
+    VScaleformManager::GlobalManager().GetCursorPos(x,y);
+    m_spMouse->SetPos(x,y);
 
-        if (g_pMainMenuVar!=NULL)
-        {
-          g_pMainMenuVar->Display_SetXYRotation((iCurrentYRes*0.5f-y)*-0.07f, (iCurrentXRes*0.5f-x)*0.07f);
-        }
-      }
-    #endif
-    
+    if (m_pMainMenuVar!=NULL)
+    {
+      m_pMainMenuVar->Display_SetXYRotation((m_iCurrentYRes*0.5f-y)*-0.07f, (m_iCurrentXRes*0.5f-x)*0.07f);
+    }
+  }
+#endif
 
-    return true;
-  } 
-  return false;
+  return true;
 }
 
-VISION_DEINIT
+void ScaleformApp::DeInit()
 {
   // de-register
-  VOnFSCommand::OnFSCallback -= *pListener;
-  VOnExternalInterfaceCall::OnExternalInterfaceCallback -= *pListener;
+  VOnFSCommand::OnFSCallback -= this;
+  VOnExternalInterfaceCall::OnExternalInterfaceCallback -= this;
 
-  V_SAFE_DELETE(pListener);
+#ifdef _VISION_MOBILE
+  V_SAFE_DELETE_ARRAY(m_ppTouchPoints);
+#else
+  m_spMouse = NULL; 
+#endif
 
-  #ifdef _VISION_MOBILE
-    V_SAFE_DELETE_ARRAY(g_ppTouchPoints);
-  #else
-    g_spMouse = NULL; 
-  #endif
-  
   // delete the movie instance  
-  g_pMainMenuVar = NULL;
-  g_spMovie = NULL; 
+  m_pMainMenuVar = NULL;
+  m_spMovie = NULL; 
 
   // deinit (only relevant if bShowOnTexture was true)
-  g_spCamera = NULL;
-  g_spContext = NULL;
-
-  // Deinit the application
-  g_spApp->DeInitSample();
-  g_spApp = NULL;
-  Vision::Plugins.UnloadAllEnginePlugins();
-
-  return 0;
+  m_spCamera = NULL;
+  m_spContext = NULL;
 }
 
-VISION_MAIN_DEFAULT
+VScaleformMovieInstance* ScaleformApp::LoadMovie(const char* szMovieName)
+{
+  VScaleformMovieInstance* pMovie = VScaleformManager::GlobalManager().LoadMovie(szMovieName);
+  if (pMovie==NULL)
+  {
+    hkvLog::FatalError("Could not load movie: %s", szMovieName);
+  }
+  return pMovie;
+}
+
+void ScaleformApp::ParseCommandLine()
+{
+#if defined(WIN32)
+  VMemoryTempBuffer<256> tmpString = GetCommandLine();
+  if (!VStringUtil::IsEmpty(tmpString.AsChar()))
+  {
+    // works not for spaces in the path
+    VStringTokenizerInPlace tokenizer(tmpString.AsChar(), ' ', true);
+    for (unsigned int i = 0; i < tokenizer.GetTokenCount(); i++)
+    {
+      VString sArgument = tokenizer.Next();
+      if(!sArgument.IsEmpty())
+      {
+        if (sArgument == "-rtt")
+        {
+          g_bShowOnTexture = true;
+        }
+        else if (sArgument.GetLen()>4 && (sArgument.EndsWith(".gfx")||sArgument.EndsWith(".swf")) )
+        {
+          m_sMovieName = sArgument;
+        }
+      }
+    }
+  }
+#endif
+}
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

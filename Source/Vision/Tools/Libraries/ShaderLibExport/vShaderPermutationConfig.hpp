@@ -68,7 +68,7 @@ public:
   ///
   /// \return
   /// True if all went successful.
-  VSHADERLIBEXPORT_IMPEXP bool ReadConfigFromFile (const char* szFile, VString& out_sError, IVLog *pLog, const char* szEffectName, const char* szTechniqueName);
+  VSHADERLIBEXPORT_IMPEXP bool ReadConfigFromFile (const char* szFile, VString& out_sError, hkvLogInterface* pLog, const char* szEffectName, const char* szTechniqueName);
 
   /// \brief Returns the number of maximum possible permutations (before filtering anything out).
   VSHADERLIBEXPORT_IMPEXP int GetMaxPermutations (void) const { return (m_iMaxPermutations); }
@@ -141,7 +141,7 @@ private:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

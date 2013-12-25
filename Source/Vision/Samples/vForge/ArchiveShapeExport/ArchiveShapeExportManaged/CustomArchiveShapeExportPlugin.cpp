@@ -145,7 +145,9 @@ namespace CustomArchiveShapeExportPlugin {
 
       //create outstream that is needed for VArchive
       IVFileOutStream *pOutStream = Vision::File.Create( sPath );
-      if (!pOutStream) Vision::Error.FatalError("Couldn't create file!");
+
+      if (!pOutStream)
+        hkvLog::FatalError("Couldn't create file '%s'", sPath.AsChar());
 
       VArchive* pArchive = new VArchive( sPath, pOutStream, Vision::GetTypeManager() );
 
@@ -179,7 +181,7 @@ namespace CustomArchiveShapeExportPlugin {
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

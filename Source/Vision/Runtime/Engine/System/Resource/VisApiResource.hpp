@@ -172,11 +172,6 @@ public:
   ///   directly with Vision::File.Create
   VISION_APIFUNC virtual IVFileOutStream *CreateFileOutStream(const char *szFilename, VManagedResource *pStoreTimeStampRes) HKV_OVERRIDE;
 
-  /// \brief
-  ///   Returns Vision's standard file manager.
-  /// \sa Vision::File.GetManager()
-  VISION_APIFUNC VOVERRIDE IVFileStreamManager* GetFileManager();
-
   ///
   /// @}
   ///
@@ -776,7 +771,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

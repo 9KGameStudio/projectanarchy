@@ -39,7 +39,13 @@
 #include <Common/Serialize/Version/hkVersionPatchManager.h>
 #if defined(HAVOK_SDK_VERSION_MAJOR) && (HAVOK_SDK_VERSION_MAJOR >= 2012)
 #include <Common/Compat/hkHavokVersions.h>
-#define HK_SERIALIZE_MIN_COMPATIBLE_VERSION_INTERNAL_VALUE HK_HAVOK_VERSION_300
+
+#ifdef _VISION_MOBILE
+  #define HK_SERIALIZE_MIN_COMPATIBLE_VERSION_INTERNAL_VALUE HK_HAVOK_VERSION_201210r1
+#else
+  #define HK_SERIALIZE_MIN_COMPATIBLE_VERSION_INTERNAL_VALUE HK_HAVOK_VERSION_300
+#endif
+
 void HK_CALL registerAnimationBehaviorPatches()
 {
 	hkVersionPatchManager& man = hkVersionPatchManager::getInstance();
@@ -540,7 +546,7 @@ hkbCharacter* vHavokBehaviorModule::addCharacter( vHavokBehaviorComponent* chara
 
 		if( resource == HK_NULL )
 		{
-			Vision::Error.Warning( "Failed to load resource from %s", projectPath.cString() );
+			hkvLog::Warning( "Failed to load resource from project path: '%s'", projectPath.cString() );
 		}
 		else
 #else
@@ -688,13 +694,13 @@ void EnsureHavokBehaviorScriptRegistration()
 		}
 		else
 		{
-			Vision::Error.Warning("Unable to create Lua Havok Behavior Module, lua_State is NULL");
+			hkvLog::Warning("Unable to create Lua Havok Behavior Module, lua_State is NULL");
 		}
 	}
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

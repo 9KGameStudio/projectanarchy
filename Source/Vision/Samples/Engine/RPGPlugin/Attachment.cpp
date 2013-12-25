@@ -51,7 +51,7 @@ void RPG_Attachment::Attach(VisObject3D_cl* object, const VString& boneName, con
     }
     else
     {
-      Vision::Error.Warning("RPG_Attachment::Attach - Supplied bone name doesn't exist on this skeleton: %s", boneName.AsChar());
+      hkvLog::Warning("RPG_Attachment::Attach - Supplied bone name doesn't exist on this skeleton: %s", boneName.AsChar());
     }
 
   }
@@ -113,7 +113,7 @@ void RPG_Attachment::Detach(bool disposeObject)
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

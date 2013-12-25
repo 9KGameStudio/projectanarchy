@@ -314,12 +314,12 @@ bool vHavokConstraintChain::AddChainLink()
 
   if (GetNumLinks() == GetMaxNumLinks())
   {
-    Vision::Error.Warning("Cannot add link - chain already has maximum length.");
+    hkvLog::Warning("Cannot add link - chain already has maximum length.");
     return false;
   }
   if (GetNumLinks() < 1)
   {
-    Vision::Error.Warning("Cannot add link - at least one existing link is needed as reference.");
+    hkvLog::Warning("Cannot add link - at least one existing link is needed as reference.");
     return false;
   }
 
@@ -814,12 +814,12 @@ bool vHavokConstraintChain::GetParametersFromDesc(
   // The link dimensions must make sense
   if ((desc.m_fLinkLength - desc.m_fLinkGap) < desc.m_fDiameter)
   {
-    Vision::Error.Warning("vHavokConstraintChain: Cannot create chain. Length of chain links is less than the chain diameter.");
+    hkvLog::Warning("vHavokConstraintChain: Cannot create chain. Length of chain links is less than the chain diameter.");
     return false;
   }
   if (desc.m_fDiameter <= 0)
   {
-    Vision::Error.Warning("vHavokConstraintChain: Cannot create chain. Chain diameter is zero or negative.");
+    hkvLog::Warning("vHavokConstraintChain: Cannot create chain. Chain diameter is zero or negative.");
     return false;
   }
 
@@ -831,7 +831,7 @@ bool vHavokConstraintChain::GetParametersFromDesc(
   
     if (!m_spAnchorBodies[i] || !m_spAnchorBodies[i]->GetHkRigidBody())
     {
-      Vision::Error.Warning("vHavokConstraintChain: Cannot create chain. Anchor body %i is missing.", i);
+      hkvLog::Warning("vHavokConstraintChain: Cannot create chain. Anchor body %i is missing.", i);
       return false;
     }
   }
@@ -891,7 +891,7 @@ bool vHavokConstraintChain::Init(vHavokConstraintChainDesc &desc)
   // pivot points)
   if (iNumPivots < 2)
   {
-    Vision::Error.Warning("vHavokConstraintChain: Cannot create chain. There are less than two pivot points.");
+    hkvLog::Warning("vHavokConstraintChain: Cannot create chain. There are less than two pivot points.");
     Reset();
     return false;
   }
@@ -904,7 +904,7 @@ bool vHavokConstraintChain::Init(vHavokConstraintChainDesc &desc)
   // chain links for havok to handle.
   if (m_iNumLinks > GetMaxNumLinks())
   {
-    Vision::Error.Warning("vHavokConstraintChain: The current number of links (%i) exceeds the maximum (%i).", m_iNumLinks, GetMaxNumLinks());
+    hkvLog::Warning("vHavokConstraintChain: The current number of links (%i) exceeds the maximum (%i).", m_iNumLinks, GetMaxNumLinks());
     Reset();
     return false;
   }
@@ -922,7 +922,7 @@ bool vHavokConstraintChain::Init(vHavokConstraintChainDesc &desc)
   // print a warning.
   float fLengthEffective = m_fLinkLength - m_fLinkGap - m_fDiameter;
   if (fLengthEffective <= 0)
-    Vision::Error.Warning("vHavokConstraintChain: The chain links would get an effective length of 0 or less. Increase the link length or decrease the link gap and/or diameter!");
+    hkvLog::Warning("vHavokConstraintChain: The chain links would get an effective length of 0 or less. Increase the link length or decrease the link gap and/or diameter!");
 
   // Add constraint infos with the pivots for anchors and chain links
   {
@@ -1040,7 +1040,7 @@ bool vHavokConstraintChain::RemoveChainLink()
 
   if (GetNumLinks() < 2)
   {
-    Vision::Error.Warning("Cannot remove link - at least one link must remain.");
+    hkvLog::Warning("Cannot remove link - at least one link must remain.");
     return false;
   }
 
@@ -1277,12 +1277,12 @@ bool vHavokConstraintChain::SetChainLength(float fLength)
   unsigned int iNumLinksRequired = CalcNumLinksRequired(fLength);
   if (iNumLinksRequired < 1)
   {
-    Vision::Error.Warning("Can't reduce chain to less than 1 link.");
+    hkvLog::Warning("Can't reduce chain to less than 1 link.");
     return false;
   }
   if (iNumLinksRequired > GetMaxNumLinks())
   {
-    Vision::Error.Warning("Can't extend chain to more than the maximum number of links (%i).", GetMaxNumLinks());
+    hkvLog::Warning("Can't extend chain to more than the maximum number of links (%i).", GetMaxNumLinks());
     return false;
   }
 
@@ -1436,7 +1436,7 @@ vHavokConstraintChain::TempRemoveFromWorld::~TempRemoveFromWorld()
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -106,7 +106,7 @@ union ParamValUnion
   }
 
   float    f;
-  int      i;
+  INT_PTR  i;
   int flagData[2];        ///< [0] = flag number   [1] = new state (0/1)
   float  v[4];            ///< new float vector to store four floats
   const char* m_pString;  ///< shared static read only string
@@ -132,7 +132,18 @@ public :
   VBASE_IMPEXP bool NameMatches(const char *pszParam);
   
   // Used for Enum and Flags to find the value of a string matching is _not_ case-sensitive
-  VBASE_IMPEXP VBool FindString(const char *pName, int &res);
+  VBASE_IMPEXP VBool FindString(const char *pName, INT_PTR &res);
+
+#if defined(_WIN64)
+  // Add a 32-bit integer version on 64-bit.
+  inline VBool FindString(const char *pName, int &res)
+  {
+    INT_PTR tmp;
+    const VBool result = FindString(pName, tmp);
+    res = static_cast<int>(tmp);
+    return result;
+  }
+#endif
 
   //helpers
   VBASE_IMPEXP static VBool IsValidType(VParamType type);
@@ -253,7 +264,7 @@ DECLARE_LIST_SERIALX(VParamList,VParam, VBASE_IMPEXP )
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

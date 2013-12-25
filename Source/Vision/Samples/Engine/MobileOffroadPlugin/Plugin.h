@@ -31,20 +31,12 @@ public:
   }
 
 };
-
-MobileOffroadPlugin g_mobileOffroadPlugin;
-
-// declare a module for the serialization
-DECLARE_THIS_MODULE(g_mobileOffroadModule, MAKE_VERSION(1,0),
-"Mobile Offroad Plugin", "Havok",
-  "", &g_mobileOffroadPlugin);
-
 IVisPlugin_cl* GetEnginePlugin_MobileOffroadPlugin();
 
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

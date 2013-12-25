@@ -26,10 +26,17 @@ namespace
 
   class RPG_PluginInitializer : public IVisCallbackHandler_cl
   {
+  public:
+    RPG_PluginInitializer() : m_bStaticsSynced(false) {}
+
   protected:
     // IVisCallbackHandler_cl
     void OnHandleCallback(IVisCallbackDataObject_cl *callback_data) HKV_OVERRIDE;
-  } s_PluginInitializer;
+
+  private:
+    bool m_bStaticsSynced;
+  } 
+  s_PluginInitializer;
 }
 
 DECLARE_THIS_MODULE(g_RPGPluginModule, MAKE_VERSION(0, 1), "RPGPlugin", "Havok", "Havok RPG Plugin", &s_Plugin);
@@ -49,9 +56,10 @@ VEXPORT IVisPlugin_cl *GetEnginePlugin()
 void RPG_Plugin::OnInitEnginePlugin()
 {
   // Module
-  Vision::Error.SystemMessage("RPGPlugin:OnInitEnginePlugin()");
+  hkvLog::Info("RPGPlugin:OnInitEnginePlugin()");
   Vision::RegisterModule(&g_RPGPluginModule);
   RPG_VisionModuleTypes::ForceStaticLink();
+
 
   // Havok AI plugin (chains to Havok plugin)
   VISION_PLUGIN_ENSURE_LOADED(vHavokAi);
@@ -64,6 +72,7 @@ void RPG_Plugin::OnInitEnginePlugin()
   vHavokPhysicsModule::OnBeforeInitializePhysics += &s_PluginInitializer;
   vHavokPhysicsModule::OnBeforeWorldCreated += &s_PluginInitializer;
   vHavokPhysicsModule::OnAfterDeInitializePhysics += &s_PluginInitializer;
+  Vision::Callbacks.OnWorldInit += &s_PluginInitializer;
 
   // Local systems
   RPG_GameManager::s_instance.OneTimeInit();
@@ -90,9 +99,10 @@ void RPG_Plugin::OnDeInitEnginePlugin()
   vHavokPhysicsModule::OnAfterDeInitializePhysics -= &s_PluginInitializer;
   vHavokPhysicsModule::OnBeforeWorldCreated -= &s_PluginInitializer;
   vHavokPhysicsModule::OnBeforeInitializePhysics -= &s_PluginInitializer;
+  Vision::Callbacks.OnWorldInit -= &s_PluginInitializer;
 
   // Module
-  Vision::Error.SystemMessage("RPGPlugin:OnDeInitEnginePlugin()");
+  hkvLog::Info("RPGPlugin:OnDeInitEnginePlugin()");
   Vision::UnregisterModule(&g_RPGPluginModule);
 }
 
@@ -108,6 +118,7 @@ void RPG_PluginInitializer::OnHandleCallback(IVisCallbackDataObject_cl *callback
   {
     VISION_HAVOK_SYNC_STATICS();
     VISION_HAVOK_SYNC_PER_THREAD_STATICS(static_cast<vHavokPhysicsModuleCallbackData *>(callback_data)->GetHavokModule());
+    m_bStaticsSynced = true;
 
     // hkaiCharacter created by this dll will have a different vtable than the one expected by the AI module (for vdb viewer)
     // The vtable-class(?) mapping is apparently many-to-one, so re-register here with our vtable
@@ -121,7 +132,7 @@ void RPG_PluginInitializer::OnHandleCallback(IVisCallbackDataObject_cl *callback
     {
       havok_module->SetUseAsynchronousPhysics(false);
 
-      havok_module->SetEnabledVisualDebugger(TRUE);
+      havok_module->SetEnabledVisualDebugger(true);
     }
 
     // Disable validation checks (that are also performed in dev build)
@@ -134,11 +145,23 @@ void RPG_PluginInitializer::OnHandleCallback(IVisCallbackDataObject_cl *callback
 
     VISION_HAVOK_UNSYNC_PER_THREAD_STATICS(static_cast<vHavokPhysicsModuleCallbackData *>(callback_data)->GetHavokModule());
     VISION_HAVOK_UNSYNC_STATICS();
+    m_bStaticsSynced = false;
+  }
+  else if (&Vision::Callbacks.OnWorldInit == callback_data->m_pSender)
+  {
+    vHavokPhysicsModule* pPhysicsModule = vHavokPhysicsModule::GetInstance();
+    if (pPhysicsModule != NULL && !m_bStaticsSynced)
+    {
+      // Havok Physics Plugin has already been initialized.
+      // Reinitialize the physics integration to be able to synchronize static variables properly.
+      pPhysicsModule->OnDeInitPhysics();
+      pPhysicsModule->OnInitPhysics();
+    }
   }
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

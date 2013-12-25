@@ -15,34 +15,39 @@
 // Helper macros
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-//Dynamically loads and initializes the plugin from a DLL
+// Dynamically (un)loads and (de)initializes the plugin from a DLL
 // e.g. VISION_PLUGIN_LOAD_DYNAMIC(VisionEnginePlugin);
 #define VISION_PLUGIN_LOAD_DYNAMIC(_plugin)                             \
     {if (!Vision::Plugins.LoadEnginePlugin(#_plugin))                    \
-      Vision::Error.FatalError("Could not load "#_plugin".vPlugin(D)");}
+      hkvLog::FatalError("Could not load "#_plugin".vPlugin(D)");}
 
-//Initializes the plugin directly if it is statically linked
-//#include <EnginePlugins/EnginePluginsImport.hpp> for plugins
-//e.g. VISION_PLUGIN_LOAD_STATIC(VisionEnginePlugin);
+#define VISION_PLUGIN_UNLOAD_DYNAMIC(_plugin)                             \
+    {if (!Vision::Plugins.UnloadEnginePlugin(#_plugin))                    \
+    hkvLog::FatalError("Could not unload "#_plugin".vPlugin(D)");}
+
+// (De)Initializes the plugin directly if it is statically linked
+// #include <EnginePlugins/EnginePluginsImport.hpp> for plugins
+// e.g. VISION_PLUGIN_LOAD_STATIC(VisionEnginePlugin);
 #define VISION_PLUGIN_LOAD_STATIC(_plugin) {GetEnginePlugin_##_plugin ()->InitEnginePlugin();}
-
+#define VISION_PLUGIN_UNLOAD_STATIC(_plugin) {GetEnginePlugin_##_plugin ()->DeInitEnginePlugin();}
 
 #if defined(_DLL) && !defined(VISIONDLL_LIB) && !defined(VBASE_LIB)  ///<We're on a platform that supports DLLs (and we want to use them)
 
-  //Loads & inits the plugin dynamically or statically depending on the target platform
-  //#include <EnginePlugins/EnginePluginsImport.hpp> for plugins
+  // (Un)Loads & (de)initializes the plugin dynamically or statically depending on the target platform
+  // #include <EnginePlugins/EnginePluginsImport.hpp> for plugins
   // e.g. VISION_PLUGIN_ENSURE_LOADED(VisionEnginePlugin);
   #define VISION_PLUGIN_ENSURE_LOADED(_plugin)  VISION_PLUGIN_LOAD_DYNAMIC(_plugin)
+  #define VISION_PLUGIN_ENSURE_UNLOADED(_plugin) VISION_PLUGIN_UNLOAD_DYNAMIC(_plugin)
 
-#else   ///<We're on a platform that uses static libraries
+#else ///< We're on a platform that uses static libraries
 
-  //Loads & inits the plugin dynamically or statically depending on the target platform
-  //#include <EnginePlugins/EnginePluginsImport.hpp> for plugins
+  // (Un)Loads & (de)initializes the plugin dynamically or statically depending on the target platform
+  // #include <EnginePlugins/EnginePluginsImport.hpp> for plugins
   // e.g. VISION_PLUGIN_ENSURE_LOADED(VisionEnginePlugin);
   #define VISION_PLUGIN_ENSURE_LOADED(_plugin) VISION_PLUGIN_LOAD_STATIC(_plugin)
+  #define VISION_PLUGIN_ENSURE_UNLOADED(_plugin) VISION_PLUGIN_UNLOAD_STATIC(_plugin)
 
 #endif
-
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 // Macros for importing and exporting functions from a DLL
@@ -426,7 +431,7 @@ protected:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

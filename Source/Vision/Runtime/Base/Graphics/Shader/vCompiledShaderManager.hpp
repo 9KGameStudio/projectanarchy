@@ -159,7 +159,7 @@ public:
   /// 
   /// \return
   ///   VCompiledShaderPass *pNewInst : A new class instance of class szClassName (or VCompiledShaderPass)
-  VBASE_IMPEXP VCompiledShaderPass* CreateCompiledShaderInstance(const char *szClassName,bool bAllowBaseFallback=true, IVLog *pLog=NULL) const;
+  VBASE_IMPEXP VCompiledShaderPass* CreateCompiledShaderInstance(const char* szClassName, bool bAllowBaseFallback = true, hkvLogInterface* pLog = hkvGlobalLog::GetInstance()) const;
 
   /// \brief
   ///   Removes all shader pass instances from this collection that are not referenced anymore
@@ -221,7 +221,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

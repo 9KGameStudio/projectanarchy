@@ -52,6 +52,10 @@ public:
   void Schedule(float fTimeDelta);
 
   /// \brief
+  ///   Advances the movie using the minimum possible time step.
+  void ScheduleMinStep();
+
+  /// \brief
   ///   Wait until the advance task has finished.
   ///
   /// Call this function to gain access rights from the current thread to
@@ -166,7 +170,7 @@ public:
 #endif // __VSCALEFORM_INTERNAL_HPP
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

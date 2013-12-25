@@ -15,7 +15,7 @@
 // rendering to a texture.
 // The security camera entities each reference a destination texture which is their render target. The destination 
 // textures are mapped onto monitors so that the monitors display the security camera's view. The engine
-// has a powerful optimisation, i.e. that the "render to texture" operation is only performed if the destination
+// has a powerful optimization, i.e. that the "render to texture" operation is only performed if the destination
 // texture is actually visible!
 // Please have a look at the security camera entity code to see how the rendering is performed in detail.
 //
@@ -24,109 +24,93 @@
 //  - location dependent environment map for a envmap shader (e.g. on a car)
 //  - terminal dialog with a person at ground control
 // ***********************************************************************************************
+
 #include <Vision/Samples/Engine/RenderToTexture/RenderToTexturePCH.h>
+#include <Vision/Runtime/Framework/VisionApp/VAppImpl.hpp>
+#include <Vision/Runtime/Framework/VisionApp/Modules/VHelp.hpp>
 
-VisSampleAppPtr spApp;
-SecurityCamEntity_cl* pSecCam1;
-SecurityCamEntity_cl* pSecCam2;
-
-VISION_INIT
+class RenderToTextureApp : public VAppImpl
 {
-  VISION_SET_DIRECTORIES(false);
-  // include the vision engine plugin (required for some of the scene elements)
-  VisionAppHelpers::MakeEXEDirCurrent();
-  VisSampleApp::LoadVisionEnginePlugin();
+public:
+  RenderToTextureApp() {}
+  virtual ~RenderToTextureApp() {}
 
-  // Create and init an application
-  spApp = new VisSampleApp();
-#if defined(_VISION_MOBILE) || defined( HK_ANARCHY )
-  if (!spApp->InitSample("Maps\\SciFi" /*DataDir*/, NULL /*SampleScene*/, VSampleFlags::VSAMPLE_INIT_DEFAULTS | VSampleFlags::VSAMPLE_FORCEMOBILEMODE))
-#elif defined(_VISION_PSP2)
-  if (!spApp->InitSample("Maps\\SciFi" /*DataDir*/, NULL /*SampleScene*/, VSampleFlags::VSAMPLE_INIT_DEFAULTS | VSampleFlags::VSAMPLE_WAITRETRACE))
-#else
-  if (!spApp->InitSample("Maps\\SciFi" /*DataDir*/, NULL /*SampleScene*/))
-#endif
-    return false;
+  virtual void Init() HKV_OVERRIDE
+  {
+    VisAppLoadSettings settings("Crossing.vscene");
+    settings.m_customSearchPaths.Append(":havok_sdk/Data/Vision/Samples/Engine/Common");
+    settings.m_customSearchPaths.Append(":havok_sdk/Data/Vision/Samples/Engine/Maps/SciFi");
+    LoadScene(settings);
+  }
 
+  virtual void AfterSceneLoaded(bool bLoadingSuccessful) HKV_OVERRIDE;
 
-  spApp->LoadScene("Crossing");
+private:
+  SecurityCamEntity_cl* m_pSecCam1;
+  SecurityCamEntity_cl* m_pSecCam2;
+};
 
-  return true;
-}
+VAPP_IMPLEMENT_SAMPLE(RenderToTextureApp);
 
-VISION_SAMPLEAPP_AFTER_LOADING
+void RenderToTextureApp::AfterSceneLoaded(bool bLoadingSuccessful)
 {
-  // define help text
-  spApp->AddHelpText("");
-  spApp->AddHelpText("How to use this demo :");
-  spApp->AddHelpText("");
-  spApp->AddHelpText("You can relocate the security cameras!");
-  spApp->AddHelpText("Move very close to a security camera to pick it");
-  spApp->AddHelpText("Drop it where ever you want");
-  spApp->AddHelpText("");
+  VArray<const char*> help;
+  help.Append("You can relocate the security cameras!");
+  help.Append("Move very close to a security camera to pick it");
+  help.Append("Drop it where ever you want");
+  help.Append("");
 
 #ifdef SUPPORTS_KEYBOARD
-  spApp->AddHelpText("KEYBOARD - ENTER : Pick/Drop security camera");
-  spApp->AddHelpText("");
+  help.Append("KEYBOARD - ENTER : Pick/Drop security camera");
+  help.Append("");
 #endif
 
 #if defined (_VISION_XENON) || (defined(_VISION_WINRT) && !defined(_VISION_METRO) && !defined(_VISION_APOLLO))
-  spApp->AddHelpText("PAD1 - A   : Pick/Drop security camera");
+  help.Append("PAD1 - A   : Pick/Drop security camera");
 #elif defined (_VISION_PS3)
-  spApp->AddHelpText("PAD1 - CROSS : Pick/Drop security camera");
+  help.Append("PAD1 - CROSS : Pick/Drop security camera");
 #elif defined (_VISION_PSP2)
-  spApp->AddHelpText("PAD - CROSS : Pick/Drop security camera");
+  help.Append("PAD - CROSS : Pick/Drop security camera");
 #elif defined (_VISION_MOBILE)
-  spApp->AddHelpText("Upper right screen corner : Pick/Drop security camera");
-  spApp->SetShowHelpText(true);
+  help.Append("Upper right screen corner : Pick/Drop security camera");
 #elif defined (_VISION_WIIU)
-  spApp->AddHelpText("DRC - B : Pick/Drop security camera");
+  help.Append("DRC - B : Pick/Drop security camera");
 #endif
 
+  RegisterAppModule(new VHelp(help));
+
   // Create two security cameras.
-  pSecCam1 = (SecurityCamEntity_cl*)Vision::Game.CreateEntity("SecurityCamEntity_cl", hkvVec3(-520,300,20), "Models\\securitycam.model");
-  pSecCam1->SetYawSpeed(0.05f * hkvMath::pi () * 2.0f);
-  pSecCam1->SetMonitorSurfaceName("MonitorScreen03_Mat");
+  m_pSecCam1 = (SecurityCamEntity_cl*)Vision::Game.CreateEntity("SecurityCamEntity_cl", hkvVec3(-520,300,20), "Models/SecurityCam/securitycam.model");
+  m_pSecCam1->SetYawSpeed(0.05f * hkvMath::pi () * 2.0f);
+  m_pSecCam1->SetMonitorSurfaceName("MonitorScreen03_Mat");
 
-  pSecCam2 = (SecurityCamEntity_cl*)Vision::Game.CreateEntity("SecurityCamEntity_cl", hkvVec3(-720,0,390), "Models\\securitycam.model", "m_bUseThermalImage=TRUE");
-  pSecCam2->SetYawSpeed(0.07f * hkvMath::pi () * 2.0f);
-  pSecCam2->SetMonitorSurfaceName("MonitorScreen01_Mat");
+  m_pSecCam2 = (SecurityCamEntity_cl*)Vision::Game.CreateEntity("SecurityCamEntity_cl", hkvVec3(-720,0,390), "Models/SecurityCam/securitycam.model", "m_bUseThermalImage=TRUE");
+  m_pSecCam2->SetYawSpeed(0.07f * hkvMath::pi () * 2.0f);
+  m_pSecCam2->SetMonitorSurfaceName("MonitorScreen01_Mat");
+  
+  // Don't display menus and messages on the security cam screens
+  unsigned int renderTargetVisiblityMask = ~(GetContext()->GetVisibleBitmask() | Vision::Message.GetVisibleBitmask());
+  m_pSecCam1->SetRenderTargetRenderFilterMask(renderTargetVisiblityMask);
+  m_pSecCam2->SetRenderTargetRenderFilterMask(renderTargetVisiblityMask);
 
 
-
-  VisBaseEntity_cl *pCam = spApp->EnableMouseCamera();
+  VisBaseEntity_cl *pCam = Vision::Game.CreateEntity("VFreeCamera", hkvVec3::ZeroVector());
 
   VisBaseEntity_cl *pSpawnPos = Vision::Game.SearchEntity("spawnpos");
   if (pSpawnPos)
   {
     pCam->SetPosition(pSpawnPos->GetPosition());
     Vision::Camera.ReComputeVisibility();
-  } else
+  }
+  else
   {
     pCam->SetPosition(150, 0, 200);
     pCam->SetOrientation(180, -15, 0);
   }
 }
 
-VISION_SAMPLEAPP_RUN
-{
-  // Run the main loop of the application until we quit
-  // everything is done by the security camera entities
-  return spApp->Run();
-}
-
-VISION_DEINIT
-{
-  // Deinit the application
-  spApp->DeInitSample();
-  spApp = NULL;
-  return 0;
-}
-
-VISION_MAIN_DEFAULT
-
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

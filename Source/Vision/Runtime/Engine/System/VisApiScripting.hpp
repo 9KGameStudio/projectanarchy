@@ -110,13 +110,27 @@ public:
   /// 
   ///   \li 'm' : bitmask (32bit int used as a bitmask, not supported as return parameter),
   /// 
-  ///   \li 'v' : vector3 (pointer to a hkvVec3),
-  /// 
   ///   \li 'c' : color (pointer to a VColorRef),
+  ///
+  ///   \li 'v2' : vector2 (pointer to a hkvVec2),
   /// 
+  ///   \li 'v3' (also 'v') : vector3 (pointer to a hkvVec3),
+  /// 
+  ///   \li 'v4' : vector4 (pointer to a hkvVec4),
+  ///
+  ///   \li 'x3' : matrix3 (pointer to a hkvMat3),
+  ///
+  ///   \li 'x4' : matrix4 (pointer to a hkvMat4),
+  ///
+  ///   \li 'p' : plane (pointer to a hkvPlane),
+  ///
+  ///   \li 'q' : quaternion (pointer to a hkvQuat),
+  ///
   ///   \li '#' : bounding box (pointer to a hkvAlignedBBox),
   /// 
-  ///   \li 'o' : typed object (pointer to an object derived from VisTypedEngineObject, not supported as return parameter).
+  ///   \li '@' : bounding sphere (pointer to a hkvBoundingSphere),
+  ///
+  ///   \li 'o' : The script object proxy representing a VisTypedEngineObject (not supported as return parameter).
   /// 
   ///   \li More types might be supported for specific implementations. The '>' character separates
   ///     the input parameter list from the return values. Thus, a function that takes two floats
@@ -126,9 +140,17 @@ public:
   ///     This advises the function to put a proxy object on the stack that stands for the owner
   ///     object. See second example.
   /// 
-  ///   \li \b VScriptInstance \b Specific \b Parameters (\b Lua):
+  ///   \li \b VScriptInstance \b Specific \b Parameters (\b Lua). Except 'u' they are not supported as return parameter:
+  ///
+  ///   \li 'r' : A script variable at the given index (specified with the parameter) from the script registration
+  ///   	\code
+  ///   	pScriptInst->ExecuteFunctionArg("GetGlobalTable","r", -10002); // for Lua: -10002 == LUA_GLOBALSINDEX
+  ///   	\endcode
+  ///
+  ///   \li 't' : Anything derived from VTypedObject (it will not search for a script object proxy like 'o',
+  ///             and a script wrapper and type safe cast function for this type must exist)
   ///   		
-  ///   \li 'u' : light user data pointer (as void *),
+  ///   \li 'u' : light user data pointer (as void *).
   ///   		    
   ///   \li '{' + ... + '}' : Create a table containing arbitrary arguments as defined in the variadic parameter.
   ///   	E.g. a function using a table with two strings as parameters, returning an integer:
@@ -148,6 +170,10 @@ public:
   ///   	\endcode
   ///   	This is only allowed in the input list - before '>'! You cannot nest this type of table!
   /// 
+  /// \note
+  ///   Do not use multiple characters in szArgFormat for specifying a new type, since the parsing code
+  ///   currently does not handle that.
+  ///
   /// \param argPtr
   ///   Pointer to the variable argument list that contains the argument as specified in
   ///   szArgFormat
@@ -377,7 +403,7 @@ public:
   /// \brief
   ///   Helper function to validate a script and output potential problems into the log. Used by
   ///   vForge.
-  VISION_APIFUNC virtual BOOL ValidateScript(const char *szText, int iLen, IVLog *pLog) = 0;
+  VISION_APIFUNC virtual BOOL ValidateScript(const char *szText, int iLen, hkvLogInterface* pLog) = 0;
 
   /// \brief
   ///   Global callback that is triggered to register all script functions.
@@ -478,7 +504,7 @@ protected:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -15,7 +15,7 @@
 class VScriptInstance;
 
 /// \class  VScriptMember
-/// \brief The Script member class is used to remebmer member variables created in the OnExpose callback.
+/// \brief The Script member class is used to remember member variables created in the OnExpose callback.
 class VScriptMember
 {
 public:
@@ -211,7 +211,7 @@ protected:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

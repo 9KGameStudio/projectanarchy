@@ -42,7 +42,7 @@ class VFilePackageZIPWrapper : public IVFilePackage
 public:
   /// \brief
   ///   Constructor; Takes the ZIP file as an input
-  inline VFilePackageZIPWrapper(VZipFileStreamManager &zip) : m_ZIP(zip)
+  inline VFilePackageZIPWrapper(VZipFileSystem &zip) : m_ZIP(zip)
   {
   }
 
@@ -50,8 +50,7 @@ public:
   ///   IVFilePackage implementation: Returns the name of the ZIP file
   virtual const char *GetPackageFileName() HKV_OVERRIDE
   {
-    VASSERT(m_ZIP.GetNumDataDirectories()==1);
-    return m_ZIP.GetDataDirectory(0);
+    return m_ZIP.GetZipFileName();
   }
   /// \brief
   ///   IVFilePackage implementation - returns the number of entries in the ZIP
@@ -68,8 +67,9 @@ public:
   }
 
 protected:
-  VZipFileStreamManager &m_ZIP;
+  VZipFileSystem &m_ZIP;
 };
+
 
 /// \brief
 ///   Data object class passed by the Vision::Browser.OnNewPackageFileLoaded callback
@@ -122,7 +122,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

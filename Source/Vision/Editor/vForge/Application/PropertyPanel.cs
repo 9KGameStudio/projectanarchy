@@ -50,9 +50,6 @@ namespace Editor
     private ToolStripButton ToolStripButtonPaste;
     private ToolStripSeparator ToolStripSeparatorHelp;
     private DialogCaptionBar dialogCaptionBar;
-    private ToolStripDropDownButton ToolStripButtonSettings;
-    private ToolStripMenuItem ToolStripMenuItemHelp;
-    private ToolStripMenuItem ToolStripMenuItemCaption;
     private ToolStripDropDownButton ToolStripButtonRecentSelection;
     private PropertyGridCollapseState _itemCollapseState;
 
@@ -65,6 +62,7 @@ namespace Editor
       InitializeComponent();
 
       // TODO: Add any initialization after the InitializeComponent call
+      propertyGrid.AddHelpButton("Property Panel", "shapes");
 
       // configure the propertygrid refresh timer
       _refreshTimer.AutoReset = false;
@@ -223,9 +221,6 @@ namespace Editor
       this.ToolStripButtonPaste = new System.Windows.Forms.ToolStripButton();
       this.ToolStripSeparatorHelp = new System.Windows.Forms.ToolStripSeparator();
       this.ToolStripButtonRecentSelection = new System.Windows.Forms.ToolStripDropDownButton();
-      this.ToolStripButtonSettings = new System.Windows.Forms.ToolStripDropDownButton();
-      this.ToolStripMenuItemHelp = new System.Windows.Forms.ToolStripMenuItem();
-      this.ToolStripMenuItemCaption = new System.Windows.Forms.ToolStripMenuItem();
       this.dialogCaptionBar = new CSharpFramework.Controls.DialogCaptionBar();
       this.SuspendLayout();
       // 
@@ -256,8 +251,7 @@ namespace Editor
             this.ToolStripButtonCopy,
             this.ToolStripButtonPaste,
             this.ToolStripSeparatorHelp,
-            this.ToolStripButtonRecentSelection,
-            this.ToolStripButtonSettings});
+            this.ToolStripButtonRecentSelection});
       this.propertyGrid.ToolStrip.Location = new System.Drawing.Point(0, 1);
       this.propertyGrid.ToolStrip.Name = "";
       this.propertyGrid.ToolStrip.Padding = new System.Windows.Forms.Padding(2, 0, 1, 0);
@@ -265,7 +259,7 @@ namespace Editor
       this.propertyGrid.ToolStrip.TabIndex = 1;
       this.propertyGrid.ToolStrip.TabStop = true;
       this.propertyGrid.ToolStrip.Text = "PropertyGridToolBar";
-      this.propertyGrid.ToolStrip.ItemClicked += new ToolStripItemClickedEventHandler(ToolStrip_ItemClicked);
+      this.propertyGrid.ToolStrip.ItemClicked += new System.Windows.Forms.ToolStripItemClickedEventHandler(this.ToolStrip_ItemClicked);
       this.propertyGrid.SelectedGridItemChanged += new System.Windows.Forms.SelectedGridItemChangedEventHandler(this.propertyGrid_SelectedGridItemChanged);
       // 
       // ToolStripButtonExpand
@@ -330,57 +324,23 @@ namespace Editor
       this.ToolStripButtonRecentSelection.Name = "ToolStripButtonRecentSelection";
       this.ToolStripButtonRecentSelection.Size = new System.Drawing.Size(29, 22);
       this.ToolStripButtonRecentSelection.ToolTipText = "List of recently selected objects";
-      this.ToolStripButtonRecentSelection.DropDownOpening += new EventHandler(ToolStripButtonRecentSelection_DropDownOpening);
-      // 
-      // ToolStripButtonSettings
-      // 
-      this.ToolStripButtonSettings.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-      this.ToolStripButtonSettings.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.ToolStripMenuItemHelp,
-            this.ToolStripMenuItemCaption});
-      this.ToolStripButtonSettings.Image = global::Editor.Properties.Resources.toolbar_export_settings;
-      this.ToolStripButtonSettings.ImageTransparentColor = System.Drawing.Color.Magenta;
-      this.ToolStripButtonSettings.Name = "ToolStripButtonSettings";
-      this.ToolStripButtonSettings.Size = new System.Drawing.Size(29, 22);
-      this.ToolStripButtonSettings.Text = "Settings";
-      // 
-      // ToolStripMenuItemHelp
-      // 
-      this.ToolStripMenuItemHelp.Checked = true;
-      this.ToolStripMenuItemHelp.CheckOnClick = true;
-      this.ToolStripMenuItemHelp.CheckState = System.Windows.Forms.CheckState.Checked;
-      this.ToolStripMenuItemHelp.Image = global::Editor.Properties.Resources.toolbar_help;
-      this.ToolStripMenuItemHelp.Name = "ToolStripMenuItemHelp";
-      this.ToolStripMenuItemHelp.Size = new System.Drawing.Size(186, 22);
-      this.ToolStripMenuItemHelp.Text = "Show Property Description";
-      this.ToolStripMenuItemHelp.Click += new System.EventHandler(this.button_PropertyDescription_Click);
-      // 
-      // ToolStripMenuItemCaption
-      // 
-      this.ToolStripMenuItemCaption.Checked = true;
-      this.ToolStripMenuItemCaption.CheckOnClick = true;
-      this.ToolStripMenuItemCaption.CheckState = System.Windows.Forms.CheckState.Checked;
-      this.ToolStripMenuItemCaption.Image = global::Editor.Properties.Resources.toolbar_caption;
-      this.ToolStripMenuItemCaption.Name = "ToolStripMenuItemCaption";
-      this.ToolStripMenuItemCaption.Size = new System.Drawing.Size(186, 22);
-      this.ToolStripMenuItemCaption.Text = "Show Caption Bar";
-      this.ToolStripMenuItemCaption.Click += new System.EventHandler(this.button_CaptionBar_Click);
+      this.ToolStripButtonRecentSelection.DropDownOpening += new System.EventHandler(this.ToolStripButtonRecentSelection_DropDownOpening);
       // 
       // dialogCaptionBar
       // 
       this.dialogCaptionBar.BackColor = System.Drawing.SystemColors.Window;
       this.dialogCaptionBar.Caption = "Property Editor";
-      this.dialogCaptionBar.CompactView = false;
       this.dialogCaptionBar.Description = "Current Selection: <selection>";
       this.dialogCaptionBar.Dock = System.Windows.Forms.DockStyle.Top;
+      this.dialogCaptionBar.HelpContext = "dialogs";
+      this.dialogCaptionBar.HelpKey = null;
+      this.dialogCaptionBar.HelpManual = null;
       this.dialogCaptionBar.Image = ((System.Drawing.Image)(resources.GetObject("dialogCaptionBar.Image")));
       this.dialogCaptionBar.Location = new System.Drawing.Point(0, 0);
       this.dialogCaptionBar.Name = "dialogCaptionBar";
       this.dialogCaptionBar.SetFontColor = System.Drawing.SystemColors.ControlText;
       this.dialogCaptionBar.ShowBorder = false;
       this.dialogCaptionBar.ShowBottomLine = true;
-      this.dialogCaptionBar.ShowCaptionText = true;
-      this.dialogCaptionBar.ShowImage = true;
       this.dialogCaptionBar.Size = new System.Drawing.Size(330, 50);
       this.dialogCaptionBar.TabIndex = 19;
       // 
@@ -392,14 +352,13 @@ namespace Editor
       this.CloseButton = false;
       this.Controls.Add(this.propertyGrid);
       this.Controls.Add(this.dialogCaptionBar);
-      this.DockableAreas = ((WeifenLuo.WinFormsUI.DockAreas)(((WeifenLuo.WinFormsUI.DockAreas.Float | WeifenLuo.WinFormsUI.DockAreas.DockLeft)
-                  | WeifenLuo.WinFormsUI.DockAreas.DockRight)));
+      this.DockableAreas = ((WeifenLuo.WinFormsUI.DockAreas)(((WeifenLuo.WinFormsUI.DockAreas.Float | WeifenLuo.WinFormsUI.DockAreas.DockLeft) 
+            | WeifenLuo.WinFormsUI.DockAreas.DockRight)));
       this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedToolWindow;
       this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
       this.Name = "PropertyPanel";
       this.TabText = "Properties";
       this.Text = "Properties";
-      this.Load += new System.EventHandler(this.PropertyPanel_Load);
       this.ResumeLayout(false);
 
     }
@@ -553,12 +512,6 @@ namespace Editor
       _recentSelectionList.Clear();
     }
 
-    private void PropertyPanel_Load(object sender, EventArgs e)
-    {
-      // Remove the Property Pages button
-      propertyGrid.ToolStrip.Items.RemoveAt(4);
-    }
-        
     void ToolStrip_ItemClicked(object sender, ToolStripItemClickedEventArgs e)
     {
       // Focus panel when toolstrip is clicked
@@ -607,7 +560,7 @@ namespace Editor
           _itemCollapseState = new PropertyGridCollapseState(propertyGrid);
 
         // Set the new selected object
-        this.propertyGrid.SelectedObject=value;
+        this.propertyGrid.SelectedObjectAndHelp = value;
         bool bModifiable = true;
 
         // Restore the item collapse state
@@ -639,7 +592,7 @@ namespace Editor
           _itemCollapseState = new PropertyGridCollapseState(propertyGrid);
 
         // Set the new selected objects
-        this.propertyGrid.SelectedObjects=value;
+        this.propertyGrid.SelectedObjectsAndHelp = value;
         bool bModifiable = true;
         
         // Make the grid read-only if at least one selected object is not modifiable
@@ -808,16 +761,6 @@ namespace Editor
       propertyGrid.CollapseAllGridItems();
     }
     
-    private void button_PropertyDescription_Click(object sender, EventArgs e)
-    {
-      propertyGrid.HelpVisible = this.ToolStripMenuItemHelp.Checked;
-    }
-
-    private void button_CaptionBar_Click(object sender, EventArgs e)
-    {
-      this.dialogCaptionBar.Visible = this.ToolStripMenuItemCaption.Checked;
-    }
-
     #endregion
 
     #region Recent Selection
@@ -1098,7 +1041,7 @@ namespace Editor
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

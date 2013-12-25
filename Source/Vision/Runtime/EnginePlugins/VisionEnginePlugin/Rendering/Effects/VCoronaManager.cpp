@@ -158,11 +158,14 @@ void VCoronaManager::OnWorldInit()
 void VCoronaManager::CreateShaders()
 {
 #ifdef SUPPORTS_CORONAS
-  VShaderEffectLib* pFXLib = Vision::Shaders.LoadShaderLibrary ("\\Shaders\\Billboards.ShaderLib", SHADERLIBFLAG_HIDDEN);
-  m_spCoronaShader = Vision::Shaders.CreateEffect("Corona", "", EFFECTCREATEFLAG_NONE, pFXLib);
-  m_spCoronaTechnique = m_spCoronaShader->GetDefaultTechnique();
+  if (m_spBillboardMesh)
+  {
+    VShaderEffectLib* pFXLib = Vision::Shaders.LoadShaderLibrary ("\\Shaders\\Billboards.ShaderLib", SHADERLIBFLAG_HIDDEN);
+    m_spCoronaShader = Vision::Shaders.CreateEffect("Corona", "", EFFECTCREATEFLAG_NONE, pFXLib);
+    m_spCoronaTechnique = m_spCoronaShader->GetDefaultTechnique();
 
-  m_spBillboardMesh->SetDefaultTechnique(m_spCoronaTechnique);
+    m_spBillboardMesh->SetDefaultTechnique(m_spCoronaTechnique);
+  }
 #endif
 }
 
@@ -340,7 +343,7 @@ void VCoronaManager::UpdateCoronas(int iCoronaUpdateFlags)
       if (pCorona->GetOwner())
       {
         // Retrieve occlusion results of the last query
-        int iElementIndex = pCorona->m_CoronaPixelCounter.GetNumber();
+        unsigned int iElementIndex = pCorona->m_CoronaPixelCounter.GetNumber();
         bool bRes = !pContext->IsPixelCounterQueryInProgress(iElementIndex);
 
         // Reschedule query if the old on could be retrieved or if a teleport forces us to re-query everything.
@@ -387,7 +390,7 @@ void VCoronaManager::UpdateCoronas(int iCoronaUpdateFlags)
       VCoronaCandidate& coronaCandidate = state.m_Candidates.ElementAt(i);
       VCoronaComponent* pCorona = coronaCandidate.m_pCorona;
 
-      int iElementIndex = pCorona->m_CoronaPixelCounter.GetNumber();
+      unsigned int iElementIndex = pCorona->m_CoronaPixelCounter.GetNumber();
       // If the visibility reached zero and the corona is no longer potentially visible it is removed from the list
       if (!pCorona->IsEnabled() || !pCorona->GetOwner()
         || (pCorona->GetVisibleBitmask() & iRenderFilterMask) == 0
@@ -613,7 +616,7 @@ VCoronaManager& VCoronaManager::GlobalManager()
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

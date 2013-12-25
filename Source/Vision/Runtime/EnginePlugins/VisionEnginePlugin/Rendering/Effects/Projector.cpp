@@ -339,7 +339,7 @@ bool VProjectedWallmark::SetCustomShaderEffect(VCompiledEffect *pFX)
 
     if (!bTechniqueValid)
     {
-      Vision::Error.Warning("Tried to assign non-valid shader effect to projector");
+      hkvLog::Warning("Tried to assign non-valid shader effect to projector");
       m_spCustomTechnique[i] = NULL;
     }
   }
@@ -521,7 +521,7 @@ void VProjectedWallmark::GetProjectionPlanes(hkvPlane& s, hkvPlane& t, hkvPlane&
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

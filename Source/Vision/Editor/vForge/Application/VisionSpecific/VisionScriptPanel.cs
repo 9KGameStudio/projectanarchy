@@ -27,6 +27,8 @@ using CSharpFramework.Dialogs;
 using ManagedFramework;
 using ScintillaNet;
 using CSharpFramework.Helper;
+using CSharpFramework.Scene;
+using ManagedBase.LogManaged;
 
 
 namespace Editor.VisionSpecific
@@ -156,9 +158,9 @@ namespace Editor.VisionSpecific
       ConsoleOutDlg dlg = new ConsoleOutDlg();
       bool bResult = ScriptManager.ValidateScript(doc, dlg.Console);
       if (bResult)
-        dlg.Console.Print("Summary: Script has been successfully validated");
+        Log.Info(dlg.Console, "Summary: Script has been successfully validated");
       else
-        dlg.Console.PrintWarning("Summary: One or more errors occurred during validation. See entries above.");
+        Log.Warning(dlg.Console, "Summary: One or more errors occurred during validation. See entries above.");
       dlg.ShowDialog();
       return bResult;
     }
@@ -199,7 +201,7 @@ namespace Editor.VisionSpecific
       if (ConfigureShapeComponentsPanel.PanelInstance == null || !EditorManager.Settings.SyncOnExposeVarsAfterSaving)
         return;
 
-      bool containsOnExposeNow = _currentDoc.ScintillaControl.Text.Contains("OnExpose");
+      bool containsOnExposeNow = _currentDoc != null && _currentDoc.ScintillaControl.Text.Contains("OnExpose");
 
       //don't sync OnExpose vars if there is and was no OnExpose Callback
       if (!_containsOnExpose && !containsOnExposeNow)
@@ -207,16 +209,29 @@ namespace Editor.VisionSpecific
 
       _containsOnExpose = containsOnExposeNow;
 
-      //find out if the right component is select in the component  panel
-      CSharpFramework.Scene.ShapeComponent[] selection = ConfigureShapeComponentsPanel.PanelInstance.CurrentComponentSelection;
+      ShapeComponentType scriptComponentType = (ShapeComponentType)EditorManager.EngineManager.ComponentClassManager.GetCollectionType("VScriptComponent");
 
-      //ensure that the right component is selected
-      if (selection!=null && selection.Length == 1 && selection[0] != null && selection[0].GetProperty("ScriptFile") != null)
+      // de-active script caching so the script will be reloaded in all cases
+      bool bOldScriptCaching = EditorManager.Settings.UseScriptCachingInEditor;
+      if (bOldScriptCaching)
+        EditorManager.Settings.UseScriptCachingInEditor = false; 
+
+      foreach(ShapeComponent scriptComponent in ShapeComponent.UsedComponents[scriptComponentType])
       {
-        //update the ScriptFile property so that the OnExpose callback is invoked
-        ConfigureShapeComponentsPanel.PanelInstance.propertyGrid_PropertyValueChanged("ScriptFile", null);
+        string scriptFile = scriptComponent.GetPropertyByName("ScriptFile").Value.ToString();
+        scriptFile = EditorManager.Project.MakeAbsolute(scriptFile);
+        if (scriptFile == _currentDoc.AbsSourceFilename)
+        {
+          ((ShapeBase)scriptComponent.Owner).PerformPostEngineInstanceCreationSetup(false);
+        } 
       }
 
+      // Restore script caching setting
+      if (bOldScriptCaching)
+        EditorManager.Settings.UseScriptCachingInEditor = true;
+
+      // Refresh the property grid of the components panel
+      ConfigureShapeComponentsPanel.PanelInstance.InvalidatePropertyGrid();
     }
 
     #endregion
@@ -526,7 +541,7 @@ namespace Editor.VisionSpecific
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

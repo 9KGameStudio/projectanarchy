@@ -13,7 +13,7 @@
 VDialog::VDialog()
 {
   m_Frame.SetOwner(this);
-  m_iDialogFlags = 0;
+  m_uiDialogFlags = 0;
   m_iOrder = DIALOG_ORDER_FRONT;
   m_iDialogResult = 0;
   m_fFadeInPos = 1.f;
@@ -43,7 +43,7 @@ VDialog::~VDialog()
 
 void VDialog::InitDialog(IVGUIContext *pContext, VDialogResource *pRes, VDialog *pParent, int iFlags)
 {
-  m_iDialogFlags = iFlags;
+  m_uiDialogFlags = iFlags;
   m_spResource = pRes;
   m_pContext = pContext;
   m_pOwner = pParent;
@@ -107,7 +107,7 @@ void VDialog::Serialize( VArchive &ar )
   if (ar.IsLoading())
   {
     ar >> iLocalVersion; VASSERT_MSG(iLocalVersion==0,"Invalid version");
-    ar >> m_iDialogFlags >> (int &)m_eStartPos;
+    ar >> m_uiDialogFlags >> (int &)m_eStartPos;
     ar >> m_fFadeInPos >> m_fFadeInSpeed >> m_iBackColor >> m_bFadeBack;
     ar >> m_iBackFadeColor >> m_fBackFadePos >> m_fBackFadeSpeed;
 
@@ -126,7 +126,7 @@ void VDialog::Serialize( VArchive &ar )
   } else
   {
     ar << iLocalVersion;
-    ar << m_iDialogFlags << (int)m_eStartPos;
+    ar << m_uiDialogFlags << (int)m_eStartPos;
     ar << m_fFadeInPos << m_fFadeInSpeed << m_iBackColor << m_bFadeBack;
     ar << m_iBackFadeColor << m_fBackFadePos << m_fBackFadeSpeed;
 
@@ -228,14 +228,14 @@ VCursor* VDialog::GetCurrentCursor(VGUIUserInfo_t &user)
 
 void VDialog::BringToFront()
 {
-  m_iOrder = m_pContext->m_OpenDialogs.GetMinOrder()-1;
-  m_pContext->m_OpenDialogs.SortByOrder();
+  m_iOrder = m_pContext->GetOpenDialogs().GetMinOrder()-1;
+  m_pContext->GetOpenDialogs().SortByOrder();
 }
 
 void VDialog::BringToBack()
 {
-  m_iOrder = m_pContext->m_OpenDialogs.GetMaxOrder()+1;
-  m_pContext->m_OpenDialogs.SortByOrder();
+  m_iOrder = m_pContext->GetOpenDialogs().GetMaxOrder()+1;
+  m_pContext->GetOpenDialogs().SortByOrder();
 }
 
 
@@ -251,6 +251,7 @@ void VDialog::OnSetFocus(bool bStatus)
   else
   {
     RemoveStatus(ITEMSTATUS_HASFOCUS);
+    SetFocusItem(NULL);
   }
 }
 
@@ -456,7 +457,7 @@ bool VDialog::Build(TiXmlElement *pNode, const char *szPath, bool bWrite)
   XMLHelper::Exchange_Floats(pNode,"clientMax",m_vClientMax.data,2,bWrite);
   bool bFullscreen = false;
   XMLHelper::Exchange_Bool(pNode,"fullscreen",bFullscreen,bWrite);
-  if (bFullscreen) m_iDialogFlags|=DIALOGFLAGS_FULLSCREEN;
+  if (bFullscreen) m_uiDialogFlags|=DIALOGFLAGS_FULLSCREEN;
   
   // start position
   const char *szStartPos = XMLHelper::Exchange_String(pNode,"startPosition",NULL,bWrite);
@@ -521,9 +522,9 @@ int VDialogCollection::CompareDialogOrder( const void *arg1, const void *arg2)
 {
   VDialog *pElem1 = *(VDialog **)arg1;
   VDialog *pElem2 = *(VDialog **)arg2;
-  if (pElem1->m_iOrder>pElem2->m_iOrder) return 1;
-  if (pElem1->m_iOrder<pElem2->m_iOrder) return -1;
-  return 0;
+  if (pElem1->m_iOrder > pElem2->m_iOrder) return 1;
+  if (pElem1->m_iOrder < pElem2->m_iOrder) return -1;
+  return arg1 < arg2 ? -1 : 1; // making qsort stable by comparing addresses
 }
 
 void VDialogCollection::SortByOrder()
@@ -569,8 +570,15 @@ void VDialogCollection::RenderAll(VGraphicsInfo &Graphics, const VItemRenderInfo
   
 void VDialogCollection::OnTickFunction(float fTimeDelta)
 {
-  for (int i=0;i<Count();i++)
-    GetAt(i)->OnTick(fTimeDelta);
+  int iCount = Count();
+  if (iCount > 0)
+  {
+    if (GetAt(0)->IsModal())
+      iCount = 1;
+
+    for (int i=0; i<iCount; i++)
+      GetAt(i)->OnTick(fTimeDelta);
+  }
 }
 
 
@@ -603,7 +611,7 @@ VDialog* VDialogCollection::FindDialog(int iID) const
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

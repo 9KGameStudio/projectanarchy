@@ -24,6 +24,7 @@
 
 
 VRSDClientLuaImplementation::VRSDClientLuaImplementation()
+  : m_bDebuggerRetrievingValues(false)
 {
   m_pLuaState = NULL;
   m_pActivationRecord = NULL;
@@ -112,8 +113,18 @@ bool VRSDClientLuaImplementation::GetLocalSymbols(DynArray_cl<VRSDScriptSymbol>&
       }
       else if(lua_isuserdata(m_pLuaState, -1))
       {
-        char buffer[32];
-        sprintf(buffer, "userdata:0x%p", lua_touserdata(m_pLuaState, -1));
+        char buffer[128];
+        swig_type_info* type = (swig_type_info *)LUA_GetSwigType(m_pLuaState, -1);
+        void * pUserData = lua_touserdata(m_pLuaState, -1);
+
+        if(type)
+        {
+          vis_snprintf(buffer, 128, "userdata:0x%p [%s: 0x%p]", pUserData, type->str, ((swig_lua_userdata*)pUserData)->ptr);
+        }
+        else
+        {
+          vis_snprintf(buffer, 128, "userdata:0x%p", lua_touserdata(m_pLuaState, -1));
+        }
         AddSymbol(LocalSymbols, LocalSymbolCount, pSymbolName, buffer, VRSDScriptSymbol::SYMBOL_USERDATA);
       }
       else if(lua_isboolean(m_pLuaState, -1))
@@ -150,6 +161,9 @@ bool VRSDClientLuaImplementation::UpdateLocalVariable(const char* Variable, cons
   if(strcmp(m_pActivationRecord->what, "Lua"))
     return true;
 
+  VLuaStackCleaner stackCleaner(m_pLuaState);
+  ScopedBooleanToTrue disableDebugHook(m_bDebuggerRetrievingValues);
+
   const char* pSymbolName = NULL;
   int iLocalIndex = 1;
 
@@ -158,7 +172,7 @@ bool VRSDClientLuaImplementation::UpdateLocalVariable(const char* Variable, cons
   VStringTokenizerInPlace Tokenizer(copyBuffer.AsChar(), '.');
   char* pCurrent = Tokenizer.Next();
   int i = 0;
-  char* pLastField = NULL;
+  const char* pLastField = NULL;
 
   // go through all local variables
   while((pSymbolName = lua_getlocal(m_pLuaState, m_pActivationRecord, iLocalIndex)) != NULL)
@@ -166,21 +180,9 @@ bool VRSDClientLuaImplementation::UpdateLocalVariable(const char* Variable, cons
     // check if this local variable is the one we want
     if(!strcmp(pSymbolName, pCurrent))
     {
-      pCurrent = Tokenizer.Next();
-
-      // get down deeper in the hierarchy if we have to (child of a local variable)
-      while(pCurrent)
-      {
-        lua_pushstring(m_pLuaState, pCurrent);
-        lua_getfield(m_pLuaState, -1, pCurrent);
-
-        // Save the name of the last field so it can be used later
-        if(i == Tokenizer.GetTokenCount() - 1)
-          pLastField = pCurrent;
-
-        pCurrent = Tokenizer.Next();
-        i++;
-      }
+      VLuaStackCleaner innerStackCleaner(m_pLuaState);
+      if(LookupPath(Tokenizer, &pLastField) != HKV_SUCCESS)
+        return false;
 
       // now the variable is at the top of the stack, update its value
       VRSDScriptSymbol::SymbolType Type = VRSDScriptSymbol::SYMBOL_USERDATA;
@@ -194,6 +196,13 @@ bool VRSDClientLuaImplementation::UpdateLocalVariable(const char* Variable, cons
 
       // pop off the field again
       lua_pop(m_pLuaState, 1);
+
+      bool bIsIntegerKey = false;
+      if(pLastField && VStringUtil::IsIntegerString(pLastField))
+      {
+        bIsIntegerKey = true;
+        lua_pushnumber(m_pLuaState, (LUA_NUMBER)atoi(pLastField));
+      }
 
       // depending on the type push the correct stuff on the lua stack
       if(Type == VRSDScriptSymbol::SYMBOL_NUMBER)
@@ -218,8 +227,15 @@ bool VRSDClientLuaImplementation::UpdateLocalVariable(const char* Variable, cons
 
       if(Tokenizer.GetTokenCount() > 1)
       {
-        lua_setfield(m_pLuaState, -2, pLastField);
-        lua_pop(m_pLuaState, (int)(i-1));
+        VASSERT(pLastField != NULL);
+        if(bIsIntegerKey)
+        {
+          lua_settable(m_pLuaState, -3);
+        }
+        else
+        {
+          lua_setfield(m_pLuaState, -2, pLastField);
+        }
       }
       else
       {
@@ -237,105 +253,104 @@ bool VRSDClientLuaImplementation::UpdateLocalVariable(const char* Variable, cons
   return true;
 }
 
-bool VRSDClientLuaImplementation::UpdateGlobalVariable(const char* Variable, const char* NewValue)
+bool VRSDClientLuaImplementation::UpdateGlobalVariable(const char* szVarName, const char* szNewValue)
 {
-  if(!Variable || !NewValue)
+  if(!szVarName || !szNewValue || szVarName[0]==0)
     return false;
 
   // we can only get global symbols without a crash if we are really in a Lua code execution path
   if(strcmp(m_pActivationRecord->what, "Lua"))
     return true;
 
-  VMemoryTempBuffer<512> copyBuffer(Variable); // operate on a copy string in the tokenizer
-  
+  VMemoryTempBuffer<512> copyBuffer(szVarName); // operate on a copy string in the tokenizer
+
+  VLuaStackCleaner stackCleaner(m_pLuaState);
+  ScopedBooleanToTrue disableDebugHook(m_bDebuggerRetrievingValues);
+
   VStringTokenizerInPlace Tokenizer(copyBuffer.AsChar(), '.');
-  char* pCurrent = Tokenizer.Next();
+  const char* pCurrent = Tokenizer.Next();
   unsigned int i = 0;
 
-  char* pLastField = NULL;
+  const char* pLastField = NULL;
 
-  while(pCurrent)
-  {
-    if(i == 0)
-      lua_getfield(m_pLuaState, LUA_GLOBALSINDEX, pCurrent);
-    else
-    {
-      lua_pushstring(m_pLuaState, pCurrent);
-      lua_rawget(m_pLuaState, -2);
-    }
-
-    // Save the name of the last field so it can be used later
-    if(i == Tokenizer.GetTokenCount() - 1)
-      pLastField = pCurrent;
-
-    i++;
-    pCurrent = Tokenizer.Next();
-  }
-
-  VRSDScriptSymbol::SymbolType Type = VRSDScriptSymbol::SYMBOL_USERDATA;
-
-  // now the variable is at the top of the stack, update its value
-  if(lua_isnumber(m_pLuaState, -1))
-    Type = VRSDScriptSymbol::SYMBOL_NUMBER;
-  else if(lua_isstring(m_pLuaState, -1))
-    Type = VRSDScriptSymbol::SYMBOL_STRING;
-  else if(lua_isboolean(m_pLuaState, -1))
-    Type = VRSDScriptSymbol::SYMBOL_BOOLEAN;
-
-  // pop off the field again
-  lua_pop(m_pLuaState, 1);
-
-  // depending on the type push the correct stuff on the lua stack
-  if(Type == VRSDScriptSymbol::SYMBOL_NUMBER)
-  {
-    lua_Number TempVar;
-    sscanf(NewValue, "%f", &TempVar);
-    lua_pushnumber(m_pLuaState, TempVar);
-  }
-  else if(Type == VRSDScriptSymbol::SYMBOL_STRING)
-  {
-    lua_pushstring(m_pLuaState, NewValue);
-  }
-  else if(Type == VRSDScriptSymbol::SYMBOL_BOOLEAN)
-  {
-    if(!strcmp(NewValue, "true") || !strcmp(NewValue, "1"))
-      lua_pushboolean(m_pLuaState, 1);
-    else
-      lua_pushboolean(m_pLuaState, 0);
-  }
-  else
+  lua_getfield(m_pLuaState, LUA_GLOBALSINDEX, pCurrent);
+  if(lua_isnil(m_pLuaState, -1))
+    return false;
+  if(LookupPath(Tokenizer, &pLastField) != HKV_SUCCESS)
     return false;
 
-  if(Tokenizer.GetTokenCount() > 1)
+  // now the variable is at the top of the stack, update its value
+  int iLuaType = lua_type(m_pLuaState, -1);
+  lua_pop(m_pLuaState, 1);
+
+  bool bIsIntegerKey = false;
+  if(pLastField && VStringUtil::IsIntegerString(pLastField))
   {
-    lua_setfield(m_pLuaState, -2, pLastField);
-    lua_pop(m_pLuaState, (int)(i-1));
+    bIsIntegerKey = true;
+    lua_pushnumber(m_pLuaState, (LUA_NUMBER)atoi(pLastField));
+  }
+
+  switch(iLuaType)
+  {
+    case LUA_TNUMBER:
+      {
+        lua_Number tempNumber=0;
+        sscanf(szNewValue, "%f", &tempNumber);
+        lua_pushnumber(m_pLuaState, tempNumber);
+      }
+      break;
+    case LUA_TSTRING:
+      lua_pushstring(m_pLuaState, szNewValue);
+      break;
+    case LUA_TBOOLEAN:
+      if( !VStringHelper::SafeCompare(szNewValue, "true") || !VStringHelper::SafeCompare(szNewValue, "1") )
+        lua_pushboolean(m_pLuaState, 1);
+      else
+        lua_pushboolean(m_pLuaState, 0);
+      break;
+
+    //we do not support the following types to edit:
+    //case LUA_TTABLE
+    //case LUA_TFUNCTION
+    //case LUA_TUSERDATA
+    //case LUA_TTHREAD
+    //case LUA_TLIGHTUSERDATA
+    default:
+      return false;
+  }
+
+  if( Tokenizer.GetTokenCount() > 1 )
+  {
+    VASSERT(pLastField != NULL);
+    if(bIsIntegerKey)
+    {
+      lua_settable(m_pLuaState, -3);
+    }
+    else
+    {
+      lua_setfield(m_pLuaState, -2, pLastField);
+    }
   }
   else
   {
-    lua_setglobal(m_pLuaState, Variable);
+    lua_setglobal(m_pLuaState, szVarName);
   }
 
   return true;
 }
 
 bool VRSDClientLuaImplementation::UpdateHiddenGlobalVariable(const void* pUserDataParent, 
-                                                             const char* Variable, 
-                                                             const char* NewValue)
+                                                             const char* szVarName, 
+                                                             const char* szNewValue)
 {
-  const char* FormatStr = 
-#ifdef _WIN64
-    LUA_HIDDEN_GLOBAL_PREFIX"-%016X-%s$";
-#else
-    LUA_HIDDEN_GLOBAL_PREFIX"-%08X-%s$";
-#endif
+  const char* szFormatStr = "G."LUA_HIDDEN_GLOBAL_PREFIX"-%p-%s$";
 
   // build global variable string
   VString sHiddenGlobalName;
-  sHiddenGlobalName.Format(FormatStr, pUserDataParent, Variable);
+  sHiddenGlobalName.Format(szFormatStr, ((swig_lua_userdata *)pUserDataParent)->ptr, szVarName);
 
   // try to update the global variable
-  return UpdateGlobalVariable(sHiddenGlobalName.AsChar(), NewValue);
+  return UpdateGlobalVariable(sHiddenGlobalName.AsChar(), szNewValue);
 }
 
 bool VRSDClientLuaImplementation::GetUserDataPointerFromGlobal(const char* szVariable, void** ppUserData, void ** ppEnvironment)
@@ -377,6 +392,9 @@ bool VRSDClientLuaImplementation::GetUserDataPointerFromLocal(const char* szVari
   if(strcmp(m_pActivationRecord->what, "Lua"))
     return true;
 
+  ScopedBooleanToTrue disableDebugHook(m_bDebuggerRetrievingValues);
+  VLuaStackCleaner stackCleaner(m_pLuaState);
+
 
   char* pSymbolName = NULL;
   int iLocalIndex = 1;
@@ -385,41 +403,29 @@ bool VRSDClientLuaImplementation::GetUserDataPointerFromLocal(const char* szVari
   
   VStringTokenizerInPlace Tokenizer(copyBuffer.AsChar(), '.');
   char* pCurrent = Tokenizer.Next();
- 
-  bool bFound = false;
 
   while((pSymbolName = (char*)lua_getlocal(m_pLuaState, m_pActivationRecord, iLocalIndex)) != NULL)
   {                                                       //Stack: ..., localX, TOP
     // check if this local variable is the one we want
     if(!strcmp(pSymbolName, pCurrent))
     {
+      VLuaStackCleaner innerStackCleaner(m_pLuaState);
       //there is already the local on the stack...
-      int iStackItems = 1;
-      pCurrent = Tokenizer.Next();
-
-      while(pCurrent)
-      {
-        lua_getfield(m_pLuaState, -1, pCurrent);         //Stack: ..., localX, {field}, TOP
-
-        pCurrent = Tokenizer.Next();
-        iStackItems++;
-      }
+      if(LookupPath(Tokenizer) != HKV_SUCCESS)
+        return false;
 
       // now the variable is at the top of the stack
       *ppUserData = lua_touserdata(m_pLuaState, -1);    //Stack: ..., localX, {field}, TOP
       *ppEnvironment = m_pLuaState;
-      bFound = true;
-
-      lua_pop(m_pLuaState, iStackItems);                //Stack: ..., TOP
-      break;
+      return true;
     }
 
-    // clean up the stack and increment the index to get the next local variable
-    lua_pop(m_pLuaState, 1);                            //Stack: ..., TOP
+    // remove the value and update the index to get the next local variable
+    lua_pop(m_pLuaState, 1);
     iLocalIndex++;
   }
 
-  return bFound;
+  return false;
 }
 
 bool VRSDClientLuaImplementation::IsLocalUserDataOfType(const char* Name, const char* Type)
@@ -433,6 +439,9 @@ bool VRSDClientLuaImplementation::IsLocalUserDataOfType(const char* Name, const 
   if(strcmp(m_pActivationRecord->what, "Lua"))
     return true;
 
+  VLuaStackCleaner stackCleaner(m_pLuaState);
+  ScopedBooleanToTrue disableDebugHook(m_bDebuggerRetrievingValues);
+
   const char* pSymbolName = NULL;
   int iLocalIndex = 1;
 
@@ -441,37 +450,27 @@ bool VRSDClientLuaImplementation::IsLocalUserDataOfType(const char* Name, const 
   VStringTokenizerInPlace Tokenizer(copyBuffer.AsChar(), '.');
   char* pCurrent = Tokenizer.Next();
 
-  bool IsOfType = false;
-
   while((pSymbolName = lua_getlocal(m_pLuaState, m_pActivationRecord, iLocalIndex)) != NULL)
   {                                                             //stack: ..., localX, TOP
     // check if this local variable is the one we want
     if(!strcmp(pSymbolName, pCurrent))
     {
+      VLuaStackCleaner innerStackCleaner(m_pLuaState);
       // there is already the local on the stack
-      int iStackItems = 1;
-      pCurrent = Tokenizer.Next();
 
-      while(pCurrent)
-      {  
-        lua_getfield(m_pLuaState, -1, pCurrent);                //stack: ..., localX, {field}, TOP
-
-        pCurrent = Tokenizer.Next();
-        iStackItems++;
-      }
+      if(LookupPath(Tokenizer) != HKV_SUCCESS)
+        return false;
 
       // now the variable is at the top of the stack
-      IsOfType = LUA_TestUserData(m_pLuaState, -1, Type) != NULL;
-      lua_pop(m_pLuaState, iStackItems);                        //stack: ..., TOP
-      break;
+      return LUA_TestUserData(m_pLuaState, -1, Type) != NULL;
     }
 
-    // clean up the stack and increment the index to get the next local variable
-    lua_pop(m_pLuaState, 1);                                    //stack: ..., TOP
+    // increment the index to get the next local variable
     iLocalIndex++;
+    lua_pop(m_pLuaState, 1);
   }
  
-  return IsOfType;
+  return false;
 }
 
 bool VRSDClientLuaImplementation::IsGlobalUserDataOfType(const char* Name, const char* Type)
@@ -485,37 +484,19 @@ bool VRSDClientLuaImplementation::IsGlobalUserDataOfType(const char* Name, const
   if(strcmp(m_pActivationRecord->what, "Lua"))
     return true;
 
+  VLuaStackCleaner stackCleaner(m_pLuaState);
+  ScopedBooleanToTrue disableDebugHook(m_bDebuggerRetrievingValues);
+
   VMemoryTempBuffer<512> copyBuffer(Name); // operate on a copy string in the tokenizer
   
   VStringTokenizerInPlace Tokenizer(copyBuffer.AsChar(), '.');
-  char* pCurrent = Tokenizer.Next();
-  int i = 0;
 
-  while(pCurrent)
-  {
-    if(i == 0)
-    {
-      lua_getfield(m_pLuaState, LUA_GLOBALSINDEX, pCurrent);
-    }
-    else
-    {
-      lua_pushstring(m_pLuaState, pCurrent);
-      lua_gettable(m_pLuaState, -2);
-    }
-
-    i++;
-    pCurrent = Tokenizer.Next();
-
-    //stop if the result is nil
-    if(lua_isnil(m_pLuaState,-1)) break;
-  }
+  lua_getfield(m_pLuaState, LUA_GLOBALSINDEX, Tokenizer.Next());
+  if(LookupPath(Tokenizer) != HKV_SUCCESS)
+    return false;
 
   // now the variable should be at the top of the stack
-  bool IsOfType = LUA_TestUserData(m_pLuaState, -1, Type) != NULL;
-
-  lua_pop(m_pLuaState, i);
-
-  return IsOfType;
+  return LUA_TestUserData(m_pLuaState, -1, Type) != NULL;
 }
 
 bool VRSDClientLuaImplementation::GetGlobalType(const char*pVariableName, char * pUserDataTypeName)
@@ -529,35 +510,19 @@ bool VRSDClientLuaImplementation::GetGlobalType(const char*pVariableName, char *
   if(strcmp(m_pActivationRecord->what, "Lua"))
     return true;
 
+  VLuaStackCleaner stackCleaner(m_pLuaState);
+  ScopedBooleanToTrue disableDebugHook(m_bDebuggerRetrievingValues);
+
   VMemoryTempBuffer<512> copyBuffer(pVariableName); // operate on a copy string in the tokenizer
 
   VStringTokenizerInPlace Tokenizer(copyBuffer.AsChar(), '.');
-  char* pCurrent = Tokenizer.Next();
-  int i = 0;
+  lua_getfield(m_pLuaState, LUA_GLOBALSINDEX, Tokenizer.Next());
 
-  while(pCurrent)
-  {
-    if(i == 0)
-    {
-      lua_getfield(m_pLuaState, LUA_GLOBALSINDEX, pCurrent);
-    }
-    else
-    {
-      lua_pushstring(m_pLuaState, pCurrent);
-      lua_gettable(m_pLuaState, -2);
-    }
-
-    i++;
-    pCurrent = Tokenizer.Next();
-
-    //stop if the result is nil
-    if(lua_isnil(m_pLuaState,-1)) break;
-  }
+  if(LookupPath(Tokenizer) != HKV_SUCCESS)
+    return false;
 
   const char * szName = VSWIG_Lua_typename(m_pLuaState, -1);
   sprintf(pUserDataTypeName, "%s", szName);
-
-  lua_pop(m_pLuaState, i);
   
   return pUserDataTypeName[0] != 0;
 }
@@ -572,6 +537,9 @@ bool VRSDClientLuaImplementation::GetLocalType(const char* pVariableName, char *
   // we can only get local symbols without a crash if we are really in a Lua code execution path
   if(strcmp(m_pActivationRecord->what, "Lua"))
     return true;
+
+  VLuaStackCleaner stackCleaner(m_pLuaState);
+  ScopedBooleanToTrue disableDebugHook(m_bDebuggerRetrievingValues);
 
   const char* pSymbolName = NULL;
   int iLocalIndex = 1;
@@ -589,21 +557,13 @@ bool VRSDClientLuaImplementation::GetLocalType(const char* pVariableName, char *
     if(!strcmp(pSymbolName, pCurrent))
     {
       // there is already the local on the stack
-      int iStackItems = 1;
-      pCurrent = Tokenizer.Next();
-
-      while(pCurrent)
-      {  
-        lua_getfield(m_pLuaState, -1, pCurrent);                //stack: ..., localX, {field}, TOP
-        pCurrent = Tokenizer.Next();
-        iStackItems++;
-      }
+      if(LookupPath(Tokenizer) != HKV_SUCCESS)
+        return false;
 
       const char * szName = VSWIG_Lua_typename(m_pLuaState, -1);
       sprintf(pUserDataTypeName, "%s", szName);
 
-      lua_pop(m_pLuaState, iStackItems);                        //stack: ..., TOP
-      break;
+      return pUserDataTypeName[0] != 0;
     }
 
     // clean up the stack and increment the index to get the next local variable
@@ -611,7 +571,7 @@ bool VRSDClientLuaImplementation::GetLocalType(const char* pVariableName, char *
     iLocalIndex++;
   }
 
-  return pUserDataTypeName[0] != 0;
+  return false;
 }
 
 bool VRSDClientLuaImplementation::GetGlobalSymbols(DynArray_cl<VRSDScriptSymbol>& GlobalSymbols, unsigned int& GlobalSymbolCount)
@@ -627,6 +587,7 @@ bool VRSDClientLuaImplementation::GetGlobalSymbols(DynArray_cl<VRSDScriptSymbol>
   if(strcmp(m_pActivationRecord->what, "Lua"))
     return true;
 
+  VLuaStackCleaner stackCleaner(m_pLuaState);
   // iterate through the globals table to get its keys
   
   // first key for the iteration
@@ -654,7 +615,7 @@ bool VRSDClientLuaImplementation::GetGlobalSymbols(DynArray_cl<VRSDScriptSymbol>
         else if(lua_type(m_pLuaState, -1) == LUA_TNUMBER)
         {
           char buffer[32];
-          sprintf(buffer, "%f", lua_tonumber(m_pLuaState, -1));
+          vis_snprintf(buffer, 32, "%f", lua_tonumber(m_pLuaState, -1));
           AddSymbol(GlobalSymbols, GlobalSymbolCount, pSymbolName, buffer, VRSDScriptSymbol::SYMBOL_NUMBER);
         }
         // string member variable
@@ -668,8 +629,18 @@ bool VRSDClientLuaImplementation::GetGlobalSymbols(DynArray_cl<VRSDScriptSymbol>
         }
         else if(lua_isuserdata(m_pLuaState, -1))
         {
-          char buffer[32];
-          sprintf(buffer, "userdata:0x%p", lua_touserdata(m_pLuaState, -1));
+          char buffer[128];
+          swig_type_info* type = (swig_type_info *)LUA_GetSwigType(m_pLuaState, -1);
+          void * pUserData = lua_touserdata(m_pLuaState, -1);
+
+          if(type)
+          {
+            vis_snprintf(buffer, 128, "userdata:0x%p [%s: 0x%p]", pUserData, type->str, ((swig_lua_userdata*)pUserData)->ptr);
+          }
+          else
+          {
+            vis_snprintf(buffer, 128, "userdata:0x%p", lua_touserdata(m_pLuaState, -1));
+          }
           AddSymbol(GlobalSymbols, GlobalSymbolCount, pSymbolName, buffer, VRSDScriptSymbol::SYMBOL_USERDATA);
         }
         else if(lua_isboolean(m_pLuaState, -1))
@@ -695,13 +666,15 @@ bool VRSDClientLuaImplementation::GetSubSymbolsForLocal(char* LocalName, DynArra
 
   if(!m_pLuaState || !m_pActivationRecord)
     return false;
-
+  
   SubSymbolCount = 0;
 
   // we can only get local symbols without a crash if we are really in a Lua code execution path
   if(strcmp(m_pActivationRecord->what, "Lua"))
     return true;
 
+  VLuaStackCleaner stackCleaner(m_pLuaState);
+  ScopedBooleanToTrue disableDebugCallback(m_bDebuggerRetrievingValues);
 
   char* pSymbolName = NULL;
   int iLocalIndex = 1;
@@ -716,17 +689,9 @@ bool VRSDClientLuaImplementation::GetSubSymbolsForLocal(char* LocalName, DynArra
     // check if this local variable is the one we want
     if(!strcmp(pSymbolName, pCurrent))
     {
-      //th local is already on the stack
-      int iStackItems = 1;
-      pCurrent = Tokenizer.Next();
-
-      while(pCurrent)
-      {
-        lua_getfield(m_pLuaState, -1, pCurrent);          //stack: .., localX, {field}, TOP
-
-        pCurrent = Tokenizer.Next();
-        iStackItems++;
-      }
+      //the local is already on the stack
+      if(LookupPath(Tokenizer) != HKV_SUCCESS)
+        return false;
 
       // now we can iterate over the contents of the table
       // first key for the iteration
@@ -735,7 +700,6 @@ bool VRSDClientLuaImplementation::GetSubSymbolsForLocal(char* LocalName, DynArra
       //access the last field
       while (lua_next(m_pLuaState, -2) != 0)              //stack: .., localX, {field}, key, value TOP
       {
-
         // we only want string fields and numeric fields
         // (lua_isstring returns also true for numbers, using
         // tostring later on will cast the number to a string)
@@ -804,9 +768,7 @@ bool VRSDClientLuaImplementation::GetSubSymbolsForLocal(char* LocalName, DynArra
         // remove the value, keep the key for the next iteration
         lua_pop(m_pLuaState, 1);                        //stack: .., localX, {field}, key, TOP
       }
-
-      lua_pop(m_pLuaState, iStackItems);                //stack: .., TOP
-      break;
+      return true;
     }
 
     // clean up the stack and increment the index to get the next local variable
@@ -830,25 +792,15 @@ bool VRSDClientLuaImplementation::GetSubSymbolsForGlobal(char* GlobalName, DynAr
   if(strcmp(m_pActivationRecord->what, "Lua"))
     return true;
 
+  ScopedBooleanToTrue disableDebugCallback(m_bDebuggerRetrievingValues);
+  VLuaStackCleaner stackCleaner(m_pLuaState);
+
   VMemoryTempBuffer<512> copyBuffer(GlobalName); // operate on a copy string in the tokenizer
   
   VStringTokenizerInPlace Tokenizer(copyBuffer.AsChar(), '.');
-  char* pCurrent = Tokenizer.Next();
-  int i = 0;
-
-  while(pCurrent)
-  {
-    if(i == 0)
-      lua_getfield(m_pLuaState, LUA_GLOBALSINDEX, pCurrent);
-    else
-    {
-      lua_pushstring(m_pLuaState, pCurrent);
-      lua_rawget(m_pLuaState, -2);
-    }
-
-    i++;
-    pCurrent = Tokenizer.Next();
-  }
+  lua_getfield(m_pLuaState, LUA_GLOBALSINDEX, Tokenizer.Next());
+  if(LookupPath(Tokenizer) != HKV_SUCCESS)
+    return false;
 
   // now the variable should be at the top of the stack and we can get the subvariables of it
   
@@ -859,12 +811,21 @@ bool VRSDClientLuaImplementation::GetSubSymbolsForGlobal(char* GlobalName, DynAr
   {
     // after this the key is at -2 and the value at -1
     
-    // we only want string fields and no other keys
-    if (lua_isstring(m_pLuaState, -2))
+    // we only want string fields and numeric fields
+    // (lua_isstring returns also true for numbers, using
+    // tostring later on will cast the number to a string)
+    int iKeyType = lua_type(m_pLuaState, -2);
+    if (iKeyType==LUA_TNUMBER || iKeyType==LUA_TSTRING)
     {  
-      char* pSymbolName = (char*)lua_tostring(m_pLuaState, -2);
+      VString sKeyBuffer;
 
-      if(pSymbolName)
+      //this if prevents a conversion of number on the Lua stack
+      if(iKeyType==LUA_TNUMBER) sKeyBuffer.Format("%1.0f", lua_tonumber(m_pLuaState, -2));
+      else                      sKeyBuffer = lua_tostring(m_pLuaState, -2);
+
+      const char* pSymbolName = sKeyBuffer.AsChar();
+
+      if(pSymbolName && pSymbolName!=strstr(pSymbolName, LUA_HIDDEN_GLOBAL_PREFIX)) //remove the second condition if you would like to see the $node vars in the G table (vRSD)
       {
         // table member variable
         if(lua_istable(m_pLuaState, -1))
@@ -892,8 +853,18 @@ bool VRSDClientLuaImplementation::GetSubSymbolsForGlobal(char* GlobalName, DynAr
         // userdata member variable
         else if(lua_isuserdata(m_pLuaState, -1))
         {
-          char buffer[32];
-          sprintf(buffer, "userdata:0x%p", lua_touserdata(m_pLuaState, -1));
+          char buffer[128];
+          swig_type_info* type = (swig_type_info *)LUA_GetSwigType(m_pLuaState, -1);
+          void * pUserData = lua_touserdata(m_pLuaState, -1);
+
+          if(type)
+          {
+            vis_snprintf(buffer, 128, "userdata:0x%p [%s: 0x%p]", pUserData, type->str, ((swig_lua_userdata*)pUserData)->ptr);
+          }
+          else
+          {
+            vis_snprintf(buffer, 128, "userdata:0x%p", lua_touserdata(m_pLuaState, -1));
+          }
           AddSymbol(SubSymbols, SubSymbolCount, pSymbolName, buffer, VRSDScriptSymbol::SYMBOL_USERDATA);
         }
         else if(lua_isboolean(m_pLuaState, -1))
@@ -910,8 +881,6 @@ bool VRSDClientLuaImplementation::GetSubSymbolsForGlobal(char* GlobalName, DynAr
     }
     lua_pop(m_pLuaState, 1);  // remove the value, keep the key for the next iteration
   }
-
-  lua_pop(m_pLuaState, i);
 
   return true;
 }
@@ -958,6 +927,31 @@ void VRSDClientLuaImplementation::ErrorScriptEvent(VRSDScriptEvent* Event)
     m_pActivationRecord = NULL;
 }
 
+hkvResult VRSDClientLuaImplementation::LookupPath(VStringTokenizerInPlace& Tokenizer, const char** pLastField)
+{
+  const char* pCurrent = Tokenizer.Next();
+  while(pCurrent)
+  {
+    if(VStringUtil::IsIntegerString(pCurrent))
+    {
+      lua_pushnumber(m_pLuaState, (LUA_NUMBER)atoi(pCurrent)); //stack: ..., localX, key, TOP
+      lua_gettable(m_pLuaState, -2);               //stack:  ..., localX, {field}, TOP
+    }
+    else
+    {
+      lua_getfield(m_pLuaState, -1, pCurrent);     //stack: .., localX, {field}, TOP
+    }
+    if(lua_isnil(m_pLuaState, -1))
+      return HKV_FAILURE;
+
+    const char* pNext = Tokenizer.Next();
+    if(pLastField != NULL && pNext == NULL)
+      *pLastField = pCurrent;
+    pCurrent = pNext;
+  }
+  return HKV_SUCCESS;
+}
+
 
 #if defined (_VISION_PS3)
 #pragma diag_push
@@ -970,6 +964,9 @@ void VRSDClientLuaImplementation::Lua_DebugHook(lua_State* L, lua_Debug* ar)
   // get the implementation pointer
   VRSDClientLuaImplementation* Impl = (VRSDClientLuaImplementation*)VRSDClient::GetGlobalClient().GetClientLanguageImplementation();
   VASSERT(Impl);
+
+  if(Impl->m_bDebuggerRetrievingValues)
+    return;
 
   // gather information from the activation record
   if(lua_getinfo(L, "nSl", ar))
@@ -1013,7 +1010,7 @@ void VRSDClientLuaImplementation::Lua_DebugHook(lua_State* L, lua_Debug* ar)
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

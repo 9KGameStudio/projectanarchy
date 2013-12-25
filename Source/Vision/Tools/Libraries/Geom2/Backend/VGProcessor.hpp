@@ -62,18 +62,18 @@ public:
   ///
   /// \return
   ///   Pointer to previously used log
-  inline IVLog* SetLog(IVLog* log)                    { IVLog* oldLog = m_log; m_log = log; return oldLog; }
+  inline hkvLogInterface* SetLog(hkvLogInterface* log)                    { hkvLogInterface* oldLog = m_log; m_log = log; return oldLog; }
 
   /// \brief
   ///   Gets pointer to log currently in use
   ///
   /// \return
   ///   Pointer to log currently in use
-  inline IVLog* GetLog() const                        { return m_log; }
+  inline hkvLogInterface* GetLog() const                        { return m_log; }
 
 
 private:
-  IVLog* m_log;
+  hkvLogInterface* m_log;
 };
 
 
@@ -127,7 +127,7 @@ private:
   VGDynamicProcessor<className>::Creator VGDynamicProcessor<className>::ms_creator;
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

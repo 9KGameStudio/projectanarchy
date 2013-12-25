@@ -644,6 +644,22 @@ private:
 
 
 /// \brief
+///   Shader class for rendering geometry into the shadow map with alpha testing.
+///
+/// All shadow map fill shaders with alpha testing (custom or default) have to use this class, since the shadow map generator uses
+/// it to provide cascade-specific properties (depth bias, clip planes) and the alpha threshold to the shader.
+class VShadowMapFillAlphaTestShaderPass : public VShadowMapFillShaderPass
+{
+public:
+  V_DECLARE_SERIAL_DLLEXP( VShadowMapFillAlphaTestShaderPass, EFFECTS_IMPEXP )
+  EFFECTS_IMPEXP virtual void PostCompileFunction(VShaderEffectResource *pSourceFX, VShaderPassResource *pSourceShader) HKV_OVERRIDE;
+
+  VConstantBufferRegister m_RegAlphaThreshold;
+
+};
+
+
+/// \brief
 ///   Shader class for rendering shadow-receiving geometry for static lights in forward rendering mode.
 class VShadowMapApplyShaderPass : public VCompiledShaderPass
 {
@@ -775,7 +791,7 @@ public:
 #endif  // VSHADOWMAPGENERATORBASE_HPP_INCLUDED
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -15,21 +15,20 @@
 class MergeModelsMainMenu : public VDialog
 {
 public:
-  
   virtual ~MergeModelsMainMenu();
-  VOVERRIDE void OnInitDialog();
-  VOVERRIDE void OnActivate();
-  VOVERRIDE void OnDeactivate();
-  VOVERRIDE void OnItemClicked(VMenuEventDataObject *pEvent);
-  VOVERRIDE void OnValueChanged(VItemValueChangedEvent *pEvent);
-  VOVERRIDE void OnTick(float dtime);
+
+  virtual void OnInitDialog() HKV_OVERRIDE;
+  virtual void OnActivate() HKV_OVERRIDE;
+  virtual void OnDeactivate() HKV_OVERRIDE;
+  virtual void OnItemClicked(VMenuEventDataObject *pEvent) HKV_OVERRIDE;
+  virtual void OnValueChanged(VItemValueChangedEvent *pEvent) HKV_OVERRIDE;
+  virtual void OnTick(float dtime) HKV_OVERRIDE;
 
   void SetMergeModelFactory(MergedModelFactory_cl *factory);
 
 protected:
-
-  V_DECLARE_SERIAL_DLLEXP( MergeModelsMainMenu, DECLSPEC_DLLEXPORT )
-  VOVERRIDE void Serialize( VArchive &ar ) {}
+  V_DECLARE_SERIAL_DLLEXP(MergeModelsMainMenu, DECLSPEC_DLLEXPORT)
+  virtual void Serialize(VArchive &ar) HKV_OVERRIDE {}
 
   VCheckBox   *m_pArmArmorCB;
   VCheckBox   *m_pShoulderArmorCB;
@@ -49,7 +48,7 @@ protected:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

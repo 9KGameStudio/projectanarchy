@@ -43,10 +43,8 @@ enum VResourceFlag
 
 class VManagedResource;
 class VResourceManager;
-struct VFileTime;
 class IVFileInStream;
 class IVFileOutStream;
-class IVFileStreamManager;
 class VResourceSnapshot;
 class VResourceSnapshotEntry;
 class VThreadedTask;
@@ -264,19 +262,19 @@ public:
   /// \brief
   ///   Overridable to gather a new file time stamp. Must be overridden in case a different file
   ///   than GetFilename() is opened.
-  VBASE_IMPEXP virtual BOOL GatherTimeStamp(IVFileStreamManager *pManager, VFileTime &destTime);
+  VBASE_IMPEXP virtual BOOL GatherTimeStamp(VDateTime &destTime);
 #endif
 
   /// \brief
   ///   Sets the resource's file stamp value directly.
-  VBASE_IMPEXP BOOL SetTimeStamp(const VFileTime& timeVal);
+  VBASE_IMPEXP BOOL SetTimeStamp(const VDateTime& timeVal);
 
   /// \brief
   ///   Returns the resource's file time stamp.
   /// \return
   ///   the resource's file time stamp. The returned time may be invalid if no 
   ///   file time is known or resource timestamps are not supported on the target platform.
-  VBASE_IMPEXP VFileTime GetFileTimeStamp() const;
+  VBASE_IMPEXP VDateTime GetFileTimeStamp() const;
 
   /// \brief
   ///   Returns the resource's asset lookup hash. Can be used to identify resource meta data changes.
@@ -295,16 +293,12 @@ public:
   /// 
   /// For further details on the passed parameters, see VResourceManager::ReloadModifiedResourceFiles.
   /// 
-  /// \param pManager
-  ///   The file stream manager used for retrieving the time stamp. Should be
-  ///   Vision::File.GetManager() when used in the engine.
-  /// 
   /// \param eOptions
   ///   The type of reloading which should be performed
   /// 
   /// \return
   ///   TRUE if the resource has been detected to be modified
-  VBASE_IMPEXP BOOL CheckFileModified(IVFileStreamManager* pManager, VUnloadReloadOptions_e eOptions = VURO_COLD_RELOAD);
+  VBASE_IMPEXP BOOL CheckFileModified(VUnloadReloadOptions_e eOptions = VURO_COLD_RELOAD);
 
   /// \brief
   ///   Checks if the resource has been modified.
@@ -312,10 +306,6 @@ public:
   /// The stream manager is used to retrieve the new time stamp.
   /// 
   /// For further details on the passed parameters, see VResourceManager::ReloadModifiedResourceFiles.
-  /// 
-  /// \param pManager
-  ///   The file stream manager used for retrieving the time stamp. Should be
-  ///   Vision::File.GetManager() when used in the engine.
   /// 
   /// \param bUnload
   ///   If TRUE, the resource will be unloaded in case it has been modified (calls EnsureUnloaded
@@ -327,10 +317,10 @@ public:
   /// 
   /// \return
   ///   TRUE if the resource has been detected to be modified
-  inline HKV_DEPRECATED_2013_2 BOOL CheckFileModified(IVFileStreamManager* pManager, BOOL bUnload, BOOL bReload)
+  inline HKV_DEPRECATED_2013_2 BOOL CheckFileModified(BOOL bUnload, BOOL bReload)
   {
     VASSERT_MSG(bUnload || bReload, "at least one option has to be set");
-    return CheckFileModified(pManager, bReload ? VURO_COLD_RELOAD : VURO_ONLY_UNLOAD);
+    return CheckFileModified(bReload ? VURO_COLD_RELOAD : VURO_ONLY_UNLOAD);
   }
 
   /// \brief
@@ -338,11 +328,7 @@ public:
   ///   is called.
   ///
   /// Effectively sets the timestamp to the current value.
-  ///
-  /// \param pManager
-  ///   The file stream manager used for retrieving the time stamp. Should be
-  ///   Vision::File.GetManager() when used in the engine.
-  VBASE_IMPEXP void IgnoreFileChanges(IVFileStreamManager* pManager);
+  VBASE_IMPEXP void IgnoreFileChanges();
 
   ///
   /// @}
@@ -874,7 +860,7 @@ protected:
   unsigned int m_iDependentSysMemSize, m_iDependentGPUMemSize;
 
 #ifdef SUPPORTS_RESOURCE_TIMESTAMP
-  vtime_t m_iFileTimeStamp;
+  VDateTime m_fileTimeStamp;
 #endif
 
   unsigned int m_uiAssetLookupHash;
@@ -1141,7 +1127,7 @@ class VResourceCollection : public VRefCountedCollection<VManagedResource>
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -93,9 +93,9 @@ BOOL VBlobShadow::CanAttachToObject(VisTypedEngineObject_cl *pObject, VString &s
   if (!IVObjectComponent::CanAttachToObject(pObject, sErrorMsgOut))
     return FALSE;
 
-  if (!pObject->IsOfType(V_RUNTIME_CLASS(VisObject3D_cl)))
+  if ((!pObject->IsOfType(V_RUNTIME_CLASS(VisObject3D_cl))) && (!pObject->IsOfType(V_RUNTIME_CLASS(VisStaticMeshInstance_cl))))
   {
-    sErrorMsgOut = "Component can only be added to instances of VisObject3D_cl or derived classes.";
+    sErrorMsgOut = "Component can only be added to instances of VisObject3D_cl and VisStaticMeshInstance_cl or derived classes.";
     return FALSE;
   }
   
@@ -166,11 +166,21 @@ void VBlobShadow::Serialize( VArchive &ar )
 
 void VBlobShadow::SetBoundingBoxFromOwnerProperties()
 {
-  VASSERT(GetOwner());
-  VisObject3D_cl *pOwner = (VisObject3D_cl *)GetOwner();
+  const VisTypedEngineObject_cl *pTypedEngineObject = GetOwner();
+  VASSERT(pTypedEngineObject != NULL);
+
+  if(pTypedEngineObject->IsOfType(V_RUNTIME_CLASS(VisObject3D_cl)))
+  {
+    const VisObject3D_cl *pOwner = vstatic_cast<const VisObject3D_cl*>(GetOwner());
+    pOwner->GetPosition((hkvVec3&) m_ShadowBox.m_vMin);
+  }
+  else if(pTypedEngineObject->IsOfType(V_RUNTIME_CLASS(VisStaticMeshInstance_cl)))
+  {
+    const VisStaticMeshInstance_cl *pOwner = vstatic_cast<const VisStaticMeshInstance_cl*>(GetOwner());
+    m_ShadowBox.m_vMin = pOwner->GetTransform().getTranslation();
+  }
 
   // build absolute bounding box
-  pOwner->GetPosition((hkvVec3&) m_ShadowBox.m_vMin);
   m_ShadowBox.m_vMax = m_ShadowBox.m_vMin;
   m_ShadowBox.addBoundary(hkvVec3 (Radius));
   m_ShadowBox.m_vMin.z -= Height;
@@ -186,7 +196,7 @@ START_VAR_TABLE(VBlobShadow,IVObjectComponent,"Blob shadow component",VVARIABLEL
 END_VAR_TABLE
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

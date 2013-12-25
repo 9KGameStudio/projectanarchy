@@ -12,6 +12,7 @@ using System.Diagnostics;
 using System.Drawing;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Threading;
@@ -38,9 +39,12 @@ using Editor.View;
 using Editor.Vision;
 using Editor.VisionSpecific;
 using ManagedBase;
+using ManagedBase.LogManaged;
 using ManagedFramework;
+using VisionManaged;
 // NUnit includes
 using NUnit.Core;
+using Editor.Help;
 
 namespace Editor
 {
@@ -168,7 +172,6 @@ namespace Editor
     private ToolStripMenuItem Menu_Remote_ExportAndRun;
     private ToolStripMenuItem Menu_Remote_Restart;
     private ToolStripMenuItem Menu_Remote_ReloadResources;
-    private ToolStripMenuItem Menu_Help_iHelp;
     private ToolStripSeparator toolStripMenuItem21;
     private ToolStripMenuItem Menu_Help_About;
     private ToolStripMenuItem Menu_Help_VisionDoc;
@@ -230,7 +233,7 @@ namespace Editor
     private ToolStripSeparator ToolBar_Tools_LastSeparator;
     private ToolStripMenuItem Menu_Engine_EditPostProcessors;
     private ToolStripMenuItem Menu_Engine_EditFog;
-    private ToolStripMenuItem editFogToolStripMenuItem;
+    private ToolStripMenuItem ToolBar_EditFog;
     private ToolStripMenuItem Menu_Engine_ProfileSettings;
     private ToolStripMenuItem Menu_Engine_ManifestSettings;
     private ToolStripButton ToolBar_OpenAssetBrowser;
@@ -242,6 +245,9 @@ namespace Editor
     private ToolStripStatusLabel statusPanel_PlayMode;
     private ToolStripSeparator toolStripSeparator3;
     private ToolStripSeparator toolStripSeparator2;
+    private ToolStripMenuItem reloadHelpContextFilesToolStripMenuItem;
+    private vGlobalLogWriter_Statusbar _pGlobalLogHandler = new vGlobalLogWriter_Statusbar();
+    private SelectHelpLanguageMenuItem _helpLanguageToolStripMenuItem;
 
     #region Nested Class : EditorCustomFileLoadingArgs
 
@@ -291,6 +297,7 @@ namespace Editor
     /// We use a message filter instead of registering hotkeys to avoid keys getting blocked in other applications.
     /// </summary>
     private ShortCutMessageFilter _scMsgFilter;
+    private ToolStripMenuItem Menu_vGameSolutionCreatorToolStripMenuItem;
 
     
     #if HK_ANARCHY
@@ -318,11 +325,22 @@ namespace Editor
       WeifenLuo.WinFormsUI.AppInterface.Instance = new DockingApp();      
       LoadSettings(); // load settings from XML file
 
+      // Init Help System (must be done after LoadSettings)
+      EditorManager.HelpSystem = new HelpSystem();
+
       //
       // Required for Windows Form Designer support
       //
       InitializeComponent();
       InitializeMyComponent(); // init the engine view
+
+      this.statusPanel_Main.Click += statusPanel_Main_Click;
+      this.statusPanel_Main.MouseEnter += statusPanel_Main_MouseEnter;
+      this.statusPanel_Main.MouseLeave += statusPanel_Main_MouseLeave;
+
+      // Init help button
+      _helpLanguageToolStripMenuItem = new SelectHelpLanguageMenuItem();
+      Menu_Help.DropDownItems.Add(_helpLanguageToolStripMenuItem);
 
       // We have to call the update titlebar here so we have the DX11 flag in the titlebar
       EditorApp.UpdateTitleBar();
@@ -330,6 +348,7 @@ namespace Editor
       // remove the 'Tests' menu if the Test data directory is not available, i.e. when vForge is shipped
       if (!TestManager.Helpers.TestDataDirExists)
       {
+        Menu_Help.DropDownItems.Remove(reloadHelpContextFilesToolStripMenuItem);
         this.mainMenu.Items.Remove(Menu_Tests);
       }
 
@@ -360,10 +379,25 @@ namespace Editor
       Scene2DView.RelevantObjects.Add(ZoneActionProvider.ACTION_PROVIDER); // register one global instance
 
       // Initialize Remote Manager
+      _pGlobalLogHandler.SetForm1(this);
+      GlobalLog.AddLogWriter(_pGlobalLogHandler);
+
       InitializeRemoteManager(); 
    
-      // Initially update status bar
+      // Set up the status bar
+      _statusbar_LogMsg            = new System.Drawing.Font(statusPanel_Main.Font.FontFamily, ((float)statusPanel_Main.Font.SizeInPoints), FontStyle.Bold                      , GraphicsUnit.Point);
+      _statusbar_LogMsg_Hover      = new System.Drawing.Font(statusPanel_Main.Font.FontFamily, ((float)statusPanel_Main.Font.SizeInPoints), FontStyle.Underline | FontStyle.Bold, GraphicsUnit.Point);
+      _statusbar_DefaultText       = new System.Drawing.Font(statusPanel_Main.Font.FontFamily, ((float)statusPanel_Main.Font.SizeInPoints), FontStyle.Regular                   , GraphicsUnit.Point);
+      _statusbar_DefaultText_Hover = new System.Drawing.Font(statusPanel_Main.Font.FontFamily, ((float)statusPanel_Main.Font.SizeInPoints), FontStyle.Underline                 , GraphicsUnit.Point);
+
+      ResourceViewerPanel.AddOnClearLogMessagesHandler(new vResourceViewerBase80.Controls.MasterPanel.ClearLogMessagesDelegate(LogMessagesCleared));
+
+      _updateStatusBarTimer.Elapsed += new System.Timers.ElapsedEventHandler(OnLogMsgTimeOut);
+      _updateStatusBarTimer.AutoReset = true;
+
       UpdateStatusBar();
+
+
 
       // special case shapes
       if (EditorManager.Settings.ExposeVisibilityShapes)
@@ -452,6 +486,9 @@ namespace Editor
       
       // register to clipboard notification chain
       nextClipboardChainViewer = SetClipboardViewer(this.Handle);
+
+      // Is GameSolutionCreator available?
+      Menu_vGameSolutionCreatorToolStripMenuItem.Enabled = File.Exists(EditorManager.GameSolutionCreatorPath);
     }
 
     /// <summary>
@@ -491,6 +528,7 @@ namespace Editor
         vResourceViewer.Classes.ResourceInfo.OnSelectedResourceChanged -= new EventHandler(ResourceInfo_OnSelectedResourceChanged);
         vResourceViewerBase80.Controls.MasterPanel.OnAutomatedResourcePreview -= new EventHandler(ResourceInfo_OnAutomatedResourcePreview);
         resourceViewerPanel.VisibleChanged -= new EventHandler(resourceViewerPanel_VisibleChanged);
+        ResourceViewerPanel.RemoveOnClearLogMessagesHandler(new vResourceViewerBase80.Controls.MasterPanel.ClearLogMessagesDelegate(LogMessagesCleared));
         layoutComboBox.SelectedIndexChanged -= new EventHandler(layoutBox_SelectedIndexChanged);
 
         // Save layout
@@ -728,6 +766,7 @@ namespace Editor
       this.toolStripMenuItem17 = new System.Windows.Forms.ToolStripSeparator();
       this.Menu_Options_ShowPlugins = new System.Windows.Forms.ToolStripMenuItem();
       this.toolStripMenuItem18 = new System.Windows.Forms.ToolStripSeparator();
+      this.Menu_vGameSolutionCreatorToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
       this.Menu_Remote = new System.Windows.Forms.ToolStripMenuItem();
       this.Menu_Remote_XBOX360_Connect = new System.Windows.Forms.ToolStripMenuItem();
       this.Menu_Remote_XBOX360_Launch = new System.Windows.Forms.ToolStripMenuItem();
@@ -744,10 +783,10 @@ namespace Editor
       this.Menu_Remote_Restart = new System.Windows.Forms.ToolStripMenuItem();
       this.Menu_Remote_ReloadResources = new System.Windows.Forms.ToolStripMenuItem();
       this.Menu_Help = new System.Windows.Forms.ToolStripMenuItem();
-      this.Menu_Help_iHelp = new System.Windows.Forms.ToolStripMenuItem();
-      this.Menu_Help_VisionDoc = new System.Windows.Forms.ToolStripMenuItem();
-      this.toolStripMenuItem21 = new System.Windows.Forms.ToolStripSeparator();
       this.Menu_Help_About = new System.Windows.Forms.ToolStripMenuItem();
+      this.toolStripMenuItem21 = new System.Windows.Forms.ToolStripSeparator();
+      this.Menu_Help_VisionDoc = new System.Windows.Forms.ToolStripMenuItem();
+      this.reloadHelpContextFilesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
       this.Menu_Tests = new System.Windows.Forms.ToolStripMenuItem();
       this.Menu_Tests_RunTests = new System.Windows.Forms.ToolStripMenuItem();
       this.Menu_Tests_VideoSize = new System.Windows.Forms.ToolStripMenuItem();
@@ -783,7 +822,7 @@ namespace Editor
       this.ToolBar_Tools = new System.Windows.Forms.ToolStripDropDownButton();
       this.ToolBar_SkyEditor = new System.Windows.Forms.ToolStripMenuItem();
       this.ToolBar_TimeOfDayEditor = new System.Windows.Forms.ToolStripMenuItem();
-      this.editFogToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+      this.ToolBar_EditFog = new System.Windows.Forms.ToolStripMenuItem();
       this.ToolBar_PostProcessor = new System.Windows.Forms.ToolStripMenuItem();
       this.toolStripMenuItem11 = new System.Windows.Forms.ToolStripSeparator();
       this.ToolBar_FindShapes = new System.Windows.Forms.ToolStripMenuItem();
@@ -974,7 +1013,6 @@ namespace Editor
       this.Menu_File_Export.Name = "Menu_File_Export";
       this.Menu_File_Export.Size = new System.Drawing.Size(155, 22);
       this.Menu_File_Export.Text = "Export";
-      this.Menu_File_Export.Click += new System.EventHandler(this.Menu_File_Export_Click);
       // 
       // Menu_File_Export_Scene
       // 
@@ -1638,18 +1676,18 @@ namespace Editor
             this.Menu_Options_Hotkeys,
             this.toolStripMenuItem17,
             this.Menu_Options_ShowPlugins,
-            this.toolStripMenuItem18});
+            this.toolStripMenuItem18,
+            this.Menu_vGameSolutionCreatorToolStripMenuItem});
       this.Menu_Options.Name = "Menu_Options";
       this.Menu_Options.Size = new System.Drawing.Size(49, 20);
       this.Menu_Options.Text = "E&xtras";
-      this.Menu_Options.DropDownClosed += new System.EventHandler(this.Menu_DropDownClosed);
       this.Menu_Options.DropDownOpening += new System.EventHandler(this.menu_Extras_Popup);
       // 
       // Menu_Options_Settings
       // 
       this.Menu_Options_Settings.Image = global::Editor.Properties.Resources.toolbar_settings;
       this.Menu_Options_Settings.Name = "Menu_Options_Settings";
-      this.Menu_Options_Settings.Size = new System.Drawing.Size(152, 22);
+      this.Menu_Options_Settings.Size = new System.Drawing.Size(236, 22);
       this.Menu_Options_Settings.Text = "Settings";
       this.Menu_Options_Settings.Click += new System.EventHandler(this.menu_Extras_Settings_Click);
       // 
@@ -1657,28 +1695,36 @@ namespace Editor
       // 
       this.Menu_Options_Hotkeys.Image = global::Editor.Properties.Resources.toolbar_hotkeys;
       this.Menu_Options_Hotkeys.Name = "Menu_Options_Hotkeys";
-      this.Menu_Options_Hotkeys.Size = new System.Drawing.Size(152, 22);
+      this.Menu_Options_Hotkeys.Size = new System.Drawing.Size(236, 22);
       this.Menu_Options_Hotkeys.Text = "Hotkeys";
       this.Menu_Options_Hotkeys.Click += new System.EventHandler(this.menu_Extras_Hotkeys_Click);
       // 
       // toolStripMenuItem17
       // 
       this.toolStripMenuItem17.Name = "toolStripMenuItem17";
-      this.toolStripMenuItem17.Size = new System.Drawing.Size(149, 6);
+      this.toolStripMenuItem17.Size = new System.Drawing.Size(233, 6);
       // 
       // Menu_Options_ShowPlugins
       // 
       this.Menu_Options_ShowPlugins.Image = global::Editor.Properties.Resources.toolbar_plugins;
       this.Menu_Options_ShowPlugins.ImageScaling = System.Windows.Forms.ToolStripItemImageScaling.None;
       this.Menu_Options_ShowPlugins.Name = "Menu_Options_ShowPlugins";
-      this.Menu_Options_ShowPlugins.Size = new System.Drawing.Size(152, 22);
+      this.Menu_Options_ShowPlugins.Size = new System.Drawing.Size(236, 22);
       this.Menu_Options_ShowPlugins.Text = "Show Plugins";
       this.Menu_Options_ShowPlugins.Click += new System.EventHandler(this.Menu_Engine_ShowPlugins_Click);
       // 
       // toolStripMenuItem18
       // 
       this.toolStripMenuItem18.Name = "toolStripMenuItem18";
-      this.toolStripMenuItem18.Size = new System.Drawing.Size(149, 6);
+      this.toolStripMenuItem18.Size = new System.Drawing.Size(233, 6);
+      // 
+      // Menu_vGameSolutionCreatorToolStripMenuItem
+      // 
+      this.Menu_vGameSolutionCreatorToolStripMenuItem.Image = global::Editor.Properties.Resources.SolutionCreator;
+      this.Menu_vGameSolutionCreatorToolStripMenuItem.Name = "Menu_vGameSolutionCreatorToolStripMenuItem";
+      this.Menu_vGameSolutionCreatorToolStripMenuItem.Size = new System.Drawing.Size(236, 22);
+      this.Menu_vGameSolutionCreatorToolStripMenuItem.Text = "Launch vGameSolutionCreator";
+      this.Menu_vGameSolutionCreatorToolStripMenuItem.Click += new System.EventHandler(this.Menu_vGameSolutionCreatorToolStripMenuItem_Click);
       // 
       // Menu_Remote
       // 
@@ -1804,41 +1850,40 @@ namespace Editor
       // Menu_Help
       // 
       this.Menu_Help.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.Menu_Help_iHelp,
-            this.Menu_Help_VisionDoc,
+            this.Menu_Help_About,
             this.toolStripMenuItem21,
-            this.Menu_Help_About});
+            this.Menu_Help_VisionDoc,
+            this.reloadHelpContextFilesToolStripMenuItem});
       this.Menu_Help.Name = "Menu_Help";
       this.Menu_Help.Size = new System.Drawing.Size(44, 20);
       this.Menu_Help.Text = "&Help";
       // 
-      // Menu_Help_iHelp
+      // Menu_Help_About
       // 
-      this.Menu_Help_iHelp.Enabled = false;
-      this.Menu_Help_iHelp.Name = "Menu_Help_iHelp";
-      this.Menu_Help_iHelp.Size = new System.Drawing.Size(192, 22);
-      this.Menu_Help_iHelp.Text = "iHelp ";
-      this.Menu_Help_iHelp.Click += new System.EventHandler(this.Menu_Help_iHelp_Click);
-      // 
-      // Menu_Help_VisionDoc
-      // 
-      this.Menu_Help_VisionDoc.Enabled = false;
-      this.Menu_Help_VisionDoc.Name = "Menu_Help_VisionDoc";
-      this.Menu_Help_VisionDoc.Size = new System.Drawing.Size(192, 22);
-      this.Menu_Help_VisionDoc.Text = "Vision Documentation";
-      this.Menu_Help_VisionDoc.Visible = false;
+      this.Menu_Help_About.Name = "Menu_Help_About";
+      this.Menu_Help_About.Size = new System.Drawing.Size(208, 22);
+      this.Menu_Help_About.Text = "About";
+      this.Menu_Help_About.Click += new System.EventHandler(this.Menu_Help_About_Click);
       // 
       // toolStripMenuItem21
       // 
       this.toolStripMenuItem21.Name = "toolStripMenuItem21";
-      this.toolStripMenuItem21.Size = new System.Drawing.Size(189, 6);
+      this.toolStripMenuItem21.Size = new System.Drawing.Size(205, 6);
       // 
-      // Menu_Help_About
+      // Menu_Help_VisionDoc
       // 
-      this.Menu_Help_About.Name = "Menu_Help_About";
-      this.Menu_Help_About.Size = new System.Drawing.Size(192, 22);
-      this.Menu_Help_About.Text = "About";
-      this.Menu_Help_About.Click += new System.EventHandler(this.Menu_Help_About_Click);
+      this.Menu_Help_VisionDoc.Image = global::Editor.Properties.Resources.toolbar_help;
+      this.Menu_Help_VisionDoc.Name = "Menu_Help_VisionDoc";
+      this.Menu_Help_VisionDoc.Size = new System.Drawing.Size(208, 22);
+      this.Menu_Help_VisionDoc.Text = "Vision Documentation";
+      this.Menu_Help_VisionDoc.Click += new System.EventHandler(this.Menu_Help_VisionDoc_Click);
+      // 
+      // reloadHelpContextFilesToolStripMenuItem
+      // 
+      this.reloadHelpContextFilesToolStripMenuItem.Name = "reloadHelpContextFilesToolStripMenuItem";
+      this.reloadHelpContextFilesToolStripMenuItem.Size = new System.Drawing.Size(208, 22);
+      this.reloadHelpContextFilesToolStripMenuItem.Text = "Reload Help Context Files";
+      this.reloadHelpContextFilesToolStripMenuItem.Click += new System.EventHandler(this.reloadHelpContextFilesToolStripMenuItem_Click);
       // 
       // Menu_Tests
       // 
@@ -2165,7 +2210,7 @@ namespace Editor
       this.ToolBar_Tools.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.ToolBar_SkyEditor,
             this.ToolBar_TimeOfDayEditor,
-            this.editFogToolStripMenuItem,
+            this.ToolBar_EditFog,
             this.ToolBar_PostProcessor,
             this.toolStripMenuItem11,
             this.ToolBar_FindShapes,
@@ -2199,14 +2244,14 @@ namespace Editor
       this.ToolBar_TimeOfDayEditor.Text = "Edit Time of Day";
       this.ToolBar_TimeOfDayEditor.Click += new System.EventHandler(this.Menu_Engine_EditTimeOfDay_Click);
       // 
-      // editFogToolStripMenuItem
+      // ToolBar_EditFog
       // 
-      this.editFogToolStripMenuItem.Image = global::Editor.Properties.Resources.toolbar_fog;
-      this.editFogToolStripMenuItem.ImageScaling = System.Windows.Forms.ToolStripItemImageScaling.None;
-      this.editFogToolStripMenuItem.Name = "editFogToolStripMenuItem";
-      this.editFogToolStripMenuItem.Size = new System.Drawing.Size(175, 22);
-      this.editFogToolStripMenuItem.Text = "Edit Fog";
-      this.editFogToolStripMenuItem.Click += new System.EventHandler(this.Menu_Engine_EditFog_Click);
+      this.ToolBar_EditFog.Image = global::Editor.Properties.Resources.toolbar_fog;
+      this.ToolBar_EditFog.ImageScaling = System.Windows.Forms.ToolStripItemImageScaling.None;
+      this.ToolBar_EditFog.Name = "ToolBar_EditFog";
+      this.ToolBar_EditFog.Size = new System.Drawing.Size(175, 22);
+      this.ToolBar_EditFog.Text = "Edit Fog";
+      this.ToolBar_EditFog.Click += new System.EventHandler(this.Menu_Engine_EditFog_Click);
       // 
       // ToolBar_PostProcessor
       // 
@@ -2401,10 +2446,12 @@ namespace Editor
       // 
       // statusPanel_Main
       // 
+      this.statusPanel_Main.AutoSize = false;
       this.statusPanel_Main.Name = "statusPanel_Main";
-      this.statusPanel_Main.Size = new System.Drawing.Size(505, 18);
+      this.statusPanel_Main.Size = new System.Drawing.Size(445, 18);
       this.statusPanel_Main.Spring = true;
       this.statusPanel_Main.Text = "statusPanel_Main";
+      this.statusPanel_Main.TextAlign = System.Drawing.ContentAlignment.TopLeft;
       // 
       // toolStripSeparator1
       // 
@@ -2477,8 +2524,57 @@ namespace Editor
       this.PerformLayout();
 
     }
+
     #endregion
 
+    #region vGlobalLogWriter_Statusbar
+
+    class vGlobalLogWriter_Statusbar : GlobalLogWriterInterface
+    {
+      public void SetForm1(Form1 Parent)
+      {
+        _Parent = Parent;
+      }
+
+      public void WriteToLog(LogMsgType MsgType, String sText, int iIndentation, String sTag)
+      {
+        switch (MsgType)
+        {
+          case LogMsgType.FatalError:
+          case LogMsgType.Error:
+            ++_iErrors;
+            _bLastMsgWasError = true;
+            _LastMessage = sText;
+            break;
+
+          case LogMsgType.SeriousWarning:
+          case LogMsgType.Warning:
+            ++_iWarnings;
+            _bLastMsgWasError = false;
+            _LastMessage = sText;
+            break;
+
+          case LogMsgType.Success:
+          case LogMsgType.Info:
+          case LogMsgType.Dev:
+          case LogMsgType.Debug:
+            ++_iMessages;
+            break;
+        }
+
+        if (_Parent != null)
+          _Parent.OnLogMsgChanged();
+      }
+
+      public Form1 _Parent = null;
+      public String _LastMessage = String.Empty;
+      public bool _bLastMsgWasError = false;
+      public int _iErrors = 0;
+      public int _iWarnings = 0;
+      public int _iMessages = 0;
+    }
+
+    #endregion
 
     #region WndProc
 
@@ -2598,8 +2694,6 @@ namespace Editor
     AssetBrowserPanel assetBrowserPanel = null;
     CollectionPanel collectionPanel = null;
 
-    //InteractiveHelpPanel interactiveHelpPanel = null;
-
     // I put this into a separate function because VS messed it up too often!
     void InitializeMyComponent()
     {
@@ -2613,10 +2707,6 @@ namespace Editor
       // Create Engine Panel
       enginePanel1 = new Editor.EnginePanel(EditorManager.ApplicationLayout.DockingArea);
       enginePanel1.ShowDockable();
-
-      // TEMP
-      //interactiveHelpPanel = new InteractiveHelpPanel();
-      //interactiveHelpPanel.ShowDockable();
 
       // create dockable undo redo history panel
       undoHistoryPanel = new UndoHistoryPanel(EditorManager.ApplicationLayout.DockingArea);
@@ -2672,7 +2762,6 @@ namespace Editor
         vResourceViewer.Classes.ResourceInfo.OnSelectedResourceChanged += new EventHandler(ResourceInfo_OnSelectedResourceChanged);
         vResourceViewerBase80.Controls.MasterPanel.OnAutomatedResourcePreview += new EventHandler(ResourceInfo_OnAutomatedResourcePreview);
         resourceViewerPanel.VisibleChanged += new EventHandler(resourceViewerPanel_VisibleChanged);
-        EditorManager.EditorConsole = resourceViewerPanel; // it implements IEditorConsole
       }
       catch (Exception ex)
       {
@@ -3058,9 +3147,6 @@ namespace Editor
       Thread.CurrentThread.CurrentCulture = culture;
       Thread.CurrentThread.CurrentUICulture = culture; // this seems responsible for number.ToString problems
 
-      // initialize DLLs
-      // int retval = ManagedFramework.ManagedFramework.minitialize() ;
-    
       // register ManagedFramework tests in test manager
       TestSuiteBuilder testBuilder = new TestSuiteBuilder();
       TestSuite testSuiteManagedFrameWork = testBuilder.Build( typeof(ManagedFramework.VisionEngineManager).Assembly.FullName );
@@ -3106,9 +3192,6 @@ namespace Editor
 
       if (g_triggerTests)
         return (g_testResult ? 0 : -1);
-
-      // deinit DLLs
-      //ManagedFramework.ManagedFramework.mterminate();
 
       return 0;
     }
@@ -3293,7 +3376,10 @@ namespace Editor
 
       // Show properties panel if option is enabled
       if (EditorManager.Settings.ShowPropertiesPanelOnSelection)
+      {
         propertyPanel1.ShowDockable();
+        propertyPanel1.Show();
+      }
     }
 
     private void EditorManager_BeforeEditorAppShutdown(object sender, EventArgs e)
@@ -3301,6 +3387,11 @@ namespace Editor
       // Shutdown the unmanaged code part of the browser panel.
       assetBrowserPanel.DeInit();
       collectionPanel.DeInit();
+
+    _updateStatusBarTimer.Elapsed -= new System.Timers.ElapsedEventHandler(OnLogMsgTimeOut);
+
+      GlobalLog.RemoveLogWriter(_pGlobalLogHandler);
+      _pGlobalLogHandler.SetForm1(null);
     }
 
     private void ApplicationLayout_ActiveLayoutChanged(object sender, LayoutManager.ActiveLayoutChangedArgs e)
@@ -3528,6 +3619,7 @@ namespace Editor
         this.ToolBar_Open.Enabled = true;
         this.ToolBar_Preferences.Enabled = true;
         this.ToolBar_Hotkeys.Enabled = true;
+        this.ToolBar_Panels.Enabled = true;
 
         if (selectionSetComboBox != null)
           selectionSetComboBox.Items.Clear();
@@ -3544,7 +3636,6 @@ namespace Editor
       Toolbar_Undo.Enabled = EditorManager.Actions.UndoCount > 0;
       Toolbar_Redo.Enabled = EditorManager.Actions.RedoCount > 0;
       ToolBar_Export.Enabled = bHasScene && !EditorManager.InPlayingMode;
-      ToolBar_Panels.Enabled = bHasScene;
       ToolBar_Tools.Enabled = bHasScene;
       ToolBar_Resources.Enabled = bHasScene;
       ToolBar_Relight.Enabled = bHasScene;
@@ -3572,6 +3663,14 @@ namespace Editor
       }
     }
 
+    /// <summary>
+    /// This function re-enables all items in a menu recursively. This is necessary, as
+    /// the default vForge items are enabled/disabled in the 'Opening' event and for any
+    /// disabled context sensitive item this would disable its shortcut and to prevent this
+    /// we have to enable the item again.
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
     private void Menu_DropDownClosed(object sender, System.EventArgs e)
     {
       if (sender is ToolStripMenuItem)
@@ -3650,7 +3749,7 @@ namespace Editor
        // open new project
        NewProject();
     }
-    
+
     /// <summary>
     /// Create a new project
     /// </summary>
@@ -3723,6 +3822,7 @@ namespace Editor
       fileDlg.InitialDirectory = EditorManager.Project.ProjectDir;
       fileDlg.Ext = ".scene";
       fileDlg.Filter = new string[] {".scene"};
+      fileDlg.SupportCustomDirectories = false;
       if (fileDlg.ShowDialog() != DialogResult.OK)
         return;
 
@@ -3952,6 +4052,7 @@ namespace Editor
         fileDlg.Caption = "Opening a Scene File";
         fileDlg.Description = "Please select the scene file you want to open and press OK to continue";
         fileDlg.InitialDirectory = EditorManager.Project.ProjectDir;
+        fileDlg.SupportCustomDirectories = false;
 
         fileDlg.Filter = new string[] {".scene"};
         if (fileDlg.ShowDialog() != DialogResult.OK)
@@ -4038,6 +4139,7 @@ namespace Editor
       fileDlg.Caption = "Saving the Scene";
       fileDlg.Description = "Enter the name of the scene and select the directory to save it in. Then press OK to continue.";
       fileDlg.InitialDirectory = EditorManager.Project.ProjectDir;
+      fileDlg.SupportCustomDirectories = false;
       fileDlg.Ext = ".scene";
       fileDlg.Filter = new string[] {".scene"};
       if (fileDlg.ShowDialog() != DialogResult.OK)
@@ -4146,8 +4248,9 @@ namespace Editor
       V3DLayer v3dLayer = bHasScene ? EditorApp.Scene.V3DLayer : null;
 
       ToolBar_SkyEditor.Enabled = bInitialized && v3dLayer != null && v3dLayer.Modifiable;
-      ToolBar_TimeOfDayEditor.Enabled = bInitialized && v3dLayer != null && v3dLayer.Modifiable && v3dLayer.HasRendererNode && v3dLayer.EnableTimeOfDay;
+      ToolBar_TimeOfDayEditor.Enabled = bInitialized && v3dLayer != null && v3dLayer.Modifiable && v3dLayer.HasRendererNode && v3dLayer.FinalEnableTimeOfDay;
       ToolBar_PostProcessor.Enabled = bInitialized && v3dLayer != null && v3dLayer.Modifiable && v3dLayer.HasRendererNode;
+      ToolBar_EditFog.Enabled = bInitialized && v3dLayer != null && v3dLayer.Modifiable && v3dLayer.HasRendererNode;
       ToolBar_SaveScreenshot.Enabled = bInitialized;
       ToolBar_SaveScreenshotAs.Enabled = bInitialized;
 
@@ -4455,6 +4558,18 @@ namespace Editor
         return;
 
       Process.Start(EditorManager.Project.ProjectDir);
+    }
+
+    private void Menu_vGameSolutionCreatorToolStripMenuItem_Click(object sender, EventArgs e)
+    {
+      try
+      {
+        Process.Start(EditorManager.GameSolutionCreatorPath);
+      }
+      catch
+      {
+        EditorManager.ShowMessageBox("Error opening vGameSolutionCreator!", "Error opening extern tool", MessageBoxButtons.OK, MessageBoxIcon.Error);
+      }
     }
 
     #endregion
@@ -4797,12 +4912,6 @@ namespace Editor
 
     #region Menu : Help
 
-    // Help->iHelp System
-    private void Menu_Help_iHelp_Click(object sender, System.EventArgs e)
-    {
-      Menu_Help_iHelp.Checked = !Menu_Help_iHelp.Checked;
-    }
-
     // Help->About this Scene
     private void Menu_File_Scene_Description_Click(object sender, System.EventArgs e)
     {
@@ -4814,6 +4923,16 @@ namespace Editor
     {
       AboutDialog dlg = new AboutDialog();
       dlg.ShowDialog();
+    }
+
+    private void reloadHelpContextFilesToolStripMenuItem_Click(object sender, EventArgs e)
+    {
+      EditorManager.HelpSystem.ReloadAllHelpContexts();
+    }
+
+    private void Menu_Help_VisionDoc_Click(object sender, EventArgs e)
+    {
+      EditorManager.HelpSystem.ShowVisionManualHelpPage(this, null);
     }
 
     #endregion
@@ -4866,7 +4985,7 @@ namespace Editor
         v3dLayer = EditorApp.Scene.V3DLayer;
 
       Menu_Engine_EditSky.Enabled = bInitialized && v3dLayer != null && v3dLayer.Modifiable;
-      Menu_Engine_EditTimeOfDay.Enabled = bInitialized && v3dLayer != null && v3dLayer.Modifiable && v3dLayer.HasRendererNode && v3dLayer.EnableTimeOfDay;
+      Menu_Engine_EditTimeOfDay.Enabled = bInitialized && v3dLayer != null && v3dLayer.Modifiable && v3dLayer.HasRendererNode && v3dLayer.FinalEnableTimeOfDay;
       Menu_Engine_EditPostProcessors.Enabled = bInitialized && v3dLayer != null && v3dLayer.Modifiable && v3dLayer.HasRendererNode;
       Menu_Engine_EditFog.Enabled = bInitialized && v3dLayer != null && v3dLayer.Modifiable;
       Menu_Engine_ProfileSettings.Enabled = bInitialized && v3dLayer != null;
@@ -4939,11 +5058,12 @@ namespace Editor
 
       FogSetup oldSetup = layer.FogSetup.Clone() as FogSetup;
 
-      bool bDeferred = (layer.RendererNodeClass == IRendererNodeManager.RENDERERNODECLASS_DEFERRED);
-      bool bForward  = (layer.RendererNodeClass == IRendererNodeManager.RENDERERNODECLASS_FORWARD);
-      bool bIR = (layer.RendererNodeClass == "VInfraredRendererNode");
+      ShapeComponentType fogCompType = EditorManager.RendererNodeManager.ComponentTypes.FirstOrDefault(t => t.UniqueName.Equals("VGlobalFogPostprocess"));
+      bool bSupportsHeightFog = fogCompType != null && EditorManager.RendererNodeManager.CanAttachPostprocessor(fogCompType.ProbeComponent);
 
-      FogDlg dlg = new FogDlg(layer.FogSetup, bDeferred || bIR, bDeferred || bForward || bIR);
+      bool bSupportsTimeOfDay = EditorManager.RendererNodeManager.SupportsTimeOfDay();
+
+      FogDlg dlg = new FogDlg(layer.FogSetup, bSupportsHeightFog, bSupportsTimeOfDay);
 
       if (dlg.ShowDialog() != DialogResult.OK)
       {
@@ -5760,7 +5880,7 @@ namespace Editor
           break;
       };
       logMessage += " " + msgText;
-      EditorManager.EngineManager.LogPrint(logMessage);
+      Log.Info(logMessage);
 
       if (msgType == RemoteMessageType.VISION_ERROR || msgType == RemoteMessageType.SYSTEM_EXCEPTION)
       {
@@ -5773,35 +5893,6 @@ namespace Editor
       String dispErrMsg = "A fatal error occured on remote machine " + EditorManager.Settings.RemoteMachineNameXbox360 + ":\r\n";
       dispErrMsg += errorMsg;
       EditorManager.ShowMessageBox(this, dispErrMsg);
-    }
-
-    #endregion
-
-    #region Status Bar
-
-    /// <summary>
-    /// Update size and content of the status bar
-    /// </summary>
-    public void UpdateStatusBar()
-    {
-      // update main panel content
-      statusPanel_Main.Text = (EditorManager.EditorMode == EditorManager.Mode.EM_PLAYING_IN_GAME) ? "Press <ESC> to leave the play-the-game mode" : "";      
-
-      // update playmode panel content
-      string playModeMsg = "Stopped";
-      switch (EditorManager.EditorMode)
-      {
-        case EditorManager.Mode.EM_ANIMATING:
-          playModeMsg = "Animating"; break;
-        case EditorManager.Mode.EM_PLAYING_IN_EDITOR:
-          playModeMsg = "Running in Editor"; break;
-        case EditorManager.Mode.EM_PLAYING_IN_GAME:
-          playModeMsg = "Playing the Game"; break;
-      }
-      statusPanel_PlayMode.Text = playModeMsg;
-
-      // update layout panel content
-      statusPanel_Layout.Text = (EditorManager.ApplicationLayout.ActiveLayout != null) ? (EditorManager.ApplicationLayout.ActiveLayout.Name + " Layout") : "";
     }
 
     #endregion
@@ -5958,20 +6049,194 @@ namespace Editor
 
     #endregion Properties
 
-    private void Menu_File_Export_Click(object sender, EventArgs e)
-    {
-
-    }
 
     private void OpenAssetBrowser_Click(object sender, EventArgs e)
     {
       assetBrowserPanel.Show();
     }
+
+    #region Statusbar and Logging
+
+    delegate void InvokeStatusbarUpdateDelegate(bool bClearLog);
+
+    System.Drawing.Font _statusbar_LogMsg;
+    System.Drawing.Font _statusbar_LogMsg_Hover;
+    System.Drawing.Font _statusbar_DefaultText;
+    System.Drawing.Font _statusbar_DefaultText_Hover;
+
+    System.Timers.Timer _updateStatusBarTimer = new System.Timers.Timer(10000);
+
+    int _logLastErrorsAndWarningsCount = 0;
+    bool _currentlyShowingLogMsg = false;
+    bool _userIsHoveringLogMsg = false;
+
+    /// <summary>
+    /// Called by vGlobalLogWriter_Statusbar whenever a new log message has arrived.
+    /// </summary>
+    public void OnLogMsgChanged()
+    {
+      if (IsHandleCreated)
+      {
+        if (InvokeRequired)
+          BeginInvoke(new InvokeStatusbarUpdateDelegate(SetStatusbarLogMessage), false);
+        else
+          SetStatusbarLogMessage(false);
+      }
+    }
+
+    /// <summary>
+    /// Invokes the Status bar Update.
+    /// </summary>
+    /// <param name="source"></param>
+    /// <param name="e"></param>
+    void OnLogMsgTimeOut(object source, System.Timers.ElapsedEventArgs e)
+    {
+      if (IsHandleCreated)
+      {
+        if (InvokeRequired)
+          BeginInvoke(new InvokeStatusbarUpdateDelegate(SetStatusbarLogMessage), true);
+        else
+          SetStatusbarLogMessage(true);
+      }
+    }
+
+    void SetStatusbarLogMsgFont()
+    {
+      if (_currentlyShowingLogMsg)
+      {
+        statusPanel_Main.ForeColor = Color.DarkRed;
+        statusPanel_Main.Font = _userIsHoveringLogMsg ? _statusbar_LogMsg_Hover : _statusbar_LogMsg;
+      }
+      else
+      {
+        statusPanel_Main.ForeColor = Color.Black;
+        statusPanel_Main.Font = _userIsHoveringLogMsg ? _statusbar_DefaultText_Hover : _statusbar_DefaultText;
+      }
+    }
+
+    /// <summary>
+    /// Called when the user clicks the status bar
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
+    void statusPanel_Main_Click(object sender, EventArgs e)
+    {
+      EditorManager.EngineManager.EnsureLogWindowIsUpToDate();
+
+      resourceViewerPanel.Show();
+      resourceViewerPanel.BringToFront();
+      resourceViewerPanel.ShowLogPane();
+    }
+
+    /// <summary>
+    /// The user moved the mouse into the message area of the status bar -> change the mouse cursor to the hand cursor.
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
+    void statusPanel_Main_MouseEnter(object sender, EventArgs e)
+    {
+      _userIsHoveringLogMsg = true;
+      this.Cursor = System.Windows.Forms.Cursors.Hand;
+
+      SetStatusbarLogMsgFont();
+    }
+
+    /// <summary>
+    /// The user moved the mouse out of the message area of the status bar -> change the mouse cursor to the arrow cursor.
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
+    void statusPanel_Main_MouseLeave(object sender, EventArgs e)
+    {
+      _userIsHoveringLogMsg = false;
+      this.Cursor = System.Windows.Forms.Cursors.Arrow;
+
+      SetStatusbarLogMsgFont();
+    }
+
+    void SetStatusbarLogMessage(bool ClearMessages)
+    {
+      EditorManager.EngineManager.EnsureLogWindowIsUpToDate();
+
+      int iErrors = _pGlobalLogHandler._iErrors;
+      int iWarnings = _pGlobalLogHandler._iWarnings;
+
+      int iCurWarningsAndErrors = iErrors + iWarnings;
+
+      if (ClearMessages)
+      {
+        _currentlyShowingLogMsg = false;
+
+        if (iCurWarningsAndErrors == 0)
+          statusPanel_Main.Text = "No Errors or Warnings. Click here to show the Log.";
+        else
+          statusPanel_Main.Text = "There are " + iErrors + " Errors and " + iWarnings + " Warnings. Click here to show the Log.";
+      }
+      else
+      {
+        if (iCurWarningsAndErrors == 0)
+        {
+          statusPanel_Main.Text = "No Errors or Warnings. Click here to show the Log.";
+          _currentlyShowingLogMsg = false;
+        }
+        else if (_logLastErrorsAndWarningsCount != iCurWarningsAndErrors)
+        {
+          _logLastErrorsAndWarningsCount = iCurWarningsAndErrors;
+
+          String sMsgPrefix = _pGlobalLogHandler._bLastMsgWasError ? "Error: " : "Warning: ";
+          String sLastMsg = _pGlobalLogHandler._LastMessage;
+          sLastMsg.Replace('\n', ' ');
+
+          statusPanel_Main.Text = sMsgPrefix + sLastMsg;
+          _currentlyShowingLogMsg = true;
+
+          _updateStatusBarTimer.Start();
+        }
+      }
+
+      SetStatusbarLogMsgFont();
+    }
+
+    /// <summary>
+    /// Update size and content of the status bar
+    /// </summary>
+    public void UpdateStatusBar()
+    {
+      SetStatusbarLogMessage(false);
+
+      // update playmode panel content
+      string playModeMsg = "Stopped";
+      switch (EditorManager.EditorMode)
+      {
+        case EditorManager.Mode.EM_ANIMATING:
+          playModeMsg = "Animating"; break;
+        case EditorManager.Mode.EM_PLAYING_IN_EDITOR:
+          playModeMsg = "Running in Editor"; break;
+        case EditorManager.Mode.EM_PLAYING_IN_GAME:
+          playModeMsg = "Playing the Game"; break;
+      }
+      statusPanel_PlayMode.Text = playModeMsg;
+
+      // update layout panel content
+      statusPanel_Layout.Text = (EditorManager.ApplicationLayout.ActiveLayout != null) ? (EditorManager.ApplicationLayout.ActiveLayout.Name + " Layout") : "";
+    }
+
+    private void LogMessagesCleared()
+    {
+      _pGlobalLogHandler._iErrors = 0;
+      _pGlobalLogHandler._iWarnings = 0;
+      _pGlobalLogHandler._iMessages = 0;
+      _pGlobalLogHandler._LastMessage = "";
+
+      BeginInvoke(new InvokeStatusbarUpdateDelegate(SetStatusbarLogMessage), true);
+    }
+
+    #endregion
   }
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

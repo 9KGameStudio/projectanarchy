@@ -32,7 +32,7 @@ V_IMPLEMENT_SERIAL(vHavokRigidBody,IVObjectComponent,0,&g_vHavokModule);
 
 
 vHavokRigidBody::vHavokRigidBody(int iComponentFlags)
-  : IVObjectComponent(0, iComponentFlags)
+  : IVisPhysicsObject_cl(0, iComponentFlags)
   , m_pModule(NULL)
   , m_bAddedToWorld(false)
   , m_szShapeCacheId(NULL)
@@ -114,7 +114,7 @@ void vHavokRigidBody::CommonInit()
   // Do not initialize the component in case our module is not active
   if (!m_pModule)
   {
-    Vision::Error.Warning("Failed to initialize vHavokRigidBody since a non Havok physics module is currently active");
+    hkvLog::Warning("Failed to initialize vHavokRigidBody since a non Havok physics module is currently active");
     return;
   }
 
@@ -158,14 +158,14 @@ void vHavokRigidBody::CommonInit()
 		  if (hkMath::countBitsSet(largeEnough) < 2)
         {
           const char *szMeshFilename = (pMesh->GetFilename()!=NULL) ? pMesh->GetFilename() : "Unnamed";
-          Vision::Error.Warning("Initializing vHavokRigidBody with a mesh [%s] with undersized extents (%.4f, %4f, %.4f), when using a shape type Mesh or Convex", 
+          hkvLog::Warning("Initializing vHavokRigidBody with a mesh [%s] with undersized extents (%.4f, %4f, %.4f), when using a shape type Mesh or Convex", 
                                 szMeshFilename, bbox_extent(0), bbox_extent(1), bbox_extent(2));
           return;
         }
       }
       else
       {
-        Vision::Error.Warning("Initializing vHavokRigidBody with a NULL mesh, when using a shape type Mesh or Convex");
+        hkvLog::Warning("Initializing vHavokRigidBody with a NULL mesh, when using a shape type Mesh or Convex");
         return;
       }
     }
@@ -353,7 +353,7 @@ void vHavokRigidBody::CommonInit()
         if (!InitRbFromFile(Havok_FileResourceName.AsChar(), Havok_TakeRbDataFromFile, fScale, &initTempl))
         {
           // Use box collision shape instead
-          Vision::Error.Warning("Havok collision file not found. Using box shape instead.");
+          hkvLog::Warning("Havok collision file not found. Using box shape instead.");
 
           Shape_Type = ShapeType_BOX;
           CommonInit();
@@ -433,9 +433,9 @@ void vHavokRigidBody::InitBoxRb(const hkvVec3& vBoxSize, const hkvVec3& vScale, 
   // Compute the box geometry for Havok
   HkBoxGeometry boxGeo;
 
-  hkVector4 vScaleFinal; vHavokConversionUtils::VisVecToPhysVecLocal(vScale, vScaleFinal);
+  hkVector4 vScaleFinal; vHavokConversionUtils::VisVecToPhysVec_noscale(vScale, vScaleFinal);
 
-  hkVector4 vScaledBoxSize; vHavokConversionUtils::VisVecToPhysVec_noscale(vBoxSize, vScaledBoxSize);
+  hkVector4 vScaledBoxSize; vHavokConversionUtils::VisVecToPhysVecLocal(vBoxSize, vScaledBoxSize);
   vScaledBoxSize.mul(vScaleFinal);
   
   boxGeo.m_HalfExtents.setMul(vScaledBoxSize, hkSimdReal_Half);
@@ -490,7 +490,7 @@ void vHavokRigidBody::InitBoxRb(HkBoxGeometry const& geometry, vHavokRigidBody::
   {
     hkVector4 epsilon; epsilon.setAll(HKVMATH_LARGE_EPSILON);
     geometry0.m_HalfExtents.setMax(geometry0.m_HalfExtents, epsilon);
-    Vision::Error.Warning("vHavokRigidBody: Box-size below minimum tolerance, clamped to %.4f", HKVMATH_LARGE_EPSILON);
+    hkvLog::Info("Warning: vHavokRigidBody: Box-size below minimum tolerance, clamped to %.4f", HKVMATH_LARGE_EPSILON);
   }
 
    // Create the box shape
@@ -511,7 +511,7 @@ void vHavokRigidBody::InitBoxRb(HkBoxGeometry const& geometry, vHavokRigidBody::
       if(fAdjustedThickness >= minHalfExtent)
       {
         fAdjustedThickness = float(minHalfExtent) * 0.99f;
-        Vision::Error.Warning("vHavokRigidBody: Surface thickness %f is greater than or equal to smallest box half extent %f, clamped to %f.", Havok_SurfaceThickness, float(minHalfExtent), fAdjustedThickness);
+        hkvLog::Info("Warning: vHavokRigidBody: Surface thickness %f is greater than or equal to smallest box half extent %f, clamped to %f.", Havok_SurfaceThickness, float(minHalfExtent), fAdjustedThickness);
       }
       hkpInertiaTensorComputer::computeBoxSurfaceMassProperties(
         geometry0.m_HalfExtents, Havok_Mass, fAdjustedThickness,
@@ -578,7 +578,7 @@ void vHavokRigidBody::InitSphereRb(HkSphereGeometry const& geometry, vHavokRigid
   if (geometry0.m_Radius < HKVMATH_LARGE_EPSILON)
   {
     geometry0.m_Radius = HKVMATH_LARGE_EPSILON;
-    Vision::Error.Warning("vHavokRigidBody: Sphere-radius below minimum tolerance, clamped to %.4f", HKVMATH_LARGE_EPSILON);
+    hkvLog::Info("Warning: vHavokRigidBody: Sphere-radius below minimum tolerance, clamped to %.4f", HKVMATH_LARGE_EPSILON);
   }
 
   // Create the sphere shape
@@ -597,7 +597,7 @@ void vHavokRigidBody::InitSphereRb(HkSphereGeometry const& geometry, vHavokRigid
       if(fAdjustedThickness >= geometry0.m_Radius)
       {
         fAdjustedThickness = float(geometry0.m_Radius) * 0.99f;
-        Vision::Error.Warning("vHavokRigidBody: Surface thickness %f is greater than or equal to radius %f, clamped to %f.", Havok_SurfaceThickness, float(geometry0.m_Radius), fAdjustedThickness);
+        hkvLog::Info("Warning: vHavokRigidBody: Surface thickness %f is greater than or equal to radius %f, clamped to %f.", Havok_SurfaceThickness, float(geometry0.m_Radius), fAdjustedThickness);
       }
       hkpInertiaTensorComputer::computeSphereSurfaceMassProperties(
         geometry0.m_Radius, Havok_Mass, fAdjustedThickness,
@@ -688,12 +688,12 @@ void vHavokRigidBody::InitCapsuleRb(HkCapsuleGeometry const& geometry, vHavokRig
   if (vd.lengthSquared<3>() < hkSimdReal::fromFloat(HKVMATH_LARGE_EPSILON*HKVMATH_LARGE_EPSILON))
   {
 	  geometry0.m_StartAxis.setAddMul(geometry0.m_EndAxis, hkVector4::getConstant<HK_QUADREAL_0010>(), hkSimdReal::fromFloat(HKVMATH_LARGE_EPSILON));
-    Vision::Error.Warning("vHavokRigidBody: Capsule-height below tolerance, clamped to %.4f", HKVMATH_LARGE_EPSILON);
+    hkvLog::Info("Warning: vHavokRigidBody: Capsule-height below tolerance, clamped to %.4f", HKVMATH_LARGE_EPSILON);
   } 
   if (geometry0.m_Radius < HKVMATH_LARGE_EPSILON)
   {
     geometry0.m_Radius = HKVMATH_LARGE_EPSILON;
-    Vision::Error.Warning("vHavokRigidBody: Capsule-radius below tolerance, clamped to %.4f", HKVMATH_LARGE_EPSILON);
+    hkvLog::Info("Warning: vHavokRigidBody: Capsule-radius below tolerance, clamped to %.4f", HKVMATH_LARGE_EPSILON);
   }
 
   // Create the capsule shape
@@ -708,7 +708,7 @@ void vHavokRigidBody::InitCapsuleRb(HkCapsuleGeometry const& geometry, vHavokRig
     break;
 
   case InertiaTensorComputeMode_SURFACE:
-    Vision::Error.Warning("Surface inertia tensor computation is not supported for capsule shapes!");
+    hkvLog::Info("Warning: Surface inertia tensor computation is not supported for capsule shapes!");
     Havok_InertiaTensorComputeMode = InertiaTensorComputeMode_NONE;
     break;
 
@@ -788,12 +788,12 @@ void vHavokRigidBody::InitCylinderRb(HkCylinderGeometry const& geometry, vHavokR
   if (vd.lengthSquared<3>() < hkSimdReal::fromFloat(HKVMATH_LARGE_EPSILON*HKVMATH_LARGE_EPSILON))
   {
 	  geometry0.m_StartAxis.setAddMul(geometry0.m_EndAxis, hkVector4::getConstant<HK_QUADREAL_0010>(), hkSimdReal::fromFloat(HKVMATH_LARGE_EPSILON));
-    Vision::Error.Warning("vHavokRigidBody: Cylinder-height below tolerance, clamped to %.4f", HKVMATH_LARGE_EPSILON);
+    hkvLog::Info("Warning: vHavokRigidBody: Cylinder-height below tolerance, clamped to %.4f", HKVMATH_LARGE_EPSILON);
   }
   if (geometry0.m_Radius < HKVMATH_LARGE_EPSILON)
   {
     geometry0.m_Radius = HKVMATH_LARGE_EPSILON;
-    Vision::Error.Warning("vHavokRigidBody: Cylinder-radius below tolerance, clamped to %.4f", HKVMATH_LARGE_EPSILON);
+    hkvLog::Info("Warning: vHavokRigidBody: Cylinder-radius below tolerance, clamped to %.4f", HKVMATH_LARGE_EPSILON);
   }
 
 
@@ -810,7 +810,7 @@ void vHavokRigidBody::InitCylinderRb(HkCylinderGeometry const& geometry, vHavokR
     break;
 
   case InertiaTensorComputeMode_SURFACE:
-    Vision::Error.Warning("Surface inertia tensor computation is not supported for cylinder shapes!");
+    hkvLog::Info("Warning: Surface inertia tensor computation is not supported for cylinder shapes!");
     Havok_InertiaTensorComputeMode = InertiaTensorComputeMode_NONE;
     break;
 
@@ -853,7 +853,7 @@ void vHavokRigidBody::InitConvexRb(VDynamicMesh *pMesh, const hkvVec3& vScale, v
     break;
 
   case InertiaTensorComputeMode_SURFACE:
-    Vision::Error.Warning("Surface inertia tensor computation is not supported for convex shapes!");
+    hkvLog::Info("Warning: Surface inertia tensor computation is not supported for convex shapes!");
     Havok_InertiaTensorComputeMode = InertiaTensorComputeMode_NONE;
     break;
 
@@ -893,7 +893,7 @@ void vHavokRigidBody::InitMeshRb(VDynamicMesh* pMesh, const hkvVec3& vScale, vHa
     break;
 
   case InertiaTensorComputeMode_SURFACE:
-    Vision::Error.Warning("Surface inertia tensor computation is not supported for mesh shapes!");
+    hkvLog::Info("Warning: Surface inertia tensor computation is not supported for mesh shapes!");
     Havok_InertiaTensorComputeMode = InertiaTensorComputeMode_NONE;
     break;
 
@@ -945,7 +945,7 @@ bool vHavokRigidBody::InitRbFromFile(const char* filename, BOOL takeRbDataFromFi
     hkRefPtr<vHavokStreamReader> spReader = hkRefNew<vHavokStreamReader>(new vHavokStreamReader(filename));
     if (!spReader->isOk())
     {
-      Vision::Error.Warning("Could not open file: [%s]", filename);
+      hkvLog::Warning("Could not open file: [%s]", filename);
       return false;
     }
 
@@ -958,7 +958,7 @@ bool vHavokRigidBody::InitRbFromFile(const char* filename, BOOL takeRbDataFromFi
 
     if (!root)
     {
-      Vision::Error.Warning("Could not load Havok data from file: [%s]: %s", filename, errRes.defaultMessage.cString());
+      hkvLog::Warning("Could not load Havok data from file: [%s]: %s", filename, errRes.defaultMessage.cString());
       return false;
     }
 
@@ -978,7 +978,7 @@ bool vHavokRigidBody::InitRbFromFile(const char* filename, BOOL takeRbDataFromFi
 
     if (!spRbData)
     {
-      Vision::Error.Warning("Could not find a usable Havok rigid body in file: [%s]", filename);
+      hkvLog::Warning("Could not find a usable Havok rigid body in file: [%s]", filename);
       return false;
     }
 
@@ -1040,7 +1040,7 @@ bool vHavokRigidBody::InitRbFromFile(const char* filename, BOOL takeRbDataFromFi
       break;
 
     case InertiaTensorComputeMode_SURFACE:
-      Vision::Error.Warning("Surface inertia tensor computation is not supported for file-based shapes!");
+      hkvLog::Info("Warning: Surface inertia tensor computation is not supported for file-based shapes!");
       Havok_InertiaTensorComputeMode = InertiaTensorComputeMode_NONE;
       break;
 
@@ -1494,6 +1494,27 @@ void vHavokRigidBody::ApplyForce(const hkvVec3& value, float deltaT)
   m_pModule->UnmarkForWrite();
 }
 
+void vHavokRigidBody::ApplyForce(const hkvVec3& value, const hkvVec3& p, float deltaT)
+{
+  VVERIFY_OR_RET(m_spRigidBody);
+
+  hkVector4 force; vHavokConversionUtils::VisVecToPhysVecLocal(value,force);
+  hkVector4 point; vHavokConversionUtils::VisVecToPhysVecLocal(p,point);
+  m_pModule->MarkForWrite();
+  m_spRigidBody->applyForce(deltaT, force, point);
+  m_pModule->UnmarkForWrite();
+}
+
+void vHavokRigidBody::ApplyTorque(const hkvVec3& value, float deltaT)
+{
+  VVERIFY_OR_RET(m_spRigidBody);
+
+  hkVector4 torque; vHavokConversionUtils::VisVecToPhysVecLocal(value,torque);
+  m_pModule->MarkForWrite();
+  m_spRigidBody->applyTorque(deltaT, torque);
+  m_pModule->UnmarkForWrite();
+}
+
 void vHavokRigidBody::ApplyLinearImpulse(const hkvVec3& value)
 {
   VVERIFY_OR_RET(m_spRigidBody);
@@ -1501,6 +1522,27 @@ void vHavokRigidBody::ApplyLinearImpulse(const hkvVec3& value)
   hkVector4 impulse; vHavokConversionUtils::VisVecToPhysVecLocal(value,impulse);
   m_pModule->MarkForWrite();
   m_spRigidBody->applyLinearImpulse(impulse);
+  m_pModule->UnmarkForWrite();
+}
+
+void vHavokRigidBody::ApplyLinearImpulse(const hkvVec3& value, const hkvVec3& p)
+{
+  VVERIFY_OR_RET(m_spRigidBody);
+
+  hkVector4 impulse; vHavokConversionUtils::VisVecToPhysVecLocal(value,impulse);
+  hkVector4 point; vHavokConversionUtils::VisVecToPhysVecLocal(p,point);
+  m_pModule->MarkForWrite();
+  m_spRigidBody->applyPointImpulse(impulse, point);
+  m_pModule->UnmarkForWrite();
+}
+
+void vHavokRigidBody::ApplyAngularImpulse(const hkvVec3& value)
+{
+  VVERIFY_OR_RET(m_spRigidBody);
+
+  hkVector4 impulse; vHavokConversionUtils::VisVecToPhysVecLocal(value,impulse);
+  m_pModule->MarkForWrite();
+  m_spRigidBody->applyAngularImpulse(impulse);
   m_pModule->UnmarkForWrite();
 }
 
@@ -1512,7 +1554,7 @@ void vHavokRigidBody::SetMass(float fMass)
   if (fMass < HKVMATH_HUGE_EPSILON)
   {
     fMass = HKVMATH_HUGE_EPSILON;
-    Vision::Error.Warning("vHavokRigidBody: Mass below minimum tolerance, clamped to %.4f", HKVMATH_HUGE_EPSILON);
+    hkvLog::Info("Warning: vHavokRigidBody: Mass below minimum tolerance, clamped to %.4f", HKVMATH_HUGE_EPSILON);
   }
 
   m_pModule->MarkForWrite();
@@ -1778,7 +1820,7 @@ void vHavokRigidBody::SetOwner(VisTypedEngineObject_cl *pOwner)
   // Do not initialize the component in case our module is not active
   if (!m_pModule)
   {
-    Vision::Error.Warning("Failed to initialize vHavokRigidBody since a non Havok physics module is currently active");
+    hkvLog::Warning("Failed to initialize vHavokRigidBody since a non Havok physics module is currently active");
     return;
   }
 
@@ -2262,7 +2304,7 @@ START_VAR_TABLE(vHavokRigidBody,IVObjectComponent,"Havok Rigid Body Component",V
 END_VAR_TABLE
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

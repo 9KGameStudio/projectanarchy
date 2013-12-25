@@ -24,12 +24,12 @@
 
 #include <Vision/Runtime/Base/VBase.hpp>
 #include <Vision/Runtime/Engine/System/Vision.hpp>
-#include <Vision/Runtime/Common/VisSampleApp.hpp>
+#include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Scene/VSceneLoader.hpp>
 
 extern VModule g_VisionEngineModule;
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

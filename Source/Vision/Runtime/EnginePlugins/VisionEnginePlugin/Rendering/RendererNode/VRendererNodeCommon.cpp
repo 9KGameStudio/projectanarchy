@@ -366,7 +366,7 @@ void VRendererNodeCommon::InitializePostProcessors()
           }
           else
           {
-            Vision::Error.Warning("Could not attach a depth-stencil target to the context of the \"%s\" post processor - depth testing will not work correctly.", pPostProcessor->GetTypeId()->m_lpszClassName);
+            hkvLog::Warning("Could not attach a depth-stencil target to the context of the \"%s\" post processor - depth testing will not work correctly.", pPostProcessor->GetTypeId()->m_lpszClassName);
           }
         }
       }
@@ -722,16 +722,16 @@ void VRendererNodeCommon::RenderOverlays(bool b2dObjects, bool b3dObjects)
     // render all other screen masks on top
     Vision::RenderLoopHelper.RenderScreenMasks();
 
+    // render 2d lines over the screen masks
+    Vision::Game.RenderDebugGeometry(VDGRM_2D);
+
+    Vision::Message.HandleMessages();
+
     // Trigger "VRH_GUI" render hook callback
     {
       VisRenderHookDataObject_cl data(&Vision::Callbacks.OnRenderHook, VRH_GUI);
       Vision::Callbacks.OnRenderHook.TriggerCallbacks(&data);
     }
-
-    // render 2d lines over the screen masks
-    Vision::Game.RenderDebugGeometry(VDGRM_2D);
-
-    Vision::Message.HandleMessages();
 
     if(Vision::GetConsoleManager()->IsVisible())
       Vision::GetConsoleManager()->Render();
@@ -741,7 +741,13 @@ void VRendererNodeCommon::RenderOverlays(bool b2dObjects, bool b3dObjects)
   if (b3dObjects)
   {
     DrawMeshBufferObjects(VRH_AFTER_RENDERING);
-    //No particle rendering here, because you shouldn't be rendering particles in VRH_AFTER_RENDERING
+  }
+
+  // Trigger the render hook only when drawing 2d objects for now.
+  // This fixes the issue that the render hook is triggered twice when upscaling is active.
+  if (b2dObjects)
+  {
+    // No particle rendering here, because you shouldn't be rendering particles in VRH_AFTER_RENDERING
     VisRenderHookDataObject_cl data(&Vision::Callbacks.OnRenderHook, VRH_AFTER_RENDERING);
     Vision::Callbacks.OnRenderHook.TriggerCallbacks(&data);
   }
@@ -824,7 +830,7 @@ bool VRendererNodeCommon::ResolveColorBufferManually()
 {
   if (m_pColorBufferResolver == NULL)
   {
-    Vision::Error.Warning("RendererNode: Trying to resolve color buffer without calling SetResolvesColorBufferManually first!");
+    hkvLog::Warning("RendererNode: Trying to resolve color buffer without calling SetResolvesColorBufferManually first!");
     return false;
   }
 
@@ -878,7 +884,7 @@ VTextureObject* VRendererNodeCommon::GetResolvedColorBuffer()
 {
   if (m_pColorBufferResolver == NULL)
   {
-    Vision::Error.Warning("RendererNode: Trying to request color buffer without calling SetRequiresResolvedColorBuffer first!");
+    hkvLog::Warning("RendererNode: Trying to request color buffer without calling SetRequiresResolvedColorBuffer first!");
     return NULL;
   }
   return m_pColorBufferResolver->GetResolvedBuffer();
@@ -993,7 +999,7 @@ START_VAR_TABLE(VRendererNodeCommon, IVRendererNode, "VRendererNodeCommon", 0, "
   END_VAR_TABLE
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

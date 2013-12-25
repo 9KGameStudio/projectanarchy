@@ -12,7 +12,6 @@
 #define PARTICLEEMITTER_HPP_INCLUDED
 
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Particles/ParticleModule.hpp>
-#include <Vision/Runtime/Engine/SceneElements/VisApiPath.hpp>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Particles/StochasticalParam.hpp>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Particles/Curve.hpp>
 
@@ -41,7 +40,7 @@ enum VIS_EMITTER_TYPE_e
   EMITTER_TYPE_SPHERE   = 1,  ///< Sphere emitter
   EMITTER_TYPE_BOX      = 2,  ///< Box emitter
   EMITTER_TYPE_PLANE    = 3,  ///< Plane emitter
-  EMITTER_TYPE_PATH     = 4,  ///< Path emitter
+  //EMITTER_TYPE_PATH     = 4,  ///< Has never been used
   EMITTER_TYPE_RAY      = 5,  ///< Ray emitter
   EMITTER_TYPE_MESH     = 6,  ///< Entity mesh
 };
@@ -93,13 +92,6 @@ public:
   ///\brief
   ///  Changes type to a ray emitter with specified length
   inline void SetType_Ray(float fRayLen);
-  ///\brief
-  ///  Changes type to a path emitter attached to specified path
-  inline void SetType_Path(VisPath_cl *pPath,float fRadius=0.f);
-  ///\brief
-  ///  Changes type to a path emitter that looks up path by path key
-  inline void SetType_Path(const char *szPathKey,float fRadius=0.f);
-
   ///\brief
   ///  Associate a mesh emitter with an entity instance. The emitter will spawn particles from random vertices of the animated trace mesh
   inline void SetMeshEmitterEntity(VisBaseEntity_cl *pEntity);
@@ -202,7 +194,6 @@ public:
   //emitter type properties
   VIS_EMITTER_TYPE_e m_eType; ///< Emitter type
   hkvVec4 m_vParam;           ///< Depends on actual type
-  VisPathPtr m_spPath;        ///< Path pointer if path type is defined
 
   // other emitter properties
   float m_fConeAngle, m_fMinConeAngle;        ///< cone angle to spawn particles in group direction. <0 for all directions
@@ -249,7 +240,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

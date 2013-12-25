@@ -92,7 +92,7 @@ public:
   HKV_FORCE_INLINE void setFromEulerAngles (float fRollDeg, float fPitchDeg, float fYawDeg);
 
   /// \brief Returns euler angles which represent the same rotation as this quaternion.
-  HKV_FORCE_INLINE void getAsEulerAngles (float& out_fRollDeg, float& out_fPitchDeg, float& out_fYawDeg);
+  HKV_FORCE_INLINE void getAsEulerAngles (float& out_fRollDeg, float& out_fPitchDeg, float& out_fYawDeg) const;
 
   /// \brief Returns a 3x3 matrix that represents the same rotation as this quaternion.
   HKV_FORCE_INLINE const hkvMat3 getAsMat3 () const;
@@ -208,11 +208,7 @@ public:
   //  float data[4];
   //};
 
-private:
-  void operator& ();
-
   // ********************* OLD INTERFACE **********************
-public:
 
   /// \brief DEPRECATED: Use hkvQuat::flipSigns instead.
   HKVMATH_DEPRECATED_STAGE2 HKV_FORCE_INLINE void Negate () { flipSigns (); }
@@ -359,7 +355,7 @@ HKV_FORCE_INLINE bool operator!= (const hkvQuat& lhs, const hkvQuat& rhs);
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

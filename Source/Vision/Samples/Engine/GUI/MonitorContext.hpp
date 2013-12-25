@@ -9,8 +9,11 @@
 #ifndef VMONITORCONTEXT_HPP_INCLUDED
 #define VMONITORCONTEXT_HPP_INCLUDED
 
-enum GUI_DEMO_CONTROL {
-  GUI_DEMO_ACTION_1 = VISION_INPUT_CONTROL_LAST_ELEMENT+1,
+#include <Vision/Runtime/Framework/VisionApp/VAppBase.hpp>
+
+enum GUI_DEMO_CONTROL 
+{
+  GUI_DEMO_ACTION_1 = VAPP_INPUT_CONTROL_LAST_ELEMENT+1,
   GUI_DEMO_ACTION_2,
   GUI_DEMO_ACTION_3,
   GUI_DEMO_EXIT
@@ -84,7 +87,7 @@ private:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

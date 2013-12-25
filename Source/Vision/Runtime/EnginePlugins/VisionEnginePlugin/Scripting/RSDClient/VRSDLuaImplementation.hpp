@@ -67,12 +67,34 @@
         return (pIn && pIn[0] == '@') ? pIn + 1 : pIn;
       }
 
+      hkvResult LookupPath(VStringTokenizerInPlace& Tokenizer, const char** pLastField = NULL);
+
+      /// \brief sets a boolean to true for the current scope
+      struct ScopedBooleanToTrue
+      {
+      private:
+        bool& m_ref;
+
+      public:
+        ScopedBooleanToTrue(bool& r)
+          : m_ref(r)
+        {
+          m_ref = true;
+        }
+
+        ~ScopedBooleanToTrue()
+        {
+          m_ref = false;
+        }
+      };
+
     protected:
 
       virtual void OnHandleCallback(IVisCallbackDataObject_cl *pData);
 
       lua_State* m_pLuaState;
       lua_Debug* m_pActivationRecord;
+      bool m_bDebuggerRetrievingValues;
 
   };
 
@@ -81,7 +103,7 @@
 #endif //_VISION_DOC
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

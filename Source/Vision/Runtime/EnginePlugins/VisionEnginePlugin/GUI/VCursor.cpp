@@ -31,7 +31,7 @@ BOOL VCursor::Reload()
   if (VFileHelper::HasExtension(szFilename,"XML"))
   {
     TiXmlDocument doc;
-    if (!doc.LoadFile(szFilename,Vision::File.GetManager()))
+    if (!doc.LoadFile(szFilename))
       return FALSE;
     return Build(doc.RootElement()->FirstChildElement("CURSOR"),szPath,false);
   }
@@ -124,6 +124,10 @@ void VCursor::OnPaint(VGraphicsInfo &Graphics, const VItemRenderInfo &parentStat
 {
   V_LOCK_RESOURCE(this);
   VASSERT(Graphics.m_pCurrentUser!=NULL);
+
+  bool bWireframe = Vision::Renderer.GetWireframeMode();
+  Vision::Renderer.SetWireframeMode(false);
+
   const VCursorProperties_t &cursor(m_UserProperties[Graphics.m_pCurrentUser->m_iID]); // user specific cursor properties
   if (!cursor.m_bVisible)
     return;
@@ -136,6 +140,8 @@ void VCursor::OnPaint(VGraphicsInfo &Graphics, const VItemRenderInfo &parentStat
 
   Graphics.Renderer.DrawTexturedQuad(vPos1,vPos2, pTex,
     cursor.texCoord.m_vMin,cursor.texCoord.m_vMax, parentState.iFadeColor*cursor.iColor,state);
+
+  Vision::Renderer.SetWireframeMode(bWireframe);
 }
 
 
@@ -191,7 +197,7 @@ IVSerializationProxy *VCursor::CreateProxy()
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -104,7 +104,7 @@ public:
 };
 
 /// \brief
-///   Implementation of a hash table mapping from VString to T*
+///  Deprecated. Use a VMap<VString, T*> instead.
 template<typename T>
 class VStrMap : public VStrMapBase
 {
@@ -120,7 +120,7 @@ public:
   ///
   /// \param nBlockSize
   ///   Initial size of the internal lookup table
-  VStrMap(int nBlockSize = 10) : VStrMapBase(nBlockSize)
+  HKV_DEPRECATED_2013_3 VStrMap(int nBlockSize = 10) : VStrMapBase(nBlockSize)
 #ifdef HK_DEBUG
    ,m_pTypedHashTable( *((VPair<T>***)&m_pHashTable) )
 #endif
@@ -186,7 +186,7 @@ typedef VStrMap<void> VMapStrToPtr;
 #endif // MU_VISION_VMAPSTRTOPTR_HPP
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

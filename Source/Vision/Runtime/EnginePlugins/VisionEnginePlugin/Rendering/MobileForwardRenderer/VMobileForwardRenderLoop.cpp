@@ -658,7 +658,8 @@ VCompiledTechnique *VMobileForwardRenderLoop::GetLightShader(VisLightSource_cl *
   VASSERT(pLight!=NULL && pSurface!=NULL);
 
   VCompiledTechnique *pTech = NULL;
-  bool bDynamicLighting = pLight->IsDynamic()==TRUE;
+  const bool bDynamicLighting = pLight->IsDynamic()==TRUE;
+  const bool bSubtractiveShadow = !bDynamicLighting && pShadowMapComponent;  
   VisLightSourceType_e lightType = pLight->GetType(); 
   VASSERT(lightType==VIS_LIGHT_POINT || lightType==VIS_LIGHT_SPOTLIGHT || lightType==VIS_LIGHT_DIRECTED);
 
@@ -757,6 +758,13 @@ VCompiledTechnique *VMobileForwardRenderLoop::GetLightShader(VisLightSource_cl *
       lightDir.normalize();
     }
   }
+  
+  // For subtractive shadows lightDir is required to disable shadows on surfaces that are back-facing to light.
+  if(bSubtractiveShadow && lightType==VIS_LIGHT_DIRECTED)
+  {
+    lightDir = pLight->GetDirection();
+    lightDir.normalize();
+  }
 
   // Attenuation texture not used by MobileShaders.ShaderLib, but may be used
   // by manually assigned shader libs.
@@ -771,7 +779,7 @@ VCompiledTechnique *VMobileForwardRenderLoop::GetLightShader(VisLightSource_cl *
     VASSERT_MSG(pPass != NULL, "Dynamic light shaders must be of class VDynamicLightShaderBase");   
     if (!pPass)
     { 
-      Vision::Error.Warning("Dynamic light shader is not of class VDynamicLightShaderBase; dynamic light will have no effect.");
+      hkvLog::Warning("Dynamic light shader is not of class VDynamicLightShaderBase; dynamic light will have no effect.");
       continue;
     }
    
@@ -812,6 +820,14 @@ VCompiledTechnique *VMobileForwardRenderLoop::GetLightShader(VisLightSource_cl *
       }
     }
 
+    // For subtractive shadows lightPos/ lightDir is required to disable shadows on surfaces that are back-facing to light.
+    if (bSubtractiveShadow)
+    {
+      pPass->SetPosition(pLight->GetPosition());
+      if (lightType == VIS_LIGHT_DIRECTED)
+        pPass->SetDirection(lightDir);
+    }
+
 #ifdef SUPPORTS_SHADOW_MAPS
     if (pShadowMapComponent)
     {
@@ -828,7 +844,7 @@ VCompiledTechnique *VMobileForwardRenderLoop::GetLightShader(VisLightSource_cl *
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

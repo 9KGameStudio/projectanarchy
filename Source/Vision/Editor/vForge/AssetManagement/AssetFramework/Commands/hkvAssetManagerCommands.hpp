@@ -49,15 +49,17 @@ struct hkvAssetCommandAddDataDirectory
     //TODO:TOC HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE, Options);
     //TODO:TOC HK_DECLARE_REFLECTION();
     Options() {}
-    Options(const char* dataDirectory, const char* libraryName, bool create, bool isProjectRoot)
-      : m_create(create), m_dataDirectory(dataDirectory), m_libraryName(libraryName), m_isProjectRoot(isProjectRoot) {}
+    Options(const char* nativePath, const char* libraryName, bool create)
+    : m_create(create), m_nativePath(nativePath), m_libraryName(libraryName)
+    {
+    }
 
-    hkStringPtr m_dataDirectory;
+    hkStringPtr m_nativePath;
     hkStringPtr m_libraryName;
     hkStringPtr m_localFileHint;
     hkStringPtr m_inputLibraryFile;
     hkBool m_create;
-    hkBool m_isProjectRoot;
+    hkvAssetLibrary::RuntimeConfig m_runtimeConfig;
   };
 
   struct Results
@@ -167,7 +169,7 @@ struct hkvAssetCommandGetTagsInfo
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

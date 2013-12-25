@@ -120,7 +120,7 @@ public:
       bool bPossible = pPostProcessor->CanAttachToObject(self, sError) == TRUE;
       if(!bPossible)
       {
-        Vision::Error.Warning("%s", sError.AsChar());
+        hkvLog::Warning("%s", sError.AsChar());
         pPostProcessor->DisposeObject();
         V_SAFE_DELETE(pPostProcessor);
       }
@@ -258,7 +258,7 @@ public:
 #endif // __VSCRIPTRENDERER_WRAPPER_HPP
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

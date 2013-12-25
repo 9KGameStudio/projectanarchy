@@ -247,6 +247,7 @@ public:
   ///   CollisionLayerNames         in      Vision/Editor/vForge/EditorPlugins/VisionPlugin/VisionEditorPlugin/Shapes/StaticMeshShape.cs
   ///   cmbPhyGroup                 in      ContentTools/Max/MaxSceneExport/Scripts/HavokVision/Vision_TaggingDialog.ms
   ///   colLayers                   in      ContentTools/Maya/MayaSceneExport/Scripts/Vision/editVisionNodeProperties.mel
+  ///   defines                     in      Vision/Runtime/EnginePlugins/Havok/HavokPhysicsEnginePlugin/Lua/HavokPhysicsLuaModule.i
   ///
   enum CollisionGroups
   {
@@ -716,6 +717,13 @@ public:
   ///
   VHAVOK_IMPEXP void WaitForSimulationToComplete();
 
+  /// \brief
+  ///   Returns whether the physics simulation step is performed by multiple threads.
+  inline bool IsMultithreaded() const
+  {
+    return (m_pPhysicsWorld->m_simulationType == hkpWorldCinfo::SIMULATION_TYPE_MULTITHREADED) && (m_pJobThreadPool != HK_NULL);
+  }
+
   ///
   /// @}
   ///
@@ -735,7 +743,7 @@ public:
   /// \param bEnabled
   ///   TRUE if visual debugger should be enabled, FALSE otherwise.
   /// 
-  VHAVOK_IMPEXP void SetEnabledVisualDebugger(BOOL bEnabled);
+  VHAVOK_IMPEXP void SetEnabledVisualDebugger(bool bEnabled);
 
   /// 
   /// \brief
@@ -744,7 +752,7 @@ public:
   /// \returns
   ///   TRUE if visual debugger is enabled, FALSE otherwise.
   /// 
-  VHAVOK_IMPEXP BOOL IsEnabledVisualDebugger() const;
+  VHAVOK_IMPEXP bool IsEnabledVisualDebugger() const;
 
   /// \brief
   ///   Sets the port to listen at for Visual Debugger connections.
@@ -786,7 +794,7 @@ public:
   /// \param bEnabled
   ///   TRUE if display handler should be enabled, FALSE otherwise.
   /// 
-  VHAVOK_IMPEXP void SetEnabledDebug(BOOL bEnabled);
+  VHAVOK_IMPEXP void SetEnabledDebug(bool bEnabled);
 
   /// 
   /// \brief
@@ -795,7 +803,7 @@ public:
   /// \returns
   ///   TRUE if display handler is enabled, FALSE otherwise.
   ///  
-  VHAVOK_IMPEXP BOOL IsEnabledDebug() const;
+  VHAVOK_IMPEXP bool IsEnabledDebug() const;
 
   ///
   /// \brief
@@ -884,7 +892,7 @@ public:
   ///   Will enable or disable debug rendering for specific types of physics objects.
   ///
   VHAVOK_IMPEXP void EnableDebugRendering(bool bRigidBodies, bool bRagdolls, 
-    bool bCharacterControlers, bool bTriggerVolumes, bool bBlockerVolumes, bool bStaticMeshes);
+    bool bCharacterControllers, bool bTriggerVolumes, bool bBlockerVolumes, bool bStaticMeshes);
 
   /// \brief
   ///   Returns whether caching physics shapes to HKT files is enforced 
@@ -1192,8 +1200,8 @@ protected:
   void SetBroadphaseSize(const hkAabb &worldBounds);
 
   /// \brief
-  ///   Checks the solver buffer is big enough.
-  bool CheckSolverBufferSize();
+  ///   Ensures the solver buffer is big enough.
+  bool EnsureValidSolverBufferSize();
 
   ///
   /// @name Notification Queues
@@ -1547,6 +1555,10 @@ protected:
   ///   Callback handler implementation.
   virtual void OnHandleCallback(IVisCallbackDataObject_cl *pData) HKV_OVERRIDE;
 
+private:
+  // Performs the operation (= initial operation if multi threaded) for the stepping the physics world.
+  hkpStepResult DoStep(float dt);
+
   hkJobQueue* m_pJobQueue;                            ///< Havok job queue
   hkSpuUtil* m_pSpuUtil;                              ///< Havok SPU utilities for PS3;
   hkJobThreadPool* m_pJobThreadPool;                  ///< Pool of threads to take jobs from the Havok job queue;
@@ -1590,8 +1602,8 @@ protected:
   // Havok Debug Rendering
   vHavokVisualDebuggerPtr m_spVisualDebugger;         ///< Smart pointer to the Havok Visual Debugger interface.
   vHavokDisplayHandlerPtr m_spDisplayHandler;         ///< Smart pointer to the Havok Debug Display Handler.
-  BOOL m_bVisualDebugger;                             ///< Determines whether physics should be displayed in the visual debugger.
-  BOOL m_bDebugDisplay;                               ///< Determines whether visual debugging is enabled in Vision.
+  bool m_bVisualDebugger;                             ///< Determines whether physics should be displayed in the visual debugger.
+  bool m_bDebugDisplay;                               ///< Determines whether visual debugging is enabled in Vision.
 
   // Collision Filtering
   bool m_bUpdateFilter;                               ///< Determines whether world collision filter has to be updated.
@@ -1675,7 +1687,7 @@ private:
 #endif // VHAVOKPHYSICSMODULE_HPP_INCLUDED
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

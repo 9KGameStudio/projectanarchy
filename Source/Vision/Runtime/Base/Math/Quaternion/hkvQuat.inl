@@ -166,7 +166,7 @@ HKV_FORCE_INLINE void hkvQuat::setFromEulerAngles (float fRollDeg, float fPitchD
   *this = hkvEulerUtil::ConvertEulerToQuaternion_Deg (fRollDeg, fPitchDeg, fYawDeg, hkvEulerMode::VisionDefault);
 }
 
-HKV_FORCE_INLINE void hkvQuat::getAsEulerAngles (float& out_fRollDeg, float& out_fPitchDeg, float& out_fYawDeg)
+HKV_FORCE_INLINE void hkvQuat::getAsEulerAngles (float& out_fRollDeg, float& out_fPitchDeg, float& out_fYawDeg) const
 {
   hkvEulerUtil::ConvertQuaternionToEuler_Deg (*this, out_fRollDeg, out_fPitchDeg, out_fYawDeg, hkvEulerMode::VisionDefault);
 }
@@ -364,7 +364,7 @@ HKV_FORCE_INLINE hkvQuat hkvMat4::getAsQuaternion () const
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -85,7 +85,7 @@ namespace VisionManaged
     if (!pEntity) // entity class does not exist? default to base entity
     {
       entityTemplate.m_pszClassName = "VisBaseEntity_cl";
-      Vision::Error.Warning("Could not create entity model '%s' of class '%s'",sConvertedFileName.AsChar(),sConvertedClassName.AsChar());
+      hkvLog::Warning("Could not create entity model '%s' of class '%s'",sConvertedFileName.AsChar(),sConvertedClassName.AsChar());
       pEntity = Vision::Game.CreateEntity(entityTemplate);
     }
 
@@ -680,7 +680,7 @@ namespace VisionManaged
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -9,12 +9,15 @@
 #ifndef H_TEST_AUTOMATION_CLASS
 #define H_TEST_AUTOMATION_CLASS
 
-#include <Vision/Runtime/Base/System/IO/Stream/VDiskFileStreamManager.hpp>
+#include <Vision/Runtime/Base/System/IO/Stream/VDiskFileStream.hpp>
 
 #include <Vision/Runtime/Base/Test/vTestClassImpl.hpp>
 
 #define MAX_TESTS 256
 #define MAX_CONFIGS 256
+
+#define TEST_ROOT_NAME_READ_BASE "test_read"
+#define TEST_ROOT_NAME_WRITE_BASE "test_write"
 
 // possible styles for the Printf function
 enum ePRINTFSTYLE
@@ -40,36 +43,6 @@ enum ePRINTFSTYLE
 class VTestClass;
 class VTypeManager;
 class VStrList;
-
-/// \brief 
-///   interface that represents callbacks for important test events
-///
-struct IVTestEventHandler
-{
-  /// \brief destructor
-  virtual ~IVTestEventHandler() {}
-
-  /// \brief
-  ///   gets called whenever a message needs to be logged
-  ///
-  /// \param message
-  ///   the message to be logged
-  virtual void Log(const char* message) = 0;
-
-  /// \brief
-  ///   gets called whenever a message needs to be logged to the xml file
-  ///
-  /// \param message
-  ///   the message to be logged
-  virtual void Xml(const char* message) = 0;
-
-  /// \brief
-  ///   gets called when the whole test is finished
-  /// 
-  /// \param iExitCode
-  ///   the exit code with which the test exited
-  virtual void Exit(int iExitCode) = 0;
-};
 
 /// \brief
 ///   This class wraps test automation completly
@@ -159,14 +132,6 @@ public:
   ///   VVERIFY( testUnit.RegisterTestsFromModule( typeManager, V_RUNTIME_CLASS(VTestClass) ) );
   ///   \endcode
   VBASE_IMPEXP int RegisterTestsFromModule(VTypeManager &typeManager, VType *pBaseType);
-
-  /// \brief
-  ///   sets the test event handler
-  ///
-  /// \param pHandler
-  ///   the new test event handler, if NULL the current handler is removed
-  VBASE_IMPEXP void SetEventHandler(IVTestEventHandler *pHandler);
-
 
   /// \brief
   ///   Runs the tests and returns the number of failed tests
@@ -345,15 +310,25 @@ public:
   /// @name Serialization
   /// @{
   ///
-  
-  // Sets/Gets the base directroy for the tests. All files of the tests should uses this directory.
+
+  // Sets the base path for the tests. All files of the tests should uses this directory.
   // eg. the settings file, the html,xml log file are created in that directory!
-  VBASE_IMPEXP void SetTestDirectory(bool readDir, const char* szAbsolutePath);
+  VBASE_IMPEXP void SetTestBasePath(bool forRead, const char* szPath);
+
+  // Gets the base directory for the tests. 
   VBASE_IMPEXP const char* GetTestDirectory(bool readDir) const;
-  
-  // helper which takes the passed filename string and returns the TestDirectory + \\ + filename
+
+  // Gets the IVFileSystem instance representing the test base directory for reading/writing
+  VBASE_IMPEXP IVFileSystem* GetTestRootFileSystem(bool forRead) const;
+
+  // Builds an absolute, platform-independent path for accessing a file in the test directory for
+  // reading/writing.
   VBASE_IMPEXP const char* BuildTestFilePath(bool useReadDir, const char* szFilename) const;
-  
+
+  // Helper to build a native file/folder name for the specified file/folder within the test's read
+  // or write file system.
+  VBASE_IMPEXP const char* BuildNativeFilePath(bool useReadDir, bool isFolder, const char* szName) const;
+
   //the framework can save and load the status of each test and subtest and the order of the tests
   //the file is saved into the TestDirectory!
   VBASE_IMPEXP VBool LoadTests(const char *szFileName, bool bUseReadDir=true);
@@ -394,12 +369,6 @@ public:
   VBASE_IMPEXP int FindTestByName(const char* szTestName);
    
   VBASE_IMPEXP VBool MoveTest(int iOldPos, int iNewPos); ///< Moves a test between two position in the order-array and update the other test positions
-
-  // Returns the VDiskFileStreamManager that is globally available for all unit tests
-  VBASE_IMPEXP IVFileStreamManager* GetDiskFileStreamManager() const;
-
-  // Returns the file stream manager which is used by default for all file I/O
-  VBASE_IMPEXP virtual IVFileStreamManager* GetDefaultFileStreamManager() const;
 
   // \brief
   //    - Returns true if fast mode is active:
@@ -617,6 +586,8 @@ protected:
   VTestClass *m_pCurrentTest;   ///< pointer to the current test
 
 private:
+  static void hkvLogWriter_TestToHTML(hkvLogMsgType::Enum MsgType, const char* szText, int iIndentation, const char* szTag, void* pPassThrough);
+
   int              m_iOutputMode;             ///< define for output (e.g. AOUT_WINCONSOLE), each combination
   
   char             m_szHTMLFile[FS_MAX_PATH]; ///< html outputfilename
@@ -647,11 +618,13 @@ private:
   int m_iCurrentSubTestFrameNr; ///< frame number within the current subtest
 
   int m_iFailed; ///< number of failed test
-  
-  unsigned int m_uiStartTime;
 
-  char m_szTestDirectory_read [FS_MAX_PATH];
-  char m_szTestDirectory_write[FS_MAX_PATH];
+  VString m_sRootNameRead;
+  VString m_sAbsTestPathRead;
+  VString m_sRootNameWrite;
+  VString m_sAbsTestPathWrite;
+
+  unsigned int m_uiStartTime;
 
   // test part index/count (e.g., index=2, count=3 runs the second third of the tests)
   int m_iPartIndex, m_iPartCount;
@@ -659,22 +632,30 @@ private:
   // downlevel support on DX11 - this is ignored on everything else
   FeatureLevel  m_featureLevel;
 
-  IVTestEventHandler *m_pTestEventHandler;
-
   ///
   /// @}
   ///
 
 private:
   VStrList *m_pTagList;
-  IVFileStreamManagerPtr m_spDiskFileStreamManager;
 };
 
+
+class VTestUtils
+{
+private:
+  VTestUtils();
+  VTestUtils(const VTestUtils&);
+  VTestUtils& operator=(const VTestUtils&);
+
+public:
+  VBASE_IMPEXP static bool AddZipFileAsRoot(const char* szZipFileName, const char* szRootName, bool bAddSearchPath);
+};
 
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

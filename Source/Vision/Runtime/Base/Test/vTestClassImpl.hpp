@@ -16,7 +16,7 @@
 
 // forward declarations
 class VTestUnit;
-class IVFileStreamManager;
+class VFileAccessManager;
 class VStrList;
 
 #define MAX_SUBTESTS 4096 ///< maximun number of subtests
@@ -501,6 +501,21 @@ public:
   VBASE_IMPEXP const char* GetTestDirectory( bool readDir ) const;
 
   /// \brief
+  ///   Returns the test directory for the VTestUnit set with VTestUnit::SetTestDirectory() as a native path
+  VBASE_IMPEXP VString GetTestDirectoryNative( bool readDir ) const
+  {
+    const char* testDataVisionPath = GetTestDirectory(readDir);
+
+    VFileAccessManager::NativePathResult nativePathResult;
+    if(VFileAccessManager::GetInstance()->MakePathNative(testDataVisionPath, nativePathResult, readDir ? VFileSystemAccessMode::READ : VFileSystemAccessMode::WRITE, VFileSystemElementType::DIRECTORY) == HKV_FAILURE)
+    {
+      return "";
+    }
+
+    return nativePathResult.m_sNativePath.AsChar();
+  }
+
+  /// \brief
   ///   the passed filename string and returns the TestDirectory + \\ + filename
   VBASE_IMPEXP const char* BuildTestFilePath( bool useReadDir, const char* szFilename ) const;
 
@@ -564,10 +579,10 @@ public:
   VBASE_IMPEXP void ResetStatistics();
 
   // binary comparison of two files
-  VBASE_IMPEXP VBool CompareFiles( const char *szName1, const char *szName2, IVFileStreamManager *pManager );
+  VBASE_IMPEXP VBool CompareFiles(const char *szName1, const char *szName2, VFileAccessManager *pManager);
 
   // compare files, ignoring whitespace characters
-  VBASE_IMPEXP VBool CompareFilesSkipWhitespace( const char *szName1, const char *szName2, IVFileStreamManager *pManager );
+  VBASE_IMPEXP VBool CompareFilesSkipWhitespace(const char *szName1, const char *szName2, VFileAccessManager *pManager);
 
   // increases errors counter by one
   inline void IncErrors() { m_iErrors++; }
@@ -645,7 +660,7 @@ private:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

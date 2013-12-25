@@ -40,13 +40,13 @@ VBool vHavokVisualDebuggerAction::Do(const class VArgList &argList)
     const char *szArg = argList.AsString(1);
     if (_stricmp(szArg, "on")==0)
     {
-      pMod->SetEnabledVisualDebugger(TRUE);
+      pMod->SetEnabledVisualDebugger(true);
       Print("Enabled Havok Visual Debugger.");
       return TRUE;
     }
     else if (_stricmp(szArg, "off")==0)
     {
-      pMod->SetEnabledVisualDebugger(FALSE);
+      pMod->SetEnabledVisualDebugger(false);
       Print("Disabled Havok Visual Debugger.");
       return TRUE;
     }
@@ -178,7 +178,7 @@ void vHavokVisualDebugger::SetPort(int iPort)
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

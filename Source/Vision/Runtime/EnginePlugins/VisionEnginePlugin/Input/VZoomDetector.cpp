@@ -8,60 +8,98 @@
 
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/VisionEnginePluginPCH.h>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Input/VZoomDetector.hpp>
-#ifdef SUPPORTS_MULTITOUCH
-VZoomDetector::VZoomDetector(const VRectanglef& validArea, float fMaxDistance) : 
-  m_area(validArea), m_fMaxDistance(fMaxDistance), m_fLastValue(0.0f), m_fValue(0.0f), m_bActive(true)
+
+#if defined(SUPPORTS_MULTITOUCH)
+
+#include <Vision/Runtime/Base/Input/VInputTouch.hpp>
+
+VZoomDetector::VZoomDetector(const VRectanglef& validArea, float fPriority, float fMaxDistance) 
+  : m_validArea(validArea)
+  , m_fPriority(fPriority)
+  , m_fMaxDistance(fMaxDistance)
+  , m_fLastValue(0.0f)
+  , m_fValue(0.0f)
+  , m_bIsZooming(false)
+  , m_bActive(true)
 {
-  m_fullScreen = false;
-  if (!m_area.IsValid())
+  if (!m_validArea.IsValid())
   {
-	m_fullScreen = true;
-    m_area.Set(0.f, 0.f, (float)Vision::Video.GetXRes(), (float)Vision::Video.GetYRes());
+    m_validArea.Set(0.0f, 0.0f, (float)Vision::Video.GetXRes(), (float)Vision::Video.GetYRes());
   }
   
   if (m_fMaxDistance < 0.0f)
   {
-    m_fMaxDistance = m_area.GetSizeX() * m_area.GetSizeX() + m_area.GetSizeY() * m_area.GetSizeY();
-  }
     
-  IVMultiTouchInput& inputDevice = static_cast<IVMultiTouchInput&>(VInputManager::GetInputDevice(INPUT_DEVICE_TOUCHSCREEN));
-  VASSERT(&inputDevice != &VInputManager::s_NoInputDevice);
-  m_pInputDevice = &inputDevice;
+    m_fMaxDistance = hkvVec2(m_validArea.GetSizeX(), m_validArea.GetSizeY()).getLength();
+  }
+
+  Vision::Callbacks.OnFrameUpdatePreRender += this;
+}
+
+VZoomDetector::~VZoomDetector()
+{
+  Vision::Callbacks.OnFrameUpdatePreRender -= this;
 }
 
 void VZoomDetector::Reset()
 {
   m_fLastValue = 0.0f;
   m_fValue = 0.0f;
+  m_bIsZooming = false;
 }
   
 void VZoomDetector::Update(float timeDiff)
 {
+  m_bIsZooming = false;
+
   if (!m_bActive)
     return;
   
-  if (m_pInputDevice->GetNumberOfTouchPoints() != 2)
+  // Only allow zooming if there are exactly two touch points.
+  IVMultiTouchInput& touchInput = VInputManager::GetTouchScreen();
+  if (touchInput.GetNumberOfTouchPoints() != 2)
   {
     m_fLastValue = 0.0f;
     m_fValue = 0.0f;
     return;
   }
   
+  // Find two valid touch points.
   int iTouchPoints[2];
-  int index = 0;
+  int iNumValidTouchPoints = 0;
+  const VPListT<VTouchArea>& touchAreas = touchInput.GetTouchAreas();
   
-  for (int i = 0; i < m_pInputDevice->GetMaximumNumberOfTouchPoints() && index < 2; i++)
+  for (int i = 0; i < touchInput.GetMaximumNumberOfTouchPoints() && iNumValidTouchPoints < 2; i++)
   {
-    if (m_pInputDevice->IsActiveTouch(i) && ( m_fullScreen || m_pInputDevice->GetTouch(i).IsInArea(m_area)))
-      iTouchPoints[index++] = i;
+    const IVMultiTouchInput::VTouchPoint& touchPoint = touchInput.GetTouch(i);
+
+    if (touchInput.IsActiveTouch(i) && touchPoint.IsInArea(m_validArea))
+    {
+      // Check if there is a touch area with a higher priority, which obscures the touch point.
+      int iTouchAreaIndex = 0;
+      for (; iTouchAreaIndex < touchAreas.GetLength(); iTouchAreaIndex++)
+      {
+        const VTouchArea* pTouchArea = touchAreas.Get(iTouchAreaIndex);
+        const VRectanglef& rect = pTouchArea->GetArea();
+
+        if (pTouchArea->GetPriority() > m_fPriority && touchPoint.IsInArea(rect))
+          break;
+      }
+
+      // All touch areas passed?
+      if (iTouchAreaIndex == touchAreas.GetLength())
+      {
+        iTouchPoints[iNumValidTouchPoints++] = i;
+      }
+    }
   }
   
-  if (index < 2)
+  if (iNumValidTouchPoints < 2)
     return;
   
-  float dx = m_pInputDevice->GetTouch(iTouchPoints[0]).fXAbsolute - m_pInputDevice->GetTouch(iTouchPoints[1]).fXAbsolute;
-  float dy = m_pInputDevice->GetTouch(iTouchPoints[0]).fYAbsolute - m_pInputDevice->GetTouch(iTouchPoints[1]).fYAbsolute;
-  float fDistance = dx * dx + dy * dy;
+  const float dx = touchInput.GetTouch(iTouchPoints[0]).fXAbsolute - touchInput.GetTouch(iTouchPoints[1]).fXAbsolute;
+  const float dy = touchInput.GetTouch(iTouchPoints[0]).fYAbsolute - touchInput.GetTouch(iTouchPoints[1]).fYAbsolute;
+  const float fDistance = hkvMath::sqrt(dx * dx + dy * dy);
   
   if (m_fLastValue == 0.0f)
     m_fLastValue = fDistance;
@@ -69,6 +107,7 @@ void VZoomDetector::Update(float timeDiff)
     m_fLastValue = m_fValue;
   
   m_fValue = fDistance;
+  m_bIsZooming = true;
 }
   
 bool VZoomDetector::IsActive()
@@ -78,31 +117,43 @@ bool VZoomDetector::IsActive()
 
 int VZoomDetector::GetRawControlValue(unsigned int uiControl)
 {
+  const int iDiff = static_cast<int>(m_fValue - m_fLastValue + 0.5f);
+
   switch (uiControl)
   {
     case CT_TOUCH_ZOOM:
-      return (int)(m_fValue - m_fLastValue);
+      return iDiff;
     case CT_TOUCH_ZOOM_IN:
-      return m_fLastValue < m_fValue ? (int)(m_fValue - m_fLastValue) : 0;
+      return hkvMath::Max(iDiff, 0);
     case CT_TOUCH_ZOOM_OUT:
-      return m_fLastValue > m_fValue ? (int)(m_fLastValue - m_fValue) : 0;
+      return hkvMath::Max(-iDiff, 0);
   }
   return 0;
 }
 
 float VZoomDetector::GetControlValue(unsigned int uiControl, float fDeadZone, bool bTimeScaled)
 {
-  return GetRawControlValue(uiControl) / m_fMaxDistance;  
+  return hkvMath::clamp(GetRawControlValue(uiControl) / m_fMaxDistance, -1.0f, 1.0f);  
 }
 
 const char* VZoomDetector::GetName()
 {
   return "Zoom Detector";
 }
+
+void VZoomDetector::OnHandleCallback(IVisCallbackDataObject_cl *pData)
+{
+  // OnFrameUpdatePreRender
+  if (pData->m_pSender == &Vision::Callbacks.OnFrameUpdatePreRender)
+  {
+    Update();
+  }
+}
+
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

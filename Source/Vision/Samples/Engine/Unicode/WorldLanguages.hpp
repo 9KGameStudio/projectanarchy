@@ -15,6 +15,7 @@
 #define _WorldLanguages_cl_HEADER_
 
 #include <Vision/Samples/Engine/Unicode/VArabicConverter.hpp>
+#include <Vision/Runtime/Framework/VisionApp/VAppBase.hpp>
 
 // defines
 #define PLACES_FILE "places.utf8"
@@ -31,7 +32,7 @@
 #define ROTANGLESCUR  6
 
 enum WORLD_LANG_CONTROL {
-  WORLD_LANG_NEXT = VISION_INPUT_CONTROL_LAST_ELEMENT+1,
+  WORLD_LANG_NEXT = VAPP_INPUT_CONTROL_LAST_ELEMENT+1,
   WORLD_LANG_PREV
 };
 
@@ -115,7 +116,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

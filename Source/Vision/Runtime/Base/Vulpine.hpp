@@ -199,9 +199,6 @@ const SLONG VERR_LINUXMAGIC     = -4711;   ///< Magic linux arbitrary error
   #endif
 
 #elif defined (_VISION_PS3)
-  //MK: This was described as a valid way of raising a debug break. The PPC
-  //  manual also mentions it as a shortcut mnemonic for "tw 31,0,0", which
-  //  is an unconditional trap.
   #define VDBGBREAK { __asm__ volatile("tw 31,0,0"); }
 
 #elif defined (_VISION_WIIU)
@@ -241,8 +238,21 @@ const SLONG VERR_LINUXMAGIC     = -4711;   ///< Magic linux arbitrary error
 #define ANALYSIS_IGNORE_WARNING_ONCE(x) __pragma(warning(suppress:x))
 #define ANALYSIS_IGNORE_WARNING_BLOCK_START(x) __pragma(warning(push)) __pragma(warning(disable:x))
 #define ANALYSIS_IGNORE_WARNING_BLOCK_END __pragma(warning(pop))
+// C4231: nonstandard extension used : 'identifier' before template explicit instantiation
+// C4244: 'argument' : conversion from 'type1' to 'type2', possible loss of data
+// C4251: 'identifier' : class 'type' needs to have dll-interface to be used by clients of class 'type2'
+// C4800: 'type' : forcing value to bool 'true' or 'false' (performance warning)
+// C6001: using uninitialized memory <variable>
+// C6011: dereferencing NULL pointer <name>
+// C6031: return value ignored: <function> could return unexpected value
+// C6211: Leaking memory <pointer> due to an exception. Consider using a local catch block to clean up memory
+// C6246: Local declaration of <variable> hides declaration of same name in outer scope. Additional Information: See previous declaration at <location>.
+// C6326: potential comparison of a constant with another constant
+// C6385: invalid data: accessing <buffer name>, the readable size is <size1> bytes, but <size2> bytes may be read: Lines: x, y
+// C6386: buffer overrun: accessing <buffer name>, the writable size is <size1> bytes, but <size2> bytes may be written: Lines: x, y
+// C6387: <argument> may be <value>: this does not adhere to the specification for the function <function name>: Lines: x, y
 #define ANALYSIS_IGNORE_ALL_START __pragma(warning(push)) \
-  __pragma(warning(disable: 6211 6001 6326 6011 6385 6031 6387 6246 6386 4251))
+  __pragma(warning(disable: 4231 4244 4251 4800 6001 6011 6031 6211 6246 6326 6385 6386 6387))
 #define ANALYSIS_IGNORE_ALL_END __pragma(warning(pop))
 #else
 #define ANALYSIS_ASSUME(x)
@@ -503,7 +513,7 @@ const SLONG VERR_LINUXMAGIC     = -4711;   ///< Magic linux arbitrary error
 #endif // #ifndef VULPINE_H_INCLUDED
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

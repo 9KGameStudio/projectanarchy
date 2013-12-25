@@ -34,7 +34,7 @@ distribution.
 #include <Vision/Runtime/Base/VBase.hpp>
 class IVFileOutStream;
 class IVFileInStream;
-class IVFileStreamManager;
+class VFileAccessManager;
 // [/TRINIGY]
 
 
@@ -1417,15 +1417,15 @@ public:
 		document data before loading.
 	*/
   // changed by [TRINIGY]
-	bool LoadFile( TiXmlEncoding encoding = TIXML_DEFAULT_ENCODING, IVFileStreamManager* pMan=NULL);
+	bool LoadFile( TiXmlEncoding encoding = TIXML_DEFAULT_ENCODING, VFileAccessManager* pMan=NULL);
 	/// Save a file using the current document value. Returns true if successful.
-	bool SaveFile(IVFileStreamManager* pMan=NULL) const;
+	bool SaveFile( VFileAccessManager* pMan = NULL ) const;
 	/// Load a file using the given filename. Returns true if successful.
-	bool LoadFile( const char * filename, IVFileStreamManager* pMan=NULL, TiXmlEncoding encoding = TIXML_DEFAULT_ENCODING );
+	bool LoadFile( const char * filename, VFileAccessManager* pMan=NULL, TiXmlEncoding encoding = TIXML_DEFAULT_ENCODING );
 	/// Save a file using the given filename. Returns true if successful.
-	bool SaveFile( const char * filename, IVFileStreamManager* pMan=NULL) const;
+	bool SaveFile( const char * filename, VFileAccessManager* pMan=NULL) const;
 	/// Load a file using the given file stream (can be NULL to trigger an error). The function does not vclose the stream Returns true if successful.
-  	bool LoadFile(IVFileInStream* file, TiXmlEncoding encoding = TIXML_DEFAULT_ENCODING );
+	bool LoadFile(IVFileInStream* file, TiXmlEncoding encoding = TIXML_DEFAULT_ENCODING );
 	/// Save a file using the given file stream. Returns true if successful.
 	bool SaveFile( IVFileOutStream* fp ) const;
 	// [/TRINIGY]
@@ -1807,7 +1807,7 @@ private:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

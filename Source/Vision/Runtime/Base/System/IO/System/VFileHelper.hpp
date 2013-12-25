@@ -14,6 +14,9 @@
 #include <Vision/Runtime/Base/String/VString.hpp>
 
 #include <Vision/Runtime/Base/System/IO/System/VFileData.hpp>
+#include <Vision/Runtime/Base/System/IO/System/VFileAccess.hpp>
+
+#include <Vision/Runtime/Base/System/VDateTime.hpp>
 
 
 #if defined (_VISION_PS3)
@@ -35,8 +38,6 @@
 ///   the context pointer passed to the enumeration function that called this callback
 typedef void (*ENUMFILES_CALLBACK)(const char *dir, const char *filename, VFileData *pFileInfo, void *context);
 
-// forward declaration
-VBASE_IMPEXP IVFileStreamManager* VBase_GetFileStreamManager();
 
 /// \brief
 ///   Helps with file path string handling
@@ -56,6 +57,10 @@ public:
   /// \brief
   ///   Turns backslashes into slashes in the passed string buffer
   VBASE_IMPEXP static void BackToFrontSlash(char *ch);
+
+  /// \brief
+  ///   Turns all forward and back slashes into the platform's correct form.
+  VBASE_IMPEXP static void ToNativeSlash(char *ch);
 
   /// \brief
   ///   Converts a filename to compatible filename, i.e. slashes to platform specific separators,
@@ -235,13 +240,18 @@ public:
   }
 
   /// \brief
-  ///   Extracts the directory from a file name.
+  ///   Determines whether the passed path is a native file system root of the current platform.
+  VBASE_IMPEXP static bool IsFileSystemRoot(const char* szPath);
+
+  /// \brief
+  ///   Extracts the parent directory of a path.
   ///
   /// \param szFilename
-  ///   The path to the file (must not be a directory)
+  ///   The path to a file or directory
   ///
   /// \param szDir
-  ///   The extracted directory without the filename.
+  ///   The parent directory if successful; an empty string in case \c szFilename does not have a
+  ///   parent directory.
   ///
   /// \see
   ///   VPathHelper::GetFileDirEx
@@ -606,7 +616,7 @@ public:
 
   /// \brief
   ///   Gets information about the modification time of a file
-  VBASE_IMPEXP static bool GetModifyTime(const char* szFileName, VFileTime& t);
+  VBASE_IMPEXP static bool GetModifyTime(const char* szFileName, VDateTime& t);
 
   /// \brief
   ///   Copies a file
@@ -625,10 +635,17 @@ public:
   VBASE_IMPEXP static bool FindFile(const char *szDir, const char *szSpec, VString *pRes = NULL);
 
   /// \brief
-  ///   Creates a directory, and all necessary directories above it that are necessary 
-  //    Only implemented for Win32 and Xbox360
+  ///   Creates a directory and all missing parent directories.
   VBASE_IMPEXP static bool MkDirRecursive(const char *dirname);
-  
+
+  /// \brief
+  ///   Removes a directory and all contained files. Continues with the remaining folders in case of error.
+  VBASE_IMPEXP static bool RmDirRecursiveNoFail(const char *szDirName);
+
+  /// \brief
+  ///   Removes a directory and all contained files. Aborts in case of error.
+  VBASE_IMPEXP static bool RmDirRecursive(const char *szDirName);
+ 
   /// \brief
   ///   Creates an empty file
   //    Only implemented for Win32 and Xbox360
@@ -729,50 +746,6 @@ public:
     return VString(szDir);
   }
 
-  /// \brief
-  ///   This function tries to resolve a relative path to an absolute one via the given file stream manager.
-  ///
-  /// In case 'bUseAssetLookUpTable' is true, the given filename is redirected via the asset look up tables.
-  /// Otherwise the path to the original file is returned but it is not guaranteed that this file actually exists.
-  /// 
-  /// \param szFilename
-  ///   Path that should be made absolute.
-  /// 
-  /// \param out_szResolvedAbsPath
-  ///   The absolute path is written to this buffer if the function returns true.
-  /// 
-  /// \param pFileManager
-  ///   The file manager used for the lookup. If NULL, VBase_GetFileStreamManager will be taken instead.
-  /// 
-  /// \param bUseAssetLookUpTable
-  ///   If true, the returned absolute path will follow redirections that are caused by the asset management system's look up tables.
-  /// 
-  /// \return
-  ///   Returns false if the file could not be found.
-  VBASE_IMPEXP static bool GetAbsolutePath(const char* szFilename, char* out_szResolvedAbsPath, IVFileStreamManager* pFileManager = NULL, bool bUseAssetLookUpTable = false)
-  {
-    if (pFileManager == NULL)
-      pFileManager = VBase_GetFileStreamManager();
-
-    //open the existing file through the file manager
-    IVFileInStream *pIn = pFileManager->Open(szFilename);
-    if (pIn)
-    {
-      // In case pIn->GetInitialDataDir() is NULL, we didn't use a lookup and thus pIn->GetFileName() equals the source file.
-      if (bUseAssetLookUpTable || pIn->GetInitialDataDir() == NULL || pIn->GetInitialDataDir()[0] == '\0')
-      {
-        VFileHelper::ResolvePath(out_szResolvedAbsPath, pIn->GetFileName());
-      }
-      else
-      {
-        VPathHelper::CombineDirAndDir(out_szResolvedAbsPath, pIn->GetInitialDataDir(), szFilename);
-      }
-      
-      pIn->Close();
-      return true;
-    }
-    return false; //file doesn't exist.
-  }
 
   /// \brief
   ///   This function tries to open the given file for writing.
@@ -780,25 +753,20 @@ public:
   /// \param szFilename
   ///   Path to the file.
   /// 
-  /// \param pFileManager
-  ///   The file manager used for the lookup. If NULL, VBase_GetFileStreamManager will be taken instead.
-  /// 
   /// \return
   ///   Returns false if the file could not be found or the file is not writable.
-  VBASE_IMPEXP static bool IsFileWritable(const char* szFilename, IVFileStreamManager* pFileManager = NULL)
+  VBASE_IMPEXP static bool IsFileWritable(const char* szFilename)
   {
-    if (pFileManager == NULL)
-      pFileManager = VBase_GetFileStreamManager();
-
-    IVFileOutStream *pStream = pFileManager->Create(szFilename, IVFileStreamManager::CREATE_APPEND);
-    if (pStream)
+    VFileHandle fileHandle;
+    if (!VFileAccess::Open(&fileHandle, szFilename, VFileAccess::write))
     {
-      pStream->Close();
-      return true;
+      return false;
     }
-    return false;
+
+    VFileAccess::Close(&fileHandle);
+    return true;
   }
-  
+
   ///
   /// @}
   ///
@@ -810,7 +778,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

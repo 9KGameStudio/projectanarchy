@@ -44,6 +44,9 @@ extern SLONG vglWindowHeight;
 class VInputManagerPC;
 typedef VInputManagerPC VInputManager;
 
+class VMotionInputPC;
+typedef VMotionInputPC VMotionInput;
+
 //compatiblity typedefs
 HKV_DEPRECATED_2012_2 typedef VInputManagerPC VInputDeviceManager;
 HKV_DEPRECATED_2012_2 typedef VInputManagerPC VInputDeviceManagerPC;
@@ -1276,7 +1279,7 @@ public:
 
   /// \brief
   ///   Get a reference to the Multitouch Device
-  VBASE_IMPEXP static VMultiTouchInputPC& GetMultitouch();
+  VBASE_IMPEXP static VMultiTouchInputPC& GetTouchScreen();
 
   /// \brief
   ///   Get a reference to the emulated Motion Sensor Device
@@ -1342,7 +1345,7 @@ private:
 #endif //VINPUTPC_HPP_INCLUDED
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

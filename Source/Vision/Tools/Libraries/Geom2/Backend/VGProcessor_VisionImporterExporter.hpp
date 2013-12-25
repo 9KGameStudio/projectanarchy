@@ -59,7 +59,7 @@ public:
 
 
 public:
-  VGVisionImporterExporter(IVLog* log = NULL) : m_log(log)  { }
+  VGVisionImporterExporter(hkvLogInterface* log = NULL) : m_log(log)  { }
   ~VGVisionImporterExporter()                               { }
 
 
@@ -126,7 +126,7 @@ public:
 
 
 private:
-  IVLog* m_log;
+  hkvLogInterface* m_log;
 
   // Writer functions.
   bool (VGVisionImporterExporter::*GetWriter(DataFormat df) const)(const VGScene& scene, const VGProcessor_VisionExporter* ve, IVFileOutStream& stream) const;
@@ -592,7 +592,7 @@ private:
 };
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -27,15 +27,23 @@ public:
       m_RegLightProjection.SetRegisterValuesMatrix(this, lightProjection, iNumCascades);
   }
 
-  inline void SetShadowParameters(float fFadeoutStart, float fFadeoutEnd, float fSubtractiveThreshold)
+  inline void SetShadowParameters(float fFadeoutStart, float fFadeoutEnd)
   {
-    float pParams[4] = { fFadeoutEnd, 1.0f / (fFadeoutEnd - fFadeoutStart), fSubtractiveThreshold, 0.0f };
+    float pParams[4] = { fFadeoutEnd, 1.0f / (fFadeoutEnd - fFadeoutStart), 0.0f, 0.0f };
     m_RegShadowParams.SetRegisterValueSafeF(this, pParams);
+  }
+
+  // Set color for subtractive shadows
+  inline void SetShadowColor(const VColorRef &shadowColor)
+  {
+    hkvVec3 vShadowColor = shadowColor.ToFloat();
+    float pParams[4] = { vShadowColor.x, vShadowColor.y, vShadowColor.z, 1.0f };
+    m_RegShadowColor.SetRegisterValueSafeF(this, pParams);
   }
 
 #ifndef _VISION_DOC
 
-  VConstantBufferRegister m_RegLightProjection, m_RegShadowParams;
+  VConstantBufferRegister m_RegLightProjection, m_RegShadowParams, m_RegShadowColor;
  
   // shader overrides
   V_DECLARE_SERIAL_DLLEXP(VMobileDynamicLightShader, VISION_APIDATA)
@@ -126,7 +134,7 @@ private:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

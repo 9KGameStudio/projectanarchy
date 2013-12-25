@@ -41,7 +41,7 @@
       // button_OK
       // 
       this.button_OK.DialogResult = System.Windows.Forms.DialogResult.OK;
-      this.button_OK.Location = new System.Drawing.Point(250, 265);
+      this.button_OK.Location = new System.Drawing.Point(145, 265);
       this.button_OK.Name = "button_OK";
       this.button_OK.Size = new System.Drawing.Size(89, 30);
       this.button_OK.TabIndex = 6;
@@ -52,7 +52,7 @@
       // button_Cancel
       // 
       this.button_Cancel.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-      this.button_Cancel.Location = new System.Drawing.Point(147, 265);
+      this.button_Cancel.Location = new System.Drawing.Point(240, 265);
       this.button_Cancel.Name = "button_Cancel";
       this.button_Cancel.Size = new System.Drawing.Size(89, 30);
       this.button_Cancel.TabIndex = 5;
@@ -63,18 +63,18 @@
       // 
       this.dialogCaptionBar.BackColor = System.Drawing.SystemColors.Window;
       this.dialogCaptionBar.Caption = "Create Time of Day Sunlight";
-      this.dialogCaptionBar.CompactView = false;
       this.dialogCaptionBar.Description = "Select the features that the sunlight should have. All settings can be changed la" +
-          "ter by adding, removing or modifying components attached to the light";
+    "ter by adding, removing or modifying components attached to the light";
       this.dialogCaptionBar.Dock = System.Windows.Forms.DockStyle.Top;
+      this.dialogCaptionBar.HelpContext = "dialogs";
+      this.dialogCaptionBar.HelpKey = "Create Time Of Day Light";
+      this.dialogCaptionBar.HelpManual = "";
       this.dialogCaptionBar.Image = ((System.Drawing.Image)(resources.GetObject("dialogCaptionBar.Image")));
       this.dialogCaptionBar.Location = new System.Drawing.Point(0, 0);
       this.dialogCaptionBar.Name = "dialogCaptionBar";
       this.dialogCaptionBar.SetFontColor = System.Drawing.SystemColors.ControlText;
       this.dialogCaptionBar.ShowBorder = false;
       this.dialogCaptionBar.ShowBottomLine = true;
-      this.dialogCaptionBar.ShowCaptionText = true;
-      this.dialogCaptionBar.ShowImage = true;
       this.dialogCaptionBar.Size = new System.Drawing.Size(492, 50);
       this.dialogCaptionBar.TabIndex = 0;
       // 
@@ -98,8 +98,8 @@
       this.label1.Size = new System.Drawing.Size(395, 50);
       this.label1.TabIndex = 2;
       this.label1.Text = "If enabled, a shadowmap component is added to the sunlight so that it casts dynam" +
-          "ic shadows. Shadow properties (resolution etc.) can be changed on that component" +
-          " later in the component layout.";
+    "ic shadows. Shadow properties (resolution etc.) can be changed on that component" +
+    " later in the component layout.";
       // 
       // checkBox_Backlight
       // 
@@ -119,7 +119,7 @@
       this.label2.Size = new System.Drawing.Size(395, 50);
       this.label2.TabIndex = 4;
       this.label2.Text = "If enabled, a second light is added that shines into the opposite direction of th" +
-          "e sun incident angle.";
+    "e sun incident angle.";
       // 
       // CreateTimeOfDayLightDlg
       // 
@@ -139,8 +139,8 @@
       this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
       this.MaximizeBox = false;
       this.MinimizeBox = false;
-      this.ShowInTaskbar = false;
       this.Name = "CreateTimeOfDayLightDlg";
+      this.ShowInTaskbar = false;
       this.Text = "Create Time of Day Sunlight";
       this.ResumeLayout(false);
       this.PerformLayout();

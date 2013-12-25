@@ -442,7 +442,7 @@ void IVTerrainDecorationModel::GatherLightmapInfo(VBaseMesh *pMesh, VLightmapSce
     return;
   if (pMesh->GetSurfaceCount()!=1)
   {
-    Vision::Error.Warning("Lightmap shadow caster mesh '%s' must have only one material. Skipping lightmap shadows for this model", pMesh->GetFilename());
+    hkvLog::Warning("Lightmap shadow caster mesh '%s' must have only one material. Skipping lightmap shadows for this model", pMesh->GetFilename());
     return;
   }
 
@@ -450,6 +450,7 @@ void IVTerrainDecorationModel::GatherLightmapInfo(VBaseMesh *pMesh, VLightmapSce
   VLightmapPrimitive *pPrim = info.CreateNewPrimitive();
   pPrim->m_eOwnerType = VLightmapPrimitive::OWNERTYPE_OBJECT3D;
   pPrim->m_iUniqueID = 0;
+  pPrim->m_sPrimitiveDescription = VString("SpeedTreeGroup filename: '") + pMesh->GetFilename() + "'"; 
   pPrim->m_eType = VLightmapPrimitive::INDEXED_MESH;
   pPrim->m_iFlags = PRIMITIVEFLAG_CASTSHADOWS;
 
@@ -646,7 +647,7 @@ void VBillboardDecorationSectorInstance::DisposeObject()
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

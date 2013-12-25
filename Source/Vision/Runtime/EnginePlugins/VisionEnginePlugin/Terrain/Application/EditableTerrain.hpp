@@ -469,9 +469,7 @@ public:
   ///   bounding box on the terrain
   /// \param pUserData
   ///   unused data that is forwarded to the filter
-  /// \param pLog
-  ///   optional log output target (errors etc.)
-  TERRAIN_IMPEXP bool ApplyFilter(IVTerrainFilter *pFilter, const VLargeBoundingBox& affectedArea, void *pUserData, IVLog *pLog=NULL);
+  TERRAIN_IMPEXP bool ApplyFilter(IVTerrainFilter *pFilter, const VLargeBoundingBox& affectedArea, void *pUserData);
 
   /// \brief
   ///   Called internally to reload editing related shaders
@@ -706,7 +704,7 @@ protected:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

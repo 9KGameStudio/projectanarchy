@@ -189,6 +189,30 @@ public:
 	///   For debug rendering all nav mesh instances in AI world.
 	VHAVOKAI_IMPEXP void DebugRender(float displayOffsetHavokScale, bool colorRegions = true);
 
+	/// \brief
+	/// Used to register Lua to expose vHavokAiModule calls to Lua
+	static void RegisterLua();
+
+	/// \brief
+	/// Register this hook to get callbacks from the engine per frame
+	void Render() {}
+
+	/// \brief
+	/// Register this hook to get callbacks from the engine per frame
+	void Update() {}
+
+	/// \brief
+	/// Find the closest point on the Nav Mesh to the given position within a particular radius
+	VHAVOKAI_IMPEXP hkvVec3* GetClosestPoint(const hkvVec3 *position, float radius = 5.0f);
+
+	/// \brief
+	/// Cast a ray from start to end and return the point (or NULL) on the Nav Mesh instances
+	VHAVOKAI_IMPEXP hkvVec3* CastRay(const hkvVec3 *start, const hkvVec3 *end);
+
+	/// \brief
+	/// Cast a ray from a 2D screen coordinate to the Nav Mesh and return the hit point
+	hkvVec3* PickPoint(float x, float y, float fMaxDist = 10000.f);
+
 	///
 	/// @}
 	///
@@ -222,7 +246,7 @@ protected:
 #endif	// __VHAVOK_AI_MODULE_HPP
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

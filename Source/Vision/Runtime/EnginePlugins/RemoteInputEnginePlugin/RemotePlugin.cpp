@@ -107,6 +107,8 @@ private:
   VRemoteInput(const VRemoteInput& other); //no copy constructor
   void operator = (const VRemoteInput& other); //don't assign anything
 
+  void HandleTouchPoint(int iTouchType, int64 iTouchId, double fPosX, double fPosY);
+
 public:
 
 
@@ -196,8 +198,8 @@ m_fRealUpdateRate(EXPECTED_UPDATE_RATE),
 m_fAverageUpdateRate(EXPECTED_UPDATE_RATE),
 m_bSmoothTouchInput(true),
 m_bDisableMouseInput(true),
-m_fIncomingWidth(1.0f),
-m_fIncomingHeight(1.0f)
+m_fIncomingWidth(0.1f),
+m_fIncomingHeight(0.1f)
 {
   for(int i=0;i<NUMBER_TOUCH_POINTS;i++)
   {
@@ -223,10 +225,90 @@ bool isValidFloat(float f)
   return true;
 }
 
+void VRemoteInput::HandleTouchPoint(int iTouchType, int64 iTouchId, double fPosX, double fPosY)
+{
+  if(iTouchType == VTT_START){
+    //search for a free place to insert the touch point into
+    int iIndex = -1;
+    for(int i=0;i<NUMBER_TOUCH_POINTS;i++)
+    {
+      if(m_touchPoints[i].used == false){
+        iIndex = i;
+        break;
+      }
+    }
+
+    if(iIndex != -1)  //only insert start if we have a slot available
+    {
+      TouchPoint& point = m_touchPoints[iIndex];
+      point.iId = iTouchId;
+      point.iRemappedId = m_iNextTouchId++;
+      point.used = true;
+
+      TouchInfo info(point.iRemappedId,
+        iIndex,
+        (int)(fPosX * Vision::Video.GetXRes()),
+        (int)(fPosY * Vision::Video.GetYRes()),
+        VTT_START);
+      m_touchQueue.Append(info);
+    }
+
+  }
+  else {
+    //search if the touch point does already exist
+    int iIndex = -1;
+    for(int i=0;i<NUMBER_TOUCH_POINTS;i++)
+    {
+      if(m_touchPoints[i].used && m_touchPoints[i].iId == iTouchId){
+        iIndex = i;
+        break;
+      }
+    }
+
+    if(iIndex != -1) //only insert update if we have a slot available
+    {
+      TouchPoint& point = m_touchPoints[iIndex];
+      if(iTouchType == VTT_END)
+      {
+        point.used = false;
+        m_touchQueue.Append(TouchInfo(point.iRemappedId,VTT_END));
+      }
+      else 
+      {
+        TouchInfo info(point.iRemappedId,
+          iIndex,
+          (int)(fPosX * Vision::Video.GetXRes()),
+          (int)(fPosY * Vision::Video.GetYRes()),
+          VTT_MOVE);
+
+        //search if there is already a update for this touchpoint
+        TouchInfo* last = NULL;
+        for(int i = 0; i < m_touchQueue.GetLength(); i++)
+        {
+          if(m_touchQueue[i].iRemappedId == info.iRemappedId){
+            last = &m_touchQueue[i];
+            break;
+          }
+        }
+
+        //update already existing entry
+        if(last != NULL){
+          last->iAbsX = info.iAbsX;
+          last->iAbsY = info.iAbsY;
+        }
+        else { //add new entry
+          m_touchQueue.Append(info);
+        }
+      }
+    }
+  }
+}
+
+
 void* VRemoteInput::OnRequest(mg_event event, mg_connection *conn, const mg_request_info *request_info) 
 {
     if (event == MG_NEW_REQUEST) {
-      //Vision::Error.SystemMessage(request_info->uri);
+      //hkvLog::Info(request_info->uri);
       if(strcmp(request_info->uri,"/") == 0){
         IVFileInStream* pFile = Vision::File.Open("\\RemoteInput\\touch.html");
         if(!pFile){
@@ -262,7 +344,7 @@ void* VRemoteInput::OnRequest(mg_event event, mg_connection *conn, const mg_requ
       else if(strstr(request_info->uri,"/static/") == request_info->uri)
       {
 
-        //Vision::Error.SystemMessage("sending %s",request_info->uri);
+        //hkvLog::Info("sending %s",request_info->uri);
         VString sFileName = "\\RemoteInput\\";
         sFileName += &request_info->uri[8];
         
@@ -290,7 +372,7 @@ void* VRemoteInput::OnRequest(mg_event event, mg_connection *conn, const mg_requ
         {
           mg_printf(conn, "HTTP/1.1 404\r\n"
             "Content-Type: text/plain\r\n\r\n"
-            "unkown file ending: %s",sFileName.AsChar());
+            "unknown file ending: %s",sFileName.AsChar());
           return "";
         }
 
@@ -298,7 +380,7 @@ void* VRemoteInput::OnRequest(mg_event event, mg_connection *conn, const mg_requ
         if(strcmp(szFileEnding,"jpg") == 0){
           szFileEnding = "jpeg";
         }
-        //Vision::Error.SystemMessage("File ending %s",szFileEnding);
+        //hkvLog::Info("File ending %s",szFileEnding);
 
         LONG uiFileSize = pFile->GetSize();
         VMemoryTempBuffer<4096> buffer(uiFileSize);
@@ -311,9 +393,9 @@ void* VRemoteInput::OnRequest(mg_event event, mg_connection *conn, const mg_requ
       else if(strcmp(request_info->uri,"/event") == 0){
         char buffer[4096];
         int iReadBytes = mg_read(conn,buffer,sizeof(buffer)-1);
-        //Vision::Error.SystemMessage("%d bytes content",iReadBytes);
+        //hkvLog::Info("%d bytes content",iReadBytes);
         buffer[iReadBytes] = '\0';
-        //Vision::Error.SystemMessage("content: %s",buffer);
+        //hkvLog::Info("content: %s",buffer);
 
 
         m_queueMutex.Lock();
@@ -354,79 +436,10 @@ void* VRemoteInput::OnRequest(mg_event event, mg_connection *conn, const mg_requ
               double fPosX = atof(toc2.Next()) / m_fIncomingWidth;
               double fPosY = atof(toc2.Next()) / m_fIncomingHeight;
 
-              if(iTouchType == VTT_START){
-                //search for a free place to insert the touch point into
-                int iIndex = -1;
-                for(int i=0;i<NUMBER_TOUCH_POINTS;i++)
-                {
-                  if(m_touchPoints[i].used == false){
-                    iIndex = i;
-                    break;
-                  }
-                }
-
-                if(iIndex != -1)  //only insert start if we have a slot available
-                {
-                  TouchPoint& point = m_touchPoints[iIndex];
-                  point.iId = iTouchId;
-                  point.iRemappedId = m_iNextTouchId++;
-                  point.used = true;
-
-                  TouchInfo info(point.iRemappedId,
-                    iIndex,
-                    (int)(fPosX * Vision::Video.GetXRes()),
-                    (int)(fPosY * Vision::Video.GetYRes()),
-                    VTT_START);
-                  m_touchQueue.Append(info);
-                }
-
-              }
-              else {
-                //search if the touch point does already exist
-                int iIndex = -1;
-                for(int i=0;i<NUMBER_TOUCH_POINTS;i++)
-                {
-                  if(m_touchPoints[i].used && m_touchPoints[i].iId == iTouchId){
-                    iIndex = i;
-                    break;
-                  }
-                }
-
-                if(iIndex != -1) //only insert update if we have a slot aviable
-                {
-                  TouchPoint& point = m_touchPoints[iIndex];
-                  if(iTouchType == VTT_END)
-                  {
-                    point.used = false;
-                    m_touchQueue.Append(TouchInfo(point.iRemappedId,VTT_END));
-                  }
-                  else {
-                    TouchInfo info(point.iRemappedId,
-                      iIndex,
-                      (int)(fPosX * Vision::Video.GetXRes()),
-                      (int)(fPosY * Vision::Video.GetYRes()),
-                      VTT_MOVE);
-
-                    //search if there is already a update for this touchpoint
-                    TouchInfo* last = NULL;
-                    for(int i = 0; i < m_touchQueue.GetLength(); i++)
-                    {
-                      if(m_touchQueue[i].iRemappedId == info.iRemappedId){
-                        last = &m_touchQueue[i];
-                        break;
-                      }
-                    }
-
-                    //update already existing entry
-                    if(last != NULL){
-                      last->iAbsX = info.iAbsX;
-                      last->iAbsY = info.iAbsY;
-                    }
-                    else { //add new entry
-                      m_touchQueue.Append(info);
-                    }
-                  }
-                }
+              // Only handle the touch point if the screen width/height has been initialized.
+              if (m_fIncomingWidth >= 1.0f && m_fIncomingHeight >= 1.0f)
+              {
+                HandleTouchPoint(iTouchType, iTouchId, fPosX, fPosY);
               }
             }
           }
@@ -443,14 +456,14 @@ void* VRemoteInput::OnRequest(mg_event event, mg_connection *conn, const mg_requ
         int iReadBytes = mg_read(conn,buffer,sizeof(buffer)-1);
         buffer[iReadBytes] = '\0';
 
-        Vision::Error.SystemMessage("remote device connected");
+        hkvLog::Info("remote device connected");
 
         m_queueMutex.Lock();
 
         VStringTokenizerInPlace toc(buffer,',');
         if(toc.GetTokenCount() == 2){
-          int iWidth = atoi(toc.Next());
-          int iHeight = atoi(toc.Next());
+          int iWidth = hkvMath::Max(atoi(toc.Next()), 8);
+          int iHeight = hkvMath::Max(atoi(toc.Next()), 8);
 
           m_fIncomingWidth = (float)iWidth;
           m_fIncomingHeight = (float)iHeight;
@@ -485,6 +498,10 @@ void* VRemoteInput::OnRequest(mg_event event, mg_connection *conn, const mg_requ
           {
             m_variables[i].bNeedsUpdate = false;
             mg_printf(conn,"variables['%s'] = %s;",m_variables[i].sVarName.AsChar(),m_variables[i].sVarValue.AsChar());
+          }
+          if (m_fIncomingWidth < 1.0f || m_fIncomingHeight < 1.0f)
+          {
+            mg_printf(conn,"needWindowSize = true;");
           }
         }
         m_variableMutex.Unlock();
@@ -567,7 +584,7 @@ void VRemoteInput::OnHandleCallback(IVisCallbackDataObject_cl *pData)
         }
       }
 
-      Vision::Error.Warning("Unable to create Lua Fmod Module, lua_State is NULL or cast failed!");
+      hkvLog::Warning("Unable to create Lua RemoteInput Module, lua_State is NULL or cast failed!");
     }
     return;
   }
@@ -593,7 +610,7 @@ void VRemoteInput::OnHandleCallback(IVisCallbackDataObject_cl *pData)
 
     m_fTimeSinceLastUpdate += Vision::GetTimer()->GetTimeDifference();
 
-    VMultiTouchInputPC& multiTouch = VInputManager::GetMultitouch();
+    VMultiTouchInputPC& multiTouch = VInputManager::GetTouchScreen();
     VMotionInputPC& motion = VInputManager::GetMotionSensor();
 
     for(int i = 0; i < m_touchQueue.GetLength(); i++)
@@ -603,7 +620,7 @@ void VRemoteInput::OnHandleCallback(IVisCallbackDataObject_cl *pData)
       {
         case VTT_MOVE:
           {
-            //Vision::Error.SystemMessage("UpdateTouch %d %d %d %f", info.iRemappedId, info.iAbsX, info.iAbsY,Vision::GetTimer()->GetTime());
+            //hkvLog::Info("UpdateTouch %d %d %d %f", info.iRemappedId, info.iAbsX, info.iAbsY,Vision::GetTimer()->GetTime());
             if(m_bSmoothTouchInput)
             {
 #ifdef USE_LINEAR_PREDICTION
@@ -629,7 +646,7 @@ void VRemoteInput::OnHandleCallback(IVisCallbackDataObject_cl *pData)
           }
           break;
         case VTT_START:
-          //Vision::Error.SystemMessage("AddNewTouch %d %d %d", info.iRemappedId, info.iAbsX, info.iAbsY);
+          //hkvLog::Info("AddNewTouch %d %d %d", info.iRemappedId, info.iAbsX, info.iAbsY);
           multiTouch.AddNewTouch(info.iRemappedId, (float)info.iAbsX, (float)info.iAbsY);
           m_touchPoints[info.iIndex].fLastPosX = (float)info.iAbsX;
           m_touchPoints[info.iIndex].fLastPosY = (float)info.iAbsY;
@@ -643,7 +660,7 @@ void VRemoteInput::OnHandleCallback(IVisCallbackDataObject_cl *pData)
 #endif  
           break;
         case VTT_END:
-          //Vision::Error.SystemMessage("RemoveTouch %d", info.iRemappedId);
+          //hkvLog::Info("RemoveTouch %d", info.iRemappedId);
           multiTouch.RemoveTouch(info.iRemappedId);
           break;
         case VTT_INIT:
@@ -693,7 +710,7 @@ void VRemoteInput::OnHandleCallback(IVisCallbackDataObject_cl *pData)
           point.fSendNextPos -= Vision::GetTimer()->GetTimeDifference();
           if(point.fSendNextPos <= 0.0f)
           {
-            //Vision::Error.SystemMessage("Interpolated update %d %d %d %f",point.iRemappedId,point.iNextPosX,point.iNextPosY,Vision::GetTimer()->GetTime());
+            //hkvLog::Info("Interpolated update %d %d %d %f",point.iRemappedId,point.iNextPosX,point.iNextPosY,Vision::GetTimer()->GetTime());
             multiTouch.UpdateTouch(point.iRemappedId, point.iNextPosX, point.iNextPosY );
             //another interpolated coordinate?
             if(point.iNextPosX != point.iLastPosX || point.iNextPosY != point.iNextPosY){
@@ -737,7 +754,7 @@ void VRemoteInput::OnHandleCallback(IVisCallbackDataObject_cl *pData)
   {
     int iXRes = Vision::Video.GetXRes();
     int iYRes = Vision::Video.GetYRes();
-    VInputManager::GetMultitouch().RecalculateAfterResize(m_iXRes,m_iYRes,iXRes,iYRes);
+    VInputManager::GetTouchScreen().RecalculateAfterResize(m_iXRes,m_iYRes,iXRes,iYRes);
     m_iXRes = iXRes;
     m_iYRes = iYRes;
   }
@@ -745,7 +762,7 @@ void VRemoteInput::OnHandleCallback(IVisCallbackDataObject_cl *pData)
 
 void VRemoteInput::DebugDrawTouchAreas(VColorRef color)
 {
-  const VPListT<VTouchArea>& touchAreas = VInputManager::GetMultitouch().GetTouchAreas();
+  const VPListT<VTouchArea>& touchAreas = VInputManager::GetTouchScreen().GetTouchAreas();
   for(int i=0; i < touchAreas.GetLength(); i++)
   {
     const VRectanglef& rect = touchAreas[i]->GetArea();
@@ -758,7 +775,7 @@ void VRemoteInput::DebugDrawTouchAreas(VColorRef color)
 
 void VRemoteInput::DebugDrawTouchPoints(VColorRef color)
 {
-  VMultiTouchInputPC& touchscreen = VInputManager::GetMultitouch();
+  VMultiTouchInputPC& touchscreen = VInputManager::GetTouchScreen();
   int count = touchscreen.GetMaximumNumberOfTouchPoints();
   for(int i = 0; i < count; i++)
   {
@@ -799,15 +816,15 @@ void VRemoteInput::DebugDrawTouchPoints(VColorRef color)
 
 void VRemoteInput::InitEmulatedDevices()
 {
-  VInputManager::GetMultitouch().Init(true);
-  VInputManager::GetMultitouch().SetEnabled(true);
+  VInputManager::GetTouchScreen().Init(true);
+  VInputManager::GetTouchScreen().SetEnabled(true);
   VInputManager::GetMotionSensor().SetEnabled(true);
 }
 
 void VRemoteInput::DeinitEmulatedDevices()
 {
-  VInputManager::GetMultitouch().SetEnabled(false);
-  VInputManager::GetMultitouch().DeInit();
+  VInputManager::GetTouchScreen().SetEnabled(false);
+  VInputManager::GetTouchScreen().DeInit();
   VInputManager::GetMotionSensor().SetEnabled(false);
 }
 
@@ -860,21 +877,24 @@ void VRemoteInput::StopServer()
     m_ctx = NULL;
   }
   m_bDisplayUrl = false;
+
+  if(m_bDisableMouseInput)
+  {
+    V_PC_MOUSE.SetActive(true);
+  }
 }
 
 bool VRemoteInput::AddVariableDirect(const char* varName, const char* value)
 {
-  m_variableMutex.Lock();
+  VMutexLocker lock(m_variableMutex);
   for(int i=0; i < m_variables.GetLength(); i++)
   {
     if(m_variables[i].sVarName == varName){
-      m_variableMutex.Unlock();
       return false;
     }
   }
 
   m_variables.Append(VariableInfo(varName,value));
-  m_variableMutex.Unlock();
   return true;
 }
 
@@ -904,18 +924,16 @@ bool VRemoteInput::AddVariable(const char* varName, const char* value)
 
 bool VRemoteInput::UpdateVariableDirect(const char* varName, const char* value)
 {
-  m_variableMutex.Lock();
+  VMutexLocker lock(m_variableMutex);
   for(int i=0; i < m_variables.GetLength(); i++)
   {
     if(m_variables[i].sVarName == varName)
     {
       m_variables[i].sVarValue = value;
       m_variables[i].bNeedsUpdate = true;
-      m_variableMutex.Unlock();
       return true;
     }
   }
-  m_variableMutex.Unlock();
   return false;
 }
 
@@ -945,17 +963,15 @@ bool VRemoteInput::UpdateVariable(const char* varName, const char* value)
 
 bool VRemoteInput::RemoveVariable(const char* varName)
 {
-  m_variableMutex.Lock();
+  VMutexLocker lock(m_variableMutex);
   for(int i=0; i < m_variables.GetLength(); i++)
   {
     if(m_variables[i].sVarName == varName)
     {
       m_variables.RemoveAt(i);
-      m_variableMutex.Unlock();
       return true;
     }
   }
-  m_variableMutex.Unlock();
   return false;
 }
 
@@ -975,7 +991,7 @@ void VRemoteInput::SetDisableMouseInput(bool bOn)
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

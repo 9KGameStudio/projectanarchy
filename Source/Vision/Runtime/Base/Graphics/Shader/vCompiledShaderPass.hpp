@@ -333,7 +333,7 @@ public:
 
   /// \brief
   ///   Copies over all shader programs from the shader pass resource to the compiled shader pass.
-  VBASE_IMPEXP bool CopyShadersFromResource (VShaderPassResource& resource, IVLog* pLog);
+  VBASE_IMPEXP bool CopyShadersFromResource (VShaderPassResource& resource, hkvLogInterface* pLog);
 
   /// \brief
   ///   Clears all shader programs previously copied by CopyShadersFromResource().
@@ -535,7 +535,7 @@ typedef VNameValueListParser<';', '=', 1024> VShaderParameterParser;
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

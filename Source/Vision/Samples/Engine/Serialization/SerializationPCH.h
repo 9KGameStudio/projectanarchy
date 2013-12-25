@@ -6,11 +6,6 @@
  *
  */
 
-// stdafx.h : include file for standard system include files,
-//  or project specific include files that are used frequently, but
-//      are changed infrequently
-//
-
 #if !defined(AFX_STDAFX_H__PICKINGSAMPLE__INCLUDED_)
 #define AFX_STDAFX_H__PICKINGSAMPLE__INCLUDED_
 
@@ -22,25 +17,16 @@
 #define WIN32_LEAN_AND_MEAN		// Exclude rarely-used stuff from Windows headers
 #endif
 
-#define VISION_SAMPLEAPP_CALLBACKS
-
 #if defined(WIN32)  || defined(_VISION_XENON) 
   #define NOMINMAX //Required by Novodex
 #endif
 
-#include <Vision/Runtime/Base/VBase.hpp>
 #include <Vision/Runtime/Engine/System/Vision.hpp>
-#include <Vision/Runtime/Common/VisSampleApp.hpp>
-
-#include <Vision/Runtime/EnginePlugins/EnginePluginsImport.hpp>
-
-//{{AFX_INSERT_LOCATION}}
-// Microsoft Visual C++ will insert additional declarations immediately before the previous line.
 
 #endif // !defined(AFX_STDAFX_H__PICKINGSAMPLE__INCLUDED_)
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

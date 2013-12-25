@@ -1,3 +1,11 @@
+/*
+ *
+ * Confidential Information of Telekinesys Research Limited (t/a Havok). Not for disclosure or distribution without Havok's
+ * prior written consent. This software contains code, techniques and know-how which is confidential and proprietary to Havok.
+ * Product and Trade Secret source code contains trade secrets of Havok. Havok Software (C) Copyright 1999-2013 Telekinesys Research Limited t/a Havok. All Rights Reserved. Use of this software is subject to the terms of an end user license agreement.
+ *
+ */
+
 // ===========================================================
 // Havok Physics Lua Module - SWIG Interface
 // ===========================================================
@@ -46,6 +54,22 @@
   #define QUALITY_CHARACTER HK_COLLIDABLE_QUALITY_CHARACTER
   #define QUALITY_KEYFRAMED_REPORTING HK_COLLIDABLE_QUALITY_KEYFRAMED_REPORTING
 
+  #define LAYER_ALL                      vHavokPhysicsModule::HK_LAYER_ALL 
+  #define LAYER_COLLIDABLE_DYNAMIC	     vHavokPhysicsModule::HK_LAYER_COLLIDABLE_DYNAMIC
+  #define LAYER_COLLIDABLE_STATIC	     vHavokPhysicsModule::HK_LAYER_COLLIDABLE_STATIC
+  #define LAYER_COLLIDABLE_TERRAIN	     vHavokPhysicsModule::HK_LAYER_COLLIDABLE_TERRAIN
+  #define LAYER_COLLIDABLE_CONTROLLER	 vHavokPhysicsModule::HK_LAYER_COLLIDABLE_CONTROLLER
+  #define LAYER_COLLIDABLE_TERRAIN_HOLE  vHavokPhysicsModule::HK_LAYER_COLLIDABLE_TERRAIN_HOLE
+  #define LAYER_COLLIDABLE_DISABLED	     vHavokPhysicsModule::HK_LAYER_COLLIDABLE_DISABLED
+  #define LAYER_COLLIDABLE_RAGDOLL	     vHavokPhysicsModule::HK_LAYER_COLLIDABLE_RAGDOLL
+  #define LAYER_COLLIDABLE_ATTACHMENTS   vHavokPhysicsModule::HK_LAYER_COLLIDABLE_ATTACHMENTS
+  #define LAYER_COLLIDABLE_FOOT_IK	     vHavokPhysicsModule::HK_LAYER_COLLIDABLE_FOOT_IK
+  #define LAYER_COLLIDABLE_DEBRIS		 vHavokPhysicsModule::HK_LAYER_COLLIDABLE_DEBRIS
+  #define LAYER_COLLIDABLE_CUSTOM0	     vHavokPhysicsModule::HK_LAYER_COLLIDABLE_CUSTOM0
+  #define LAYER_COLLIDABLE_CUSTOM1	     vHavokPhysicsModule::HK_LAYER_COLLIDABLE_CUSTOM1
+  #define LAYER_COLLIDABLE_CUSTOM2	     vHavokPhysicsModule::HK_LAYER_COLLIDABLE_CUSTOM2
+  #define LAYER_COLLIDABLE_CUSTOM3	     vHavokPhysicsModule::HK_LAYER_COLLIDABLE_CUSTOM3 
+  #define LAYER_COLLIDABLE_CUSTOM4	     vHavokPhysicsModule::HK_LAYER_COLLIDABLE_CUSTOM4
 %}
 
 %immutable;
@@ -70,6 +94,25 @@ static const int QUALITY_CRITICAL;
 static const int QUALITY_BULLET;
 static const int QUALITY_CHARACTER;
 static const int QUALITY_KEYFRAMED_REPORTING;
+
+
+//collision layers
+static const int LAYER_ALL;                     
+static const int LAYER_COLLIDABLE_DYNAMIC;			
+static const int LAYER_COLLIDABLE_STATIC;				
+static const int LAYER_COLLIDABLE_TERRAIN;			
+static const int LAYER_COLLIDABLE_CONTROLLER;		
+static const int LAYER_COLLIDABLE_TERRAIN_HOLE; 
+static const int LAYER_COLLIDABLE_DISABLED;			
+static const int LAYER_COLLIDABLE_RAGDOLL;			
+static const int LAYER_COLLIDABLE_ATTACHMENTS;	
+static const int LAYER_COLLIDABLE_FOOT_IK;			
+static const int LAYER_COLLIDABLE_DEBRIS;				
+static const int LAYER_COLLIDABLE_CUSTOM0;			
+static const int LAYER_COLLIDABLE_CUSTOM1;			
+static const int LAYER_COLLIDABLE_CUSTOM2;			
+static const int LAYER_COLLIDABLE_CUSTOM3;			
+static const int LAYER_COLLIDABLE_CUSTOM4;			
 
 %mutable;
   
@@ -191,63 +234,108 @@ static const int QUALITY_KEYFRAMED_REPORTING;
   }
 %}
 
-%native(RayCast) int PhysicsLuaModule_RayCast(lua_State *L);
+%native(CalcFilterInfo) int PhysicsLuaModule_CalcFilterInfo(lua_State *L);
 %{
-	int PhysicsLuaModule_RayCast(lua_State *L)
-	{
-		DECLARE_ARGS_OK;
+   int PhysicsLuaModule_CalcFilterInfo(lua_State *L) 
+   {
+     DECLARE_ARGS_OK
 	
-		// Get arguments	
-		GET_ARG(1, hkvVec3, origin);
-		GET_ARG(2, hkvVec3, direction);
-		
-		// Get world
-		hkpWorld* world = vHavokPhysicsModule::GetInstance()->GetPhysicsWorld();
-		
-		// Lock world
-		world->lock();
+	   // Get arguments
+	   GET_ARG(1, int, layer);
+	   GET_ARG(2, int, group);
+	   GET_ARG(3, int, subsystem);
+	   GET_ARG(3, int, subsystemDontCollideWith);
 
-		hkVector4 ray;
-		vHavokConversionUtils::VisVecToPhysVec_noscale(direction, ray);
-		ray.mul( hkSimdReal::fromFloat(500) );
+	   // Calculate collision filter information
+	   int iCollisionFilterInfo = hkpGroupFilter::calcFilterInfo(layer, group, subsystem, subsystemDontCollideWith);
 
-		// Setup raycast
-		hkpWorldRayCastInput input;
-		vHavokConversionUtils::VisVecToPhysVecWorld( origin, input.m_from );
-		input.m_to.setAdd( input.m_from, ray );
-		input.m_enableShapeCollectionFilter = true;
-		input.m_filterInfo = 0xffffffff;
+     lua_pushinteger(L, (lua_Integer)iCollisionFilterInfo);
+	   return 1;
+   }
+%}
 
-		// Cast ray
-		hkpClosestRayHitCollector output;
-		world->castRay( input, output );
+%native(PerformRaycast) int PhysicsLuaModule_PerformRaycast(lua_State *L);
+%{
+   int PhysicsLuaModule_PerformRaycast(lua_State *L)
+   {
+	   DECLARE_ARGS_OK;
+	
+	   // Get arguments
+	   GET_ARG(1, hkvVec3, vRayStart);
+	   GET_ARG(2, hkvVec3, vRayEnd);
+     GET_ARG(3, int, iCollisionFilterInfo);
 
-		// Unlock world
-		world->unlock();
+	   // Perform raycast
+	   VisPhysicsRaycastClosestResult_cl raycastData;
+	   raycastData.vRayStart = vRayStart;
+	   raycastData.vRayEnd = vRayEnd;
+	   raycastData.iCollisionBitmask = iCollisionFilterInfo;
+	   vHavokPhysicsModule::GetInstance()->PerformRaycast(&raycastData);
+	
+	   // Check hit
+	   if (!raycastData.bHit)
+	   { 
+	     lua_pushboolean(L, false);
+	     return 1;
+	   }
+	
+	   lua_pushboolean(L, true);
 
-		// Check hit
-		if ( !output.hasHit() )
-		{
-			lua_pushboolean(L,false);
-			return 1;
-		}
+     // Create an empty table for returning raycast results
+	   lua_newtable(L); 
 
-		// Get hit point
-		const hkpWorldRayCastOutput& hit = output.getHit();
-		hkVector4 hitPoint; hitPoint.setAddMul( input.m_from, ray, hit.m_hitFraction );
+	   // Hit type
+	   lua_pushstring(L, "HitType");
+     switch(raycastData.closestHit.eHitType)
+	   {
+	   case VIS_TRACETYPE_ENTITYPOLY:
+	     lua_pushstring(L, "Entity"); 
+	     break;
 
-		// Get Vision hit point
-    hkvVec3 visionHitPoint;
-    vHavokConversionUtils::PhysVecToVisVecWorld( hitPoint, visionHitPoint );
+	   case VIS_TRACETYPE_STATICGEOMETRY:
+	     lua_pushstring(L, "Mesh"); 
+	     break;
 
-		// Results
-		lua_pushboolean(L,true);
-		
-		hkvVec3* resultPtr = new hkvVec3( (const hkvVec3&)visionHitPoint );
-		SWIG_NewPointerObj( L, (void*)resultPtr, SWIGTYPE_p_hkvVec3, 1 );		
-		
-		return 2;
-	}
+     case VIS_TRACETYPE_TERRAIN:
+	     lua_pushstring(L, "Terrain"); 
+	     break;
+
+     default:
+	     lua_pushstring(L, "Unknown"); 
+	   }
+     lua_settable(L, -3);  
+
+	   // Hit object 
+	   lua_pushstring(L, "HitObject");    
+	   LUA_PushObjectProxy(L, raycastData.closestHit.pHitObject);
+	   lua_settable(L, -3);  
+
+	   // Hit fraction
+	   lua_pushstring(L, "HitFraction");         
+     lua_pushnumber(L, (lua_Number)raycastData.closestHit.fHitFraction); 
+	   lua_settable(L, -3);  
+
+	   // Impact point and normal
+	   lua_pushstring(L, "ImpactPoint");          
+	   LUA_PushObjectProxy(L, new hkvVec3(raycastData.closestHit.vImpactPoint));
+     lua_settable(L, -3);            
+	   lua_pushstring(L, "ImpactNormal");          
+	   LUA_PushObjectProxy(L, new hkvVec3(raycastData.closestHit.vImpactNormal));
+     lua_settable(L, -3);   
+
+	   // Hit material information
+	   lua_pushstring(L, "DynamicFriction");         
+     lua_pushnumber(L, (lua_Number)raycastData.closestHit.hitMaterial.fDynamicFriction);    
+	   lua_settable(L, -3); 
+	   lua_pushstring(L, "Restitution");         
+     lua_pushnumber(L, (lua_Number)raycastData.closestHit.hitMaterial.fRestitution);    
+	   lua_settable(L, -3); 
+	   lua_pushstring(L, "UserData");   
+	   lua_pushstring(L, raycastData.closestHit.hitMaterial.szUserData.AsChar());
+	   lua_settable(L, -3);
+   
+	   return 2;
+   }
 %}
 
 #else
@@ -337,7 +425,74 @@ public:
   
   /// \brief Enables / disables collisions between the given groups
   static void SetGroupsCollision(int group1, int group2, bool doEnable);
-      
+
+  /// \brief Calculates collision filter information.
+  ///
+  /// \param layer
+  ///   The collision layer.
+  ///
+  /// \param group 
+  ///   The collision group.
+  ///
+  /// \param subsystem 
+  ///   The collision subsystem.
+  ///
+  /// \param subsystemDontCollideWith 
+  ///    The collision subsystem this body shouldn't collide with.
+  ///
+  /// \note
+  ///   See the Havok documentation for more information about what values to specify for these parameters.
+  /// 
+  /// \return
+  ///   Collision filter information, used e.g. for PerformRaycast().
+  int CalcFilterInfo(int layer, int group, int subsystem, int subsystemDontCollideWith);
+
+  /// \brief Performs a raycast and returns the closest result.
+  ///
+  /// \param rayStart
+  ///   Start of ray.
+  /// 
+  /// \param rayEnd
+  ///   End of ray.
+  ///
+  /// \param collisionFilterInfo
+  ///   Use CalcFilterInfo() to setup the collisionFilterInfo.
+  ///
+  /// \return
+  ///   The first return parameter is a boolean that indicates whether the ray has hit something.
+  ///   The second return parameter is a table that contains the raycast results for the closest hit:
+  ///   - HitType [string]: Type of geometry that was hit, can be "Entity", "Mesh", "Terrain", "Unknown".
+  ///   - HitObject [VisTypedEngineObject_cl*]: If an entity was hit, the corresponding VisObject3D_cl pointer is stored here. If a static mesh instance was hit, the corresponding VisStaticMeshInstance_cl is stored here.
+  ///   - HitFraction [number]: Fraction between start and end of the trace at which the hit occurred.
+  ///   - ImpactPoint [hkvVec3]: Point (position) of impact.
+  ///   - ImpactNormal [hkvVec3]: Surface normal at the point of impact.
+  ///   - DynamicFriction [number]: Coefficient for dynamic friction. 
+  ///   - Restitution [number]: Coefficient for restitution.
+  ///   - UserData [string]: Physics material user data string (currently ony supported for static meshes).
+  ///
+  /// \par Example
+  ///   \code
+  ///     function OnThink(self)
+  ///       local rayStart = Vision.hkvVec3(100.0, 150.0, 0.0)
+  ///       local rayEnd = Vision.hkvVec3(-140.0, 150.0, 0.0)
+  ///       local iCollisionFilterInfo = Physics.CalcFilterInfo(Physics.LAYER_ALL, 0, 0, 0);
+  ///		local isHit, result = Physics.PerformRaycast(rayStart, rayEnd, iCollisionFilterInfo)
+  ///       if isHit == true then 
+  ///         Debug:PrintLine("Hit type: " ..result["HitType"])
+  ///         if result["HitType"] == "Entity" then
+  ///           Debug:PrintLine("Mesh of hit entity: " ..result["HitObject"]:GetMesh():GetName())
+  ///         end 
+  ///         Debug:PrintLine("Hit fraction: " ..result["HitFraction"])
+  ///         Debug:PrintLine("Hit position: " ..result["ImpactPoint"])
+  ///         Debug:PrintLine("Hit normal: " ..result["ImpactNormal"])
+  ///         Debug:PrintLine("Dynamic friction of hit object: " ..result["DynamicFriction"])
+  ///         Debug:PrintLine("Restitution of hit object: " ..result["Restitution"])
+  ///         Debug:PrintLine("Physics user data of hit object: " ..result["UserData"])
+  ///       end
+  ///     end
+  ///   \endcode
+  static boolean_table PerformRaycast(hkvVec3 rayStart, hkvVec3 rayEnd, int collisionFilterInfo); 
+
   /// @}
   /// @name Motion Type Constants
   /// @{
@@ -367,40 +522,91 @@ public:
   /// @name Quality Constants
   /// @{
   
-	/// \brief Use this for fixed bodies.
-	static const number QUALITY_FIXED;
+  /// \brief Use this for fixed bodies.
+  static const number QUALITY_FIXED;
 
-	/// \brief Use this for moving objects with infinite mass.
-	static const number QUALITY_KEYFRAMED;
+  /// \brief Use this for moving objects with infinite mass.
+  static const number QUALITY_KEYFRAMED;
 
-	/// \brief Use this for all your debris objects.
-	static const number QUALITY_DEBRIS;
+  /// \brief Use this for all your debris objects.
+  static const number QUALITY_DEBRIS;
 
-	/// \brief Use this for debris objects that should have simplified TOI collisions with fixed/landscape objects.
-	static const number QUALITY_DEBRIS_SIMPLE_TOI;
+  /// \brief Use this for debris objects that should have simplified TOI collisions with fixed/landscape objects.
+  static const number QUALITY_DEBRIS_SIMPLE_TOI;
 
-	/// \brief Use this for moving bodies, which should not leave the world,
-	/// but you rather prefer those objects to tunnel through the world than
-	/// dropping frames because the engine.
-	static const number QUALITY_MOVING;
+  /// \brief Use this for moving bodies, which should not leave the world,
+  /// but you rather prefer those objects to tunnel through the world than
+  /// dropping frames because the engine.
+  static const number QUALITY_MOVING;
 
-	/// \brief Use this for all objects, which you cannot afford to tunnel through
-	/// the world at all.
-	static const number QUALITY_CRITICAL;
+  /// \brief Use this for all objects, which you cannot afford to tunnel through
+  /// the world at all.
+  static const number QUALITY_CRITICAL;
 
-	/// \brief Use this for very fast objects.
-	static const number QUALITY_BULLET;
+  /// \brief Use this for very fast objects.
+  static const number QUALITY_BULLET;
 
   /// \brief Use this for rigid body character controllers.
-	static const number QUALITY_CHARACTER;
+  static const number QUALITY_CHARACTER;
 
-	/// \brief Use this for moving objects with infinite mass which should report
-	/// contact points and TOI-collisions against all other bodies, including other
-	/// fixed and keyframed bodies.
+  /// \brief Use this for moving objects with infinite mass which should report
+  /// contact points and TOI-collisions against all other bodies, including other
+  /// fixed and keyframed bodies.
   /// \note Note that only non-TOI contact points are reported in collisions against debris-quality objects.
 	const number QUALITY_KEYFRAMED_REPORTING;
+
+  /// @}
+  /// @name Collision Layer Constants
+  /// @{
   
+  static const int LAYER_ALL;   
+	                  
+  static const int LAYER_COLLIDABLE_DYNAMIC;			
+
+  static const int LAYER_COLLIDABLE_STATIC;				
+
+  static const int LAYER_COLLIDABLE_TERRAIN;			
+
+  static const int LAYER_COLLIDABLE_CONTROLLER;		
+
+  static const int LAYER_COLLIDABLE_TERRAIN_HOLE; 
+
+  static const int LAYER_COLLIDABLE_DISABLED;			
+
+  static const int LAYER_COLLIDABLE_RAGDOLL;	
+			
+  static const int LAYER_COLLIDABLE_ATTACHMENTS;	
+
+  static const int LAYER_COLLIDABLE_FOOT_IK;			
+
+  static const int LAYER_COLLIDABLE_DEBRIS;		
+			
+  static const int LAYER_COLLIDABLE_CUSTOM0;		
+		
+  static const int LAYER_COLLIDABLE_CUSTOM1;		
+		
+  static const int LAYER_COLLIDABLE_CUSTOM2;		
+		
+  static const int LAYER_COLLIDABLE_CUSTOM3;		
+		
+  static const int LAYER_COLLIDABLE_CUSTOM4;			
+
   /// @}
 };
 
 #endif
+
+/*
+ * Havok SDK - Base file, BUILD(#20131218)
+ * 
+ * Confidential Information of Havok.  (C) Copyright 1999-2013
+ * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok
+ * Logo, and the Havok buzzsaw logo are trademarks of Havok.  Title, ownership
+ * rights, and intellectual property rights in the Havok software remain in
+ * Havok and/or its suppliers.
+ * 
+ * Use of this software for evaluation purposes is subject to and indicates
+ * acceptance of the End User licence Agreement for this product. A copy of
+ * the license is included with this software and is also available from salesteam@havok.com.
+ * 
+ */

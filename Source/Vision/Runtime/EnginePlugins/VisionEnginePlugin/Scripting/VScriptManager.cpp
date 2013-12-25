@@ -110,13 +110,14 @@ void VScriptResourceManager::SetScriptInstance( VisTypedEngineObject_cl *pObj, I
 }
 
 
-bool VScriptResourceManager::LuaErrorCheck(lua_State *L, int status, IVLog *pLog) 
+bool VScriptResourceManager::LuaErrorCheck(lua_State *L, int status, hkvLogInterface* pLog) 
 {
   if ( status==0 || status==LUA_YIELD )
     return true;
 
-  char *szError = NULL;
   const char *szErrorLatin1 = lua_tostring(L, -1);
+
+  const char* szError = "";
 
   if(szErrorLatin1 != NULL) 
   {
@@ -124,18 +125,20 @@ bool VScriptResourceManager::LuaErrorCheck(lua_State *L, int status, IVLog *pLog
      VMemoryTempBuffer<1024> tmpBuffer;
      const int iErrorStrSize = VString::ConvertLatin1ToUTF8(szErrorLatin1, static_cast<int>(strlen(szErrorLatin1)), NULL, 0);
      tmpBuffer.EnsureCapacity(iErrorStrSize+1);
-     szError = reinterpret_cast<char*>(tmpBuffer.GetBuffer());
+     char* szLocalErrorMsg = reinterpret_cast<char*>(tmpBuffer.GetBuffer());
 
-     VString::ConvertLatin1ToUTF8(szErrorLatin1, static_cast<int>(strlen(szErrorLatin1)), szError, iErrorStrSize);
-     szError[iErrorStrSize] = '\0';
+     VString::ConvertLatin1ToUTF8(szErrorLatin1, static_cast<int>(strlen(szErrorLatin1)), szLocalErrorMsg, iErrorStrSize);
+     szLocalErrorMsg[iErrorStrSize] = '\0';
+
+     szError = szLocalErrorMsg;
 
      if (pLog) 
-       pLog->Error(szError);
+       hkvLog::Error(pLog, "[Lua]%s", szLocalErrorMsg);
      else
-       Vision::Error.Warning("Lua Error : %s",szError);
+       hkvLog::Error("[Lua]%s", szLocalErrorMsg);
   }
   else
-    szError = "unknown error"; // happens (at least) if you call "error();" in the script
+    szError = "Unknown Error"; // happens (at least) if you call "error();" in the script
 
   lua_pop(L, 1); // remove error message
 
@@ -180,9 +183,46 @@ bool VScriptResourceManager::LuaErrorCheck(lua_State *L, int status, IVLog *pLog
         {
           VString Executable = VFileHelper::CombineDirAndFile(pExecutablePath, "vRSD.exe");
 
+          VStaticString<FS_MAX_PATH> sProjectPathNormal(pProjectPath);
+          VFileAccessManager::CanonicalizePath(sProjectPathNormal);
+
+          VString sCustomPaths;
+          for (int iSearchPathIdx = VFileAccessManager::GetInstance()->GetNumSearchPaths() - 1; iSearchPathIdx >= 0; --iSearchPathIdx)
+          {
+            const VSearchPath& searchPath = VFileAccessManager::GetInstance()->GetSearchPath(iSearchPathIdx);
+            VFileAccessManager::NativePathResult nativeRes;
+            if (VFileAccessManager::GetInstance()->MakePathNative(searchPath.GetBasePath(), nativeRes, VFileSystemAccessMode::READ_NO_REDIRECT, VFileSystemElementType::DIRECTORY) == HKV_SUCCESS)
+            {
+              // We already passed the project path; don't pass it again
+              if (_stricmp(sProjectPathNormal, nativeRes.m_sNativePath) == 0)
+                continue;
+
+              // The base data and editor data paths don't contain any scripts of interest; skip them here
+              VStaticString<FS_MAX_PATH> sPathNormal;
+              sPathNormal = Vision::Editor.GetBaseDataPath();
+              VFileAccessManager::CanonicalizePath(sPathNormal);
+              if (_stricmp(sPathNormal, nativeRes.m_sNativePath) == 0)
+                continue;
+              sPathNormal = Vision::Editor.GetEditorDataPath();
+              VFileAccessManager::CanonicalizePath(sPathNormal);
+              if (_stricmp(sPathNormal, nativeRes.m_sNativePath) == 0)
+                continue;
+
+              if (!sCustomPaths.IsEmpty())
+                sCustomPaths += ";";
+              sCustomPaths += nativeRes.m_sNativePath;
+            }
+          }
+
           VString CommandLine(" \"");
-          CommandLine += pProjectPath;
+          CommandLine += sProjectPathNormal;
           CommandLine += "\" -connect-to-localhost -port 4224";
+          if (!sCustomPaths.IsEmpty())
+          {
+            CommandLine += " -custom-directories \"";
+            CommandLine += sCustomPaths;
+            CommandLine += "\"";
+          }
 
           STARTUPINFO si;
           PROCESS_INFORMATION pi;
@@ -256,7 +296,7 @@ bool VScriptResourceManager::LuaErrorCheck(lua_State *L, int status, IVLog *pLog
   {
     if( lua_getinfo( L, "nSl", &stack[data.m_iStackDepth] ) )
     {
-      //Vision::Error.Warning("Lua-Debug [%d]: Line(%d) Name(%s) Function defined @(%d) Source(%s)",data.m_iStackDepth,stack[data.m_iStackDepth].currentline,stack[data.m_iStackDepth].name,stack[data.m_iStackDepth].linedefined,stack[data.m_iStackDepth].source);
+      //hkvLog::Warning("Lua-Debug [%d]: Line(%d) Name(%s) Function defined @(%d) Source(%s)",data.m_iStackDepth,stack[data.m_iStackDepth].currentline,stack[data.m_iStackDepth].name,stack[data.m_iStackDepth].linedefined,stack[data.m_iStackDepth].source);
     }
     data.m_iStackDepth++;
   }
@@ -363,7 +403,7 @@ static int vision_panic (lua_State *L)
 {
   (void)L;  /* to avoid warnings */
   
-  Vision::Error.Warning("LUA PANIC: unprotected error in call to Lua API (%s)\n",
+  hkvLog::Warning("LUA PANIC: unprotected error in call to Lua API (%s)\n",
                    lua_tostring(L, -1));
 
   VASSERT(false); //get a break point
@@ -390,7 +430,7 @@ static void Lua_DebugHook( lua_State *L, lua_Debug *ar )
     {
       if( lua_getinfo( L, "nSl", &stack[data.m_iStackDepth] ) )
       {
-        //Vision::Error.Warning("Lua-Debug [%d]: Line(%d) Name(%s) Function defined @(%d) Source(%s)",data.m_iStackDepth,stack[data.m_iStackDepth].currentline,stack[data.m_iStackDepth].name,stack[data.m_iStackDepth].linedefined,stack[data.m_iStackDepth].source);
+        //hkvLog::Warning("Lua-Debug [%d]: Line(%d) Name(%s) Function defined @(%d) Source(%s)",data.m_iStackDepth,stack[data.m_iStackDepth].currentline,stack[data.m_iStackDepth].name,stack[data.m_iStackDepth].linedefined,stack[data.m_iStackDepth].source);
       }
       data.m_iStackDepth++;
     }
@@ -418,7 +458,7 @@ void VScriptResourceManager::OneTimeInit()
 #endif
   Vision::Callbacks.OnUpdateSceneBegin += this;
   Vision::Callbacks.OnUpdateSceneFinished += this;
-  Vision::Callbacks.OnEngineDeInitializing += this;
+  Vision::Callbacks.OnEngineDeInit += this;
   Vision::Callbacks.OnEngineInit += this;
   Vision::Callbacks.OnVideoChanged +=this;
 
@@ -448,7 +488,7 @@ void VScriptResourceManager::OneTimeInit()
   if (Vision::Editor.IsInEditor())
     lua_sethook( m_pMasterState, Lua_DebugHook, LUA_MASKRET | LUA_MASKCALL | LUA_MASKLINE, 0 );
 
-  Vision::Error.SystemMessage("Scripting: Open master state");
+  hkvLog::Info("Scripting: Open master state");
 
 	// open all lua base libraries
   luaL_openlibs(m_pMasterState);
@@ -480,7 +520,7 @@ void VScriptResourceManager::OneTimeDeInit()
   #endif
   Vision::Callbacks.OnUpdateSceneBegin -= this;
   Vision::Callbacks.OnUpdateSceneFinished -= this;
-  Vision::Callbacks.OnEngineDeInitializing -= this;
+  Vision::Callbacks.OnEngineDeInit -= this;
   Vision::Callbacks.OnBeforeSceneLoaded -= this;
   Vision::Callbacks.OnAfterSceneLoaded -= this;
   Vision::Callbacks.OnAfterSceneUnloaded -= this;
@@ -490,7 +530,7 @@ void VScriptResourceManager::OneTimeDeInit()
   VRSDClient::GetGlobalClient().UnregisterCallbacks();
   VRSDClient::GetGlobalClient().SetClientLanguageImplementation( NULL );
 
-  Vision::Error.SystemMessage("Scripting: Close master state");
+  hkvLog::Info("Scripting: Close master state");
 
   // deinit debug hook
   lua_sethook( m_pMasterState, Lua_DebugHook, 0, 0 );
@@ -617,8 +657,13 @@ void VScriptResourceManager::OnHandleCallback(IVisCallbackDataObject_cl *pData)
   {
     // any resources changed by the editor?
     VisEditorModeChangedDataObject_cl *pModeObj = (VisEditorModeChangedDataObject_cl *)pData;
+   
+    // When entering or leaving script relevant modes clean the resources
     if (pModeObj->m_eNewMode==VisEditorManager_cl::EDITORMODE_PLAYING_IN_EDITOR
-     || pModeObj->m_eNewMode==VisEditorManager_cl::EDITORMODE_PLAYING_IN_GAME)
+     || pModeObj->m_eNewMode==VisEditorManager_cl::EDITORMODE_PLAYING_IN_GAME
+     || pModeObj->m_eOldMode==VisEditorManager_cl::EDITORMODE_PLAYING_IN_EDITOR
+     || pModeObj->m_eOldMode==VisEditorManager_cl::EDITORMODE_PLAYING_IN_GAME
+      )
     {
       for (int i=0; i<GetResourceCount(); i++)
       {
@@ -626,7 +671,11 @@ void VScriptResourceManager::OnHandleCallback(IVisCallbackDataObject_cl *pData)
         if(pRes != NULL)
           pRes->UnloadAndReload(VURO_COLD_RELOAD);
       }
-      
+    }
+    
+    if (pModeObj->m_eNewMode==VisEditorManager_cl::EDITORMODE_PLAYING_IN_EDITOR
+     || pModeObj->m_eNewMode==VisEditorManager_cl::EDITORMODE_PLAYING_IN_GAME)
+    {
       //dump globals of all resources
       int iResourceCount = GetResourceCount();
       int iActualResourceCount = 0;
@@ -644,8 +693,8 @@ void VScriptResourceManager::OnHandleCallback(IVisCallbackDataObject_cl *pData)
       //dump overall globals
       iNumGlobals += DumpVisionGlobals(m_pMasterState);
 
-      if(iResourceCount>0)
-        Vision::Error.SystemMessage("Scripting: Dumped unused globals in %d resources, %d globals are still in use.", iActualResourceCount, iNumGlobals);
+      if(iResourceCount > 0)
+        hkvLog::Dev("Scripting: Dumped unused globals in %d resources, %d globals are still in use.", iActualResourceCount, iNumGlobals);
 
       //also reset the mapping of obj-pointer - to - wrapper
       LUA_ResetWrapperLookupTable(m_pMasterState);
@@ -658,7 +707,7 @@ void VScriptResourceManager::OnHandleCallback(IVisCallbackDataObject_cl *pData)
   }
 #endif
 
-  if (pData->m_pSender==&Vision::Callbacks.OnEngineDeInitializing)
+  if (pData->m_pSender==&Vision::Callbacks.OnEngineDeInit)
   {
     SetSceneScript(NULL);
     SetGameScript(NULL);
@@ -714,24 +763,6 @@ void VScriptResourceManager::OnHandleCallback(IVisCallbackDataObject_cl *pData)
   }
 }
 
-/*
-lua_State* VScriptResourceManager::GetParentState()
-{
-  // first check per-scene script
-  VScriptInstance *p = (VScriptInstance *)m_spSceneScript.m_pPtr;
-  if (p && p->m_spResource && p->m_spResource->m_pResourceState)
-    return p->m_spResource->m_pResourceState;
-
-  // next the master script file
-  p = (VScriptInstance *)m_spMasterScript.m_pPtr;
-  if (p && p->m_spResource && p->m_spResource->m_pResourceState)
-    return p->m_spResource->m_pResourceState;
-
-  // finally the global main state
-  return GetMasterState();
-}
-*/
-
 int VScriptResourceManager::DumpVisionGlobals(lua_State *L) const
 {
   if(L==NULL)
@@ -783,16 +814,18 @@ IVScriptInstance* VScriptResourceManager::CreateScriptInstanceFromFile(const cha
 }
 
 
-BOOL VScriptResourceManager::ValidateScript(const char *szText, int iLen, IVLog *pLog)
+BOOL VScriptResourceManager::ValidateScript(const char *szText, int iLen, hkvLogInterface* pLog)
 {
   char blank = 0;
   if (!szText)
     szText = &blank;
+
   if (iLen<0)
     iLen = (int)strlen(szText);
+
   if (iLen==0)
   {
-    pLog->Error("No source code specified");
+    hkvLog::Error(pLog, "No source code specified");
     return FALSE;
   }
 
@@ -813,7 +846,7 @@ BOOL VScriptResourceManager::ValidateScript(const char *szText, int iLen, IVLog 
   if (!VScriptResourceManager::LuaErrorCheck(pTempThread,lua_pcall(pTempThread, 0, LUA_MULTRET, 0), pLog))
     return FALSE;
 
-  if (pLog) pLog->Info("OK.");
+  hkvLog::Info(pLog, "OK.");
   return TRUE;
 }
 
@@ -873,17 +906,17 @@ bool VScriptResourceManager::Require(const char* pFileName)
   szBuffer[iScriptLen] = 0;
   pIn->Close();
 
-  if (!LUA_ERRORCHECK(m_pMasterState, luaL_loadbuffer(m_pMasterState, szBuffer, iScriptLen, pFileName)))
+  if (!VScriptResourceManager::LuaErrorCheck(m_pMasterState, luaL_loadbuffer(m_pMasterState, szBuffer, iScriptLen, pFileName)))
     return false;
 
-  if (!LUA_ERRORCHECK(m_pMasterState, lua_pcall (m_pMasterState, 0, LUA_MULTRET, 0)))
+  if (!VScriptResourceManager::LuaErrorCheck(m_pMasterState, lua_pcall (m_pMasterState, 0, LUA_MULTRET, 0)))
     return false;
 
   return true;
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

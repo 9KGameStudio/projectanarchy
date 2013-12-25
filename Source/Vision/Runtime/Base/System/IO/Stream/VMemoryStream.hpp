@@ -150,7 +150,7 @@ public:
   }
 
   /// \brief Time stamp of the buffered file.
-  VFileTime m_timeStamp;
+  VDateTime m_timeStamp;
 
 private:
   int m_iSize;
@@ -172,7 +172,7 @@ public:
   inline VLoadingTask() : VManagedResource(NULL) { }
 
   /// \brief Constructor.
-  VBASE_IMPEXP VLoadingTask(class VMemoryStreamManager* pParentManager, const char* szFilename, IVFileStreamManager* pManager = NULL);
+  VBASE_IMPEXP VLoadingTask(class VMemoryStreamManager* pParentManager, const char* szFilename);
 
   /// \brief Constructor.
   VBASE_IMPEXP VLoadingTask(class VMemoryStreamManager* pParentManager, const char* szFilename, const unsigned char* pSourceBuffer, int iSourceBufferSize);
@@ -247,7 +247,6 @@ protected:
   virtual BOOL Unload() HKV_OVERRIDE;
   virtual void AccumulateMemoryFootprint(size_t &iUniqueSys, size_t &iUniqueGPU, size_t &iDependentSys, size_t &iDependentGPU) HKV_OVERRIDE;
 
-  IVFileStreamManagerPtr m_spStreamManager;
   VMemoryStreamPtr m_spStream;
   bool m_bSuccess;
   volatile float m_fProgress;
@@ -318,13 +317,10 @@ public:
   ///
   /// \param szFilename
   ///   the path to the file which should be precached.
-  /// \param pManager
-  ///   the file manager to use for opening the file. If \c NULL, uses the default file stream
-  ///   manager set in vBase.
   /// \note 
   ///   You can use VThreadManager::GetManager()->WaitForTask() method along with the 
   ///   returned VLoadingTask if you want to wait until the file has been loaded.
-  VBASE_IMPEXP VLoadingTask* PrecacheFile(const char *szFilename, IVFileStreamManager* pManager=NULL);
+  VBASE_IMPEXP VLoadingTask* PrecacheFile(const char *szFilename);
 
   /// \brief
   ///   Uses the passed memory block to create a pre-cache entry for the specified file
@@ -368,7 +364,7 @@ public:
 
   /// \brief
   ///   Constructor. Takes the stream source to read the data from.
-  VBASE_IMPEXP VMemoryInStream(IVFileStreamManager* pManager, VMemoryStream* pSource);
+  VBASE_IMPEXP VMemoryInStream(IVFileSystem* pFileSystem, VMemoryStream* pSource);
 
   VBASE_IMPEXP virtual size_t Read(void* pBuffer,int iLen) HKV_OVERRIDE;
   VBASE_IMPEXP virtual void Close() HKV_OVERRIDE;
@@ -376,7 +372,6 @@ public:
   VBASE_IMPEXP virtual LONG GetPos() HKV_OVERRIDE;
   VBASE_IMPEXP virtual LONG GetSize() HKV_OVERRIDE;
   VBASE_IMPEXP virtual const char* GetFileName() HKV_OVERRIDE;
-  VBASE_IMPEXP virtual bool GetTimeStamp(VFileTime& result) HKV_OVERRIDE;
 
 private:
   VMemoryStreamPtr m_spStream;
@@ -392,7 +387,7 @@ class VMemoryOutStream : public IVFileOutStream
 public:
   /// \brief
   ///   Constructor. Takes the stream destination to write the data to.
-  VBASE_IMPEXP VMemoryOutStream(IVFileStreamManager *pManager, VMemoryStream *pDest);
+  VBASE_IMPEXP VMemoryOutStream(IVFileSystem *pFileSystem, VMemoryStream *pDest);
 
   VBASE_IMPEXP virtual size_t Write(const void* pBuffer,size_t iLen) HKV_OVERRIDE;
   VBASE_IMPEXP virtual void Close() HKV_OVERRIDE;
@@ -713,7 +708,7 @@ private:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

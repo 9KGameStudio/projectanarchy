@@ -251,7 +251,7 @@ Scaleform::GFx::Loader * VScaleformManager::GetLoader() const
   return m_pLoader;
 }
 
-void VScaleformManager::Init(IVFileStreamManager *pManager)
+void VScaleformManager::Init()
 {
   if (m_bInitialized) 
     return;
@@ -267,10 +267,10 @@ void VScaleformManager::Init(IVFileStreamManager *pManager)
     Vision::Profiling.AddElement(PROFILING_ADVANCE, "Play", TRUE);
     Vision::Profiling.AddElement(PROFILING_RENDER,  "Render", TRUE);
     Vision::Profiling.AddElement(PROFILING_FSCOMMAND,  "Fs Command",TRUE);
-    Vision::Profiling.AddElement(PROFILING_EXT_INTERFACE,  "External Interface",TRUE);
+    Vision::Profiling.AddElement(PROFILING_EXT_INTERFACE,  "External Interface", TRUE);
   #endif
 
-  //initialize input
+  // initialize input
   m_pCursorInputMap = new VInputMap(SF_CONTROLS_LENGTH, 2);
   
   #if defined(WIN32)
@@ -320,7 +320,7 @@ void VScaleformManager::Init(IVFileStreamManager *pManager)
   m_pCommandQueue = new VScaleformCommandQueue();
   m_pCommandQueue->Start();
 
-  //initialize Scaleform HAL
+  // initialize Scaleform HAL
 #if defined (_VR_DX9)
   D3DPRESENT_PARAMETERS d3dpp;
   VVideoConfig *pVideoCfg = Vision::Video.GetCurrentConfig();
@@ -337,7 +337,6 @@ void VScaleformManager::Init(IVFileStreamManager *pManager)
   VASSERT_MSG(m_pd3dDevice!=NULL, "No D3D device present!");
 #endif
 
-  // the renderer could become a static member
   bool bSuccess;
 #if defined (WIN32) && defined(_VR_DX9)
   m_pRenderHal = new D3D9::HAL(m_pCommandQueue);
@@ -356,7 +355,7 @@ void VScaleformManager::Init(IVFileStreamManager *pManager)
   m_pRenderHal = new GL::HAL(m_pCommandQueue);
   bSuccess = m_pRenderHal->InitHAL(GL::HALInitParams());
 
-  //TODO: remove this as soon as SF provides proper solution (used to clean error stack - temp solution)
+  // TODO: remove this as soon as SF provides proper solution (used to clean error stack - temp solution)
   glGetError();
 #endif
   VASSERT_MSG(bSuccess, "Unable to initialize Scaleform HAL");
@@ -376,7 +375,7 @@ void VScaleformManager::Init(IVFileStreamManager *pManager)
 
   m_bInitialized = true; //set the bool to true at this point will avoid a loop in CreateLoader
 
-  CreateLoader(pManager);
+  CreateLoader();
   VASSERT_MSG(m_pLoader, "Unable to create a Loader object")
 
   // register callbacks
@@ -388,7 +387,14 @@ void VScaleformManager::Init(IVFileStreamManager *pManager)
   Vision::Callbacks.OnEnterBackground += this;
   Vision::Callbacks.OnEnterForeground += this;
   Vision::Callbacks.OnLeaveForeground += this;
-  Vision::Callbacks.OnEngineDeInitializing += this;
+  Vision::Callbacks.OnEngineDeInit += this;
+
+  // Start / Stop the movie when switching the PlayTheGame modes in vForge.
+  if (Vision::Editor.IsInEditor())
+  {
+    Vision::Callbacks.OnAfterSceneLoaded += this;
+    Vision::Callbacks.OnBeforeSceneUnloaded += this;
+  }
 
   // Also register to Fmod deinit callback to be able to release all resources
   // prior to Fmod shutdown.
@@ -397,7 +403,7 @@ void VScaleformManager::Init(IVFileStreamManager *pManager)
 
 void VScaleformManager::DeInit()
 {
-  if(!m_bInitialized) 
+  if (!m_bInitialized) 
     return;  
 
   // deregister callbacks
@@ -409,35 +415,42 @@ void VScaleformManager::DeInit()
   Vision::Callbacks.OnEnterBackground -= this;
   Vision::Callbacks.OnEnterForeground -= this;
   Vision::Callbacks.OnLeaveForeground -= this;
-  Vision::Callbacks.OnEngineDeInitializing -= this;
+  Vision::Callbacks.OnEngineDeInit -= this;
   Vision::Callbacks.OnVideoInitialized -= this;
+
+  if (Vision::Editor.IsInEditor())
+  {
+    Vision::Callbacks.OnAfterSceneLoaded -= this;
+    Vision::Callbacks.OnBeforeSceneUnloaded -= this;
+  }
+
   VFmodManager::GlobalManager().OnBeforeDeinitializeFmod -= this;
 
   // Free all elements.
-
   // Make sure all remaining movie instances in scaleform textures are released.
   const int iCount = m_Instances.Count();
   for (int i = 0; i < iCount; i++)
   {
     VScaleformMovieInstance* pMovieInstance = m_Instances.GetAt(i);
     
+    // Only scaleform textures should have a reference to the remaining movies now.
     if (pMovieInstance->GetRefCount() > 1)
     {
-      VASSERT(pMovieInstance->m_bIsTexture);
+      VASSERT_MSG(pMovieInstance->m_bIsTexture, "Scaleform movie instance was not released.");
       pMovieInstance->Invalidate();
     }
   }
 
   m_Instances.Clear();
 
-#ifdef SF_AMP_SERVER
+#if defined(SF_AMP_SERVER)
   AMP::Server::GetInstance().RemoveLoader(m_pLoader);
 #endif
 
-  m_pRenderer->Release();
-  m_pRenderHal->Release();
+  V_SAFE_RELEASE(m_pRenderer);
+  V_SAFE_RELEASE(m_pRenderHal);
 
-#ifdef WIN32
+#if defined(WIN32)
   SetHandleWindowsInput(false);
   V_SAFE_DELETE(m_pFontConfigSet);
 #endif
@@ -445,8 +458,7 @@ void VScaleformManager::DeInit()
   V_SAFE_DELETE(m_pCommandQueue);
   V_SAFE_DELETE(m_pLoader);
 
-
-#ifdef SF_AMP_SERVER
+#if defined(SF_AMP_SERVER)
   AMP::Server::Uninit();
   V_SAFE_DELETE(m_pAmpAppController);
 #endif
@@ -454,12 +466,10 @@ void VScaleformManager::DeInit()
   m_bInitialized = false;
 }
 
-Scaleform::Render::TextureManager * VScaleformManager::GetTextureManager() const
+Scaleform::Render::TextureManager* VScaleformManager::GetTextureManager() const
 {
-  if(m_pRenderHal==NULL) return NULL;
-  return m_pRenderHal->GetTextureManager();
+  return (m_pRenderHal == NULL) ? NULL : m_pRenderHal->GetTextureManager();
 }
-
 
 bool VScaleformManager::UnloadMovie(VScaleformMovieInstance *pMovie)
 {
@@ -475,15 +485,14 @@ bool VScaleformManager::UnloadMovie(VScaleformMovieInstance *pMovie)
 void VScaleformManager::UnloadAllMovies()
 {
   // clear the list of instances, but not the ones that are created for textures
-  for (int i=m_Instances.Count()-1;i>=0;i--)
+  for (int i = m_Instances.Count()-1; i >= 0; i--)
   {
     if (!m_Instances.GetAt(i)->m_bIsTexture)
       m_Instances.RemoveAt(i);
   }
 }
 
-VScaleformMovieInstance * VScaleformManager::LoadMovie(
-  const char *szFileName, const char *szCandidateMovie, const char *szImeXml,
+VScaleformMovieInstance* VScaleformManager::LoadMovie(const char *szFileName, const char *szCandidateMovie, const char *szImeXml,
   int iPosX, int iPosY, int iWidth, int iHeight)
 {
   //Lazy loading: This is required because at EngineInitilization the thread manager is not present!
@@ -492,20 +501,28 @@ VScaleformMovieInstance * VScaleformManager::LoadMovie(
 
   if (!Vision::File.Exists(szFileName))
   {
-    Vision::Error.Warning("File '%s' does not exist, movie file not loaded.", szFileName);
+    hkvLog::Warning("Scaleform: File '%s' does not exist, movie file not loaded.", szFileName);
     return NULL;
   }
 
   VScaleformMovieInstance *pInstance = new VScaleformMovieInstance(szFileName, m_pLoader, szCandidateMovie, szImeXml, iPosX, iPosY, iWidth, iHeight);
 
-  //return NULL if loading fails
-  if(!pInstance->IsValid())
+  // Return NULL if loading fails.
+  if (!pInstance->IsValid())
   {
     V_SAFE_DELETE(pInstance);
     return NULL;
   }
 
   m_Instances.Add(pInstance);
+
+  // In the editor, we don't want the movie to start if the view is not animated.
+  if (Vision::Editor.IsInEditor() && !Vision::Editor.IsAnimatingOrPlaying())
+  {
+    // Advance the movie, so that the first frame is visible.
+    pInstance->m_pAdvanceTask->ScheduleMinStep();
+    pInstance->SetPaused(true);
+  }
 
   return pInstance;
 }
@@ -518,41 +535,27 @@ VScaleformMovieInstance * VScaleformManager::LoadMovie(
 
 VScaleformMovieInstance * VScaleformManager::GetMovie(const char *szFileName) const
 {
-  if(szFileName==NULL)
-    return NULL;
-
   int iCount = m_Instances.Count();
 
-  for(int i=0;i<iCount;i++)
+  for(int i = 0; i < iCount; i++)
   {
-    if(VStringHelper::SafeCompare(m_Instances.GetAt(i)->GetFileName(), szFileName, true)==0)
+    if (VStringHelper::SafeCompare(m_Instances.GetAt(i)->GetFileName(), szFileName, true) == 0)
       return m_Instances.GetAt(i);
   }
 
   return NULL;
 }
 
-Scaleform::GFx::Loader* VScaleformManager::CreateLoader(IVFileStreamManager *pManager)
+Scaleform::GFx::Loader* VScaleformManager::CreateLoader()
 {
   if(m_pLoader)
   {
-    if(pManager && g_pFileManager != pManager)
-    {
-      #ifdef SF_AMP_SERVER
-        AMP::Server::GetInstance().RemoveLoader(m_pLoader);
-      #endif
-
-      VASSERT_MSG(m_Instances.Count()==0,
-        "Warning: Your are deleting a previous used Loader object and still having movie instances probably initialized with it.")
-      V_SAFE_DELETE(m_pLoader);
-    }
-    else
-      return m_pLoader;    
+    return m_pLoader;
   }
 
   if(!m_bInitialized)
   {
-    Init(pManager); //will care about loader creation
+    Init(); //will care about loader creation
     VASSERT_MSG(m_pLoader, "No loader after initialization present!");
     return m_pLoader;
   }
@@ -602,11 +605,6 @@ Scaleform::GFx::Loader* VScaleformManager::CreateLoader(IVFileStreamManager *pMa
   m_pLoader->SetFontProvider(fontProvider);
 #endif
 
-  if (!pManager)
-    pManager = Vision::File.GetManager();
-  g_pFileManager = pManager;
-
-
   Scaleform::Ptr<ASSupport> pAS2Support = *new AS2Support();
   m_pLoader->SetAS2Support(pAS2Support); 
   Scaleform::Ptr<ASSupport> pASSupport = *new AS3Support();
@@ -617,7 +615,7 @@ Scaleform::GFx::Loader* VScaleformManager::CreateLoader(IVFileStreamManager *pMa
 
   pTextureManager->ProcessQueues(); //just to be sure that there are no pending tasks
 
-  //assign the image creator to the loader (with our texture manager)
+  // Assign the image creator to the loader (with our texture manager).
   Scaleform::Ptr<ImageCreator> spImageCreator = *new ImageCreator(pTextureManager);
   m_pLoader->SetImageCreator(spImageCreator);
 
@@ -634,7 +632,7 @@ Scaleform::GFx::Loader* VScaleformManager::CreateLoader(IVFileStreamManager *pMa
   FMOD::System* pSoundManager =  VFmodManager::GlobalManager().GetFmodSystem();
   VASSERT_MSG(pSoundManager!=NULL, "No FMOD sound manager found! Maybe you miss VISION_PLUGIN_ENSURE_LOADED(vFmodEnginePlugin); in your code, or compile vScaleform plugin without GFX_ENABLE_SOUND");
 
-  //create scaleform sound renderer
+  // Create scaleform sound renderer.
   Scaleform::Ptr<Scaleform::Sound::SoundRendererFMOD> pSoundRenderer = *Scaleform::Sound::SoundRendererFMOD::CreateSoundRenderer();
   bool result = pSoundRenderer->Initialize(pSoundManager, false /* call update */, false /* use own thread for fmod update */);
   VASSERT_MSG(result, "Unable to initialize SoundRendererFMOD instance in VScaleformManager");
@@ -643,7 +641,7 @@ Scaleform::GFx::Loader* VScaleformManager::CreateLoader(IVFileStreamManager *pMa
   Scaleform::Ptr<Audio> pAudio = *new Audio(pSoundRenderer);
   m_pLoader->SetAudio(pAudio);
 #else
-  Vision::Error.Warning("VScaleformManager: Sound is disabled - maybe the linkage of the vScaleformPlugin is inappropriate.");
+  hkvLog::Warning("VScaleformManager: Sound is disabled - maybe the linkage of the vScaleformPlugin is inappropriate.");
 #endif
 
   return m_pLoader;
@@ -653,12 +651,18 @@ Scaleform::GFx::Loader* VScaleformManager::CreateLoader(IVFileStreamManager *pMa
 
 SCALEFORM_IMPEXP bool VScaleformManager::ApplyFontToTheLoader(const char *szFontFilename, const char *szConfigName /*= NULL*/)
 {
+  VFileAccessManager::NativePathResult nativePathResult;
+  if(VFileAccessManager::GetInstance()->MakePathNative(szFontFilename, nativePathResult, VFileSystemAccessMode::READ, VFileSystemElementType::FILE) == HKV_FAILURE)
+  {
+    return false;
+  }
+
   CreateLoader();
 
   if(m_pFontConfigSet == NULL)
     m_pFontConfigSet = new FontConfigSet;
 
-  ConfigParser parser(szFontFilename); 
+  ConfigParser parser(nativePathResult.m_sNativePath); 
   VASSERT(parser.IsValid()); 
   m_pFontConfigSet->Parse(&parser); 
 
@@ -712,7 +716,7 @@ void VScaleformManager::OnHandleCallback(IVisCallbackDataObject_cl *pData)
 
   //count the number of instances since we need it in every following callback
   const bool bShutdownInProgress = 
-    (pData->m_pSender == &Vision::Callbacks.OnEngineDeInitializing || 
+    (pData->m_pSender == &Vision::Callbacks.OnEngineDeInit || 
     pData->m_pSender == &VFmodManager::GlobalManager().OnBeforeDeinitializeFmod);
   
   //shutdown immediately on consoles
@@ -725,7 +729,7 @@ void VScaleformManager::OnHandleCallback(IVisCallbackDataObject_cl *pData)
   #endif
   
   const int iCount = m_Instances.Count();
-  VScaleformMovieInstance ** ppInstances = m_Instances.GetPtrs();
+  VScaleformMovieInstance** ppInstances = m_Instances.GetPtrs();
 
   // perform the rendering
   if (pData->m_pSender == &Vision::Callbacks.OnRenderHook)
@@ -756,7 +760,7 @@ void VScaleformManager::OnHandleCallback(IVisCallbackDataObject_cl *pData)
         HandleInput();
       }
 
-      for(int i = 0; i < iCount; i++)
+      for (int i = 0; i < iCount; i++)
       {
         ppInstances[i]->m_pAdvanceTask->Schedule(Vision::GetTimer()->GetTimeDifference());
       }
@@ -767,7 +771,7 @@ void VScaleformManager::OnHandleCallback(IVisCallbackDataObject_cl *pData)
     }
 
     #if defined (WIN32) && (defined(_VR_DX9) || defined(_VR_DX11))
-      //shutdown Scaleform manager on OnEngineDeInitializing or OnBeforeDeinitializeFmod
+      //shutdown Scaleform manager on OnEngineDeInit or OnBeforeDeinitializeFmod
       if(bShutdownInProgress)
         DeInit();
     #endif
@@ -787,17 +791,21 @@ void VScaleformManager::OnHandleCallback(IVisCallbackDataObject_cl *pData)
       ppInstances[i]->SyncScaleformVariables();
 
       ppInstances[i]->HandleScaleformCallbacks();
+
+      #if defined(USE_SF_IME)
+        ppInstances[i]->HandleImeStatusChanges();
+      #endif
     }
     return;
   }
 
   //prepare for video mode change
-  if (pData->m_pSender==&Vision::Callbacks.OnBeforeVideoChanged)
+  if (pData->m_pSender == &Vision::Callbacks.OnBeforeVideoChanged)
   {
 #if defined (WIN32) && (defined(_VR_DX9) || defined(_VR_DX11))
     WaitForAllTasks();
 
-    if(m_pRenderHal!=NULL)
+    if(m_pRenderHal != NULL)
       m_pRenderHal->PrepareForReset();
 
 #endif
@@ -805,16 +813,16 @@ void VScaleformManager::OnHandleCallback(IVisCallbackDataObject_cl *pData)
   }
 
   // update the viewport
-  if (pData->m_pSender==&Vision::Callbacks.OnVideoChanged)
+  if (pData->m_pSender == &Vision::Callbacks.OnVideoChanged)
   {
 #if defined (WIN32) && (defined(_VR_DX9) || defined(_VR_DX11))
 
     WaitForAllTasks();
 
-    if(m_pRenderHal!=NULL)
+    if(m_pRenderHal != NULL)
       m_pRenderHal->RestoreAfterReset();
 
-    for (int i=0;i<iCount;i++)
+    for (int i = 0; i < iCount; i++)
     {
       ppInstances[i]->m_pLastRenderContext = NULL;
     }
@@ -824,7 +832,7 @@ void VScaleformManager::OnHandleCallback(IVisCallbackDataObject_cl *pData)
   }
 
   // device lost
-  if (pData->m_pSender==&Vision::Callbacks.OnEnterBackground)
+  if (pData->m_pSender == &Vision::Callbacks.OnEnterBackground)
   {
 #if defined (WIN32) && defined(_VR_DX9)
     WaitForAllTasks();
@@ -838,12 +846,12 @@ void VScaleformManager::OnHandleCallback(IVisCallbackDataObject_cl *pData)
   }
 
   // device recreated
-  if (pData->m_pSender==&Vision::Callbacks.OnEnterForeground)
+  if (pData->m_pSender == &Vision::Callbacks.OnEnterForeground)
   {
 #if defined (WIN32) && defined(_VR_DX9) 
     WaitForAllTasks();
 
-    if(m_pRenderHal!=NULL)
+    if(m_pRenderHal != NULL)
       m_pRenderHal->RestoreAfterReset();
 
 #elif defined(_VISION_ANDROID)
@@ -863,7 +871,7 @@ void VScaleformManager::OnHandleCallback(IVisCallbackDataObject_cl *pData)
     return;
   }
 
-  if (pData->m_pSender==&Vision::Callbacks.OnLeaveForeground)
+  if (pData->m_pSender == &Vision::Callbacks.OnLeaveForeground)
   {
 #if defined(_VISION_ANDROID)
     WaitForAllTasks();
@@ -876,15 +884,48 @@ void VScaleformManager::OnHandleCallback(IVisCallbackDataObject_cl *pData)
     return;
   }
 
+  // Start movies in vForge when starting to animate.
+  if (pData->m_pSender == &Vision::Callbacks.OnAfterSceneLoaded)
+  {
+    for (int i = 0; i < iCount; i++)
+    {
+      VScaleformMovieInstance* pInstance = ppInstances[i];
+      if (pInstance->m_bIsTexture)
+      {
+        pInstance->SetPaused(false);
+        pInstance->Restart();
+      }
+    }
+    return;
+  }
+
+  // Pause and restart movies in vForge when not animating anymore.
+  if (pData->m_pSender == &Vision::Callbacks.OnBeforeSceneUnloaded)
+  {
+    for (int i = 0; i < iCount; i++)
+    {
+      VScaleformMovieInstance* pInstance = ppInstances[i];
+      if (pInstance->m_bIsTexture)
+      {
+        pInstance->Restart();
+
+        // Advance the movie, so that the first frame is visible.
+        pInstance->m_pAdvanceTask->ScheduleMinStep();
+        pInstance->SetPaused(true);
+      } 
+    }
+    return;
+  }
+
 #if defined(WIN32)
-  #ifdef USE_SF_IME
-    if(pData->m_pSender==&VInputCallbacks::OnPreTranslateMessage)
+  #if defined(USE_SF_IME)
+    if (pData->m_pSender == &VInputCallbacks::OnPreTranslateMessage)
     {
       VWindowsMessageDataObject* pObj = (VWindowsMessageDataObject*)pData;
 
-      for (int i=0;i<iCount;i++)
+      for (int i = 0;i < iCount;i++)
       {
-        if(ppInstances[i]->IsFocused())
+        if (ppInstances[i]->IsFocused())
         {
           ppInstances[i]->HandlePreTranslatedIMEInputMessage(pObj); 
           return; //we are done when the focus movie handled the message
@@ -894,11 +935,11 @@ void VScaleformManager::OnHandleCallback(IVisCallbackDataObject_cl *pData)
     }
   #endif
 
-  if(pData->m_pSender==&VInputCallbacks::OnPostTranslateMessage)
+  if(pData->m_pSender == &VInputCallbacks::OnPostTranslateMessage)
   {
     VWindowsMessageDataObject* pObj = (VWindowsMessageDataObject*)pData;
 
-    if(pObj->m_Msg.message==WM_IME_SETCONTEXT)
+    if(pObj->m_Msg.message == WM_IME_SETCONTEXT)
     {
       DefWindowProc(pObj->m_Msg.hwnd, pObj->m_Msg.message, pObj->m_Msg.wParam, 0);
       pObj->m_bProcessed = true;
@@ -907,9 +948,9 @@ void VScaleformManager::OnHandleCallback(IVisCallbackDataObject_cl *pData)
       
     if(m_bHandlesWindowsInput)
     {
-      for (int i=0;i<iCount;i++)
+      for (int i = 0;i < iCount; i++)
       {
-        if(ppInstances[i]->IsFocused())
+        if (ppInstances[i]->IsFocused())
         { 
           ppInstances[i]->HandleWindowsInputMessage(pObj);
 
@@ -920,7 +961,7 @@ void VScaleformManager::OnHandleCallback(IVisCallbackDataObject_cl *pData)
     }
     
     //no window has the focus...
-    if(pObj->m_Msg.message==WM_SETFOCUS)
+    if (pObj->m_Msg.message == WM_SETFOCUS)
     {
       float x,y;
       GetCursorPos(x,y, m_iLastActiveCursor);
@@ -1106,7 +1147,7 @@ void VScaleformManager::ValidateFocus(float x, float y)
 
   bool bFocused = false;
   //start with the most recent movie (top)
-  for (int i=iCount-1;i>=0;i--)
+  for (int i = iCount-1; i >= 0; i--)
   {
     //shortcut evaluation
     VASSERT_MSG(ppInstances[i]->m_pMovieInst!=NULL, "GFx Movie not present");
@@ -1493,7 +1534,7 @@ void VScaleformMovieExclusiveRenderLoop::OnDoRenderLoop(void *pUserData)
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

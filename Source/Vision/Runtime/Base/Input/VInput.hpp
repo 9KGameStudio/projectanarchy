@@ -564,8 +564,7 @@ class VInputManagerBase
 
   static int s_iNumOfAliasMappings;
 
-  static VStrMap<int> s_map;
-  static int s_pIndices[];
+  static VMap<VString, int> s_map;
 
 public:
 
@@ -1978,21 +1977,54 @@ public:
   /// @}
   ///
 
-  /// \brief Returns the number of possible triggers in this map.
+  /// \brief
+  ///   Returns the number of possible triggers in this map.
   inline int GetNumOfTriggers() { return m_iNumMappedInputs; }
 
-  /// \brief Returns the number of alternatives per trigger (how many controls are mapable to one trigger).
+  /// \brief
+  ///   Returns the number of alternatives per trigger (how many controls are mapable to one trigger).
   inline int GetNumOfAlternatives() { return m_iNumAlternatives; }
+
+  /// \brief
+  ///   Returns whether the input map is enabled or not.
+  inline bool IsEnabled() const { return m_bEnabled; }
+
+  /// \brief
+  ///   Enables or disables the input map (GetTrigger will always return 0)
+  inline void SetEnabled(bool bEnable) { m_bEnabled = bEnable; }
+
+  /// \brief
+  ///   Returns an array of all currently available input maps
+  VBASE_IMPEXP static const VArray<VInputMap*>& GetInputMaps();
+
+  /// \brief
+  ///   Locks or un-locks all currently available input maps
+  ///
+  /// Note that nested calls are not allowed!
+  ///
+  /// \param bLock
+  ///   Flag indicating whether to lock or unlock all input maps.
+  VBASE_IMPEXP static void LockInputMaps(bool bLock);
+
+  VBASE_IMPEXP static bool AreInputMapsLocked()
+  {
+    return (s_inputMapStates.GetCount() > 0);
+  }
 
 protected:
   int GetNextFreeAlternative(int iTriggerIndex) const;
 
   VInputMap(const VInputMap &other);
 
+  bool m_bEnabled;
+
   VMappedInput** m_ppMappedInputs;
   int m_iNumMappedInputs;
   int m_iNumAlternatives;
-  
+
+private:
+  static VArray<VInputMap*> s_inputMaps;
+  static VMap<VInputMap*, bool> s_inputMapStates;
 };
 
 
@@ -2174,7 +2206,7 @@ public:
 #endif //VINPUT_HPP_INCLUDED
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

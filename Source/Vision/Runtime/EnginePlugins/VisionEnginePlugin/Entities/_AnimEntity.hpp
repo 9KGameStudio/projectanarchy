@@ -10,10 +10,10 @@
 /// Generic entity class with support for playing an animation.
 ///
 
+#ifndef _ANIMENTITY_HPP_INCLUDED
+#define _ANIMENTITY_HPP_INCLUDED
 
-#ifndef VISION__ANIMENTITY
-#define VISION__ANIMENTITY
-
+#include <Vision/Runtime/Engine/SceneElements/VisApiBaseEntity.hpp>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/Effects/EffectsModule.hpp>
 
 // class AnimEntity_cl is deprecated - should not be used anymore
@@ -197,11 +197,10 @@ protected:
 
 };
 
-
-#endif
+#endif // _ANIMENTITY_HPP_INCLUDED
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

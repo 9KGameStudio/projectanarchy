@@ -205,7 +205,7 @@ HKV_FORCE_INLINE void hkvMat3::setDiagonal (const hkvVec3& values)
   m_Column[2][2] = values[2];
 }
 
-HKV_FORCE_INLINE const hkvVec3 hkvMat3::getDiagonal ()
+HKV_FORCE_INLINE const hkvVec3 hkvMat3::getDiagonal () const
 {
   return hkvVec3 (m_Column[0][0], m_Column[1][1], m_Column[2][2]);
 }
@@ -546,7 +546,7 @@ HKV_FORCE_INLINE const hkvMat3_AsArray hkvMat3::getAsArray (Layout layout) const
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

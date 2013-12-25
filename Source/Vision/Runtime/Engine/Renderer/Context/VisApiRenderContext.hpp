@@ -692,7 +692,6 @@ public:
   ///   The function succeeds even if the projected 2D position is outside the viewport, e.g. x2d<0
   VISION_APIFUNC BOOL Project2D(const hkvVec3& pos, float &x2d, float &y2d) const;
 
-
   /// \brief
   ///   Projects a 3D world position to 2D screen coordinates using the FOV and the camera position
   ///   of this context
@@ -728,15 +727,15 @@ public:
   VISION_APIFUNC BOOL Project2D(const hkvVec3& pos, float &x2d, float &y2d, float &zcoord, const hkvVec3& cameraPos, const hkvMat3& cameraRotation) const;
 
   /// \brief
-  ///   Creates a 3D direction vector in world space from 2D screen position
+  ///   Computes a 3D direction vector in world space from 2D screen position
   ///
-  /// considering the camera orientation of this context.
+  /// considering the current camera configuration of this context.
   /// 
-  /// This helper function is useful if you want to perform tracelines in the direction of the 2D
+  /// This helper function is useful if you want to perform trace lines in the direction of the 2D
   /// mouse cursor.
   /// 
   /// All positions generated from the camera position and this direction are projected to the same
-  /// 2D position again using VisGame_cl::Project2D.
+  /// 2D position again when using VisGame_cl::Project2D.
   /// 
   /// Note that any line rendered with VisGame_cl::DrawSingleLine and that starts at the camera
   /// position will not be visible, since it's collapsed to a single point on screen.
@@ -745,10 +744,10 @@ public:
   /// direction
   /// 
   /// \param fScreenX
-  ///   screen x position, e.g. [0..1024]
+  ///   Screen x position in pixels, e.g. [0..1024]
   /// 
   /// \param fScreenY
-  ///   screen y position, e.g. [0..768]
+  ///   Screen y position in pixels, e.g. [0..768]
   /// 
   /// \param destDir
   ///   vector reference that receives the direction
@@ -756,7 +755,7 @@ public:
   /// \param fLen
   ///   target length of the direction vector
   /// 
-  /// \param pStartPos
+  /// \param pNearPlanePosOut
   ///   Optional position that receives the position on the near clip plane (important for
   ///   orthographic views)
   /// 
@@ -764,12 +763,68 @@ public:
   /// 
   /// \example
   ///   \code
-  ///   hkvVec3 traceStart = pCamera->GetPosition();
-  ///   hkvVec3 traceDir;
-  ///   Vision::Contexts.GetMainRenderContext()->GetTraceDirFromScreenPos(fMouseX,fMouseX,traceDir,1000.f);
-  ///   hkvVec3 traceEnd = traceStart + traceDir;
+  ///     hkvVec3 traceStart = pCamera->GetPosition();
+  ///     hkvVec3 traceDir;
+  ///     Vision::Contexts.GetMainRenderContext()->GetTraceDirFromScreenPos(fMouseX, fMouseX, traceDir, 1000.f);
+  ///     hkvVec3 traceEnd = traceStart + traceDir;
   ///   \endcode
-  VISION_APIFUNC void GetTraceDirFromScreenPos(float fScreenX, float fScreenY, hkvVec3& destDir, float fLen=1.f, hkvVec3* pStartPos=NULL);
+  ///
+  VISION_APIFUNC void GetTraceDirFromScreenPos(float fScreenX, float fScreenY, hkvVec3& destDir, float fLen=1.f, hkvVec3* pNearPlanePosOut=NULL) const;
+
+  /// \brief
+  ///   Computes a normalized direction vector in world space from a 2D screen position.
+  ///
+  /// \param fScreenX
+  ///   x-coordinate of screen position in pixels.
+  ///
+  /// \param fScreenY
+  ///   y-coordinate of screen position in pixels.
+  ///
+  /// \return
+  ///   The normalized direction vector.
+  ///
+  VISION_APIFUNC const hkvVec3 GetTraceDirFromScreenPos(float fScreenX, float fScreenY) const;
+
+  /// \brief
+  ///   Computes a normalized direction vector in world space from clip space coordinates.
+  ///
+  /// \param vClipSpaceCoords
+  ///   Clip space coordinates. The third coordinate specifies the depth from 0 to 1 and gets 
+  ///   converted to the [-1..1] range for the respective platforms automatically. 
+  ///
+  /// \return
+  ///   The normalized direction vector.
+  ///
+  VISION_APIFUNC const hkvVec3 GetTraceDirFromClipSpacePos(const hkvVec3& vClipSpaceCoords) const;
+
+  /// \brief
+  ///   Computes a world space position from a 2D screen position.
+  ///
+  /// \param fScreenX
+  ///   x-coordinate of screen position in pixels.
+  ///
+  /// \param fScreenY
+  ///   y-coordinate of screen position in pixels.
+  ///
+  /// \param fDepth
+  ///   Specifies the depth from 0 to 1 and gets converted to the [-1..1] range for the respective platforms automatically.
+  ///
+  /// \return
+  ///   The world space position.
+  ///
+  VISION_APIFUNC const hkvVec3 GetWorldPosFromScreenPos(float fScreenX, float fScreenY, float fDepth) const;
+
+  /// \brief
+  ///   Computes a world space position from clip space coordinates.
+  ///
+  /// \param vClipSpaceCoords
+  ///   Clip space coordinates. The third coordinate specifies the depth from 0 to 1 and gets 
+  ///   converted to the [-1..1] range for the respective platforms automatically. 
+  ///
+  /// \return
+  ///   The world space position.
+  ///
+  VISION_APIFUNC const hkvVec3 GetWorldPosFromClipSpacePos(const hkvVec3& vClipSpaceCoords) const;
 
   /// \brief
   ///  Returns a view-space depth which is close to the far plane but guaranteed not to be far clipped after projection.
@@ -784,7 +839,6 @@ public:
   ///
   /// @}
   ///
-
 
   ///
   /// @name Access Global Instances
@@ -811,7 +865,6 @@ public:
   /// \return
   ///   VisRenderContext_cl *pContext: Pointer to the main render context
   VISION_APIFUNC static VisRenderContext_cl *GetMainRenderContext(); 
-
 
   ///
   /// @}
@@ -1094,7 +1147,6 @@ public:
   ///   Returns the number of active render targets in this render context.
   VISION_APIFUNC unsigned int GetNumRenderTargets() const;
 
-
   ///
   /// @}
   ///
@@ -1122,7 +1174,6 @@ public:
   /// 
   /// \sa SetRenderFlags
   inline int GetRenderFlags() const {return m_iRenderFlags;}
-
 
   ///
   /// @}
@@ -1161,7 +1212,6 @@ public:
   /// \brief
   ///   Returns the value set via SetUsageHint
   inline VisContextUsageHint_e GetUsageHint() const {return m_eUsageHint;}
-
 
   ///
   /// @}
@@ -1258,7 +1308,6 @@ public:
   /// 
   /// \sa VisRenderContext_cl::SetRenderFilterMask
   inline unsigned int GetRenderFilterMask() const {return m_iRenderFilter;}
-
 
   ///
   /// @}
@@ -1382,8 +1431,6 @@ public:
   ///   Helper function to build a 4x4 projection matrix for the passed projection type.
   VISION_APIFUNC void ComputeProjectionMatrix(hkvMat4& matrix, VisProjectionType_e projectionType) const;
  
-  
- 
   ///
   /// @}
   ///
@@ -1413,7 +1460,6 @@ public:
   ///   pBox->RenderSelection(Vision::Contexts.GetCurrentContext()->GetRenderInterface());
   ///   \endcode
   VISION_APIFUNC IVRenderInterface* GetRenderInterface();
-
 
   ///
   /// @}
@@ -1478,8 +1524,6 @@ public:
   // TODO: DOKU
   VISION_APIFUNC void ResolveToTexture(VTextureObject *pTexObj, bool bDepthTexture=false, unsigned int iRenderTargetIndex=0, unsigned int iXOfs=0, unsigned int iYOfs=0, unsigned int iWidth=0, unsigned int iHeight=0, unsigned int iLevel=0, unsigned int iFaceOrSlice=0);
 
-
-
 #ifdef _VISION_XENON  
 
   /// \brief
@@ -1505,8 +1549,6 @@ public:
   VISION_APIFUNC void SetDepthFillPass(bool bStatus);
   VISION_APIFUNC bool GetDepthFillPass();
 #endif
-
-
 
   ///
   /// @}
@@ -1727,7 +1769,6 @@ public:
   void DeleteFrameBufferObject();
   static inline bool IsMultisamplingSupported() { return g_bMultisamplingSupported; }
 
-
 #elif defined(_VR_GCM)
   VISION_APIFUNC void SetDepthStencilSurface(CellGcmTexture *pSurface);
   VISION_APIFUNC void SetRenderSurface(int iRenderTargetIndex, CellGcmTexture *pColorSurface, VVIDEO_Multisample eMultisample = VVIDEO_MULTISAMPLE_OFF);
@@ -1737,7 +1778,6 @@ public:
   VISION_APIFUNC void CopyRenderTargetConfig(CellGcmSurface& xOut) const { memcpy(&xOut,&m_RenderTargetConfiguration,sizeof(CellGcmSurface)); }
 
   static inline bool IsMultisamplingSupported() { return g_bMultisamplingSupported; }
-
 
 #elif defined(_VR_GXM)
 
@@ -1758,7 +1798,6 @@ public:
   VISION_APIFUNC void GetRenderSurface(int iRenderTargetIndex, GX2ColorBuffer*& pColorSurface);
 
 #endif
-
 
   ///
   /// @}
@@ -1902,7 +1941,6 @@ public:
   /// @}
   ///
 
-
   ///
   /// @name Pixel Counter Query Management
   /// @{
@@ -2037,8 +2075,6 @@ public:
   /// @}
   ///
 
-
-
   ///
   /// @name Miscellaneous Visibility-related Functions
   /// @{
@@ -2088,7 +2124,6 @@ public:
   /// 
   /// \sa IVisVisibilityCollector_cl::GetBaseFrustum
   VISION_APIFUNC void GetViewFrustum(VisFrustum_cl &viewFrustum) const;
-
 
   ///
   /// @}
@@ -2236,10 +2271,7 @@ private:
   friend void vrSetScissorRect(const VRectanglef *pScreenRect);
   friend void vrIdentityMatrix();
 
-  
   friend void vrSetProjectionMatrix (const hkvMat4* pMatrix);
-
-
 
   bool IsValid() const;
   void Reset();
@@ -2270,14 +2302,11 @@ private:
   int m_iCubeMapFaceOrArrayIndex[MAX_NUM_RENDERTARGETS];
   int m_iCubeMapFaceOrArrayIndexDepthStencil;
 
-
-
 #ifdef _VISION_XENON
   bool m_bDepthFillPass;
   DWORD m_iSyncFence;
   bool m_bAutoTiling;
 #endif
-
 
   // Occlusion query members
   unsigned int m_iNumScheduledOcclusionTests;
@@ -2393,11 +2422,10 @@ private:
 
 VISION_ELEMENTMANAGER_TEMPLATE_DECL(VisRenderContext_cl)
 
-
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

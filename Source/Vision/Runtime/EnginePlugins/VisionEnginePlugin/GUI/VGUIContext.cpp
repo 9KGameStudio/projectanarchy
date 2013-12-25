@@ -23,7 +23,7 @@
 #undef DO_NOT_USE_VGL
 
 // NULL App class that does not perform anything game loop specific
-class VNullApp : public VisionApp_cl
+HKV_DEPRECATED_2013_3 class VNullApp : public VisionApp_cl
 {
 public:
   virtual void OnUpdateScene() HKV_OVERRIDE
@@ -37,10 +37,8 @@ public:
 
     Vision::Profiling.Update();
   }
-  VNullApp()
-  {
-    //Vision::SetSceneManager(new VNullSceneManager);
-  }
+
+  VNullApp() {}
 };
 
 
@@ -50,9 +48,14 @@ IVGUIContext::IVGUIContext(VGUIManager *pManager)
     pManager = &VGUIManager::GlobalManager();
 
   m_pManager = pManager;
+  
   m_bActive = false;
   m_bShowCursor = true;
   m_bHandleKeyboard = false; // true in main context
+  m_bMouseOverOnInputOnly = false;
+  m_bSmoothScroll = false;
+  m_bSwipeToScroll = false;
+
   pManager->Contexts().Add(this);
   m_iRenderHookConstant = VRH_GUI;
   m_iVisibleBitmask = VIS_ENTITY_VISIBLE_IN_WORLD;
@@ -62,10 +65,11 @@ IVGUIContext::IVGUIContext(VGUIManager *pManager)
   m_iUserIDMask = 1<<VGUIUserInfo_t::GUIUser0;
 
   m_fDragThreshold = 0.0f;
+  m_fAccumulatedMoveDistance = 0.0f;
 
-  #if defined(VISION_GUI_USE_WINDOWS_INPUT)
+#if defined(VISION_GUI_USE_WINDOWS_INPUT)
   VInputCallbacks::OnPreTranslateMessage += this;
-  #endif
+#endif
 
 #if defined(SUPPORTS_MULTITOUCH) && defined(_VISION_PSP2)
   VMultiTouchInputPSP2 *pMultiTouch = (VMultiTouchInputPSP2*)&VInputManagerPSP2::GetInputDevice(INPUT_DEVICE_TOUCHSCREEN);
@@ -123,7 +127,7 @@ void IVGUIContext::SetActivate(bool bStatus)
       pUser->m_pCurrentCursor = NULL;
     }
     m_spFocusDlg = NULL;
-    m_OpenDialogs.Clear();
+    m_openDialogs.Clear();
     m_spOverrideCursor = NULL;
     m_spTooltip = NULL;
   }
@@ -148,8 +152,7 @@ void IVGUIContext::OnHandleCallback(IVisCallbackDataObject_cl *pData)
     if (m_bActive)
       OnTickFunction(Vision::GetUITimer()->GetTimeDifference());
   }
-  
-  #if defined(VISION_GUI_USE_WINDOWS_INPUT)
+#if defined(VISION_GUI_USE_WINDOWS_INPUT)
   else if(pData->m_pSender==&VInputCallbacks::OnPreTranslateMessage)
   {
     VWindowsMessageDataObject* pObj = (VWindowsMessageDataObject*)pData;
@@ -160,11 +163,8 @@ void IVGUIContext::OnHandleCallback(IVisCallbackDataObject_cl *pData)
     }
     
   }
-  #endif
-
+#endif
 }
-
-
 
 bool IVGUIContext::HandleSingleKey(int iKey)
 {
@@ -207,7 +207,9 @@ void IVGUIContext::OnTickFunction(float fTimeDelta)
 
     vMouseDelta = userState.m_vMousePos-vOldMousePos; // both coordinates are integer based
 
-    bool bMouseMoving = vMouseDelta.getLength() > m_fDragThreshold;
+    float fMoveDistance = vMouseDelta.getLength();
+    m_fAccumulatedMoveDistance += fMoveDistance;
+    bool bMouseMoving = m_fAccumulatedMoveDistance > m_fDragThreshold;
 
     if (bMouseMoving)
       INVALIDATE_DOUBLECLICK;
@@ -222,7 +224,7 @@ void IVGUIContext::OnTickFunction(float fTimeDelta)
 #endif
 
     // tick function for all dialogs and tooltip
-    m_OpenDialogs.OnTickFunction(fTimeDelta);
+    m_openDialogs.OnTickFunction(fTimeDelta);
     if (m_spTooltip)
       m_spTooltip->OnTick(fTimeDelta);
 
@@ -235,10 +237,10 @@ void IVGUIContext::OnTickFunction(float fTimeDelta)
     }
 
     // if no focus dialog set, use the first in hierarchy
-    if (m_OpenDialogs.Count()>0)
+    if (m_openDialogs.Count()>0)
     {
       if (!m_spFocusDlg)
-        m_spFocusDlg = m_OpenDialogs.GetAt(0);
+        m_spFocusDlg = m_openDialogs.GetAt(0);
       userState.m_pCurrentCursor = m_spFocusDlg->GetCurrentCursor(userState);
     }
     else
@@ -254,6 +256,15 @@ void IVGUIContext::OnTickFunction(float fTimeDelta)
     int iClicked = (userState.m_iButtonMask & (~iOldButton)) & BUTTONMASK_CLICKEVENTS;
     int iReleased = (iOldButton & (~userState.m_iButtonMask)) & BUTTONMASK_CLICKEVENTS;
 
+    // mouse over
+    if (m_spFocusDlg != NULL)
+    {
+      VMenuEventDataObject data(NULL, this, NULL, NULL, userState, userState.m_iButtonMask);
+      m_spFocusDlg->FillEvent(&data); 
+
+      SetMouseOverItem(userState, data.m_pItem);
+    }
+
     // Handle pointer down / up events
     if(iClicked)
     {
@@ -267,42 +278,46 @@ void IVGUIContext::OnTickFunction(float fTimeDelta)
         data.m_pItem->OnPointerDown(&data);
 
       OnPointerDown.TriggerCallbacks(&data);
+
+      m_fAccumulatedMoveDistance = 0;
     }
 
-    if(iReleased)
-    {
-      VMenuEventDataObject data(&OnPointerUp, this, NULL, NULL, userState, iReleased);
-      FillEvent(data);
-
-      if (m_spFocusDlg != NULL) 
-        m_spFocusDlg->OnPointerUp(&data);
-
-      if(data.m_pItem != NULL)
-        data.m_pItem->OnPointerUp(&data);
-
-      OnPointerUp.TriggerCallbacks(&data);
-    }
-
-    // Handle OnItemClicked via pointer release
     if (iReleased)
     {
-      // first check the focused window for a click
-      VMenuEventDataObject data(&OnItemClick, this, NULL, NULL, userState, iReleased);
-      FillEvent(data);
+      VMenuEventDataObject pointerData(&OnPointerUp, this, NULL, NULL, userState, iReleased);
+      FillEvent(pointerData);
 
-      // first, notify the dialog
-      if (m_spFocusDlg != NULL) 
-        m_spFocusDlg->OnClick(&data);
+      VMenuEventDataObject itemData(&OnItemClick, this, NULL, NULL, userState, iReleased);
+      FillEvent(itemData);
 
-      if (data.m_pItem != NULL && data.m_pItem == userState.m_spMouseDownItem)
+      if (m_fAccumulatedMoveDistance <= m_fDragThreshold)
       {
-        VASSERT(data.m_pDialog);
-        data.m_pDialog->OnItemClicked(&data); // this one forwards it to the item
-        OnItemClick.TriggerCallbacks(&data);
+        if (m_spFocusDlg != NULL)
+          m_spFocusDlg->OnPointerUp(&pointerData);
+
+        if(pointerData.m_pItem != NULL)
+          pointerData.m_pItem->OnPointerUp(&pointerData);
+
+        OnPointerUp.TriggerCallbacks(&pointerData);
+
+        if (m_spFocusDlg != NULL) 
+          m_spFocusDlg->OnClick(&itemData);
+
+        if (itemData.m_pItem != NULL && itemData.m_pItem == userState.m_spMouseDownItem)
+        {
+          VASSERT(itemData.m_pDialog);
+          itemData.m_pDialog->OnItemClicked(&itemData); // this one forwards it to the item
+          OnItemClick.TriggerCallbacks(&itemData);
+        }
       }
+
+      if (m_bMouseOverOnInputOnly && (userState.m_spMouseOverItem != NULL))
+        userState.m_spMouseOverItem->OnMouseLeave(userState);
 
       userState.m_fLastClickTime = 0.f;
       userState.m_iLastClickedMask = iReleased;
+
+      m_fAccumulatedMoveDistance = 0;
     }
 
     // check for click and doubleclick
@@ -310,8 +325,6 @@ void IVGUIContext::OnTickFunction(float fTimeDelta)
     if (iClicked && !bDragging)
     {
       userState.m_spMouseDownItem = userState.m_spMouseOverItem;
-      if (userState.m_spMouseDownItem != NULL)
-        userState.m_spMouseDownItem->SetStatus(ITEMSTATUS_SELECTED); // highlight item under mouse
 
       if (iClicked == userState.m_iLastClickedMask)
       {
@@ -333,18 +346,6 @@ void IVGUIContext::OnTickFunction(float fTimeDelta)
         INVALIDATE_DOUBLECLICK;
     }
 
-    // mouse over
-    if (userState.m_iButtonMask == 0 && m_spFocusDlg != NULL)
-    {
-      if (userState.m_spMouseOverItem != NULL)
-        userState.m_spMouseOverItem->RemoveStatus(ITEMSTATUS_SELECTED);
-
-      VMenuEventDataObject data(NULL, this, NULL, NULL, userState, userState.m_iButtonMask);
-      m_spFocusDlg->FillEvent(&data); 
-
-      SetMouseOverItem(userState, data.m_pItem);
-    }
-
     // dragging?
     if (userState.m_iButtonMask && bMouseMoving)
     {
@@ -358,7 +359,7 @@ void IVGUIContext::OnTickFunction(float fTimeDelta)
     }
 
     // show tooltip
-    if (bMouseMoving)
+    if (fMoveDistance > m_fDragThreshold)
     {
       SetTooltip(NULL); // remove tooltip if mouse is moving
     } 
@@ -410,7 +411,7 @@ void IVGUIContext::OnTickFunction(float fTimeDelta)
 void IVGUIContext::OnPaint(VGraphicsInfo &Graphics, const VItemRenderInfo &parentState)
 {
   // render all dialogs in correct order
-  m_OpenDialogs.RenderAll(Graphics,parentState);
+  m_openDialogs.RenderAll(Graphics,parentState);
 
   // render tooltip
   if (m_spTooltip)
@@ -447,9 +448,9 @@ void IVGUIContext::OnRender()
 int IVGUIContext::ShowDialogModal(VDialog *pDialog, IVisApp_cl *pRunApp)
 {
   pDialog->m_pContext = this;
-  m_OpenDialogs.Add(pDialog);
+  m_openDialogs.Add(pDialog);
   SetFocus(pDialog);
-  m_OpenDialogs.SortByOrder();
+  m_openDialogs.SortByOrder();
 
   if (!pRunApp)
   {
@@ -477,7 +478,7 @@ int IVGUIContext::ShowDialogModal(VDialog *pDialog, IVisApp_cl *pRunApp)
   SetFocus(NULL); // otherwise it refuses to set the next one as focus dialog
   SetFocus((VDialog *)pDialog->m_pOwner);
   pDialog->SetModalApp(NULL);
-  m_OpenDialogs.Remove(pDialog);
+  m_openDialogs.Remove(pDialog);
 
   return iDlgResult;
 }
@@ -501,9 +502,9 @@ int IVGUIContext::ShowDialogModal(VDialog *pParent, const char *szDialogResource
 void IVGUIContext::ShowDialog(VDialog* pDialog)
 {
   pDialog->m_pContext = this;
-  m_OpenDialogs.Add(pDialog);
+  m_openDialogs.Add(pDialog);
   SetFocus(pDialog);
-  m_OpenDialogs.SortByOrder();
+  m_openDialogs.SortByOrder();
 }
 
 
@@ -512,7 +513,6 @@ VDialog* IVGUIContext::ShowDialog(const char *szDialogResource)
   VDialog* pDlg = GetManager()->CreateDialogInstance(szDialogResource,this);
   if (!pDlg)
     return NULL;
-
 
   hkvVec2 vPos = pDlg->GetStartPosition();
   pDlg->SetPosition(vPos.x,vPos.y);
@@ -523,19 +523,21 @@ VDialog* IVGUIContext::ShowDialog(const char *szDialogResource)
 
 void IVGUIContext::CloseDialog(VDialog* pDialog)
 {
-  VASSERT(pDialog!=NULL && m_OpenDialogs.Contains(pDialog));
+  VASSERT(pDialog!=NULL && m_openDialogs.Contains(pDialog));
   if (m_spFocusDlg == pDialog)
   {
     SetFocus(NULL); // otherwise it refuses to set the next one as focus dialog
     SetFocus(static_cast<VDialog*>(pDialog->m_pOwner));
   }
-  m_OpenDialogs.Remove(pDialog);
+  m_openDialogs.Remove(pDialog);
 }
 
 
 void IVGUIContext::SetFocus(VDialog *pDialog)
 {
-  if (pDialog == m_spFocusDlg) return;
+  if (pDialog == m_spFocusDlg)
+    return;
+
   if (m_spFocusDlg != NULL && m_spFocusDlg->IsModal()) // cannot set because current one is modal
   {
     if (pDialog != NULL && !pDialog->IsModal())
@@ -563,16 +565,31 @@ void IVGUIContext::SetFocus(VDialog *pDialog)
       return;
     }
 
+    const int iItemCount = pDialog->Items().Count();
+    for (int i=0; i<iItemCount; ++i)
+    {
+      for (int j=0; j<VGUIUserInfo_t::GUIMaxUser; j++)
+      {
+        VGUIUserInfo_t *pUser = GetUser((VGUIUserInfo_t::VGUIUserID_e)j);
+        if (pUser == NULL)
+          continue;
+
+        pDialog->Items().GetAt(i)->OnMouseLeave(*pUser);
+      }
+    }
+
   #if !defined(SUPPORTS_MOUSE) && !defined(SUPPORTS_MULTITOUCH)
     // initially set the control with tab order 0
     int iIndex = pDialog->Items().GetItemIndexWithTabOrder(0);
     if (iIndex>=0)
     {
-      for (int i=0;i<VGUIUserInfo_t::GUIMaxUser;i++)
+      for (int i=0; i<VGUIUserInfo_t::GUIMaxUser; ++i)
       {
         VGUIUserInfo_t *pUser = GetUser((VGUIUserInfo_t::VGUIUserID_e)i);
-        if (!pUser) continue;
-        SetMouseOverItem(*pUser,pDialog->Items().GetAt(iIndex));
+        if (pUser == NULL)
+          continue;
+
+        SetMouseOverItem(*pUser, pDialog->Items().GetAt(iIndex));
       }
     }
   #endif
@@ -585,8 +602,6 @@ void IVGUIContext::SetFocus(VDialog *pDialog)
       if (!pUser) continue;
       
       pUser->m_spMouseOverItem = NULL;
-      if (pUser->m_spMouseDownItem != NULL)
-        pUser->m_spMouseDownItem->RemoveStatus(ITEMSTATUS_SELECTED);
       pUser->m_spMouseDownItem = NULL;
     }
   }
@@ -597,10 +612,18 @@ void IVGUIContext::SetFocus(VDialog *pDialog)
 
 void IVGUIContext::SetMouseOverItem(VGUIUserInfo_t &user, VWindowBase *pItem)
 {
-  if (user.m_spMouseOverItem==pItem) return;
+  bool bClicked = true;
+  if (m_bMouseOverOnInputOnly)
+    bClicked = (user.m_iButtonMask & BUTTONMASK_CLICKEVENTS) != 0;
+
+  if ((user.m_spMouseOverItem == pItem) || !bClicked)
+    return;
+
   if (user.m_spMouseOverItem)
     user.m_spMouseOverItem->OnMouseLeave(user);
+
   user.m_spMouseOverItem = pItem;
+
   if (pItem)
     pItem->OnMouseEnter(user);
 }
@@ -633,10 +656,10 @@ void IVGUIContext::FillEvent(VMenuEventDataObject &data)
   }
 
   // test all other dialogs whether clicked inside the dialog
-  for (int i=0;i<m_OpenDialogs.Count() && !data.m_bProcessed;i++) 
+  for (int i=0;i<m_openDialogs.Count() && !data.m_bProcessed;i++) 
   {
-    if (m_OpenDialogs.GetAt(i)==m_spFocusDlg) continue;
-    m_OpenDialogs.GetAt(i)->FillEvent(&data);
+    if (m_openDialogs.GetAt(i)==m_spFocusDlg) continue;
+    m_openDialogs.GetAt(i)->FillEvent(&data);
     if (data.m_bProcessed)
     {
       SetFocus(data.m_pDialog);
@@ -928,7 +951,7 @@ int VGUIMainContext::GetButtonMask(VGUIUserInfo_t &user)
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

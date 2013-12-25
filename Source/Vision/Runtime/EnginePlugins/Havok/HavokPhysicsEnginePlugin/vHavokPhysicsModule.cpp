@@ -119,8 +119,15 @@ unsigned int g_iHavokMaxThreads = hkvMath::Min<int> (vHavokCpuJobThreadPool::MAX
 V_IMPLEMENT_DYNCREATE( VHavokTask, VThreadedTask, &g_vHavokModule );
 
 #if defined(HAVOK_SDK_VERSION_MAJOR) && (HAVOK_SDK_VERSION_MAJOR >= 2012)
+
 #include <Common/Compat/hkHavokVersions.h>
-#define HK_SERIALIZE_MIN_COMPATIBLE_VERSION_INTERNAL_VALUE HK_HAVOK_VERSION_300
+
+#ifdef _VISION_MOBILE
+  #define HK_SERIALIZE_MIN_COMPATIBLE_VERSION_INTERNAL_VALUE HK_HAVOK_VERSION_660b1
+#else
+  #define HK_SERIALIZE_MIN_COMPATIBLE_VERSION_INTERNAL_VALUE HK_HAVOK_VERSION_300
+#endif
+
 void HK_CALL registerCommonCollidePhysicsPatches(hkVersionPatchManager& man)
 {
    #undef HK_EXCLUDE_COMMON_PATCHES
@@ -572,16 +579,21 @@ protected:
 // Initialisation & Deinitialisation                                          //
 // -------------------------------------------------------------------------- //
 
-vHavokPhysicsModule::vHavokPhysicsModule(void) : 
-  m_bIsSceneLoading(false), 
-  m_bSimulationStarted(false),
-  m_bResultsExpected(false),
-  m_bNewResultsAvailable(false),
-  m_steppedExternally(false),
-  m_vdbSteppedExternally(false),
-  m_iMinSolverBufferIncreaseStep(2 * 1024 * 1024),
-  m_pSweepSemaphore(NULL),
-  m_iVisualDebuggerPort(HK_VISUAL_DEBUGGER_DEFAULT_PORT)
+vHavokPhysicsModule::vHavokPhysicsModule()
+  : m_bSimulationStarted(false)
+  , m_bResultsExpected(false)
+  , m_steppedExternally(false)
+  , m_vdbSteppedExternally(false)
+  , m_iMinSolverBufferIncreaseStep(2 * 1024 * 1024)
+  , m_bNewResultsAvailable(false)
+  , m_bIsSceneLoading(false)
+  , m_bPaused(false)
+  , m_spVisualDebugger(NULL)
+  , m_spDisplayHandler(NULL)
+  , m_bVisualDebugger(false)
+  , m_bDebugDisplay(false)
+  , m_pSweepSemaphore(NULL)
+  , m_iVisualDebuggerPort(HK_VISUAL_DEBUGGER_DEFAULT_PORT)
 {
   vHavokConversionUtils::SetHavok2VisionScale(DEFAULT_HAVOK_TO_VISION_SCALE);
   m_staticGeomMode = vHavokPhysicsModule::SGM_SINGLE_INSTANCES;
@@ -614,6 +626,25 @@ vHavokPhysicsModule::vHavokPhysicsModule(void) :
   m_bDebugRenderTriggerVolumes = false;
   m_bDebugRenderBlockerVolumes = false;
   m_bDebugRenderStaticMeshes = false;
+
+  // Set simulation time step
+  m_fLeftOver = 0.f;
+  m_fTimeStep = VHAVOK_BASE_TIME_STEP;
+
+  m_iMaxTicksPerFrame = 2;            // use up to two physics steps per frame
+  m_bFixedTicksPerFrame = false;      // don't use a fixed number of physics steps per frame
+  m_bAllowVariableStepRate = true;    // allow variable step rate...
+  m_fMinTimeStep = 1.0f / 120.0f;     // ...between 120Hz...
+  m_fMaxTimeStep = 1.0f / 30.0f;      // ...and 30Hz.
+
+  /*
+  Example for fixed step rate at VHAVOK_BASE_TIME_STEP with max. 4 steps per frame:
+  m_iMaxTicksPerFrame = 4;
+  m_bFixedTicksPerFrame = false;
+  m_fMinTimeStep = 0.0f;
+  m_fMaxTimeStep = 0.0f;
+  m_bAllowVariableStepRate = false;
+  */
 }
 
 vHavokPhysicsModule::~vHavokPhysicsModule(void)
@@ -785,35 +816,10 @@ BOOL vHavokPhysicsModule::OnInitPhysics()
 
   m_pPhysicsWorld = HK_NULL;
 
-  // Set simulation time step
-  m_fLeftOver = 0.f;
-  m_fTimeStep = VHAVOK_BASE_TIME_STEP;
-
-  m_iMaxTicksPerFrame = 2;            // use up to two physics steps per frame
-  m_bFixedTicksPerFrame = false;      // don't use a fixed number of physics steps per frame
-  m_bAllowVariableStepRate = true;    // allow variable step rate...
-  m_fMinTimeStep = 1/120.0f;           // ...between 120Hz...
-  m_fMaxTimeStep = 1/30.0f;           // ...and 30Hz.
-
-  /*
-  Example for fixed step rate at VHAVOK_BASE_TIME_STEP with max. 4 steps per frame:
-  m_iMaxTicksPerFrame = 4;
-  m_bFixedTicksPerFrame = false;
-  m_fMinTimeStep = 0.0f;
-  m_fMaxTimeStep = 0.0f;
-  m_bAllowVariableStepRate = false;
-  */
-
-  // Setup debug rendering
-  m_bVisualDebugger = false;
-  m_bDebugDisplay = false;
-  m_bPaused = false;
-
   CreateWorld(); // don't delay so that vForge etc always has one (even if will be recreated soon enough anyway..)
 
   // Setup misc stats
   m_bIsSceneLoading = false;
-
 
   // Register some relevant Vision callbacks
   Vision::Callbacks.OnBeforeSceneLoaded += this;
@@ -1076,18 +1082,21 @@ void vHavokPhysicsModule::SetBroadphaseSize(const hkAabb &worldBounds)
   m_pPhysicsWorld->unlock();
 }
 
-bool vHavokPhysicsModule::CheckSolverBufferSize()
+bool vHavokPhysicsModule::EnsureValidSolverBufferSize()
 {
-  VASSERT(m_pPhysicsWorld);
+  VASSERT(m_pPhysicsWorld != NULL);
+  m_pPhysicsWorld->markForWrite();
 
   // get required solver buffer size
   hkWorldMemoryAvailableWatchDog::MemUsageInfo memInfo;
   m_pPhysicsWorld->calcRequiredSolverBufferSize(memInfo);
 
+  m_pPhysicsWorld->unmarkForWrite();
+
   // retrieve solver allocator and check if it meets the requirements
   hkSolverAllocator& solver = 
     static_cast<hkSolverAllocator&>(hkMemoryRouter::getInstance().solver());
-  if(memInfo.m_sumRuntimeBlockSize <= solver.getBufferSize())
+  if (memInfo.m_sumRuntimeBlockSize <= solver.getBufferSize())
     return true;
 
 #ifdef HK_DEBUG_SLOW
@@ -1108,7 +1117,7 @@ bool vHavokPhysicsModule::CheckSolverBufferSize()
   gAllocator.blockFree(solver.m_bufferStart, solver.getBufferSize());
   solver.setBuffer(pNewBuffer, iNewBufferSize);
 
-  Vision::Error.Warning("Solver buffer size increased to %i Bytes.", iNewBufferSize);
+  hkvLog::Info("Warning: Solver buffer size increased to %i Bytes.", iNewBufferSize);
   return true;
 }
 
@@ -1227,15 +1236,12 @@ void vHavokPhysicsModule::CreateWorld()
 
   CreateCachedBodies();
 
-#ifdef WIN32
-  // Enable VDB, when working inside vForge
-  m_bVisualDebugger |= (BOOL)(Vision::Editor.IsInEditor());
-    
+#if defined(WIN32)
+  // Always enable VDB, when working inside vForge
+  m_bVisualDebugger |= Vision::Editor.IsInEditor();
 #endif
   
-  m_spVisualDebugger = NULL; // new world, need new context
   SetEnabledVisualDebugger(m_bVisualDebugger);
-  m_spDisplayHandler = NULL; // new world, need new handlers 
   SetEnabledDebug(m_bDebugDisplay);
 
   vHavokPhysicsModuleCallbackData newWorld(&vHavokPhysicsModule::OnAfterWorldCreated, this);
@@ -1320,30 +1326,41 @@ void vHavokPhysicsModule::StartSimulation(float dt)
       if (m_pRayCasterMultiple)
         m_pRayCasterMultiple->Execute();
 
-      if ( (m_pPhysicsWorld->m_simulationType == hkpWorldCinfo::SIMULATION_TYPE_MULTITHREADED) && (m_pJobThreadPool != HK_NULL) )
+      // Init threads for this simulation step and check if solver buffer memory is big enough.
+      hkpStepResult stepResult = DoStep(dt);
+
+      if (stepResult == HK_STEP_RESULT_MEMORY_FAILURE_BEFORE_INTEGRATION)
       {
-        m_pPhysicsWorld->checkUnmarked();
+        EnsureValidSolverBufferSize();
 
-        // Init threads for this simulation step and check if solver buffer memory is big enough.
-        hkpStepResult stepResult = m_pPhysicsWorld->initMtStep(m_pJobQueue, dt);
-        if (stepResult == HK_STEP_RESULT_MEMORY_FAILURE_BEFORE_INTEGRATION)
-        {
-          CheckSolverBufferSize();
-
-          // try again
-          stepResult = m_pPhysicsWorld->initMtStep(m_pJobQueue, dt);
-        }
-        VASSERT_MSG(stepResult == HK_STEP_RESULT_SUCCESS, "Physics initialization step failed.");
-
-        // get the thread pool working in the jobs (this thread will continue without 
-        // doing Physics work until Wait is called later on)
-        m_pJobThreadPool->processAllJobs(m_pJobQueue);
+        // try again
+        stepResult = DoStep(dt);
       }
-      else
-      {
-        m_pPhysicsWorld->stepDeltaTime(dt);
-      }
+      VASSERT_MSG(stepResult == HK_STEP_RESULT_SUCCESS, "Physics initialization step failed.");
     }
+  }
+}
+
+hkpStepResult vHavokPhysicsModule::DoStep(float dt)
+{
+  if (IsMultithreaded())
+  {
+    m_pPhysicsWorld->checkUnmarked();
+
+    const hkpStepResult result = m_pPhysicsWorld->initMtStep(m_pJobQueue, dt);
+
+    if (result == HK_STEP_RESULT_SUCCESS)
+    {
+      // Get the thread pool working on the jobs (this thread will continue without 
+      // doing Physics work until Wait is called later on).
+      m_pJobThreadPool->processAllJobs(m_pJobQueue);
+    }
+
+    return result;
+  }
+  else
+  {
+    return m_pPhysicsWorld->stepDeltaTime(dt);
   }
 }
 
@@ -1354,13 +1371,15 @@ void vHavokPhysicsModule::WaitForForegroundSimulationToComplete()
     m_bSimulationStarted = false;
     m_bResultsExpected = true;
 #if (HK_CONFIG_THREAD == HK_CONFIG_MULTI_THREADED) && !defined(HAVOK_FORCE_SINGLETHREADED)  // Will be on PC, PS3 etc.
+
     if ((m_pPhysicsWorld->m_simulationType == hkpWorldCinfo::SIMULATION_TYPE_MULTITHREADED) && (m_pJobThreadPool != HK_NULL))
     {
       m_pPhysicsWorld->checkUnmarked();
       m_pJobQueue->processAllJobs(); // do some jobs ourself
       m_pJobThreadPool->waitForCompletion(); // wait for all remaining threads
-      m_pPhysicsWorld->finishMtStep( m_pJobQueue, m_pJobThreadPool );
+      m_pPhysicsWorld->finishMtStep(m_pJobQueue, m_pJobThreadPool);
     }
+
 #endif
     // else nothing to do as all done on start
   }
@@ -1392,8 +1411,8 @@ BOOL vHavokPhysicsModule::OnDeInitPhysics()
   const int numSteppers = m_steppers.GetSize();
   for (int k = numSteppers - 1; k >= 0; k--)
   {
-     IHavokStepper* stepper = m_steppers[k];
-     stepper->OnDeInitPhysicsModule();
+    IHavokStepper* stepper = m_steppers[k];
+    stepper->OnDeInitPhysicsModule();
   }
    
   vHavokConstraint::ElementManagerDeleteAll();
@@ -1459,8 +1478,7 @@ BOOL vHavokPhysicsModule::OnDeInitPhysics()
 
 
   // Clean up visual debugger before local shape Cache as the VDB shape hash can keep a reference 
-  if (m_spVisualDebugger != NULL)
-    m_spVisualDebugger = NULL;
+  m_spVisualDebugger = NULL;
 
   // Clear Havok shape cache 
   if (!vHavokShapeFactory::ClearCache())
@@ -1475,12 +1493,9 @@ BOOL vHavokPhysicsModule::OnDeInitPhysics()
   {
     
     // Clean up havok display handler
-    if (m_spDisplayHandler != NULL)
-    {
-      m_spDisplayHandler = NULL;
-    }
+    m_spDisplayHandler = NULL;
 
-      V_SAFE_DELETE(m_pRayCasterSingle);
+    V_SAFE_DELETE(m_pRayCasterSingle);
     V_SAFE_DELETE(m_pRayCasterMultiple);
 
     // Clean up physics
@@ -1491,11 +1506,14 @@ BOOL vHavokPhysicsModule::OnDeInitPhysics()
       m_pPhysicsWorld = NULL;
     }
 
+    m_entityListenersToIgnore.RemoveAll();
+
     // Clean up havok listeners
     if (m_spConstraintListener != NULL)
       m_spConstraintListener = NULL;
     if (m_spContactListener != NULL)
       m_spContactListener = NULL;
+
 #if (HK_CONFIG_THREAD == HK_CONFIG_MULTI_THREADED) && !defined(HAVOK_FORCE_SINGLETHREADED)
 
       if (m_pJobThreadPool)
@@ -1606,12 +1624,12 @@ void vHavokPhysicsModule::SetThreadCount(unsigned int iNumThreads)
   }
 }
 
-void vHavokPhysicsModule::EnableDebugRendering(bool bRigidBodies, bool bRagdolls, bool bCharacterControlers, 
+void vHavokPhysicsModule::EnableDebugRendering(bool bRigidBodies, bool bRagdolls, bool bCharacterControllers, 
   bool bTriggerVolumes, bool bBlockerVolumes, bool bStaticMeshes)
 {
   m_bDebugRenderRigidBodies = bRigidBodies;
   m_bDebugRenderRagdolls = bRagdolls;
-  m_bDebugRenderCharacterControllers = bCharacterControlers;
+  m_bDebugRenderCharacterControllers = bCharacterControllers;
   m_bDebugRenderTriggerVolumes = bTriggerVolumes;
   m_bDebugRenderBlockerVolumes = bBlockerVolumes;
   m_bDebugRenderStaticMeshes = bStaticMeshes;
@@ -1903,7 +1921,7 @@ void vHavokPhysicsModule::SetPhysicsTickCount(int iTickCount,
   int iMaxTicksPerFrame, bool bFixedTicksPerFrame, float fMinPhysicsTimeStep, float fMaxPhysicsTimeStep)
 {
   VASSERT(iTickCount >= 0);
-  VASSERT( fMaxPhysicsTimeStep >= 0.0f );
+  VASSERT(fMaxPhysicsTimeStep >= 0.0f);
 
   // fixed time stepping
   if (iTickCount != 0)
@@ -2130,7 +2148,8 @@ void vHavokPhysicsModule::PerformRaycast(VisPhysicsRaycastBase_cl *pRaycastData)
     {
       ForwardRaycastData( pRaycastData, &hit );
     }
-  }else // all the hits
+  }
+  else // all the hits
   {
     hkpAllRayHitCollector output;
     m_pPhysicsWorld->castRay( input, output );
@@ -2144,10 +2163,8 @@ void vHavokPhysicsModule::PerformRaycast(VisPhysicsRaycastBase_cl *pRaycastData)
       {
         ForwardRaycastData( pRaycastData, &hit );
       }
-
     }
   }
-  
 
   m_pPhysicsWorld->unlock();
 }
@@ -2280,6 +2297,7 @@ void vHavokPhysicsModule::PerformSweepBatched(vHavokSweepCommand* pCommands, int
     {
       vHavokSweepCommand& command = pCommands[iCommandIdx];
       hkpWorldLinearCastCommand physicsCommand;
+      physicsCommand.m_numResultsOut = 0; // Fix Android compiler warning about uninitialized variable.
 
       hkvVec3 vPos(hkvNoInitialization);
 
@@ -2386,12 +2404,15 @@ bool vHavokPhysicsModule::DropToFloor(vHavokRigidBody *pRigidBody, float fDist)
 
   if (iNumHits > 0)
   {
-      hkVector4 dVec;
-     dVec.set(0,0,-result.m_fDistance); dVec.mul(vHavokConversionUtils::GetVision2HavokScaleSIMD());
-     m_pPhysicsWorld->markForWrite();
-     dVec.add(pRigidBody->GetHkRigidBody()->getPosition());
-     pRigidBody->GetHkRigidBody()->setPosition(dVec);
-     m_pPhysicsWorld->unmarkForWrite();
+    hkVector4 dVec;
+    dVec.set(0,0,-result.m_fDistance); dVec.mul(vHavokConversionUtils::GetVision2HavokScaleSIMD());
+    m_pPhysicsWorld->markForWrite();
+    dVec.add(pRigidBody->GetHkRigidBody()->getPosition());
+    pRigidBody->GetHkRigidBody()->setPosition(dVec);
+    m_pPhysicsWorld->unmarkForWrite();
+    hkvVec3 visVec;
+    vHavokConversionUtils::PhysVecToVisVecWorld(dVec, visVec);
+    pRigidBody->GetOwner3D()->SetPosition(visVec);
     return true;
   }
 
@@ -2497,7 +2518,7 @@ void vHavokPhysicsModule::OnHandleCallback(IVisCallbackDataObject_cl *pData)
       }
       else
       {
-        Vision::Error.Warning("Could not automatically compute broadphase size - no static Physics meshes were found, or the total extent of the static geometry was to small (must be greater than %.1f Vision units in all dimensions). Fallback to manual size.", HK2VIS_FLOAT_SCALED(2.f*BROADPHASE_SIZE_TOLERANCE));
+        hkvLog::Info("Warning Could not automatically compute broadphase size - no static Physics meshes were found, or the total extent of the static geometry was too small (must be greater than %.1f Vision units in all dimensions). Falling back to manual size.", HK2VIS_FLOAT_SCALED(2.0f * BROADPHASE_SIZE_TOLERANCE));
       }
     }
     
@@ -2540,7 +2561,7 @@ void vHavokPhysicsModule::OnHandleCallback(IVisCallbackDataObject_cl *pData)
     VCustomSceneChunkDataObject &chunkData(*((VCustomSceneChunkDataObject *)pData));
     if (chunkData.m_iChunkID=='HVKW')
     {
-      Vision::Error.Warning("Custom-Chunk 'HKVW' is not supported any more, please reexport scene!");
+      hkvLog::Warning("Custom-Chunk 'HKVW' is not supported any more, please reexport scene!");
     }
   }
   else if (pData->m_pSender == &VManagedThread::OnThreadLocalVariableInit)
@@ -2961,7 +2982,7 @@ void vHavokPhysicsModule::RemoveBlockerVolume(vHavokBlockerVolumeComponent* pBlo
 // Havok Debug Rendering                                                      //
 // -------------------------------------------------------------------------- //
 
-void vHavokPhysicsModule::SetEnabledVisualDebugger(BOOL bEnabled)
+void vHavokPhysicsModule::SetEnabledVisualDebugger(bool bEnabled)
 {
 #if !defined(PROFILING ) || !defined(_VISION_APOLLO) // Conflicts at the moment
   m_bVisualDebugger = bEnabled;
@@ -2975,11 +2996,11 @@ void vHavokPhysicsModule::SetEnabledVisualDebugger(BOOL bEnabled)
     m_spVisualDebugger = NULL;
   }
 #else
-      m_bVisualDebugger = FALSE;
+  m_bVisualDebugger = FALSE;
 #endif
 }
 
-BOOL vHavokPhysicsModule::IsEnabledVisualDebugger() const
+bool vHavokPhysicsModule::IsEnabledVisualDebugger() const
 {
   return m_bVisualDebugger;
 }
@@ -2993,7 +3014,7 @@ void vHavokPhysicsModule::SetVisualDebuggerPort(int iPort)
   }
 }
 
-void vHavokPhysicsModule::SetEnabledDebug(BOOL bEnabled)
+void vHavokPhysicsModule::SetEnabledDebug(bool bEnabled)
 {
   m_bDebugDisplay = bEnabled;
 
@@ -3003,11 +3024,10 @@ void vHavokPhysicsModule::SetEnabledDebug(BOOL bEnabled)
     m_spDisplayHandler = NULL;
 }
 
-BOOL vHavokPhysicsModule::IsEnabledDebug() const
+bool vHavokPhysicsModule::IsEnabledDebug() const
 {
   return m_bDebugDisplay;
 }
-
 
 // -------------------------------------------------------------------------- //
 // Collision Filtering                                                        //
@@ -3128,8 +3148,8 @@ void vHavokPhysicsModule::OnStaticMeshInstanceCreated(VisStaticMeshInstance_cl *
   WaitForSimulationToComplete();
 
   // Create our static mesh instance representation
-  vHavokStaticMesh *pStaticMesh = new vHavokStaticMesh(*this);
-  pStaticMesh->Init(*pMeshInstance);  
+  VSmartPtr<vHavokStaticMesh> spStaticMesh = new vHavokStaticMesh(*this);
+  spStaticMesh->Init(*pMeshInstance);  
 
   hkMemorySystem::getInstance().garbageCollect();
 }
@@ -3157,17 +3177,23 @@ void vHavokPhysicsModule::OnStaticMeshInstanceMoved(VisStaticMeshInstance_cl *pM
   VVERIFY_OR_RET(pMeshInstance != NULL);
   
   // Retrieve the vHavok object from the static mesh instance
-  vHavokStaticMesh *pHavokStaticMesh = 
-    static_cast<vHavokStaticMesh*>(pMeshInstance->GetPhysicsObject());
-  if (!pHavokStaticMesh)
-    return;
+  vHavokStaticMesh *pHavokStaticMesh = static_cast<vHavokStaticMesh*>(pMeshInstance->GetPhysicsObject());
 
-  // Wait until it is safe to modify physics objects...
-  WaitForSimulationToComplete();
+  if(pHavokStaticMesh != NULL)
+  {
+    // Wait until it is safe to modify physics objects...
+    WaitForSimulationToComplete();
 
-  MarkForWrite();
-  pHavokStaticMesh->UpdateVision2Havok();
-  UnmarkForWrite();
+    MarkForWrite();
+    pHavokStaticMesh->UpdateVision2Havok();
+    UnmarkForWrite();
+  }
+  else
+  {
+    // Physics static mesh can be missing due undersized source mesh. In this case try to create
+    // it here with a potentially new/ sufficient scale.
+    OnStaticMeshInstanceCreated(pMeshInstance);
+  }
 }
 
 void vHavokPhysicsModule::OnStaticMeshInstanceCollisionBitmaskChanged(VisStaticMeshInstance_cl *pMeshInstance)
@@ -3446,9 +3472,9 @@ void vHavokPhysicsModule::DumpCachedMessagesToLog()
 
   // Dump the cached Havok messages to the log output (e.g. resource viewer)
   for (int i = 0; i < m_cachedWarnings.GetLength(); i++)
-    Vision::Error.Warning(m_cachedWarnings[i]);
+    hkvLog::Warning(m_cachedWarnings[i]);
   for (int i = 0; i < m_cachedMessages.GetLength(); i++)
-    Vision::Error.SystemMessage(m_cachedMessages[i]);
+    hkvLog::Info(m_cachedMessages[i]);
 
   m_cachedMessages.Reset();
   m_cachedWarnings.Reset();
@@ -3503,7 +3529,7 @@ void vHavokPhysicsModule::SetBroadphaseSizeManual(float fBroadphaseManualSize)
   if (fHalfSideLength < BROADPHASE_SIZE_TOLERANCE)
   {
     fHalfSideLength = BROADPHASE_SIZE_TOLERANCE;
-    Vision::Error.Warning("Manual broadphase size too small, clamped value to %.1f", HK2VIS_FLOAT_SCALED(BROADPHASE_SIZE_TOLERANCE*hkReal(2)));
+    hkvLog::Info("Warning: Manual broadphase size too small, clamped value to %.1f", HK2VIS_FLOAT_SCALED(BROADPHASE_SIZE_TOLERANCE*hkReal(2)));
   }
 
   worldBounds.m_min.setAll(-fHalfSideLength);
@@ -3900,7 +3926,7 @@ void vHavokPhysicsModule::FinishDeterminismTest()
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

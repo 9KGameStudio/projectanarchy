@@ -11,7 +11,6 @@
 #include <Vision/Runtime/Engine/Renderer/VisApiSimpleRendererNode.hpp>
 #include <Vision/Runtime/Base/Graphics/Shader/vShaderConstantHelper.hpp>
 
-
 // register the classes
 V_IMPLEMENT_DYNAMIC(IVisRenderLoop_cl, VisTypedEngineObject_cl, Vision::GetEngineModule());
 V_IMPLEMENT_DYNAMIC(VisionRenderLoop_cl, IVisRenderLoop_cl, Vision::GetEngineModule());
@@ -40,18 +39,17 @@ VisionShaderProvider_cl::VisionShaderProvider_cl() : m_DefaultLightingColorEffec
   m_bInitialized = false;
 
   Vision::Callbacks.OnWorldInit += this;
-  Vision::Callbacks.OnEngineDeInitializing += this;
+  Vision::Callbacks.OnEngineDeInit += this;
   Vision::Callbacks.OnWorldDeInit += this;
 }
 
 VisionShaderProvider_cl::~VisionShaderProvider_cl()
 {
   Vision::Callbacks.OnWorldInit -= this;
-  Vision::Callbacks.OnEngineDeInitializing -= this;
+  Vision::Callbacks.OnEngineDeInit -= this;
   Vision::Callbacks.OnWorldDeInit -= this;
   m_spSpotlightTexture = NULL;
 }
-
 
 void VisionShaderProvider_cl::OnHandleCallback(IVisCallbackDataObject_cl *pData)
 {
@@ -70,7 +68,7 @@ void VisionShaderProvider_cl::OnHandleCallback(IVisCallbackDataObject_cl *pData)
     m_DefaultLightingColorEffects.Clear();
     return;
   }  
-  if (pData->m_pSender==&Vision::Callbacks.OnEngineDeInitializing)
+  if (pData->m_pSender==&Vision::Callbacks.OnEngineDeInit)
   {
     m_spBaseShaderLib = NULL;
     m_DefaultLightingColorEffects.Clear();
@@ -117,7 +115,6 @@ VCompiledEffect* VisionShaderProvider_cl::GetDefaultLightingColorEffect(bool bUs
     m_DefaultLightingColorEffects.AddUnique(pEffect);
   return pEffect;
 }
-
 
 ////////////////////////////////////////////////////////////////////////////////////////
 // Constructor / Destructor / Init + Deinit
@@ -248,14 +245,12 @@ VTextureObject* VisionShaderProvider_cl::GetDefaultAttenuationTexture()
   return m_spAttenSmoothTex;
 }
 
-
 VTextureObject* VisionShaderProvider_cl::GetDefaultSpotlightTexture()
 {
   if (!m_spSpotlightTexture)
     m_spSpotlightTexture = Vision::TextureManager.Load2DTexture("defaultSpotlight.dds", VTM_FLAG_DEFAULT_MIPMAPPED);
   return m_spSpotlightTexture;
 }
-
 
 // Returns a dynamic light shader, depending on the passed parameters, and modifies the shader if necessary.
 VCompiledTechnique *VisionShaderProvider_cl::GetDynamicLightShader(const VisLightSource_cl *pLight, 
@@ -327,7 +322,7 @@ VCompiledTechnique *VisionShaderProvider_cl::GetDynamicLightShader(const VisLigh
     VASSERT_MSG(pPass != NULL, "Dynamic light shaders must be of class VDynamicLightShaderBase");   
     if (!pPass)
     {
-      Vision::Error.Warning("Dynamic light shader is not of class VDynamicLightShaderBase; dynamic light will have no effect.");
+      hkvLog::Warning("Dynamic light shader is not of class VDynamicLightShaderBase; dynamic light will have no effect.");
       continue;
     }
     // set light source properties
@@ -427,14 +422,12 @@ VTextureObject* VisionRenderLoop_cl::GetDefaultAttenuationTexture()
   return m_spAttenSmoothTex;
 }
 
-
 VTextureObject* VisionRenderLoop_cl::GetDefaultSpotlightTexture()
 {
   if (!m_spSpotlightTexture)
     m_spSpotlightTexture = Vision::TextureManager.Load2DTexture("defaultSpotlight.dds", VTM_FLAG_DEFAULT_MIPMAPPED);
   return m_spSpotlightTexture;
 }
-
 
 #ifdef SUPPORTS_MEMEXPORT_SKINNING
 
@@ -470,7 +463,6 @@ void VisionRenderLoop_cl::ReleaseMemexportSkinningShaders()
 
 #endif // _VISION_XENON
 
-
 #if defined(_VISION_WIIU)
 
 void VisionRenderLoop_cl::CreateMemexportSkinningShaders()
@@ -498,7 +490,6 @@ void VisionRenderLoop_cl::ReleaseMemexportSkinningShaders()
 }
 
 #endif // _VISION_WIIU
-
 
 #if defined(_VR_DX11)
 
@@ -552,7 +543,6 @@ void VisionRenderLoop_cl::ReleaseMemexportSkinningShaders()
 
 #endif  // SUPPORTS_MEMEXPORT_SKINNING
 
-
 void VisionRenderLoop_cl::OnWorldInit()
 {
   CreateBaseShaders();
@@ -571,7 +561,7 @@ void VisionRenderLoop_cl::SetRenderHookOrder(VRenderHook_e eRenderHook, bool bRe
 
 #ifdef HK_DEBUG
   if (eRenderHook > VRH_CORONAS_AND_FLARES)
-    Vision::Error.Warning("VisionRenderLoop_cl::SetRenderHookOrder: Applying the order of render hooks above VRH_CORONAS_AND_FLARES will have no effect");
+    hkvLog::Warning("VisionRenderLoop_cl::SetRenderHookOrder: Applying the order of render hooks above VRH_CORONAS_AND_FLARES will have no effect");
 #endif
 
   if (bRenderMeshBufferObjectsFirst)
@@ -634,8 +624,6 @@ void VisionRenderLoop_cl::RenderHook(const VisMeshBufferObjectCollection_cl &vis
     Vision::Callbacks.OnRenderHook.TriggerCallbacks(&data, VRHP_POST_MESHBUFFEROBJECTS_AND_PARTICLES, iStartIndex);
 }
 
-
-
 ////////////////////////////////////////////////////////////////////////////////////////
 // The Render Loop Main Function
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -650,7 +638,7 @@ void VisionShaderProvider_cl::ResetCache()
 void VisionRenderLoop_cl::HandleVisibleVisibilityObjects()
 {
   m_VisibilityObjectCollector.HandleVisibleVisibilityObjects();
-  }
+}
 
 VISION_APIFUNC void VisionRenderLoop_cl::OnDoRenderLoop(void *pUserData)
 {
@@ -707,8 +695,6 @@ VISION_APIFUNC void VisionRenderLoop_cl::OnDoRenderLoop(void *pUserData)
   // Get a pointer to the collection of visible particle groups
   const VisParticleGroupCollection_cl *pVisibleParticleGroups = &m_VisibilityObjectCollector.GetParticleGroupCollection();
 
-
-
   /*****************************************************************************************************/
   /**  First render the primary opaque geometry pass which will only contain truly opaque geometry    **/
   /*****************************************************************************************************/
@@ -730,8 +716,6 @@ VISION_APIFUNC void VisionRenderLoop_cl::OnDoRenderLoop(void *pUserData)
     // Render all primary opaque pass shaders on entities (see "DrawEntitiesShaders")
     DrawEntitiesShaders(*pVisibleEntitiesPrimaryOpaquePass, VPT_PrimaryOpaquePass);
   }
-
-
 
   /*****************************************************************************************************/
   /**  Now render the secondary opaque geometry pass which will contain alpha tested geometry,        **/
@@ -848,28 +832,31 @@ VISION_APIFUNC void VisionRenderLoop_cl::OnDoRenderLoop(void *pUserData)
     // Trigger "VRH_GUI" render hook callback
     if (bDrawMasksAndDebugGeometry)
     {
-      // Trigger "VRH_GUI" render hook callback
-      VisRenderHookDataObject_cl data(&Vision::Callbacks.OnRenderHook, VRH_GUI);
-      Vision::Callbacks.OnRenderHook.TriggerCallbacks(&data);
-
       // Render buffered debug lines (but do not reset buffer). If we have a renderer node, this has to be done in the final-stage post processor instead.
-      Vision::Game.RenderDebugGeometry(VDGRM_ALL);
-
-      // Render all mesh buffer objects with the render order flag "VRH_AFTER_RENDERING"
-      RenderHook(*pVisibleMeshBuffer, pVisibleParticleGroups, VRH_AFTER_RENDERING, m_bTriggerCallbacks);
-
-
+      Vision::Game.RenderDebugGeometry(VDGRM_ALL); 
       Vision::Message.HandleMessages();
+
+      // Trigger "VRH_GUI" render hook callback
+      {
+        VisRenderHookDataObject_cl data(&Vision::Callbacks.OnRenderHook, VRH_GUI);
+        Vision::Callbacks.OnRenderHook.TriggerCallbacks(&data);
+      }
 
       if (Vision::GetConsoleManager()->IsVisible())
         Vision::GetConsoleManager()->Render();
+
+      // No particle rendering here, because you shouldn't be rendering particles in VRH_AFTER_RENDERING
+      {
+        Vision::RenderLoopHelper.RenderMeshBufferObjects(*pVisibleMeshBuffer, VRH_AFTER_RENDERING);
+
+        VisRenderHookDataObject_cl data(&Vision::Callbacks.OnRenderHook, VRH_AFTER_RENDERING);
+        Vision::Callbacks.OnRenderHook.TriggerCallbacks(&data);
+      }
     }
   }
 
   m_pShaderProvider = NULL;
 }
-
-
 
 
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -1242,13 +1229,13 @@ VCompiledEffect* VisionShaderProvider_cl::CreateMaterialEffect(VisSurface_cl *pS
   VShaderEffectLib* pFXLib = Vision::Shaders.LoadShaderLibrary (szLibName, SHADERLIBFLAG_HIDDEN);
 
   if (!pFXLib)
-    Vision::Error.Warning ("Failed to load shader library '%s'",szLibName);
+    hkvLog::Warning ("Failed to load shader library '%s'",szLibName);
 
 
   VCompiledEffect *pFX = Vision::Shaders.CreateEffect (szEffectName, szParamStr, iCreateFlags, pFXLib);
 
   if (!pFX)
-    Vision::Error.Warning ("Failed to create effect '%s'",szEffectName);
+    hkvLog::Warning ("Failed to create effect '%s'",szEffectName);
 
   return pFX;
 }
@@ -1415,7 +1402,7 @@ void VVisibilityObjectCollector::HandleVisibleVisibilityObjects()
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

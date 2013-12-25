@@ -82,7 +82,7 @@ public:
   VBASE_IMPEXP void SetFloatVec4(int id, float v1, float v2, float v3, float v4);
   VBASE_IMPEXP void SetFloatVec4(int id, float val, const char* pIndex);
   VBASE_IMPEXP VBool SetString(int id, const char *pValue, const char *pIndex = NULL);
-  VBASE_IMPEXP void SetEnum(int id, int val);
+  VBASE_IMPEXP void SetEnum(int id, INT_PTR val);
   VBASE_IMPEXP void SetFlag(int id, int iFlag, VBool bState); ///< Toggles flags on/off.
   VBASE_IMPEXP void SetFlag(int id, const char *pName, VBool bState); ///< Toggles flags on/off.
   VBASE_IMPEXP void SetFlag(int id, int iFlag); ///< Replaces flags.
@@ -96,7 +96,7 @@ public:
   VBASE_IMPEXP void  GetFloatVec2(int id, float *val);
   VBASE_IMPEXP void  GetFloatVec4(int id, float *val);
   VBASE_IMPEXP void  GetString(int id, VString &res, const char* pIndex = NULL);
-  VBASE_IMPEXP int   GetEnum(int id);
+  VBASE_IMPEXP INT_PTR GetEnum(int id);
   VBASE_IMPEXP int   GetFlag(int id); ///< Gets all the flags.
   VBASE_IMPEXP int   GetFlag(int id, int iFlag); ///< Gets a specific single flag or a combination of flags.
   VBASE_IMPEXP int   GetFlag(int id, const char* szFlagName);  ///< Gets a specific single flag.
@@ -134,7 +134,7 @@ protected:
 #endif // _VISION_VPARAMARRAY_HPP
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

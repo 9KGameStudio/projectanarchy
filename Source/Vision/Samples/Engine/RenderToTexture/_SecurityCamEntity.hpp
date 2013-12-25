@@ -9,6 +9,8 @@
 #ifndef H_SECURITYCAMENTITY_HPP_INCLUDED
 #define H_SECURITYCAMENTITY_HPP_INCLUDED
 
+#include <Vision/Runtime/Framework/VisionApp/VAppBase.hpp>
+
 ////////////////////////////////////////////////////////////////////////////////
 // class SecurityCamEntity_cl
 ////////////////////////////////////////////////////////////////////////////////
@@ -18,7 +20,7 @@
 // rendered scene gets displayed on a monitor 
 ////////////////////////////////////////////////////////////////////////////////
 enum RTT_CONTROL {
-  RTT_PICK_CAMERA = VISION_INPUT_CONTROL_LAST_ELEMENT+1
+  RTT_PICK_CAMERA = VAPP_INPUT_CONTROL_LAST_ELEMENT+1
 };
 
 class SecurityCamEntity_cl : public VisBaseEntity_cl, public IVisCallbackHandler_cl
@@ -43,6 +45,9 @@ public:
   void          PickCamera(bool status=true);
 
   inline void   SetYawSpeed(float f)              { m_fYawSpeed = f; }
+
+  // Sets render filter mask for security cam screen rendertarget that will decide which contents to render.
+  void          SetRenderTargetRenderFilterMask(unsigned int visibilityMask);
 
   // Handle background events
   void OnHandleCallback(IVisCallbackDataObject_cl* pData) HKV_OVERRIDE;
@@ -80,7 +85,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

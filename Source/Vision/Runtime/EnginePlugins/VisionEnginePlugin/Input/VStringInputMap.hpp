@@ -133,26 +133,21 @@ public:
   inline float GetTrigger(const char *szTriggerName)
   {
     int iTriggerIndex = 0;
-    int *pTriggerIndex = &iTriggerIndex;
 
-    if(!m_hashMap.Lookup(szTriggerName, pTriggerIndex))
+    if(!m_hashMap.Lookup(szTriggerName, iTriggerIndex))
     {
-      //Vision::Error.Warning("Input trigger '%s' is unknown!", szTriggerName);
+      //hkvLog::Warning("Input trigger '%s' is unknown!", szTriggerName);
       return 0;
     }
 
-    return VInputMap::GetTrigger((int)*pTriggerIndex);
+    return VInputMap::GetTrigger(iTriggerIndex);
   }
 
 protected:
   //to find the next free trigger for not yet assigned named triggers
   EFFECTS_IMPEXP int GetNextFreeTriggerIndex() const;
 
-  //allocation container of all mapped trigger indices since VStrMap just accepts pointer types
-  int *m_pMappedIndices;
-
-  //the actual hash map holding the assignment of names to trigger indices
-  VStrMap<int> m_hashMap;
+  VMap<VString, int> m_hashMap;
 };
 
 V_ENGINE_PLUGIN_ELEMENT_MANAGER_TEMPLATE_DECL(VStringInputMap)
@@ -161,7 +156,7 @@ V_ENGINE_PLUGIN_ELEMENT_MANAGER_TEMPLATE_DECL(VStringInputMap)
 #endif //VSTRINGINPUTMAP_HPP_INCLUDED
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -25,6 +25,10 @@ public:
   bool Init( int& iWidth_out, int& iHeight_out, float &fResolutionMultiplier_out );
 
   /// \brief
+  ///   Deinitialize the HMD manager.
+  bool DeInit();
+
+  /// \brief
   ///   Retrieve the HMD sensor.
   inline OVR::SensorDevice* GetSensor() const
   {
@@ -61,7 +65,7 @@ private:
 #endif // defined( _HMDMANAGER_HPP )
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -732,7 +732,7 @@ void VTerrainDecorationEntityModel::RecreateIRShaders(VisSurface_cl* pSurface, V
       break;
 
     default:
-      Vision::Error.Warning("VTerrainDecorationEntityModel::RecreateIRShaders: Only 3DMesh geometry topology is supported");
+      hkvLog::Warning("VTerrainDecorationEntityModel::RecreateIRShaders: Only 3DMesh geometry topology is supported");
       return;
   }
 
@@ -776,14 +776,14 @@ void VTerrainDecorationEntityModel::RecreateIRShaders(VisSurface_cl* pSurface, V
     VCompiledEffect* pFX = Vision::Shaders.CreateEffect("InitialPass", szParam, EFFECTCREATEFLAG_NONE, pEffectLib);
     if (pFX == NULL)
     {
-      Vision::Error.Warning("VTerrainDecorationEntityModel::RecreateIRShaders: Failed to create InitialPass effect");
+      hkvLog::Warning("VTerrainDecorationEntityModel::RecreateIRShaders: Failed to create InitialPass effect");
       return;
     }
   
     VCompiledTechnique* pTechnique = pFX->FindCompatibleTechnique(&cfg);
     if (pTechnique == NULL)
     {
-      Vision::Error.Warning("VTerrainDecorationEntityModel::RecreateIRShaders: No compatible technique found; using default technique");
+      hkvLog::Warning("VTerrainDecorationEntityModel::RecreateIRShaders: No compatible technique found; using default technique");
       pTechnique = pFX->GetDefaultTechnique(); // find default technique
     }
 
@@ -811,14 +811,14 @@ void VTerrainDecorationEntityModel::RecreateIRShaders(VisSurface_cl* pSurface, V
     VCompiledEffect* pFX = Vision::Shaders.CreateEffect("PrePass", szParam, EFFECTCREATEFLAG_NONE, pEffectLib);
     if (pFX == NULL)
     {
-      Vision::Error.Warning("VTerrainDecorationEntityModel::RecreateIRShaders: Failed to create PrePass effect");
+      hkvLog::Warning("VTerrainDecorationEntityModel::RecreateIRShaders: Failed to create PrePass effect");
       return;
     }
 
     VCompiledTechnique* pTechnique = pFX->FindCompatibleTechnique(&cfg);
     if (pTechnique == NULL)
     {
-      Vision::Error.Warning("VTerrainDecorationEntityModel::RecreateIRShaders: No compatible technique found; using default technique");
+      hkvLog::Warning("VTerrainDecorationEntityModel::RecreateIRShaders: No compatible technique found; using default technique");
       pTechnique = pFX->GetDefaultTechnique(); // find default technique
     }
 
@@ -860,7 +860,7 @@ char* VTerrainDecorationEntityModel::GetParamStringForIRSurface(VisSurface_cl* p
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

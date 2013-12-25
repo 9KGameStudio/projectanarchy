@@ -7,40 +7,41 @@
  */
 
 using System;
-using System.IO;
-using System.Diagnostics;
 using System.Collections;
-using System.Drawing.Design;
 using System.ComponentModel;
-using System.Globalization;
-using System.Runtime.Serialization;
-using CSharpFramework;
-using CSharpFramework.Math;
-using CSharpFramework.Shapes;
-using CSharpFramework.PropertyEditors;
-using CSharpFramework.DynamicProperties;
-using CSharpFramework.UndoRedo;
-using CSharpFramework.Actions;
-using CSharpFramework.Scene;
-using CSharpFramework.View;
-using CSharpFramework.Serialization;
+using System.Diagnostics;
 using System.Drawing;
-using TerrainManaged;
+using System.Drawing.Design;
+using System.Drawing.Imaging;
+using System.Globalization;
+using System.IO;
+using System.Runtime.Serialization;
+using System.Windows.Forms;
+using CSharpFramework;
+using CSharpFramework.Actions;
+using CSharpFramework.Controls;
+using CSharpFramework.Dialogs;
+using CSharpFramework.DynamicProperties;
+using CSharpFramework.Helper;
+using CSharpFramework.Math;
+using CSharpFramework.PropertyEditors;
+using CSharpFramework.Scene;
+using CSharpFramework.Serialization;
+using CSharpFramework.Shapes;
+using CSharpFramework.Tests;
+using CSharpFramework.UndoRedo;
+using CSharpFramework.View;
+using CSharpFramework.Visitors;
+using ManagedBase;
+using ManagedBase.LogManaged;
 using TerrainBase;
 using TerrainBase.Config;
-using System.Windows.Forms;
-using TerrainEditorPlugin.Dialogs;
 using TerrainBase.Editing;
-using TerrainEditorPlugin.Editing;
 using TerrainBase.Terrain;
-using System.Drawing.Imaging;
-using CSharpFramework.Controls;
-using ManagedBase;
-using CSharpFramework.Helper;
-using CSharpFramework.Dialogs;
-using CSharpFramework.Visitors;
+using TerrainEditorPlugin.Dialogs;
+using TerrainEditorPlugin.Editing;
 using TerrainEditorPlugin.Filter;
-using CSharpFramework.Tests;
+using TerrainManaged;
 using VisionEditorPlugin.Shapes;
 
 
@@ -1112,7 +1113,7 @@ namespace TerrainEditorPlugin.Shapes
         if (HasEngineInstance())
           EngineTerrain.SetLODScaling(_lodMetric, _fLODScaling, _fMirrorLODBias);
         if (TerrainEditor.PreviewFullRes)
-          EditorManager.EngineManager.LogPrintWarning("LOD has no visual effect at the moment because it is turned off in the terrain editor toolbar");
+          Log.Warning("LOD has no visual effect at the moment because it is turned off in the terrain editor toolbar");
       }
     }
 
@@ -2579,13 +2580,18 @@ namespace TerrainEditorPlugin.Shapes
       }
       return shape;
     }
+
+    public override Type GetShapeType()
+    {
+      return typeof(TerrainShape);
+    }
   }
 
   #endregion
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -6,17 +6,40 @@
  *
  */
 
+const DWORD MS_VC_EXCEPTION=0x406D1388;
 
+#pragma pack(push,8)
+typedef struct tagTHREADNAME_INFO
+{
+  DWORD dwType; // Must be 0x1000.
+  LPCSTR szName; // Pointer to name (in user addr space).
+  DWORD dwThreadID; // Thread ID (-1=caller thread).
+  DWORD dwFlags; // Reserved for future use, must be zero.
+} THREADNAME_INFO;
+#pragma pack(pop)
 
-VThread::VThread(VPlatformThreadFunc pStartFunction, void *pArgument, int iStackSize, VThreadPriority ePriority) :
+VThread::VThread(VPlatformThreadFunc pStartFunction, void *pArgument, int iStackSize, VThreadPriority ePriority, const char* szThreadName) :
   m_pStartFunc(pStartFunction),
   m_iProcessor(-1),
   m_ePriority(ePriority),
   m_iStackSize(iStackSize < 0 ? 0 : iStackSize)
 {
-  m_hHandle = CreateThread(NULL, m_iStackSize, m_pStartFunc, pArgument, CREATE_SUSPENDED, NULL);
+  THREADNAME_INFO info;
+  info.dwType = 0x1000;
+  info.szName = szThreadName;
+  info.dwFlags = 0;
+
+  m_hHandle = CreateThread(NULL, m_iStackSize, m_pStartFunc, pArgument, CREATE_SUSPENDED, &info.dwThreadID);
   VASSERT(m_hHandle);
   SetPriority(ePriority);
+
+  __try
+  {
+    RaiseException( MS_VC_EXCEPTION, 0, sizeof(info)/sizeof(ULONG_PTR), (ULONG_PTR*)&info );
+  }
+  __except(EXCEPTION_EXECUTE_HANDLER)
+  {
+  }
 }
 
 VThread::~VThread()
@@ -77,7 +100,7 @@ void VThread::Join()
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

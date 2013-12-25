@@ -193,7 +193,7 @@ void PlayerUIDialog::OnTick(float deltaTime)
   if (!characterEntity)
   {
     // @todo: handle player death properly
-    Vision::Error.Warning("Player character has probably died, which isn't yet handled. Set the character's Unlimited Health entity property to true to prevent this.");
+    hkvLog::Warning("Player character has probably died, which isn't yet handled. Set the character's Unlimited Health entity property to true to prevent this.");
     return;
   }
 
@@ -353,7 +353,7 @@ void PlayerUIDialog::CheatToggleUnlimitedHealth()
   {
     msg = "CHEAT - Unlimited Health: OFF";
   }
-  Vision::Error.SystemMessage(msg.AsChar());
+  hkvLog::Info(msg.AsChar());
   Vision::Message.Add(1, msg.AsChar());
 }
 
@@ -372,7 +372,7 @@ void PlayerUIDialog::CheatToggleUnlimitedMana()
   {
     msg = "CHEAT - Unlimited Mana: OFF";
   }
-  Vision::Error.SystemMessage(msg.AsChar());
+  hkvLog::Info(msg.AsChar());
   Vision::Message.Add(1, msg.AsChar());
 }
 
@@ -407,14 +407,14 @@ void PlayerUIDialog::InitInputMap()
 #endif
 
 #if defined(_VISION_MOBILE)
-  // vSceneViewer profiling menu uses -900 for depth
-  // Explicitly place the touchscreen area 'behind' that at -950
+  // vPlayer app menu uses a priority of 2000
+  // Explicitly config a lower priority for the touchscreen area
   // Though now the rest of the GUI probably doesn't work!
-  float const depth = -950.0f;
+  float const priority = -950.0f;
   int const width = Vision::Video.GetXRes();
   int const height = Vision::Video.GetYRes();
 
-  VTouchArea *touchScreen = new VTouchArea(VInputManager::GetTouchScreen(), VRectanglef(0.0f, 0.0f, width, height), depth);
+  VTouchArea *touchScreen = new VTouchArea(VInputManager::GetTouchScreen(), VRectanglef(0.0f, 0.0f, width, height), priority);
   m_inputMap->MapTrigger(PI_PrimaryAction, touchScreen, CT_TOUCH_ANY);
   m_inputMap->MapTrigger(PI_PrimaryActionX, touchScreen, CT_TOUCH_ABS_X);
   m_inputMap->MapTrigger(PI_PrimaryActionY, touchScreen, CT_TOUCH_ABS_Y);
@@ -434,7 +434,7 @@ hkvVec2 PlayerUIDialog::GetCursorPosition(IVGUIContext const *context) const
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -21,8 +21,6 @@ VIMPORT IVisPlugin_cl* GetEnginePlugin_SampleGamePlugin();
 VIMPORT IVisPlugin_cl* GetEnginePlugin_SpeedtreeEnginePlugin();
 VIMPORT IVisPlugin_cl* GetEnginePlugin_Speedtree5EnginePlugin();
 VIMPORT IVisPlugin_cl* GetEnginePlugin_SoundEnginePlugin();
-VIMPORT IVisPlugin_cl* GetEnginePlugin_vPhysX();
-VIMPORT IVisPlugin_cl* GetEnginePlugin_vPhysX3();
 VIMPORT IVisPlugin_cl* GetEnginePlugin_KynogonPlugin();
 VIMPORT IVisPlugin_cl* GetEnginePlugin_vBullet();
 VIMPORT IVisPlugin_cl* GetEnginePlugin_vSubstanceAirCPU();
@@ -44,7 +42,7 @@ VIMPORT IVisPlugin_cl* GetEnginePlugin_vFmodEnginePlugin();
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

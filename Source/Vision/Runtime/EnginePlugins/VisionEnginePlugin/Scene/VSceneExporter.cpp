@@ -171,14 +171,11 @@ VExportShapesArchive* VSceneExporter::StartVSceneExport(IVFileOutStream *pOut, b
   (*m_pArchive) << Vision::World.GetCoordinateSystem()->GetProjection();
 
   // #17: time stepping
-  // Note we always export variable timestepping for now (2013.2)
-  // This will be re-enabled as soon as fixed time stepping works correctly (2013.3).
   if ((m_eExportFlags & VExport_TimeStepping) != 0)
   {
     // Update Scene Controller
-    /*IVisUpdateSceneController_cl* pUpdateSceneController = Vision::GetApplication()->GetSceneUpdateController();
-    (*m_pArchive) << pUpdateSceneController;*/
-    (*m_pArchive) << (IVisUpdateSceneController_cl*)(NULL);
+    IVisUpdateSceneController_cl* pUpdateSceneController = Vision::GetApplication()->GetSceneUpdateController();
+    (*m_pArchive) << pUpdateSceneController;
 
     // Timer
     IVTimerPtr spTimer = Vision::GetTimer();
@@ -187,27 +184,27 @@ VExportShapesArchive* VSceneExporter::StartVSceneExport(IVFileOutStream *pOut, b
     // is Vision's default timer.
     Vision::SetTimer(NULL); 
 
-    //if (spTimer == Vision::GetTimer())
+    if (spTimer == Vision::GetTimer())
     {
       // Do not serialize default timer.
       (*m_pArchive) << (IVTimer*)(NULL);
     }
-    /*else
+    else
     {
       (*m_pArchive) << spTimer;
-    }*/
+    }
 
     // Re-set timer.
     Vision::SetTimer(spTimer);
 
     // Store physics time stepping
-    /*IVisPhysicsModule_cl* pPhysicsModule = Vision::GetApplication()->GetPhysicsModule();
+    IVisPhysicsModule_cl* pPhysicsModule = Vision::GetApplication()->GetPhysicsModule();
     if (pPhysicsModule != NULL)
     {
       (*m_pArchive) << pPhysicsModule->GetPhysicsTickCount();
       (*m_pArchive) << pPhysicsModule->GetMaxTicksPerFrame();
     }
-    else*/
+    else
     {
       // no physics time stepping specified
       (*m_pArchive) << int(-1);
@@ -404,32 +401,35 @@ void VSceneExporter::WriteVSceneFile()
   if (m_eExportFlags&VExport_View)
   {
     file.StartChunk('VIEW'); 
-      // clip distances
+
       IVRendererNode* pNode = Vision::Renderer.GetRendererNode(0);
       VASSERT(pNode != NULL);
+
+      // clip distances
       file.WriteFloat(pNode->GetViewProperties()->getNear());
       file.WriteFloat(pNode->GetViewProperties()->getFar());
 
       // initial camera position (scene version 2)
-      hkvVec3 vCamPos = Vision::Camera.GetCurrentCameraPosition();
-      hkvMat3 camRot;
-      Vision::Camera.GetCurrentCameraRotation(camRot);
-      file.Write(vCamPos.data,3*sizeof(float),"3f");
+      hkvVec3 vCameraPos = Vision::Camera.GetCurrentCameraPosition();
+      file.Write(vCameraPos.data, 3*sizeof(float), "3f");
 
+      hkvMat3 mCameraRot;
+      Vision::Camera.GetCurrentCameraRotation(mCameraRot); 
       for (int i = 0; i < 9; ++i)
       {
-        float f = camRot.m_ElementsCM[(i/3)+(i%3)*3];
-        file.Write(&f,sizeof(float),"1f");
+        float f = mCameraRot.m_ElementsCM[(i/3) + (i%3)*3];
+        file.Write(&f, sizeof(float), "1f");
       }
 
-      // Get field of view
-      float fovX = 90.0f;
-      float fovY = 0.0f;
-      Vision::Contexts.GetMainRenderContext()->GetFOV(fovX, fovY);
+      // Field of view
+      float fCameraFovX = 90.0f;
+      float fCameraFovY = 0.0f;
+      Vision::Contexts.GetMainRenderContext()->GetFOV(fCameraFovX, fCameraFovY);
+      file.WriteFloat(fCameraFovX);
+      
+      file.WriteInt(0); // reserved
+      file.WriteInt(0); // reserved
 
-      file.WriteFloat(fovX);
-      file.WriteInt(0); // reserved
-      file.WriteInt(0); // reserved
     file.EndChunk();
   }
 
@@ -541,7 +541,7 @@ void VSceneExporter::WriteVPrefabFile()
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

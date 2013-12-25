@@ -157,7 +157,7 @@ void VTerrainConfig::GetWorldSpaceToSectorTransform(int iSectorX, int iSectorY, 
   dest.w = -dest.y * vTemp.y;
 }
 
-//Returns project local directory
+// Returns native directory if the native project path is set; otherwise project local directory
 bool VTerrainConfig::GetDirectory(char *szPath, const char *szFolder, bool bTempDir) const
 {
   VASSERT(szFolder);
@@ -165,12 +165,12 @@ bool VTerrainConfig::GetDirectory(char *szPath, const char *szFolder, bool bTemp
   if (m_sTerrainFolder.IsEmpty()) 
     return false;
 
-  char szRoot[FS_MAX_PATH];
-  strcpy(szRoot,m_sTerrainFolder);
+  VStaticString<FS_MAX_PATH> sDir(m_sNativeProjectDir);
+  VFileAccessManager::AppendPath(sDir, m_sTerrainFolder);
   if (bTempDir)
-    strcat(szRoot,"_temp");   //TODO: "\\.temp\\"  ?
+    sDir += "_temp";   //TODO: "\\.temp\\"  ?
 
-  VFileHelper::CombineDirAndFile(szPath, szRoot, szFolder);
+  VFileHelper::CombineDirAndFile(szPath, sDir, szFolder);
 
   return true;
 }
@@ -202,13 +202,25 @@ bool VTerrainConfig::IsTempDirFile(const char *szFilename) const
   
 const char* VTerrainConfig::FixTempDirFile(const char *szFilename, char *szBuffer) const
 {
-  char szFolder[FS_MAX_PATH];
-  sprintf(szFolder,"%s_temp\\",m_sTerrainFolder.AsChar());
-  int iLen = (int)strlen(szFolder);
-  if (_strnicmp(szFilename,szFolder,iLen)!=0)
-    return szFilename; // this is not a temp dir file
+  // Get the folder for the terrain temp directory
+  char szTemp[FS_MAX_PATH];
+  if (!GetDirectory(szTemp, "", true))
+    return szFilename;
 
-  VFileHelper::CombineDirAndFile(szBuffer,m_sTerrainFolder,&szFilename[iLen]);
+  // Check whether the path starts with that folder. Also make sure that if the string matches, 
+  /// it ends at a folder boundary. If not, just return the input path
+  size_t iTempDirLen = strlen(szTemp);
+  if (_strnicmp(szFilename, szTemp, iTempDirLen) != 0 || (szFilename[iTempDirLen] != '/' && szFilename[iTempDirLen] != '\\'))
+    return szFilename;
+
+  // Get the non-temp terrain directory
+  if (!GetDirectory(szTemp, "", false))
+    return szFilename;
+
+  // Compose a path starting with the terrain directory followed by the remainder that
+  // followed the temp path. We can offset the remainder index by 1 to skip the separator char
+  // (we made sure earlier that one exists at this position)
+  VFileHelper::CombineDirAndFile(szBuffer, szTemp, &szFilename[iTempDirLen + 1]);
 
   return szBuffer;
 }
@@ -411,17 +423,15 @@ bool VTerrainConfig::GetSectorCacheFilename(char *szPath, int iSectorX, int iSec
 //Helper that makes subdirectories for us
 #define _MAKE_DIR(_T)              \
   GetDirectory(szDir,_T, bTemp);   \
-  VFileHelper::CombineDirAndFile(szAbsDir, szProjectDir,szDir);\
-  if (!VFileHelper::ExistsDir(szAbsDir))            \
-    if (!VFileHelper::MkDirRecursive(szAbsDir))     \
+  if (!VFileHelper::ExistsDir(szDir))            \
+    if (!VFileHelper::MkDirRecursive(szDir))     \
       return false;
 
-bool VTerrainConfig::MakeRelevantDirectories(const char *szProjectDir, bool bTemp) const
+bool VTerrainConfig::MakeRelevantDirectories(bool bTemp) const
 {
   VASSERT(!m_sTerrainFolder.IsEmpty());
-  VASSERT(VPathHelper::IsAbsolutePath(szProjectDir));
-  
-  char szAbsDir[FS_MAX_PATH];
+  VASSERT(!m_sNativeProjectDir.IsEmpty());
+
   char szDir[FS_MAX_PATH];
 
   _MAKE_DIR("");  //make sure terrain folder exists
@@ -561,16 +571,8 @@ void VTerrainConfig::ChunkFileSerialize(VChunkFile &file)
 
 bool VTerrainConfig::RecursiveCreateDir(const char *szProjRelpath) const
 {
-  VASSERT(!m_sAbsProjectDir.IsEmpty());
+  VASSERT(!m_sNativeProjectDir.IsEmpty());
   
-  #if 0
-  char tmp[FS_MAX_PATH];
-  sprintf(tmp, "LOG:RecursiveCreateDir(%s)\r\n", szProjRelpath); //HACK
-  OutputDebugString(tmp); 
-  #endif
-  
-  //TODO: Use VFileHelper:: instead?
-
   const char *szStart = szProjRelpath;
   char szPath[FS_MAX_PATH];
   while (szProjRelpath && szProjRelpath[0])
@@ -592,7 +594,7 @@ bool VTerrainConfig::RecursiveCreateDir(const char *szProjRelpath) const
     if (szPath[0])
     {
       char szAbsPath[FS_MAX_PATH];
-      VFileHelper::CombineDirAndFile(szAbsPath,m_sAbsProjectDir,szPath);
+      VFileHelper::CombineDirAndFile(szAbsPath,m_sNativeProjectDir,szPath);
       if (!VFileHelper::ExistsDir(szAbsPath))
         if (!VFileHelper::MkDir(szAbsPath))
           return false;
@@ -604,7 +606,7 @@ bool VTerrainConfig::RecursiveCreateDir(const char *szProjRelpath) const
 
 int VTerrainConfig::RCSPerformAction(const char *szFilename, int eAction) const
 {
-  if (!m_bUseTempFolder && !m_sAbsProjectDir.IsEmpty())   // saving to real directory and in editor? 
+  if (!m_bUseTempFolder && !m_sNativeProjectDir.IsEmpty())   // saving to real directory and in editor? 
   {
     static bool bCheck = true;
     if (bCheck)
@@ -613,15 +615,15 @@ int VTerrainConfig::RCSPerformAction(const char *szFilename, int eAction) const
     }
     // use RCS
     if (VPathHelper::IsAbsolutePath(szFilename))
-      return VFileAccessManager::RCSPerformAction(szFilename, eAction); //use absolute path
+      return VRCSHelper::RCSPerformAction(szFilename, eAction); //use absolute path
     
-    return VFileAccessManager::RCSPerformAction(szFilename, eAction, m_sAbsProjectDir); // use project dir
+    return VRCSHelper::RCSPerformAction(szFilename, eAction, m_sNativeProjectDir); // use project dir
   }    
   return true;
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

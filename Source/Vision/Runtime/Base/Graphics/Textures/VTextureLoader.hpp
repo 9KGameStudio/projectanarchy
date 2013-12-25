@@ -13,6 +13,7 @@
 
 #include <Vision/Runtime/Base/Graphics/Textures/VTextureFileHeader.hpp>
 #include <Vision/Runtime/Base/Graphics/Textures/VCompressionHelper.hpp>
+#include <Vision/Runtime/Base/Logging/hkvLog.h>
 
 class VTextureLoader;
 
@@ -345,9 +346,6 @@ public:
   /// \param szFilename
   ///   Texture filename
   ///
-  /// \param pManager
-  ///   File manager that is used to load the texture
-  ///
   /// \param iFlags
   ///   Additional loading flags. Same constants as used for loading textures in the engine (e.g. VTM_FLAG_NO_MIPMAPS for instance)
   ///
@@ -360,11 +358,11 @@ public:
   /// \returns
   ///   true if opening the file was successful
   ///
-  VBASE_IMPEXP bool Open(const char *szFilename, IVFileStreamManager *pManager, int iFlags, VTextureType_e eExpectedType=Unknown, IVLog *pLog=NULL);
+  VBASE_IMPEXP bool Open(const char* szFilename, int iFlags, VTextureType_e eExpectedType = Unknown, hkvLogInterface* pLog = hkvGlobalLog::GetInstance());
 
   /// \brief
   ///   This overload of Open operates on a previously opened file stream
-  VBASE_IMPEXP bool Open(IVFileInStream *pStream, bool bCloseStream, int iFlags, VTextureType_e eExpectedType=Unknown, IVLog *pLog=NULL);
+  VBASE_IMPEXP bool Open(IVFileInStream* pStream, bool bCloseStream, int iFlags, VTextureType_e eExpectedType = Unknown, hkvLogInterface* pLog = hkvGlobalLog::GetInstance());
 
   /// \brief
   ///   Closes the file
@@ -498,7 +496,7 @@ protected:
 
   bool m_bOwnsStream;  
   IVFileInStream *m_pStream;
-  IVLog *m_pLog;
+  hkvLogInterface *m_pLog;
   short m_iCurrentRAWImage, m_iCurrentRGBAImage;
   ImageInfo_t m_BitmapInfo[16];
   ImageInfo_t m_BitmapInfoRGBA[16];
@@ -515,7 +513,7 @@ protected:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

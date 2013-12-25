@@ -61,8 +61,21 @@ struct VGraphProps
   bool bRangeAdaptation;      ///< if true, value-range will be automatically adapted
 };
 
-/// brief
-///  class that describes a curve within a graph.
+/// \brief
+///   Interface defining a curve updater.
+///
+/// A curve updater is responsible for delivering data for a curve within a graph.
+class VCurveUpdater : public VRefCounter
+{
+public:
+  VCurveUpdater() {}
+  virtual ~VCurveUpdater() {}
+
+  virtual void Update(VArray<float>& values) = 0;
+};
+
+/// \brief
+///   Class that describes a curve within a graph.
 class VCurveObject
 {
 public:
@@ -74,11 +87,13 @@ public:
     m_iColor = V_RGBA_WHITE;
     m_iVertexOffset = 0;
     m_spLegendMask = NULL;
+    m_spUpdater = NULL;
   }
 
   ~VCurveObject()
   {
     m_spLegendMask = NULL;
+    m_spUpdater = NULL;
   }
   
   bool operator== (const VCurveObject &rhs) const
@@ -98,10 +113,11 @@ public:
   }
 
 private:
-  char m_szName[VCURVE_MAX_NAME];    ///< name of curve
-  VColorRef m_iColor;                ///< color of curve
-  unsigned int m_iVertexOffset;      ///< offset into global vertex array of parent graph
-  VisScreenMaskPtr m_spLegendMask;   ///< screen mask for legend
+  char m_szName[VCURVE_MAX_NAME];       ///< name of curve
+  VColorRef m_iColor;                   ///< color of curve
+  unsigned int m_iVertexOffset;         ///< offset into global vertex array of parent graph
+  VisScreenMaskPtr m_spLegendMask;      ///< screen mask for legend
+  VSmartPtr<VCurveUpdater> m_spUpdater; ///< updater which is responsible for delivering new values
 };
 
 /// \brief 
@@ -127,9 +143,12 @@ public:
   /// \param iColor
   ///   Color of the curve and corresponding legend
   ///
+  /// \param pUpdater
+  ///   Curve updater responsible for updating the curve in question.
+  ///
   /// \return
-  ///   Index of curve to be used for Update(). Will return -1 on failure.
-  EFFECTS_IMPEXP virtual int AddCurve(const char *szName, VColorRef iColor);
+  ///   Returns if curve was successfully added or not.
+  EFFECTS_IMPEXP virtual bool AddCurve(const char *szName, VColorRef iColor, VCurveUpdater* pUpdater);
 
   /// \brief
   ///   After curves have been added, this method has to be called to init graph.
@@ -138,10 +157,6 @@ public:
   ///   Specifies texture to use for background of graph. Per default a grid texture
   ///   will be used.
   EFFECTS_IMPEXP virtual void Init(const char *szMaskTexture=NULL);
-
-  /// \brief
-  ///   Updates curve of specified index.
-  EFFECTS_IMPEXP virtual void Update(unsigned int iCurveIndex, float fValue); 
   
   /// \brief
   ///   Returns whether graph is visible.
@@ -156,14 +171,20 @@ public:
   EFFECTS_IMPEXP virtual void OnHandleCallback(IVisCallbackDataObject_cl *pData) HKV_OVERRIDE;
 
 protected: 
+  /// \brief
+  ///   Appends a new value to the curve with the given index.
+  EFFECTS_IMPEXP virtual void AppendValue(int iCurveIndex, float fValue);
 
-  // creates effect for displaying graph
+  /// \brief
+  /// Creates effect for displaying graph
   virtual VCompiledTechnique* CreateEffect();
 
-  // converts screen relative coords [range: 0..1] into pixel coordinates
+  /// \brief
+  /// Converts screen relative coords [range: 0..1] into pixel coordinates
   virtual hkvVec2 GetScreenPos(float fRelativePosX, float fRelativePosY);
 
-  // resizes graph
+  /// \brief
+  /// Resizes graph
   virtual void Resize();
   
   VisScreenMaskPtr m_spBackgroundMask;         ///< screen mask for graph background
@@ -172,9 +193,8 @@ protected:
 
   DynArray_cl<VGraphVertex> m_vertexArray;     ///< global vertex array
   DynArray_cl<unsigned short> m_indexArray;    ///< global index array
-  DynObjArray_cl<VCurveObject> m_curves;       ///< list of curves 
+  VArray<VCurveObject> m_curves;               ///< array of curves 
   
-  int m_iManagerIndex;
   VGraphProps m_props;
   bool m_bDirty;
   bool m_bVisible;
@@ -183,17 +203,15 @@ protected:
   float m_fLastMaxValue;
 
 private:
-
   // copying not allowed
   VGraphObject(const VGraphObject& rhs);
   void operator=(const VGraphObject& rhs);
-
 };
 
-#endif
+#endif //VGRAPH_OBJECT_HPP
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

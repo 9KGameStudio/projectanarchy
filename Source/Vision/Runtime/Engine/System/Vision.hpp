@@ -112,7 +112,6 @@
 
 #include <Vision/Runtime/Engine/Physics/VisApiPhysics.hpp>
 #include <Vision/Runtime/Base/Math/BoundingVolume/hkvAlignedBBox.h>
-#include <Vision/Runtime/Engine/System/VisApiSystem.hpp>
 
 #include <Vision/Runtime/Engine/System/Resource/VisApiResource.hpp>
 
@@ -145,6 +144,8 @@
 #include <Vision/Runtime/Engine/Application/VisionApp.hpp>
 
 #include <Vision/Runtime/Engine/Profiling/VisPerformanceMarker.hpp>
+
+#include <Vision/Runtime/Engine/System/VisApiPersistentData.hpp>
 
 
 
@@ -221,7 +222,6 @@ public:
 
   VISION_APIDATA static VisWorld_cl   World;                      ///< World related functions
   VISION_APIDATA static VisShaders_cl Shaders;                    ///< Shader setup functions
-  VISION_APIDATA static VisSystem_cl  System;                     ///< System and CPU related functions
   VISION_APIDATA static VisFile_cl    File;                       ///< File related functions
 
   VISION_APIDATA static VisPluginManager_cl  Plugins;             ///< Plugin related functions
@@ -231,6 +231,7 @@ public:
   VISION_APIDATA static VisRenderLoopHelper_cl RenderLoopHelper;  ///< Internal Render loop helper
   VISION_APIDATA static VisResourceSystem_cl ResourceSystem;      ///< Resource system
   VISION_APIDATA static VisAnimManager_cl Animations;             ///< Animation system
+  VISION_APIDATA static VisPersistentData_cl PersistentData;      ///< Persistent Data
 
 #ifdef SUPPORTS_BROWSER
   VISION_APIDATA static VisBrowserManager_cl Browser;             ///< Browser manager
@@ -801,8 +802,7 @@ private:
   static IVisSceneManagerPtr m_spSceneManager;
   static IVConsoleManagerPtr m_spConsoleManager; 
   static IVTimerPtr m_spEngineTimer; 
-  static IVTimerPtr m_spUITimer; 
-
+  static IVTimerPtr m_spUITimer;
 };
 
 // if the linker complains that the following functions are missing
@@ -817,7 +817,7 @@ void VISION_APIFUNC VisionInterReleaseDebugLinkingCheck();
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

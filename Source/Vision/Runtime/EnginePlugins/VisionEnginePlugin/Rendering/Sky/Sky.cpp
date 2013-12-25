@@ -30,17 +30,17 @@ VSkyManager &VSkyManager::GlobalManager()
 
 void VSkyManager::OneTimeInit()
 {
-  Vision::Callbacks.OnEngineDeInitializing += this;
+  Vision::Callbacks.OnEngineDeInit += this;
 }
 
 void VSkyManager::OneTimeDeinit()
 {
-  Vision::Callbacks.OnEngineDeInitializing -= this;
+  Vision::Callbacks.OnEngineDeInit -= this;
 }
 
 void VSkyManager::OnHandleCallback(IVisCallbackDataObject_cl *pData)
 {
-  if (pData->m_pSender==&Vision::Callbacks.OnEngineDeInitializing)
+  if (pData->m_pSender==&Vision::Callbacks.OnEngineDeInit)
   { 
     VSky::g_GlobalConstantBufferSky.FreeBuffer();
   }
@@ -448,7 +448,7 @@ VISION_APIFUNC VCompiledTechnique* VSky::GetTechnique(int iLayerCount)
     VCompiledEffect *pFX = Vision::Shaders.CreateEffect("DefaultSky", NULL, 0);
     if (!pFX)
     {
-      Vision::Error.Warning("Failed to create default sky effect. Sky deactivated.");
+      hkvLog::Warning("Failed to create default sky effect. Sky deactivated.");
       SetVisibleBitmask(0);
       m_iLayerTechniqueCachedMask = 0xffffffff;
       return NULL;
@@ -916,7 +916,7 @@ START_VAR_TABLE(VisSky_cl,VSky, "Sky box", VVARIABLELIST_FLAGS_NONE, "Sky box" )
 END_VAR_TABLE
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

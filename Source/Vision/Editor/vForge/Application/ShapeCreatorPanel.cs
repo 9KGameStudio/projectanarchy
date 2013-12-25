@@ -22,19 +22,20 @@ using System.IO;
 using CSharpFramework.Dialogs;
 using CSharpFramework.Controls;
 using CSharpFramework.Helper;
+using System.Collections.Generic;
 
 namespace Editor
 {
   #region Class ShapeCreatorPanel
 
   /// <summary>
-	/// This panel has a tree view that allows to drag creator objects onto the engine view.
-	/// The engine view is responsible for creating an instance in the view. By default, all creator
-	/// plugins show up in this panel, but the Vision engine view already allows to drag Shape instances
-	/// into it.
-	/// </summary>
-	public class ShapeCreatorPanel : DockableForm
-	{
+  /// This panel has a tree view that allows to drag creator objects onto the engine view.
+  /// The engine view is responsible for creating an instance in the view. By default, all creator
+  /// plugins show up in this panel, but the Vision engine view already allows to drag Shape instances
+  /// into it.
+  /// </summary>
+  public partial class ShapeCreatorPanel : DockableForm
+  {
     #region Nested Class ShapeCreatorTreeNode
 
     /// <summary>
@@ -47,7 +48,8 @@ namespace Editor
       /// </summary>
       /// <param name="nodename"></param>
       /// <param name="iIcon"></param>
-      public ShapeCreatorTreeNode(string nodename, int iIcon) : base(nodename,iIcon,iIcon)
+      public ShapeCreatorTreeNode(string nodename, int iIcon)
+        : base(nodename, iIcon, iIcon)
       {
       }
 
@@ -57,53 +59,101 @@ namespace Editor
       /// <param name="nodename"></param>
       /// <param name="creator"></param>
       /// <param name="iIcon"></param>
-      public ShapeCreatorTreeNode(string nodename, object creator, int iIcon) : base(nodename,iIcon,iIcon)
+      public ShapeCreatorTreeNode(string nodename, object creator, int iIcon, string helpKey)
+        : base(nodename, iIcon, iIcon)
       {
         CreatorObject = creator;
+        _sHelpKey = helpKey;
+
+        if (!string.IsNullOrEmpty(_sHelpKey))
+        {
+          _helpButton = new HelpToolStripMenuItem(_sHelpKey, "shapes");
+          if (iIcon < EditorManager.GUI.ShapeTreeImages.ImageList.Images.Count && iIcon >= 0)
+            _helpButton.Image = EditorManager.GUI.ShapeTreeImages.ImageList.Images[iIcon];
+          
+          ContextMenuStrip = new System.Windows.Forms.ContextMenuStrip();
+
+          // This is a workaround for 'ContextMenuStrip.Items.Add' being incredibly slow so
+          // we can't call it in every constructor. Therefore, we listen to the opening of the
+          // context menu and only add the item if we actually need to show it.
+          ContextMenuStrip.Opening += new CancelEventHandler(ContextMenuStrip_Opening);
+        }
+      }
+
+      void ContextMenuStrip_Opening(object sender, CancelEventArgs e)
+      {
+        // Empty context menus are always canceled by default, so we need to reset it here or
+        // the menu won't show up on the first try.
+        e.Cancel = false;
+        if (_helpButton != null)
+        {
+          ContextMenuStrip.Items.Add(_helpButton);
+          ContextMenuStrip.Opening -= new CancelEventHandler(ContextMenuStrip_Opening);
+        }
+      }
+
+      /// <summary>
+      /// The help key used for the context menu of this ShapeCreatorTreeNode.
+      /// </summary>
+      public string HelpKey
+      {
+        get
+        {
+          return _sHelpKey;
+        }
       }
 
       /// <summary>
       /// Indicates whether this node is a category or a creator
       /// </summary>
-      public bool IsCategory {get {return CreatorObject==null;}}
+      public bool IsCategory { get { return CreatorObject == null; } }
 
       /// <summary>
       /// The creator object (passed in the constructor)
       /// </summary>
       public object CreatorObject = null;
+
+      string _sHelpKey = null;
+      HelpToolStripMenuItem _helpButton = null;
     }
 
     #endregion
 
-    private System.Windows.Forms.Label label_Description;
-    private System.Windows.Forms.Splitter splitter1;
-    private IncrementalSearchPanel searchPanel;
+    #region Member Variables
 
     private TreeNode[] nodeState = null;
-    private Panel panel_Search;
-    private TreeView treeView_Creators;
-    private Button button_CollapseAll;
-    private Button button_ExpandAll;
-    private Button recentShapesButton;
-    private ContextMenuStrip recentShapesContextMenu;
-    private ToolStripMenuItem recentEntriesToolStripMenuItem;
-    private ToolTip toolTip1;
     private IContainer components;
+    private bool _startDragDrop = false;
+    object _selectedCreatorObject = null;
+    static string NO_DESCRIPTION = "<No description available>";
+    ShapeCreatorTreeNode _selectedCreatorNode = null;
+    ToolStripHelpButton _helpbutton = null;
+
+    #endregion Member Variables
 
     /// <summary>
     /// Constructor
     /// </summary>
-		public ShapeCreatorPanel(DockingContainer container) : base(container)
-		{
-			//
-			// Required for Windows Form Designer support
-			//
-			InitializeComponent();
+    public ShapeCreatorPanel(DockingContainer container)
+      : base(container)
+    {
+      //
+      // Required for Windows Form Designer support
+      //
+      InitializeComponent();
+
+      // Add help button
+      _helpbutton = new ToolStripHelpButton(Text);
+      _helpbutton.Alignment = ToolStripItemAlignment.Right;
+      toolStrip.Items.Insert(0, _helpbutton);
+
+
       label_Description.Text = null;
 
       IProject.NewProjectLoaded += new EventHandler(IProject_NewProjectLoaded);
       IProject.ProjectUnloaded += new EventHandler(IProject_ProjectUnloaded);
       PrefabDesc.OnPrefabSaved += new EventHandler(PrefabDesc_OnPrefabSaved);
+      PrefabDesc.OnPrefabPropertiesChanged += new EventHandler(PrefabDesc_OnPrefabPropertiesChanged);
       treeView_Creators.ImageList = TreeViewImages.ImageList;
 
       // Incremental search
@@ -115,29 +165,8 @@ namespace Editor
       // UI updates of ShapeCreatorPanel can be triggered from the EditorManager.GUI as desired (e.g. when ShapeCreators
       // have been added in custom plugins from e.g. some scene callback and they should be available in the list)
       EditorManager.GUI.ShapeCreatorUpdateRequest += new EventHandler(EditorManager_GUI_ShapeCreatorUpdateRequest);
-		}
-
-    /// <summary>
-    /// Clean up any resources being used.
-    /// </summary>
-    protected override void Dispose(bool disposing)
-    {
-      if (disposing)
-      {
-        IProject.NewProjectLoaded -= new EventHandler(IProject_NewProjectLoaded);
-        IProject.ProjectUnloaded -= new EventHandler(IProject_ProjectUnloaded);
-        PrefabDesc.OnPrefabSaved -= new EventHandler(PrefabDesc_OnPrefabSaved);
-
-        searchPanel.FilterChanged -= new EventHandler(searchPanel_FilterChanged);
-        EditorManager.EditorSettingsChanged -= new EditorSettingsChangedEventHandler(EditorManager_EditorSettingsChanged);
-        EditorManager.GUI.ShapeCreatorUpdateRequest -= new EventHandler(EditorManager_GUI_ShapeCreatorUpdateRequest);
-        if (components != null)
-        {
-          components.Dispose();
-        }
-      }
-      base.Dispose(disposing);
     }
+
 
     /// <summary>
     /// Private constructor. Necessary to get this form properly shown in the designer when deriving from it.
@@ -148,156 +177,6 @@ namespace Editor
     {
       InitializeComponent();
     }
-
-		#region Windows Form Designer generated code
-		/// <summary>
-		/// Required method for Designer support - do not modify
-		/// the contents of this method with the code editor.
-		/// </summary>
-		private void InitializeComponent()
-		{
-      this.components = new System.ComponentModel.Container();
-      System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(ShapeCreatorPanel));
-      this.label_Description = new System.Windows.Forms.Label();
-      this.splitter1 = new System.Windows.Forms.Splitter();
-      this.searchPanel = new CSharpFramework.Controls.IncrementalSearchPanel();
-      this.panel_Search = new System.Windows.Forms.Panel();
-      this.recentShapesButton = new System.Windows.Forms.Button();
-      this.button_ExpandAll = new System.Windows.Forms.Button();
-      this.button_CollapseAll = new System.Windows.Forms.Button();
-      this.treeView_Creators = new System.Windows.Forms.TreeView();
-      this.recentShapesContextMenu = new System.Windows.Forms.ContextMenuStrip(this.components);
-      this.recentEntriesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-      this.toolTip1 = new System.Windows.Forms.ToolTip(this.components);
-      this.panel_Search.SuspendLayout();
-      this.recentShapesContextMenu.SuspendLayout();
-      this.SuspendLayout();
-      // 
-      // label_Description
-      // 
-      this.label_Description.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-      this.label_Description.Dock = System.Windows.Forms.DockStyle.Bottom;
-      this.label_Description.Location = new System.Drawing.Point(0, 506);
-      this.label_Description.Name = "label_Description";
-      this.label_Description.Size = new System.Drawing.Size(324, 44);
-      this.label_Description.TabIndex = 1;
-      this.label_Description.Text = "Description goes here";
-      // 
-      // splitter1
-      // 
-      this.splitter1.Dock = System.Windows.Forms.DockStyle.Bottom;
-      this.splitter1.Location = new System.Drawing.Point(0, 504);
-      this.splitter1.Name = "splitter1";
-      this.splitter1.Size = new System.Drawing.Size(324, 2);
-      this.splitter1.TabIndex = 2;
-      this.splitter1.TabStop = false;
-      // 
-      // searchPanel
-      // 
-      this.searchPanel.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
-                  | System.Windows.Forms.AnchorStyles.Right)));
-      this.searchPanel.Enabled = false;
-      this.searchPanel.Location = new System.Drawing.Point(38, 4);
-      this.searchPanel.Name = "searchPanel";
-      this.searchPanel.Size = new System.Drawing.Size(212, 26);
-      this.searchPanel.TabIndex = 1;
-      // 
-      // panel_Search
-      // 
-      this.panel_Search.Controls.Add(this.recentShapesButton);
-      this.panel_Search.Controls.Add(this.button_ExpandAll);
-      this.panel_Search.Controls.Add(this.button_CollapseAll);
-      this.panel_Search.Controls.Add(this.searchPanel);
-      this.panel_Search.Dock = System.Windows.Forms.DockStyle.Top;
-      this.panel_Search.Location = new System.Drawing.Point(0, 0);
-      this.panel_Search.Name = "panel_Search";
-      this.panel_Search.Padding = new System.Windows.Forms.Padding(4);
-      this.panel_Search.Size = new System.Drawing.Size(324, 32);
-      this.panel_Search.TabIndex = 0;
-      // 
-      // recentShapesButton
-      // 
-      this.recentShapesButton.Enabled = false;
-      this.recentShapesButton.Image = global::Editor.Properties.Resources.pawn_new;
-      this.recentShapesButton.Location = new System.Drawing.Point(7, 6);
-      this.recentShapesButton.Name = "recentShapesButton";
-      this.recentShapesButton.Size = new System.Drawing.Size(29, 21);
-      this.recentShapesButton.TabIndex = 0;
-      this.toolTip1.SetToolTip(this.recentShapesButton, "Recently Used Shapes");
-      this.recentShapesButton.UseVisualStyleBackColor = true;
-      this.recentShapesButton.Click += new System.EventHandler(this.recentShapesButton_Click);
-      // 
-      // button_ExpandAll
-      // 
-      this.button_ExpandAll.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-      this.button_ExpandAll.Enabled = false;
-      this.button_ExpandAll.Image = global::Editor.Properties.Resources.expand_all;
-      this.button_ExpandAll.Location = new System.Drawing.Point(254, 5);
-      this.button_ExpandAll.Name = "button_ExpandAll";
-      this.button_ExpandAll.Size = new System.Drawing.Size(28, 21);
-      this.button_ExpandAll.TabIndex = 2;
-      this.toolTip1.SetToolTip(this.button_ExpandAll, "Expand All");
-      this.button_ExpandAll.UseVisualStyleBackColor = true;
-      this.button_ExpandAll.Click += new System.EventHandler(this.button_ExpandAll_Click);
-      // 
-      // button_CollapseAll
-      // 
-      this.button_CollapseAll.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-      this.button_CollapseAll.Enabled = false;
-      this.button_CollapseAll.Image = global::Editor.Properties.Resources.collapse_all;
-      this.button_CollapseAll.Location = new System.Drawing.Point(288, 5);
-      this.button_CollapseAll.Name = "button_CollapseAll";
-      this.button_CollapseAll.Size = new System.Drawing.Size(28, 21);
-      this.button_CollapseAll.TabIndex = 3;
-      this.toolTip1.SetToolTip(this.button_CollapseAll, "Collapse All");
-      this.button_CollapseAll.UseVisualStyleBackColor = true;
-      this.button_CollapseAll.Click += new System.EventHandler(this.button_CollapseAll_Click);
-      // 
-      // treeView_Creators
-      // 
-      this.treeView_Creators.Dock = System.Windows.Forms.DockStyle.Fill;
-      this.treeView_Creators.Location = new System.Drawing.Point(0, 32);
-      this.treeView_Creators.Name = "treeView_Creators";
-      this.treeView_Creators.Size = new System.Drawing.Size(324, 472);
-      this.treeView_Creators.TabIndex = 1;
-      this.treeView_Creators.NodeMouseDoubleClick += new System.Windows.Forms.TreeNodeMouseClickEventHandler(this.treeView_Creators_NodeMouseDoubleClick);
-      this.treeView_Creators.AfterSelect += new System.Windows.Forms.TreeViewEventHandler(this.treeView_Creators_AfterSelect);
-      this.treeView_Creators.NodeMouseClick += new System.Windows.Forms.TreeNodeMouseClickEventHandler(this.treeView_Creators_NodeMouseClick);
-      this.treeView_Creators.KeyDown += new System.Windows.Forms.KeyEventHandler(this.treeView_Creators_KeyDown);
-      this.treeView_Creators.ItemDrag += new System.Windows.Forms.ItemDragEventHandler(this.treeView_Creators_ItemDrag);
-      // 
-      // recentShapesContextMenu
-      // 
-      this.recentShapesContextMenu.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.recentEntriesToolStripMenuItem});
-      this.recentShapesContextMenu.Name = "contextMenuStrip1";
-      this.recentShapesContextMenu.Size = new System.Drawing.Size(162, 26);
-      // 
-      // recentEntriesToolStripMenuItem
-      // 
-      this.recentEntriesToolStripMenuItem.Name = "recentEntriesToolStripMenuItem";
-      this.recentEntriesToolStripMenuItem.Size = new System.Drawing.Size(161, 22);
-      this.recentEntriesToolStripMenuItem.Text = "<recent entries>";
-      // 
-      // ShapeCreatorPanel
-      // 
-      this.AutoScaleBaseSize = new System.Drawing.Size(5, 13);
-      this.ClientSize = new System.Drawing.Size(324, 550);
-      this.Controls.Add(this.treeView_Creators);
-      this.Controls.Add(this.panel_Search);
-      this.Controls.Add(this.splitter1);
-      this.Controls.Add(this.label_Description);
-      this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
-      this.Name = "ShapeCreatorPanel";
-      this.TabText = "Shape Creators";
-      this.Text = "Shape Creators";
-      this.panel_Search.ResumeLayout(false);
-      this.recentShapesContextMenu.ResumeLayout(false);
-      this.ResumeLayout(false);
-
-    }
-
-		#endregion
 
     #region Build tree functions
 
@@ -336,13 +215,13 @@ namespace Editor
     /// <param name="nodename"></param>
     /// <param name="iIconIndex"></param>
     /// <returns></returns>
-    public ShapeCreatorTreeNode AddCreator(ShapeCreatorTreeNode parent, object creator, string nodename, int iIconIndex)
+    public ShapeCreatorTreeNode AddCreator(ShapeCreatorTreeNode parent, object creator, string nodename, int iIconIndex, string helpKey)
     {
-      TreeNodeCollection nodes = (parent==null) ? treeView_Creators.Nodes : parent.Nodes;
+      TreeNodeCollection nodes = (parent == null) ? treeView_Creators.Nodes : parent.Nodes;
 
-      ShapeCreatorTreeNode node = new ShapeCreatorTreeNode(nodename,creator,iIconIndex);
+      ShapeCreatorTreeNode node = new ShapeCreatorTreeNode(nodename, creator, iIconIndex, helpKey);
       nodes.Add(node);
-      
+
       return node;
     }
 
@@ -355,18 +234,18 @@ namespace Editor
     /// <returns></returns>
     public ShapeCreatorTreeNode AddCategory(ShapeCreatorTreeNode parent, string nodename, int iIconIndex)
     {
-      TreeNodeCollection nodes = (parent==null) ? treeView_Creators.Nodes : parent.Nodes;
+      TreeNodeCollection nodes = (parent == null) ? treeView_Creators.Nodes : parent.Nodes;
 
-      if (iIconIndex<0) // use the folder icon
+      if (iIconIndex < 0) // use the folder icon
         iIconIndex = GroupShape.GroupIconIndex;
 
       // find existing category
       string compare = nodename.ToLower();
       foreach (ShapeCreatorTreeNode child in nodes)
-        if (child.Text.ToLower()==compare)
+        if (child.Text.ToLower() == compare)
           return child;
 
-      ShapeCreatorTreeNode node = new ShapeCreatorTreeNode(nodename,iIconIndex);
+      ShapeCreatorTreeNode node = new ShapeCreatorTreeNode(nodename, iIconIndex);
       nodes.Add(node);
 
       return node;
@@ -468,7 +347,7 @@ namespace Editor
     /// </summary>
     public GUI.DynamicImageList TreeViewImages
     {
-      get {return EditorManager.GUI.ShapeTreeImages;}
+      get { return EditorManager.GUI.ShapeTreeImages; }
     }
 
     /// <summary>
@@ -480,7 +359,7 @@ namespace Editor
       StoreCollapsedState();
       ClearTree();
       EditorProject project = EditorApp.Project;
-      if (project==null)
+      if (project == null)
       {
         EndAddCreators();
         return;
@@ -502,10 +381,11 @@ namespace Editor
 
         ShapeCreatorTreeNode catPlugin = catCreators;
         string catName = plugin.GetPluginCategory();
-        if (catName!=null && catName.Length>0)
+        if (catName != null && catName.Length > 0)
           catPlugin = AddCategoryPath(catCreators, catName, "\\", -1);
 
-        AddCreator(catPlugin,plugin,plugin.GetPluginName(),plugin.IconIndex);
+        string sShapeTypeName = plugin.GetShapeType() == null ? null : plugin.GetShapeType().Name;
+        AddCreator(catPlugin, plugin, plugin.GetPluginName(), plugin.IconIndex, sShapeTypeName);
       }
 
       string prefabDir = project.MakeAbsolute(EditorManager.Settings.PrefabDirectory);
@@ -522,7 +402,7 @@ namespace Editor
           EditorManager.DumpException(ex);
         }
       }
-      
+
       // Expand all if no collapsed state was restored before, otherwise restore old one.
       // We can not expand/collapse the TreeNodes at creation time as they have no children
       // assigned when they are created.
@@ -530,7 +410,7 @@ namespace Editor
         treeView_Creators.ExpandAll();
       else
         RestoreCollapsedState(treeView_Creators.Nodes);
-      
+
       EndAddCreators();
     }
 
@@ -538,20 +418,14 @@ namespace Editor
     private void IProject_NewProjectLoaded(object sender, EventArgs e)
     {
       this.ProjectUpdate();
-      searchPanel.Enabled = true;
-      button_CollapseAll.Enabled = true;
-      button_ExpandAll.Enabled = true;
-      recentShapesButton.Enabled = true;
+      toolStrip.Enabled = true;
       ClearRecentShapesContextMenu();
     }
 
     private void IProject_ProjectUnloaded(object sender, EventArgs e)
     {
       this.ClearTree();
-      searchPanel.Enabled = false;
-      button_CollapseAll.Enabled = false;
-      button_ExpandAll.Enabled = false;
-      recentShapesButton.Enabled = false;
+      toolStrip.Enabled = false;
       ClearRecentShapesContextMenu();
     }
 
@@ -569,7 +443,12 @@ namespace Editor
 
     void PrefabDesc_OnPrefabSaved(object sender, EventArgs e)
     {
-      this.ProjectUpdate();
+      ProjectUpdate();
+    }
+
+    void PrefabDesc_OnPrefabPropertiesChanged(object sender, EventArgs e)
+    {
+      ProjectUpdate();
     }
 
     #endregion
@@ -579,11 +458,11 @@ namespace Editor
     private void treeView_Creators_ItemDrag(object sender, System.Windows.Forms.ItemDragEventArgs e)
     {
       ShapeCreatorTreeNode node = (ShapeCreatorTreeNode)e.Item;
-      if (node.CreatorObject==null)
+      if (node.CreatorObject == null)
         return;
 
       // start dragging the creator object
-      DoDragDrop(node.CreatorObject, DragDropEffects.Copy|DragDropEffects.Scroll);
+      DoDragDrop(node.CreatorObject, DragDropEffects.Copy | DragDropEffects.Scroll);
 
       UpdateRecentShapesList(node.CreatorObject); // create item, even if dragdrop was cancelled.
     }
@@ -592,13 +471,18 @@ namespace Editor
 
     #region Tree View callbacks
 
-    ShapeCreatorTreeNode _selectedCreatorNode = null;
-
     private void treeView_Creators_AfterSelect(object sender, System.Windows.Forms.TreeViewEventArgs e)
     {
+      if (_helpbutton.DynamicHelpKeys == null)
+        _helpbutton.DynamicHelpKeys = new List<string>();
+      else
+        _helpbutton.DynamicHelpKeys.Clear();
+
       _selectedCreatorNode = e.Node as ShapeCreatorTreeNode;
       if (_selectedCreatorNode == null)
         return;
+
+      _helpbutton.DynamicHelpKeys.Add(_selectedCreatorNode.HelpKey);
       SelectedCreatorObject = _selectedCreatorNode.CreatorObject;
     }
 
@@ -607,39 +491,16 @@ namespace Editor
       PrefabDesc prefab = SelectedCreatorObject as PrefabDesc;
       if (prefab != null)
       {
-        using (PropertyGridDlg dlg = new PropertyGridDlg("Change prefab properties", "Change the properties of this prefab and click OK to apply and save the new settings"))
-        {
-          dlg.DataObject = prefab;
-          if (dlg.ShowDialog() != DialogResult.OK)
-            return;
-
-          // get back results
-          prefab = (PrefabDesc)dlg.DataObject;
-          if (!prefab.PropertiesChanged) // seems untouched by property grid
-            return;
-
-          // fire the static event
-          prefab.TriggerPropertiesChangedEvent();
-          if (!prefab.SaveToFile(null))
-          {
-            EditorManager.ShowMessageBox("Changes could not be applied because the prefab shape could not be saved.\n\nDetailed message:" + prefab.LastError, "Failed to save prefab", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            return;
-          }
-
-
-          //_selectedCreatorNode.CreatorObject = prefab;
-          // brute force rebuild tree:
-          ProjectUpdate();
-        }
+        PrefabManager.EditPrefabDescriptor(prefab);
       }
     }
 
-    private void button_CollapseAll_Click(object sender, EventArgs e)
+    private void toolButton_CollapseAll_Click(object sender, EventArgs e)
     {
       treeView_Creators.CollapseAll();
     }
 
-    private void button_ExpandAll_Click(object sender, EventArgs e)
+    private void toolButton_ExpandAll_Click(object sender, EventArgs e)
     {
       treeView_Creators.ExpandAll();
     }
@@ -650,22 +511,19 @@ namespace Editor
       if (_selectedCreatorNode == null)
         return;
       SelectedCreatorObject = _selectedCreatorNode.CreatorObject;
-      treeView_Creators.SelectedNode = e.Node; 
+      treeView_Creators.SelectedNode = e.Node;
     }
 
     #endregion
 
     #region Selected Creator Object
 
-    object _selectedCreatorObject = null;
-    static string NO_DESCRIPTION = "<No description available>";
-
     /// <summary>
     /// get or set the creator object
     /// </summary>
     public object SelectedCreatorObject
     {
-      get {return _selectedCreatorObject;}
+      get { return _selectedCreatorObject; }
       set
       {
         if (_selectedCreatorObject == value)
@@ -673,13 +531,13 @@ namespace Editor
         _selectedCreatorObject = value;
 
         // fire event
-        if (SelectedCreatorObjectChanged!=null)
-          SelectedCreatorObjectChanged(this,EventArgs.Empty);
+        if (SelectedCreatorObjectChanged != null)
+          SelectedCreatorObjectChanged(this, EventArgs.Empty);
 
         // update description text
         string _desc = null;
         IEditorPlugin plugin = _selectedCreatorObject as IEditorPlugin;
-        if (plugin!=null)
+        if (plugin != null)
         {
           _desc = plugin.GetPluginDescription();
           if (string.IsNullOrEmpty(_desc))
@@ -711,8 +569,13 @@ namespace Editor
     {
       ProjectUpdate();
       treeView_Creators.ExpandAll();
+      toolStripButtonClearSearch.Enabled = !string.IsNullOrEmpty(searchPanel.SearchText);
     }
 
+    private void toolStripButtonClearSearch_Click(object sender, EventArgs e)
+    {
+      searchPanel.ClearSearch();
+    }
 
     /// <summary>
     /// Implements natural sorting for filenames. This class is used in AddPrefabCreators
@@ -771,24 +634,32 @@ namespace Editor
         if (catName != null && catName != "")
           cat = AddCategoryPath(catParent, catName, "\\", -1);
 
-        AddCreator(cat, desc, _name, iIcon);
+        AddCreator(cat, desc, _name, iIcon, "PrefabShape");
       }
 
       // Check whether any prefab creators has been added
       if (catParent.Nodes.Count == 0)
         catParent.Remove();
-    } 
- 
+    }
+
+    private void toolStrip_Layout(object sender, LayoutEventArgs e)
+    {
+      int width = toolStrip.DisplayRectangle.Width;
+
+      foreach (ToolStripItem tsi in toolStrip.Items)
+      {
+        if (tsi != searchPanel)
+        {
+          width -= tsi.Width + tsi.Margin.Horizontal;
+        }
+      }
+
+      searchPanel.Width = Math.Max(100, width - searchPanel.Margin.Horizontal);
+    }
+
     #endregion
 
     #region Recent Shapes Button
-
-    private bool _startDragDrop = false;
-
-    private void recentShapesButton_Click(object sender, EventArgs e)
-    {
-      recentShapesContextMenu.Show(recentShapesButton, new Point(0, recentShapesButton.Height));
-    }
 
     private void UpdateRecentShapesList(object creatorObj)
     {
@@ -802,25 +673,25 @@ namespace Editor
       }
       CSharpFramework.EditorManager.PluginToolStripMenuItem shapeItem = new CSharpFramework.EditorManager.PluginToolStripMenuItem(shapeCreatorPlugin.Name, (IEditorPlugin)creatorObj);
       // return if item exists
-      foreach (CSharpFramework.EditorManager.PluginToolStripMenuItem item in recentShapesContextMenu.Items)
+      foreach (CSharpFramework.EditorManager.PluginToolStripMenuItem item in recentShapesToolButton.DropDownItems)
         if (item.m_plugin.Name == shapeItem.m_plugin.Name)
         {
           // add to top
-          recentShapesContextMenu.Items.Insert(0, item);
+          recentShapesToolButton.DropDownItems.Insert(0, item);
           return;
         }
       // remove first if maximum is reached
-      if (recentShapesContextMenu.Items.Count >= maximum)
+      if (recentShapesToolButton.DropDownItems.Count >= maximum)
       {
-        ToolStripItem toRemove = recentShapesContextMenu.Items[maximum-1];
+        ToolStripItem toRemove = recentShapesToolButton.DropDownItems[maximum - 1];
         toRemove.MouseDown -= shapeItem_MouseDown;
         toRemove.MouseUp -= shapeItem_MouseUp;
         toRemove.MouseLeave -= shapeItem_MouseLeave;
-        recentShapesContextMenu.Items.Remove(toRemove);
+        recentShapesToolButton.DropDownItems.Remove(toRemove);
       }
-        
+
       // add new
-      recentShapesContextMenu.Items.Insert(0, shapeItem);
+      recentShapesToolButton.DropDownItems.Insert(0, shapeItem);
       shapeItem.MouseDown += new MouseEventHandler(shapeItem_MouseDown);
       shapeItem.MouseLeave += new EventHandler(shapeItem_MouseLeave);
       shapeItem.MouseUp += new MouseEventHandler(shapeItem_MouseUp);
@@ -832,7 +703,7 @@ namespace Editor
       {
         _startDragDrop = false;
         DoDragDrop((sender as CSharpFramework.EditorManager.PluginToolStripMenuItem).m_plugin, DragDropEffects.Copy | DragDropEffects.Scroll);
-        recentShapesContextMenu.Close();
+        recentShapesToolButton.HideDropDown();
       }
     }
 
@@ -848,13 +719,13 @@ namespace Editor
 
     private void ClearRecentShapesContextMenu()
     {
-      foreach (ToolStripItem item in recentShapesContextMenu.Items)
+      foreach (ToolStripItem item in recentShapesToolButton.DropDownItems)
       {
         item.MouseDown -= shapeItem_MouseDown;
         item.MouseUp -= shapeItem_MouseUp;
         item.MouseLeave -= shapeItem_MouseLeave;
       }
-      recentShapesContextMenu.Items.Clear();
+      recentShapesToolButton.DropDownItems.Clear();
     }
 
     #endregion
@@ -873,7 +744,7 @@ namespace Editor
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

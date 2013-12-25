@@ -13,10 +13,10 @@
 
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/Effects/EffectsModule.hpp>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Particles/Curve.hpp>
-#include <Vision/Runtime/Engine/SceneElements/VisApiPath.hpp>
 
 class TiXmlElement;
 class PathCameraEntity;
+class VisPath_cl;
 
 /// \brief
 ///   PathParameter : Information about the current position on a path. Used internally
@@ -275,48 +275,10 @@ public:
   int m_iRendererNodeIndex;
 };
 
-
-/// \brief
-///   This is the analogue to the CameraPositionShape inside vForge. It can be used to attach the camera to fixed entities set in vForge
-class CameraPositionEntity : public VisBaseEntity_cl
-{
-public:
-  inline CameraPositionEntity()
-  {
-    NearClipDistance = FarClipDistance = FovX = 0.f;
-  }
-
-  ///\brief
-  /// Takes the camera of the passed context and applies its own transformation and view settings to it
-  ///
-  /// \param pContext
-  ///   The context that should receive a new camera position. When using a renderer node (e.g. deferred), pass pNode->GetReferenceContext()
-  EFFECTS_IMPEXP void ApplyToContext(VisRenderContext_cl *pContext);
-
-  ///\brief
-  /// Static helper function to find a camera shape in the scene by key and then apply the position and view settings.
-  ///
-  /// \param pContext
-  ///   The context that should receive a new camera position. When using a renderer node (e.g. deferred), pass pNode->GetReferenceContext()
-  ///
-  /// \param szKey
-  ///   The key of the camera shape. Set as the ObjectKey string in vForge.
-  EFFECTS_IMPEXP static CameraPositionEntity* ApplyToContext(VisRenderContext_cl *pContext, const char *szKey);
-
-  EFFECTS_IMPEXP virtual void Serialize( VArchive &ar ) HKV_OVERRIDE;
-  V_DECLARE_SERIAL_DLLEXP( CameraPositionEntity,  EFFECTS_IMPEXP );
-  V_DECLARE_VARTABLE(CameraPositionEntity, EFFECTS_IMPEXP);
-
-  // exposed members
-  float NearClipDistance;
-  float FarClipDistance;
-  float FovX;
-};
-
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

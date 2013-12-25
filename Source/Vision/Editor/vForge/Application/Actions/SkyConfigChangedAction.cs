@@ -25,9 +25,9 @@ namespace Editor.Actions
     /// <param name="_v3dLayer"></param>
     /// <param name="_newConfig"></param>
     public SkyConfigChangedAction(V3DLayer _v3dLayer, SkyConfig _newConfig)
-		{
+    {
       v3dLayer = _v3dLayer;
-      oldConfig = v3dLayer.SkyConfig;
+      oldConfig = null;
       newConfig = _newConfig;
     }
 
@@ -39,8 +39,9 @@ namespace Editor.Actions
     public override void Do()
     {
       v3dLayer.Modified = true;
-      v3dLayer.SkyConfig = newConfig; // sets Active field
+      oldConfig = v3dLayer.SwapSkyConfig(newConfig);
       newConfig.Update();
+      newConfig = null;
 
       // Send layer change event to force refresh the shown property grid values
       IScene.SendLayerChangedEvent(new LayerChangedArgs(v3dLayer, null, LayerChangedArgs.Action.PropertyChanged));
@@ -52,8 +53,10 @@ namespace Editor.Actions
     public override void Undo()
     {
       v3dLayer.Modified = true;
-      v3dLayer.SkyConfig = oldConfig;
+      newConfig = v3dLayer.SwapSkyConfig(oldConfig);
       oldConfig.Update();
+      oldConfig = null;
+
       IScene.SendLayerChangedEvent(new LayerChangedArgs(v3dLayer, null, LayerChangedArgs.Action.PropertyChanged));
     }
 
@@ -74,6 +77,21 @@ namespace Editor.Actions
     /// IAction function
     /// </summary>
     public override string ShortName { get {return "Changed Sky config";}}
+
+    public override void OnDispose()
+    {
+      if (oldConfig != null)
+      {
+        oldConfig.Dispose();
+        oldConfig = null;
+      }
+
+      if (newConfig != null)
+      {
+        newConfig.Dispose();
+        newConfig = null;
+      }
+    }
 
     #endregion
 
@@ -103,7 +121,7 @@ namespace Editor.Actions
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

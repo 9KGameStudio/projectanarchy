@@ -57,11 +57,11 @@ void VBlobShadowManager::OneTimeInit()
   PROFILING_BS_SCISSORRECT       = Vision::Profiling.GetFreeElementID();
 
   VProfilingNode *pGroup = Vision::Profiling.AddGroup("Blob Shadows");
-  VProfilingNode *pOverall = Vision::Profiling.AddElement(PROFILING_BS_OVERALL,        "Blob Shadows Overall",TRUE,pGroup);
-    Vision::Profiling.AddElement(PROFILING_BS_SCISSORRECT,    "Scissor rect test",TRUE,pOverall);
-    Vision::Profiling.AddElement(PROFILING_BS_DETERMINE_PRIMS,"Determine primitives",TRUE,pOverall);
-    Vision::Profiling.AddElement(PROFILING_BS_PREPARE_SHADER, "Prepare shader",TRUE,pOverall);
-    Vision::Profiling.AddElement(PROFILING_BS_RENDER_PRIMS,   "Render primitives",TRUE,pOverall);
+  VProfilingNode *pOverall = Vision::Profiling.AddElement(PROFILING_BS_OVERALL, "Blob Shadows Overall", TRUE, pGroup);
+  Vision::Profiling.AddElement(PROFILING_BS_SCISSORRECT,    "Scissor rect test", TRUE, pOverall);
+  Vision::Profiling.AddElement(PROFILING_BS_DETERMINE_PRIMS,"Determine primitives", TRUE, pOverall);
+  Vision::Profiling.AddElement(PROFILING_BS_PREPARE_SHADER, "Prepare shader", TRUE, pOverall);
+  Vision::Profiling.AddElement(PROFILING_BS_RENDER_PRIMS,   "Render primitives", TRUE, pOverall);
 }
 
 void VBlobShadowManager::OneTimeDeInit()
@@ -69,8 +69,19 @@ void VBlobShadowManager::OneTimeDeInit()
   Vision::Callbacks.OnRenderHook -= this;
   Vision::Callbacks.OnWorldDeInit -= this;
   Vision::Callbacks.OnReassignShaders -= this;
+
+  ClearResources();
 }
 
+void VBlobShadowManager::ClearResources()
+{
+  PurgeShadows();
+  m_spDefaultFX = NULL;
+  m_bFailedLoading = false;
+  m_spDefaultShadowTex = NULL;
+  m_spDefaultTech[0] = NULL;
+  m_spDefaultTech[1] = NULL;
+}
 
 VBlobShadowManager& VBlobShadowManager::GlobalManager()
 {
@@ -151,12 +162,7 @@ void VBlobShadowManager::OnHandleCallback(IVisCallbackDataObject_cl *pData)
   // UnloadWorld : do some per-scene deinitialisation
   else if (pData->m_pSender==&Vision::Callbacks.OnWorldDeInit)
   {
-    PurgeShadows();
-    m_spDefaultFX = NULL;
-    m_bFailedLoading = false;
-    m_spDefaultShadowTex = NULL;
-    m_spDefaultTech[0] = NULL;
-    m_spDefaultTech[1] = NULL;
+    ClearResources();
   }
 
   // Reassign shaders
@@ -302,7 +308,7 @@ void VBlobShadowManager::DebugRenderShadowBoxes()
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

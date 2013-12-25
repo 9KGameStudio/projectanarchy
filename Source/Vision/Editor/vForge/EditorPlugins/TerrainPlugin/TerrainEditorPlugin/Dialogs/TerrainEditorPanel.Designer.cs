@@ -114,6 +114,7 @@ namespace TerrainEditorPlugin.Dialogs
       this.toolStripButton_PurgeResources = new System.Windows.Forms.ToolStripButton();
       this.splitContainer1 = new System.Windows.Forms.SplitContainer();
       this.dialogCaptionBar = new CSharpFramework.Controls.DialogCaptionBar();
+      this.toolStripSeparator9 = new System.Windows.Forms.ToolStripSeparator();
       this.tabControl.SuspendLayout();
       this.tabPage_Heightmap.SuspendLayout();
       this.groupBox_ExportDDS.SuspendLayout();
@@ -1034,7 +1035,8 @@ namespace TerrainEditorPlugin.Dialogs
             this.toolStripButton_DisplayMiniMap,
             this.toolStripSeparator1,
             this.toolStripButton_Selection,
-            this.toolStripButton_PurgeResources});
+            this.toolStripButton_PurgeResources,
+            this.toolStripSeparator9});
       this.toolStrip_Main.Location = new System.Drawing.Point(0, 50);
       this.toolStrip_Main.Name = "toolStrip_Main";
       this.toolStrip_Main.Size = new System.Drawing.Size(433, 31);
@@ -1227,6 +1229,11 @@ namespace TerrainEditorPlugin.Dialogs
       this.dialogCaptionBar.Size = new System.Drawing.Size(433, 50);
       this.dialogCaptionBar.TabIndex = 19;
       // 
+      // toolStripSeparator9
+      // 
+      this.toolStripSeparator9.Name = "toolStripSeparator9";
+      this.toolStripSeparator9.Size = new System.Drawing.Size(6, 31);
+      // 
       // TerrainEditorPanel
       // 
       this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -1377,5 +1384,6 @@ namespace TerrainEditorPlugin.Dialogs
     private System.Windows.Forms.Button button_ExportPrefab;
     private System.Windows.Forms.Label label_Export;
     private System.Windows.Forms.Splitter splitter4;
+    private System.Windows.Forms.ToolStripSeparator toolStripSeparator9;
 	}
 }

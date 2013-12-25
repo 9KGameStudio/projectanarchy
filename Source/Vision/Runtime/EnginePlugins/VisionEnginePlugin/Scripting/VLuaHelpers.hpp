@@ -28,13 +28,23 @@ class VScriptMember;
 
 #define LUA_STACK_DUMPS
 
-#define VLUA_TVECTOR3       100
-#define VLUA_TCOLOR         101
-#define VLUA_TBOUNDINGBOX   102
-#define VLUA_TBITMASK       103
-#define VLUA_TPATHNODE      104
-#define VLUA_TSOUNDRESOURCE 105
-#define VLUA_TSOUNDOBJECT   106
+#define VLUA_TVECTOR3        100
+#define VLUA_TCOLOR          101
+#define VLUA_TBOUNDINGBOX    102 
+
+// Not used 
+#define VLUA_TBITMASK        103 
+#define VLUA_TPATHNODE       104 
+#define VLUA_TSOUNDRESOURCE  105 
+#define VLUA_TSOUNDOBJECT    106 
+
+#define VLUA_TVECTOR2        107
+#define VLUA_TVECTOR4        108
+#define VLUA_TMATRIX3        109
+#define VLUA_TMATRIX4        110
+#define VLUA_TPLANE          111
+#define VLUA_TQUATERNION     112
+#define VLUA_TBOUNDINGSPHERE 113
 
 
 /****************************************************************************/
@@ -79,14 +89,35 @@ class VScriptMember;
 
 //additionally export type safe functions
 
+// Helper function to push a hkvVec2 to the stack
+SCRIPT_IMPEXP void LUA_PushObjectProxy(lua_State* L, hkvVec2* pVector); 
+
 // Helper function to push a hkvVec3 to the stack
 SCRIPT_IMPEXP void LUA_PushObjectProxy(lua_State* L, hkvVec3* pVector); 
 
-// Helper function to push a VColorRef to the stack
-SCRIPT_IMPEXP void LUA_PushObjectProxy(lua_State* L, VColorRef *pColorRef); 
+// Helper function to push a hkvVec4 to the stack
+SCRIPT_IMPEXP void LUA_PushObjectProxy(lua_State* L, hkvVec4* pVector); 
+
+// Helper function to push a hkvMat3 to the stack
+SCRIPT_IMPEXP void LUA_PushObjectProxy(lua_State* L, hkvMat3* pMatrix);
+
+// Helper function to push a hkvMat4 to the stack
+SCRIPT_IMPEXP void LUA_PushObjectProxy(lua_State* L, hkvMat4* pMatrix);
+
+// Helper function to push a hkvPlane to the stack
+SCRIPT_IMPEXP void LUA_PushObjectProxy(lua_State* L, hkvPlane* pPlane);
+
+// Helper function to push a hkvQuat to the stack
+SCRIPT_IMPEXP void LUA_PushObjectProxy(lua_State* L, hkvQuat* pQuat);
 
 // Helper function to push a hkvAlignedBBox to the stack
 SCRIPT_IMPEXP void LUA_PushObjectProxy(lua_State* L, hkvAlignedBBox *pBox);
+
+// Helper function to push a hkvBoundingSphere to the stack
+SCRIPT_IMPEXP void LUA_PushObjectProxy(lua_State* L, hkvBoundingSphere *pSphere);
+
+// Helper function to push a VColorRef to the stack
+SCRIPT_IMPEXP void LUA_PushObjectProxy(lua_State* L, VColorRef *pColorRef); 
 
 // Helper function to push a VBitmask to the stack
 SCRIPT_IMPEXP void LUA_PushBitmask(lua_State* L, unsigned int iMask);
@@ -285,11 +316,25 @@ SCRIPT_IMPEXP bool LUA_GetValue(lua_State* L, int id, IVObjectComponent* &pObj);
 
 SCRIPT_IMPEXP bool LUA_GetFloatField(lua_State* L, int id, const char *pszField, float &value);
 
+SCRIPT_IMPEXP bool LUA_GetValue(lua_State* L, int id, hkvVec2& value);
+
 SCRIPT_IMPEXP bool LUA_GetValue(lua_State* L, int id, hkvVec3& value);
 
-SCRIPT_IMPEXP bool LUA_GetValue(lua_State* L, int id, VColorRef &value);
+SCRIPT_IMPEXP bool LUA_GetValue(lua_State* L, int id, hkvVec4& value);
+
+SCRIPT_IMPEXP bool LUA_GetValue(lua_State* L, int id, hkvMat3& value);
+
+SCRIPT_IMPEXP bool LUA_GetValue(lua_State* L, int id, hkvMat4& value);
+
+SCRIPT_IMPEXP bool LUA_GetValue(lua_State* L, int id, hkvPlane& value);
+
+SCRIPT_IMPEXP bool LUA_GetValue(lua_State* L, int id, hkvQuat& value);
 
 SCRIPT_IMPEXP bool LUA_GetValue(lua_State* L, int id, hkvAlignedBBox &value);
+
+SCRIPT_IMPEXP bool LUA_GetValue(lua_State* L, int id, hkvBoundingSphere &value);
+
+SCRIPT_IMPEXP bool LUA_GetValue(lua_State* L, int id, VColorRef &value);
 
 //bitmask access
 SCRIPT_IMPEXP bool LUA_GetValue(lua_State* L, int id, int*& bitmask);
@@ -475,10 +520,32 @@ protected:
 
 };
 
+/// \brief helper class which restores the lua API stack to its previous state when leaving the scope
+class VLuaStackCleaner
+{
+private:
+  lua_State* m_pLuaState;
+  int m_numElementsOnStackStart;
+
+public:
+  VLuaStackCleaner(lua_State* pLuaState)
+    : m_pLuaState(pLuaState)
+  {
+    m_numElementsOnStackStart = lua_gettop(pLuaState);
+  }
+
+  ~VLuaStackCleaner()
+  {
+    int numElementsOnStackEnd = lua_gettop(m_pLuaState);
+    VASSERT_MSG(numElementsOnStackEnd >= m_numElementsOnStackStart, "there are less elements on the stack than on scope enter!");
+    lua_settop(m_pLuaState, m_numElementsOnStackStart);
+  }
+};
+
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

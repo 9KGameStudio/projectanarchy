@@ -31,6 +31,9 @@ void VLUA_CreateGlobalInstances(lua_State* L)
       VSWIG_PUSH_PROXY(L, VisGame_cl, &Vision::Game)
       lua_setglobal(L, "Game");
 
+      VSWIG_PUSH_PROXY(L, VisPersistentData_cl, &Vision::PersistentData)
+      lua_setglobal(L, "PersistentData");
+
       IVConsoleManager *pConsoleManager = Vision::GetConsoleManager();
       VSWIG_PUSH_PROXY(L, IVConsoleManager, pConsoleManager)
       lua_setglobal(L, "Console");  
@@ -88,7 +91,7 @@ void VLUA_OpenLibraries (lua_State* L)
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

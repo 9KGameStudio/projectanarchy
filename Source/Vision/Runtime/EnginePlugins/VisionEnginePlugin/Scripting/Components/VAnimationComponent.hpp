@@ -77,12 +77,37 @@ public:
   SCRIPT_IMPEXP bool SetTime(float fTime, bool bRelativeTime = false);
 
   /// \brief
+  ///   Get time in current animation.
+  ///   Absolute time (bRelativeTime == false) returns a value between [0, DURATION]
+  ///   Relative time returns [0,1]
+  ///   If no control is currently active, the value returned is -1.f.
+  SCRIPT_IMPEXP float GetTime(bool bRelativeTime = false);
+
+  /// \brief
+  ///   Set playback speed for current animation.
+  ///   \param fSpeedFactor 1.0 indicates normal forward playback.
+  ///   The fSpeedFactor can also be set to negatives to reverse playback.
+  ///   For example, fSpeedFactor = -2.0f will make the animation play 2x speed in reverse.
+  SCRIPT_IMPEXP void SetSpeed(float fSpeedFactor);
+
+  /// \brief
+  ///   Get playback speed for current animation.
+  ///   If no control is currently active, the value returned is 0.
+  SCRIPT_IMPEXP float GetSpeed();
+  
+  /// \brief
   ///   Get the number of present animation sequences
   SCRIPT_IMPEXP int GetNumSequences();
 
   /// \brief
-  ///   Returns true if the animation playback is running
+  ///   Returns true if the animation playback is running, false if paused and false if no anim controller exists.
+  ///   Please note this behavior is NOT simply the opposite of IsPaused.
   SCRIPT_IMPEXP inline bool IsPlaying() { return m_pAnimCtrl && m_pAnimCtrl->IsPlaying(); }
+
+  /// \brief
+  ///   Returns false if the animation playback is running, true if paused and false if no anim controller exists.
+  ///   Please note this behavior is NOT simply the opposite of IsPlaying.
+  SCRIPT_IMPEXP inline bool IsPaused() { return m_pAnimCtrl && !m_pAnimCtrl->IsPlaying(); }
 
   /// \brief
   ///   Returns the name of the currently active animation or NULL
@@ -121,7 +146,7 @@ protected:
 #endif // __ANIMAION_COMPONENT_HPP
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

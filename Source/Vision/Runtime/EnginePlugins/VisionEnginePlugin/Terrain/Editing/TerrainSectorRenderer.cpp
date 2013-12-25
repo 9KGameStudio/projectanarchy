@@ -297,7 +297,7 @@ bool VTerrainSectorRenderer::SaveRenderTarget(VTerrainSector* pSector, VisRender
   strcpy (szAbsFilename, pStream->GetFileName());
   pStream->Close();
 
-  VFileAccessManager::RCSEditFile(szAbsFilename);
+  VRCSHelper::RCSEditFile(szAbsFilename);
 
   if (pTex==NULL)
     return false;
@@ -336,7 +336,7 @@ bool VTerrainSectorRenderer::SaveRenderTarget(VTerrainSector* pSector, VisRender
   else if (VFileHelper::HasExtension(szAbsFilename,"DDS"))
     iSavingResult = image.SaveUncompressedDDS(szAbsFilename);
 
-  VFileAccessManager::RCSAddFile(szAbsFilename, true /* Binary file */);
+  VRCSHelper::RCSAddFile(szAbsFilename, true /* Binary file */);
 
   return iSavingResult == 0;
 }
@@ -379,7 +379,7 @@ bool VTerrainSectorRenderer::SaveToFile(VTerrainSector *pSector)
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

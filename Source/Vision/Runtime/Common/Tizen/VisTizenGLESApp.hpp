@@ -10,11 +10,17 @@
 #define VIS_TIZEN_GLES_APP_HPP
 
 #include <Vision/Runtime/Base/VBase.hpp>
+#include <Vision/Runtime/Framework/VisionApp/VAppBase.hpp>
 
+extern "C" bool VisionInitFunction();
+extern "C" bool VisionRunFunction();
+extern "C" bool VisionDeInitFunction();
 
 /**
 * [VisTizenGLESApp] UiApp must inherit from UiApp class
 * which provides basic features necessary to define an UiApp.
+* 
+* VisTizenGLESApp is only there for legacy reasons. For normal applications consider VAppTizen.
 */
 class VisTizenGLESApp 
   : public Tizen::App::UiApp
@@ -22,6 +28,10 @@ class VisTizenGLESApp
   , public Tizen::Ui::IOrientationEventListener
   , public Tizen::Ui::Controls::IFrameEventListener
 {
+  friend bool VisionInitFunction();
+  friend bool VisionRunFunction();
+  friend bool VisionDeInitFunction();
+
 public:
   /**
   * [Test] UiApp must have a factory method that creates an instance of itself.
@@ -92,7 +102,7 @@ private:
 #endif // _FRAMEBASEDGLESTIZEN_H_
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

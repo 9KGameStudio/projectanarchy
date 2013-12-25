@@ -14,6 +14,9 @@
 class VInputManagerIOS;
 typedef VInputManagerIOS VInputManager;
 
+class VMotionInputIOS;
+typedef VMotionInputIOS VMotionInput;
+
 //compatiblity typedefs
 HKV_DEPRECATED_2012_2 typedef VInputManagerIOS VInputDeviceManager;
 HKV_DEPRECATED_2012_2 typedef VInputManagerIOS VInputDeviceManagerIOS;
@@ -279,9 +282,6 @@ private:
 
   float m_fTimeDiff;
 
-  float m_fInvX;
-  float m_fInvY;
-
   int m_iTouchScale;
 
   VTouchPoint m_TouchPoints[V_IOS_MAX_TOUCH_POINTS];
@@ -364,7 +364,7 @@ private:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131021)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

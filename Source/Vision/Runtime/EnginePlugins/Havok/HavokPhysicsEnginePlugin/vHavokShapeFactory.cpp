@@ -98,7 +98,7 @@ hkRefNew<hkpShape> vHavokShapeFactory::CreateConvexHullShapeFromMesh(VBaseMesh *
       }
       else if(!Vision::Editor.IsInEditor() && !bForceHktShapeCaching)
       {
-        Vision::Error.Warning("Cached HKT file for %s is missing. Please generate HKT file (see documentation for details).", pMesh->GetFilename());
+        hkvLog::Warning("Cached HKT file for %s is missing. Please generate HKT file (see documentation for details).", pMesh->GetFilename());
       }
     }
   }
@@ -189,7 +189,7 @@ hkRefNew<hkpShape> vHavokShapeFactory::CreateShapeFromMesh(VBaseMesh* pMesh, con
       }
       else if(!Vision::Editor.IsInEditor() && !bForceHktShapeCaching)
       {
-        Vision::Error.Warning("Cached HKT file for %s is missing. Please generate HKT file (see documentation for details).", pMesh->GetFilename());
+        hkvLog::Warning("Cached HKT file for %s is missing. Please generate HKT file (see documentation for details).", pMesh->GetFilename());
       }
     }
   }
@@ -221,7 +221,7 @@ hkRefNew<hkpShape> vHavokShapeFactory::CreateShapeFromMesh(VBaseMesh* pMesh, con
     pCompressedMeshShape->removeReference();
 
     const char *szMeshFilename = (pMesh->GetFilename() != NULL) ? pMesh->GetFilename() : "UnnamedMesh";
-    Vision::Error.Warning("Physics Shape for [%s] is empty. Volume too small?",  szMeshFilename);
+    hkvLog::Warning("Physics Shape for [%s] is empty. Volume too small?",  szMeshFilename);
     return NULL;
   }
   
@@ -354,7 +354,7 @@ hkRefNew<hkpShape> vHavokShapeFactory::CreateShapeFromStaticMeshInstances(const 
       }
       else if(!Vision::Editor.IsInEditor() && !bForceHktShapeCaching)
       {
-        Vision::Error.Warning("Cached HKT file for %s is missing. Please generate HKT file (see documentation for details).", meshInstances[0]->GetMesh()->GetFilename());
+        hkvLog::Warning("Cached HKT file for %s is missing. Please generate HKT file (see documentation for details).", meshInstances[0]->GetMesh()->GetFilename());
       }
     }
   }
@@ -385,9 +385,9 @@ hkRefNew<hkpShape> vHavokShapeFactory::CreateShapeFromStaticMeshInstances(const 
     CreateMeshShapeFromStaticMeshInstances(meshInstances, referenceTransform, bAllowPerTriCollisionInfo, eWeldingType);
 
   // We are just caching single static mesh instances and no static mesh collections.
-  if (iCount == 1)
+  if ((pShape != NULL) && (iCount == 1))
   {
-     *szShapeCacheId = AddShape(szShapeId, pShape);
+    *szShapeCacheId = AddShape(szShapeId, pShape);
 
     // Only cache shape to HKT file when inside vForge or when enforced.
     if ((Vision::Editor.IsInEditor() && bAllowStaticMeshCaching) || bForceHktShapeCaching)
@@ -549,10 +549,18 @@ hkpShape* vHavokShapeFactory::CreateMeshShapeFromStaticMeshInstances(const VisSt
     ci.m_userDataMode = hkpBvCompressedMeshShape::PER_PRIMITIVE_DATA_NONE; 
     pCompressedMeshShape = new hkvBvCompressedMeshShape(ci, iFileTime);
   }
-  VASSERT_MSG(pCompressedMeshShape->getNumChildShapes() > 0, "hkvBvCompressedMeshShape could not be created for static model!");
 
-  pCompressedMeshShape->SetupMaterials();
-
+  if(pCompressedMeshShape->getNumChildShapes() < 1)
+  {
+    hkvLog::Error("[vHavokPhysics] hkvBvCompressedMeshShape could not be created for static mesh. One reason for this can be an undersized mesh.");
+    pCompressedMeshShape->removeReference();
+    pCompressedMeshShape = NULL;
+  }
+  else
+  {
+    pCompressedMeshShape->SetupMaterials();
+  }
+  
   return pCompressedMeshShape;
 }
 
@@ -574,7 +582,7 @@ hkpShape* vHavokShapeFactory::CreateShapeFromTerrain(const VTerrainSector& terra
     if (pCachedShape)
       return pCachedShape;
     else
-      Vision::Error.Warning("Cached HKT file for %s is missing. Please generate HKT file (see documentation for details).", terrain.GetFilename());
+      hkvLog::Warning("Cached HKT file for %s is missing. Please generate HKT file (see documentation for details).", terrain.GetFilename());
   }
 
   hkpSampledHeightFieldBaseCinfo ci; 
@@ -591,7 +599,7 @@ hkpShape* vHavokShapeFactory::CreateShapeFromTerrain(const VTerrainSector& terra
   const bool bHasHoles = terrain.HasHoles();
 
   if (!bExact && bHasHoles)
-    Vision::Error.Warning("Terrain sector has holes but uses approximated physics representation. Therefore precise physics representation enforced.");
+    hkvLog::Info("Warning: Terrain sector has holes but uses approximated physics representation. Therefore precise physics representation enforced.");
 
   // Two choices here.. could use just the heightfield as is, or
   // wrap it in a tri sampler. The tri sampler will give exact collisions, the heightfield alone will be based on collision spheres.
@@ -980,18 +988,22 @@ void vHavokShapeFactory::GetHktDependencies(VResourceSnapshot &snapshot, VTerrai
   // Afterwards remove extension.
   char szFilename[FS_MAX_PATH];
   pSector->m_Config.GetSectorFilename(szFilename, pSector->m_iIndexX, pSector->m_iIndexY, "hmap", true);
-  char szPath[FS_MAX_PATH];
-  bool bSuccess = VFileHelper::GetAbsolutePath(szFilename, szPath, Vision::File.GetManager());
-  VASSERT_MSG(bSuccess, "vHavokShapeFactory::GetHktDependencies: Failed to make the path to the sector hmap absolute, the file may not exist!");
-  VFileHelper::GetFilenameNoExt(szPath, szFilename);
+
+  VFileAccessManager::NativePathResult sectorNativeResult;
+  if (VFileAccessManager::GetInstance()->MakePathNative(szFilename, sectorNativeResult, VFileSystemAccessMode::READ, VFileSystemElementType::FILE) != HKV_SUCCESS)
+  {
+    VASSERT_MSG(FALSE, "vHavokShapeFactory::GetHktDependencies: Failed to determine the native path to the sector hmap; the file may not exist!");
+    return;
+  }
+  VFileHelper::GetFilenameNoExt(szFilename, sectorNativeResult.m_sNativePath);
 
   // Build the cached shape filename
-  VStaticString<FS_MAX_PATH> szCachedShapeName(szPath);
+  VStaticString<FS_MAX_PATH> szCachedShapeName(szFilename);
   vHavokCachedShape::GetTerrainSectorShapePath(szCachedShapeName, ePhysicsType, bHasHoles);
   IVFileInStream *pIn = Vision::File.Open(szCachedShapeName);
   if (pIn)
   {
-    snapshot.AddFileDependency(pSector, szCachedShapeName, pIn->GetSize() );
+    snapshot.AddFileDependency(pSector, szCachedShapeName, pIn->GetSize());
     pIn->Close();
   }
 
@@ -1000,7 +1012,7 @@ void vHavokShapeFactory::GetHktDependencies(VResourceSnapshot &snapshot, VTerrai
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

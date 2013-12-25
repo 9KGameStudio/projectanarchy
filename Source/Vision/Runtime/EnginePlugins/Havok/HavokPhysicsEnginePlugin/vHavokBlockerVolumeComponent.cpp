@@ -202,9 +202,7 @@ void vHavokBlockerVolumeComponent::CreatePhysicsObject()
   if (notLargeEnough.anyIsSet<hkVector4ComparisonMask::MASK_XYZ>())
   {
     const char *szMeshFilename = (pMesh->GetFilename() != NULL) ? pMesh->GetFilename() : "UnnamedMesh";
-    Vision::Error.Warning(
-      "Havok Physics Blocker Volume: Static mesh [%s] has undersized extents (%.4f, %4f, %.4f)", 
-      szMeshFilename, bbox_extent(0), bbox_extent(1), bbox_extent(2));
+    hkvLog::Warning("Havok Physics Blocker Volume: Static mesh [%s] has undersized extents (%.4f, %4f, %.4f)", szMeshFilename, bbox_extent(0), bbox_extent(1), bbox_extent(2));
     return;
   }
   
@@ -545,7 +543,7 @@ END_VAR_TABLE
 //------------------------------------------------------------------------------
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -29,7 +29,7 @@ class hkvAssetQuery;
 class hkvQueryChangedData : public hkvCallbackData
 {
 public:
-  ASSETFRAMEWORK_IMPEXP hkvQueryChangedData(hkvCallback* sender) : hkvCallbackData(sender)
+  ASSETFRAMEWORK_IMPEXP hkvQueryChangedData(const hkvCallback* sender) : hkvCallbackData(sender)
   {
     m_query = NULL;
   }
@@ -97,15 +97,16 @@ public:
   ASSETFRAMEWORK_IMPEXP hkUint32 getNumberOfAssetsInView() const;
   ASSETFRAMEWORK_IMPEXP hkvAsset::RefCPtr getAssetInView(hkUint32 viewIndex) const;
   ASSETFRAMEWORK_IMPEXP hkInt32 indexOfAssetInView(const hkvAsset& asset) const;
+
+  // View Settings
   ASSETFRAMEWORK_IMPEXP void sortByCategory(hkvAssetSortingCriterion assetSortingCriterion, bool ascending);
-
   inline hkvAssetSortingCriterion getSortingCriterion() const { return m_sortingCriterion; }
-  inline hkBool getAscending() const { return m_ascending; }
+  inline bool getAscending() const { return m_ascending; }
 
-  inline void setUseListView(bool listView) { m_listView = listView; }
-  inline hkBool getUseListView() const { return m_listView; }
+  ASSETFRAMEWORK_IMPEXP void setUseListView(bool listView);
+  inline bool getUseListView() const { return m_listView; }
 
-  inline void setThumbnailSize(hkInt32 thumbnailSize) { m_thumbnailSize = thumbnailSize; }
+  ASSETFRAMEWORK_IMPEXP void setThumbnailSize(hkInt32 thumbnailSize);
   inline hkInt32 getThumbnailSize() const { return m_thumbnailSize; }
 
   // Selection
@@ -132,15 +133,17 @@ public:
     hkUint32 stackIndex, hkvProperty::Purpose purpose) HKV_OVERRIDE;
 
 public:
-  hkvCallback OnQueryChanged;
-  hkvCallback OnAssetViewDataChanged;
-  hkvCallback OnSelectionChanged;
+  hkvCallback OnQueryChanged;           ///< Called when a query's settings have changed. Called by 'evaluateQuery'.
+  hkvCallback OnAssetViewDataChanged;   ///< Called when a query's result is ready. Called by 'sortByCategory'.
+  hkvCallback OnSelectionChanged;       ///< Called when the selection in the query has been modified.
+  hkvCallback OnViewSettingsChanged;    ///< Called when view settings have changed, like sort order, thumbnail size, use of list view etc.
 
 private:
   void checkPlausibility();
 
-  void callOnQueryChanged();
-  void callOnAssetViewDataChanged();
+  void callOnQueryChanged() const;
+  void callOnAssetViewDataChanged() const;
+  void callOnViewSettingsChanged() const;
 
 private:
   // Library
@@ -173,7 +176,7 @@ private:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

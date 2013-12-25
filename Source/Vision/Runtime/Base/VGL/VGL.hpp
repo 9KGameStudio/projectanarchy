@@ -11,6 +11,91 @@
 #ifndef _VGL_HPP
 #define _VGL_HPP
 
+/// \brief Class containing various helper functions for applications.
+class VBASE_IMPEXP VBaseAppHelpers
+{
+public:
+
+  /// \brief
+  ///   Retrieves the directory of the currently running application
+  ///
+  /// \param pszAppDir
+  ///   Application directory.
+  /// 
+  /// \return
+  ///   Whether the function succeeded
+  static bool GetApplicationDir(char *pszAppDir);
+
+  /// \brief
+  ///   Retrieves a platform dependent non-unique human readable identifier of the machine or device the application is running on.
+  static void GetDeviceName(char* buffer, int maxLength);
+
+  /// \brief
+  ///   Retrieves a platform dependent non-unique human readable identifier of the machine or device the application is running on.
+  template<int N> static void GetDeviceName(char (&buffer)[N])
+  {
+    return GetDeviceName(buffer, N);
+  }
+
+  /// \brief
+  ///   Helper function to install a file system that allows access to the Havok SDK.
+  ///
+  /// This function is intended to be used in applications that run in the context of the Havok
+  /// SDK, and use the standard base data and possibly other data directories within the SDK.
+  ///
+  /// It should not be used in applications that do not share the directory layout of the
+  /// Havok SDK.
+  ///
+  /// \param szName
+  ///   name of the file system to install; default: 'havok_sdk'
+  /// \param bWritable
+  ///   whether the SDK file system should be writable; default: false
+  /// \return
+  ///   whether the file system was added successfully
+  static hkvResult InstallSDKFileSystem(const char* szName = "havok_sdk", bool bWritable = false)
+  {
+    return InstallSDKFileSystem(*VFileAccessManager::GetInstance(), szName, bWritable);
+  }
+
+  /// \brief
+  ///   Helper function to install a file system that allows access to the Havok SDK.
+  ///
+  /// This function is intended to be used in applications that run in the context of the Havok
+  /// SDK, and use the standard base data and possibly other data directories within the SDK.
+  ///
+  /// It should not be used in applications that do not share the directory layout of the
+  /// Havok SDK.
+  ///
+  /// \param fileAccessManager
+  ///   the file access manager in which to install the SDK file system
+  /// \param szName
+  ///   name of the file system to install; default: 'havok_sdk'
+  /// \param bWritable
+  ///   whether the SDK file system should be writable; default: false
+  /// \return
+  ///   whether the file system was added successfully
+  static hkvResult InstallSDKFileSystem(VFileAccessManager& fileAccessManager, const char* szName = "havok_sdk", bool bWritable = false);
+
+  /// \brief
+  ///   Searches for a vForge workspace marker upwards from (and including) the passed
+  ///   project directory.
+  /// \param szProjectDir
+  ///   The project dir in which to start the search.
+  /// \param szWorkspaceRoot
+  ///   The name of the root under which the workspace file system is going to be installed. 
+  ///   This is used for building the project search path (which always lies within this
+  ///   file system).
+  /// \param sWorkspaceDir
+  ///   The buffer into which to write the workspace directory. Only valid if the function succeeds.
+  /// \param sProjectSearchPath
+  ///   The buffer into which to write the project search path. Only valid if the function succeeds.
+  /// \return
+  ///   Whether the vForge workspace for the passed project could be successfully found.
+  static hkvResult FindVForgeWorkspace(const char* szProjectDir, const char* szWorkspaceRoot,
+    VStaticString<FS_MAX_PATH>& sWorkspaceDir, VStaticString<FS_MAX_PATH>& sProjectSearchPath);
+};
+
+
 #ifndef _VISION_DOC
 
 //
@@ -575,8 +660,6 @@ VBASE_IMPEXP VGLLanguage VGLGetKeyBoardLanguage();
 
 #endif
 
-#if defined(WIN32) && !defined(_VISION_WINRT)
-
 ///
 /// @}
 ///
@@ -585,138 +668,6 @@ VBASE_IMPEXP VGLLanguage VGLGetKeyBoardLanguage();
 /// @name Log Window Functions
 /// @{
 ///
-
-/// \brief
-///   Initialize log window
-/// 
-/// Properly initialize and open log window for log and debug output
-/// 
-/// \return
-///   RETVAL
-/// 
-/// \errcodes
-///   \li \c VERR_NOERROR:   Everything's fine
-/// 
-///   \li \c VERR_NOWINDOW:  Could not open log window
-VBASE_IMPEXP RETVAL VGLLogInit(void);
-
-/// \brief
-///   Deinitialize log window and free the allocated data
-/// 
-///  Currently called by VGLDeInitialize
-VBASE_IMPEXP void VGLLogDeInit();
-
-/// \brief
-///   Sets a new log window traget that receives update messages (log and resource viewer)
-VBASE_IMPEXP void VGLSetLogWindow(HWND newlog);
-
-/// \brief
-///   Output log data
-/// 
-/// Output a string to the log window, with debug and/or log info
-/// 
-/// \param msg
-///   String with message
-VBASE_IMPEXP void VGLLogMessage(const char *msg);
-
-
-
-/// \brief
-///   Output formatted log data
-/// 
-/// Output a formatted string, with parameters, just like printf
-/// 
-/// \param s
-///   Formatting string, exactly like printf
-/// 
-/// \param ...
-///   The rest of the characters, printf style
-VBASE_IMPEXP void VGLLogPrint(const char *s, ...);
-
-
-
-/// \brief
-///   Delete last line from log window
-/// 
-/// Delete the last line from the log window
-VBASE_IMPEXP void VGLLogDeleteLine();
-
-
-
-
-/// \brief
-///   Reset log window
-/// 
-/// Empties the log window from all the log output that is there already.
-VBASE_IMPEXP void VGLLogReset(void);
-
-
-
-/// \brief
-///   Kill log window Description Closes the log window, and terminates the EXE file for it
-VBASE_IMPEXP void VGLLogQuit(void);
-
-
-
-/// \brief
-///   Hide log window
-/// 
-/// Make the log window invisible by minimizing it
-VBASE_IMPEXP void VGLLogHide(void);
-
-
-
-/// \brief
-///   Show log window
-/// 
-/// Make the log window visible by restoring it
-/// 
-/// \sa VGLLogHide
-VBASE_IMPEXP void VGLLogShow(void);
-
-
-
-/// \brief
-///   Put log window on top
-/// 
-/// Forces the log window to remain on top of other windows
-/// 
-/// \param ontop
-///   Whether it should be on top or not
-VBASE_IMPEXP void VGLLogOnTop(bool ontop);
-
-
-
-/// \brief
-///   Disables the Quit button
-/// 
-/// Greys out the Quit button in the debug window
-/// 
-/// \param state
-///   \li TRUE if greyed out,
-/// 
-///   \li FALSE if not
-VBASE_IMPEXP void VGLLogDisableQuit(bool state);
-
-
-/*
-/// \brief
-///   Dump everything in log window
-/// 
-/// This function will request a dump of the contents of the log window.
-/// 
-/// \param microSeconds
-///   Number of microseconds that this function may take without timing out.
-/// 
-/// \return
-///   char *: String containing the log window data. If this is NULL, the function failed. This
-///   could happen if the log window was not present or if the connection to it timed out. The user
-///   has to free the string with the VGLFree() function.
-VBASE_IMPEXP char *VGLLogDump(ULONG microSeconds);
-*/
-
-
-#endif
 
 /// \brief
 ///   Updates a list of resource manager in the resource viewer
@@ -742,695 +693,6 @@ VBASE_IMPEXP bool VGLIsResourceViewerConnnected();
 ///
 /// @}
 ///
-
-///
-/// @name Registry Functions
-/// @{
-///
-
-
-#if defined(WIN32) && !defined(_VISION_WINRT)
-/// \brief
-///   Set the base (group) name
-/// 
-/// Set a new name for the base, or group, used to collect all the settings in one place. The
-/// default value is "vulpine\"
-/// 
-/// \param baseName
-///   Name of the base
-/// 
-/// \return
-///   RETVAL
-/// 
-/// \errcodes
-///   \li \c VERR_NOERROR:  Base name set successfully
-/// 
-///   \li \c VERR_ERROR:    Something went wrong
-/// 
-/// \note
-///   If you are not Trinigy, you might want to set this somewhere at the beginning of your
-///   application
-VBASE_IMPEXP RETVAL  VGLSetBaseName(const char *baseName);
-
-
-
-/// \brief
-///   Retrieve the base (group) name
-/// 
-/// Get the current name for the base or group. See VGLSetBaseName.
-/// 
-/// \return
-///   char *name: Name of the base group
-/// 
-/// \errcodes
-///   \li \c VERR_NOERROR:  Base name set successfully
-/// 
-///   \li \c VERR_ERROR:    Something went wrong
-/// 
-/// \note
-///   If you are not vulpine, you might want to set this somewhere at the beginning of your
-///   application
-/// 
-/// \note
-///   The user has to free the string with the VGLFree() function.
-VBASE_IMPEXP char   *VGLGetBaseName(void);
-
-
-
-/// \brief
-///   Set the application name
-/// 
-/// Set a new name for the application.
-/// 
-/// \param appName
-///   Name of the application
-/// 
-/// \return
-///   RETVAL
-/// 
-/// \errcodes
-///   \li \c VERR_NOERROR:  Base name set successfully
-/// 
-///   \li \c VERR_ERROR:    Something went wrong
-/// 
-/// \note
-///   This is the same value set in the VGLInitialize function. If you want to change this value
-///   during runtime, call this function. Also, if you happen not to call VGLInitialize, you should
-///   definitely call this function before using the other functions in this section.
-VBASE_IMPEXP RETVAL  VGLSetApplicationName(const char *appName);
-
-
-
-/// \brief
-///   Delete all applications
-/// 
-/// Recursively delete all registered applications under a certain base
-/// 
-/// \param baseName
-///   Name of base to delete everything under. NULL if default.
-/// 
-/// \return
-///   RETVAL
-/// 
-/// \errcodes
-///   \li \c VERR_NOERROR:  Deletion was successful. Everything is gone.
-/// 
-///   \li \c VERR_ERROR:    Something went wrong
-/// 
-/// \note
-///   *** WARNING! *** This is a _very_ destructive command. Only use it very reluctantly!
-VBASE_IMPEXP RETVAL VGLDeleteBase(const char *baseName = NULL);
-
-
-
-/// \brief
-///   Retrieve the application name
-/// 
-/// Get the current name for the application.
-/// 
-/// \return
-///   char *: Current name of the application
-/// 
-/// \errcodes
-///   \li \c VERR_NOERROR:  Base name set successfully
-/// 
-///   \li \c VERR_ERROR:    Something went wrong
-/// 
-/// \note
-///   I don't expect anyone to ever call this function, but in case it's interesting, it's included
-///   here.
-VBASE_IMPEXP char   *VGLGetApplicationName(void);
-
-
-/// \brief
-///   Finds registered applications
-/// 
-/// Looks in the registry for registered applications and returns a list with their names.
-/// 
-/// \return
-///   char **: Array of string pointers, each string containing the name of an install application.
-///   The last one is NULL. The names can successfully be used with VGLGetRegisteredApplication and
-///   VGLRunRegisteredApplication
-/// 
-/// \note
-///   You are responsible for freeing the strings and the array returned by this function. Start
-///   with freeing all the elements up to the one that is NULL. Then free the whole thing. Free
-///   with VGLFree().
-/// 
-/// \example
-///   \code
-///   char **apps = VGLFindRegisteredApplications();
-///   for (int i = 0; apps[i]; i++)
-///     VGLFree(apps[i]);
-///   if (i)
-///     VGLFree(apps);
-///   \endcode
-VBASE_IMPEXP char **VGLFindRegisteredApplications(void);
-
-
-
-/// \brief
-///   Registers an application
-/// 
-/// with the registry, thus enabling other applications to find it
-/// 
-/// \param appName
-///   Application name, if registering under another name. Use NULL if default. (the one running)
-/// 
-/// \param location
-///   Path and executable, if registering another application. Use NULL if default. (location of
-///   running program)
-/// 
-/// \return
-///   RETVAL: Status code
-/// 
-/// \errcodes
-///   \li \c VERR_NOERROR:  Base name set successfully
-/// 
-///   \li \c VERR_ERROR:    Something went wrong
-/// 
-/// \note
-///   I don't expect anyone to ever call this function, but in case it's interesting, it's included
-///   here.
-VBASE_IMPEXP RETVAL  VGLRegisterApplication(const char *appName = NULL, const char *location = NULL);
-
-
-
-/// \brief
-///   Unregisters an application
-/// 
-/// Kills all registry entries for this program
-/// 
-/// \param appName
-///   Application name to unregister. Use NULL if default (the one running)
-/// 
-/// \return
-///   RETVAL
-/// 
-/// \errcodes
-///   \li \c VERR_NOERROR:  Application was successfully unregistered
-/// 
-///   \li \c VERR_ERROR:    Something went wrong
-/// 
-/// \note
-///   This function should only be used by uninstallers
-VBASE_IMPEXP RETVAL VGLUnregisterApplication(const char *appName = NULL);
-
-
-
-/// \brief
-///   Get location of registered application
-/// 
-/// This will return the location of an application that is registered with VGL.
-/// 
-/// \param appName
-///   Name of application. Use NULL if default (the one running)
-/// 
-/// \return
-///   char *: Location of application with path and file NULL if application was not found
-/// 
-/// \note
-///   Useful for finding i.e. directories of applications Free the returned pointer with VGLFree().
-VBASE_IMPEXP char   *VGLGetRegisteredApplication(const char *appName = NULL);
-
-
-
-/// \brief
-///   Checks whether application is registered
-/// 
-/// This function will check whether an application is  registered with VGL.
-/// 
-/// \param appName
-///   Name of application Use NULL if default (pointless though :)
-/// 
-/// \return
-///   RETVAL: TRUE if application is registered, else FALSE
-/// 
-/// \note
-///   For extra niceness, use this function first :)
-VBASE_IMPEXP RETVAL  VGLIsApplicationRegistered(const char *appName = NULL);
-
-/// \brief
-///   Launches a document using the Windows shell
-/// 
-/// \param pszFilePath
-///   Fullpath to the file
-/// 
-/// \param pszWorkingPath
-///   Fullpath to the working directory
-/// 
-/// \return
-///   HINSTANCE or error code (see ShellExecute)
-VBASE_IMPEXP intptr_t VGLLaunchFile(const char *pszFilePath, const char *pszWorkingPath=NULL);
-
-/// \brief
-///   Run registered application
-/// 
-/// Locates and executes a registered application with command line
-/// 
-/// \param appName
-///   Name of application to execute
-/// 
-/// \param commandLine
-///   Command line
-/// 
-/// \param parameters
-///   Startup parameters. For now, the only parameter that is supported properly is 0 (default), so
-///   just don't set this value. Ok?
-/// 
-/// \return
-///   RETVAL
-/// 
-/// \errcodes
-///   \li \c VERR_NOMEM:    Not enough memory was available to run this command.
-/// 
-///   \li \c VERR_ERROR:    Something didn't quite work out.
-/// 
-///   \li \c VERR_NOERROR:  Everything is fine and dandy
-/// 
-/// \note
-///   Preferrably use this to run registered applications
-VBASE_IMPEXP RETVAL VGLRunRegisteredApplication(const char *appName, const char *commandLine = NULL, ULONG parameters = 0);
-
-
-
-/// \brief
-///   Register extension to application
-/// 
-/// Register a file extension to belong to a registered application
-/// 
-/// \param ext
-///   Extension (with or without preceding dot)
-/// 
-/// \param appName
-///   Name of application. NULL if it's supposed to be the current (running) application.
-/// 
-/// \return
-///   RETVAL
-/// 
-/// \errcodes
-///   \li \c VERR_ERROR:    It didn't work. Extension is not registered.
-/// 
-///   \li \c VERR_NOERROR:  Extension is now registered.
-/// 
-/// \note
-///   This function will save the previous owner of the extension so that it can be restored with
-///   VGLRestoreExtension()
-VBASE_IMPEXP RETVAL  VGLRegisterExtension(const char *ext, const char *appName = NULL);
-
-
-
-/// \brief
-///   Restore registered extension.
-/// 
-/// Restore a file extension to its previous owner.
-/// 
-/// \param ext
-///   Extension (with or without preceding dot)
-/// 
-/// \param appName
-///   Name of application. Null if current app.
-/// 
-/// \return
-///   RETVAL
-/// 
-/// \errcodes
-///   \li \c VERR_ERROR:    Didn't work. Maybe extension wasn't registered in the first place?
-/// 
-///   \li \c VERR_NOERROR:  Extension successfully restored to previous owner.
-/// 
-/// \note
-///   Use this when i.e. uninstalling an application
-VBASE_IMPEXP RETVAL  VGLRestoreExtension(const char *ext, const char *appName = NULL);
-
-
-
-/// \brief
-///   Check whether extension is registered
-/// 
-/// Finds out whether a file extension is registered by VGL
-/// 
-/// \param ext
-///   Extension (with or withoug preceding dot)
-/// 
-/// \param appName
-///   Name of application. NULL if current app.
-/// 
-/// \return
-///   RETVAL: TRUE if application is registered. FALSE if not.
-/// 
-/// \note
-///   Only works with extensions registered by VGL
-VBASE_IMPEXP RETVAL  VGLIsExtensionRegistered(const char *ext, const char *appName = NULL);
-
-
-
-/// \brief
-///   Check whether config value is set
-/// 
-/// Find out whether a value is set in configuration/registry for this application.
-/// 
-/// \param name
-///   Name (and path) of value
-/// 
-/// \param appName
-///   Name of application (NULL if current one)
-/// 
-/// \return
-///   RETVAL: TRUE if value is set, FALSE if not
-/// 
-/// \note
-///   Use this first
-VBASE_IMPEXP RETVAL  VGLIsValueSet(const char *name, const char *appName = NULL);
-
-
-
-/// \brief
-///   Delete config value
-/// 
-/// Delete a value from configuration/registry for an application
-/// 
-/// \param name
-///   Name (and path) of value
-/// 
-/// \param appName
-///   Name of application (NULL if current one)
-/// 
-/// \return
-///   RETVAL
-/// 
-/// \errcodes
-///   \li \c VERR_ERROR:    Value could not be deleted. Did it exist in the first place?
-/// 
-///   \li \c VERR_NOERROR:  Value deleted.
-/// 
-/// \note
-///   Functionality for killing _all_ values is soon to be written...
-VBASE_IMPEXP RETVAL  VGLDeleteValue(const char *name, const char *appName = NULL);
-
-
-
-/// \brief
-///   Set config value
-/// 
-/// Set a configuration/registry value for an application
-/// 
-/// \param name
-///   Name of value
-/// 
-/// \param data
-///   Data (of whatever type)
-/// 
-/// \param length
-///   Size of data
-/// 
-/// \param type
-///   Data type
-///   \li REG_BINARY: Binary data (no type)
-/// 
-///   \li REG_DWORD:  DWord data (int, float, et.c.)
-/// 
-///   \li REG_SZ:     String data (nil terminated, include nil in length)
-/// 
-/// \param appName
-///   Name of application (NULL if current one)
-/// 
-/// \return
-///   RETVAL
-/// 
-/// \errcodes
-///   \li \c VERR_ERROR:    Value could not be set for some reason
-/// 
-///   \li \c VERR_NOERROR:  Value was set successfully
-/// 
-/// \note
-///   Generic function for setting reg/conf values. Use the other set functions for setting int,
-///   float, double and string.
-VBASE_IMPEXP RETVAL  VGLSetValue(const char *name, const void *data, SLONG length, SLONG type = REG_BINARY, const char *appName = NULL);
-
-
-
-/// \brief
-///   Get config value
-/// 
-/// Retrieve value from config file/registry
-/// 
-/// \param name
-///   Name of value
-/// 
-/// \param appName
-///   Name of application (NULL if the current one)
-/// 
-/// \return
-///   void *: Pointer to retreived data. NULL if failed.
-/// 
-/// \note
-///   Use the other get functions for retrieving int, float, double and string Don't forget to free
-///   this value with VGLFree().
-VBASE_IMPEXP void   *VGLGetValue(const char *name, const char *appName = NULL);
-
-
-
-/// \brief
-///   Get int value
-/// 
-/// Retrieve int value from config file/registry
-/// 
-/// \param name
-///   Name of value
-/// 
-/// \param appName
-///   Name of application (NULL if current)
-/// 
-/// \return
-///   int: Value
-/// 
-/// \note
-///   Use IsValueSet() to check whether value actually exists
-VBASE_IMPEXP int     VGLGetInt(const char *name, const char *appName = NULL);
-
-
-
-/// \brief
-///   Get float value
-/// 
-/// Retrieve float value from config file/regitry
-/// 
-/// \param name
-///   Name of value
-/// 
-/// \param appName
-///   Name of application (NULL if current)
-/// 
-/// \return
-///   float: Value
-/// 
-/// \note
-///   Use IsValueSet() to check whether value actually exists
-VBASE_IMPEXP float   VGLGetFloat(const char *name, const char *appName = NULL);
-
-
-
-/// \brief
-///   Get double value
-/// 
-/// Retrieve double value from config file/regitry
-/// 
-/// \param name
-///   Name of value
-/// 
-/// \param appName
-///   Name of application (NULL if current)
-/// 
-/// \return
-///   double: Value
-/// 
-/// \note
-///   Use IsValueSet() to check whether value actually exists
-VBASE_IMPEXP double  VGLGetDouble(const char *name, const char *appName = NULL);
-
-
-
-/// \brief
-///   Get string
-/// 
-/// Retrieve string from config file/regitry
-/// 
-/// \param name
-///   Name of string
-/// 
-/// \param appName
-///   Name of application (NULL if current)
-/// 
-/// \return
-///   char *: String. NULL if value doesn't exist.
-/// 
-/// \note
-///   For compatibility reasons, still use IsValueSet() to check whether value actually exists Free
-///   the returned string with VGLFree().
-VBASE_IMPEXP char   *VGLGetString(const char *name, const char *appName = NULL);
-
-
-
-/// \brief
-///   Set int value
-/// 
-/// to config/registry
-/// 
-/// \param name
-///   Name of value
-/// 
-/// \param value
-///   Value to set
-/// 
-/// \param appName
-///   Name of application (NULL if current)
-/// 
-/// \note
-///   To check whether it was successful, use IsValueSet()
-VBASE_IMPEXP void    VGLSetInt(const char *name, int value, const char *appName = NULL);
-
-
-
-/// \brief
-///   Set float value
-/// 
-/// to config/registry
-/// 
-/// \param name
-///   Name of value
-/// 
-/// \param value
-///   Value to set
-/// 
-/// \param appName
-///   Name of application (NULL if current)
-/// 
-/// \note
-///   To check whether it was successful, use IsValueSet()
-VBASE_IMPEXP void    VGLSetFloat(const char *name, float value, const char *appName = NULL);
-
-
-
-/// \brief
-///   Set double value
-/// 
-/// to config/registry
-/// 
-/// \param name
-///   Name of value
-/// 
-/// \param value
-///   Value to set
-/// 
-/// \param appName
-///   Name of application (NULL if current)
-/// 
-/// \note
-///   To check whether it was successful, use IsValueSet()
-VBASE_IMPEXP void    VGLSetDouble(const char *name, double &value, const char *appName = NULL);
-
-
-
-/// \brief
-///   Set string
-/// 
-/// to config/registry
-/// 
-/// \param name
-///   Name of string
-/// 
-/// \param s
-///   String to set
-/// 
-/// \param appName
-///   Name of application (NULL if current)
-/// 
-/// \note
-///   To check whether it was successful, use IsValueSet()
-VBASE_IMPEXP void    VGLSetString(const char *name, const char *s, const char *appName = NULL);
-
-
-
-
-
-///
-/// @}
-///
-
-///
-/// @name Miscellaneous Functions
-/// @{
-///
-
-
-
-
-/// \brief
-///   Gets a library version
-/// 
-/// Gets the current version of an EXE or DLL
-/// 
-/// \param fileName
-///   Name of library to get version of NULL will get version of VGL
-/// 
-/// \return
-///   ULONG: Version number coded as follows:
-///   \li Bits 24-31: Major version number (get with VGLGetVersion() >> 24)
-/// 
-///   \li Bits 16-12: Minor version number (get with (VGLGetVersion() >> 16) & 0xff)
-/// 
-///   \li Bits 8-15: Release number (get with (VGLGetVersion() >> 8) & 0xff)
-/// 
-///   \li Bits 0-7: Sub-release number (get with VGLGetVersion() & 0xff)
-/// 
-/// \note
-///   Useful for checking compatibility issues between this library and programs and libraries that
-///   use it
-/// 
-/// \note
-///   The version with a void argument is there for backwards compatibility with prorgrams relying
-///   on earlier versions of VGL, to get the version of VGL. Don't use it!
-VBASE_IMPEXP ULONG VGLGetVersion(const char *fileName = NULL);
-
-
-
-/// \brief
-///   Get "Program Files" directory
-/// 
-/// Get the default directory of installed programs, which is "Program Files" under English
-/// windows, "Programme" under German, et.c.
-/// 
-/// \return
-///   char *: Directory of program files. NULL if not found.
-/// 
-/// \note
-///   So far only valid under Windows
-/// 
-/// \note
-///   Free this string with VGLFree();
-VBASE_IMPEXP char *VGLGetProgramsDir(void);
-
-
-
-/// \brief
-///   Get start menu directory
-/// 
-/// Get the programs subdirectory of the windows start menu
-/// 
-/// \return
-///   char *: Directory of start/programs. NULL if not found
-/// 
-/// \note
-///   Only valid under windows :)
-/// 
-/// \note
-///   Free this string with VGLFree();
-VBASE_IMPEXP char *VGLGetStartDir(void);
-
-#endif
-
-
 
 #define VGL_TIMER_MODE_INVALID      (0)
 #define VGL_TIMER_MODE_PERFORMANCE  (1)
@@ -1507,44 +769,6 @@ VBASE_IMPEXP uint64 VGLGetTimer();
 ///   VGLGetTimer to get the time.
 VBASE_IMPEXP void VGLSetTimer(uint64 timeValue);
 
-/// \brief
-///   Show pop-up message box
-/// 
-/// This function will display a pop-up message box
-/// 
-/// \param message
-///   String containing the message
-/// 
-/// \param title
-///   Title of the message box
-/// 
-/// \note
-///   The message may contain formatting characters such as "\n". Use this function instead of
-///   Windows message boxes, since this one is portable to other platforms (and virtual windows
-///   too).
-VBASE_IMPEXP void VGLMessageBox(const char *message, const char *title);
-
-
-
-/// \brief
-///   Show error message
-/// 
-/// This function will display an error message. Per default, it will be an error message box in
-/// Windows, but other forms will be available in the future.
-/// 
-/// \param message
-///   String containing the message
-/// 
-/// \param title
-///   Title of the error box (default is "Error")
-/// 
-/// \note
-///   The message may contain formatting characters such as "\\n" (new line). Use this function
-///   instead of Windows message boxes, since this one is portable to other platforms (and virtual
-///   windows too).
-VBASE_IMPEXP void VGLErrorMessage(const char *message, const char *title = "Error");
-
-
 #define VQB_HANDLE_WINDOW_CLOSE  1  ///< The window will be closed if the user clicks on the X buton (ALT-F4). If not specified the application has to check VGLWantClose manually
 #define VQB_QUIT_ON_CLOSE        2  ///< The application will quit if the window is closed
 #define VQB_DEFAULT (VQB_HANDLE_WINDOW_CLOSE)
@@ -1596,80 +820,9 @@ VBASE_IMPEXP void VGLSetQuitBehaviour(int iFlags);
 /// \sa VGLSetQuitBehaviour
 VBASE_IMPEXP int  VGLGetQuitBehaviour();
 
-
-/// \brief
-///   Free memory allocated by VGL
-/// 
-/// Do the memory cleanup of any memory allocated by VGL
-/// 
-/// \param memory
-///   Pointer to memory
-/// 
-/// \note
-///   This solves the problem of different memory modules. It's just a wrapper for free()
-VBASE_IMPEXP void VGLFree(void *memory);
-
-
-/// \brief
-///   Return a random value
-/// 
-/// Call the rand() function of the C library and make sure it returns nothing bigger than RAND_MAX
-/// (0x7fff)
-/// 
-/// \return
-///   The random value
-/// 
-/// \note
-///   This solves porting problem because most some other operating system have a 32bit rand()
-///   function
-VBASE_IMPEXP ULONG VGLRand(void);
-
 ///
 /// @}
 ///
-
-#ifndef _VISION_DOC
-
-class VBASE_IMPEXP VBaseAppHelpers
-{
-
-public:
-
-  /// \brief
-  ///   Retrieves the directory of the currently running application
-  /// 
-  /// \return
-  ///   Whether the function succeeded
-  static bool GetApplicationDir(char *pszAppDir);
-  
-};
-
-
-#if defined(_VISION_XENON) || ( defined(_VISION_WINRT) && !defined(_VISION_METRO) && !defined(_VISION_APOLLO)  )
-VBASE_IMPEXP RETVAL VGLXGamepadSetFeedback( unsigned int padnum, unsigned short speed_left, unsigned short speed_right );
-VBASE_IMPEXP RETVAL VGLXGamepadGetThumbstickValue( unsigned int padnum, unsigned int thumbstick );
-VBASE_IMPEXP unsigned char VGLXGamepadGetLeftTriggerValue( unsigned int padnum );
-VBASE_IMPEXP unsigned char VGLXGamepadGetRightTriggerValue( unsigned int padnum );
-VBASE_IMPEXP RETVAL VGLXGamepadIsDigitalButtonPressed( unsigned int padnum, unsigned int button );
-VBASE_IMPEXP RETVAL VGLXGamepadIsDigitalButtonPressedOnce( unsigned int padnum, unsigned int button );
-VBASE_IMPEXP RETVAL VGLXGetControllerCapabilities( int padnum, int *ctrltype, int *digitalbuttons, bool *pbLeftTtrigger, bool *pbRightTrigger, int *thumbsticks, int *rumble );
-VBASE_IMPEXP RETVAL VGLXGetActiveGamepads();
-VBASE_IMPEXP RETVAL VGLXHandleGamepads();  
-VBASE_IMPEXP RETVAL VGLXDeInitializeGamepads();
-VBASE_IMPEXP RETVAL VGLXInitializeGamepads(int maxnum);
-
-#define  VIS_XENON_GAMEPAD_THUMBSTICK_LEFT_X         0x00000001
-#define  VIS_XENON_GAMEPAD_THUMBSTICK_LEFT_Y         0x00000002
-#define  VIS_XENON_GAMEPAD_THUMBSTICK_RIGHT_X        0x00000004
-#define  VIS_XENON_GAMEPAD_THUMBSTICK_RIGHT_Y        0x00000008
-
-#define  VIS_XENON_GAMEPAD_MOTOR_LEFT                0x00000001
-#define  VIS_XENON_GAMEPAD_MOTOR_RIGHT               0x00000002
-
-#endif
-
-
-#endif //_VISION_DOC
 
 ///
 /// @name Vgl Key Codes
@@ -1907,7 +1060,7 @@ VBASE_IMPEXP RETVAL VGLXInitializeGamepads(int maxnum);
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

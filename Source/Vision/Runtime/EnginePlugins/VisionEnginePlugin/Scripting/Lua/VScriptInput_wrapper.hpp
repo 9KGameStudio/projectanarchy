@@ -331,7 +331,7 @@ public:
 
     if(szTriggerName==NULL || szTriggerName[0]==0)
     {
-      Vision::Error.Warning("[Lua] MapTrigger: Trigger name is empty, please specify a proper name.");
+      hkvLog::Warning("[Lua] MapTrigger: Trigger name is empty, please specify a proper name.");
       return -1;
     }
     
@@ -352,7 +352,7 @@ public:
 
     if (pInputDevice == NULL || pInputDevice->GetModel() == INPUT_DEVICE_NONE)
     {
-      Vision::Error.Warning("[Lua] MapTrigger: Could not find input device '%s' for trigger '%s'.", sDeviceName.AsChar(), szTriggerName);
+      hkvLog::Warning("[Lua] MapTrigger: Could not find input device '%s' for trigger '%s'.", sDeviceName.AsChar(), szTriggerName);
       return -1;
     }
 
@@ -396,7 +396,7 @@ private:
 #endif // __VSCRIPTINPUT_WRAPPER_HPP
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

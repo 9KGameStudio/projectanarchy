@@ -35,7 +35,7 @@ VScalefromModelPreview::VScalefromModelPreview(VScaleformMovieInstance * pMainMo
 
   //Scaleform::StringBuffer buffer2;
   //Scaleform::Memory::pGlobalHeap->MemReport(buffer2, Scaleform::MemoryHeap::MemReportFull);
-  //Vision::Error.Warning("\n-----------------\n1st report:\n\n%s\n-----------------\n", buffer2.ToCStr());
+  //hkvLog::Warning("\n-----------------\n1st report:\n\n%s\n-----------------\n", buffer2.ToCStr());
 
   VString sTargetName;
   sTargetName.Format("ScaleformModelPreviewComponent:%p", pPreviewEntity);
@@ -69,7 +69,7 @@ VScalefromModelPreview::VScalefromModelPreview(VScaleformMovieInstance * pMainMo
 
   //Scaleform::StringBuffer buffer;
   //Scaleform::Memory::pGlobalHeap->MemReport(buffer, Scaleform::MemoryHeap::MemReportFull);
-  //Vision::Error.Warning("\n-----------------\n2nd report:\n\n%s\n-----------------\n", buffer.ToCStr());
+  //hkvLog::Warning("\n-----------------\n2nd report:\n\n%s\n-----------------\n", buffer.ToCStr());
 
   Vision::Callbacks.OnEnterForeground += this;
 }
@@ -149,7 +149,7 @@ void VScalefromModelPreview::OnHandleCallback(IVisCallbackDataObject_cl *pData)
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -588,31 +588,6 @@ FMOD_RESULT F_CALLBACK EventCallback(FMOD_EVENT *event, FMOD_EVENT_CALLBACKTYPE 
   return FMOD_OK;
 }
 
-
-void VFmodEventCollection::DebugOutput()
-{
-  int yk = 20;
-  int iCount = Count();
-  for (int i=0;i<iCount;i++,yk+=12)
-  {
-    VFmodEvent* pEvent = GetAt(i);
-
-    char *szEventName = NULL;
-    pEvent->GetInfo(NULL, &szEventName, NULL);
-    if (szEventName)
-    {
-      /*
-      Vision::Message.Print(1, 40, yk, "%i. '%s' (Event %s), playing: %s",
-        i,
-        pEvent->GetEventGroup()->m_szEventGroupName,
-        szEventName,
-        pEvent->IsPlaying() ? "yes":"no"
-        );
-      */
-    }
-  }
-}
-
 void VFmodEventCollection::Update()
 {
   int iCount = Count();
@@ -676,7 +651,7 @@ VFmodEvent* VFmodEventCollection::SearchEvent(const char* szName) const
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -101,7 +101,10 @@ void VMenuItemCollection::RenderAll(VGraphicsInfo &Graphics, const VItemRenderIn
 void VMenuItemCollection::OnTickFunction(float fTimeDelta)
 {
   for (int i=0;i<Count();i++)
-    GetAt(i)->OnTick(fTimeDelta);
+  {
+    VDlgControlBase* pItem = GetAt(i);
+    pItem->OnTick(fTimeDelta);
+  }
 }
 
   
@@ -159,9 +162,9 @@ int VMenuItemCollection::CompareItemPriority( const void *arg1, const void *arg2
 {
   VDlgControlBase *pElem1 = *(VDlgControlBase **)arg1;
   VDlgControlBase *pElem2 = *(VDlgControlBase **)arg2;
-  if (pElem1->m_iOrder>pElem2->m_iOrder) return 1;
-  if (pElem1->m_iOrder<pElem2->m_iOrder) return -1;
-  return 0;
+  if (pElem1->m_iOrder > pElem2->m_iOrder) return 1;
+  if (pElem1->m_iOrder < pElem2->m_iOrder) return -1;
+  return arg1 < arg2 ? -1 : 1; // making qsort stable by comparing addresses
 }
 
 
@@ -246,9 +249,9 @@ bool VMenuItemCollection::Build(VWindowBase *pOwner, TiXmlElement *pNode, const 
       continue;
     
     VDlgControlBase *pItem = (VDlgControlBase *)pType->CreateInstance();
+
     // sanity check
-    if (!pItem->IsOfType(Vision::GetTypeManager()->GetType("VDlgControlBase")))
-      Vision::Error.FatalError("class '%s' is not derived from base class VDlgControlBase",szClassName);
+    VASSERT_MSG(pItem->IsOfType(Vision::GetTypeManager()->GetType("VDlgControlBase")), "class '%s' is not derived from base class VDlgControlBase",szClassName);
 
     pItem->SetParent(pOwner);
     pItem->Build(pItemNode,szPath,bWrite);
@@ -259,7 +262,7 @@ bool VMenuItemCollection::Build(VWindowBase *pOwner, TiXmlElement *pNode, const 
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

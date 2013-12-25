@@ -18,8 +18,10 @@ class VFileLock
 public:
   /// \brief
   ///   Constructor.
-  VBASE_IMPEXP VFileLock() : m_bMemoryLock(false), m_bRCSLock(false), m_pStream(NULL), m_pManager(NULL) {}
-  
+  VBASE_IMPEXP VFileLock() : m_bMemoryLock(false), m_bRCSLock(false), m_pStream(NULL)
+  {
+  }
+
   /// \brief
   ///   Destructor; unlocks any file locked by this VFileLock instance.
   VBASE_IMPEXP ~VFileLock() {UnlockFile();}
@@ -30,12 +32,9 @@ public:
   /// \param szFilename
   ///   The file to be locked. If a relative path is given, pFileManager will be used to resolve the file.
   ///
-  /// \param pFileManager
-  ///   The file manager that is used to access the lock and resolve the given filename if it is relative.
-  ///
   /// \return
   ///   true if the file exists on disk.
-  VBASE_IMPEXP bool SetFile(const char* szFilename, IVFileStreamManager* pFileManager = NULL);
+  VBASE_IMPEXP bool SetFile(const char* szFilename);
 
   /// \brief
   ///   Convenience function to set the file to lock and locks it at the same time.
@@ -46,12 +45,9 @@ public:
   /// \param loadedTimeStamp
   ///   The timestamp of the file that is currently loaded in memory.
   ///
-  /// \param pFileManager
-  ///   The file manager that is used to access the lock and resolve the given filename if it is relative.
-  ///
   /// \return
   ///   true if the file could be locked or if the file does not exist.
-  VBASE_IMPEXP bool LockFile(const char* szFilename, const VFileTime& loadedTimeStamp, IVFileStreamManager* pFileManager = NULL);
+  VBASE_IMPEXP bool LockFile(const char* szFilename, const VDateTime& loadedTimeStamp);
 
   /// \brief
   ///   Tries to lock the file. The locking fails if the file on disk has a different timestamp than loadedTimeStamp.
@@ -62,7 +58,7 @@ public:
   ///
   /// \return
   ///   true if the file could be locked or if the file does not exist.
-  VBASE_IMPEXP bool LockFile(const VFileTime& loadedTimeStamp);
+  VBASE_IMPEXP bool LockFile(const VDateTime& loadedTimeStamp);
 
   /// \brief
   ///   Removes the file lock. In case of RCS systems the function may fail if changes have already been made
@@ -78,7 +74,7 @@ public:
   VBASE_IMPEXP bool LockFileExists() const;
 
   /// \brief
-  ///   Tries to get a VRCSFileStatus for the set file. The given VFileTime will affect the
+  ///   Tries to get a VRCSFileStatus for the set file. The given VDateTime will affect the
   ///   VRCSFileStatus::RCS_MODE_IS_HEAD_REV flag in case of disk based locking.
   ///
   /// \param out_status
@@ -89,7 +85,7 @@ public:
   ///
   /// \return
   ///   true if the status could be retrieved.
-  VBASE_IMPEXP bool GetLockStat(VRCSFileStatus& out_status, const VFileTime& loadedTimeStamp) const;
+  VBASE_IMPEXP bool GetLockStat(VRCSFileStatus& out_status, const VDateTime& loadedTimeStamp) const;
   
 private:
   bool ResolveGivenPath() const;
@@ -104,14 +100,13 @@ private:
 
   VString m_sGivenPath;            ///< Path given by the SetFile function.
   mutable VString m_sAbsPath;      ///< Absolute path to the file that should be locked.
-  IVFileStreamManager* m_pManager; ///< The file manager used to access the to be locked file.
 };
 
 
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

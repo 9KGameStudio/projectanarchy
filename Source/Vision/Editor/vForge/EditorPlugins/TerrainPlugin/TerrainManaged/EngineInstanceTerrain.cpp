@@ -234,10 +234,14 @@ namespace TerrainManaged
     m_pTerrain = new VEditableTerrain();
     m_pTerrain->AddRef();
     
-    //Fill in project directory
-    ConversionUtils::StringToVString(EditorManager::Project->ProjectDir, m_pTerrain->m_Config.m_sAbsProjectDir);
-    if(cfg.m_sAbsProjectDir.IsEmpty())
-      cfg.m_sAbsProjectDir = m_pTerrain->m_Config.m_sAbsProjectDir;
+    //Fill in project directory and the absolute terrain directory
+    ConversionUtils::StringToVString(EditorManager::Project->ProjectDir, m_pTerrain->m_Config.m_sNativeProjectDir);
+    cfg.m_sNativeProjectDir = m_pTerrain->m_Config.m_sNativeProjectDir;
+
+    VStaticString<FS_MAX_PATH> sNativeTerrainDir;
+    VFileAccessManager::JoinPaths(sNativeTerrainDir, cfg.m_sNativeProjectDir, cfg.m_sTerrainFolder);
+    m_pTerrain->m_Config.m_sNativeTerrainDir = sNativeTerrainDir;
+    cfg.m_sNativeTerrainDir = m_pTerrain->m_Config.m_sNativeTerrainDir;
 
     //RecursiveCreateDir
     // first synchronize detail textures & models
@@ -254,23 +258,16 @@ namespace TerrainManaged
 
     // TODO: same for models
 
-    VString absDir;
-    ConversionUtils::StringToVString(EditorManager::Project->MakeAbsolute(pConfig->TerrainFolder), absDir);
-    m_pTerrain->m_Config.m_sAbsTerrainDir = absDir;
-    
-    
-    if (m_pTerrain->LoadFromFile(absDir))
+    if (m_pTerrain->LoadFromFile(cfg.m_sNativeTerrainDir))
     {
       // copy back to C#
       TerrainConversionHelpers::ConfigFromNative(&m_pTerrain->m_Config, pConfig);
-      ConversionUtils::StringToVString(EditorManager::Project->ProjectDir,absDir);
-      m_pTerrain->m_Config.MakeRelevantDirectories(absDir, true);  //make sure the folder for temp files exists
+      m_pTerrain->m_Config.MakeRelevantDirectories(true);  //make sure the folder for temp files exists
     } 
     else
     {
       //no directory on disc, so create it
-      ConversionUtils::StringToVString(EditorManager::Project->ProjectDir,absDir);
-      m_pTerrain->CreateTerrain(&cfg,absDir,true);
+      m_pTerrain->CreateTerrain(&cfg, true);
 
       float fProgessStep = 100.f/(float)(m_pTerrain->m_Config.m_iSectorCount[0]*m_pTerrain->m_Config.m_iSectorCount[1]);
       int iIndex = 0;
@@ -325,8 +322,8 @@ namespace TerrainManaged
     ConversionUtils::StringToVString(newFolder,cfg.m_sTerrainFolder);
     m_pTerrain->SetFilename(cfg.m_sTerrainFolder);
 
-    cfg.MakeRelevantDirectories(cfg.m_sAbsProjectDir, false); //normal files
-    cfg.MakeRelevantDirectories(cfg.m_sAbsProjectDir, true);  //temp files  
+    cfg.MakeRelevantDirectories(false); //normal files
+    cfg.MakeRelevantDirectories(true);  //temp files  
     
     // save config
     if (!m_bIsReference)
@@ -1404,7 +1401,7 @@ namespace TerrainManaged
         const VTextureWeightmapChannelResource::DetailTextureProperties_t& props = m_pTerrain->m_WeightmapChannels.GetAt(i)->m_Properties;
         if (props.GetDiffuseTexture(0, 0)->HasAlphaChannel())
         {
-          Vision::Error.Warning("A terrain layer uses a texture with an alpha channel. Alpha-Blending will not work when using three-way-mapping.");
+          hkvLog::Warning("A terrain layer uses a texture with an alpha channel. Alpha-Blending will not work when using three-way-mapping.");
           bShowAlphaBlendingWarning = false;
         }
       }
@@ -1465,15 +1462,15 @@ namespace TerrainManaged
 
             VTextureObject* pDiffuseTexture = channelProps.GetDiffuseTexture(pSector->m_iIndexX, pSector->m_iIndexY);
             if (pDiffuseTexture != NULL)
-              pDiffuseTexture->CheckFileModified(Vision::File.GetManager());
+              pDiffuseTexture->CheckFileModified();
 
             VTextureObject* pNormalmapTexture = channelProps.GetNormalmapTexture(pSector->m_iIndexX, pSector->m_iIndexY);
             if (pNormalmapTexture != NULL)
-              pNormalmapTexture->CheckFileModified(Vision::File.GetManager());
+              pNormalmapTexture->CheckFileModified();
 
             VTextureObject* pSpecularTexture = channelProps.GetSpecularTexture(pSector->m_iIndexX, pSector->m_iIndexY);
             if (pSpecularTexture != NULL)
-              pSpecularTexture->CheckFileModified(Vision::File.GetManager());
+              pSpecularTexture->CheckFileModified();
           }
         }
 
@@ -1696,7 +1693,7 @@ namespace TerrainManaged
     if (!pBmp || !pBmp->IsLoaded())
       return;
 
-    pBmp->CheckFileModified(Vision::File.GetManager()); // in case the bitmap has changed
+    pBmp->CheckFileModified(); // in case the bitmap has changed
     VTextureWeightmapChannelResource *pResR = pDestR ? m_pTerrain->m_WeightmapChannels.FindByID(pDestR->ID) : NULL;
     VTextureWeightmapChannelResource *pResG = pDestG ? m_pTerrain->m_WeightmapChannels.FindByID(pDestG->ID) : NULL;
     VTextureWeightmapChannelResource *pResB = pDestB ? m_pTerrain->m_WeightmapChannels.FindByID(pDestB->ID) : NULL;
@@ -2410,9 +2407,9 @@ namespace TerrainManaged
     if (iX<0 && iY<0)
     {
       //Update config.vtc
-      VFileAccessManager::RCSUpdateFile(m_pTerrain->m_Config.m_sTerrainFolder);
+      VRCSHelper::RCSUpdateFile(m_pTerrain->m_Config.m_sTerrainFolder);
       if (iActions & RCS_EDIT)
-        VFileAccessManager::RCSEditFile(m_pTerrain->m_Config.m_sTerrainFolder); //make sure we can write to it
+        VRCSHelper::RCSEditFile(m_pTerrain->m_Config.m_sTerrainFolder); //make sure we can write to it
     }
     
     if (iX<0) { iX = 0; iW = m_pTerrain->m_Config.m_iSectorCount[0]; }
@@ -2447,6 +2444,10 @@ namespace TerrainManaged
     if (m_pTerrain==nullptr || pSettings==nullptr)
       return;
 
+    VASSERT_MSG(!m_pTerrain->m_Config.m_sNativeProjectDir.IsEmpty(), "Project directory must be set for terrain export!");
+    if (m_pTerrain->m_Config.m_sNativeProjectDir.IsEmpty())
+      return;
+
     // Disable automatic asset transformation
     bool bAutomaticAssetTransform = EditorManager::AssetManager->AutomaticAssetTransform;
     EditorManager::AssetManager->AutomaticAssetTransform = false;
@@ -2457,14 +2458,12 @@ namespace TerrainManaged
     // Ensure export folders exist
     char szAbsPath[FS_MAX_PATH];
     m_pTerrain->m_Config.GetDirectory(szAbsPath, VTC_DIR_MESH, false);
-    VString sAbspath = VFileHelper::CombineDirAndDir(m_pTerrain->m_Config.m_sAbsProjectDir, szAbsPath);
-    if (!VFileHelper::ExistsDir(sAbspath))
-      VFileHelper::MkDir(sAbspath);
+    if (!VFileHelper::ExistsDir(szAbsPath))
+      VFileHelper::MkDir(szAbsPath);
 
     m_pTerrain->m_Config.GetDirectory(szAbsPath, VTC_DIR_TEXTURE, false);
-    sAbspath = VFileHelper::CombineDirAndDir(m_pTerrain->m_Config.m_sAbsProjectDir, szAbsPath);
-    if (!VFileHelper::ExistsDir(sAbspath))
-      VFileHelper::MkDir(sAbspath);
+    if (!VFileHelper::ExistsDir(szAbsPath))
+      VFileHelper::MkDir(szAbsPath);
 
     m_pTerrain->SectorManager().SetUseExportRendering(true);
 
@@ -2506,16 +2505,22 @@ namespace TerrainManaged
       for (int sx=0; sx<m_pTerrain->m_Config.m_iSectorCount[0]; ++sx)
       {
         char szFilename[FS_MAX_PATH];
-        VFileTime vmeshFileTime, fileTime;
+        VFileAccessManager::NativePathResult fileNativeRes;
+        VDateTime vmeshFileTime, fileTime;
 
         bool bExport = false;
         bool bExportSectorTexture = false;
 
-        // Macro to get absolute filename of a specific terrain file type
+        // Macro to get native filename of a specific terrain file type
         #define GET_SECTOR_FILENAME(fileType) \
           m_pTerrain->m_Config.GetSectorFile(szFilename, sx, sy, fileType);\
-          if (!VFileHelper::IsAbsolutePath(szFilename))\
-            VFileHelper::GetAbsolutePath(szFilename, szFilename, Vision::File.GetManager());
+          if (!VFileAccessManager::IsPathNative(szFilename))\
+          {\
+            fileNativeRes.m_sNativePath.Reset();\
+            VFileAccessManager::GetInstance()->MakePathNative(szFilename, fileNativeRes, VFileSystemAccessMode::READ_NO_REDIRECT, VFileSystemElementType::FILE);\
+            strncpy(szFilename, fileNativeRes.m_sNativePath, FS_MAX_PATH);\
+          }
+
 
         // Export texture when diffuse replacement texture is missing
         GET_SECTOR_FILENAME(VTC_FILE_TEXTURES_DIFFUSE);
@@ -2568,21 +2573,19 @@ namespace TerrainManaged
         {
           // Build .vmesh filename
           m_pTerrain->m_Config.GetSectorMeshFilename(szFilename, sx, sy, false);
-          VString sectorMeshFileName(m_pTerrain->m_Config.m_sAbsProjectDir);
-          sectorMeshFileName += VString(szFilename);
+          VString sectorMeshFileName(szFilename);
 
           // Build .vcolmesh filename
           m_pTerrain->m_Config.GetSectorCollisionFilename(szFilename, sx, sy, false);
-          VString sectorCollisionFileName(m_pTerrain->m_Config.m_sAbsProjectDir);
-          sectorCollisionFileName += VString(szFilename);
+          VString sectorCollisionFileName(szFilename);
 
           m_pTerrain->GetSector(sx, sy)->EnsureLoaded();
           if (m_pTerrain->GetSector(sx, sy)->IsAllHoles() || (m_pTerrain->GetSector(sx, sy)->GetVisibleBitmask() == 0))
           {
             if (VFileHelper::Exists(sectorMeshFileName))
-              VFileAccessManager::RCSPerformAction(sectorMeshFileName, RCS_REMOVE);
+              VRCSHelper::RCSPerformAction(sectorMeshFileName, RCS_REMOVE);
             if (VFileHelper::Exists(sectorCollisionFileName))
-              VFileAccessManager::RCSPerformAction(sectorCollisionFileName, RCS_REMOVE);
+              VRCSHelper::RCSPerformAction(sectorCollisionFileName, RCS_REMOVE);
           }
           else
           {
@@ -2592,9 +2595,9 @@ namespace TerrainManaged
             sectorCollisionFilenames.push_back(sectorCollisionFileName);
 
             if (VFileHelper::Exists(sectorMeshFileName))
-              VFileAccessManager::RCSEditFile(sectorMeshFileName);
+              VRCSHelper::RCSEditFile(sectorMeshFileName);
             if (VFileHelper::Exists(sectorCollisionFileName))
-              VFileAccessManager::RCSEditFile(sectorCollisionFileName);
+              VRCSHelper::RCSEditFile(sectorCollisionFileName);
           }
           m_pTerrain->GetSector(sx, sy)->EnsureUnloaded();
         }
@@ -2609,7 +2612,7 @@ namespace TerrainManaged
           pProgress->Percentage = fPercentage;
 
         Application::DoEvents();
-      }      
+      }
     }
 
     // Restore view settings
@@ -2728,9 +2731,9 @@ namespace TerrainManaged
 
     // Add files to RCS (done for all files, even if they already have been opened for edit)
     for (int i=0; i<(int)sectorMeshFilenames.size(); ++i)
-      VFileAccessManager::RCSAddFile(sectorMeshFilenames[i], true);
+      VRCSHelper::RCSAddFile(sectorMeshFilenames[i], true);
     for (int i=0; i<(int)sectorCollisionFilenames.size(); ++i)
-      VFileAccessManager::RCSAddFile(sectorCollisionFilenames[i], true);
+      VRCSHelper::RCSAddFile(sectorCollisionFilenames[i], true);
 
     // Save new settings to file
     SaveMeshExportSettings(pSettings);
@@ -2748,19 +2751,21 @@ namespace TerrainManaged
     // Create mesh shape for each exported .vmesh file
     ShapeCollection^ sectorShapes = gcnew ShapeCollection();
     for (int sy=0; sy<m_pTerrain->m_Config.m_iSectorCount[1]; ++sy)
-          {
+    {
       for (int sx=0; sx<m_pTerrain->m_Config.m_iSectorCount[0]; ++sx)
       {
         char szFilename[FS_MAX_PATH];
         if (!m_pTerrain->m_Config.GetSectorMeshFilename(szFilename, sx, sy, false))
           continue;
 
-        String^ absSectorFileName = gcnew String(m_pTerrain->m_Config.m_sAbsProjectDir);
-        absSectorFileName += gcnew String(szFilename);
+        String^ absSectorFileName = gcnew String(szFilename);
         if (!System::IO::File::Exists(absSectorFileName))
           continue;
 
-        String^ sectorFileName = gcnew String(szFilename);
+        String^ sectorFileName = EditorManager::EngineManager->File_MakeRelative(absSectorFileName, FileSystemAccessMode::ReadNoRedirect, FileSystemElementType::File);
+        if (sectorFileName == nullptr)
+          continue;
+
         StaticMeshShape^ shape = gcnew StaticMeshShape(Path::GetFileNameWithoutExtension(sectorFileName));
         shape->MeshFileName = sectorFileName;
 
@@ -2854,7 +2859,7 @@ namespace TerrainManaged
     char szAbsFilename[FS_MAX_PATH];
     m_pTerrain->m_Config.GetDirectory(szAbsFilename, VTC_DIR_MESH, false);
     VFileHelper::CombineDirAndFile(szAbsFilename, szAbsFilename, "ExportSettings.xml");
-    return (EditorManager::Project->ProjectDir + gcnew String(szAbsFilename));
+    return gcnew String(szAbsFilename);
   }
 
   void EngineInstanceTerrain::SaveMeshExportSettings(TerrainMeshExportSettings^ pSettings)
@@ -2863,7 +2868,7 @@ namespace TerrainManaged
 
     VString sFilename;
     ConversionUtils::StringToVString(szAbsFilename, sFilename);
-    VFileAccessManager::RCSEditFile(sFilename);
+    VRCSHelper::RCSEditFile(sFilename);
 
     // we don't have access to the derived class of TerrainMeshExportSettings, thus we have to use the base type and copy the data
     TerrainMeshExportSettings^ pData = gcnew TerrainMeshExportSettings(pSettings);
@@ -2873,7 +2878,7 @@ namespace TerrainManaged
     ser->Serialize(writer, pData);
     writer->Close();
 
-    VFileAccessManager::RCSAddFile(sFilename, false);
+    VRCSHelper::RCSAddFile(sFilename, false);
   }
 
   TerrainMeshExportSettings^ EngineInstanceTerrain::LoadMeshExportSettings()
@@ -2896,7 +2901,7 @@ namespace TerrainManaged
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

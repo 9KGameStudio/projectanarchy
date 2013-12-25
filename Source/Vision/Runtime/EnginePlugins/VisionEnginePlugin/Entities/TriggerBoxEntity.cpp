@@ -403,7 +403,7 @@ void TriggerBoxEntity_cl::AddObservedEntity(VisBaseEntity_cl *pEnt)
 {
   if(pEnt==NULL)
   {
-    Vision::Error.Warning("Cannot add null pointer to TriggerBoxEntity_cl::AddObservedEntity");
+    hkvLog::Warning("Cannot add null pointer to TriggerBoxEntity_cl::AddObservedEntity");
     return;
   }
 
@@ -416,7 +416,7 @@ void TriggerBoxEntity_cl::RemoveObservedEntity(VisBaseEntity_cl *pEnt)
 {
   if(pEnt==NULL)
   {
-    Vision::Error.Warning("Cannot remove null pointer from TriggerBoxEntity_cl::RemoveObservedEntity");
+    hkvLog::Warning("Cannot remove null pointer from TriggerBoxEntity_cl::RemoveObservedEntity");
     return;
   }
 
@@ -464,7 +464,7 @@ START_VAR_TABLE(TriggerBoxEntity_cl, VisBaseEntity_cl, "Trigger box entity", VFO
 END_VAR_TABLE
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

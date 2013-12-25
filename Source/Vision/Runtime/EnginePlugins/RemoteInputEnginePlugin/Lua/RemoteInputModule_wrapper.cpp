@@ -1050,19 +1050,32 @@ SWIGINTERN void  SWIG_Lua_module_add_function(lua_State* L,const char* name,lua_
 SWIGINTERN void VisionLuaClassGet(lua_State *L)
 {
   //solution 1: retrieve element when accessing an user data object from a global $node-POINTER_ADR-NAME_OF_ELEM$
-  //(+): fast and allows user to associate elemets with an instance of an user data object
+  //(+): allows user to associate elemets with an instance of an user data object
   //(-): elements are not stored in a table, so you cannot iterate over all elements of an instance
   
   const char * pKey = lua_tostring(L, 2);
-  const void * pPtr = lua_topointer(L, 1);
+  swig_lua_userdata * pUser = (swig_lua_userdata *) lua_topointer(L, 1);
+                                                                             //stack: userdata, key, ..., TOP
+  lua_pushliteral(L, "G");                                                   //stack: userdata, key, ..., 'G', TOP
+  lua_gettable(L, LUA_GLOBALSINDEX);                                         //stack: userdata, key, ..., globalTable, TOP
 
-  lua_pushfstring(L, "$node-%p-%s$", pPtr, pKey);  //stack: userdata, key, ..., new key, TOP
-  lua_gettable(L, LUA_GLOBALSINDEX); 		      //stack: userdata, key, ..., requested val, TOP
-  
+  if( lua_isnil(L, -1)==1 ) //test if the global table is valid
+  {                                                                          //stack: userdata, key, ..., nil, TOP
+    lua_pop(L, 1);                                                           //stack: userdata, key, ..., TOP
+    lua_pushfstring(L, "$node-%p-%s$", ((pUser==0) ? 0 : pUser->ptr), pKey); //stack: userdata, key, ..., new key, TOP
+    lua_gettable(L, LUA_GLOBALSINDEX);                                       //stack: userdata, key, ..., requested val, TOP
+  }
+  else
+  {                                                                          //stack: userdata, key,  ..., globalTable, TOP
+    lua_pushfstring(L, "$node-%p-%s$", ((pUser==0) ? 0 : pUser->ptr), pKey); //stack: userdata, key,  ..., globalTable, new key, TOP
+    lua_gettable(L, -2);                                                     //stack: userdata, key,  ..., globalTable, requested val, TOP
+    lua_remove(L, -2);                                                       //stack: userdata, key,  ..., requested val, TOP
+  }
+
 /*
   //solution 2: get element from a global table $node-POINTER_ADR$
   //(+): user data object instance behaves like a table (you can iterate on this table)
-  //(-): slower than solution 1
+  //(-): slower than solution 1 when setting the variable
   
   int iPtr = (int) lua_topointer(L, 1);
   lua_pushfstring(L, "$node-%p$", iPtr);          //stack: userdata, key, ..., instance string, TOP
@@ -1085,6 +1098,7 @@ SWIGINTERN int  SWIG_Lua_class_get(lua_State* L)
   (1) userdata (not the meta table)
   (2) string name of the attribute
 */
+
   assert(lua_isuserdata(L,-2));  /* just in case */
   lua_getmetatable(L,-2);    /* get the meta table */
   assert(lua_istable(L,-1));  /* just in case */
@@ -1144,16 +1158,29 @@ SWIGINTERN int  SWIG_Lua_class_get(lua_State* L)
 SWIGINTERN void VisionLuaClassSet(lua_State *L)
 {
   //solution 1: store all elements when accessing an user data objects as a global $node-POINTER_ADR-NAME_OF_ELEM$
-  //(+): fast and allows user to associate elemets with an instance of an user data object
+  //(+): allows user to associate elemets with an instance of an user data object
   //(-): elements are not stored in a table, so you cannot iterate over all elements of an instance
   
   const char * pKey = lua_tostring(L, 2);
-  const void * pPtr = lua_topointer(L, 1);
-  
-  lua_pushfstring(L, "$node-%p-%s$", pPtr, pKey);   //stack: userdata, key, value, ..., new key, TOP
-  
-  lua_pushvalue(L, 3);                              //stack: userdata, key, value, ..., new key, value, TOP
-  lua_settable(L, LUA_GLOBALSINDEX);                //stack: userdata, key, value, ..., TOP
+  swig_lua_userdata * pUser = (swig_lua_userdata *) lua_topointer(L, 1);
+                                                                             //stack: userdata, key, value, ..., TOP
+  lua_pushliteral(L, "G");                                                   //stack: userdata, key, value, ..., 'G', TOP
+  lua_gettable(L, LUA_GLOBALSINDEX);                                         //stack: userdata, key, value, ..., globalTable, TOP
+
+  if( lua_isnil(L, -1)==1 ) //test if the global table is valid
+  {                                                                          //stack: userdata, key, value, ..., nil, TOP
+    lua_pop(L, 1);                                                           //stack: userdata, key, value, ..., TOP
+    lua_pushfstring(L, "$node-%p-%s$", ((pUser==0) ? 0 : pUser->ptr), pKey); //stack: userdata, key, value, ..., new key, TOP
+    lua_pushvalue(L, 3);                                                     //stack: userdata, key, value, ..., new key, value, TOP
+    lua_settable(L, LUA_GLOBALSINDEX);                                       //stack: userdata, key, value, ..., TOP
+  }
+  else
+  {                                                                          //stack: userdata, key, value, ..., globalTable, TOP
+    lua_pushfstring(L, "$node-%p-%s$", ((pUser==0) ? 0 : pUser->ptr), pKey); //stack: userdata, key, value, ..., globalTable, new key, TOP
+    lua_pushvalue(L, 3);                                                     //stack: userdata, key, value, ..., globalTable, new key, value, TOP
+    lua_settable(L, -3);                                                     //stack: userdata, key, value, ..., globalTable, TOP
+    lua_pop(L, 1);                                                           //stack: userdata, key, value, ..., TOP
+  }
 
 /*  
   //solution 2: create a table $node-POINTER_ADR$ and save the element as element of this table
@@ -1193,11 +1220,11 @@ SWIGINTERN int  SWIG_Lua_class_set(lua_State* L)
 /*  there should be 3 params passed in
   (1) table (not the meta table)
   (2) string name of the attribute
-  (3) any for the new value
+  (3) any for the new value  
 printf("SWIG_Lua_class_set %p(%s) '%s' %p(%s)\n",
       lua_topointer(L,1),lua_typename(L,lua_type(L,1)),
       lua_tostring(L,2),
-      lua_topointer(L,3),lua_typename(L,lua_type(L,3)));*/
+      lua_topointer(L,3),lua_typename(L,lua_type(L,3))); */
 
   assert(lua_isuserdata(L,1));  /* just in case */
   lua_getmetatable(L,1);    /* get the meta table */
@@ -1680,6 +1707,7 @@ static int _wrap_IVRemoteInput_StartServer__SWIG_0(lua_State* L) {
   bool result;
   
   SWIG_check_num_args("StartServer",3,3)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("StartServer",1,"IVRemoteInput *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("StartServer",1,"IVRemoteInput *");
   if(!SWIG_lua_isnilstring(L,2)) SWIG_fail_arg("StartServer",2,"char const *");
   if(!lua_isnumber(L,3)) SWIG_fail_arg("StartServer",3,"int");
@@ -1709,6 +1737,7 @@ static int _wrap_IVRemoteInput_StartServer__SWIG_1(lua_State* L) {
   bool result;
   
   SWIG_check_num_args("StartServer",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("StartServer",1,"IVRemoteInput *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("StartServer",1,"IVRemoteInput *");
   if(!SWIG_lua_isnilstring(L,2)) SWIG_fail_arg("StartServer",2,"char const *");
   
@@ -1793,6 +1822,7 @@ static int _wrap_IVRemoteInput_StopServer(lua_State* L) {
   IVRemoteInput *arg1 = (IVRemoteInput *) 0 ;
   
   SWIG_check_num_args("StopServer",1,1)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("StopServer",1,"IVRemoteInput *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("StopServer",1,"IVRemoteInput *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_IVRemoteInput,0))){
@@ -1818,6 +1848,7 @@ static int _wrap_IVRemoteInput_DebugDrawTouchAreas(lua_State* L) {
   VColorRef *argp2 ;
   
   SWIG_check_num_args("DebugDrawTouchAreas",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("DebugDrawTouchAreas",1,"IVRemoteInput *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("DebugDrawTouchAreas",1,"IVRemoteInput *");
   if(!lua_isuserdata(L,2)) SWIG_fail_arg("DebugDrawTouchAreas",2,"VColorRef");
   
@@ -1850,6 +1881,7 @@ static int _wrap_IVRemoteInput_DebugDrawTouchPoints(lua_State* L) {
   VColorRef *argp2 ;
   
   SWIG_check_num_args("DebugDrawTouchPoints",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("DebugDrawTouchPoints",1,"IVRemoteInput *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("DebugDrawTouchPoints",1,"IVRemoteInput *");
   if(!lua_isuserdata(L,2)) SWIG_fail_arg("DebugDrawTouchPoints",2,"VColorRef");
   
@@ -1880,6 +1912,7 @@ static int _wrap_IVRemoteInput_InitEmulatedDevices(lua_State* L) {
   IVRemoteInput *arg1 = (IVRemoteInput *) 0 ;
   
   SWIG_check_num_args("InitEmulatedDevices",1,1)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("InitEmulatedDevices",1,"IVRemoteInput *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("InitEmulatedDevices",1,"IVRemoteInput *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_IVRemoteInput,0))){
@@ -1903,6 +1936,7 @@ static int _wrap_IVRemoteInput_DeinitEmulatedDevices(lua_State* L) {
   IVRemoteInput *arg1 = (IVRemoteInput *) 0 ;
   
   SWIG_check_num_args("DeinitEmulatedDevices",1,1)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("DeinitEmulatedDevices",1,"IVRemoteInput *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("DeinitEmulatedDevices",1,"IVRemoteInput *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_IVRemoteInput,0))){
@@ -1929,6 +1963,7 @@ static int _wrap_IVRemoteInput_AddVariableDirect(lua_State* L) {
   bool result;
   
   SWIG_check_num_args("AddVariableDirect",3,3)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("AddVariableDirect",1,"IVRemoteInput *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("AddVariableDirect",1,"IVRemoteInput *");
   if(!SWIG_lua_isnilstring(L,2)) SWIG_fail_arg("AddVariableDirect",2,"char const *");
   if(!SWIG_lua_isnilstring(L,3)) SWIG_fail_arg("AddVariableDirect",3,"char const *");
@@ -1959,6 +1994,7 @@ static int _wrap_IVRemoteInput_UpdateVariableDirect(lua_State* L) {
   bool result;
   
   SWIG_check_num_args("UpdateVariableDirect",3,3)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("UpdateVariableDirect",1,"IVRemoteInput *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("UpdateVariableDirect",1,"IVRemoteInput *");
   if(!SWIG_lua_isnilstring(L,2)) SWIG_fail_arg("UpdateVariableDirect",2,"char const *");
   if(!SWIG_lua_isnilstring(L,3)) SWIG_fail_arg("UpdateVariableDirect",3,"char const *");
@@ -1988,6 +2024,7 @@ static int _wrap_IVRemoteInput_RemoveVariable(lua_State* L) {
   bool result;
   
   SWIG_check_num_args("RemoveVariable",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("RemoveVariable",1,"IVRemoteInput *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("RemoveVariable",1,"IVRemoteInput *");
   if(!SWIG_lua_isnilstring(L,2)) SWIG_fail_arg("RemoveVariable",2,"char const *");
   
@@ -2014,6 +2051,7 @@ static int _wrap_IVRemoteInput_SetResizeOnConnect(lua_State* L) {
   bool arg2 ;
   
   SWIG_check_num_args("SetResizeOnConnect",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("SetResizeOnConnect",1,"IVRemoteInput *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("SetResizeOnConnect",1,"IVRemoteInput *");
   if(!lua_isboolean(L,2)) SWIG_fail_arg("SetResizeOnConnect",2,"bool");
   
@@ -2040,6 +2078,7 @@ static int _wrap_IVRemoteInput_SetSmoothTouchInput(lua_State* L) {
   bool arg2 ;
   
   SWIG_check_num_args("SetSmoothTouchInput",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("SetSmoothTouchInput",1,"IVRemoteInput *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("SetSmoothTouchInput",1,"IVRemoteInput *");
   if(!lua_isboolean(L,2)) SWIG_fail_arg("SetSmoothTouchInput",2,"bool");
   
@@ -2066,6 +2105,7 @@ static int _wrap_IVRemoteInput_SetDisableMouseInput(lua_State* L) {
   bool arg2 ;
   
   SWIG_check_num_args("SetDisableMouseInput",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("SetDisableMouseInput",1,"IVRemoteInput *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("SetDisableMouseInput",1,"IVRemoteInput *");
   if(!lua_isboolean(L,2)) SWIG_fail_arg("SetDisableMouseInput",2,"bool");
   

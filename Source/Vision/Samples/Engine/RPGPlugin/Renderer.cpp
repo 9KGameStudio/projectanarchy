@@ -39,6 +39,8 @@ namespace
 
     // Viewport
     context->GetViewport(viewParams.m_vpX, viewParams.m_vpY, viewParams.m_vpW, viewParams.m_vpH, viewParams.m_vpNear, viewParams.m_vpFar);
+
+    viewParams.m_valid = true;
   }
 
   void StoreViewParamsFromNode(RPG_ViewParams& viewParams, IVRendererNode /*const*/*node)
@@ -53,7 +55,7 @@ namespace
   void LoadViewParamsToContext(VisRenderContext_cl *context, RPG_ViewParams const& viewParams)
   {
     VASSERT(context);
-    if(!context)
+    if(!context || !viewParams.m_valid)
       return;
 
     // Viewport
@@ -86,7 +88,7 @@ namespace
   void LoadViewParamsToNode(IVRendererNode *node, RPG_ViewParams const& viewParams)
   {
     VASSERT(node && node->GetReferenceContext());
-    if(!(node && node->GetReferenceContext()))
+    if(!(node && node->GetReferenceContext()) || !viewParams.m_valid)
       return;
 
     VisRenderContext_cl *const context = node->GetReferenceContext();
@@ -136,7 +138,7 @@ void RPG_RendererUtil::LoadViewParams(RPG_ViewParams const& viewParams)
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

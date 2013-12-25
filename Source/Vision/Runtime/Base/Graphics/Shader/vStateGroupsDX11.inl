@@ -207,9 +207,8 @@ class VStateGroupBlendDX11 : public VStateGroupBlendBase
       if ( VVideo::GetDXFeatureLevel() <= D3D_FEATURE_LEVEL_9_3 
         && m_cBlendEnable != 0 && m_cBlendEnable != 255)
       {
-#if defined( HK_DEBUG )
-        OutputDebugStringA( "WARNING: Forcing same blend operation across all render targets for DX11 feature level 9_3 and below.\n" );
-#endif
+        hkvLog::Dev("Forcing same blend operation across all render targets for DX11 feature level 9_3 and below." );
+
         m_cBlendEnable = m_cBlendEnable ? 0xFF : 0;
       }
 
@@ -220,7 +219,7 @@ class VStateGroupBlendDX11 : public VStateGroupBlendBase
       if (VVideo::GetDXFeatureLevel() < D3D_FEATURE_LEVEL_10_0)
       {
           if ( m_iRenderTargetWriteMask != 0)
-              m_iRenderTargetWriteMask = 0xffffffff; // not seprable
+              m_iRenderTargetWriteMask = 0xffffffff; // not separable
       }
 #endif
 
@@ -264,7 +263,7 @@ class VStateGroupBlendDX11 : public VStateGroupBlendBase
 };
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

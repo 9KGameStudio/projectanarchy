@@ -68,6 +68,9 @@ namespace TerrainEditorPlugin.Dialogs
       this.captionBar.CompactView = false;
       this.captionBar.Description = "Please select the method for creating a new terrain and click on \'Create\'";
       this.captionBar.Dock = System.Windows.Forms.DockStyle.Top;
+      this.captionBar.HelpContext = "dialogs";
+      this.captionBar.HelpKey = "Terrain Creation";
+      this.captionBar.HelpManual = "";
       this.captionBar.Image = ((System.Drawing.Image)(resources.GetObject("captionBar.Image")));
       this.captionBar.Location = new System.Drawing.Point(0, 0);
       this.captionBar.Name = "captionBar";

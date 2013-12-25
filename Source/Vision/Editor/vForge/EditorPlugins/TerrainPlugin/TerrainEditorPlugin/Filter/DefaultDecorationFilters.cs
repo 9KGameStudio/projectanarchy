@@ -179,7 +179,7 @@ namespace TerrainEditorPlugin.Filter
     Bitmap _bitmap;
 
     [Description("The luminance texture that should be imported as vegetation density")]
-    [EditorAttribute(typeof(BitmapBrowserEditor), typeof(UITypeEditor))]
+    [EditorAttribute(typeof(AssetEditor), typeof(UITypeEditor)), AssetDialogFilter(new string[] { "Texture" })]
     public string LuminanceTexture
     {
       get { return _luminanceFilename; }
@@ -361,7 +361,7 @@ namespace TerrainEditorPlugin.Filter
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

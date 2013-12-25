@@ -782,8 +782,6 @@ bool VTerrainSector::DeleteSectorData(bool bUseTemp)
   bool bOldUseTemp = m_Config.m_bUseTempFolder;
   m_Config.m_bUseTempFolder = bUseTemp; // temp or final directory?
 
-  const char *szDataDir = GetSectorManager()->GetFileManager()->GetDataDirectory();
-
   const char *relevantExt[] = {"mesh","hmap",NULL};
   for (int i = 0; relevantExt[i] != NULL; i++)
   {
@@ -791,11 +789,14 @@ bool VTerrainSector::DeleteSectorData(bool bUseTemp)
     if (!m_Config.GetSectorCacheFilename(szFilename,m_iIndexX,m_iIndexY,relevantExt[i],true))
       return false;
 
-    m_Config.RCSPerformAction(szFilename, RCS_REMOVE); // open for delete
+    VFileAccessManager::NativePathResult fileNativeResult;
+    if (VFileAccessManager::GetInstance()->MakePathNative(szFilename, fileNativeResult, VFileSystemAccessMode::READ, VFileSystemElementType::FILE) != HKV_SUCCESS)
+    {
+      continue;
+    }
 
-    char szFileAndPath[FS_MAX_PATH];
-    VFileHelper::CombineDirAndFile(szFileAndPath,szDataDir,szFilename);
-    VFileHelper::Delete(szFileAndPath, true);
+    m_Config.RCSPerformAction(fileNativeResult.m_sNativePath.AsChar(), RCS_REMOVE); // open for delete
+    VFileHelper::Delete(fileNativeResult.m_sNativePath.AsChar(), true);
   }
 
   m_Config.m_bUseTempFolder = bOldUseTemp;
@@ -1336,7 +1337,7 @@ void VTerrainSector::PreCache()
   m_pSnapshot->m_spResFileLoadingTask = Vision::File.PrecacheFile(szFilename);
   if (m_pSnapshot->m_spResFileLoadingTask==NULL || m_pSnapshot->m_spResFileLoadingTask->IsMissing())
   {
-    Vision::Error.Warning("Streaming package '%s' not found", szFilename);
+    hkvLog::Warning("Streaming package '%s' not found", szFilename);
     this->EnsureLoaded();
   }
 }
@@ -2294,6 +2295,17 @@ public:
       return NULL;
     const char *szNewFile = m_Sector.m_Config.FixTempDirFile(szPath,szBuffer);
     VASSERT(!m_Sector.m_Config.IsTempDirFile(szNewFile));
+
+    if (!VFileAccessManager::IsPathRelative(szNewFile))
+    {
+      VFileAccessManager::RelativePathResult relPathResult;
+      if (VFileAccessManager::GetInstance()->MakePathRelative(szNewFile, relPathResult, VFileSystemAccessMode::READ_NO_REDIRECT, VFileSystemElementType::FILE) == HKV_SUCCESS)
+      {
+        strcpy(szBuffer, relPathResult.m_sRelativePath);
+        szNewFile = szBuffer;
+      }
+    }
+
     return szNewFile;
   }
 
@@ -2320,7 +2332,7 @@ bool VTerrainSector::SaveSectorFinal(bool bSaveSnapshot)
       VResourceSnapshot snapshot;
       GetDependencies(snapshot);
       m_Config.RCSPerformAction(szFilename, RCS_EDIT); //make sure we can write to it
-      snapshot.SaveToBinaryFile(szFilename, Vision::File.GetOutputManager(),&resolver);
+      snapshot.SaveToBinaryFile(szFilename, &resolver);
       m_Config.RCSPerformAction(szFilename, RCS_ADD);
     }
 #endif  
@@ -2402,7 +2414,7 @@ VCompiledTechnique* VTerrainSector::GetReplacementTechnique()
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

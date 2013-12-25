@@ -114,10 +114,10 @@ void vHavokContactListener::contactPointCallback (const hkpContactPointEvent &ev
   bool bApplyProperties = false;
 
   // Skip fake vertical contact points that may have been added in the character rigid body listener.
-  if ( event.m_contactPoint->getPosition().getInt24W() == hkpCharacterRigidBody::m_magicNumber ||
-	   event.m_contactPoint->getPosition().getInt24W() == hkpCharacterRigidBody::m_notMagicNumber )
+  if ( event.m_contactPoint->getPosition().getInt24W() == hkpCharacterRigidBody::m_magicNumber 
+  || event.m_contactPoint->getPosition().getInt24W() == hkpCharacterRigidBody::m_notMagicNumber )
   {
-	  return;
+    return;
   }
 
   for (int i=0;i<2;i++)
@@ -158,6 +158,7 @@ void vHavokContactListener::contactPointCallback (const hkpContactPointEvent &ev
           if (pShape->getClassType() == &hkvBvCompressedMeshShapeClass)
           {
             const hkvBvCompressedMeshShape *pMeshShape = (hkvBvCompressedMeshShape*)(pShape);
+            VASSERT(key != HK_INVALID_SHAPE_KEY);
             const hkvMeshMaterialCache* matCache = (const hkvMeshMaterialCache*) ( pMeshShape->m_userData );
             if (matCache)
             {
@@ -299,7 +300,7 @@ void vHavokCollisionListener::contactPointRemovedCallback(hkpContactPointRemoved
 */
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

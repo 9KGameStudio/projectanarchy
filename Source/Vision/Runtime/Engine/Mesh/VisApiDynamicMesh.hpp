@@ -222,10 +222,14 @@ public:
   /// 
   /// \param szName
   ///   The name of the mesh
+  ///
+  /// \param szDirOverride
+  ///   In case the mesh name does not correspond to or contain the actual mesh directory, the directory in which
+  ///   mesh-related files are assumed can be specified.
   /// 
   /// \return 
   ///   A new or existing dynamic mesh resource
-  VISION_APIFUNC static VDynamicMesh *LoadDynamicMesh(IVFileInStream& pInStream, const char *szName);
+  VISION_APIFUNC static VDynamicMesh *LoadDynamicMesh(IVFileInStream& pInStream, const char *szName, const char *szDirOverride = NULL);
 
   ///
   /// @}
@@ -705,7 +709,7 @@ protected:
   VISION_APIFUNC void Init();
 
   VISION_APIFUNC virtual bool LoadFromFile(const char *szFilename) HKV_OVERRIDE; 
-  VISION_APIFUNC virtual bool LoadFromStream(IVFileInStream& rInStream, const char *szName); 
+  VISION_APIFUNC virtual bool LoadFromStream(IVFileInStream& rInStream, const char *szName, const char *szDirectoryOverride = NULL); 
   
   void CreateShaderSet(unsigned int iCapacity);
 
@@ -998,7 +1002,7 @@ private:
 #endif // DEFINE_VISAPIDYNAMICMESH
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

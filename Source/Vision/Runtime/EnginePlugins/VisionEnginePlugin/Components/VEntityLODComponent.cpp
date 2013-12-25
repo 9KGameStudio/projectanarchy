@@ -132,7 +132,7 @@ void VEntityLODComponent::InitializeLODLevelInfo(int iLevel, const char* szMeshF
   }
   else if (!m_pLevels[iLevel].SetModelFile(szMeshFilename))
   {
-    Vision::Error.Warning("Model '%s' could not be loaded for LOD Level [%i]", szMeshFilename, iLevel);
+    hkvLog::Warning("VEntityLODComponent: Model '%s' could not be loaded for LOD Level [%i]", szMeshFilename, iLevel);
     return;
   }
 
@@ -508,7 +508,7 @@ START_VAR_TABLE(VEntityLODComponent,IVObjectComponent, "Entity LOD Component. Ca
 END_VAR_TABLE
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

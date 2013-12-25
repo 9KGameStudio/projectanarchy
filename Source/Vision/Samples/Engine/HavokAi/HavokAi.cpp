@@ -10,279 +10,277 @@
 // HavokAi : Havok AI Binding Sample
 // Copyright (C) Havok.com Inc. All rights reserved.
 //
+// On PC the command line argument '-streaming' enables the streaming version of the sample,
+// which streams in parts of the nav mesh.
 //***********************************************************************************************
-// 
-//***********************************************************************************************
+
+// TODO: WiiU: ~VSampleFlags::VSAMPLE_WIIU_DRCDEMO
+
 #include <Vision/Samples/Engine/HavokAi/HavokAiPCH.h>
+#include <Vision/Samples/Engine/HavokAi/PathPickDlg.hpp>
+
+#include <Vision/Runtime/Framework/VisionApp/VAppImpl.hpp>
+#include <Vision/Runtime/Framework/VisionApp/Modules/VHelp.hpp>
+
+#include <Vision/Runtime/EnginePlugins/EnginePluginsImport.hpp>
+
 #include <Vision/Runtime/EnginePlugins/Havok/HavokAiEnginePlugin/vHavokAiModule.hpp>
 #include <Ai/Pathfinding/World/hkaiWorld.h>
 #include <Vision/Runtime/EnginePlugins/Havok/HavokAiEnginePlugin/vHavokAiNavMeshResource.hpp>
 #include <Vision/Runtime/EnginePlugins/Havok/HavokAiEnginePlugin/vHavokAiNavMeshResourceManager.hpp>
 #include <Vision/Runtime/EnginePlugins/Havok/HavokAiEnginePlugin/vHavokAiNavMeshInstance.hpp>
-#include <Vision/Runtime/EnginePlugins/Havok/HavokPhysicsEnginePlugin/vHavokConversionUtils.hpp>
+
 #include <Vision/Runtime/EnginePlugins/Havok/HavokPhysicsEnginePlugin/vHavokPhysicsModule.hpp>
 #include <Vision/Runtime/EnginePlugins/Havok/HavokPhysicsEnginePlugin/vHavokSync.hpp>
-#include <Vision/Runtime/EnginePlugins/EnginePluginsImport.hpp>
 
-VisSampleAppPtr spApp = NULL;
-VGUIMainContextPtr spGUIContext;
-VDialogPtr spMainDlg;
-VisBaseEntity_cl* pCamera = NULL;
-vHavokAiNavMeshInstance* pNavMeshInstance = NULL;
-bool bLastShowGUI = false;
-
-const int NUM_RIGID_BODIES = 20;
-VisBaseEntity_cl* pRigidBodies[NUM_RIGID_BODIES];
-hkvVec3 vStartPoint(-500.f, -500.f, 0.f);
-hkvVec3 vEndPoint(500.f, 500.f, 0.f);
-
-/// --------------------------------------------------------------------------- /// 
-/// Input Controls                                                              ///
-/// --------------------------------------------------------------------------- ///
 enum HAVOKAI_CONTROL 
 {
-	HAVOKAI_SHOW_MENU = VISION_INPUT_CONTROL_LAST_ELEMENT+1
+  HAVOKAI_SHOW_MENU = VAPP_INPUT_CONTROL_LAST_ELEMENT + 1
 };
 
-/// --------------------------------------------------------------------------- /// 
-/// Implement a simple GUI dialog class that handles the picking                ///
-/// --------------------------------------------------------------------------- ///
-class VEntityPickDlg : public VDialog
+class HavokAiApp : public VAppImpl
 {
 public:
-
-	VOVERRIDE void OnSetFocus(bool bStatus)
-	{
-		m_spCursor = GetMenuManager()->LoadCursorResource("GUI\\mouseNorm.TGA");
-	}
-
-	VOVERRIDE VCursor* GetCurrentCursor(VGUIUserInfo_t &user)
-	{
-		return m_spCursor;
-	}
-
-	VOVERRIDE void OnClick(VMenuEventDataObject *pEvent) 
-	{
-		VDialog::OnClick(pEvent);
-
- 		hkvVec2 vMousePos = GetContext()->GetCurrentMousePos();
- 		hkvVec3 vDir;
- 		Vision::Contexts.GetCurrentContext()->GetTraceDirFromScreenPos(vMousePos.x, vMousePos.y, vDir, 10000.f);
- 		hkvVec3 vFrom = Vision::Camera.GetCurrentCameraPosition();
- 		hkvVec3 vTo = vFrom + vDir;
-
-		const float v2h = vHavokConversionUtils::GetVision2HavokScale();
-		hkVector4 from; from.set( vFrom.x*v2h, vFrom.y*v2h, vFrom.z*v2h );
-		hkVector4 to; to.set( vTo.x*v2h, vTo.y*v2h, vTo.z*v2h );
-
-		hkaiNavMeshQueryMediator::HitDetails hit;
-		hit.m_hitFaceKey = HKAI_INVALID_PACKED_KEY;
-		hit.m_hitFraction = -1.f;
-		if (vHavokAiModule::GetInstance()->GetAiWorld()->getDynamicQueryMediator()->castRay(from, to, hit))
-		{
-			hkVector4 hitPoint; hitPoint.setInterpolate(from, to, hit.m_hitFraction);
-			hitPoint.mul4( vHavokConversionUtils::GetHavok2VisionScale() );
-			if (pEvent->m_iButtons & BUTTON_LMOUSE)
-			{
-				vStartPoint.set( hitPoint(0), hitPoint(1), hitPoint(2) );				
-			}
-			else
-			{
-				vEndPoint.set( hitPoint(0), hitPoint(1), hitPoint(2) );
-			}
-		}
-	}
-
-	VCursorPtr m_spCursor;
-};
-
-VISION_INIT
-{
-	for (int i = 0; i < NUM_RIGID_BODIES; i++)
-		pRigidBodies[i] = NULL;
-
-	VISION_SET_DIRECTORIES(false);
-	VisSampleApp::LoadVisionEnginePlugin();
-	VISION_PLUGIN_ENSURE_LOADED(vHavokAi);
-	VISION_HAVOK_SYNC_ALL_STATICS();
-  
-	// Create an application
-	spApp = new VisSampleApp();
- 
-#if defined(_VISION_MOBILE) || defined( HK_ANARCHY )
-  Vision::Renderer.SetUseSingleBufferedStaticMeshes(false);
-	if (!spApp->InitSample("HavokAi" /*DataDir*/, "vScenes\\HavokAi" /*SampleScene*/, VSampleFlags::VSAMPLE_INIT_DEFAULTS | VSampleFlags::VSAMPLE_FORCEMOBILEMODE ))
-#else
-	if (!spApp->InitSample("HavokAi" /*DataDir*/, "vScenes\\HavokAi" /*SampleScene*/, VSampleFlags::VSAMPLE_INIT_DEFAULTS & ~VSampleFlags::VSAMPLE_WIIU_DRCDEMO ))
-#endif
-		return false;
-
-#if !defined(_VISION_MOBILE) && !defined( HK_ANARCHY )
-  spApp->AddSampleDataDir("Models");
-#endif
-
-  if (vHavokAiModule::GetInstance()->LoadNavMeshDeprecated("vScenes\\HavokAi.NavMeshData\\navmesh_0.hkt"))
+  HavokAiApp() 
+    : m_bUseStreaming(false) // Set to true to enable streaming the NavMesh.
+    , m_spPickDlg(NULL)
+    , m_bLastShowGUI(false)
+    , m_pCamera(NULL)
   {
-    return true;
+    for (int i = 0; i < NumEntities; i++)
+      m_pEntities[i] = NULL;
+  }
+  virtual ~HavokAiApp() {}
+
+  virtual void Init() HKV_OVERRIDE
+  {
+    ParseCommandLine();
+
+    const char* szSceneName = m_bUseStreaming ? "Scenes/HavokAiStreaming.vscene" : "Scenes/HavokAi.vscene";
+
+    VisAppLoadSettings settings(szSceneName);
+    settings.m_customSearchPaths.Append(":havok_sdk/Data/Vision/Samples/Engine/HavokAi");
+    settings.m_customSearchPaths.Append(":havok_sdk/Data/Vision/Samples/Engine/Common");
+    LoadScene(settings);
   }
 
-	return false;
+  virtual void PreloadPlugins() HKV_OVERRIDE
+  {
+    VISION_PLUGIN_ENSURE_LOADED(vHavokAi);
+    VISION_HAVOK_SYNC_ALL_STATICS();
+  }
+
+  virtual void AfterEngineInit() HKV_OVERRIDE
+  {
+    VAppImpl::AfterEngineInit();
+
+    InitHelp();
+
+    // Show streaming zone debug rendering.
+    if (m_bUseStreaming)
+      Vision::Profiling.ToggleDebugRenderFlags(DEBUGRENDERFLAG_ZONES);
+  }
+
+  virtual void AfterSceneLoaded(bool bLoadingSuccessful) HKV_OVERRIDE;
+
+  virtual bool Run() HKV_OVERRIDE;
+
+  virtual void DeInit() HKV_OVERRIDE
+  {
+    m_spPickDlg = NULL;
+  }
+
+  virtual void EngineDeInit() HKV_OVERRIDE
+  {
+    VISION_HAVOK_UNSYNC_ALL_STATICS();
+  }
+
+private:
+  void InitHelp();
+  void InitInput();
+  void ParseCommandLine();
+
+  bool m_bUseStreaming;
+
+  VSmartPtr<PathPickDlg> m_spPickDlg;
+  bool m_bLastShowGUI;
+  VisBaseEntity_cl* m_pCamera;
+
+  static const unsigned int NumEntities = 20;
+  VisBaseEntity_cl* m_pEntities[NumEntities];
+};
+
+VAPP_IMPLEMENT_SAMPLE(HavokAiApp);
+
+void HavokAiApp::AfterSceneLoaded(bool bLoadingSuccessful)
+{
+  // For HavokAiStreaming, the NavMesh gets streamed in automatically.
+  if (!m_bUseStreaming)
+  {
+    vHavokAiModule::GetInstance()->LoadNavMeshDeprecated("Scenes/HavokAi.NavMeshData/navmesh_0.hkt");
+  }
+
+  // Override scene settings.
+  vHavokAiModule::GetInstance()->SetConnectToPhysicsWorld(true); 
+
+  // Create a GUI context
+  m_spPickDlg = new PathPickDlg();
+  m_spPickDlg->InitDialog(GetContext(), NULL, NULL);
+
+  m_pCamera = Vision::Game.CreateEntity("VFreeCamera", hkvVec3(484.0f, 753.8f, 920.7f));
+  m_pCamera->SetOrientation(-118.5f, 49.5f, 0.f);
+
+  InitInput();
 }
 
-VISION_SAMPLEAPP_AFTER_LOADING
+bool HavokAiApp::Run()
 {
-  // Override setting of scene
-  vHavokAiModule::GetInstance()->SetConnectToPhysicsWorld(true);
+  // Show / Hide GUI
+  const bool bShowGUI = (GetInputMap()->GetTrigger(HAVOKAI_SHOW_MENU) != 0);
+  if (m_bLastShowGUI != bShowGUI)
+  {
+    if (bShowGUI)
+      GetContext()->ShowDialog(m_spPickDlg);
+    else
+      GetContext()->CloseDialog(m_spPickDlg);
 
-#ifdef SUPPORTS_KEYBOARD
-	VisSampleApp::GetInputMap()->MapTrigger(HAVOKAI_SHOW_MENU, V_KEYBOARD, CT_KB_LALT);
-	VisSampleApp::GetInputMap()->MapTrigger(HAVOKAI_SHOW_MENU, V_KEYBOARD, CT_KB_RALT);
+    m_pCamera->SetThinkFunctionStatus(!bShowGUI);
+    m_bLastShowGUI = bShowGUI;
+  }
 
-	spApp->AddHelpText("");
-	spApp->AddHelpText("KEYBOARD - ALT : Show the cursor");
-	spApp->AddHelpText("LEFT MOUSE CLICK : Set start position");
-	spApp->AddHelpText("RIGHT MOUSE CLICK : Set end position");
+  // Process rigid bodies
+  static unsigned int uiNextEntityIndex = 0;
+  static float baseTime = Vision::GetTimer()->GetCurrentTime();
+  float currTime = Vision::GetTimer()->GetCurrentTime();
+
+  if ((currTime - baseTime) > 1.0f)
+  {
+    const hkvVec3 vInitialPos(0.0f, 0.0f, 1500.0f);
+
+    vHavokRigidBody *pComponent;
+    if (m_pEntities[uiNextEntityIndex] == NULL)
+    { 
+      m_pEntities[uiNextEntityIndex] = Vision::Game.CreateEntity("VisBaseEntity_cl", vInitialPos, "Models/AmmoBox/ammobox3.model");
+      m_pEntities[uiNextEntityIndex]->SetScaling(2.0f);
+      m_pEntities[uiNextEntityIndex]->SetCastShadows(true);
+
+      pComponent = new vHavokRigidBody();
+      m_pEntities[uiNextEntityIndex]->AddComponent(pComponent);
+      pComponent->SetRestitution(0.3f);
+    }
+    else
+    {
+      pComponent = m_pEntities[uiNextEntityIndex]->Components().GetComponentOfType<vHavokRigidBody>();
+      pComponent->SetPosition(vInitialPos);
+      m_pEntities[uiNextEntityIndex]->SetPosition(vInitialPos);
+    }
+    pComponent->SetLinearVelocity(hkvVec3::ZeroVector());
+    pComponent->SetAngularVelocity(hkvVec3(
+      static_cast<float>(rand() % 10), static_cast<float>(rand() % 10), static_cast<float>(rand() % 10)) * 50.0f);
+
+    baseTime = currTime;
+    if (++uiNextEntityIndex == NumEntities)
+      uiNextEntityIndex = 0;
+  }
+
+  vHavokAiModule::GetInstance()->DebugRender(0.1f, false);
+
+  IVRenderInterface *pRI = Vision::Contexts.GetMainRenderContext()->GetRenderInterface();
+  hkvVec3 newStart = m_spPickDlg->GetStartPoint();
+  hkvVec3 newEnd = m_spPickDlg->GetEndPoint();
+  vHavokAiModule::GetInstance()->ComputeAndDrawPath(pRI, &newStart, &newEnd, 20.0f, 1.75f, 0.2f, hkColor::YELLOW);
+
+  return true;
+}
+
+void HavokAiApp::InitHelp()
+{
+  VArray<const char*> helpText;
+
+#if defined(SUPPORTS_KEYBOARD)
+
+  helpText.Append("");
+  helpText.Append("KEYBOARD - ALT : Show the cursor");
+  helpText.Append("LEFT MOUSE CLICK : Set start position");
+  helpText.Append("RIGHT MOUSE CLICK : Set end position");
 #endif
 
 #if defined (_VISION_XENON)|| (defined(_VISION_WINRT) && !defined(_VISION_METRO) && !defined(_VISION_APOLLO))
 
-	VisSampleApp::GetInputMap()->MapTrigger(HAVOKAI_SHOW_MENU, V_XENON_PAD(0), CT_PAD_LEFT_SHOULDER);
-
-	spApp->AddHelpText("");
-	spApp->AddHelpText("PAD1 - Left Shoulder : Show the cursor");
-	spApp->AddHelpText("PAD1 - Right Thumbstick : Move camera/cursor");
-	spApp->AddHelpText("PAD1 - A : Set start position");
-	spApp->AddHelpText("PAD1 - B : Set end position");
+  helpText.Append("");
+  helpText.Append("PAD1 - Left Shoulder : Show the cursor");
+  helpText.Append("PAD1 - Right Thumbstick : Move camera/cursor");
+  helpText.Append("PAD1 - A : Set start position");
+  helpText.Append("PAD1 - B : Set end position");
 
 #elif defined (_VISION_PS3)
 
-	VisSampleApp::GetInputMap()->MapTrigger(HAVOKAI_SHOW_MENU, V_PS3_PAD(0), CT_PAD_LEFT_SHOULDER);
-
-	spApp->AddHelpText("");
-	spApp->AddHelpText("PAD1 - Left Shoulder : Show the cursor");
-	spApp->AddHelpText("PAD1 - Right Thumbstick : Move camera/cursor");
-	spApp->AddHelpText("PAD1 - CROSS : Set start position");
-	spApp->AddHelpText("PAD1 - CIRCLE : Set end position");
+  helpText.Append("");
+  helpText.Append("PAD1 - Left Shoulder : Show the cursor");
+  helpText.Append("PAD1 - Right Thumbstick : Move camera/cursor");
+  helpText.Append("PAD1 - CROSS : Set start position");
+  helpText.Append("PAD1 - CIRCLE : Set end position");
 
 #elif defined (_VISION_PSP2)
 
-	VisSampleApp::GetInputMap()->MapTrigger(HAVOKAI_SHOW_MENU, V_PSP2_PAD(0), CT_PAD_LEFT_SHOULDER);
-
-	spApp->AddHelpText("");
-	spApp->AddHelpText("PAD - Left Shoulder : Show the cursor");
-	spApp->AddHelpText("PAD - Right Thumbstick : Move camera/cursor");
-	spApp->AddHelpText("PAD - CROSS : Set start position");
-	spApp->AddHelpText("PAD - CIRCLE : Set end position");
+  helpText.Append("");
+  helpText.Append("PAD - Left Shoulder : Show the cursor");
+  helpText.Append("PAD - Right Thumbstick : Move camera/cursor");
+  helpText.Append("PAD - CROSS : Set start position");
+  helpText.Append("PAD - CIRCLE : Set end position");
 
 #elif defined (_VISION_WIIU)
 
-  VisSampleApp::GetInputMap()->MapTrigger(HAVOKAI_SHOW_MENU, VInputManagerWiiU::GetDRC(V_DRC_FIRST), CT_PAD_LEFT_SHOULDER);
-
-  spApp->AddHelpText("");
-  spApp->AddHelpText("DRC - Left Shoulder : Show the cursor");
-  spApp->AddHelpText("DRC - Right Thumbstick : Move camera/cursor");
-  spApp->AddHelpText("DRC - B : Set start position");
-  spApp->AddHelpText("DRC - A : Set end position");
+  helpText.Append("");
+  helpText.Append("DRC - Left Shoulder : Show the cursor");
+  helpText.Append("DRC - Right Thumbstick : Move camera/cursor");
+  helpText.Append("DRC - B : Set start position");
+  helpText.Append("DRC - A : Set end position");
 
 #endif
-
-	// Create a GUI context
-	spGUIContext = new VGUIMainContext(NULL);
-	spMainDlg = new VEntityPickDlg();
-	spMainDlg->InitDialog(spGUIContext,NULL,NULL);
-	spGUIContext->SetActivate(false);
-
-	pCamera = spApp->EnableMouseCamera();
-	pCamera->SetPosition(484.f, 753.8f, 920.7f);
-	pCamera->SetOrientation(-118.5f, 49.5f, 0.f);
+  if(helpText.GetSize() > 0)
+    RegisterAppModule(new VHelp(helpText));
 }
 
-VISION_SAMPLEAPP_RUN
+void HavokAiApp::InitInput()
 {
-	// Run the main loop of the application until we quit
-	if (spApp->Run())
-	{
-		// Show / Hide GUI
-		bool bShowGUI = VisSampleApp::GetInputMap()->GetTrigger(HAVOKAI_SHOW_MENU)!=0;
-		if (bLastShowGUI!=bShowGUI)
-		{
-			if (bShowGUI)
-				spGUIContext->ShowDialog(spMainDlg);
+#if defined(SUPPORTS_KEYBOARD)
+  GetInputMap()->MapTrigger(HAVOKAI_SHOW_MENU, V_KEYBOARD, CT_KB_LALT);
+  GetInputMap()->MapTrigger(HAVOKAI_SHOW_MENU, V_KEYBOARD, CT_KB_RALT);
+#endif
 
-			spGUIContext->SetActivate(bShowGUI);
-			pCamera->SetThinkFunctionStatus(!bShowGUI);
-			bLastShowGUI = bShowGUI;
-		}
-
-		// Process rigid bodies
-		static int nextBodyIndex = 0;
-		static float baseTime = Vision::GetTimer()->GetCurrentTime();
-		float currTime = Vision::GetTimer()->GetCurrentTime();
-		if ((currTime-baseTime) > 1.f)
-		{
-			hkvVec3 vInitialPos(0.f, 0.f, 1500.f);
-			vHavokRigidBody *pComponent;
-			if (!pRigidBodies[nextBodyIndex])
-			{
-				pComponent = new vHavokRigidBody;
-				pComponent->Initialize();
-				pRigidBodies[nextBodyIndex] = Vision::Game.CreateEntity("VisBaseEntity_cl", vInitialPos, "Models\\ammobox3.model");
-				hkvVec3 scaleFactor(2.f, 2.f, 2.f);
-				pRigidBodies[nextBodyIndex]->SetScaling(scaleFactor);
-				pRigidBodies[nextBodyIndex]->AddComponent(pComponent);
-				pRigidBodies[nextBodyIndex]->SetCastShadows(true);
-				pComponent->SetRestitution(0.1f);
-			}
-			else
-			{
-				pComponent = (vHavokRigidBody*)pRigidBodies[nextBodyIndex]->Components().GetComponentOfType( vHavokRigidBody::GetClassTypeId() );
-				pComponent->SetPosition(vInitialPos);
-				pRigidBodies[nextBodyIndex]->SetPosition(vInitialPos);
-			}
-			hkvVec3 zero(0.f, 0.f, 0.f);
-			pComponent->SetLinearVelocity(zero);
-			pComponent->SetAngularVelocity(zero);
-
-			baseTime = currTime;
-			if (++nextBodyIndex == NUM_RIGID_BODIES)
-				nextBodyIndex = 0;
-		}
-
-		vHavokAiModule::GetInstance()->DebugRender(0.1f, false);
-
-		IVRenderInterface *pRI = Vision::Contexts.GetMainRenderContext()->GetRenderInterface();
-		vHavokAiModule::GetInstance()->ComputeAndDrawPath(pRI, &vStartPoint, &vEndPoint, 20.f, 1.75f, 0.2f, hkColor::YELLOW);
-
-		return true;
-	}
-	return false;
+#if defined (_VISION_XENON)|| (defined(_VISION_WINRT) && !defined(_VISION_METRO) && !defined(_VISION_APOLLO))
+  GetInputMap()->MapTrigger(HAVOKAI_SHOW_MENU, V_XENON_PAD(0), CT_PAD_LEFT_SHOULDER);
+#elif defined (_VISION_PS3)
+  GetInputMap()->MapTrigger(HAVOKAI_SHOW_MENU, V_PS3_PAD(0), CT_PAD_LEFT_SHOULDER);
+#elif defined (_VISION_PSP2)
+  GetInputMap()->MapTrigger(HAVOKAI_SHOW_MENU, V_PSP2_PAD(0), CT_PAD_LEFT_SHOULDER);
+#elif defined (_VISION_WIIU)
+  GetInputMap()->MapTrigger(HAVOKAI_SHOW_MENU, VInputManagerWiiU::GetDRC(V_DRC_FIRST), CT_PAD_LEFT_SHOULDER);
+#endif
 }
 
-VISION_DEINIT
+void HavokAiApp::ParseCommandLine()
 {
-	// DeInit GUI
-	spMainDlg = NULL;
-	spGUIContext->SetActivate(false);
-	spGUIContext = NULL;
-	VGUIManager::GlobalManager().CleanupResources();
-
-	// Deinit the application
-	spApp->DeInitSample();
-	spApp = NULL;
-
-	// Make sure to unload the engine plugins before the app is closed
-	Vision::Plugins.UnloadAllEnginePlugins();
- 
-	// This should be done after Havok Physics has been de-initialized
-	VISION_HAVOK_UNSYNC_ALL_STATICS();
-
-	return 0;
+#if defined(WIN32)
+  VMemoryTempBuffer<256> tmpString = GetCommandLine();
+  if (!VStringUtil::IsEmpty(tmpString.AsChar()))
+  {
+    VStringTokenizerInPlace tokenizer(tmpString.AsChar(), ' ', true);
+    for (unsigned int i = 0; i < tokenizer.GetTokenCount(); i++)
+    {
+      const VString sArgument = tokenizer.Next();
+      if (sArgument == "-streaming")
+      {
+        m_bUseStreaming = true;
+      }
+    }
+  }
+#endif
 }
-
-VISION_MAIN_DEFAULT
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

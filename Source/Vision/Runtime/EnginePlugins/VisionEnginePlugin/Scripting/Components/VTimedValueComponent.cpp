@@ -192,7 +192,7 @@ void VTimedValueComponent::Serialize( VArchive &ar )
 {
   char iLocalVersion = 0;
   IVObjectComponent::Serialize(ar);
-  Vision::Error.Warning("VTimedValueComponent is not intended to be (de-)serialized. It should only be created by Lua script.");
+  hkvLog::Warning("VTimedValueComponent is not intended to be (de-)serialized. It should only be created by Lua script.");
   if (ar.IsLoading())
   {
     ar >> iLocalVersion;
@@ -253,7 +253,7 @@ START_VAR_TABLE(VTimedValueComponent, IVObjectComponent, "Lua TimedValue compone
 END_VAR_TABLE
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

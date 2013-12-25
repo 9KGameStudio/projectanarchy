@@ -12,12 +12,16 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters.Binary;
+using System.Text.RegularExpressions;
 using System.Windows.Forms;
 using System.Xml;
+
 using CSharpFramework;
 using CSharpFramework.Actions;
+using CSharpFramework.AssetManagement;
 using CSharpFramework.Clipboard;
 using CSharpFramework.Dialogs;
 using CSharpFramework.DynamicProperties;
@@ -27,12 +31,12 @@ using CSharpFramework.Scene;
 using CSharpFramework.Serialization;
 using CSharpFramework.Shapes;
 using CSharpFramework.Visitors;
+
 using Editor.Actions;
 using Editor.Dialogs;
-using Editor.Vision;
+
+using ManagedBase.LogManaged;
 using ManagedFramework;
-using CSharpFramework.AssetManagement;
-using System.Linq;
 
 namespace Editor
 {
@@ -49,7 +53,8 @@ namespace Editor
     /// </summary>
     /// <param name="_Project">Owner project</param>
     /// <param name="relFilename">Project relative filename of the scene to initialize the settings.ExportPath with. Can be null.</param>
-    public EditorScene(IProject _Project, string relFilename) : base(_Project)
+    public EditorScene(IProject _Project, string relFilename)
+      : base(_Project)
     {
       this.FileName = relFilename;
       _sceneSettings = new EditorSceneSettings(this);
@@ -92,8 +97,8 @@ namespace Editor
     /// </summary>
     public EditorSceneSettings Settings
     {
-      get {return _sceneSettings;}
-      set 
+      get { return _sceneSettings; }
+      set
       {
         if (_sceneSettings == value)
           return;
@@ -104,11 +109,11 @@ namespace Editor
 
     public override SceneExportProfile CurrentExportProfile
     {
-      get 
+      get
       {
         if (_currentProfile == null)
           _currentProfile = new SceneExportProfile(this, null);
-        return _currentProfile; 
+        return _currentProfile;
       }
       set
       {
@@ -132,7 +137,7 @@ namespace Editor
     public void ShowDescriptionAtStartup()
     {
       // show the description dialog
-      if (Settings!=null && Settings.ShowDescriptionAtStartup)
+      if (Settings != null && Settings.ShowDescriptionAtStartup)
       {
         ShowDescription();
       }
@@ -146,7 +151,7 @@ namespace Editor
     {
       Layer mainLayer = V3DLayer;
       // show the description dialog
-      if (mainLayer!=null && mainLayer.HasDescription)
+      if (mainLayer != null && mainLayer.HasDescription)
       {
         if (_descriptionDialog == null || _descriptionDialog.IsDisposed)
         {
@@ -169,8 +174,8 @@ namespace Editor
     /// </summary>
     public override Vector3F CurrentShapeSpawnPosition
     {
-      get {return Settings.ShapeOrigin;}
-      set {Settings.ShapeOrigin=value;}
+      get { return Settings.ShapeOrigin; }
+      set { Settings.ShapeOrigin = value; }
     }
 
     /// <summary>
@@ -196,14 +201,14 @@ namespace Editor
         fmt.Serialize(fs, Settings);
         fs.Close();
       }
-      catch( System.UnauthorizedAccessException )
+      catch (System.UnauthorizedAccessException)
       {
         EditorManager.ShowMessageBox("Unable to write to the local user layers file: " + filename + ". Please make sure the file is writable (and not checked into source control).", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
         return false;
       }
-      catch( Exception ex )
+      catch (Exception ex)
       {
-        EditorManager.DumpException( ex );
+        EditorManager.DumpException(ex);
         EditorManager.ShowMessageBox("Error writing to local user layers file: " + filename, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
         return false;
       }
@@ -227,7 +232,7 @@ namespace Editor
         FileStream fs = new FileStream(filename, FileMode.Open, FileAccess.Read);
         Settings = (EditorSceneSettings)fmt.Deserialize(fs);
         fs.Close();
-      } 
+      }
       catch (Exception ex)
       {
         EditorManager.DumpException(ex);
@@ -269,21 +274,20 @@ namespace Editor
       EditorManager.Progress.StatusString = "Load manifest file";
       FileName = relFileName;
       string absFileName = AbsoluteFileName;
-      EditorManager.LoadManifestFile(Project,Path.Combine(LayerDirectoryName,"vForgeManifest.txt"));
 
       // Check for old scene file format, and refuse to load it.
       try
       {
-        FileStream fs = new FileStream( absFileName , FileMode.Open, FileAccess.Read);
+        FileStream fs = new FileStream(absFileName, FileMode.Open, FileAccess.Read);
         long iLen = fs.Length;
         fs.Close();
-        if (iLen>0) // this is an old file
+        if (iLen > 0) // this is an old file
         {
           String error = String.Format("Loading aborted.\nThe file format of this scene is not supported by recent versions of vForge.\nTo migrate it, please open and then re-save this file in vForge prior to version 2012.3.");
           EditorManager.ShowMessageBox(error, "Scene loading error", MessageBoxButtons.OK, MessageBoxIcon.Error);
           return false;
         }
-      } 
+      }
       catch (Exception ex)
       {
         EditorManager.DumpException(ex);
@@ -303,7 +307,7 @@ namespace Editor
       // Load user specific data
       string directoryName = LayerDirectoryName;
       string userFilename = Path.Combine(directoryName, EditorManager.UserSettingsFilename);
-      
+
       // first try user specific file:
       if (!LoadUserSettingsFile(userFilename))
       {
@@ -332,7 +336,7 @@ namespace Editor
 
       // load the layer files...
       LayerCollection newLayers = new LayerCollection();
-      if (!GatherLayers(newLayers,EditorManager.Progress))
+      if (!GatherLayers(newLayers, EditorManager.Progress))
       {
         _bSceneLoadingInProgress = false;
         Layers.Clear();
@@ -439,9 +443,9 @@ namespace Editor
         if (!zone.Loaded)
           continue;
 
-        meshAbsFilename = Path.Combine(this.LayerDirectoryName, "StaticLightingInfo_"+zone.ZoneName+".lit");
+        meshAbsFilename = Path.Combine(this.LayerDirectoryName, "StaticLightingInfo_" + zone.ZoneName + ".lit");
         EditorManager.EngineManager.ReloadStaticLightingMeshes(zone, meshAbsFilename);
-        EditorManager.EngineManager.ReloadLightingFiles(basename+zone.ZoneName, zone);
+        EditorManager.EngineManager.ReloadLightingFiles(basename + zone.ZoneName, zone);
       }
 
 
@@ -646,7 +650,7 @@ namespace Editor
 
 
     public bool ImportLayers(LayerCollection newLayers, ProgressStatus progress, FileInfo[] files)
-    { 
+    {
       bool bOK = true;
       float fPercentage = 0.0f;
       foreach (FileInfo fileInfo in files)
@@ -850,7 +854,7 @@ namespace Editor
 
       // gather new and modified layers
       GatherZones(modifiedZones);
-      GatherLayers(modifiedLayers,null);
+      GatherLayers(modifiedLayers, null);
 
       // gather deleted layers
       foreach (Layer layer in Layers)
@@ -860,7 +864,7 @@ namespace Editor
 
         if (File.Exists(layer.AbsoluteLayerFilename))
           continue;
-        
+
         layer.FileStatus = Layer.LayerFileStatus_e.Deleted;
         modifiedLayers.Add(layer);
       }
@@ -873,7 +877,7 @@ namespace Editor
 
       LayerUpdateDlg dlg = new LayerUpdateDlg();
       dlg.SetModifiedFiles(modifiedLayers, modifiedZones);
-      if (dlg.ShowDialog()!=DialogResult.OK)
+      if (dlg.ShowDialog() != DialogResult.OK)
         return;
 
       EditorManager.Actions.StartGroup("Update Layers");
@@ -890,20 +894,20 @@ namespace Editor
       {
         Layer.LayerFileStatus_e status = layer.FileStatus;
 
-        if (status==Layer.LayerFileStatus_e.Deleted)
+        if (status == Layer.LayerFileStatus_e.Deleted)
         {
           EditorManager.Actions.Add(new RemoveLayerAction(layer));
           continue;
         }
-        if (status==Layer.LayerFileStatus_e.NewLayer)
+        if (status == Layer.LayerFileStatus_e.NewLayer)
         {
-          EditorManager.Actions.Add(new AddLayerAction(layer,false)); // no unique filenames, use as-is
+          EditorManager.Actions.Add(new AddLayerAction(layer, false)); // no unique filenames, use as-is
           continue;
         }
-        if (status==Layer.LayerFileStatus_e.Modified)
+        if (status == Layer.LayerFileStatus_e.Modified)
         {
           Layer oldLayer = Layers.GetLayerByFilename(layer.LayerFilename);
-          EditorManager.Actions.Add(new UpdateLayerAction(oldLayer,layer));
+          EditorManager.Actions.Add(new UpdateLayerAction(oldLayer, layer));
           continue;
         }
       }
@@ -967,7 +971,7 @@ namespace Editor
             {
               string layername = propNode.GetAttribute("filename");
               if (!string.IsNullOrEmpty(layername))
-                layerNames.Add(Path.ChangeExtension(layername,IScene.LayerFileExtension)); // always use .Layer file extension here
+                layerNames.Add(Path.ChangeExtension(layername, IScene.LayerFileExtension)); // always use .Layer file extension here
             }
           }
           zone.LayerFilenames = layerNames.ToArray();
@@ -1063,7 +1067,7 @@ namespace Editor
       if (zonesToRename.Count > 0)
       {
         string warningMsg = "The following zones had to be renamed, since they are already loaded in the scene:\n";
-          
+
         foreach (Zone zoneToRename in zonesToRename)
         {
           string uniqueZoneName = this.CreateUniqueZoneName(zoneToRename.ZoneName);
@@ -1075,7 +1079,7 @@ namespace Editor
         }
 
         EditorManager.ShowMessageBox(warningMsg, "Renaming zone(s)", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-          
+
       }
 
 
@@ -1115,19 +1119,19 @@ namespace Editor
 
       // STEP 0: make sure there is a folder of the scene's name
       string directoryName = absFileName + LayerDirectoryExtension;
-      System.Diagnostics.Debug.Assert(directoryName.IndexOfAny(Path.GetInvalidPathChars())<0,"Layer directory path contains invalid characters");
+      System.Diagnostics.Debug.Assert(directoryName.IndexOfAny(Path.GetInvalidPathChars()) < 0, "Layer directory path contains invalid characters");
 
       if (!Directory.Exists(directoryName))
         Directory.CreateDirectory(directoryName);
 
       // trigger event
-      EditorManager.OnSceneEvent(new SceneEventArgs(SceneEventArgs.Action.BeforeSaving,true));
+      EditorManager.OnSceneEvent(new SceneEventArgs(SceneEventArgs.Action.BeforeSaving, true));
 
       // STEP 1: Create a 0 byte scene file if it doesn't exist
       if (!File.Exists(absFileName))
       {
         FileStream fs = Project.CreateDataFile(absFileName, true /* Binary file */);
-        if (fs!=null) fs.Close();
+        if (fs != null) fs.Close();
       }
 
       // STEP 2: Save user specific data
@@ -1137,7 +1141,7 @@ namespace Editor
       userFilename = Path.Combine(directoryName, "default.user");
       if (!File.Exists(userFilename))
         SaveUserSettingsFile(userFilename);
-      
+
       // profiles are only saved via Export dialog
       //CurrentExportProfile.SaveToFile(); // save export profile to different file
 
@@ -1208,18 +1212,18 @@ namespace Editor
         FileHelper.CopyFiles(oldDir, "Thumbnail.*", newDir, false, false, FileAttributes.Hidden, false);
         FileHelper.CopyFiles(oldDir, "lighting.cfg", newDir, false, false, FileAttributes.Hidden, false);
         FileHelper.CopyFiles(oldDir, "*.user", newDir, false, false, FileAttributes.Hidden, false);
-        FileHelper.CopyFiles(oldDir, "*."+SceneExportProfile.FILE_EXTENSION_EXPORTPROFILE, newDir, false, false, FileAttributes.Hidden, false);
+        FileHelper.CopyFiles(oldDir, "*." + SceneExportProfile.FILE_EXTENSION_EXPORTPROFILE, newDir, false, false, FileAttributes.Hidden, false);
         foreach (string layerFile in additionalFilesToCopy)
           FileHelper.CopyFiles(oldDir, layerFile, newDir, false, false, FileAttributes.Hidden, false);
 
       }
 
       // STEP 6: Trigger event
-      EditorManager.OnSceneEvent(new SceneEventArgs(SceneEventArgs.Action.AfterSaving,bOK));
+      EditorManager.OnSceneEvent(new SceneEventArgs(SceneEventArgs.Action.AfterSaving, bOK));
       if (bSaveToNewLocation)
         EditorManager.OnSceneEvent(new SaveSceneAsEventArgs(oldAbsFileName, absFileName));
 
-      if (bOK) 
+      if (bOK)
         m_bDirty = false;
 
       // Also save the current export profile because it stores which layer should be exported:
@@ -1247,7 +1251,7 @@ namespace Editor
 
       // unlock the file (layers)
       foreach (Layer layer in Layers)
-        layer.ReleaseLock(false,false);
+        layer.ReleaseLock(false, false);
 
       // Delete the scene file watcher that listens for lock/layer file changes.
       RemoveFileWatcher();
@@ -1273,8 +1277,8 @@ namespace Editor
     /// </summary>
     public override bool Dirty
     {
-      get  {  return (m_bDirty);    }
-      set  
+      get { return (m_bDirty); }
+      set
       {
         if (m_bDirty == value)
           return;
@@ -1382,7 +1386,7 @@ namespace Editor
     }
 
     #endregion
-    
+
     #region ISerializable Members
 
     /// <summary>
@@ -1427,9 +1431,9 @@ namespace Editor
 
       // single shape in clipboard?
       ShapeBase singleshape = obj as ShapeBase;
-      if (singleshape!=null)
+      if (singleshape != null)
       {
-       
+
         layer = ActiveLayer;
         ShapeBase parent = layer.ActiveShape;
         // Override the parent if a hint structure has been passed
@@ -1448,7 +1452,7 @@ namespace Editor
 
       // shape collection in clipboard?
       ShapeCollection shapes = obj as ShapeCollection;
-      if (shapes!=null)
+      if (shapes != null)
       {
         layer = ActiveLayer;
         ShapeBase parent = layer.ActiveShape;
@@ -1457,7 +1461,7 @@ namespace Editor
         if (opHint != null && opHint is ShapeCollection.PasteHint)
           parent = (opHint as ShapeCollection.PasteHint).Parent;
 
-      
+
 
         shapes = (ShapeCollection)shapes.CloneForClipboard(); // clone all shapes (necessary)
 
@@ -1471,36 +1475,36 @@ namespace Editor
               return false;
             }
           }
-         
+
         }
 
 
         IAction action = AddShapesAction.CreateAddShapesAction(shapes, parent, layer, true, "paste");
         EditorManager.Actions.Add(action);
-     
+
         // set this collection as new selection in the Gizmo
         // (we can't do this in the loop above, because the ItemChange actions set a new selected item in the gizmo)
         EditorApp.ActiveView.Gizmo.Clear();
         foreach (ShapeBase shape in shapes)
-          if ((shape as Shape3D)!=null)
-            EditorApp.ActiveView.Gizmo.AddShape(shape,false);
+          if ((shape as Shape3D) != null)
+            EditorApp.ActiveView.Gizmo.AddShape(shape, false);
 
         return true;
       }
 
       // layer in clipboard?
       layer = obj as Layer;
-      if (layer!=null)
+      if (layer != null)
       {
         Layer newLayer = (Layer)layer.Clone();
-        newLayer.SetLayerNameInternal(EditorManager.Scene.Layers.GetUniqueLayerName(newLayer.LayerName,null));
+        newLayer.SetLayerNameInternal(EditorManager.Scene.Layers.GetUniqueLayerName(newLayer.LayerName, null));
         EditorManager.Actions.Add(new AddLayerAction(newLayer));
         return true;
       }
 
       // more than one layer?
       LayerCollection layers = obj as LayerCollection;
-      if (layers != null && layers.Count>0)
+      if (layers != null && layers.Count > 0)
       {
         if (layers.Count > 1)
           EditorManager.Actions.StartGroup("Paste layers");
@@ -1520,7 +1524,7 @@ namespace Editor
 
       // more than one zone?
       ZoneCollection zones = obj as ZoneCollection;
-      if (zones != null && zones.Count>0)
+      if (zones != null && zones.Count > 0)
       {
         if (zones.Count > 1)
           EditorManager.Actions.StartGroup("Paste zones");
@@ -1534,8 +1538,8 @@ namespace Editor
       SkyConfig sky = obj as SkyConfig;
       if (sky != null)
       {
-        if (V3DLayer!=null)
-          EditorManager.Actions.Add(new SkyConfigChangedAction(V3DLayer,(SkyConfig)sky.Clone()));
+        if (V3DLayer != null)
+          EditorManager.Actions.Add(new SkyConfigChangedAction(V3DLayer, (SkyConfig)sky.Clone()));
         return true;
       }
 
@@ -1600,7 +1604,7 @@ namespace Editor
     /// </summary>
     public string LightingBaseFilename
     {
-      get 
+      get
       {
         return FileName;
       }
@@ -1616,7 +1620,7 @@ namespace Editor
     /// </summary>
     public string AbsoluteExportPath
     {
-      get 
+      get
       {
         string filename = CurrentExportProfile.ExportPath;
         if (filename != null && FileHelper.IsAbsolute(filename)) // it is already an absolute path
@@ -1625,10 +1629,10 @@ namespace Editor
         if (string.IsNullOrEmpty(filename)) // use scene filename
           return Path.Combine(Project.ProjectDir, Path.ChangeExtension(FileName, SceneExportProfile.FILE_EXTENSION_EXPORT));
 
-        if (Path.GetExtension(filename)==null) // add default file extension
+        if (Path.GetExtension(filename) == null) // add default file extension
           filename = Path.ChangeExtension(filename, SceneExportProfile.FILE_EXTENSION_EXPORT);
 
-        return Path.Combine(Project.ProjectDir,filename);
+        return Path.Combine(Project.ProjectDir, filename);
       }
     }
 
@@ -1641,6 +1645,19 @@ namespace Editor
       {
         string filename = AbsoluteExportPath;
         return filename + "_data";
+      }
+    }
+
+    struct SceneEntry
+    {
+      public string Platform;
+      public string DisplayName;
+      public string Scene;
+      public string[] SearchPaths;
+
+      public string GetLuaLine()
+      {
+        return string.Format("AddScene ({0}, \"{1}\", \"{2}\", \"{3}\")", Platform, DisplayName, Scene, string.Join(";", SearchPaths));
       }
     }
 
@@ -1679,88 +1696,136 @@ namespace Editor
       // Reactivate isolate selection mode
       EditorManager.ActiveView.IsolateSelection(true, true);
 
-      // now launch the viewer
-      if (bSuccess && CurrentExportProfile.RunAfterExport)
+      // Write exported scenes list and launch PC vPlayer (other platforms are handled via FileServe)
+      if (bSuccess)
       {
-        // Try to find the optimal profile to run:
-        IProfileManager.Profile profileToRun = null;
-        if (CurrentExportProfile.SelectedAssetProfiles.IsActiveProfileSet)
+        UpdatedExportedScenesList(absExportPath, assetProfiles);
+
+        if (CurrentExportProfile.RunAfterExport)
         {
-          // If the current profile is among the selected profiles, use that one
-          profileToRun = EditorManager.ProfileManager.GetActiveProfile();
-        }
-        else
-        {
-          // Otherwise, use the first profile we can find.
-          foreach (IProfileManager.Profile profile in EditorManager.ProfileManager.GetProfiles())
+          // Try the PC profiles in order, preferring the native renderer one
+#if _VR_DX9
+          string[] pcProfiles = new string[] { "pcdx9", "pcdx11" };
+#else
+          string[] pcProfiles = new string[] { "pcdx11", "pcdx9" };
+#endif
+
+          // In either case, sort so that if one of the PC profiles is currently active it is preferred
+          pcProfiles = pcProfiles.OrderByDescending(profile => profile == EditorManager.ProfileManager.GetActiveProfile().ToString()).ToArray();
+
+          string launchProfile = pcProfiles.FirstOrDefault(profile => assetProfiles.Contains(profile));
+          if (launchProfile != null)
           {
-            if (CurrentExportProfile.SelectedAssetProfiles.IsProfileSet(profile.ToString()))
-            {
-              profileToRun = profile;
-              break;
-            }
-          }
-        }
+            string sceneForProfile = Path.ChangeExtension(absExportPath, string.Format("{0}.vscene", launchProfile));
 
-        // If there is a profile we can run, start the scene viewer.
-        if (profileToRun != null)
-        {
-          string sceneToRun = absExportPath;
-          string oldExtension = Path.GetExtension(sceneToRun);
-          sceneToRun = Path.ChangeExtension(sceneToRun, profileToRun.ToString()) + oldExtension;
+            // Launch the vPlayer executable
+            string absPlayerPath = Path.Combine(Path.GetDirectoryName(Application.ExecutablePath), "vPlayer.exe");
 
-          if (profileToRun.IsMobilePlatform())
-          {
-            // write the exported scene name to the exported scene Lua file so the scene viewer will find it
-            string mobilePlatforms = "";
-            List<IProfileManager.Profile> profiles = EditorManager.ProfileManager.GetProfiles();
-            HashSet<string> mobilePlatformsSet = new HashSet<string>(profiles.Where(x => x.IsMobilePlatform()).Select(x => x.ToString().ToUpper()));
-            // Tizen has a fallback to android, to we add it to the list as well.
-            if (mobilePlatformsSet.Contains("ANDROID") && !mobilePlatformsSet.Contains("TIZEN"))
-              mobilePlatformsSet.Add("TIZEN");
-
-            mobilePlatforms = string.Join(" + ", mobilePlatformsSet);
-
-            string projectDir = EditorManager.Project.ProjectDir;
-            string relativeSceneFileName = absExportPath.Substring(projectDir.Length);
-            string customDataDirs = "";
-            if (EditorManager.Project.CustomDataDirectories != null)
-            {
-              foreach (IProject.CustomDataDirectoryEntry customDataDir in EditorManager.Project.CustomDataDirectories)
-              {
-                if (customDataDirs.Length > 0)
-                  customDataDirs += ";";
-                customDataDirs += customDataDir.AbsolutePath;
-              }
-            }
-
-            try
-            {
-              System.IO.File.WriteAllText(@"..\..\..\..\Data\Vision\Tools\vSceneViewer\Dialogs\ExportedScenes.lua",
-                String.Format("SetHomeDir({0}, \"\")\nAddScene ( {0}, \"Exported Scene: {1}\", \"{2};{3}\", \"{4}\")",
-                              mobilePlatforms, EditorManager.Scene.FileNameNoExt, projectDir.Replace("\\", "\\\\"),
-                              relativeSceneFileName.Replace("\\", "\\\\"), customDataDirs.Replace("\\", "\\\\"))
-              );
-              EditorManager.ShowMessageBox("Export finished. Please run the vSceneViewer on your mobile device or hit the refresh scene list button in the vSceneViewer select scene dialog.", "Export successful", MessageBoxButtons.OK, MessageBoxIcon.Information);
-            }
-            catch (System.IO.IOException ex)
-            {
-              EditorManager.ShowMessageBox("An error occurred while writing ExportedScenes.lua:\n" + ex.Message,
-                                           "File write error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-          }
-          else
-          {
-            // Launch the vSceneViewer executable
-            string path = Path.GetDirectoryName(Application.ExecutablePath);
-            string absSceneViewerPath = Path.Combine(path, "vSceneViewer.exe");
-            FileHelper.RunExternalTool("Scene Viewer", absSceneViewerPath, "\"" + sceneToRun + "\"", false);
+            FileHelper.RunExternalTool("vPlayer", absPlayerPath, "\"" + sceneForProfile + "\"", false);
           }
         }
       }
+
+      EditorManager.TriggerSceneEvent(SceneEventArgs.Action.AfterExportAll, bSuccess);
+
       return bSuccess;
     }
 
+    private void UpdatedExportedScenesList(string absExportPath, List<string> assetProfiles)
+    {
+      List<SceneEntry> sceneEntries = new List<SceneEntry>();
+
+      string luaFile = Path.Combine(Application.StartupPath, @"..\..\..\..\Data\Vision\Tools\vPlayer\Exported.lua");
+
+      Regex entryRegex = new Regex(@"AddScene \((?<platform>\w+), ""(?<displayname>[^""]+)"", ""(?<scene>[^""]+)"", ""(?<searchpaths>[^""]+)""\)");
+
+      try
+      {
+        using (StreamReader reader = new StreamReader(luaFile))
+        {
+          while (!reader.EndOfStream)
+          {
+            string line = reader.ReadLine().Trim();
+
+            if (line.StartsWith("--"))
+            {
+              continue;
+            }
+
+            Match match = entryRegex.Match(line);
+
+            if (match.Success)
+            {
+              SceneEntry entry = new SceneEntry();
+              entry.Platform = match.Groups["platform"].Value;
+              entry.DisplayName = match.Groups["displayname"].Value;
+              entry.Scene = match.Groups["scene"].Value.Replace('\\', '/');
+              entry.SearchPaths = match.Groups["searchpaths"].Value.Split(';');
+
+              sceneEntries.Add(entry);
+            }
+          }
+        }
+      }
+      catch (System.Exception)
+      {
+        // Ignore
+      }
+
+      string sceneName = Path.GetFileNameWithoutExtension(absExportPath);
+
+      List<string> searchPaths = new List<string> { EditorManager.Project.ProjectSearchPath };
+      if(EditorManager.Project.CustomDataDirectories != null)
+      {
+        foreach(IProject.CustomDataDirectoryEntry dir in EditorManager.Project.CustomDataDirectories)
+        {
+          searchPaths.Add(dir.AbsolutePath);
+        }
+      }
+
+      string projectRelativeScenePath;
+      try
+      {
+        projectRelativeScenePath = EditorManager.Project.MakeRelative(absExportPath);
+      }
+      catch (Exception ex)
+      {
+        // Scene path can't be made relative to any data dir
+        EditorManager.ShowMessageBox(ex.Message, "Failed to update exported scenes list for vPlayer");
+        return;
+      }
+
+
+      foreach (string profile in assetProfiles)
+      {
+        SceneEntry newEntry = new SceneEntry();
+
+        // Default profile name is equivalent to platform name
+        newEntry.Platform = EditorManager.ProfileManager.GetDefaultProfile(EditorManager.ProfileManager.GetProfileByName(profile).GetPlatform()).ToUpper();
+
+        newEntry.DisplayName = string.Format("{0} (Exported scene)", sceneName);
+        newEntry.Scene = Path.ChangeExtension(projectRelativeScenePath, string.Format("{0}.vscene", profile)).Replace('\\', '/');
+        newEntry.SearchPaths = searchPaths.ToArray();
+
+        // Remove existing entries for this scene and profile and place the new one on top of the list
+        sceneEntries.RemoveAll(entry => entry.Scene == newEntry.Scene && entry.SearchPaths[0] == newEntry.SearchPaths[0] && entry.Platform == newEntry.Platform);
+        sceneEntries.Insert(0, newEntry);
+      }
+
+
+      try
+      {
+        // Write out first 20 entries
+        string output = "-- This file is automatically generated during scene export. Do not edit this file.\n";
+        output += string.Join("\n", sceneEntries.Take(20).Select(entry => entry.GetLuaLine()));
+        System.IO.File.WriteAllText(luaFile, output);
+      }
+      catch (System.IO.IOException ex)
+      {
+        EditorManager.ShowMessageBox("An error occurred while writing ExportedScenes.lua:\n" + ex.Message,
+                                     "File write error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+      }
+    }
     /// <summary>
     /// Export the scene to vscene file and do not save the path to the settings
     /// </summary>
@@ -2054,6 +2119,7 @@ namespace Editor
         snapshot.CurrentZone = null;
         bOK &= ExportHelper.StartResourceSnapshot(snapshot);
         foreach (Layer layer in Layers)
+        {
           if (layer.ExportFinal && layer.ParentZone == null)
           {
             if (!CurrentExportProfile.InvisibleLayersExportInvisibleObjects)
@@ -2065,6 +2131,7 @@ namespace Editor
             layer.GetDependencies(snapshot);
             bOK &= layer.OnExport(info);
           }
+        }
         bOK &= ExportHelper.EndResourceSnapshot(snapshot);
         EditorManager.Progress.Percentage += fProgressStep;
 
@@ -2134,14 +2201,14 @@ namespace Editor
             if (shape.FinalVisibleState)
               restoreVisibility.Add(shape);
 
-            EditorManager.EngineManager.LogPrintWarning("'" + shape.ShapeName + "' (" + shape.GetType() + ") is not supported on Mobile Platforms");
-            shape.SetVisible(false, false);              
+            Log.Warning("'" + shape.ShapeName + "' (" + shape.GetType() + ") is not supported on Mobile Platforms");
+            shape.SetVisible(false, false);
           }
 
           foreach (ShapeBase child in shape.ChildCollection)
             shapes.Push(child);
         }
-      }     
+      }
     }
 
     #endregion
@@ -2216,7 +2283,7 @@ namespace Editor
         string litname = Path.Combine(this.LayerDirectoryName, "StaticLightingInfo.lit");
 
         EditorManager.EngineManager.ResetStaticLighting(null, litname); // trigger native callback
-        
+
 
         string outFilename = AbsoluteFileName;
         string outFilenameExt = Path.GetExtension(outFilename);
@@ -2282,7 +2349,7 @@ namespace Editor
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

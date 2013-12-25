@@ -38,7 +38,7 @@ public:
   ///
   /// \return
   /// Returns the complete shader code, after all #include-directives have been resolved.
-  VSHADERLIBEXPORT_IMPEXP static VString ResolveAllIncludes (const char* szSource, const char* szShaderFilename, const char* szShaderName, bool& out_bError, IVLog* pLog);
+  VSHADERLIBEXPORT_IMPEXP static VString ResolveAllIncludes (const char* szSource, const char* szShaderFilename, const char* szShaderName, bool& out_bError, hkvLogInterface* pLog);
 
   /// \brief Static helper function to quickly find out whether a shader uses permutation variables, at all.
   ///
@@ -57,7 +57,7 @@ public:
   ///
   /// \return
   /// Returns true if the shader uses permutation variables, false if not or if there was an error.
-  VSHADERLIBEXPORT_IMPEXP static bool DoesShaderUsePermutationVariables (const char* szSource, const char* szShaderFilename, bool& out_bError, IVLog* pLog);
+  VSHADERLIBEXPORT_IMPEXP static bool DoesShaderUsePermutationVariables (const char* szSource, const char* szShaderFilename, bool& out_bError, hkvLogInterface* pLog);
 
   /// \brief Sets the base source-code from which to generate the permutations.
   /// 
@@ -71,7 +71,7 @@ public:
   ///
   /// \param pLog
   /// Logging structure where lots of information is sent to.
-  VSHADERLIBEXPORT_IMPEXP bool SetShaderSource (const char* szSource, const char* szShaderFilename, IVLog* pLog);
+  VSHADERLIBEXPORT_IMPEXP bool SetShaderSource (const char* szSource, const char* szShaderFilename, hkvLogInterface* pLog);
 
   /// \brief Returns whether the previously specified shader code contained any permutation variables.
   //VSHADERLIBEXPORT_IMPEXP bool HasShaderPermutationVariables (void) const {return (m_UsedVariables.GetLength () > 0);}
@@ -95,7 +95,7 @@ public:
   ///
   /// \param pLog
   /// Logging structure.
-  VSHADERLIBEXPORT_IMPEXP bool GenerateUniqueShaderPermutations (const VShaderPermutationConfig& cfg, VArray<VVariablePermutation>& out_Permutations, VStrList& out_sUniqueShaders, VArray<int>& out_PermutationShaderID, IVLog* pLog) const;
+  VSHADERLIBEXPORT_IMPEXP bool GenerateUniqueShaderPermutations (const VShaderPermutationConfig& cfg, VArray<VVariablePermutation>& out_Permutations, VStrList& out_sUniqueShaders, VArray<int>& out_PermutationShaderID, hkvLogInterface* pLog) const;
 
 private:
   /// \brief Generates a shader permutation under a given configuration of permutation variables.
@@ -114,23 +114,23 @@ private:
   ///
   /// \return
   /// True if code generation succeeded, false otherwise.
-  bool GenerateShaderCode (VString& out_ShaderSource, const VVariablePermutation& VarCfg, VString& out_sPrologue, IVLog* pLog) const;
+  bool GenerateShaderCode (VString& out_ShaderSource, const VVariablePermutation& VarCfg, VString& out_sPrologue, hkvLogInterface* pLog) const;
 
 
   /// \brief Finds all permutation variables that are used inside $ifdef / $if / $elif
-  bool FindUsedVariables (const char* szString, IVLog* pLog);
+  bool FindUsedVariables (const char* szString, hkvLogInterface* pLog);
 
   /// \brief Finds all permutation variables that are used as replacements, such as "int iMSAA = $MSAA_SAMPLES;"
-  void FindRemainingVariables (const char* szString, IVLog* pLog);
+  void FindRemainingVariables (const char* szString, hkvLogInterface* pLog);
 
   /// \brief Replaces all $if / $ifdef / $elif with proper Lua code for later execution.
-  bool ReplaceIfDefsWithLua (VStringBuffer& out_Result, const char* szSource, IVLog* pLog);
+  bool ReplaceIfDefsWithLua (VStringBuffer& out_Result, const char* szSource, hkvLogInterface* pLog);
 
 
   VString m_sShaderCodeAsLua;
   VStrList m_UsedVariables;
   mutable VStringBuffer m_sGeneratedShaderCode;
-  mutable IVLog* m_pLog;
+  mutable hkvLogInterface* m_pLog;
 
   static int LUAFUNC_ReadCVAR (lua_State* state);
   static int LUAFUNC_WriteCVAR (lua_State* state);
@@ -144,7 +144,7 @@ private:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

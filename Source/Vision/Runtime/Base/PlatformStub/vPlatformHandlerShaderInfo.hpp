@@ -36,6 +36,11 @@ struct VShaderConstant
 
 struct VShaderSourceInfo
 {
+  enum Constants
+  {
+    NumDataPaths = 16
+  };
+
   VShaderSourceInfo()
   {
     m_ShaderType = VSS_Invalid;
@@ -116,7 +121,7 @@ struct VShaderSourceInfo
   const char* m_szShaderSource;
   int m_iShaderSourceLength;
   int m_iNumDataPaths;
-  const char *m_szDataPaths[16];
+  const char *m_szDataPaths[NumDataPaths];
   const char *m_szEntryFunctionName;
   const char *m_szShaderProfileName;
   int m_iCompilerFlags; ///< only compile relevant flags from VsfLoadSaveFlags_e enum
@@ -141,7 +146,7 @@ struct VShaderSourceInfo
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

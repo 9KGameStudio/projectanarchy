@@ -11,22 +11,13 @@
 #ifndef __VMESSAGE_INCLUDED__
 #define __VMESSAGE_INCLUDED__
 
+class VSocket;
+
   /// \brief
   ///   This class describes a message in the remote communication system.
   class VMessage
   {
     public:
-
-      /// \struct Header
-      ///
-      /// \brief  The header of a message. Contains the message type and the content size of the message
-      ///
-      struct Header
-      {
-        int iMessageType;
-        int iContentSize;
-      };
-
       /// \fn VBASE_IMPEXP VMessage()
       ///
       /// \brief Default constructor. 
@@ -50,60 +41,57 @@
       ///
       VBASE_IMPEXP VMessage(int Type, int PreallocSize);
 
+      /// \brief Copy constructor.
+      VBASE_IMPEXP VMessage(const VMessage& other);
+
       /// \fn VBASE_IMPEXP ~VMessage()
       ///
       /// \brief  The destructor. 
       ///
       VBASE_IMPEXP ~VMessage();
 
-      /// \fn VBASE_IMPEXP bool IsValid()
-      ///
-      /// \brief  Query if this message is a valid message. (Correctly initialized or received)
-      ///
-      /// \return true if valid, false if not. 
-      ///
-      VBASE_IMPEXP bool IsValid();
+      /// \brief Assignment operator.
+      VBASE_IMPEXP VMessage& operator=(const VMessage& other);
 
-      /// \fn VBASE_IMPEXP int GetContentSize()
+      /// \fn VBASE_IMPEXP unsigned int GetContentSize() const
       ///
       /// \brief  Gets the content (payload) size of the message. 
       ///
       /// \return The content size. 
       ///
-      VBASE_IMPEXP int GetContentSize();
+      VBASE_IMPEXP unsigned int GetContentSize() const;
 
-      /// \fn VBASE_IMPEXP int GetMessageType()
-      ///
       /// \brief  Gets the message type. 
       ///
       /// \return The message type. 
       ///
-      VBASE_IMPEXP int GetMessageType();
+      VBASE_IMPEXP int GetMessageType() const;
 
-      /// \fn VBASE_IMPEXP void Write(int iValue)
-      ///
       /// \brief  Writes an integer value into the data buffer.
       ///
       /// \param  iValue  The int to write. 
       ///
-      VBASE_IMPEXP void Write(int iValue);
+      VBASE_IMPEXP void WriteInt(int iValue);
 
-      /// \fn VBASE_IMPEXP void Write(const char* pString)
       ///
+      /// \brief  Writes a 64bit integer value into the data buffer.
+      ///
+      /// \param  iValue  The int to write. 
+      ///
+      VBASE_IMPEXP void WriteInt64(__int64 iValue);
+
       /// \brief  Writes a string into the message. 
       ///
       /// \param [in] pString If non-null, the string to write into the data buffer. 
       ///
-      VBASE_IMPEXP void Write(const char* pString);
+      VBASE_IMPEXP void WriteString(const char* pString);
 
-      /// \fn VBASE_IMPEXP void Write(const char* pBytes, int iCount)
-      ///
       /// \brief  Writes a binary blob into the message. 
       ///
       /// \param [in] pBytes  If non-null, the bytes to write. 
-      /// \param  iCount  Number of bytes to write. 
+      /// \param  uiCount  Number of bytes to write. 
       ///
-      VBASE_IMPEXP void Write(const char* pBytes, int iCount);
+      VBASE_IMPEXP void WriteBytes(const char* pBytes, unsigned int uiCount);
 
       /// \fn VBASE_IMPEXP bool ReadInt(int& iValue)
       ///
@@ -115,6 +103,14 @@
       ///
       VBASE_IMPEXP bool ReadInt(int& iValue);
 
+      /// \brief  Reads a 64bit integer value from the data buffer of the message. 
+      ///
+      /// \param [out] iValue  the value. 
+      ///
+      /// \return true if it succeeds, false if it fails. 
+      ///
+      VBASE_IMPEXP bool ReadInt64(__int64& iValue);
+
       /// \fn VBASE_IMPEXP bool ReadString(char** ppString)
       ///
       /// \brief  Reads a string from the data buffer of the message. The string lifetime is bound to the lifetime of the VMessage object.
@@ -125,19 +121,18 @@
       ///
       VBASE_IMPEXP bool ReadString(char** ppString);
 
+      /// \brief Gets a raw memory block from the messages buffer and advances the read offset.
+      ///
+      /// The lifetime of the pointer is bound to the lifetime of the VMessage object.
+      ///
+      /// \param uiLen the length of the raw memory block to get
+      VBASE_IMPEXP const void* GetRawBlock(unsigned int uiLen);
+
       /// \fn VBASE_IMPEXP void ResetReadPointer()
       ///
       /// \brief  Resets the read pointer of the data buffer. This function can be used to rewind the read pointer to read the message again from the beginning.
       ///
       VBASE_IMPEXP void ResetReadPointer();
-
-      /// \fn VBASE_IMPEXP void From(VMessage* pMsg)
-      ///
-      /// \brief  Constructs this messages content from another message.
-      ///
-      /// \param [in] pMsg  The message which will be copied into this object. 
-      ///
-      VBASE_IMPEXP void From(VMessage* pMsg);
 
       /// \fn VBASE_IMPEXP bool WasSent()
       ///
@@ -163,22 +158,29 @@
       ///
       VBASE_IMPEXP void SetAutoDelete(bool bAutoDelete) {m_bAutoDelete = bAutoDelete; }
 
-    private:
+      /// \brief Receives a message from the given socket.
+      VBASE_IMPEXP hkvResult ReceiveFrom(VSocket& socket);
 
-      friend class VTarget;
+      /// \brief Sends a message on the given socket.
+      VBASE_IMPEXP hkvResult SendTo(VSocket& socket);
+
+      /// \brief Broadcasts a message on the given socket.
+      VBASE_IMPEXP hkvResult Broadcast(VSocket& socket, unsigned short usPort);
+
+    private:  
       friend class VConnection;
 
-      //! Stores the header of the message. 
-      Header m_Header;
-      
-      //! Stores the content of the message.  This is the data buffer.
-      DynArray_cl<char> m_Content;
+      /// \brief  Sets the content (payload) size of the message. 
+      VBASE_IMPEXP void SetContentSize(unsigned int uiContentSize);
+
+      /// \brief  Sets the message type. 
+      VBASE_IMPEXP void SetMessageType(int iMessageType);
+   
+      //! Stores the header and content of the message.
+      DynArray_cl<char> m_headerAndContent;
       
       //! Stores the current read offset into the data buffer. 
       int m_iReadOffset;
-      
-      //! Stores if this is a valid message. 
-      bool m_bValidMessage;
 
       //! Stores if this message was sent already
       bool m_bSent;
@@ -190,7 +192,7 @@
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

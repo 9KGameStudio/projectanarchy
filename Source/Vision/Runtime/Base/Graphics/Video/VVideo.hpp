@@ -36,8 +36,8 @@
 
 #include <Vision/Runtime/Base/Graphics/Video/VWindow.hpp>
 
-#define VVIDEO_DEFAULTWIDTH 1024
-#define VVIDEO_DEFAULTHEIGHT 768 
+#define VVIDEO_DEFAULTWIDTH 1280
+#define VVIDEO_DEFAULTHEIGHT 720 
 
 #ifdef _VR_DX9
 
@@ -1482,16 +1482,6 @@ public:
 
 #endif
 
-
-  /// \brief
-  ///   Returns the last error that occurred during any call to any VVideo method.
-  /// 
-  /// The error is returned as a string describing the problem that was encountered.
-  /// 
-  /// \return
-  ///   VString: The respective error message.
-  static VBASE_IMPEXP VString GetLastError();
-
   /// \brief
   ///   Initializes the device context.
   /// 
@@ -2072,15 +2062,15 @@ public:
   static VBASE_IMPEXP VTextureLoader::VTextureFormat_e GetSupportedDepthStencilFormat(VTextureLoader::VTextureFormat_e eDepthStencilFormat, 
                                                                                       const VVideoConfig &videoConfig);
 
-#if defined( HK_ANARCHY )
   /// \brief
   ///   Returns whether the Vision Anarchy splash screen is still being displayed.
-  #if defined( _VR_GLES2 )
-    static bool IsSplashScreenActive();
-  #else   // defined( _VR_GLES2 )
-    static inline bool IsSplashScreenActive() { return false; }
-  #endif  // defined( _VR_GLES2 )
-#endif  // defined( HK_ANARCHY )
+#if defined(HK_ANARCHY) && defined(_VR_GLES2)
+  static void SetupSplashScreen(unsigned int uiFadeInTime, unsigned int uiFadeOutTime, bool bSmoothFade);
+  static bool IsSplashScreenActive();
+#else
+  static void SetupSplashScreen(unsigned int uiFadeInTime, unsigned int uiFadeOutTime, bool bSmoothFade) {}
+  static inline bool IsSplashScreenActive() { return false; }
+#endif
 
 protected:
   static VBASE_IMPEXP bool m_bRenderingIsSuspended;
@@ -2133,7 +2123,6 @@ protected:
 #endif
 
 
-  static VString m_szErrorString;
   static bool  m_bInitialized;
   static float m_fGammaStore[256*3];
   static int m_iStateFlags;
@@ -2330,7 +2319,7 @@ private:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

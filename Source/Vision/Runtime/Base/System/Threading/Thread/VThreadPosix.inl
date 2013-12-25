@@ -8,9 +8,10 @@
 
 
 
-VThread::VThread(VPlatformThreadFunc pStartFunction, void *pArgument, int iStackSize, VThreadPriority ePriority) :
+VThread::VThread(VPlatformThreadFunc pStartFunction, void *pArgument, int iStackSize, VThreadPriority ePriority, const char* szThreadName) :
   m_pStartFunc(pStartFunction),
   m_pArgument(pArgument),
+  m_sName(szThreadName),
   m_iProcessor(-1),
   m_iStackSize(iStackSize),
   m_ePriority(ePriority)
@@ -26,6 +27,12 @@ VThread::~VThread()
 void VThread::Start()
 {
   int result = pthread_create(&m_Thread, NULL, m_pStartFunc, m_pArgument);
+  
+#if !defined(_VISION_IOS)
+  pthread_setname_np(m_Thread, m_sName);
+#endif
+  
+  m_sName.Reset();
   VASSERT(result == 0);
   SetPriority(m_ePriority);
 }
@@ -91,7 +98,7 @@ void VThread::Join()
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

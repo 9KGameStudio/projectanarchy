@@ -40,11 +40,11 @@ VPostProcessToneMapping::VPostProcessToneMapping() :
   m_bRenderFirstTime = true;
   m_fPriority = VPOSTPROCESSOR_PRIORITY_TONEMAPPING;
 
-  ToneMapType = TONEMAP_SCALE;
-  Saturation = 1.f;
-  Contrast = 1.f;
-  Brightness = 0.f;
-  MotionBlurFeedback = 0.f;
+  ToneMapType = TONEMAP_NONE;
+  Saturation = 1.0f;
+  Contrast = 1.0f;
+  Brightness = 0.0f;
+  MotionBlurFeedback = 0.0f;
 
   m_bufferUsageFlags = SAMPLES_ACCUMULATION_BUFFER | DRAWS_FULLSCREEN_QUAD;
 }
@@ -112,7 +112,7 @@ void VPostProcessToneMapping::InitializePostProcessor()
 
   SetToneMapping(ToneMapType, Saturation, Contrast, Brightness, TintColor, MotionBlurFeedback);
 
-  const bool bUseMotionBlur = MotionBlurFeedback>0.f;
+  const bool bUseMotionBlur = MotionBlurFeedback > 0.0f;
   VCompiledTechnique* pTech = GetTechnique(bUseMotionBlur);
 
   m_spMask->SetTechnique(pTech);
@@ -493,19 +493,19 @@ void VPostProcessToneMapping::Serialize( VArchive &ar )
 //-----------------------------------------------------------------------------------
 
 START_VAR_TABLE(VPostProcessToneMapping, VPostProcessingBaseComponent, "VPostProcessToneMapping", VCOMPONENT_ALLOW_MULTIPLE, "Tone Mapping")  
-  DEFINE_VAR_ENUM(VPostProcessToneMapping, ToneMapType, "Tone Mapping Mode (Scale simply adjusts brightness, contrast, and saturation; Scale_Map additionally remaps the color range to 0..1)", "SCALE", "OFF,SCALE,SCALE_MAP,GRADING", 0, 0);
+  DEFINE_VAR_ENUM(VPostProcessToneMapping, ToneMapType, "Tone Mapping Mode (Scale simply adjusts brightness, contrast, and saturation; Scale_Map additionally remaps the color range to 0..1)", "OFF", "OFF,SCALE,SCALE_MAP,GRADING", 0, 0);
   DEFINE_VAR_STRING_CALLBACK(VPostProcessToneMapping,Grading3DTexture,"3D texture used for the color grading lookup (GRADING mode only)","",DISPLAY_HINT_TEXTUREFILE,0);
   DEFINE_VAR_FLOAT(VPostProcessToneMapping, Saturation, "Saturation (values below 1 decrease saturation, values above 1 increase saturation); ignored for GRADING mode", "1.0", 0, "Slider(0,16)");
   DEFINE_VAR_COLORREF(VPostProcessToneMapping, TintColor, "Color to tint the final result; ignored for GRADING mode", "255/255/255/255", 0, 0);
   DEFINE_VAR_FLOAT(VPostProcessToneMapping, Contrast, "Contrast (values below 1 decrease contrast, values above 1 increase contrast); ignored for GRADING mode", "1.0", 0, "Slider(0,4)");
-  DEFINE_VAR_FLOAT(VPostProcessToneMapping, Brightness, "Brightness (values below 0 decrease brightness, values above 0 increase brightness); ignored for GRADING mode", "0.0", 0, "Slider(0,1)");
-  DEFINE_VAR_FLOAT(VPostProcessToneMapping, MotionBlurFeedback, "Motion blur feedback strength (higher values result in stronger blur)", "0.0", 0, "Slider(0,10000)");
+  DEFINE_VAR_FLOAT(VPostProcessToneMapping, Brightness, "Brightness (values below 0 decrease brightness, values above 0 increase brightness); ignored for GRADING mode", "0.0", 0, "Slider(0,0.9)");
+  DEFINE_VAR_FLOAT(VPostProcessToneMapping, MotionBlurFeedback, "Motion blur feedback strength (higher values result in stronger blur)", "0.0", 0, "Slider(0,0.2)");
 END_VAR_TABLE
 
 //-----------------------------------------------------------------------------------
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

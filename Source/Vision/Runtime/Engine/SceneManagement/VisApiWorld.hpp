@@ -513,9 +513,6 @@ private:
 	VisObject3D_cl* m_pSrcObject;
 };
 
-
-
-
 /// \brief
 ///   Class for accessing functionality related to the game world.
 class VisWorld_cl
@@ -532,7 +529,7 @@ public:
 
   /// \brief
   ///   Returns whether the world has been initialized
-  VISION_APIFUNC BOOL IsWorldInitialized() const;
+  VISION_APIFUNC bool IsWorldInitialized() const;
   
 
   ///
@@ -657,11 +654,10 @@ private:
   bool m_bWorldInitialized;
 };
 
-
-#endif
+#endif //DEFINE_VISAPIWORLD
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

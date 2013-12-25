@@ -201,7 +201,7 @@ public:
 
   /// \brief
   ///   Creates a shader program of the given type and stores it as a void pointer in out_ResultPtr which needs to be casted to VVertexShaderObject*, VPixelShaderObject*, etc.
-  VBASE_IMPEXP void CreateShader (VShaderStage_e Shader, void** out_ResultPtr, IVLog* pLog);
+  VBASE_IMPEXP void CreateShader (VShaderStage_e Shader, void** out_ResultPtr, hkvLogInterface* pLog);
 
   /// \brief
   ///   Returns the Minimum Shader Model required by this shader.
@@ -463,19 +463,19 @@ private:
   void ConstructorInit (void);
   void DestructorClear (void);
 
-  void CreateVertexShader_Internal (void** out_ResultPtr, IVLog *pLog);
-  void CreatePixelShader_Internal (void** out_ResultPtr, IVLog *pLog);
-  void CreateGeometryShader_Internal (void** out_ResultPtr, IVLog *pLog);
-  void CreateHullShader_Internal (void** out_ResultPtr, IVLog *pLog);
-  void CreateDomainShader_Internal (void** out_ResultPtr, IVLog *pLog);
-  void CreateComputeShader_Internal (void** out_ResultPtr, IVLog *pLog);
+  void CreateVertexShader_Internal (void** out_ResultPtr, hkvLogInterface* pLog);
+  void CreatePixelShader_Internal (void** out_ResultPtr, hkvLogInterface* pLog);
+  void CreateGeometryShader_Internal (void** out_ResultPtr, hkvLogInterface* pLog);
+  void CreateHullShader_Internal (void** out_ResultPtr, hkvLogInterface* pLog);
+  void CreateDomainShader_Internal (void** out_ResultPtr, hkvLogInterface* pLog);
+  void CreateComputeShader_Internal (void** out_ResultPtr, hkvLogInterface* pLog);
 
 };
 
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

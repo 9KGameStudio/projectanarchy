@@ -389,7 +389,7 @@ namespace VisionManaged
       return false;
     }
 
-    VFileTime newFileTime;
+    VDateTime newFileTime;
     if (VFileHelper::GetModifyTime(sAbsFilename.AsChar(), newFileTime))
     {
       pEntity->GetCubeMapTexture()->SetTimeStamp(newFileTime);
@@ -401,7 +401,7 @@ namespace VisionManaged
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

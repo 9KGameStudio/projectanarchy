@@ -18,8 +18,7 @@ enum VItemStatus
   ITEMSTATUS_VISIBLE             = V_BIT(0),    ///< Whether a UI item is visible at all
   ITEMSTATUS_ENABLED             = V_BIT(1),    ///< Whether a UI item is enabled and can be interacted with
   ITEMSTATUS_HASFOCUS            = V_BIT(3),    ///< Whether a UI item has the focus for keyboard input
-  ITEMSTATUS_SELECTED            = V_BIT(4),    ///< Whether a UI item is currently selected
-  ITEMSTATUS_STAYSELECTED        = V_BIT(5),    ///< Whether a UI item is supposed to stay selected
+  ITEMSTATUS_SELECTED            = V_BIT(5),    ///< Whether a UI item is supposed to stay selected
   ITEMSTATUS_MOUSEOVER_USER0     = V_BIT(8),    ///< Whether user 0 is hovering over the item
   ITEMSTATUS_MOUSEOVER_USER1     = V_BIT(9),    ///< Whether user 1 is hovering over the item
   ITEMSTATUS_MOUSEOVER_USER2     = V_BIT(10),   ///< Whether user 2 is hovering over the item
@@ -131,7 +130,7 @@ public:
 
   /// \brief
   ///   Control selected status.
-  inline bool IsSelected() const {return IsStatusSet(ITEMSTATUS_SELECTED|ITEMSTATUS_STAYSELECTED);}
+  inline bool IsSelected() const {return IsStatusSet(ITEMSTATUS_SELECTED);}
 
   /// \brief
   ///   Indicates whether control is static (i.e. has ID VGUIManager::ID_STATIC).
@@ -156,7 +155,7 @@ public:
 
   /// \brief
   ///   Flags the control to stay selected
-  inline void SetSelected(bool bStatus) {SetStatus(ITEMSTATUS_STAYSELECTED,bStatus);}
+  inline void SetSelected(bool bStatus) {SetStatus(ITEMSTATUS_SELECTED,bStatus);}
 
   /// \brief
   ///   Set the visible status
@@ -512,7 +511,7 @@ struct VGUIUserInfo_t
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

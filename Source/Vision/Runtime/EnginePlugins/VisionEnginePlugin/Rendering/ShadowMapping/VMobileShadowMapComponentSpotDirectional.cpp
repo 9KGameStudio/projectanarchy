@@ -19,7 +19,6 @@ VMobileShadowMapComponentSpotDirectional::VMobileShadowMapComponentSpotDirection
 {
   m_fFadeOutStart = 0.0f;
   m_fFadeOutEnd = 0.0f;
-  MaxIntensity = 0.8f;
 }
 
 VMobileShadowMapComponentSpotDirectional::VMobileShadowMapComponentSpotDirectional(int iRendererNodeIndex) : 
@@ -27,7 +26,6 @@ VMobileShadowMapComponentSpotDirectional::VMobileShadowMapComponentSpotDirection
 {
   m_fFadeOutStart = 0.0f;
   m_fFadeOutEnd = 0.0f;
-  MaxIntensity = 0.8f;
 }
 
 VMobileShadowMapComponentSpotDirectional::~VMobileShadowMapComponentSpotDirectional()
@@ -96,7 +94,7 @@ void VMobileShadowMapComponentSpotDirectional::GetVariableAttributes(VisVariable
     destInfo.m_bHidden = true; 
   else if (!strcmp(pVariable->GetName(), "SampleRadiusScaleWithDistance"))
     destInfo.m_bHidden = true; 
-  else if (!strcmp(pVariable->GetName(), "AmbientColor"))
+  else if (!strcmp(pVariable->GetName(), "AmbientColor") && m_pLightSource->IsDynamic())
     destInfo.m_bHidden = true; 
   else if (!strcmp(pVariable->GetName(), "ShadowBoxExtrudeMultiplier"))
     destInfo.m_bHidden = true;
@@ -117,12 +115,6 @@ void VMobileShadowMapComponentSpotDirectional::GetVariableAttributes(VisVariable
     if (!strcmp(pVariable->GetName(), "NearClip"))
       destInfo.m_bHidden = true;
   }
-
-  if (m_pLightSource->IsDynamic())
-  {
-    if (!strcmp(pVariable->GetName(), "MaxIntensity"))
-      destInfo.m_bHidden = true;
-  }
 }
 
 #endif
@@ -131,13 +123,13 @@ void VMobileShadowMapComponentSpotDirectional::SetCascadeCount(unsigned int iCou
 {
   VASSERT(iCount > 0);
   if (iCount > MOBILE_MAX_SHADOW_PARTS_COUNT)
-    Vision::Error.Warning("VMobileShadowMapComponentSpotDirectional: Currently only %d cascade is supported!", MOBILE_MAX_SHADOW_PARTS_COUNT);
+    hkvLog::Warning("VMobileShadowMapComponentSpotDirectional: Currently only %d cascade is supported!", MOBILE_MAX_SHADOW_PARTS_COUNT);
 }
 
 void VMobileShadowMapComponentSpotDirectional::SetCascadeSelection(VCascadeSelectionMethod_e cascadeSelection)
 {
   if (cascadeSelection != CSM_NO_SELECTION)
-    Vision::Error.Warning("VMobileShadowMapComponentSpotDirectional: Currently only CSM_NO_SELECTION is supported!");
+    hkvLog::Warning("VMobileShadowMapComponentSpotDirectional: Currently only CSM_NO_SELECTION is supported!");
 }
 
 void VMobileShadowMapComponentSpotDirectional::SetCascadeRange(int iCascade, float fRange)
@@ -145,7 +137,7 @@ void VMobileShadowMapComponentSpotDirectional::SetCascadeRange(int iCascade, flo
   VASSERT(iCascade >= 0);
   if (iCascade > (MOBILE_MAX_SHADOW_PARTS_COUNT-1))
   {
-    Vision::Error.Warning("VMobileShadowMapComponentSpotDirectional: Currently only %d cascade is supported!", MOBILE_MAX_SHADOW_PARTS_COUNT);
+    hkvLog::Warning("VMobileShadowMapComponentSpotDirectional: Currently only %d cascade is supported!", MOBILE_MAX_SHADOW_PARTS_COUNT);
     return;
   }
 
@@ -163,7 +155,7 @@ void VMobileShadowMapComponentSpotDirectional::SetCascadeRange(int iCascade, flo
 void VMobileShadowMapComponentSpotDirectional::SetOverestimateCascades(BOOL bOverestimate)
 {
   if (!bOverestimate)
-    Vision::Error.Warning("VMobileShadowMapComponentSpotDirectional: Currently overestimation is always enabled!");
+    hkvLog::Warning("VMobileShadowMapComponentSpotDirectional: Currently overestimation is always enabled!");
 }
 
 void VMobileShadowMapComponentSpotDirectional::SetCascadeRangePtr(float* range, int size)
@@ -188,11 +180,6 @@ void VMobileShadowMapComponentSpotDirectional::SetCascadeRangePtr(float* range, 
   }
 }
 
-void VMobileShadowMapComponentSpotDirectional::SetMaxIntensity(float fMaxIntensity)
-{
-  MaxIntensity = fMaxIntensity;
-}
-
 void VMobileShadowMapComponentSpotDirectional::Serialize(VArchive &ar)
 {
   VBaseShadowMapComponentSpotDirectional::Serialize(ar);
@@ -203,30 +190,48 @@ void VMobileShadowMapComponentSpotDirectional::Serialize(VArchive &ar)
     ar >> cLocalVersion; 
     VASSERT(cLocalVersion <= SHADOWMAP_COMPONENT_MOBILE_SPOTDIR_CURRENT_VERSION);
 
-    ar >> MaxIntensity;
+    if (cLocalVersion == SHADOWMAP_COMPONENT_MOBILE_SPOTDIR_VERSION_0)
+    {
+      float fMaxIntensity;
+      ar >> fMaxIntensity;
+
+      // For backward compatibility convert MaxIntensity into AmbientColor (overwriting thereby serialized AmbientColor value from base class).
+      AmbientColor.FromFloat(hkvVec3(fMaxIntensity, fMaxIntensity, fMaxIntensity));
+    }
   }
   else
   {
     ar << cLocalVersion;
-    ar << MaxIntensity;
   }
 }
 
 void VMobileShadowMapComponentSpotDirectional::UpdateLightShader(VMobileDynamicLightShader *pPass)
 {
-  VASSERT(pPass != NULL);
+  VASSERT(pPass!=NULL && GetLightSource()!=NULL); 
 
   pPass->SetLightProjection(CascadeCount, m_LightProjection);
-  pPass->SetShadowParameters(m_fFadeOutStart, m_fFadeOutEnd, 1.0f-MaxIntensity);
+  pPass->SetShadowParameters(m_fFadeOutStart, m_fFadeOutEnd);
   pPass->SetShadowTexture(GetShadowTexture());
+  pPass->SetShadowColor(AmbientColor);
+  
+  int iLightMaskSampler = pPass->GetSamplerIndexByName(VSS_PixelShader, "LightMask");
+  if (iLightMaskSampler >= 0)
+  {
+    VStateGroupTexture *pStateGroupTexture = pPass->GetStateGroupTexture(VSS_PixelShader, iLightMaskSampler);
+    if (pStateGroupTexture != NULL)
+    {
+      // specify this white alternative texture if no SM is available. The default would be a plain black texture
+      pStateGroupTexture->m_spCustomTex = Vision::TextureManager.GetPlainWhiteTexture();
+      pStateGroupTexture->m_iTextureIndex = GetLightSource()->GetNumber();
+    }
+  }
 }
 
 START_VAR_TABLE(VMobileShadowMapComponentSpotDirectional, VBaseShadowMapComponentSpotDirectional, "Mobile ShadowMap Component for Spotlights or directional lights", VCOMPONENT_ALLOW_MULTIPLE, "Mobile Shadow Map Component Spot/Directional")  
-DEFINE_VAR_FLOAT(VMobileShadowMapComponentSpotDirectional, MaxIntensity, "Maximum intensity of subtractive shadows [0.0-1.0]", "0.8", 0, "Clamp(0.0, 1.0)");
 END_VAR_TABLE
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

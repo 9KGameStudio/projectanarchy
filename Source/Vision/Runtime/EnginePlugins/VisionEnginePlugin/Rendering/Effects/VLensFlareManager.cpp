@@ -253,7 +253,7 @@ void VLensFlareManager::UpdateLensFlares(int iLensFlareUpdateFlags)
       if (pLensFlare->GetOwner())
       {
         // Retrieve occlusion results of the last query
-        int iElementIndex = pLensFlare->m_LensFlarePixelCounter.GetNumber();
+        unsigned int iElementIndex = pLensFlare->m_LensFlarePixelCounter.GetNumber();
         bool bRes = !pContext->IsPixelCounterQueryInProgress(iElementIndex);
 
         // Reschedule query if the old on could be retrieved or if a teleport forces us to re-query everything.
@@ -300,7 +300,7 @@ void VLensFlareManager::UpdateLensFlares(int iLensFlareUpdateFlags)
       VLensFlareCandidate& lensFlareCandidate = state.m_Candidates.ElementAt(i);
       VLensFlareComponent *pLensFlare = lensFlareCandidate.m_pLensFlare;
 
-      int iElementIndex = pLensFlare->m_LensFlarePixelCounter.GetNumber();
+      unsigned int iElementIndex = pLensFlare->m_LensFlarePixelCounter.GetNumber();
       // If the visibility reached zero and the lens flare is no longer potentially visible it is removed from the list
       if (!pLensFlare->IsEnabled() || !pLensFlare->GetOwner()
         || (((VisLightSource_cl*)pLensFlare->GetOwner())->GetVisibleBitmask() & pContext->GetRenderFilterMask()) == 0
@@ -501,7 +501,7 @@ VLensFlareManager& VLensFlareManager::GlobalManager()
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

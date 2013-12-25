@@ -64,6 +64,9 @@ VFmodSoundObject::VFmodSoundObject(VFmodSoundObjectCollection* pOwner, VFmodSoun
   SetPosition(vPos);
 
   m_pChannel = (FMOD::Channel*)0;
+  m_pOwner = pOwner;
+  if(pOwner)
+    pOwner->Add(this);
 
   if(Vision::Editor.IsAnimatingOrPlaying() && (iFlags & VFMOD_FLAG_PAUSED) == 0)
     Play();
@@ -89,6 +92,7 @@ void VFmodSoundObject::DisposeObject()
 // -------------------------------------------------------------------------- //
 void VFmodSoundObject::Play(float fStartTime, bool bAlsoInEditor)
 {
+  m_bIsPlaying = true;
   m_fStartTime = fStartTime;
   Helper_SetFlag(VFMOD_FLAG_PAUSED, !IsPlaying());
 }
@@ -122,6 +126,8 @@ void VFmodSoundObject::SetPaused(bool bStatus)
 {
   if (IsPlaying() != bStatus)
     return;
+
+  m_bIsPlaying = !bStatus;
 
   Helper_SetFlag(VFMOD_FLAG_PAUSED, !IsPlaying());
 }
@@ -337,24 +343,70 @@ void VFmodSoundObject::Update()
 
 void VFmodSoundObjectCollection::Update()
 {
+   int iCount = Count();
+   for (int i=0;i<iCount;i++)
+   {
+      VFmodSoundObject* pInst = GetAt(i);
+      pInst->Update();
+   }
 }
+
 
 void VFmodSoundObjectCollection::PurgeNotPlaying()
 { 
+   int iCount = Count();
+   for (int i=iCount-1;i>=0;i--)
+   {
+      VFmodSoundObject* pInst = GetAt(i);
+      if(!pInst->m_bPlayedOnce || pInst->IsPlaying() ||
+         (pInst->m_iFlags&VFMOD_FLAG_NODISPOSE) != 0)
+      {
+         continue; // Valid sound - cannot be removed
+      }
+
+      if (!Vision::Editor.IsInEditor())
+         VASSERT(pInst->GetRefCount() == 1 && "SoundObject removed from collection but still referenced (non-disposeable object)! "
+         "This results in sound objects not being held in Fmod sound manager collection any longer but still reside in memory. "
+         "Check if VFMOD_FLAG_NODISPOSE is set on sound creation for this purpose.");
+
+      pInst->m_pOwner = NULL;
+      RemoveAt(i);
+   }
 }
 
 
 void VFmodSoundObjectCollection::StopAll(bool bReasonIsUnloadWorld)
 {
+   int iCount = Count();
+   for (int i=0;i<iCount;i++)
+   {
+      VFmodSoundObject* pObj = GetAt(i);
+
+      if (bReasonIsUnloadWorld && pObj->HasFlag(VFMOD_FLAG_SURVIVE_UNLOAD_WORLD))
+         continue;
+
+      pObj->Stop();
+   }
+
+   PurgeNotPlaying();
 }
+
 
 VFmodSoundObject* VFmodSoundObjectCollection::SearchObject(const char* szName) const
 {
+   int iCount = Count();
+   for (int i=0;i<iCount;i++)
+   {
+      VFmodSoundObject* pObject = GetAt(i);
+      if(pObject->HasObjectKey(szName))
+         return pObject;
+   }
+
   return NULL;
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

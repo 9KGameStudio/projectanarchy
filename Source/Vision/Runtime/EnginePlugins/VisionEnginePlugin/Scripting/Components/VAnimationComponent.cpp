@@ -128,7 +128,7 @@ bool VAnimationComponent::AddAnimationSequence(const char * szAnimSequence)
   VDynamicMesh * pMesh = ((VisBaseEntity_cl *)m_pOwner)->GetMesh();
   if(pMesh==NULL)
   {
-    Vision::Error.Warning("AddAnimationSequence: No mesh present!");
+    hkvLog::Warning("AddAnimationSequence: No mesh present!");
     return false;
   }
 
@@ -138,7 +138,7 @@ bool VAnimationComponent::AddAnimationSequence(const char * szAnimSequence)
 
   if(pSet==NULL)
   {
-    Vision::Error.Warning("AddAnimationSequence: Could not load '%s' animation sequence.", szAnimSequence);
+    hkvLog::Warning("AddAnimationSequence: Could not load '%s' animation sequence.", szAnimSequence);
     return false;
   }
 
@@ -152,14 +152,51 @@ bool VAnimationComponent::SetTime(float fTime, bool bRelativeTime /*= false*/)
   if(m_pAnimCtrl)
   {
     if(bRelativeTime)
-      m_pAnimCtrl->SetCurrentSequenceTime(m_pAnimCtrl->GetCurrentSequenceTime()*fTime);
+    {
+      m_pAnimCtrl->SetCurrentSequencePosition(fTime);
+    }
     else
+    {
       m_pAnimCtrl->SetCurrentSequenceTime(fTime);
-
+    }
     return true;
   }
-
   return false;
+}
+
+float VAnimationComponent::GetTime(bool bRelativeTime /* = false */)
+{
+  float time = -1.f;
+  if (m_pAnimCtrl)
+  {
+    if (bRelativeTime)
+    {
+      time = m_pAnimCtrl->GetCurrentSequencePosition();
+    }
+    else 
+    {
+      time = m_pAnimCtrl->GetCurrentSequenceTime();
+    }
+  }
+  return time;
+}
+
+void VAnimationComponent::SetSpeed(float fSpeedFactor)
+{
+  if (m_pAnimCtrl)
+  {
+    m_pAnimCtrl->SetSpeed(fSpeedFactor);
+  }
+}
+
+float VAnimationComponent::GetSpeed()
+{
+  float speed = 0.f;
+  if (m_pAnimCtrl)
+  {
+    speed = m_pAnimCtrl->GetSpeed();
+  }
+  return speed;
 }
 
 void VAnimationComponent::AddEndEvent(const char * szEventName, bool bAutoRemove)
@@ -257,7 +294,7 @@ START_VAR_TABLE(VAnimationComponent, IVObjectComponent, "LUA Animation component
 END_VAR_TABLE
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

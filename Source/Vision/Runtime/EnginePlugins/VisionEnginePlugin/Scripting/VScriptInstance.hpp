@@ -16,7 +16,7 @@ class VScriptInstance;
 class VScriptMember;
 
 /// \brief
-///   Archive class that implements important funtionality to allow for full object serialization from inside a script.
+///   Archive class that implements important functionality to allow for full object serialization from inside a script.
 ///
 /// That is, objects are stored in a table and saved as a full list later. The list is loaded again regardless of whether
 /// the script's serialize function needs the objects or not.
@@ -86,6 +86,7 @@ public:
   SCRIPT_IMPEXP void HandleWaitingObjects(float dtime);
   SCRIPT_IMPEXP void AddSuspendedObject(VScriptInstance *pObj);
   SCRIPT_IMPEXP void HandleSuspendedObjects(float dtime);
+  SCRIPT_IMPEXP void DiscardDependentScriptInstanceThreads(const VScriptResource* pResource);
 public:
   bool m_bAnyFlaggedForDisposal;
 
@@ -211,10 +212,11 @@ protected:
   /// \internal
   struct VLuaThreadInfo
   {
-    lua_State *pThread;     ///< lua thread
-    int iRefKey;            ///< key value under which the reference is hold
-    VThreadState_e eState;  ///< internal state
-    float fWaitTime;        ///< current time to wait
+    lua_State* pParentThread;///< parent resource lua thread
+    lua_State* pThread;      ///< lua thread
+    int iRefKey;             ///< key value under which the reference is hold
+    VThreadState_e eState;   ///< internal state
+    float fWaitTime;         ///< current time to wait
 
     const char *GetStatusString(char *szBuffer) const;
   };
@@ -247,7 +249,7 @@ protected:
 #endif // VSCRIPT_INSTANCE_HPP_INCLUDED
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

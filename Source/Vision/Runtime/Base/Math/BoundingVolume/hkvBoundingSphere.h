@@ -418,7 +418,7 @@ public:
   ///   The end position of the line.
   ///
   /// \param out_fHitFraction
-  ///   Optional. If specified the fraction along the line where the spher surface was hit will be stored here.\n
+  ///   Optional. If specified the fraction along the line where the sphere surface was hit will be stored here.\n
   ///   vLineStartPos + (vLineEndPos - vLineStartPos) * *out_fHitFraction == *out_IntersectionPoint\n
   ///   Nothing is written into this variable, if the line does not intersect the sphere.
   ///
@@ -503,7 +503,7 @@ HKV_FORCE_INLINE bool operator!= (const hkvBoundingSphere& lhs, const hkvBoundin
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

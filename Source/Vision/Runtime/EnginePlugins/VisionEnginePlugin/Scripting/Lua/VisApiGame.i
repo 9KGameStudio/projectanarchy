@@ -104,13 +104,13 @@ public:
     {
       if(ppMeshesToMerge==NULL)
       {
-        Vision::Error.Warning("[Lua] MergeDynamicMesh: No model meshes specified!");
+        hkvLog::Warning("[Lua] MergeDynamicMesh: No model meshes specified!");
         return NULL;
       }
       
       if(iCount<2||iCount>32)
       {
-        Vision::Error.Warning("[Lua] MergeDynamicMesh: Cannot not merge %u mesh files. Range must be between 2 and 32!", iCount);
+        hkvLog::Warning("[Lua] MergeDynamicMesh: Cannot not merge %u mesh files. Range must be between 2 and 32!", iCount);
         return NULL;
       }
 
@@ -130,7 +130,7 @@ public:
       
       if(pMergedModel==NULL)
       {
-        Vision::Error.Warning("[Lua] MergeDynamicMesh: Failed not merge %u mesh files!", iCount);
+        hkvLog::Warning("[Lua] MergeDynamicMesh: Failed not merge %u mesh files!", iCount);
         return NULL;
       }
       
@@ -142,13 +142,13 @@ public:
     {
       if(pszMeshesToMerge==NULL)
       {
-        Vision::Error.Warning("[Lua] MergeDynamicMesh: No model mesh strings specified!");
+        hkvLog::Warning("[Lua] MergeDynamicMesh: No model mesh strings specified!");
         return NULL;
       }
       
       if(iCount<2||iCount>32)
       {
-        Vision::Error.Warning("[Lua] MergeDynamicMesh: Cannot not merge %u mesh files. Range must be between 2 and 32!", iCount);
+        hkvLog::Warning("[Lua] MergeDynamicMesh: Cannot not merge %u mesh files. Range must be between 2 and 32!", iCount);
         return NULL;
       }
 
@@ -168,7 +168,7 @@ public:
       
       if(pMergedModel==NULL)
       {
-        Vision::Error.Warning("[Lua] MergeDynamicMesh: Failed not merge %u mesh files!", iCount);
+        hkvLog::Warning("[Lua] MergeDynamicMesh: Failed not merge %u mesh files!", iCount);
         return NULL;
       }
       
@@ -387,7 +387,7 @@ public:
     VType *pType = Vision::GetTypeManager()->GetType(szComponentType);
     if (pType==NULL)
     {
-      Vision::Error.Warning("[Lua] CreateComponent: did not find component of the specified type: %s", szComponentType);
+      hkvLog::Warning("[Lua] CreateComponent: did not find component of the specified type: %s", szComponentType);
       lua_pushnil(L);
       return 1;
     }
@@ -396,7 +396,7 @@ public:
     IVObjectComponent *pComponent = (IVObjectComponent *)pType->CreateInstance();
     if (pComponent==NULL)
     {
-      Vision::Error.Warning("[Lua] CreateComponent: Failed construction an instance of the specified component type: %s", szComponentType);
+      hkvLog::Warning("[Lua] CreateComponent: Failed construction an instance of the specified component type: %s", szComponentType);
       lua_pushnil(L);
       return 1;
     }
@@ -538,7 +538,7 @@ public:
     VPrefab* pPrefab = VPrefabManager::GlobalManager().LoadPrefab( szFilename );
     if(pPrefab==NULL)
     {
-      Vision::Error.Warning("[Lua] Failed to load prefab '%s' in VisGame_cl_InstantiatePrefab", szFilename);
+      hkvLog::Warning("[Lua] Failed to load prefab '%s' in VisGame_cl_InstantiatePrefab", szFilename);
       lua_pushnil(L);                                       //stack: ..., nil
       return 1;                                             //return 1 stack item (nil)
     }
@@ -708,7 +708,7 @@ public:
   /// \par Example
   ///   \code
   ///     function OnCreate(self)
-  ///       local objects = InstantiatePrefab(Vision.hkvVec3(0,0,0), "myPrefab.prefab", self) --use self as parent
+  ///       local objects = Game:InstantiatePrefab(Vision.hkvVec3(0,0,0), "myPrefab.prefab", self) --use self as parent
   ///       Debug:PrinLine("Instantiated " .. #objects .. " child objects via prefab!")
   ///     end
   ///   \endcode
@@ -1014,7 +1014,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

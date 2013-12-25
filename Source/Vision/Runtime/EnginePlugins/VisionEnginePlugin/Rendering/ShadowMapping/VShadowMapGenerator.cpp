@@ -46,7 +46,7 @@ VShadowMapGenerator::VShadowMapGenerator(IVRendererNode *pRendererNode, VisLight
   m_bPropertiesDirty = false;
   m_iNumParts = iNumCascades;
   m_pParts = new VShadowMapPart[iMaxNumCascades];
-  m_bUpdateEnabled = false;
+  m_bUpdateEnabled = true;
   m_bIsRenderedInterleaved = false;
   m_bIsInitialized = false;
   m_iPartsRendered = 0;  
@@ -107,10 +107,8 @@ void VShadowMapGenerator::DeInitialize()
 #endif
 
   m_spShadowMapDepthStencil = NULL;
-
   m_spDebugMask = NULL;
 
-  m_bIsRenderedInterleaved = false;
   m_bIsInitialized = false;
 }
 
@@ -173,7 +171,7 @@ bool VShadowMapGenerator::Initialize()
 
   while ((m_iTextureSize[0] > iMaxTextureSize) || (m_iTextureSize[1] > iMaxTextureSize))
   {
-    Vision::Error.Warning("Specified shadow map size/cascade count is too large for current hardware. Reducing resolution.");
+    hkvLog::Warning("Specified shadow map size/cascade count is too large for current hardware. Reducing resolution.");
     m_iTextureSize[0] >>= 1;
     m_iTextureSize[1] >>= 1;
     iShadowMapSize >>= 1;
@@ -316,7 +314,7 @@ bool VShadowMapGenerator::Initialize()
   #if defined (_VR_GLES2)
     if (config.m_eFormat == VTextureLoader::UNKNOWN)
     {
-      Vision::Error.Warning("Shadow mapping not supported on this device!");
+      hkvLog::Warning("Shadow mapping not supported on this device!");
       return false;
     }
   #endif
@@ -382,7 +380,7 @@ bool VShadowMapGenerator::Initialize()
 
     pContext->SetLODReferenceContext(m_pRendererNode->GetReferenceContext());
     pContext->SetRenderLoop(pShadowMapRenderLoop);
-    pContext->SetRenderingEnabled(m_bUpdateEnabled);
+    pContext->SetRenderingEnabled(m_bUpdateEnabled && !m_bIsRenderedInterleaved);   // Interleaved shadow map rendering is handled separately!
     pContext->SetUserData(this);
 
     // Set Render Targets to the shared shadow map / depth stencil map
@@ -586,7 +584,7 @@ void VShadowMapGenerator::SetCascadeCount(int iNumParts)
 {
   if (iNumParts > 1 && m_pLightSource->GetType() != VIS_LIGHT_DIRECTED)
   {
-    Vision::Error.Warning("More than one cascade is only supported for directional lights. Forcing iNumCascades to 1!");
+    hkvLog::Warning("More than one cascade is only supported for directional lights. Forcing iNumCascades to 1!");
     iNumParts = 1;
   }
   m_iNumParts = iNumParts;
@@ -595,13 +593,18 @@ void VShadowMapGenerator::SetCascadeCount(int iNumParts)
 
 void VShadowMapGenerator::SetUpdateEnabled(bool bStatus)
 {
-  for (int i=0; i<m_iNumParts; i++)
-  {
-    VisRenderContext_cl *pContext = m_pParts[i].GetRenderContext();
-    VASSERT(pContext != NULL);
-    pContext->SetRenderingEnabled(bStatus);
-  }
   m_bUpdateEnabled = bStatus;
+
+  // Interleaved rendered shadowmaps have a special update path and are not rendered with the other contexts.
+  if(!m_bIsRenderedInterleaved)
+  {
+    for (int i=0; i<m_iNumParts; i++)
+    {
+      VisRenderContext_cl *pContext = m_pParts[i].GetRenderContext();
+      VASSERT(pContext != NULL);
+      pContext->SetRenderingEnabled(m_bUpdateEnabled);
+    }
+  }
 }
 
 void VShadowMapGenerator::OnHandleCallback(IVisCallbackDataObject_cl *pData)
@@ -692,9 +695,9 @@ void VShadowMapGenerator::UpdateDepthFillTechniques(int iCascade)
 {
   VASSERT(m_spShadowMapFormat->GetTerrainFillTechnique()->GetShader(0)->IsOfType(VShadowMapFillShaderPass::GetClassTypeId()));
   VASSERT(m_spShadowMapFormat->GetOpaqueFillTechnique(false)->GetShader(0)->IsOfType(VShadowMapFillShaderPass::GetClassTypeId()));
-  VASSERT(m_spShadowMapFormat->GetAlphaFillTechnique(false)->GetShader(0)->IsOfType(VShadowMapFillShaderPass::GetClassTypeId()));
+  VASSERT(m_spShadowMapFormat->GetAlphaFillTechnique(false)->GetShader(0)->IsOfType(VShadowMapFillAlphaTestShaderPass::GetClassTypeId()));
   VASSERT(m_spShadowMapFormat->GetOpaqueFillTechnique(true)->GetShader(0)->IsOfType(VShadowMapFillShaderPass::GetClassTypeId()));
-  VASSERT(m_spShadowMapFormat->GetAlphaFillTechnique(true)->GetShader(0)->IsOfType(VShadowMapFillShaderPass::GetClassTypeId()));
+  VASSERT(m_spShadowMapFormat->GetAlphaFillTechnique(true)->GetShader(0)->IsOfType(VShadowMapFillAlphaTestShaderPass::GetClassTypeId()));
 
   float fBias, fSlopeScale;
   hkvVec3 vClipPlanes(hkvNoInitialization);
@@ -883,7 +886,7 @@ void VShadowMapFormatDepthOnly::Initialize(VShadowMapGenerator* pGenerator)
 #endif
   if (!Vision::Shaders.LoadShaderLibrary(szShaderFileName, SHADERLIBFLAG_HIDDEN))
   {
-    Vision::Error.Warning("Shader lib file for shadowing could not be loaded (file '%s')", szShaderFileName);
+    hkvLog::Warning("Shader lib file for shadowing could not be loaded (file '%s')", szShaderFileName);
     return;
   }
 
@@ -901,9 +904,9 @@ void VShadowMapFormatDepthOnly::Initialize(VShadowMapGenerator* pGenerator)
   
   VASSERT(m_spTerrainFillTechnique->GetShader(0)->IsOfType(VShadowMapFillShaderPass::GetClassTypeId()));
   VASSERT(m_spOpaqueFillTechnique->GetShader(0)->IsOfType(VShadowMapFillShaderPass::GetClassTypeId()));
-  VASSERT(m_spAlphatestFillTechnique->GetShader(0)->IsOfType(VShadowMapFillShaderPass::GetClassTypeId()));
+  VASSERT(m_spAlphatestFillTechnique->GetShader(0)->IsOfType(VShadowMapFillAlphaTestShaderPass::GetClassTypeId()));
   VASSERT(m_spOpaqueFillTechniqueDoubleSided->GetShader(0)->IsOfType(VShadowMapFillShaderPass::GetClassTypeId()));
-  VASSERT(m_spAlphatestFillTechniqueDoubleSided->GetShader(0)->IsOfType(VShadowMapFillShaderPass::GetClassTypeId()));
+  VASSERT(m_spAlphatestFillTechniqueDoubleSided->GetShader(0)->IsOfType(VShadowMapFillAlphaTestShaderPass::GetClassTypeId()));
 
   // Note: disabling of a pixel shader generally works on WiiU, but using the clip instruction inside the pixel shader as done by the alpha-test
   //       fill techniques causes problems on the WiiU, because the alpha-test pixel shader would be still active after it has been used once.
@@ -1150,6 +1153,58 @@ void VShadowMapFillShaderPass::PostCompileFunction(VShaderEffectResource *pSourc
     m_RegClipPlanes.Init(this, "g_ShadowClipPlanes");
 
   m_cStateGroupMask &= ~STATEGROUP_DEPTHSTENCIL;
+}
+
+// ================================================================================
+// VShadowMapFillAlphaTestShaderPass
+// ================================================================================
+
+V_IMPLEMENT_SERIAL( VShadowMapFillAlphaTestShaderPass, VShadowMapFillShaderPass, 0, &g_VisionEngineModule );
+
+static VCallbackRetVal_e VISION_FASTCALL ShaderCallback(VCallbackGeometryType_e sendertype, void *pElement, VCompiledShaderPass *shader)
+{
+  VisSurface_cl *pSurface = NULL;
+ 
+  if (sendertype == GEOMETRYTYPE_ENTITYSUBMESH) // shader called by an entity model
+  {
+     const VisBaseEntity_cl *pEntity = ((VEntitySubmeshInfo_t*)pElement)->m_pEntity;
+     VASSERT(pEntity != NULL); 
+     const VDynamicMesh *pMesh = pEntity->GetMesh();
+     VisSurface_cl** pSurfaceArray = pEntity->GetSurfaceArray();
+     if((pMesh != NULL) && (pSurfaceArray != NULL))
+     {
+       const VDynamicSubmesh *pSubmesh = pMesh->GetSubmesh(((VEntitySubmeshInfo_t*)pElement)->m_iSubmeshIndex);
+       VASSERT(pSubmesh != NULL);
+       pSurface = pSurfaceArray[pSubmesh->GetSurfaceIndex()];
+     }
+  }
+  else if (sendertype == GEOMETRYTYPE_STATICGEOMETRY)
+  {
+    const VisStaticGeometryInstance_cl *pInstance = (VisStaticGeometryInstance_cl*)pElement;
+    VASSERT(pInstance != NULL);
+    pSurface = pInstance->GetSurface();
+  }
+
+  if (pSurface != NULL)
+  {
+    VShadowMapFillAlphaTestShaderPass *pShader = vstatic_cast<VShadowMapFillAlphaTestShaderPass*>(shader);
+    float fAlphaTestThreshold = pSurface->GetAlphaTestThreshold();
+    float fValues[4] = { fAlphaTestThreshold, fAlphaTestThreshold, fAlphaTestThreshold, fAlphaTestThreshold };
+    pShader->m_RegAlphaThreshold.SetRegisterValueSafeF(pShader, fValues);
+    pShader->m_bModified = true; 
+  }
+
+  return CALLBACK_CONTINUE;
+}
+
+void VShadowMapFillAlphaTestShaderPass::PostCompileFunction(VShaderEffectResource *pSourceFX, VShaderPassResource *pSourceShader)
+{
+  VShadowMapFillShaderPass::PostCompileFunction(pSourceFX, pSourceShader);
+
+  bool bResult = m_RegAlphaThreshold.Init(this, "AlphaThreshold");
+  VASSERT_MSG(bResult == true, "VShadowMapFillAlphaTestShaderPass: Failed to initialize AlphaThreshold shader register");
+
+  m_pCallback = ShaderCallback;
 }
 
 
@@ -1664,7 +1719,7 @@ void VShadowMapRenderLoop::SplitByRenderState(const VisEntityCollection_cl *pEnt
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

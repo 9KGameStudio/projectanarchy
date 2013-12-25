@@ -25,9 +25,6 @@
 #include <algorithm>
 #include <deque>
 
-#define DBGMSG(msg, ...)
-//#define DBGMSG(msg, ...) { hkStringBuf dbgBuf; dbgBuf.printf(msg, __VA_ARGS__); dbgBuf.append("\r\n"); OutputDebugStringA(dbgBuf.cString()); }
-
 /// \class hkvCrossThreadWork
 /// \brief Helper to allow background operations to wait for some work to be done in
 ///        a different thread, such as (usually) the main thread.
@@ -662,7 +659,6 @@ void hkvBackgroundProcessor<Input, Output>::handleRetryWait(const InputEntry& in
     hkInt32 msToWait = (hkInt32)(m_retryWaitMs - msElapsed);
     if (msToWait > 0)
     {
-      DBGMSG("handleRetryWait(%d)", msToWait);
       Sleep(msToWait);
     }
   }
@@ -693,13 +689,10 @@ bool hkvBackgroundProcessor<Input, Output>::handleRetryResult(const InputEntry& 
   return true;
 }
 
-
-#undef DBGMSG
-
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

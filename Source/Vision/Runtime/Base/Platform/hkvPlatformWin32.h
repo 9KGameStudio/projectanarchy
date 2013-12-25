@@ -76,6 +76,8 @@
 #elif defined( _VISION_APOLLO )
   #define SUPPORTS_MULTITOUCH
 #endif  
+  #define SUPPORTS_MOTIONINPUT
+
   // on Windows-based platforms, we support the file serve client for
   // vanilla win32 and x64, as well as Apollo
 #if defined( _VISION_APOLLO ) || !defined( _VISION_WINRT )
@@ -104,7 +106,7 @@
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

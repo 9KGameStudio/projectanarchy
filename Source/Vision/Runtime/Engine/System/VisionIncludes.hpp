@@ -55,9 +55,7 @@
 
 #include <Vision/Runtime/Base/System/IO/Stream/IVFileStream.hpp>
 #include <Vision/Runtime/Base/System/IO/Stream/VMemoryStream.hpp>
-#include <Vision/Runtime/Base/System/IO/Clipboard/VClipboard.hpp>
-#include <Vision/Runtime/Base/System/IO/Stream/VZipFileStreamManager.hpp>
-#include <Vision/Runtime/Base/System/IO/Stream/VDiskFileStreamManager.hpp>
+#include <Vision/Runtime/Base/System/IO/Stream/VDiskFileStream.hpp>
 
 #include <Vision/Runtime/Base/System/Resource/VResource.hpp>
 #include <Vision/Runtime/Base/System/Resource/VResourceManager.hpp>
@@ -77,10 +75,6 @@
 #include <Vision/Runtime/Base/Graphics/Shader/vEffectAssignment.hpp>
 #include <Vision/Runtime/Base/String/VStringTokenizerInPlace.hpp>
 
-
-#ifdef WIN32
-  #include <Vision/Runtime/Base/Graphics/Shader/vShaderIncludeManager.hpp>
-#endif
 
 #include <Vision/Runtime/Base/RemoteComm/VTarget.hpp>
 #include <Vision/Runtime/Base/RemoteComm/VConnection.hpp>
@@ -151,7 +145,7 @@
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

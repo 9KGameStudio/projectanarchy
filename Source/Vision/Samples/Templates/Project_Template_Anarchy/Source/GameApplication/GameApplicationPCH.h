@@ -6,33 +6,19 @@
  *
  */
 
-// stdafx.h : include file for standard system include files,
-//  or project specific include files that are used frequently, but
-//      are changed infrequently
-//
-
 #if !defined(GAMEAPPLICATIONPCH_H_INCLUDED)
 #define GAMEAPPLICATIONPCH_H_INCLUDED
 
 #if defined(WIN32)
-
-#define WIN32_LEAN_AND_MEAN    // Exclude rarely-used stuff from Windows headers
-
+  #define WIN32_LEAN_AND_MEAN // Exclude rarely-used stuff from Windows headers
 #endif
 
-#define VISION_SAMPLEAPP_CALLBACKS
-
-#include <Vision/Runtime/Base/VBase.hpp>
 #include <Vision/Runtime/Engine/System/Vision.hpp>
-#include <Vision/Runtime/Common/VisSampleApp.hpp>
-
-
-// TODO: reference additional headers your program requires here
 
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

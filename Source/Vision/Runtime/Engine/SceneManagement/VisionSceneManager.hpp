@@ -149,13 +149,19 @@ public:
   ///   Returns the visibility zone with the specified unique ID.
   VISION_APIFUNC VisVisibilityZone_cl *VisibilityZoneForUID(__int64 uid) const;
 
-
   /// \brief
   ///   Returns the extents of the currently loaded scene.
   /// 
   /// \param bbox
-  ///   Bounding box enclosing scene geometry.
+  ///   Bounding box enclosing static scene geometry.
   VISION_APIFUNC virtual void GetSceneExtents(hkvAlignedBBox& bbox) const = 0;
+
+  /// \brief
+  ///   Returns the dynamic extents of the currently loaded scene.
+  /// 
+  /// \param bbox
+  ///   Bounding box enclosing static and dynamic scene geometry (static meshes and entities).
+  VISION_APIFUNC virtual void GetDynamicSceneExtents(hkvAlignedBBox& bbox) const = 0;
 
   /// \brief
   ///   Traces a ray into the scene and returns the first visibility zone it hits.
@@ -433,57 +439,9 @@ public:
   /// @{
   ///
 
+  VISION_APIFUNC virtual unsigned int FindVisibilityZones(const hkvAlignedBBox &bbox, VisVisibilityZone_cl **ppZones, unsigned int iMaxZones) HKV_OVERRIDE;
 
-  /// \brief
-  ///   Returns a list of all visibility zones overlapping a bounding box.
-  /// 
-  /// \param bbox
-  ///   Bounding box to test.
-  /// 
-  /// \param ppZones
-  ///   List of pointers to visibility zones (output).
-  /// 
-  /// \param iMaxZones
-  ///   Maximum number of visibility zones to return. Typically the allocated size of the array
-  ///   passed in ppZones.
-  /// 
-  /// \return
-  ///   the umber of visibility zones overlapping the bounding box, i.e. the number of
-  ///   entries in the ppZones list.
-  VISION_APIFUNC VOVERRIDE unsigned int FindVisibilityZones(const hkvAlignedBBox &bbox, VisVisibilityZone_cl **ppZones, unsigned int iMaxZones);
-
-
-  /// \brief
-  ///   Returns the closest visibility zone for a bounding box.
-  /// 
-  /// Returns the closest visibility zone for a bounding box, taking proximity to the static
-  /// geometry in visibility nodes and portal relations into account.
-  /// 
-  /// This method is used by the Vision engine in order to classify scene elements according to the
-  /// visibility zone they belong to.
-  /// 
-  /// In cases where the passed bounding box overlaps/spans multiple visibility zones, this
-  /// function returns the visibility zone the center of the bounding box (or, if set, the origin
-  /// passed to this function) is in.
-  /// 
-  /// Note that the this method relies on static geometry instances in the visibility zones for
-  /// classifying scene elements. In situations where the bounding boxes of visibility zones
-  /// overlap and there is no static geometry present which can be used to classify the visibility
-  /// zone assignment of scene elements, this implementation will fail. Such scenes have to use
-  /// custom scene manager implementations.
-  /// 
-  /// \param bbox
-  ///   Bounding box to test against.
-  /// 
-  /// \param pOrigin
-  ///   If not null, this parameter is used to specify a custom origin (in world space) for a scene
-  ///   element. The function should then use this position to identify the best-fitting visibility
-  ///   zone rather than the center of the bounding box.
-  /// 
-  /// \return
-  ///   the closest visibility zone for the passed bounding box and position.
-  VISION_APIFUNC VOVERRIDE VisVisibilityZone_cl *FindClosestVisibilityZone(const hkvAlignedBBox &bbox, const hkvVec3* pOrigin = NULL);
-
+  VISION_APIFUNC virtual VisVisibilityZone_cl *FindClosestVisibilityZone(const hkvAlignedBBox &bbox, const hkvVec3* pOrigin = NULL) HKV_OVERRIDE;
 
   /// \brief
   ///   Returns the closest visibility zone for a bounding box, based only on proximity.
@@ -500,30 +458,11 @@ public:
   ///   the closest visibility zone for the passed bounding box and position.
   VISION_APIFUNC VisVisibilityZone_cl *FindClosestVisibilityZoneSimple(const hkvAlignedBBox &bbox) const;
 
+  VISION_APIFUNC virtual void GetSceneExtents(hkvAlignedBBox& bbox) const HKV_OVERRIDE;
 
-  /// \brief
-  ///   Returns the extents of the currently loaded scene.
-  /// 
-  /// \param bbox
-  ///   Bounding box enclosing all scene geometry.
-  VISION_APIFUNC VOVERRIDE void GetSceneExtents(hkvAlignedBBox& bbox) const;
+  VISION_APIFUNC virtual void GetDynamicSceneExtents(hkvAlignedBBox& bbox) const HKV_OVERRIDE;
 
-  /// \brief
-  ///   Traces a ray into the scene and returns the first visibility zone that was hit.
-  /// 
-  /// This function is useful if a camera is outside of the scene (e.g. in an editor) and a starting point for
-  /// visibility determination is required.
-  /// 
-  /// \param vPos
-  ///   Starting position of the ray.
-  ///
-  /// \param vDir
-  ///   Direction and length of the ray.
-  ///
-  /// \returns
-  ///   the first visibility zone that was hit by the ray, or NULL if none was hit.
-  ///
-  VISION_APIFUNC VOVERRIDE VisVisibilityZone_cl *TraceIntoZone(const hkvVec3& vPos, const hkvVec3& vDir);
+  VISION_APIFUNC virtual VisVisibilityZone_cl *TraceIntoZone(const hkvVec3& vPos, const hkvVec3& vDir) HKV_OVERRIDE;
 
   ///
   /// @}
@@ -535,10 +474,9 @@ public:
   /// @{
   ///
 
-
   /// \brief
   ///   Overridden implementation that returns instances of base class VisZoneResource_cl
-  VISION_APIFUNC VOVERRIDE VisZoneResource_cl *CreateZoneResource(VisZoneResourceManager_cl *pManager);
+  VISION_APIFUNC virtual VisZoneResource_cl *CreateZoneResource(VisZoneResourceManager_cl *pManager) HKV_OVERRIDE;
 
 
   /// \brief
@@ -621,7 +559,7 @@ typedef VSmartPtr<IVisSceneManager_cl> IVisSceneManagerPtr;
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

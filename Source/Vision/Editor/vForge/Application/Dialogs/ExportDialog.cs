@@ -62,6 +62,7 @@ namespace Editor.Dialogs
     private ColumnHeader nameHeader;
     private ColumnHeader descriptionHeader;
     private TableLayoutPanel checkBoxTableLayout;
+    private Button button_DeleteProfile;
 
 		/// <summary>
 		/// Required designer variable.
@@ -88,7 +89,7 @@ namespace Editor.Dialogs
       toolTip.AutoPopDelay = 5000;
       toolTip.InitialDelay = 1000;
       toolTip.ReshowDelay = 500;
-      toolTip.SetToolTip(this.checkBox_RunAfterExport, "Uses the vSceneViewer.exe in the same directory as the running vForge.exe");
+      toolTip.SetToolTip(this.checkBox_RunAfterExport, "Uses the vPlayer.exe in the same directory as the running vForge.exe");
 		}
 
     private void ExportDialog_Load(object sender, EventArgs e)
@@ -157,6 +158,7 @@ namespace Editor.Dialogs
       this.nameHeader = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
       this.descriptionHeader = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
       this.groupBox3 = new System.Windows.Forms.GroupBox();
+      this.button_DeleteProfile = new System.Windows.Forms.Button();
       this.checkBox_SaveProfileOnExport = new System.Windows.Forms.CheckBox();
       this.label2 = new System.Windows.Forms.Label();
       this.button_SaveProfile = new System.Windows.Forms.Button();
@@ -491,6 +493,7 @@ namespace Editor.Dialogs
       // 
       this.groupBox3.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
+      this.groupBox3.Controls.Add(this.button_DeleteProfile);
       this.groupBox3.Controls.Add(this.checkBox_SaveProfileOnExport);
       this.groupBox3.Controls.Add(this.label2);
       this.groupBox3.Controls.Add(this.button_SaveProfile);
@@ -502,6 +505,20 @@ namespace Editor.Dialogs
       this.groupBox3.TabIndex = 1;
       this.groupBox3.TabStop = false;
       this.groupBox3.Text = "Export Presets";
+      // 
+      // button_DeleteProfile
+      // 
+      this.button_DeleteProfile.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+      this.button_DeleteProfile.Image = global::Editor.Properties.Resources.delete2;
+      this.button_DeleteProfile.ImageAlign = System.Drawing.ContentAlignment.MiddleRight;
+      this.button_DeleteProfile.Location = new System.Drawing.Point(291, 43);
+      this.button_DeleteProfile.Name = "button_DeleteProfile";
+      this.button_DeleteProfile.Size = new System.Drawing.Size(107, 24);
+      this.button_DeleteProfile.TabIndex = 5;
+      this.button_DeleteProfile.Text = "Delete Preset";
+      this.button_DeleteProfile.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
+      this.button_DeleteProfile.UseVisualStyleBackColor = true;
+      this.button_DeleteProfile.Click += new System.EventHandler(this.button_DeleteProfile_Click);
       // 
       // checkBox_SaveProfileOnExport
       // 
@@ -541,7 +558,7 @@ namespace Editor.Dialogs
       this.button_CreateProfile.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
       this.button_CreateProfile.Image = ((System.Drawing.Image)(resources.GetObject("button_CreateProfile.Image")));
       this.button_CreateProfile.ImageAlign = System.Drawing.ContentAlignment.MiddleRight;
-      this.button_CreateProfile.Location = new System.Drawing.Point(281, 43);
+      this.button_CreateProfile.Location = new System.Drawing.Point(168, 43);
       this.button_CreateProfile.Name = "button_CreateProfile";
       this.button_CreateProfile.Size = new System.Drawing.Size(117, 24);
       this.button_CreateProfile.TabIndex = 3;
@@ -580,19 +597,19 @@ namespace Editor.Dialogs
       // 
       this.captionBar.BackColor = System.Drawing.SystemColors.Window;
       this.captionBar.Caption = "Exporting the Scene";
-      this.captionBar.CompactView = false;
       this.captionBar.Description = "All settings in this dialog can be saved in export presets for later reuse. You c" +
     "an export the scene either for the active Asset Profile, or for a selection of m" +
     "ultiple Asset Profiles.";
       this.captionBar.Dock = System.Windows.Forms.DockStyle.Top;
+      this.captionBar.HelpContext = "dialogs";
+      this.captionBar.HelpKey = "Export Dialog";
+      this.captionBar.HelpManual = null;
       this.captionBar.Image = ((System.Drawing.Image)(resources.GetObject("captionBar.Image")));
       this.captionBar.Location = new System.Drawing.Point(0, 0);
       this.captionBar.Name = "captionBar";
       this.captionBar.SetFontColor = System.Drawing.SystemColors.ControlText;
       this.captionBar.ShowBorder = false;
       this.captionBar.ShowBottomLine = true;
-      this.captionBar.ShowCaptionText = true;
-      this.captionBar.ShowImage = true;
       this.captionBar.Size = new System.Drawing.Size(554, 52);
       this.captionBar.TabIndex = 0;
       // 
@@ -613,7 +630,7 @@ namespace Editor.Dialogs
       this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
       this.MaximizeBox = false;
       this.MinimizeBox = false;
-      this.MinimumSize = new System.Drawing.Size(450, 520);
+      this.MinimumSize = new System.Drawing.Size(570, 520);
       this.Name = "ExportDialog";
       this.ShowInTaskbar = false;
       this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
@@ -983,7 +1000,7 @@ namespace Editor.Dialogs
 
         item.Tag = name;
         item.Group = listView_Layers.Groups["Plugins"];
-        item.ToolTipText = "If enabled, this plugin will be loaded by the vSceneViewer";
+        item.ToolTipText = "If enabled, this plugin will be loaded by the vPlayer";
         item.Checked = bState;
       }
 
@@ -1027,7 +1044,7 @@ namespace Editor.Dialogs
         else if (item.Tag is Zone)
           ((Zone)item.Tag).GetDependencies(info);
       }
-      string desc = "This list shows the native assets used by the current export profile";
+      string desc = "This list shows the native assets used by the current export preset";
       dlg.Description = desc;
       dlg.AssetList = EditorManager.AssetManager.ExtractAssetInfo(info);
       ExportHelper.EndResourceSnapshot(info); // after extracting
@@ -1050,11 +1067,11 @@ namespace Editor.Dialogs
       if (!CurrentSettingModified)
         return true;
 
-      DialogResult res = EditorManager.ShowMessageBox("The current profile '" + _settings.ProfileName + "' has been modified since\nlast saving.\n\n" +
-        "Select 'Yes' to save the profile\n" +
+      DialogResult res = EditorManager.ShowMessageBox("The current preset '" + _settings.ProfileName + "' has been modified since\nlast saving.\n\n" +
+        "Select 'Yes' to save the preset\n" +
         "Select 'No' to discard the changes\n" +
-        "Select 'Cancel' to abort profile switching\n"
-        , "Save profile changes?", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question);
+        "Select 'Cancel' to abort preset switching\n"
+        , "Save preset changes?", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question);
 
       if (res == DialogResult.Cancel)
         return false;
@@ -1111,12 +1128,44 @@ namespace Editor.Dialogs
     {
       if (!settings.SaveToFile())
       {
-        EditorManager.ShowMessageBox("Failed to save export profile '" + settings.ProfileName + "'", "Export Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        EditorManager.ShowMessageBox("Failed to save export preset '" + settings.ProfileName + "'", "Export Preset Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
         return false;
       }
       Settings = settings; // clone and update UI
       _settingsUnmodified = (SceneExportProfile)settings.Clone();
 
+      return true;
+    }
+
+    bool DeleteProfile(SceneExportProfile settings)
+    {
+      if (comboBox_Profile.Items.Count <= 1)
+      {
+        EditorManager.ShowMessageBox("Can't delete the last export preset '" + settings.ProfileName + "'", "Delete Export Preset Failed", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        return false;
+      }
+
+      if (EditorManager.ShowMessageBox("Do you want to delete the export preset '" + settings.ProfileName + "'?", "Delete Export Preset?", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.No)
+      {
+        return false;
+      }
+
+      if (!settings.DeleteFile())
+      {
+        EditorManager.ShowMessageBox("Failed to delete preset '" + settings.ProfileName + "'.\nMake sure the file '" + settings.FileName + "' is writable.", "Delete Export Preset Failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        return false;
+      }
+
+      // We do not want that popup that the export preset we just deleted is modified.
+      _bForceReturnNotModified = true;
+      // Rebuild the export preset combobox and select its new first index.
+      FillProfileCombobox();
+      comboBox_Profile.SelectedIndex = 0;
+      // Changing SelectedIndex does not invoke selection changed, so we do so manually.
+      comboBox_Profile_SelectionChangeCommitted(null, null);
+      _bForceReturnNotModified = false;
+      // The Settings property has now been modified and we need to push it back to the global settings as it may still be the just deleted one.
+      EditorManager.Scene.CurrentExportProfile = Settings;
       return true;
     }
 
@@ -1127,8 +1176,8 @@ namespace Editor.Dialogs
 
       CreateFileDlg dlg = new CreateFileDlg();
       dlg.InitialDirectory = EditorManager.Scene.LayerDirectoryName;
-      dlg.Caption = "Creating a new Export Profile";
-      dlg.Description = "Enter the name of the new profile file.";
+      dlg.Caption = "Creating a new Export Preset";
+      dlg.Description = "Enter the name of the new preset file.";
       dlg.Ext = "." + SceneExportProfile.FILE_EXTENSION_EXPORTPROFILE;
       dlg.Filter = new string[] { dlg.Ext.ToLower() };
       dlg.AllowOverwrite = false;
@@ -1170,6 +1219,11 @@ namespace Editor.Dialogs
       }
       Settings = newProfile; // clone and apply to UI
       _settingsUnmodified = (SceneExportProfile)newProfile.Clone();
+    }
+
+    private void button_DeleteProfile_Click(object sender, EventArgs e)
+    {
+      DeleteProfile(Settings);
     }
 
     private void button_SaveProfile_Click(object sender, EventArgs e)
@@ -1226,11 +1280,12 @@ namespace Editor.Dialogs
     }
 
     #endregion
+
   }
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

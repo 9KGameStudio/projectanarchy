@@ -669,7 +669,7 @@ void VisMirror_cl::SetModelFile(const char *szModel)
     m_spDynamicMesh = Vision::Game.LoadDynamicMesh(szModel, true, false);
     if (m_spDynamicMesh == NULL)
     {
-      Vision::Error.Warning("Could not load mirror model %s", szModel);
+      hkvLog::Warning("Could not load mirror model %s", szModel);
       return;
     }
     VisMeshBuffer_cl *pMesh = new VisMeshBuffer_cl();
@@ -1329,7 +1329,7 @@ void VisMirror_cl::Serialize( VArchive &ar )
 VisMirror_cl::VReflectionShaderSets_e g_TempMode = VisMirror_cl::AlwaysSimple;
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -111,7 +111,7 @@ bool IVShadowMapComponent::InitializeRenderer()
   m_pRendererNode = vdynamic_cast<VRendererNodeCommon*>(Vision::Renderer.GetRendererNode(m_iRendererNodeIndex));
   if (m_pRendererNode == NULL)
   {
-    Vision::Error.Warning("No VRendererNodeCommon set. Shadows will not work.");
+    hkvLog::Warning("No VRendererNodeCommon set. Shadows will not work.");
     return false;
   }
 
@@ -123,7 +123,7 @@ bool IVShadowMapComponent::InitializeRenderer()
     }
     else
     {
-      Vision::Error.Warning("Debug mode only works with directional lights, reverting to 'SHADOW_MAPPING_MODE_PCF4'.");
+      hkvLog::Warning("Debug mode only works with directional lights, reverting to 'SHADOW_MAPPING_MODE_PCF4'.");
       ShadowMappingMode = SHADOW_MAPPING_MODE_PCF4;
     }
   }
@@ -417,13 +417,13 @@ void IVShadowMapComponent::SetShadowMappingMode(VShadowMappingMode_e mode)
 #ifndef _VR_DX11
   if (mode == SHADOW_MAPPING_MODE_CHS)
   {
-    Vision::Error.Warning("Contact hardening shadows (CHS) are DX11 only.");
+    hkvLog::Warning("Contact hardening shadows (CHS) are DX11 only.");
     mode = SHADOW_MAPPING_MODE_PCSS16;
   }
 #else
   if ( mode == SHADOW_MAPPING_MODE_CHS && VVideo::GetDXFeatureLevel() < D3D_FEATURE_LEVEL_10_0 )
   {
-    Vision::Error.Warning( "Contact hardening shadows (CHS) are not supported for 9.3 downlevel DX11." );
+    hkvLog::Warning( "Contact hardening shadows (CHS) are not supported for 9.3 downlevel DX11." );
     mode = SHADOW_MAPPING_MODE_PCSS16;
   }
 #endif
@@ -601,7 +601,7 @@ START_VAR_TABLE(IVShadowMapComponent, IVObjectComponent, "Abstract ShadowMap Com
 END_VAR_TABLE
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

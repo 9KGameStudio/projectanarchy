@@ -209,7 +209,7 @@ void RPG_GameManager::SetLevelInfo(RPG_LevelInfo* levelInfo)
 {
   if(m_levelInfo && levelInfo)
   {
-    Vision::Error.Warning("Overwriting the existing LevelInfo stored in RPG_GameManager. This probably means that there are multiple LevelInfo objects in your scene.");
+    hkvLog::Warning("Overwriting the existing LevelInfo stored in RPG_GameManager. This probably means that there are multiple LevelInfo objects in your scene.");
   }
 
   m_levelInfo = levelInfo;
@@ -219,7 +219,7 @@ RPG_LevelInfo* RPG_GameManager::GetLevelInfo()
 {
   if(!m_levelInfo)
   {
-    Vision::Error.Warning("This level does not have a LevelInfo object. Please create one in vForge.");
+    hkvLog::Warning("This level does not have a LevelInfo object. Please create one in vForge.");
   }
 
   return m_levelInfo;
@@ -259,38 +259,32 @@ void RPG_GameManager::OnBeforeSceneLoaded(char const *sceneFileName)
 
   // Add our own Havok Behavior world listener in order to listen to Behavior events
   vHavokBehaviorModule *const havok_behavior_module = vHavokBehaviorModule::GetInstance();
-  {
-    havok_behavior_module->getBehaviorWorld()->addListener(&RPG_HavokBehaviorWorldListener::s_instance);
-  }
+  havok_behavior_module->getBehaviorWorld()->addListener(&RPG_HavokBehaviorWorldListener::s_instance);
 }
 
 void RPG_GameManager::OnAfterSceneLoaded()
 {
-  Vision::Callbacks.OnUpdateSceneBegin += this;
-
   RPG_RendererUtil::StoreViewParams(m_storedViewParams);
-
-  // Set up game view params
-  RPG_ViewParams viewParams = m_storedViewParams;
-  {
-    viewParams.m_projectionType = VIS_PROJECTIONTYPE_PERSPECTIVE;
-    viewParams.m_nearClip = 50.f;
-    viewParams.m_farClip = 2500.f;
-    viewParams.m_fovX = 0.f;
-    viewParams.m_fovY = 50.f;
-  }
-
-  RPG_RendererUtil::LoadViewParams(viewParams);
 
   // Initial player spawn
   if(m_levelInfo && m_levelInfo->GetInitialPlayerSpawnPoint())
   {
+    Vision::Callbacks.OnUpdateSceneBegin += this;
+
     RPG_PlayerSpawnPoint const *const playerSpawnPoint = m_levelInfo->GetInitialPlayerSpawnPoint();
     SpawnPlayer(PLAYER_PREFAB_NAME, playerSpawnPoint->GetPosition(), playerSpawnPoint->GetOrientation());
-  }
-  else
-  {
-    SpawnPlayer(PLAYER_PREFAB_NAME, hkvVec3::ZeroVector(), hkvVec3::ZeroVector());
+
+    // Set up game view params
+    RPG_ViewParams viewParams = m_storedViewParams;
+    {
+      viewParams.m_projectionType = VIS_PROJECTIONTYPE_PERSPECTIVE;
+      viewParams.m_nearClip = 50.f;
+      viewParams.m_farClip = 2500.f;
+      viewParams.m_fovX = 0.f;
+      viewParams.m_fovY = 50.f;
+    }
+
+    RPG_RendererUtil::LoadViewParams(viewParams);
   }
 }
 
@@ -303,30 +297,31 @@ void RPG_GameManager::OnBeforeSceneUnloaded()
 
 void RPG_GameManager::OnAfterSceneUnloaded()
 {
-  m_sceneFileName = "";
-  
-  m_bossEntitySpawned = false;
-
   Vision::Callbacks.OnUpdateSceneBegin -= this;
 
-  vHavokBehaviorModule *const havok_behavior_module = vHavokBehaviorModule::GetInstance();
+  if (!VStringUtil::IsEmpty(m_sceneFileName))
   {
+    // Only try to remove the listener if a scene was actually loaded
+    vHavokBehaviorModule *const havok_behavior_module = vHavokBehaviorModule::GetInstance();
     havok_behavior_module->getBehaviorWorld()->removeListener(&RPG_HavokBehaviorWorldListener::s_instance);
   }
+
+  m_bossEntitySpawned = false;
+  m_sceneFileName = "";
 }
 
 void RPG_GameManager::OnUpdateSceneBegin()
 {
-  if(!IsGameOver())
+  if (!IsGameOver())
   {
     // Handle demo player
-    if(!m_playerEntity)
+    if (!m_playerEntity)
     {
       SpawnPlayer(PLAYER_PREFAB_NAME, m_playerRespawnPosition, hkvVec3::ZeroVector());
     }
     else
     {
-      // Store the most recent player position for respawn
+      // Store the most recent player position for respawn.
       m_playerRespawnPosition = m_playerEntity->GetPosition();
     }
   }
@@ -363,7 +358,7 @@ void RPG_GameManager::OnHandleCallback(IVisCallbackDataObject_cl *callbackData)
 RPG_GameManager RPG_GameManager::s_instance;
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -15,6 +15,7 @@
 #include <Vision/Samples/Engine/Unicode/VArabicConverter.hpp>
 #include <Vision/Runtime/Base/System/Memory/VMemDbg.hpp>
 
+#include <Vision/Runtime/Framework/VisionApp/VAppImpl.hpp>
 
 // ReadPlacesFile: Reads in the PLACES_FILE and sets up all the WorldPlace_t
 //                 objects.
@@ -198,46 +199,40 @@ void WorldLanguages_cl::InitFunction()
   
   // set up some keys
 #ifdef SUPPORTS_KEYBOARD
-  VisSampleApp::GetInputMap()->MapTrigger(WORLD_LANG_PREV, V_KEYBOARD, CT_KB_BACKSP, VInputOptions::Once());
-  VisSampleApp::GetInputMap()->MapTrigger(WORLD_LANG_NEXT, V_KEYBOARD, CT_KB_SPACE,  VInputOptions::Once());
+  VAppImpl::GetInputMap()->MapTrigger(WORLD_LANG_PREV, V_KEYBOARD, CT_KB_BACKSP, VInputOptions::Once());
+  VAppImpl::GetInputMap()->MapTrigger(WORLD_LANG_NEXT, V_KEYBOARD, CT_KB_SPACE,  VInputOptions::Once());
 #endif
 
 #if defined(SUPPORTS_MULTITOUCH)
-  VTouchArea *pTouchArea
-#if defined(WIN32) && !defined(_VISION_WINRT)
-    = new VTouchArea(VInputManager::GetMultitouch(),  VRectanglef(0,0,(float)Vision::Video.GetXRes(),(float)Vision::Video.GetYRes()));
-#else
-    = new VTouchArea(VInputManager::GetTouchScreen());
-#endif
-
-  VisSampleApp::GetInputMap()->MapTrigger(WORLD_LANG_NEXT, pTouchArea, CT_TOUCH_ANY, VInputOptions::Once());
+  VTouchArea* pTouchArea = new VTouchArea(VInputManager::GetTouchScreen());
+  VAppImpl::GetInputMap()->MapTrigger(WORLD_LANG_NEXT, pTouchArea, CT_TOUCH_ANY, VInputOptions::Once());
 #endif
 
 #if defined(_VISION_XENON) || (defined(_VISION_WINRT) && !defined(_VISION_METRO) && !defined(_VISION_APOLLO))
-  VisSampleApp::GetInputMap()->MapTrigger(WORLD_LANG_PREV, V_XENON_PAD(0), CT_PAD_A, VInputOptions::Once());
-  VisSampleApp::GetInputMap()->MapTrigger(WORLD_LANG_NEXT, V_XENON_PAD(0), CT_PAD_B, VInputOptions::Once());
+  VAppImpl::GetInputMap()->MapTrigger(WORLD_LANG_PREV, V_XENON_PAD(0), CT_PAD_A, VInputOptions::Once());
+  VAppImpl::GetInputMap()->MapTrigger(WORLD_LANG_NEXT, V_XENON_PAD(0), CT_PAD_B, VInputOptions::Once());
 
 #elif defined(_VISION_PS3)
-  VisSampleApp::GetInputMap()->MapTrigger(WORLD_LANG_PREV, V_PS3_PAD(0), CT_PAD_CROSS, VInputOptions::Once());
-  VisSampleApp::GetInputMap()->MapTrigger(WORLD_LANG_NEXT, V_PS3_PAD(0), CT_PAD_CIRCLE, VInputOptions::Once());
+  VAppImpl::GetInputMap()->MapTrigger(WORLD_LANG_PREV, V_PS3_PAD(0), CT_PAD_CROSS, VInputOptions::Once());
+  VAppImpl::GetInputMap()->MapTrigger(WORLD_LANG_NEXT, V_PS3_PAD(0), CT_PAD_CIRCLE, VInputOptions::Once());
 
 #elif defined(_VISION_PSP2)
-  VisSampleApp::GetInputMap()->MapTrigger(WORLD_LANG_PREV, V_PSP2_PAD(0), CT_PAD_CROSS, VInputOptions::Once());
-  VisSampleApp::GetInputMap()->MapTrigger(WORLD_LANG_NEXT, V_PSP2_PAD(0), CT_PAD_CIRCLE, VInputOptions::Once());
+  VAppImpl::GetInputMap()->MapTrigger(WORLD_LANG_PREV, V_PSP2_PAD(0), CT_PAD_CROSS, VInputOptions::Once());
+  VAppImpl::GetInputMap()->MapTrigger(WORLD_LANG_NEXT, V_PSP2_PAD(0), CT_PAD_CIRCLE, VInputOptions::Once());
 
 #elif defined(_VISION_MOBILE)
   int width = Vision::Video.GetXRes();
   int height = Vision::Video.GetYRes();
   
   VTouchArea* prevArea = new VTouchArea(VInputManager::GetTouchScreen(), VRectanglef(0, 0, 100, height), -950.0f);
-  VisSampleApp::GetInputMap()->MapTrigger(WORLD_LANG_PREV, prevArea, CT_TOUCH_ANY, VInputOptions::Once());    
+  VAppImpl::GetInputMap()->MapTrigger(WORLD_LANG_PREV, prevArea, CT_TOUCH_ANY, VInputOptions::Once());    
   
   VTouchArea* nextArea = new VTouchArea(VInputManager::GetTouchScreen(), VRectanglef(width - 100, 0, width, height), -950.0f);
-  VisSampleApp::GetInputMap()->MapTrigger(WORLD_LANG_NEXT, nextArea, CT_TOUCH_ANY, VInputOptions::Once());
+  VAppImpl::GetInputMap()->MapTrigger(WORLD_LANG_NEXT, nextArea, CT_TOUCH_ANY, VInputOptions::Once());
 
 #elif defined(_VISION_WIIU)
-  VisSampleApp::GetInputMap()->MapTrigger(WORLD_LANG_PREV, VInputManagerWiiU::GetDRC(V_DRC_FIRST), CT_PAD_B, VInputOptions::Once());
-  VisSampleApp::GetInputMap()->MapTrigger(WORLD_LANG_NEXT, VInputManagerWiiU::GetDRC(V_DRC_FIRST), CT_PAD_A, VInputOptions::Once());
+  VAppImpl::GetInputMap()->MapTrigger(WORLD_LANG_PREV, VInputManagerWiiU::GetDRC(V_DRC_FIRST), CT_PAD_B, VInputOptions::Once());
+  VAppImpl::GetInputMap()->MapTrigger(WORLD_LANG_NEXT, VInputManagerWiiU::GetDRC(V_DRC_FIRST), CT_PAD_A, VInputOptions::Once());
   
 #endif
 
@@ -325,12 +320,12 @@ void WorldLanguages_cl::ThinkFunction()
 
   // if distance is smaller than an arbitrary threshold, destination is reached
   // (since rotation speed decreases exponentially, destination will never be reached)
-  if ( ((fDeltaY * fDeltaY) + (fDeltaZ * fDeltaZ)) < 0.5f ) 
+  if ( ((fDeltaY * fDeltaY) + (fDeltaZ * fDeltaZ)) < 0.000001 ) 
   {
     // if we reached the target angles, show the text
     ShowOverlays(TRUE);
 
-    float x = Vision::Video.GetXRes()-300.f;
+    float x = Vision::Video.GetXRes()-350.f;
     float y = Vision::Video.GetYRes()-60.f;
 
     // display current rotation angles
@@ -343,8 +338,8 @@ void WorldLanguages_cl::ThinkFunction()
       currentLon = -currentLon;
       currentLonC = 'W';
     }
-    currentAngle.Format("Current  N %02.3f, %c %03.3f", -m_fCurrentAngle[0], currentLonC, currentLon);
-    spGlobalFont->PrintText(NULL, hkvVec2(8.f, Vision::Video.GetYRes() - 40.f), currentAngle, VColorRef(255,255,255,160), state, fTempScale);
+    currentAngle.Format("Current  N %02.2f, %c %03.2f", -m_fCurrentAngle[0], currentLonC, currentLon);
+    spGlobalFont->PrintText(NULL, hkvVec2(300.f, Vision::Video.GetYRes() - 40.f), currentAngle, VColorRef(255,255,255,160), state, fTempScale);
       
     // display target rotation angles
     VString targetAngle;
@@ -355,8 +350,8 @@ void WorldLanguages_cl::ThinkFunction()
       targetLon = -targetLon;
       targetLonC = 'W';
     }
-    targetAngle.Format("Target N %02.3f, %c %03.3f", -m_fTargetAngle[0], targetLonC, targetLon); 
-    spGlobalFont->PrintText(NULL, hkvVec2(8.f, Vision::Video.GetYRes() - 80.f), targetAngle, VColorRef(255,255,255,160), state, fTempScale);
+    targetAngle.Format("Target N %02.2f, %c %03.2f", -m_fTargetAngle[0], targetLonC, targetLon); 
+    spGlobalFont->PrintText(NULL, hkvVec2(300.f, Vision::Video.GetYRes() - 60.f), targetAngle, VColorRef(255,255,255,160), state, fTempScale);
 
     // "Destination reached" text
     spGlobalFont->PrintText(NULL, hkvVec2(x, y), "Destination reached!", VColorRef(255,255,255,160), state);
@@ -368,9 +363,19 @@ void WorldLanguages_cl::ThinkFunction()
 
     // no linear speed, but a fraction of the distance to go
     float distFraction = 1.f - powf(0.03f,fDiff); // framerate independent fraction
-    m_fCurrentAngle[0] += distFraction*fDeltaY;
-    m_fCurrentAngle[1] += distFraction*fDeltaZ;
-    
+
+    // 10 degree per second is our minimal turn speed.
+    float fMinStep = 10 * fDiff; 
+    hkvVec2 vDist(fDeltaY, fDeltaZ);
+    // We must not step over the destination.
+    float fMaxStep = vDist.getLength(); 
+    // Make sure our current step has a minimal speed of 'fMinStep' and does not go over the destination.
+    float fStep = hkvMath::Min(hkvMath::Max(fMaxStep * distFraction, fMinStep), fMaxStep);
+    vDist *= (fStep / fMaxStep);
+
+    m_fCurrentAngle[0] += vDist.x;
+    m_fCurrentAngle[1] += vDist.y;
+
     // set globe's rotation
     hkvMat3 mat1, mat2;
 
@@ -390,8 +395,8 @@ void WorldLanguages_cl::ThinkFunction()
       currentLon = -currentLon;
       currentLonC = 'W';
     }
-    currentAngle.Format("Current  N %02.3f, %c %03.3f", -m_fCurrentAngle[0], currentLonC, currentLon);
-    spGlobalFont->PrintText(NULL, hkvVec2(8.f, Vision::Video.GetYRes() - 40.f), currentAngle, VColorRef(255,255,255,160), state, fTempScale);
+    currentAngle.Format("Current  N %02.2f, %c %03.2f", -m_fCurrentAngle[0], currentLonC, currentLon);
+    spGlobalFont->PrintText(NULL, hkvVec2(300.f, Vision::Video.GetYRes() - 40.f), currentAngle, VColorRef(255,255,255,160), state, fTempScale);
       
     // display target rotation angles
     VString targetAngle;
@@ -402,14 +407,14 @@ void WorldLanguages_cl::ThinkFunction()
       targetLon = -targetLon;
       targetLonC = 'W';
     }
-    targetAngle.Format("Target N %02.3f, %c %03.3f", -m_fTargetAngle[0], targetLonC, targetLon); 
-    spGlobalFont->PrintText(NULL, hkvVec2(8.f, Vision::Video.GetYRes() - 80.f), targetAngle, VColorRef(255,255,255,160), state, fTempScale);
+    targetAngle.Format("Target N %02.2f, %c %03.2f", -m_fTargetAngle[0], targetLonC, targetLon); 
+    spGlobalFont->PrintText(NULL, hkvVec2(300.f, Vision::Video.GetYRes() - 60.f), targetAngle, VColorRef(255,255,255,160), state, fTempScale);
     
     // "Searching..." text
-    spGlobalFont->PrintText(NULL, hkvVec2(Vision::Video.GetXRes()-300.f, Vision::Video.GetYRes() - 60.f), "Searching...", VColorRef(255,255,255,160), state);       
+    spGlobalFont->PrintText(NULL, hkvVec2(Vision::Video.GetXRes()-350.f, Vision::Video.GetYRes() - 60.f), "Searching...", VColorRef(255,255,255,160), state);       
   }
 
-  if (VisSampleApp::GetInputMap()->GetTrigger(WORLD_LANG_NEXT))
+  if (VAppImpl::GetInputMap()->GetTrigger(WORLD_LANG_NEXT))
   {
     // switch to the next place
     if (++m_iCurrentPlace >= m_iNumPlaces)
@@ -418,7 +423,7 @@ void WorldLanguages_cl::ThinkFunction()
     SwitchPlace(m_iCurrentPlace);
   }
 
-  if (VisSampleApp::GetInputMap()->GetTrigger(WORLD_LANG_PREV))
+  if (VAppImpl::GetInputMap()->GetTrigger(WORLD_LANG_PREV))
   {
     // switch to the previous place
     if (--m_iCurrentPlace < 0)
@@ -434,7 +439,7 @@ START_VAR_TABLE(WorldLanguages_cl, VisBaseEntity_cl, "WorldLanguages_cl", 0, "")
 END_VAR_TABLE
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

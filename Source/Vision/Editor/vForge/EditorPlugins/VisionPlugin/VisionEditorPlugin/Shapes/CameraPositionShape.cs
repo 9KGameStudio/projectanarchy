@@ -122,7 +122,6 @@ namespace VisionEditorPlugin.Shapes
 		public CameraPositionShape(string name) : base(name)
 		{
 			AddHint(HintFlags_e.NoScale);
-      //AddHint(HintFlags_e.NoExport);
 		}
   
     #endregion
@@ -225,7 +224,6 @@ namespace VisionEditorPlugin.Shapes
         EditorManager.ActiveView.SetViewSettings(EditorManager.ActiveView.DefaultViewSettings, false);
       }
 
-
       base.PerformRelevantOperation (name, iShapeIndex, iShapeCount);
     }
 
@@ -233,24 +231,19 @@ namespace VisionEditorPlugin.Shapes
     {     
       EngineInstanceEntity entity = _engineInstance as EngineInstanceEntity;
 
-      // this shape is only exported as entity if the camera has a key
-      SetHint(HintFlags_e.NoExport, string.IsNullOrEmpty(_objectKey));
-
       if (entity != null)
       {
-        // we dont have a specific engine instance class, so assign via standard variable reflection
-        entity.SetVariable("NearClipDistance", NearClipDistance.ToString());
-        entity.SetVariable("FarClipDistance", FarClipDistance.ToString());
-        entity.SetVariable("FovX", FOV.ToString());
+        // we don't have a specific engine instance class, so assign via standard variable reflection
+        entity.SetVariable("m_fNearClipDistance", NearClipDistance.ToString());
+        entity.SetVariable("m_fFarClipDistance", FarClipDistance.ToString());
+        entity.SetVariable("m_fFovX", FOV.ToString());
       }
       
       bool bResult = base.OnExport(info);
       return bResult;
     }
 
-
     #endregion
-
 
     #region Engine Instance
 
@@ -325,13 +318,14 @@ namespace VisionEditorPlugin.Shapes
     /// <param name="context"></param>
     protected CameraPositionShape(SerializationInfo info, StreamingContext context) : base(info, context)
     {
+      AddHint(HintFlags_e.NoScale);
+
       if (SerializationHelper.HasElement(info,"key")) // new version
         _key = (Keys)info.GetValue("key", typeof(Keys));
       else if (SerializationHelper.HasElement(info, "_key")) // old version
         _key = (Keys)info.GetValue("_key", typeof(Shortcut));
       if (!CheckValidKey(_key,false))
         _key = Keys.None;
-			AddHint(HintFlags_e.NoScale);
 
       if (SerializationHelper.HasElement(info, "_fCustomFOV"))
         _fCustomFOV = info.GetSingle("_fCustomFOV");
@@ -350,6 +344,7 @@ namespace VisionEditorPlugin.Shapes
     {
       base.GetObjectData(info,context);
       info.AddValue("key",_key); // old version was "_key"
+
       info.AddValue("_fCustomFOV", _fCustomFOV);
       info.AddValue("_fCustomNear", _fCustomNear);
       info.AddValue("_fCustomFar", _fCustomFar);
@@ -406,10 +401,7 @@ namespace VisionEditorPlugin.Shapes
       return true;
     }
 
-    /// <summary>
-    /// Optionally defines a keyboard hotkey to jump to this camera in the editor. The hotkey binding must not overlap with other hotkeys.
-    /// </summary>
-    [SortedCategory(CAT_CAMERA, CATORDER_CAMERA), PropertyOrder(1)]
+    [SortedCategory(CAT_CAMERA, CATORDER_CAMERA), PropertyOrder(2)]
     [Description("Optionally defines a keyboard hotkey to jump to this camera in the editor. The hotkey binding must not overlap with other hotkeys.")]
     public Keys ShortCut
     {
@@ -529,10 +521,9 @@ namespace VisionEditorPlugin.Shapes
     /// <returns></returns>
     public override string GetPluginDescription()
     {
-      return "Adds a camera position to the scene."+
-       " You can jump to this position via the hotkey assigned to the shape.\n" +
-       "This shape is mainly used inside the editor to improve workflow. Shape export to vScene or vZone is disabled by default.\n" +
-       "You have to specify an ObjectKey in order for the shape to be exported.";
+      return "Adds a camera position to the scene. "+
+       "You can jump to this position via the hotkey assigned to the shape.\n" +
+       "This shape is mainly used inside the vForge and vPlayer to improve workflow.";
     }
 
 
@@ -546,6 +537,11 @@ namespace VisionEditorPlugin.Shapes
       shape.Position = EditorManager.Scene.CurrentShapeSpawnPosition;
       return shape;
     }
+
+    public override Type GetShapeType()
+    {
+      return typeof(CameraPositionShape);
+    }
   }
 
 
@@ -554,7 +550,7 @@ namespace VisionEditorPlugin.Shapes
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

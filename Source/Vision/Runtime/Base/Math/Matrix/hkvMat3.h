@@ -314,7 +314,7 @@ public:
 
   /// \brief
   ///   Returns all the values on the matrices diagonal.
-  HKV_FORCE_INLINE const hkvVec3 getDiagonal ();
+  HKV_FORCE_INLINE const hkvVec3 getDiagonal () const; 
 
   /// \brief
   ///   Sets the x,y,z values on the specified axis. iAxisXYZ must be in range [0;2].
@@ -708,7 +708,7 @@ HKV_FORCE_INLINE const hkvMat3 operator/ (const hkvMat3& lhs, float f);
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

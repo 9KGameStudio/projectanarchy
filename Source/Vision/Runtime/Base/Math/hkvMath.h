@@ -600,7 +600,6 @@ public:
   ///
   /// \param fInterpolation
   ///   Interpolation factor, must be between 0 and 1.
-  ///   This function will assert if fInterpolation is outside the [0;1] range.
   template<class T>
   HKV_FORCE_INLINE static T interpolate (const T& val1, const T& val2, float fInterpolation);
 
@@ -615,7 +614,6 @@ public:
   ///
   /// \param fInterpolation
   ///   Interpolation factor, must be between 0 and 1.
-  ///   This function will assert if fInterpolation is outside the [0;1] range.
   template<class T>
   HKV_FORCE_INLINE static T interpolate (const T& val1, const T& val2, double fInterpolation);
 
@@ -639,7 +637,7 @@ static const hkvInit_None hkvNoInitialization = hkvInit_None ();
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -46,6 +46,8 @@ public:
   inline VImageStates &Frame() {return m_Frame;}
   GUI_IMPEXP virtual void OnClick(VMenuEventDataObject *pEvent);
 
+  GUI_IMPEXP hkvVec2 GetMoveRange();
+
 protected:
 // serialization
   V_DECLARE_SERIAL_DLLEXP( VSliderControl, GUI_IMPEXP_DATA );
@@ -53,7 +55,7 @@ protected:
 // renderable
   GUI_IMPEXP virtual void OnPaint(VGraphicsInfo &Graphics, const VItemRenderInfo &parentState) HKV_OVERRIDE;
   GUI_IMPEXP virtual bool Build(TiXmlElement *pNode, const char *szPath, bool bWrite) HKV_OVERRIDE;
-  GUI_IMPEXP virtual void OnTick(float dtime) HKV_OVERRIDE {}
+  GUI_IMPEXP virtual void OnTick(float dtime) HKV_OVERRIDE;
 
 protected:
   // data members:
@@ -81,6 +83,9 @@ public:
   {
     m_pSliderCtrl = pOwner;
     SetParent(pOwner);
+
+    m_fScrollFactor = 0.9f;
+    m_vScrollSpeed = hkvVec2(0.0f, 0.0f);
   }
 
 // renderable
@@ -89,15 +94,25 @@ public:
   GUI_IMPEXP virtual void OnBuildFinished() HKV_OVERRIDE;
 
   // VWindowBase
-  GUI_IMPEXP virtual void OnDragBegin(const hkvVec2 &vMousePos, int iButtonMask) HKV_OVERRIDE {m_vDragStart=m_vDragPos=vMousePos; m_vDragPos+=GetPosition();}
+  GUI_IMPEXP virtual void OnDragBegin(const hkvVec2 &vMousePos, int iButtonMask) HKV_OVERRIDE;
   GUI_IMPEXP virtual void OnDragging(const hkvVec2 &vMouseDelta) HKV_OVERRIDE;
   GUI_IMPEXP virtual void OnDragEnd(VWindowBase *pOver) HKV_OVERRIDE;
   GUI_IMPEXP virtual VCursor *GetMouseOverCursor(VGUIUserInfo_t &user) HKV_OVERRIDE {return m_Image.m_States[GetCurrentState()].GetCursor();}
+
+  GUI_IMPEXP virtual void OnTick(float dtime) HKV_OVERRIDE;
 
   inline void SetBorderMode(bool bStatus) {m_Image.SetStretchMode(bStatus ? VImageState::BORDER : VImageState::STRETCHED);}
   inline const hkvVec2 &GetUnscaledSize() const {return m_vUnscaledSize;}
 
   inline VImageStates &Images() {return m_Image;}
+
+  inline void SetScrollFactor(float fValue) { m_fScrollFactor = fValue; }
+  inline float GetScrollFactor() const { return m_fScrollFactor; }
+
+  inline const hkvVec2& GetDragStart() const { return m_vDragStart; }
+  inline const hkvVec2& GetDragPosition() const { return m_vDragPos; }
+  inline void SetDragPosition(const hkvVec2& vDragPos) { m_vDragPos = vDragPos; }
+
 protected:
 // serialization
   V_DECLARE_SERIAL_DLLEXP( VSlider, GUI_IMPEXP_DATA );
@@ -107,14 +122,17 @@ protected:
   VSliderControl *m_pSliderCtrl; ///< owner
   VImageStates m_Image;
   hkvVec2 m_vUnscaledSize;
-  hkvVec2 m_vDragStart,m_vDragPos; ///< temp values
+  hkvVec2 m_vDragStart, m_vDragPos; ///< temp values
+
+  float m_fScrollFactor;
+  hkvVec2 m_vScrollSpeed;
 };
 
 
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

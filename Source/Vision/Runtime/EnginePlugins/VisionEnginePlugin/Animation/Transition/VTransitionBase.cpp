@@ -575,7 +575,7 @@ void VTransitionTable::SerializeX( VArchive &ar )
 
           if (m_bBrokenVersion3 && !bOldBroken)
           {
-            Vision::Error.SystemMessage("Transition table '%s' has been saved with incompatible version. Fixing it, but please re-save file", GetFilename());
+            hkvLog::Info("Transition table '%s' has been saved with incompatible version. Fixing it, but please re-save file", GetFilename());
             VASSERT_MSG(FALSE,"Transition table has been saved with incompatible version. Fixing it, but please re-save file. See log for filename");
             return; // read the whole file again
           }
@@ -700,7 +700,7 @@ VisAnimSequence_cl* VTransitionTable::DeserializeBlendSequence(VArchive &ar, cha
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

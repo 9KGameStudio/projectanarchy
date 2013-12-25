@@ -441,7 +441,7 @@ public:
   /// This vector will not be normalized afterwards.
   /// If this vector and vNormal are parallel, the resulting vector will be the zero vector.
   ///
-  /// \sa hkvVec3::getOrthogonalVector
+  /// \sa hkvVec2::getOrthogonalVector
   HKV_FORCE_INLINE void makeOrthogonalTo (const hkvVec2& vNormal);
 
   /// \brief
@@ -450,7 +450,7 @@ public:
   /// There is no guarantee into which direction the resulting vector will point, other
   /// than that it will be orthogonal to this vector.
   ///
-  /// \sa hkvVec3::makeOrthogonalTo
+  /// \sa hkvVec2::makeOrthogonalTo
   HKV_FORCE_INLINE const hkvVec2 getOrthogonalVector () const;
 
   /// \brief
@@ -459,7 +459,7 @@ public:
   /// \param vNormal
   ///   The normal of a plane through the origin, which will be used to reflect this vector.
   ///
-  /// \sa hkvVec3::getReflected
+  /// \sa hkvVec2::getReflected
   HKV_FORCE_INLINE void reflect (const hkvVec2& vNormal);
 
   /// \brief
@@ -468,7 +468,7 @@ public:
   /// \param vNormal
   ///   The normal of a plane through the origin, which will be used to reflect this vector.
   ///
-  /// \sa hkvVec3::reflect
+  /// \sa hkvVec2::reflect
   HKV_FORCE_INLINE const hkvVec2 getReflected (const hkvVec2& vNormal) const;
 
   ///
@@ -540,7 +540,7 @@ HKV_FORCE_INLINE const hkvVec2 operator/ (const hkvVec2& lhs, float f);
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

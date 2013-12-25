@@ -84,6 +84,8 @@ void AnimationMainMenu::OnInitDialog()
   // set the initial mode
   SetSkeletalMode(SimpleSkeletalAnimatedObject_cl::MODE_SINGLEANIM);
 
+  // don't start with an animation (can look awkward because you won't see the whole animation on startup)
+  m_pSkeletalCharacter->GetSingleAnimControl()->Pause();
 }
 
 
@@ -203,16 +205,16 @@ void AnimationMainMenu::OnTick(float dtime)
 void AnimationMainMenu::SetAnimationType(AnimationType_e eType)
 {
   m_eCurrentAnimType = eType;
-  m_pSkeletalCharacter->SetActivate(eType==SKELETAL);
-  m_pVertexAnimCharacter->SetActivate(eType==VERTEX);
+  m_pSkeletalCharacter->SetActivate(eType == SKELETAL);
+  m_pVertexAnimCharacter->SetActivate(eType == VERTEX);
 
-  if (eType==SKELETAL)
+  if (eType == SKELETAL)
   {
     m_pCheckBoxVertexAnim->SetChecked(false);
     m_pSubMenu->SetDialog(m_spSubMenu_Skeletal);
   }
 
-  if (eType==VERTEX)
+  if (eType == VERTEX)
   {
     m_pCheckBoxSkeletalAnim->SetChecked(false);
     m_pSubMenu->SetDialog(m_spSubMenu_Vertex);
@@ -258,24 +260,29 @@ void AnimationMainMenu::SetSkeletalAnimPhase(float fPhase)
   m_pSliderSetAnimTime->SetValue(fPhase);
 
   // set phase
-  fPhase *= m_pSkeletalCharacter->GetSingleAnimControl()->GetAnimSequence()->GetLength();
-  m_pSkeletalCharacter->GetSingleAnimControl()->SetCurrentSequenceTime(fPhase);
+  if(m_pSkeletalCharacter->GetSingleAnimControl() && m_pSkeletalCharacter->GetSingleAnimControl()->GetAnimSequence())
+  {
+	  fPhase *= m_pSkeletalCharacter->GetSingleAnimControl()->GetAnimSequence()->GetLength();
+	  m_pSkeletalCharacter->GetSingleAnimControl()->SetCurrentSequenceTime(fPhase);
+  }
 }
 
 
 void AnimationMainMenu::SetSkeletalNeckYaw(float fAngle)
 {
-  // set slider position
-  m_pSliderFKinYaw->SetValue(fAngle); 
+  if(m_pSkeletalCharacter->GetBoneModifiedNode())
+  {
+    // set slider position
+    m_pSliderFKinYaw->SetValue(fAngle); 
 
-  // set the bone rotation
-  ASSERT(m_pSkeletalCharacter->GetBoneModifiedNode());
-  int iNeckBoneIndex = m_pSkeletalCharacter->GetNeckBoneIndex();
+    // set the bone rotation
+    int iNeckBoneIndex = m_pSkeletalCharacter->GetNeckBoneIndex();
 
-  // convert Euler to quaternion
-  hkvQuat customBoneRotation (hkvNoInitialization);
-  customBoneRotation.setFromEulerAngles (0, fAngle, 0);
-  m_pSkeletalCharacter->GetBoneModifiedNode()->SetCustomBoneRotation(iNeckBoneIndex, customBoneRotation, VIS_MODIFY_BONE);
+    // convert Euler to quaternion
+    hkvQuat customBoneRotation (hkvNoInitialization);
+    customBoneRotation.setFromEulerAngles (0, fAngle, 0);
+    m_pSkeletalCharacter->GetBoneModifiedNode()->SetCustomBoneRotation(iNeckBoneIndex, customBoneRotation, VIS_MODIFY_BONE);
+  }
 }
 
 
@@ -286,7 +293,8 @@ void AnimationMainMenu::SetSkeletalLayeredAnimWeight(float fWeight)
   m_pSliderLayered->SetValue(fWeight);
 
   // set weighting on animation
-  m_pSkeletalCharacter->GetLayerMixerNode()->SetInputWeight(1, fWeight);
+  if(m_pSkeletalCharacter->GetLayerMixerNode() )
+	m_pSkeletalCharacter->GetLayerMixerNode()->SetInputWeight(1, fWeight);
 }
 
 
@@ -307,7 +315,7 @@ VWindowBase* VDialogSubCtrl::TestMouseOver(VGUIUserInfo_t &user, const hkvVec2 &
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

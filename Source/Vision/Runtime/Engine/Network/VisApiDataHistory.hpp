@@ -260,7 +260,7 @@ VReadResult_e VisDataHistory_cl<dataType, iHistoryLength, Mix>::Interpolate (dat
   // 'iInterpolationPoint' is too old, taking earliest known value (extrapolate in the past?)
   if (iInterpolationPoint <= iOldestTime)
   {
-    //Vision::Error.SystemMessage("  oldest = %d, newest = %d, iInterpolationPoint: %d", (int)iOldestTime, (int)iNewestTime, (int)iInterpolationPoint);
+    //hkvLog::Info("  oldest = %d, newest = %d, iInterpolationPoint: %d", (int)iOldestTime, (int)iNewestTime, (int)iInterpolationPoint);
 
     *out_pData = m_history[m_iHistoryStart].m_data;
     return VRR_Oldest;
@@ -333,7 +333,7 @@ bool VisDataHistory_cl<dataType, iHistoryLength, Mix>::Read (const dataType*& ou
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

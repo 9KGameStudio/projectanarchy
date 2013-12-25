@@ -355,6 +355,9 @@ namespace TerrainEditorPlugin.Dialogs
       this.dialogCaptionBar1.CompactView = false;
       this.dialogCaptionBar1.Description = "Setup initial Terrain properties";
       this.dialogCaptionBar1.Dock = System.Windows.Forms.DockStyle.Top;
+      this.dialogCaptionBar1.HelpContext = "dialogs";
+      this.dialogCaptionBar1.HelpKey = "Terrain Config";
+      this.dialogCaptionBar1.HelpManual = "";
       this.dialogCaptionBar1.Image = ((System.Drawing.Image)(resources.GetObject("dialogCaptionBar1.Image")));
       this.dialogCaptionBar1.Location = new System.Drawing.Point(0, 0);
       this.dialogCaptionBar1.Name = "dialogCaptionBar1";

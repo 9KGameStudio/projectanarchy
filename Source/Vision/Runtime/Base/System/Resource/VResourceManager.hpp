@@ -700,10 +700,6 @@ public:
   /// 
   /// A file stream manager has to be passed for loading resources.
   /// 
-  /// \param pManager
-  ///   The file stream manager used for retrieving the time stamp. Should be
-  ///   Vision::File.GetManager() when used in the engine.
-  /// 
   /// \param eOptions
   ///   Which type of reloading should happen
   /// 
@@ -720,8 +716,7 @@ public:
   /// 
   ///   \li TRUE,TRUE :  Modified resource are unloaded and reloaded. The resource is up-to-date
   ///     afterwards.
-  VBASE_IMPEXP unsigned int ReloadModifiedResourceFiles(IVFileStreamManager *pManager, 
-                                                        VUnloadReloadOptions_e eOptions = VURO_COLD_RELOAD);
+  VBASE_IMPEXP unsigned int ReloadModifiedResourceFiles(VUnloadReloadOptions_e eOptions = VURO_COLD_RELOAD);
 
   /// \brief
   ///   Reloads all modified resources in the manager.
@@ -729,10 +724,6 @@ public:
   /// Modified resources are identified by their file time stamp.
   /// 
   /// A file stream manager has to be passed for loading resources.
-  /// 
-  /// \param pManager
-  ///   The file stream manager used for retrieving the time stamp. Should be
-  ///   Vision::File.GetManager() when used in the engine.
   /// 
   /// \param bUnload
   ///   If TRUE, the resource will be unloaded in case it has been modified (calls EnsureUnloaded
@@ -755,9 +746,9 @@ public:
   /// 
   ///   \li TRUE,TRUE :  Modified resource are unloaded and reloaded. The resource is up-to-date
   ///     afterwards.
-  inline HKV_DEPRECATED_2013_2 unsigned int ReloadModifiedResourceFiles(IVFileStreamManager *pManager, BOOL bUnload, BOOL bReload)
+  inline HKV_DEPRECATED_2013_2 unsigned int ReloadModifiedResourceFiles(BOOL bUnload, BOOL bReload)
   {
-    return ReloadModifiedResourceFiles(pManager, bReload ? VURO_COLD_RELOAD : VURO_ONLY_UNLOAD);
+    return ReloadModifiedResourceFiles(bReload ? VURO_COLD_RELOAD : VURO_ONLY_UNLOAD);
   }
 
   /// \brief
@@ -770,16 +761,12 @@ public:
   /// \param szResourceId
   ///   The ID of the resource to reload.
   ///
-  /// \param pManager
-  ///   The file stream manager used for retrieving the time stamp. Should be
-  ///   Vision::File.GetManager() when used in the engine.
-  ///
   /// \param eOptions
   ///   The type of reloading that should be performed
   /// 
   /// \return
   ///   Returns TRUE when the resource was modified.
-  VBASE_IMPEXP BOOL ReloadModifiedResourceFile(const char *szResourceId, IVFileStreamManager *pManager, 
+  VBASE_IMPEXP BOOL ReloadModifiedResourceFile(const char *szResourceId, 
                                                VUnloadReloadOptions_e eOptions = VURO_COLD_RELOAD);
 
   /// \brief
@@ -792,11 +779,6 @@ public:
   /// \param szResourceId
   ///   The ID of the resource to reload.
   ///
-  /// \param pManager
-  ///   The file stream manager used for retrieving the time stamp. Should be
-  ///   Vision::File.GetManager() when used in the engine.
-  ///
-  ///
   /// \param bUnload
   ///   If TRUE, the resource will be unloaded in case it has been modified (calls EnsureUnloaded
   ///   for the resource).
@@ -807,9 +789,9 @@ public:
   /// 
   /// \return
   ///   Returns TRUE when the resource was modified.
-  inline HKV_DEPRECATED_2013_2 BOOL ReloadModifiedResourceFile(const char *szResourceId, IVFileStreamManager *pManager, BOOL bUnload, BOOL bReload)
+  inline HKV_DEPRECATED_2013_2 BOOL ReloadModifiedResourceFile(const char *szResourceId, BOOL bUnload, BOOL bReload)
   {
-    return ReloadModifiedResourceFile(szResourceId, pManager, bReload ? VURO_COLD_RELOAD : VURO_ONLY_UNLOAD);
+    return ReloadModifiedResourceFile(szResourceId, bReload ? VURO_COLD_RELOAD : VURO_ONLY_UNLOAD);
   }
 
   /// \brief
@@ -818,10 +800,6 @@ public:
   /// 
   /// \param szResourceId
   ///   The ID of the resource to reload.
-  /// 
-  /// \param pManager
-  ///   The file stream manager used for retrieving the time stamp. Should be
-  ///   Vision::File.GetManager() when used in the engine.
   /// 
   /// \param eOptions
   ///   the type of reloading which should be performed on the resource
@@ -840,7 +818,7 @@ public:
   /// 
   ///   \li TRUE,TRUE :  The resource is unloaded and reloaded. It is guaranteed
   ///     to be up-to-date afterwards.
-  VBASE_IMPEXP BOOL ReloadSpecificResourceFile(const char *szResourceId, IVFileStreamManager *pManager, 
+  VBASE_IMPEXP BOOL ReloadSpecificResourceFile(const char *szResourceId,
                                                VUnloadReloadOptions_e eOptions = VURO_COLD_RELOAD);
 
   /// \brief
@@ -849,10 +827,6 @@ public:
   /// 
   /// \param szResourceId
   ///   The ID of the resource to reload.
-  /// 
-  /// \param pManager
-  ///   The file stream manager used for retrieving the time stamp. Should be
-  ///   Vision::File.GetManager() when used in the engine.
   /// 
   /// \param bUnload
   ///   If TRUE, a resource will be unloaded (calls EnsureUnloaded for the resource).
@@ -874,9 +848,9 @@ public:
   /// 
   ///   \li TRUE,TRUE :  The resource is unloaded and reloaded. It is guaranteed
   ///     to be up-to-date afterwards.
-  inline HKV_DEPRECATED_2013_2 BOOL ReloadSpecificResourceFile(const char *szResourceId, IVFileStreamManager *pManager, BOOL bUnload, BOOL bReload)
+  inline HKV_DEPRECATED_2013_2 BOOL ReloadSpecificResourceFile(const char *szResourceId, BOOL bUnload, BOOL bReload)
   {
-    return ReloadSpecificResourceFile(szResourceId, pManager, bReload ? VURO_COLD_RELOAD : VURO_ONLY_UNLOAD);
+    return ReloadSpecificResourceFile(szResourceId, bReload ? VURO_COLD_RELOAD : VURO_ONLY_UNLOAD);
   }
   
   ///
@@ -1128,10 +1102,6 @@ public:
   VBASE_IMPEXP virtual IVFileOutStream *CreateFileOutStream(const char *szFilename, VManagedResource *pStoreTimeStampRes);
 
   /// \brief
-  ///   Overridable function to access the file manager for disk operations
-  VBASE_IMPEXP virtual IVFileStreamManager* GetFileManager() {return VBase_GetFileStreamManager();}
-
-  /// \brief
   ///   Sets the filename for a resource
   ///
   /// \param pResource
@@ -1198,8 +1168,8 @@ protected:
   VResourceList m_resources;
   VResourceList m_resourcesToRestore;
   int m_iNumResourcesToRestore;
-  //TODO replace this with a real hashmap to avoid ugly casting
-  VStrMap<void> m_resourcesByName;
+
+  VMap<VString, int> m_resourcesByName;
 
   bool m_bHandlesBackgrounding;
 
@@ -1249,7 +1219,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

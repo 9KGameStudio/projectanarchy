@@ -9,7 +9,6 @@
 #include <Vision/Runtime/Base/BasePCH.h>
 #include <iostream>
 
-#include <Vision/Runtime/Base/IPC/VIPCTrace.hpp>
 #include <Vision/Runtime/Base/IPC/VMessage.hpp>
 #include <Vision/Runtime/Base/IPC/VChannelPipe.hpp>
 
@@ -97,8 +96,6 @@ ChannelPipe::~ChannelPipe()
   {
     if (m_connected)
     {
-      TRACE0("ChannelPipe: Disconnecting pipe.");
-      //FlushFileBuffers(m_pipe);
       if (m_mode == MODE_SERVER)
       {
         DisconnectNamedPipe(m_pipe);
@@ -117,7 +114,6 @@ bool ChannelPipe::CreatePipe()
 {
   VString pipename;
   pipename.Format("\\\\.\\pipe\\webvision.%u", m_id); 
-  TRACE1("Creating pipe: %s", pipename.AsChar());
 
   if (m_mode == MODE_SERVER)
   {
@@ -142,8 +138,7 @@ bool ChannelPipe::CreatePipe()
   }
   if (m_pipe == INVALID_HANDLE_VALUE) 
   {
-    DWORD lastError = GetLastError();
-    TRACE1("Creation of pipe failed with error %#.8x", lastError);
+
     return false;
   }
   return true;
@@ -240,7 +235,6 @@ bool ChannelPipe::DoSend(Message* msg)
     DWORD writeReturnCode = HandleOverlapped(m_pipe, &overlapped, m_cancelEvent, INFINITE);
     if (writeReturnCode != NO_ERROR)
     {
-      TRACE1("Pipe write failed with error %#.8x", writeReturnCode);
       std::cout << "Write to pipe failed with error code: " << writeReturnCode;
       return false;
     }
@@ -254,8 +248,6 @@ bool ChannelPipe::DoSend(Message* msg)
 
 void ChannelPipe::ProcessMessages()
 {
-  TRACE0("Processing messages...");
-
   if (!m_connected)
     return;
 
@@ -273,7 +265,6 @@ void ChannelPipe::ProcessMessages()
     DWORD peekError = (peekRes == FALSE) ? GetLastError() : NO_ERROR;
     if (peekError == ERROR_BROKEN_PIPE || peekError == ERROR_PIPE_NOT_CONNECTED)
     {
-      TRACE0("Pipe broken; closing client end.");
       CloseHandle(m_pipe);
       m_pipe = INVALID_HANDLE_VALUE;
       m_connected = false;
@@ -281,11 +272,8 @@ void ChannelPipe::ProcessMessages()
     }
     if (peekError != NO_ERROR || (bytesRead == 0))
     {
-      TRACE0("No more data in pipe; exiting processing loop.");
       break;
     }
-
-    TRACE0("Reading from pipe...");
 
     ResetEvent(m_readEvent);
     OVERLAPPED overlapped;
@@ -299,7 +287,6 @@ void ChannelPipe::ProcessMessages()
       DWORD readReturnCode = HandleOverlapped(m_pipe, &overlapped, m_cancelEvent, &bytesRead, INFINITE);
       if (readReturnCode == ERROR_BROKEN_PIPE || readReturnCode == ERROR_PIPE_NOT_CONNECTED)
       {
-        TRACE0("Pipe broken; closing client end.");
         CloseHandle(m_pipe);
         m_pipe = INVALID_HANDLE_VALUE;
         m_connected = false;
@@ -307,7 +294,6 @@ void ChannelPipe::ProcessMessages()
       }
       else if (readReturnCode != NO_ERROR)
       {
-        TRACE1("Pipe read failed with error %#.8x", readReturnCode);
         std::cout << "Read from pipe failed with error code: " << readReturnCode;
         break;
       }
@@ -326,8 +312,6 @@ void ChannelPipe::ProcessMessages()
       m_listener->OnMessageReceived(msg);
     }
   }
-
-  TRACE0("Finished processing messages.");
 }
 
 void ChannelPipe::CancelIO()
@@ -346,7 +330,7 @@ void ChannelPipe::SetConnectTimeout(UINT timeout)
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

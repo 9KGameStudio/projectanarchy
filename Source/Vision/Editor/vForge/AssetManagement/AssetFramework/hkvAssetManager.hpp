@@ -226,6 +226,7 @@ public:
   ASSETFRAMEWORK_IMPEXP hkvAssetLibrary::RefPtr getAssetLibrary(hkUint32 libraryIndex) const;
   ASSETFRAMEWORK_IMPEXP hkvAssetLibrary::RefPtr getAssetLibraryByName(const char* libraryName) const;
   ASSETFRAMEWORK_IMPEXP hkvAssetLibrary::RefPtr getAssetLibraryByAbsolutePath(const char* absolutePath) const;
+  ASSETFRAMEWORK_IMPEXP hkvAssetLibrary::RefPtr getAssetLibraryBySearchPath(const char* searchPath) const;
   ASSETFRAMEWORK_IMPEXP hkvAssetLibrary::RefPtr getProjectRootLibrary() const;
   ASSETFRAMEWORK_IMPEXP void refreshAssetLibrary(const char* libraryName, const char* relativePath = NULL);
   ASSETFRAMEWORK_IMPEXP void query(hkvAssetQuery& query) const;
@@ -313,7 +314,7 @@ private: // static data
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -26,7 +26,7 @@
 /// The most recently freed allocations are not immediately released, but made access-protected instead
 /// which allows finding invalid accesses to freed pointers.
 ///
-/// Using this manager has an extremely high memory and CPU overhead.
+/// Using this manager has a very high memory and CPU overhead.
 ///
 #if !( defined(WIN32) && !defined( _VISION_WINRT ) ) && !defined(_VISION_DOC)
 
@@ -67,7 +67,7 @@ private:
 #endif // VGuardingMemoryManager_h__
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

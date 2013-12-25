@@ -1261,6 +1261,12 @@ private:
 template<int iSize> class VStaticString
 {
 public:
+  enum Constants
+  {
+    BufferSize = iSize
+  };
+
+public:
 
   ///
   /// @name Constructor
@@ -1322,13 +1328,24 @@ public:
   ///
 
   /// \brief
+  ///   Sets a string
+  inline void Set(const char* pStr, int iLength = -1)
+  {
+    if (pStr)
+    {
+      vstrncpy(m_str, pStr, iLength < 0 ? iSize+1 : iLength+1);
+    }
+    else
+    {
+      m_str[0] = 0;
+    }
+  }
+
+  /// \brief
   ///   Assigns a string
   inline VStaticString<iSize>& operator = (const char *pStr)
   {
-    if (pStr)
-      vstrncpy(m_str,pStr,iSize+1);
-    else
-      m_str[0] = 0;
+    Set(pStr);
     return *this;
   }
 
@@ -1448,7 +1465,7 @@ public:
 
   /// \brief
   ///   Returns the stored hash result.
-  VBASE_IMPEXP int GetStoredHash();
+  VBASE_IMPEXP int GetStoredHash() const;
 
   /// \brief
   ///   Returns a modifiable char* string buffer
@@ -1572,29 +1589,11 @@ VArchive& operator << (VArchive& ar, VStaticString<iSize>& obj)
   vstringvariablename.FormatArgList(constchartext, argptr); \
   va_end (argptr);
 
-/////////////////////////////////////////////////////////////////////////////////////
-// ** trace **
-/////////////////////////////////////////////////////////////////////////////////////
-
-#if defined WIN32
-  #if defined(HK_DEBUG)
-    void VBASE_IMPEXP VTrace(const char *text, ...);
-    #define VTRACE    VTrace
-  #endif
-#endif
-
-#if !defined VTRACE
-  // define a dummy function and a macro which takes the arguments behind VTRACE without compilerer errors
-  // and hope the compiler optimizes this strange line (source ==> AFX.H ;))
-  inline void VTrace(const char *text, ...) { }
-  #define VTRACE   1 ? (void)0 : ::VTrace
-#endif
-
 
 #endif  //VISION_VSTRING_HPP
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

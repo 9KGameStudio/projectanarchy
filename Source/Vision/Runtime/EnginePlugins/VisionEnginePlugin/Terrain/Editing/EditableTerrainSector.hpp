@@ -209,9 +209,9 @@ public:
 
   // Timestamps: These are needed to prevent locking of files that have changed on disk but
   // those changes haven't been loaded yet in the code.
-  VFileTime m_SectorInfoFileTime;
-  VFileTime m_SectorHMapFileTime;
-  VFileTime m_SectorMeshFileTime;
+  VDateTime m_SectorInfoFileTime;
+  VDateTime m_SectorHMapFileTime;
+  VDateTime m_SectorMeshFileTime;
 
   // random generation    
   int m_iRandomSeed;
@@ -229,7 +229,7 @@ typedef VSmartPtr<VEditableTerrainSector> VEditableTerrainSectorPtr;
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -11,6 +11,9 @@
 // are changed infrequently
 //
 
+#ifndef HAVOK_AI_ENGINEPLUGIN_HPP
+#define HAVOK_AI_ENGINEPLUGIN_HPP
+
 #if !defined(AFX_STDAFX_H__16731FC2_4597_4F18_95B2_B105710FA38F__INCLUDED_)
 #define AFX_STDAFX_H__16731FC2_4597_4F18_95B2_B105710FA38F__INCLUDED_
 
@@ -18,17 +21,31 @@
 #pragma once
 #endif // _MSC_VER > 1000
 
-#ifndef WIN32_LEAN_AND_MEAN		
-  #define WIN32_LEAN_AND_MEAN		// Exclude rarely-used stuff from Windows headers
+#if defined(WIN32)
+
+	#ifndef WIN32_LEAN_AND_MEAN		
+	#define WIN32_LEAN_AND_MEAN		// Exclude rarely-used stuff from Windows headers
+	#endif
+
+	#include <crtdbg.h>
+
+	//TODO REmove references to vHavokAiUtil when moved functionality to module.
+	#ifdef VHAVOKAIUTIL_PLUGIN_EXPORTS
+		#define VHAVOKAIUTIL_IMPEXP __declspec(dllexport)
+	#else
+		#define VHAVOKAIUTIL_IMPEXP __declspec(dllimport)
+	#endif 
+
+#else
+	#define VHAVOKAIUTIL_IMPEXP
 #endif
+
+
+
 
 #include <Vision/Runtime/Base/VBase.hpp>
 #include <Vision/Runtime/Engine/System/Vision.hpp>
-#include <Vision/Runtime/Common/VisSampleApp.hpp>
 
-#ifdef WIN32
-#include <crtdbg.h>
-#endif
 
 #undef swap16
 #include <Vision/Runtime/EnginePlugins/Havok/HavokPhysicsEnginePlugin/vHavokPhysicsIncludes.hpp>
@@ -40,8 +57,10 @@
 
 #endif // !defined(AFX_STDAFX_H__06731FC2_4597_4F18_95B2_B105710FA38E__INCLUDED_)
 
+#endif
+
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

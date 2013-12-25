@@ -191,8 +191,15 @@ void VShadowMapGenSpotDir::Update(bool force)
 
       pCam->SetDirection(GetDirection());
       pCam->SetPosition(GetPosition());
-      part.GetRenderContext()->SetClipPlanes(m_pShadowComponent->GetNearClip(), m_pLightSource->GetRadius());
-      float fAngle = m_pLightSource->GetProjectionAngle();
+
+	  float lightRadius = m_pLightSource->GetRadius();
+	  const float nearClip = m_pShadowComponent->GetNearClip();
+
+	  if(nearClip > lightRadius )
+		  lightRadius = nearClip;
+
+      part.GetRenderContext()->SetClipPlanes(nearClip, lightRadius);
+      const float fAngle = m_pLightSource->GetProjectionAngle();
       part.GetRenderContext()->SetFOV(fAngle, fAngle);
 
       part.Update();
@@ -304,7 +311,7 @@ bool VShadowMapGenSpotDir::IsMeshInsideOrthoShadowVolume(const VisStaticGeometry
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

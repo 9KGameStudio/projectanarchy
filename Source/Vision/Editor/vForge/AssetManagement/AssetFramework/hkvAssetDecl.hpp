@@ -24,6 +24,7 @@ enum hkvAssetSortingCriterion
   HKV_ASC_TAG,      ///< Sort by number of tags set
   HKV_ASC_VARIANT,  ///< Sort by number of variants set, then by variant names
   HKV_ASC_FOLDER,   ///< Sort by folder path
+  HKV_ASC_COUNT,    ///< Total number of sorting criteria
 };
 
 
@@ -34,7 +35,6 @@ enum hkvAssetLibraryLoadResult
   HKV_ALLR_SUCCESS,                 ///< The library has been loaded successfully
   HKV_ALLR_PATH_NOT_FOUND,          ///< The asset library path is not a valid path
   HKV_ALLR_LIBRARY_ALREADY_PRESENT, ///< A new library should have been created, but an asset library file already exists
-  HKV_ALLR_LIBRARY_NOT_FOUND,       ///< An existing asset library should be loaded, but no asset library file was found
   HKV_ALLR_LIBRARY_LOAD_FAILED      ///< Loading a library failed for another reason (i.e., inaccessible or corrupt file)
 };
 
@@ -51,7 +51,7 @@ enum hkvAssetOperationResult
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

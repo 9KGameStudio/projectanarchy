@@ -11,7 +11,7 @@
 #ifndef _VISION_VFILEDATA_HPP
 #define _VISION_VFILEDATA_HPP
 
-#include <Vision/Runtime/Base/System/IO/System/VFileTime.hpp>
+#include <Vision/Runtime/Base/System/VDateTime.hpp>
 
 
 /// \brief
@@ -37,14 +37,14 @@ public:
   int size;   ///< size of the file in bytes
   char name[FS_MAX_FILE];   ///< filename without any path
   unsigned int attrib;      ///< attributes of the file (see Attributes enum)
-  VFileTime time;   ///< date and time of last write access
+  VDateTime time;   ///< date and time of last write access
 };
 
 
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -11,7 +11,7 @@
 #ifndef V_VZOOMDETECTOR_HPP_INCLUDED
 #define V_VZOOMDETECTOR_HPP_INCLUDED
 
-#ifdef SUPPORTS_MULTITOUCH
+#if defined(SUPPORTS_MULTITOUCH)
 
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/Effects/EffectsModule.hpp>
 
@@ -22,10 +22,32 @@ enum VZoomGesture
   CT_TOUCH_ZOOM_OUT
 };
 
-class VZoomDetector : public IVInputDevice
+class VZoomDetector : public IVInputDevice, public IVisCallbackHandler_cl
 {
 public:
-  EFFECTS_IMPEXP VZoomDetector(const VRectanglef& validArea = VRectanglef(), float fMaxDistance = -1.0f);
+  /// \brief
+  ///   Constructor
+  ///
+  /// \param validArea
+  ///   Specifies the are in which touches are taken into account. An invalid rectangle 
+  ///   sets the area to the whole screen.
+  ///
+  /// \param fPriority
+  ///   Specifies the priority in terms of touch areas. This makes sure that no touches are registered
+  ///   where touch areas with a higher priority are present.
+  ///   Note that this will not prevent touches from being registered for other touch areas.
+  ///
+  /// \param fMaxDistance
+  ///   Upper bound for the maximum zooming distance. The control value will be normalized with it, so
+  ///   that the resulting control value is in the range [-1, 1].
+  ///   Set this to less than zero if the whole screen should be used.
+  ///
+  EFFECTS_IMPEXP VZoomDetector(const VRectanglef& validArea = VRectanglef(), float fPriority = -1000.0f, float fMaxDistance = -1.0f);
+  EFFECTS_IMPEXP virtual ~VZoomDetector();
+
+  /// \brief
+  ///   Returns true if the users currently performs a zooming gesture.
+  inline bool IsZooming() const { return m_bIsZooming; }
 
   EFFECTS_IMPEXP virtual void Reset() HKV_OVERRIDE;
   
@@ -37,20 +59,21 @@ public:
   EFFECTS_IMPEXP virtual float GetControlValue(unsigned int uiControl, float fDeadZone, bool bTimeScaled = false) HKV_OVERRIDE;
   
   EFFECTS_IMPEXP virtual const char* GetName() HKV_OVERRIDE;
+
+  EFFECTS_IMPEXP virtual void OnHandleCallback(IVisCallbackDataObject_cl *pData) HKV_OVERRIDE;
+
   
 private:
-  
-  VRectanglef m_area;
-  bool m_fullScreen;
+  VRectanglef m_validArea;
+  float m_fPriority;
   
   float m_fMaxDistance;
   
   float m_fLastValue;
   float m_fValue;
+  bool m_bIsZooming;
   
   bool m_bActive;
-   
-  IVMultiTouchInput* m_pInputDevice;
 };
 
 #endif
@@ -58,7 +81,7 @@ private:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

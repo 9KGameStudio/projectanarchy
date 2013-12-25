@@ -25,7 +25,7 @@ class VArchive;
 //#define V_SERIALIZE_DEBUG
 
 #ifdef V_SERIALIZE_DEBUG
-#define V_SERIALIZE_DEBUG_OUT(x) OutputDebugStringA(x);
+#define V_SERIALIZE_DEBUG_OUT(x) hkvLog::Dev(x);
 #else
 #define V_SERIALIZE_DEBUG_OUT(x)
 #endif
@@ -96,7 +96,7 @@ class VArchive;
 #endif // _VISION_VSERIALX_H_
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -403,7 +403,7 @@ void VTextControl::EnterText(const char* pUTF8Text)
 
 bool VTextControl::HasText()
 {
-  return m_sCurrentText.GetSize() > 0;
+  return !m_sCurrentText.IsEmpty();
 }
 
 const char* VTextControl::GetUTF8Text() const
@@ -469,7 +469,7 @@ void VTextControl::OnSpecialKey(unsigned int uiKey)
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -132,20 +132,45 @@ public:
 
   /// \brief
   ///   Shows or hides the mouse cursor for this context
-  inline void SetShowCursor(bool bStatus) {m_bShowCursor=bStatus;}
+  inline void SetShowCursor(bool bStatus) { m_bShowCursor = bStatus; }
 
   /// \brief
   ///   Shows or hides the mouse cursor for this context
-  inline bool GetShowCursor() const {return m_bShowCursor;}
+  inline bool GetShowCursor() const { return m_bShowCursor; }
 
   /// \brief
   ///   If enabled, this context processes keyboard input (if available) and forwards key values to
   ///   the controls. Not recommended for HUD
-  inline void SetHandleKeyboard(bool bStatus) {m_bHandleKeyboard=bStatus;}
+  inline void SetHandleKeyboard(bool bStatus) { m_bHandleKeyboard = bStatus; }
 
   /// \brief
   ///   Returns the current keyboard status
-  inline bool GetHandleKeyboard() const {return m_bHandleKeyboard;}
+  inline bool GetHandleKeyboard() const { return m_bHandleKeyboard; }
+
+  /// \brief
+  ///   If enabled, mouse over status is triggered if and only if a key or touch event is currently active,
+  ///   otherwise mouse over status is always triggered.
+  inline void SetSelectionOnClickOnly(bool bStatus) { m_bMouseOverOnInputOnly = bStatus; }
+
+  /// \brief
+  ///   Returns the current mouse over usage
+  inline bool GetSelectionOnClickOnly() const { return m_bMouseOverOnInputOnly; }
+
+  /// \brief
+  ///   Sets whether smooth scrolling is enabled or not (applies to VSlider for instance).
+  inline void SetSmoothScroll(bool bStatus) { m_bSmoothScroll = bStatus; }
+
+  /// \brief
+  ///   Returns whether smooth scrolling is enabled or not.
+  inline bool GetSmoothScroll() const { return m_bSmoothScroll; }
+
+  /// \brief
+  ///   Sets whether list controls can be scrolled by touch (on the list control's entire area) or not.
+  inline void SetSwipeToScroll(bool bStatus) { m_bSwipeToScroll = bStatus; }
+
+  /// \brief
+  ///   Returns if touch scroll for list controls is enabled or not.
+  inline bool GetSwipeToScroll() const { return m_bSwipeToScroll; }
 
   /// \brief
   ///   Activate or deactivate that keyboard enter is treated as mouse right click
@@ -262,24 +287,24 @@ public:
   ///   application.
   ///
   /// \sa SetDialogResult
-  GUI_IMPEXP int ShowDialogModal(VDialog *pParent, const char *szDialogResource, const hkvVec2 &vPos, IVisApp_cl *pRunApp=NULL);
+  HKV_DEPRECATED_2013_3 GUI_IMPEXP virtual int ShowDialogModal(VDialog *pParent, const char *szDialogResource, const hkvVec2 &vPos, IVisApp_cl *pRunApp=NULL);
 
   /// \brief
   ///   This version of ShowDialogModal uses a dialog instance directly
-  GUI_IMPEXP int ShowDialogModal(VDialog *pDialog, IVisApp_cl *pRunApp=NULL);
+  HKV_DEPRECATED_2013_3 GUI_IMPEXP virtual int ShowDialogModal(VDialog *pDialog, IVisApp_cl *pRunApp=NULL);
 
   /// \brief
   ///   Show a dialog in non-modal mode. The dialog is created from the resource
-  GUI_IMPEXP VDialog* ShowDialog(const char *szDialogResource);
+  GUI_IMPEXP virtual VDialog* ShowDialog(const char *szDialogResource);
 
   /// \brief
   ///   This version of ShowDialog takes an existing instance of a dialog
-  GUI_IMPEXP void ShowDialog(VDialog* pDialog);
+  GUI_IMPEXP virtual void ShowDialog(VDialog* pDialog);
 
   /// \brief
   ///   CLoses a dialog that has been enabled via ShowDialog. Modal dialogs should be closed using
   ///   pDialog->SetDialogResult instead
-  GUI_IMPEXP void CloseDialog(VDialog* pDialog);
+  GUI_IMPEXP virtual void CloseDialog(VDialog* pDialog);
 
   /// \brief
   ///   Shows a tooltip
@@ -338,7 +363,7 @@ public:
 
   /// \brief
   ///   Accesses the collection of open dialogs
-  VDialogCollection m_OpenDialogs;
+  GUI_IMPEXP VDialogCollection& GetOpenDialogs() { return m_openDialogs; }
 
   /// \brief
   ///   Return the dialog that currently has the focus
@@ -373,7 +398,7 @@ public:
   /// \brief
   ///   Returns an application instance that does not do anything game loop specific, e.g. entity
   ///   thinking. It can thus be used to pass it to modal dialogs
-  GUI_IMPEXP IVisApp_cl* GetNullApp();
+  HKV_DEPRECATED_2013_3 GUI_IMPEXP IVisApp_cl* GetNullApp();
 
 #if defined(_VISION_WIIU)
   /// \brief
@@ -402,7 +427,7 @@ protected:
 #ifdef SUPPORTS_KEYBOARD
   bool m_bKeyPressed[256]; ///< keyboard status
 #endif
-  bool m_bActive, m_bShowCursor, m_bHandleKeyboard;
+  bool m_bActive, m_bShowCursor, m_bHandleKeyboard, m_bMouseOverOnInputOnly, m_bSmoothScroll, m_bSwipeToScroll;
 
   VCursorPtr m_spOverrideCursor;
   int m_iRenderHookConstant;
@@ -418,15 +443,16 @@ protected:
 #endif
 
   float m_fDragThreshold;
-};
+  float m_fAccumulatedMoveDistance;
 
+  VDialogCollection m_openDialogs;
+};
 
 /// \brief
 ///   Collection of GUI contexts (refcounted)
 class VGUIContextCollection : public  VRefCountedCollection<IVGUIContext>
 {
 };
-
 
 /// \brief
 ///   Derived class that implements the UpdateCursorPos() and GetButtonMask() using
@@ -454,7 +480,6 @@ public:
   /// \brief
   ///   Listen to some more callbacks, e.g. Video settings changed
   GUI_IMPEXP virtual void OnHandleCallback(IVisCallbackDataObject_cl *pData);
-  
  
   /// \brief Describes the different modes that a cursor can have.
   enum CURSOR_MODE
@@ -475,7 +500,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -260,11 +260,11 @@ void KeyControlledAnimatedWarrior_cl::ProcessKeyboardEvents()
 }
 
 V_IMPLEMENT_SERIAL( KeyControlledAnimatedWarrior_cl, AnimatedWarrior_cl, 0, Vision::GetEngineModule() );
-START_VAR_TABLE(KeyControlledAnimatedWarrior_cl, AnimatedWarrior_cl, "An animated warrior character that can be controlled with the keyboard", VFORGE_HIDECLASS, "Models\\Warrior\\Warrior.model")
+START_VAR_TABLE(KeyControlledAnimatedWarrior_cl, AnimatedWarrior_cl, "An animated warrior character that can be controlled with the keyboard", VFORGE_HIDECLASS, "Data\\Vision\\Samples\\Engine\\Common\\Models\\Warrior\\Warrior.model")
 END_VAR_TABLE
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

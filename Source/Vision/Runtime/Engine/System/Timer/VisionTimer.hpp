@@ -31,10 +31,14 @@
 class IVTimer : public VTypedObject, public VRefCounter
 {
 public:
- 
+
   /// \brief
   /// Default constructor
-  VISION_APIFUNC IVTimer() {}
+  VISION_APIFUNC IVTimer()
+  {
+    // Call Init non-virtually to intialize members to default
+    IVTimer::Init();
+  }
 
   /// \brief
   /// Virtual destructor
@@ -95,7 +99,7 @@ public:
   /// 
   /// Enables the timer if the timer has been disabled before.
   inline void Enable();
-  
+
 
   ///
   /// @}
@@ -120,7 +124,7 @@ public:
   VISION_APIFUNC float GetTime() const;
 
 
-  
+
   /// \brief
   ///   Returns the accurate current time relative to the initialization of the timer.
   /// 
@@ -232,7 +236,7 @@ public:
   /// function to pause the game for a while without updating the in-game time. If you call this
   /// function the next call of the Update-function will not cause any updates.
   VISION_APIFUNC void SkipOneFrame();
-  
+
   /// \brief
   ///   Sets the clamping value for the maximum time difference.
   /// 
@@ -365,15 +369,15 @@ public:
 
   V_DECLARE_SERIAL_DLLEXP(IVTimer, VISION_APIDATA)
 
-  /// \brief
-  ///   Serializes the current state of timer.
-  /// 
-  /// This function serializes/deserializes the current state (including the actual time values) of this timer 
-  /// instance. Upon deserialization, the timer continues in the state and with the time of the serialized timer. 
-  /// 
-  /// \param ar
-  ///   The archive to read from or write to
-  VISION_APIFUNC virtual void Serialize(VArchive &ar) HKV_OVERRIDE;
+    /// \brief
+    ///   Serializes the current state of timer.
+    /// 
+    /// This function serializes/deserializes the current state (including the actual time values) of this timer 
+    /// instance. Upon deserialization, the timer continues in the state and with the time of the serialized timer. 
+    /// 
+    /// \param ar
+    ///   The archive to read from or write to
+    VISION_APIFUNC virtual void Serialize(VArchive &ar) HKV_OVERRIDE;
 
   ///
   /// @}
@@ -490,7 +494,7 @@ public:
 
   V_DECLARE_SERIAL_DLLEXP(VDefaultTimer, VISION_APIDATA)
 
-  VISION_APIFUNC virtual void Serialize(VArchive &ar) HKV_OVERRIDE;
+    VISION_APIFUNC virtual void Serialize(VArchive &ar) HKV_OVERRIDE;
 
   ///
   /// @}
@@ -541,7 +545,7 @@ public:
 
   V_DECLARE_SERIAL_DLLEXP(VFixStepTimer, VISION_APIDATA)
 
-  VISION_APIFUNC virtual void Serialize(VArchive &ar) HKV_OVERRIDE;
+    VISION_APIFUNC virtual void Serialize(VArchive &ar) HKV_OVERRIDE;
 
   ///
   /// @}
@@ -554,7 +558,7 @@ protected:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -49,6 +49,7 @@
   #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Entities/PathCameraEntity.hpp>
   #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Entities/VCustomVolumeManager.hpp>
   #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Entities/VCustomVolumeObject.hpp>
+  #include <Vision/Runtime/Engine/System/VisApiPersistentData.hpp>
 %}
 
 //common used constants
@@ -58,9 +59,15 @@
 //       Primitives           //
 ////////////////////////////////
 //primitives
+%include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Scripting/Lua/hkvVec2.i>;
 %include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Scripting/Lua/hkvVec3.i>;
+%include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Scripting/Lua/hkvVec4.i>;
 %include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Scripting/Lua/hkvMat3.i>;
+%include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Scripting/Lua/hkvMat4.i>;
+%include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Scripting/Lua/hkvPlane.i>;
+%include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Scripting/Lua/hkvQuat.i>;
 %include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Scripting/Lua/hkvAlignedBBox.i>;
+%include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Scripting/Lua/hkvBoundingSphere.i>;
 %include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Scripting/Lua/VColor.i>;
 %include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Scripting/Lua/VBitmask.i>;
 
@@ -112,6 +119,7 @@
 %include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Scripting/Lua/VisApiGame.i>;
 %include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Scripting/Lua/VisionTimer.i>;
 %include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Scripting/Lua/VisionConsoleManager.i>
+%include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Scripting/Lua/VisApiPersistentData.i>
 
 //static wrappers (created only for scripting)
 %include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Scripting/Lua/VScriptDraw_wrapper.i>;
@@ -235,11 +243,17 @@ public:
   /// @name Primitive Types (having a Constructor in Lua)
   /// @{
   
+  static hkvVec2 hkvVec2(...);
   static hkvVec3 hkvVec3(...);
+  static hkvVec4 hkvVec4(...);
   static hkvMat3 hkvMat3(...);
+  static hkvMat3 hkvMat4(...);
+  static hkvPlane hkvPlane(...);
+  static hkvQuat hkvQuat(...); 
+  static hkvAlignedBBox hkvAlignedBBox(...);
+  static hkvBoundingSphere hkvBoundingSphere(...);
   static VColorRef VColorRef(...);
   static VBitmask VBitmask(...);
-  static hkvAlignedBBox hkvAlignedBBox(...);
 
   /// @}
   /// @name Named Colors
@@ -486,12 +500,19 @@ public:
   /// @}
   /// @name Math Constants
   /// @{ 
-    
+
+  number MATH_E                 = HKVMATH_E;
+  number MATH_PI                = HKVMATH_PI;
+  number MATH_EPSILON           = HKVMATH_EPSILON;
+   
   number MATH_SMALL_EPSILON     = HKVMATH_SMALL_EPSILON;
   number MATH_DEFAULT_EPSILON   = HKVMATH_DEFAULT_EPSILON;
   number MATH_LARGE_EPSILON     = HKVMATH_LARGE_EPSILON;
   number MATH_HUGE_EPSILON      = HKVMATH_HUGE_EPSILON;
   number MATH_GIGANTIC_EPSILON  = HKVMATH_GIGANTIC_EPSILON;
+
+  number MATH_FLOAT_MAX_POS     = HKVMATH_FLOAT_MAX_POS; 
+  number MATH_FLOAT_MAX_NEG     = HKVMATH_FLOAT_MAX_NEG; 
     
   /// @}
 };
@@ -499,7 +520,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

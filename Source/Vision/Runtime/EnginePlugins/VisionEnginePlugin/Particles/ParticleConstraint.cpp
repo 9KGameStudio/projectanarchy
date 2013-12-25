@@ -279,7 +279,7 @@ bool VisParticleConstraintList_cl::LoadFromFile(const char *szFilename)
 {
   g_sLastError.Reset();
   TiXmlDocument doc;
-  if (!doc.LoadFile(szFilename,Vision::File.GetManager()))
+  if (!doc.LoadFile(szFilename))
   {  
     g_sLastError = doc.ErrorDesc();
     return false; // error when loading
@@ -300,7 +300,7 @@ bool VisParticleConstraintList_cl::SaveToFile(const char *szFilename)
     VASSERT(FALSE); // this should never happen!
     return false;
   }
-  if (!doc.SaveFile(szFilename,Vision::File.GetManager()))
+  if (!doc.SaveFile(szFilename))
   {  
     g_sLastError = doc.ErrorDesc();
     return false; // error when saving
@@ -1956,7 +1956,7 @@ void VisParticleConstraintTerrain_cl::HandleParticles(IVPhysicsParticleCollectio
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -1579,10 +1579,7 @@ public:
   #endif
 
   // old methods - still supported, but will be removed
-  VISION_APIFUNC void SetHeightfieldForceFixStepTesselation(VIS_CFG_OnOff status);
-  VISION_APIFUNC void SetVideoWait(VIS_CFG_OnOff retrace, VIS_CFG_OnOff glFinish);
-  VISION_APIFUNC void SetDepthOffsetEpsilon (float epsilon);
-  VISION_APIFUNC void SetCheckForGraphicsAPIErrors(VIS_CFG_OnOff status);
+  VISION_APIFUNC void SetVideoWait(VIS_CFG_OnOff glFinish);
   VISION_APIFUNC const char *Get3DAPIErrorString();
   VISION_APIFUNC HKV_DEPRECATED_2012_1 void EvaluateBrightnessAtPoint (const hkvVec3& pos, unsigned char &r, unsigned char &g, unsigned char &b);
   VISION_APIFUNC HKV_DEPRECATED_2012_1 int EvaluateBrightnessAtPointEx (const hkvVec3& pos, float fRadius, hkvVec4 &destColor, int iFlags, hkvVec3* pNormal=NULL);
@@ -1666,7 +1663,7 @@ VISION_APIFUNC VRenderHook_e UpdateRenderHook(unsigned int uiOldValue);
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

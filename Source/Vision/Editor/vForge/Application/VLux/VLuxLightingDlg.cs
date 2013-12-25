@@ -7,21 +7,18 @@
  */
 
 using System;
-using System.Drawing;
-using System.IO;
-using System.Collections;
-using System.ComponentModel;
-using System.Windows.Forms;
-using System.Diagnostics;
-using CSharpFramework;
-using CSharpFramework.Dialogs;
-using Microsoft.Win32;
-using Editor.Vision;
-using CSharpFramework.Controls;
-using CSharpFramework.Scene;
-using System.Runtime.InteropServices;
-using CSharpFramework.Helper;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using System.Runtime.InteropServices;
+using System.Threading;
+using System.Windows.Forms;
+using CSharpFramework;
+using CSharpFramework.Controls;
+using CSharpFramework.Dialogs;
+using CSharpFramework.Helper;
+using CSharpFramework.Scene;
+using Editor.Vision;
 
 namespace Editor.VLux
 {
@@ -388,6 +385,9 @@ namespace Editor.VLux
       this.dialogCaptionBar1.Description = "Please select the vLux settings file to use and press \"Relight\" to recompute the " +
           "static lighting.";
       this.dialogCaptionBar1.Dock = System.Windows.Forms.DockStyle.Top;
+      this.dialogCaptionBar1.HelpContext = "dialogs";
+      this.dialogCaptionBar1.HelpKey = "vLux Lighting";
+      this.dialogCaptionBar1.HelpManual = "";
       this.dialogCaptionBar1.Image = ((System.Drawing.Image)(resources.GetObject("dialogCaptionBar1.Image")));
       this.dialogCaptionBar1.Location = new System.Drawing.Point(0, 0);
       this.dialogCaptionBar1.Name = "dialogCaptionBar1";
@@ -667,8 +667,15 @@ namespace Editor.VLux
         if (vLux == null)
           return;
 
-        Console.WriteLine(vLux.StandardOutput.ReadToEnd());
+        // ReadToEnd will block so we do so in another thread.
+        Thread StandardOutputThread = new Thread(() => { Console.WriteLine(vLux.StandardOutput.ReadToEnd()); });
 
+        using (WaitForProcessDlg waitDlg = new WaitForProcessDlg("vLux", vLux))
+        {
+          waitDlg.ShowDialog(this);
+        }
+
+        // In case the user somehow succeeds in closing WaitForProcessDlg it will block here until the process in done.
         vLux.WaitForExit();
         int iExitCode = vLux.ExitCode;
 
@@ -840,7 +847,7 @@ namespace Editor.VLux
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

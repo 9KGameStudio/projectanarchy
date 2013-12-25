@@ -30,10 +30,10 @@
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Entities/_AnimEntity.hpp>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Entities/_DanglingEntity.hpp>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Entities/PathCameraEntity.hpp>
+#include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Entities/CameraPositionEntity.hpp>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Entities/TriggerBoxEntity.hpp>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Entities/TriggerDoorEntity.hpp>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Entities/VCustomVolumeManager.hpp>
-#include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/Profiling/VGraphManager.hpp>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/Effects/Cloth/_ClothEntity.hpp>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Scripting/VScriptIncludes.hpp>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Terrain/Application/Terrain.hpp>
@@ -51,7 +51,7 @@
   // No shadow mapping support on this platform
 #endif
 
-#include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Components/VPlayerCamera.hpp>
+#include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Components/VOrbitCamera.hpp>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/Effects/BillboardGroup.hpp>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/Effects/BlobShadowManager.hpp>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/Effects/CubeMapHandle.hpp>
@@ -72,6 +72,7 @@
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/PathRendering/VCablePathRenderer.hpp>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/PathRendering/VDebugPathRenderer.hpp>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/PathRendering/VPathRenderingData.hpp>
+#include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Input/VFreeCamera.hpp>
 
 #if !defined( HK_ANARCHY )
   #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/ForwardRenderer/ForwardRenderer.hpp>
@@ -181,8 +182,6 @@ public:
 DepthFogBinder g_DepthFogSerializationBinder;
 #endif
 
-
-//Initialize our plugin
 void VisionEnginePlugin_cl::OnInitEnginePlugin()
 {
   #if !defined(_VISION_MOBILE) && !defined( HK_ANARCHY )
@@ -209,13 +208,15 @@ void VisionEnginePlugin_cl::OnInitEnginePlugin()
   FORCE_LINKDYNCLASS(ClothEntity_cl);
   FORCE_LINKDYNCLASS(DanglingEntity_cl);
   FORCE_LINKDYNCLASS(PathCameraEntity);
+  FORCE_LINKDYNCLASS(CameraPositionEntity);
   FORCE_LINKDYNCLASS(StaticCollisionEntity_cl);
   FORCE_LINKDYNCLASS(TriggerBoxEntity_cl);
   FORCE_LINKDYNCLASS(TriggerDoorEntity_cl);
   FORCE_LINKDYNCLASS(VBillboardGroupInstance);
   FORCE_LINKDYNCLASS(VBlobShadowShader);
   FORCE_LINKDYNCLASS(VProjectedWallmark);
-  FORCE_LINKDYNCLASS(VPlayerCamera);
+  FORCE_LINKDYNCLASS(VOrbitCamera);
+  FORCE_LINKDYNCLASS(VPlayerCamera); // fall back for orbit camera
   FORCE_LINKDYNCLASS(VPlayableCharacterComponent);
   FORCE_LINKDYNCLASS(VTransitionStateMachine);
   FORCE_LINKDYNCLASS(VTimeOfDayComponent);
@@ -227,6 +228,8 @@ void VisionEnginePlugin_cl::OnInitEnginePlugin()
   FORCE_LINKDYNCLASS(VForwardRenderingSystem);
 #endif
   FORCE_LINKDYNCLASS(VPostProcessGlow);
+  FORCE_LINKDYNCLASS(VFreeCamera);
+  FORCE_LINKDYNCLASS(VisMouseCamera_cl); // serialization fall back to VFreeCamera
 
 #if (defined (WIN32) && !defined(_VISION_MOBILE) ) || defined (_VISION_XENON) || defined (_VISION_PS3) || defined(_VISION_PSP2) || defined(_VISION_WIIU)
 
@@ -361,9 +364,6 @@ void VisionEnginePlugin_cl::OnInitEnginePlugin()
   // Custom Volume Objects
   VCustomVolumeManager::GlobalManager().OneTimeInit();
 
-  // Graph Objects
-  VGraphManager::GlobalManager().OneTimeInit();
-
 #if ( defined(WIN32) && !defined( HK_ANARCHY ) ) || defined(_VISION_XENON) || defined (_VISION_PS3) || defined (_VISION_WIIU)
   // Projected decals
   VProjectedDecalManager::GlobalManager().OneTimeInit();
@@ -395,9 +395,6 @@ void VisionEnginePlugin_cl::OnDeInitEnginePlugin()
 
   //Mirror
   VisMirrorManager_cl::GlobalManager().OneTimeDeInit();
-
-  //Postprocessing
-  //VPostProcessingManager::GlobalManager().OneTimeDeInit();
 
   // Terrain
   VTerrainManager::GlobalManager().DeInitOneTime();
@@ -477,9 +474,6 @@ void VisionEnginePlugin_cl::OnDeInitEnginePlugin()
   //deregister named input maps
   VStringInputMap::OneTimeDeInit();
 
-  // Graph Objects
-  VGraphManager::GlobalManager().OneTimeDeInit();
-
 #if ( defined(WIN32) && !defined( HK_ANARCHY ) ) || defined(_VISION_XENON) || defined (_VISION_PS3) || defined (_VISION_WIIU)
   // Projected decals
   VProjectedDecalManager::GlobalManager().OneTimeDeInit();
@@ -487,7 +481,7 @@ void VisionEnginePlugin_cl::OnDeInitEnginePlugin()
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

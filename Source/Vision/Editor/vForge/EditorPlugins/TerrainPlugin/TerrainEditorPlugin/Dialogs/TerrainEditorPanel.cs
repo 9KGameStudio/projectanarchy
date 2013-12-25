@@ -7,48 +7,48 @@
  */
 
 using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.ComponentModel.Design;
-using System.Reflection;
-using System.Data;
-using System.Drawing;
-using System.Text;
-using System.Windows.Forms;
-using CSharpFramework.Docking;
-using CSharpFramework;
-using TerrainEditorPlugin.Shapes;
-using TerrainEditorPlugin.Contexts;
-using TerrainBase.Editing;
-using CSharpFramework.PropertyEditors;
 using System.Collections;
-using TerrainEditorPlugin.Controls;
-using TerrainManaged;
-using CSharpFramework.Dialogs;
-using TerrainEditorPlugin.Editing;
-using TerrainEditorPlugin.Actions;
-using CSharpFramework.View;
-using CSharpFramework.Scene;
-using TerrainEditorPlugin.Filter;
-using System.IO;
+using System.ComponentModel;
+using System.Drawing;
 using System.Drawing.Design;
-using System.Windows.Forms.Design;
-using CSharpFramework.Helper;
-using CSharpFramework.Clipboard;
-using CSharpFramework.PickHandlers;
-using CSharpFramework.Shapes;
-using CSharpFramework.Math;
-using CSharpFramework.Actions;
+using System.IO;
 using System.Runtime.Serialization;
-using CSharpFramework.Serialization;
-using CSharpFramework.ShortCuts;
+using System.Windows.Forms;
+using CSharpFramework;
+using CSharpFramework.Actions;
 using CSharpFramework.AssetManagement;
+using CSharpFramework.Controls;
+using CSharpFramework.Dialogs;
+using CSharpFramework.Docking;
+using CSharpFramework.Helper;
+using CSharpFramework.Math;
+using CSharpFramework.PickHandlers;
+using CSharpFramework.PropertyEditors;
+using CSharpFramework.Scene;
+using CSharpFramework.Serialization;
+using CSharpFramework.Shapes;
+using CSharpFramework.View;
+using ManagedBase.LogManaged;
+using TerrainBase.Editing;
+using TerrainEditorPlugin.Actions;
+using TerrainEditorPlugin.Contexts;
+using TerrainEditorPlugin.Editing;
+using TerrainEditorPlugin.Filter;
+using TerrainEditorPlugin.Shapes;
+using TerrainManaged;
 
 namespace TerrainEditorPlugin.Dialogs
 {
 	public partial class TerrainEditorPanel : DockableForm
-	{
-		public TerrainEditorPanel(DockingContainer container)
+  {
+    #region Member Variables
+
+    // Help button
+    ToolStripHelpButton _helpbuttonShapes = null;
+
+    #endregion
+
+    public TerrainEditorPanel(DockingContainer container)
 			: base(container)
 		{
       // actually this has to be done here
@@ -61,6 +61,10 @@ namespace TerrainEditorPlugin.Dialogs
       //this.Controls.Add(this.brushListCtrl1);
       
       InitializeComponent();
+
+      // Add help buttons
+      _helpbuttonShapes = new ToolStripHelpButton(Text);
+      toolStrip_Main.Items.Add(_helpbuttonShapes);
 
       UpdatePanelStatus();
       UpdateHeightmapPanel();
@@ -1020,15 +1024,16 @@ namespace TerrainEditorPlugin.Dialogs
       DetailTextureResource texture = TerrainEditor.CurrentTerrain.CreateDetailTexture();
 
       // pick the detail texture file
-      IOpenAssetDlg assetDlg = EditorManager.AssetManager.GetOpenAssetDialog("Select Detail Texture",
-          "Select which texture to use for the new detail texture layer.", "", new string[] { "Texture" }, false);
+      using (IOpenAssetDlg assetDlg = new LegacyAssetDlgWrapper("Select Detail Texture",
+          "Select which texture to use for the new detail texture layer.", "", new string[] { "Texture" }, true))
+      {
+        if (assetDlg.ShowDialog(this) != DialogResult.OK)
+          return;
 
-      if (assetDlg.ShowDialog(this) != DialogResult.OK)
-        return;
-
-      texture.DiffuseFilename = EditorManager.Project.MakeRelative(assetDlg.SelectedAsset);
-      texture.Name = System.IO.Path.GetFileNameWithoutExtension(texture.DiffuseFilename);
-      EditorManager.Actions.Add(new AddDetailTextureAction(TerrainEditor.CurrentTerrain, texture));
+        texture.DiffuseFilename = EditorManager.Project.MakeRelative(assetDlg.SelectedAsset);
+        texture.Name = System.IO.Path.GetFileNameWithoutExtension(texture.DiffuseFilename);
+        EditorManager.Actions.Add(new AddDetailTextureAction(TerrainEditor.CurrentTerrain, texture));
+      }
     }
 
     /// <summary>
@@ -1605,7 +1610,7 @@ namespace TerrainEditorPlugin.Dialogs
               _terrainPanel.UpdateDecoration(false);
             }
             else
-              EditorManager.EngineManager.LogPrintWarning("Cannot attach vegetation painting component to shape " + result.hitShape.ShapeName);
+              Log.Warning("Cannot attach vegetation painting component to shape " + result.hitShape.ShapeName);
           }
           else
           {
@@ -1685,7 +1690,7 @@ namespace TerrainEditorPlugin.Dialogs
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -21,7 +21,7 @@ VPostProcessTranslucencies::VPostProcessTranslucencies(bool bQuarterSizeParticle
 #if defined (WIN32)
   if (m_bQuarterSizeParticles)
   {
-    Vision::Error.Warning("Win32 version does not support quarter-size particle rendering.");
+    hkvLog::Warning("Win32 version does not support quarter-size particle rendering.");
   }
   m_bQuarterSizeParticles = false;
 #endif
@@ -65,7 +65,7 @@ void VPostProcessTranslucencies::InitializePostProcessor()
 
 #if defined(_VISION_MOBILE) || defined(_VISION_PSP2)
   if(m_bQuarterSizeParticles)
-    Vision::Error.Warning("Quarter size particles are not supported on mobile platforms");
+    hkvLog::Warning("Quarter size particles are not supported on mobile platforms");
   m_bQuarterSizeParticles = false;
 #else
   if (m_bQuarterSizeParticles)
@@ -455,7 +455,7 @@ void VPostProcessTranslucencies::RestorePreviousContext()
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

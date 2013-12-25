@@ -27,7 +27,9 @@ public:
 
   bool LoadScene(const char * szFileName)
   {
-    return Vision::GetApplication()->RequestLoadScene( szFileName );
+    VisAppLoadSettings settings(szFileName);
+    settings.m_bReplaceSearchPaths = false;
+    return Vision::GetApplication()->RequestLoadScene(settings);
   }
 
   void UnloadScene()
@@ -97,10 +99,10 @@ public:
     szBuffer[iScriptLen] = 0;
     pIn->Close();
 
-    if (!LUA_ERRORCHECK(L, luaL_loadbuffer(L, szBuffer, iScriptLen, szFileName)))
+    if (!VScriptResourceManager::LuaErrorCheck(L, luaL_loadbuffer(L, szBuffer, iScriptLen, szFileName)))
       return false;
 
-    if (!LUA_ERRORCHECK(L, lua_pcall (L, 0, LUA_MULTRET, 0)))
+    if (!VScriptResourceManager::LuaErrorCheck(L, lua_pcall (L, 0, LUA_MULTRET, 0)))
       return false;
 
     return true;
@@ -111,7 +113,7 @@ public:
 #endif // __VSCRIPTAPP_WRAPPER_HPP
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

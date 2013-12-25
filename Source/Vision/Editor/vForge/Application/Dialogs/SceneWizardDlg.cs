@@ -561,6 +561,20 @@ namespace Editor.Dialogs
       {
         _scene.V3DLayer.EnableTimeOfDay = false;
       }
+
+      // Copy the just applied settings to each profile.
+      CSharpFramework.AssetManagement.IProfileManager.Profile activeProfile = EditorManager.ProfileManager.GetActiveProfile();
+      foreach (CSharpFramework.AssetManagement.IProfileManager.Profile profile in EditorManager.ProfileManager.GetProfiles())
+      {
+        if (profile != activeProfile)
+        {
+          EditorManager.ProfileManager.CopyProfileSettingsToProfile(activeProfile, profile);
+        }
+      }
+
+      // Save the newly setup scene.
+      Scene.Dirty = true;
+      Scene.Save();
     }
 
     #endregion
@@ -586,7 +600,7 @@ namespace Editor.Dialogs
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

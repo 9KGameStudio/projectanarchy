@@ -51,7 +51,6 @@ VisParticleEmitter_cl *VisParticleEmitter_cl::Clone(const VRandom& randGen) cons
 
   COPY_MEMBER(m_eType);
   COPY_MEMBER(m_vParam);
-  COPY_MEMBER(m_spPath);
 
   COPY_MEMBER(m_fConeAngle);
   COPY_MEMBER(m_fMinConeAngle);
@@ -84,11 +83,14 @@ bool VisParticleEmitter_cl::GetBoundingBox(hkvAlignedBBox &dstBox) const
 {
   switch (m_eType)
   {
-    case EMITTER_TYPE_UNKNOWN:return false;
+    case EMITTER_TYPE_UNKNOWN:
+      return false;
+
     case EMITTER_TYPE_POINT:
       dstBox.m_vMin.set(-1.f,-1.f,-1.f);
       dstBox.m_vMax.set( 1.f, 1.f, 1.f);
       return true;
+
     case EMITTER_TYPE_SPHERE:
       dstBox.m_vMax.set(m_vParam.x,m_vParam.x,m_vParam.x);
       dstBox.m_vMin = -dstBox.m_vMax;
@@ -98,24 +100,22 @@ bool VisParticleEmitter_cl::GetBoundingBox(hkvAlignedBBox &dstBox) const
       dstBox.m_vMax = m_vParam.getAsVec3 ();
       dstBox.m_vMin = -dstBox.m_vMax;
       return true;
+
     case EMITTER_TYPE_PLANE:
       dstBox.m_vMax = m_vParam.getAsVec3 ();
       dstBox.m_vMax.z = 1.f;
       dstBox.m_vMin = -dstBox.m_vMax;
       return true;
 
-    case EMITTER_TYPE_PATH:
-      VASSERT(m_spPath);
-//      m_spPath->GetBoundingBox(); // does not exist yet
-      VASSERT(FALSE);
-      return false;
-
     case EMITTER_TYPE_RAY:
       dstBox.m_vMin.set(-1.f,-1.f,-1.f);
       dstBox.m_vMax.set(m_vParam.x,1.f,1.f);
       return true;
+
+    default:
+      VASSERT_MSG(false, "Warning: Unknown particle type in VisParticleEmitter_cl::GetBoundingBox detected.");
+      return false;
   }
-  return false;
 }
 
 
@@ -128,7 +128,6 @@ const char *VisParticleEmitter_cl::GetTypeName() const
     case EMITTER_TYPE_SPHERE:return "sphere";
     case EMITTER_TYPE_BOX:return "box";
     case EMITTER_TYPE_PLANE:return "plane";
-    case EMITTER_TYPE_PATH:return "path";
     case EMITTER_TYPE_RAY:return "ray";
     case EMITTER_TYPE_MESH:return "mesh";
   }
@@ -149,7 +148,6 @@ bool VisParticleEmitter_cl::GetTypeFromName(const char *szName)
   CHECK_EMITTER_NAME("sphere",EMITTER_TYPE_SPHERE);
   CHECK_EMITTER_NAME("box",EMITTER_TYPE_BOX);
   CHECK_EMITTER_NAME("plane",EMITTER_TYPE_PLANE);
-  CHECK_EMITTER_NAME("path",EMITTER_TYPE_PATH);
   CHECK_EMITTER_NAME("ray",EMITTER_TYPE_RAY);
   CHECK_EMITTER_NAME("mesh",EMITTER_TYPE_MESH);
   VASSERT(FALSE);
@@ -320,16 +318,6 @@ void VisParticleEmitter_cl::SpawnSingleParticle(ParticleExt_t *pParticle, Partic
       }
       break;
     }
-    case EMITTER_TYPE_PATH:
-    {
-      float fT = randGen.GetFloat();
-      VASSERT(m_spPath);
-      m_spPath->EvalPointSmooth(fT,vTempVec);
-      pParticle->pos[0] = vTempVec.x;
-      pParticle->pos[1] = vTempVec.y;
-      pParticle->pos[2] = vTempVec.z;
-      break;
-    }
     case EMITTER_TYPE_MESH:
     {
       if (m_spEmitterMesh)
@@ -381,6 +369,9 @@ void VisParticleEmitter_cl::SpawnSingleParticle(ParticleExt_t *pParticle, Partic
       }
       break;
     }
+    default:
+      VASSERT_MSG(false, "Warning: Unknown particle type in VisParticleEmitter_cl::SpawnSingleParticle detected.");
+      break;
   }
 }
 
@@ -471,17 +462,10 @@ bool VisParticleEmitter_cl::DataExchangeXML(TiXmlElement *pEmitter, bool bWrite)
     case EMITTER_TYPE_RAY:
       XMLHelper::Exchange_Float(pEmitter,"length",m_vParam.x,bWrite);
       break;
-    case EMITTER_TYPE_PATH:
-      if (bWrite)
-      {
-        const char *szPathKey = m_spPath->GetKey();
-        if (szPathKey)
-          pEmitter->SetAttribute("pathkey",szPathKey);
-      } else
-      {
-        const char *szPathKey = pEmitter->Attribute("pathkey");
-        SetType_Path(szPathKey);
-      }
+    case EMITTER_TYPE_MESH:
+      break;
+    default:
+      VASSERT_MSG(false, "Warning: Unknown particle type in VisParticleEmitter_cl::DataExchangeXML detected.");
       break;
   }
 
@@ -624,7 +608,7 @@ void VisParticleEmitterList_cl::SerializeX( VArchive &ar )
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

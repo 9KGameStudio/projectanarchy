@@ -23,10 +23,10 @@
 VPostProcessGlow::VPostProcessGlow(GlowDownscale_e eDownScaleMode) 
   : DownscaleMode(eDownScaleMode)
   , BlurValue(1.0f)
-  , Bias(0.0f)
-  , Exponent(4.0f)
-  , Scale(4.0f)
-  , BlurPasses(2)
+  , Bias(0.1f)
+  , Exponent(6.0f)
+  , Scale(1.5f)
+  , BlurPasses(3)
   , m_iScreenX(0), m_iScreenY(0)
   , m_iScreenTexX(0), m_iScreenTexY(0)
   , m_iBlurX(0), m_iBlurY(0)
@@ -42,10 +42,10 @@ VPostProcessGlow::VPostProcessGlow(GlowDownscale_e eDownScaleMode)
 VPostProcessGlow::VPostProcessGlow() 
   : DownscaleMode(GLOW_DOWNSCALE_2X)
   , BlurValue(1.0f)
-  , Bias(0.0f)
-  , Exponent(4.0f)
-  , Scale(4.0f)
-  , BlurPasses(2)
+  , Bias(0.1f)
+  , Exponent(6.0f)
+  , Scale(1.5f)
+  , BlurPasses(3)
   , m_iScreenX(0), m_iScreenY(0)
   , m_iScreenTexX(0), m_iScreenTexY(0)
   , m_iBlurX(0), m_iBlurY(0)
@@ -521,18 +521,17 @@ void VPostProcessGlow::Serialize( VArchive &ar )
 
 START_VAR_TABLE(VPostProcessGlow, VPostProcessingBaseComponent, "VPostProcessGlow", 0, "Glow")  
   DEFINE_VAR_ENUM(VPostProcessGlow, DownscaleMode, "Downscale mode (4x is slightly faster, 2x produces higher quality)", "DOWNSCALE_2X", "DOWNSCALE_2X,DOWNSCALE_4X", 0, 0);
-  DEFINE_VAR_FLOAT(VPostProcessGlow, Bias, "Glow Bias (higher bias makes overall picture brighter and increases glow)", "0.05", 0, "Slider(0,4)");
-  DEFINE_VAR_FLOAT(VPostProcessGlow, Exponent, "Glow exponent (higher exponent results in more contrast and more selective glow)", "1.5", 0, "Slider(0,16)");
-  DEFINE_VAR_FLOAT(VPostProcessGlow, Scale, "Glow Scale (higher scale makes bright areas brighter)", "0.3333", 0, "Slider(0,10)");
-  DEFINE_VAR_INT(VPostProcessGlow, BlurPasses, "Number of blur passes for the glow effect.", "3", 0, 0);
-  DEFINE_VAR_FLOAT(VPostProcessGlow, BlurValue, "Sample texel offset value for blur pass", "1", 0, "Slider(0,4)"); 
+  DEFINE_VAR_FLOAT(VPostProcessGlow, Bias, "Makes the overall image brighter and results in more glow.\nThe bias is added to all pixels before it is decided which pixels will recieve glow. Large bias values mean that the overall picture gets brighter and more glow is visible. Values below zero mean that less pixels will recieve glow, however this only works well when HDR rendering is also enabled.", "0.1", 0, "Slider(-1,1)");
+  DEFINE_VAR_FLOAT(VPostProcessGlow, Exponent, "A larger exponent results in more contrast and more selective glow. I.e. the areas of glow will get smaller but more intense.", "6.0", 0, "Slider(0,16)");
+  DEFINE_VAR_FLOAT(VPostProcessGlow, Scale, "Factor to scale the glow intensity linearly. Higher scale makes all bright areas equally brighter.", "1.5", 0, "Slider(0,10)");
+  DEFINE_VAR_INT(VPostProcessGlow, BlurPasses, "How often the glow values are blurred. Higher values increase the radius of the glow effect and make it softer. However, each additional blur pass requires significantly more GPU processing power. Especially on mobile devices the number of blur passes should be kept as low as possible.", "3", 0, 0);
 END_VAR_TABLE
 
 
 //-----------------------------------------------------------------------------------
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

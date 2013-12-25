@@ -66,12 +66,18 @@
     static const int BLEND_ALPHA_TEST       = VIS_TRANSP_ALPHATEST;
     static const int BLEND_ADD_MODULATE     = VIS_TRANSP_ADD_MODULATE;
 
+    static const float MATH_E                 = HKVMATH_E;
+    static const float MATH_PI                = HKVMATH_PI;
+    static const float MATH_EPSILON           = HKVMATH_EPSILON;
+
     static const float MATH_SMALL_EPSILON     = HKVMATH_SMALL_EPSILON;
     static const float MATH_DEFAULT_EPSILON   = HKVMATH_DEFAULT_EPSILON;
     static const float MATH_LARGE_EPSILON     = HKVMATH_LARGE_EPSILON;
     static const float MATH_HUGE_EPSILON      = HKVMATH_HUGE_EPSILON;
     static const float MATH_GIGANTIC_EPSILON  = HKVMATH_GIGANTIC_EPSILON;
 
+    static const float MATH_FLOAT_MAX_POS     = HKVMATH_FLOAT_MAX_POS; 
+    static const float MATH_FLOAT_MAX_NEG     = HKVMATH_FLOAT_MAX_NEG; 
 
     #ifdef SWIG
       %mutable;
@@ -103,7 +109,7 @@
 #endif //__VSCRIPTCONSTANTS_WRAPPER_HPP
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

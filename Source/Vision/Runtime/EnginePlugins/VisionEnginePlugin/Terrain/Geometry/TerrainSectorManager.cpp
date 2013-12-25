@@ -1245,7 +1245,7 @@ void VTerrainSectorManager::LoadGeometryChunk(VChunkFile &file)
   m_spTerrainIndexBuffer->GetVertexDescriptor(descr);
   if (descr.m_iPosOfs != VERTEXDESC_FORMAT_FLOAT2)
   {
-    Vision::Error.Warning("Please re-save terrain '%s' since it has outdated vertex buffers",m_pTerrain->GetFilename());
+    hkvLog::Warning("Please re-save terrain '%s' since it has outdated vertex buffers",m_pTerrain->GetFilename());
     m_spTerrainIndexBuffer = NULL;
     EnsureSharedMeshesCreated();
   }
@@ -1455,7 +1455,7 @@ VTerrainConstantBufferGlobals *VTerrainSectorManager::GetGlobalsConstantBuffer()
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

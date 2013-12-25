@@ -21,7 +21,6 @@ struct VAssetInfo;
 /// \brief 
 ///   Helper class for loading an asset look-up table and for performing
 ///   asset look-ups.
-/// \sa IVFileStreamManager#LookUpAsset
 class hkvAssetLookUpTable
 {
 public:
@@ -71,13 +70,13 @@ public:
 private:
   char* m_pStringData;
   VAssetInfo* m_pData; // array that contains all data structs
-  VStrMap<VAssetInfo> m_LookUpTable;
+  VMap<VString, VAssetInfo*> m_LookUpTable;
 };
 
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

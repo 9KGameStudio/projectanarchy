@@ -155,20 +155,22 @@ class VisProgressDataObject_cl : public IVisCallbackDataObject_cl
 {
 public:
 
+  enum VisProgressDataObjectType
+  {
+    PDOT_LOADING_SCENE = 0,
+    PDOT_BACKGROUND_RESTORE
+  };
+
   /// \brief
   ///   Constructor that takes the sender callback instance, flags, progress percentage and a
   ///   message string
-  VisProgressDataObject_cl(VisCallback_cl *pSender, int iFlags, VProgressStatus &progress) 
-    : IVisCallbackDataObject_cl(pSender), m_Progress(progress)
+  VisProgressDataObject_cl(VisCallback_cl *pSender, int iFlags, float fPercentage, VisProgressDataObjectType eType) 
+    : IVisCallbackDataObject_cl(pSender)
+    , m_iStatusFlags(iFlags)
+    , m_fPercentage(fPercentage)
+    , m_eType(eType)
   {
-    m_iStatusFlags = iFlags;
-    m_fPercentage = progress.GetCurrentProgress();
-    m_szMessage = progress.GetProgressStatusString();
   }
-  
-  /// \brief
-  ///   The progress status object
-  VProgressStatus &m_Progress;
 
   /// \brief
   ///   Member that describes a bitmask for the current loadworld status.
@@ -180,8 +182,8 @@ public:
   float m_fPercentage;
 
   /// \brief
-  ///   String pointer for additional information about the current status. Can also be retrieved via m_Progress.GetProgressStatusString()
-  const char *m_szMessage;
+  ///   Specifies the origin of the progress activity.
+  VisProgressDataObjectType m_eType;
 };
 
 
@@ -718,34 +720,22 @@ public:
   /// Note that at calling time of OnEngineInit the Video mode is not yet initialized so GPU
   /// dependent resources such as textures or mesh buffers cannot be created.
   /// 
-  /// It is possible that initialization and deinitialization happens more than once.
+  /// It is possible that initialization and de-initialization happens more than once.
   /// 
   /// \sa VisCallbackManager_cl::OnEngineDeInit()
   VisCallback_cl OnEngineInit;
 
   /// \brief
-  ///   This callback gets called BEFORE the engine gets deinitialized, but after the video has
-  ///   been deinitialized
+  ///   This callback gets called when the engine gets de-initialized. A final PurgeAllResource()
+  ///   is triggered after the callback has been triggered.
   /// 
-  /// Plugins can register to this callback to be notified when the engine gets deinitialized.
+  /// Plugins can register to this callback to be notified when the engine gets de-initialized.
   /// Final cleanup can be performed here.
   /// 
-  /// It is possible that initialization and deinitialization happens more than once.
+  /// It is possible that initialization and de-initialization happens more than once.
   /// 
   /// \sa VisCallbackManager_cl::OnEngineInit()
   VisCallback_cl OnEngineDeInit;
-
-  /// \brief
-  ///   This callback gets called BEFORE the engine gets deinitialized
-  /// 
-  /// In contrast to VisCallbackManager_cl::OnEngineDeInit the video context is still valid while this callback is
-  /// triggered.
-  /// 
-  /// It is thus useful to perform some final resource cleanup that rely on the graphics context,
-  /// such as textures etc.
-  /// 
-  /// \sa VisCallbackManager_cl::OnEngineDeInit()
-  VisCallback_cl OnEngineDeInitializing;
   
   /// \brief
   ///   This callback gets triggered by the engine after a model file has been loaded.
@@ -863,7 +853,7 @@ public:
   /// 
   /// Thus in most situations the OnBeforeSceneLoaded resp. the OnAfterSceneLoaded callback might
   /// be more suitable, because for these callbacks vForge mimics the same behaviour as starting
-  /// the exported scene with the scene viewer.
+  /// the exported scene in vPlayer.
   /// 
   /// vForge triggers another callback OnEditorModeChanging right before it changes the mode.
   /// 
@@ -1187,7 +1177,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -21,9 +21,6 @@
   #define SCALEFORM_IMPEXP
 #endif
 
-//used file manager for IO stuff
-extern IVFileStreamManager *g_pFileManager;
-
 enum SF_CONSTANTS
 {
   SF_MOVIE_SIZE_RENDERCONTEXT = -1,
@@ -99,7 +96,7 @@ public:
 
   /// \brief 
   ///   Initialization function, called when the first movie will be loaded (lazy loading)
-  void Init(IVFileStreamManager *pManager = NULL);
+  void Init();
 
   /// \brief 
   ///   Deinitialization function.
@@ -330,9 +327,8 @@ public:
   SCALEFORM_IMPEXP Scaleform::GFx::Loader * GetLoader() const;
 
   /// \brief  Create a new loader. This call will replace the current loader (if present).
-  /// \param pManager The file manager, which should be used by the loader.
   /// \return NULL if it fails, otherwise a pointer to the created loader.
-  SCALEFORM_IMPEXP Scaleform::GFx::Loader* CreateLoader(IVFileStreamManager *pManager = NULL);
+  SCALEFORM_IMPEXP Scaleform::GFx::Loader* CreateLoader();
 
   /// @}
   /// @name Rendering Related Methods
@@ -352,13 +348,13 @@ public:
 
   /// \brief  Returns a pointer to the used Scaleform texture manager.
   /// \return NULL if no movie and therefore no texture manager is present.
-  SCALEFORM_IMPEXP Scaleform::Render::TextureManager * GetTextureManager() const;
+  SCALEFORM_IMPEXP Scaleform::Render::TextureManager* GetTextureManager() const;
 
   #if defined(_VISION_XENON) || defined(WIN32) || defined(_VISION_PS3)
     /// \brief Convert a vision texture to a Scaleform in order to be used inside a SWF movie.
     /// \param pTexture  The texture to convert.
     /// \return NULL if it fails, else the Scaleform texture.
-    SCALEFORM_IMPEXP Scaleform::Render::TextureImage * ConvertTexture(VTextureObject *pTexture);
+    SCALEFORM_IMPEXP Scaleform::Render::TextureImage* ConvertTexture(VTextureObject *pTexture);
   #endif
 
   /// @}
@@ -484,7 +480,7 @@ protected:
     Scaleform::Render::GL::HAL * m_pRenderHal;
   #endif
 
-  //2D renderer
+  // 2D renderer
   Scaleform::Render::Renderer2D * m_pRenderer;
 
   //set the render order for this movie
@@ -504,10 +500,10 @@ protected:
     bool m_bSimulateMouseEvents;
   #endif
   
-  VScaleformCommandQueue * m_pCommandQueue;
+  VScaleformCommandQueue* m_pCommandQueue;
 
   //input handling vars
-  VInputMap *m_pCursorInputMap;
+  VInputMap* m_pCursorInputMap;
 
   bool m_bHandleInput;
   bool m_bHandlesWindowsInput;
@@ -524,7 +520,7 @@ protected:
   DynArray_cl<int> m_pGfXKeyMap;
   DynArray_cl<bool> m_bTriggerIDOldState;
 
-  VInputMap *m_pInputMap;
+  VInputMap* m_pInputMap;
 
 #ifdef SF_AMP_SERVER
   friend class VScaleformAmpAppController;
@@ -557,7 +553,7 @@ private:
 #endif // VSCALEFORMMANAGER_HPP_INCLUDED
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -16,121 +16,25 @@
 // make a custom type of menu items, such as scrollbars, etc.
 // ***********************************************************************************************
 #include <Vision/Samples/Engine/GUI/GUIPCH.h>
+#include <Vision/Runtime/Framework/VisionApp/VAppImpl.hpp>
+#include <Vision/Runtime/Framework/VisionApp/Modules/VExitHandler.hpp>
 
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/GUI/VMenuIncludes.hpp>
 #include <Vision/Samples/Engine/GUI/MonitorContext.hpp>
-#include <Vision/Runtime/Common/VisSampleApp.hpp>
-
-#if defined(_VISION_ANDROID) || defined(_VISION_TIZEN)
-#include <Vision/Runtime/Common/VisMobileExitDialog.hpp> 
-#endif
-
-enum GUIState
-{
-  GS_INIT,
-  GS_MAIN_MENU,
-  GS_GAME
-};
-
-GUIState g_state = GS_INIT;
-
-VGUIMainContextPtr g_spGUIContext = NULL;
-VMonitorGUIContextPtr g_spMonitor = NULL;
-
-VDialog* g_pMainMenuDialog = NULL;
-VDialog* g_pMessageBoxInGame = NULL;
-
-class GUISampleApp : public VisSampleApp
-{
-public:
-  virtual void OnUpdateScene() HKV_OVERRIDE
-  {
-    if ((g_spGUIContext != NULL) && g_spGUIContext->IsActive())
-    {
-      // Timer is not longer updated here, because it needs to be updated right after the frame flip
-      Vision::Callbacks.OnUpdateSceneBegin.TriggerCallbacks();
-      const float dtime = Vision::GetTimer()->GetTimeDifference();
-
-      // Handle render contexts
-      VisRenderContext_cl::HandleAllRenderContexts(dtime);
-
-      Vision::Profiling.Update();
-    }
-    else
-    {
-      VisSampleApp::OnUpdateScene();
-    }
-  }
-
-  virtual bool Run() HKV_OVERRIDE
-  {
-    if ((g_spGUIContext != NULL) && g_spGUIContext->IsActive())
-    {
-#if defined(_VISION_ANDROID) || defined(_VISION_TIZEN)
-      if (m_spGUIContext != NULL && m_spGUIContext->IsActive() && m_spExitDlg != NULL && static_cast<VisMobileExitDialog*>(m_spExitDlg.GetPtr())->IsExitTriggered())
-      {
-        return false;
-      }
-#endif
-
-      return VisionApp_cl::Run();
-    }
-    else
-    {
-      return VisSampleApp::Run();
-    }
-  }
-
-#if defined(_VISION_ANDROID) || defined(_VISION_TIZEN)
-  virtual bool OnMobileBackButtonPressed() HKV_OVERRIDE
-  {
-    // Disable back button default behaviour
-    return true;
-  }
-#endif
-};
-
-VSmartPtr<GUISampleApp> spApp = NULL;
+#include <Vision/Runtime/Framework/VisionApp/Helper/VDataDirectoryHelper.hpp>
 
 // Sample flags, and filename configurations
 #if defined(_VISION_MOBILE) || defined(HK_ANARCHY) || defined( _VISION_APOLLO ) || defined( _VISION_METRO )   // TODO: Define _VISION_MOBILE on Apollo.
-  uint64 iSampleFlags = VSampleFlags::VSAMPLE_INIT_DEFAULTS | VSampleFlags::VSAMPLE_FORCEMOBILEMODE;
-  int iVideoWidth = VVIDEO_DEFAULTWIDTH;
-  int iVideoHeight = VVIDEO_DEFAULTHEIGHT;
-
   #define MENU_SYSTEM_FILENAME "GUI\\Dialogs\\MenuSystemMobile.xml"
   #define MAIN_MENU_FILENAME "GUI\\Dialogs\\MainMenuMobile.xml"
-
-  #define SCENE_NAME "Crossing"
-  #define MESH_NAME "Crossing.vmesh"
-
-  VisScreenMaskPtr g_spExit;
-
-#elif defined(_VISION_PSP2)
-  uint64 iSampleFlags = VSampleFlags::VSAMPLE_INIT_DEFAULTS | VSampleFlags::VSAMPLE_WAITRETRACE;
-  int iVideoWidth = 960;
-  int iVideoHeight = 544;
-
-  #define MENU_SYSTEM_FILENAME "GUI\\Dialogs\\MenuSystemMobile.xml"
-  #define MAIN_MENU_FILENAME "GUI\\Dialogs\\MainMenuMobile.xml"
-
-  #define SCENE_NAME "Crossing"
-  #define MESH_NAME "Crossing.vmesh"
-
 #else
-  uint64 iSampleFlags = VSampleFlags::VSAMPLE_INIT_DEFAULTS;
-  int iVideoWidth = VVIDEO_DEFAULTWIDTH;
-  int iVideoHeight = VVIDEO_DEFAULTHEIGHT;
-
   #define MENU_SYSTEM_FILENAME "GUI\\Dialogs\\MenuSystem.xml"
   #define MAIN_MENU_FILENAME "GUI\\Dialogs\\MainMenu.xml"
-
-  #define SCENE_NAME "Crossing"
-  #define MESH_NAME "Crossing.vmesh"
-
 #endif
 
-#define MAP_DATA_DIR  "Maps"VFILE_STR_SEPARATOR"SciFi"
+#define MAP_DATA_DIR  ":havok_sdk/Data/Vision/Samples/Engine/Maps/SciFi"
+#define SCENE_NAME "Crossing"
+#define MESH_NAME "Crossing.vmesh"
 
 // Optional callback listener that can translate all text labels in the GUI.
 // Note: Does not do anything in this version.
@@ -148,298 +52,273 @@ public:
     //pTextData->m_szLabel = "Translated version";
   }
 };
-
 TextLabelTranslator translator;
 
-VISION_INIT
+
+
+class GUISampleApp : public VAppImpl
 {
-  VISION_SET_DIRECTORIES(false);
+public:
+  enum GUIState
+  {
+    GS_MAIN_MENU,
+    GS_GAME
+  };
 
-  // Include the vision engine plugin
-  VisionAppHelpers::MakeEXEDirCurrent();
-  VisSampleApp::LoadVisionEnginePlugin();
+  GUISampleApp() 
+    : m_state(GS_MAIN_MENU)
+    , m_spMonitor(NULL)
+    , m_pMainMenuDialog(NULL)
+    , m_pMessageBoxInGame(NULL) 
+    , m_spBackMask(NULL)
+  {}
+  virtual ~GUISampleApp() {}
 
+  virtual void Init() HKV_OVERRIDE;
+  virtual void SetupAppConfig(VisAppConfig_cl& config) HKV_OVERRIDE;
+  virtual void AfterSceneLoaded(bool bLoadingSuccessful) HKV_OVERRIDE;
+  virtual bool Run() HKV_OVERRIDE;
+  virtual void DeInit() HKV_OVERRIDE;
+  
+private:
+  GUIState m_state;
+
+  VMonitorGUIContextPtr m_spMonitor;
+
+  VDialog* m_pMainMenuDialog;
+  VDialog* m_pMessageBoxInGame;
+  VisScreenMaskPtr m_spBackMask;
+};
+
+VAPP_IMPLEMENT_SAMPLE(GUISampleApp);
+
+void GUISampleApp::Init()
+{
 #if defined(_VISION_MOBILE) || defined(HK_ANARCHY)
   Vision::Renderer.SetUseSingleBufferedStaticMeshes(false);
 #endif
 
-#if defined(_VISION_WIIU)
-  iSampleFlags &= ~VSampleFlags::VSAMPLE_WIIU_DRCDEMO;
-#endif
+  SetupScene(VisAppLoadSettings(SCENE_NAME, MAP_DATA_DIR));
+  
 
-  // Create and init an application
-  spApp = new GUISampleApp();
-  if (!spApp->InitSample(MAP_DATA_DIR /*DataDir*/, NULL,  iSampleFlags & ~VSampleFlags::VSAMPLE_SPLASHSCREEN & ~VSampleFlags::VSAMPLE_HAVOKLOGO, iVideoWidth, iVideoHeight ))
-    return false;
+  Vision::Error.SetReportStatus(FALSE);
+  Vision::ResourceSystem.SetReportSurvivingResources(FALSE);
 
-  g_state = GS_INIT;
+  VAppMenuContextPtr spContext = GetContext();
 
-  g_spGUIContext = NULL;
-  g_spMonitor = NULL;
+  // Load some GUI resources:
+  VGUIManager::GlobalManager().LoadResourceFile(MENU_SYSTEM_FILENAME);
 
-  g_pMainMenuDialog = NULL;
-  g_pMessageBoxInGame = NULL;
+  VGUIManager::OnTextLabelCallback += translator;
 
-  return true;
-}
+  // Use a modified default tooltip
+  VTooltip *pCustomTooltip = new VTooltip();
+  pCustomTooltip->SetDelay(0.5f); // shorter delay than usual
+  spContext->SetTooltipTemplate(pCustomTooltip);
+  m_pMainMenuDialog = spContext->ShowDialog(MAIN_MENU_FILENAME);
 
-VISION_SAMPLEAPP_AFTER_LOADING
-{
-  if (g_state == GS_INIT)
-  {
-    // Define help text
-    spApp->AddHelpText("");
-    spApp->AddHelpText("How to use this demo :");
-    spApp->AddHelpText("");
-
-#ifdef SUPPORTS_KEYBOARD
-    VisSampleApp::GetInputMap()->MapTrigger(GUI_DEMO_EXIT, V_KEYBOARD, CT_KB_ESC);
-    spApp->AddHelpText("KEYBOARD - ESC : Go to main menu");
-    spApp->AddHelpText("");
-#endif
+  // Prepare the world in order to have skinning shaders for the render to texture menu
+  Vision::InitWorld();
 
 #ifdef SUPPORTS_MOUSE
-    VisSampleApp::GetInputMap()->MapTrigger(GUI_DEMO_ACTION_1, V_MOUSE, CT_MOUSE_LEFT_BUTTON);
-    VisSampleApp::GetInputMap()->MapTrigger(GUI_DEMO_ACTION_2, V_MOUSE, CT_MOUSE_RIGHT_BUTTON);
-    VisSampleApp::GetInputMap()->MapTrigger(GUI_DEMO_ACTION_3, V_MOUSE, CT_MOUSE_MIDDLE_BUTTON);
+  GetInputMap()->MapTrigger(GUI_DEMO_ACTION_1, V_MOUSE, CT_MOUSE_LEFT_BUTTON);
+  GetInputMap()->MapTrigger(GUI_DEMO_ACTION_2, V_MOUSE, CT_MOUSE_RIGHT_BUTTON);
+  GetInputMap()->MapTrigger(GUI_DEMO_ACTION_3, V_MOUSE, CT_MOUSE_MIDDLE_BUTTON);
 #endif
 
 #if defined (_VISION_XENON) || (defined(_VISION_WINRT) && !defined(_VISION_METRO) && !defined(_VISION_APOLLO))
-    VisSampleApp::GetInputMap()->MapTrigger(GUI_DEMO_ACTION_1, V_XENON_PAD(0), CT_PAD_A);
-    VisSampleApp::GetInputMap()->MapTrigger(GUI_DEMO_ACTION_2, V_XENON_PAD(0), CT_PAD_B);
-    VisSampleApp::GetInputMap()->MapTrigger(GUI_DEMO_ACTION_3, V_XENON_PAD(0), CT_PAD_X);
-    VisSampleApp::GetInputMap()->MapTrigger(GUI_DEMO_EXIT,     V_XENON_PAD(0), CT_PAD_Y);
-
-    spApp->AddHelpText("PAD1 - A : Click with cursor");
-    spApp->AddHelpText("PAD1 - Y : Go to main menu");
+  GetInputMap()->MapTrigger(GUI_DEMO_ACTION_1, V_XENON_PAD(0), CT_PAD_A);
+  GetInputMap()->MapTrigger(GUI_DEMO_ACTION_2, V_XENON_PAD(0), CT_PAD_B);
+  GetInputMap()->MapTrigger(GUI_DEMO_ACTION_3, V_XENON_PAD(0), CT_PAD_X);
 
 #elif defined (_VISION_PS3)
-    VisSampleApp::GetInputMap()->MapTrigger(GUI_DEMO_ACTION_1, V_PS3_PAD(0), CT_PAD_CROSS);
-    VisSampleApp::GetInputMap()->MapTrigger(GUI_DEMO_ACTION_2, V_PS3_PAD(0), CT_PAD_CIRCLE);
-    VisSampleApp::GetInputMap()->MapTrigger(GUI_DEMO_ACTION_3, V_PS3_PAD(0), CT_PAD_SQUARE);
-    VisSampleApp::GetInputMap()->MapTrigger(GUI_DEMO_EXIT,     V_PS3_PAD(0), CT_PAD_TRIANGLE);
-
-    spApp->AddHelpText("PAD1 - CROSS : Click with cursor");
-    spApp->AddHelpText("PAD1 - TRIANGLE : Go to main menu");
+  GetInputMap()->MapTrigger(GUI_DEMO_ACTION_1, V_PS3_PAD(0), CT_PAD_CROSS);
+  GetInputMap()->MapTrigger(GUI_DEMO_ACTION_2, V_PS3_PAD(0), CT_PAD_CIRCLE);
+  GetInputMap()->MapTrigger(GUI_DEMO_ACTION_3, V_PS3_PAD(0), CT_PAD_SQUARE);
 
 #elif defined (_VISION_PSP2)
-    VisSampleApp::GetInputMap()->MapTrigger(GUI_DEMO_ACTION_1, V_PSP2_PAD(0), CT_PAD_CROSS);
-    VisSampleApp::GetInputMap()->MapTrigger(GUI_DEMO_ACTION_2, V_PSP2_PAD(0), CT_PAD_CIRCLE);
-    VisSampleApp::GetInputMap()->MapTrigger(GUI_DEMO_ACTION_3, V_PSP2_PAD(0), CT_PAD_SQUARE);
-    VisSampleApp::GetInputMap()->MapTrigger(GUI_DEMO_EXIT, V_PSP2_PAD(0), CT_PAD_TRIANGLE);
-
-    spApp->AddHelpText("PAD1 - CROSS : Click with cursor");
-    spApp->AddHelpText("PAD1 - TRIANGLE : Go to main menu");
+  GetInputMap()->MapTrigger(GUI_DEMO_ACTION_1, V_PSP2_PAD(0), CT_PAD_CROSS);
+  GetInputMap()->MapTrigger(GUI_DEMO_ACTION_2, V_PSP2_PAD(0), CT_PAD_CIRCLE);
+  GetInputMap()->MapTrigger(GUI_DEMO_ACTION_3, V_PSP2_PAD(0), CT_PAD_SQUARE);
 
 #elif defined (_VISION_WIIU)
-    VisSampleApp::GetInputMap()->MapTrigger(GUI_DEMO_ACTION_1, VInputManagerWiiU::GetDRC(V_DRC_FIRST), CT_PAD_B);
-    VisSampleApp::GetInputMap()->MapTrigger(GUI_DEMO_ACTION_2, VInputManagerWiiU::GetDRC(V_DRC_FIRST), CT_PAD_A);
-    VisSampleApp::GetInputMap()->MapTrigger(GUI_DEMO_ACTION_3, VInputManagerWiiU::GetDRC(V_DRC_FIRST), CT_PAD_Y);
-    VisSampleApp::GetInputMap()->MapTrigger(GUI_DEMO_EXIT,     VInputManagerWiiU::GetDRC(V_DRC_FIRST), CT_PAD_X);
-
-    spApp->AddHelpText("PAD1 - B : Click with cursor");
-    spApp->AddHelpText("PAD1 - X : Go to main menu");
-
-#elif defined(_VISION_MOBILE) || defined( _VISION_APOLLO ) || defined( _VISION_METRO )    // TODO: Define _VISION_MOBILE on Apollo.
-    int iResX = Vision::Video.GetXRes();
-    int iResY = Vision::Video.GetYRes();
-    int iWidth, iHeight;
-
-    g_spExit = new VisScreenMask_cl("GUI\\Dialogs\\ButtonQuit_Normal.TGA");
-    g_spExit->GetTextureSize(iWidth, iHeight);
-    g_spExit->SetPos(iResX - iWidth - 16.0f, 16.0f);
-    g_spExit->SetTransparency(VIS_TRANSP_ALPHA);
-    g_spExit->SetVisible(TRUE);
-
-    VTouchArea* pDemoExitArea = new VTouchArea(VInputManager::GetTouchScreen(), VRectanglef(iResX - iWidth - 16.0f, 0.0f, float(iResX), 16.0f + iHeight), 0.0f);
-    VisSampleApp::GetInputMap()->MapTrigger(GUI_DEMO_EXIT, pDemoExitArea, CT_TOUCH_ANY);
+  GetInputMap()->MapTrigger(GUI_DEMO_ACTION_1, VInputManagerWiiU::GetDRC(V_DRC_FIRST), CT_PAD_B);
+  GetInputMap()->MapTrigger(GUI_DEMO_ACTION_2, VInputManagerWiiU::GetDRC(V_DRC_FIRST), CT_PAD_A);
+  GetInputMap()->MapTrigger(GUI_DEMO_ACTION_3, VInputManagerWiiU::GetDRC(V_DRC_FIRST), CT_PAD_Y);
 
 #endif
 
-    Vision::Error.SetReportStatus(FALSE);
-    Vision::ResourceSystem.SetReportSurvivingResources(FALSE);
-
-    // Create a GUI context and load the GUI resources
-    g_spGUIContext = new VGUIMainContext(NULL); // NULL means using the VGUIManager::GlobalManager
-    g_spGUIContext->SetActivate(true);
-
-    // Load some GUI resources:
-    VGUIManager::GlobalManager().LoadResourceFile(MENU_SYSTEM_FILENAME);
-
-    VGUIManager::OnTextLabelCallback += translator;
-
-    // Use a modified default tooltip
-    VTooltip *pCustomTooltip = new VTooltip();
-    pCustomTooltip->SetDelay(0.5f); // shorter delay than usual
-    g_spGUIContext->SetTooltipTemplate(pCustomTooltip);
-
-    g_spGUIContext->SetActivate(true);
-    g_pMainMenuDialog = g_spGUIContext->ShowDialog(MAIN_MENU_FILENAME);
-
-    // Prepare the world in order to have skinning shaders for the render to texture menu
-    Vision::InitWorld();
-    spApp->SelectAssetProfile(SCENE_NAME, true);
-    // Start in main menu after initialization
-    g_state = GS_MAIN_MENU;
-  }
-  else if (g_state == GS_GAME)
+  // Add additional back touch area on mobile
+#if defined(_VISION_MOBILE)
+  if (m_spBackMask == NULL)
   {
-    VisBaseEntity_cl *pCamera = spApp->EnableMouseCamera();
+    const int iScreenWidth = Vision::Video.GetXRes();
+    const int iScreenHeight = Vision::Video.GetYRes();
+    const float fUiScale = VAppHelper::GetUIScalingFactor();
+
+    m_spBackMask = new VisScreenMask_cl("GUI/Dialogs/ButtonQuit_Normal.TGA");
+    
+    int iTextureWidth, iTextureHeight;
+    m_spBackMask->GetTextureSize(iTextureWidth, iTextureHeight);
+    const hkvVec2 vTargetSize = hkvVec2(iTextureWidth, iTextureHeight) * fUiScale;
+    m_spBackMask->SetTargetSize(vTargetSize.x, vTargetSize.y);
+    
+    const hkvVec2 vPos = hkvVec2(iScreenWidth - vTargetSize.x - 16.0f, 16.0f);
+    m_spBackMask->SetPos(vPos.x, vPos.y);
+    m_spBackMask->SetTransparency(VIS_TRANSP_ALPHA);
+    m_spBackMask->SetVisible(TRUE);
+
+    VTouchArea* pDemoExitArea = new VTouchArea(VInputManager::GetTouchScreen(), 
+      VRectanglef(vPos.x, vPos.y, vPos.x + vTargetSize.x, vPos.y + vTargetSize.y), 0.0f);
+    GetInputMap()->MapTrigger(VAPP_EXIT, pDemoExitArea, CT_TOUCH_ANY);
+  }
+#endif
+}
+
+void GUISampleApp::SetupAppConfig(VisAppConfig_cl& config)
+{
+  config.m_videoConfig.m_bWaitVRetrace = true;
+
+#if defined(_VISION_PSP2)
+  config.m_videoConfig.m_iXRes = 960;
+  config.m_videoConfig.m_iYRes = 544;
+#endif
+}
+
+void GUISampleApp::AfterSceneLoaded(bool bLoadingSuccessful)
+{
+  if (m_state == GS_GAME)
+  {
+    VExitHandler* pExit = GetAppModule<VExitHandler>();
+    if (pExit)
+      pExit->SetEnabled(false);
+
+    VisBaseEntity_cl* pCamera = Vision::Game.CreateEntity("VFreeCamera", hkvVec3::ZeroVector());
     pCamera->SetPosition(150, 0, 200);
     pCamera->SetOrientation(180, -15, 0);
 
     VisSurface_cl *pScreenSrf = NULL;
     VMeshManager* MeshManager = VMeshManager::GetMeshManager();
     VisStaticMesh_cl* CinemaMesh = (VisStaticMesh_cl*)MeshManager->GetResourceByName(MESH_NAME);
-    
+
     if( CinemaMesh )
       pScreenSrf = CinemaMesh->GetSurfaceByName("MonitorScreen01_Mat");
 
     // Put GUI on one of the scene's monitors.
-    g_spMonitor = new VMonitorGUIContext(NULL, pScreenSrf);
-    g_spMonitor->SetActivate(true);
-    g_spMonitor->ShowDialog("GUI\\Dialogs\\MonitorDialog.xml");
+    m_spMonitor = new VMonitorGUIContext(NULL, pScreenSrf);
+    m_spMonitor->SetActivate(true);
+    m_spMonitor->ShowDialog("GUI\\Dialogs\\MonitorDialog.xml");
   }
 }
 
-VISION_SAMPLEAPP_RUN
+bool GUISampleApp::Run()
 {
-  switch (g_state)
+  switch (m_state)
   {
-    case GS_MAIN_MENU:
-      {
-        VASSERT(g_pMainMenuDialog);
+  case GS_MAIN_MENU:
+    {
+      VASSERT(m_pMainMenuDialog);
 
-        int iDlgResult = g_pMainMenuDialog->GetDialogResult();
+      int iDlgResult = m_pMainMenuDialog->GetDialogResult();
+      if (iDlgResult)
+      {
+        if (iDlgResult == VGUIManager::GetID("CANCEL"))
+        {
+          GetContext()->CloseDialog(m_pMainMenuDialog);
+          m_pMainMenuDialog = NULL;
+          return false;
+        }
+        else if (iDlgResult == VGUIManager::GetID("NEWGAME"))
+        {
+          GetContext()->CloseDialog(m_pMainMenuDialog);
+          m_pMainMenuDialog = NULL;
+
+          m_state = GS_GAME;
+
+          // Load a map with free camera...
+          LoadScene(VisAppLoadSettings(SCENE_NAME, MAP_DATA_DIR));
+
+          return true;
+        }
+      }
+
+      return true;
+    }
+
+  case GS_GAME:
+    {
+      if (GetInputMap()->GetTrigger(VAPP_EXIT) && (m_pMessageBoxInGame == NULL))
+      {
+        VAppMenu* pMenu = GetAppModule<VAppMenu>();
+        if (pMenu)
+          pMenu->Reset();
+
+        // Show in-game menu, allowing the user to exit to main menu
+        m_pMessageBoxInGame = GetContext()->ShowDialog("GUI/Dialogs/MessageBox_InGame.xml");
+        VInputMap::LockInputMaps(true);
+      }
+
+      if (m_pMessageBoxInGame)
+      {
+        int iDlgResult = m_pMessageBoxInGame->GetDialogResult();
         if (iDlgResult)
         {
-          if (iDlgResult == VGUIManager::GetID("CANCEL"))
+          VInputMap::LockInputMaps(false);
+
+          // Close the dialog when a result is available
+          GetContext()->CloseDialog(m_pMessageBoxInGame);
+          m_pMessageBoxInGame = NULL;
+
+          // In case of MAINMENU, unload scene and go to main menu again
+          if (iDlgResult == VGUIManager::GetID("MAINMENU"))
           {
-#if defined(_VISION_ANDROID) || defined(_VISION_TIZEN)
-            g_pMainMenuDialog->SetDialogResult(0);
+            m_spMonitor->SetActivate(false);
+            m_spMonitor = NULL;
 
-            // On android use the build-in exit dialog
-            spApp->ShowExitDialog();
-#else
-            g_spGUIContext->CloseDialog(g_pMainMenuDialog);
-            g_pMainMenuDialog = NULL;
-            return false;
-#endif
-          }
-          else if (iDlgResult == VGUIManager::GetID("NEWGAME"))
-          {
-            g_spGUIContext->CloseDialog(g_pMainMenuDialog);
-            g_pMainMenuDialog = NULL;
+            if (Vision::World.IsWorldInitialized())
+              Vision::DeInitWorld();
+            Vision::InitWorld();
+            m_state = GS_MAIN_MENU;
 
-            g_spGUIContext->SetActivate(false);
+            VExitHandler* pExit = GetAppModule<VExitHandler>();
+            if (pExit)
+              pExit->SetEnabled(true);
 
-            g_state = GS_GAME;
-
-            // Load a map with free camera...
-            spApp->LoadScene(SCENE_NAME);
-
-            return true;
+            m_pMainMenuDialog = GetContext()->ShowDialog(MAIN_MENU_FILENAME);
           }
         }
-
-#if defined(_VISION_ANDROID) || defined(_VISION_TIZEN)
-        if (spApp->GetInputMap()->GetTrigger(EXIT)) 
-        {
-          // Show exit dialog when back button is pressed in main menu
-          spApp->ShowExitDialog();
-        }
-#endif
-        
-        return spApp->Run();        
       }
 
-    case GS_GAME:
-      {
-        if (VisSampleApp::GetInputMap()->GetTrigger(GUI_DEMO_EXIT)
-#if defined (_VISION_XENON) || defined (_VISION_PS3) || defined (_VISION_PSP2) || defined(_VISION_WIIU) || (defined(_VISION_WINRT) && !defined(_VISION_METRO) && !defined(_VISION_APOLLO))
-          || (VisSampleApp::GetInputMap()->GetTrigger(EXIT_COMBO) && VisSampleApp::GetInputMap()->GetTrigger(EXIT))
-#endif
-          )
-        {
-          // Show in-game menu, allowing the user to exit to main menu
-          g_spGUIContext->SetActivate(true);
-          g_pMessageBoxInGame = g_spGUIContext->ShowDialog("GUI\\Dialogs\\MessageBox_InGame.xml");
-        }
+      return true;
+    }
 
-        spApp->Run();
-
-        if (g_pMessageBoxInGame)
-        {
-          int iDlgResult = g_pMessageBoxInGame->GetDialogResult();
-          if (iDlgResult)
-          {
-            // Close the dialog when a result is available
-            g_spGUIContext->CloseDialog(g_pMessageBoxInGame);
-            g_pMessageBoxInGame = NULL;
-
-            g_spGUIContext->SetActivate(false);
-
-            // In case of MAINMENU, unload scene and go to main menu again
-            if (iDlgResult == VGUIManager::GetID("MAINMENU"))
-            {
-              g_spMonitor->SetActivate(false);
-              g_spMonitor = NULL;
-
-              Vision::InitWorld();
-              spApp->SelectAssetProfile(SCENE_NAME, true);
-              g_state = GS_MAIN_MENU;
-
-              g_spGUIContext->SetActivate(true);
-              g_pMainMenuDialog = g_spGUIContext->ShowDialog(MAIN_MENU_FILENAME);
-            }
-          }
-        }
-
-        return true;
-      }
-
-    default:
-      VASSERT(false);
-      return false;
+  default:
+    VASSERT(false);
+    return false;
   }
+
+  return false;
 }
 
-VISION_DEINIT
+void GUISampleApp::DeInit()
 {
   // Cleanup GUI related stuff just before sample de-initialization
-  g_spGUIContext->SetActivate(false);
-  g_spGUIContext = NULL;
-
   VGUIManager::GlobalManager().CleanupResources();
   VGUIManager::OnTextLabelCallback -= translator;
 
-  if (g_spMonitor)
+  if (m_spMonitor)
   {
-    g_spMonitor->SetActivate(false);
-    g_spMonitor = NULL;
+    m_spMonitor->SetActivate(false);
+    m_spMonitor = NULL;
   }
 
-  g_pMainMenuDialog = NULL;
-  g_pMessageBoxInGame = NULL;
-
-#if defined(_VISION_MOBILE) || defined( _VISION_APOLLO ) || defined( _VISION_METRO )    // TODO: Define _VISION_MOBILE on Apollo.
-  g_spExit = NULL;
-#endif
-
-  // Deinit our application
-  spApp->DeInitSample();
-  spApp = NULL;
-  Vision::Plugins.UnloadAllEnginePlugins();
-
-  return 0;
+  m_pMainMenuDialog = NULL;
+  m_pMessageBoxInGame = NULL;
+  m_spBackMask = NULL;
 }
 
-#if !defined( _VISION_IOS )
-VISION_MAIN_DEFAULT
-#endif
-
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

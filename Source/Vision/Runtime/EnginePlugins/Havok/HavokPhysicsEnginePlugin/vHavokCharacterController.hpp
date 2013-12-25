@@ -72,7 +72,7 @@ public:
 /// \brief
 ///   Havok Character Controller
 ///
-class vHavokCharacterController : public IVObjectComponent
+class vHavokCharacterController : public IVisPhysicsObject_cl
 {
 public:
 
@@ -486,15 +486,16 @@ protected:
   int m_iCollisionFilter;
 
 private:
-  // Applies entity scale to specified values, validates those values and returns the
-  // worldTransform matrix of the entity.
-  hkvMat4 ApplyEntityScale(hkVector4 &vTop, hkVector4 &vBottom, float &fRadius);
+  // Applies entity scale to specified values and validates those values.
+  void ApplyEntityScale(hkVector4 &vTop, hkVector4 &vBottom, float &fRadius);
+
+  static void GetUpVectorFromGravity(hkVector4& up);
 };
 
 #endif // vHavokCharacterController_HPP_INCLUDED
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -433,11 +433,11 @@ public:
 
   /// \brief
   ///   Internal function
-  VBASE_IMPEXP bool CheckValid(IVLog *pLog) const;
+  VBASE_IMPEXP bool CheckValid(hkvLogInterface* pLog) const;
 
   /// \brief
   ///   Internal function
-  VBASE_IMPEXP bool CheckValidVertex(MeshVertex_t *v, IVLog *pLog, bool &bReport, int iPrimFlags) const;
+  VBASE_IMPEXP bool CheckValidVertex(MeshVertex_t *v, hkvLogInterface* pLog, bool &bReport, int iPrimFlags) const;
 
   /// \brief
   ///   Overridable that is called during lightmap live update. Custom primitive can implement this function and update the lightmap on the fly
@@ -470,6 +470,7 @@ public:
   __int64 m_iUniqueID;            ///< identifies the object after loading. For instance VisObject3D_cl::GetUniqueID serialized from vForge
   unsigned int m_iUserData;       ///< custom purpose, gets serialized
   int m_iSortingKey;              ///< receiver only: sorting key for charting. Might be a Zone ID
+  VString m_sPrimitiveDescription;///< name of the primitive, identifies object for error/warning output. For instance m_sObjectKey oder FileName.
 
   // primitive features
   unsigned int m_iFlags; ///< see PRIMITIVEFLAG_xyz; doublesided flag is in m_RenderState
@@ -601,24 +602,24 @@ public:
 
   /// \brief
   ///   Saves this scene info object to a mesh information file. Can be read by vLux.
-  VBASE_IMPEXP bool SaveMeshFile(const char *szFilename, IVFileStreamManager *pFileManager);
+  VBASE_IMPEXP bool SaveMeshFile(const char *szFilename);
 
   /// \brief
   ///   Saves this scene info object to output file that provides lightmap UV information. Used by
   ///   vLux.
-  VBASE_IMPEXP bool SaveOutputFile(const char *szFilename, IVFileStreamManager *pFileManager);
+  VBASE_IMPEXP bool SaveOutputFile(const char *szFilename);
 
   /// \brief
   ///   Loads mesh information. Used by vLux.
-  VBASE_IMPEXP bool LoadMeshFile(const char *szFilename, IVFileStreamManager *pFileManager);
+  VBASE_IMPEXP bool LoadMeshFile(const char *szFilename);
 
   /// \brief
   ///   Loads the output information file. Used by custom code.
-  VBASE_IMPEXP bool LoadOutputFile(const char *szFilename, IVFileStreamManager *pFileManager, IVTextureLoader *pLightmapProvider);
+  VBASE_IMPEXP bool LoadOutputFile(const char *szFilename, IVTextureLoader *pLightmapProvider);
  
   /// \brief
   ///   Only loads the header information which contains lighting mode etc. Used internally
-  VBASE_IMPEXP bool LoadSettings(const char *szFilename, IVFileStreamManager *pFileManager);
+  VBASE_IMPEXP bool LoadSettings(const char *szFilename);
 
 
   // internal
@@ -669,7 +670,7 @@ public:
   }
 
   // Internal
-  VBASE_IMPEXP bool CheckValid(IVLog *pLog) const;
+  VBASE_IMPEXP bool CheckValid(hkvLogInterface* pLog) const;
 
   /// \brief
   ///   Used by vForge to set an array of desired caster IDs. Applications should check this via
@@ -820,7 +821,7 @@ inline bool VLightmapPrimitive::MeshMaterial_t::GetCustomRadiosityShader(VString
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

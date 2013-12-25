@@ -360,17 +360,15 @@ bool VEditableTerrainSector::SaveWeightmapTextures()
   if (m_UsedWeightmapChannels.Count()>0)
     m_UsedWeightmapChannels.GetAt(0)->Clear(255);
 
-  const char* pszProjectDir = (m_Config.m_bUseTempFolder) ? NULL : m_Config.m_sAbsProjectDir.AsChar();
-
   for(int weightMapIdx = 0; weightMapIdx < weightMapCount; weightMapIdx++)
   {
     char szFileName[FS_MAX_PATH];
     sprintf(szFileName,szFormat,weightMapIdx);
 
     VisBitmap_cl* bitMap = weightMaps.GetAt(weightMapIdx);
-    if (pszProjectDir)
+    if (!m_Config.m_bUseTempFolder)
     {
-      VFileAccessManager::RCSPerformAction(szFileName, RCS_EDIT, pszProjectDir); //make sure we can write to it
+      VRCSHelper::RCSPerformAction(szFileName, RCS_EDIT, NULL); //make sure we can write to it
     }
 
     // upload texture in-place
@@ -412,9 +410,9 @@ bool VEditableTerrainSector::SaveWeightmapTextures()
 
     }
 
-    if (pszProjectDir)
+    if (!m_Config.m_bUseTempFolder)
     {
-      VFileAccessManager::RCSPerformAction(szFileName, RCS_ADD, pszProjectDir); //make sure it's added to RCS
+      VRCSHelper::RCSPerformAction(szFileName, RCS_ADD, NULL); //make sure it's added to RCS
     }
   }
 
@@ -510,7 +508,7 @@ bool VEditableTerrainSector::LoadSectorEditingInformation()
     return false;
 
   VChunkFile file;
-  if (!file.Open(szFilename,Vision::File.GetManager()))
+  if (!file.Open(szFilename))
     return false;
 
   int iVersion,iCount;
@@ -567,21 +565,10 @@ bool VEditableTerrainSector::SaveSectorEditingInformation()
   if (!m_Config.GetSectorEditingFilename(szFilename,m_iIndexX,m_iIndexY,true))
     return false;
 
-  {
-    // Create Editing dir if it doesn't exist yet
-    char szFileDir[FS_MAX_PATH];
-    VFileHelper::GetFileDir(szFilename, szFileDir);
-    VString sAbspath = VFileHelper::CombineDirAndDir(m_Config.m_sAbsProjectDir, szFileDir);
-    if (!VFileHelper::ExistsDir(sAbspath))
-    {
-      VFileHelper::MkDir(sAbspath);
-    }
-  }
-
   m_Config.RCSPerformAction(szFilename, RCS_EDIT); //make sure we can write to it
 
   VChunkFile file;
-  if (!file.Create(szFilename,Vision::File.GetOutputManager()))
+  if (!file.Create(szFilename))
     return false;
 
   // detail textures
@@ -887,9 +874,9 @@ BOOL VEditableTerrainSector::Unload()
 
   // Reset timestamps as we have just unloaded the sector and thus we no
   // longer have a valid state in order to lock the sector.
-  m_SectorInfoFileTime = VFileTime();
-  m_SectorHMapFileTime = VFileTime();
-  m_SectorMeshFileTime = VFileTime();
+  m_SectorInfoFileTime = VDateTime();
+  m_SectorHMapFileTime = VDateTime();
+  m_SectorMeshFileTime = VDateTime();
 
   return bResult;
 }
@@ -2495,8 +2482,8 @@ bool VEditableTerrainSector::GetRelevantHoleData(const VTerrainLockObject &srcDa
 //Checks out (updates) and optionally marks the terrain sector files for editing
 void VEditableTerrainSector::UpdateRCSFiles(int eAction)
 {
-  VVERIFY_OR_RET( !m_Config.m_sAbsTerrainDir.IsEmpty() );
-  IVRevisionControlSystem *pRCS = VFileAccessManager::GetActiveRCS();
+  VVERIFY_OR_RET( !m_Config.m_sNativeTerrainDir.IsEmpty() );
+  IVRevisionControlSystem *pRCS = VRCSHelper::GetActiveRCS();
   if (!pRCS)
     return;
 
@@ -2523,7 +2510,7 @@ void VEditableTerrainSector::UpdateRCSFiles(int eAction)
     if (m_Config.GetSectorFile(szTemp, m_iIndexX, m_iIndexY, types[i]))
     {
       sprintf(szFilename, szTemp, "*"); // weightmap contains %s which needs to be replaced with *
-      VFileHelper::CombineDirAndFile(szTemp, m_Config.m_sAbsProjectDir, szFilename); //make absolute path
+      VFileHelper::CombineDirAndFile(szTemp, m_Config.m_sNativeProjectDir, szFilename); //make absolute path
       pRCS->PerformAction(szTemp, eAction, true /* Binary file */);  
     }
   }
@@ -2621,12 +2608,12 @@ bool VEditableTerrainSector::GetFileLock()
 
   //Get lock for SectorInfo file
   m_Config.GetSectorFile(szFilename,m_iIndexX,m_iIndexY, VTC_FILE_EDITING_DATA);
-    if (!m_SectorInfoLock.LockFile(szFilename, m_SectorInfoFileTime, Vision::File.GetManager()))
+    if (!m_SectorInfoLock.LockFile(szFilename, m_SectorInfoFileTime))
     return false;
 
   //Get lock for hmap file
   m_Config.GetSectorFile(szFilename,m_iIndexX,m_iIndexY, VTC_FILE_SECTORS_HMAP);
-    if (!m_SectorHMapLock.LockFile(szFilename, m_SectorHMapFileTime, Vision::File.GetManager()))
+    if (!m_SectorHMapLock.LockFile(szFilename, m_SectorHMapFileTime))
   {
     m_SectorInfoLock.UnlockFile();
     return false;
@@ -2634,7 +2621,7 @@ bool VEditableTerrainSector::GetFileLock()
 
   //Get lock for mesh file (tiles,holes and decorations)
   m_Config.GetSectorFile(szFilename,m_iIndexX,m_iIndexY, VTC_FILE_SECTORS_MESH);
-    if (!m_SectorMeshLock.LockFile(szFilename, m_SectorMeshFileTime, Vision::File.GetManager()))
+    if (!m_SectorMeshLock.LockFile(szFilename, m_SectorMeshFileTime))
   {
     m_SectorInfoLock.UnlockFile();
     m_SectorHMapLock.UnlockFile();
@@ -2666,18 +2653,15 @@ void VEditableTerrainSector::UpdateFileLockTimeStamp(int iFileType)
   if (Vision::Editor.IsInEditor())
   {
     const int VTCKeys[3] = {VTC_FILE_EDITING_DATA, VTC_FILE_SECTORS_HMAP, VTC_FILE_SECTORS_MESH};
-    VFileTime* Locks[3] = {&m_SectorInfoFileTime, &m_SectorHMapFileTime, &m_SectorMeshFileTime};
+    VDateTime* Locks[3] = {&m_SectorInfoFileTime, &m_SectorHMapFileTime, &m_SectorMeshFileTime};
 
     for (int i = 0; i < V_ARRAY_SIZE(VTCKeys); ++i)
     {
       if (iFileType == VTCKeys[i])
       {
         char szFilename[FS_MAX_PATH];
-        char szAbsoluteFilename[FS_MAX_PATH];
-
         m_Config.GetSectorFile(szFilename, m_iIndexX, m_iIndexY, VTCKeys[i]);
-        if (VFileHelper::GetAbsolutePath(szFilename, szAbsoluteFilename, Vision::File.GetManager()))
-          VFileHelper::GetModifyTime(szAbsoluteFilename, *Locks[i]);
+        VFileAccessManager::GetInstance()->GetFileTimeStamp(szFilename, *Locks[i]);
       }
     }
   }
@@ -2735,10 +2719,10 @@ bool VEditableTerrainSector::SaveSector(bool bUseTemp)
 
     if (bResult)
     {
-    RemoveEditorFlag(SECTOR_EDITORFLAG_HEIGHTMAPDIRTY);
+      RemoveEditorFlag(SECTOR_EDITORFLAG_HEIGHTMAPDIRTY);
       UpdateFileLockTimeStamp(VTC_FILE_SECTORS_HMAP);
-    bHeightmapSaved = true;
-  }
+      bHeightmapSaved = true;
+    }
   }
 
   // save the sector file also when we needed to save the heightmap, otherwise the dirty bounding box remains in the file
@@ -2936,7 +2920,7 @@ IVResourcePreview *VEditableTerrainSector::CreateResourcePreview()
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

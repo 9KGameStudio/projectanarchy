@@ -39,14 +39,11 @@
 VisCallback_cl VOnExternalInterfaceCall::OnExternalInterfaceCallback;
 VisCallback_cl VOnFSCommand::OnFSCallback;
 
-IVFileStreamManager *g_pFileManager;
-
 extern int PROFILING_FSCOMMAND;
 extern int PROFILING_EXT_INTERFACE;
 
 //command queue related methods
 //=============================
-
 
 #if defined(WIN32)  || defined(_VISION_XENON) 
 DWORD __stdcall CommandQueueThreadFunc(LPVOID arg)
@@ -73,7 +70,6 @@ SceInt32 CommandQueueThreadFunc(SceSize, void* arg);
   pQueue->Run();
   RETURN_VAL
 }
-
 
 VScaleformCommandQueue::VScaleformCommandQueue() :
   m_bCancel(false),
@@ -148,7 +144,6 @@ void VScaleformExternalInterfaceHandler::Callback(
     new VOnExternalInterfaceCall(pInst, szMethodName, pArgs, uiArgCount));
 }
 
-
 ///////////////////////////////////
 //          VisionGFile          //
 ///////////////////////////////////
@@ -157,11 +152,10 @@ void VScaleformExternalInterfaceHandler::Callback(
 class VisionGFile : public Scaleform::File
 {
 public:
-  VisionGFile(IVFileStreamManager *pManager, const char *szFilename)
+  VisionGFile(const char *szFilename)
   {
-    VASSERT(pManager);
     // Open file for reading
-    m_pStream = pManager->Open(szFilename);
+    m_pStream = Vision::File.Open(szFilename);
   }
 
   virtual ~VisionGFile() {Close();}
@@ -189,17 +183,14 @@ public:
   virtual int64       LSeek(int64 offset, int origin=Seek_Set)            {if (!m_pStream->SetPos((LONG)offset,origin)) return -1;return LTell();}
 };
 
-
 // File loader callback.
 Scaleform::File* VGFxFileOpener::OpenFile(const char* purl, int flags, int mode)
 {
   if (purl == NULL || strlen(purl) == 0)
     return NULL;
 
-  VASSERT(g_pFileManager);
-  return new VisionGFile(g_pFileManager, purl);
+  return new VisionGFile(purl);
 }
-
 
 ////////////////////////////////////////
 //           VScaleformLog            //
@@ -216,7 +207,7 @@ void VScaleformLog::LogMessageVarg(Scaleform::LogMessageType messageType, const 
 #endif
 
   // Output log to console
-  Vision::Error.SystemMessage(comp);
+  hkvLog::Info(comp);
 }
 
 #ifdef SF_AMP_SERVER
@@ -276,7 +267,7 @@ bool VScaleformAmpAppController::HandleAmpRequest(const Scaleform::GFx::AMP::Mes
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

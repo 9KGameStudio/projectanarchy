@@ -46,6 +46,17 @@ typedef unsigned int CHUNKIDTYPE;
 class VChunkFile : public VBaseObject
 {
 public:
+  /// \brief
+  ///   Chunk File status
+  enum ChunkFileStatus_e
+  {
+    STATUS_UNDEFINED = 0,
+    STATUS_LOADING,
+    STATUS_SAVING,
+    STATUS_EOF,
+    STATUS_NOT_FOUND,
+    STATUS_ERROR
+  };
 
   ///
   /// @name Constructor / Destructor
@@ -132,15 +143,10 @@ public:
   /// \param szFilename
   ///   file name of the file to open
   /// 
-  /// \param pManager
-  ///   pointer to the stream manager used for opening the file. This pointer can be NULL to use
-  ///   vBase's standard manager. To use the data directories set in the engine, the
-  ///   engine's file manager should be passed here (Vision::File.GetManager())
-  /// 
   /// \return
   ///   \c TRUE if everything worked fine. When failed, GetLastError() returns the last
   ///   error string.
-  VBASE_IMPEXP BOOL Open(const char *szFilename, IVFileStreamManager *pManager=NULL);
+  VBASE_IMPEXP BOOL Open(const char *szFilename);
 
 
 
@@ -188,14 +194,10 @@ public:
   /// \param szFilename
   ///   file name of the file to create
   /// 
-  /// \param pManager
-  ///   pointer to the stream manager used for creating the file. This pointer can be NULL to use
-  ///   vBase's standard manager.
-  /// 
   /// \return
   ///   \c TRUE, if everything worked fine. When failed, GetLastError() returns the last
   ///   error string.
-  VBASE_IMPEXP BOOL Create(const char *szFilename, IVFileStreamManager *pManager=NULL);
+  VBASE_IMPEXP BOOL Create(const char *szFilename);
 
 
   ///
@@ -246,11 +248,15 @@ public:
 
   /// \brief
   ///   Indicates whether an error has occurred
-  inline BOOL IsInErrorState() const {return m_eStatus == STATUS_ERROR;}
+  inline BOOL IsInErrorState() const {return m_eStatus == STATUS_ERROR || m_eStatus == STATUS_NOT_FOUND;}
 
   /// \brief
   ///   Indicates whether the end of file has been reached.
   inline BOOL IsEOF() const {return m_eStatus == STATUS_EOF;}
+
+  /// \brief
+  ///   Indicates if the file has not been found.
+  inline BOOL IsNotFound() const { return m_eStatus == STATUS_NOT_FOUND; }
 
   /// \brief
   ///   Get the current file offset position
@@ -762,7 +768,10 @@ public:
   /// 
   /// \param szError
   ///   String that describes the error
-  VBASE_IMPEXP void SetError(const char *szError);
+  ///
+  /// \param eError
+  ///   Status type (STATUS_ERROR by default)
+  VBASE_IMPEXP void SetError(const char *szError, ChunkFileStatus_e eError = STATUS_ERROR);
 
   /// \brief
   ///   Outputs a custom warning string
@@ -841,14 +850,6 @@ protected:
   ///
 
 private:
-  enum ChunkFileStatus_e
-  {
-    STATUS_UNDEFINED = 0,
-    STATUS_LOADING,
-    STATUS_SAVING,
-    STATUS_EOF,
-    STATUS_ERROR
-  };
   unsigned int _Write(const void *pData, unsigned int iSize);
   unsigned int _Read(void *pData, unsigned int iSize);
   BOOL PushChunk(CHUNKIDTYPE expectedID=(CHUNKIDTYPE)CHUNKID_ANY, CHUNKIDTYPE *piID = NULL, int *piChunkSize = NULL);
@@ -916,10 +917,7 @@ public:
   /// 
   /// \param szOutName
   ///   output file name of the text file
-  /// 
-  /// \param pManager
-  ///   Stream manager used to create file streams
-  VBASE_IMPEXP BOOL Open(const char *szFilename, const char *szOutName, IVFileStreamManager *pManager=NULL);
+  VBASE_IMPEXP BOOL Open(const char *szFilename, const char *szOutName);
 
   /// \brief
   ///   Closes the file again
@@ -1026,7 +1024,7 @@ private:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

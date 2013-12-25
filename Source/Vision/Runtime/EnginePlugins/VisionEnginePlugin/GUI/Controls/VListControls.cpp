@@ -10,6 +10,7 @@
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/GUI/VMenuIncludes.hpp>
 #include <Vision/Runtime/Base/System/Memory/VMemDbg.hpp>
 
+#define V_MOUSE_WHEEL_SCROLL_SPEED 20.0f
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 // VListControlItem
@@ -31,7 +32,6 @@ VListControlItem::VListControlItem(const char *szText)
   m_Text.SetText(szText);
 }
 
-
 void VListControlItem::CommonInit()
 {
   m_iIndex = -1;
@@ -39,11 +39,11 @@ void VListControlItem::CommonInit()
   m_bFullyVisible = false;
   m_iData=0;
 
+  m_iCustomHeight = -1;
+
   //m_Text.SetCustomClipRectPtr(&m_BoundingBox); // use this box for additional clamping
   m_pDefaultStates = NULL;
 }
-
-
 
 bool VListControlItem::Build(TiXmlElement *pNode, const char *szPath, bool bWrite)
 {
@@ -58,7 +58,6 @@ bool VListControlItem::Build(TiXmlElement *pNode, const char *szPath, bool bWrit
 
   return true;
 }
-
 
 V_IMPLEMENT_SERIAL( VListControlItem, VWindowBase, 0, &g_VisionEngineModule );
 void VListControlItem::Serialize( VArchive &ar )
@@ -80,7 +79,6 @@ void VListControlItem::Serialize( VArchive &ar )
     ar << m_Icon;
   }
 }
-
 
 void VListControlItem::OnPaint(VGraphicsInfo &Graphics, const VItemRenderInfo &parentState)
 {
@@ -108,7 +106,6 @@ void VListControlItem::OnPaint(VGraphicsInfo &Graphics, const VItemRenderInfo &p
   }
 }
 
-
 void VListControlItem::OnMeasureItem(const VRectanglef &area, hkvVec2 &vCurrentPos)
 {
   // Update the item's position. Make sure the item is positioned on pixel boundaries,
@@ -117,20 +114,6 @@ void VListControlItem::OnMeasureItem(const VRectanglef &area, hkvVec2 &vCurrentP
   m_vPosition.y = floor(vCurrentPos.y +0.5f);
 
   VListControl *pListCtrl = (VListControl *)GetParent();
-
-  // Center text vertically next to the icon
-  const float fIconSize = pListCtrl->GetIconSize();
-  if(fIconSize > 0.0f)
-  {
-    const float fFontHeight = m_Text.GetFont() != NULL ? m_Text.GetFont()->GetFontHeight() : 0.0f;
-    hkvVec2 vOffset = hkvVec2(fIconSize + 4.0f, (fIconSize * 0.5f) - (fFontHeight * 0.5f));
-    vOffset += pListCtrl->GetIconRelOfs();
-
-    vOffset.x = floor(vOffset.x +0.5f);
-    vOffset.y = floor(vOffset.y +0.5f);
-
-    m_Text.SetTextOfs(vOffset);
-  }
 
   if (!m_bCachedTextRectValid)
   {
@@ -152,18 +135,21 @@ void VListControlItem::OnMeasureItem(const VRectanglef &area, hkvVec2 &vCurrentP
   m_vSize.x = area.GetSizeX(); // full width for correct centering
 
   m_vSize.y = hkvMath::Max(pListCtrl->m_fIconSize+4.f, m_vSize.y);
+  m_vSize.y = hkvMath::Max((float)m_iCustomHeight, m_vSize.y);
 
   vCurrentPos.y += m_vSize.y;
 
   m_bClipped = (m_vPosition.y > area.m_vMax.y) || (m_vPosition.y+m_vSize.y<area.m_vMin.y);
   m_bFullyVisible = (m_vPosition.y >= area.m_vMin.y) && (m_vPosition.y+m_vSize.y<=area.m_vMax.y);
-}
 
+  const hkvVec2 vIconOfs = pListCtrl->m_vIconOfs;
+  const float fIconSize = pListCtrl->m_fIconSize;
+  m_ClientAreaBorder.m_vMin.x = vIconOfs.x + fIconSize;
+}
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 // VListControlItemCollection
 ////////////////////////////////////////////////////////////////////////////////////////////
-
 
 void VListControlItemCollection::Add(VListControlItem *pItem, int iInsertBefore, bool bSetDefaultStates)
 {
@@ -176,7 +162,6 @@ void VListControlItemCollection::Add(VListControlItem *pItem, int iInsertBefore,
   }
   VRefCountedCollection<VListControlItem>::Insert(pItem,iInsertBefore);
 }
-
 
 bool VListControlItemCollection::Build(TiXmlElement *pNode, const char *szPath, bool bWrite)
 {
@@ -216,7 +201,6 @@ VListControlItem *VListControlItemCollection::FindItemByUserData(const void *pDa
   return NULL;
 }
 
-
 void VListControlItemCollection::MeasureItems(const VRectanglef &area, hkvVec2 &vStartPos)
 {
   for (int i=0;i<Count();i++)
@@ -239,14 +223,12 @@ hkvVec2 VListControlItemCollection::GetSize() const
   return vSize;
 }
 
-  
 void VListControlItemCollection::PaintAll(VGraphicsInfo &Graphics, const VItemRenderInfo &parentState)
 {
   for (int i=0;i<Count();i++)
     GetAt(i)->OnPaint(Graphics,parentState);
 }
 
-  
 VListControlItem *VListControlItemCollection::GetItemAt(VGUIUserInfo_t &user, const hkvVec2 &vAbsPos) const
 {
   for (int i=0;i<Count();i++)
@@ -257,7 +239,6 @@ VListControlItem *VListControlItemCollection::GetItemAt(VGUIUserInfo_t &user, co
   }
   return NULL;
 }
-
 
 void VListControlItemCollection::SerializeX( VArchive &ar )
 {
@@ -277,12 +258,9 @@ void VListControlItemCollection::SerializeX( VArchive &ar )
   } 
 }
 
-
-
 ////////////////////////////////////////////////////////////////////////////////////////////
 // VListControl
 ////////////////////////////////////////////////////////////////////////////////////////////
-
 
 VListControl::VListControl()
 {
@@ -295,7 +273,6 @@ VListControl::VListControl()
   m_fIconSize = 0.0f;
   m_vIconOfs.set(0.f,0.f);
 }
-
 
 V_IMPLEMENT_SERIAL( VListControl, VDlgControlBase, 0, &g_VisionEngineModule );
 void VListControl::Serialize( VArchive &ar )
@@ -319,8 +296,6 @@ void VListControl::Serialize( VArchive &ar )
     ar.WriteObject(m_spVScrollbar);
   }
 }
-
-
 
 bool VListControl::Build(TiXmlElement *pNode, const char *szPath, bool bWrite)
 {
@@ -355,13 +330,11 @@ bool VListControl::Build(TiXmlElement *pNode, const char *szPath, bool bWrite)
   return true;
 }
 
-
 void VListControl::AddItem(VListControlItem *pItem, int iInsertBefore, bool bSetDefaultStates)
 {
   m_Items.Add(pItem,iInsertBefore,bSetDefaultStates);
   m_bCollectionChanged = true;
 }
-
 
 VListControlItem* VListControl::AddItem(const char *szName, int iInsertBefore, int iData, void *pUserData)
 {
@@ -372,8 +345,6 @@ VListControlItem* VListControl::AddItem(const char *szName, int iInsertBefore, i
   pItem->SetText(szName);
   return pItem;
 }
-
-
 
 void VListControl::RemoveItem(VListControlItem *pItem)
 {
@@ -401,6 +372,7 @@ void VListControl::Reset()
 {
   m_Items.Clear();
   m_bCollectionChanged = true;
+  m_bFromScrollbar = false;
 
   for (int i=0;i<VGUIUserInfo_t::GUIMaxUser;i++)
   {
@@ -411,8 +383,6 @@ void VListControl::Reset()
   }
 }
 
-
-
 void VListControl::SetScrollPosition(float fPos)
 {
   if (m_fCurrentScrollPos==fPos) return;
@@ -420,7 +390,6 @@ void VListControl::SetScrollPosition(float fPos)
   m_bCollectionChanged = true;
   m_bFromScrollbar = false; // ignore scroll bar position next update; instead, set scrollbar value
 }
-
 
 void VListControl::EnsureVisible(VListControlItem *pItem)
 {
@@ -444,8 +413,6 @@ void VListControl::EnsureVisible(VListControlItem *pItem)
   VASSERT(fDiff>0.f) // since we know it is outside
   SetScrollPosition(m_fCurrentScrollPos+fDiff);
 }
-
-
 
 void VListControl::OnPaint(VGraphicsInfo &Graphics, const VItemRenderInfo &parentState)
 {
@@ -507,7 +474,6 @@ void VListControl::OnPaint(VGraphicsInfo &Graphics, const VItemRenderInfo &paren
 
 }
 
-
 VWindowBase* VListControl::TestMouseOver(VGUIUserInfo_t &user, const hkvVec2 &vAbsMouse)
 {
   if (m_spVScrollbar && m_spVScrollbar->IsVisible())
@@ -522,7 +488,6 @@ VWindowBase* VListControl::TestMouseOver(VGUIUserInfo_t &user, const hkvVec2 &vA
   return this;
 }
 
-
 VTooltip* VListControl::GetTooltip(VGUIUserInfo_t &user)
 {
   int i = user.m_iID;
@@ -530,8 +495,6 @@ VTooltip* VListControl::GetTooltip(VGUIUserInfo_t &user)
     return m_spMouseOverItem[i]->GetTooltip(user);
   return VDlgControlBase::GetTooltip(user);
 }
-
-
 
 void VListControl::OnSizeChanged() 
 {
@@ -543,6 +506,33 @@ void VListControl::OnSizeChanged()
   AdjustScrollBars();
 }
 
+void VListControl::OnDragBegin(const hkvVec2 &vMousePos, int iButtonMask)
+{
+  VDlgControlBase::OnDragBegin(vMousePos, iButtonMask);
+
+  if (m_spVScrollbar && (GetContext() != NULL) && GetContext()->GetSwipeToScroll())
+    m_spVScrollbar->GetSlider()->OnDragBegin(vMousePos, iButtonMask);
+}
+
+void VListControl::OnDragging(const hkvVec2 &vMouseDelta)
+{
+  VDlgControlBase::OnDragging(vMouseDelta);
+
+  if (m_spVScrollbar && (GetContext() != NULL) && GetContext()->GetSwipeToScroll())
+  {
+    const hkvVec2 vScale = m_spVScrollbar->GetMoveRange().compDiv((m_Items.GetSize() - GetSize()));
+    m_spVScrollbar->GetSlider()->OnDragging(-vMouseDelta.compMul(vScale));
+  }
+}
+
+void VListControl::OnDragEnd(VWindowBase *pOver)
+{
+  VDlgControlBase::OnDragEnd(pOver);
+
+  if (m_spVScrollbar && (GetContext() != NULL) && GetContext()->GetSwipeToScroll())
+    m_spVScrollbar->GetSlider()->OnDragEnd(pOver);
+}
+
 void VListControl::AdjustScrollBars()
 {
   if (m_spVScrollbar)
@@ -552,7 +542,6 @@ void VListControl::AdjustScrollBars()
     m_spVScrollbar->SetPosition(GetSize().x,0.f);
   }
 }
-
 
 void VListControl::OnClick(VMenuEventDataObject *pEvent)
 {
@@ -595,11 +584,27 @@ void VListControl::OnPointerUp(VMenuEventDataObject *pEvent)
   }
 }
 
+void VListControl::OnMouseEnter(VGUIUserInfo_t &user)
+{
+  VDlgControlBase::OnMouseEnter(user);
+}
+
+void VListControl::OnMouseLeave(VGUIUserInfo_t &user)
+{
+  VDlgControlBase::OnMouseLeave(user);
+
+  int i = user.m_iID;
+  if (m_spMouseOverItem[i])
+  {
+    m_spMouseOverItem[i]->OnMouseLeave(user);
+    m_spMouseDownItem[i] = NULL;
+  }
+}
+
 void VListControl::SetSelectionIndex(int iIndex, const VGUIUserInfo_t *pUser)
 {
   SetSelection(m_Items.GetAtSafe(iIndex),pUser);
 }
-
 
 void VListControl::SetSelection(VListControlItem *pItem, const VGUIUserInfo_t *pUser)
 {
@@ -617,27 +622,31 @@ void VListControl::SetSelection(VListControlItem *pItem, const VGUIUserInfo_t *p
   SendValueChangedEvent(&data);
 }
 
-
-  
 VListControlItem *VListControl::GetItemAt(VGUIUserInfo_t &user,const hkvVec2 &vAbsPos) const
 {
   return m_Items.GetItemAt(user, vAbsPos);
 }
 
-
 void VListControl::SetMouseOverItem(VGUIUserInfo_t &user, VListControlItem *pItem)
 {
+  bool bClicked = true;
+  if ((GetContext() != NULL) && GetContext()->GetSelectionOnClickOnly())
+    bClicked = (user.m_iButtonMask & BUTTONMASK_CLICKEVENTS) != 0;
+
   int i = user.m_iID;
-  if (m_spMouseOverItem[i]==pItem) return;
+  if ((m_spMouseOverItem[i] == pItem) || !bClicked)
+    return;
+
   if (m_spMouseOverItem[i])
     m_spMouseOverItem[i]->OnMouseLeave(user);
+
   m_spMouseOverItem[i] = pItem;
+
   if (pItem)
     pItem->OnMouseEnter(user);
 }
 
-
-void VListControl::OnTick(float dtime)
+void VListControl::OnTick(float fDeltaTime)
 {
   for (int i=0;i<VGUIUserInfo_t::GUIMaxUser;i++)
   {
@@ -645,10 +654,43 @@ void VListControl::OnTick(float dtime)
     if (!pUser) continue;
     SetMouseOverItem(*pUser, GetItemAt(*pUser, pUser->m_vMousePos));
   }
+
+  TickScrollbar(fDeltaTime);
+}
+
+void VListControl::TickScrollbar(float fDeltaTime)
+{
+  if (m_spVScrollbar)
+  {
+    m_spVScrollbar->GetSlider()->OnTick(fDeltaTime);
+
+#if defined(SUPPORTS_MOUSE)
+    VRectanglef rect = GetBoundingBox();
+    float fX = static_cast<float>(VInputManager::GetMouse().GetRawControlValue(CT_MOUSE_RAW_CURSOR_X));
+    float fY = static_cast<float>(VInputManager::GetMouse().GetRawControlValue(CT_MOUSE_RAW_CURSOR_Y));
+
+    if (IsVisible() && rect.IsInside(fX, fY))
+    {
+      float fValue = static_cast<float>(VInputManager::GetMouse().GetRawControlValue(CT_MOUSE_WHEEL));
+      if ((fValue < 0.0f) || (fValue > 0.0f))
+      {
+        const hkvVec2& vDragStart = m_spVScrollbar->GetSlider()->GetDragStart();
+        hkvVec2 vDragPos = m_spVScrollbar->GetSlider()->GetDragPosition();
+        hkvVec2 vMoveRange = m_spVScrollbar->GetMoveRange();
+
+        vDragPos.clampTo(vDragStart, vMoveRange + vDragStart);
+        m_spVScrollbar->GetSlider()->SetDragPosition(vDragPos);
+
+        if ((fValue < 0.0f && vDragPos.y < (vMoveRange.y + vDragStart.y)) || (fValue > 0.0f && vDragPos.y > vDragStart.y))
+          m_spVScrollbar->GetSlider()->OnDragging(hkvVec2(0.0f, -fValue*V_MOUSE_WHEEL_SCROLL_SPEED));
+      }
+    }
+#endif
+  }
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

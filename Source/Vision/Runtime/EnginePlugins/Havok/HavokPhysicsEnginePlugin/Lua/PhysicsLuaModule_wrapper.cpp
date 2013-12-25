@@ -1052,19 +1052,32 @@ SWIGINTERN void  SWIG_Lua_module_add_function(lua_State* L,const char* name,lua_
 SWIGINTERN void VisionLuaClassGet(lua_State *L)
 {
   //solution 1: retrieve element when accessing an user data object from a global $node-POINTER_ADR-NAME_OF_ELEM$
-  //(+): fast and allows user to associate elemets with an instance of an user data object
+  //(+): allows user to associate elemets with an instance of an user data object
   //(-): elements are not stored in a table, so you cannot iterate over all elements of an instance
   
   const char * pKey = lua_tostring(L, 2);
-  const void * pPtr = lua_topointer(L, 1);
+  swig_lua_userdata * pUser = (swig_lua_userdata *) lua_topointer(L, 1);
+                                                                             //stack: userdata, key, ..., TOP
+  lua_pushliteral(L, "G");                                                   //stack: userdata, key, ..., 'G', TOP
+  lua_gettable(L, LUA_GLOBALSINDEX);                                         //stack: userdata, key, ..., globalTable, TOP
 
-  lua_pushfstring(L, "$node-%p-%s$", pPtr, pKey);  //stack: userdata, key, ..., new key, TOP
-  lua_gettable(L, LUA_GLOBALSINDEX); 		      //stack: userdata, key, ..., requested val, TOP
-  
+  if( lua_isnil(L, -1)==1 ) //test if the global table is valid
+  {                                                                          //stack: userdata, key, ..., nil, TOP
+    lua_pop(L, 1);                                                           //stack: userdata, key, ..., TOP
+    lua_pushfstring(L, "$node-%p-%s$", ((pUser==0) ? 0 : pUser->ptr), pKey); //stack: userdata, key, ..., new key, TOP
+    lua_gettable(L, LUA_GLOBALSINDEX);                                       //stack: userdata, key, ..., requested val, TOP
+  }
+  else
+  {                                                                          //stack: userdata, key,  ..., globalTable, TOP
+    lua_pushfstring(L, "$node-%p-%s$", ((pUser==0) ? 0 : pUser->ptr), pKey); //stack: userdata, key,  ..., globalTable, new key, TOP
+    lua_gettable(L, -2);                                                     //stack: userdata, key,  ..., globalTable, requested val, TOP
+    lua_remove(L, -2);                                                       //stack: userdata, key,  ..., requested val, TOP
+  }
+
 /*
   //solution 2: get element from a global table $node-POINTER_ADR$
   //(+): user data object instance behaves like a table (you can iterate on this table)
-  //(-): slower than solution 1
+  //(-): slower than solution 1 when setting the variable
   
   int iPtr = (int) lua_topointer(L, 1);
   lua_pushfstring(L, "$node-%p$", iPtr);          //stack: userdata, key, ..., instance string, TOP
@@ -1087,6 +1100,7 @@ SWIGINTERN int  SWIG_Lua_class_get(lua_State* L)
   (1) userdata (not the meta table)
   (2) string name of the attribute
 */
+
   assert(lua_isuserdata(L,-2));  /* just in case */
   lua_getmetatable(L,-2);    /* get the meta table */
   assert(lua_istable(L,-1));  /* just in case */
@@ -1146,16 +1160,29 @@ SWIGINTERN int  SWIG_Lua_class_get(lua_State* L)
 SWIGINTERN void VisionLuaClassSet(lua_State *L)
 {
   //solution 1: store all elements when accessing an user data objects as a global $node-POINTER_ADR-NAME_OF_ELEM$
-  //(+): fast and allows user to associate elemets with an instance of an user data object
+  //(+): allows user to associate elemets with an instance of an user data object
   //(-): elements are not stored in a table, so you cannot iterate over all elements of an instance
   
   const char * pKey = lua_tostring(L, 2);
-  const void * pPtr = lua_topointer(L, 1);
-  
-  lua_pushfstring(L, "$node-%p-%s$", pPtr, pKey);   //stack: userdata, key, value, ..., new key, TOP
-  
-  lua_pushvalue(L, 3);                              //stack: userdata, key, value, ..., new key, value, TOP
-  lua_settable(L, LUA_GLOBALSINDEX);                //stack: userdata, key, value, ..., TOP
+  swig_lua_userdata * pUser = (swig_lua_userdata *) lua_topointer(L, 1);
+                                                                             //stack: userdata, key, value, ..., TOP
+  lua_pushliteral(L, "G");                                                   //stack: userdata, key, value, ..., 'G', TOP
+  lua_gettable(L, LUA_GLOBALSINDEX);                                         //stack: userdata, key, value, ..., globalTable, TOP
+
+  if( lua_isnil(L, -1)==1 ) //test if the global table is valid
+  {                                                                          //stack: userdata, key, value, ..., nil, TOP
+    lua_pop(L, 1);                                                           //stack: userdata, key, value, ..., TOP
+    lua_pushfstring(L, "$node-%p-%s$", ((pUser==0) ? 0 : pUser->ptr), pKey); //stack: userdata, key, value, ..., new key, TOP
+    lua_pushvalue(L, 3);                                                     //stack: userdata, key, value, ..., new key, value, TOP
+    lua_settable(L, LUA_GLOBALSINDEX);                                       //stack: userdata, key, value, ..., TOP
+  }
+  else
+  {                                                                          //stack: userdata, key, value, ..., globalTable, TOP
+    lua_pushfstring(L, "$node-%p-%s$", ((pUser==0) ? 0 : pUser->ptr), pKey); //stack: userdata, key, value, ..., globalTable, new key, TOP
+    lua_pushvalue(L, 3);                                                     //stack: userdata, key, value, ..., globalTable, new key, value, TOP
+    lua_settable(L, -3);                                                     //stack: userdata, key, value, ..., globalTable, TOP
+    lua_pop(L, 1);                                                           //stack: userdata, key, value, ..., TOP
+  }
 
 /*  
   //solution 2: create a table $node-POINTER_ADR$ and save the element as element of this table
@@ -1195,11 +1222,11 @@ SWIGINTERN int  SWIG_Lua_class_set(lua_State* L)
 /*  there should be 3 params passed in
   (1) table (not the meta table)
   (2) string name of the attribute
-  (3) any for the new value
+  (3) any for the new value  
 printf("SWIG_Lua_class_set %p(%s) '%s' %p(%s)\n",
       lua_topointer(L,1),lua_typename(L,lua_type(L,1)),
       lua_tostring(L,2),
-      lua_topointer(L,3),lua_typename(L,lua_type(L,3)));*/
+      lua_topointer(L,3),lua_typename(L,lua_type(L,3))); */
 
   assert(lua_isuserdata(L,1));  /* just in case */
   lua_getmetatable(L,1);    /* get the meta table */
@@ -1798,7 +1825,7 @@ SWIGINTERN char const *VTypedObject_GetPropertyType(VTypedObject *self,char cons
           case VULPTYPE_BYTE_COLOR4:
             return "VColorRef";
           default:
-            Vision::Error.Warning("Type of property '%s' is unknown in Lua.", propName);
+            hkvLog::Warning("Type of property '%s' is unknown in Lua.", propName);
             return NULL;
       }
     }
@@ -1884,7 +1911,7 @@ SWIGINTERN bool VTypedObject_operator_Se__Se_(VTypedObject *self,VTypedObject co
     if (ARGS_OK) {
       VisVariable_cl *pVar = pTypedObject->GetVariable(pszName);
       if (!pVar) {
-        luaL_error(L, "Called getter of unknown property '%s'", pszName);
+        hkvLog::Warning("Called getter of unknown property '%s'", pszName);
         lua_pushnil(L);
         return 1;
       }
@@ -1973,7 +2000,7 @@ SWIGINTERN bool VTypedObject_operator_Se__Se_(VTypedObject *self,VTypedObject co
           }
           break;
         default:
-          luaL_error(L, "Called getter of unknown type %d (%s)", pVar->type, pszName);
+          hkvLog::Warning("Called getter of unknown type %d (%s)", pVar->type, pszName);
           lua_pushnil(L);
           break;
       }
@@ -1998,9 +2025,8 @@ SWIGINTERN bool VTypedObject_operator_Se__Se_(VTypedObject *self,VTypedObject co
 
       if (!pVar)
       {
-        luaL_error(L, "Called setter of unknown property '%s'", pszName);
-        lua_pushnil(L);
-        return 1;
+        hkvLog::Warning("Called setter of unknown property '%s'", pszName);
+        return 0;
       }
       
       switch (pVar->type) {
@@ -2076,7 +2102,7 @@ SWIGINTERN bool VTypedObject_operator_Se__Se_(VTypedObject *self,VTypedObject co
           }
           break;
         default:
-          luaL_error(L, "Called setter of unknown type %d (%s)", pVar->type, pszName);
+          hkvLog::Warning("Called setter of unknown type %d (%s)", pVar->type, pszName);
           break;
       }
     }
@@ -2206,7 +2232,7 @@ SWIGINTERN bool VisTypedEngineObject_cl_RemoveComponentOfType__SWIG_0(VisTypedEn
     VType *pType = Vision::GetTypeManager()->GetType(szComponentType);
     if (pType==NULL)
     {
-      Vision::Error.Warning("[Lua] AddComponentOfType: did not find component of the specified type: %s", szComponentType);
+      hkvLog::Warning("[Lua] AddComponentOfType: did not find component of the specified type: %s", szComponentType);
       lua_settop(L, 0); //remove all items from the stack
       lua_pushnil(L);
       return 1;
@@ -2216,7 +2242,7 @@ SWIGINTERN bool VisTypedEngineObject_cl_RemoveComponentOfType__SWIG_0(VisTypedEn
     VSmartPtr<IVObjectComponent> spComponent = (IVObjectComponent *)pType->CreateInstance();
     if (spComponent==NULL)
     {
-      Vision::Error.Warning("[Lua] AddComponentOfType: Failed construction an instance of the specified component type: %s", szComponentType);
+      hkvLog::Warning("[Lua] AddComponentOfType: Failed construction an instance of the specified component type: %s", szComponentType);
       lua_settop(L, 0); //remove all items from the stack
       lua_pushnil(L);
       return 1;
@@ -2254,7 +2280,7 @@ SWIGINTERN bool VisTypedEngineObject_cl_RemoveComponentOfType__SWIG_0(VisTypedEn
     VString sCanAddError;
     if (!pSelf->CanAddComponent(spComponent, sCanAddError))
     {
-      Vision::Error.Warning("[Lua] AddComponentOfType: Can't add component of type '%s'. Error: %s", szComponentType, sCanAddError.AsChar());
+      hkvLog::Warning("[Lua] AddComponentOfType: Can't add component of type '%s'. Error: %s", szComponentType, sCanAddError.AsChar());
       lua_settop(L, 0); //remove all items from the stack
       lua_pushnil(L);
       return 1;
@@ -2474,7 +2500,7 @@ SWIGINTERN bool VisTypedEngineObject_cl_RemoveComponentOfType__SWIG_0(VisTypedEn
 SWIGINTERN bool IVObjectComponent_CanAttachToObject(IVObjectComponent *self,VisTypedEngineObject_cl *typedObject){
       VString sError;
       bool bPossible = self->CanAttachToObject(typedObject, sError) == TRUE;
-      if(!bPossible) Vision::Error.Warning("%s", sError.AsChar());
+      if(!bPossible) hkvLog::Warning("%s", sError.AsChar());
       return bPossible;
     }
 
@@ -2588,6 +2614,22 @@ SWIGINTERN bool IVObjectComponent_CanAttachToObject(IVObjectComponent *self,VisT
   #define QUALITY_CHARACTER HK_COLLIDABLE_QUALITY_CHARACTER
   #define QUALITY_KEYFRAMED_REPORTING HK_COLLIDABLE_QUALITY_KEYFRAMED_REPORTING
 
+  #define LAYER_ALL                      vHavokPhysicsModule::HK_LAYER_ALL 
+  #define LAYER_COLLIDABLE_DYNAMIC	     vHavokPhysicsModule::HK_LAYER_COLLIDABLE_DYNAMIC
+  #define LAYER_COLLIDABLE_STATIC	     vHavokPhysicsModule::HK_LAYER_COLLIDABLE_STATIC
+  #define LAYER_COLLIDABLE_TERRAIN	     vHavokPhysicsModule::HK_LAYER_COLLIDABLE_TERRAIN
+  #define LAYER_COLLIDABLE_CONTROLLER	 vHavokPhysicsModule::HK_LAYER_COLLIDABLE_CONTROLLER
+  #define LAYER_COLLIDABLE_TERRAIN_HOLE  vHavokPhysicsModule::HK_LAYER_COLLIDABLE_TERRAIN_HOLE
+  #define LAYER_COLLIDABLE_DISABLED	     vHavokPhysicsModule::HK_LAYER_COLLIDABLE_DISABLED
+  #define LAYER_COLLIDABLE_RAGDOLL	     vHavokPhysicsModule::HK_LAYER_COLLIDABLE_RAGDOLL
+  #define LAYER_COLLIDABLE_ATTACHMENTS   vHavokPhysicsModule::HK_LAYER_COLLIDABLE_ATTACHMENTS
+  #define LAYER_COLLIDABLE_FOOT_IK	     vHavokPhysicsModule::HK_LAYER_COLLIDABLE_FOOT_IK
+  #define LAYER_COLLIDABLE_DEBRIS		 vHavokPhysicsModule::HK_LAYER_COLLIDABLE_DEBRIS
+  #define LAYER_COLLIDABLE_CUSTOM0	     vHavokPhysicsModule::HK_LAYER_COLLIDABLE_CUSTOM0
+  #define LAYER_COLLIDABLE_CUSTOM1	     vHavokPhysicsModule::HK_LAYER_COLLIDABLE_CUSTOM1
+  #define LAYER_COLLIDABLE_CUSTOM2	     vHavokPhysicsModule::HK_LAYER_COLLIDABLE_CUSTOM2
+  #define LAYER_COLLIDABLE_CUSTOM3	     vHavokPhysicsModule::HK_LAYER_COLLIDABLE_CUSTOM3 
+  #define LAYER_COLLIDABLE_CUSTOM4	     vHavokPhysicsModule::HK_LAYER_COLLIDABLE_CUSTOM4
 
 SWIGINTERN void vHavokCharacterController_SetEnabled(vHavokCharacterController *self,bool bValue){
     self->SetEnabled(bValue);
@@ -2645,7 +2687,7 @@ SWIGINTERN bool vHavokCharacterController_DropToFloor__SWIG_0(vHavokCharacterCon
 SWIGINTERN vHavokCharacterController *vHavokCharacterController_Cast(VTypedObject *pObject){
     if(pObject && pObject->IsOfType(vHavokCharacterController::GetClassTypeId()))
       return (vHavokCharacterController *) pObject;
-    Vision::Error.Warning("[Lua] Cannot cast to %s!","vHavokCharacterController");
+    hkvLog::Warning("[Lua] Cannot cast to %s!","vHavokCharacterController");
     return NULL;
   }
 SWIGINTERN void vHavokRigidBody_SetDebugRendering(vHavokRigidBody *self,bool bValue){
@@ -2730,7 +2772,7 @@ SWIGINTERN bool vHavokRigidBody_DropToFloor__SWIG_0(vHavokRigidBody *self,float 
 SWIGINTERN vHavokRigidBody *vHavokRigidBody_Cast(VTypedObject *pObject){
     if(pObject && pObject->IsOfType(vHavokRigidBody::GetClassTypeId()))
       return (vHavokRigidBody *) pObject;
-    Vision::Error.Warning("[Lua] Cannot cast to %s!","vHavokRigidBody");
+    hkvLog::Warning("[Lua] Cannot cast to %s!","vHavokRigidBody");
     return NULL;
   }
 SWIGINTERN void vHavokRagdoll_SetEnabled(vHavokRagdoll *self,bool bValue){
@@ -2742,7 +2784,7 @@ SWIGINTERN void vHavokRagdoll_SetDebugRendering(vHavokRagdoll *self,bool bValue)
 SWIGINTERN vHavokRagdoll *vHavokRagdoll_Cast(VTypedObject *pObject){
     if(pObject && pObject->IsOfType(vHavokRagdoll::GetClassTypeId()))
       return (vHavokRagdoll *) pObject;
-    Vision::Error.Warning("[Lua] Cannot cast to %s!","vHavokRagdoll");
+    hkvLog::Warning("[Lua] Cannot cast to %s!","vHavokRagdoll");
     return NULL;
   }
 
@@ -2831,61 +2873,104 @@ SWIGINTERN vHavokRagdoll *vHavokRagdoll_Cast(VTypedObject *pObject){
   }
 
 
-	int PhysicsLuaModule_RayCast(lua_State *L)
-	{
-		DECLARE_ARGS_OK;
+   int PhysicsLuaModule_CalcFilterInfo(lua_State *L) 
+   {
+     DECLARE_ARGS_OK
 	
-		// Get arguments	
-		GET_ARG(1, hkvVec3, origin);
-		GET_ARG(2, hkvVec3, direction);
-		
-		// Get world
-		hkpWorld* world = vHavokPhysicsModule::GetInstance()->GetPhysicsWorld();
-		
-		// Lock world
-		world->lock();
+	   // Get arguments
+	   GET_ARG(1, int, layer);
+	   GET_ARG(2, int, group);
+	   GET_ARG(3, int, subsystem);
+	   GET_ARG(3, int, subsystemDontCollideWith);
 
-		hkVector4 ray;
-		vHavokConversionUtils::VisVecToPhysVec_noscale(direction, ray);
-		ray.mul( hkSimdReal::fromFloat(500) );
+	   // Calculate collision filter information
+	   int iCollisionFilterInfo = hkpGroupFilter::calcFilterInfo(layer, group, subsystem, subsystemDontCollideWith);
 
-		// Setup raycast
-		hkpWorldRayCastInput input;
-		vHavokConversionUtils::VisVecToPhysVecWorld( origin, input.m_from );
-		input.m_to.setAdd( input.m_from, ray );
-		input.m_enableShapeCollectionFilter = true;
-		input.m_filterInfo = 0xffffffff;
+     lua_pushinteger(L, (lua_Integer)iCollisionFilterInfo);
+	   return 1;
+   }
 
-		// Cast ray
-		hkpClosestRayHitCollector output;
-		world->castRay( input, output );
 
-		// Unlock world
-		world->unlock();
+   int PhysicsLuaModule_PerformRaycast(lua_State *L)
+   {
+	   DECLARE_ARGS_OK;
+	
+	   // Get arguments
+	   GET_ARG(1, hkvVec3, vRayStart);
+	   GET_ARG(2, hkvVec3, vRayEnd);
+     GET_ARG(3, int, iCollisionFilterInfo);
 
-		// Check hit
-		if ( !output.hasHit() )
-		{
-			lua_pushboolean(L,false);
-			return 1;
-		}
+	   // Perform raycast
+	   VisPhysicsRaycastClosestResult_cl raycastData;
+	   raycastData.vRayStart = vRayStart;
+	   raycastData.vRayEnd = vRayEnd;
+	   raycastData.iCollisionBitmask = iCollisionFilterInfo;
+	   vHavokPhysicsModule::GetInstance()->PerformRaycast(&raycastData);
+	
+	   // Check hit
+	   if (!raycastData.bHit)
+	   { 
+	     lua_pushboolean(L, false);
+	     return 1;
+	   }
+	
+	   lua_pushboolean(L, true);
 
-		// Get hit point
-		const hkpWorldRayCastOutput& hit = output.getHit();
-		hkVector4 hitPoint; hitPoint.setAddMul( input.m_from, ray, hit.m_hitFraction );
+     // Create an empty table for returning raycast results
+	   lua_newtable(L); 
 
-		// Get Vision hit point
-    hkvVec3 visionHitPoint;
-    vHavokConversionUtils::PhysVecToVisVecWorld( hitPoint, visionHitPoint );
+	   // Hit type
+	   lua_pushstring(L, "HitType");
+     switch(raycastData.closestHit.eHitType)
+	   {
+	   case VIS_TRACETYPE_ENTITYPOLY:
+	     lua_pushstring(L, "Entity"); 
+	     break;
 
-		// Results
-		lua_pushboolean(L,true);
-		
-		hkvVec3* resultPtr = new hkvVec3( (const hkvVec3&)visionHitPoint );
-		SWIG_NewPointerObj( L, (void*)resultPtr, SWIGTYPE_p_hkvVec3, 1 );		
-		
-		return 2;
-	}
+	   case VIS_TRACETYPE_STATICGEOMETRY:
+	     lua_pushstring(L, "Mesh"); 
+	     break;
+
+     case VIS_TRACETYPE_TERRAIN:
+	     lua_pushstring(L, "Terrain"); 
+	     break;
+
+     default:
+	     lua_pushstring(L, "Unknown"); 
+	   }
+     lua_settable(L, -3);  
+
+	   // Hit object 
+	   lua_pushstring(L, "HitObject");    
+	   LUA_PushObjectProxy(L, raycastData.closestHit.pHitObject);
+	   lua_settable(L, -3);  
+
+	   // Hit fraction
+	   lua_pushstring(L, "HitFraction");         
+     lua_pushnumber(L, (lua_Number)raycastData.closestHit.fHitFraction); 
+	   lua_settable(L, -3);  
+
+	   // Impact point and normal
+	   lua_pushstring(L, "ImpactPoint");          
+	   LUA_PushObjectProxy(L, new hkvVec3(raycastData.closestHit.vImpactPoint));
+     lua_settable(L, -3);            
+	   lua_pushstring(L, "ImpactNormal");          
+	   LUA_PushObjectProxy(L, new hkvVec3(raycastData.closestHit.vImpactNormal));
+     lua_settable(L, -3);   
+
+	   // Hit material information
+	   lua_pushstring(L, "DynamicFriction");         
+     lua_pushnumber(L, (lua_Number)raycastData.closestHit.hitMaterial.fDynamicFriction);    
+	   lua_settable(L, -3); 
+	   lua_pushstring(L, "Restitution");         
+     lua_pushnumber(L, (lua_Number)raycastData.closestHit.hitMaterial.fRestitution);    
+	   lua_settable(L, -3); 
+	   lua_pushstring(L, "UserData");   
+	   lua_pushstring(L, raycastData.closestHit.hitMaterial.szUserData.AsChar());
+	   lua_settable(L, -3);
+   
+	   return 2;
+   }
 
 #ifdef __cplusplus
 extern "C" {
@@ -3127,6 +3212,7 @@ static int _wrap_VColorRef_Clear(lua_State* L) {
   VColorRef *arg1 = (VColorRef *) 0 ;
   
   SWIG_check_num_args("Clear",1,1)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("Clear",1,"VColorRef *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("Clear",1,"VColorRef *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VColorRef,0))){
@@ -3154,6 +3240,7 @@ static int _wrap_VColorRef_SetRGBA(lua_State* L) {
   UINT arg5 ;
   
   SWIG_check_num_args("SetRGBA",5,5)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("SetRGBA",1,"VColorRef *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("SetRGBA",1,"VColorRef *");
   if(!lua_isnumber(L,2)) SWIG_fail_arg("SetRGBA",2,"UINT");
   if(!lua_isnumber(L,3)) SWIG_fail_arg("SetRGBA",3,"UINT");
@@ -3192,6 +3279,7 @@ static int _wrap_VColorRef_SetRGB(lua_State* L) {
   UINT arg4 ;
   
   SWIG_check_num_args("SetRGB",4,4)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("SetRGB",1,"VColorRef *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("SetRGB",1,"VColorRef *");
   if(!lua_isnumber(L,2)) SWIG_fail_arg("SetRGB",2,"UINT");
   if(!lua_isnumber(L,3)) SWIG_fail_arg("SetRGB",3,"UINT");
@@ -3226,6 +3314,7 @@ static int _wrap_VColorRef___eq(lua_State* L) {
   bool result;
   
   SWIG_check_num_args("operator ==",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("operator ==",1,"VColorRef *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("operator ==",1,"VColorRef *");
   if(!lua_isuserdata(L,2)) SWIG_fail_arg("operator ==",2,"VColorRef const &");
   
@@ -3257,6 +3346,7 @@ static int _wrap_VColorRef___add(lua_State* L) {
   VColorRef result;
   
   SWIG_check_num_args("operator +",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("operator +",1,"VColorRef const *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("operator +",1,"VColorRef const *");
   if(!lua_isuserdata(L,2)) SWIG_fail_arg("operator +",2,"VColorRef const &");
   
@@ -3291,6 +3381,7 @@ static int _wrap_VColorRef___sub(lua_State* L) {
   VColorRef result;
   
   SWIG_check_num_args("operator -",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("operator -",1,"VColorRef const *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("operator -",1,"VColorRef const *");
   if(!lua_isuserdata(L,2)) SWIG_fail_arg("operator -",2,"VColorRef const &");
   
@@ -3325,6 +3416,7 @@ static int _wrap_VColorRef___mul__SWIG_0(lua_State* L) {
   VColorRef result;
   
   SWIG_check_num_args("operator *",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("operator *",1,"VColorRef const *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("operator *",1,"VColorRef const *");
   if(!lua_isuserdata(L,2)) SWIG_fail_arg("operator *",2,"VColorRef const &");
   
@@ -3359,6 +3451,7 @@ static int _wrap_VColorRef___mul__SWIG_1(lua_State* L) {
   VColorRef result;
   
   SWIG_check_num_args("operator *",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("operator *",1,"VColorRef const *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("operator *",1,"VColorRef const *");
   if(!lua_isnumber(L,2)) SWIG_fail_arg("operator *",2,"float");
   
@@ -3447,6 +3540,7 @@ static int _wrap_VColorRef_IsZero(lua_State* L) {
   bool result;
   
   SWIG_check_num_args("IsZero",1,1)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("IsZero",1,"VColorRef const *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("IsZero",1,"VColorRef const *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VColorRef,0))){
@@ -3471,6 +3565,7 @@ static int _wrap_VColorRef_IsBlack(lua_State* L) {
   bool result;
   
   SWIG_check_num_args("IsBlack",1,1)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("IsBlack",1,"VColorRef const *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("IsBlack",1,"VColorRef const *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VColorRef,0))){
@@ -3495,6 +3590,7 @@ static int _wrap_VColorRef_GetIntensity(lua_State* L) {
   float result;
   
   SWIG_check_num_args("GetIntensity",1,1)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("GetIntensity",1,"VColorRef const *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("GetIntensity",1,"VColorRef const *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VColorRef,0))){
@@ -3521,6 +3617,7 @@ static int _wrap_VColorRef_Lerp(lua_State* L) {
   float arg4 ;
   
   SWIG_check_num_args("Lerp",4,4)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("Lerp",1,"VColorRef *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("Lerp",1,"VColorRef *");
   if(!lua_isuserdata(L,2)) SWIG_fail_arg("Lerp",2,"VColorRef const &");
   if(!lua_isuserdata(L,3)) SWIG_fail_arg("Lerp",3,"VColorRef const &");
@@ -3559,6 +3656,7 @@ static int _wrap_VColorRef_r_set(lua_State* L) {
   UBYTE arg2 ;
   
   SWIG_check_num_args("r",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("r",1,"VColorRef *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("r",1,"VColorRef *");
   if(!lua_isnumber(L,2)) SWIG_fail_arg("r",2,"UBYTE");
   
@@ -3586,6 +3684,7 @@ static int _wrap_VColorRef_r_get(lua_State* L) {
   UBYTE result;
   
   SWIG_check_num_args("r",1,1)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("r",1,"VColorRef *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("r",1,"VColorRef *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VColorRef,0))){
@@ -3610,6 +3709,7 @@ static int _wrap_VColorRef_g_set(lua_State* L) {
   UBYTE arg2 ;
   
   SWIG_check_num_args("g",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("g",1,"VColorRef *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("g",1,"VColorRef *");
   if(!lua_isnumber(L,2)) SWIG_fail_arg("g",2,"UBYTE");
   
@@ -3637,6 +3737,7 @@ static int _wrap_VColorRef_g_get(lua_State* L) {
   UBYTE result;
   
   SWIG_check_num_args("g",1,1)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("g",1,"VColorRef *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("g",1,"VColorRef *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VColorRef,0))){
@@ -3661,6 +3762,7 @@ static int _wrap_VColorRef_b_set(lua_State* L) {
   UBYTE arg2 ;
   
   SWIG_check_num_args("b",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("b",1,"VColorRef *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("b",1,"VColorRef *");
   if(!lua_isnumber(L,2)) SWIG_fail_arg("b",2,"UBYTE");
   
@@ -3688,6 +3790,7 @@ static int _wrap_VColorRef_b_get(lua_State* L) {
   UBYTE result;
   
   SWIG_check_num_args("b",1,1)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("b",1,"VColorRef *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("b",1,"VColorRef *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VColorRef,0))){
@@ -3712,6 +3815,7 @@ static int _wrap_VColorRef_a_set(lua_State* L) {
   UBYTE arg2 ;
   
   SWIG_check_num_args("a",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("a",1,"VColorRef *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("a",1,"VColorRef *");
   if(!lua_isnumber(L,2)) SWIG_fail_arg("a",2,"UBYTE");
   
@@ -3739,6 +3843,7 @@ static int _wrap_VColorRef_a_get(lua_State* L) {
   UBYTE result;
   
   SWIG_check_num_args("a",1,1)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("a",1,"VColorRef *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("a",1,"VColorRef *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VColorRef,0))){
@@ -3865,6 +3970,7 @@ static int _wrap_VColorRef_Clone(lua_State* L) {
   VColorRef result;
   
   SWIG_check_num_args("Clone",1,1)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("Clone",1,"VColorRef *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("Clone",1,"VColorRef *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VColorRef,0))){
@@ -3892,6 +3998,7 @@ static int _wrap_VColorRef_clone(lua_State* L) {
   VColorRef result;
   
   SWIG_check_num_args("clone",1,1)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("clone",1,"VColorRef *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("clone",1,"VColorRef *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VColorRef,0))){
@@ -3952,6 +4059,7 @@ static int _wrap_VTypedObject_GetType(lua_State* L) {
   char *result = 0 ;
   
   SWIG_check_num_args("GetType",1,1)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("GetType",1,"VTypedObject const *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("GetType",1,"VTypedObject const *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VTypedObject,0))){
@@ -3977,6 +4085,7 @@ static int _wrap_VTypedObject_IsOfType(lua_State* L) {
   bool result;
   
   SWIG_check_num_args("IsOfType",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("IsOfType",1,"VTypedObject *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("IsOfType",1,"VTypedObject *");
   if(!SWIG_lua_isnilstring(L,2)) SWIG_fail_arg("IsOfType",2,"char const *");
   
@@ -4004,6 +4113,7 @@ static int _wrap_VTypedObject_GetPropertyType(lua_State* L) {
   char *result = 0 ;
   
   SWIG_check_num_args("GetPropertyType",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("GetPropertyType",1,"VTypedObject *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("GetPropertyType",1,"VTypedObject *");
   if(!SWIG_lua_isnilstring(L,2)) SWIG_fail_arg("GetPropertyType",2,"char const *");
   
@@ -4031,6 +4141,7 @@ static int _wrap_VTypedObject___eq(lua_State* L) {
   bool result;
   
   SWIG_check_num_args("operator ==",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("operator ==",1,"VTypedObject *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("operator ==",1,"VTypedObject *");
   if(!lua_isuserdata(L,2)) SWIG_fail_arg("operator ==",2,"VTypedObject const &");
   
@@ -4061,6 +4172,7 @@ static int _wrap_VTypedObject_GetNumProperties(lua_State* L) {
   int result;
   
   SWIG_check_num_args("GetNumVariables",1,1)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("GetNumVariables",1,"VTypedObject const *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("GetNumVariables",1,"VTypedObject const *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VTypedObject,0))){
@@ -4087,6 +4199,7 @@ static int _wrap_VTypedObject_UpdateProperty(lua_State* L) {
   bool result;
   
   SWIG_check_num_args("SetVariable",3,3)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("SetVariable",1,"VTypedObject *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("SetVariable",1,"VTypedObject *");
   if(!SWIG_lua_isnilstring(L,2)) SWIG_fail_arg("SetVariable",2,"char const *");
   if(!SWIG_lua_isnilstring(L,3)) SWIG_fail_arg("SetVariable",3,"char const *");
@@ -4136,6 +4249,7 @@ static int _wrap_VisTypedEngineObject_cl_GetComponentCount(lua_State* L) {
   int result;
   
   SWIG_check_num_args("GetComponentCount",1,1)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("GetComponentCount",1,"VisTypedEngineObject_cl *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("GetComponentCount",1,"VisTypedEngineObject_cl *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VisTypedEngineObject_cl,0))){
@@ -4161,6 +4275,7 @@ static int _wrap_VisTypedEngineObject_cl_AddComponent(lua_State* L) {
   bool result;
   
   SWIG_check_num_args("AddComponent",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("AddComponent",1,"VisTypedEngineObject_cl *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("AddComponent",1,"VisTypedEngineObject_cl *");
   if(!SWIG_isptrtype(L,2)) SWIG_fail_arg("AddComponent",2,"IVObjectComponent *");
   
@@ -4192,6 +4307,7 @@ static int _wrap_VisTypedEngineObject_cl_RemoveComponent(lua_State* L) {
   bool result;
   
   SWIG_check_num_args("RemoveComponent",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("RemoveComponent",1,"VisTypedEngineObject_cl *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("RemoveComponent",1,"VisTypedEngineObject_cl *");
   if(!SWIG_isptrtype(L,2)) SWIG_fail_arg("RemoveComponent",2,"IVObjectComponent *");
   
@@ -4224,6 +4340,7 @@ static int _wrap_VisTypedEngineObject_cl_RemoveComponentOfType__SWIG_0(lua_State
   bool result;
   
   SWIG_check_num_args("RemoveComponentOfType",3,3)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("RemoveComponentOfType",1,"VisTypedEngineObject_cl *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("RemoveComponentOfType",1,"VisTypedEngineObject_cl *");
   if(!SWIG_lua_isnilstring(L,2)) SWIG_fail_arg("RemoveComponentOfType",2,"char const *");
   if(!SWIG_lua_isnilstring(L,3)) SWIG_fail_arg("RemoveComponentOfType",3,"char const *");
@@ -4253,6 +4370,7 @@ static int _wrap_VisTypedEngineObject_cl_RemoveComponentOfType__SWIG_1(lua_State
   bool result;
   
   SWIG_check_num_args("RemoveComponentOfType",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("RemoveComponentOfType",1,"VisTypedEngineObject_cl *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("RemoveComponentOfType",1,"VisTypedEngineObject_cl *");
   if(!SWIG_lua_isnilstring(L,2)) SWIG_fail_arg("RemoveComponentOfType",2,"char const *");
   
@@ -4337,6 +4455,7 @@ static int _wrap_VisTypedEngineObject_cl_RemoveAllComponents(lua_State* L) {
   VisTypedEngineObject_cl *arg1 = (VisTypedEngineObject_cl *) 0 ;
   
   SWIG_check_num_args("RemoveAllComponents",1,1)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("RemoveAllComponents",1,"VisTypedEngineObject_cl *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("RemoveAllComponents",1,"VisTypedEngineObject_cl *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VisTypedEngineObject_cl,0))){
@@ -4387,6 +4506,7 @@ static int _wrap_IVObjectComponent_SetOwner(lua_State* L) {
   VisTypedEngineObject_cl *arg2 = (VisTypedEngineObject_cl *) 0 ;
   
   SWIG_check_num_args("SetOwner",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("SetOwner",1,"IVObjectComponent *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("SetOwner",1,"IVObjectComponent *");
   if(!SWIG_isptrtype(L,2)) SWIG_fail_arg("SetOwner",2,"VisTypedEngineObject_cl *");
   
@@ -4417,6 +4537,7 @@ static int _wrap_IVObjectComponent_GetComponentID(lua_State* L) {
   int result;
   
   SWIG_check_num_args("GetComponentID",1,1)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("GetComponentID",1,"IVObjectComponent const *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("GetComponentID",1,"IVObjectComponent const *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_IVObjectComponent,0))){
@@ -4441,6 +4562,7 @@ static int _wrap_IVObjectComponent_GetComponentName(lua_State* L) {
   char *result = 0 ;
   
   SWIG_check_num_args("GetComponentName",1,1)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("GetComponentName",1,"IVObjectComponent *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("GetComponentName",1,"IVObjectComponent *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_IVObjectComponent,0))){
@@ -4465,6 +4587,7 @@ static int _wrap_IVObjectComponent_SetComponentID(lua_State* L) {
   int arg2 ;
   
   SWIG_check_num_args("SetComponentID",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("SetComponentID",1,"IVObjectComponent *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("SetComponentID",1,"IVObjectComponent *");
   if(!lua_isnumber(L,2)) SWIG_fail_arg("SetComponentID",2,"int");
   
@@ -4491,6 +4614,7 @@ static int _wrap_IVObjectComponent_SetComponentName(lua_State* L) {
   char *arg2 = (char *) 0 ;
   
   SWIG_check_num_args("SetComponentName",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("SetComponentName",1,"IVObjectComponent *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("SetComponentName",1,"IVObjectComponent *");
   if(!SWIG_lua_isnilstring(L,2)) SWIG_fail_arg("SetComponentName",2,"char const *");
   
@@ -4518,6 +4642,7 @@ static int _wrap_IVObjectComponent_CanAttachToObject(lua_State* L) {
   bool result;
   
   SWIG_check_num_args("CanAttachToObject",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("CanAttachToObject",1,"IVObjectComponent *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("CanAttachToObject",1,"IVObjectComponent *");
   if(!SWIG_isptrtype(L,2)) SWIG_fail_arg("CanAttachToObject",2,"VisTypedEngineObject_cl *");
   
@@ -4833,12 +4958,285 @@ fail:
 }
 
 
+static int _wrap_LAYER_ALL_get(lua_State* L) {
+  int SWIG_arg = 0;
+  int result;
+  
+  SWIG_check_num_args("LAYER_ALL",0,0)
+  result = (int)(int)LAYER_ALL;
+  lua_pushnumber(L, (lua_Number) result); SWIG_arg++;
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_LAYER_COLLIDABLE_DYNAMIC_get(lua_State* L) {
+  int SWIG_arg = 0;
+  int result;
+  
+  SWIG_check_num_args("LAYER_COLLIDABLE_DYNAMIC",0,0)
+  result = (int)(int)LAYER_COLLIDABLE_DYNAMIC;
+  lua_pushnumber(L, (lua_Number) result); SWIG_arg++;
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_LAYER_COLLIDABLE_STATIC_get(lua_State* L) {
+  int SWIG_arg = 0;
+  int result;
+  
+  SWIG_check_num_args("LAYER_COLLIDABLE_STATIC",0,0)
+  result = (int)(int)LAYER_COLLIDABLE_STATIC;
+  lua_pushnumber(L, (lua_Number) result); SWIG_arg++;
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_LAYER_COLLIDABLE_TERRAIN_get(lua_State* L) {
+  int SWIG_arg = 0;
+  int result;
+  
+  SWIG_check_num_args("LAYER_COLLIDABLE_TERRAIN",0,0)
+  result = (int)(int)LAYER_COLLIDABLE_TERRAIN;
+  lua_pushnumber(L, (lua_Number) result); SWIG_arg++;
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_LAYER_COLLIDABLE_CONTROLLER_get(lua_State* L) {
+  int SWIG_arg = 0;
+  int result;
+  
+  SWIG_check_num_args("LAYER_COLLIDABLE_CONTROLLER",0,0)
+  result = (int)(int)LAYER_COLLIDABLE_CONTROLLER;
+  lua_pushnumber(L, (lua_Number) result); SWIG_arg++;
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_LAYER_COLLIDABLE_TERRAIN_HOLE_get(lua_State* L) {
+  int SWIG_arg = 0;
+  int result;
+  
+  SWIG_check_num_args("LAYER_COLLIDABLE_TERRAIN_HOLE",0,0)
+  result = (int)(int)LAYER_COLLIDABLE_TERRAIN_HOLE;
+  lua_pushnumber(L, (lua_Number) result); SWIG_arg++;
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_LAYER_COLLIDABLE_DISABLED_get(lua_State* L) {
+  int SWIG_arg = 0;
+  int result;
+  
+  SWIG_check_num_args("LAYER_COLLIDABLE_DISABLED",0,0)
+  result = (int)(int)LAYER_COLLIDABLE_DISABLED;
+  lua_pushnumber(L, (lua_Number) result); SWIG_arg++;
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_LAYER_COLLIDABLE_RAGDOLL_get(lua_State* L) {
+  int SWIG_arg = 0;
+  int result;
+  
+  SWIG_check_num_args("LAYER_COLLIDABLE_RAGDOLL",0,0)
+  result = (int)(int)LAYER_COLLIDABLE_RAGDOLL;
+  lua_pushnumber(L, (lua_Number) result); SWIG_arg++;
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_LAYER_COLLIDABLE_ATTACHMENTS_get(lua_State* L) {
+  int SWIG_arg = 0;
+  int result;
+  
+  SWIG_check_num_args("LAYER_COLLIDABLE_ATTACHMENTS",0,0)
+  result = (int)(int)LAYER_COLLIDABLE_ATTACHMENTS;
+  lua_pushnumber(L, (lua_Number) result); SWIG_arg++;
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_LAYER_COLLIDABLE_FOOT_IK_get(lua_State* L) {
+  int SWIG_arg = 0;
+  int result;
+  
+  SWIG_check_num_args("LAYER_COLLIDABLE_FOOT_IK",0,0)
+  result = (int)(int)LAYER_COLLIDABLE_FOOT_IK;
+  lua_pushnumber(L, (lua_Number) result); SWIG_arg++;
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_LAYER_COLLIDABLE_DEBRIS_get(lua_State* L) {
+  int SWIG_arg = 0;
+  int result;
+  
+  SWIG_check_num_args("LAYER_COLLIDABLE_DEBRIS",0,0)
+  result = (int)(int)LAYER_COLLIDABLE_DEBRIS;
+  lua_pushnumber(L, (lua_Number) result); SWIG_arg++;
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_LAYER_COLLIDABLE_CUSTOM0_get(lua_State* L) {
+  int SWIG_arg = 0;
+  int result;
+  
+  SWIG_check_num_args("LAYER_COLLIDABLE_CUSTOM0",0,0)
+  result = (int)(int)LAYER_COLLIDABLE_CUSTOM0;
+  lua_pushnumber(L, (lua_Number) result); SWIG_arg++;
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_LAYER_COLLIDABLE_CUSTOM1_get(lua_State* L) {
+  int SWIG_arg = 0;
+  int result;
+  
+  SWIG_check_num_args("LAYER_COLLIDABLE_CUSTOM1",0,0)
+  result = (int)(int)LAYER_COLLIDABLE_CUSTOM1;
+  lua_pushnumber(L, (lua_Number) result); SWIG_arg++;
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_LAYER_COLLIDABLE_CUSTOM2_get(lua_State* L) {
+  int SWIG_arg = 0;
+  int result;
+  
+  SWIG_check_num_args("LAYER_COLLIDABLE_CUSTOM2",0,0)
+  result = (int)(int)LAYER_COLLIDABLE_CUSTOM2;
+  lua_pushnumber(L, (lua_Number) result); SWIG_arg++;
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_LAYER_COLLIDABLE_CUSTOM3_get(lua_State* L) {
+  int SWIG_arg = 0;
+  int result;
+  
+  SWIG_check_num_args("LAYER_COLLIDABLE_CUSTOM3",0,0)
+  result = (int)(int)LAYER_COLLIDABLE_CUSTOM3;
+  lua_pushnumber(L, (lua_Number) result); SWIG_arg++;
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_LAYER_COLLIDABLE_CUSTOM4_get(lua_State* L) {
+  int SWIG_arg = 0;
+  int result;
+  
+  SWIG_check_num_args("LAYER_COLLIDABLE_CUSTOM4",0,0)
+  result = (int)(int)LAYER_COLLIDABLE_CUSTOM4;
+  lua_pushnumber(L, (lua_Number) result); SWIG_arg++;
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
 static int _wrap_vHavokCharacterController_SetEnabled(lua_State* L) {
   int SWIG_arg = 0;
   vHavokCharacterController *arg1 = (vHavokCharacterController *) 0 ;
   bool arg2 ;
   
   SWIG_check_num_args("SetEnabled",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("SetEnabled",1,"vHavokCharacterController *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("SetEnabled",1,"vHavokCharacterController *");
   if(!lua_isboolean(L,2)) SWIG_fail_arg("SetEnabled",2,"bool");
   
@@ -4865,6 +5263,7 @@ static int _wrap_vHavokCharacterController_SetDebugRendering(lua_State* L) {
   bool arg2 ;
   
   SWIG_check_num_args("SetDebugRendering",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("SetDebugRendering",1,"vHavokCharacterController *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("SetDebugRendering",1,"vHavokCharacterController *");
   if(!lua_isboolean(L,2)) SWIG_fail_arg("SetDebugRendering",2,"bool");
   
@@ -4891,6 +5290,7 @@ static int _wrap_vHavokCharacterController_SetCapsuleHeight(lua_State* L) {
   float arg2 ;
   
   SWIG_check_num_args("SetCapsuleHeight",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("SetCapsuleHeight",1,"vHavokCharacterController *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("SetCapsuleHeight",1,"vHavokCharacterController *");
   if(!lua_isnumber(L,2)) SWIG_fail_arg("SetCapsuleHeight",2,"float");
   
@@ -4917,6 +5317,7 @@ static int _wrap_vHavokCharacterController_GetCapsuleHeight(lua_State* L) {
   float result;
   
   SWIG_check_num_args("GetCapsuleHeight",1,1)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("GetCapsuleHeight",1,"vHavokCharacterController *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("GetCapsuleHeight",1,"vHavokCharacterController *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_vHavokCharacterController,0))){
@@ -4941,6 +5342,7 @@ static int _wrap_vHavokCharacterController_SetCapsuleOffset(lua_State* L) {
   float arg2 ;
   
   SWIG_check_num_args("SetCapsuleOffset",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("SetCapsuleOffset",1,"vHavokCharacterController *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("SetCapsuleOffset",1,"vHavokCharacterController *");
   if(!lua_isnumber(L,2)) SWIG_fail_arg("SetCapsuleOffset",2,"float");
   
@@ -4967,6 +5369,7 @@ static int _wrap_vHavokCharacterController_GetCapsuleOffset(lua_State* L) {
   float result;
   
   SWIG_check_num_args("GetCapsuleOffset",1,1)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("GetCapsuleOffset",1,"vHavokCharacterController *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("GetCapsuleOffset",1,"vHavokCharacterController *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_vHavokCharacterController,0))){
@@ -4991,6 +5394,7 @@ static int _wrap_vHavokCharacterController_SetCapsuleTop(lua_State* L) {
   hkvVec3 *arg2 = (hkvVec3 *) 0 ;
   
   SWIG_check_num_args("SetCapsuleTop",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("SetCapsuleTop",1,"vHavokCharacterController *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("SetCapsuleTop",1,"vHavokCharacterController *");
   if(!SWIG_isptrtype(L,2)) SWIG_fail_arg("SetCapsuleTop",2,"hkvVec3 *");
   
@@ -5021,6 +5425,7 @@ static int _wrap_vHavokCharacterController_GetCapsuleTop(lua_State* L) {
   hkvVec3 result;
   
   SWIG_check_num_args("GetCapsuleTop",1,1)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("GetCapsuleTop",1,"vHavokCharacterController *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("GetCapsuleTop",1,"vHavokCharacterController *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_vHavokCharacterController,0))){
@@ -5048,6 +5453,7 @@ static int _wrap_vHavokCharacterController_SetCapsuleBottom(lua_State* L) {
   hkvVec3 *arg2 = (hkvVec3 *) 0 ;
   
   SWIG_check_num_args("SetCapsuleBottom",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("SetCapsuleBottom",1,"vHavokCharacterController *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("SetCapsuleBottom",1,"vHavokCharacterController *");
   if(!SWIG_isptrtype(L,2)) SWIG_fail_arg("SetCapsuleBottom",2,"hkvVec3 *");
   
@@ -5078,6 +5484,7 @@ static int _wrap_vHavokCharacterController_GetCapsuleBottom(lua_State* L) {
   hkvVec3 result;
   
   SWIG_check_num_args("GetCapsuleBottom",1,1)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("GetCapsuleBottom",1,"vHavokCharacterController *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("GetCapsuleBottom",1,"vHavokCharacterController *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_vHavokCharacterController,0))){
@@ -5105,6 +5512,7 @@ static int _wrap_vHavokCharacterController_SetCapsuleRadius(lua_State* L) {
   float arg2 ;
   
   SWIG_check_num_args("SetCapsuleRadius",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("SetCapsuleRadius",1,"vHavokCharacterController *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("SetCapsuleRadius",1,"vHavokCharacterController *");
   if(!lua_isnumber(L,2)) SWIG_fail_arg("SetCapsuleRadius",2,"float");
   
@@ -5131,6 +5539,7 @@ static int _wrap_vHavokCharacterController_GetCapsuleRadius(lua_State* L) {
   float result;
   
   SWIG_check_num_args("GetCapsuleRadius",1,1)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("GetCapsuleRadius",1,"vHavokCharacterController *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("GetCapsuleRadius",1,"vHavokCharacterController *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_vHavokCharacterController,0))){
@@ -5155,6 +5564,7 @@ static int _wrap_vHavokCharacterController_GetCurrentLinearVelocity__SWIG_0(lua_
   hkvVec3 result;
   
   SWIG_check_num_args("GetCurrentLinearVelocity",1,1)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("GetCurrentLinearVelocity",1,"vHavokCharacterController *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("GetCurrentLinearVelocity",1,"vHavokCharacterController *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_vHavokCharacterController,0))){
@@ -5184,6 +5594,7 @@ static int _wrap_vHavokCharacterController_PerformSweep(lua_State* L) {
   float result;
   
   SWIG_check_num_args("PerformSweep",3,3)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("PerformSweep",1,"vHavokCharacterController *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("PerformSweep",1,"vHavokCharacterController *");
   if(!lua_isuserdata(L,2)) SWIG_fail_arg("PerformSweep",2,"hkvVec3 const &");
   if(!lua_isnumber(L,3)) SWIG_fail_arg("PerformSweep",3,"float");
@@ -5217,6 +5628,7 @@ static int _wrap_vHavokCharacterController_DropToFloor__SWIG_0(lua_State* L) {
   bool result;
   
   SWIG_check_num_args("DropToFloor",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("DropToFloor",1,"vHavokCharacterController *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("DropToFloor",1,"vHavokCharacterController *");
   if(!lua_isnumber(L,2)) SWIG_fail_arg("DropToFloor",2,"float");
   
@@ -5243,6 +5655,7 @@ static int _wrap_vHavokCharacterController_DropToFloor__SWIG_1(lua_State* L) {
   bool result;
   
   SWIG_check_num_args("DropToFloor",1,1)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("DropToFloor",1,"vHavokCharacterController *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("DropToFloor",1,"vHavokCharacterController *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_vHavokCharacterController,0))){
@@ -5340,6 +5753,7 @@ static int _wrap_vHavokCharacterController_IsEnabled(lua_State* L) {
   bool result;
   
   SWIG_check_num_args("IsEnabled",1,1)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("IsEnabled",1,"vHavokCharacterController const *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("IsEnabled",1,"vHavokCharacterController const *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_vHavokCharacterController,0))){
@@ -5365,6 +5779,7 @@ static int _wrap_vHavokCharacterController_SetDebugColor(lua_State* L) {
   VColorRef *argp2 ;
   
   SWIG_check_num_args("SetDebugColor",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("SetDebugColor",1,"vHavokCharacterController *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("SetDebugColor",1,"vHavokCharacterController *");
   if(!lua_isuserdata(L,2)) SWIG_fail_arg("SetDebugColor",2,"VColorRef");
   
@@ -5396,6 +5811,7 @@ static int _wrap_vHavokCharacterController_GetCurrentLinearVelocity__SWIG_1(lua_
   hkvVec3 *arg2 = 0 ;
   
   SWIG_check_num_args("GetCurrentLinearVelocity",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("GetCurrentLinearVelocity",1,"vHavokCharacterController const *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("GetCurrentLinearVelocity",1,"vHavokCharacterController const *");
   if(!lua_isuserdata(L,2)) SWIG_fail_arg("GetCurrentLinearVelocity",2,"hkvVec3 &");
   
@@ -5480,6 +5896,7 @@ static int _wrap_vHavokCharacterController_SetPosition(lua_State* L) {
   hkvVec3 *arg2 = 0 ;
   
   SWIG_check_num_args("SetPosition",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("SetPosition",1,"vHavokCharacterController *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("SetPosition",1,"vHavokCharacterController *");
   if(!lua_isuserdata(L,2)) SWIG_fail_arg("SetPosition",2,"hkvVec3 const &");
   
@@ -5510,6 +5927,7 @@ static int _wrap_vHavokCharacterController_SetFlyState(lua_State* L) {
   bool arg2 ;
   
   SWIG_check_num_args("SetFlyState",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("SetFlyState",1,"vHavokCharacterController *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("SetFlyState",1,"vHavokCharacterController *");
   if(!lua_isboolean(L,2)) SWIG_fail_arg("SetFlyState",2,"bool");
   
@@ -5536,6 +5954,7 @@ static int _wrap_vHavokCharacterController_SetWantJump(lua_State* L) {
   bool arg2 ;
   
   SWIG_check_num_args("SetWantJump",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("SetWantJump",1,"vHavokCharacterController *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("SetWantJump",1,"vHavokCharacterController *");
   if(!lua_isboolean(L,2)) SWIG_fail_arg("SetWantJump",2,"bool");
   
@@ -5562,6 +5981,7 @@ static int _wrap_vHavokCharacterController_IsStanding(lua_State* L) {
   bool result;
   
   SWIG_check_num_args("IsStanding",1,1)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("IsStanding",1,"vHavokCharacterController const *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("IsStanding",1,"vHavokCharacterController const *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_vHavokCharacterController,0))){
@@ -5587,6 +6007,7 @@ static int _wrap_vHavokCharacterController_CheckSupport(lua_State* L) {
   bool result;
   
   SWIG_check_num_args("CheckSupport",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("CheckSupport",1,"vHavokCharacterController const *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("CheckSupport",1,"vHavokCharacterController const *");
   if(!lua_isuserdata(L,2)) SWIG_fail_arg("CheckSupport",2,"hkvVec3 const &");
   
@@ -5617,6 +6038,7 @@ static int _wrap_vHavokCharacterController_GetGravityScaling(lua_State* L) {
   float result;
   
   SWIG_check_num_args("GetGravityScaling",1,1)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("GetGravityScaling",1,"vHavokCharacterController const *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("GetGravityScaling",1,"vHavokCharacterController const *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_vHavokCharacterController,0))){
@@ -5641,6 +6063,7 @@ static int _wrap_vHavokCharacterController_SetGravityScaling(lua_State* L) {
   float arg2 ;
   
   SWIG_check_num_args("SetGravityScaling",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("SetGravityScaling",1,"vHavokCharacterController *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("SetGravityScaling",1,"vHavokCharacterController *");
   if(!lua_isnumber(L,2)) SWIG_fail_arg("SetGravityScaling",2,"float");
   
@@ -5670,6 +6093,7 @@ static int _wrap_vHavokCharacterController_SetCollisionInfo(lua_State* L) {
   int arg5 ;
   
   SWIG_check_num_args("SetCollisionInfo",5,5)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("SetCollisionInfo",1,"vHavokCharacterController *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("SetCollisionInfo",1,"vHavokCharacterController *");
   if(!lua_isnumber(L,2)) SWIG_fail_arg("SetCollisionInfo",2,"int");
   if(!lua_isnumber(L,3)) SWIG_fail_arg("SetCollisionInfo",3,"int");
@@ -5702,6 +6126,7 @@ static int _wrap_vHavokCharacterController_Static_Friction_set(lua_State* L) {
   float arg2 ;
   
   SWIG_check_num_args("Static_Friction",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("Static_Friction",1,"vHavokCharacterController *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("Static_Friction",1,"vHavokCharacterController *");
   if(!lua_isnumber(L,2)) SWIG_fail_arg("Static_Friction",2,"float");
   
@@ -5728,6 +6153,7 @@ static int _wrap_vHavokCharacterController_Static_Friction_get(lua_State* L) {
   float result;
   
   SWIG_check_num_args("Static_Friction",1,1)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("Static_Friction",1,"vHavokCharacterController *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("Static_Friction",1,"vHavokCharacterController *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_vHavokCharacterController,0))){
@@ -5752,6 +6178,7 @@ static int _wrap_vHavokCharacterController_Dynamic_Friction_set(lua_State* L) {
   float arg2 ;
   
   SWIG_check_num_args("Dynamic_Friction",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("Dynamic_Friction",1,"vHavokCharacterController *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("Dynamic_Friction",1,"vHavokCharacterController *");
   if(!lua_isnumber(L,2)) SWIG_fail_arg("Dynamic_Friction",2,"float");
   
@@ -5778,6 +6205,7 @@ static int _wrap_vHavokCharacterController_Dynamic_Friction_get(lua_State* L) {
   float result;
   
   SWIG_check_num_args("Dynamic_Friction",1,1)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("Dynamic_Friction",1,"vHavokCharacterController *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("Dynamic_Friction",1,"vHavokCharacterController *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_vHavokCharacterController,0))){
@@ -5802,6 +6230,7 @@ static int _wrap_vHavokCharacterController_Max_Slope_set(lua_State* L) {
   float arg2 ;
   
   SWIG_check_num_args("Max_Slope",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("Max_Slope",1,"vHavokCharacterController *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("Max_Slope",1,"vHavokCharacterController *");
   if(!lua_isnumber(L,2)) SWIG_fail_arg("Max_Slope",2,"float");
   
@@ -5828,6 +6257,7 @@ static int _wrap_vHavokCharacterController_Max_Slope_get(lua_State* L) {
   float result;
   
   SWIG_check_num_args("Max_Slope",1,1)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("Max_Slope",1,"vHavokCharacterController *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("Max_Slope",1,"vHavokCharacterController *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_vHavokCharacterController,0))){
@@ -5852,6 +6282,7 @@ static int _wrap_vHavokCharacterController_Character_Mass_set(lua_State* L) {
   float arg2 ;
   
   SWIG_check_num_args("Character_Mass",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("Character_Mass",1,"vHavokCharacterController *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("Character_Mass",1,"vHavokCharacterController *");
   if(!lua_isnumber(L,2)) SWIG_fail_arg("Character_Mass",2,"float");
   
@@ -5878,6 +6309,7 @@ static int _wrap_vHavokCharacterController_Character_Mass_get(lua_State* L) {
   float result;
   
   SWIG_check_num_args("Character_Mass",1,1)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("Character_Mass",1,"vHavokCharacterController *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("Character_Mass",1,"vHavokCharacterController *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_vHavokCharacterController,0))){
@@ -5902,6 +6334,7 @@ static int _wrap_vHavokCharacterController_Character_Strength_set(lua_State* L) 
   float arg2 ;
   
   SWIG_check_num_args("Character_Strength",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("Character_Strength",1,"vHavokCharacterController *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("Character_Strength",1,"vHavokCharacterController *");
   if(!lua_isnumber(L,2)) SWIG_fail_arg("Character_Strength",2,"float");
   
@@ -5928,6 +6361,7 @@ static int _wrap_vHavokCharacterController_Character_Strength_get(lua_State* L) 
   float result;
   
   SWIG_check_num_args("Character_Strength",1,1)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("Character_Strength",1,"vHavokCharacterController *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("Character_Strength",1,"vHavokCharacterController *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_vHavokCharacterController,0))){
@@ -5952,6 +6386,7 @@ static int _wrap_vHavokCharacterController_Gravity_Scale_set(lua_State* L) {
   float arg2 ;
   
   SWIG_check_num_args("Gravity_Scale",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("Gravity_Scale",1,"vHavokCharacterController *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("Gravity_Scale",1,"vHavokCharacterController *");
   if(!lua_isnumber(L,2)) SWIG_fail_arg("Gravity_Scale",2,"float");
   
@@ -5978,6 +6413,7 @@ static int _wrap_vHavokCharacterController_Gravity_Scale_get(lua_State* L) {
   float result;
   
   SWIG_check_num_args("Gravity_Scale",1,1)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("Gravity_Scale",1,"vHavokCharacterController *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("Gravity_Scale",1,"vHavokCharacterController *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_vHavokCharacterController,0))){
@@ -6042,6 +6478,7 @@ static int _wrap_vHavokRigidBody_Remove(lua_State* L) {
   vHavokRigidBody *arg1 = (vHavokRigidBody *) 0 ;
   
   SWIG_check_num_args("DisposeObject",1,1)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("DisposeObject",1,"vHavokRigidBody *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("DisposeObject",1,"vHavokRigidBody *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_vHavokRigidBody,0))){
@@ -6066,6 +6503,7 @@ static int _wrap_vHavokRigidBody_SetDebugRendering(lua_State* L) {
   bool arg2 ;
   
   SWIG_check_num_args("SetDebugRendering",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("SetDebugRendering",1,"vHavokRigidBody *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("SetDebugRendering",1,"vHavokRigidBody *");
   if(!lua_isboolean(L,2)) SWIG_fail_arg("SetDebugRendering",2,"bool");
   
@@ -6096,6 +6534,7 @@ static int _wrap_vHavokRigidBody_InitBox__SWIG_0(lua_State* L) {
   bool result;
   
   SWIG_check_num_args("InitBox",5,5)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("InitBox",1,"vHavokRigidBody *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("InitBox",1,"vHavokRigidBody *");
   if(!SWIG_isptrtype(L,2)) SWIG_fail_arg("InitBox",2,"hkvVec3 *");
   if(!SWIG_isptrtype(L,3)) SWIG_fail_arg("InitBox",3,"hkvVec3 *");
@@ -6139,6 +6578,7 @@ static int _wrap_vHavokRigidBody_InitBox__SWIG_1(lua_State* L) {
   bool result;
   
   SWIG_check_num_args("InitBox",4,4)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("InitBox",1,"vHavokRigidBody *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("InitBox",1,"vHavokRigidBody *");
   if(!SWIG_isptrtype(L,2)) SWIG_fail_arg("InitBox",2,"hkvVec3 *");
   if(!SWIG_isptrtype(L,3)) SWIG_fail_arg("InitBox",3,"hkvVec3 *");
@@ -6179,6 +6619,7 @@ static int _wrap_vHavokRigidBody_InitBox__SWIG_2(lua_State* L) {
   bool result;
   
   SWIG_check_num_args("InitBox",3,3)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("InitBox",1,"vHavokRigidBody *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("InitBox",1,"vHavokRigidBody *");
   if(!SWIG_isptrtype(L,2)) SWIG_fail_arg("InitBox",2,"hkvVec3 *");
   if(!SWIG_isptrtype(L,3)) SWIG_fail_arg("InitBox",3,"hkvVec3 *");
@@ -6216,6 +6657,7 @@ static int _wrap_vHavokRigidBody_InitBox__SWIG_3(lua_State* L) {
   bool result;
   
   SWIG_check_num_args("InitBox",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("InitBox",1,"vHavokRigidBody *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("InitBox",1,"vHavokRigidBody *");
   if(!SWIG_isptrtype(L,2)) SWIG_fail_arg("InitBox",2,"hkvVec3 *");
   
@@ -6409,6 +6851,7 @@ static int _wrap_vHavokRigidBody_InitSphere__SWIG_0(lua_State* L) {
   bool result;
   
   SWIG_check_num_args("InitSphere",5,5)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("InitSphere",1,"vHavokRigidBody *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("InitSphere",1,"vHavokRigidBody *");
   if(!lua_isnumber(L,2)) SWIG_fail_arg("InitSphere",2,"float");
   if(!lua_isnumber(L,3)) SWIG_fail_arg("InitSphere",3,"float");
@@ -6444,6 +6887,7 @@ static int _wrap_vHavokRigidBody_InitSphere__SWIG_1(lua_State* L) {
   bool result;
   
   SWIG_check_num_args("InitSphere",4,4)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("InitSphere",1,"vHavokRigidBody *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("InitSphere",1,"vHavokRigidBody *");
   if(!lua_isnumber(L,2)) SWIG_fail_arg("InitSphere",2,"float");
   if(!lua_isnumber(L,3)) SWIG_fail_arg("InitSphere",3,"float");
@@ -6476,6 +6920,7 @@ static int _wrap_vHavokRigidBody_InitSphere__SWIG_2(lua_State* L) {
   bool result;
   
   SWIG_check_num_args("InitSphere",3,3)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("InitSphere",1,"vHavokRigidBody *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("InitSphere",1,"vHavokRigidBody *");
   if(!lua_isnumber(L,2)) SWIG_fail_arg("InitSphere",2,"float");
   if(!lua_isnumber(L,3)) SWIG_fail_arg("InitSphere",3,"float");
@@ -6505,6 +6950,7 @@ static int _wrap_vHavokRigidBody_InitSphere__SWIG_3(lua_State* L) {
   bool result;
   
   SWIG_check_num_args("InitSphere",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("InitSphere",1,"vHavokRigidBody *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("InitSphere",1,"vHavokRigidBody *");
   if(!lua_isnumber(L,2)) SWIG_fail_arg("InitSphere",2,"float");
   
@@ -6661,6 +7107,7 @@ static int _wrap_vHavokRigidBody_InitCapsule__SWIG_0(lua_State* L) {
   bool result;
   
   SWIG_check_num_args("InitCapsule",7,7)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("InitCapsule",1,"vHavokRigidBody *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("InitCapsule",1,"vHavokRigidBody *");
   if(!SWIG_isptrtype(L,2)) SWIG_fail_arg("InitCapsule",2,"hkvVec3 *");
   if(!SWIG_isptrtype(L,3)) SWIG_fail_arg("InitCapsule",3,"hkvVec3 *");
@@ -6710,6 +7157,7 @@ static int _wrap_vHavokRigidBody_InitCapsule__SWIG_1(lua_State* L) {
   bool result;
   
   SWIG_check_num_args("InitCapsule",6,6)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("InitCapsule",1,"vHavokRigidBody *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("InitCapsule",1,"vHavokRigidBody *");
   if(!SWIG_isptrtype(L,2)) SWIG_fail_arg("InitCapsule",2,"hkvVec3 *");
   if(!SWIG_isptrtype(L,3)) SWIG_fail_arg("InitCapsule",3,"hkvVec3 *");
@@ -6756,6 +7204,7 @@ static int _wrap_vHavokRigidBody_InitCapsule__SWIG_2(lua_State* L) {
   bool result;
   
   SWIG_check_num_args("InitCapsule",5,5)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("InitCapsule",1,"vHavokRigidBody *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("InitCapsule",1,"vHavokRigidBody *");
   if(!SWIG_isptrtype(L,2)) SWIG_fail_arg("InitCapsule",2,"hkvVec3 *");
   if(!SWIG_isptrtype(L,3)) SWIG_fail_arg("InitCapsule",3,"hkvVec3 *");
@@ -6799,6 +7248,7 @@ static int _wrap_vHavokRigidBody_InitCapsule__SWIG_3(lua_State* L) {
   bool result;
   
   SWIG_check_num_args("InitCapsule",4,4)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("InitCapsule",1,"vHavokRigidBody *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("InitCapsule",1,"vHavokRigidBody *");
   if(!SWIG_isptrtype(L,2)) SWIG_fail_arg("InitCapsule",2,"hkvVec3 *");
   if(!SWIG_isptrtype(L,3)) SWIG_fail_arg("InitCapsule",3,"hkvVec3 *");
@@ -7047,6 +7497,7 @@ static int _wrap_vHavokRigidBody_InitCylinder__SWIG_0(lua_State* L) {
   bool result;
   
   SWIG_check_num_args("InitCylinder",7,7)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("InitCylinder",1,"vHavokRigidBody *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("InitCylinder",1,"vHavokRigidBody *");
   if(!SWIG_isptrtype(L,2)) SWIG_fail_arg("InitCylinder",2,"hkvVec3 *");
   if(!SWIG_isptrtype(L,3)) SWIG_fail_arg("InitCylinder",3,"hkvVec3 *");
@@ -7096,6 +7547,7 @@ static int _wrap_vHavokRigidBody_InitCylinder__SWIG_1(lua_State* L) {
   bool result;
   
   SWIG_check_num_args("InitCylinder",6,6)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("InitCylinder",1,"vHavokRigidBody *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("InitCylinder",1,"vHavokRigidBody *");
   if(!SWIG_isptrtype(L,2)) SWIG_fail_arg("InitCylinder",2,"hkvVec3 *");
   if(!SWIG_isptrtype(L,3)) SWIG_fail_arg("InitCylinder",3,"hkvVec3 *");
@@ -7142,6 +7594,7 @@ static int _wrap_vHavokRigidBody_InitCylinder__SWIG_2(lua_State* L) {
   bool result;
   
   SWIG_check_num_args("InitCylinder",5,5)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("InitCylinder",1,"vHavokRigidBody *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("InitCylinder",1,"vHavokRigidBody *");
   if(!SWIG_isptrtype(L,2)) SWIG_fail_arg("InitCylinder",2,"hkvVec3 *");
   if(!SWIG_isptrtype(L,3)) SWIG_fail_arg("InitCylinder",3,"hkvVec3 *");
@@ -7185,6 +7638,7 @@ static int _wrap_vHavokRigidBody_InitCylinder__SWIG_3(lua_State* L) {
   bool result;
   
   SWIG_check_num_args("InitCylinder",4,4)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("InitCylinder",1,"vHavokRigidBody *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("InitCylinder",1,"vHavokRigidBody *");
   if(!SWIG_isptrtype(L,2)) SWIG_fail_arg("InitCylinder",2,"hkvVec3 *");
   if(!SWIG_isptrtype(L,3)) SWIG_fail_arg("InitCylinder",3,"hkvVec3 *");
@@ -7431,6 +7885,7 @@ static int _wrap_vHavokRigidBody_InitConvex__SWIG_0(lua_State* L) {
   bool result;
   
   SWIG_check_num_args("InitConvex",5,5)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("InitConvex",1,"vHavokRigidBody *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("InitConvex",1,"vHavokRigidBody *");
   if(!SWIG_isptrtype(L,2)) SWIG_fail_arg("InitConvex",2,"VDynamicMesh *");
   if(!SWIG_isptrtype(L,3)) SWIG_fail_arg("InitConvex",3,"hkvVec3 *");
@@ -7474,6 +7929,7 @@ static int _wrap_vHavokRigidBody_InitConvex__SWIG_1(lua_State* L) {
   bool result;
   
   SWIG_check_num_args("InitConvex",4,4)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("InitConvex",1,"vHavokRigidBody *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("InitConvex",1,"vHavokRigidBody *");
   if(!SWIG_isptrtype(L,2)) SWIG_fail_arg("InitConvex",2,"VDynamicMesh *");
   if(!SWIG_isptrtype(L,3)) SWIG_fail_arg("InitConvex",3,"hkvVec3 *");
@@ -7514,6 +7970,7 @@ static int _wrap_vHavokRigidBody_InitConvex__SWIG_2(lua_State* L) {
   bool result;
   
   SWIG_check_num_args("InitConvex",3,3)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("InitConvex",1,"vHavokRigidBody *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("InitConvex",1,"vHavokRigidBody *");
   if(!SWIG_isptrtype(L,2)) SWIG_fail_arg("InitConvex",2,"VDynamicMesh *");
   if(!SWIG_isptrtype(L,3)) SWIG_fail_arg("InitConvex",3,"hkvVec3 *");
@@ -7551,6 +8008,7 @@ static int _wrap_vHavokRigidBody_InitConvex__SWIG_3(lua_State* L) {
   bool result;
   
   SWIG_check_num_args("InitConvex",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("InitConvex",1,"vHavokRigidBody *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("InitConvex",1,"vHavokRigidBody *");
   if(!SWIG_isptrtype(L,2)) SWIG_fail_arg("InitConvex",2,"VDynamicMesh *");
   
@@ -7744,6 +8202,7 @@ static int _wrap_vHavokRigidBody_InitMesh__SWIG_0(lua_State* L) {
   bool result;
   
   SWIG_check_num_args("InitMesh",5,5)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("InitMesh",1,"vHavokRigidBody *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("InitMesh",1,"vHavokRigidBody *");
   if(!SWIG_isptrtype(L,2)) SWIG_fail_arg("InitMesh",2,"VDynamicMesh *");
   if(!SWIG_isptrtype(L,3)) SWIG_fail_arg("InitMesh",3,"hkvVec3 *");
@@ -7787,6 +8246,7 @@ static int _wrap_vHavokRigidBody_InitMesh__SWIG_1(lua_State* L) {
   bool result;
   
   SWIG_check_num_args("InitMesh",4,4)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("InitMesh",1,"vHavokRigidBody *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("InitMesh",1,"vHavokRigidBody *");
   if(!SWIG_isptrtype(L,2)) SWIG_fail_arg("InitMesh",2,"VDynamicMesh *");
   if(!SWIG_isptrtype(L,3)) SWIG_fail_arg("InitMesh",3,"hkvVec3 *");
@@ -7827,6 +8287,7 @@ static int _wrap_vHavokRigidBody_InitMesh__SWIG_2(lua_State* L) {
   bool result;
   
   SWIG_check_num_args("InitMesh",3,3)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("InitMesh",1,"vHavokRigidBody *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("InitMesh",1,"vHavokRigidBody *");
   if(!SWIG_isptrtype(L,2)) SWIG_fail_arg("InitMesh",2,"VDynamicMesh *");
   if(!SWIG_isptrtype(L,3)) SWIG_fail_arg("InitMesh",3,"hkvVec3 *");
@@ -7864,6 +8325,7 @@ static int _wrap_vHavokRigidBody_InitMesh__SWIG_3(lua_State* L) {
   bool result;
   
   SWIG_check_num_args("InitMesh",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("InitMesh",1,"vHavokRigidBody *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("InitMesh",1,"vHavokRigidBody *");
   if(!SWIG_isptrtype(L,2)) SWIG_fail_arg("InitMesh",2,"VDynamicMesh *");
   
@@ -8055,6 +8517,7 @@ static int _wrap_vHavokRigidBody_InitFromFile__SWIG_0(lua_State* L) {
   bool result;
   
   SWIG_check_num_args("InitFromFile",3,3)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("InitFromFile",1,"vHavokRigidBody *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("InitFromFile",1,"vHavokRigidBody *");
   if(!SWIG_lua_isnilstring(L,2)) SWIG_fail_arg("InitFromFile",2,"char const *");
   if(!lua_isnumber(L,3)) SWIG_fail_arg("InitFromFile",3,"float");
@@ -8084,6 +8547,7 @@ static int _wrap_vHavokRigidBody_InitFromFile__SWIG_1(lua_State* L) {
   bool result;
   
   SWIG_check_num_args("InitFromFile",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("InitFromFile",1,"vHavokRigidBody *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("InitFromFile",1,"vHavokRigidBody *");
   if(!SWIG_lua_isnilstring(L,2)) SWIG_fail_arg("InitFromFile",2,"char const *");
   
@@ -8169,6 +8633,7 @@ static int _wrap_vHavokRigidBody_SetMotionType(lua_State* L) {
   int arg2 ;
   
   SWIG_check_num_args("SetMotionType",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("SetMotionType",1,"vHavokRigidBody *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("SetMotionType",1,"vHavokRigidBody *");
   if(!lua_isnumber(L,2)) SWIG_fail_arg("SetMotionType",2,"int");
   
@@ -8197,6 +8662,7 @@ static int _wrap_vHavokRigidBody_PerformSweep(lua_State* L) {
   float result;
   
   SWIG_check_num_args("PerformSweep",3,3)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("PerformSweep",1,"vHavokRigidBody *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("PerformSweep",1,"vHavokRigidBody *");
   if(!lua_isuserdata(L,2)) SWIG_fail_arg("PerformSweep",2,"hkvVec3 const &");
   if(!lua_isnumber(L,3)) SWIG_fail_arg("PerformSweep",3,"float");
@@ -8230,6 +8696,7 @@ static int _wrap_vHavokRigidBody_DropToFloor__SWIG_0(lua_State* L) {
   bool result;
   
   SWIG_check_num_args("DropToFloor",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("DropToFloor",1,"vHavokRigidBody *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("DropToFloor",1,"vHavokRigidBody *");
   if(!lua_isnumber(L,2)) SWIG_fail_arg("DropToFloor",2,"float");
   
@@ -8256,6 +8723,7 @@ static int _wrap_vHavokRigidBody_DropToFloor__SWIG_1(lua_State* L) {
   bool result;
   
   SWIG_check_num_args("DropToFloor",1,1)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("DropToFloor",1,"vHavokRigidBody *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("DropToFloor",1,"vHavokRigidBody *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_vHavokRigidBody,0))){
@@ -8353,6 +8821,7 @@ static int _wrap_vHavokRigidBody_SetPosition(lua_State* L) {
   hkvVec3 *arg2 = 0 ;
   
   SWIG_check_num_args("SetPosition",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("SetPosition",1,"vHavokRigidBody *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("SetPosition",1,"vHavokRigidBody *");
   if(!lua_isuserdata(L,2)) SWIG_fail_arg("SetPosition",2,"hkvVec3 const &");
   
@@ -8383,6 +8852,7 @@ static int _wrap_vHavokRigidBody_SetOrientation(lua_State* L) {
   hkvVec3 *arg2 = 0 ;
   
   SWIG_check_num_args("SetOrientation",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("SetOrientation",1,"vHavokRigidBody *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("SetOrientation",1,"vHavokRigidBody *");
   if(!lua_isuserdata(L,2)) SWIG_fail_arg("SetOrientation",2,"hkvVec3 const &");
   
@@ -8414,6 +8884,7 @@ static int _wrap_vHavokRigidBody_SetDebugColor(lua_State* L) {
   VColorRef *argp2 ;
   
   SWIG_check_num_args("SetDebugColor",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("SetDebugColor",1,"vHavokRigidBody *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("SetDebugColor",1,"vHavokRigidBody *");
   if(!lua_isuserdata(L,2)) SWIG_fail_arg("SetDebugColor",2,"VColorRef");
   
@@ -8445,6 +8916,7 @@ static int _wrap_vHavokRigidBody_SetLinearDamping(lua_State* L) {
   float arg2 ;
   
   SWIG_check_num_args("SetLinearDamping",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("SetLinearDamping",1,"vHavokRigidBody *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("SetLinearDamping",1,"vHavokRigidBody *");
   if(!lua_isnumber(L,2)) SWIG_fail_arg("SetLinearDamping",2,"float");
   
@@ -8471,6 +8943,7 @@ static int _wrap_vHavokRigidBody_GetLinearDamping(lua_State* L) {
   float result;
   
   SWIG_check_num_args("GetLinearDamping",1,1)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("GetLinearDamping",1,"vHavokRigidBody const *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("GetLinearDamping",1,"vHavokRigidBody const *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_vHavokRigidBody,0))){
@@ -8495,6 +8968,7 @@ static int _wrap_vHavokRigidBody_SetDamageMultiplier(lua_State* L) {
   float arg2 ;
   
   SWIG_check_num_args("SetDamageMultiplier",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("SetDamageMultiplier",1,"vHavokRigidBody *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("SetDamageMultiplier",1,"vHavokRigidBody *");
   if(!lua_isnumber(L,2)) SWIG_fail_arg("SetDamageMultiplier",2,"float");
   
@@ -8521,6 +8995,7 @@ static int _wrap_vHavokRigidBody_GetDamageMultiplier(lua_State* L) {
   float result;
   
   SWIG_check_num_args("GetDamageMultiplier",1,1)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("GetDamageMultiplier",1,"vHavokRigidBody const *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("GetDamageMultiplier",1,"vHavokRigidBody const *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_vHavokRigidBody,0))){
@@ -8545,6 +9020,7 @@ static int _wrap_vHavokRigidBody_SetAngularDamping(lua_State* L) {
   float arg2 ;
   
   SWIG_check_num_args("SetAngularDamping",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("SetAngularDamping",1,"vHavokRigidBody *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("SetAngularDamping",1,"vHavokRigidBody *");
   if(!lua_isnumber(L,2)) SWIG_fail_arg("SetAngularDamping",2,"float");
   
@@ -8571,6 +9047,7 @@ static int _wrap_vHavokRigidBody_GetAngularDamping(lua_State* L) {
   float result;
   
   SWIG_check_num_args("GetAngularDamping",1,1)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("GetAngularDamping",1,"vHavokRigidBody const *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("GetAngularDamping",1,"vHavokRigidBody const *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_vHavokRigidBody,0))){
@@ -8595,6 +9072,7 @@ static int _wrap_vHavokRigidBody_SetLinearVelocity(lua_State* L) {
   hkvVec3 *arg2 = 0 ;
   
   SWIG_check_num_args("SetLinearVelocity",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("SetLinearVelocity",1,"vHavokRigidBody *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("SetLinearVelocity",1,"vHavokRigidBody *");
   if(!lua_isuserdata(L,2)) SWIG_fail_arg("SetLinearVelocity",2,"hkvVec3 const &");
   
@@ -8625,6 +9103,7 @@ static int _wrap_vHavokRigidBody_GetLinearVelocity(lua_State* L) {
   hkvVec3 result;
   
   SWIG_check_num_args("GetLinearVelocity",1,1)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("GetLinearVelocity",1,"vHavokRigidBody const *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("GetLinearVelocity",1,"vHavokRigidBody const *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_vHavokRigidBody,0))){
@@ -8652,6 +9131,7 @@ static int _wrap_vHavokRigidBody_SetAngularVelocity(lua_State* L) {
   hkvVec3 *arg2 = 0 ;
   
   SWIG_check_num_args("SetAngularVelocity",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("SetAngularVelocity",1,"vHavokRigidBody *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("SetAngularVelocity",1,"vHavokRigidBody *");
   if(!lua_isuserdata(L,2)) SWIG_fail_arg("SetAngularVelocity",2,"hkvVec3 const &");
   
@@ -8682,6 +9162,7 @@ static int _wrap_vHavokRigidBody_GetAngularVelocity(lua_State* L) {
   hkvVec3 result;
   
   SWIG_check_num_args("GetAngularVelocity",1,1)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("GetAngularVelocity",1,"vHavokRigidBody const *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("GetAngularVelocity",1,"vHavokRigidBody const *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_vHavokRigidBody,0))){
@@ -8703,13 +9184,14 @@ fail:
 }
 
 
-static int _wrap_vHavokRigidBody_ApplyForce(lua_State* L) {
+static int _wrap_vHavokRigidBody_ApplyForce__SWIG_0(lua_State* L) {
   int SWIG_arg = 0;
   vHavokRigidBody *arg1 = (vHavokRigidBody *) 0 ;
   hkvVec3 *arg2 = 0 ;
   float arg3 ;
   
   SWIG_check_num_args("ApplyForce",3,3)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("ApplyForce",1,"vHavokRigidBody *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("ApplyForce",1,"vHavokRigidBody *");
   if(!lua_isuserdata(L,2)) SWIG_fail_arg("ApplyForce",2,"hkvVec3 &");
   if(!lua_isnumber(L,3)) SWIG_fail_arg("ApplyForce",3,"float");
@@ -8736,12 +9218,172 @@ fail:
 }
 
 
-static int _wrap_vHavokRigidBody_ApplyLinearImpulse(lua_State* L) {
+static int _wrap_vHavokRigidBody_ApplyForce__SWIG_1(lua_State* L) {
+  int SWIG_arg = 0;
+  vHavokRigidBody *arg1 = (vHavokRigidBody *) 0 ;
+  hkvVec3 *arg2 = 0 ;
+  hkvVec3 *arg3 = 0 ;
+  float arg4 ;
+  
+  SWIG_check_num_args("ApplyForce",4,4)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("ApplyForce",1,"vHavokRigidBody *");
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("ApplyForce",1,"vHavokRigidBody *");
+  if(!lua_isuserdata(L,2)) SWIG_fail_arg("ApplyForce",2,"hkvVec3 &");
+  if(!lua_isuserdata(L,3)) SWIG_fail_arg("ApplyForce",3,"hkvVec3 &");
+  if(!lua_isnumber(L,4)) SWIG_fail_arg("ApplyForce",4,"float");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_vHavokRigidBody,0))){
+    SWIG_fail_ptr("vHavokRigidBody_ApplyForce",1,SWIGTYPE_p_vHavokRigidBody);
+  }
+  
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,2,(void**)&arg2,SWIGTYPE_p_hkvVec3,0))){
+    SWIG_fail_ptr("vHavokRigidBody_ApplyForce",2,SWIGTYPE_p_hkvVec3);
+  }
+  
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,3,(void**)&arg3,SWIGTYPE_p_hkvVec3,0))){
+    SWIG_fail_ptr("vHavokRigidBody_ApplyForce",3,SWIGTYPE_p_hkvVec3);
+  }
+  
+  arg4 = (float)lua_tonumber(L, 4);
+  (arg1)->ApplyForce(*arg2,*arg3,arg4);
+  
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_vHavokRigidBody_ApplyForce(lua_State* L) {
+  int argc;
+  int argv[5]={
+    1,2,3,4,5
+  };
+  
+  argc = lua_gettop(L);
+  if (argc == 3) {
+    int _v;
+    {
+      void *ptr;
+      if (SWIG_isptrtype(L,argv[0])==0 || SWIG_ConvertPtr(L,argv[0], (void **) &ptr, SWIGTYPE_p_vHavokRigidBody, 0)) {
+        _v = 0;
+      } else {
+        _v = 1;
+      }
+    }
+    if (_v) {
+      {
+        void *ptr;
+        if (lua_isuserdata(L,argv[1])==0 || SWIG_ConvertPtr(L,argv[1], (void **) &ptr, SWIGTYPE_p_hkvVec3, 0)) {
+          _v = 0;
+        } else {
+          _v = 1;
+        }
+      }
+      if (_v) {
+        {
+          _v = lua_isnumber(L,argv[2]);
+        }
+        if (_v) {
+          return _wrap_vHavokRigidBody_ApplyForce__SWIG_0(L);
+        }
+      }
+    }
+  }
+  if (argc == 4) {
+    int _v;
+    {
+      void *ptr;
+      if (SWIG_isptrtype(L,argv[0])==0 || SWIG_ConvertPtr(L,argv[0], (void **) &ptr, SWIGTYPE_p_vHavokRigidBody, 0)) {
+        _v = 0;
+      } else {
+        _v = 1;
+      }
+    }
+    if (_v) {
+      {
+        void *ptr;
+        if (lua_isuserdata(L,argv[1])==0 || SWIG_ConvertPtr(L,argv[1], (void **) &ptr, SWIGTYPE_p_hkvVec3, 0)) {
+          _v = 0;
+        } else {
+          _v = 1;
+        }
+      }
+      if (_v) {
+        {
+          void *ptr;
+          if (lua_isuserdata(L,argv[2])==0 || SWIG_ConvertPtr(L,argv[2], (void **) &ptr, SWIGTYPE_p_hkvVec3, 0)) {
+            _v = 0;
+          } else {
+            _v = 1;
+          }
+        }
+        if (_v) {
+          {
+            _v = lua_isnumber(L,argv[3]);
+          }
+          if (_v) {
+            return _wrap_vHavokRigidBody_ApplyForce__SWIG_1(L);
+          }
+        }
+      }
+    }
+  }
+  
+  lua_pushstring(L,"Wrong arguments for overloaded function 'vHavokRigidBody_ApplyForce'\n"
+    "  Possible C/C++ prototypes are:\n"
+    "    ApplyForce(vHavokRigidBody *,hkvVec3 &,float)\n"
+    "    ApplyForce(vHavokRigidBody *,hkvVec3 &,hkvVec3 &,float)\n");
+  lua_error(L);return 0;
+}
+
+
+static int _wrap_vHavokRigidBody_ApplyTorque(lua_State* L) {
+  int SWIG_arg = 0;
+  vHavokRigidBody *arg1 = (vHavokRigidBody *) 0 ;
+  hkvVec3 *arg2 = 0 ;
+  float arg3 ;
+  
+  SWIG_check_num_args("ApplyTorque",3,3)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("ApplyTorque",1,"vHavokRigidBody *");
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("ApplyTorque",1,"vHavokRigidBody *");
+  if(!lua_isuserdata(L,2)) SWIG_fail_arg("ApplyTorque",2,"hkvVec3 &");
+  if(!lua_isnumber(L,3)) SWIG_fail_arg("ApplyTorque",3,"float");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_vHavokRigidBody,0))){
+    SWIG_fail_ptr("vHavokRigidBody_ApplyTorque",1,SWIGTYPE_p_vHavokRigidBody);
+  }
+  
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,2,(void**)&arg2,SWIGTYPE_p_hkvVec3,0))){
+    SWIG_fail_ptr("vHavokRigidBody_ApplyTorque",2,SWIGTYPE_p_hkvVec3);
+  }
+  
+  arg3 = (float)lua_tonumber(L, 3);
+  (arg1)->ApplyTorque(*arg2,arg3);
+  
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_vHavokRigidBody_ApplyLinearImpulse__SWIG_0(lua_State* L) {
   int SWIG_arg = 0;
   vHavokRigidBody *arg1 = (vHavokRigidBody *) 0 ;
   hkvVec3 *arg2 = 0 ;
   
   SWIG_check_num_args("ApplyLinearImpulse",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("ApplyLinearImpulse",1,"vHavokRigidBody *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("ApplyLinearImpulse",1,"vHavokRigidBody *");
   if(!lua_isuserdata(L,2)) SWIG_fail_arg("ApplyLinearImpulse",2,"hkvVec3 &");
   
@@ -8766,12 +9408,156 @@ fail:
 }
 
 
+static int _wrap_vHavokRigidBody_ApplyLinearImpulse__SWIG_1(lua_State* L) {
+  int SWIG_arg = 0;
+  vHavokRigidBody *arg1 = (vHavokRigidBody *) 0 ;
+  hkvVec3 *arg2 = 0 ;
+  hkvVec3 *arg3 = 0 ;
+  
+  SWIG_check_num_args("ApplyLinearImpulse",3,3)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("ApplyLinearImpulse",1,"vHavokRigidBody *");
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("ApplyLinearImpulse",1,"vHavokRigidBody *");
+  if(!lua_isuserdata(L,2)) SWIG_fail_arg("ApplyLinearImpulse",2,"hkvVec3 &");
+  if(!lua_isuserdata(L,3)) SWIG_fail_arg("ApplyLinearImpulse",3,"hkvVec3 &");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_vHavokRigidBody,0))){
+    SWIG_fail_ptr("vHavokRigidBody_ApplyLinearImpulse",1,SWIGTYPE_p_vHavokRigidBody);
+  }
+  
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,2,(void**)&arg2,SWIGTYPE_p_hkvVec3,0))){
+    SWIG_fail_ptr("vHavokRigidBody_ApplyLinearImpulse",2,SWIGTYPE_p_hkvVec3);
+  }
+  
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,3,(void**)&arg3,SWIGTYPE_p_hkvVec3,0))){
+    SWIG_fail_ptr("vHavokRigidBody_ApplyLinearImpulse",3,SWIGTYPE_p_hkvVec3);
+  }
+  
+  (arg1)->ApplyLinearImpulse(*arg2,*arg3);
+  
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_vHavokRigidBody_ApplyLinearImpulse(lua_State* L) {
+  int argc;
+  int argv[4]={
+    1,2,3,4
+  };
+  
+  argc = lua_gettop(L);
+  if (argc == 2) {
+    int _v;
+    {
+      void *ptr;
+      if (SWIG_isptrtype(L,argv[0])==0 || SWIG_ConvertPtr(L,argv[0], (void **) &ptr, SWIGTYPE_p_vHavokRigidBody, 0)) {
+        _v = 0;
+      } else {
+        _v = 1;
+      }
+    }
+    if (_v) {
+      {
+        void *ptr;
+        if (lua_isuserdata(L,argv[1])==0 || SWIG_ConvertPtr(L,argv[1], (void **) &ptr, SWIGTYPE_p_hkvVec3, 0)) {
+          _v = 0;
+        } else {
+          _v = 1;
+        }
+      }
+      if (_v) {
+        return _wrap_vHavokRigidBody_ApplyLinearImpulse__SWIG_0(L);
+      }
+    }
+  }
+  if (argc == 3) {
+    int _v;
+    {
+      void *ptr;
+      if (SWIG_isptrtype(L,argv[0])==0 || SWIG_ConvertPtr(L,argv[0], (void **) &ptr, SWIGTYPE_p_vHavokRigidBody, 0)) {
+        _v = 0;
+      } else {
+        _v = 1;
+      }
+    }
+    if (_v) {
+      {
+        void *ptr;
+        if (lua_isuserdata(L,argv[1])==0 || SWIG_ConvertPtr(L,argv[1], (void **) &ptr, SWIGTYPE_p_hkvVec3, 0)) {
+          _v = 0;
+        } else {
+          _v = 1;
+        }
+      }
+      if (_v) {
+        {
+          void *ptr;
+          if (lua_isuserdata(L,argv[2])==0 || SWIG_ConvertPtr(L,argv[2], (void **) &ptr, SWIGTYPE_p_hkvVec3, 0)) {
+            _v = 0;
+          } else {
+            _v = 1;
+          }
+        }
+        if (_v) {
+          return _wrap_vHavokRigidBody_ApplyLinearImpulse__SWIG_1(L);
+        }
+      }
+    }
+  }
+  
+  lua_pushstring(L,"Wrong arguments for overloaded function 'vHavokRigidBody_ApplyLinearImpulse'\n"
+    "  Possible C/C++ prototypes are:\n"
+    "    ApplyLinearImpulse(vHavokRigidBody *,hkvVec3 &)\n"
+    "    ApplyLinearImpulse(vHavokRigidBody *,hkvVec3 &,hkvVec3 &)\n");
+  lua_error(L);return 0;
+}
+
+
+static int _wrap_vHavokRigidBody_ApplyAngularImpulse(lua_State* L) {
+  int SWIG_arg = 0;
+  vHavokRigidBody *arg1 = (vHavokRigidBody *) 0 ;
+  hkvVec3 *arg2 = 0 ;
+  
+  SWIG_check_num_args("ApplyAngularImpulse",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("ApplyAngularImpulse",1,"vHavokRigidBody *");
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("ApplyAngularImpulse",1,"vHavokRigidBody *");
+  if(!lua_isuserdata(L,2)) SWIG_fail_arg("ApplyAngularImpulse",2,"hkvVec3 &");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_vHavokRigidBody,0))){
+    SWIG_fail_ptr("vHavokRigidBody_ApplyAngularImpulse",1,SWIGTYPE_p_vHavokRigidBody);
+  }
+  
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,2,(void**)&arg2,SWIGTYPE_p_hkvVec3,0))){
+    SWIG_fail_ptr("vHavokRigidBody_ApplyAngularImpulse",2,SWIGTYPE_p_hkvVec3);
+  }
+  
+  (arg1)->ApplyAngularImpulse(*arg2);
+  
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
 static int _wrap_vHavokRigidBody_SetMass(lua_State* L) {
   int SWIG_arg = 0;
   vHavokRigidBody *arg1 = (vHavokRigidBody *) 0 ;
   float arg2 ;
   
   SWIG_check_num_args("SetMass",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("SetMass",1,"vHavokRigidBody *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("SetMass",1,"vHavokRigidBody *");
   if(!lua_isnumber(L,2)) SWIG_fail_arg("SetMass",2,"float");
   
@@ -8798,6 +9584,7 @@ static int _wrap_vHavokRigidBody_SetRestitution(lua_State* L) {
   float arg2 ;
   
   SWIG_check_num_args("SetRestitution",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("SetRestitution",1,"vHavokRigidBody *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("SetRestitution",1,"vHavokRigidBody *");
   if(!lua_isnumber(L,2)) SWIG_fail_arg("SetRestitution",2,"float");
   
@@ -8824,6 +9611,7 @@ static int _wrap_vHavokRigidBody_SetFriction(lua_State* L) {
   float arg2 ;
   
   SWIG_check_num_args("SetFriction",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("SetFriction",1,"vHavokRigidBody *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("SetFriction",1,"vHavokRigidBody *");
   if(!lua_isnumber(L,2)) SWIG_fail_arg("SetFriction",2,"float");
   
@@ -8844,6 +9632,58 @@ fail:
 }
 
 
+static int _wrap_vHavokRigidBody_SetActive(lua_State* L) {
+  int SWIG_arg = 0;
+  vHavokRigidBody *arg1 = (vHavokRigidBody *) 0 ;
+  bool arg2 ;
+  
+  SWIG_check_num_args("SetActive",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("SetActive",1,"vHavokRigidBody *");
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("SetActive",1,"vHavokRigidBody *");
+  if(!lua_isboolean(L,2)) SWIG_fail_arg("SetActive",2,"bool");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_vHavokRigidBody,0))){
+    SWIG_fail_ptr("vHavokRigidBody_SetActive",1,SWIGTYPE_p_vHavokRigidBody);
+  }
+  
+  arg2 = (lua_toboolean(L, 2)!=0);
+  (arg1)->SetActive(arg2);
+  
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_vHavokRigidBody_GetActive(lua_State* L) {
+  int SWIG_arg = 0;
+  vHavokRigidBody *arg1 = (vHavokRigidBody *) 0 ;
+  bool result;
+  
+  SWIG_check_num_args("GetActive",1,1)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("GetActive",1,"vHavokRigidBody const *");
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("GetActive",1,"vHavokRigidBody const *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_vHavokRigidBody,0))){
+    SWIG_fail_ptr("vHavokRigidBody_GetActive",1,SWIGTYPE_p_vHavokRigidBody);
+  }
+  
+  result = (bool)((vHavokRigidBody const *)arg1)->GetActive();
+  lua_pushboolean(L,(int)(result!=0)); SWIG_arg++;
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
 static int _wrap_vHavokRigidBody_SetCollisionInfo(lua_State* L) {
   int SWIG_arg = 0;
   vHavokRigidBody *arg1 = (vHavokRigidBody *) 0 ;
@@ -8853,6 +9693,7 @@ static int _wrap_vHavokRigidBody_SetCollisionInfo(lua_State* L) {
   int arg5 ;
   
   SWIG_check_num_args("SetCollisionInfo",5,5)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("SetCollisionInfo",1,"vHavokRigidBody *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("SetCollisionInfo",1,"vHavokRigidBody *");
   if(!lua_isnumber(L,2)) SWIG_fail_arg("SetCollisionInfo",2,"int");
   if(!lua_isnumber(L,3)) SWIG_fail_arg("SetCollisionInfo",3,"int");
@@ -8906,10 +9747,14 @@ static swig_lua_method swig_vHavokRigidBody_methods[] = {
     {"SetAngularVelocity", _wrap_vHavokRigidBody_SetAngularVelocity}, 
     {"GetAngularVelocity", _wrap_vHavokRigidBody_GetAngularVelocity}, 
     {"ApplyForce", _wrap_vHavokRigidBody_ApplyForce}, 
+    {"ApplyTorque", _wrap_vHavokRigidBody_ApplyTorque}, 
     {"ApplyLinearImpulse", _wrap_vHavokRigidBody_ApplyLinearImpulse}, 
+    {"ApplyAngularImpulse", _wrap_vHavokRigidBody_ApplyAngularImpulse}, 
     {"SetMass", _wrap_vHavokRigidBody_SetMass}, 
     {"SetRestitution", _wrap_vHavokRigidBody_SetRestitution}, 
     {"SetFriction", _wrap_vHavokRigidBody_SetFriction}, 
+    {"SetActive", _wrap_vHavokRigidBody_SetActive}, 
+    {"GetActive", _wrap_vHavokRigidBody_GetActive}, 
     {"SetCollisionInfo", _wrap_vHavokRigidBody_SetCollisionInfo}, 
     {0,0}
 };
@@ -8925,6 +9770,7 @@ static int _wrap_vHavokRagdoll_Remove(lua_State* L) {
   vHavokRagdoll *arg1 = (vHavokRagdoll *) 0 ;
   
   SWIG_check_num_args("DisposeObject",1,1)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("DisposeObject",1,"vHavokRagdoll *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("DisposeObject",1,"vHavokRagdoll *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_vHavokRagdoll,0))){
@@ -8949,6 +9795,7 @@ static int _wrap_vHavokRagdoll_SetEnabled(lua_State* L) {
   bool arg2 ;
   
   SWIG_check_num_args("SetEnabled",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("SetEnabled",1,"vHavokRagdoll *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("SetEnabled",1,"vHavokRagdoll *");
   if(!lua_isboolean(L,2)) SWIG_fail_arg("SetEnabled",2,"bool");
   
@@ -8975,6 +9822,7 @@ static int _wrap_vHavokRagdoll_SetDebugRendering(lua_State* L) {
   bool arg2 ;
   
   SWIG_check_num_args("SetDebugRendering",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("SetDebugRendering",1,"vHavokRagdoll *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("SetDebugRendering",1,"vHavokRagdoll *");
   if(!lua_isboolean(L,2)) SWIG_fail_arg("SetDebugRendering",2,"bool");
   
@@ -9025,6 +9873,7 @@ static int _wrap_vHavokRagdoll_IsEnabled(lua_State* L) {
   bool result;
   
   SWIG_check_num_args("IsEnabled",1,1)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("IsEnabled",1,"vHavokRagdoll const *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("IsEnabled",1,"vHavokRagdoll const *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_vHavokRagdoll,0))){
@@ -9050,6 +9899,7 @@ static int _wrap_vHavokRagdoll_SetDebugColor(lua_State* L) {
   VColorRef *argp2 ;
   
   SWIG_check_num_args("SetDebugColor",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("SetDebugColor",1,"vHavokRagdoll *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("SetDebugColor",1,"vHavokRagdoll *");
   if(!lua_isuserdata(L,2)) SWIG_fail_arg("SetDebugColor",2,"VColorRef");
   
@@ -9081,6 +9931,7 @@ static int _wrap_vHavokRagdoll_GetRagdollCollisionFile(lua_State* L) {
   char *result = 0 ;
   
   SWIG_check_num_args("GetRagdollCollisionFile",1,1)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("GetRagdollCollisionFile",1,"vHavokRagdoll *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("GetRagdollCollisionFile",1,"vHavokRagdoll *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_vHavokRagdoll,0))){
@@ -9105,6 +9956,7 @@ static int _wrap_vHavokRagdoll_SetRagdollCollisionFile(lua_State* L) {
   char *arg2 = (char *) 0 ;
   
   SWIG_check_num_args("SetRagdollCollisionFile",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("SetRagdollCollisionFile",1,"vHavokRagdoll *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("SetRagdollCollisionFile",1,"vHavokRagdoll *");
   if(!SWIG_lua_isnilstring(L,2)) SWIG_fail_arg("SetRagdollCollisionFile",2,"char const *");
   
@@ -9130,6 +9982,7 @@ static int _wrap_vHavokRagdoll_ApplyCurrentBoneConfiguration(lua_State* L) {
   vHavokRagdoll *arg1 = (vHavokRagdoll *) 0 ;
   
   SWIG_check_num_args("ApplyCurrentBoneConfiguration",1,1)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("ApplyCurrentBoneConfiguration",1,"vHavokRagdoll *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("ApplyCurrentBoneConfiguration",1,"vHavokRagdoll *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_vHavokRagdoll,0))){
@@ -9155,6 +10008,7 @@ static int _wrap_vHavokRagdoll_GetRigidBodyIndex(lua_State* L) {
   int result;
   
   SWIG_check_num_args("GetRigidBodyIndex",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("GetRigidBodyIndex",1,"vHavokRagdoll const *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("GetRigidBodyIndex",1,"vHavokRagdoll const *");
   if(!SWIG_lua_isnilstring(L,2)) SWIG_fail_arg("GetRigidBodyIndex",2,"char const *");
   
@@ -9183,6 +10037,7 @@ static int _wrap_vHavokRagdoll_ApplyForceToRigidBody(lua_State* L) {
   float arg4 ;
   
   SWIG_check_num_args("ApplyForceToRigidBody",4,4)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("ApplyForceToRigidBody",1,"vHavokRagdoll *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("ApplyForceToRigidBody",1,"vHavokRagdoll *");
   if(!lua_isnumber(L,2)) SWIG_fail_arg("ApplyForceToRigidBody",2,"int");
   if(!lua_isuserdata(L,3)) SWIG_fail_arg("ApplyForceToRigidBody",3,"hkvVec3 &");
@@ -9218,6 +10073,7 @@ static int _wrap_vHavokRagdoll_ApplyLinearImpulseToRigidBody(lua_State* L) {
   hkvVec3 *arg3 = 0 ;
   
   SWIG_check_num_args("ApplyLinearImpulseToRigidBody",3,3)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("ApplyLinearImpulseToRigidBody",1,"vHavokRagdoll *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("ApplyLinearImpulseToRigidBody",1,"vHavokRagdoll *");
   if(!lua_isnumber(L,2)) SWIG_fail_arg("ApplyLinearImpulseToRigidBody",2,"int");
   if(!lua_isuserdata(L,3)) SWIG_fail_arg("ApplyLinearImpulseToRigidBody",3,"hkvVec3 &");
@@ -9251,6 +10107,7 @@ static int _wrap_vHavokRagdoll_GetPositionOfRigidBody(lua_State* L) {
   hkvVec3 result;
   
   SWIG_check_num_args("GetPositionOfRigidBody",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("GetPositionOfRigidBody",1,"vHavokRagdoll const *");
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("GetPositionOfRigidBody",1,"vHavokRagdoll const *");
   if(!lua_isnumber(L,2)) SWIG_fail_arg("GetPositionOfRigidBody",2,"int");
   
@@ -9310,7 +10167,8 @@ static const struct luaL_reg swig_commands[] = {
     { "SetHavokToVisionScale",PhysicsLuaModule_SetHavokToVisionScale},
     { "SetGravity",PhysicsLuaModule_SetGravity},
     { "SetGroupsCollision",PhysicsLuaModule_SetGroupsCollision},
-    { "RayCast",PhysicsLuaModule_RayCast},
+    { "CalcFilterInfo",PhysicsLuaModule_CalcFilterInfo},
+    { "PerformRaycast",PhysicsLuaModule_PerformRaycast},
     {0,0}
 };
 
@@ -9340,6 +10198,22 @@ static swig_lua_var_info swig_variables[] = {
     { "QUALITY_BULLET", _wrap_QUALITY_BULLET_get, SWIG_Lua_set_immutable },
     { "QUALITY_CHARACTER", _wrap_QUALITY_CHARACTER_get, SWIG_Lua_set_immutable },
     { "QUALITY_KEYFRAMED_REPORTING", _wrap_QUALITY_KEYFRAMED_REPORTING_get, SWIG_Lua_set_immutable },
+    { "LAYER_ALL", _wrap_LAYER_ALL_get, SWIG_Lua_set_immutable },
+    { "LAYER_COLLIDABLE_DYNAMIC", _wrap_LAYER_COLLIDABLE_DYNAMIC_get, SWIG_Lua_set_immutable },
+    { "LAYER_COLLIDABLE_STATIC", _wrap_LAYER_COLLIDABLE_STATIC_get, SWIG_Lua_set_immutable },
+    { "LAYER_COLLIDABLE_TERRAIN", _wrap_LAYER_COLLIDABLE_TERRAIN_get, SWIG_Lua_set_immutable },
+    { "LAYER_COLLIDABLE_CONTROLLER", _wrap_LAYER_COLLIDABLE_CONTROLLER_get, SWIG_Lua_set_immutable },
+    { "LAYER_COLLIDABLE_TERRAIN_HOLE", _wrap_LAYER_COLLIDABLE_TERRAIN_HOLE_get, SWIG_Lua_set_immutable },
+    { "LAYER_COLLIDABLE_DISABLED", _wrap_LAYER_COLLIDABLE_DISABLED_get, SWIG_Lua_set_immutable },
+    { "LAYER_COLLIDABLE_RAGDOLL", _wrap_LAYER_COLLIDABLE_RAGDOLL_get, SWIG_Lua_set_immutable },
+    { "LAYER_COLLIDABLE_ATTACHMENTS", _wrap_LAYER_COLLIDABLE_ATTACHMENTS_get, SWIG_Lua_set_immutable },
+    { "LAYER_COLLIDABLE_FOOT_IK", _wrap_LAYER_COLLIDABLE_FOOT_IK_get, SWIG_Lua_set_immutable },
+    { "LAYER_COLLIDABLE_DEBRIS", _wrap_LAYER_COLLIDABLE_DEBRIS_get, SWIG_Lua_set_immutable },
+    { "LAYER_COLLIDABLE_CUSTOM0", _wrap_LAYER_COLLIDABLE_CUSTOM0_get, SWIG_Lua_set_immutable },
+    { "LAYER_COLLIDABLE_CUSTOM1", _wrap_LAYER_COLLIDABLE_CUSTOM1_get, SWIG_Lua_set_immutable },
+    { "LAYER_COLLIDABLE_CUSTOM2", _wrap_LAYER_COLLIDABLE_CUSTOM2_get, SWIG_Lua_set_immutable },
+    { "LAYER_COLLIDABLE_CUSTOM3", _wrap_LAYER_COLLIDABLE_CUSTOM3_get, SWIG_Lua_set_immutable },
+    { "LAYER_COLLIDABLE_CUSTOM4", _wrap_LAYER_COLLIDABLE_CUSTOM4_get, SWIG_Lua_set_immutable },
     {0,0,0}
 };
 

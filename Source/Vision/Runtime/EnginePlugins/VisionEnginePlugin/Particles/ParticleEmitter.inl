@@ -45,42 +45,25 @@ inline float VisParticleEmitter_cl::GetConeAngle() const
 
 inline void VisParticleEmitter_cl::SetType_Point()
 {
-  m_spPath=NULL;
   m_eType=EMITTER_TYPE_POINT;
 }
 
 inline void VisParticleEmitter_cl::SetType_Sphere(float fRadius) 
 {
-  m_spPath=NULL;
   m_eType=EMITTER_TYPE_SPHERE;
   m_vParam.set(fRadius,fRadius,fRadius, 0.0f);
 }
 
 inline void VisParticleEmitter_cl::SetType_Box(const hkvVec3& vBoxDim)
 {
-  m_spPath=NULL;
   m_eType=EMITTER_TYPE_BOX;
   m_vParam = (vBoxDim*0.5f).getAsVec4 (0.0f);
 }
 
 inline void VisParticleEmitter_cl::SetType_Plane(float fPlaneDimU,float fPlaneDimV)
 {
-  m_spPath=NULL;
   m_eType=EMITTER_TYPE_PLANE;
   m_vParam.set(fPlaneDimU*0.5f,fPlaneDimV*0.5f,0.f, 0.0f);
-}
-
-inline void VisParticleEmitter_cl::SetType_Path(VisPath_cl *pPath,float fRadius)
-{
-  m_eType=EMITTER_TYPE_PATH;
-  m_vParam.x=fRadius;
-  m_spPath=pPath;
-  if (!pPath) m_eType=EMITTER_TYPE_UNKNOWN;
-}
-
-inline void VisParticleEmitter_cl::SetType_Path(const char *szPathKey,float fRadius)
-{
-  SetType_Path(Vision::Game.SearchPath(szPathKey),fRadius);
 }
 
 inline void VisParticleEmitter_cl::SetType_Ray(float fRayLen)
@@ -121,7 +104,7 @@ inline void VisParticleEmitter_cl::SetSpawnFrequency(float fParticlesPerSecond, 
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

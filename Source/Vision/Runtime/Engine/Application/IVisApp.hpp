@@ -71,18 +71,19 @@ public:
   /// \param iYRes
   ///   Vertical screen resolution
   /// 
-  /// \param iInitFlags
+  /// \param uiInitFlags
   ///   A logical combination of flags listed in the VAppFlags enum.
-  VisAppConfig_cl(int iXRes = VVIDEO_DEFAULTWIDTH, int iYRes = VVIDEO_DEFAULTHEIGHT, int iInitFlags = VAPP_INIT_DEFAULTS)
-    : m_videoConfig(iXRes, iYRes)
+  VisAppConfig_cl(int iXRes = VVIDEO_DEFAULTWIDTH, int iYRes = VVIDEO_DEFAULTHEIGHT, unsigned int uiInitFlags = VAPP_INIT_DEFAULTS)
+    : m_videoConfig(iXRes, iYRes), m_uiInitFlags(uiInitFlags)
   {
-    m_iInitFlags = iInitFlags;
 #ifdef WIN32
     m_videoConfig.m_szWindowTitle = "Vision Application";
-#endif    
+#endif
+
+    m_sFileSystemRootName = "havok_sdk";
   }
 
-  int m_iInitFlags;
+  unsigned int m_uiInitFlags;
   
 #if defined(WIN32) && !defined(_VISION_WINRT)
   VWindowConfig m_windowConfig; ///< Window configuration
@@ -91,6 +92,7 @@ public:
   VVideoConfig m_videoConfig;   ///< Video configuration
   VisConfig_t m_engineConfig;  ///< Engine configuration
 
+  VString m_sFileSystemRootName;
 
 #ifdef _VISION_PS3
   VGcmConfig m_gcmConfig;
@@ -153,6 +155,48 @@ protected:
 
 typedef VSmartPtr<IVisUpdateSceneController_cl> IVisUpdateSceneControllerPtr;
 
+/// \brief
+///   Helper structure passed to RequestLoadScene(...).
+///
+/// \sa IVisApp_cl::RequestLoadScene
+struct VisAppLoadSettings
+{
+  /// \brief
+  ///   Flags for different loading behavior
+  enum LoadingFlags
+  {
+    LF_UseStreamingIfExists   = V_BIT(0), ///< If there is a corresponding .vres file to the scene, the scene loading is done via streaming. You have to call Tick periodically to advance the streaming.
+    LF_ForceMobileMode        = V_BIT(1), ///< Forces the loader to use a VisionMobileShaderProvider and a simple Lightgrid, regardless of what is set in the vscene file.
+    LF_UsePrewarming          = V_BIT(2), ///< Prewarms all resources by rendering every mesh once with the assigned shader which which forces the graphics driver to create its internal objects. This prevents stuttering after scene loading.
+    LF_UseInterleavedLoading  = V_BIT(3) | LF_UseStreamingIfExists, ///< Does not load the whole scene at once but only a certain amount of chunks per frame. You have to call IsFinished periodically to advance the scene file loading. Also enables LF_UseStreamingIfExists.
+    LF_LoadTimeStepSettings   = V_BIT(4),  ///< Time Stepping settings are loaded by default. Omit this flag if time stepping settings should always be set manually.
+
+    LF_PlatformDefault = 
+#if defined(NEEDS_SCENE_STREAMING)
+    LF_UseStreamingIfExists |
+#endif
+#if defined(NEEDS_SCENE_PREWARMING)
+    LF_UsePrewarming |
+#endif
+    LF_LoadTimeStepSettings
+  };
+
+  VISION_APIFUNC VisAppLoadSettings();
+  VISION_APIFUNC VisAppLoadSettings(const VString& sSceneName);
+  VISION_APIFUNC VisAppLoadSettings(const VString& sSceneName, const VString& sDataDirectory);
+
+  VString m_sSceneName;                    ///< Name of scene which should be loaded.
+  VArray<VString> m_customSearchPaths;     ///< Array of custom search paths required by the scene.
+  VString m_sWorkspaceRoot;                ///< Custom workspace root if required by the scene.
+
+  unsigned int m_uiSceneLoaderFlags;       ///< Scene loading flags which are passed to the scene loader.
+  bool m_bAssetProfileFallback;            ///< Specifies whether or not a asset profile fallback is allowed.
+
+  bool m_bProcessManifestFile;             ///< Indicates if the projects manifest file should be processed.
+  bool m_bSearchPathsFromManifest;         ///< Automatically add search paths included in the manifest file.
+  bool m_bPluginsFromManifest;             ///< Automatically add plugins included in the manifest file.
+  bool m_bReplaceSearchPaths;              ///< Indicates whether existing search paths should be replaced by the given ones.
+};
 
 /// \brief
 ///   Interface class that controls the main application loop.
@@ -166,7 +210,6 @@ typedef VSmartPtr<IVisUpdateSceneController_cl> IVisUpdateSceneControllerPtr;
 class IVisApp_cl : public VRefCounter
 {
 public:
-
   /// \brief
   ///   Constructor.
   /// 
@@ -269,9 +312,6 @@ public:
   /// The incoming percentage value should be remapped using the following formula: fPercentage =
   /// (m_fProgressRangeEnd-m_fProgressRangeStart) * fPercentage + m_fProgressRangeStart*100.f;
   /// 
-  /// See VisSampleApp::OnLoadSceneStatus implementation which shows a splash screen and a progress
-  /// bar.
-  /// 
   /// \param iStatus
   ///   is one of the following:
   ///   \li VIS_API_LOADSCENESTATUS_START : Triggered by the scene loader when a new scene starts
@@ -285,17 +325,14 @@ public:
   ///
   /// \param fPercentage
   ///   Current status (percentage finished).
-  ///
-  /// \param pszStatus
-  ///   Status string.
   /// 
   /// \sa VisionApp_cl::OnLoadSceneStatus
-  /// \sa VisSampleApp::OnLoadSceneStatus
-  virtual void OnLoadSceneStatus(int iStatus, float fPercentage, const char* pszStatus) = 0; 
+  virtual void OnLoadSceneStatus(int iStatus, float fPercentage) = 0; 
 
   /// \brief
   ///   Helper function to call the virtual OnLoadSceneStatus function and the callback.
-  VISION_APIFUNC void TriggerLoadSceneStatus(int iStatus, float fPercentage, const char* pszStatus);
+  VISION_APIFUNC void TriggerLoadSceneStatus(int iStatus, float fPercentage, 
+    VisProgressDataObject_cl::VisProgressDataObjectType eType = VisProgressDataObject_cl::PDOT_LOADING_SCENE);
 
   /// \brief
   ///   Overridable that must return a valid VProgressStatus object that is updated by the engine
@@ -308,16 +345,9 @@ public:
   /// \return
   ///   True, if the request has been successful.
   ///
-  /// \param pszSceneName
-  ///   The name of the scene file (.vscene will be added).
-  ///
-  /// \param iAdditionalLoadingFlags
-  ///   Optionally specify additional VSceneLoader flags.
-  ///
-  /// \param bAllowProfileFallback
-  ///   If true LoadScene will try to guess the asset profile to use. By default it will first use the platform specific profile, but it might fall back to 'pcdx9'
-  ///   if there is no platform specific profile, but a pcdx9 profile, and the current platform is compatible with that (regarding texture formats).
-  virtual bool RequestLoadScene(const char* pszSceneName, int iAdditionalLoadingFlags = 0, bool bAllowProfileFallback = true) = 0;
+  /// \param settings
+  ///   Application load settings describing the scene to be loaded.
+  virtual bool RequestLoadScene(const VisAppLoadSettings& settings) = 0;
 
   ///
   /// @}
@@ -618,7 +648,7 @@ typedef VSmartPtr<IVisSceneManager_cl> IVisSceneManagerPtr;
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

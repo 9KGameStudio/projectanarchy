@@ -36,13 +36,7 @@ class VisResourceViewerRemote : IVisCallbackHandler_cl
 
     /// \brief 
     ///   Callback called by the engine when the engine wants to print a message. These messages will be sent over the remote connection and displayed in the remote debugger.
-    ///
-    /// \param szMessage The engine message.
-    /// \param messageType Type of the message. 
-    /// \param pUserData User-data pointer supplied back by the engine. In this case it is a pointer to the client.
-    ///
-    /// \return Returns whether the function succeeded.
-    static BOOL EngineMessageCallback(const char* szMessage, VisApiMessageType_e messageType, void* pUserData);
+    static void LogMessageHandler(hkvLogMsgType::Enum MsgType, const char* szText, int iIndentation, const char* szTag, void* pPassThrough);
 
   private:
 
@@ -62,7 +56,7 @@ class VisResourceViewerRemote : IVisCallbackHandler_cl
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -39,6 +39,10 @@ class IVisPhysicsObject_cl : public IVObjectComponent
     ///   Empty Constructor. Physics modules have to implement their own physics object class based
     ///   on this interface
     IVisPhysicsObject_cl() {}
+
+    /// \brief
+    ///   Constructor with component parameters.
+    IVisPhysicsObject_cl(int iID, int iComponentFlags) : IVObjectComponent(iID, iComponentFlags) {}
 };
 
 
@@ -47,7 +51,7 @@ typedef VSmartPtr<IVisPhysicsObject_cl> IVisPhysicsObjectPtr;
 #endif  // FR_DEFINE_VISAPIPHYSICSOBJECT
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

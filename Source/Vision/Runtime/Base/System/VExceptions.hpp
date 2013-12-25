@@ -92,33 +92,6 @@ public:
 
 
 /// \brief
-///   Exception class for memory-related errors
-class VMemoryException
-{
-public:
-  /// \brief
-  ///   Constructor.
-  inline VMemoryException() { }
-  /// \brief
-  ///   Destructor.
-  inline ~VMemoryException() { }
-};
-
-
-/// \brief
-///   Exception class for errors relating to unsupported functionality
-class VNotSupportedException
-{
-public:
-  /// \brief
-  ///   Constructor.
-  inline VNotSupportedException() { }
-  /// \brief
-  ///   Destructor.
-  inline ~VNotSupportedException() { }
-};
-
-/// \brief
 ///   Throws a VArchiveException
 /// \param reason
 ///   the cause of the exception
@@ -128,18 +101,11 @@ public:
 ///   the name of the class being serialized when the exception occurred
 void VBASE_IMPEXP_CLASS VThrowArchiveException(int reason,const char *filename, const char *szClassName=NULL);
 
-/// \brief
-///   Throws a VMemoryException.
-void VBASE_IMPEXP_CLASS VThrowMemoryException();
-
-/// \brief
-///   Throws a VNotSupportedException.
-void VBASE_IMPEXP_CLASS VThrowNotSupportedException();
 
 #endif // _VISION_EXCEPTIONS_HPP_
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

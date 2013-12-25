@@ -10,6 +10,13 @@
 
 struct RPG_ViewParams
 {
+  RPG_ViewParams()
+  : m_valid(false)
+  {
+  }
+
+  bool m_valid;
+
   // Projection
   VisProjectionType_e m_projectionType;
   float m_fovX;
@@ -39,7 +46,7 @@ namespace RPG_RendererUtil
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

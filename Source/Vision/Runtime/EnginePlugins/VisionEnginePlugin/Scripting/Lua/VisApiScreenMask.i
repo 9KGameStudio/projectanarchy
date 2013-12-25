@@ -1,3 +1,10 @@
+/*
+ *
+ * Confidential Information of Telekinesys Research Limited (t/a Havok). Not for disclosure or distribution without Havok's
+ * prior written consent. This software contains code, techniques and know-how which is confidential and proprietary to Havok.
+ * Product and Trade Secret source code contains trade secrets of Havok. Havok Software (C) Copyright 1999-2013 Telekinesys Research Limited t/a Havok. All Rights Reserved. Use of this software is subject to the terms of an end user license agreement.
+ *
+ */
 
 #ifndef VLUA_APIDOC
 
@@ -114,6 +121,25 @@ VSWIG_CREATE_CONCAT(VisScreenMask_cl, 64, "[%s]", self->GetTextureObject()==NULL
     
     int x,y;
     pSelf->GetTextureSize(x,y);
+    
+    lua_pushnumber(L, (lua_Number)x);
+    lua_pushnumber(L, (lua_Number)y);
+    
+    return 2; //we leave two values on the stack
+  }
+%}
+
+//implement GetTargetSize native because it returns two values at once
+%native(VisScreenMask_cl_GetTargetSize) int VisScreenMask_cl_GetTargetSize(lua_State *L);
+%{
+  SWIGINTERN int VisScreenMask_cl_GetTargetSize(lua_State *L)
+  {
+    IS_MEMBER_OF(VisScreenMask_cl) //this will move this function to the method table of the specified class
+    
+    SWIG_CONVERT_POINTER(L, 1, VisScreenMask_cl, pSelf)
+    
+    float x,y;
+    pSelf->GetTargetSize(x,y);
     
     lua_pushnumber(L, (lua_Number)x);
     lua_pushnumber(L, (lua_Number)y);
@@ -382,3 +408,18 @@ public:
 };
 
 #endif
+
+/*
+ * Havok SDK - Base file, BUILD(#20131218)
+ * 
+ * Confidential Information of Havok.  (C) Copyright 1999-2013
+ * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok
+ * Logo, and the Havok buzzsaw logo are trademarks of Havok.  Title, ownership
+ * rights, and intellectual property rights in the Havok software remain in
+ * Havok and/or its suppliers.
+ * 
+ * Use of this software for evaluation purposes is subject to and indicates
+ * acceptance of the End User licence Agreement for this product. A copy of
+ * the license is included with this software and is also available from salesteam@havok.com.
+ * 
+ */

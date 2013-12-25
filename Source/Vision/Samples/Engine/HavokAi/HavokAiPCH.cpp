@@ -6,10 +6,6 @@
  *
  */
 
-// stdafx.cpp : source file that includes just the standard includes
-//	RainSample.pch will be the pre-compiled header
-//	stdafx.obj will contain the pre-compiled type information
-
 #include <Vision/Samples/Engine/HavokAi/HavokAiPCH.h>
 
 // Havok - Keycode
@@ -35,7 +31,7 @@
 #include <Common/Base/Config/hkProductFeatures.cxx>
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -225,7 +225,7 @@ BOOL VTerrain::Reload()
   char szPathname[FS_MAX_PATH];
   VFileHelper::CombineDirAndFile(szPathname,GetFilename(),"Config.vtc");
   VChunkFile file;
-  if (!file.Open(szPathname,Vision::File.GetManager()))
+  if (!file.Open(szPathname))
     return FALSE;
 
 
@@ -258,7 +258,7 @@ BOOL VTerrain::Reload()
         break;
       case 'CONF':
         m_Config.ChunkFileSerialize(file);
-        CreateTerrain(NULL,szAbsProjDir,false); // do not save
+        CreateTerrain(NULL, false); // do not save
         break;
       case 'GEOM':
         m_SectorManager.LoadGeometryChunk(file);
@@ -334,21 +334,25 @@ bool VTerrain::SaveToFile(const char *szFolder)
 
 bool VTerrain::SaveConfigFile(const char *szFolder)
 {
-  if (!szFolder)
-    szFolder = GetFilename();
-  if (!szFolder || !szFolder[0])
-    return false;
+  //NB. szFolder can be Absolute or Project Relative (depending on what was passed in or how it was loaded)
+  VStaticString<FS_MAX_PATH> sConfigFile;
+  if (!VStringUtil::IsEmpty(szFolder))
+  {
+    sConfigFile = szFolder;
+  }
+  else
+  {
+    sConfigFile = m_Config.m_sNativeProjectDir;
+    VFileAccessManager::AppendPath(sConfigFile, m_Config.m_sTerrainFolder);
+  }
+  VFileAccessManager::AppendPath(sConfigFile, "Config.vtc");
 
- //NB. szFolder can be Absolute or Project Relative (depending on what was passed in or how it was loaded)
-
-  VStaticString<FS_MAX_PATH> szConfigFile;
-  VFileHelper::CombineDirAndFile(szConfigFile,szFolder,"Config.vtc");
-
-  m_Config.RCSPerformAction(szConfigFile, RCS_EDIT); //make sure we can write to it
+  m_Config.m_bUseTempFolder = false;
+  m_Config.RCSPerformAction(sConfigFile, RCS_EDIT); //make sure we can write to it
 
   // write out terrain file
   VChunkFile file;
-  if (!file.Create(szConfigFile,Vision::File.GetManager()))
+  if (!file.Create(sConfigFile))
     return false;
 
   // file version
@@ -369,21 +373,20 @@ bool VTerrain::SaveConfigFile(const char *szFolder)
   file.Close();
   if (file.IsInErrorState())
     return false;
-  m_Config.RCSPerformAction(szConfigFile, RCS_ADD);
+  m_Config.RCSPerformAction(sConfigFile, RCS_ADD);
   
   return true;
 }
 
 
 
-void VTerrain::CreateTerrain(VTerrainConfig *pConfig, const char *szAbsProjectDir, bool bSave)
+void VTerrain::CreateTerrain(VTerrainConfig *pConfig, bool bSave)
 {
   // copy config to current
   if (pConfig)
     m_Config = *pConfig; // copy the config
 
-  const char *szFilename = m_Config.m_sTerrainFolder;
-  SetFilename(szFilename);
+  SetFilename(m_Config.m_sTerrainFolder);
   FlagAsLoaded();
 
   FreeTerrain();
@@ -395,21 +398,21 @@ void VTerrain::CreateTerrain(VTerrainConfig *pConfig, const char *szAbsProjectDi
 
   if (bSave)
   {
-    VASSERT(szAbsProjectDir);
-    VASSERT(VPathHelper::IsAbsolutePath(szAbsProjectDir));
+    VASSERT_MSG(!m_Config.m_sNativeProjectDir.IsEmpty(), "A native project directory must be set for saving the terrain!");
 
     // create all the directories
-    VASSERT( !m_Config.m_sAbsProjectDir.IsEmpty() );
-    m_Config.MakeRelevantDirectories(szAbsProjectDir, false); //normal files
-    m_Config.MakeRelevantDirectories(szAbsProjectDir, true);  //temp files  
+    m_Config.MakeRelevantDirectories(false); //normal files
+    m_Config.MakeRelevantDirectories(true);  //temp files  
   }
 
   // prepare directory
-  VASSERT(szAbsProjectDir==NULL || VFileHelper::ExistsDir(szAbsProjectDir));
-  m_SectorManager.InitTerrain(/*szAbsProjectDir*/);
+  m_SectorManager.InitTerrain();
 
   if (bSave)
-    SaveToFile(szFilename);
+  {
+    VString sNativeTerrainDir = VPathHelper::CombineDirAndDir(m_Config.m_sNativeProjectDir, m_Config.m_sTerrainFolder);
+    SaveToFile(sNativeTerrainDir);
+  }
 
 //  AddToSceneManager(); // this should be done from outside now
   m_SectorManager.SetAllowPurging(true); // confirm new purge time
@@ -445,7 +448,7 @@ void VTerrain::Serialize( VArchive &ar )
     ar.ReadStringBinary(szPath,FS_MAX_PATH);
     if (!LoadFromFile(szPath)) // loads the config
     {
-      Vision::Error.FatalError("Failed to load Config.vtc which is mandatory for the terrain");
+      hkvLog::FatalError("Failed to load Config.vtc which is mandatory for the terrain");
     }
       
 
@@ -879,7 +882,7 @@ void VTerrain::RemoveDecorationInstances(const VLargeBoundingBox &bbox)
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

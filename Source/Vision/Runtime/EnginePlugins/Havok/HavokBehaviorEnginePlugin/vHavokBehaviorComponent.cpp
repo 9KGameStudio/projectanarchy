@@ -655,34 +655,17 @@ void vHavokBehaviorComponent::GetDependencies(VResourceSnapshot &snapshot)
 
 void vHavokBehaviorComponent::GetProjectPath(hkStringBuf& projectPath) const
 {
-	// Get full path
-	VString fullProjectPath = m_projectName;
+  VFileAccessManager::AbsolutePathResult projectAbsRes;
+  if (VFileAccessManager::GetInstance()->MakePathAbsolute(m_projectName, projectAbsRes, VFileSystemAccessMode::READ_NO_REDIRECT, VFileSystemElementType::FILE) == HKV_SUCCESS)
+  {
+    projectPath = projectAbsRes.m_sAbsolutePath;
+  }
+  else
+  {
+    projectPath = m_projectName;
+  }
 
-	// If path is not absolute, use the current scene directory as the base path
-	if( !VFileHelper::IsAbsolutePath( fullProjectPath ) )
-	{
-		for( int i = 0; i < Vision::File.GetMaxDataDirectoryCount(); ++i )
-		{
-			VString dir = Vision::File.GetDataDirectory(i);
-			if( !dir.IsEmpty() )
-			{
-				AppendRelativePath( dir, fullProjectPath );
-					
-				// Resolve path to clean up extraneous slashes
-				char resultPath[FS_MAX_PATH];
-				VFileHelper::ResolvePath( resultPath, dir );
-
-				if( VFileHelper::Exists( resultPath ) )
-				{
-					fullProjectPath = resultPath;
-					break;
-				}
-			}
-		}
-	}
-
-	projectPath = fullProjectPath.GetSafeStr();
-	projectPath.pathNormalize();
+  projectPath.pathNormalize();
 }
 
 const hkQsTransform& vHavokBehaviorComponent::GetWorldFromModel() const
@@ -922,7 +905,7 @@ START_VAR_TABLE(vHavokBehaviorComponent, IVObjectComponent, "Havok Behavior Char
 END_VAR_TABLE
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

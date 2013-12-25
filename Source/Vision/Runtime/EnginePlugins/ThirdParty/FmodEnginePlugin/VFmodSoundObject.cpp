@@ -714,36 +714,6 @@ FMOD_RESULT F_CALLBACK ChannelCallback(FMOD_CHANNEL *channel, FMOD_CHANNEL_CALLB
 }
 
 
-
-void VFmodSoundObjectCollection::DebugOutput()
-{
-  int yk = 20;
-  int iCount = Count();
-  for (int i=0;i<iCount;i++,yk+=12)
-  {
-    VFmodSoundObject* pInst = GetAt(i);
-    /*
-    Vision::Message.Print(1, 40, yk, "%i. '%s' (Channel %i, time :%.2f), playing: %s",
-      i,
-      pInst->GetSoundResource()->GetFilename(),
-      pInst->GetChannelIndex(),pInst->GetCurrentTime(),
-      pInst->IsPlaying() ? "yes":"no"
-      );
-    */
-    float x,y;
-    if (Vision::Contexts.GetCurrentContext()->Project2D(pInst->GetPosition(),x,y))
-    {
-      float fCurrentIts = 0.0f;
-      /*
-      if (pInst->m_pChannel)
-        pInst->m_pChannel->getAudibility(&fCurrentIts);
-      */
-      Vision::Message.Print(1, (int)x, (int)y, "%.3f", fCurrentIts);
-      //pInst->IncPosition(0.0f, 0.0f, 0.01f);
-    }
-  }
-}
-
 void VFmodSoundObjectCollection::Update()
 {
   int iCount = Count();
@@ -809,7 +779,7 @@ VFmodSoundObject* VFmodSoundObjectCollection::SearchObject(const char* szName) c
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

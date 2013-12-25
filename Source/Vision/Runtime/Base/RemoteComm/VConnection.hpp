@@ -11,6 +11,10 @@
 #ifndef __VCONNECTION_INCLUDED__
 #define __VCONNECTION_INCLUDED__
 
+#include <Vision/Runtime/Base/RemoteComm/VSocket.hpp>
+
+#include <Vision/Runtime/Base/Container/VRingBuffer.hpp>
+
   class VMessage;
 
   /// \brief
@@ -19,15 +23,13 @@
   {
     public:
 
-      /// \fn VConnection(int iSocket, char* pIdentifier, int iReceiveBufferSize = 16*1024)
-      ///
       /// \brief  Constructor. 
       ///
-      /// \param  iSocket Index of the socket to use. 
-      /// \param [in] pIdentifier The identifier of the connection - this has to be a four letter code e.g "VRSD" or "VRES". Has to be unique per system using the VTarget functionality.
-      /// \param  iReceiveBufferSize  Size of the receive buffer. 
+      /// \param  socket An already connected socket to use. The connection will take over ownership of the socket and leave the passed argument empty.
+      /// \param [in] pIdentifier The identifier of the connection - this has to be a four letter code e.g "VRSD" or "VRES". Has to be unique per system using the VTarget functionality. 
+      /// \param szRemoteHost The address of the remote host of the connection.
       ///
-      VConnection(int iSocket, char* pIdentifier, int iReceiveBufferSize = 16*1024);
+      VConnection(VSocket &socket, const char* pIdentifier, const char* szRemoteHost);
 
       /// \fn ~VConnection()
       ///
@@ -45,6 +47,9 @@
       ///
       VBASE_IMPEXP bool SendAsync(VMessage* pMessage);
 
+      /// \brief Flushes the queue of asynchronuously sent messages.
+      VBASE_IMPEXP void FlushSendAsync();
+
       /// \fn VBASE_IMPEXP bool Send(VMessage* pMessage)
       ///
       /// \brief  Sends the given message synchronous on the connection. 
@@ -55,25 +60,16 @@
       ///
       VBASE_IMPEXP bool Send(VMessage* pMessage);
 
-      /// \fn VBASE_IMPEXP bool Recv(VMessage* pMessage)
-      ///
       /// \brief  Receives a message from the connection. This call can block if there is no message in the queue!
-      ///
-      /// \param [in] pMessage  The message object to receive the content into.
-      ///
-      /// \return true if it succeeds, false if it fails. 
-      ///
-      VBASE_IMPEXP bool Recv(VMessage* pMessage);
+      VBASE_IMPEXP VMessage* Recv();
 
-      /// \fn VBASE_IMPEXP inline int GetSocket()
-      ///
-      /// \brief  Gets the internal socket identifier of the connection. 
+      /// \brief  Gets the internal socket of the connection. 
       ///
       /// \return The socket. 
       ///
-      VBASE_IMPEXP inline int GetSocket()
+      VBASE_IMPEXP inline VSocket& GetSocket()
       {
-        return m_iSocket;
+        return m_socket;
       }
 
       /// \fn VBASE_IMPEXP inline const char* GetIdentifier()
@@ -124,37 +120,31 @@
       ///
       VBASE_IMPEXP VMessage* GetNextASyncMessageToSend();
 
+      /// \brief Returns the address of the remote host of the connection.
+      VBASE_IMPEXP const char* GetRemoteHost()
+      {
+        return m_sRemoteHost;
+      }
+
+      /// \brief Temporarily disables asynchronous message parsing.
+      ///
+      /// \param bSuspended Flag if async message receiving should be supended or not.
+      ///
+      /// This function can only be valid if the message receive buffer is currently empty.
+      /// Any messages received after changing this flag but before the TargetThread has read it may result
+      /// in incorrectly parsed messages. Make sure that the message protocol used takes this into consideration.
+      VBASE_IMPEXP void SuspendAsyncMessageReceive(bool bSuspended);
+
     private:
-
-      /// \fn bool SendImpl(VMessage* pMsg)
-      ///
-      /// \brief  Send implementation.
-      ///
-      /// \param [in] pMsg  The message to send.
-      ///
-      /// \return true if it succeeds, false if it fails. 
-      ///
-      bool SendImpl(VMessage* pMsg);
-
-      /// \fn bool RecvImpl(VMessage* pMsg)
-      ///
-      /// \brief  Receive implementation. 
-      ///
-      /// \param [in,out] pMsg  The message object to fill the data into.
-      ///
-      /// \return true if it succeeds, false if it fails. 
-      ///
-      bool RecvImpl(VMessage* pMsg);
-
       friend class VTarget;
 
-      /// \fn void SetIdentifier(char* pIdentifier)
+      /// \fn void SetIdentifier(const char* pIdentifier)
       ///
       /// \brief  Sets the identifier of the connection. 
       ///
       /// \param [in,out] pIdentifier The identifier. 
       ///
-      void SetIdentifier(char* pIdentifier);
+      void SetIdentifier(const char* pIdentifier);
 
       /// \fn void SetInvalid()
       ///
@@ -176,14 +166,17 @@
       ///
       void Close();
 
-      //! Stores the socket identifier of this connection. 
-      int m_iSocket;
+      /// \brief Reads all available messages from the ring buffer and appends them to the queue.
+      void ParseMessages();
+
+      //! Stores the socket of this connection. 
+      VSocket m_socket;
 
       //! Stores the list of enqueued messages to send. 
-      VPListT<VMessage> m_EnqueuedMessages;
+      VArray<VMessage*> m_aEnqueuedMessages;
       
       //! Stores the list of received messages. 
-      VPListT<VMessage> m_ReceivedMessages;
+      VArray<VMessage*> m_aReceivedMessages;
 
       //! The mutex guarding the receive queue. 
       VMutex m_ReceiveQueueMutex;
@@ -194,17 +187,40 @@
       //! The mutex guarding the send function. 
       VMutex m_SendMutex;
       
-      //! The mutex guarding the receive function. 
-      VMutex m_RecvMutex;
-
       //! Stores the identifier of the connection. 
       char* m_pIdentifier;
+
+      //! Stores the address of the remote host. 
+      VString m_sRemoteHost;
+
+      enum ParseState
+      {
+        READ_MESSAGE_TYPE_AND_SIZE,
+        READ_MESSAGE_CONTENT,
+      };
+
+      ParseState m_eCurrentParseState;
+      VMessage* m_pCurrentMessage;
+
+      VRingBuffer<char, 16 * 1024> m_ringBuffer;
+
+      VEvent m_receiveQueueNonEmptyEvent;
+      VEvent m_sendQueueEmptyEvent;
+
+#if defined(HK_DEBUG_SLOW)
+      // To be able to reliably check that the async receive is only suspended while there is no unprocessed message data left,
+      // we need to synchronize access to m_bReceiveSuspended. This is only needed to check for race conditions, but not required
+      // when using the receive suspend correctly.
+      VMutex m_receiveSuspendMutex;
+#endif
+
+      bool m_bReceiveSuspended;
   };
 
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

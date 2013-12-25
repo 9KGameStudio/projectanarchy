@@ -64,6 +64,14 @@ MobileOffRoadGame MobileOffRoadGame::s_instance;
 
 void MobileOffRoadGame::OneTimeInit()
 {
+  // In case the Havok Physics plugin is already loaded, synchronize the statics now.
+  vHavokPhysicsModule* pPhysicsModule = vHavokPhysicsModule::GetInstance();
+  if (pPhysicsModule != NULL)
+  {
+    VISION_HAVOK_SYNC_STATICS();
+    VISION_HAVOK_SYNC_PER_THREAD_STATICS(pPhysicsModule);
+  }
+  
   m_playingTheGame = false;
 
   // the game manager should listen to the following callbacks:
@@ -73,9 +81,9 @@ void MobileOffRoadGame::OneTimeInit()
   Vision::Callbacks.OnUpdateSceneFinished += this;
 
   // Set-up the physics callbacks
-  vHavokPhysicsModule::OnBeforeInitializePhysics	+= this;
-  vHavokPhysicsModule::OnUnsyncHavokStatics		+= this;
-  vHavokVisualDebugger::OnCreatingContexts		+= this;
+  vHavokPhysicsModule::OnBeforeInitializePhysics += this;
+  vHavokPhysicsModule::OnUnsyncHavokStatics += this;
+  vHavokVisualDebugger::OnCreatingContexts += this;
 }
 
 void MobileOffRoadGame::OneTimeDeInit()
@@ -89,14 +97,13 @@ void MobileOffRoadGame::OneTimeDeInit()
   Vision::Callbacks.OnUpdateSceneFinished -= this;
 
   // Cancel the physics callbacks
-  vHavokPhysicsModule::OnBeforeInitializePhysics	-= this;
-  vHavokPhysicsModule::OnUnsyncHavokStatics		-= this;
-  vHavokVisualDebugger::OnCreatingContexts		-= this;
+  vHavokPhysicsModule::OnBeforeInitializePhysics -= this;
+  vHavokPhysicsModule::OnUnsyncHavokStatics -= this;
+  vHavokVisualDebugger::OnCreatingContexts -= this;
 }
 
 void MobileOffRoadGame::SetPlayTheGame(bool status)
 {
-  
   if (status == m_playingTheGame)
     return;
 
@@ -108,7 +115,7 @@ void MobileOffRoadGame::SetPlayTheGame(bool status)
       return;
     }
   }
-  
+
   m_playingTheGame = status;
 
   if (m_playingTheGame)
@@ -205,33 +212,29 @@ void MobileOffRoadGame::OnHandleCallback(IVisCallbackDataObject_cl *pData)
 {
   if (pData->m_pSender == &vHavokPhysicsModule::OnBeforeInitializePhysics)
   {
-    vHavokPhysicsModuleCallbackData* pHavokData = (vHavokPhysicsModuleCallbackData*)pData;
-
+    vHavokPhysicsModuleCallbackData* pHavokData = static_cast<vHavokPhysicsModuleCallbackData*>(pData);
     VISION_HAVOK_SYNC_STATICS();
     VISION_HAVOK_SYNC_PER_THREAD_STATICS(pHavokData->GetHavokModule());
   }
 
-  if ( pData->m_pSender == &vHavokPhysicsModule::OnUnsyncHavokStatics )
+  else if (pData->m_pSender == &vHavokPhysicsModule::OnUnsyncHavokStatics)
   {
-    vHavokPhysicsModuleCallbackData *pHavokData = (vHavokPhysicsModuleCallbackData*)pData;
-
+    vHavokPhysicsModuleCallbackData* pHavokData = static_cast<vHavokPhysicsModuleCallbackData*>(pData);
     VISION_HAVOK_UNSYNC_STATICS();
     VISION_HAVOK_UNSYNC_PER_THREAD_STATICS(pHavokData->GetHavokModule());
   }
 
-  if (pData->m_pSender==&Vision::Callbacks.OnAfterSceneLoaded)
+  else if (pData->m_pSender==&Vision::Callbacks.OnAfterSceneLoaded)
   {
     SetPlayTheGame(true);
-    return;
   }
 
-  if (pData->m_pSender==&Vision::Callbacks.OnAfterSceneUnloaded) // this is important when running outside vForge
+  else if (pData->m_pSender==&Vision::Callbacks.OnAfterSceneUnloaded) // this is important when running outside vForge
   {
     SetPlayTheGame(false);
-    return;
   }
 
-  if(m_playingTheGame && (pData->m_pSender == &Vision::Callbacks.OnUpdateSceneFinished))
+  else if(m_playingTheGame && (pData->m_pSender == &Vision::Callbacks.OnUpdateSceneFinished))
   {
     Update();
   }
@@ -377,7 +380,7 @@ void MobileOffRoadGame::Update()
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -201,6 +201,8 @@ void VVirtualThumbStick::Show(bool bShow)
   m_spCircleMask->SetVisible(TRUE);
   m_bActive = true;
 
+  SetValidArea(m_validArea);
+
   Vision::Callbacks.OnFrameUpdatePreRender += this;
 }
 
@@ -214,6 +216,9 @@ void VVirtualThumbStick::Hide()
   m_bActive = false;
   m_fXValue = 0.0f;
   m_fYValue = 0.0f;
+
+  // Remove the touch area.
+  m_spTouchArea = NULL;
 
   Vision::Callbacks.OnFrameUpdatePreRender -= this;
 }
@@ -299,7 +304,7 @@ void VVirtualThumbStick::OnHandleCallback(IVisCallbackDataObject_cl *pData)
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -234,6 +234,21 @@ public:
     size_t m_numTransformed;      ///< The number of assets successfully transformed or found not needing to be transformed
   };
 
+  /// \brief
+  ///   Holds information about the usage of this asset library (determined / passed in at 
+  ///   creation time)
+  struct RuntimeConfig
+  {
+    RuntimeConfig()
+    : m_isProjectRoot(false), m_isStatic(false)
+    {
+    }
+
+    bool m_isProjectRoot;      ///< This asset library is the root of the currently loaded project
+    bool m_isStatic;           ///< The loading of this asset library is not user-configurable
+    hkStringPtr m_searchPath;  ///< The search path by which the Vision Engine accesses this asset library
+  };
+
 private:
   struct AssetDeletion
   {
@@ -250,11 +265,9 @@ public:
   ///   whether a new library should be created or an existing library should be opened. At 
   ///   construction time, this merely sets internal state, which will later be used by
   ///   loadLibrary().
-  /// \param isProjectRoot
-  ///   whether this asset library is the main asset library of the project (i.e., this is the
-  ///   project directory). While this constraint is not enforced, exactly one of the libraries 
-  ///   opened at the same time should have that flag set.
-  ASSETFRAMEWORK_IMPEXP hkvAssetLibrary(const char* libraryPath, bool create, bool isProjectRoot);
+  /// \param runtimeConfig
+  ///   the runtime configuration of this asset library within the Vision Engine
+  ASSETFRAMEWORK_IMPEXP hkvAssetLibrary(const char* libraryPath, bool create, const RuntimeConfig& runtimeConfig);
 
   /// \brief
   ///   Destructor.
@@ -336,6 +349,10 @@ public:
   ///   Returns the absolute path to the base folder of this asset library.
   ASSETFRAMEWORK_IMPEXP const char* getPath() const;
 
+  /// brief
+  ///   Returns the search path by which this asset library is known to the Vision Engine.
+  ASSETFRAMEWORK_IMPEXP const char* getSearchPath() const;
+
   /// \brief
   ///   Queries the relative path for transformed assets, and writes it to a string buffer.
   /// \param out_path
@@ -377,13 +394,18 @@ public:
 
   /// \brief
   ///   Returns whether this asset library has been flagged as being the project root.
-  ASSETFRAMEWORK_IMPEXP bool isProjectRoot() const  { return m_isProjectRoot; }
+  ASSETFRAMEWORK_IMPEXP bool isProjectRoot() const  { return m_runtimeConfig.m_isProjectRoot; }
+
+  /// \brief
+  ///   Returns whether this asset library is static; i.e., whether it was loaded by a
+  ///   framework decision (as opposed to being loaded by user configuration)
+  ASSETFRAMEWORK_IMPEXP bool isStatic() const { return m_runtimeConfig.m_isStatic; }
 
   /// \brief
   ///   Sets whether this asset library should be considered the project root.
   /// \param root
   ///   whether this asset library should be considered the project root
-  ASSETFRAMEWORK_IMPEXP void setProjectRoot(bool root) { m_isProjectRoot = root; }
+  ASSETFRAMEWORK_IMPEXP void setProjectRoot(bool root) { m_runtimeConfig.m_isProjectRoot = root; }
 
   /// \brief
   ///   Returns the number of assets managed by this asset library.
@@ -569,13 +591,13 @@ private:
     }
   };
 
-  bool m_isProjectRoot;
   bool m_createLibrary;
   bool m_isLoaded;
   bool m_isDirty;
   bool m_isLoading;
 
   hkvAssetLibraryConfig m_config;
+  RuntimeConfig m_runtimeConfig;
 
   hkStringPtr m_absolutePath;
   hkStringPtr m_localFileName;
@@ -611,7 +633,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

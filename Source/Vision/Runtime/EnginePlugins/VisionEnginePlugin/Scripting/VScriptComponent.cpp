@@ -148,7 +148,7 @@ void VScriptComponent::SetOwner(VisTypedEngineObject_cl *pOwner)
 
     // will reload resource if timestamp is deprecated
     if (pRes != NULL)
-      pRes->CheckFileModified(Vision::File.GetManager()); 
+      pRes->CheckFileModified(); 
   }
 
   if (pOwner != NULL && !ScriptFile.IsEmpty())
@@ -448,7 +448,7 @@ void VScriptComponent::Serialize( VArchive &ar )
   {
     ar >> iLocalVersion;
     if (iLocalVersion<VERSION_INITIAL||iLocalVersion>VERSION_CURRENT)
-      Vision::Error.FatalError("Invalid script serialization version - please re-export map");
+      hkvLog::FatalError("Invalid script serialization version - please re-export map");
 
     // This is a workaround for [#21287] : This component must be immediately added to the owner's component list,
     // otherwise script function calls on it create a new script component which results in one object having two script components
@@ -577,7 +577,7 @@ DEFINE_VAR_VSTRING(VScriptComponent, ScriptFile, "Filename of the script file", 
 END_VAR_TABLE
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -27,14 +27,14 @@ VCustomVolumeManager::~VCustomVolumeManager()
 void VCustomVolumeManager::OneTimeInit()
 {
   Vision::Callbacks.OnWorldDeInit += this;
-  Vision::Callbacks.OnEngineDeInitializing += this;
+  Vision::Callbacks.OnEngineDeInit += this;
 }
 
 void VCustomVolumeManager::OneTimeDeInit()
 {
   ReleaseAll();
   Vision::Callbacks.OnWorldDeInit -= this;
-  Vision::Callbacks.OnEngineDeInitializing -= this;
+  Vision::Callbacks.OnEngineDeInit -= this;
 }
 
 int VCustomVolumeManager::AddInstance(VCustomVolumeObject* pInstance)
@@ -88,7 +88,7 @@ void VCustomVolumeManager::ReleaseAll()
 void VCustomVolumeManager::OnHandleCallback(IVisCallbackDataObject_cl *pData)
 {
   if(pData->m_pSender == &Vision::Callbacks.OnWorldDeInit ||
-     pData->m_pSender == &Vision::Callbacks.OnEngineDeInitializing)
+     pData->m_pSender == &Vision::Callbacks.OnEngineDeInit)
   {
     ReleaseAll();
   }
@@ -100,7 +100,7 @@ VCustomVolumeManager& VCustomVolumeManager::GlobalManager()
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

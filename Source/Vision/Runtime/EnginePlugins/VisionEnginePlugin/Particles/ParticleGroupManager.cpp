@@ -427,31 +427,21 @@ bool VisParticleEffectFile_cl::SaveToXML(const char *szFilename)
     pDesc->DataExchangeXML(XMLHelper::SubNode(pRoot,XML_GROUPDESCRIPTOR_NAME,true),true);
   }
 
-  // in case of an absolute path, we have to tweak the filename after saving
-  int tweakFilenamePos = 0;
-  IVFileStreamManager* fileStreamManager = Vision::File.GetManager();
-  if (szFilename != NULL && strncmp(&szFilename[1], ":\\", 2)==0)
+  // in case of an absolute path, we have to replace the filename with a relative name after saving
+  VFileAccessManager::RelativePathResult fileRelativeResult;
+  bool bReplacePath = false;
+  if (VFileAccessManager::IsPathNative(szFilename))
   {
-    for (int j=0; j<fileStreamManager->GetNumDataDirectories(); ++j)
-    {
-      const char * szDirectory = fileStreamManager->GetDataDirectory(j);
-      VASSERT(szDirectory != NULL);
-      int szDirectoryLength = (int)strlen(szDirectory);
-      if (strncmp(szFilename, szDirectory, strlen(szDirectory)) == 0)
-      {
-        tweakFilenamePos = szDirectoryLength;
-        break; 
-      }
-    }
+    bReplacePath = (VFileAccessManager::GetInstance()->MakePathRelative(szFilename, fileRelativeResult, VFileSystemAccessMode::WRITE, VFileSystemElementType::FILE) == HKV_SUCCESS);
+    VASSERT_MSG(bReplacePath, "Failed to determine the relative name for file '%s'", szFilename);
   }
 
-  //TODO: RCS	or remove readonly	
   // save the XML
-  if (!doc.SaveFile(GetFilename(),fileStreamManager))
+  if (!doc.SaveFile(GetFilename()))
   {  
-    if (tweakFilenamePos > 0)
+    if (bReplacePath)
     {
-      SetFilename(&szFilename[tweakFilenamePos]);
+      SetFilename(fileRelativeResult.m_sRelativePath);
     }
     VisParticleGroupManager_cl::g_sLastError = doc.ErrorDesc();
     return false;
@@ -460,12 +450,12 @@ bool VisParticleEffectFile_cl::SaveToXML(const char *szFilename)
   // also save to binary file along with it:
   char szBinFile[FS_MAX_PATH];
   VFileHelper::AddExtension(szBinFile,GetFilename(),"vpfx");
-  IVFileOutStream *pOut = fileStreamManager->Create(szBinFile);
+  IVFileOutStream *pOut = VFileAccessManager::GetInstance()->Create(szBinFile);
   SaveToBinaryFile(pOut);
 
-  if (tweakFilenamePos > 0)
+  if (bReplacePath)
   {
-    SetFilename(&szFilename[tweakFilenamePos]);
+    SetFilename(fileRelativeResult.m_sRelativePath);
   }
   return true;
 }
@@ -576,7 +566,7 @@ VisParticleEffect_cl* VisParticleEffectFile_cl::CreateParticleEffectInstance(con
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

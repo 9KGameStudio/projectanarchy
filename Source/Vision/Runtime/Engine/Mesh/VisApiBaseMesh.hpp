@@ -1199,7 +1199,7 @@ public:
   /// 
   /// \return
   ///   VisModel_cl *pNewMesh : A new mesh instance baked form the sources. Can be NULL if an error has occurred (which is reported to pLog instance).
-  VISION_APIFUNC VDynamicMesh* MergeDynamicMeshes(const char *szNewName, MeshMergeInfo_t *pInfoList, int iInfoCount, VisSkeleton_cl *pReferenceSkeleton = NULL, IVLog *pLog = NULL);
+  VISION_APIFUNC VDynamicMesh* MergeDynamicMeshes(const char *szNewName, MeshMergeInfo_t *pInfoList, int iInfoCount, VisSkeleton_cl *pReferenceSkeleton = NULL, hkvLogInterface* pLog = hkvGlobalLog::GetInstance());
 
 protected:
 
@@ -1212,7 +1212,7 @@ protected:
 #endif // DEFINE_VISAPIBASEMESH
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

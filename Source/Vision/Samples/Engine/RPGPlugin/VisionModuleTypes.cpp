@@ -62,16 +62,16 @@ void RPG_VisionModuleTypes::ForceStaticLink()
   FORCE_LINKDYNCLASS(RPG_Trigger);
   FORCE_LINKDYNCLASS(RPG_GUIHud);
 
-  Vision::Error.SystemMessage("RPG_VisionModuleTypes::ForceStaticLink begin type dump");
+  hkvLog::Info("RPG_VisionModuleTypes::ForceStaticLink begin type dump");
   for(VType *moduleType = g_RPGPluginModule.GetTypeList(); moduleType; moduleType = moduleType->m_pNextType)
   {
-    Vision::Error.SystemMessage("%s", moduleType->m_lpszClassName);
+    hkvLog::Info("%s", moduleType->m_lpszClassName);
   }
-  Vision::Error.SystemMessage("RPG_VisionModuleTypes::ForceStaticLink end type dump");
+  hkvLog::Info("RPG_VisionModuleTypes::ForceStaticLink end type dump");
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

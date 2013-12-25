@@ -109,7 +109,7 @@ public:
   ///       self:AddComponentOfType("VTimedValueComponent", "Timer")
   ///       self.Timer:SetDuration(15)     -- 15 sec
   ///       self.Timer:SetRange(-10,10)    -- start from -10 until 10 (in 15 sec)
-  ///       self.Timer:AddCallback("MyCallback", 3) -- call 'MyCallback' afers 3 sec
+  ///       self.Timer:AddCallback("MyCallback", 3) -- call 'MyCallback' after 3 sec
   ///     end
   ///
   ///     function OnThink(self)
@@ -129,7 +129,7 @@ public:
   /// \brief Set the range for values generated during the specified duration. When the end value (fToValue) is reached, it will start over.
   /// \param fromValue The start value when the timer is 0.
   /// \param toValue The end value reached after the set duration.
-  /// \param reset [\b optional] Performs a reset (timer immediatly starts with 0, even when running) if set to true.
+  /// \param reset [\b optional] Performs a reset (timer immediately starts with 0, even when running) if set to true.
   /// \par Example
   ///   \code
   ///     function OnAfterSceneLoaded(self)
@@ -144,7 +144,7 @@ public:
   void SetRange(number fromValue, number toValue, boolean reset = false);
 
   /// \brief Set the time required to interpolate from the start value to the stop value. Already registered
-  ///        Lua callback timestamps will be streched in proportion to the previous duration!
+  ///        Lua callback timestamps will be stretched in proportion to the previous duration!
   ///        So it is easier to setup the callbacks after you defined the duration.
   /// \param duration The duration in seconds
   /// \par Example
@@ -253,7 +253,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

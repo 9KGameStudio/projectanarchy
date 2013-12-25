@@ -72,6 +72,9 @@ class VPushButton : public VDlgControlBase
 public:
   GUI_IMPEXP virtual void OnPaint(VGraphicsInfo &Graphics, const VItemRenderInfo &parentState) HKV_OVERRIDE;
   GUI_IMPEXP virtual bool Build(TiXmlElement *pNode, const char *szPath, bool bWrite) HKV_OVERRIDE;
+  GUI_IMPEXP virtual void OnPointerDown(VMenuEventDataObject *pEvent) HKV_OVERRIDE { SetSelected(true); }
+  GUI_IMPEXP virtual void OnPointerUp(VMenuEventDataObject *pEvent) HKV_OVERRIDE { SetSelected(false); }
+  GUI_IMPEXP virtual void OnMouseLeave(VGUIUserInfo_t &user) HKV_OVERRIDE { VDlgControlBase::OnMouseLeave(user); SetSelected(false); }
 
   GUI_IMPEXP virtual VCursor *GetMouseOverCursor(VGUIUserInfo_t &user) HKV_OVERRIDE
   {
@@ -111,9 +114,12 @@ class VCheckBox : public VPushButton
 public:
   GUI_IMPEXP virtual void OnPaint(VGraphicsInfo &Graphics, const VItemRenderInfo &parentState) HKV_OVERRIDE;
   GUI_IMPEXP virtual bool Build(TiXmlElement *pNode, const char *szPath, bool bWrite) HKV_OVERRIDE;
+  GUI_IMPEXP virtual void OnPointerDown(VMenuEventDataObject *pEvent) HKV_OVERRIDE { /* disable VPushButton's OnPointerDown functionality */ }
+  GUI_IMPEXP virtual void OnPointerUp(VMenuEventDataObject *pEvent) HKV_OVERRIDE { /* disable VPushButton's OnPointerUp functionality */ }
+  GUI_IMPEXP virtual void OnMouseLeave(VGUIUserInfo_t &user) HKV_OVERRIDE { VDlgControlBase::OnMouseLeave(user); }
 
   /// \brief Checked status : actually same as selected.
-  inline bool IsChecked() const {return IsStatusSet(ITEMSTATUS_STAYSELECTED);}
+  inline bool IsChecked() const {return IsStatusSet(ITEMSTATUS_SELECTED);}
 
   /// \brief Sets the checkbox to checked or unchecked.
   GUI_IMPEXP void SetChecked(bool bStatus);
@@ -223,7 +229,7 @@ private:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

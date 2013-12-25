@@ -78,7 +78,7 @@ void RPG_ControllerComponent::SetState(RPG_ControllerStateId::Enum newStateId)
     RPG_ControllerStateBase *currentState = m_states[m_currentStateId];
     if(currentState)
     {
-      //Vision::Error.SystemMessage("Controller 0x%x exiting state %s", this, currentState->GetName());
+      //hkvLog::Info("Controller 0x%x exiting state %s", this, currentState->GetName());
       currentState->OnExitState(this);
     }
 
@@ -87,7 +87,7 @@ void RPG_ControllerComponent::SetState(RPG_ControllerStateId::Enum newStateId)
     currentState = m_states[m_currentStateId];
     if(currentState)
     {
-      //Vision::Error.SystemMessage("Controller 0x%x entering state %s", this, currentState->GetName());
+      //hkvLog::Info("Controller 0x%x entering state %s", this, currentState->GetName());
       currentState->OnEnterState(this);
     }
 
@@ -524,7 +524,7 @@ hkBool32 LocalSteeringFilter::isObstacleEnabled(hkaiCharacter const *aiCharacter
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

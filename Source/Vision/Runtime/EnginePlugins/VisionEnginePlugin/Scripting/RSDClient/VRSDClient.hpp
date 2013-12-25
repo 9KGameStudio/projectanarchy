@@ -798,18 +798,8 @@
       ///
       IVRSDClientLanguageImplementation* GetClientLanguageImplementation();
 
-      /// \fn SCRIPT_IMPEXP static BOOL EngineMessageCallback(const char* szMessage,
-      ///     VisApiMessageType_e messageType, void* pUserData)
-      ///
-      /// \brief  Callback, called by the engine when the engines wants to print a message. These messages will be send over the remote connection and displayed in the remote debugger.
-      ///
-      /// \param [in,out] szMessage The engine message.
-      /// \param  messageType Type of the message. 
-      /// \param [in,out] pUserData Userdata pointer supplied back by the engine. In this case it is a pointer to the client.
-      ///
-      /// \return true if it succeeds, false if it fails. 
-      ///
-      SCRIPT_IMPEXP static BOOL EngineMessageCallback(const char* szMessage, VisApiMessageType_e messageType, void* pUserData);
+      /// \brief Callback, called by the engine when the engine wants to print a message. These messages will be sent over the remote connection and displayed in the remote debugger.
+      SCRIPT_IMPEXP static void LogMessageHandler(hkvLogMsgType::Enum MsgType, const char* szText, int iIndentation, const char* szTag, void* pPassThrough);
 
       /// \fn SCRIPT_IMPEXP void RegisterUserDataAccessor(IVRSDUserDataAccessor* pUserDataAccessor)
       ///
@@ -983,7 +973,7 @@
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

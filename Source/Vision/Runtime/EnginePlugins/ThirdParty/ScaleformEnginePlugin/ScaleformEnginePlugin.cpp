@@ -63,7 +63,7 @@ static void EnsureScaleformScriptRegistration()
         }
       }
 
-      Vision::Error.Warning("Unable to create Lua Scaleform Module, lua_State is NULL");
+      hkvLog::Warning("Unable to create Lua Scaleform Module, lua_State is NULL or cast failed!");
     }
   }
 }
@@ -164,7 +164,7 @@ void vScaleformPlugin_cl::OnHandleCallback(IVisCallbackDataObject_cl *pData)
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

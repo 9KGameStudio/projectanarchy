@@ -1278,7 +1278,7 @@ bool VisParticleGroupDescriptor_cl::LoadFromXML(const char *szFilename)
 {
   SetCurrentRelPath(szFilename);
   TiXmlDocument doc;
-  if (!doc.LoadFile(szFilename,Vision::File.GetManager()))
+  if (!doc.LoadFile(szFilename))
     return false;
 
   // find the first descriptor node in this file
@@ -1308,7 +1308,7 @@ bool VisParticleGroupDescriptor_cl::SaveToXML(const char *szFilename)
 
   if (!DataExchangeXML(pRoot->ToElement(),true))
     return false;
-  if (!doc.SaveFile(Vision::File.GetManager()))
+  if (!doc.SaveFile())
     return false;
 
   return true;
@@ -1356,7 +1356,7 @@ void VisParticleDescriptorList_cl::SerializeX( VArchive &ar, VisParticleEffectFi
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

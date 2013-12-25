@@ -145,6 +145,38 @@ bool SwigTypeDataAccessor::UpdateMemberFromString(void* pUserDataPointer, void *
 
   //try other primitive data types...
 
+  //hkvVec2
+  cast = VSWIG_TypeCheckStruct(usr->type,SWIGTYPE_p_hkvVec2);
+
+  if(cast)
+  {
+    int iNewMemory = 0; // SWIG Internal: iNewMemory handling not yet implemented -> has to remain 0
+    hkvVec2* pVec = (hkvVec2* )VSWIG_TypeCast(cast,usr->ptr,&iNewMemory);
+    if(!pVec || iNewMemory) 
+      return false; //cast failed
+
+    if(!_stricmp("X", szMemberName))
+    {
+      float val=0;
+      if(sscanf(szUpdateString, "%f", &val)==1)
+      {
+        pVec->x = val;
+        return true;
+      }
+    }
+    else if(!_stricmp("Y", szMemberName))
+    {
+      float val=0;
+      if(sscanf(szUpdateString, "%f", &val)==1)
+      {
+        pVec->y = val;
+        return true;
+      }
+    }
+
+    return false;
+  }
+
   //hkvVec3
   cast = VSWIG_TypeCheckStruct(usr->type,SWIGTYPE_p_hkvVec3);
 
@@ -152,7 +184,8 @@ bool SwigTypeDataAccessor::UpdateMemberFromString(void* pUserDataPointer, void *
   {
     int iNewMemory = 0; // SWIG Internal: iNewMemory handling not yet implemented -> has to remain 0
     hkvVec3* pVec = (hkvVec3* )VSWIG_TypeCast(cast,usr->ptr,&iNewMemory);
-    if(!pVec || iNewMemory) return false; //cast failed
+    if(!pVec || iNewMemory)
+      return false; //cast failed
 
     if(!_stricmp("X", szMemberName))
     {
@@ -181,15 +214,293 @@ bool SwigTypeDataAccessor::UpdateMemberFromString(void* pUserDataPointer, void *
         return true;
       }
     }
-    //else if(!_stricmp("W", szMemberName))
-    //{
-    //  float val=0;
-    //  if(sscanf(szUpdateString, "%f", &val)==1)
-    //  {
-    //    pVec->w = val;
-    //    return true;
-    //  }
-    //}
+
+    return false;
+  }
+
+  //hkvVec4
+  cast = VSWIG_TypeCheckStruct(usr->type,SWIGTYPE_p_hkvVec4);
+
+  if(cast)
+  {
+    int iNewMemory = 0; // SWIG Internal: iNewMemory handling not yet implemented -> has to remain 0
+    hkvVec4* pVec = (hkvVec4* )VSWIG_TypeCast(cast,usr->ptr,&iNewMemory);
+    if(!pVec || iNewMemory) 
+      return false; //cast failed
+
+    if(!_stricmp("X", szMemberName))
+    {
+      float val=0;
+      if(sscanf(szUpdateString, "%f", &val)==1)
+      {
+        pVec->x = val;
+        return true;
+      }
+    }
+    else if(!_stricmp("Y", szMemberName))
+    {
+      float val=0;
+      if(sscanf(szUpdateString, "%f", &val)==1)
+      {
+        pVec->y = val;
+        return true;
+      }
+    }
+    else if(!_stricmp("Z", szMemberName))
+    {
+      float val=0;
+      if(sscanf(szUpdateString, "%f", &val)==1)
+      {
+        pVec->z = val;
+        return true;
+      }
+    }
+    else if(!_stricmp("W", szMemberName))
+    {
+      float val=0;
+      if(sscanf(szUpdateString, "%f", &val)==1)
+      {
+        pVec->w = val;
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  // hkvMat3
+  cast = VSWIG_TypeCheckStruct(usr->type,SWIGTYPE_p_hkvMat3);
+
+  if(cast)
+  {
+    int iNewMemory = 0;
+    hkvMat3 * pMatrix = (hkvMat3 *)VSWIG_TypeCast(cast,usr->ptr,&iNewMemory);
+    if(!pMatrix || iNewMemory) 
+      return false; //cast failed
+
+    if(!strcmp("Row1: m[0,3,6]", szMemberName))
+    {
+      float x=0,y=0,z=0;
+      if(sscanf(szUpdateString, "%f/%f/%f", &x,&y,&z)==3)
+      {
+        pMatrix->setRow(0, hkvVec3(x, y, z));
+        return true;
+      }
+    }
+    else if(!strcmp("Row2: m[1,4,7]", szMemberName))
+    {
+      float x=0,y=0,z=0;
+      if(sscanf(szUpdateString, "%f/%f/%f", &x,&y,&z)==3)
+      {
+        pMatrix->setRow(1, hkvVec3(x, y, z));
+        return true;
+      }
+    }
+    else if(!strcmp("Row3: m[2,5,8]", szMemberName))
+    {
+      float x=0,y=0,z=0;
+      if(sscanf(szUpdateString, "%f/%f/%f", &x,&y,&z)==3)
+      {
+        pMatrix->setRow(2, hkvVec3(x, y, z));
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  // hkvMat4
+  cast = VSWIG_TypeCheckStruct(usr->type,SWIGTYPE_p_hkvMat4);
+
+  if(cast)
+  {
+    int iNewMemory = 0;
+    hkvMat4 * pMatrix = (hkvMat4 *)VSWIG_TypeCast(cast,usr->ptr,&iNewMemory);
+    if(!pMatrix || iNewMemory) 
+      return false; //cast failed
+
+    if(!strcmp("Row1: m[0,4,8,12]", szMemberName))
+    {
+      float x=0,y=0,z=0,w=0;
+      if(sscanf(szUpdateString, "%f/%f/%f/%f", &x,&y,&z,&w)==4)
+      {
+        pMatrix->setRow(0, hkvVec4(x, y, z, w));
+        return true;
+      }
+    }
+    else if(!strcmp("Row2: m[1,5,9,13]", szMemberName))
+    {
+      float x=0,y=0,z=0,w=0;
+      if(sscanf(szUpdateString, "%f/%f/%f/%f", &x,&y,&z,&w)==4)
+      {
+        pMatrix->setRow(1, hkvVec4(x, y, z, w));
+        return true;
+      }
+    }
+    else if(!strcmp("Row3: m[2,6,10,14]", szMemberName))
+    {
+      float x=0,y=0,z=0,w=0;
+      if(sscanf(szUpdateString, "%f/%f/%f/%f", &x,&y,&z,&w)==4)
+      {
+        pMatrix->setRow(2, hkvVec4(x, y, z, w));
+        return true;
+      }
+    }
+    else if(!strcmp("Vector4: m[3,7,11,15]", szMemberName))
+    {
+      float x=0,y=0,z=0,w=0;
+      if(sscanf(szUpdateString, "%f/%f/%f/%f", &x,&y,&z,&w)==4)
+      {
+        pMatrix->setRow(3, hkvVec4(x, y, z, w));
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  // hkvPlane
+  cast = VSWIG_TypeCheckStruct(usr->type,SWIGTYPE_p_hkvPlane);
+
+  if(cast)
+  {
+    int iNewMemory = 0;
+    hkvPlane* pPlane = (hkvPlane *)VSWIG_TypeCast(cast,usr->ptr,&iNewMemory);
+    if(!pPlane || iNewMemory) 
+      return false; //cast failed
+
+    if(!strcmp("Normal", szMemberName))
+    {
+      float x=0,y=0,z=0;
+      if(sscanf(szUpdateString, "%f/%f/%f", &x,&y,&z)==3)
+      {
+        pPlane->m_vNormal.set(x,y,z);
+        return true;
+      }
+    }
+    else if(!strcmp("NegDist", szMemberName))
+    {
+      float d=0;
+      if(sscanf(szUpdateString, "%f", &d)==1)
+      {
+        pPlane->m_fNegDist = d;
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  // hkvQuat
+  cast = VSWIG_TypeCheckStruct(usr->type,SWIGTYPE_p_hkvQuat);
+
+  if(cast)
+  {
+    int iNewMemory = 0; // SWIG Internal: iNewMemory handling not yet implemented -> has to remain 0
+    hkvQuat* pQuat = (hkvQuat* )VSWIG_TypeCast(cast,usr->ptr,&iNewMemory);
+    if(!pQuat || iNewMemory) 
+      return false; //cast failed
+
+    if(!_stricmp("X", szMemberName))
+    {
+      float val=0;
+      if(sscanf(szUpdateString, "%f", &val)==1)
+      {
+        pQuat->x = val;
+        return true;
+      }
+    }
+    else if(!_stricmp("Y", szMemberName))
+    {
+      float val=0;
+      if(sscanf(szUpdateString, "%f", &val)==1)
+      {
+        pQuat->y = val;
+        return true;
+      }
+    }
+    else if(!_stricmp("Z", szMemberName))
+    {
+      float val=0;
+      if(sscanf(szUpdateString, "%f", &val)==1)
+      {
+        pQuat->z = val;
+        return true;
+      }
+    }
+    else if(!_stricmp("W", szMemberName))
+    {
+      float val=0;
+      if(sscanf(szUpdateString, "%f", &val)==1)
+      {
+        pQuat->w = val;
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  // hkvAlignedBBox
+  cast = VSWIG_TypeCheckStruct(usr->type,SWIGTYPE_p_hkvAlignedBBox);
+
+  if(cast)
+  {
+    int iNewMemory = 0;
+    hkvAlignedBBox* pBox = (hkvAlignedBBox *)VSWIG_TypeCast(cast,usr->ptr,&iNewMemory);
+    if(!pBox || iNewMemory) 
+      return false; //cast failed
+
+    if(!strcmp("Min", szMemberName))
+    {
+      float x=0,y=0,z=0;
+      if(sscanf(szUpdateString, "%f/%f/%f", &x,&y,&z)==3)
+      {
+        pBox->m_vMin.set(x,y,z);
+        return true;
+      }
+    }
+    else if(!strcmp("Max", szMemberName))
+    {
+      float x=0,y=0,z=0;
+      if(sscanf(szUpdateString, "%f/%f/%f", &x,&y,&z)==3)
+      {
+        pBox->m_vMax.set(x,y,z);
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  // hkvBoundingSphere
+  cast = VSWIG_TypeCheckStruct(usr->type,SWIGTYPE_p_hkvBoundingSphere);
+
+  if(cast)
+  {
+    int iNewMemory = 0;
+    hkvBoundingSphere* pBSphere = (hkvBoundingSphere *)VSWIG_TypeCast(cast,usr->ptr,&iNewMemory);
+    if(!pBSphere || iNewMemory)
+      return false; //cast failed
+
+    if(!strcmp("Center", szMemberName))
+    {
+      float x=0,y=0,z=0;
+      if(sscanf(szUpdateString, "%f/%f/%f", &x,&y,&z)==3)
+      {
+        pBSphere->m_vCenter.set(x,y,z);
+        return true;
+      }
+    }
+    else if(!strcmp("Radius", szMemberName))
+    {
+      float r=0;
+      if(sscanf(szUpdateString, "%f", &r)==1)
+      {
+        pBSphere->m_fRadius = r;
+        return true;
+      }
+    }
 
     return false;
   }
@@ -265,89 +576,21 @@ bool SwigTypeDataAccessor::UpdateMemberFromString(void* pUserDataPointer, void *
     return false;
   }
 
-  // hkvAlignedBBox
-  cast = VSWIG_TypeCheckStruct(usr->type,SWIGTYPE_p_hkvAlignedBBox);
-
-  if(cast)
-  {
-    int iNewMemory = 0;
-    hkvAlignedBBox* pBox = (hkvAlignedBBox *)VSWIG_TypeCast(cast,usr->ptr,&iNewMemory);
-    if(!pBox || iNewMemory) return false; //cast failed
-
-    if(!strcmp("Min", szMemberName))
-    {
-      float x=0,y=0,z=0;
-      if(sscanf(szUpdateString, "%f/%f/%f", &x,&y,&z)==3)
-      {
-        pBox->m_vMin.set(x,y,z);
-        return true;
-      }
-    }
-    else if(!strcmp("Max", szMemberName))
-    {
-      float x=0,y=0,z=0;
-      if(sscanf(szUpdateString, "%f/%f/%f", &x,&y,&z)==3)
-      {
-        pBox->m_vMax.set(x,y,z);
-        return true;
-      }
-    }
-
-    return false;
-  }
-
-  cast = VSWIG_TypeCheckStruct(usr->type,SWIGTYPE_p_hkvMat3);
-
-  if(cast)
-  {
-    int iNewMemory = 0;
-    hkvMat3 * pMatrix = (hkvMat3 *)VSWIG_TypeCast(cast,usr->ptr,&iNewMemory);
-    if(!pMatrix || iNewMemory) return false; //cast failed
-
-    hkvVec3 v1,v2,v3;
-    pMatrix->getAxisXYZ(&v1,&v2,&v3);
-
-    if(!strcmp("Vector1: m[0,3,6]", szMemberName))
-    {
-      float x=0,y=0,z=0;
-      if(sscanf(szUpdateString, "%f/%f/%f", &x,&y,&z)==3)
-      {
-        v1.set(x,y,z);
-        pMatrix->setAxisXYZ (v1,v2,v3);
-        return true;
-      }
-    }
-    else if(!strcmp("Vector2: m[1,4,7]", szMemberName))
-    {
-      float x=0,y=0,z=0;
-      if(sscanf(szUpdateString, "%f/%f/%f", &x,&y,&z)==3)
-      {
-        v2.set(x,y,z);
-        pMatrix->setAxisXYZ (v1,v2,v3);
-        return true;
-      }
-    }
-    else if(!strcmp("Vector3: m[2,5,8]", szMemberName))
-    {
-      float x=0,y=0,z=0;
-      if(sscanf(szUpdateString, "%f/%f/%f", &x,&y,&z)==3)
-      {
-        v3.set(x,y,z);
-        pMatrix->setAxisXYZ (v1,v2,v3);
-          return true;
-      }
-    }
-
-    return false;
-  }
-
   return false;
 }
+
 
 static VString hkvVec3_ToString (const hkvVec3& v)
 {
   VString s;
   s.Format ("(%.2f | %.2f | %.2f)", v.x, v.y, v.z);
+  return s;
+}
+
+static VString hkvVec4_ToString (const hkvVec4& v)
+{
+  VString s;
+  s.Format ("(%.2f | %.2f | %.2f | %.2f)", v.x, v.y, v.z, v.w);
   return s;
 }
 
@@ -508,6 +751,29 @@ bool SwigTypeDataAccessor::GetUserDataMembers(void* pUserDataPointer, void *pEnv
 
   //try primitive data types...
 
+  //hkvVec2
+  cast = VSWIG_TypeCheckStruct(usr->type,SWIGTYPE_p_hkvVec2);
+
+  if(cast)
+  {
+    int iNewMemory = 0; // SWIG Internal: iNewMemory handling not yet implemented -> has to remain 0
+    hkvVec2* pVec = (hkvVec2* )VSWIG_TypeCast(cast,usr->ptr,&iNewMemory);
+
+    if(!pVec || iNewMemory)
+    {
+      AddMembersAndAttributes((swig_lua_class *) usr->type->clientdata, L,dynArrMembers, iMemberCount);
+      return false; //cast failed
+    }
+
+    VString sBuffer;
+    sBuffer.Format("%f", pVec->x);
+    Helper_AddMember(dynArrMembers, iMemberCount, "X", sBuffer.AsChar(), VRSDScriptSymbol::SYMBOL_NUMBER);
+    sBuffer.Format("%f", pVec->y);
+    Helper_AddMember(dynArrMembers, iMemberCount, "Y", sBuffer.AsChar(), VRSDScriptSymbol::SYMBOL_NUMBER);
+
+    return true;
+  }
+
   //hkvVec3
   cast = VSWIG_TypeCheckStruct(usr->type,SWIGTYPE_p_hkvVec3);
 
@@ -529,8 +795,174 @@ bool SwigTypeDataAccessor::GetUserDataMembers(void* pUserDataPointer, void *pEnv
     Helper_AddMember(dynArrMembers, iMemberCount, "Y", sBuffer.AsChar(), VRSDScriptSymbol::SYMBOL_NUMBER);
     sBuffer.Format("%f", pVec->z);
     Helper_AddMember(dynArrMembers, iMemberCount, "Z", sBuffer.AsChar(), VRSDScriptSymbol::SYMBOL_NUMBER);
-    //sBuffer.Format("%f", pVec->w);
-    //Helper_AddMember(dynArrMembers, iMemberCount, "W", sBuffer.AsChar(), VRSDScriptSymbol::SYMBOL_NUMBER);
+
+    return true;
+  }
+
+  //hkvVec4
+  cast = VSWIG_TypeCheckStruct(usr->type,SWIGTYPE_p_hkvVec4);
+
+  if(cast)
+  {
+    int iNewMemory = 0; // SWIG Internal: iNewMemory handling not yet implemented -> has to remain 0
+    hkvVec4* pVec = (hkvVec4* )VSWIG_TypeCast(cast,usr->ptr,&iNewMemory);
+
+    if(!pVec || iNewMemory)
+    {
+      AddMembersAndAttributes((swig_lua_class *) usr->type->clientdata, L,dynArrMembers, iMemberCount);
+      return false; //cast failed
+    }
+
+    VString sBuffer;
+    sBuffer.Format("%f", pVec->x);
+    Helper_AddMember(dynArrMembers, iMemberCount, "X", sBuffer.AsChar(), VRSDScriptSymbol::SYMBOL_NUMBER);
+    sBuffer.Format("%f", pVec->y);
+    Helper_AddMember(dynArrMembers, iMemberCount, "Y", sBuffer.AsChar(), VRSDScriptSymbol::SYMBOL_NUMBER);
+    sBuffer.Format("%f", pVec->z);
+    Helper_AddMember(dynArrMembers, iMemberCount, "Z", sBuffer.AsChar(), VRSDScriptSymbol::SYMBOL_NUMBER);
+    sBuffer.Format("%f", pVec->w);
+    Helper_AddMember(dynArrMembers, iMemberCount, "W", sBuffer.AsChar(), VRSDScriptSymbol::SYMBOL_NUMBER);
+
+    return true;
+  }
+
+  //hkvMat3 
+  cast = VSWIG_TypeCheckStruct(usr->type,SWIGTYPE_p_hkvMat3);
+
+  if(cast)
+  {
+    int iNewMemory = 0;
+    hkvMat3 * pMatrix = (hkvMat3 *)VSWIG_TypeCast(cast,usr->ptr,&iNewMemory);
+
+    if(!pMatrix || iNewMemory)
+    {
+      AddMembersAndAttributes((swig_lua_class *) usr->type->clientdata, L, dynArrMembers, iMemberCount);
+      return false; //cast failed
+    }
+
+    //handle vectors as string symbols in vRSD (update is more convenient)
+    Helper_AddMember(dynArrMembers, iMemberCount, "Row1: m[0,3,6]", hkvVec3_ToString(pMatrix->getRow(0)).AsChar(), VRSDScriptSymbol::SYMBOL_STRING);
+    Helper_AddMember(dynArrMembers, iMemberCount, "Row2: m[1,4,7]", hkvVec3_ToString(pMatrix->getRow(1)).AsChar(), VRSDScriptSymbol::SYMBOL_STRING);
+    Helper_AddMember(dynArrMembers, iMemberCount, "Row3: m[2,5,8]", hkvVec3_ToString(pMatrix->getRow(2)).AsChar(), VRSDScriptSymbol::SYMBOL_STRING);
+
+    return true;
+  }
+
+  //hkvMat4 
+  cast = VSWIG_TypeCheckStruct(usr->type,SWIGTYPE_p_hkvMat4);
+
+  if(cast)
+  {
+    int iNewMemory = 0;
+    hkvMat4 * pMatrix = (hkvMat4 *)VSWIG_TypeCast(cast,usr->ptr,&iNewMemory);
+
+    if(!pMatrix || iNewMemory)
+    {
+      AddMembersAndAttributes((swig_lua_class *) usr->type->clientdata, L, dynArrMembers, iMemberCount);
+      return false; //cast failed
+    }
+
+    hkvVec4 v1,v2,v3,v4;
+    v1 = pMatrix->getColumn(0);
+    v2 = pMatrix->getColumn(1);
+    v3 = pMatrix->getColumn(2);
+    v4 = pMatrix->getColumn(3);
+    //handle vectors as string symbols in vRSD (update is more convenient)
+    Helper_AddMember(dynArrMembers, iMemberCount, "Row1: m[0,4,8,12]", hkvVec4_ToString(pMatrix->getRow(0)).AsChar(), VRSDScriptSymbol::SYMBOL_STRING);
+    Helper_AddMember(dynArrMembers, iMemberCount, "Row2: m[1,5,9,13]", hkvVec4_ToString(pMatrix->getRow(1)).AsChar(), VRSDScriptSymbol::SYMBOL_STRING);
+    Helper_AddMember(dynArrMembers, iMemberCount, "Row3: m[2,6,10,14]", hkvVec4_ToString(pMatrix->getRow(2)).AsChar(), VRSDScriptSymbol::SYMBOL_STRING);
+    Helper_AddMember(dynArrMembers, iMemberCount, "Row4: m[3,7,11,15]", hkvVec4_ToString(pMatrix->getRow(3)).AsChar(), VRSDScriptSymbol::SYMBOL_STRING);
+
+    return true;
+  }
+
+  // hkvPlane
+  cast = VSWIG_TypeCheckStruct(usr->type,SWIGTYPE_p_hkvPlane);
+
+  if(cast)
+  {
+    int iNewMemory = 0;
+    hkvPlane* pPlane = (hkvPlane *)VSWIG_TypeCast(cast,usr->ptr,&iNewMemory);
+
+    if(!pPlane || iNewMemory)
+    {
+      AddMembersAndAttributes((swig_lua_class *) usr->type->clientdata, L, dynArrMembers, iMemberCount);
+      return false; //cast failed
+    }
+    //handle vectors as string symbols in vRSD (update is more convenient)
+    Helper_AddMember(dynArrMembers, iMemberCount, "Normal", hkvVec3_ToString(pPlane->m_vNormal).AsChar (), VRSDScriptSymbol::SYMBOL_STRING);
+    VString sBuffer;
+    sBuffer.Format("%f", pPlane->m_fNegDist);
+    Helper_AddMember(dynArrMembers, iMemberCount, "NegDist", sBuffer.AsChar(), VRSDScriptSymbol::SYMBOL_NUMBER);
+
+    return true;
+  }
+
+  // hkvQuat
+  cast = VSWIG_TypeCheckStruct(usr->type,SWIGTYPE_p_hkvQuat);
+
+  if(cast)
+  {
+    int iNewMemory = 0; // SWIG Internal: iNewMemory handling not yet implemented -> has to remain 0
+    hkvQuat* pQuat = (hkvQuat* )VSWIG_TypeCast(cast,usr->ptr,&iNewMemory);
+
+    if(!pQuat || iNewMemory)
+    {
+      AddMembersAndAttributes((swig_lua_class *) usr->type->clientdata, L,dynArrMembers, iMemberCount);
+      return false; //cast failed
+    }
+
+    VString sBuffer;
+    sBuffer.Format("%f", pQuat->x);
+    Helper_AddMember(dynArrMembers, iMemberCount, "X", sBuffer.AsChar(), VRSDScriptSymbol::SYMBOL_NUMBER);
+    sBuffer.Format("%f", pQuat->y);
+    Helper_AddMember(dynArrMembers, iMemberCount, "Y", sBuffer.AsChar(), VRSDScriptSymbol::SYMBOL_NUMBER);
+    sBuffer.Format("%f", pQuat->z);
+    Helper_AddMember(dynArrMembers, iMemberCount, "Z", sBuffer.AsChar(), VRSDScriptSymbol::SYMBOL_NUMBER);
+    sBuffer.Format("%f", pQuat->w);
+    Helper_AddMember(dynArrMembers, iMemberCount, "W", sBuffer.AsChar(), VRSDScriptSymbol::SYMBOL_NUMBER);
+
+    return true;
+  }
+
+  //hkvAlignedBBox
+  cast = VSWIG_TypeCheckStruct(usr->type,SWIGTYPE_p_hkvAlignedBBox);
+
+  if(cast)
+  {
+    int iNewMemory = 0;
+    hkvAlignedBBox* pBox = (hkvAlignedBBox *)VSWIG_TypeCast(cast,usr->ptr,&iNewMemory);
+
+    if(!pBox || iNewMemory)
+    {
+      AddMembersAndAttributes((swig_lua_class *) usr->type->clientdata, L, dynArrMembers, iMemberCount);
+      return false; //cast failed
+    }
+    //handle vectors as string symbols in vRSD (update is more convenient)
+    Helper_AddMember(dynArrMembers, iMemberCount, "Min", hkvVec3_ToString (pBox->m_vMin).AsChar (), VRSDScriptSymbol::SYMBOL_STRING);
+    Helper_AddMember(dynArrMembers, iMemberCount, "Max", hkvVec3_ToString (pBox->m_vMax).AsChar (), VRSDScriptSymbol::SYMBOL_STRING);
+
+    return true;
+  }
+
+  // hkvBoundingSphere
+  cast = VSWIG_TypeCheckStruct(usr->type,SWIGTYPE_p_hkvBoundingSphere);
+
+  if(cast)
+  {
+    int iNewMemory = 0;
+    hkvBoundingSphere* pBSphere = (hkvBoundingSphere *)VSWIG_TypeCast(cast,usr->ptr,&iNewMemory);
+
+    if(!pBSphere || iNewMemory)
+    {
+      AddMembersAndAttributes((swig_lua_class *) usr->type->clientdata, L, dynArrMembers, iMemberCount);
+      return false; //cast failed
+    }
+    //handle vectors as string symbols in vRSD (update is more convenient)
+    Helper_AddMember(dynArrMembers, iMemberCount, "Center", hkvVec3_ToString(pBSphere->m_vCenter).AsChar (), VRSDScriptSymbol::SYMBOL_STRING);
+    VString sBuffer;
+    sBuffer.Format("%f", pBSphere->m_fRadius);
+    Helper_AddMember(dynArrMembers, iMemberCount, "Radius", sBuffer.AsChar(), VRSDScriptSymbol::SYMBOL_NUMBER);
 
     return true;
   }
@@ -581,50 +1013,6 @@ bool SwigTypeDataAccessor::GetUserDataMembers(void* pUserDataPointer, void *pEnv
     Helper_AddMember(dynArrMembers, iMemberCount, "Blue", sBuffer.AsChar(), VRSDScriptSymbol::SYMBOL_STRING);
     sBuffer.Format("0x%x", pColor->a);
     Helper_AddMember(dynArrMembers, iMemberCount, "Alpha", sBuffer.AsChar(), VRSDScriptSymbol::SYMBOL_STRING);
-
-    return true;
-  }
-
-  //hkvAlignedBBox
-  cast = VSWIG_TypeCheckStruct(usr->type,SWIGTYPE_p_hkvAlignedBBox);
-
-  if(cast)
-  {
-    int iNewMemory = 0;
-    hkvAlignedBBox* pBox = (hkvAlignedBBox *)VSWIG_TypeCast(cast,usr->ptr,&iNewMemory);
-    
-    if(!pBox || iNewMemory)
-    {
-      AddMembersAndAttributes((swig_lua_class *) usr->type->clientdata, L, dynArrMembers, iMemberCount);
-      return false; //cast failed
-    }
-    //handle vectors as string symbols in vRSD (update is more convenient)
-    Helper_AddMember(dynArrMembers, iMemberCount, "Min", hkvVec3_ToString (pBox->m_vMin).AsChar (), VRSDScriptSymbol::SYMBOL_STRING);
-    Helper_AddMember(dynArrMembers, iMemberCount, "Max", hkvVec3_ToString (pBox->m_vMax).AsChar (), VRSDScriptSymbol::SYMBOL_STRING);
-
-    return true;
-  }
-
-  //hkvMat3 
-  cast = VSWIG_TypeCheckStruct(usr->type,SWIGTYPE_p_hkvMat3);
-
-  if(cast)
-  {
-    int iNewMemory = 0;
-    hkvMat3 * pMatrix = (hkvMat3 *)VSWIG_TypeCast(cast,usr->ptr,&iNewMemory);
-    
-    if(!pMatrix || iNewMemory)
-    {
-      AddMembersAndAttributes((swig_lua_class *) usr->type->clientdata, L, dynArrMembers, iMemberCount);
-      return false; //cast failed
-    }
-
-    hkvVec3 v1,v2,v3;
-    pMatrix->getAxisXYZ(&v1,&v2,&v3);
-    //handle vectors as string symbols in vRSD (update is more convenient)
-    Helper_AddMember(dynArrMembers, iMemberCount, "Vector1: m[0,3,6]", hkvVec3_ToString (v1).AsChar (), VRSDScriptSymbol::SYMBOL_STRING);
-    Helper_AddMember(dynArrMembers, iMemberCount, "Vector2: m[1,4,7]", hkvVec3_ToString (v2).AsChar (), VRSDScriptSymbol::SYMBOL_STRING);
-    Helper_AddMember(dynArrMembers, iMemberCount, "Vector3: m[2,5,8]", hkvVec3_ToString (v3).AsChar (), VRSDScriptSymbol::SYMBOL_STRING);
 
     return true;
   }
@@ -700,10 +1088,13 @@ int  SwigTypeDataAccessor::GetMembersFromGlobal(void* pUserDataPointer, lua_Stat
 
   int iCount = iMemberCount;
 
-  // first key for the iteration
-  lua_pushnil(L);
+  lua_pushliteral(L, "G");                               //stack: ..., 'G', TOP
+  lua_gettable(L, LUA_GLOBALSINDEX);                     //stack: ..., globalTable, TOP
 
-  while (lua_next(L, LUA_GLOBALSINDEX) != 0)
+  // first key for the iteration
+  lua_pushnil(L);                                        //stack: ..., globalTable, nil TOP
+
+  while (lua_next(L, -2) != 0)
   {
     // after this the key is at -2 and the value at -1
 
@@ -724,7 +1115,7 @@ int  SwigTypeDataAccessor::GetMembersFromGlobal(void* pUserDataPointer, lua_Stat
 
         //check if sscanf assigned the two required values and
         //if the address matches the current userdata item
-        if(iAssignedValues!=2 || pAdr!=pUserDataPointer)
+        if( iAssignedValues!=2 || pAdr!=((swig_lua_userdata*)pUserDataPointer)->ptr )
         {
           lua_pop(L,1);
           continue;
@@ -743,7 +1134,7 @@ int  SwigTypeDataAccessor::GetMembersFromGlobal(void* pUserDataPointer, lua_Stat
         else if(lua_type(L, -1) == LUA_TNUMBER)
         {
           char buffer[32];
-          sprintf(buffer, "%f", lua_tonumber(L, -1));
+          vis_snprintf(buffer, 32, "%f", lua_tonumber(L, -1));
           Helper_AddMember(dynArrMembers, iMemberCount, szBuffer, buffer, VRSDScriptSymbol::SYMBOL_NUMBER);
         }
         // string member variable
@@ -757,8 +1148,18 @@ int  SwigTypeDataAccessor::GetMembersFromGlobal(void* pUserDataPointer, lua_Stat
         }
         else if(lua_isuserdata(L, -1))
         {
-          char buffer[32];
-          sprintf(buffer, "userdata:0x%p", lua_touserdata(L, -1));      
+          char buffer[128];
+          swig_type_info* type = (swig_type_info *)LUA_GetSwigType(L, -1);
+          void * pUserData = lua_touserdata(L, -1);
+
+          if(type)
+          {
+            vis_snprintf(buffer, 128, "userdata:0x%p [%s: 0x%p]", pUserData, type->str, ((swig_lua_userdata*)pUserData)->ptr); //consider this for the future: SwigTypeDataAccessor::GetUserDataMembers(pUserData, L, dynArrMembers, iMemberCount); (add loop avoidance...)
+          }
+          else
+          {
+            vis_snprintf(buffer, 128, "userdata:0x%p", pUserData);
+          }
           Helper_AddMember(dynArrMembers, iMemberCount, szBuffer, buffer, VRSDScriptSymbol::SYMBOL_USERDATA, false);
         }
         else if(lua_isboolean(L, -1))
@@ -773,14 +1174,18 @@ int  SwigTypeDataAccessor::GetMembersFromGlobal(void* pUserDataPointer, lua_Stat
         }
       }
     }
-    lua_pop(L, 1);  // remove the value, keep the key for the next iteration
+    // remove the value, keep the key for the next iteration
+    lua_pop(L, 1);                          //stack: ..., globalTable, last_key, TOP
   }
+
+  //remove the last key and the global table
+  lua_pop(L, 2);                            //stack: ..., TOP
 
   return iMemberCount-iCount;
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

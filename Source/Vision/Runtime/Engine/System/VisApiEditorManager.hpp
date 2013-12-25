@@ -352,6 +352,24 @@ public:
     return false;
   }
 
+  /// \brief
+  ///   Returns the base data path used by the editor.
+  /// \return
+  ///   \c NULL if no project is loaded; the base data path otherwise
+  inline VString& GetBaseDataPath()
+  {
+    return m_BaseDataPath;
+  }
+
+  /// \brief
+  ///   Returns the path used by the editor to load internal.
+  /// \return
+  ///   \c NULL if no project is loaded; the edtor data path otherwise
+  inline VString& GetEditorDataPath()
+  {
+    return m_EditorDataPath;
+  }
+
   ///
   /// \brief  Gets the project path of the currently loaded project in the editor. This value is only valid (non-NULL) when InEditor() is true. (E.g. a project loaded and in play-the-game mode)
   ///
@@ -428,6 +446,14 @@ public:
   /// \brief
   ///   Called by the editor to set the current editor mode
   VISION_APIFUNC void SetMode(EditorMode_e state);
+
+  /// \brief
+  ///   Called by the editor to set the current base data path
+  VISION_APIFUNC void SetBaseDataPath(const char* szBaseDataPath);
+
+  /// \brief
+  ///   Called by the editor to set the current editor data path
+  VISION_APIFUNC void SetEditorDataPath(const char* szEditorDataPath);
 
   /// \brief
   ///   Called by the editor to set the current project path
@@ -572,6 +598,8 @@ friend class Vision;
 
   bool m_bIsInEditor, m_bIgnoreAdvancedEffects, m_bIsInEditorSilentMode, m_bEditorScriptCaching;
   EditorMode_e m_editorMode;
+  VString m_BaseDataPath;
+  VString m_EditorDataPath;
   VString m_ProjectPath;
   VString m_SceneName;
   VString m_SDKPath;
@@ -612,7 +640,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

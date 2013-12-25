@@ -16,6 +16,10 @@
 #include <Vision/Samples/Engine/ModelMerging/ModelMergingPCH.h>
 #include <Vision/Samples/Engine/ModelMerging/MergedModelFactory.hpp>
 
+#include <Vision/Samples/Engine/ModelMerging/KeyControlledTransitionBarbarian.hpp>
+#include <Vision/Samples/Engine/ModelMerging/TransitionBarbarian.hpp>
+#include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Components/VOrbitCamera.hpp>
+
 MergedModelFactory_cl::MergedModelFactory_cl()
 {
   m_pMergedModelEntity = NULL;
@@ -32,21 +36,20 @@ MergedModelFactory_cl::MergedModelFactory_cl()
   m_bBeard = false;
   m_bAxe = true;
 
-  m_vPos = hkvVec3(0.f, 0.f, 0.f);
-  m_vOri = hkvVec3(0.f, 0.f, 0.f);
+  m_vPos = hkvVec3::ZeroVector();
+  m_vOri = hkvVec3::ZeroVector();
 
-  m_pPlayerCamera = new VPlayerCamera();
-  m_pPlayerCamera->InitialYaw = 90.f;
-  m_pPlayerCamera->RelativeLookAtHeight = 1.0f;
-  m_pPlayerCamera->Follow = false;
-  m_pPlayerCamera->Collides = false;
-  m_pPlayerCamera->DepthOfField = true;
-#if defined( _VISION_MOBILE )
-  float fContentScaleFactor = Vision::Video.GetVideoConfig()->DisplayDensity;
-  m_pPlayerCamera->CameraSensitivity /= fContentScaleFactor * 1.5f;
-#endif
-  m_pCameraEntity = Vision::Game.CreateEntity( "VisBaseEntity_cl", hkvVec3(0.f, 0.f, 100.f), "");
-  m_pCameraEntity->AddComponent(m_pPlayerCamera);
+  m_pOrbitCamera = new VOrbitCamera();
+  m_pOrbitCamera->InitialYaw = 90.0f;
+  m_pOrbitCamera->RelativeLookAtHeight = 1.0f;
+  m_pOrbitCamera->Follow = false;
+  m_pOrbitCamera->Collides = false;
+  m_pOrbitCamera->DepthOfField = true;
+  m_pOrbitCamera->MinimalDistance = 100.0f;
+  m_pOrbitCamera->MaximalDistance = 1000.0f;
+
+  m_pCameraEntity = Vision::Game.CreateEntity( "VisBaseEntity_cl", hkvVec3(0.0f, 0.0f, 100.0f), "");
+  m_pCameraEntity->AddComponent(m_pOrbitCamera);
 }
 
 MergedModelFactory_cl::~MergedModelFactory_cl()
@@ -108,36 +111,36 @@ void MergedModelFactory_cl::MergeModel()
 
   // Always use the body
   MeshMergeInfo_t info[32]; // maximum count
-  info[0].m_pMesh = Vision::Game.LoadDynamicMesh("Barbarian_Body.model", true);
+  info[0].m_pMesh = Vision::Game.LoadDynamicMesh("Models/Barbarian/Barbarian_Body.model", true);
 
   int i = 1;
 
   // Armor
   if (m_bArmArmor)
-    info[i++].m_pMesh = Vision::Game.LoadDynamicMesh("Barbarian_Arm.model", true);
+    info[i++].m_pMesh = Vision::Game.LoadDynamicMesh("Models/Barbarian/Barbarian_Arm.model", true);
   if (m_bShoulderArmor)
-    info[i++].m_pMesh = Vision::Game.LoadDynamicMesh("Barbarian_Shoulder.model", true);
+    info[i++].m_pMesh = Vision::Game.LoadDynamicMesh("Models/Barbarian/Barbarian_Shoulder.model", true);
   if (m_bLegsArmor)
-    info[i++].m_pMesh = Vision::Game.LoadDynamicMesh("Barbarian_Legs.model", true);
+    info[i++].m_pMesh = Vision::Game.LoadDynamicMesh("Models/Barbarian/Barbarian_Legs.model", true);
   if (m_bKneeArmor)
-    info[i++].m_pMesh = Vision::Game.LoadDynamicMesh("Barbarian_Knee.model", true);
+    info[i++].m_pMesh = Vision::Game.LoadDynamicMesh("Models/Barbarian/Barbarian_Knee.model", true);
   if (m_bAccessoire)
-    info[i++].m_pMesh = Vision::Game.LoadDynamicMesh("Barbarian_Accessoire.model", true);
+    info[i++].m_pMesh = Vision::Game.LoadDynamicMesh("Models/Barbarian/Barbarian_Accessoire.model", true);
   if (m_bBelt)
-    info[i++].m_pMesh = Vision::Game.LoadDynamicMesh("Barbarian_Belt.model", true);
+    info[i++].m_pMesh = Vision::Game.LoadDynamicMesh("Models/Barbarian/Barbarian_Belt.model", true);
   if (m_bCloth)
-    info[i++].m_pMesh = Vision::Game.LoadDynamicMesh("Barbarian_Cloth.model", true);
+    info[i++].m_pMesh = Vision::Game.LoadDynamicMesh("Models/Barbarian/Barbarian_Cloth.model", true);
   if (m_bBeard)
-    info[i++].m_pMesh = Vision::Game.LoadDynamicMesh("Barbarian_Beard.model", true);
+    info[i++].m_pMesh = Vision::Game.LoadDynamicMesh("Models/Barbarian/Barbarian_Beard.model", true);
 
   // Weapon
   if (m_bAxe)
-    info[i++].m_pMesh = Vision::Game.LoadDynamicMesh("Barbarian_Axe.model", true);
+    info[i++].m_pMesh = Vision::Game.LoadDynamicMesh("Models/Barbarian/Barbarian_Axe.model", true);
   else
-    info[i++].m_pMesh = Vision::Game.LoadDynamicMesh("Barbarian_Sword.model", true);
+    info[i++].m_pMesh = Vision::Game.LoadDynamicMesh("Models/Barbarian/Barbarian_Sword.model", true);
 
   // Setup model
-  m_pMergedModelEntity = (KeyControlledTransitionBarbarian_cl *) Vision::Game.CreateEntity("KeyControlledTransitionBarbarian_cl", m_vPos, "Barbarian_Body.model");
+  m_pMergedModelEntity = (KeyControlledTransitionBarbarian_cl *) Vision::Game.CreateEntity("KeyControlledTransitionBarbarian_cl", m_vPos, "Models/Barbarian/Barbarian_Body.model");
 
   if (m_iModelsToMerge > 1)
   {
@@ -151,7 +154,7 @@ void MergedModelFactory_cl::MergeModel()
     m_pMergedModelEntity->SetMesh(pMergedModel);
 
     // Load sequence set
-    VisAnimSequenceSet_cl *pSet = Vision::Animations.GetSequenceSetManager()->LoadAnimSequenceSet("Barbarian_Body.anim");
+    VisAnimSequenceSet_cl *pSet = Vision::Animations.GetSequenceSetManager()->LoadAnimSequenceSet("Models/Barbarian/Barbarian_Body.anim");
     m_pMergedModelEntity->GetMesh()->GetSequenceSetCollection()->Add(pSet);
 
     if(pTransitionStateMachine != NULL)
@@ -163,9 +166,11 @@ void MergedModelFactory_cl::MergeModel()
   m_pMergedModelEntity->SetPosition(m_vPos);
   m_pMergedModelEntity->SetOrientation(m_vOri);
   m_pCameraEntity->AttachToParent(m_pMergedModelEntity);
-  m_pPlayerCamera->ResetOldPosition();
-  m_pPlayerCamera->Follow = false;
-  m_pPlayerCamera->Zoom = true;
+
+  m_pOrbitCamera->Follow = false;
+  m_pOrbitCamera->FollowFixed = false;
+  m_pOrbitCamera->Zoom = true;
+  m_pOrbitCamera->MoveSmoothness = 0.3f;
 }
 
 void MergedModelFactory_cl::PreviewModel()
@@ -173,17 +178,17 @@ void MergedModelFactory_cl::PreviewModel()
   DeleteModels();
 
   m_pPreviewModelEntities = new VisBaseEntity_cl*[BARBARIAN_MAX];
-  m_pPreviewModelEntities[BARBARIAN_BODY] = Vision::Game.CreateEntity("VisBaseEntity_cl", hkvVec3(0.f, 0.f, 0.f), "Barbarian_Body.model");
-  m_pPreviewModelEntities[BARBARIAN_ARM] = Vision::Game.CreateEntity("VisBaseEntity_cl", hkvVec3(0.f, 0.f, 0.f), "Barbarian_Arm.model");
-  m_pPreviewModelEntities[BARBARIAN_SHOULDER] = Vision::Game.CreateEntity("VisBaseEntity_cl", hkvVec3(0.f, 0.f, 0.f), "Barbarian_Shoulder.model");
-  m_pPreviewModelEntities[BARBARIAN_LEGS] = Vision::Game.CreateEntity("VisBaseEntity_cl", hkvVec3(0.f, 0.f, 0.f), "Barbarian_Legs.model");
-  m_pPreviewModelEntities[BARBARIAN_KNEE] = Vision::Game.CreateEntity("VisBaseEntity_cl", hkvVec3(0.f, 0.f, 0.f), "Barbarian_Knee.model");
-  m_pPreviewModelEntities[BARBARIAN_ACCESSOIRE] = Vision::Game.CreateEntity("VisBaseEntity_cl", hkvVec3(0.f, 0.f, 0.f), "Barbarian_Accessoire.model");
-  m_pPreviewModelEntities[BARBARIAN_BELT] = Vision::Game.CreateEntity("VisBaseEntity_cl", hkvVec3(0.f, 0.f, 0.f), "Barbarian_Belt.model");
-  m_pPreviewModelEntities[BARBARIAN_CLOTH] = Vision::Game.CreateEntity("VisBaseEntity_cl", hkvVec3(0.f, 0.f, 0.f), "Barbarian_Cloth.model");
-  m_pPreviewModelEntities[BARBARIAN_BEARD] = Vision::Game.CreateEntity("VisBaseEntity_cl", hkvVec3(0.f, 0.f, 0.f), "Barbarian_Beard.model");
-  m_pPreviewModelEntities[BARBARIAN_AXE] = Vision::Game.CreateEntity("VisBaseEntity_cl", hkvVec3(0.f, 0.f, 0.f), "Barbarian_Axe.model");
-  m_pPreviewModelEntities[BARBARIAN_SWORD] = Vision::Game.CreateEntity("VisBaseEntity_cl", hkvVec3(0.f, 0.f, 0.f), "Barbarian_Sword.model");
+  m_pPreviewModelEntities[BARBARIAN_BODY] = Vision::Game.CreateEntity("VisBaseEntity_cl", hkvVec3(0.f, 0.f, 0.f), "Models/Barbarian/Barbarian_Body.model");
+  m_pPreviewModelEntities[BARBARIAN_ARM] = Vision::Game.CreateEntity("VisBaseEntity_cl", hkvVec3(0.f, 0.f, 0.f), "Models/Barbarian/Barbarian_Arm.model");
+  m_pPreviewModelEntities[BARBARIAN_SHOULDER] = Vision::Game.CreateEntity("VisBaseEntity_cl", hkvVec3(0.f, 0.f, 0.f), "Models/Barbarian/Barbarian_Shoulder.model");
+  m_pPreviewModelEntities[BARBARIAN_LEGS] = Vision::Game.CreateEntity("VisBaseEntity_cl", hkvVec3(0.f, 0.f, 0.f), "Models/Barbarian/Barbarian_Legs.model");
+  m_pPreviewModelEntities[BARBARIAN_KNEE] = Vision::Game.CreateEntity("VisBaseEntity_cl", hkvVec3(0.f, 0.f, 0.f), "Models/Barbarian/Barbarian_Knee.model");
+  m_pPreviewModelEntities[BARBARIAN_ACCESSOIRE] = Vision::Game.CreateEntity("VisBaseEntity_cl", hkvVec3(0.f, 0.f, 0.f), "Models/Barbarian/Barbarian_Accessoire.model");
+  m_pPreviewModelEntities[BARBARIAN_BELT] = Vision::Game.CreateEntity("VisBaseEntity_cl", hkvVec3(0.f, 0.f, 0.f), "Models/Barbarian/Barbarian_Belt.model");
+  m_pPreviewModelEntities[BARBARIAN_CLOTH] = Vision::Game.CreateEntity("VisBaseEntity_cl", hkvVec3(0.f, 0.f, 0.f), "Models/Barbarian/Barbarian_Cloth.model");
+  m_pPreviewModelEntities[BARBARIAN_BEARD] = Vision::Game.CreateEntity("VisBaseEntity_cl", hkvVec3(0.f, 0.f, 0.f), "Models/Barbarian/Barbarian_Beard.model");
+  m_pPreviewModelEntities[BARBARIAN_AXE] = Vision::Game.CreateEntity("VisBaseEntity_cl", hkvVec3(0.f, 0.f, 0.f), "Models/Barbarian/Barbarian_Axe.model");
+  m_pPreviewModelEntities[BARBARIAN_SWORD] = Vision::Game.CreateEntity("VisBaseEntity_cl", hkvVec3(0.f, 0.f, 0.f), "Models/Barbarian/Barbarian_Sword.model");
 
   // Setup animation system
   VDynamicMesh* pBodyMesh = m_pPreviewModelEntities[BARBARIAN_BODY]->GetMesh();
@@ -211,13 +216,17 @@ void MergedModelFactory_cl::PreviewModel()
 #endif
   }
 
-  m_pCameraEntity->AttachToParent(m_pPreviewModelEntities[BARBARIAN_BODY]);
-  m_pPlayerCamera->ResetOldPosition();
-  m_pPlayerCamera->Follow = true;
-  m_pPlayerCamera->Zoom = false;
-  m_pPlayerCamera->InitialYaw = -90.f;
+  float fCurrentCameraYaw = Vision::Camera.GetMainCamera()->GetActualOrientation().x;// m_pCameraEntity->GetActualOrientation().x;
 
-  
+  m_pCameraEntity->AttachToParent(m_pPreviewModelEntities[BARBARIAN_BODY]);
+
+  m_pOrbitCamera->Follow = false;
+  m_pOrbitCamera->FollowFixed = true;
+  m_pOrbitCamera->Zoom = false;
+  // Make sure we face the entity from the front.
+  m_pOrbitCamera->InitialYaw += m_vOri.x + 90.0f - fCurrentCameraYaw;
+  m_pOrbitCamera->CameraDistance = 180.0f;
+
   UpdatePreview();
 }
 
@@ -267,7 +276,7 @@ void MergedModelFactory_cl::DeleteModels()
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

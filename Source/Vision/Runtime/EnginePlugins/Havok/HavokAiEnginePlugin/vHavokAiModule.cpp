@@ -29,6 +29,13 @@
 // for visual debugger
 #include <Ai/Visualize/VisualDebugger/hkaiViewerContext.h>
 
+//for SWIG Havok AI module
+#include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Scripting/VScriptIncludes.hpp>
+
+
+extern "C" int luaopen_HavokAi(lua_State *);
+
+
 // Static global manager
 vHavokAiModule vHavokAiModule::g_GlobalManager;
 
@@ -49,6 +56,11 @@ void vHavokAiModule::OneTimeInit()
 	vHavokPhysicsModule::OnBeforeWorldCreated += this;
 	vHavokPhysicsModule::OnAfterWorldCreated += this;
 	vHavokVisualDebugger::OnCreatingContexts += this;
+
+	Vision::Callbacks.OnRenderHook += this;
+	Vision::Callbacks.OnUpdateSceneFinished += this;
+	IVScriptManager::OnRegisterScriptFunctions += this;
+	IVScriptManager::OnScriptProxyCreation += this;
 }
 
 void vHavokAiModule::OneTimeDeInit()
@@ -58,6 +70,11 @@ void vHavokAiModule::OneTimeDeInit()
 	vHavokPhysicsModule::OnBeforeWorldCreated -= this;
 	vHavokPhysicsModule::OnAfterWorldCreated -= this;
 	vHavokVisualDebugger::OnCreatingContexts -= this;
+
+	Vision::Callbacks.OnRenderHook -= this;
+	Vision::Callbacks.OnUpdateSceneFinished -= this;
+	IVScriptManager::OnRegisterScriptFunctions -= this;
+	IVScriptManager::OnScriptProxyCreation -= this;
 }
 
 void vHavokAiModule::Init()
@@ -138,6 +155,19 @@ void vHavokAiModule::OnHandleCallback(IVisCallbackDataObject_cl *pData)
 			vHavokVisualDebuggerCallbackData_cl* pVdbData = (vHavokVisualDebuggerCallbackData_cl*)pData;
 			pVdbData->m_contexts->pushBack(m_aiViewerContext);
 		}
+	}
+	else if (pData->m_pSender == &Vision::Callbacks.OnRenderHook)
+	{
+		Render();
+	}
+	else if (pData->m_pSender == &Vision::Callbacks.OnUpdateSceneFinished)
+	{
+		Update();
+	}
+	else if(pData->m_pSender==&IVScriptManager::OnRegisterScriptFunctions)
+	{
+		vHavokAiModule::RegisterLua();
+
 	}
 }
 
@@ -494,8 +524,134 @@ bool vHavokAiModule::LoadNavMeshDeprecated(const char* filename, VArray<vHavokAi
 	return true;
 }
 
+void vHavokAiModule::RegisterLua() 
+{
+	IVScriptManager* pSM = Vision::GetScriptManager();
+	if (pSM != NULL)
+	{
+		lua_State* pLuaState = static_cast<VScriptResourceManager*>(pSM)->GetMasterState();
+		if (pLuaState)
+		{
+			luaopen_HavokAi(pLuaState);
+
+			int iRetParams = LUA_CallStaticFunction(pLuaState, "HavokAi", "vHavokAiModule", "Cast", "v>v", vHavokAiModule::GetInstance());
+			if (iRetParams==1)
+			{
+				if(lua_isnil(pLuaState, -1))
+				{
+					lua_pop(pLuaState, iRetParams);
+				}
+				else
+				{
+					lua_setglobal(pLuaState, "AI");
+				}
+			}
+		}
+		else
+		{
+			hkvLog::Warning("Unable to  register Lua Ai Module, lua_State is NULL.");
+		}
+	}
+	else 
+	{
+		hkvLog::Warning("Unable to register Lua Ai module, Script Manager is NULL.");
+	}
+}
+
+hkvVec3 *vHavokAiModule::GetClosestPoint(const hkvVec3 *position, float radius)
+{
+  if(position==NULL)
+    return NULL;
+
+	hkVector4 p;
+	vHavokConversionUtils::VisVecToPhysVecWorld(*position, p);
+
+	hkaiNavMeshQueryMediator::HitDetails hitInfo;
+
+	const hkaiNavMeshQueryMediator* mediator = m_aiWorld->getDynamicQueryMediator();
+
+	hkVector4 hitPoint;
+	hkaiPackedKey key = mediator->getClosestPoint( p, radius, hitPoint );
+
+	hkvVec3 *result = NULL;
+
+	if (key != HKAI_INVALID_PACKED_KEY)
+	{
+		result = new hkvVec3();
+		vHavokConversionUtils::PhysVecToVisVecWorld(hitPoint, *result);
+	}
+
+	return result;
+}
+
+hkvVec3 *vHavokAiModule::CastRay(const hkvVec3 *start, const hkvVec3 *end)
+{
+  if(start==NULL || end==NULL)
+    return NULL;
+
+	hkVector4 s;
+	vHavokConversionUtils::VisVecToPhysVecWorld(*start, s);
+	hkVector4 e;
+	vHavokConversionUtils::VisVecToPhysVecWorld(*end, e);
+
+	hkaiNavMeshQueryMediator::RaycastInput rcInput;
+	rcInput.m_from = s;
+	rcInput.m_to = e;
+
+	hkaiNavMeshQueryMediator::HitDetails hitInfo;
+
+	const hkaiNavMeshQueryMediator* mediator = m_aiWorld->getDynamicQueryMediator();
+	hkBool didHit = mediator->castRay( rcInput, hitInfo );
+	hkVector4 hitPoint; hitPoint.setInterpolate4( s, e, hitInfo.m_hitFraction);
+
+	hkvVec3 *result = NULL;
+
+	if (didHit)
+	{
+		result = new hkvVec3();
+		vHavokConversionUtils::PhysVecToVisVecWorld(hitPoint, *result);
+	}
+
+	return result;
+}
+
+hkvVec3 *vHavokAiModule::PickPoint(float x, float y, float fMaxDist)
+{
+	hkvVec3 *result = NULL;
+
+	hkvVec3 traceStart = Vision::Camera.GetCurrentCameraPosition();
+	hkvVec3 traceDir;
+	Vision::Contexts.GetCurrentContext()->GetTraceDirFromScreenPos(x, y, traceDir, fMaxDist);
+	hkvVec3 traceEnd = traceStart + traceDir;
+
+	hkVector4 s;
+	vHavokConversionUtils::VisVecToPhysVecWorld(traceStart, s);
+	hkVector4 e;
+	vHavokConversionUtils::VisVecToPhysVecWorld(traceEnd, e);
+
+	hkaiNavMeshQueryMediator::RaycastInput rcInput;
+	rcInput.m_from = s;
+	rcInput.m_to = e;
+
+	hkaiNavMeshQueryMediator::HitDetails hitInfo;
+
+	const hkaiNavMeshQueryMediator* mediator = m_aiWorld->getDynamicQueryMediator();
+	hkBool didHit = mediator->castRay( rcInput, hitInfo );
+
+	if (didHit)
+	{
+		hkVector4 hitPoint;
+		hitPoint.setInterpolate4( s, e, hitInfo.m_hitFraction);
+
+		result = new hkvVec3();
+		vHavokConversionUtils::PhysVecToVisVecWorld(hitPoint, *result);
+	}
+
+	return result;
+}
+
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

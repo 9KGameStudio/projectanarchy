@@ -397,7 +397,7 @@ VCursor* VGUIManager::GetDefaultCursor() const
 bool VGUIManager::LoadResourceFile(const char *szFilename)
 {
   TiXmlDocument doc;
-  if (!doc.LoadFile(szFilename,Vision::File.GetManager()))
+  if (!doc.LoadFile(szFilename))
     return false;
 
   char szPath[FS_MAX_PATH];
@@ -473,7 +473,7 @@ const char *VGUIManager::TranslateString(VWindowBase *pItem, const char *szIn) c
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

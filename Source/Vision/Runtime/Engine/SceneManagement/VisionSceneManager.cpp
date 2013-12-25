@@ -233,9 +233,7 @@ VisionSceneManager_cl::VisionSceneManager_cl() : m_ChangingZones(0, 0)
 
   m_SnapshotQueue.m_pCreator = &g_ResourceCreator;
   m_SnapshotQueue.m_pLoader = &Vision::File.GetMemoryStreamManager();
-  m_SnapshotQueue.m_pFileManager = Vision::File.GetManager();
   m_SnapshotQueue.m_pLog = NULL;
-
 }
 
 
@@ -252,7 +250,7 @@ unsigned int VisionSceneManager_cl::FindVisibilityZones(const hkvAlignedBBox &bb
     {
       pNodes[iNumRelevantZones++] = pZone;
       if (iNumRelevantZones >= iMaxNodes) {
-        Vision::Error.Warning("Entity overlapped more than %d visibility zones - bounding box may be incorrect or too large.", iMaxNodes);
+        hkvLog::Warning("Entity overlapped more than %d visibility zones - bounding box may be incorrect or too large.", iMaxNodes);
         break;
       }
     }
@@ -375,12 +373,26 @@ VisVisibilityZone_cl *VisionSceneManager_cl::FindClosestVisibilityZone(const hkv
   return pBestZone;
 }
 
-
 void VisionSceneManager_cl::GetSceneExtents(hkvAlignedBBox& bbox) const
 {
   bbox.setInvalid();
   FOR_ALL_GEOMETRY_INSTANCES
     bbox.expandToInclude(pInst->GetBoundingBox());
+  }
+}
+
+void VisionSceneManager_cl::GetDynamicSceneExtents(hkvAlignedBBox& bbox) const
+{
+  GetSceneExtents(bbox);
+
+  const unsigned int uiNumEntities = VisBaseEntity_cl::ElementManagerGetSize();
+  for (unsigned int uiIndex = 0; uiIndex < uiNumEntities; uiIndex++)
+  {
+    VisBaseEntity_cl* pEntity = VisBaseEntity_cl::ElementManagerGetAt(uiIndex);
+    if (pEntity == NULL)
+      continue;
+
+    bbox.expandToInclude(pEntity->GetBoundingBox());
   }
 }
 
@@ -742,7 +754,7 @@ bool VisionSceneManager_cl::PurgeResources(__int64 iEndTime)
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

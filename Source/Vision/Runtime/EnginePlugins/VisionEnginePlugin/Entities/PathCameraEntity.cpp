@@ -10,15 +10,13 @@
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Entities/PathCameraEntity.hpp>
 #include <Vision/Runtime/Base/ThirdParty/tinyXML/TinyXMLHelper.hpp>
 #include <Vision/Runtime/Base/System/Memory/VMemDbg.hpp>
-
+#include <Vision/Runtime/Engine/SceneElements/VisApiPath.hpp>
 
 VisCallback_cl PathCameraAction::OnTriggerEvent;
-
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Class PathParameter
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 
 void PathParameter::Handle(float dtime)
 {
@@ -37,8 +35,6 @@ void PathParameter::Handle(float dtime)
     if (m_fCurrentParam<=m_fMaxParam) {m_fCurrentParam=m_fMaxParam;m_bFinished=true;return;}
   }
 }
-
-        
 
 void PathParameter::EvaluatePosition(hkvVec3& vPos, hkvMat3 *pCamRot)
 {
@@ -86,7 +82,6 @@ void PathParameter::EvaluatePosition(hkvVec3& vPos, hkvMat3 *pCamRot)
   }
 }
 
-
 void PathParameter::FromXMLNode(TiXmlElement *pNode)
 {
   Clear();
@@ -108,8 +103,6 @@ void PathParameter::FromXMLNode(TiXmlElement *pNode)
   m_fCurrentParam = m_fStartParam;
   m_fCurrentTime = 0.f;
 }
-
-
 
 PathCameraAction::~PathCameraAction()
 {
@@ -160,7 +153,6 @@ void PathCameraAction::FromXMLNode(TiXmlElement *pNode)
     }
   }
 }
-
 
 void PathCameraAction::EvaluatePosition(hkvVec3& vPos, hkvMat3 &camRot)
 {
@@ -214,12 +206,9 @@ void PathCameraAction::Handle(PathCameraEntity *pOwner, float dtime)
 
 }
 
-
-
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Class PathCameraEntity
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 
 PathCameraEntity::PathCameraEntity()
 {
@@ -289,7 +278,6 @@ void PathCameraEntity::TickFunction(float dtime)
   }
 }
 
-
 void PathCameraEntity::ThinkFunction()
 {
   float dtime = Vision::GetTimer()->GetTimeDifference();
@@ -309,7 +297,6 @@ void PathCameraEntity::DeInitFunction()
   }
 }
 
-
 bool PathCameraEntity::LoadScriptFile(const char *szFilename)
 {
   if (VStringUtil::IsEmpty(szFilename))
@@ -323,7 +310,7 @@ bool PathCameraEntity::LoadScriptFile(const char *szFilename)
     return false;
   
   TiXmlDocument doc;
-  if (!doc.LoadFile(m_sScriptFile,Vision::File.GetManager()))
+  if (!doc.LoadFile(m_sScriptFile))
     return false;
 
   if (!doc.RootElement())
@@ -365,7 +352,7 @@ bool PathCameraEntity::LoadScriptFile(const char *szFilename)
   // all actions sorted out?
   if (m_iActionCount<1)
   {
-    Vision::Error.Warning("Camera script file '%s' does not contain valid camera actions. Please check path keys.", m_sScriptFile.AsChar());
+    hkvLog::Warning("Camera script file '%s' does not contain valid camera actions. Please check path keys.", m_sScriptFile.AsChar());
     return false;
   }
 
@@ -374,7 +361,6 @@ bool PathCameraEntity::LoadScriptFile(const char *szFilename)
 
   return true;
 }
-
 
 void PathCameraEntity::FreeScriptFile()
 {
@@ -385,10 +371,9 @@ void PathCameraEntity::FreeScriptFile()
   V_SAFE_DELETE_ARRAY(m_pActions);
 }
 
-
 bool PathCameraEntity::Start()
 {
-  if (m_iActionCount<=0)
+  if (m_iActionCount <= 0)
   {
     SetThinkFunctionStatus(false);
     return false;
@@ -414,15 +399,15 @@ bool PathCameraEntity::Start()
     m_spFadeMask->SetUserData(m_spFadeMask); // render in main scene [HACK]
   }
 
-  for (int i=0;i<m_iActionCount;i++)
+  for (int i = 0; i < m_iActionCount; i++)
     m_pActions[i].Reset();
 
   m_iCurrentAction = 0;
   SetThinkFunctionStatus(true);
   m_bPaused = false;
 
-  pCamera->AttachToEntity(this, hkvVec3::ZeroVector ());
-  TickFunction(0.f); // get current position and rotation
+  pCamera->AttachToEntity(this, hkvVec3::ZeroVector());
+  TickFunction(0.0f); // get current position and rotation
   return true;
 }
 
@@ -440,10 +425,8 @@ void PathCameraEntity::SetPause(bool bStatus)
   m_bPaused = bStatus;
 }
 
+V_IMPLEMENT_SERIAL(PathCameraEntity, VisBaseEntity_cl, 0, &g_VisionEngineModule);
 
-
-
-V_IMPLEMENT_SERIAL( PathCameraEntity, VisBaseEntity_cl, 0, &g_VisionEngineModule );
 void PathCameraEntity::Serialize( VArchive &ar )
 {
   VisBaseEntity_cl::Serialize(ar);
@@ -452,18 +435,18 @@ void PathCameraEntity::Serialize( VArchive &ar )
     SetUseEulerAngles(false);
     SetThinkFunctionStatus(false);
     int iVersion;
-    ar >> iVersion; VASSERT(iVersion==0 && "Unsupported version number");
+    ar >> iVersion; VASSERT_MSG(iVersion == 0, "Unsupported version number");
     ar >> m_sScriptFile;
     bool bStart;
     ar >> bStart;
-  } else
+  } 
+  else
   {
     ar << (int)0; // version
     ar.WriteStringBinary(m_sScriptFile);
     ar << true;
   }
 }
-
 
 void PathCameraEntity::OnDeserializationCallback(const VSerializationContext &context)
 {
@@ -474,82 +457,12 @@ void PathCameraEntity::OnDeserializationCallback(const VSerializationContext &co
     Start();
 }
 
-
 // hide this entity class in vForge because there is a dedicated C# shape type
 START_VAR_TABLE(PathCameraEntity, VisBaseEntity_cl, "PathCameraEntity", VFORGE_HIDECLASS, "")  
 END_VAR_TABLE
 
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Class CameraPositionEntity
-//////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-V_IMPLEMENT_SERIAL( CameraPositionEntity, VisBaseEntity_cl, 0, &g_VisionEngineModule );
-void CameraPositionEntity::Serialize( VArchive &ar )
-{
-  VisBaseEntity_cl::Serialize(ar);
-  char iLocalVersion = 0;
-  if (ar.IsLoading())
-  {
-    ar >> iLocalVersion; VASSERT(iLocalVersion==0 && "Unsupported version number");
-    ar >> NearClipDistance >> FarClipDistance >> FovX;
-  } else
-  {
-    ar << iLocalVersion; // version
-    ar << NearClipDistance << FarClipDistance << FovX;
-  }
-}
-
-void CameraPositionEntity::ApplyToContext(VisRenderContext_cl *pContext)
-{
-  VASSERT(pContext!=NULL && pContext->GetCamera()!=NULL);
-
-  // apply position and transformation
-  pContext->GetCamera()->AttachToEntity(this,hkvVec3::ZeroVector ());
-
-  // apply view settings
-  float fNear,fFar;
-  pContext->GetClipPlanes(fNear,fFar);
-  if (NearClipDistance>0.f)
-    fNear = NearClipDistance;
-  if (FarClipDistance>0.f)
-    fFar = FarClipDistance;
-  if (fFar<=fNear) fFar = fNear+0.001f;
-  pContext->SetClipPlanes(fNear,fFar);
-  if (FovX>0.f)
-  {
-    float FovY = 0.0f;
-    int iWidth, iHeight;
-    pContext->GetSize(iWidth, iHeight);
-
-    hkvMathHelpers::adjustFovsForAspectRatio(FovX, FovY, float(iWidth) / float(iHeight));
-
-    pContext->SetFOV(FovX, FovY);
-  }
-
-}
-
-CameraPositionEntity* CameraPositionEntity::ApplyToContext(VisRenderContext_cl *pContext, const char *szKey)
-{
-  VisBaseEntity_cl *pEnt = Vision::Game.SearchEntity(szKey);
-  if (pEnt==NULL || !pEnt->IsOfType(V_RUNTIME_CLASS(CameraPositionEntity)))
-    return NULL;
-  CameraPositionEntity *pCam = (CameraPositionEntity *)pEnt;
-  pCam->ApplyToContext(pContext);
-  return pCam;
-}
-
-
-// hide this entity class in vForge because there is a dedicated C# shape type
-START_VAR_TABLE(CameraPositionEntity, VisBaseEntity_cl, "CameraPositionEntity", VFORGE_HIDECLASS, "")  
-  DEFINE_VAR_FLOAT(CameraPositionEntity, NearClipDistance, "Custom near clip distance (or 0)", "0.0", 0, 0);
-  DEFINE_VAR_FLOAT(CameraPositionEntity, FarClipDistance, "Custom far clip distance (or 0)", "0.0", 0, 0);
-  DEFINE_VAR_FLOAT(CameraPositionEntity, FovX, "Custom fov (or 0)", "0.0", 0, 0);
-END_VAR_TABLE
-
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

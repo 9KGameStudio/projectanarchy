@@ -20,6 +20,7 @@ VScaleformTexture::VScaleformTexture()
   , m_spRenderTarget(NULL)
 {
   s_iResourceCount++;
+  SetResourceFlag(VRESOURCEFLAG_AUTOUNLOAD | VRESOURCEFLAG_ALLOWUNLOAD);
 }
 
 VScaleformTexture::~VScaleformTexture()
@@ -58,10 +59,6 @@ BOOL VScaleformTexture::Reload()
   m_spMovie->m_iHeight = SF_MOVIE_SIZE_RENDERCONTEXT;
 
   m_spMovie->SetVisibleBitmask(VIS_ENTITY_VISIBLE_IN_TEXTURE);
-
-  // advance the movie once
-  m_spMovie->m_pAdvanceTask->Schedule(0.05f); // has to be > 0
-  m_spMovie->m_pAdvanceTask->WaitUntilFinished();
 
   // Do not call base implementation (VTextureObject::Reload()) since this tries to load from file.
   return TRUE;
@@ -151,7 +148,7 @@ VTextureObject* VScaleformTextureFormatProvider::CreateTexture(const char *szFil
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

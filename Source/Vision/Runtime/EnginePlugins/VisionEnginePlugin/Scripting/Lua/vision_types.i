@@ -27,7 +27,7 @@ typedef int SINT;
   {
     if(pObject && pObject->IsOfType(CAST_TO_CLASS::GetClassTypeId()))
       return (CAST_TO_CLASS *) pObject;
-    Vision::Error.Warning("[Lua] Cannot cast to %s!", #CAST_TO_CLASS);
+    hkvLog::Warning("[Lua] Cannot cast to %s!", #CAST_TO_CLASS);
     return NULL;
   }
   
@@ -209,7 +209,7 @@ typedef int SINT;
 %enddef
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

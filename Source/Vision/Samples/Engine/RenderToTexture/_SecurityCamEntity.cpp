@@ -7,11 +7,9 @@
  */
 
 #include <Vision/Samples/Engine/RenderToTexture/RenderToTexturePCH.h>
+#include <Vision/Runtime/Framework/VisionApp/VAppImpl.hpp>
 
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// class ThermalImageRenderLoop_cl
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+#include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Input/VFreeCamera.hpp>
 
 // this class performs a modified renderloop that renders objects with a different set of shaders
 class ThermalImageRenderLoop_cl : public VisionRenderLoop_cl
@@ -125,27 +123,27 @@ void SecurityCamEntity_cl::InitFunction()
 
   int usesKeyboard = 0;
   #if defined(SUPPORTS_KEYBOARD)
-  VisSampleApp::GetInputMap()->MapTrigger(RTT_PICK_CAMERA, V_KEYBOARD, CT_KB_ENTER, VInputOptions::OncePerFrame( ONCE_ON_PRESS, usesKeyboard));
+  VAppImpl::GetInputMap()->MapTrigger(RTT_PICK_CAMERA, V_KEYBOARD, CT_KB_ENTER, VInputOptions::OncePerFrame( ONCE_ON_PRESS, usesKeyboard));
     usesKeyboard = 1;
   #endif
 
   #if defined(_VISION_XENON) || (defined(_VISION_WINRT) && !defined(_VISION_METRO) && !defined(_VISION_APOLLO))
-    VisSampleApp::GetInputMap()->MapTrigger(RTT_PICK_CAMERA, V_XENON_PAD(0), CT_PAD_A, VInputOptions::OncePerFrame( ONCE_ON_PRESS, usesKeyboard));
+    VAppImpl::GetInputMap()->MapTrigger(RTT_PICK_CAMERA, V_XENON_PAD(0), CT_PAD_A, VInputOptions::OncePerFrame( ONCE_ON_PRESS, usesKeyboard));
   
   #elif defined(_VISION_PS3)
-    VisSampleApp::GetInputMap()->MapTrigger(RTT_PICK_CAMERA, V_PS3_PAD(0), CT_PAD_CROSS, VInputOptions::OncePerFrame( ONCE_ON_PRESS, usesKeyboard));
+    VAppImpl::GetInputMap()->MapTrigger(RTT_PICK_CAMERA, V_PS3_PAD(0), CT_PAD_CROSS, VInputOptions::OncePerFrame( ONCE_ON_PRESS, usesKeyboard));
   
   #elif defined(_VISION_PSP2)
-    VisSampleApp::GetInputMap()->MapTrigger(RTT_PICK_CAMERA, V_PSP2_PAD(0), CT_PAD_CROSS, VInputOptions::OncePerFrame( ONCE_ON_PRESS, usesKeyboard));
+    VAppImpl::GetInputMap()->MapTrigger(RTT_PICK_CAMERA, V_PSP2_PAD(0), CT_PAD_CROSS, VInputOptions::OncePerFrame( ONCE_ON_PRESS, usesKeyboard));
   
   #elif defined(_VISION_MOBILE)
     int width = Vision::Video.GetXRes();
     
     VTouchArea* pickArea = new VTouchArea(VInputManager::GetTouchScreen(), VRectanglef(width - 100, 0, width, 100), 0.0f);
-    VisSampleApp::GetInputMap()->MapTrigger(RTT_PICK_CAMERA, pickArea, CT_TOUCH_ANY, VInputOptions::Once());
+    VAppImpl::GetInputMap()->MapTrigger(RTT_PICK_CAMERA, pickArea, CT_TOUCH_ANY, VInputOptions::Once());
 
   #elif defined(_VISION_WIIU)
-    VisSampleApp::GetInputMap()->MapTrigger(RTT_PICK_CAMERA, VInputManagerWiiU::GetDRC(V_DRC_FIRST), CT_PAD_B, VInputOptions::OncePerFrame( ONCE_ON_PRESS, usesKeyboard));
+    VAppImpl::GetInputMap()->MapTrigger(RTT_PICK_CAMERA, VInputManagerWiiU::GetDRC(V_DRC_FIRST), CT_PAD_B, VInputOptions::OncePerFrame( ONCE_ON_PRESS, usesKeyboard));
 
   #endif
 
@@ -191,9 +189,7 @@ void SecurityCamEntity_cl::InitFunction()
   m_spRenderContext->SetVisibilityCollector(pVisColl);
   m_spRenderContext->SetRenderLoop(new VisionRenderLoop_cl());
   
-  // Prevents the debug text rendered by the message system from being rendered in this context
-  m_spRenderContext->SetRenderFilterMask(~Vision::Message.GetVisibleBitmask());
-
+  
   pVisColl->SetOcclusionQueryRenderContext(m_spRenderContext);
   Vision::Contexts.AddContext(m_spRenderContext);
 
@@ -204,6 +200,15 @@ void SecurityCamEntity_cl::InitFunction()
 
   SetMonitorSurfaceName(m_szMonitorSrfName);
 }
+
+// ---------------------------------------------------------------------------------
+// Method: SetRenderTargetRenderFilterMask
+// ---------------------------------------------------------------------------------
+void SecurityCamEntity_cl::SetRenderTargetRenderFilterMask(unsigned int visibilityMask)
+{  
+  m_spRenderContext->SetRenderFilterMask(visibilityMask);
+}
+
 
 // ---------------------------------------------------------------------------------
 // Method: DeInitFunction
@@ -240,7 +245,7 @@ void SecurityCamEntity_cl::ThinkFunction()
   ////////////////////////////////////////////////////
   if (m_bIsPicked)
   {
-    if (VisSampleApp::GetInputMap()->GetTrigger(RTT_PICK_CAMERA))
+    if (VAppImpl::GetInputMap()->GetTrigger(RTT_PICK_CAMERA))
       PickCamera(false);
   } else
   {
@@ -255,7 +260,7 @@ void SecurityCamEntity_cl::ThinkFunction()
     if (!g_pCurrentlyPickedCam && diff.getLength()<80.f)
     {
       Vision::Message.Print(1,1,1,"Pick camera");
-      if (VisSampleApp::GetInputMap()->GetTrigger(RTT_PICK_CAMERA))
+      if (VAppImpl::GetInputMap()->GetTrigger(RTT_PICK_CAMERA))
         PickCamera();
     }
   }
@@ -332,7 +337,7 @@ void SecurityCamEntity_cl::PickCamera(bool status)
 {
   if (status==IsPicked()) return;
   m_bIsPicked = status;
-  VisMouseCamera_cl *pCam = (VisMouseCamera_cl *)VisRenderContext_cl::GetMainRenderContext()->GetCamera()->GetParent();
+  VFreeCamera *pCam = vstatic_cast<VFreeCamera*>(VisRenderContext_cl::GetMainRenderContext()->GetCamera()->GetParent());
   VASSERT(pCam);
 
   if (m_bIsPicked)
@@ -355,8 +360,6 @@ void SecurityCamEntity_cl::PickCamera(bool status)
   }
 }
 
-
-
 V_IMPLEMENT_SERIAL( SecurityCamEntity_cl, VisBaseEntity_cl, 0, Vision::GetEngineModule() );
 START_VAR_TABLE(SecurityCamEntity_cl, VisBaseEntity_cl, "SecurityCamEntity_cl", 0, "")  
   DEFINE_VAR_FLOAT(SecurityCamEntity_cl,  m_fUpdateTime,      "Update interval for rendering (0=each frame)", "0.05", 0,0);
@@ -369,7 +372,7 @@ START_VAR_TABLE(SecurityCamEntity_cl, VisBaseEntity_cl, "SecurityCamEntity_cl", 
 END_VAR_TABLE
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

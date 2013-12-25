@@ -115,18 +115,6 @@ public:
   ///   the active range defined via PushRange.
   VBASE_IMPEXP void SetProgress(float fPercentage);
 
-  /// \brief
-  ///   Optional information string that can be passed to the progress object
-  /// 
-  /// \param szMsg
-  ///   Message string constant (can be NULL)
-  /// 
-  /// \param bCopyString
-  ///   If false (default) the status object just holds the szMsg pointer so no allocation takes
-  ///   place.  The string pointer must remain valid in that case until the end (i.e. not just
-  ///   created in a local function)
-  VBASE_IMPEXP void SetProgressStatusString(const char *szMsg, bool bCopyString=false);
-
   ///
   /// @}
   ///
@@ -140,11 +128,6 @@ public:
   ///   Returns the current percentage progress value mapped to the current active range. This
   ///   value can be used directly for status display. See also OnProgressChanged.
   inline float GetCurrentProgress() const {return m_fCurrentProgress;}
-
-  /// \brief
-  ///   Returns the status string that has been set via SetProgressStatusString. See also
-  ///   OnStatusStringChanged.
-  inline const char* GetProgressStatusString() const {return m_szStatusString;}
 
   /// \brief
   ///   Returns the current stack depth of the PushRange/PopRange stack.
@@ -184,11 +167,6 @@ public:
   /// 
   /// The actual progress value can be queried via GetCurrentProgress.
   VBASE_IMPEXP virtual void OnProgressChanged();
-
-  /// \brief
-  ///   Virtual overridable that is triggered when the current status string
-  ///   (GetProgressStatusString) has changed
-  VBASE_IMPEXP virtual void OnStatusStringChanged();
 
   /// \brief
   ///   Virtual overridable that can be triggered by users if they want to abort a running progress. This base implementation just sets the m_bWantsAbort flag
@@ -259,7 +237,7 @@ protected:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

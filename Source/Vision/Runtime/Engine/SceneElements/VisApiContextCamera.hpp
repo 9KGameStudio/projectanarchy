@@ -21,9 +21,8 @@ class VisVisibilityZone_cl;
 class VisBaseEntity_cl;
 typedef VSmartPtr<VisContextCamera_cl> VisContextCameraPtr;
 
-
 /// \brief
-///   Class for setting cameras for invidual render contexts
+///   Class for setting cameras for individual render contexts.
 /// 
 /// The VisCameraContext_cl class provides functionality to create and handle cameras. Each context
 /// camera has to be attached to one or more render contexts in order to take effect. See the
@@ -43,7 +42,7 @@ public:
 
   /// \brief
   ///   Dispose the object and remove it from scene
-  VISION_APIFUNC VOVERRIDE void DisposeObject();
+  VISION_APIFUNC virtual void DisposeObject() HKV_OVERRIDE;
 
   /// \brief
   ///   Sets the position and orientation of the context camera in world-space.
@@ -120,7 +119,6 @@ public:
   ///   Updates the camera matrix. Must be called by before the scene is rendered.
   VISION_APIFUNC void Update();
 
-
   /// \brief
   ///   Gets the current 3x3 rotation matrix of the camera. DEPRECATED: Use 'GetWorldToCameraRotation' instead.
   HKV_DEPRECATED_2012_2 VISION_APIFUNC void GetWorldRotationMatrix(hkvMat3& wrMatrix) const;
@@ -150,8 +148,8 @@ public:
   ///   occurred.
   VISION_APIFUNC unsigned int GetLastTeleported() const;
 
-  VISION_APIFUNC VOVERRIDE void ModSysNotifyFunctionParentDestroyed();
-  VISION_APIFUNC VOVERRIDE void ModSysNotifyFunctionOnDisconnect(BOOL bDestroy);
+  VISION_APIFUNC virtual void ModSysNotifyFunctionParentDestroyed() HKV_OVERRIDE;
+  VISION_APIFUNC virtual void ModSysNotifyFunctionOnDisconnect(BOOL bDestroy) HKV_OVERRIDE;
 
 private:
   void SetCoreCamera();
@@ -166,7 +164,7 @@ VISION_ELEMENTMANAGER_TEMPLATE_DECL(VisContextCamera_cl)
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

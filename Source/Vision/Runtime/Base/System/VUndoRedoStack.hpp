@@ -66,14 +66,7 @@ public:
   ///   Returns the number of possible Redo() function calls
   VBASE_IMPEXP int GetRedoCount() const;
 
-  /// \brief
-  ///   Prints stack content (debug only)
-  VBASE_IMPEXP void DumpUndoStack();
 
-  /// \brief
-  ///   Prints stack content (debug only)
-  VBASE_IMPEXP void DumpRedoStack();
-  
 protected:
   friend class VAction;
 
@@ -91,7 +84,7 @@ protected:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

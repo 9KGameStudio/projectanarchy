@@ -42,17 +42,20 @@ bool vHavokCachedShape::SaveConvexShape(const VBaseMesh *pMesh, const hkvVec3& v
 #else
   VASSERT(pMesh!=NULL && pShape!=NULL);
 
-  char pszMeshName[FS_MAX_PATH];
-  bool bSuccess = VFileHelper::GetAbsolutePath(pMesh->GetFilename(), pszMeshName, Vision::File.GetManager());
-  VASSERT_MSG(bSuccess, "vHavokCachedShape::SaveConvexShape: Failed to make the path absolute, the file may not exist!");
+  VFileAccessManager::NativePathResult meshNativeResult;
+  if (VFileAccessManager::GetInstance()->MakePathNative(pMesh->GetFilename(), meshNativeResult, VFileSystemAccessMode::READ, VFileSystemElementType::FILE) != HKV_SUCCESS)
+  {
+    VASSERT_MSG(FALSE, "vHavokCachedShape::SaveConvexShape: Failed to determine the native mesh path; the file may not exist!");
+    return false;
+  }
 
-  VStaticString<FS_MAX_PATH> szCachedShapeDirname(pszMeshName);
+  VStaticString<FS_MAX_PATH> szCachedShapeDirname(meshNativeResult.m_sNativePath);
   szCachedShapeDirname += "_data";
   if (!VFileHelper::ExistsDir(szCachedShapeDirname))
     VFileHelper::MkDir(szCachedShapeDirname);
 
   // Build the shape filename
-  VStaticString<FS_MAX_PATH> szCachedShapeName(pszMeshName);
+  VStaticString<FS_MAX_PATH> szCachedShapeName(meshNativeResult.m_sNativePath);
   GetConvexShapePath(szCachedShapeName, vScale, bShrinkToFit);
 
   return SaveShape(szCachedShapeName, hkvConvexVerticesShapeClass, pShape);
@@ -67,17 +70,20 @@ bool vHavokCachedShape::SaveMeshShape(const VBaseMesh *pMesh, const hkvVec3& vSc
 #else
   VASSERT(pMesh!=NULL && pShape!=NULL);
 
-  char pszMeshName[FS_MAX_PATH];
-  bool bSuccess = VFileHelper::GetAbsolutePath(pMesh->GetFilename(), pszMeshName, Vision::File.GetManager());
-  VASSERT_MSG(bSuccess, "vHavokCachedShape::SaveMeshShape: Failed to make the path absolute, the file may not exist!");
+  VFileAccessManager::NativePathResult meshNativeResult;
+  if (VFileAccessManager::GetInstance()->MakePathNative(pMesh->GetFilename(), meshNativeResult, VFileSystemAccessMode::READ, VFileSystemElementType::FILE) != HKV_SUCCESS)
+  {
+    VASSERT_MSG(FALSE, "vHavokCachedShape::SaveConvexShape: Failed to determine the native mesh path; the file may not exist!");
+    return false;
+  }
 
-  VStaticString<FS_MAX_PATH> szCachedShapeDirname(pszMeshName);
+  VStaticString<FS_MAX_PATH> szCachedShapeDirname(meshNativeResult.m_sNativePath);
   szCachedShapeDirname += "_data";
   if (!VFileHelper::ExistsDir(szCachedShapeDirname))
     VFileHelper::MkDir(szCachedShapeDirname);
 
   // Build the shape filename
-  VStaticString<FS_MAX_PATH> szCachedShapeName(pszMeshName);
+  VStaticString<FS_MAX_PATH> szCachedShapeName(meshNativeResult.m_sNativePath);
   GetMeshShapePath(szCachedShapeName, vScale, eCollisionBehavior, eWeldingType);
 
   return SaveShape(szCachedShapeName, hkvBvCompressedMeshShapeClass, pShape);
@@ -96,10 +102,13 @@ bool vHavokCachedShape::SaveTerrainSectorShape(const VTerrainSector *pSector, co
   // Afterwards remove extension.
   char szFilename[FS_MAX_PATH];
   pSector->m_Config.GetSectorFilename(szFilename, pSector->m_iIndexX, pSector->m_iIndexY, "hmap", true);
-  char szPath[FS_MAX_PATH];
-  bool bSuccess = VFileHelper::GetAbsolutePath(szFilename, szPath, Vision::File.GetManager());
-  VASSERT_MSG(bSuccess, "vHavokCachedShape::SaveTerrainSectorShape: Failed to make the path to the sector hmap absolute, the file may not exist!");
-  VFileHelper::GetFilenameNoExt(szFilename, szPath);
+  VFileAccessManager::NativePathResult sectorNativeResult;
+  if (VFileAccessManager::GetInstance()->MakePathNative(szFilename, sectorNativeResult, VFileSystemAccessMode::READ, VFileSystemElementType::FILE) != HKV_SUCCESS)
+  {
+    VASSERT_MSG(FALSE, "vHavokShapeFactory::GetHktDependencies: Failed to determine the native path to the sector hmap; the file may not exist!");
+    return false;
+  }
+  VFileHelper::GetFilenameNoExt(szFilename, sectorNativeResult.m_sNativePath);
 
   // Build the shape filename
   VStaticString<FS_MAX_PATH> szCachedShapeName(szFilename); 
@@ -177,10 +186,13 @@ hkpShape* vHavokCachedShape::LoadTerrainSectorShape(const VTerrainSector *pSecto
   // Afterwards remove extension.
   char szFilename[FS_MAX_PATH];
   pSector->m_Config.GetSectorFilename(szFilename, pSector->m_iIndexX, pSector->m_iIndexY, "hmap", true);
-  char szPath[FS_MAX_PATH];
-  bool bSuccess = VFileHelper::GetAbsolutePath(szFilename, szPath, Vision::File.GetManager());
-  VASSERT_MSG(bSuccess, "vHavokCachedShape::LoadTerrainSectorShape: Failed to make the path to the sector hmap absolute, the file may not exist!");
-  VFileHelper::GetFilenameNoExt(szFilename, szPath);
+  VFileAccessManager::NativePathResult sectorNativeResult;
+  if (VFileAccessManager::GetInstance()->MakePathNative(szFilename, sectorNativeResult, VFileSystemAccessMode::READ, VFileSystemElementType::FILE) != HKV_SUCCESS)
+  {
+    VASSERT_MSG(FALSE, "vHavokShapeFactory::GetHktDependencies: Failed to determine the native path to the sector hmap; the file may not exist!");
+    return NULL;
+  }
+  VFileHelper::GetFilenameNoExt(szFilename, sectorNativeResult.m_sNativePath);
 
   // Build the cached shape filename
   VStaticString<FS_MAX_PATH> szCachedShapeName(szFilename);
@@ -250,7 +262,7 @@ bool vHavokCachedShape::SaveShape(const char *szCachedShapeName, const hkClass& 
   VASSERT(szCachedShapeName!=NULL && pShape!=NULL);
 
   // make sure it's editable
-  VFileAccessManager::RCSEditFile(szCachedShapeName);
+  VRCSHelper::RCSEditFile(szCachedShapeName);
 
   // save shape to file
   {
@@ -261,7 +273,7 @@ bool vHavokCachedShape::SaveShape(const char *szCachedShapeName, const hkClass& 
 
     if (res == HK_FAILURE)
     {
-      Vision::Error.Warning("vHavokCachedShape::Save of %s failed", szCachedShapeName);
+      hkvLog::Warning("vHavokCachedShape::Save of %s failed", szCachedShapeName);
       return false;
     }
 
@@ -269,7 +281,7 @@ bool vHavokCachedShape::SaveShape(const char *szCachedShapeName, const hkClass& 
   }
 
   // make sure it's added
-  VFileAccessManager::RCSAddFile(szCachedShapeName, true /* Binary file */);
+  VRCSHelper::RCSAddFile(szCachedShapeName, true /* Binary file */);
 
   return true;
 }
@@ -294,7 +306,7 @@ hkpShape* vHavokCachedShape::LoadShape(const char *szCachedShapeName, const hkCl
   {
     hkStringBuf fullWarning( "vHavokCachedShape::Load of ", szCachedShapeName, " failed due to non exact Havok SDK version:");
     fullWarning.appendPrintf("(%s in file, %s runtime)",formatDetails.m_version.cString(), HAVOK_SDK_VERSION_NUMBER );
-    Vision::Error.Warning( fullWarning.cString() );
+    hkvLog::Warning( fullWarning.cString() );
     return HK_NULL;                    
   }
 #endif
@@ -307,7 +319,7 @@ hkpShape* vHavokCachedShape::LoadShape(const char *szCachedShapeName, const hkCl
     fileContents->removeReference();
   }
   else
-    Vision::Error.Warning("vHavokCachedShape::Load of %s failed due to [%s]", szCachedShapeName, err.defaultMessage.cString());
+    hkvLog::Warning("vHavokCachedShape::Load of %s failed due to [%s]", szCachedShapeName, err.defaultMessage.cString());
   
   return pShape;
 }
@@ -333,7 +345,7 @@ bool vHavokCachedShape::IsHktUpToDate(VBaseMesh *pMesh, hkpShape *pShape, const 
   if (iFileTime != pColMesh->GetFileTime())
   {
     if (!Vision::Editor.IsInEditor() && !bForceHktShapeCaching)
-      Vision::Error.Warning("vHavokCachedShape::Load for %s failed since HKT file is outdated. Please re-generate HKT file (see documentation for details).", pMesh->GetFilename());
+      hkvLog::Warning("vHavokCachedShape::Load for %s failed since HKT file is outdated. Please re-generate HKT file (see documentation for details).", pMesh->GetFilename());
     return false;
   }
   
@@ -341,7 +353,7 @@ bool vHavokCachedShape::IsHktUpToDate(VBaseMesh *pMesh, hkpShape *pShape, const 
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -143,7 +143,7 @@ public:
 
   /// \brief
   ///   Creates the terrain using the passed config and saving the files to the absolute directory
-  TERRAIN_IMPEXP void CreateTerrain(VTerrainConfig *pConfig, const char *szAbsProjectDir, bool bSave=true);
+  TERRAIN_IMPEXP void CreateTerrain(VTerrainConfig *pConfig, bool bSave=true);
 
   /// \brief
   ///   Loads a terrain file from file. The filename must direct to the Config.vtc file
@@ -161,7 +161,7 @@ public:
   inline const VTerrainConfig& Config() const {return m_Config;}
 
   /// \brief
-  ///   Overidable function that releases all resources associated with the terrain
+  ///   Overridable function that releases all resources associated with the terrain
   TERRAIN_IMPEXP virtual void FreeTerrain();
 
   /// \brief
@@ -441,7 +441,7 @@ protected:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

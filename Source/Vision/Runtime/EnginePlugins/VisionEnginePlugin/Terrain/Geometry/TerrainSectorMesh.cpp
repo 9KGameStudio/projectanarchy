@@ -277,17 +277,32 @@ void VTerrainSectorMeshPageInfo::SerializeX(VTerrainSector *pOwner, VArchive &ar
       {
         ANALYSIS_IGNORE_WARNING_ONCE(6246)
           VTextureObject *pTex = GetTextureBySamplerIndex(i);
+
         VStaticString<FS_MAX_PATH> sOrigName = pTex->GetFilename();
+        VStaticString<FS_MAX_PATH> sBuffer;
         const char *szFixedName = pTex->GetFilename();
         bool bNameChanged = false;
+
         if (!pOwner->m_Config.m_bUseTempFolder) // when we are saving to final directory, make sure that all filenames are correctly resolved
         {
-          char szBuffer[FS_MAX_PATH];
-          szFixedName = pOwner->m_Config.FixTempDirFile(sOrigName,szBuffer);
-          bNameChanged = strcmp(sOrigName,szFixedName)!=0;
-          if (bNameChanged)
-            pTex->SetFilename(szFixedName);
+          szFixedName = pOwner->m_Config.FixTempDirFile(sOrigName, sBuffer.AsChar());
         }
+
+        // In any case, make sure to write relative names into the files.
+        if (!VFileAccessManager::IsPathRelative(szFixedName))
+        {
+          VFileAccessManager::RelativePathResult relPathResult;
+          if (VFileAccessManager::GetInstance()->MakePathRelative(szFixedName, relPathResult, VFileSystemAccessMode::READ_NO_REDIRECT, VFileSystemElementType::FILE) == HKV_SUCCESS)
+          {
+            sBuffer = relPathResult.m_sRelativePath;
+            szFixedName = sBuffer;
+          }
+        }
+
+        bNameChanged = strcmp(sOrigName,szFixedName)!=0;
+        if (bNameChanged)
+          pTex->SetFilename(szFixedName);
+
         VTextureObject::DoArchiveExchange(ar, pTex);
         if (bNameChanged)
           pTex->SetFilename(sOrigName);
@@ -409,8 +424,8 @@ void VTerrainSectorMeshPageInfo::BindSectorShaderTextures(VCompiledShaderPass *p
         {
           VisRenderStates_cl::VSSetLightmapToLightMaskTransform(pEntry->m_vUVScaleOfs.data);
           pTex = pEntry->m_spLightMask;
-          //Vision::Shaders.DisplayDebugTexture(pTex);
-        } else
+        } 
+        else
           pTex = NULL;
       } break;
     case TEXTURETYPE_AUXILIARY_TEXTURE:
@@ -698,7 +713,7 @@ void VTerrainSectorMeshPageInfo::UnLockPixelConst()
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

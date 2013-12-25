@@ -21,6 +21,7 @@
 #include <Common/Base/Reflection/Registry/hkTypeInfoRegistry.h>
 #include <Common/Base/Reflection/Registry/hkVtableClassRegistry.h>
 
+//AI Utility
 #include <Common/Serialize/Version/hkVersionPatchManager.h>
 #if defined(HAVOK_SDK_VERSION_MAJOR) && (HAVOK_SDK_VERSION_MAJOR >= 2012)
 #include <Common/Compat/hkHavokVersions.h>
@@ -83,7 +84,7 @@ public:
 
 	vHavokAiModuleCallbackHandler_cl() {}
 
-	VOVERRIDE void OnHandleCallback(IVisCallbackDataObject_cl *pData)
+	virtual void OnHandleCallback(IVisCallbackDataObject_cl *pData) HKV_OVERRIDE
 	{
 		if ( pData->m_pSender == &vHavokPhysicsModule::OnBeforeInitializePhysics )
 		{
@@ -163,6 +164,7 @@ public:
 	}
 };
 
+//static handler
 static vHavokAiModuleCallbackHandler_cl g_HavokAiModuleCallbackHandler;
 
 //////////////////////////////////////////////////////////////////////////
@@ -171,7 +173,7 @@ static vHavokAiModuleCallbackHandler_cl g_HavokAiModuleCallbackHandler;
 void vHavokAiPlugin_cl::OnInitEnginePlugin()
 {
 	// This plugin depends on the main Havok Physics plugin being loaded
-	VISION_PLUGIN_ENSURE_LOADED( vHavok );
+	VISION_PLUGIN_ENSURE_LOADED(vHavok);
 
 	// Register to sync statics (hopefully) after the main Havok plugin
 	vHavokPhysicsModule::OnBeforeInitializePhysics += &g_HavokAiModuleCallbackHandler;
@@ -179,16 +181,24 @@ void vHavokAiPlugin_cl::OnInitEnginePlugin()
 	vHavokPhysicsModule::OnAfterDeInitializePhysics += &g_HavokAiModuleCallbackHandler;
 	Vision::Callbacks.OnAfterSceneUnloaded += &g_HavokAiModuleCallbackHandler;
 
+
+	//Register to sync after main Havok plugin
+
 	Vision::RegisterModule( &g_vHavokAiModule );
 
 	vHavokAiModule::GetInstance()->OneTimeInit();
 
 	vHavokAiNavMeshResourceManager::GetInstance()->OneTimeInit();
+	
+	//vHavokAiUtil::GetInstance()->OneTimeInit();
+
 }
 
 // De-initialize the plugin
 void vHavokAiPlugin_cl::OnDeInitEnginePlugin()
 {
+	//vHavokAiUtil::GetInstance()->OneTimeInit();
+
 	vHavokAiNavMeshResourceManager::GetInstance()->OneTimeDeInit();
 
 	vHavokAiModule::GetInstance()->OneTimeDeInit();
@@ -221,7 +231,7 @@ VEXPORT IVisPlugin_cl* GetEnginePlugin()
 #endif // _DLL or _WINDLL
 
 /*
- * Havok SDK - Base file, BUILD(#20131019)
+ * Havok SDK - Base file, BUILD(#20131218)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2013
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok
