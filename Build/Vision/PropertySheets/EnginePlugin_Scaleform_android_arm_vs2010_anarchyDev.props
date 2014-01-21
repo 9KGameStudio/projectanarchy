@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <PlatformToolset>arm-linux-androideabi-4.6</PlatformToolset>
     <AndroidAPILevel>android-10</AndroidAPILevel>
     <AndroidArch>armv7-a</AndroidArch>
@@ -31,8 +31,8 @@
       <OptimizationLevel>Ofast</OptimizationLevel>
       <PrecompiledHeader/>
       <PrecompiledHeaderFile/>
-      <PrecompiledHeaderOutputFile>Application.pch</PrecompiledHeaderOutputFile>
-      <PreprocessorDefinitions>;HK_ANARCHY;PROFILING;_VISION_POSIX;_VISION_ANDROID;_VISION_NO_WARNING_IMAGE_FORMAT;VBASE_LIB;LINK_WITH_VISION;VISIONDLL_LIB;USE_HAVOK;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PrecompiledHeaderOutputFile>EnginePlugin_Scaleform.pch</PrecompiledHeaderOutputFile>
+      <PreprocessorDefinitions>HK_DEBUG;HK_ANARCHY;PROFILING;_VISION_POSIX;_VISION_ANDROID;_VISION_NO_WARNING_IMAGE_FORMAT;VBASE_LIB;LINK_WITH_VISION;VISIONDLL_LIB;USE_HAVOK;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ProducesObjectFile>true</ProducesObjectFile>
       <ProgramDataBaseFileName>$(OutDir)$(TargetName).pdb</ProgramDataBaseFileName>
       <QuitAfterWarnings>Off</QuitAfterWarnings>
@@ -47,14 +47,14 @@
       <Warnings>AllWarnings</Warnings>
     </ClCompile>
     <Lib>
-      <AdditionalDependencies>-lEGL;-lGLESv2;-lGLESv1_CM;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib\LuaAndroid_Release.a;-lfmodex;-lfmodevent;-lBase;-lVision;-lVisionEnginePlugin;-lVisionApp;-lvHavok;-lhkBase;-lhkCompat;-lhkSceneData;-lhkSerialize;-lhkVisualize;-lhkInternal;-lhkGeometryUtilities;-lhkcdInternal;-lhkcdCollide;-lhkpUtilities;-lhkpVehicle;-lhkpDynamics;-lhkpCollide;-lhkpInternal;-lhkpConstraintSolver;-lhkpConstraint;-lhkaPhysics2012Bridge;-lhkaInternal;-lhkaAnimation;-lhkbBehavior;-lhkbInternal;-lhkbUtilities;-lhkbPhysics2012Bridge;-lhkbAiBridge;-lhkbScriptRelease;-lhkaiPathfinding;-lhkaiInternal;-lhkaiVisualize;-lhkaiSpatialAnalysis;-lhkaiPhysics2012Bridge;-lvHavokAi;-lvHavokBehavior;-lvFmodEnginePlugin;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\..\Lib\android_arm_vs2010_anarchy\release;$(VISION_SDK)/Lib/android_arm_vs2010_anarchy\release;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/lib/android/armeabi-v7a</AdditionalLibraryDirectories>
+      <AdditionalDependencies>-lfmodex;-lfmodevent;-lVisionEnginePlugin;-lvHavok;-lvHavokAi;-lvHavokBehavior;-lvFmodEnginePlugin;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\..\..\Lib\android_arm_vs2010_anarchy\dev;$(VISION_SDK)/Lib/android_arm_vs2010_anarchy\dev;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/lib/android/armeabi-v7a</AdditionalLibraryDirectories>
       <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
       <LibrarianCommand>-rmc</LibrarianCommand>
     </Lib>
     <Link>
-      <AdditionalDependencies>-landroid;-lEGL;-lGLESv2;-lGLESv1_CM;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib\LuaAndroid_Release.a;-lfmodex;-lfmodevent;-lBase;-lVision;-lVisionEnginePlugin;-lVisionApp;-lvHavok;-lhkBase;-lhkCompat;-lhkSceneData;-lhkSerialize;-lhkVisualize;-lhkInternal;-lhkGeometryUtilities;-lhkcdInternal;-lhkcdCollide;-lhkpUtilities;-lhkpVehicle;-lhkpDynamics;-lhkpCollide;-lhkpInternal;-lhkpConstraintSolver;-lhkpConstraint;-lhkaPhysics2012Bridge;-lhkaInternal;-lhkaAnimation;-lhkbBehavior;-lhkbInternal;-lhkbUtilities;-lhkbPhysics2012Bridge;-lhkbAiBridge;-lhkbScriptRelease;-lhkaiPathfinding;-lhkaiInternal;-lhkaiVisualize;-lhkaiSpatialAnalysis;-lhkaiPhysics2012Bridge;-lvHavokAi;-lvHavokBehavior;-lvFmodEnginePlugin;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\..\Lib\android_arm_vs2010_anarchy\release;$(VISION_SDK)/Lib/android_arm_vs2010_anarchy\release;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/lib/android/armeabi-v7a</AdditionalLibraryDirectories>
+      <AdditionalDependencies>-landroid;-lfmodex;-lfmodevent;-lVisionEnginePlugin;-lvHavok;-lvHavokAi;-lvHavokBehavior;-lvFmodEnginePlugin;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\..\..\Lib\android_arm_vs2010_anarchy\dev;$(VISION_SDK)/Lib/android_arm_vs2010_anarchy\dev;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/lib/android/armeabi-v7a</AdditionalLibraryDirectories>
       <AdditionalLinkerOptions>-nosegments_always_executable</AdditionalLinkerOptions>
       <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
       <AutomaticSDA>No</AutomaticSDA>
