@@ -611,6 +611,10 @@ namespace TerrainEditorPlugin.Shapes
                   if (sectorFileName == null)
                     continue;
 
+                  sectorFileName = EditorManager.EngineManager.File_MakeRelative(sectorFileName, FileSystemAccessMode.ReadNoRedirect, FileSystemElementType.File);
+                  if (sectorFileName == null)
+                      continue;
+
                   // create static mesh
                   StaticMeshShape shape = new StaticMeshShape(Path.GetFileNameWithoutExtension(sectorFileName));
                   shape.Position = (Vector3F)EngineTerrain.GetSectorOrigin(sx, sy);
