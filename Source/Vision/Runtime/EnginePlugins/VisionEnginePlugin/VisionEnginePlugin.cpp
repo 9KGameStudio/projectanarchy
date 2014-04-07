@@ -2,7 +2,7 @@
  *
  * Confidential Information of Telekinesys Research Limited (t/a Havok). Not for disclosure or distribution without Havok's
  * prior written consent. This software contains code, techniques and know-how which is confidential and proprietary to Havok.
- * Product and Trade Secret source code contains trade secrets of Havok. Havok Software (C) Copyright 1999-2013 Telekinesys Research Limited t/a Havok. All Rights Reserved. Use of this software is subject to the terms of an end user license agreement.
+ * Product and Trade Secret source code contains trade secrets of Havok. Havok Software (C) Copyright 1999-2014 Telekinesys Research Limited t/a Havok. All Rights Reserved. Use of this software is subject to the terms of an end user license agreement.
  *
  */
 
@@ -24,6 +24,7 @@
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/Effects/Mirror.hpp>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/Effects/VWallmarkManager.hpp>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/Effects/Projector.hpp>
+#include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/Effects/MobileWater.hpp>
 
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/GUI/VMenuIncludes.hpp>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Input/VStringInputMap.hpp>
@@ -364,6 +365,11 @@ void VisionEnginePlugin_cl::OnInitEnginePlugin()
   // Custom Volume Objects
   VCustomVolumeManager::GlobalManager().OneTimeInit();
 
+  // Mobile water
+  FORCE_LINKDYNCLASS(VMobileWater);
+  FORCE_LINKDYNCLASS(VMobileWaterShader);
+  VMobileWaterManager::GlobalManager().OneTimeInit();
+
 #if ( defined(WIN32) && !defined( HK_ANARCHY ) ) || defined(_VISION_XENON) || defined (_VISION_PS3) || defined (_VISION_WIIU)
   // Projected decals
   VProjectedDecalManager::GlobalManager().OneTimeInit();
@@ -474,6 +480,9 @@ void VisionEnginePlugin_cl::OnDeInitEnginePlugin()
   //deregister named input maps
   VStringInputMap::OneTimeDeInit();
 
+  // Mobile water
+  VMobileWaterManager::GlobalManager().OneTimeDeInit();
+
 #if ( defined(WIN32) && !defined( HK_ANARCHY ) ) || defined(_VISION_XENON) || defined (_VISION_PS3) || defined (_VISION_WIIU)
   // Projected decals
   VProjectedDecalManager::GlobalManager().OneTimeDeInit();
@@ -481,9 +490,9 @@ void VisionEnginePlugin_cl::OnDeInitEnginePlugin()
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131218)
+ * Havok SDK - Base file, BUILD(#20140327)
  * 
- * Confidential Information of Havok.  (C) Copyright 1999-2013
+ * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok
  * Logo, and the Havok buzzsaw logo are trademarks of Havok.  Title, ownership
  * rights, and intellectual property rights in the Havok software remain in

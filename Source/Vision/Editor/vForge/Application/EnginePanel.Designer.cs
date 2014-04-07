@@ -53,23 +53,6 @@ private ToolStripSeparator toolStripMenuItem6;
 private ToolStripMenuItem shapeOriginToolStripMenuItem1;
 private ToolStripMenuItem createToolStripMenuItem;
 private ToolStripMenuItem insertHereToolStripMenuItem;
-private ToolStripMenuItem snapPositionToolStripMenuItem;
-private ToolStripMenuItem snapRotationToolStripMenuItem;
-private ToolStripMenuItem showGridToolStripMenuItem;
-private ToolStripMenuItem relativeGridToolStripMenuItem;
-private ToolStripMenuItem gridLinesToolStripMenuItem;
-private ToolStripMenuItem volumeGridToolStripMenuItem;
-private ToolStripSeparator toolStripMenuItem7;
-private ToolStripMenuItem gridSize10ToolStripMenuItem;
-private ToolStripMenuItem gridSize25ToolStripMenuItem;
-private ToolStripMenuItem gridSize100ToolStripMenuItem;
-private ToolStripSeparator toolStripMenuItem15;
-private ToolStripMenuItem units2ToolStripMenuItem;
-private ToolStripMenuItem units5ToolStripMenuItem;
-private ToolStripMenuItem units10ToolStripMenuItem;
-private ToolStripMenuItem units25ToolStripMenuItem;
-private ToolStripMenuItem units50ToolStripMenuItem;
-private ToolStripMenuItem units100ToolStripMenuItem;
 private ToolStripMenuItem solidToolStripMenuItem;
 private ToolStripMenuItem wireframeToolStripMenuItem;
 private ToolStripMenuItem dummyToolStripMenuItem1;
@@ -88,20 +71,6 @@ private ToolStripMenuItem directionPosXToolStripMenuItem;
 private ToolStripMenuItem directionNegXToolStripMenuItem;
 private ToolStripMenuItem directionPosYToolStripMenuItem;
 private ToolStripMenuItem directionNegYToolStripMenuItem;
-private ToolStripSplitButton toolStripDropDownButton_PerspectiveMode;
-private ToolStripMenuItem ToolStripMenuItem_Perspective;
-private ToolStripMenuItem ToolStripMenuItem_PerspectiveTop;
-private ToolStripMenuItem ToolStripMenuItem_PerspectiveFront;
-private ToolStripMenuItem ToolStripMenuItem_PerspectiveRight;
-private ToolStripSeparator toolStripMenuItem19;
-private ToolStripMenuItem ToolStripMenuItem_Top;
-private ToolStripMenuItem ToolStripMenuItem_Front;
-private ToolStripMenuItem ToolStripMenuItem_Right;
-private ToolStripSeparator toolStripMenuItem1;
-private ToolStripMenuItem ToolStripMenuItem_View_EditClipRange;
-private ToolStripMenuItem ToolStripMenuItem_View_ZoomIn;
-private ToolStripMenuItem ToolStripMenuItem_View_ZoomOut;
-private ToolStripMenuItem ToolStripMenuItem_View_ZoomDefault;
 private ToolStripSplitButton ToolStripSplitButton_Rendering;
 private ToolStripMenuItem ToolStrip_Rendering_Solid;
 private ToolStripMenuItem ToolStrip_Rendering_Wireframe;
@@ -114,10 +83,6 @@ private ToolStripMenuItem zonesToolStripMenuItem;
 private ToolStripMenuItem loadZoneAtCameraPositionToolStripMenuItem;
 private ToolStripMenuItem selectZoneAtCameraPositionToolStripMenuItem;
 private ToolStripMenuItem loadZonesCloseToCameraToolStripMenuItem;
-private ToolStripSeparator toolStripMenuItem9;
-private ToolStripMenuItem ToolStripMenuItem_View_Properties;
-private ToolStripMenuItem setupGridToolStripMenuItem;
-private ToolStripSeparator toolStripMenuItem10;
 private ToolStripMenuItem AlignmentToolStripMenuItem;
 private ToolStripMenuItem AlignToGridToolStripMenuItem;
 private ToolStripMenuItem AlignToObjectToolStripMenuItem;
@@ -136,44 +101,20 @@ private ToolStripMenuItem ToolStripMenuItem_IconAction_Drop_BB;
 private ToolStripMenuItem ToolStripMenuItem_IconAction_Drop_BC;
 private ToolStripSplitButton ToolStripSplitButton_MoveSensitivity;
 private ImageList UnitScaleImageList;
-private ToolStripMenuItem ToolStripMenuItem_View_Size;
-private ToolStripMenuItem ToolStripMenuItem_View_SetSize;
-private ToolStripSeparator toolStripMenuItem12;
-private ToolStripMenuItem ToolStripMenuItem_View_SafeMode;
-private ToolStripMenuItem ToolStripMenuItem_View_SetCustomSafeMode;
-private ToolStripSeparator toolStripMenuItem13;
-private ToolStripSeparator toolStripMenuItem14;
-private ToolStripMenuItem ToolStripMenuItem_View_DisableSafeMode;
 private ToolStripMenuItem ToolStripMenuItem_IconAction_ToggleFreeze;
-private ToolStripMenuItem uniformScaleToolStripMenuItem;
-private ToolStripMenuItem nonuniformScaleToolStripMenuItem;
 private ToolStripMenuItem transformGizmoToolStripMenuItem;
 private ToolStripMenuItem moveToolStripMenuItem;
 private ToolStripMenuItem rotateToolStripMenuItem;
 private ToolStripMenuItem scaleToolStripMenuItem;
-private ToolStripSplitButton ToolStripSplitButton_Camera;
-private ToolStripMenuItem toolStripButton_MoveContext;
-private ToolStripMenuItem toolStripButton_MoveCameraWithKeys;
-private ToolStripSeparator ToolStripSplitButton_CameraSep1;
-private ToolStripMenuItem ToolStripSplitButton_CameraStyle_Pan;
-private ToolStripMenuItem ToolStripSplitButton_CameraStyle_PanHoriz;
-private ToolStripMenuItem ToolStripSplitButton_CameraStyle_Orbit;
-private ToolStripMenuItem ToolStripSplitButton_CameraStyle_Max;
-private ToolStripMenuItem ToolStripSplitButton_CameraStyle_Maya;
 private ToolStripMenuItem toolStripButton_StickToGround;
 private ToolStripMenuItem toolStripButton_EnableMoveSnap;
 private ToolStripMenuItem toolStripButton_EnableAngleSnap;
-private ToolStripSplitButton ToolStripSplitButton_Tools;
-private ToolStripMenuItem toolStripButton_MeasureTool;
 private ToolStripMenuItem toolStripButton_localPos;
 private ToolStripMenuItem toolStripButton_localOri;
-private ToolStripMenuItem toolStripButton_localScale;
 private ToolStripMenuItem toolStripButton_Link_ShowAll;
 private ToolStripMenuItem toolStripButton_Link_ShowSelected;
 private ToolStripMenuItem toolStripButton_Link_ShowNone;
 private ToolStripMenuItem toolStripButton_Link_ShowActiveLayer;
-private ToolStripSeparator ToolStripSplitButton_Tools_Sep1;
-private ToolStripMenuItem ToolStripButton_HighlightSelection;
 private ToolStripMenuItem ToolStripButton_IsolateSelection;
 private ToolStripMenuItem ToolStripButton_AutomaticZoomFit;
 private ToolStripSplitButton ToolStripSplitButton_SelectionFilter;
@@ -181,13 +122,7 @@ private ToolStripMenuItem ToolStripSplitButton_SelectionFilterUse;
 private ToolStripMenuItem ToolStripSplitButton_SelectionFilterOtherShapes;
 private ToolStripSeparator toolStripMenuItem16;
 private ToolStripSplitButton ToolStripButton_Select;
-private ToolStripMenuItem ToolStripButton_OneClickSelection;
-private ToolStripSeparator ToolStripSplitButton_CameraSep2;
-private ToolStripMenuItem ToolStripSplitButton_Camera_MoveOrigin;
-private ToolStripMenuItem ToolStripSplitButton_Camera_MoveShapeOrigin;
-private ToolStripMenuItem ToolStripSplitButton_Camera_MoveSelection;
 private ToolStripMenuItem traceHitToolStripMenuItem;
-private ToolStripSplitButtonCheckable ToolStripButton_Scale;
 private ToolStripSplitButtonCheckable ToolStripButton_Move;
 private ToolStripSplitButtonCheckable ToolStripButton_Rotate;
 private ToolStripSplitButtonCheckable ToolStripButton_Link;
@@ -202,6 +137,40 @@ ToolStripDropDown _play_Dropdown = null;
       this.Profiling_Previous = new System.Windows.Forms.MenuItem();
       this.Profiling_Next = new System.Windows.Forms.MenuItem();
       this.panel_VisionView = new System.Windows.Forms.Panel();
+      this.transformStrip_EnginePanel = new System.Windows.Forms.ToolStrip();
+      this.transformStrip_toggleTransformMode = new System.Windows.Forms.ToolStripButton();
+      this.toolStripSeparator5 = new System.Windows.Forms.ToolStripSeparator();
+      this.toolStripDropDownButton_Translation = new System.Windows.Forms.ToolStripDropDownButton();
+      this.toolStripMenuItem_CopyTranslation = new System.Windows.Forms.ToolStripMenuItem();
+      this.toolStripMenuItem_PasteTranslation = new System.Windows.Forms.ToolStripMenuItem();
+      this.labelX = new System.Windows.Forms.ToolStripLabel();
+      this.transformStrip_TranslateX = new System.Windows.Forms.ToolStripTextBox();
+      this.labelY = new System.Windows.Forms.ToolStripLabel();
+      this.transformStrip_TranslateY = new System.Windows.Forms.ToolStripTextBox();
+      this.labelZ = new System.Windows.Forms.ToolStripLabel();
+      this.transformStrip_TranslateZ = new System.Windows.Forms.ToolStripTextBox();
+      this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
+      this.toolStripDropDownButton_Rotation = new System.Windows.Forms.ToolStripDropDownButton();
+      this.toolStripMenuItem_CopyRotation = new System.Windows.Forms.ToolStripMenuItem();
+      this.toolStripMenuItem_PasteRotation = new System.Windows.Forms.ToolStripMenuItem();
+      this.labelYaw = new System.Windows.Forms.ToolStripLabel();
+      this.transformStrip_Yaw = new System.Windows.Forms.ToolStripTextBox();
+      this.labelPitch = new System.Windows.Forms.ToolStripLabel();
+      this.transformStrip_Pitch = new System.Windows.Forms.ToolStripTextBox();
+      this.labelRoll = new System.Windows.Forms.ToolStripLabel();
+      this.transformStrip_Roll = new System.Windows.Forms.ToolStripTextBox();
+      this.toolStripSeparator2 = new System.Windows.Forms.ToolStripSeparator();
+      this.toolStripDropDownButton_Scale = new System.Windows.Forms.ToolStripDropDownButton();
+      this.toolStripMenuItem_CopyScale = new System.Windows.Forms.ToolStripMenuItem();
+      this.toolStripMenuItem_PasteScale = new System.Windows.Forms.ToolStripMenuItem();
+      this.labelXScale = new System.Windows.Forms.ToolStripLabel();
+      this.transformStrip_ScaleX = new System.Windows.Forms.ToolStripTextBox();
+      this.labelYScale = new System.Windows.Forms.ToolStripLabel();
+      this.transformStrip_ScaleY = new System.Windows.Forms.ToolStripTextBox();
+      this.labelZScale = new System.Windows.Forms.ToolStripLabel();
+      this.transformStrip_ScaleZ = new System.Windows.Forms.ToolStripTextBox();
+      this.toolStripLabel1 = new System.Windows.Forms.ToolStripLabel();
+      this.transformStrip_ScaleXYZ = new System.Windows.Forms.ToolStripTextBox();
       this.toolStrip_EnginePanel = new System.Windows.Forms.ToolStrip();
       this.ToolStripButton_Select = new System.Windows.Forms.ToolStripSplitButton();
       this.ToolStripButton_Move = new CSharpFramework.Controls.ToolStripSplitButtonCheckable();
@@ -211,10 +180,6 @@ ToolStripDropDown _play_Dropdown = null;
       this.ToolStripButton_Rotate = new CSharpFramework.Controls.ToolStripSplitButtonCheckable();
       this.toolStripButton_EnableAngleSnap = new System.Windows.Forms.ToolStripMenuItem();
       this.toolStripButton_localOri = new System.Windows.Forms.ToolStripMenuItem();
-      this.ToolStripButton_Scale = new CSharpFramework.Controls.ToolStripSplitButtonCheckable();
-      this.uniformScaleToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-      this.nonuniformScaleToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-      this.toolStripButton_localScale = new System.Windows.Forms.ToolStripMenuItem();
       this.ToolStripButton_Link = new CSharpFramework.Controls.ToolStripSplitButtonCheckable();
       this.toolStripButton_Link_ShowNone = new System.Windows.Forms.ToolStripMenuItem();
       this.toolStripButton_Link_ShowAll = new System.Windows.Forms.ToolStripMenuItem();
@@ -225,7 +190,7 @@ ToolStripDropDown _play_Dropdown = null;
       this.animateToolStripMenuItem_Animate = new System.Windows.Forms.ToolStripMenuItem();
       this.runInEditorToolStripMenuItem_RunInEditor = new System.Windows.Forms.ToolStripMenuItem();
       this.playTheGameToolStripMenuItem_PlayTheGame = new System.Windows.Forms.ToolStripMenuItem();
-      this.ToolStripSplitButton_Camera = new System.Windows.Forms.ToolStripSplitButton();
+      this.ToolStripSplitButton_Camera = new System.Windows.Forms.ToolStripDropDownButton();
       this.toolStripButton_MoveContext = new System.Windows.Forms.ToolStripMenuItem();
       this.toolStripButton_MoveCameraWithKeys = new System.Windows.Forms.ToolStripMenuItem();
       this.ToolStripSplitButton_CameraSep1 = new System.Windows.Forms.ToolStripSeparator();
@@ -266,7 +231,7 @@ ToolStripDropDown _play_Dropdown = null;
       this.ToolStrip_Rendering_AffectsScene = new System.Windows.Forms.ToolStripMenuItem();
       this.ToolStrip_Rendering_AffectsSelection = new System.Windows.Forms.ToolStripMenuItem();
       this.ToolStripSplitButton_DebugFlags = new System.Windows.Forms.ToolStripSplitButton();
-      this.toolStripDropDownButton_PerspectiveMode = new System.Windows.Forms.ToolStripSplitButton();
+      this.toolStripDropDownButton_PerspectiveMode = new System.Windows.Forms.ToolStripDropDownButton();
       this.ToolStripMenuItem_Perspective = new System.Windows.Forms.ToolStripMenuItem();
       this.ToolStripMenuItem_PerspectiveTop = new System.Windows.Forms.ToolStripMenuItem();
       this.ToolStripMenuItem_PerspectiveFront = new System.Windows.Forms.ToolStripMenuItem();
@@ -277,10 +242,6 @@ ToolStripDropDown _play_Dropdown = null;
       this.ToolStripMenuItem_Right = new System.Windows.Forms.ToolStripMenuItem();
       this.toolStripMenuItem1 = new System.Windows.Forms.ToolStripSeparator();
       this.ToolStripMenuItem_View_EditClipRange = new System.Windows.Forms.ToolStripMenuItem();
-      this.ToolStripMenuItem_View_ZoomIn = new System.Windows.Forms.ToolStripMenuItem();
-      this.ToolStripMenuItem_View_ZoomOut = new System.Windows.Forms.ToolStripMenuItem();
-      this.ToolStripMenuItem_View_ZoomDefault = new System.Windows.Forms.ToolStripMenuItem();
-      this.toolStripMenuItem9 = new System.Windows.Forms.ToolStripSeparator();
       this.ToolStripMenuItem_View_Size = new System.Windows.Forms.ToolStripMenuItem();
       this.ToolStripMenuItem_View_SetSize = new System.Windows.Forms.ToolStripMenuItem();
       this.toolStripMenuItem12 = new System.Windows.Forms.ToolStripSeparator();
@@ -290,11 +251,6 @@ ToolStripDropDown _play_Dropdown = null;
       this.toolStripMenuItem13 = new System.Windows.Forms.ToolStripSeparator();
       this.toolStripMenuItem14 = new System.Windows.Forms.ToolStripSeparator();
       this.ToolStripMenuItem_View_Properties = new System.Windows.Forms.ToolStripMenuItem();
-      this.ToolStripSplitButton_Tools = new System.Windows.Forms.ToolStripSplitButton();
-      this.toolStripButton_MeasureTool = new System.Windows.Forms.ToolStripMenuItem();
-      this.ToolStripSplitButton_Tools_Sep1 = new System.Windows.Forms.ToolStripSeparator();
-      this.ToolStripButton_HighlightSelection = new System.Windows.Forms.ToolStripMenuItem();
-      this.ToolStripButton_OneClickSelection = new System.Windows.Forms.ToolStripMenuItem();
       this.toolStripSeparator4 = new System.Windows.Forms.ToolStripSeparator();
       this.contextMenuStrip_SelShapes = new System.Windows.Forms.ContextMenuStrip(this.components);
       this.transformGizmoToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -334,31 +290,12 @@ ToolStripDropDown _play_Dropdown = null;
       this.pasteAtCursorToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
       this.toolStripMenuItem4 = new System.Windows.Forms.ToolStripSeparator();
       this.gridToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-      this.setupGridToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-      this.toolStripMenuItem10 = new System.Windows.Forms.ToolStripSeparator();
-      this.snapPositionToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-      this.snapRotationToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
       this.showGridToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-      this.relativeGridToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-      this.gridLinesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-      this.volumeGridToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-      this.toolStripMenuItem7 = new System.Windows.Forms.ToolStripSeparator();
-      this.gridSize10ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-      this.gridSize25ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-      this.gridSize100ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-      this.toolStripMenuItem15 = new System.Windows.Forms.ToolStripSeparator();
-      this.units2ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-      this.units5ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-      this.units10ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-      this.units25ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-      this.units50ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-      this.units100ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
       this.toolStripMenuItem5 = new System.Windows.Forms.ToolStripSeparator();
       this.renderingToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
       this.solidToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
       this.wireframeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
       this.shadingToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-      this.dummyToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
       this.debugFlagsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
       this.dummyToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
       this.pickToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -375,7 +312,15 @@ ToolStripDropDown _play_Dropdown = null;
       this.selectZoneAtCameraPositionToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
       this.loadZoneAtCameraPositionToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
       this.loadZonesCloseToCameraToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+      this.dummyToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
       this.UnitScaleImageList = new System.Windows.Forms.ImageList(this.components);
+      this.ToolStripSplitButton_Tools = new System.Windows.Forms.ToolStripDropDownButton();
+      this.toolStripButton_MeasureTool = new System.Windows.Forms.ToolStripMenuItem();
+      this.ToolStripSplitButton_Tools_Sep1 = new System.Windows.Forms.ToolStripSeparator();
+      this.ToolStripButton_HighlightSelection = new System.Windows.Forms.ToolStripMenuItem();
+      this.ToolStripButton_OneClickSelection = new System.Windows.Forms.ToolStripMenuItem();
+      this.transformStrip_EnginePanel.SuspendLayout();
+      this.ToolStripButton_Scale = new System.Windows.Forms.ToolStripButton();
       this.toolStrip_EnginePanel.SuspendLayout();
       this.contextMenuStrip_SelShapes.SuspendLayout();
       this.contextMenuStrip_View.SuspendLayout();
@@ -409,6 +354,323 @@ ToolStripDropDown _play_Dropdown = null;
       this.panel_VisionView.Name = "panel_VisionView";
       this.panel_VisionView.Size = new System.Drawing.Size(769, 413);
       this.panel_VisionView.TabIndex = 1;
+      // 
+      // transformStrip_EnginePanel
+      // 
+      this.transformStrip_EnginePanel.Dock = System.Windows.Forms.DockStyle.Bottom;
+      this.transformStrip_EnginePanel.Enabled = false;
+      this.transformStrip_EnginePanel.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.transformStrip_toggleTransformMode,
+            this.toolStripSeparator5,
+            this.toolStripDropDownButton_Translation,
+            this.labelX,
+            this.transformStrip_TranslateX,
+            this.labelY,
+            this.transformStrip_TranslateY,
+            this.labelZ,
+            this.transformStrip_TranslateZ,
+            this.toolStripSeparator1,
+            this.toolStripDropDownButton_Rotation,
+            this.labelYaw,
+            this.transformStrip_Yaw,
+            this.labelPitch,
+            this.transformStrip_Pitch,
+            this.labelRoll,
+            this.transformStrip_Roll,
+            this.toolStripSeparator2,
+            this.toolStripDropDownButton_Scale,
+            this.labelXScale,
+            this.transformStrip_ScaleX,
+            this.labelYScale,
+            this.transformStrip_ScaleY,
+            this.labelZScale,
+            this.transformStrip_ScaleZ,
+            this.toolStripLabel1,
+            this.transformStrip_ScaleXYZ});
+      this.transformStrip_EnginePanel.Location = new System.Drawing.Point(0, 463);
+      this.transformStrip_EnginePanel.Name = "transformStrip_EnginePanel";
+      this.transformStrip_EnginePanel.Size = new System.Drawing.Size(890, 31);
+      this.transformStrip_EnginePanel.TabIndex = 0;
+      this.transformStrip_EnginePanel.Text = "transformStrip";
+      // 
+      // transformStrip_toggleTransformMode
+      // 
+      this.transformStrip_toggleTransformMode.AutoSize = false;
+      this.transformStrip_toggleTransformMode.CheckOnClick = true;
+      this.transformStrip_toggleTransformMode.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+      this.transformStrip_toggleTransformMode.Image = global::Editor.Properties.Resources.toolbar_transform_absolute;
+      this.transformStrip_toggleTransformMode.ImageScaling = System.Windows.Forms.ToolStripItemImageScaling.None;
+      this.transformStrip_toggleTransformMode.ImageTransparentColor = System.Drawing.Color.Magenta;
+      this.transformStrip_toggleTransformMode.Name = "transformStrip_toggleTransformMode";
+      this.transformStrip_toggleTransformMode.Size = new System.Drawing.Size(28, 28);
+      this.transformStrip_toggleTransformMode.Text = "toolStripButton2";
+      this.transformStrip_toggleTransformMode.ToolTipText = "Toggles whether transformations in absolute (world) space or relative (model spac" +
+    "e)";
+      this.transformStrip_toggleTransformMode.Click += new System.EventHandler(this.transformStrip_toggleTransformMode_Click);
+      // 
+      // toolStripSeparator5
+      // 
+      this.toolStripSeparator5.Name = "toolStripSeparator5";
+      this.toolStripSeparator5.Size = new System.Drawing.Size(6, 31);
+      // 
+      // toolStripDropDownButton_Translation
+      // 
+      this.toolStripDropDownButton_Translation.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+      this.toolStripDropDownButton_Translation.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.toolStripMenuItem_CopyTranslation,
+            this.toolStripMenuItem_PasteTranslation});
+      this.toolStripDropDownButton_Translation.Image = global::Editor.Properties.Resources.toolbar_move;
+      this.toolStripDropDownButton_Translation.ImageScaling = System.Windows.Forms.ToolStripItemImageScaling.None;
+      this.toolStripDropDownButton_Translation.ImageTransparentColor = System.Drawing.Color.Magenta;
+      this.toolStripDropDownButton_Translation.Name = "toolStripDropDownButton_Translation";
+      this.toolStripDropDownButton_Translation.Size = new System.Drawing.Size(37, 28);
+      this.toolStripDropDownButton_Translation.ToolTipText = "Modify selected object rotation";
+      // 
+      // toolStripMenuItem_CopyTranslation
+      // 
+      this.toolStripMenuItem_CopyTranslation.Image = global::Editor.Properties.Resources.toolbar_copy;
+      this.toolStripMenuItem_CopyTranslation.Name = "toolStripMenuItem_CopyTranslation";
+      this.toolStripMenuItem_CopyTranslation.Size = new System.Drawing.Size(214, 22);
+      this.toolStripMenuItem_CopyTranslation.Text = "Copy Absolute Translation";
+      this.toolStripMenuItem_CopyTranslation.Click += new System.EventHandler(this.copyTranslationStripMenuItem1_Click);
+      // 
+      // toolStripMenuItem_PasteTranslation
+      // 
+      this.toolStripMenuItem_PasteTranslation.Image = global::Editor.Properties.Resources.toolbar_paste;
+      this.toolStripMenuItem_PasteTranslation.Name = "toolStripMenuItem_PasteTranslation";
+      this.toolStripMenuItem_PasteTranslation.Size = new System.Drawing.Size(214, 22);
+      this.toolStripMenuItem_PasteTranslation.Text = "Paste Absolute Translation";
+      this.toolStripMenuItem_PasteTranslation.Click += new System.EventHandler(this.pasteTranslationToolStripMenuItem_Click);
+      // 
+      // labelX
+      // 
+      this.labelX.Name = "labelX";
+      this.labelX.Size = new System.Drawing.Size(14, 28);
+      this.labelX.Text = "X";
+      // 
+      // transformStrip_TranslateX
+      // 
+      this.transformStrip_TranslateX.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+      this.transformStrip_TranslateX.Name = "transformStrip_TranslateX";
+      this.transformStrip_TranslateX.Size = new System.Drawing.Size(48, 31);
+      this.transformStrip_TranslateX.Leave += new System.EventHandler(this.transformStrip_Leave);
+      this.transformStrip_TranslateX.KeyDown += new System.Windows.Forms.KeyEventHandler(this.transformStrip_KeyDown);
+      this.transformStrip_TranslateX.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.transformStripTextBox_KeyPress);
+      this.transformStrip_TranslateX.Click += new System.EventHandler(this.transformStripTextBox_Click);
+      // 
+      // labelY
+      // 
+      this.labelY.Name = "labelY";
+      this.labelY.Size = new System.Drawing.Size(14, 28);
+      this.labelY.Text = "Y";
+      // 
+      // transformStrip_TranslateY
+      // 
+      this.transformStrip_TranslateY.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+      this.transformStrip_TranslateY.Name = "transformStrip_TranslateY";
+      this.transformStrip_TranslateY.Size = new System.Drawing.Size(48, 31);
+      this.transformStrip_TranslateY.Leave += new System.EventHandler(this.transformStrip_Leave);
+      this.transformStrip_TranslateY.KeyDown += new System.Windows.Forms.KeyEventHandler(this.transformStrip_KeyDown);
+      this.transformStrip_TranslateY.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.transformStripTextBox_KeyPress);
+      this.transformStrip_TranslateY.Click += new System.EventHandler(this.transformStripTextBox_Click);
+      // 
+      // labelZ
+      // 
+      this.labelZ.Name = "labelZ";
+      this.labelZ.Size = new System.Drawing.Size(14, 28);
+      this.labelZ.Text = "Z";
+      // 
+      // transformStrip_TranslateZ
+      // 
+      this.transformStrip_TranslateZ.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+      this.transformStrip_TranslateZ.Name = "transformStrip_TranslateZ";
+      this.transformStrip_TranslateZ.Size = new System.Drawing.Size(48, 31);
+      this.transformStrip_TranslateZ.Leave += new System.EventHandler(this.transformStrip_Leave);
+      this.transformStrip_TranslateZ.KeyDown += new System.Windows.Forms.KeyEventHandler(this.transformStrip_KeyDown);
+      this.transformStrip_TranslateZ.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.transformStripTextBox_KeyPress);
+      this.transformStrip_TranslateZ.Click += new System.EventHandler(this.transformStripTextBox_Click);
+      // 
+      // toolStripSeparator1
+      // 
+      this.toolStripSeparator1.Name = "toolStripSeparator1";
+      this.toolStripSeparator1.Size = new System.Drawing.Size(6, 31);
+      // 
+      // toolStripDropDownButton_Rotation
+      // 
+      this.toolStripDropDownButton_Rotation.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+      this.toolStripDropDownButton_Rotation.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.toolStripMenuItem_CopyRotation,
+            this.toolStripMenuItem_PasteRotation});
+      this.toolStripDropDownButton_Rotation.Image = global::Editor.Properties.Resources.toolbar_rotate;
+      this.toolStripDropDownButton_Rotation.ImageScaling = System.Windows.Forms.ToolStripItemImageScaling.None;
+      this.toolStripDropDownButton_Rotation.ImageTransparentColor = System.Drawing.Color.Magenta;
+      this.toolStripDropDownButton_Rotation.Name = "toolStripDropDownButton_Rotation";
+      this.toolStripDropDownButton_Rotation.Size = new System.Drawing.Size(37, 28);
+      this.toolStripDropDownButton_Rotation.Text = "toolStripDropDownButton_Rotation";
+      this.toolStripDropDownButton_Rotation.ToolTipText = "Modify selected object rotation";
+      // 
+      // toolStripMenuItem_CopyRotation
+      // 
+      this.toolStripMenuItem_CopyRotation.Image = global::Editor.Properties.Resources.toolbar_copy;
+      this.toolStripMenuItem_CopyRotation.Name = "toolStripMenuItem_CopyRotation";
+      this.toolStripMenuItem_CopyRotation.Size = new System.Drawing.Size(200, 22);
+      this.toolStripMenuItem_CopyRotation.Text = "Copy Absolute Rotation";
+      this.toolStripMenuItem_CopyRotation.Click += new System.EventHandler(this.copyRotationToolStripMenuItem_Click);
+      // 
+      // toolStripMenuItem_PasteRotation
+      // 
+      this.toolStripMenuItem_PasteRotation.Image = global::Editor.Properties.Resources.toolbar_paste;
+      this.toolStripMenuItem_PasteRotation.Name = "toolStripMenuItem_PasteRotation";
+      this.toolStripMenuItem_PasteRotation.Size = new System.Drawing.Size(200, 22);
+      this.toolStripMenuItem_PasteRotation.Text = "Paste Absolute Rotation";
+      this.toolStripMenuItem_PasteRotation.Click += new System.EventHandler(this.pasteRotationToolStripMenuItem_Click);
+      // 
+      // labelYaw
+      // 
+      this.labelYaw.Name = "labelYaw";
+      this.labelYaw.Size = new System.Drawing.Size(29, 28);
+      this.labelYaw.Text = "Yaw";
+      // 
+      // transformStrip_Yaw
+      // 
+      this.transformStrip_Yaw.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+      this.transformStrip_Yaw.Name = "transformStrip_Yaw";
+      this.transformStrip_Yaw.Size = new System.Drawing.Size(36, 31);
+      this.transformStrip_Yaw.Leave += new System.EventHandler(this.transformStrip_Leave);
+      this.transformStrip_Yaw.KeyDown += new System.Windows.Forms.KeyEventHandler(this.transformStrip_KeyDown);
+      this.transformStrip_Yaw.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.transformStripTextBox_KeyPress);
+      this.transformStrip_Yaw.Click += new System.EventHandler(this.transformStripTextBox_Click);
+      // 
+      // labelPitch
+      // 
+      this.labelPitch.Name = "labelPitch";
+      this.labelPitch.Size = new System.Drawing.Size(34, 28);
+      this.labelPitch.Text = "Pitch";
+      // 
+      // transformStrip_Pitch
+      // 
+      this.transformStrip_Pitch.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+      this.transformStrip_Pitch.Name = "transformStrip_Pitch";
+      this.transformStrip_Pitch.Size = new System.Drawing.Size(36, 31);
+      this.transformStrip_Pitch.Leave += new System.EventHandler(this.transformStrip_Leave);
+      this.transformStrip_Pitch.KeyDown += new System.Windows.Forms.KeyEventHandler(this.transformStrip_KeyDown);
+      this.transformStrip_Pitch.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.transformStripTextBox_KeyPress);
+      this.transformStrip_Pitch.Click += new System.EventHandler(this.transformStripTextBox_Click);
+      // 
+      // labelRoll
+      // 
+      this.labelRoll.Name = "labelRoll";
+      this.labelRoll.Size = new System.Drawing.Size(27, 28);
+      this.labelRoll.Text = "Roll";
+      // 
+      // transformStrip_Roll
+      // 
+      this.transformStrip_Roll.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+      this.transformStrip_Roll.Name = "transformStrip_Roll";
+      this.transformStrip_Roll.Size = new System.Drawing.Size(36, 31);
+      this.transformStrip_Roll.Leave += new System.EventHandler(this.transformStrip_Leave);
+      this.transformStrip_Roll.KeyDown += new System.Windows.Forms.KeyEventHandler(this.transformStrip_KeyDown);
+      this.transformStrip_Roll.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.transformStripTextBox_KeyPress);
+      this.transformStrip_Roll.Click += new System.EventHandler(this.transformStripTextBox_Click);
+      // 
+      // toolStripSeparator2
+      // 
+      this.toolStripSeparator2.Name = "toolStripSeparator2";
+      this.toolStripSeparator2.Size = new System.Drawing.Size(6, 31);
+      // 
+      // toolStripDropDownButton_Scale
+      // 
+      this.toolStripDropDownButton_Scale.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+      this.toolStripDropDownButton_Scale.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.toolStripMenuItem_CopyScale,
+            this.toolStripMenuItem_PasteScale});
+      this.toolStripDropDownButton_Scale.Image = global::Editor.Properties.Resources.toolbar_scale_nonuniform;
+      this.toolStripDropDownButton_Scale.ImageScaling = System.Windows.Forms.ToolStripItemImageScaling.None;
+      this.toolStripDropDownButton_Scale.ImageTransparentColor = System.Drawing.Color.Magenta;
+      this.toolStripDropDownButton_Scale.Name = "toolStripDropDownButton_Scale";
+      this.toolStripDropDownButton_Scale.Size = new System.Drawing.Size(37, 28);
+      this.toolStripDropDownButton_Scale.Text = "toolStripDropDownButton_Rotation";
+      this.toolStripDropDownButton_Scale.ToolTipText = "Modify selected object rotation";
+      // 
+      // toolStripMenuItem_CopyScale
+      // 
+      this.toolStripMenuItem_CopyScale.Image = global::Editor.Properties.Resources.toolbar_copy;
+      this.toolStripMenuItem_CopyScale.Name = "toolStripMenuItem_CopyScale";
+      this.toolStripMenuItem_CopyScale.Size = new System.Drawing.Size(182, 22);
+      this.toolStripMenuItem_CopyScale.Text = "Copy Absolute Scale";
+      this.toolStripMenuItem_CopyScale.Click += new System.EventHandler(this.copyScaleToolStripMenuItem_Click);
+      // 
+      // toolStripMenuItem_PasteScale
+      // 
+      this.toolStripMenuItem_PasteScale.Image = global::Editor.Properties.Resources.toolbar_paste;
+      this.toolStripMenuItem_PasteScale.Name = "toolStripMenuItem_PasteScale";
+      this.toolStripMenuItem_PasteScale.Size = new System.Drawing.Size(182, 22);
+      this.toolStripMenuItem_PasteScale.Text = "Paste Absolute Scale";
+      this.toolStripMenuItem_PasteScale.Click += new System.EventHandler(this.pasteScaleToolStripMenuItem_Click);
+      // 
+      // labelXScale
+      // 
+      this.labelXScale.Name = "labelXScale";
+      this.labelXScale.Size = new System.Drawing.Size(14, 28);
+      this.labelXScale.Text = "X";
+      // 
+      // transformStrip_ScaleX
+      // 
+      this.transformStrip_ScaleX.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+      this.transformStrip_ScaleX.Name = "transformStrip_ScaleX";
+      this.transformStrip_ScaleX.Size = new System.Drawing.Size(36, 31);
+      this.transformStrip_ScaleX.Leave += new System.EventHandler(this.transformStrip_Leave);
+      this.transformStrip_ScaleX.KeyDown += new System.Windows.Forms.KeyEventHandler(this.transformStrip_KeyDown);
+      this.transformStrip_ScaleX.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.transformStripTextBox_KeyPress);
+      this.transformStrip_ScaleX.Click += new System.EventHandler(this.transformStripTextBox_Click);
+      // 
+      // labelYScale
+      // 
+      this.labelYScale.Name = "labelYScale";
+      this.labelYScale.Size = new System.Drawing.Size(14, 28);
+      this.labelYScale.Text = "Y";
+      // 
+      // transformStrip_ScaleY
+      // 
+      this.transformStrip_ScaleY.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+      this.transformStrip_ScaleY.Name = "transformStrip_ScaleY";
+      this.transformStrip_ScaleY.Size = new System.Drawing.Size(36, 31);
+      this.transformStrip_ScaleY.Leave += new System.EventHandler(this.transformStrip_Leave);
+      this.transformStrip_ScaleY.KeyDown += new System.Windows.Forms.KeyEventHandler(this.transformStrip_KeyDown);
+      this.transformStrip_ScaleY.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.transformStripTextBox_KeyPress);
+      this.transformStrip_ScaleY.Click += new System.EventHandler(this.transformStripTextBox_Click);
+      // 
+      // labelZScale
+      // 
+      this.labelZScale.Name = "labelZScale";
+      this.labelZScale.Size = new System.Drawing.Size(14, 28);
+      this.labelZScale.Text = "Z";
+      // 
+      // transformStrip_ScaleZ
+      // 
+      this.transformStrip_ScaleZ.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+      this.transformStrip_ScaleZ.Name = "transformStrip_ScaleZ";
+      this.transformStrip_ScaleZ.Size = new System.Drawing.Size(36, 31);
+      this.transformStrip_ScaleZ.Leave += new System.EventHandler(this.transformStrip_Leave);
+      this.transformStrip_ScaleZ.KeyDown += new System.Windows.Forms.KeyEventHandler(this.transformStrip_KeyDown);
+      this.transformStrip_ScaleZ.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.transformStripTextBox_KeyPress);
+      this.transformStrip_ScaleZ.Click += new System.EventHandler(this.transformStripTextBox_Click);
+      // 
+      // toolStripLabel1
+      // 
+      this.toolStripLabel1.Name = "toolStripLabel1";
+      this.toolStripLabel1.Size = new System.Drawing.Size(28, 28);
+      this.toolStripLabel1.Text = "XYZ";
+      // 
+      // transformStrip_ScaleXYZ
+      // 
+      this.transformStrip_ScaleXYZ.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+      this.transformStrip_ScaleXYZ.Name = "transformStrip_ScaleXYZ";
+      this.transformStrip_ScaleXYZ.Size = new System.Drawing.Size(36, 31);
+      this.transformStrip_ScaleXYZ.Leave += new System.EventHandler(this.transformStrip_Leave);
+      this.transformStrip_ScaleXYZ.KeyDown += new System.Windows.Forms.KeyEventHandler(this.transformStrip_KeyDown);
+      this.transformStrip_ScaleXYZ.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.transformStripTextBox_KeyPress);
+      this.transformStrip_ScaleXYZ.Click += new System.EventHandler(this.transformStripTextBox_Click);
       // 
       // toolStrip_EnginePanel
       // 
@@ -464,8 +726,8 @@ ToolStripDropDown _play_Dropdown = null;
       this.ToolStripButton_Move.Size = new System.Drawing.Size(40, 28);
       this.ToolStripButton_Move.Text = "Move";
       this.ToolStripButton_Move.ToolTipText = "Move Selected Shapes";
-      this.ToolStripButton_Move.Click += new System.EventHandler(this.toolStripButton_Move_Click);
       this.ToolStripButton_Move.DropDownOpening += new System.EventHandler(this.toolStripButton_Move_DropDownOpening);
+      this.ToolStripButton_Move.Click += new System.EventHandler(this.toolStripButton_Move_Click);
       // 
       // toolStripButton_EnableMoveSnap
       // 
@@ -512,8 +774,8 @@ ToolStripDropDown _play_Dropdown = null;
       this.ToolStripButton_Rotate.Size = new System.Drawing.Size(40, 28);
       this.ToolStripButton_Rotate.Text = "Rotate";
       this.ToolStripButton_Rotate.ToolTipText = "Rotate Selected Shapes";
-      this.ToolStripButton_Rotate.Click += new System.EventHandler(this.toolStripButton_Rotate_Click);
       this.ToolStripButton_Rotate.DropDownOpening += new System.EventHandler(this.toolStripButton_Rotate_DropDownOpening);
+      this.ToolStripButton_Rotate.Click += new System.EventHandler(this.toolStripButton_Rotate_Click);
       // 
       // toolStripButton_EnableAngleSnap
       // 
@@ -535,52 +797,6 @@ ToolStripDropDown _play_Dropdown = null;
       this.toolStripButton_localOri.Text = "Local Transform";
       this.toolStripButton_localOri.Click += new System.EventHandler(this.toolStripButton_localOri_Click);
       // 
-      // ToolStripButton_Scale
-      // 
-      this.ToolStripButton_Scale.Checked = System.Windows.Forms.CheckState.Unchecked;
-      this.ToolStripButton_Scale.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-      this.ToolStripButton_Scale.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.uniformScaleToolStripMenuItem,
-            this.nonuniformScaleToolStripMenuItem,
-            this.toolStripButton_localScale});
-      this.ToolStripButton_Scale.Image = global::Editor.Properties.Resources.toolbar_scale_uniform;
-      this.ToolStripButton_Scale.ImageScaling = System.Windows.Forms.ToolStripItemImageScaling.None;
-      this.ToolStripButton_Scale.ImageTransparentColor = System.Drawing.Color.Magenta;
-      this.ToolStripButton_Scale.Name = "ToolStripButton_Scale";
-      this.ToolStripButton_Scale.Size = new System.Drawing.Size(40, 28);
-      this.ToolStripButton_Scale.Text = "Scale";
-      this.ToolStripButton_Scale.ToolTipText = "Scale Selected Shapes";
-      this.ToolStripButton_Scale.ButtonClick += new System.EventHandler(this.toolStripSplitButton_Scale_ButtonClick);
-      this.ToolStripButton_Scale.DropDownOpening += new System.EventHandler(this.toolStripSplitButton_Scale_DropDownOpening);
-      // 
-      // uniformScaleToolStripMenuItem
-      // 
-      this.uniformScaleToolStripMenuItem.Image = global::Editor.Properties.Resources.toolbar_scale_uniform_small;
-      this.uniformScaleToolStripMenuItem.ImageScaling = System.Windows.Forms.ToolStripItemImageScaling.None;
-      this.uniformScaleToolStripMenuItem.Name = "uniformScaleToolStripMenuItem";
-      this.uniformScaleToolStripMenuItem.Size = new System.Drawing.Size(175, 22);
-      this.uniformScaleToolStripMenuItem.Text = "Uniform Scale";
-      this.uniformScaleToolStripMenuItem.Click += new System.EventHandler(this.uniformScaleToolStripMenuItem1_Click);
-      // 
-      // nonuniformScaleToolStripMenuItem
-      // 
-      this.nonuniformScaleToolStripMenuItem.Image = global::Editor.Properties.Resources.toolbar_scale_nonuniform_small;
-      this.nonuniformScaleToolStripMenuItem.ImageScaling = System.Windows.Forms.ToolStripItemImageScaling.None;
-      this.nonuniformScaleToolStripMenuItem.Name = "nonuniformScaleToolStripMenuItem";
-      this.nonuniformScaleToolStripMenuItem.Size = new System.Drawing.Size(175, 22);
-      this.nonuniformScaleToolStripMenuItem.Text = "Non-uniform Scale";
-      this.nonuniformScaleToolStripMenuItem.Click += new System.EventHandler(this.nonuniformScaleToolStripMenuItem1_Click);
-      // 
-      // toolStripButton_localScale
-      // 
-      this.toolStripButton_localScale.CheckOnClick = true;
-      this.toolStripButton_localScale.Image = global::Editor.Properties.Resources.toolbar_gizmo;
-      this.toolStripButton_localScale.ImageScaling = System.Windows.Forms.ToolStripItemImageScaling.None;
-      this.toolStripButton_localScale.Name = "toolStripButton_localScale";
-      this.toolStripButton_localScale.Size = new System.Drawing.Size(175, 22);
-      this.toolStripButton_localScale.Text = "Local Transform";
-      this.toolStripButton_localScale.Click += new System.EventHandler(this.toolStripButton_localScale_Click);
-      // 
       // ToolStripButton_Link
       // 
       this.ToolStripButton_Link.Checked = System.Windows.Forms.CheckState.Unchecked;
@@ -596,8 +812,8 @@ ToolStripDropDown _play_Dropdown = null;
       this.ToolStripButton_Link.Size = new System.Drawing.Size(40, 28);
       this.ToolStripButton_Link.Text = "Link";
       this.ToolStripButton_Link.ToolTipText = "Shape Linking Context";
-      this.ToolStripButton_Link.Click += new System.EventHandler(this.toolStripButton_Link_Click);
       this.ToolStripButton_Link.DropDownOpening += new System.EventHandler(this.toolStripButton_Link_DropDownOpening);
+      this.ToolStripButton_Link.Click += new System.EventHandler(this.toolStripButton_Link_Click);
       // 
       // toolStripButton_Link_ShowNone
       // 
@@ -655,7 +871,6 @@ ToolStripDropDown _play_Dropdown = null;
       this.toolStripDropDownButton_PlayMode.ImageTransparentColor = System.Drawing.Color.Magenta;
       this.toolStripDropDownButton_PlayMode.Name = "toolStripDropDownButton_PlayMode";
       this.toolStripDropDownButton_PlayMode.Size = new System.Drawing.Size(40, 28);
-      //this.toolStripDropDownButton_PlayMode.ToolTipText = "Animates or Plays Engine View";
       this.toolStripDropDownButton_PlayMode.ButtonClick += new System.EventHandler(this.toolStripDropDownButton_PlayMode_ButtonClick);
       // 
       // animateToolStripMenuItem_Animate
@@ -665,7 +880,6 @@ ToolStripDropDown _play_Dropdown = null;
       this.animateToolStripMenuItem_Animate.Name = "animateToolStripMenuItem_Animate";
       this.animateToolStripMenuItem_Animate.Size = new System.Drawing.Size(150, 22);
       this.animateToolStripMenuItem_Animate.Text = "Animate";
-      //this.animateToolStripMenuItem_Animate.ToolTipText = "Play Application in \"Animate\" mode";
       this.animateToolStripMenuItem_Animate.Click += new System.EventHandler(this.animateToolStripMenuItem_Animate_Click);
       // 
       // runInEditorToolStripMenuItem_RunInEditor
@@ -675,7 +889,6 @@ ToolStripDropDown _play_Dropdown = null;
       this.runInEditorToolStripMenuItem_RunInEditor.Name = "runInEditorToolStripMenuItem_RunInEditor";
       this.runInEditorToolStripMenuItem_RunInEditor.Size = new System.Drawing.Size(150, 22);
       this.runInEditorToolStripMenuItem_RunInEditor.Text = "Run in Editor";
-      //this.runInEditorToolStripMenuItem_RunInEditor.ToolTipText = "Play application in \"Play in Editor\" mode";
       this.runInEditorToolStripMenuItem_RunInEditor.Click += new System.EventHandler(this.runInEditorToolStripMenuItem_RunInEditor_Click);
       // 
       // playTheGameToolStripMenuItem_PlayTheGame
@@ -685,7 +898,6 @@ ToolStripDropDown _play_Dropdown = null;
       this.playTheGameToolStripMenuItem_PlayTheGame.Name = "playTheGameToolStripMenuItem_PlayTheGame";
       this.playTheGameToolStripMenuItem_PlayTheGame.Size = new System.Drawing.Size(150, 22);
       this.playTheGameToolStripMenuItem_PlayTheGame.Text = "Play the Game";
-      //this.playTheGameToolStripMenuItem_PlayTheGame.ToolTipText = "Play application in \"Play the Game\" mode";
       this.playTheGameToolStripMenuItem_PlayTheGame.Click += new System.EventHandler(this.playTheGameToolStripMenuItem_PlayTheGame_Click);
       // 
       // ToolStripSplitButton_Camera
@@ -708,9 +920,8 @@ ToolStripDropDown _play_Dropdown = null;
       this.ToolStripSplitButton_Camera.ImageScaling = System.Windows.Forms.ToolStripItemImageScaling.None;
       this.ToolStripSplitButton_Camera.ImageTransparentColor = System.Drawing.Color.Magenta;
       this.ToolStripSplitButton_Camera.Name = "ToolStripSplitButton_Camera";
-      this.ToolStripSplitButton_Camera.Size = new System.Drawing.Size(40, 28);
+      this.ToolStripSplitButton_Camera.Size = new System.Drawing.Size(37, 28);
       this.ToolStripSplitButton_Camera.Text = "Camera Control Options";
-      this.ToolStripSplitButton_Camera.Click += new System.EventHandler(this.toolStripButton_MoveContext_Click);
       this.ToolStripSplitButton_Camera.DropDownOpening += new System.EventHandler(this.ToolStripSplitButton_Camera_DropDownOpening);
       // 
       // toolStripButton_MoveContext
@@ -821,7 +1032,7 @@ ToolStripDropDown _play_Dropdown = null;
       this.ToolStripSplitButton_MoveSensitivity.ImageScaling = System.Windows.Forms.ToolStripItemImageScaling.None;
       this.ToolStripSplitButton_MoveSensitivity.ImageTransparentColor = System.Drawing.Color.Magenta;
       this.ToolStripSplitButton_MoveSensitivity.Name = "ToolStripSplitButton_MoveSensitivity";
-      this.ToolStripSplitButton_MoveSensitivity.Size = new System.Drawing.Size(40, 28);
+      this.ToolStripSplitButton_MoveSensitivity.Size = new System.Drawing.Size(16, 28);
       this.ToolStripSplitButton_MoveSensitivity.Text = "Camera Move and Rotate Sensitivity";
       this.ToolStripSplitButton_MoveSensitivity.ButtonClick += new System.EventHandler(this.ToolStripSplitButton_UIUnitScale_ButtonClick);
       // 
@@ -957,7 +1168,7 @@ ToolStripDropDown _play_Dropdown = null;
       this.ToolStripButton_ZoomFit.Size = new System.Drawing.Size(40, 28);
       this.ToolStripButton_ZoomFit.Text = "Focus On Selection";
       this.ToolStripButton_ZoomFit.ToolTipText = "Focus Scene";
-      this.ToolStripButton_ZoomFit.Click += new System.EventHandler(this.toolStripButton_ZoomFit_Click);
+      this.ToolStripButton_ZoomFit.ButtonClick += new System.EventHandler(this.ToolStripButton_ZoomFit_ButtonClick);
       this.ToolStripButton_ZoomFit.DropDownOpening += new System.EventHandler(this.ToolStripButton_ZoomFit_DropDownOpening);
       // 
       // ToolStripButton_IsolateSelection
@@ -1109,10 +1320,6 @@ ToolStripDropDown _play_Dropdown = null;
             this.ToolStripMenuItem_Right,
             this.toolStripMenuItem1,
             this.ToolStripMenuItem_View_EditClipRange,
-            this.ToolStripMenuItem_View_ZoomIn,
-            this.ToolStripMenuItem_View_ZoomOut,
-            this.ToolStripMenuItem_View_ZoomDefault,
-            this.toolStripMenuItem9,
             this.ToolStripMenuItem_View_Size,
             this.ToolStripMenuItem_View_SafeMode,
             this.toolStripMenuItem14,
@@ -1120,10 +1327,9 @@ ToolStripDropDown _play_Dropdown = null;
       this.toolStripDropDownButton_PerspectiveMode.Image = global::Editor.Properties.Resources.view_properties;
       this.toolStripDropDownButton_PerspectiveMode.ImageTransparentColor = System.Drawing.Color.Magenta;
       this.toolStripDropDownButton_PerspectiveMode.Name = "toolStripDropDownButton_PerspectiveMode";
-      this.toolStripDropDownButton_PerspectiveMode.Size = new System.Drawing.Size(40, 28);
+      this.toolStripDropDownButton_PerspectiveMode.Size = new System.Drawing.Size(37, 28);
       this.toolStripDropDownButton_PerspectiveMode.Text = "3D View";
       this.toolStripDropDownButton_PerspectiveMode.ToolTipText = "View Mode";
-      this.toolStripDropDownButton_PerspectiveMode.ButtonClick += new System.EventHandler(this.toolStripDropDownButton_PerspectiveMode_ButtonClick);
       this.toolStripDropDownButton_PerspectiveMode.DropDownOpening += new System.EventHandler(this.toolStripDropDownButton_PerspectiveMode_DropDownOpening);
       // 
       // ToolStripMenuItem_Perspective
@@ -1140,7 +1346,7 @@ ToolStripDropDown _play_Dropdown = null;
       // 
       this.ToolStripMenuItem_PerspectiveTop.Image = global::Editor.Properties.Resources.toolbar_zgizmo;
       this.ToolStripMenuItem_PerspectiveTop.ImageScaling = System.Windows.Forms.ToolStripItemImageScaling.None;
-      this.ToolStripMenuItem_PerspectiveTop.Name = "ToolStripMenuItem_Perspective";
+      this.ToolStripMenuItem_PerspectiveTop.Name = "ToolStripMenuItem_PerspectiveTop";
       this.ToolStripMenuItem_PerspectiveTop.Size = new System.Drawing.Size(254, 22);
       this.ToolStripMenuItem_PerspectiveTop.Text = "  Orient Top";
       this.ToolStripMenuItem_PerspectiveTop.ToolTipText = "Reorients camera to a top-down perspective view";
@@ -1150,21 +1356,26 @@ ToolStripDropDown _play_Dropdown = null;
       // 
       this.ToolStripMenuItem_PerspectiveFront.Image = global::Editor.Properties.Resources.toolbar_xgizmo;
       this.ToolStripMenuItem_PerspectiveFront.ImageScaling = System.Windows.Forms.ToolStripItemImageScaling.None;
-      this.ToolStripMenuItem_PerspectiveFront.Name = "ToolStripMenuItem_Perspective";
+      this.ToolStripMenuItem_PerspectiveFront.Name = "ToolStripMenuItem_PerspectiveFront";
       this.ToolStripMenuItem_PerspectiveFront.Size = new System.Drawing.Size(254, 22);
       this.ToolStripMenuItem_PerspectiveFront.Text = "  Orient Front";
       this.ToolStripMenuItem_PerspectiveFront.ToolTipText = "Reorients camera to a front-facing perspective view";
       this.ToolStripMenuItem_PerspectiveFront.Click += new System.EventHandler(this.perspectiveToolStripMenuItem_PerspectiveFront_Click);
       // 
-      // ToolStripMenuItem_PerspectiveRightB
+      // ToolStripMenuItem_PerspectiveRight
       // 
       this.ToolStripMenuItem_PerspectiveRight.Image = global::Editor.Properties.Resources.toolbar_ygizmo;
       this.ToolStripMenuItem_PerspectiveRight.ImageScaling = System.Windows.Forms.ToolStripItemImageScaling.None;
-      this.ToolStripMenuItem_PerspectiveRight.Name = "ToolStripMenuItem_Perspective";
+      this.ToolStripMenuItem_PerspectiveRight.Name = "ToolStripMenuItem_PerspectiveRight";
       this.ToolStripMenuItem_PerspectiveRight.Size = new System.Drawing.Size(254, 22);
       this.ToolStripMenuItem_PerspectiveRight.Text = "  Orient Right";
       this.ToolStripMenuItem_PerspectiveRight.ToolTipText = "Reorients camera to a right-facing perspective view";
       this.ToolStripMenuItem_PerspectiveRight.Click += new System.EventHandler(this.perspectiveToolStripMenuItem_PerspectiveRight_Click);
+      // 
+      // toolStripMenuItem19
+      // 
+      this.toolStripMenuItem19.Name = "toolStripMenuItem19";
+      this.toolStripMenuItem19.Size = new System.Drawing.Size(251, 6);
       // 
       // ToolStripMenuItem_Top
       // 
@@ -1210,38 +1421,6 @@ ToolStripDropDown _play_Dropdown = null;
       this.ToolStripMenuItem_View_EditClipRange.Text = "Edit Clip Range (Orthogonal View)";
       this.ToolStripMenuItem_View_EditClipRange.ToolTipText = "Edit Orthographic Clip Range";
       this.ToolStripMenuItem_View_EditClipRange.Click += new System.EventHandler(this.toolStripButton_SelectViewBox_Click);
-      // 
-      // ToolStripMenuItem_View_ZoomIn
-      // 
-      this.ToolStripMenuItem_View_ZoomIn.Image = global::Editor.Properties.Resources.zoom_in;
-      this.ToolStripMenuItem_View_ZoomIn.ImageScaling = System.Windows.Forms.ToolStripItemImageScaling.None;
-      this.ToolStripMenuItem_View_ZoomIn.Name = "ToolStripMenuItem_View_ZoomIn";
-      this.ToolStripMenuItem_View_ZoomIn.Size = new System.Drawing.Size(254, 22);
-      this.ToolStripMenuItem_View_ZoomIn.Text = "Zoom In (Orthogonal View)";
-      this.ToolStripMenuItem_View_ZoomIn.Click += new System.EventHandler(this.toolStripButtonZoomIn_Click);
-      // 
-      // ToolStripMenuItem_View_ZoomOut
-      // 
-      this.ToolStripMenuItem_View_ZoomOut.Image = global::Editor.Properties.Resources.zoom_out;
-      this.ToolStripMenuItem_View_ZoomOut.ImageScaling = System.Windows.Forms.ToolStripItemImageScaling.None;
-      this.ToolStripMenuItem_View_ZoomOut.Name = "ToolStripMenuItem_View_ZoomOut";
-      this.ToolStripMenuItem_View_ZoomOut.Size = new System.Drawing.Size(254, 22);
-      this.ToolStripMenuItem_View_ZoomOut.Text = "Zoom Out (Orthogonal View)";
-      this.ToolStripMenuItem_View_ZoomOut.Click += new System.EventHandler(this.toolStripButton_ZoomOut_Click);
-      // 
-      // ToolStripMenuItem_View_ZoomDefault
-      // 
-      this.ToolStripMenuItem_View_ZoomDefault.Image = global::Editor.Properties.Resources.view_1_1;
-      this.ToolStripMenuItem_View_ZoomDefault.ImageScaling = System.Windows.Forms.ToolStripItemImageScaling.None;
-      this.ToolStripMenuItem_View_ZoomDefault.Name = "ToolStripMenuItem_View_ZoomDefault";
-      this.ToolStripMenuItem_View_ZoomDefault.Size = new System.Drawing.Size(254, 22);
-      this.ToolStripMenuItem_View_ZoomDefault.Text = "Default Zoom (Orthogonal View)";
-      this.ToolStripMenuItem_View_ZoomDefault.Click += new System.EventHandler(this.toolStripButton_Zoom100_Click);
-      // 
-      // toolStripMenuItem9
-      // 
-      this.toolStripMenuItem9.Name = "toolStripMenuItem9";
-      this.toolStripMenuItem9.Size = new System.Drawing.Size(251, 6);
       // 
       // ToolStripMenuItem_View_Size
       // 
@@ -1320,56 +1499,6 @@ ToolStripDropDown _play_Dropdown = null;
       this.ToolStripMenuItem_View_Properties.ToolTipText = "Configure Viewport Preview Settings (FOV or Filtering)";
       this.ToolStripMenuItem_View_Properties.Click += new System.EventHandler(this.viewPropertiesToolStripMenuItem_Click);
       // 
-      // ToolStripSplitButton_Tools
-      // 
-      this.ToolStripSplitButton_Tools.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-      this.ToolStripSplitButton_Tools.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.toolStripButton_MeasureTool,
-            this.ToolStripSplitButton_Tools_Sep1,
-            this.ToolStripButton_HighlightSelection,
-            this.ToolStripButton_OneClickSelection});
-      this.ToolStripSplitButton_Tools.Image = global::Editor.Properties.Resources.toolbar_tool;
-      this.ToolStripSplitButton_Tools.ImageScaling = System.Windows.Forms.ToolStripItemImageScaling.None;
-      this.ToolStripSplitButton_Tools.ImageTransparentColor = System.Drawing.Color.Magenta;
-      this.ToolStripSplitButton_Tools.Name = "ToolStripSplitButton_Tools";
-      this.ToolStripSplitButton_Tools.Size = new System.Drawing.Size(40, 28);
-      this.ToolStripSplitButton_Tools.Text = "Tools";
-      this.ToolStripSplitButton_Tools.DropDownOpening += new System.EventHandler(this.ToolStripSplitButton_Tools_DropDownOpening);
-      // 
-      // toolStripButton_MeasureTool
-      // 
-      this.toolStripButton_MeasureTool.Image = global::Editor.Properties.Resources.toolbar_measure;
-      this.toolStripButton_MeasureTool.ImageScaling = System.Windows.Forms.ToolStripItemImageScaling.None;
-      this.toolStripButton_MeasureTool.Name = "toolStripButton_MeasureTool";
-      this.toolStripButton_MeasureTool.Size = new System.Drawing.Size(176, 22);
-      this.toolStripButton_MeasureTool.Text = "Measure Tool";
-      this.toolStripButton_MeasureTool.ToolTipText = "Simple picker tool to measure the distance between two positions";
-      this.toolStripButton_MeasureTool.Click += new System.EventHandler(this.toolStripButton_MeasureTool_Click);
-      // 
-      // ToolStripSplitButton_Tools_Sep1
-      // 
-      this.ToolStripSplitButton_Tools_Sep1.Name = "ToolStripSplitButton_Tools_Sep1";
-      this.ToolStripSplitButton_Tools_Sep1.Size = new System.Drawing.Size(173, 6);
-      // 
-      // ToolStripButton_HighlightSelection
-      // 
-      this.ToolStripButton_HighlightSelection.CheckOnClick = true;
-      this.ToolStripButton_HighlightSelection.ImageScaling = System.Windows.Forms.ToolStripItemImageScaling.None;
-      this.ToolStripButton_HighlightSelection.Name = "ToolStripButton_HighlightSelection";
-      this.ToolStripButton_HighlightSelection.Size = new System.Drawing.Size(176, 22);
-      this.ToolStripButton_HighlightSelection.Text = "Highlight Selection";
-      this.ToolStripButton_HighlightSelection.Click += new System.EventHandler(this.ToolStripSplitButton_HighlightSelection_Click);
-      // 
-      // ToolStripButton_OneClickSelection
-      // 
-      this.ToolStripButton_OneClickSelection.CheckOnClick = true;
-      this.ToolStripButton_OneClickSelection.ImageScaling = System.Windows.Forms.ToolStripItemImageScaling.None;
-      this.ToolStripButton_OneClickSelection.Name = "ToolStripButton_OneClickSelection";
-      this.ToolStripButton_OneClickSelection.Size = new System.Drawing.Size(176, 22);
-      this.ToolStripButton_OneClickSelection.Text = "One Click Selection";
-      this.ToolStripButton_OneClickSelection.ToolTipText = "If enabled, one click selection is also possible in the vForge camera modes.";
-      this.ToolStripButton_OneClickSelection.Click += new System.EventHandler(this.ToolStripButton_OneClickSelection_Click);
-      // 
       // toolStripSeparator4
       // 
       this.toolStripSeparator4.Name = "toolStripSeparator4";
@@ -1427,7 +1556,6 @@ ToolStripDropDown _play_Dropdown = null;
       this.scaleToolStripMenuItem.Name = "scaleToolStripMenuItem";
       this.scaleToolStripMenuItem.Size = new System.Drawing.Size(108, 22);
       this.scaleToolStripMenuItem.Text = "Scale";
-      this.scaleToolStripMenuItem.Click += new System.EventHandler(this.toolStripButton_Scale_Click);
       // 
       // AlignmentToolStripMenuItem
       // 
@@ -1678,6 +1806,7 @@ ToolStripDropDown _play_Dropdown = null;
             this.pasteAtCursorToolStripMenuItem,
             this.toolStripMenuItem4,
             this.gridToolStripMenuItem,
+            this.showGridToolStripMenuItem,
             this.toolStripMenuItem5,
             this.renderingToolStripMenuItem,
             this.shadingToolStripMenuItem,
@@ -1688,14 +1817,14 @@ ToolStripDropDown _play_Dropdown = null;
             this.shapeOriginToolStripMenuItem1,
             this.zonesToolStripMenuItem});
       this.contextMenuStrip_View.Name = "contextMenuStrip_View";
-      this.contextMenuStrip_View.Size = new System.Drawing.Size(175, 242);
+      this.contextMenuStrip_View.Size = new System.Drawing.Size(154, 242);
       this.contextMenuStrip_View.Opening += new System.ComponentModel.CancelEventHandler(this.contextMenuStrip_View_Opening);
       // 
       // pasteAtCursorToolStripMenuItem
       // 
       this.pasteAtCursorToolStripMenuItem.Image = global::Editor.Properties.Resources.paste;
       this.pasteAtCursorToolStripMenuItem.Name = "pasteAtCursorToolStripMenuItem";
-      this.pasteAtCursorToolStripMenuItem.Size = new System.Drawing.Size(174, 22);
+      this.pasteAtCursorToolStripMenuItem.Size = new System.Drawing.Size(153, 22);
       this.pasteAtCursorToolStripMenuItem.Text = "Paste at Cursor";
       this.pasteAtCursorToolStripMenuItem.ToolTipText = "Pastes the current clipboard content to the scene position under the cursor";
       this.pasteAtCursorToolStripMenuItem.Click += new System.EventHandler(this.pasteAtCursorToolStripMenuItem_Click);
@@ -1703,184 +1832,30 @@ ToolStripDropDown _play_Dropdown = null;
       // toolStripMenuItem4
       // 
       this.toolStripMenuItem4.Name = "toolStripMenuItem4";
-      this.toolStripMenuItem4.Size = new System.Drawing.Size(171, 6);
+      this.toolStripMenuItem4.Size = new System.Drawing.Size(150, 6);
       // 
       // gridToolStripMenuItem
       // 
-      this.gridToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.setupGridToolStripMenuItem,
-            this.toolStripMenuItem10,
-            this.showGridToolStripMenuItem,
-            this.snapPositionToolStripMenuItem,
-            this.snapRotationToolStripMenuItem,
-            this.relativeGridToolStripMenuItem,
-            this.gridLinesToolStripMenuItem,
-            this.volumeGridToolStripMenuItem,
-            this.toolStripMenuItem7,
-            this.gridSize10ToolStripMenuItem,
-            this.gridSize25ToolStripMenuItem,
-            this.gridSize100ToolStripMenuItem,
-            this.toolStripMenuItem15,
-            this.units2ToolStripMenuItem,
-            this.units5ToolStripMenuItem,
-            this.units10ToolStripMenuItem,
-            this.units25ToolStripMenuItem,
-            this.units50ToolStripMenuItem,
-            this.units100ToolStripMenuItem});
       this.gridToolStripMenuItem.Image = global::Editor.Properties.Resources.setup_grid;
       this.gridToolStripMenuItem.Name = "gridToolStripMenuItem";
-      this.gridToolStripMenuItem.Size = new System.Drawing.Size(174, 22);
-      this.gridToolStripMenuItem.Text = "Grid";
-      // 
-      // setupGridToolStripMenuItem
-      // 
-      this.setupGridToolStripMenuItem.Image = global::Editor.Properties.Resources.setup_grid;
-      this.setupGridToolStripMenuItem.Name = "setupGridToolStripMenuItem";
-      this.setupGridToolStripMenuItem.Size = new System.Drawing.Size(129, 22);
-      this.setupGridToolStripMenuItem.Text = "Setup Grid";
-      this.setupGridToolStripMenuItem.ToolTipText = "Setup the Grid Snapping Options for Move and Rotation Grids";
-      this.setupGridToolStripMenuItem.Click += new System.EventHandler(this.setupGridToolStripMenuItem_Click);
-      // 
-      // toolStripMenuItem10
-      // 
-      this.toolStripMenuItem10.Name = "toolStripMenuItem10";
-      this.toolStripMenuItem10.Size = new System.Drawing.Size(126, 6);
-      // 
-      // snapPositionToolStripMenuItem
-      // 
-      this.snapPositionToolStripMenuItem.Name = "snapPositionToolStripMenuItem";
-      this.snapPositionToolStripMenuItem.Size = new System.Drawing.Size(129, 22);
-      this.snapPositionToolStripMenuItem.Text = "Snap Position";
-      this.snapPositionToolStripMenuItem.ToolTipText = "Enables/disables position snapping";
-      this.snapPositionToolStripMenuItem.Click += new System.EventHandler(this.snapPositionToolStripMenuItem_Click);
-      // 
-      // snapRotationToolStripMenuItem
-      // 
-      this.snapRotationToolStripMenuItem.Name = "snapRotationToolStripMenuItem";
-      this.snapRotationToolStripMenuItem.Size = new System.Drawing.Size(129, 22);
-      this.snapRotationToolStripMenuItem.Text = "Snap Rotation";
-      this.snapRotationToolStripMenuItem.ToolTipText = "Enables/disables rotation snapping";
-      this.snapRotationToolStripMenuItem.Click += new System.EventHandler(this.snapRotationToolStripMenuItem_Click);
+      this.gridToolStripMenuItem.Size = new System.Drawing.Size(153, 22);
+      this.gridToolStripMenuItem.Text = "Setup Grid";
+      this.gridToolStripMenuItem.ToolTipText = "Setup the Grid Snapping Options for Move and Rotation Grids";
+      this.gridToolStripMenuItem.Click += new System.EventHandler(this.setupGridToolStripMenuItem_Click);
       // 
       // showGridToolStripMenuItem
       // 
+      this.showGridToolStripMenuItem.Checked = true;
+      this.showGridToolStripMenuItem.CheckState = System.Windows.Forms.CheckState.Checked;
       this.showGridToolStripMenuItem.Name = "showGridToolStripMenuItem";
-      this.showGridToolStripMenuItem.Size = new System.Drawing.Size(129, 22);
+      this.showGridToolStripMenuItem.Size = new System.Drawing.Size(153, 22);
       this.showGridToolStripMenuItem.Text = "Show Grid";
-      this.showGridToolStripMenuItem.ToolTipText = "Display the grid around the selection";
       this.showGridToolStripMenuItem.Click += new System.EventHandler(this.showGridToolStripMenuItem_Click);
-      // 
-      // relativeGridToolStripMenuItem
-      // 
-      this.relativeGridToolStripMenuItem.Name = "relativeGridToolStripMenuItem";
-      this.relativeGridToolStripMenuItem.Size = new System.Drawing.Size(129, 22);
-      this.relativeGridToolStripMenuItem.Text = "Relative Grid";
-      this.relativeGridToolStripMenuItem.ToolTipText = "Whether to draw the grid relative to the gizmo, or centered at the origin";
-      this.relativeGridToolStripMenuItem.Click += new System.EventHandler(this.relativeGridToolStripMenuItem_Click);
-      // 
-      // gridLinesToolStripMenuItem
-      // 
-      this.gridLinesToolStripMenuItem.Name = "gridLinesToolStripMenuItem";
-      this.gridLinesToolStripMenuItem.Size = new System.Drawing.Size(129, 22);
-      this.gridLinesToolStripMenuItem.Text = "Draw Lines";
-      this.gridLinesToolStripMenuItem.ToolTipText = "Whether to draw the grid as lines or points";
-      this.gridLinesToolStripMenuItem.Click += new System.EventHandler(this.gridLinesToolStripMenuItem_Click);
-      // 
-      // volumeGridToolStripMenuItem
-      // 
-      this.volumeGridToolStripMenuItem.Name = "volumeGridToolStripMenuItem";
-      this.volumeGridToolStripMenuItem.Size = new System.Drawing.Size(129, 22);
-      this.volumeGridToolStripMenuItem.Text = "Volume (3D) Grid";
-      this.volumeGridToolStripMenuItem.ToolTipText = "Whether to draw and snap against a volumetric or planar grid";
-      this.volumeGridToolStripMenuItem.Click += new System.EventHandler(this.volumeGridToolStripMenuItem_Click);
-      // 
-      // toolStripMenuItem7
-      // 
-      this.toolStripMenuItem7.Name = "toolStripMenuItem7";
-      this.toolStripMenuItem7.Size = new System.Drawing.Size(126, 6);
-
-      // 
-      // gridSize10ToolStripMenuItem
-      // 
-      this.gridSize10ToolStripMenuItem.Name = "units2ToolStripMenuItem";
-      this.gridSize10ToolStripMenuItem.Size = new System.Drawing.Size(129, 22);
-      this.gridSize10ToolStripMenuItem.Text = "Grid Size: 10 x 10";
-      this.gridSize10ToolStripMenuItem.ToolTipText = "Sets grid size to 10 x 10 cells";
-      this.gridSize10ToolStripMenuItem.Click += new System.EventHandler(this.gridSizeToolStripMenuItem_Click);
-      // 
-      // gridSize25ToolStripMenuItem
-      // 
-      this.gridSize25ToolStripMenuItem.Name = "units10ToolStripMenuItem";
-      this.gridSize25ToolStripMenuItem.Size = new System.Drawing.Size(129, 22);
-      this.gridSize25ToolStripMenuItem.Text = "Grid Size: 25 x 25";
-      this.gridSize25ToolStripMenuItem.ToolTipText = "Sets grid size to 25 x 25 cells";
-      this.gridSize25ToolStripMenuItem.Click += new System.EventHandler(this.gridSizeToolStripMenuItem1_Click);
-      // 
-      // gridSize100ToolStripMenuItem
-      // 
-      this.gridSize100ToolStripMenuItem.Name = "units10ToolStripMenuItem";
-      this.gridSize100ToolStripMenuItem.Size = new System.Drawing.Size(129, 22);
-      this.gridSize100ToolStripMenuItem.Text = "Grid Size: 100 x 100";
-      this.gridSize100ToolStripMenuItem.ToolTipText = "Sets grid size to 100 x 100 cells)";
-      this.gridSize100ToolStripMenuItem.Click += new System.EventHandler(this.gridSizeToolStripMenuItem2_Click);
-      // 
-      // toolStripMenuItem15
-      // 
-      this.toolStripMenuItem15.Name = "toolStripMenuItem15";
-      this.toolStripMenuItem15.Size = new System.Drawing.Size(126, 6);
-      // 
-      // units2ToolStripMenuItem
-      // 
-      this.units2ToolStripMenuItem.Name = "units2ToolStripMenuItem";
-      this.units2ToolStripMenuItem.Size = new System.Drawing.Size(129, 22);
-      this.units2ToolStripMenuItem.Text = "2 Units";
-      this.units2ToolStripMenuItem.ToolTipText = "Pre-defined grid of 2 units";
-      this.units2ToolStripMenuItem.Click += new System.EventHandler(this.unitsToolStripMenuItem_Click);
-      // 
-      // units5ToolStripMenuItem
-      // 
-      this.units5ToolStripMenuItem.Name = "units5ToolStripMenuItem";
-      this.units5ToolStripMenuItem.Size = new System.Drawing.Size(129, 22);
-      this.units5ToolStripMenuItem.Text = "5 Units";
-      this.units5ToolStripMenuItem.ToolTipText = "Pre-defined grid of 5 units";
-      this.units5ToolStripMenuItem.Click += new System.EventHandler(this.unitsToolStripMenuItem1_Click);
-      // 
-      // units10ToolStripMenuItem
-      // 
-      this.units10ToolStripMenuItem.Name = "units10ToolStripMenuItem";
-      this.units10ToolStripMenuItem.Size = new System.Drawing.Size(129, 22);
-      this.units10ToolStripMenuItem.Text = "10 Units";
-      this.units10ToolStripMenuItem.ToolTipText = "Pre-defined grid of 10 units";
-      this.units10ToolStripMenuItem.Click += new System.EventHandler(this.unitsToolStripMenuItem2_Click);
-      // 
-      // units25ToolStripMenuItem
-      // 
-      this.units25ToolStripMenuItem.Name = "units25ToolStripMenuItem";
-      this.units25ToolStripMenuItem.Size = new System.Drawing.Size(129, 22);
-      this.units25ToolStripMenuItem.Text = "25 Units";
-      this.units25ToolStripMenuItem.ToolTipText = "Pre-defined grid of 25 units";
-      this.units25ToolStripMenuItem.Click += new System.EventHandler(this.unitsToolStripMenuItem3_Click);
-      // 
-      // units50ToolStripMenuItem
-      // 
-      this.units50ToolStripMenuItem.Name = "units50ToolStripMenuItem";
-      this.units50ToolStripMenuItem.Size = new System.Drawing.Size(129, 22);
-      this.units50ToolStripMenuItem.Text = "50 Units";
-      this.units50ToolStripMenuItem.ToolTipText = "Pre-defined grid of 50 units";
-      this.units50ToolStripMenuItem.Click += new System.EventHandler(this.unitsToolStripMenuItem4_Click);
-      // 
-      // units100ToolStripMenuItem
-      // 
-      this.units100ToolStripMenuItem.Name = "units100ToolStripMenuItem";
-      this.units100ToolStripMenuItem.Size = new System.Drawing.Size(129, 22);
-      this.units100ToolStripMenuItem.Text = "100 Units";
-      this.units100ToolStripMenuItem.ToolTipText = "Pre-defined grid of 100 units";
-      this.units100ToolStripMenuItem.Click += new System.EventHandler(this.unitsToolStripMenuItem5_Click);
       // 
       // toolStripMenuItem5
       // 
       this.toolStripMenuItem5.Name = "toolStripMenuItem5";
-      this.toolStripMenuItem5.Size = new System.Drawing.Size(171, 6);
+      this.toolStripMenuItem5.Size = new System.Drawing.Size(150, 6);
       // 
       // renderingToolStripMenuItem
       // 
@@ -1889,7 +1864,7 @@ ToolStripDropDown _play_Dropdown = null;
             this.wireframeToolStripMenuItem});
       this.renderingToolStripMenuItem.Image = global::Editor.Properties.Resources.view_default;
       this.renderingToolStripMenuItem.Name = "renderingToolStripMenuItem";
-      this.renderingToolStripMenuItem.Size = new System.Drawing.Size(174, 22);
+      this.renderingToolStripMenuItem.Size = new System.Drawing.Size(153, 22);
       this.renderingToolStripMenuItem.Text = "Rendering";
       this.renderingToolStripMenuItem.ToolTipText = "Rasterizer options fotr the view";
       // 
@@ -1913,11 +1888,10 @@ ToolStripDropDown _play_Dropdown = null;
       // 
       this.shadingToolStripMenuItem.Image = global::Editor.Properties.Resources.view_solid;
       this.shadingToolStripMenuItem.Name = "shadingToolStripMenuItem";
-      this.shadingToolStripMenuItem.Size = new System.Drawing.Size(174, 22);
+      this.shadingToolStripMenuItem.Size = new System.Drawing.Size(153, 22);
       this.shadingToolStripMenuItem.Text = "Shading";
       this.shadingToolStripMenuItem.ToolTipText = "Replaces the rendering with a renderloop that applies shading options to the rend" +
     "ered geometry";
-
       // 
       // debugFlagsToolStripMenuItem
       // 
@@ -1925,7 +1899,7 @@ ToolStripDropDown _play_Dropdown = null;
             this.dummyToolStripMenuItem});
       this.debugFlagsToolStripMenuItem.Image = global::Editor.Properties.Resources.flags;
       this.debugFlagsToolStripMenuItem.Name = "debugFlagsToolStripMenuItem";
-      this.debugFlagsToolStripMenuItem.Size = new System.Drawing.Size(174, 22);
+      this.debugFlagsToolStripMenuItem.Size = new System.Drawing.Size(153, 22);
       this.debugFlagsToolStripMenuItem.Text = "Debug Flags";
       this.debugFlagsToolStripMenuItem.ToolTipText = "Displays debug information using the engine\'s profiling API";
       // 
@@ -1942,7 +1916,7 @@ ToolStripDropDown _play_Dropdown = null;
             this.Pick_UV1_ToolStripMenuItem});
       this.pickToolStripMenuItem.Image = ((System.Drawing.Image)(resources.GetObject("pickToolStripMenuItem.Image")));
       this.pickToolStripMenuItem.Name = "pickToolStripMenuItem";
-      this.pickToolStripMenuItem.Size = new System.Drawing.Size(174, 22);
+      this.pickToolStripMenuItem.Size = new System.Drawing.Size(153, 22);
       this.pickToolStripMenuItem.Text = "Pick";
       // 
       // Pick_UV0_ToolStripMenuItem
@@ -1962,7 +1936,7 @@ ToolStripDropDown _play_Dropdown = null;
       // toolStripMenuItem6
       // 
       this.toolStripMenuItem6.Name = "toolStripMenuItem6";
-      this.toolStripMenuItem6.Size = new System.Drawing.Size(171, 6);
+      this.toolStripMenuItem6.Size = new System.Drawing.Size(150, 6);
       // 
       // createToolStripMenuItem
       // 
@@ -1970,7 +1944,7 @@ ToolStripDropDown _play_Dropdown = null;
             this.insertHereToolStripMenuItem});
       this.createToolStripMenuItem.Image = global::Editor.Properties.Resources.pawn_new;
       this.createToolStripMenuItem.Name = "createToolStripMenuItem";
-      this.createToolStripMenuItem.Size = new System.Drawing.Size(174, 22);
+      this.createToolStripMenuItem.Size = new System.Drawing.Size(153, 22);
       this.createToolStripMenuItem.Text = "Create";
       this.createToolStripMenuItem.ToolTipText = "All shape creator plugins";
       // 
@@ -1988,7 +1962,7 @@ ToolStripDropDown _play_Dropdown = null;
             this.traceHitToolStripMenuItem});
       this.shapeOriginToolStripMenuItem1.Image = global::Editor.Properties.Resources.node;
       this.shapeOriginToolStripMenuItem1.Name = "shapeOriginToolStripMenuItem1";
-      this.shapeOriginToolStripMenuItem1.Size = new System.Drawing.Size(174, 22);
+      this.shapeOriginToolStripMenuItem1.Size = new System.Drawing.Size(153, 22);
       this.shapeOriginToolStripMenuItem1.Text = "Shape Origin";
       this.shapeOriginToolStripMenuItem1.ToolTipText = "Sets a new shape spawn origin";
       // 
@@ -2024,7 +1998,7 @@ ToolStripDropDown _play_Dropdown = null;
             this.loadZonesCloseToCameraToolStripMenuItem});
       this.zonesToolStripMenuItem.Image = global::Editor.Properties.Resources.unload_zone;
       this.zonesToolStripMenuItem.Name = "zonesToolStripMenuItem";
-      this.zonesToolStripMenuItem.Size = new System.Drawing.Size(174, 22);
+      this.zonesToolStripMenuItem.Size = new System.Drawing.Size(153, 22);
       this.zonesToolStripMenuItem.Text = "Zones";
       // 
       // selectZoneAtCameraPositionToolStripMenuItem
@@ -2048,6 +2022,11 @@ ToolStripDropDown _play_Dropdown = null;
       this.loadZonesCloseToCameraToolStripMenuItem.Text = "Load Zones close to Camera position";
       this.loadZonesCloseToCameraToolStripMenuItem.Click += new System.EventHandler(this.loadZonesCloseToCameraToolStripMenuItem_Click);
       // 
+      // dummyToolStripMenuItem1
+      // 
+      this.dummyToolStripMenuItem1.Name = "dummyToolStripMenuItem1";
+      this.dummyToolStripMenuItem1.Size = new System.Drawing.Size(32, 19);
+      // 
       // UnitScaleImageList
       // 
       this.UnitScaleImageList.ImageStream = ((System.Windows.Forms.ImageListStreamer)(resources.GetObject("UnitScaleImageList.ImageStream")));
@@ -2063,12 +2042,75 @@ ToolStripDropDown _play_Dropdown = null;
       this.UnitScaleImageList.Images.SetKeyName(8, "uinit_scale_9.png");
       this.UnitScaleImageList.Images.SetKeyName(9, "uinit_scale_10.png");
       // 
+      // ToolStripButton_Scale
+      // 
+      this.ToolStripButton_Scale.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+      this.ToolStripButton_Scale.Image = global::Editor.Properties.Resources.toolbar_scale_uniform;
+      this.ToolStripButton_Scale.ImageScaling = System.Windows.Forms.ToolStripItemImageScaling.None;
+      this.ToolStripButton_Scale.ImageTransparentColor = System.Drawing.Color.Magenta;
+      this.ToolStripButton_Scale.Name = "ToolStripButton_Scale";
+      this.ToolStripButton_Scale.Size = new System.Drawing.Size(28, 28);
+      this.ToolStripButton_Scale.Text = "Scale";
+      this.ToolStripButton_Scale.ToolTipText = "Scale Selected Shapes";
+      this.ToolStripButton_Scale.Click += new System.EventHandler(this.ToolStripButton_Scale_Click_1);
+      // 
+      // ToolStripSplitButton_Tools
+      // 
+      this.ToolStripSplitButton_Tools.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+      this.ToolStripSplitButton_Tools.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.toolStripButton_MeasureTool,
+            this.ToolStripSplitButton_Tools_Sep1,
+            this.ToolStripButton_HighlightSelection,
+            this.ToolStripButton_OneClickSelection});
+      this.ToolStripSplitButton_Tools.Image = global::Editor.Properties.Resources.toolbar_tool;
+      this.ToolStripSplitButton_Tools.ImageScaling = System.Windows.Forms.ToolStripItemImageScaling.None;
+      this.ToolStripSplitButton_Tools.ImageTransparentColor = System.Drawing.Color.Magenta;
+      this.ToolStripSplitButton_Tools.Name = "ToolStripSplitButton_Tools";
+      this.ToolStripSplitButton_Tools.Size = new System.Drawing.Size(37, 28);
+      this.ToolStripSplitButton_Tools.Text = "Tools";
+      this.ToolStripSplitButton_Tools.DropDownOpening += new System.EventHandler(this.ToolStripSplitButton_Tools_DropDownOpening);
+      // 
+      // toolStripButton_MeasureTool
+      // 
+      this.toolStripButton_MeasureTool.Image = global::Editor.Properties.Resources.toolbar_measure;
+      this.toolStripButton_MeasureTool.ImageScaling = System.Windows.Forms.ToolStripItemImageScaling.None;
+      this.toolStripButton_MeasureTool.Name = "toolStripButton_MeasureTool";
+      this.toolStripButton_MeasureTool.Size = new System.Drawing.Size(176, 22);
+      this.toolStripButton_MeasureTool.Text = "Measure Tool";
+      this.toolStripButton_MeasureTool.ToolTipText = "Simple picker tool to measure the distance between two positions";
+      this.toolStripButton_MeasureTool.Click += new System.EventHandler(this.toolStripButton_MeasureTool_Click);
+      // 
+      // ToolStripSplitButton_Tools_Sep1
+      // 
+      this.ToolStripSplitButton_Tools_Sep1.Name = "ToolStripSplitButton_Tools_Sep1";
+      this.ToolStripSplitButton_Tools_Sep1.Size = new System.Drawing.Size(173, 6);
+      // 
+      // ToolStripButton_HighlightSelection
+      // 
+      this.ToolStripButton_HighlightSelection.CheckOnClick = true;
+      this.ToolStripButton_HighlightSelection.ImageScaling = System.Windows.Forms.ToolStripItemImageScaling.None;
+      this.ToolStripButton_HighlightSelection.Name = "ToolStripButton_HighlightSelection";
+      this.ToolStripButton_HighlightSelection.Size = new System.Drawing.Size(176, 22);
+      this.ToolStripButton_HighlightSelection.Text = "Highlight Selection";
+      this.ToolStripButton_HighlightSelection.Click += new System.EventHandler(this.ToolStripSplitButton_HighlightSelection_Click);
+      // 
+      // ToolStripButton_OneClickSelection
+      // 
+      this.ToolStripButton_OneClickSelection.CheckOnClick = true;
+      this.ToolStripButton_OneClickSelection.ImageScaling = System.Windows.Forms.ToolStripItemImageScaling.None;
+      this.ToolStripButton_OneClickSelection.Name = "ToolStripButton_OneClickSelection";
+      this.ToolStripButton_OneClickSelection.Size = new System.Drawing.Size(176, 22);
+      this.ToolStripButton_OneClickSelection.Text = "One Click Selection";
+      this.ToolStripButton_OneClickSelection.ToolTipText = "If enabled, one click selection is also possible in the vForge camera modes.";
+      this.ToolStripButton_OneClickSelection.Click += new System.EventHandler(this.ToolStripButton_OneClickSelection_Click);
+      // 
       // EnginePanel
       // 
       this.AutoScaleBaseSize = new System.Drawing.Size(5, 13);
       this.ClientSize = new System.Drawing.Size(769, 444);
       this.CloseButton = false;
       this.Controls.Add(this.panel_VisionView);
+      this.Controls.Add(this.transformStrip_EnginePanel);
       this.Controls.Add(this.toolStrip_EnginePanel);
       this.DockableAreas = ((WeifenLuo.WinFormsUI.DockAreas)((WeifenLuo.WinFormsUI.DockAreas.Float | WeifenLuo.WinFormsUI.DockAreas.Document)));
       this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
@@ -2077,12 +2119,15 @@ ToolStripDropDown _play_Dropdown = null;
       this.TabText = "Engine View";
       this.Text = "Engine View";
       this.Load += new System.EventHandler(this.EnginePanel_Load);
+      this.transformStrip_EnginePanel.ResumeLayout(false);
+      this.transformStrip_EnginePanel.PerformLayout();
       this.toolStrip_EnginePanel.ResumeLayout(false);
       this.toolStrip_EnginePanel.PerformLayout();
       this.contextMenuStrip_SelShapes.ResumeLayout(false);
       this.contextMenuStrip_View.ResumeLayout(false);
       this.ResumeLayout(false);
       this.PerformLayout();
+
     }
 		#endregion
 
@@ -2113,5 +2158,80 @@ ToolStripDropDown _play_Dropdown = null;
       }
       base.Dispose(disposing);
     }
+
+    private ToolStripMenuItem showGridToolStripMenuItem;
+    private ToolStripButton ToolStripButton_Scale;
+    private ToolStrip transformStrip_EnginePanel;
+    private ToolStripButton transformStrip_toggleTransformMode;
+    private ToolStripSeparator toolStripSeparator5;
+    private ToolStripLabel labelX;
+    private ToolStripTextBox transformStrip_TranslateX;
+    private ToolStripLabel labelY;
+    private ToolStripTextBox transformStrip_TranslateY;
+    private ToolStripLabel labelZ;
+    private ToolStripSeparator toolStripSeparator1;
+    private ToolStripLabel labelYaw;
+    private ToolStripTextBox transformStrip_Yaw;
+    private ToolStripLabel labelPitch;
+    private ToolStripTextBox transformStrip_Pitch;
+    private ToolStripLabel labelRoll;
+    private ToolStripTextBox transformStrip_Roll;
+    private ToolStripSeparator toolStripSeparator2;
+    private ToolStripLabel labelXScale;
+    private ToolStripTextBox transformStrip_ScaleX;
+    private ToolStripLabel labelYScale;
+    private ToolStripTextBox transformStrip_ScaleY;
+    private ToolStripLabel labelZScale;
+    private ToolStripTextBox transformStrip_ScaleZ;
+    private ToolStripDropDownButton toolStripDropDownButton_Translation;
+    private ToolStripMenuItem toolStripMenuItem_CopyTranslation;
+    private ToolStripMenuItem toolStripMenuItem_PasteTranslation;
+    private ToolStripDropDownButton toolStripDropDownButton_Rotation;
+    private ToolStripMenuItem toolStripMenuItem_CopyRotation;
+    private ToolStripMenuItem toolStripMenuItem_PasteRotation;
+    private ToolStripDropDownButton toolStripDropDownButton_Scale;
+    private ToolStripMenuItem toolStripMenuItem_CopyScale;
+    private ToolStripMenuItem toolStripMenuItem_PasteScale;
+    private ToolStripTextBox transformStrip_TranslateZ;
+    private ToolStripLabel toolStripLabel1;
+    private ToolStripTextBox transformStrip_ScaleXYZ;
+    private ToolStripDropDownButton ToolStripSplitButton_Camera;
+    private ToolStripMenuItem toolStripButton_MoveContext;
+    private ToolStripMenuItem toolStripButton_MoveCameraWithKeys;
+    private ToolStripSeparator ToolStripSplitButton_CameraSep1;
+    private ToolStripMenuItem ToolStripSplitButton_CameraStyle_Pan;
+    private ToolStripMenuItem ToolStripSplitButton_CameraStyle_PanHoriz;
+    private ToolStripMenuItem ToolStripSplitButton_CameraStyle_Orbit;
+    private ToolStripMenuItem ToolStripSplitButton_CameraStyle_Max;
+    private ToolStripMenuItem ToolStripSplitButton_CameraStyle_Maya;
+    private ToolStripSeparator ToolStripSplitButton_CameraSep2;
+    private ToolStripMenuItem ToolStripSplitButton_Camera_MoveOrigin;
+    private ToolStripMenuItem ToolStripSplitButton_Camera_MoveShapeOrigin;
+    private ToolStripMenuItem ToolStripSplitButton_Camera_MoveSelection;
+    private ToolStripDropDownButton toolStripDropDownButton_PerspectiveMode;
+    private ToolStripMenuItem ToolStripMenuItem_Perspective;
+    private ToolStripMenuItem ToolStripMenuItem_PerspectiveTop;
+    private ToolStripMenuItem ToolStripMenuItem_PerspectiveFront;
+    private ToolStripMenuItem ToolStripMenuItem_PerspectiveRight;
+    private ToolStripSeparator toolStripMenuItem19;
+    private ToolStripMenuItem ToolStripMenuItem_Top;
+    private ToolStripMenuItem ToolStripMenuItem_Front;
+    private ToolStripMenuItem ToolStripMenuItem_Right;
+    private ToolStripSeparator toolStripMenuItem1;
+    private ToolStripMenuItem ToolStripMenuItem_View_EditClipRange;
+    private ToolStripMenuItem ToolStripMenuItem_View_Size;
+    private ToolStripMenuItem ToolStripMenuItem_View_SetSize;
+    private ToolStripSeparator toolStripMenuItem12;
+    private ToolStripMenuItem ToolStripMenuItem_View_SafeMode;
+    private ToolStripMenuItem ToolStripMenuItem_View_SetCustomSafeMode;
+    private ToolStripMenuItem ToolStripMenuItem_View_DisableSafeMode;
+    private ToolStripSeparator toolStripMenuItem13;
+    private ToolStripSeparator toolStripMenuItem14;
+    private ToolStripMenuItem ToolStripMenuItem_View_Properties;
+    private ToolStripDropDownButton ToolStripSplitButton_Tools;
+    private ToolStripMenuItem toolStripButton_MeasureTool;
+    private ToolStripSeparator ToolStripSplitButton_Tools_Sep1;
+    private ToolStripMenuItem ToolStripButton_HighlightSelection;
+    private ToolStripMenuItem ToolStripButton_OneClickSelection;
 	}
 }

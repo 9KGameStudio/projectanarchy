@@ -2,7 +2,7 @@
  *
  * Confidential Information of Telekinesys Research Limited (t/a Havok). Not for disclosure or distribution without Havok's
  * prior written consent. This software contains code, techniques and know-how which is confidential and proprietary to Havok.
- * Product and Trade Secret source code contains trade secrets of Havok. Havok Software (C) Copyright 1999-2013 Telekinesys Research Limited t/a Havok. All Rights Reserved. Use of this software is subject to the terms of an end user license agreement.
+ * Product and Trade Secret source code contains trade secrets of Havok. Havok Software (C) Copyright 1999-2014 Telekinesys Research Limited t/a Havok. All Rights Reserved. Use of this software is subject to the terms of an end user license agreement.
  *
  */
 
@@ -289,6 +289,43 @@ public:
   VHAVOK_IMPEXP void ApplyLinearImpulseToRigidBody(int iBoneIndex, const hkvVec3& impulse);
 
   /// \brief
+  ///   Applies a force to all bones within the given volume.
+  ///
+  /// \param force
+  ///   Force vector to apply.
+  ///
+  /// \param deltaT
+  ///   The time interval over which the force is applied.
+  ///
+  /// \param volume
+  ///   Force is applied to a all rigid bodies inside this volume.
+  ///
+  /// \param falloffExponent
+  ///   Exponent to control the exponential falloff. An exponent of 1 results in a linear falloff.
+  ///
+  /// See the documentation for vHavokRigidBody::ApplyForce or vHavokRigidBody::ApplyLinearImpulse 
+  /// for more information on the difference between applying forces or impulses.
+  ///
+  VHAVOK_IMPEXP void ApplyForceToVolume(const hkvVec3& force, float deltaT, const hkvBoundingSphere& volume, float falloffExponent = 0.2f);
+
+  /// \brief
+  ///   Applies a linear impulse to all bones within the given volume.
+  ///
+  /// \param impulse
+  ///   Impulse vector to apply.
+  ///
+  /// \param volume
+  ///   Impulse is applied to a all rigid bodies inside this volume.
+  ///
+  /// \param falloffExponent
+  ///   Exponent to control the exponential falloff. An exponent of 1 results in a linear falloff.
+  ///
+  /// See the documentation for vHavokRigidBody::ApplyForce or vHavokRigidBody::ApplyLinearImpulse 
+  /// for more information on the difference between applying forces or impulses.
+  ///
+  VHAVOK_IMPEXP void ApplyLinearImpulseToVolume(const hkvVec3& impulse, const hkvBoundingSphere& volume, float falloffExponent = 0.2f);
+
+  /// \brief
   ///   Returns the position of a given rigid body within the rag doll.
   ///
   /// \param iBoneIndex
@@ -391,9 +428,9 @@ private:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131218)
+ * Havok SDK - Base file, BUILD(#20140327)
  * 
- * Confidential Information of Havok.  (C) Copyright 1999-2013
+ * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok
  * Logo, and the Havok buzzsaw logo are trademarks of Havok.  Title, ownership
  * rights, and intellectual property rights in the Havok software remain in

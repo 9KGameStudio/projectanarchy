@@ -2,7 +2,7 @@
  *
  * Confidential Information of Telekinesys Research Limited (t/a Havok). Not for disclosure or distribution without Havok's
  * prior written consent. This software contains code, techniques and know-how which is confidential and proprietary to Havok.
- * Product and Trade Secret source code contains trade secrets of Havok. Havok Software (C) Copyright 1999-2013 Telekinesys Research Limited t/a Havok. All Rights Reserved. Use of this software is subject to the terms of an end user license agreement.
+ * Product and Trade Secret source code contains trade secrets of Havok. Havok Software (C) Copyright 1999-2014 Telekinesys Research Limited t/a Havok. All Rights Reserved. Use of this software is subject to the terms of an end user license agreement.
  *
  */
 
@@ -156,6 +156,7 @@ public:
   // Operations that move elements around
   void InsertAt(int nIndex, ARG_TYPE newElement, int nCount = 1);
   void RemoveAt(int nIndex, int nCount = 1);
+  void RemoveAtSwapWithLast(int nIndex);
   void InsertAt(int nStartIndex, VArray* pNewArray);
 
   
@@ -470,6 +471,18 @@ void VArray<TYPE, ARG_TYPE>::RemoveAt(int nIndex, int nCount)
 }
 
 template<class TYPE, class ARG_TYPE>
+void VArray<TYPE, ARG_TYPE>::RemoveAtSwapWithLast(int nIndex)
+{
+  VASSERT(V_IS_VALID_PTR(this));
+  VASSERT(nIndex >= 0);
+  VASSERT(nIndex < m_nSize);
+
+  VDestructElements<TYPE>(&m_pData[nIndex], 1);
+  memcpy(&m_pData[nIndex], &m_pData[m_nSize-1], sizeof(TYPE));
+  --m_nSize;
+}
+
+template<class TYPE, class ARG_TYPE>
 void VArray<TYPE, ARG_TYPE>::InsertAt(int nStartIndex, VArray* pNewArray)
 {
   VASSERT(V_IS_VALID_PTR(this));
@@ -521,9 +534,9 @@ void VArray<TYPE, ARG_TYPE>::Swap(VArray& other)
 #endif  //DC_VISION_VARRAY_HPP
 
 /*
- * Havok SDK - Base file, BUILD(#20131218)
+ * Havok SDK - Base file, BUILD(#20140327)
  * 
- * Confidential Information of Havok.  (C) Copyright 1999-2013
+ * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok
  * Logo, and the Havok buzzsaw logo are trademarks of Havok.  Title, ownership
  * rights, and intellectual property rights in the Havok software remain in

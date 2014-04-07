@@ -2,7 +2,7 @@
  *
  * Confidential Information of Telekinesys Research Limited (t/a Havok). Not for disclosure or distribution without Havok's
  * prior written consent. This software contains code, techniques and know-how which is confidential and proprietary to Havok.
- * Product and Trade Secret source code contains trade secrets of Havok. Havok Software (C) Copyright 1999-2013 Telekinesys Research Limited t/a Havok. All Rights Reserved. Use of this software is subject to the terms of an end user license agreement.
+ * Product and Trade Secret source code contains trade secrets of Havok. Havok Software (C) Copyright 1999-2014 Telekinesys Research Limited t/a Havok. All Rights Reserved. Use of this software is subject to the terms of an end user license agreement.
  *
  */
 
@@ -1351,12 +1351,12 @@ private:
   friend class Vision;
   friend class VisRenderLoopHelper_cl;
   friend class VisMeshBufferObject_cl;
-  friend void SetupVertexBufferTextures(VisMeshBuffer_cl *pBuffer, VisMeshBuffer_cl **pTexStreams, int iStreamMask = 0xFFFFFFFF);
+  friend void SetupVertexBufferTextures(VisMeshBuffer_cl *pBuffer, VisMeshBuffer_cl **pTexStreams, int iStreamMask);
   friend void RenderVertexBuffers(const class VisMeshBufferObjectCollection_cl &collection, int iMask, VCompiledShaderPass *pCustomShader);
   friend void RenderSingleBufferPrimitives(VisMeshBufferObject_cl *pMeshObj, char primtype, char iTransp, VisMeshBuffer_cl *pIndexBuffer, int iFirstPrim, int iPrimCount, VCompiledShaderPass *pShader);
   friend void SetupVertexBufferTextureArrays(VisMeshBufferObject_cl *pMeshObj, VisMeshBuffer_cl **pTexStreams);
   //friend char *GetVertexArrayPtr(VisMeshBuffer_cl *pBuffer);
-  friend int AddMeshBufferStreams(VisMeshBuffer_cl *pMesh, int iStreamMasks, int iByteOffset, int iInstanceCount, int iStreamIndex = -1);
+  friend int AddMeshBufferStreams(VisMeshBuffer_cl *pMesh, int iStreamMasks, int iByteOffset, int iInstanceCount, int iStreamIndex);
   friend void RenderParticleBuffer(VisParticleGroup_cl *pgroup, int iParticleCount);
   friend void RenderGeometryParticleBuffer_Instancing(VisParticleGroup_cl *pgroup, int iParticleCount);
   void VerifyVertexLockedStatus(bool bReqStatus) const;
@@ -2056,9 +2056,9 @@ VISION_ELEMENTMANAGER_TEMPLATE_DECL(VisMeshBufferObject_cl)
 #endif // VISAPIVERTEXBUFFERS_HPP_INCLUDED
 
 /*
- * Havok SDK - Base file, BUILD(#20131218)
+ * Havok SDK - Base file, BUILD(#20140327)
  * 
- * Confidential Information of Havok.  (C) Copyright 1999-2013
+ * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok
  * Logo, and the Havok buzzsaw logo are trademarks of Havok.  Title, ownership
  * rights, and intellectual property rights in the Havok software remain in

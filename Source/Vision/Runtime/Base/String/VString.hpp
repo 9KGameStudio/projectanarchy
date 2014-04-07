@@ -2,7 +2,7 @@
  *
  * Confidential Information of Telekinesys Research Limited (t/a Havok). Not for disclosure or distribution without Havok's
  * prior written consent. This software contains code, techniques and know-how which is confidential and proprietary to Havok.
- * Product and Trade Secret source code contains trade secrets of Havok. Havok Software (C) Copyright 1999-2013 Telekinesys Research Limited t/a Havok. All Rights Reserved. Use of this software is subject to the terms of an end user license agreement.
+ * Product and Trade Secret source code contains trade secrets of Havok. Havok Software (C) Copyright 1999-2014 Telekinesys Research Limited t/a Havok. All Rights Reserved. Use of this software is subject to the terms of an end user license agreement.
  *
  */
 
@@ -129,6 +129,52 @@ public:
   /// \return
   ///   true (substring found in string), or false (no match)
   VBASE_IMPEXP static bool Match(const char* szWildcards, const char* szStr);
+
+  /// \brief
+  ///   Removes all characters at the end of the string that match the given list of characters.
+  /// 
+  /// The list of characters supports single byte ASCII characters or utf8 characters of any length.
+  /// Using strings that are longer than single utf8 characters is not recommended.
+  /// 
+  /// \param szStr
+  ///   The string to be trimmed.
+  ///
+  /// \param iCharacters
+  ///   The number of characters in the pCharacters array.
+  /// 
+  /// \param pCharacters
+  ///   The array of characters that should be trimmed from the string.
+  /// 
+  /// \example
+  ///   \code
+  ///   const char* pTrimChars[] = {" ", "\n", "\r"};
+  ///   VString sText = "Trim all new lines and white space at the end  \n\r";
+  ///   sText.TrimEnd(V_ARRAY_SIZE(pTrimChars), pTrimChars);
+  ///   \endcode
+  VBASE_IMPEXP static void TrimEnd(char* szStr, int iCharacters, const char** pCharacters);
+
+  /// \brief
+  ///   Removes all characters at the start of the string that match the given list of characters.
+  /// 
+  /// The list of characters supports single byte ASCII characters or utf8 characters of any length.
+  /// Using strings that are longer than single utf8 characters is not recommended.
+  /// 
+  /// \param szStr
+  ///   The string to be trimmed.
+  ///
+  /// \param iCharacters
+  ///   The number of characters in the pCharacters array.
+  /// 
+  /// \param pCharacters
+  ///   The array of characters that should be trimmed from the string.
+  /// 
+  /// \example
+  ///   \code
+  ///   const char* pTrimChars[] = {" ", "\n", "\r"};
+  ///   VString sText = "\n\r   Trim all new lines and white space at the front";
+  ///   sText.TrimStart(V_ARRAY_SIZE(pTrimChars), pTrimChars);
+  ///   \endcode
+  VBASE_IMPEXP static void TrimStart(char* szStr, int iCharacters, const char** pCharacters);
 };
 
 //Similar to strncpy
@@ -231,6 +277,12 @@ public:
 
   /// \brief
   ///   Constructor that copies the string from a char pointer, using the specified string size in bytes.
+  ///
+  /// \param str
+  ///   The input string.
+  ///
+  /// \param iSize
+  ///   The size in bytes of the part of the input string that should be copied. Negative values cause the whole string to be copied.
   VBASE_IMPEXP VString(const char* str, int iSize);
 
   /// \brief
@@ -650,6 +702,16 @@ public:
   VBASE_IMPEXP void Reset();
   
   /// \brief
+  ///   Sets the string to the given value. If iSize is positive, only the given number of bytes will be copied.
+  ///
+  /// \param str
+  ///   The input string.
+  ///
+  /// \param iSize
+  ///   The size in bytes of the part of the input string that should be copied.
+  VBASE_IMPEXP void Set(const char* str, int iSize = -1);
+
+  /// \brief
   ///   Copies a substring of another string into this string object.
   /// 
   /// Takes the left (count) characters of the passed string (str) and copies these characters into
@@ -669,6 +731,46 @@ public:
   ///   VASSERT(!strcmp(b, "Hello");
   ///   \endcode
   VBASE_IMPEXP void Left(const char* szStr, int iCount);
+
+  /// \brief
+  ///   Removes all characters at the end of the string that match the given list of characters.
+  /// 
+  /// The list of characters supports single byte ASCII characters or utf8 characters of any length.
+  /// Using strings that are longer than single utf8 characters is not recommended.
+  /// 
+  /// \param iCharacters
+  ///   The number of characters in the pCharacters array.
+  /// 
+  /// \param pCharacters
+  ///   The array of characters that should be trimmed from the string.
+  /// 
+  /// \example
+  ///   \code
+  ///   const char* pTrimChars[] = {" ", "\n", "\r"};
+  ///   VString sText = "Trim all new lines and white space at the end  \n\r";
+  ///   sText.TrimEnd(V_ARRAY_SIZE(pTrimChars), pTrimChars);
+  ///   \endcode
+  VBASE_IMPEXP void TrimEnd(int iCharacters, const char** pCharacters);
+
+  /// \brief
+  ///   Removes all characters at the start of the string that match the given list of characters.
+  /// 
+  /// The list of characters supports single byte ASCII characters or utf8 characters of any length.
+  /// Using strings that are longer than single utf8 characters is not recommended.
+  /// 
+  /// \param iCharacters
+  ///   The number of characters in the pCharacters array.
+  /// 
+  /// \param pCharacters
+  ///   The array of characters that should be trimmed from the string.
+  /// 
+  /// \example
+  ///   \code
+  ///   const char* pTrimChars[] = {" ", "\n", "\r"};
+  ///   VString sText = "\n\r   Trim all new lines and white space at the front";
+  ///   sText.TrimStart(V_ARRAY_SIZE(pTrimChars), pTrimChars);
+  ///   \endcode
+  VBASE_IMPEXP void TrimStart(int iCharacters, const char** pCharacters);
 
   /// \brief
   ///   Truncates the string to a specific byte size.
@@ -1429,6 +1531,52 @@ public:
     return ret;
   }
 
+  /// \brief
+  ///   Removes all characters at the end of the string that match the given list of characters.
+  /// 
+  /// The list of characters supports single byte ASCII characters or utf8 characters of any length.
+  /// Using strings that are longer than single utf8 characters is not recommended.
+  /// 
+  /// \param iCharacters
+  ///   The number of characters in the pCharacters array.
+  /// 
+  /// \param pCharacters
+  ///   The array of characters that should be trimmed from the string.
+  /// 
+  /// \example
+  ///   \code
+  ///   const char* pTrimChars[] = {" ", "\n", "\r"};
+  ///   VString sText = "Trim all new lines and white space at the end  \n\r";
+  ///   sText.TrimEnd(V_ARRAY_SIZE(pTrimChars), pTrimChars);
+  ///   \endcode
+  inline void TrimEnd(int iCharacters, const char** pCharacters)
+  {
+    VStringHelper::TrimEnd(m_str, iCharacters, pCharacters);
+  }
+
+  /// \brief
+  ///   Removes all characters at the start of the string that match the given list of characters.
+  /// 
+  /// The list of characters supports single byte ASCII characters or utf8 characters of any length.
+  /// Using strings that are longer than single utf8 characters is not recommended.
+  /// 
+  /// \param iCharacters
+  ///   The number of characters in the pCharacters array.
+  /// 
+  /// \param pCharacters
+  ///   The array of characters that should be trimmed from the string.
+  /// 
+  /// \example
+  ///   \code
+  ///   const char* pTrimChars[] = {" ", "\n", "\r"};
+  ///   VString sText = "\n\r   Trim all new lines and white space at the front";
+  ///   sText.TrimStart(V_ARRAY_SIZE(pTrimChars), pTrimChars);
+  ///   \endcode
+  inline void TrimStart(int iCharacters, const char** pCharacters)
+  {
+    VStringHelper::TrimStart(m_str, iCharacters, pCharacters);
+  }
+
   char m_str[iSize+1];
   ///
   /// @}
@@ -1593,9 +1741,9 @@ VArchive& operator << (VArchive& ar, VStaticString<iSize>& obj)
 #endif  //VISION_VSTRING_HPP
 
 /*
- * Havok SDK - Base file, BUILD(#20131218)
+ * Havok SDK - Base file, BUILD(#20140327)
  * 
- * Confidential Information of Havok.  (C) Copyright 1999-2013
+ * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok
  * Logo, and the Havok buzzsaw logo are trademarks of Havok.  Title, ownership
  * rights, and intellectual property rights in the Havok software remain in

@@ -2,7 +2,7 @@
  *
  * Confidential Information of Telekinesys Research Limited (t/a Havok). Not for disclosure or distribution without Havok's
  * prior written consent. This software contains code, techniques and know-how which is confidential and proprietary to Havok.
- * Product and Trade Secret source code contains trade secrets of Havok. Havok Software (C) Copyright 1999-2013 Telekinesys Research Limited t/a Havok. All Rights Reserved. Use of this software is subject to the terms of an end user license agreement.
+ * Product and Trade Secret source code contains trade secrets of Havok. Havok Software (C) Copyright 1999-2014 Telekinesys Research Limited t/a Havok. All Rights Reserved. Use of this software is subject to the terms of an end user license agreement.
  *
  */
 
@@ -366,6 +366,7 @@ namespace Editor
       EditorManager.Actions.ActionEvent += new ActionEventHandler(Actions_ActionEvent);
       EditorManager.SceneChanged += new SceneChangedEventHandler(EditorManager_SceneChanged);
       EditorManager.EditorModeChanged += new EditorModeChangedEventHandler(EditorManager_EditorModeChanged);
+      EditorManager.BeforeEditorModeChanging += new BeforeEditorModeChanging(EditorManager_BeforeEditorModeChanging);
       EditorManager.ShapeSelectionChanged += new ShapeSelectionChangedEventHandler(EditorManager_ShapeSelectionChanged);
       EditorManager.ApplicationLayout.ActiveLayoutChanged += new LayoutManager.ActiveLayoutChangedEventHandler(ApplicationLayout_ActiveLayoutChanged);
       EditorManager.ApplicationLayout.AvailableLayoutsChanged += new CSharpFramework.Layout.LayoutManager.AvailableLayoutsChangedEventHandler(ApplicationLayout_AvailableLayoutsChanged);
@@ -414,7 +415,7 @@ namespace Editor
       ShortCutConfig shortcuts = EditorManager.ShortCuts;
       shortcuts.Add(new GizmoModeShortCut(Keys.W, ShapeDragMode.MOVE, false));
       shortcuts.Add(new GizmoModeShortCut(Keys.E, ShapeDragMode.ROTATE, false));
-      shortcuts.Add(new GizmoModeShortCut(Keys.R, ShapeDragMode.UNIFORMSCALE, false));
+      shortcuts.Add(new GizmoModeShortCut(Keys.R, ShapeDragMode.SCALE, false));
       shortcuts.Add(new GizmoModeShortCut(Keys.None, ShapeDragMode.LINK, false));      
       shortcuts.Add(new GizmoSwitchShortCut(Keys.Q, true, false));
       shortcuts.Add(new GizmoSwitchShortCut(Keys.Shift | Keys.Q, false, false));
@@ -422,7 +423,7 @@ namespace Editor
       // Alternate gizmo mode shortcuts to use with WASD fly mode controls
       shortcuts.Add(new GizmoModeShortCut(Keys.D1, ShapeDragMode.MOVE, true));
       shortcuts.Add(new GizmoModeShortCut(Keys.D2, ShapeDragMode.ROTATE, true));
-      shortcuts.Add(new GizmoModeShortCut(Keys.D3, ShapeDragMode.UNIFORMSCALE, true));
+      shortcuts.Add(new GizmoModeShortCut(Keys.D3, ShapeDragMode.SCALE, true));
       shortcuts.Add(new GizmoModeShortCut(Keys.D4, ShapeDragMode.LINK, true));
       shortcuts.Add(new GizmoSwitchShortCut(Keys.F1, true, true));
       shortcuts.Add(new GizmoSwitchShortCut(Keys.Shift | Keys.F1, false, true));
@@ -2685,6 +2686,7 @@ namespace Editor
     // docking panels; it is important to keep a reference to the panels
     ShapeCreatorPanel shapeCreatorPanel = null;
     UndoHistoryPanel undoHistoryPanel = null;
+    ScriptListPanel scriptListPanel = null;
     ShapeTreePanel shapeTreePanel = null;
     ShapeSearchPanel shapeSearchPanel = null;
     FindDuplicatesPanel shapeDuplicatesPanel = null;
@@ -2693,6 +2695,7 @@ namespace Editor
     ActionRecorderPanel actionRecorderPanel = null;
     AssetBrowserPanel assetBrowserPanel = null;
     CollectionPanel collectionPanel = null;
+    GridPanel gridPanel = null;
 
     // I put this into a separate function because VS messed it up too often!
     void InitializeMyComponent()
@@ -2712,7 +2715,11 @@ namespace Editor
       undoHistoryPanel = new UndoHistoryPanel(EditorManager.ApplicationLayout.DockingArea);
       undoHistoryPanel.ShowDockable();
 
-      // TEMP
+      // create dockable panel with list of all scripts
+      scriptListPanel = new ScriptListPanel(EditorManager.ApplicationLayout.DockingArea);
+      scriptListPanel.ShowDockable();
+
+      // Shape Creator Panel
       shapeCreatorPanel = new ShapeCreatorPanel(EditorManager.ApplicationLayout.DockingArea);
       shapeCreatorPanel.ShowDockable();
       shapeCreatorPanel.SelectedCreatorObjectChanged += new EventHandler(shapeCreatorPanel_SelectedCreatorObjectChanged);
@@ -2721,9 +2728,13 @@ namespace Editor
       assetBrowserPanel = new AssetBrowserPanel(EditorManager.ApplicationLayout.DockingArea);
       assetBrowserPanel.ShowDockable();
 
-      // deactivated for now, will come in a later release
+      // Collection Panel
       collectionPanel = new CollectionPanel(EditorManager.ApplicationLayout.DockingArea);
       collectionPanel.ShowDockable();
+
+      // Grid Panel
+      gridPanel = new GridPanel(EditorManager.ApplicationLayout.DockingArea);
+      gridPanel.ShowDockable();
 
       // Create Dockable Property Panel
       propertyPanel1 = new Editor.PropertyPanel(EditorManager.ApplicationLayout.DockingArea);
@@ -3365,6 +3376,22 @@ namespace Editor
     }
 
     /// <summary>
+    /// Respond if the play mode is about to be changed to check if interim backup of layers should be created before changing the mode.
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
+    private void EditorManager_BeforeEditorModeChanging(object sender, EditorModeChangedArgs e)
+    {
+      // Save the scene before starting Run in Editor or Play the Game if the option is enabled and the scene is dirty
+      if (EditorManager.Settings.SaveSceneBackupOnRun && 
+        EditorManager.Scene != null && EditorManager.Scene.Dirty && // Editor Mode may be changed without having a scene loaded in the vForge tests.
+        (e._newMode == EditorManager.Mode.EM_PLAYING_IN_EDITOR || e._newMode == EditorManager.Mode.EM_PLAYING_IN_GAME))
+      {
+        EditorManager.Scene.SaveSceneLayerInterimBackups();
+      }
+    }
+
+    /// <summary>
     /// Respond to changing shape selection
     /// </summary>
     /// <param name="sender"></param>
@@ -3388,7 +3415,7 @@ namespace Editor
       assetBrowserPanel.DeInit();
       collectionPanel.DeInit();
 
-    _updateStatusBarTimer.Elapsed -= new System.Timers.ElapsedEventHandler(OnLogMsgTimeOut);
+      _updateStatusBarTimer.Elapsed -= new System.Timers.ElapsedEventHandler(OnLogMsgTimeOut);
 
       GlobalLog.RemoveLogWriter(_pGlobalLogHandler);
       _pGlobalLogHandler.SetForm1(null);
@@ -3876,17 +3903,10 @@ namespace Editor
         return false;
       }
 
-      //Should we do this here? This sends a broadcast and that isn't very useful
-      // since nothing is initialized yet. We also don't have a post load 
-      // callback.
-      // But we might need the pointer to be set while loading.
-      // What about changing the editor to not send events when setting the ,
-      // Project member but having separate events. (ProjectChange/ProjectChanged)
-      //EditorManager.Project = proj;
-
       //Load project
-      if (proj.Load(filename))
+      try
       {
+        proj.Load(filename);
         mruList_RecentProjects.Add(filename);
         EditorManager.Project = proj;
         //project loaded, now prompt the user for the scene
@@ -3896,12 +3916,12 @@ namespace Editor
         UpdateToolbars();
         return true;
       }
-      else
+      catch (Exception ex)
       {
         mruList_RecentProjects.Remove(filename);
-        EditorManager.ShowMessageBox("Unable to load project file " + filename, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-        // EditorManager.Project = null;
+        EditorManager.ShowMessageBox(string.Format("Unable to load project file {0}: {1}", filename, ex.Message), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
       }
+
       UpdateToolbars();
       return false;
     }
@@ -5563,7 +5583,8 @@ namespace Editor
         return;
       }
 
-      bool bSuccess = EditorApp.Scene.ExportSceneNotSaveSettings(vscenePath, new List<string> { exportProfile.ToString() });
+      bool unused = false;
+      bool bSuccess = EditorApp.Scene.ExportSceneNotSaveSettings(vscenePath, new List<string> { exportProfile.ToString() }, ref unused);
       if (!bSuccess)
       {
         EditorManager.ShowMessageBox(this, "Could not export scene for Xbox360.");
@@ -6236,9 +6257,9 @@ namespace Editor
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131218)
+ * Havok SDK - Base file, BUILD(#20140328)
  * 
- * Confidential Information of Havok.  (C) Copyright 1999-2013
+ * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok
  * Logo, and the Havok buzzsaw logo are trademarks of Havok.  Title, ownership
  * rights, and intellectual property rights in the Havok software remain in

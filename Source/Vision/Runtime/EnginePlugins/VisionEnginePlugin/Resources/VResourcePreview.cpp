@@ -2,7 +2,7 @@
  *
  * Confidential Information of Telekinesys Research Limited (t/a Havok). Not for disclosure or distribution without Havok's
  * prior written consent. This software contains code, techniques and know-how which is confidential and proprietary to Havok.
- * Product and Trade Secret source code contains trade secrets of Havok. Havok Software (C) Copyright 1999-2013 Telekinesys Research Limited t/a Havok. All Rights Reserved. Use of this software is subject to the terms of an end user license agreement.
+ * Product and Trade Secret source code contains trade secrets of Havok. Havok Software (C) Copyright 1999-2014 Telekinesys Research Limited t/a Havok. All Rights Reserved. Use of this software is subject to the terms of an end user license agreement.
  *
  */
 
@@ -110,6 +110,9 @@ public:
   virtual bool SupportsThumbnails() HKV_OVERRIDE;
   virtual bool SupportsImageThumbnails() HKV_OVERRIDE;
   virtual VString GetThumbnailFilename() HKV_OVERRIDE;
+
+private:
+  void ComputeBestStartFrame();
 
 private:
   hkvVec3 m_vLastPos;
@@ -1127,22 +1130,173 @@ VParticleFXResourcePreview::VParticleFXResourcePreview(VManagedResource *pOwner)
 {
 }
 
+static float WeightedParticleCountScoreFunction(VisParticleEffect_cl* pEffect)
+{
+  float fTotalWeight = 0.0f;
+  int iActiveGroups = 0;
+  const int iGroups = pEffect->GetParticleGroupCount();
+  for (int i=0; i < iGroups; ++i)
+  {
+    unsigned int iGroupWeight = 0;
+    ParticleGroupBase_cl* pGroup = pEffect->GetParticleGroup(i);
+    const int iParticles = pGroup->GetPhysicsParticleCount();
+    ParticleExt_t* p = pGroup->GetParticlesExt();
+    for (int j = 0; j < iParticles; j++, p++)
+    {
+      if (p->valid)
+      {
+        iGroupWeight += p->color.a;
+      }
+    }
+
+    fTotalWeight += iGroupWeight / 255.0f;
+    if (iGroupWeight > 0)
+      iActiveGroups++;
+  }
+
+  return fTotalWeight * iActiveGroups;
+}
+
+void VParticleFXResourcePreview::ComputeBestStartFrame()
+{
+  // Limit AABB inflation by changing the inflate interval of each layer.
+  for (int i = 0; i < m_spInst->GetParticleGroupCount(); ++i)
+  {
+    m_spInst->GetParticleGroup(i)->GetDescriptor()->m_fDynamicInflateInterval = 0.01f;
+  }
+
+  // We want to use a descriptive frame for the screen shot.
+  // The particle system shouldn't be dead and within its alive frames we choose the frame
+  // with the biggest score.
+  int iBestFrame = -1;
+  int iDeadAtFrame = -1;
+  float fBestScore = -1;
+  hkvAlignedBBox bestAABB;
+  bestAABB.setInvalid();
+
+  // Simulate the particle effect with increasing time-steps to cover both very quick and very slow particle effects.
+  const int iFrameCount = 20;
+  const float fTimeStepStart = 0.04f;
+  const float fTimeStepMultiplicator = 1.273f; // Gives us roughly 5 seconds of simulation time.
+
+  float fCurrentTimeStep = fTimeStepStart;
+  for (int i = 0; i < iFrameCount; ++i)
+  {
+    m_spInst->Tick(fCurrentTimeStep);
+    fCurrentTimeStep *= fTimeStepMultiplicator;
+
+    // Make sure the AABB is up to date
+    hkvAlignedBBox bbox;
+    m_spInst->UpdateVisibilityBoundingBox();
+    m_spInst->GetCurrentBoundingBox(bbox);
+
+    if (m_spInst->IsLifeTimeOver() || !bbox.isValid())
+    {
+      iDeadAtFrame = i;
+      break;
+    }
+
+    // Check whether this frame is 'bigger' than the previous best.
+    float fThisScore = WeightedParticleCountScoreFunction(m_spInst);
+    if (fThisScore > fBestScore)
+    {
+      fBestScore = fThisScore;
+      bestAABB = bbox;
+      iBestFrame = i;
+    }
+  }
+
+  // If we didn't hit a valid frame we cancel the operation.
+  if (!bestAABB.isValid())
+  {
+    m_vBoundingBoxCenter.setZero();
+    m_vLastPos.setZero();
+    return;
+  }
+
+  // Setup rotation of the particle effect. We can't rotate the camera in the OnRender function
+  // as the particles are camera aligned and changing the camera within the render function will
+  // thus invalidate the particle simulation.
+  {
+    hkvAlignedBBox currentBox = bestAABB;
+
+    // calculate bounding box areas
+    float fFront = currentBox.getSizeX() * currentBox.getSizeZ();
+    float fTop   = currentBox.getSizeX() * currentBox.getSizeY();
+    float fSide  = currentBox.getSizeY() * currentBox.getSizeZ();
+
+    // set camera rotation to view onto the largest side of the bounding box
+    float fY = (fFront >= fSide) ? 85.0f : -5.0f;
+    float fP = ((fTop >= fFront) && (fTop >= fSide)) ? 40.0f : 20.0f;
+
+    hkvMat3 newRotation (hkvNoInitialization);
+    newRotation.setFromEulerAngles (0, fP, fY);
+
+    // apply new rotation
+    m_spInst->SetRotationMatrix(newRotation.getInverse());
+  }
+
+  // Distance is only dependent on the AABB's bounding sphere.
+  UpdateDistanceFromBBox(bestAABB);
+
+  // m_vBoundingBoxCenter changes once the rotation is added so we compute the rotation here.
+  // We can't get this information from the particle as we may get local or world space data.
+  // As in our initial configuration local space equals world space we can simply assume the
+  // AABB to be local space and do the transformation for the rotated and shifted particle
+  // effect here.
+  {
+    hkvVec3 vLocalSpaceCenter = bestAABB.getCenter();   
+    m_vBoundingBoxCenter = m_spInst->GetRotationMatrix() * vLocalSpaceCenter;
+  }
+
+  // Shift the particle effect to its final destination as otherwise the tick computations are wrong.
+  VisContextCamera_cl* pCam = Vision::Contexts.GetCurrentContext()->GetCamera();
+  hkvVec3 vPos = pCam->GetPosition() + pCam->GetDirection() * GetDistance() - m_vBoundingBoxCenter;
+  m_spInst->SetPosition(vPos);
+  m_vLastPos = vPos;
+
+  // Restart the effect instance and tick to the best frame we found.
+  {
+    m_spInst->Restart();
+    fCurrentTimeStep = fTimeStepStart;
+    for (int i = 0; i < iBestFrame; ++i)
+    {
+      m_spInst->Tick(fCurrentTimeStep);
+      fCurrentTimeStep *= fTimeStepMultiplicator;
+    }
+  }
+}
+
 void VParticleFXResourcePreview::OnActivate()
 {
-  VisParticleEffectFile_cl *pFX = (VisParticleEffectFile_cl *)GetOwner();
+  VisParticleEffectFile_cl* pFX = (VisParticleEffectFile_cl *)GetOwner();
 
-  hkvAlignedBBox bbox;
-  pFX->GetBoundingBox(bbox);
-
+  // Create the particle effect instance, also call SetRemoveWhenFinished to make sure we can
+  // safely simulate and restart the effect.
   m_spInst = pFX->CreateParticleEffectInstance(hkvVec3::ZeroVector (), hkvVec3::ZeroVector ());
   m_spInst->SetHandleWhenVisible(false);
   m_spInst->SetVisibleBitmask(0);
+  m_spInst->SetRemoveWhenFinished(false);
 
-  m_spInst->UpdateVisibilityBoundingBox(); // basically ensure the simulation has finished
-  m_spInst->GetCurrentBoundingBox(bbox);
-
-  UpdateDistanceFromBBox(bbox);
-  m_vBoundingBoxCenter = bbox.getCenter();
+  // If this is true we are making a screenshot instead of rendering it in the viewport via the
+  // resource viewer in vForge. This is not entirely correct but is true for our use-cases and
+  // there is no other way to determine whether we are running this function for a screenshot.
+  if (GetOverwriteSceneCamera())
+  {
+    ComputeBestStartFrame();
+  }
+  else
+  {
+    hkvAlignedBBox bbox;
+    pFX->GetBoundingBox(bbox);
+    hkvAlignedBBox instanceAABB;
+    m_spInst->UpdateVisibilityBoundingBox();
+    m_spInst->GetCurrentBoundingBox(instanceAABB);
+    bbox.expandToInclude(instanceAABB);
+    UpdateDistanceFromBBox(bbox);
+    m_vBoundingBoxCenter = bbox.getCenter();
+    m_vLastPos.setZero();
+  }
 }
 
 void VParticleFXResourcePreview::OnDeActivate()
@@ -1165,51 +1319,21 @@ bool VParticleFXResourcePreview::OnUpdate(float fTimeDiff)
 void VParticleFXResourcePreview::OnRender(int iFlags)
 {
   bool bThumbnail = (iFlags&RESOURCEPREVIEWFLAG_FOR_THUMBNAIL)>0;
+  VisParticleEffectFile_cl* pFX = (VisParticleEffectFile_cl *)GetOwner();
 
-  VisContextCamera_cl *cam = Vision::Contexts.GetCurrentContext()->GetCamera();
-  hkvMat3 currentRotation = cam->GetRotationMatrix();
-
-  VisParticleEffectFile_cl *pFX = (VisParticleEffectFile_cl *)GetOwner();
-  hkvVec3 vPos;
-  hkvAlignedBBox bbox;
-  pFX->GetBoundingBox(bbox);
-
-  // overwrite rotation (must be done before Helper_CreateTransformation)
-  if (bThumbnail && GetOverwriteSceneCamera())
-  {
-    hkvAlignedBBox currentBox;
-    m_spInst->GetCurrentBoundingBox(currentBox);
-
-    // calculate bounding box areas
-    float fFront = currentBox.getSizeX() * currentBox.getSizeZ();
-    float fTop   = currentBox.getSizeX() * currentBox.getSizeY();
-    float fSide  = currentBox.getSizeY() * currentBox.getSizeZ();
-
-    // set camera rotation to view onto the largest side of the bounding box
-    float fY = (fFront >= fSide) ? 85.0f : -5.0f;
-    float fP = ((fTop >= fFront) && (fTop >= fSide)) ? 40.0f : 20.0f;
-
-    hkvMat3 newRotation (hkvNoInitialization);
-    newRotation.setFromEulerAngles (0, fP, fY);
-
-    // apply new rotation
-    cam->SetRotationMatrix(newRotation);
-    cam->Update();
-  }
-
-  // calculate transformation (must be done after the rotation overwrite)
-  vPos = cam->GetPosition() + cam->GetDirection()*GetDistance() - m_vBoundingBoxCenter;
-
-  m_spInst->IncPosition(vPos-m_vLastPos,true);
+  // Calculate transformation, the particle effect is always shifted infront of the camera.
+  VisContextCamera_cl* cam = Vision::Contexts.GetCurrentContext()->GetCamera();
+  hkvVec3 vPos = cam->GetPosition() + cam->GetDirection()*GetDistance() - m_vBoundingBoxCenter;
+  m_spInst->IncPosition(vPos - m_vLastPos, true);
   m_vLastPos = vPos;
-  m_spInst->UpdateVisibilityBoundingBox(); // basically ensure the simulation has finished
 
+  // Create particle group collection.
   m_Layers.Clear();
   int iCount = m_spInst->GetParticleGroupCount();
-  for (int i=0;i<iCount;i++)
+  for (int i = 0; i < iCount; i++)
   {
-    VisParticleGroup_cl *pLayer = m_spInst->GetParticleGroup(i);
-    if (pLayer==NULL)
+    VisParticleGroup_cl* pLayer = m_spInst->GetParticleGroup(i);
+    if (pLayer == NULL)
       continue;
     m_Layers.AppendEntry(pLayer);
     pLayer->SetVisibleBitmask(1);
@@ -1217,18 +1341,13 @@ void VParticleFXResourcePreview::OnRender(int iFlags)
     pLayer->SetAlwaysInForeGround(TRUE);
   }
       
-  // render
+  // Render.
   Vision::RenderLoopHelper.RenderParticleSystems(&m_Layers,1,1);
+
   for (int i=0;i<(int)m_Layers.GetNumEntries();i++)
   {
     m_Layers.GetEntry(i)->SetVisibleBitmask(0);
     m_Layers.GetEntry(i)->SetRenderOrder(0);
-  }
-
-  if (bThumbnail && GetOverwriteSceneCamera())
-  {
-    cam->SetRotationMatrix(currentRotation);
-    cam->Update();
   }
 }
 
@@ -1473,9 +1592,9 @@ void VTextureCubemapResourcePreview::OnRender(int iFlags)
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131218)
+ * Havok SDK - Base file, BUILD(#20140327)
  * 
- * Confidential Information of Havok.  (C) Copyright 1999-2013
+ * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok
  * Logo, and the Havok buzzsaw logo are trademarks of Havok.  Title, ownership
  * rights, and intellectual property rights in the Havok software remain in

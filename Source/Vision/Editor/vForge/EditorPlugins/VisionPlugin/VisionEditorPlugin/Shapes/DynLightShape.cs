@@ -2,21 +2,19 @@
  *
  * Confidential Information of Telekinesys Research Limited (t/a Havok). Not for disclosure or distribution without Havok's
  * prior written consent. This software contains code, techniques and know-how which is confidential and proprietary to Havok.
- * Product and Trade Secret source code contains trade secrets of Havok. Havok Software (C) Copyright 1999-2013 Telekinesys Research Limited t/a Havok. All Rights Reserved. Use of this software is subject to the terms of an end user license agreement.
+ * Product and Trade Secret source code contains trade secrets of Havok. Havok Software (C) Copyright 1999-2014 Telekinesys Research Limited t/a Havok. All Rights Reserved. Use of this software is subject to the terms of an end user license agreement.
  *
  */
 
 using System;
 using System.IO;
-using System.Collections;
 using System.Drawing.Design;
 using System.ComponentModel;
-using System.Globalization;
 using System.Runtime.Serialization;
 using CSharpFramework;
 using ManagedFramework;
 using CSharpFramework.Math;
-using CSharpFramework.Shapes;
+using CSharpFramework.Shapes; 
 using CSharpFramework.View;
 using CSharpFramework.Scene;
 using CSharpFramework.PropertyEditors;
@@ -27,17 +25,46 @@ using CSharpFramework.Serialization;
 using VisionManaged;
 using VisionEditorPlugin.Dialogs;
 using System.Windows.Forms;
-
+using System.Linq;
 
 namespace VisionEditorPlugin.Shapes
 {
+  public class DynLightPropertySorter : UndoableObjectConverter
+  {
+    public override PropertyDescriptorCollection GetProperties(ITypeDescriptorContext context, object value, Attribute[] attributes)
+    {
+      PropertyDescriptorCollection propertyDescriptors = base.GetProperties(context, value, attributes);
+      DynLightShape lightShape = value as DynLightShape;
+      if (lightShape == null)
+        return propertyDescriptors;
+
+      bool hasToD = lightShape.HasTimeOfDayComponent;
+      if (!hasToD)
+        return propertyDescriptors;
+
+      for (int i = 0; i < propertyDescriptors.Count; ++i)
+      {
+        if (hasToD && disabledPropsOnToD.Contains(propertyDescriptors[i].Name))
+        {
+          PropertyDescriptor oldDesc = propertyDescriptors[i];
+          propertyDescriptors.RemoveAt(i);
+          propertyDescriptors.Insert(i, new UndoRedoPropertyDescriptor(oldDesc, PropertyFlags_e.Readonly, null, null)); // read-only property
+        }
+      }
+
+      return propertyDescriptors;
+    }
+
+    static readonly string[] disabledPropsOnToD = new string[] { "Multiplier", "LightColor" };
+  }
+
 	/// <summary>
 	/// Shape that describes a dynamic light source.
 	/// </summary>
   [DefaultProperty("Engine Class"),
    Serializable,
-   ShapeTypeNiceName("Lightsource")
-  ]
+   ShapeTypeNiceName("Lightsource")]
+  [TypeConverter(typeof(DynLightPropertySorter))]
   public class DynLightShape : ShapeObject3D, ILightSource
   {
     #region Category Sorting Definitions
@@ -339,12 +366,50 @@ namespace VisionEditorPlugin.Shapes
     {
       base.OnAttachComponent(component);
       UpdateLightPreviewProperties(); // in case the user adds a shadow component, we don't want it twice
+
+      if(component.CollectionType.UniqueName == "VTimeOfDayComponent")
+      {
+        // Force propertygrid update if this shape is selected.
+        if (EditorManager.SelectedShapes.Contains(this))
+        {
+          EditorManager.OnShapeSelectionChanged(new ShapeSelectionChangedArgs(EditorManager.SelectedShapes, EditorManager.SelectedShapes));
+
+          // Light color is not editable!
+          if (EditorManager.ActiveView.HotSpots.Contains(_hotSpotColor))
+            EditorManager.ActiveView.HotSpots.Remove(_hotSpotColor);
+        }
+      }
     }
 
     public override void OnRemoveComponent(ShapeComponent component)
     {
       base.OnRemoveComponent(component);
       UpdateLightPreviewProperties(); // in case the user adds a shadow component, we don't want it twice
+
+      if (component.CollectionType.UniqueName == "VTimeOfDayComponent")
+      {
+
+        // Force propertygrid update if this shape is selected.
+        if (EditorManager.SelectedShapes.Contains(this))
+        {
+          EditorManager.OnShapeSelectionChanged(new ShapeSelectionChangedArgs(EditorManager.SelectedShapes, EditorManager.SelectedShapes));
+
+          // Light color is now editable!
+          if (!EditorManager.ActiveView.HotSpots.Contains(_hotSpotColor))
+            EditorManager.ActiveView.HotSpots.Add(_hotSpotColor);
+        }
+      }
+    }
+
+    /// <summary>
+    /// Determines if this light has a time-of-day component.
+    /// </summary>
+    public bool HasTimeOfDayComponent
+    {
+      get
+      {
+        return Components == null ? false : Components.Any(x => x.CollectionType.UniqueName == "VTimeOfDayComponent");
+      }
     }
 
     /// <summary>
@@ -1659,8 +1724,9 @@ namespace VisionEditorPlugin.Shapes
       //color
       _hotSpotColor = new HotSpotColorButton(this,"LightColor");
       _hotSpotColor.ToolTipText = "Change the light's color";
-      _hotSpotColor.Set2DOffset(10.0f,10.0f);
-      EditorManager.ActiveView.HotSpots.Add(_hotSpotColor);
+      _hotSpotColor.Set2DOffset(20.0f,20.0f);
+      if(!HasTimeOfDayComponent)
+        EditorManager.ActiveView.HotSpots.Add(_hotSpotColor);
 
 			// add more hotspots here...
 		}
@@ -1673,7 +1739,8 @@ namespace VisionEditorPlugin.Shapes
 			// release the hotspots again:
 			EditorManager.ActiveView.HotSpots.Remove(_hotSpotAngle);
       EditorManager.ActiveView.HotSpots.Remove(_hotSpotIntensity);
-      EditorManager.ActiveView.HotSpots.Remove(_hotSpotColor);
+      if(EditorManager.ActiveView.HotSpots.Contains(_hotSpotColor))
+        EditorManager.ActiveView.HotSpots.Remove(_hotSpotColor);
       _hotSpotAngle.Remove();
       _hotSpotIntensity.Remove();
       _hotSpotColor.Remove();
@@ -2187,9 +2254,9 @@ namespace VisionEditorPlugin.Shapes
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131218)
+ * Havok SDK - Base file, BUILD(#20140328)
  * 
- * Confidential Information of Havok.  (C) Copyright 1999-2013
+ * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok
  * Logo, and the Havok buzzsaw logo are trademarks of Havok.  Title, ownership
  * rights, and intellectual property rights in the Havok software remain in

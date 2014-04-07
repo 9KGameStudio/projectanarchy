@@ -2,7 +2,7 @@
  *
  * Confidential Information of Telekinesys Research Limited (t/a Havok). Not for disclosure or distribution without Havok's
  * prior written consent. This software contains code, techniques and know-how which is confidential and proprietary to Havok.
- * Product and Trade Secret source code contains trade secrets of Havok. Havok Software (C) Copyright 1999-2013 Telekinesys Research Limited t/a Havok. All Rights Reserved. Use of this software is subject to the terms of an end user license agreement.
+ * Product and Trade Secret source code contains trade secrets of Havok. Havok Software (C) Copyright 1999-2014 Telekinesys Research Limited t/a Havok. All Rights Reserved. Use of this software is subject to the terms of an end user license agreement.
  *
  */
 
@@ -17,6 +17,7 @@ using CSharpFramework.Actions;
 using VisionManaged;
 using ManagedFramework;
 using CSharpFramework.AssetManagement;
+using System.Collections.Generic;
 
 namespace VisionEditorPlugin.Contexts
 {
@@ -25,7 +26,7 @@ namespace VisionEditorPlugin.Contexts
   /// <summary>
   /// Base class of a drag and drop context
   /// </summary>
-  public class GeometryAsssetDropContext : IDropContext
+  public class GeometryAssetDropContext : IDropContext
   {
     #region Dragging functions
 
@@ -46,8 +47,11 @@ namespace VisionEditorPlugin.Contexts
       else if (_assetTypes[0] == "StaticMesh")
       {
         EngineInstanceStaticMesh instance = new EngineInstanceStaticMesh();
-        instance.SetMeshFile(_assetPaths[0], "", 0, false);
-        instance.SetCollisionBitmask(0);
+        LODEntry lodEntry = new LODEntry();
+        lodEntry._filename = _assetPaths[0];
+        List<LODEntry> lodEntries = new List<LODEntry>();
+        lodEntries.Add(lodEntry);       
+        instance.SetLODChain(lodEntries);
         _instance = instance;
       }
       else if (_assetTypes[0] == "Prefab")
@@ -73,18 +77,22 @@ namespace VisionEditorPlugin.Contexts
         EntityShape entity = new EntityShape(_assetNames[0]);
         entity.EntityClass = "VisBaseEntity_cl";
         entity.ModelFile = _assetPaths[0];
+        entity.Position = _cachedPosition;
         _dummyShape = entity;
       }
       else if (_assetTypes[0] == "StaticMesh")
       {
         StaticMeshShape staticMesh = new StaticMeshShape(_assetNames[0]);
         staticMesh.MeshFileName = _assetPaths[0];
+        staticMesh.Position = _cachedPosition;
+
         _dummyShape = staticMesh;
       }
       else if (_assetTypes[0] == "Prefab")
       {
         PrefabShape prefabShape = new PrefabShape(_assetNames[0]);
         prefabShape.Filename = _assetPaths[0];
+        prefabShape.Position = _cachedPosition;
         _dummyShape = prefabShape;
       }
     }
@@ -102,12 +110,17 @@ namespace VisionEditorPlugin.Contexts
       if (_assetTypes[0] == "Model")
       {
         createInstance(e);
+        DragOver(sender, e);
       }
       else if (_assetTypes[0] == "StaticMesh")
       {
+        createInstance(e);
+        DragOver(sender, e);
       }
       else if (_assetTypes[0] == "Prefab")
       {
+        //createShape(e);
+        //DragOver(sender, e);
       }
       else
       {
@@ -136,33 +149,17 @@ namespace VisionEditorPlugin.Contexts
       if (_instance == null && _dummyShape == null)
         return;
 
-      Vector3F startRay, endRay;
-      Vector3F hitPoint = new Vector3F();
-      Point p = new Point(e.X, e.Y);
-      Point relP = EditorManager.ActiveView.PointToClient(p);
-      EditorManager.EngineManager.GetRayAtScreenPos(out startRay, out endRay, relP.X, relP.Y, EditorManager.Settings.MaxPickingDistance);
-      if (EditorManager.EngineManager.GetTraceHit(startRay, endRay, ref hitPoint))
-      {
-        if (_instance != null)
-          _instance.SetPosition(hitPoint.X, hitPoint.Y, hitPoint.Z);
-        if (_dummyShape != null)
-          _dummyShape.Position = hitPoint;
-      }
-      // No hit, so place the object near the camera on the cursor ray
-      else
-      {
-        BoundingBox aabb = new BoundingBox();
-        if (_dummyShape != null)
-        {
-          _dummyShape.GetLocalBoundingBox(ref aabb);
-          Vector3F dir = endRay - startRay;
-          dir.Normalize();
-          _dummyShape.Position = startRay + dir * aabb.Radius * 3.0f;
+      BoundingBox aabb = new BoundingBox();
+      if (_instance != null)
+        _instance.GetLocalBoundingBox(ref aabb);
+      else if (_dummyShape != null)
+        _dummyShape.GetLocalBoundingBox(ref aabb);
 
-          if (_instance != null)
-            _instance.SetPosition(_dummyShape.Position.X, _dummyShape.Position.Y, _dummyShape.Position.Z);
-        }
-      }
+      _cachedPosition = GetObjectPosition(new Point(e.X, e.Y), aabb, true);
+      if (_dummyShape != null)
+        _dummyShape.Position = _cachedPosition;
+      if (_instance != null)
+        _instance.SetPosition(_cachedPosition);
 
       EditorManager.ActiveView.UpdateView(true);
     }
@@ -187,6 +184,7 @@ namespace VisionEditorPlugin.Contexts
     private string[] _assetNames;
     private Shape3D _dummyShape;
     private IEngineShapeInstance _instance;
+    private Vector3F _cachedPosition = new Vector3F();
     #endregion
   }
 
@@ -195,9 +193,9 @@ namespace VisionEditorPlugin.Contexts
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131218)
+ * Havok SDK - Base file, BUILD(#20140328)
  * 
- * Confidential Information of Havok.  (C) Copyright 1999-2013
+ * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok
  * Logo, and the Havok buzzsaw logo are trademarks of Havok.  Title, ownership
  * rights, and intellectual property rights in the Havok software remain in

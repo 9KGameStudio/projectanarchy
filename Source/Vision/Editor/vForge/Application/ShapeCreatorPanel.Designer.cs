@@ -145,8 +145,7 @@ namespace Editor
       // 
       this.toolStripLabelSearch.Image = ((System.Drawing.Image)(resources.GetObject("toolStripLabelSearch.Image")));
       this.toolStripLabelSearch.Name = "toolStripLabelSearch";
-      this.toolStripLabelSearch.Size = new System.Drawing.Size(61, 22);
-      this.toolStripLabelSearch.Text = "Search:";
+      this.toolStripLabelSearch.Size = new System.Drawing.Size(16, 22);
       // 
       // searchPanel
       // 
@@ -155,7 +154,7 @@ namespace Editor
       this.searchPanel.ForeColor = System.Drawing.Color.Silver;
       this.searchPanel.Name = "searchPanel";
       this.searchPanel.Size = new System.Drawing.Size(100, 23);
-      this.searchPanel.Text = "Enter your search token here...";
+      this.searchPanel.Text = "Search";
       // 
       // toolStripSeparator1
       // 

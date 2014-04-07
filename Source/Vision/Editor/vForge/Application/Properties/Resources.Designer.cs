@@ -1723,6 +1723,26 @@ namespace Editor.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap toolbar_transform_absolute {
+            get {
+                object obj = ResourceManager.GetObject("toolbar_transform_absolute", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap toolbar_transform_relative {
+            get {
+                object obj = ResourceManager.GetObject("toolbar_transform_relative", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap toolbar_undo {
             get {
                 object obj = ResourceManager.GetObject("toolbar_undo", resourceCulture);

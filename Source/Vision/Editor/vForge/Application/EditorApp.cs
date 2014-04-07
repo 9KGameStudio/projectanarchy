@@ -2,7 +2,7 @@
  *
  * Confidential Information of Telekinesys Research Limited (t/a Havok). Not for disclosure or distribution without Havok's
  * prior written consent. This software contains code, techniques and know-how which is confidential and proprietary to Havok.
- * Product and Trade Secret source code contains trade secrets of Havok. Havok Software (C) Copyright 1999-2013 Telekinesys Research Limited t/a Havok. All Rights Reserved. Use of this software is subject to the terms of an end user license agreement.
+ * Product and Trade Secret source code contains trade secrets of Havok. Havok Software (C) Copyright 1999-2014 Telekinesys Research Limited t/a Havok. All Rights Reserved. Use of this software is subject to the terms of an end user license agreement.
  *
  */
 
@@ -215,6 +215,7 @@ namespace Editor
       }
       set
       {
+        GizmoBase.GridSettings = (value != null) ? value.Settings.GridSettings : null;
         EditorManager.Scene = value;
         EditorManager.EngineManager.ClearMaterialProviderList();  // do this before engine instances are created
 
@@ -222,8 +223,6 @@ namespace Editor
         if (value!=null)
         {
           EditorManager.Scene.IsInitialising = true;
-
-          GizmoBase.GridSettings = value.Settings.GridSettings;
 
           EditorManager.EngineManager.InitNewScene();
 
@@ -236,11 +235,10 @@ namespace Editor
         }
         else // load the empty scene
         {
-          GizmoBase.GridSettings = null;
-
           if (EditorManager.EngineManager.IsInitialized())
             EditorManager.EngineManager.DeInitScene();
         }
+
         EditorManager.VisibilityBuilder.Build(value, null);
         if (!TestManager.IsRunning)
           EditorManager.EngineManager.ShowErrorReportDialog();
@@ -483,9 +481,9 @@ namespace Editor
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131218)
+ * Havok SDK - Base file, BUILD(#20140328)
  * 
- * Confidential Information of Havok.  (C) Copyright 1999-2013
+ * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok
  * Logo, and the Havok buzzsaw logo are trademarks of Havok.  Title, ownership
  * rights, and intellectual property rights in the Havok software remain in

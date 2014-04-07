@@ -2,7 +2,7 @@
  *
  * Confidential Information of Telekinesys Research Limited (t/a Havok). Not for disclosure or distribution without Havok's
  * prior written consent. This software contains code, techniques and know-how which is confidential and proprietary to Havok.
- * Product and Trade Secret source code contains trade secrets of Havok. Havok Software (C) Copyright 1999-2013 Telekinesys Research Limited t/a Havok. All Rights Reserved. Use of this software is subject to the terms of an end user license agreement.
+ * Product and Trade Secret source code contains trade secrets of Havok. Havok Software (C) Copyright 1999-2014 Telekinesys Research Limited t/a Havok. All Rights Reserved. Use of this software is subject to the terms of an end user license agreement.
  *
  */
 
@@ -141,6 +141,10 @@ struct VShaderConstantTableEntry
 /// Registers are the granularity for accessing data inside the table.
 class VShaderConstantTable : public VRefCounter
 {
+private:
+  VShaderConstantTable(const VShaderConstantTable&);
+  void operator = (const VShaderConstantTable&);
+
 public:
 
   /// \brief
@@ -563,6 +567,27 @@ public:
   }
 
   /// \brief
+  ///   Helper function to put a single value into a register
+  ///
+  /// This function should be used if the register index is known since no name lookups have to be
+  /// performed.
+  /// 
+  /// It uses the Lock/unlock mechanism to copy the value into a single register.
+  /// 
+  /// \param iRegister
+  ///   Register index. Must be in valid min/max range supplied by this buffer.
+  /// 
+  /// \param fValue
+  ///   The value to be set
+  inline void SetSingleValueF(int iRegister, float fValue)
+  {
+    VASSERT(iRegister >= 0);
+    float *pDest = (float *)Lock(iRegister, 1, VIS_LOCKFLAG_DISCARDABLE);
+    *pDest = fValue;
+    Unlock();
+  }
+
+  /// \brief
   ///   Helper function to modify a single register
   /// 
   /// This function should be used if the register index is known since no name lookups have to be
@@ -972,9 +997,9 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131218)
+ * Havok SDK - Base file, BUILD(#20140327)
  * 
- * Confidential Information of Havok.  (C) Copyright 1999-2013
+ * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok
  * Logo, and the Havok buzzsaw logo are trademarks of Havok.  Title, ownership
  * rights, and intellectual property rights in the Havok software remain in

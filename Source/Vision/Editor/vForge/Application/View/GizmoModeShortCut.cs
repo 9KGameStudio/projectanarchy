@@ -2,7 +2,7 @@
  *
  * Confidential Information of Telekinesys Research Limited (t/a Havok). Not for disclosure or distribution without Havok's
  * prior written consent. This software contains code, techniques and know-how which is confidential and proprietary to Havok.
- * Product and Trade Secret source code contains trade secrets of Havok. Havok Software (C) Copyright 1999-2013 Telekinesys Research Limited t/a Havok. All Rights Reserved. Use of this software is subject to the terms of an end user license agreement.
+ * Product and Trade Secret source code contains trade secrets of Havok. Havok Software (C) Copyright 1999-2014 Telekinesys Research Limited t/a Havok. All Rights Reserved. Use of this software is subject to the terms of an end user license agreement.
  *
  */
 
@@ -65,21 +65,9 @@ namespace Editor.View
           case ShapeDragMode.ROTATE:
             EditorManager.ActiveView.Gizmo.LocalOrientation = !EditorManager.ActiveView.Gizmo.LocalOrientation;
             break;
-          case ShapeDragMode.SCALE:
-          case ShapeDragMode.UNIFORMSCALE:
-            EditorManager.ActiveView.Gizmo.LocalScaling = !EditorManager.ActiveView.Gizmo.LocalScaling;
-            break;
           default:
             break;
         }
-      }
-
-      if (_newMode == ShapeDragMode.SCALE || _newMode == ShapeDragMode.UNIFORMSCALE)
-      {
-        if (EditorManager.ActiveView.Gizmo.UseUniformScaling)
-          EditorManager.ActiveView.Gizmo.DragMode = ShapeDragMode.UNIFORMSCALE;
-        else
-          EditorManager.ActiveView.Gizmo.DragMode = ShapeDragMode.SCALE;
       }
       else
       {
@@ -166,8 +154,6 @@ namespace Editor.View
         if (EditorManager.ActiveView.Gizmo.DragMode == ShapeDragMode.MOVE)
           EditorManager.ActiveView.Gizmo.DragMode = ShapeDragMode.ROTATE;
         else if (EditorManager.ActiveView.Gizmo.DragMode == ShapeDragMode.ROTATE)
-          EditorManager.ActiveView.Gizmo.DragMode = ShapeDragMode.UNIFORMSCALE;
-        else if (EditorManager.ActiveView.Gizmo.DragMode == ShapeDragMode.UNIFORMSCALE)
           EditorManager.ActiveView.Gizmo.DragMode = ShapeDragMode.SCALE;
         else if (EditorManager.ActiveView.Gizmo.DragMode == ShapeDragMode.SCALE)
           EditorManager.ActiveView.Gizmo.DragMode = ShapeDragMode.MOVE;
@@ -176,8 +162,6 @@ namespace Editor.View
       else
       {
         if (EditorManager.ActiveView.Gizmo.DragMode == ShapeDragMode.SCALE)
-          EditorManager.ActiveView.Gizmo.DragMode = ShapeDragMode.UNIFORMSCALE;
-        else if (EditorManager.ActiveView.Gizmo.DragMode == ShapeDragMode.UNIFORMSCALE)
           EditorManager.ActiveView.Gizmo.DragMode = ShapeDragMode.ROTATE;
         else if (EditorManager.ActiveView.Gizmo.DragMode == ShapeDragMode.ROTATE)
           EditorManager.ActiveView.Gizmo.DragMode = ShapeDragMode.MOVE;
@@ -302,10 +286,6 @@ namespace Editor.View
         case ShapeDragMode.ROTATE:
           EditorManager.ActiveView.Gizmo.LocalOrientation = !EditorManager.ActiveView.Gizmo.LocalOrientation;
           break;
-        case ShapeDragMode.SCALE: // scale and uniformscale are the same case, so intended fall through
-        case ShapeDragMode.UNIFORMSCALE:
-          EditorManager.ActiveView.Gizmo.LocalScaling = !EditorManager.ActiveView.Gizmo.LocalScaling;
-          break;
       }
       
       return true;
@@ -423,9 +403,9 @@ namespace Editor.View
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131218)
+ * Havok SDK - Base file, BUILD(#20140328)
  * 
- * Confidential Information of Havok.  (C) Copyright 1999-2013
+ * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok
  * Logo, and the Havok buzzsaw logo are trademarks of Havok.  Title, ownership
  * rights, and intellectual property rights in the Havok software remain in

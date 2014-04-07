@@ -1666,24 +1666,25 @@ SWIG_Lua_dostring(lua_State *L, const char* str) {
 #define SWIGTYPE_p___int64 swig_types[5]
 #define SWIGTYPE_p_char swig_types[6]
 #define SWIGTYPE_p_float swig_types[7]
-#define SWIGTYPE_p_hkvVec3 swig_types[8]
-#define SWIGTYPE_p_int swig_types[9]
-#define SWIGTYPE_p_long swig_types[10]
-#define SWIGTYPE_p_p_char swig_types[11]
-#define SWIGTYPE_p_p_unsigned_long swig_types[12]
-#define SWIGTYPE_p_short swig_types[13]
-#define SWIGTYPE_p_signed___int64 swig_types[14]
-#define SWIGTYPE_p_signed_char swig_types[15]
-#define SWIGTYPE_p_unsigned___int64 swig_types[16]
-#define SWIGTYPE_p_unsigned_char swig_types[17]
-#define SWIGTYPE_p_unsigned_int swig_types[18]
-#define SWIGTYPE_p_unsigned_long swig_types[19]
-#define SWIGTYPE_p_unsigned_short swig_types[20]
-#define SWIGTYPE_p_vHavokCharacterController swig_types[21]
-#define SWIGTYPE_p_vHavokRagdoll swig_types[22]
-#define SWIGTYPE_p_vHavokRigidBody swig_types[23]
-static swig_type_info *swig_types[25];
-static swig_module_info swig_module = {swig_types, 24, 0, 0, 0, 0};
+#define SWIGTYPE_p_hkvBoundingSphere swig_types[8]
+#define SWIGTYPE_p_hkvVec3 swig_types[9]
+#define SWIGTYPE_p_int swig_types[10]
+#define SWIGTYPE_p_long swig_types[11]
+#define SWIGTYPE_p_p_char swig_types[12]
+#define SWIGTYPE_p_p_unsigned_long swig_types[13]
+#define SWIGTYPE_p_short swig_types[14]
+#define SWIGTYPE_p_signed___int64 swig_types[15]
+#define SWIGTYPE_p_signed_char swig_types[16]
+#define SWIGTYPE_p_unsigned___int64 swig_types[17]
+#define SWIGTYPE_p_unsigned_char swig_types[18]
+#define SWIGTYPE_p_unsigned_int swig_types[19]
+#define SWIGTYPE_p_unsigned_long swig_types[20]
+#define SWIGTYPE_p_unsigned_short swig_types[21]
+#define SWIGTYPE_p_vHavokCharacterController swig_types[22]
+#define SWIGTYPE_p_vHavokRagdoll swig_types[23]
+#define SWIGTYPE_p_vHavokRigidBody swig_types[24]
+static swig_type_info *swig_types[26];
+static swig_module_info swig_module = {swig_types, 25, 0, 0, 0, 0};
 #define SWIG_TypeQuery(name) SWIG_TypeQueryModule(&swig_module, &swig_module, name)
 #define SWIG_MangledTypeQuery(name) SWIG_MangledTypeQueryModule(&swig_module, &swig_module, name)
 
@@ -2639,6 +2640,7 @@ SWIGINTERN void vHavokCharacterController_SetDebugRendering(vHavokCharacterContr
   }
 SWIGINTERN void vHavokCharacterController_SetCapsuleHeight(vHavokCharacterController *self,float fHeight){
       self->Character_Top.z = self->Character_Bottom.z+fHeight;
+      self->UpdateBoundingVolume();
     }
 SWIGINTERN float vHavokCharacterController_GetCapsuleHeight(vHavokCharacterController *self){
       return self->Character_Top.z-self->Character_Bottom.z;
@@ -2647,24 +2649,34 @@ SWIGINTERN void vHavokCharacterController_SetCapsuleOffset(vHavokCharacterContro
       float fHeight = self->Character_Top.z-self->Character_Bottom.z;
       self->Character_Bottom.z = fOffsetZ;
       self->Character_Top.z = self->Character_Bottom.z+fHeight;
+      self->UpdateBoundingVolume();
     }
 SWIGINTERN float vHavokCharacterController_GetCapsuleOffset(vHavokCharacterController *self){
       return self->Character_Bottom.z;
     }
 SWIGINTERN void vHavokCharacterController_SetCapsuleTop(vHavokCharacterController *self,hkvVec3 *pTop){
-      if(pTop) self->Character_Top = hkvVec3(pTop->x,pTop->y,pTop->z);
+      if(pTop)
+      {
+        self->Character_Top = hkvVec3(pTop->x,pTop->y,pTop->z);
+        self->UpdateBoundingVolume();
+      }
     }
 SWIGINTERN hkvVec3 vHavokCharacterController_GetCapsuleTop(vHavokCharacterController *self){
       return hkvVec3(self->Character_Top.x, self->Character_Top.y, self->Character_Top.z);
     }
 SWIGINTERN void vHavokCharacterController_SetCapsuleBottom(vHavokCharacterController *self,hkvVec3 *pBottom){
-      if(pBottom) self->Character_Bottom = hkvVec3(pBottom->x,pBottom->y,pBottom->z);
+      if(pBottom)
+      {
+        self->Character_Bottom = hkvVec3(pBottom->x,pBottom->y,pBottom->z);
+        self->UpdateBoundingVolume();
+      }
     }
 SWIGINTERN hkvVec3 vHavokCharacterController_GetCapsuleBottom(vHavokCharacterController *self){
       return hkvVec3(self->Character_Bottom.x, self->Character_Bottom.y, self->Character_Bottom.z);
     }
 SWIGINTERN void vHavokCharacterController_SetCapsuleRadius(vHavokCharacterController *self,float fRadius){
       self->Capsule_Radius = fRadius;
+      self->UpdateBoundingVolume();
     }
 SWIGINTERN float vHavokCharacterController_GetCapsuleRadius(vHavokCharacterController *self){
       return self->Capsule_Radius;
@@ -6120,6 +6132,30 @@ fail:
 }
 
 
+static int _wrap_vHavokCharacterController_UpdateBoundingVolume(lua_State* L) {
+  int SWIG_arg = 0;
+  vHavokCharacterController *arg1 = (vHavokCharacterController *) 0 ;
+  
+  SWIG_check_num_args("UpdateBoundingVolume",1,1)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("UpdateBoundingVolume",1,"vHavokCharacterController *");
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("UpdateBoundingVolume",1,"vHavokCharacterController *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_vHavokCharacterController,0))){
+    SWIG_fail_ptr("vHavokCharacterController_UpdateBoundingVolume",1,SWIGTYPE_p_vHavokCharacterController);
+  }
+  
+  (arg1)->UpdateBoundingVolume();
+  
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
 static int _wrap_vHavokCharacterController_Static_Friction_set(lua_State* L) {
   int SWIG_arg = 0;
   vHavokCharacterController *arg1 = (vHavokCharacterController *) 0 ;
@@ -6458,6 +6494,7 @@ static swig_lua_method swig_vHavokCharacterController_methods[] = {
     {"GetGravityScaling", _wrap_vHavokCharacterController_GetGravityScaling}, 
     {"SetGravityScaling", _wrap_vHavokCharacterController_SetGravityScaling}, 
     {"SetCollisionInfo", _wrap_vHavokCharacterController_SetCollisionInfo}, 
+    {"UpdateBoundingVolume", _wrap_vHavokCharacterController_UpdateBoundingVolume}, 
     {0,0}
 };
 static swig_lua_attribute swig_vHavokCharacterController_attributes[] = {
@@ -10100,6 +10137,358 @@ fail:
 }
 
 
+static int _wrap_vHavokRagdoll_ApplyForceToVolume__SWIG_0(lua_State* L) {
+  int SWIG_arg = 0;
+  vHavokRagdoll *arg1 = (vHavokRagdoll *) 0 ;
+  hkvVec3 *arg2 = 0 ;
+  float arg3 ;
+  hkvBoundingSphere *arg4 = 0 ;
+  float arg5 ;
+  
+  SWIG_check_num_args("ApplyForceToVolume",5,5)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("ApplyForceToVolume",1,"vHavokRagdoll *");
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("ApplyForceToVolume",1,"vHavokRagdoll *");
+  if(!lua_isuserdata(L,2)) SWIG_fail_arg("ApplyForceToVolume",2,"hkvVec3 const &");
+  if(!lua_isnumber(L,3)) SWIG_fail_arg("ApplyForceToVolume",3,"float");
+  if(!lua_isuserdata(L,4)) SWIG_fail_arg("ApplyForceToVolume",4,"hkvBoundingSphere const &");
+  if(!lua_isnumber(L,5)) SWIG_fail_arg("ApplyForceToVolume",5,"float");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_vHavokRagdoll,0))){
+    SWIG_fail_ptr("vHavokRagdoll_ApplyForceToVolume",1,SWIGTYPE_p_vHavokRagdoll);
+  }
+  
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,2,(void**)&arg2,SWIGTYPE_p_hkvVec3,0))){
+    SWIG_fail_ptr("vHavokRagdoll_ApplyForceToVolume",2,SWIGTYPE_p_hkvVec3);
+  }
+  
+  arg3 = (float)lua_tonumber(L, 3);
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,4,(void**)&arg4,SWIGTYPE_p_hkvBoundingSphere,0))){
+    SWIG_fail_ptr("vHavokRagdoll_ApplyForceToVolume",4,SWIGTYPE_p_hkvBoundingSphere);
+  }
+  
+  arg5 = (float)lua_tonumber(L, 5);
+  (arg1)->ApplyForceToVolume((hkvVec3 const &)*arg2,arg3,(hkvBoundingSphere const &)*arg4,arg5);
+  
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_vHavokRagdoll_ApplyForceToVolume__SWIG_1(lua_State* L) {
+  int SWIG_arg = 0;
+  vHavokRagdoll *arg1 = (vHavokRagdoll *) 0 ;
+  hkvVec3 *arg2 = 0 ;
+  float arg3 ;
+  hkvBoundingSphere *arg4 = 0 ;
+  
+  SWIG_check_num_args("ApplyForceToVolume",4,4)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("ApplyForceToVolume",1,"vHavokRagdoll *");
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("ApplyForceToVolume",1,"vHavokRagdoll *");
+  if(!lua_isuserdata(L,2)) SWIG_fail_arg("ApplyForceToVolume",2,"hkvVec3 const &");
+  if(!lua_isnumber(L,3)) SWIG_fail_arg("ApplyForceToVolume",3,"float");
+  if(!lua_isuserdata(L,4)) SWIG_fail_arg("ApplyForceToVolume",4,"hkvBoundingSphere const &");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_vHavokRagdoll,0))){
+    SWIG_fail_ptr("vHavokRagdoll_ApplyForceToVolume",1,SWIGTYPE_p_vHavokRagdoll);
+  }
+  
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,2,(void**)&arg2,SWIGTYPE_p_hkvVec3,0))){
+    SWIG_fail_ptr("vHavokRagdoll_ApplyForceToVolume",2,SWIGTYPE_p_hkvVec3);
+  }
+  
+  arg3 = (float)lua_tonumber(L, 3);
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,4,(void**)&arg4,SWIGTYPE_p_hkvBoundingSphere,0))){
+    SWIG_fail_ptr("vHavokRagdoll_ApplyForceToVolume",4,SWIGTYPE_p_hkvBoundingSphere);
+  }
+  
+  (arg1)->ApplyForceToVolume((hkvVec3 const &)*arg2,arg3,(hkvBoundingSphere const &)*arg4);
+  
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_vHavokRagdoll_ApplyForceToVolume(lua_State* L) {
+  int argc;
+  int argv[6]={
+    1,2,3,4,5,6
+  };
+  
+  argc = lua_gettop(L);
+  if (argc == 4) {
+    int _v;
+    {
+      void *ptr;
+      if (SWIG_isptrtype(L,argv[0])==0 || SWIG_ConvertPtr(L,argv[0], (void **) &ptr, SWIGTYPE_p_vHavokRagdoll, 0)) {
+        _v = 0;
+      } else {
+        _v = 1;
+      }
+    }
+    if (_v) {
+      {
+        void *ptr;
+        if (lua_isuserdata(L,argv[1])==0 || SWIG_ConvertPtr(L,argv[1], (void **) &ptr, SWIGTYPE_p_hkvVec3, 0)) {
+          _v = 0;
+        } else {
+          _v = 1;
+        }
+      }
+      if (_v) {
+        {
+          _v = lua_isnumber(L,argv[2]);
+        }
+        if (_v) {
+          {
+            void *ptr;
+            if (lua_isuserdata(L,argv[3])==0 || SWIG_ConvertPtr(L,argv[3], (void **) &ptr, SWIGTYPE_p_hkvBoundingSphere, 0)) {
+              _v = 0;
+            } else {
+              _v = 1;
+            }
+          }
+          if (_v) {
+            return _wrap_vHavokRagdoll_ApplyForceToVolume__SWIG_1(L);
+          }
+        }
+      }
+    }
+  }
+  if (argc == 5) {
+    int _v;
+    {
+      void *ptr;
+      if (SWIG_isptrtype(L,argv[0])==0 || SWIG_ConvertPtr(L,argv[0], (void **) &ptr, SWIGTYPE_p_vHavokRagdoll, 0)) {
+        _v = 0;
+      } else {
+        _v = 1;
+      }
+    }
+    if (_v) {
+      {
+        void *ptr;
+        if (lua_isuserdata(L,argv[1])==0 || SWIG_ConvertPtr(L,argv[1], (void **) &ptr, SWIGTYPE_p_hkvVec3, 0)) {
+          _v = 0;
+        } else {
+          _v = 1;
+        }
+      }
+      if (_v) {
+        {
+          _v = lua_isnumber(L,argv[2]);
+        }
+        if (_v) {
+          {
+            void *ptr;
+            if (lua_isuserdata(L,argv[3])==0 || SWIG_ConvertPtr(L,argv[3], (void **) &ptr, SWIGTYPE_p_hkvBoundingSphere, 0)) {
+              _v = 0;
+            } else {
+              _v = 1;
+            }
+          }
+          if (_v) {
+            {
+              _v = lua_isnumber(L,argv[4]);
+            }
+            if (_v) {
+              return _wrap_vHavokRagdoll_ApplyForceToVolume__SWIG_0(L);
+            }
+          }
+        }
+      }
+    }
+  }
+  
+  lua_pushstring(L,"Wrong arguments for overloaded function 'vHavokRagdoll_ApplyForceToVolume'\n"
+    "  Possible C/C++ prototypes are:\n"
+    "    ApplyForceToVolume(vHavokRagdoll *,hkvVec3 const &,float,hkvBoundingSphere const &,float)\n"
+    "    ApplyForceToVolume(vHavokRagdoll *,hkvVec3 const &,float,hkvBoundingSphere const &)\n");
+  lua_error(L);return 0;
+}
+
+
+static int _wrap_vHavokRagdoll_ApplyLinearImpulseToVolume__SWIG_0(lua_State* L) {
+  int SWIG_arg = 0;
+  vHavokRagdoll *arg1 = (vHavokRagdoll *) 0 ;
+  hkvVec3 *arg2 = 0 ;
+  hkvBoundingSphere *arg3 = 0 ;
+  float arg4 ;
+  
+  SWIG_check_num_args("ApplyLinearImpulseToVolume",4,4)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("ApplyLinearImpulseToVolume",1,"vHavokRagdoll *");
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("ApplyLinearImpulseToVolume",1,"vHavokRagdoll *");
+  if(!lua_isuserdata(L,2)) SWIG_fail_arg("ApplyLinearImpulseToVolume",2,"hkvVec3 const &");
+  if(!lua_isuserdata(L,3)) SWIG_fail_arg("ApplyLinearImpulseToVolume",3,"hkvBoundingSphere const &");
+  if(!lua_isnumber(L,4)) SWIG_fail_arg("ApplyLinearImpulseToVolume",4,"float");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_vHavokRagdoll,0))){
+    SWIG_fail_ptr("vHavokRagdoll_ApplyLinearImpulseToVolume",1,SWIGTYPE_p_vHavokRagdoll);
+  }
+  
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,2,(void**)&arg2,SWIGTYPE_p_hkvVec3,0))){
+    SWIG_fail_ptr("vHavokRagdoll_ApplyLinearImpulseToVolume",2,SWIGTYPE_p_hkvVec3);
+  }
+  
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,3,(void**)&arg3,SWIGTYPE_p_hkvBoundingSphere,0))){
+    SWIG_fail_ptr("vHavokRagdoll_ApplyLinearImpulseToVolume",3,SWIGTYPE_p_hkvBoundingSphere);
+  }
+  
+  arg4 = (float)lua_tonumber(L, 4);
+  (arg1)->ApplyLinearImpulseToVolume((hkvVec3 const &)*arg2,(hkvBoundingSphere const &)*arg3,arg4);
+  
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_vHavokRagdoll_ApplyLinearImpulseToVolume__SWIG_1(lua_State* L) {
+  int SWIG_arg = 0;
+  vHavokRagdoll *arg1 = (vHavokRagdoll *) 0 ;
+  hkvVec3 *arg2 = 0 ;
+  hkvBoundingSphere *arg3 = 0 ;
+  
+  SWIG_check_num_args("ApplyLinearImpulseToVolume",3,3)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("ApplyLinearImpulseToVolume",1,"vHavokRagdoll *");
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("ApplyLinearImpulseToVolume",1,"vHavokRagdoll *");
+  if(!lua_isuserdata(L,2)) SWIG_fail_arg("ApplyLinearImpulseToVolume",2,"hkvVec3 const &");
+  if(!lua_isuserdata(L,3)) SWIG_fail_arg("ApplyLinearImpulseToVolume",3,"hkvBoundingSphere const &");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_vHavokRagdoll,0))){
+    SWIG_fail_ptr("vHavokRagdoll_ApplyLinearImpulseToVolume",1,SWIGTYPE_p_vHavokRagdoll);
+  }
+  
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,2,(void**)&arg2,SWIGTYPE_p_hkvVec3,0))){
+    SWIG_fail_ptr("vHavokRagdoll_ApplyLinearImpulseToVolume",2,SWIGTYPE_p_hkvVec3);
+  }
+  
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,3,(void**)&arg3,SWIGTYPE_p_hkvBoundingSphere,0))){
+    SWIG_fail_ptr("vHavokRagdoll_ApplyLinearImpulseToVolume",3,SWIGTYPE_p_hkvBoundingSphere);
+  }
+  
+  (arg1)->ApplyLinearImpulseToVolume((hkvVec3 const &)*arg2,(hkvBoundingSphere const &)*arg3);
+  
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_vHavokRagdoll_ApplyLinearImpulseToVolume(lua_State* L) {
+  int argc;
+  int argv[5]={
+    1,2,3,4,5
+  };
+  
+  argc = lua_gettop(L);
+  if (argc == 3) {
+    int _v;
+    {
+      void *ptr;
+      if (SWIG_isptrtype(L,argv[0])==0 || SWIG_ConvertPtr(L,argv[0], (void **) &ptr, SWIGTYPE_p_vHavokRagdoll, 0)) {
+        _v = 0;
+      } else {
+        _v = 1;
+      }
+    }
+    if (_v) {
+      {
+        void *ptr;
+        if (lua_isuserdata(L,argv[1])==0 || SWIG_ConvertPtr(L,argv[1], (void **) &ptr, SWIGTYPE_p_hkvVec3, 0)) {
+          _v = 0;
+        } else {
+          _v = 1;
+        }
+      }
+      if (_v) {
+        {
+          void *ptr;
+          if (lua_isuserdata(L,argv[2])==0 || SWIG_ConvertPtr(L,argv[2], (void **) &ptr, SWIGTYPE_p_hkvBoundingSphere, 0)) {
+            _v = 0;
+          } else {
+            _v = 1;
+          }
+        }
+        if (_v) {
+          return _wrap_vHavokRagdoll_ApplyLinearImpulseToVolume__SWIG_1(L);
+        }
+      }
+    }
+  }
+  if (argc == 4) {
+    int _v;
+    {
+      void *ptr;
+      if (SWIG_isptrtype(L,argv[0])==0 || SWIG_ConvertPtr(L,argv[0], (void **) &ptr, SWIGTYPE_p_vHavokRagdoll, 0)) {
+        _v = 0;
+      } else {
+        _v = 1;
+      }
+    }
+    if (_v) {
+      {
+        void *ptr;
+        if (lua_isuserdata(L,argv[1])==0 || SWIG_ConvertPtr(L,argv[1], (void **) &ptr, SWIGTYPE_p_hkvVec3, 0)) {
+          _v = 0;
+        } else {
+          _v = 1;
+        }
+      }
+      if (_v) {
+        {
+          void *ptr;
+          if (lua_isuserdata(L,argv[2])==0 || SWIG_ConvertPtr(L,argv[2], (void **) &ptr, SWIGTYPE_p_hkvBoundingSphere, 0)) {
+            _v = 0;
+          } else {
+            _v = 1;
+          }
+        }
+        if (_v) {
+          {
+            _v = lua_isnumber(L,argv[3]);
+          }
+          if (_v) {
+            return _wrap_vHavokRagdoll_ApplyLinearImpulseToVolume__SWIG_0(L);
+          }
+        }
+      }
+    }
+  }
+  
+  lua_pushstring(L,"Wrong arguments for overloaded function 'vHavokRagdoll_ApplyLinearImpulseToVolume'\n"
+    "  Possible C/C++ prototypes are:\n"
+    "    ApplyLinearImpulseToVolume(vHavokRagdoll *,hkvVec3 const &,hkvBoundingSphere const &,float)\n"
+    "    ApplyLinearImpulseToVolume(vHavokRagdoll *,hkvVec3 const &,hkvBoundingSphere const &)\n");
+  lua_error(L);return 0;
+}
+
+
 static int _wrap_vHavokRagdoll_GetPositionOfRigidBody(lua_State* L) {
   int SWIG_arg = 0;
   vHavokRagdoll *arg1 = (vHavokRagdoll *) 0 ;
@@ -10143,6 +10532,8 @@ static swig_lua_method swig_vHavokRagdoll_methods[] = {
     {"GetRigidBodyIndex", _wrap_vHavokRagdoll_GetRigidBodyIndex}, 
     {"ApplyForceToRigidBody", _wrap_vHavokRagdoll_ApplyForceToRigidBody}, 
     {"ApplyLinearImpulseToRigidBody", _wrap_vHavokRagdoll_ApplyLinearImpulseToRigidBody}, 
+    {"ApplyForceToVolume", _wrap_vHavokRagdoll_ApplyForceToVolume}, 
+    {"ApplyLinearImpulseToVolume", _wrap_vHavokRagdoll_ApplyLinearImpulseToVolume}, 
     {"GetPositionOfRigidBody", _wrap_vHavokRagdoll_GetPositionOfRigidBody}, 
     {0,0}
 };
@@ -10267,6 +10658,7 @@ static swig_type_info _swigt__p_VisTypedEngineObject_cl = {"_p_VisTypedEngineObj
 static swig_type_info _swigt__p___int64 = {"_p___int64", "__int64 *|LONGLONG *|LONG64 *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_char = {"_p_char", "CHAR *|TCHAR *|char *|CCHAR *|SBYTE *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_float = {"_p_float", "FLOAT *|float *", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__p_hkvBoundingSphere = {"_p_hkvBoundingSphere", "hkvBoundingSphere *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_hkvVec3 = {"_p_hkvVec3", "hkvVec3 *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_int = {"_p_int", "BOOL *|INT32 *|VBool *|int *|INT *|INT_PTR *|LONG32 *|SINT *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_long = {"_p_long", "SHANDLE_PTR *|LONG_PTR *|LONG *|HRESULT *|RETVAL *|long *|SLONG *|SSIZE_T *", 0, 0, (void*)0, 0};
@@ -10293,6 +10685,7 @@ static swig_type_info *swig_type_initial[] = {
   &_swigt__p___int64,
   &_swigt__p_char,
   &_swigt__p_float,
+  &_swigt__p_hkvBoundingSphere,
   &_swigt__p_hkvVec3,
   &_swigt__p_int,
   &_swigt__p_long,
@@ -10319,6 +10712,7 @@ static swig_cast_info _swigc__p_VisTypedEngineObject_cl[] = {  {&_swigt__p_IVObj
 static swig_cast_info _swigc__p___int64[] = {  {&_swigt__p___int64, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_char[] = {  {&_swigt__p_char, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_float[] = {  {&_swigt__p_float, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_hkvBoundingSphere[] = {  {&_swigt__p_hkvBoundingSphere, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_hkvVec3[] = {  {&_swigt__p_hkvVec3, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_int[] = {  {&_swigt__p_int, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_long[] = {  {&_swigt__p_long, 0, 0, 0},{0, 0, 0, 0}};
@@ -10345,6 +10739,7 @@ static swig_cast_info *swig_cast_initial[] = {
   _swigc__p___int64,
   _swigc__p_char,
   _swigc__p_float,
+  _swigc__p_hkvBoundingSphere,
   _swigc__p_hkvVec3,
   _swigc__p_int,
   _swigc__p_long,

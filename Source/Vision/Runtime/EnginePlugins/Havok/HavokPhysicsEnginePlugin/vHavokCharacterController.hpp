@@ -2,7 +2,7 @@
  *
  * Confidential Information of Telekinesys Research Limited (t/a Havok). Not for disclosure or distribution without Havok's
  * prior written consent. This software contains code, techniques and know-how which is confidential and proprietary to Havok.
- * Product and Trade Secret source code contains trade secrets of Havok. Havok Software (C) Copyright 1999-2013 Telekinesys Research Limited t/a Havok. All Rights Reserved. Use of this software is subject to the terms of an end user license agreement.
+ * Product and Trade Secret source code contains trade secrets of Havok. Havok Software (C) Copyright 1999-2014 Telekinesys Research Limited t/a Havok. All Rights Reserved. Use of this software is subject to the terms of an end user license agreement.
  *
  */
 
@@ -25,48 +25,7 @@
 #include <Vision/Runtime/EnginePlugins/Havok/HavokPhysicsEnginePlugin/CharacterControlStates/vCharacterStateJumping.h>
 #include <Vision/Runtime/EnginePlugins/Havok/HavokPhysicsEnginePlugin/CharacterControlStates/vCharacterStateOnGround.h>
 
-class VTransitionStateMachine;
-class vHavokCharacterController;
-
-#if defined(HAVOK_SDK_VERSION_MAJOR) && (HAVOK_SDK_VERSION_MAJOR >= 2012)
-typedef hkSimplexSolverInput hkpSimplexSolverInput;
-#endif
-
-#if !defined(_VISION_DOC)
-
-#if defined (__SNC__)
-#pragma diag_push
-#pragma diag_suppress=1011
-#endif
-
-class vHavokCharacterPushableProxy : public hkpCharacterProxy, public hkpCharacterProxyListener
-{
-public:
-
-	HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_CHARACTER);
-	
-	vHavokCharacterPushableProxy( const hkpCharacterProxyCinfo& info, const vHavokCharacterController *pOwner, hkReal strength = 1.0f );
-
-	virtual ~vHavokCharacterPushableProxy();
-
-	virtual void processConstraintsCallback( const hkpCharacterProxy* proxy, const hkArray<hkpRootCdPoint>& manifold, hkpSimplexSolverInput& input );
-
-	bool handleSteps( const vHavokCharacterController* character, const hkpCharacterInput& input, hkpCharacterOutput& output );
-	bool isOnStep() const { return m_onStepCnt > 0; }
-
-	void drawDebug( const vHavokCharacterController* character ) const;
-
-	hkReal m_strength;	// Relative push strength
-	int m_onStepCnt;	// indicates if handleStep() projected the controller onto a step
-	class DebugHavokCharacterController* m_visDebug;
-};
-
-#if defined (__SNC__)
-#pragma diag_pop
-#endif
-
-#endif // !_VISION_DOC
-
+class vHavokCharacterPushableProxy;
 
 ///
 /// \brief
@@ -328,10 +287,10 @@ public:
   /// \param iNumSteps
   ///   Number of steps to integrate.
   ///
-  /// \param fDuration
-  ///   Frame-interval of application.
+  /// \param fAccumulatedTime
+  ///   The time accumulated since the last simulation step.
   ///
-  VHAVOK_IMPEXP virtual void Step(float fTimeStep, int iNumSteps, float fDuration);
+  VHAVOK_IMPEXP virtual void Step(float fTimeStep, int iNumSteps, float fAccumulatedTime);
 
   /// \brief
   ///   Updates the owner of this component with the position and rotation calculated
@@ -495,9 +454,9 @@ private:
 #endif // vHavokCharacterController_HPP_INCLUDED
 
 /*
- * Havok SDK - Base file, BUILD(#20131218)
+ * Havok SDK - Base file, BUILD(#20140327)
  * 
- * Confidential Information of Havok.  (C) Copyright 1999-2013
+ * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok
  * Logo, and the Havok buzzsaw logo are trademarks of Havok.  Title, ownership
  * rights, and intellectual property rights in the Havok software remain in

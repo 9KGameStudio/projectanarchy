@@ -2,7 +2,7 @@
  *
  * Confidential Information of Telekinesys Research Limited (t/a Havok). Not for disclosure or distribution without Havok's
  * prior written consent. This software contains code, techniques and know-how which is confidential and proprietary to Havok.
- * Product and Trade Secret source code contains trade secrets of Havok. Havok Software (C) Copyright 1999-2013 Telekinesys Research Limited t/a Havok. All Rights Reserved. Use of this software is subject to the terms of an end user license agreement.
+ * Product and Trade Secret source code contains trade secrets of Havok. Havok Software (C) Copyright 1999-2014 Telekinesys Research Limited t/a Havok. All Rights Reserved. Use of this software is subject to the terms of an end user license agreement.
  *
  */
 
@@ -11,15 +11,16 @@
 #define VSCALEFORMMOVIE_HPP_INCLUDED
 
 #include <Vision/Runtime/EnginePlugins/ThirdParty/ScaleformEnginePlugin/vScaleformManager.hpp>
+#include <Vision/Runtime/EnginePlugins/ThirdParty/ScaleformEnginePlugin/VScaleformValue.hpp>
 
-//Vision forward decls
-class VScaleformValue;
-class VScaleformValueConst;
+// Vision forward declarations
+class VScaleformVariable;
+class VScaleformVariableManager;
 class VScaleformMovieInstance;
 class VScaleformAdvanceTask;
 typedef VSmartPtr<VScaleformMovieInstance> VScaleformMovieInstancePtr;
 
-//Scaleform forwards decls
+// Scaleform forward declarations
 namespace Scaleform
 {
   namespace Render
@@ -56,7 +57,7 @@ namespace Scaleform
 class VOnFSCommand : public IVisCallbackDataObject_cl
 {
 public:
-  SCALEFORM_IMPEXP VOnFSCommand(){}
+  SCALEFORM_IMPEXP VOnFSCommand() : m_pMovieInstance(NULL) {}
 
   /// \brief  Internal constructor for FS commands.
   SCALEFORM_IMPEXP VOnFSCommand(VScaleformMovieInstance *pMovie, const char* szCommand, const char* szArgs);
@@ -64,9 +65,9 @@ public:
   /// \brief  Internal destructor.
   SCALEFORM_IMPEXP virtual ~VOnFSCommand();
 
-  VScaleformMovieInstance *m_pMovie;  ///< the movie that triggered the event
-  VString m_sCommand;                 ///< the command string as set by the artist
-  VString m_sArgs;                    ///< the command argument as set by the artist
+  VScaleformMovieInstance *m_pMovieInstance;  ///< the movie that triggered the event
+  VString m_sCommand;                         ///< the command string as set by the artist
+  VString m_sArgs;                            ///< the command argument as set by the artist
 
   SCALEFORM_IMPEXP static VisCallback_cl OnFSCallback; 
 };
@@ -75,19 +76,23 @@ public:
 /// \brief  Data object that gets send by the OnCommandCallback. Provides information about the movie and the command event.
 class VOnExternalInterfaceCall : public IVisCallbackDataObject_cl
 {
+  // Non-copyable.
+  VOnExternalInterfaceCall(const VOnExternalInterfaceCall&);
+  VOnExternalInterfaceCall& operator=(const VOnExternalInterfaceCall&);
+
 public:
-  SCALEFORM_IMPEXP VOnExternalInterfaceCall(){}
+  SCALEFORM_IMPEXP VOnExternalInterfaceCall() : m_pMovieInstance(NULL), m_pArgs(NULL), m_uiArgCount(0) {}
 
   /// \brief  Internal constructor.
   SCALEFORM_IMPEXP VOnExternalInterfaceCall(
-    VScaleformMovieInstance *pMovie, const char* szMethodName, const Scaleform::GFx::Value* pArgs, unsigned int uiArgCount);
+    VScaleformMovieInstance *pMovieInstance, const char* szMethodName, const Scaleform::GFx::Value* pArgs, unsigned int uiArgCount);
 
   /// \brief  Internal destructor.
   SCALEFORM_IMPEXP virtual ~VOnExternalInterfaceCall();
 
-  VScaleformMovieInstance *m_pMovie;      ///< the movie that triggered the event
+  VScaleformMovieInstance *m_pMovieInstance;      ///< the movie that triggered the event
   VString m_sMethodName;                  ///< the method name that has been called (comparable to the former command string)
-  VScaleformValueConst** m_ppArgs;        ///< the array of argument pointer
+  VScaleformValue* m_pArgs;               ///< the array of argument pointer
   unsigned char m_uiArgCount;             ///< the number of passed arguments
 
   SCALEFORM_IMPEXP static VisCallback_cl OnExternalInterfaceCallback; 
@@ -98,8 +103,10 @@ public:
 /// \brief  The Scaleform movie instance is a wrapper around the Scaleform::GFx::Movie, handling initialization
 /// 				of the Scaleform sub system, FSCallbacks, ExternalInterface calls, memorizing the Scaleform::Loader
 /// 				object, etc...
-class VScaleformMovieInstance : public VRefCounter
+class VScaleformMovieInstance : public VTypedObject, public VRefCounter
 {
+  V_DECLARE_DYNAMIC_DLLEXP(VScaleformMovieInstance, SCALEFORM_IMPEXP)
+
   friend class VScaleformTexture;
   friend class VScaleformAdvanceTask;
   friend class VScaleformManager;
@@ -183,6 +190,7 @@ public:
   SCALEFORM_IMPEXP void SetAuthoredSize();
 
   /// @}
+
   /// @name Movie Control / Properties
   /// @{
 
@@ -246,19 +254,64 @@ public:
   /// \return true if focused, false if not.
   SCALEFORM_IMPEXP bool IsFocused() const;
 
+  /// @}
+
+  /// @name ActionScript Access
+  /// @{
+
   /// \brief  
-  ///   Gets a variable from the Scaleform movie.
-  /// 
-  /// The lifetime of the object returned is managed by this Scaleform movie. It
-  /// will get destroyed when the movie instance is destroyed.
+  ///   Returns a variable from the Scaleform movie.
   ///
-  /// \param  szVarName  
-  ///   The name of the variable including path specification (e.g. '_root/MyVar').
+  /// As opposed to GetVariableValue, this function returns a direct handle to the variable.
+  /// This means that the value of the handle will always be in sync with the ActionScript state.
+  ///
+  /// \param szVarName  
+  ///   The name of the variable including path specification (e.g. '_root.MyVar').
   /// \return 
-  ///   null if variable is not present, else the wrapped variable.
-  SCALEFORM_IMPEXP VScaleformValue* GetVariable(const char * szVarName);
+  ///   Variable with undefined value if not present, else the wrapped variable.
+  ///
+  /// \sa GetVariableValue
+  SCALEFORM_IMPEXP const VScaleformVariable GetVariable(const char* szVarName);
+
+  /// \brief
+  ///   Returns the value of a variable from the Scaleform movie.
+  ///
+  /// As opposed to GetVariable, this method only returns the value of the variable.
+  /// If the value of the variable is only needed once, this method should be preferred.
+  ///
+  /// \param szVarName
+  ///   The name of the variable including path specification (e.g. '_root.MyVar').
+  /// \return
+  ///   Value of the variable. Undefined value if not present.
+  ///
+  /// \sa GetVariable
+  SCALEFORM_IMPEXP const VScaleformValue GetVariableValue(const char* szVarName);
+
+  /// \brief
+  ///   Invokes a function on the movie.
+  /// 
+  /// \param szFunctionName
+  ///   The name of the function.
+  /// \param pArgs
+  ///   Array of the arguments passed to the function. May be NULL.
+  /// \param uiNumArgs
+  ///   The number of the arguments in the passed array. May be zero.
+  SCALEFORM_IMPEXP const VScaleformValue Invoke(const char* szFunctionName, 
+    const VScaleformValue *pArgs, unsigned int uiNumArgs) const;
+
+  inline const VScaleformValue Invoke(const char* szMethodName)
+  {
+    return Invoke(szMethodName, NULL, 0);
+  }
+
+  template<int N>
+  inline const VScaleformValue Invoke(const char* szMethodName, const VScaleformValue (&args)[N])
+  {
+    return Invoke(szMethodName, args, N);
+  }
 
   /// @}
+
   /// @name Input Handling
   /// @{
 
@@ -275,6 +328,7 @@ public:
 #endif
 
   /// @}
+
   /// @name Callbacks
   /// @{
   
@@ -290,7 +344,7 @@ public:
   //
   // Overridable to get movie event notifications. Custom movie classes can override this function
   // or alternatively register a listener to the public OnExternalInterfaceCall callback
-  SCALEFORM_IMPEXP virtual void OnExternalInterfaceCall(const char* szMethodName, VScaleformValueConst** ppArgs, unsigned int uiArgCount)
+  SCALEFORM_IMPEXP virtual void OnExternalInterfaceCall(const char* szMethodName, const VScaleformValue* pArgs, unsigned int uiArgCount)
   {
   }
 
@@ -309,13 +363,6 @@ protected:
 
   //used in the input handling system (as proposed by SF)
   Scaleform::KeyModifiers* UpdateModifiers(bool extendedKeyFlag = false);
-
-  ///
-  /// \brief
-  ///   Synchronizes the scaleform variable values with the movie.
-  ///
-  /// This can only be called when the advance task  isn't currently running.
-  void SyncScaleformVariables();
 
   /// \brief
   ///   Process queued scaleform callbacks in main thread.
@@ -337,7 +384,7 @@ private:
   Scaleform::GFx::MovieDisplayHandle* m_phMovieDisplay;
 
 #if defined(USE_SF_IME)
-  //vars required for IME init
+  // Required for IME initialization.
   VString m_sCandidateMovie;
   VString m_sImeXml;
 #endif
@@ -356,12 +403,12 @@ private:
 
   VString m_sFileName;
 
-#ifdef WIN32
-  Scaleform::KeyModifiers *m_pKeyModifiers;
+#if defined(WIN32)
+  Scaleform::KeyModifiers* m_pKeyModifiers;
 #endif
 
   VScaleformAdvanceTask* m_pAdvanceTask;
-  VArray<VScaleformValue*> m_referencedScaleformValues;
+  VScaleformVariableManager* m_pVariableManager;
 
   // Queued callback objects send from the advance thread.
   // (Can be accessed when the advance thread is not running)
@@ -372,9 +419,9 @@ private:
 #endif // VSCALEFORMMOVIE_HPP_INCLUDED
 
 /*
- * Havok SDK - Base file, BUILD(#20131218)
+ * Havok SDK - Base file, BUILD(#20140327)
  * 
- * Confidential Information of Havok.  (C) Copyright 1999-2013
+ * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok
  * Logo, and the Havok buzzsaw logo are trademarks of Havok.  Title, ownership
  * rights, and intellectual property rights in the Havok software remain in

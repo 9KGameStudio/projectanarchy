@@ -2,7 +2,7 @@
  *
  * Confidential Information of Telekinesys Research Limited (t/a Havok). Not for disclosure or distribution without Havok's
  * prior written consent. This software contains code, techniques and know-how which is confidential and proprietary to Havok.
- * Product and Trade Secret source code contains trade secrets of Havok. Havok Software (C) Copyright 1999-2013 Telekinesys Research Limited t/a Havok. All Rights Reserved. Use of this software is subject to the terms of an end user license agreement.
+ * Product and Trade Secret source code contains trade secrets of Havok. Havok Software (C) Copyright 1999-2014 Telekinesys Research Limited t/a Havok. All Rights Reserved. Use of this software is subject to the terms of an end user license agreement.
  *
  */
 
@@ -24,10 +24,10 @@ class VisMirrorManager_cl;
 ///   This class represents a simple vertex for mirror rendering.
 struct MirrorVertex_t
 {
-  float pos[3];               ///< Position
-  float normal[3];            ///< Normal
-  float tex[2];               ///< UV
-  VColorRef color;            ///< Vertex Color
+  hkvVec3 pos;               ///< Position
+  hkvVec3 normal;            ///< Normal
+  hkvVec2 tex;               ///< UV
+  VColorRef color;           ///< Vertex Color
 };
 
 /// \brief
@@ -508,9 +508,9 @@ private:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131218)
+ * Havok SDK - Base file, BUILD(#20140327)
  * 
- * Confidential Information of Havok.  (C) Copyright 1999-2013
+ * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok
  * Logo, and the Havok buzzsaw logo are trademarks of Havok.  Title, ownership
  * rights, and intellectual property rights in the Havok software remain in

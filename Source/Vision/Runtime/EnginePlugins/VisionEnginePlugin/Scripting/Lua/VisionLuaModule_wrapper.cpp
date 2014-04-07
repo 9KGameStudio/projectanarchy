@@ -1551,8 +1551,8 @@ SWIG_Lua_dostring(lua_State *L, const char* str) {
 /* ------------------------------ end luarun.swg  ------------------------------ */
 
 
-swig_type_info *swig_types[72];
-swig_module_info swig_module = {swig_types, 71, 0, 0, 0, 0};
+swig_type_info *swig_types[73];
+swig_module_info swig_module = {swig_types, 72, 0, 0, 0, 0};
 
 #define SWIG_name      "Vision"
 #define SWIG_init      luaopen_Vision
@@ -1740,6 +1740,7 @@ SWIGINTERN void SWIG_write_ptr_array(lua_State* L,void **array,int size,swig_typ
   #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Scripting/Lua/VScriptDebug_wrapper.hpp>
   #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Scripting/Lua/VScriptScreen_wrapper.hpp>
   #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Scripting/Lua/VScriptRenderer_wrapper.hpp>
+  #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Scripting/Lua/VScriptWorld_wrapper.hpp>
   #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Scripting/Lua/VScriptUtil_wrapper.hpp>
   #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Scripting/Lua/VScriptApp_wrapper.hpp>
   #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Scripting/Lua/VBitmask.hpp>
@@ -7785,6 +7786,57 @@ static int _wrap_LIGHT_SPOT_get(lua_State* L) {
   
   SWIG_check_num_args("LIGHT_SPOT",0,0)
   result = (int)(int)LIGHT_SPOT;
+  lua_pushnumber(L, (lua_Number) result); SWIG_arg++;
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_DEPTH_FOG_OFF_get(lua_State* L) {
+  int SWIG_arg = 0;
+  int result;
+  
+  SWIG_check_num_args("DEPTH_FOG_OFF",0,0)
+  result = (int)(int)DEPTH_FOG_OFF;
+  lua_pushnumber(L, (lua_Number) result); SWIG_arg++;
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_DEPTH_FOG_ON_get(lua_State* L) {
+  int SWIG_arg = 0;
+  int result;
+  
+  SWIG_check_num_args("DEPTH_FOG_ON",0,0)
+  result = (int)(int)DEPTH_FOG_ON;
+  lua_pushnumber(L, (lua_Number) result); SWIG_arg++;
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_DEPTH_FOG_TIME_OF_DAY_get(lua_State* L) {
+  int SWIG_arg = 0;
+  int result;
+  
+  SWIG_check_num_args("DEPTH_FOG_TIME_OF_DAY",0,0)
+  result = (int)(int)DEPTH_FOG_TIME_OF_DAY;
   lua_pushnumber(L, (lua_Number) result); SWIG_arg++;
   return SWIG_arg;
   
@@ -65002,6 +65054,370 @@ static swig_lua_class *swig_VScriptRenderer_wrapper_bases[] = {0};
 static const char *swig_VScriptRenderer_wrapper_base_names[] = {0};
 static swig_lua_class _wrap_class_VScriptRenderer_wrapper = { "VScriptRenderer_wrapper", &SWIGTYPE_p_VScriptRenderer_wrapper,_wrap_new_VScriptRenderer_wrapper, swig_delete_VScriptRenderer_wrapper, swig_VScriptRenderer_wrapper_methods, swig_VScriptRenderer_wrapper_attributes, swig_VScriptRenderer_wrapper_bases, swig_VScriptRenderer_wrapper_base_names };
 
+static int _wrap_new_VScriptWorld_wrapper(lua_State* L) {
+  int SWIG_arg = 0;
+  VScriptWorld_wrapper *result = 0 ;
+  
+  SWIG_check_num_args("VScriptWorld_wrapper",0,0)
+  result = (VScriptWorld_wrapper *)new VScriptWorld_wrapper();
+  SWIG_NewPointerObj(L,result,SWIGTYPE_p_VScriptWorld_wrapper,1); SWIG_arg++; 
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_VScriptWorld_wrapper_SetDepthFogMode(lua_State* L) {
+  int SWIG_arg = 0;
+  VScriptWorld_wrapper *arg1 = (VScriptWorld_wrapper *) 0 ;
+  int arg2 ;
+  
+  SWIG_check_num_args("SetDepthFogMode",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("SetDepthFogMode",1,"VScriptWorld_wrapper *");
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("SetDepthFogMode",1,"VScriptWorld_wrapper *");
+  if(!lua_isnumber(L,2)) SWIG_fail_arg("SetDepthFogMode",2,"int");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScriptWorld_wrapper,0))){
+    SWIG_fail_ptr("VScriptWorld_wrapper_SetDepthFogMode",1,SWIGTYPE_p_VScriptWorld_wrapper);
+  }
+  
+  arg2 = (int)lua_tonumber(L, 2);
+  (arg1)->SetDepthFogMode(arg2);
+  
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_VScriptWorld_wrapper_GetDepthFogMode(lua_State* L) {
+  int SWIG_arg = 0;
+  VScriptWorld_wrapper *arg1 = (VScriptWorld_wrapper *) 0 ;
+  int result;
+  
+  SWIG_check_num_args("GetDepthFogMode",1,1)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("GetDepthFogMode",1,"VScriptWorld_wrapper *");
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("GetDepthFogMode",1,"VScriptWorld_wrapper *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScriptWorld_wrapper,0))){
+    SWIG_fail_ptr("VScriptWorld_wrapper_GetDepthFogMode",1,SWIGTYPE_p_VScriptWorld_wrapper);
+  }
+  
+  result = (int)(arg1)->GetDepthFogMode();
+  lua_pushnumber(L, (lua_Number) result); SWIG_arg++;
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_VScriptWorld_wrapper_SetDepthFogStart(lua_State* L) {
+  int SWIG_arg = 0;
+  VScriptWorld_wrapper *arg1 = (VScriptWorld_wrapper *) 0 ;
+  float arg2 ;
+  
+  SWIG_check_num_args("SetDepthFogStart",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("SetDepthFogStart",1,"VScriptWorld_wrapper *");
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("SetDepthFogStart",1,"VScriptWorld_wrapper *");
+  if(!lua_isnumber(L,2)) SWIG_fail_arg("SetDepthFogStart",2,"float");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScriptWorld_wrapper,0))){
+    SWIG_fail_ptr("VScriptWorld_wrapper_SetDepthFogStart",1,SWIGTYPE_p_VScriptWorld_wrapper);
+  }
+  
+  arg2 = (float)lua_tonumber(L, 2);
+  (arg1)->SetDepthFogStart(arg2);
+  
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_VScriptWorld_wrapper_GetDepthFogStart(lua_State* L) {
+  int SWIG_arg = 0;
+  VScriptWorld_wrapper *arg1 = (VScriptWorld_wrapper *) 0 ;
+  float result;
+  
+  SWIG_check_num_args("GetDepthFogStart",1,1)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("GetDepthFogStart",1,"VScriptWorld_wrapper const *");
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("GetDepthFogStart",1,"VScriptWorld_wrapper const *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScriptWorld_wrapper,0))){
+    SWIG_fail_ptr("VScriptWorld_wrapper_GetDepthFogStart",1,SWIGTYPE_p_VScriptWorld_wrapper);
+  }
+  
+  result = (float)((VScriptWorld_wrapper const *)arg1)->GetDepthFogStart();
+  lua_pushnumber(L, (lua_Number) result); SWIG_arg++;
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_VScriptWorld_wrapper_SetDepthFogEnd(lua_State* L) {
+  int SWIG_arg = 0;
+  VScriptWorld_wrapper *arg1 = (VScriptWorld_wrapper *) 0 ;
+  float arg2 ;
+  
+  SWIG_check_num_args("SetDepthFogEnd",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("SetDepthFogEnd",1,"VScriptWorld_wrapper *");
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("SetDepthFogEnd",1,"VScriptWorld_wrapper *");
+  if(!lua_isnumber(L,2)) SWIG_fail_arg("SetDepthFogEnd",2,"float");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScriptWorld_wrapper,0))){
+    SWIG_fail_ptr("VScriptWorld_wrapper_SetDepthFogEnd",1,SWIGTYPE_p_VScriptWorld_wrapper);
+  }
+  
+  arg2 = (float)lua_tonumber(L, 2);
+  (arg1)->SetDepthFogEnd(arg2);
+  
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_VScriptWorld_wrapper_GetDepthFogEnd(lua_State* L) {
+  int SWIG_arg = 0;
+  VScriptWorld_wrapper *arg1 = (VScriptWorld_wrapper *) 0 ;
+  float result;
+  
+  SWIG_check_num_args("GetDepthFogEnd",1,1)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("GetDepthFogEnd",1,"VScriptWorld_wrapper const *");
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("GetDepthFogEnd",1,"VScriptWorld_wrapper const *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScriptWorld_wrapper,0))){
+    SWIG_fail_ptr("VScriptWorld_wrapper_GetDepthFogEnd",1,SWIGTYPE_p_VScriptWorld_wrapper);
+  }
+  
+  result = (float)((VScriptWorld_wrapper const *)arg1)->GetDepthFogEnd();
+  lua_pushnumber(L, (lua_Number) result); SWIG_arg++;
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_VScriptWorld_wrapper_SetDepthFogColor(lua_State* L) {
+  int SWIG_arg = 0;
+  VScriptWorld_wrapper *arg1 = (VScriptWorld_wrapper *) 0 ;
+  VColorRef arg2 ;
+  VColorRef *argp2 ;
+  
+  SWIG_check_num_args("SetDepthFogColor",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("SetDepthFogColor",1,"VScriptWorld_wrapper *");
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("SetDepthFogColor",1,"VScriptWorld_wrapper *");
+  if(!lua_isuserdata(L,2)) SWIG_fail_arg("SetDepthFogColor",2,"VColorRef");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScriptWorld_wrapper,0))){
+    SWIG_fail_ptr("VScriptWorld_wrapper_SetDepthFogColor",1,SWIGTYPE_p_VScriptWorld_wrapper);
+  }
+  
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,2,(void**)&argp2,SWIGTYPE_p_VColorRef,0))){
+    SWIG_fail_ptr("VScriptWorld_wrapper_SetDepthFogColor",2,SWIGTYPE_p_VColorRef);
+  }
+  arg2 = *argp2;
+  
+  (arg1)->SetDepthFogColor(arg2);
+  
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_VScriptWorld_wrapper_GetDepthFogColor(lua_State* L) {
+  int SWIG_arg = 0;
+  VScriptWorld_wrapper *arg1 = (VScriptWorld_wrapper *) 0 ;
+  VColorRef result;
+  
+  SWIG_check_num_args("GetDepthFogColor",1,1)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("GetDepthFogColor",1,"VScriptWorld_wrapper const *");
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("GetDepthFogColor",1,"VScriptWorld_wrapper const *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScriptWorld_wrapper,0))){
+    SWIG_fail_ptr("VScriptWorld_wrapper_GetDepthFogColor",1,SWIGTYPE_p_VScriptWorld_wrapper);
+  }
+  
+  result = ((VScriptWorld_wrapper const *)arg1)->GetDepthFogColor();
+  {
+    VColorRef * resultptr = new VColorRef((const VColorRef &) result);
+    SWIG_NewPointerObj(L,(void *) resultptr,SWIGTYPE_p_VColorRef,1); SWIG_arg++;
+  }
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_VScriptWorld_wrapper_SetMaskSky(lua_State* L) {
+  int SWIG_arg = 0;
+  VScriptWorld_wrapper *arg1 = (VScriptWorld_wrapper *) 0 ;
+  bool arg2 ;
+  
+  SWIG_check_num_args("SetMaskSky",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("SetMaskSky",1,"VScriptWorld_wrapper *");
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("SetMaskSky",1,"VScriptWorld_wrapper *");
+  if(!lua_isboolean(L,2)) SWIG_fail_arg("SetMaskSky",2,"bool");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScriptWorld_wrapper,0))){
+    SWIG_fail_ptr("VScriptWorld_wrapper_SetMaskSky",1,SWIGTYPE_p_VScriptWorld_wrapper);
+  }
+  
+  arg2 = (lua_toboolean(L, 2)!=0);
+  (arg1)->SetMaskSky(arg2);
+  
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_VScriptWorld_wrapper_IsMaskSkyEnabled(lua_State* L) {
+  int SWIG_arg = 0;
+  VScriptWorld_wrapper *arg1 = (VScriptWorld_wrapper *) 0 ;
+  bool result;
+  
+  SWIG_check_num_args("IsMaskSkyEnabled",1,1)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("IsMaskSkyEnabled",1,"VScriptWorld_wrapper const *");
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("IsMaskSkyEnabled",1,"VScriptWorld_wrapper const *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScriptWorld_wrapper,0))){
+    SWIG_fail_ptr("VScriptWorld_wrapper_IsMaskSkyEnabled",1,SWIGTYPE_p_VScriptWorld_wrapper);
+  }
+  
+  result = (bool)((VScriptWorld_wrapper const *)arg1)->IsMaskSkyEnabled();
+  lua_pushboolean(L,(int)(result!=0)); SWIG_arg++;
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_VScriptWorld_wrapper_SetVirtualSkyDepth(lua_State* L) {
+  int SWIG_arg = 0;
+  VScriptWorld_wrapper *arg1 = (VScriptWorld_wrapper *) 0 ;
+  float arg2 ;
+  
+  SWIG_check_num_args("SetVirtualSkyDepth",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("SetVirtualSkyDepth",1,"VScriptWorld_wrapper *");
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("SetVirtualSkyDepth",1,"VScriptWorld_wrapper *");
+  if(!lua_isnumber(L,2)) SWIG_fail_arg("SetVirtualSkyDepth",2,"float");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScriptWorld_wrapper,0))){
+    SWIG_fail_ptr("VScriptWorld_wrapper_SetVirtualSkyDepth",1,SWIGTYPE_p_VScriptWorld_wrapper);
+  }
+  
+  arg2 = (float)lua_tonumber(L, 2);
+  (arg1)->SetVirtualSkyDepth(arg2);
+  
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_VScriptWorld_wrapper_GetVirtualSkyDepth(lua_State* L) {
+  int SWIG_arg = 0;
+  VScriptWorld_wrapper *arg1 = (VScriptWorld_wrapper *) 0 ;
+  float result;
+  
+  SWIG_check_num_args("GetVirtualSkyDepth",1,1)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("GetVirtualSkyDepth",1,"VScriptWorld_wrapper const *");
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("GetVirtualSkyDepth",1,"VScriptWorld_wrapper const *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScriptWorld_wrapper,0))){
+    SWIG_fail_ptr("VScriptWorld_wrapper_GetVirtualSkyDepth",1,SWIGTYPE_p_VScriptWorld_wrapper);
+  }
+  
+  result = (float)((VScriptWorld_wrapper const *)arg1)->GetVirtualSkyDepth();
+  lua_pushnumber(L, (lua_Number) result); SWIG_arg++;
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static void swig_delete_VScriptWorld_wrapper(void *obj) {
+VScriptWorld_wrapper *arg1 = (VScriptWorld_wrapper *) obj;
+delete arg1;
+}
+static swig_lua_method swig_VScriptWorld_wrapper_methods[] = {
+    {"SetDepthFogMode", _wrap_VScriptWorld_wrapper_SetDepthFogMode}, 
+    {"GetDepthFogMode", _wrap_VScriptWorld_wrapper_GetDepthFogMode}, 
+    {"SetDepthFogStart", _wrap_VScriptWorld_wrapper_SetDepthFogStart}, 
+    {"GetDepthFogStart", _wrap_VScriptWorld_wrapper_GetDepthFogStart}, 
+    {"SetDepthFogEnd", _wrap_VScriptWorld_wrapper_SetDepthFogEnd}, 
+    {"GetDepthFogEnd", _wrap_VScriptWorld_wrapper_GetDepthFogEnd}, 
+    {"SetDepthFogColor", _wrap_VScriptWorld_wrapper_SetDepthFogColor}, 
+    {"GetDepthFogColor", _wrap_VScriptWorld_wrapper_GetDepthFogColor}, 
+    {"SetMaskSky", _wrap_VScriptWorld_wrapper_SetMaskSky}, 
+    {"IsMaskSkyEnabled", _wrap_VScriptWorld_wrapper_IsMaskSkyEnabled}, 
+    {"SetVirtualSkyDepth", _wrap_VScriptWorld_wrapper_SetVirtualSkyDepth}, 
+    {"GetVirtualSkyDepth", _wrap_VScriptWorld_wrapper_GetVirtualSkyDepth}, 
+    {0,0}
+};
+static swig_lua_attribute swig_VScriptWorld_wrapper_attributes[] = {
+    {0,0,0}
+};
+static swig_lua_class *swig_VScriptWorld_wrapper_bases[] = {0};
+static const char *swig_VScriptWorld_wrapper_base_names[] = {0};
+static swig_lua_class _wrap_class_VScriptWorld_wrapper = { "VScriptWorld_wrapper", &SWIGTYPE_p_VScriptWorld_wrapper,_wrap_new_VScriptWorld_wrapper, swig_delete_VScriptWorld_wrapper, swig_VScriptWorld_wrapper_methods, swig_VScriptWorld_wrapper_attributes, swig_VScriptWorld_wrapper_bases, swig_VScriptWorld_wrapper_base_names };
+
 static int _wrap_new_VScriptScreen_wrapper(lua_State* L) {
   int SWIG_arg = 0;
   VScriptScreen_wrapper *result = 0 ;
@@ -66144,6 +66560,9 @@ static swig_lua_var_info swig_variables[] = {
     { "LIGHT_POINT", _wrap_LIGHT_POINT_get, SWIG_Lua_set_immutable },
     { "LIGHT_DIRECTED", _wrap_LIGHT_DIRECTED_get, SWIG_Lua_set_immutable },
     { "LIGHT_SPOT", _wrap_LIGHT_SPOT_get, SWIG_Lua_set_immutable },
+    { "DEPTH_FOG_OFF", _wrap_DEPTH_FOG_OFF_get, SWIG_Lua_set_immutable },
+    { "DEPTH_FOG_ON", _wrap_DEPTH_FOG_ON_get, SWIG_Lua_set_immutable },
+    { "DEPTH_FOG_TIME_OF_DAY", _wrap_DEPTH_FOG_TIME_OF_DAY_get, SWIG_Lua_set_immutable },
     { "CORONA_NO_SCALE", _wrap_CORONA_NO_SCALE_get, SWIG_Lua_set_immutable },
     { "CORONA_DISTANCE_SCALE", _wrap_CORONA_DISTANCE_SCALE_get, SWIG_Lua_set_immutable },
     { "CORONA_AREA_SCALE", _wrap_CORONA_AREA_SCALE_get, SWIG_Lua_set_immutable },
@@ -66613,6 +67032,7 @@ static swig_type_info _swigt__p_VScriptInput_wrapper = {"_p_VScriptInput_wrapper
 static swig_type_info _swigt__p_VScriptRenderer_wrapper = {"_p_VScriptRenderer_wrapper", "VScriptRenderer_wrapper *", 0, 0, (void*)&_wrap_class_VScriptRenderer_wrapper, 0};
 static swig_type_info _swigt__p_VScriptScreen_wrapper = {"_p_VScriptScreen_wrapper", "VScriptScreen_wrapper *", 0, 0, (void*)&_wrap_class_VScriptScreen_wrapper, 0};
 static swig_type_info _swigt__p_VScriptUtil_wrapper = {"_p_VScriptUtil_wrapper", "VScriptUtil_wrapper *", 0, 0, (void*)&_wrap_class_VScriptUtil_wrapper, 0};
+static swig_type_info _swigt__p_VScriptWorld_wrapper = {"_p_VScriptWorld_wrapper", "VScriptWorld_wrapper *", 0, 0, (void*)&_wrap_class_VScriptWorld_wrapper, 0};
 static swig_type_info _swigt__p_VStringInputMap = {"_p_VStringInputMap", "VStringInputMap *", 0, 0, (void*)&_wrap_class_VStringInputMap, 0};
 static swig_type_info _swigt__p_VTextureObject = {"_p_VTextureObject", "VTextureObject *", 0, 0, (void*)&_wrap_class_VTextureObject, 0};
 static swig_type_info _swigt__p_VTimedValueComponent = {"_p_VTimedValueComponent", "VTimedValueComponent *", 0, 0, (void*)&_wrap_class_VTimedValueComponent, 0};
@@ -66686,6 +67106,7 @@ static swig_type_info *swig_type_initial[] = {
   &_swigt__p_VScriptRenderer_wrapper,
   &_swigt__p_VScriptScreen_wrapper,
   &_swigt__p_VScriptUtil_wrapper,
+  &_swigt__p_VScriptWorld_wrapper,
   &_swigt__p_VStringInputMap,
   &_swigt__p_VTextureObject,
   &_swigt__p_VTimedValueComponent,
@@ -66759,6 +67180,7 @@ static swig_cast_info _swigc__p_VScriptInput_wrapper[] = {  {&_swigt__p_VScriptI
 static swig_cast_info _swigc__p_VScriptRenderer_wrapper[] = {  {&_swigt__p_VScriptRenderer_wrapper, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_VScriptScreen_wrapper[] = {  {&_swigt__p_VScriptScreen_wrapper, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_VScriptUtil_wrapper[] = {  {&_swigt__p_VScriptUtil_wrapper, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_VScriptWorld_wrapper[] = {  {&_swigt__p_VScriptWorld_wrapper, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_VStringInputMap[] = {  {&_swigt__p_VStringInputMap, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_VTextureObject[] = {  {&_swigt__p_VTextureObject, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_VTimedValueComponent[] = {  {&_swigt__p_VTimedValueComponent, 0, 0, 0},{0, 0, 0, 0}};
@@ -66832,6 +67254,7 @@ static swig_cast_info *swig_cast_initial[] = {
   _swigc__p_VScriptRenderer_wrapper,
   _swigc__p_VScriptScreen_wrapper,
   _swigc__p_VScriptUtil_wrapper,
+  _swigc__p_VScriptWorld_wrapper,
   _swigc__p_VStringInputMap,
   _swigc__p_VTextureObject,
   _swigc__p_VTimedValueComponent,

@@ -2,7 +2,7 @@
  *
  * Confidential Information of Telekinesys Research Limited (t/a Havok). Not for disclosure or distribution without Havok's
  * prior written consent. This software contains code, techniques and know-how which is confidential and proprietary to Havok.
- * Product and Trade Secret source code contains trade secrets of Havok. Havok Software (C) Copyright 1999-2013 Telekinesys Research Limited t/a Havok. All Rights Reserved. Use of this software is subject to the terms of an end user license agreement.
+ * Product and Trade Secret source code contains trade secrets of Havok. Havok Software (C) Copyright 1999-2014 Telekinesys Research Limited t/a Havok. All Rights Reserved. Use of this software is subject to the terms of an end user license agreement.
  *
  */
 
@@ -79,6 +79,8 @@ namespace Editor
         EditorScene.LayerChanged += new LayerChangedEventHandler(shapeTreeView.OnLayerChanged);
         EditorScene.LayerChanged += new LayerChangedEventHandler(EditorScene_LayerChanged);
 
+        EditorManager.SceneEvent += new SceneEventHandler(EditorManager_SceneEvent);
+
         //EditorScene.LayerChanged += new LayerChangedEventHandler(layerListView.OnLayerChanged);
         //EditorManager.SceneChanged += new SceneChangedEventHandler(layerListView.OnSceneChanged);
 
@@ -100,15 +102,37 @@ namespace Editor
         directionCeilingToolStripMenuItem.Tag = Vector3F.ZAxis;
         directionFloorToolStripMenuItem.Tag = -Vector3F.ZAxis;
 
+        // Incremental search
+        searchPanel.FilterChanged += new EventHandler(searchPanel_FilterChanged);
       }
 
     }
 
+    #region Shape Search Filter
+    
+    void searchPanel_FilterChanged(object sender, EventArgs e)
+    {
+      toolStripButtonClearSearch.Enabled = !string.IsNullOrEmpty(searchPanel.SearchText);
+      shapeTreeView.UseShapeFilter = searchPanel.SearchText.Length > 0;
+      shapeTreeView.ShapeFilter = searchPanel.SearchText;
+      shapeTreeView.BuildTree(null);
+    }
 
-		/// <summary> 
-		/// Clean up any resources being used.
-		/// </summary>
-		
+    private void toolStripButtonClearSearch_Click(object sender, EventArgs e)
+    {
+      searchPanel.ClearSearch();
+    }
+
+    void EditorManager_SceneEvent(object sender, SceneEventArgs e)
+    {
+      if (e.action == SceneEventArgs.Action.AfterClosing)
+      {
+        // Will trigger searchPanel_FilterChanged
+        searchPanel.ClearSearch();
+      }
+    }
+
+    #endregion
 
     /// <summary>
     /// Private constructor. Necessary to get this form properly shown in the designer when deriving from it.
@@ -191,7 +215,7 @@ namespace Editor
         EditorManager.Actions.StartGroup("Sort shapes");
         foreach (ShapeBase shape in shapes)
         {
-          if (shape.HasChildren())
+          if (shape.HasVisibleChildren() && !shape.IsHintSet(ShapeBase.HintFlags_e.HideChildren))
           {
             EditorManager.Actions.Add(new SortShapeChildrenAlphabeticallyAction(shape, order));
           }
@@ -851,6 +875,8 @@ namespace Editor
         toolStripButton_ShapeMoveUp.Enabled = false;
         toolStripSplitButton_ToolsOptions.Enabled = false;
         toolStripButton_ImportReference.Enabled = false;
+        toolStripLabelSearch.Enabled = false;
+        searchPanel.Enabled = false;
         return;
       }
 
@@ -871,6 +897,8 @@ namespace Editor
       toolStripButton_ShapeMoveUp.Enabled = bHasScene;
       toolStripSplitButton_ToolsOptions.Enabled = bHasScene;
       toolStripButton_ImportReference.Enabled = bHasScene;
+      searchPanel.Enabled = bHasScene;
+      toolStripLabelSearch.Enabled = bHasScene;
 
       Zone parentZone = (treeView_Layers.Selection_Layers.Count > 0 && treeView_Layers.Selection_SingleLayer) ? treeView_Layers.Selection_Layers[0].ParentZone : null;
       int iLayerCount = (parentZone == activeZone) ? EditorManager.Scene.GetZoneLayerCount(activeZone) : EditorManager.Scene.Layers.Count;
@@ -1071,7 +1099,9 @@ namespace Editor
       bool needInvoke = this.InvokeRequired;
 
       if (e.action == LayerChangedArgs.Action.ContentChanged)
+      {
         UpdatedLayerInfoPanelVisible = true;
+      }  
     }
 
     #endregion
@@ -1149,6 +1179,21 @@ namespace Editor
     private void toolStripSplitButton_PropertiesOnSelection_Click(object sender, EventArgs e)
     {
       EditorManager.Settings.ShowPropertiesPanelOnSelection = toolStripSplitButton_PropertiesOnSelection.Checked;
+    }
+
+    private void toolStrip_Search_Layout(object sender, LayoutEventArgs e)
+    {
+      int width = toolStrip_Search.DisplayRectangle.Width;
+
+      foreach (ToolStripItem tsi in toolStrip_Search.Items)
+      {
+        if (tsi != searchPanel)
+        {
+          width -= tsi.Width + tsi.Margin.Horizontal;
+        }
+      }
+
+      searchPanel.Width = Math.Max(30, width - searchPanel.Margin.Horizontal);
     }
 
     private void SortSelectedShapes(MoveShapesDirection moveDirection)
@@ -1234,9 +1279,9 @@ namespace Editor
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131218)
+ * Havok SDK - Base file, BUILD(#20140328)
  * 
- * Confidential Information of Havok.  (C) Copyright 1999-2013
+ * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok
  * Logo, and the Havok buzzsaw logo are trademarks of Havok.  Title, ownership
  * rights, and intellectual property rights in the Havok software remain in

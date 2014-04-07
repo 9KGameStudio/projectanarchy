@@ -2,7 +2,7 @@
  *
  * Confidential Information of Telekinesys Research Limited (t/a Havok). Not for disclosure or distribution without Havok's
  * prior written consent. This software contains code, techniques and know-how which is confidential and proprietary to Havok.
- * Product and Trade Secret source code contains trade secrets of Havok. Havok Software (C) Copyright 1999-2013 Telekinesys Research Limited t/a Havok. All Rights Reserved. Use of this software is subject to the terms of an end user license agreement.
+ * Product and Trade Secret source code contains trade secrets of Havok. Havok Software (C) Copyright 1999-2014 Telekinesys Research Limited t/a Havok. All Rights Reserved. Use of this software is subject to the terms of an end user license agreement.
  *
  */
 
@@ -22,6 +22,7 @@ public:
     void SetCapsuleHeight(float fHeight)
     {
       self->Character_Top.z = self->Character_Bottom.z+fHeight;
+      self->UpdateBoundingVolume();
     }
 
     float GetCapsuleHeight()
@@ -34,6 +35,7 @@ public:
       float fHeight = self->Character_Top.z-self->Character_Bottom.z;
       self->Character_Bottom.z = fOffsetZ;
       self->Character_Top.z = self->Character_Bottom.z+fHeight;
+      self->UpdateBoundingVolume();
     }
 
     float GetCapsuleOffset()
@@ -43,7 +45,11 @@ public:
 
     void SetCapsuleTop(hkvVec3* pTop)
     {
-      if(pTop) self->Character_Top = hkvVec3(pTop->x,pTop->y,pTop->z);
+      if(pTop)
+      {
+        self->Character_Top = hkvVec3(pTop->x,pTop->y,pTop->z);
+        self->UpdateBoundingVolume();
+      }
     }
 
     hkvVec3 GetCapsuleTop()
@@ -53,7 +59,11 @@ public:
 
     void SetCapsuleBottom(hkvVec3* pBottom)
     {
-      if(pBottom) self->Character_Bottom = hkvVec3(pBottom->x,pBottom->y,pBottom->z);
+      if(pBottom)
+      {
+        self->Character_Bottom = hkvVec3(pBottom->x,pBottom->y,pBottom->z);
+        self->UpdateBoundingVolume();
+      }
     }
 
     hkvVec3 GetCapsuleBottom()
@@ -64,6 +74,7 @@ public:
     void SetCapsuleRadius(float fRadius)
     {
       self->Capsule_Radius = fRadius;
+      self->UpdateBoundingVolume();
     }
 
     float GetCapsuleRadius()
@@ -113,6 +124,8 @@ public:
   inline void SetGravityScaling(float fValue);
   
   void SetCollisionInfo(int iLayer, int iGroup, int iSubsystem, int iSubsystemDontCollideWith);
+  
+  void UpdateBoundingVolume();
 
   float Static_Friction;                 ///< Default static friction for surfaces hit.
   float Dynamic_Friction;                ///< Default dynamic friction for surfaces hit.
@@ -300,9 +313,9 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131218)
+ * Havok SDK - Base file, BUILD(#20140327)
  * 
- * Confidential Information of Havok.  (C) Copyright 1999-2013
+ * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok
  * Logo, and the Havok buzzsaw logo are trademarks of Havok.  Title, ownership
  * rights, and intellectual property rights in the Havok software remain in

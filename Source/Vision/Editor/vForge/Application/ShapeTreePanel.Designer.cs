@@ -4,6 +4,7 @@ using System.Drawing;
 using System.ComponentModel;
 using System.Collections;
 using CSharpFramework;
+using CSharpFramework.Controls;
 
 namespace Editor
 {
@@ -195,12 +196,18 @@ namespace Editor
       this.toolStripSplitButton_ToolsOptions = new System.Windows.Forms.ToolStripSplitButton();
       this.toolStripSplitButton_AutomaticFocus = new System.Windows.Forms.ToolStripMenuItem();
       this.toolStripSplitButton_PropertiesOnSelection = new System.Windows.Forms.ToolStripMenuItem();
+      this.toolStripSeparator6 = new System.Windows.Forms.ToolStripSeparator();
+      this.toolStripLabelSearch = new System.Windows.Forms.ToolStripLabel();
+      this.searchPanel = new CSharpFramework.Controls.IncrementalSearchPanel();
+      this.toolStripSeparator7 = new System.Windows.Forms.ToolStripSeparator();
       this.panel_UpdateLayer = new System.Windows.Forms.TableLayoutPanel();
       this.pictureBox_UpdateIcon = new System.Windows.Forms.PictureBox();
       this.flowLayoutPanel1 = new System.Windows.Forms.FlowLayoutPanel();
       this.button_UpdateIgnore = new System.Windows.Forms.Button();
       this.button_LayerUpdate = new System.Windows.Forms.Button();
       this.label1 = new System.Windows.Forms.Label();
+      this.toolStrip_Search = new System.Windows.Forms.ToolStrip();
+      this.toolStripButtonClearSearch = new System.Windows.Forms.ToolStripButton();
       this.contextMenuStrip_Shapes.SuspendLayout();
       this.contextMenuStrip_Layer.SuspendLayout();
       this.toolStrip1.SuspendLayout();
@@ -209,6 +216,7 @@ namespace Editor
       this.panel_UpdateLayer.SuspendLayout();
       ((System.ComponentModel.ISupportInitialize)(this.pictureBox_UpdateIcon)).BeginInit();
       this.flowLayoutPanel1.SuspendLayout();
+      this.toolStrip_Search.SuspendLayout();
       this.SuspendLayout();
       // 
       // shapeTreeView
@@ -217,13 +225,16 @@ namespace Editor
       this.shapeTreeView.AllowMultiSelect = true;
       this.shapeTreeView.ContextMenuStrip = this.contextMenuStrip_Shapes;
       this.shapeTreeView.Dock = System.Windows.Forms.DockStyle.Top;
+      this.shapeTreeView.DrawMode = System.Windows.Forms.TreeViewDrawMode.OwnerDrawText;
       this.shapeTreeView.HideSelection = false;
       this.shapeTreeView.LabelEdit = true;
-      this.shapeTreeView.Location = new System.Drawing.Point(0, 25);
+      this.shapeTreeView.Location = new System.Drawing.Point(0, 50);
       this.shapeTreeView.Name = "shapeTreeView";
       this.shapeTreeView.SelectedNodes = ((System.Collections.ArrayList)(resources.GetObject("shapeTreeView.SelectedNodes")));
-      this.shapeTreeView.Size = new System.Drawing.Size(340, 257);
+      this.shapeTreeView.ShapeFilter = "";
+      this.shapeTreeView.Size = new System.Drawing.Size(397, 257);
       this.shapeTreeView.TabIndex = 1;
+      this.shapeTreeView.UseShapeFilter = false;
       // 
       // contextMenuStrip_Shapes
       // 
@@ -545,9 +556,9 @@ namespace Editor
       // splitter1
       // 
       this.splitter1.Dock = System.Windows.Forms.DockStyle.Top;
-      this.splitter1.Location = new System.Drawing.Point(0, 282);
+      this.splitter1.Location = new System.Drawing.Point(0, 307);
       this.splitter1.Name = "splitter1";
-      this.splitter1.Size = new System.Drawing.Size(340, 3);
+      this.splitter1.Size = new System.Drawing.Size(397, 3);
       this.splitter1.TabIndex = 2;
       this.splitter1.TabStop = false;
       // 
@@ -567,7 +578,7 @@ namespace Editor
             this.toolStripMenuItem_LastSeparator,
             this.renameFileToLayerNameToolStripMenuItem});
       this.contextMenuStrip_Layer.Name = "contextMenuStrip_Layer";
-      this.contextMenuStrip_Layer.Size = new System.Drawing.Size(215, 258);
+      this.contextMenuStrip_Layer.Size = new System.Drawing.Size(215, 236);
       this.contextMenuStrip_Layer.Opening += new System.ComponentModel.CancelEventHandler(this.contextMenuStrip_Layer_Opening);
       // 
       // lockStatusToolStripMenuItem
@@ -686,9 +697,9 @@ namespace Editor
             this.toolStripSeparator1,
             this.toolStripButton_LockUpdate,
             this.toolStripButton_FileRefresh});
-      this.toolStrip1.Location = new System.Drawing.Point(0, 285);
+      this.toolStrip1.Location = new System.Drawing.Point(0, 310);
       this.toolStrip1.Name = "toolStrip1";
-      this.toolStrip1.Size = new System.Drawing.Size(340, 25);
+      this.toolStrip1.Size = new System.Drawing.Size(397, 25);
       this.toolStrip1.TabIndex = 3;
       this.toolStrip1.Text = "toolStrip_Layers";
       // 
@@ -816,13 +827,14 @@ namespace Editor
       this.treeView_Layers.AllowMultiSelect = true;
       this.treeView_Layers.CheckBoxes = true;
       this.treeView_Layers.Dock = System.Windows.Forms.DockStyle.Fill;
+      this.treeView_Layers.DrawMode = System.Windows.Forms.TreeViewDrawMode.OwnerDrawText;
       this.treeView_Layers.HideSelection = false;
       this.treeView_Layers.LabelEdit = true;
-      this.treeView_Layers.Location = new System.Drawing.Point(0, 310);
+      this.treeView_Layers.Location = new System.Drawing.Point(0, 335);
       this.treeView_Layers.Name = "treeView_Layers";
       this.treeView_Layers.SelectedNodes = ((System.Collections.ArrayList)(resources.GetObject("treeView_Layers.SelectedNodes")));
       this.treeView_Layers.ShowNodeToolTips = true;
-      this.treeView_Layers.Size = new System.Drawing.Size(340, 342);
+      this.treeView_Layers.Size = new System.Drawing.Size(397, 317);
       this.treeView_Layers.TabIndex = 4;
       // 
       // contextMenuStrip_Zones
@@ -911,7 +923,7 @@ namespace Editor
             this.toolStripSplitButton_ToolsOptions});
       this.toolStrip_Shapes.Location = new System.Drawing.Point(0, 0);
       this.toolStrip_Shapes.Name = "toolStrip_Shapes";
-      this.toolStrip_Shapes.Size = new System.Drawing.Size(340, 25);
+      this.toolStrip_Shapes.Size = new System.Drawing.Size(397, 25);
       this.toolStrip_Shapes.TabIndex = 0;
       this.toolStrip_Shapes.Text = "toolStrip2";
       // 
@@ -1040,7 +1052,34 @@ namespace Editor
       this.toolStripSplitButton_PropertiesOnSelection.Name = "toolStripSplitButton_PropertiesOnSelection";
       this.toolStripSplitButton_PropertiesOnSelection.Size = new System.Drawing.Size(261, 22);
       this.toolStripSplitButton_PropertiesOnSelection.Text = "Show Properties Panel On Selection";
+      this.toolStripSplitButton_PropertiesOnSelection.Visible = false;
       this.toolStripSplitButton_PropertiesOnSelection.Click += new System.EventHandler(this.toolStripSplitButton_PropertiesOnSelection_Click);
+      // 
+      // toolStripSeparator6
+      // 
+      this.toolStripSeparator6.Name = "toolStripSeparator6";
+      this.toolStripSeparator6.Size = new System.Drawing.Size(6, 25);
+      // 
+      // toolStripLabelSearch
+      // 
+      this.toolStripLabelSearch.Image = ((System.Drawing.Image)(resources.GetObject("toolStripLabelSearch.Image")));
+      this.toolStripLabelSearch.Name = "toolStripLabelSearch";
+      this.toolStripLabelSearch.Size = new System.Drawing.Size(16, 22);
+      this.toolStripLabelSearch.ToolTipText = "Filter shapes according to search term";
+      // 
+      // searchPanel
+      // 
+      this.searchPanel.AutoSize = false;
+      this.searchPanel.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+      this.searchPanel.ForeColor = System.Drawing.Color.Silver;
+      this.searchPanel.Name = "searchPanel";
+      this.searchPanel.Size = new System.Drawing.Size(100, 23);
+      this.searchPanel.Text = "Search";
+      // 
+      // toolStripSeparator7
+      // 
+      this.toolStripSeparator7.Name = "toolStripSeparator7";
+      this.toolStripSeparator7.Size = new System.Drawing.Size(6, 25);
       // 
       // panel_UpdateLayer
       // 
@@ -1058,13 +1097,13 @@ namespace Editor
       this.panel_UpdateLayer.RowCount = 2;
       this.panel_UpdateLayer.RowStyles.Add(new System.Windows.Forms.RowStyle());
       this.panel_UpdateLayer.RowStyles.Add(new System.Windows.Forms.RowStyle());
-      this.panel_UpdateLayer.Size = new System.Drawing.Size(340, 56);
+      this.panel_UpdateLayer.Size = new System.Drawing.Size(397, 56);
       this.panel_UpdateLayer.TabIndex = 6;
       // 
       // pictureBox_UpdateIcon
       // 
-      this.pictureBox_UpdateIcon.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
-            | System.Windows.Forms.AnchorStyles.Left)
+      this.pictureBox_UpdateIcon.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
       this.pictureBox_UpdateIcon.Image = ((System.Drawing.Image)(resources.GetObject("pictureBox_UpdateIcon.Image")));
       this.pictureBox_UpdateIcon.Location = new System.Drawing.Point(6, 6);
@@ -1085,13 +1124,13 @@ namespace Editor
       this.flowLayoutPanel1.FlowDirection = System.Windows.Forms.FlowDirection.RightToLeft;
       this.flowLayoutPanel1.Location = new System.Drawing.Point(43, 24);
       this.flowLayoutPanel1.Name = "flowLayoutPanel1";
-      this.flowLayoutPanel1.Size = new System.Drawing.Size(294, 29);
+      this.flowLayoutPanel1.Size = new System.Drawing.Size(351, 29);
       this.flowLayoutPanel1.TabIndex = 1;
       // 
       // button_UpdateIgnore
       // 
       this.button_UpdateIgnore.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-      this.button_UpdateIgnore.Location = new System.Drawing.Point(231, 3);
+      this.button_UpdateIgnore.Location = new System.Drawing.Point(288, 3);
       this.button_UpdateIgnore.Name = "button_UpdateIgnore";
       this.button_UpdateIgnore.Size = new System.Drawing.Size(60, 23);
       this.button_UpdateIgnore.TabIndex = 2;
@@ -1101,7 +1140,7 @@ namespace Editor
       // button_LayerUpdate
       // 
       this.button_LayerUpdate.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-      this.button_LayerUpdate.Location = new System.Drawing.Point(165, 3);
+      this.button_LayerUpdate.Location = new System.Drawing.Point(222, 3);
       this.button_LayerUpdate.Name = "button_LayerUpdate";
       this.button_LayerUpdate.Size = new System.Drawing.Size(60, 23);
       this.button_LayerUpdate.TabIndex = 1;
@@ -1118,17 +1157,43 @@ namespace Editor
       this.label1.TabIndex = 0;
       this.label1.Text = "One or more layers have been modified";
       // 
+      // toolStrip_Search
+      // 
+      this.toolStrip_Search.GripStyle = System.Windows.Forms.ToolStripGripStyle.Hidden;
+      this.toolStrip_Search.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.toolStripLabelSearch,
+            this.searchPanel,
+            this.toolStripButtonClearSearch});
+      this.toolStrip_Search.Location = new System.Drawing.Point(0, 25);
+      this.toolStrip_Search.Name = "toolStrip_Search";
+      this.toolStrip_Search.Size = new System.Drawing.Size(397, 25);
+      this.toolStrip_Search.TabIndex = 7;
+      this.toolStrip_Search.Text = "toolStrip2";
+      this.toolStrip_Search.Layout += new System.Windows.Forms.LayoutEventHandler(this.toolStrip_Search_Layout);
+      // 
+      // toolStripButtonClearSearch
+      // 
+      this.toolStripButtonClearSearch.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+      this.toolStripButtonClearSearch.Enabled = false;
+      this.toolStripButtonClearSearch.Image = ((System.Drawing.Image)(resources.GetObject("toolStripButtonClearSearch.Image")));
+      this.toolStripButtonClearSearch.ImageTransparentColor = System.Drawing.Color.Magenta;
+      this.toolStripButtonClearSearch.Name = "toolStripButtonClearSearch";
+      this.toolStripButtonClearSearch.Size = new System.Drawing.Size(23, 22);
+      this.toolStripButtonClearSearch.ToolTipText = "Clear Search";
+      this.toolStripButtonClearSearch.Click += new System.EventHandler(this.toolStripButtonClearSearch_Click);
+      // 
       // ShapeTreePanel
       // 
       this.AutoScaleBaseSize = new System.Drawing.Size(5, 13);
-      this.ClientSize = new System.Drawing.Size(340, 652);
+      this.ClientSize = new System.Drawing.Size(397, 652);
       this.Controls.Add(this.panel_UpdateLayer);
       this.Controls.Add(this.treeView_Layers);
       this.Controls.Add(this.toolStrip1);
       this.Controls.Add(this.splitter1);
       this.Controls.Add(this.shapeTreeView);
+      this.Controls.Add(this.toolStrip_Search);
       this.Controls.Add(this.toolStrip_Shapes);
-      this.DockableAreas = ((WeifenLuo.WinFormsUI.DockAreas)(((WeifenLuo.WinFormsUI.DockAreas.Float | WeifenLuo.WinFormsUI.DockAreas.DockLeft)
+      this.DockableAreas = ((WeifenLuo.WinFormsUI.DockAreas)(((WeifenLuo.WinFormsUI.DockAreas.Float | WeifenLuo.WinFormsUI.DockAreas.DockLeft) 
             | WeifenLuo.WinFormsUI.DockAreas.DockRight)));
       this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
       this.Name = "ShapeTreePanel";
@@ -1146,6 +1211,8 @@ namespace Editor
       this.panel_UpdateLayer.PerformLayout();
       ((System.ComponentModel.ISupportInitialize)(this.pictureBox_UpdateIcon)).EndInit();
       this.flowLayoutPanel1.ResumeLayout(false);
+      this.toolStrip_Search.ResumeLayout(false);
+      this.toolStrip_Search.PerformLayout();
       this.ResumeLayout(false);
       this.PerformLayout();
 
@@ -1165,6 +1232,7 @@ namespace Editor
       //EditorManager.SceneChanged -= new SceneChangedEventHandler(layerListView.OnSceneChanged);
 
       CSharpFramework.Layer.ActiveShapeChanged -= new CSharpFramework.Layer.ActiveShapeChangedEventHandler(Layer_ActiveShapeChanged);
+      searchPanel.FilterChanged -= new EventHandler(searchPanel_FilterChanged);
 
       if (disposing)
       {
@@ -1175,5 +1243,12 @@ namespace Editor
       }
       base.Dispose(disposing);
     }
+
+    private ToolStripSeparator toolStripSeparator6;
+    private ToolStripLabel toolStripLabelSearch;
+    private IncrementalSearchPanel searchPanel;
+    private ToolStripSeparator toolStripSeparator7;
+    private ToolStrip toolStrip_Search;
+    private ToolStripButton toolStripButtonClearSearch;    
   }
 }

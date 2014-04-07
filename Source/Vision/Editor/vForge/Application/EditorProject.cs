@@ -2,7 +2,7 @@
  *
  * Confidential Information of Telekinesys Research Limited (t/a Havok). Not for disclosure or distribution without Havok's
  * prior written consent. This software contains code, techniques and know-how which is confidential and proprietary to Havok.
- * Product and Trade Secret source code contains trade secrets of Havok. Havok Software (C) Copyright 1999-2013 Telekinesys Research Limited t/a Havok. All Rights Reserved. Use of this software is subject to the terms of an end user license agreement.
+ * Product and Trade Secret source code contains trade secrets of Havok. Havok Software (C) Copyright 1999-2014 Telekinesys Research Limited t/a Havok. All Rights Reserved. Use of this software is subject to the terms of an end user license agreement.
  *
  */
 
@@ -16,6 +16,7 @@ using CSharpFramework.Dialogs;
 using AssetManagementManaged;
 using System.Diagnostics;
 using Editor.Dialogs;
+using System.Collections.Generic;
 
 namespace Editor
 {
@@ -182,38 +183,19 @@ namespace Editor
     /// <returns></returns>
     public override bool Close()
     {
-      if (Scene!=null)
+      if (Scene != null)
         Scene.Close();
+
+      SendProjectClosingEvent();
+
       EditorApp.Project = null;
       EditorApp.Scene = null;
 
-      //Remove the project directory from the engine base data directory
-      EditorApp.EngineManager.File_RemoveSearchPath(ProjectSearchPath);
-      RemoveAllCustomDataDirectories();
-
-      EditorApp.EngineManager.File_RemoveFileSystem("workspace");
-
-      // empty all class managers (before engine.DeInit so that native code can be executed)
-      EditorManager.EngineManager.RefreshEntityClassManager();
-      EditorManager.EngineManager.RefreshShaderEffectManager();
-      EditorManager.EngineManager.RefreshComponentClassManager();
-
-      EditorApp.EngineManager.DeInitEngine();
-
-      // Unload plugins after DeInit (when all references to plugin components/entities are gone)
-      EditorManager.EngineManager.Plugins_UnloadAllEnginePlugins();
-
-      // Unload the project specific editor plugins
-      PluginManager.UnloadPlugins(EditorPlugins);
-      EditorManager.DeInitializeNonStandardPlugins();
-
-      EditorPlugins = null;
-
-      ProjectDir = "";
-      FileName = "";
-
-      // Deactivate RCS system
-      UpdateRCSStatus(false);
+      while (_deinitStack.Count > 0)
+      {
+        Action deinitAction = _deinitStack.Pop();
+        deinitAction();
+      }
 
       return true;
     }
@@ -260,15 +242,20 @@ namespace Editor
       }
 
       proj.FileName = projextname;
-      if (proj.Load(projfile))
+
+      try
       {
+        proj.Load(projfile);
+
         //Add the project file
         ManagedBase.RCS.GetProvider().AddFile(projfile, true /* Binary file - but files are until now empty, should we place text in there this needs to be changed */);
       }
-      else
+      catch(Exception ex)
       {
+        EditorManager.DumpException(ex);
         proj = null;
       }
+
       return proj;
     }
 
@@ -276,95 +263,170 @@ namespace Editor
     /// Actually load the project
     /// </summary>
     /// <param name="filename"></param>
-    /// <returns></returns>
-    public bool Load(string filename)
+    public void Load(string filename)
     {
       if (!File.Exists(filename))
-        return false;
-
-      EditorManager.EngineManager.InitFileHandling();
-      EditorManager.EngineManager.SetBaseDataPath(EditorManager.BaseDataDir);
-      EditorManager.EngineManager.SetEditorDataPath(EditorManager.AppDataDir);
-
-      m_filename = filename;
-      string projectDirNoEndingSlash = Path.GetDirectoryName(filename).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-      ProjectDir = projectDirNoEndingSlash + Path.DirectorySeparatorChar;
-
-      //Nothing to read at the moment...
-      //We don't want to put user specific data in the project file anyway
-      //Handle file string earlier to use RCS.
-      this.FileName = Path.GetFileName(filename);
-
-      EditorManager.EngineManager.SetProjectPath(Path.GetDirectoryName(PathName));
-
-      // Open MultiUser Editing Dialog
-      if (!TestManager.IsRunning && !EditorManager.SilentMode && EditorManager.Settings.OpenMultiUserEditingDialogOnProjectLoad)
       {
-        if (DetectFolderType() != FolderType_e.Local || EditorManager.Settings.OpenMultiUserEditingDialogForLocalProjects)
+        throw new FileNotFoundException("Project file not found.");
+      }
+
+      try
+      {
+        SendProjectLoadingEvent();
+
+        EditorManager.EngineManager.InitFileHandling();
+        EditorManager.EngineManager.SetBaseDataPath(EditorManager.BaseDataDir);
+        EditorManager.EngineManager.SetEditorDataPath(EditorManager.AppDataDir);
+
+        _deinitStack.Push(() =>
         {
-          MultiUserEditingDlg dlg = new MultiUserEditingDlg();
-          dlg.ShowInTaskbar = false;
-          dlg.Project = this;
-          if (dlg.ShowDialog() != DialogResult.OK)
-            return false;
+          //Remove the project directory from the engine base data directory
+          EditorApp.EngineManager.File_RemoveSearchPath(ProjectSearchPath);
+          RemoveAllCustomDataDirectories();
+
+          EditorApp.EngineManager.File_RemoveFileSystem("workspace");
+        });
+
+        m_filename = filename;
+        string projectDirNoEndingSlash = Path.GetDirectoryName(filename).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        ProjectDir = projectDirNoEndingSlash + Path.DirectorySeparatorChar;
+
+        //Nothing to read at the moment...
+        //We don't want to put user specific data in the project file anyway
+        //Handle file string earlier to use RCS.
+        this.FileName = Path.GetFileName(filename);
+
+        _deinitStack.Push(() =>
+        {
+          ProjectDir = "";
+          FileName = "";
+        });
+
+        EditorManager.EngineManager.SetProjectPath(Path.GetDirectoryName(PathName));
+
+        // Open MultiUser Editing Dialog
+        if (!TestManager.IsRunning && !EditorManager.SilentMode && EditorManager.Settings.OpenMultiUserEditingDialogOnProjectLoad)
+        {
+          if (DetectFolderType() != FolderType_e.Local || EditorManager.Settings.OpenMultiUserEditingDialogForLocalProjects)
+          {
+            MultiUserEditingDlg dlg = new MultiUserEditingDlg();
+            dlg.ShowInTaskbar = false;
+            dlg.Project = this;
+            if (dlg.ShowDialog() != DialogResult.OK)
+            {
+              throw new Exception("No multi-user editing option selected.");
+            }
+          }
         }
-      }
 
-      // Select and activate the right RCS system. User cannot abort this operation.
-      // If updating the RCS status fails we break up loading the project.
-      if (!UpdateRCSStatus(true))
-        return false;
+        // Select and activate the right RCS system. User cannot abort this operation.
+        // If updating the RCS status fails we break up loading the project.
+        if (!UpdateRCSStatus(true))
+        {
+          throw new Exception("Failed to update RCS status.");
+        }
 
-      if (!EnsureValidWorkspace())
-        return false;
+        // Setup RCS changelist
+        if (ManagedBase.RCS.GetProvider() != null)
+        {
+          string sChangeListDescription = "vForge";
+          if (EditorManager.Settings.CreateSeparateChangelists)
+          {
+            string sDirName = Path.GetFileName(projectDirNoEndingSlash);
+            sChangeListDescription += " - " + sDirName;
+          }
+          string sChangelist = ManagedBase.RCS.GetProvider().GetChangelistByDescription(sChangeListDescription, true);
+          if (sChangelist != null)
+            ManagedBase.RCS.GetProvider().SetChangelist(sChangelist);
+        }
 
-      // optionally load plugins from sub directory
-      string additionalPluginDir = AdditionalPluginDir;
+        _deinitStack.Push(() =>
+        {
+          // Deactivate RCS system
+          UpdateRCSStatus(false);
+        });
 
-      EditorManager.ProfileManager.InitNewProject(ProjectDir);
+        if (!EnsureValidWorkspace())
+        {
+          throw new Exception("No valid workspace found.");
+        }
 
-      //Add the project directory to the engine base data directory
-      EditorManager.EngineManager.File_AddSearchPath(ProjectSearchPath, SearchPathFlags.Writable | SearchPathFlags.PathMustExist);
+        // optionally load plugins from sub directory
+        string additionalPluginDir = AdditionalPluginDir;
 
-      // Notify the asset manager of automatically added data directories
-      EditorManager.AssetManager.AddDataDirectory(
-        EditorManager.IsCustomBaseDataDir ? ":base_data" : EditorManager.DefaultBaseDataSearchPath, "Base", false, false, true);
-      EditorManager.AssetManager.AddDataDirectory(ProjectSearchPath, new DirectoryInfo(ProjectDir).Name, false, true, true);
+        EditorManager.ProfileManager.InitNewProject(ProjectDir);
 
-      // If a custom simulation data path has been set, add it as a file system.
-      if (EditorManager.IsCustomSimulationDataDir)
-      {
-        EditorManager.EngineManager.File_AddFileSystem("simulation_data", EditorManager.SimulationDataDir, FileSystemFlags.Writable);
-      }
-      // Add the search path for simulation data
-      this.AddCustomDataDirectory(
-        EditorManager.IsCustomSimulationDataDir ? ":simulation_data" : EditorManager.DefaultSimulationDataSearchPath, "Simulation", true, true);
+        //Add the project directory to the engine base data directory
+        EditorManager.EngineManager.File_AddSearchPath(ProjectSearchPath, SearchPathFlags.Writable | SearchPathFlags.PathMustExist);
 
-      // Load the project specific editor plugins (install an assembly resolver to load the
-      // assemblies from the project directory)
-      AppDomain.CurrentDomain.AssemblyResolve += new ResolveEventHandler(ProjectPlugins_AssemblyResolve);
-      EditorPlugins = new EditorPluginCollection();
-      PluginManager.LoadPlugins(ProjectDir, EditorPlugins);
-      if (additionalPluginDir!=null)
-        PluginManager.LoadPlugins(additionalPluginDir, EditorPlugins);
-      AppDomain.CurrentDomain.AssemblyResolve -= new ResolveEventHandler(ProjectPlugins_AssemblyResolve);
+        // Notify the asset manager of automatically added data directories
+        EditorManager.AssetManager.AddDataDirectory(
+          EditorManager.IsCustomBaseDataDir ? ":base_data" : EditorManager.DefaultBaseDataSearchPath, "Base", false, false, true);
+        EditorManager.AssetManager.AddDataDirectory(ProjectSearchPath, new DirectoryInfo(ProjectDir).Name, false, true, true);
 
-      //Load the entity plugins (so they can register their application) before engine init
+        // If a custom simulation data path has been set, add it as a file system.
+        if (EditorManager.IsCustomSimulationDataDir)
+        {
+          EditorManager.EngineManager.File_AddFileSystem("simulation_data", EditorManager.SimulationDataDir, FileSystemFlags.Writable);
+        }
+        // Add the search path for simulation data
+        this.AddCustomDataDirectory(
+          EditorManager.IsCustomSimulationDataDir ? ":simulation_data" : EditorManager.DefaultSimulationDataSearchPath, "Simulation", true, true);
+
+        // Load the project specific editor plugins (install an assembly resolver to load the
+        // assemblies from the project directory)
+        AppDomain.CurrentDomain.AssemblyResolve += new ResolveEventHandler(ProjectPlugins_AssemblyResolve);
+        EditorPlugins = new EditorPluginCollection();
+        PluginManager.LoadPlugins(ProjectDir, EditorPlugins);
+        if (additionalPluginDir != null)
+          PluginManager.LoadPlugins(additionalPluginDir, EditorPlugins);
+        AppDomain.CurrentDomain.AssemblyResolve -= new ResolveEventHandler(ProjectPlugins_AssemblyResolve);
+
+        //Load the entity plugins (so they can register their application) before engine init
       EditorManager.EngineManager.Plugins_LoadAllEnginePlugins(projectDirNoEndingSlash);
-      if (additionalPluginDir != null)
-        EditorManager.EngineManager.Plugins_LoadAllEnginePlugins(additionalPluginDir);
-      // load the manifest file which may contain additional engine plugins:
-      EditorManager.LoadManifestFile(this,Path.Combine(projectDirNoEndingSlash,"vForgeManifest.txt"));
+        if (additionalPluginDir != null)
+          EditorManager.EngineManager.Plugins_LoadAllEnginePlugins(additionalPluginDir);
 
-      EditorManager.EngineManager.RefreshEntityClassManager();
-      EditorManager.EngineManager.RefreshShaderEffectManager();
-      EditorManager.EngineManager.RefreshComponentClassManager();
+        // load the manifest file which may contain additional engine plugins:
+        EditorManager.LoadManifestFile(this,Path.Combine(projectDirNoEndingSlash,"vForgeManifest.txt"));
 
-      //Initialize the engine
-      if (!EditorApp.EngineManager.InitEngine())
-        return false;
+        _deinitStack.Push(() =>
+        {
+          // Unload plugins after DeInit (when all references to plugin components/entities are gone)
+          EditorManager.EngineManager.Plugins_UnloadAllEnginePlugins();
 
-      return true;
+          // Unload the project specific editor plugins
+          PluginManager.UnloadPlugins(EditorPlugins);
+          EditorManager.DeInitializeNonStandardPlugins();
+
+          EditorPlugins = null;
+        });
+
+        EditorManager.EngineManager.RefreshEntityClassManager();
+        EditorManager.EngineManager.RefreshShaderEffectManager();
+        EditorManager.EngineManager.RefreshComponentClassManager();
+
+        //Initialize the engine
+        if (!EditorApp.EngineManager.InitEngine())
+        {
+          throw new Exception("Failed to initialize engine. Please check the engine log for more details.");
+        }
+
+        _deinitStack.Push(() =>
+        {
+          // empty all class managers (before engine.DeInit so that native code can be executed)
+          EditorManager.EngineManager.RefreshEntityClassManager();
+          EditorManager.EngineManager.RefreshShaderEffectManager();
+          EditorManager.EngineManager.RefreshComponentClassManager();
+
+          EditorApp.EngineManager.DeInitEngine();
+        });
+      }
+      catch
+      {
+        Close();
+        throw;
+      }
     }
 
 
@@ -604,6 +666,9 @@ namespace Editor
 
     private bool m_bDirty;
 
+    // Actions to be performed during closing of the project, matching the calls during loading in reverse order.
+    private Stack<Action> _deinitStack = new Stack<Action>();
+
     #endregion
 
     /// <summary>
@@ -618,9 +683,9 @@ namespace Editor
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131218)
+ * Havok SDK - Base file, BUILD(#20140328)
  * 
- * Confidential Information of Havok.  (C) Copyright 1999-2013
+ * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok
  * Logo, and the Havok buzzsaw logo are trademarks of Havok.  Title, ownership
  * rights, and intellectual property rights in the Havok software remain in

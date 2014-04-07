@@ -2,7 +2,7 @@
  *
  * Confidential Information of Telekinesys Research Limited (t/a Havok). Not for disclosure or distribution without Havok's
  * prior written consent. This software contains code, techniques and know-how which is confidential and proprietary to Havok.
- * Product and Trade Secret source code contains trade secrets of Havok. Havok Software (C) Copyright 1999-2013 Telekinesys Research Limited t/a Havok. All Rights Reserved. Use of this software is subject to the terms of an end user license agreement.
+ * Product and Trade Secret source code contains trade secrets of Havok. Havok Software (C) Copyright 1999-2014 Telekinesys Research Limited t/a Havok. All Rights Reserved. Use of this software is subject to the terms of an end user license agreement.
  *
  */
 
@@ -30,7 +30,7 @@ public:
 
   bool IsVisibleInAnyContext() const;
   
-  const char * GetFileName() const;
+  const char* GetFileName() const;
 
   void SetPaused(bool bPaused);
 
@@ -42,12 +42,24 @@ public:
 
   void SetHandleInput(bool bEnable);
   
-  VScaleformValue* GetVariable(const char * szVarName);
+  const VScaleformVariable GetVariable(const char* szVarName);
+  const VScaleformValue GetVariableValue(const char* szVarName);
 };
 
 //add lua tostring and concat operators
 VSWIG_CREATE_CONCAT(VScaleformMovieInstance, 256, "[%s]", self->GetFileName())
 VSWIG_CREATE_TOSTRING(VScaleformMovieInstance, "VScaleformMovieInstance: '%s'", self->GetFileName())
+
+// Implement Invoke() as native as it takes a variable number of arguments.
+%native(VScaleformMovieInstance_Invoke) int VScaleformMovieInstance_Invoke(lua_State *L);
+%{
+  SWIGINTERN int VScaleformMovieInstance_Invoke(lua_State *L)
+  {
+    IS_MEMBER_OF(VScaleformMovieInstance) // This will move this function to the method table of the specified class.
+
+    return VScaleform_Invoke(L, VScaleformMovieInstance);
+  }
+%}
 
 //implement GetPosition native because we would like to return two values at once
 %native(VScaleformMovieInstance_GetPosition) int VScaleformMovieInstance_GetPosition(lua_State *L);
@@ -233,20 +245,54 @@ public:
   /// \param enable Set to false to stop further input handling. Default is true.
   void SetHandleInput(boolean enable);
   
-  /// \brief  Gets a variable from the Scaleform movie.
+  /// \brief  Returns a variable from the Scaleform movie.
+  ///
+  /// As opposed to GetVariableValue, this function returns a direct handle to the variable.
+  /// This means that the value of the handle will always be in sync with the ActionScript state.
+  ///
   /// \param  varName  The name of the variable including path in the movie (e.g. '_root/MyVar').
-  /// \return null if it fails, else the wrapped variable.
+  /// \return  Variable with undefined value if not present, else the wrapped variable.
+  ///
   /// \par Example
   ///   \code
   ///     ...
-  ///     if var==nil then
-  ///       var = movie:GetVariable("_root.mainMenu")
-  ///     else
-  ///       var:Display_SetXYRotation(x, y); -- create a 3Di effect
-  ///     end
+  ///     variable = movie:GetVariable("_root.mainMenu") -- Returns the handle to the variable that currently holds a reference to a display object.
+  ///     variable:Display_SetXYRotation(x, y); -- Rotate the display object.
+  ///     ...
+  ///     variabler2 = movie:GetVariable("_root.counter) -- Counter is an integer value.
+  ///     variable2.SetNumber(1.5) -- The value is in sync with the ActionScript variable.
   ///     ...
   ///   \endcode
   VScaleformValue GetVariable(string varName);
+
+  /// \brief  Returns the value of a variable from the Scaleform movie.
+  ///
+  /// As opposed to GetVariable, this method only returns the value of the variable.
+  /// If the value of the variable is only needed once, this method should be preferred.
+  ///
+  /// \param  varName  The name of the variable including path in the movie (e.g. '_root/MyVar').
+  /// \return  Value of the variable. Undefined value if not present.
+  ///
+  /// \par Example
+  ///   \code
+  ///     ...
+  ///     value = movie:GetVariableValue("_root.mainMenu") -- Returns the reference to a display object as the value.
+  ///     value:Display_SetXYRotation(x, y); -- Rotate the display object.
+  ///     ...
+  ///     value2 = movie:GetVariableValue("_root.counter) -- Counter is an integer value.
+  ///     value2.SetNumber(1.5) -- The value is only a copy from the ActionScript state, so this call will only modify the LUA object.
+  ///     ...
+  ///   \endcode
+  VScaleformValue GetVariableValue(string varName);
+
+  /// \brief
+  ///   Invokes the function on the movie and returns the return value.
+  ///
+  /// \param functionName
+  ///   The name of the function.
+  /// \param ...
+  ///   Optional arguments for the function call.
+  VScaleformValue Invoke(string functionName, ...);
   
   /// @}
   ///
@@ -256,9 +302,9 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131218)
+ * Havok SDK - Base file, BUILD(#20140327)
  * 
- * Confidential Information of Havok.  (C) Copyright 1999-2013
+ * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok
  * Logo, and the Havok buzzsaw logo are trademarks of Havok.  Title, ownership
  * rights, and intellectual property rights in the Havok software remain in

@@ -2,7 +2,7 @@
  *
  * Confidential Information of Telekinesys Research Limited (t/a Havok). Not for disclosure or distribution without Havok's
  * prior written consent. This software contains code, techniques and know-how which is confidential and proprietary to Havok.
- * Product and Trade Secret source code contains trade secrets of Havok. Havok Software (C) Copyright 1999-2013 Telekinesys Research Limited t/a Havok. All Rights Reserved. Use of this software is subject to the terms of an end user license agreement.
+ * Product and Trade Secret source code contains trade secrets of Havok. Havok Software (C) Copyright 1999-2014 Telekinesys Research Limited t/a Havok. All Rights Reserved. Use of this software is subject to the terms of an end user license agreement.
  *
  */
 
@@ -12,14 +12,10 @@
 
 #if defined(WIN32) && !defined(HK_ANARCHY)
 //remove USE_SF_IME and recompile the vScaleForm plugin if you haven't purchased ScaleformIME (included in VisionPlus)
-//FIXME Bug HS#11455 #define USE_SF_IME
+#define USE_SF_IME
 #endif
 
-#if defined(VISIONDLL_ISPLUGIN) || defined(SCALEFORMPLUGIN_IMPORTS) || defined(SCALEFORMPLUGIN_EXPORTS)
-  #include <Vision/Runtime/EnginePlugins/ThirdParty/ScaleformEnginePlugin/VScaleformImpExp.hpp>
-#else
-  #define SCALEFORM_IMPEXP
-#endif
+#include <Vision/Runtime/EnginePlugins/ThirdParty/ScaleformEnginePlugin/VScaleformImpExp.hpp>
 
 enum SF_CONSTANTS
 {
@@ -130,6 +126,7 @@ public:
   SCALEFORM_IMPEXP void WaitForAllTasks();
 
   /// @}
+
   /// @name Movie Loading/Unloading
   /// @{
 
@@ -186,6 +183,7 @@ public:
   SCALEFORM_IMPEXP void UnloadAllMovies();
 
   /// @}
+
   /// @name Input Handling
   /// @{
  
@@ -297,9 +295,10 @@ public:
   /// \return The cursor index from 0 to SF_MAX_CURSOR_NUM-1.
   inline int GetActiveCursor() { return m_iLastActiveCursor; }
 
-#ifdef WIN32
-  
   /// @}
+
+#if defined(WIN32)
+
   /// @name Font Configuration
   /// @{
   
@@ -315,10 +314,11 @@ public:
   /// \return true if it succeeds, false if it fails.
   /// \see ApplyFontToTheLoader
   SCALEFORM_IMPEXP bool ApplyFontConfig(const char *szConfigName);
+
+  /// @}
   
 #endif
-  
-  /// @}
+
   /// @name Loader Methods (only use result pointers when linking statically!)
   /// @{
 
@@ -331,6 +331,7 @@ public:
   SCALEFORM_IMPEXP Scaleform::GFx::Loader* CreateLoader();
 
   /// @}
+
   /// @name Rendering Related Methods
   /// @{
 
@@ -343,6 +344,7 @@ public:
   SCALEFORM_IMPEXP void RenderMovies(VScaleformMovieInstance** ppInstances, unsigned int iCount);
 
   /// @}
+
   /// @name Rendering Related Methods (only use result pointers when linking statically!)
   /// @{
 
@@ -358,6 +360,7 @@ public:
   #endif
 
   /// @}
+
   /// @name Internal Methods
   /// @{
 
@@ -368,6 +371,7 @@ public:
   virtual ~VScaleformManager();
 
   /// @}
+
   /// @name Scaleform Key Codes (for input mapping)
   /// @{
 
@@ -413,6 +417,19 @@ public:
   SCALEFORM_IMPEXP static const int SF_KEY_ICO_00;	 //  00 key on ICO
   
   /// @}
+
+  /// @name Callbacks
+  /// @{
+
+  /// \brief
+  ///   Triggered right before the Scaleform movies are being advanced.
+  ///
+  /// This is a good place to access VScaleformValue objects since no Advance tasks
+  /// are currently running. Thus the access doesn't need to be synchronized which improves performance.
+  VisCallback_cl OnBeforeAdvanceMovies;
+
+  /// @}
+
 protected:
   /// @name Callback Handling
   /// @{
@@ -553,9 +570,9 @@ private:
 #endif // VSCALEFORMMANAGER_HPP_INCLUDED
 
 /*
- * Havok SDK - Base file, BUILD(#20131218)
+ * Havok SDK - Base file, BUILD(#20140327)
  * 
- * Confidential Information of Havok.  (C) Copyright 1999-2013
+ * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok
  * Logo, and the Havok buzzsaw logo are trademarks of Havok.  Title, ownership
  * rights, and intellectual property rights in the Havok software remain in

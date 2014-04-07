@@ -2,7 +2,7 @@
  *
  * Confidential Information of Telekinesys Research Limited (t/a Havok). Not for disclosure or distribution without Havok's
  * prior written consent. This software contains code, techniques and know-how which is confidential and proprietary to Havok.
- * Product and Trade Secret source code contains trade secrets of Havok. Havok Software (C) Copyright 1999-2013 Telekinesys Research Limited t/a Havok. All Rights Reserved. Use of this software is subject to the terms of an end user license agreement.
+ * Product and Trade Secret source code contains trade secrets of Havok. Havok Software (C) Copyright 1999-2014 Telekinesys Research Limited t/a Havok. All Rights Reserved. Use of this software is subject to the terms of an end user license agreement.
  *
  */
 
@@ -657,15 +657,15 @@ void vHavokBehaviorComponent::GetProjectPath(hkStringBuf& projectPath) const
 {
   VFileAccessManager::AbsolutePathResult projectAbsRes;
   if (VFileAccessManager::GetInstance()->MakePathAbsolute(m_projectName, projectAbsRes, VFileSystemAccessMode::READ_NO_REDIRECT, VFileSystemElementType::FILE) == HKV_SUCCESS)
-  {
+	{
     projectPath = projectAbsRes.m_sAbsolutePath;
   }
   else
-  {
+				{
     projectPath = m_projectName;
-  }
+	}
 
-  projectPath.pathNormalize();
+	projectPath.pathNormalize();
 }
 
 const hkQsTransform& vHavokBehaviorComponent::GetWorldFromModel() const
@@ -693,7 +693,19 @@ bool vHavokBehaviorComponent::IsNodeActive(const char* nodeName)
 	return false;
 }
 
-void vHavokBehaviorComponent::SetFloatVar(const char* variableName, float value)
+bool vHavokBehaviorComponent::HasVariable(const char* variableName) const
+{
+	if ( m_character != HK_NULL )
+	{
+		hkbWorld* world = m_character->getWorld();
+		hkbBehaviorGraph* behavior = m_character->getBehavior();
+		int idx = world->getVariableId(variableName);
+		return idx >= 0 && behavior->hasVariable( idx );
+	}
+	return false;
+}
+
+bool vHavokBehaviorComponent::SetFloatVar(const char* variableName, float value)
 {
 	// If there is an error we may not have a character.
 	// But Script will still happily call into this function.
@@ -706,8 +718,10 @@ void vHavokBehaviorComponent::SetFloatVar(const char* variableName, float value)
 		if ( idx >= 0 && behavior->hasVariable( idx )  )
 		{
 			behavior->setVariableValueWord( idx, value, true );
+			return true;
 		}
 	}
+	return false;
 }
 
 float vHavokBehaviorComponent::GetFloatVar(const char* variableName)
@@ -728,7 +742,25 @@ float vHavokBehaviorComponent::GetFloatVar(const char* variableName)
 	return 0.0f;
 }
 
-void vHavokBehaviorComponent::SetWordVar(const char* variableName, int value)
+int vHavokBehaviorComponent::GetWordVar(const char* variableName)
+{
+	if ( m_character != HK_NULL )
+	{
+		hkbWorld* world = m_character->getWorld();
+		hkbBehaviorGraph* behavior = m_character->getBehavior();
+		int idx = world->getVariableId(variableName);
+
+		if ( idx >= 0 && behavior->hasVariable( idx ) )
+		{
+			int value = behavior->getVariableValueWord<int>( idx );
+			return value;
+		}
+	}
+
+	return 0;
+}
+
+bool vHavokBehaviorComponent::SetWordVar(const char* variableName, int value)
 {
 	if ( m_character != HK_NULL )
 	{
@@ -739,11 +771,13 @@ void vHavokBehaviorComponent::SetWordVar(const char* variableName, int value)
 		if ( idx >= 0 && behavior->hasVariable( idx )  )
 		{
 			behavior->setVariableValueWord( idx, value, true );
+			return true;
 		}
 	}
+	return false;
 }
 
-void vHavokBehaviorComponent::SetBoolVar(const char* variableName, bool value)
+bool vHavokBehaviorComponent::SetBoolVar(const char* variableName, bool value)
 {
 	// If there is an error we may not have a character.
 	// But Script will still happily call into this function.
@@ -756,8 +790,10 @@ void vHavokBehaviorComponent::SetBoolVar(const char* variableName, bool value)
 		if ( idx >= 0 && behavior->hasVariable( idx ) )
 		{
 			behavior->setVariableValueWord<hkUint8>( idx, value );
+			return true;
 		}
 	}
+	return false;
 }
 
 bool vHavokBehaviorComponent::GetBoolVar(const char* variableName) const
@@ -778,7 +814,7 @@ bool vHavokBehaviorComponent::GetBoolVar(const char* variableName) const
 	return false;
 }
 
-void vHavokBehaviorComponent::TriggerEvent(const char* eventName) const
+bool vHavokBehaviorComponent::TriggerEvent(const char* eventName) const
 {
 	if ( m_character != HK_NULL )
 	{
@@ -790,8 +826,10 @@ void vHavokBehaviorComponent::TriggerEvent(const char* eventName) const
 		if ( idx >=0 && behavior->getInternalEventId( idx ) >= 0 )
 		{
 			m_character->getEventQueue()->enqueueWithExternalId(idx);
+			return true;
 		}
 	}
+  return false;
 }
 
 void vHavokBehaviorComponent::RegisterEventHandler(const char* eventName)
@@ -905,9 +943,9 @@ START_VAR_TABLE(vHavokBehaviorComponent, IVObjectComponent, "Havok Behavior Char
 END_VAR_TABLE
 
 /*
- * Havok SDK - Base file, BUILD(#20131218)
+ * Havok SDK - Base file, BUILD(#20140327)
  * 
- * Confidential Information of Havok.  (C) Copyright 1999-2013
+ * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok
  * Logo, and the Havok buzzsaw logo are trademarks of Havok.  Title, ownership
  * rights, and intellectual property rights in the Havok software remain in

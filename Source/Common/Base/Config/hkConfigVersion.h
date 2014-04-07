@@ -2,7 +2,7 @@
  *
  * Confidential Information of Telekinesys Research Limited (t/a Havok). Not for disclosure or distribution without Havok's
  * prior written consent. This software contains code, techniques and know-how which is confidential and proprietary to Havok.
- * Product and Trade Secret source code contains trade secrets of Havok. Havok Software (C) Copyright 1999-2013 Telekinesys Research Limited t/a Havok. All Rights Reserved. Use of this software is subject to the terms of an end user license agreement.
+ * Product and Trade Secret source code contains trade secrets of Havok. Havok Software (C) Copyright 1999-2014 Telekinesys Research Limited t/a Havok. All Rights Reserved. Use of this software is subject to the terms of an end user license agreement.
  *
  */
 
@@ -24,8 +24,8 @@
 #ifndef HK_BASE_CONFIGVERSION_H
 #define HK_BASE_CONFIGVERSION_H
 
-#define HAVOK_SDK_VERSION_MAJOR 2013
-#define HAVOK_SDK_VERSION_MINOR 2
+#define HAVOK_SDK_VERSION_MAJOR 2014
+#define HAVOK_SDK_VERSION_MINOR 0
 #define HAVOK_SDK_VERSION_POINT 5
 
 // Release id must be less than 3 chars to fit in binary packfile header.
@@ -50,20 +50,21 @@
 #define HK_STRING2011 "2011"
 #define HK_STRING2012 "2012"
 #define HK_STRING2013 "2013"
+#define HK_STRING2014 "2014"
 #define HK_NUM_TO_STR(NUM) HK_STRING##NUM
 #define HAVOK_SDK_VERSION_STRING_SPEC(MAJOR,MINOR,POINT,RELEASE) HK_NUM_TO_STR(MAJOR) "." HK_NUM_TO_STR(MINOR) "." HK_NUM_TO_STR(POINT) "-" RELEASE
 
 #define HAVOK_SDK_VERSION_NUM_STRING  HAVOK_SDK_VERSION_STRING_SPEC(HAVOK_SDK_VERSION_MAJOR, HAVOK_SDK_VERSION_MINOR, HAVOK_SDK_VERSION_POINT, HAVOK_SDK_VERSION_RELEASE) // e.g. "2010.1.0-r1"
 #define HAVOK_SDK_VERSION_STRING      "hk_" HAVOK_SDK_VERSION_NUM_STRING // e.g. "hk_2010.1.0-r1"
 
-#define HAVOK_BUILD_NUMBER 20131217
+#define HAVOK_BUILD_NUMBER 0
 
 #endif // HK_BASE_CONFIGVERSION_H
 
 /*
- * Havok SDK - Base file, BUILD(#20131218)
+ * Havok SDK - Base file, BUILD(#20140327)
  * 
- * Confidential Information of Havok.  (C) Copyright 1999-2013
+ * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok
  * Logo, and the Havok buzzsaw logo are trademarks of Havok.  Title, ownership
  * rights, and intellectual property rights in the Havok software remain in

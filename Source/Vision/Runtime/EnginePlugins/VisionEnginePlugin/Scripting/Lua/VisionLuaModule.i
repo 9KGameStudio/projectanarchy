@@ -2,7 +2,7 @@
  *
  * Confidential Information of Telekinesys Research Limited (t/a Havok). Not for disclosure or distribution without Havok's
  * prior written consent. This software contains code, techniques and know-how which is confidential and proprietary to Havok.
- * Product and Trade Secret source code contains trade secrets of Havok. Havok Software (C) Copyright 1999-2013 Telekinesys Research Limited t/a Havok. All Rights Reserved. Use of this software is subject to the terms of an end user license agreement.
+ * Product and Trade Secret source code contains trade secrets of Havok. Havok Software (C) Copyright 1999-2014 Telekinesys Research Limited t/a Havok. All Rights Reserved. Use of this software is subject to the terms of an end user license agreement.
  *
  */
 
@@ -39,6 +39,7 @@
   #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Scripting/Lua/VScriptDebug_wrapper.hpp>
   #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Scripting/Lua/VScriptScreen_wrapper.hpp>
   #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Scripting/Lua/VScriptRenderer_wrapper.hpp>
+  #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Scripting/Lua/VScriptWorld_wrapper.hpp>
   #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Scripting/Lua/VScriptUtil_wrapper.hpp>
   #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Scripting/Lua/VScriptApp_wrapper.hpp>
   #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Scripting/Lua/VBitmask.hpp>
@@ -127,6 +128,7 @@
 %include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Scripting/Lua/VScriptInput_wrapper.i>;
 %include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Scripting/Lua/VScriptUtil_wrapper.i>;
 %include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Scripting/Lua/VScriptRenderer_wrapper.i>;
+%include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Scripting/Lua/VScriptWorld_wrapper.i>;
 %include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Scripting/Lua/VScriptScreen_wrapper.i>;
 %include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Scripting/Lua/VScriptFileSystem_wrapper.i>;
 %include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Scripting/Lua/VScriptApp_wrapper.i>;
@@ -453,6 +455,14 @@ public:
   number LIGHT_SPOT     = VIS_LIGHT_SPOTLIGHT;
 
   /// @}
+  /// @name Depth fog modes
+  /// @{
+  
+  number DEPTH_FOG_OFF         = VFogParameters::Off;
+  number DEPTH_FOG_ON          = VFogParameters::On;
+  number DEPTH_FOG_TIME_OF_DAY = VFogParameters::TimeOfDay;
+
+  /// @}
   /// @name Corona Scaling
   /// @{
   
@@ -520,9 +530,9 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131218)
+ * Havok SDK - Base file, BUILD(#20140327)
  * 
- * Confidential Information of Havok.  (C) Copyright 1999-2013
+ * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok
  * Logo, and the Havok buzzsaw logo are trademarks of Havok.  Title, ownership
  * rights, and intellectual property rights in the Havok software remain in

@@ -2,7 +2,7 @@
  *
  * Confidential Information of Telekinesys Research Limited (t/a Havok). Not for disclosure or distribution without Havok's
  * prior written consent. This software contains code, techniques and know-how which is confidential and proprietary to Havok.
- * Product and Trade Secret source code contains trade secrets of Havok. Havok Software (C) Copyright 1999-2013 Telekinesys Research Limited t/a Havok. All Rights Reserved. Use of this software is subject to the terms of an end user license agreement.
+ * Product and Trade Secret source code contains trade secrets of Havok. Havok Software (C) Copyright 1999-2014 Telekinesys Research Limited t/a Havok. All Rights Reserved. Use of this software is subject to the terms of an end user license agreement.
  *
  */
 
@@ -702,13 +702,13 @@ public:
 
   /// \brief Instantiate a prefab.
   /// \param pos The position where to instantiate the prefab
-  /// \param prefabFilename The filename of the prefab resource.
+  /// \param prefabFilename The filename of the prefab binary resource.
   /// \param optionalParent (\b optional) Specify a parent for all created objects (e.g. to rotate or move them all together).
   /// \return A table containing all created objects available in Lua Script (instances of VTypedObject or dereived)
   /// \par Example
   ///   \code
   ///     function OnCreate(self)
-  ///       local objects = Game:InstantiatePrefab(Vision.hkvVec3(0,0,0), "myPrefab.prefab", self) --use self as parent
+  ///       local objects = Game:InstantiatePrefab(Vision.hkvVec3(0,0,0), "myPrefab.vprefab", self) --use self as parent
   ///       Debug:PrinLine("Instantiated " .. #objects .. " child objects via prefab!")
   ///     end
   ///   \endcode
@@ -1014,9 +1014,9 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131218)
+ * Havok SDK - Base file, BUILD(#20140327)
  * 
- * Confidential Information of Havok.  (C) Copyright 1999-2013
+ * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok
  * Logo, and the Havok buzzsaw logo are trademarks of Havok.  Title, ownership
  * rights, and intellectual property rights in the Havok software remain in

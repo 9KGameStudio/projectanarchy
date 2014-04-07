@@ -2,7 +2,7 @@
  *
  * Confidential Information of Telekinesys Research Limited (t/a Havok). Not for disclosure or distribution without Havok's
  * prior written consent. This software contains code, techniques and know-how which is confidential and proprietary to Havok.
- * Product and Trade Secret source code contains trade secrets of Havok. Havok Software (C) Copyright 1999-2013 Telekinesys Research Limited t/a Havok. All Rights Reserved. Use of this software is subject to the terms of an end user license agreement.
+ * Product and Trade Secret source code contains trade secrets of Havok. Havok Software (C) Copyright 1999-2014 Telekinesys Research Limited t/a Havok. All Rights Reserved. Use of this software is subject to the terms of an end user license agreement.
  *
  */
 
@@ -11,10 +11,12 @@
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Scripting/VScriptIncludes.hpp>
 #include <Vision/Runtime/EnginePlugins/ThirdParty/ScaleformEnginePlugin/vScaleformManager.hpp>
 #include <Vision/Runtime/EnginePlugins/ThirdParty/ScaleformEnginePlugin/VScaleformMovie.hpp>
-#include <Vision/Runtime/EnginePlugins/ThirdParty/ScaleformEnginePlugin/VScaleformUtil.hpp>
+#include <Vision/Runtime/EnginePlugins/ThirdParty/ScaleformEnginePlugin/VScaleformValue.hpp>
 #include <Vision/Runtime/EnginePlugins/ThirdParty/ScaleformEnginePlugin/vScaleformInternal.hpp>
+#include <Vision/Runtime/EnginePlugins/ThirdParty/ScaleformEnginePlugin/VScaleformVariableManager.hpp>
+#include <Vision/Runtime/EnginePlugins/ThirdParty/ScaleformEnginePlugin/VScaleformArgumentsHelper.hpp>
 
-//we do not use namespace Scaleform since it contains ambiguous symbols like Ptr, Value, etc...
+// We do not use namespace Scaleform since it contains ambiguous symbols like Ptr, Value, etc...
 using namespace Scaleform::Render;
 using namespace Scaleform::GFx;
 
@@ -32,9 +34,9 @@ public:
 
   virtual unsigned GetMaxTouchPoints() const HKV_OVERRIDE { return m_iMaxTouchPoints; }
   
-  virtual Scaleform::UInt32   GetSupportedGesturesMask() const HKV_OVERRIDE { return 0; }
+  virtual Scaleform::UInt32 GetSupportedGesturesMask() const HKV_OVERRIDE { return 0; }
   
-  virtual bool     SetMultitouchInputMode(Scaleform::GFx::MultitouchInterface::MultitouchInputMode eMode) HKV_OVERRIDE { return true; }
+  virtual bool SetMultitouchInputMode(Scaleform::GFx::MultitouchInterface::MultitouchInputMode eMode) HKV_OVERRIDE { return true; }
 };
 
 /*
@@ -64,6 +66,7 @@ public:
 VScaleformAdvanceTask::VScaleformAdvanceTask(VScaleformMovieInstance* pMovieInst)
   : VThreadedTask()
   , m_bInitInProgress(false)
+  , m_bAdvanceInProgress(false)
   , m_fTimeDelta(0.0f)
   , m_pMovieInst(pMovieInst)
 {
@@ -80,7 +83,10 @@ void VScaleformAdvanceTask::Init()
 
 void VScaleformAdvanceTask::Schedule(float fTimeDelta)
 {
+  VASSERT_MSG(!m_bAdvanceInProgress, "Advance is already in progress");
+
   m_fTimeDelta = fTimeDelta;
+  m_bAdvanceInProgress = true;
 
   if (VScaleformManager::GlobalManager().IsMultithreadedAdvanceEnabled())
   {
@@ -103,18 +109,28 @@ void VScaleformAdvanceTask::ScheduleMinStep()
 
 void VScaleformAdvanceTask::WaitUntilFinished()
 {
-  if (!VScaleformManager::GlobalManager().IsMultithreadedAdvanceEnabled())
-    return;
+  if (m_bAdvanceInProgress)
+  {
+    if (VScaleformManager::GlobalManager().IsMultithreadedAdvanceEnabled())
+    {
+      Vision::GetThreadManager()->WaitForTask(this, true);
+ 
+      // Movie instance can now be accessed from the current thread.
+      m_pMovieInst->GetGFxMovieInstance()->SetCaptureThread(Scaleform::GetCurrentThreadId());
+    }
 
-  Vision::GetThreadManager()->WaitForTask(this, true);
+    // Read updated Scaleform variable values.
+    m_pMovieInst->m_pVariableManager->SynchronizeRead();
 
-  // Movie instance can now be accessed from the current thread.
-  m_pMovieInst->GetGFxMovieInstance()->SetCaptureThread(Scaleform::GetCurrentThreadId());
+    m_bAdvanceInProgress = false;
+  }
 }
 
 void VScaleformAdvanceTask::Run(VManagedThread *pThread)
 {
   VASSERT_MSG(m_pMovieInst != NULL && m_pMovieInst->GetGFxMovieInstance() != NULL, "No scaleform movie instance present!");
+  VASSERT_MSG(m_bAdvanceInProgress, "VScaleformAdvanceTask::Run() should not be called if Advance is not in progress.");
+
   m_pMovieInst->GetGFxMovieInstance()->SetCaptureThread(Scaleform::GetCurrentThreadId());
 
   // Initialization
@@ -134,12 +150,15 @@ void VScaleformAdvanceTask::Run(VManagedThread *pThread)
 //          VScaleformMovieInstance         //
 //////////////////////////////////////////////
 
+extern VModule g_ScaleformModule;
+V_IMPLEMENT_DYNAMIC(VScaleformMovieInstance, VTypedObject, &g_ScaleformModule)
+
 VScaleformMovieInstance::VScaleformMovieInstance(const char *szFilename, Scaleform::GFx::Loader* pLoader,
   const char *szCandidateMovie, const char *szImeXml, int iPosX, int iPosY, int iWidth, int iHeight)
   : m_pMovieInst(NULL)
   , m_phMovieDisplay(NULL)
-  , m_referencedScaleformValues()
-#ifdef USE_SF_IME
+  , m_pVariableManager(new VScaleformVariableManager())
+#if defined(USE_SF_IME)
   , m_sCandidateMovie(szCandidateMovie)
   , m_sImeXml(szImeXml)
 #endif
@@ -156,15 +175,12 @@ VScaleformMovieInstance::VScaleformMovieInstance(const char *szFilename, Scalefo
   , m_iMovieAuthoredHeight(SF_MOVIE_SIZE_AUTHORED)
   , m_sFileName(szFilename)
 #if defined(WIN32)
-  , m_pKeyModifiers(NULL)
+  , m_pKeyModifiers(new Scaleform::KeyModifiers())
 #endif
   , m_pAdvanceTask(NULL)
 {
   m_pAdvanceTask = new VScaleformAdvanceTask(this);
 
-#if defined(WIN32)
-  m_pKeyModifiers = new Scaleform::KeyModifiers();
-#endif
   Scaleform::Ptr<MovieDef> pMovieDef = *pLoader->CreateMovie(szFilename, Loader::LoadAll|Loader::LoadWaitCompletion);
   VASSERT_MSG(pMovieDef != NULL, "Could not create Scaleform Movie Def!");
 
@@ -239,15 +255,9 @@ void VScaleformMovieInstance::Invalidate()
   m_pAdvanceTask->WaitUntilFinished();
   V_SAFE_DELETE(m_pAdvanceTask);
 
-  #if defined(WIN32)
-    V_SAFE_DELETE(m_pKeyModifiers);
-  #endif
-
-  for (int i = 0; i < m_referencedScaleformValues.GetSize(); i++)
-  {
-    delete m_referencedScaleformValues[i];
-  }
-  m_referencedScaleformValues.RemoveAll();
+#if defined(WIN32)
+  V_SAFE_DELETE(m_pKeyModifiers);
+#endif
 
   for (int i = 0; i < m_queuedFSCommands.GetSize(); i++)
   {
@@ -261,45 +271,68 @@ void VScaleformMovieInstance::Invalidate()
   }
   m_queuedExternalCalls.RemoveAll();
 
+  V_SAFE_DELETE(m_pVariableManager);
+  VScaleformValue::InvalidateAllObjectReferences(this);
+
   V_SAFE_RELEASE(m_pMovieInst);
-  V_SAFE_DELETE(m_phMovieDisplay); //no ref count for movie display handle
+  V_SAFE_DELETE(m_phMovieDisplay); // No reference count for movie display handle.
 }
 
-VScaleformValue* VScaleformMovieInstance::GetVariable(const char * szVarName)
-{
-  VASSERT_MSG(szVarName != NULL, "Specify a valid var!");
-  VASSERT_MSG(m_pMovieInst != NULL, "Movie not loaded");
+//-----------------------------------------------------------------------------------
+// ActionScript Access
 
-  // Check if variable object has already been created.
-  for (int i = 0; i < m_referencedScaleformValues.GetSize(); i++)
-  {
-    VScaleformValue* pValue = m_referencedScaleformValues[i];
-    if (pValue->m_sVarName == szVarName)
-      return pValue;
-  }
+const VScaleformVariable VScaleformMovieInstance::GetVariable(const char* szVarName)
+{
+  VASSERT_MSG(m_pMovieInst != NULL, "Movie not loaded.");
 
   // Wait until the advance task has finished before retrieving the variable.
-  m_pAdvanceTask->WaitUntilFinished();
+  WaitForAdvanceFinished();
 
-  // Create new Scaleform variable.
-  Scaleform::GFx::Value* pValue = new Scaleform::GFx::Value();
-  if (!m_pMovieInst->GetVariable(pValue, szVarName))
+  Value gfxValue;
+  if (!m_pMovieInst->GetVariable(&gfxValue, szVarName))
+    return VScaleformVariable(); // Return invalid variable.
+
+  return m_pVariableManager->CreateVariable(gfxValue, szVarName, this, Value(Value::VT_Undefined));
+}
+
+const VScaleformValue VScaleformMovieInstance::GetVariableValue(const char* szVarName)
+{
+  VASSERT_MSG(m_pMovieInst != NULL, "Movie not loaded.");
+
+  // Wait until the advance task has finished before retrieving the variable.
+  WaitForAdvanceFinished();
+
+  Value gfxValue;
+  if (!m_pMovieInst->GetVariable(&gfxValue, szVarName))
+    return VScaleformValue(); // Return Undefined value.
+
+  return VScaleformValue(gfxValue, this);
+}
+
+const VScaleformValue VScaleformMovieInstance::Invoke(const char* szFunctionName, const VScaleformValue *pArgs, unsigned int uiNumArgs) const
+{
+  VASSERT_MSG(m_pMovieInst != NULL, "Movie not loaded.");
+
+  WaitForAdvanceFinished();
+
+  Value gfxResultValue;
+  if (uiNumArgs > 0)
   {
-    delete pValue;
-    return NULL;
+    // Convert to GFx argument array.
+    const VScaleformArgumentsHelper args(pArgs, uiNumArgs);
+
+    // If the call is not successful the return value will be undefined.
+    m_pMovieInst->Invoke(szFunctionName, &gfxResultValue, args.GetGFxArguments(), uiNumArgs);
+  }
+  else
+  {
+    m_pMovieInst->Invoke(szFunctionName, &gfxResultValue, NULL, 0);
   }
 
-  // Wrap SF object.
-  VScaleformValue *pWrappedValue = new VScaleformValue(pValue, m_pMovieInst, szVarName);
-
-  // Get current scaleform value from the movie.
-  pWrappedValue->SyncValueWithScaleform();
-
-  // Add to internal list in order to update scaleform values every frame.
-  m_referencedScaleformValues.Add(pWrappedValue);
-
-  return pWrappedValue;
+  return VScaleformValue(gfxResultValue, this);
 }
+
+//-----------------------------------------------------------------------------------
 
 void VScaleformMovieInstance::SetOpacity(float fAlpha)
 {
@@ -473,7 +506,7 @@ bool VScaleformMovieInstance::ValidateFocus(float fX, float fY)
   m_pAdvanceTask->WaitUntilFinished();
 
   // focus will be restored when clicking anywhere inside the scaleform movie and the movie is visible
-  if( IsVisibleInAnyContext() && (fX>=m_iPosX && fX<=(m_iPosX+m_iWidth)) && (fY>=m_iPosY && fY<=(m_iPosY+m_iHeight)) )
+  if (IsVisibleInAnyContext() && (fX >= m_iPosX && fX <= (m_iPosX + m_iWidth)) && (fY >= m_iPosY && fY <= (m_iPosY + m_iHeight)))
   {
     if(m_pMovieInst->IsMovieFocused()) return false;
 
@@ -484,16 +517,6 @@ bool VScaleformMovieInstance::ValidateFocus(float fX, float fY)
   //outside click
   m_pMovieInst->HandleEvent(Event::KillFocus);
   return false;
-}
-
-void VScaleformMovieInstance::SyncScaleformVariables()
-{
-  for (int i = 0; i < m_referencedScaleformValues.GetSize(); i++)
-  {
-    VScaleformValue* pValue = m_referencedScaleformValues.GetAt(i);
-
-    pValue->SyncValueWithScaleform();
-  }
 }
 
 void VScaleformMovieInstance::HandleScaleformCallbacks()
@@ -532,7 +555,7 @@ void VScaleformMovieInstance::HandleScaleformCallbacks()
     VOnExternalInterfaceCall* pData = m_queuedExternalCalls[i];
 
     // call virtual function
-    OnExternalInterfaceCall(pData->m_sMethodName, pData->m_ppArgs, pData->m_uiArgCount);
+    OnExternalInterfaceCall(pData->m_sMethodName, pData->m_pArgs, pData->m_uiArgCount);
 
     // ..and also trigger the callback
     VOnExternalInterfaceCall::OnExternalInterfaceCallback.TriggerCallbacks(pData);
@@ -542,7 +565,7 @@ void VScaleformMovieInstance::HandleScaleformCallbacks()
     IVScriptInstance *pGameInst = VScriptResourceManager::GlobalManager().GetGameScript();
 
     // call 'OnExternalInterfaceCall' for the scene script (if callback is present)
-    if(pSceneInst != NULL || pGameInst != NULL)
+    if (pSceneInst != NULL || pGameInst != NULL)
     {
       VASSERT_MSG(pData->m_uiArgCount < 59, 
         "Exceeded max parameter count of 59 for VScaleformExternalInterfaceHandler in Lua (table truncated after parameter 5)");
@@ -553,9 +576,9 @@ void VScaleformMovieInstance::HandleScaleformCallbacks()
       char szFormatStringBuffer[64] = "ss[";
       for(unsigned int i = 0; i < pData->m_uiArgCount; i++)
       {
-        // this 'copy' is required since 'ToString()' will be
+        // This 'copy' is required since 'ToString()' will be
         // removed from the stack at the end of the loop
-        stringRepresentation[i] = pData->m_ppArgs[i]->ToString().AsChar(); 
+        stringRepresentation[i] = pData->m_pArgs[i].ToString(); 
 
         // assign to void * array
         ppArray[i] = stringRepresentation[i].GetChar();
@@ -593,41 +616,32 @@ void VScaleformMovieInstance::HandleScaleformCallbacks()
 }
 
 VOnExternalInterfaceCall::VOnExternalInterfaceCall(
-  VScaleformMovieInstance *pMovie, const char* szMethodName, const Scaleform::GFx::Value* pArgs, unsigned int uiArgCount) 
+  VScaleformMovieInstance *pMovieInstance, const char* szMethodName, const Scaleform::GFx::Value* pArgs, unsigned int uiArgCount) 
   : IVisCallbackDataObject_cl(&VOnExternalInterfaceCall::OnExternalInterfaceCallback)
-  , m_pMovie(pMovie)
+  , m_pMovieInstance(pMovieInstance)
   , m_sMethodName(szMethodName)
-  , m_ppArgs(NULL)
+  , m_pArgs(NULL)
   , m_uiArgCount(uiArgCount)
 {
-  if(uiArgCount > 0)
+  if (uiArgCount > 0)
   {
-    m_ppArgs = new VScaleformValueConst*[uiArgCount];
+    m_pArgs = new VScaleformValue[uiArgCount];
     
-    for(unsigned int i = 0; i < uiArgCount; i++)
+    for (unsigned int i = 0; i < uiArgCount; i++)
     {
-      // Create wrapped value and make copy of GFXValue.
-      // Original value will not be accessible late on.
-      m_ppArgs[i] = new VScaleformValueConst(new Scaleform::GFx::Value(pArgs[i]));
-
-      // We're currently in the advance thread. So it is safe to sync the values.
-      m_ppArgs[i]->SyncReferenceValueWithScaleform();
+      m_pArgs[i] = VScaleformValue(pArgs[i], m_pMovieInstance);
     }
   }
 }
 
 VOnExternalInterfaceCall::~VOnExternalInterfaceCall()
 {
-  for(unsigned int i = 0; i < m_uiArgCount; i++)
-  {
-    delete m_ppArgs[i];
-  }
-  V_SAFE_DELETE_ARRAY(m_ppArgs);
+  V_SAFE_DELETE_ARRAY(m_pArgs);
 }
 
 VOnFSCommand::VOnFSCommand(VScaleformMovieInstance *pMovie, const char* szCommand, const char* szArgs) 
   : IVisCallbackDataObject_cl(&VOnFSCommand::OnFSCallback)
-  , m_pMovie(pMovie)
+  , m_pMovieInstance(pMovie)
   , m_sCommand(szCommand)
   , m_sArgs(szArgs)
 {
@@ -638,9 +652,9 @@ VOnFSCommand::~VOnFSCommand()
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131218)
+ * Havok SDK - Base file, BUILD(#20140327)
  * 
- * Confidential Information of Havok.  (C) Copyright 1999-2013
+ * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok
  * Logo, and the Havok buzzsaw logo are trademarks of Havok.  Title, ownership
  * rights, and intellectual property rights in the Havok software remain in

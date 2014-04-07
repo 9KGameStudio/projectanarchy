@@ -2,7 +2,7 @@
  *
  * Confidential Information of Telekinesys Research Limited (t/a Havok). Not for disclosure or distribution without Havok's
  * prior written consent. This software contains code, techniques and know-how which is confidential and proprietary to Havok.
- * Product and Trade Secret source code contains trade secrets of Havok. Havok Software (C) Copyright 1999-2013 Telekinesys Research Limited t/a Havok. All Rights Reserved. Use of this software is subject to the terms of an end user license agreement.
+ * Product and Trade Secret source code contains trade secrets of Havok. Havok Software (C) Copyright 1999-2014 Telekinesys Research Limited t/a Havok. All Rights Reserved. Use of this software is subject to the terms of an end user license agreement.
  *
  */
 
@@ -47,9 +47,17 @@
 #include <Vision/Runtime/EnginePlugins/ThirdParty/ScaleformEnginePlugin/vScaleformAlloc.hpp>
 #include <Vision/Runtime/EnginePlugins/ThirdParty/ScaleformEnginePlugin/vScaleformManager.hpp>
 #include <Vision/Runtime/EnginePlugins/ThirdParty/ScaleformEnginePlugin/VScaleformMovie.hpp>
+#include <Vision/Runtime/EnginePlugins/ThirdParty/ScaleformEnginePlugin/VScaleformVariableManager.hpp>
 #include <Vision/Runtime/EnginePlugins/ThirdParty/ScaleformEnginePlugin/vScaleformInternal.hpp>
 #include <Vision/Runtime/EnginePlugins/ThirdParty/ScaleformEnginePlugin/VScaleformTexture.hpp>
 #include <Vision/Runtime/EnginePlugins/ThirdParty/ScaleformUtils/vScaleformUtils.hpp>
+
+// IME libs
+#if defined(WIN32) && !defined(_VISION_WINRT) && defined(USE_SF_IME)
+#pragma comment(lib, "libgfx_ime.lib")
+#pragma comment(lib, "imm32.lib")
+#pragma comment(lib, "uuid.lib")
+#endif
 
 //this is just the startup behavior, please use method void EnableMultithreadedAdvance(bool bEnable)
 #define MULTITHREADED_ADVANCE true
@@ -446,6 +454,12 @@ void VScaleformManager::DeInit()
 #if defined(SF_AMP_SERVER)
   AMP::Server::GetInstance().RemoveLoader(m_pLoader);
 #endif
+  V_SAFE_DELETE(m_pLoader);
+
+#if defined(SF_AMP_SERVER)
+  AMP::Server::Uninit();
+  V_SAFE_DELETE(m_pAmpAppController);
+#endif
 
   V_SAFE_RELEASE(m_pRenderer);
   V_SAFE_RELEASE(m_pRenderHal);
@@ -456,12 +470,6 @@ void VScaleformManager::DeInit()
 #endif
   V_SAFE_DELETE(m_pCursorInputMap);
   V_SAFE_DELETE(m_pCommandQueue);
-  V_SAFE_DELETE(m_pLoader);
-
-#if defined(SF_AMP_SERVER)
-  AMP::Server::Uninit();
-  V_SAFE_DELETE(m_pAmpAppController);
-#endif
 
   m_bInitialized = false;
 }
@@ -548,7 +556,7 @@ VScaleformMovieInstance * VScaleformManager::GetMovie(const char *szFileName) co
 
 Scaleform::GFx::Loader* VScaleformManager::CreateLoader()
 {
-  if(m_pLoader)
+  if (m_pLoader != NULL)
   {
     return m_pLoader;
   }
@@ -564,10 +572,6 @@ Scaleform::GFx::Loader* VScaleformManager::CreateLoader()
   calculateScaleformBase();
 
   m_pLoader = new VLocalLoader();
-
-  #ifdef SF_AMP_SERVER
-    AMP::Server::GetInstance().AddLoader(m_pLoader);
-  #endif
 
   // Set log
   m_pLoader->SetLog(Scaleform::Ptr<Log>(*new VScaleformLog()));
@@ -641,7 +645,11 @@ Scaleform::GFx::Loader* VScaleformManager::CreateLoader()
   Scaleform::Ptr<Audio> pAudio = *new Audio(pSoundRenderer);
   m_pLoader->SetAudio(pAudio);
 #else
-  hkvLog::Warning("VScaleformManager: Sound is disabled - maybe the linkage of the vScaleformPlugin is inappropriate.");
+  hkvLog::Warning("VScaleformManager: Sound is disabled - maybe the linkage of the vScaleformPlugin is incorrect.");
+#endif
+
+#ifdef SF_AMP_SERVER
+  AMP::Server::GetInstance().AddLoader(m_pLoader);
 #endif
 
   return m_pLoader;
@@ -649,10 +657,10 @@ Scaleform::GFx::Loader* VScaleformManager::CreateLoader()
 
 #ifdef WIN32
 
-SCALEFORM_IMPEXP bool VScaleformManager::ApplyFontToTheLoader(const char *szFontFilename, const char *szConfigName /*= NULL*/)
+SCALEFORM_IMPEXP bool VScaleformManager::ApplyFontToTheLoader(const char *szFontFilename, const char *szConfigName)
 {
   VFileAccessManager::NativePathResult nativePathResult;
-  if(VFileAccessManager::GetInstance()->MakePathNative(szFontFilename, nativePathResult, VFileSystemAccessMode::READ, VFileSystemElementType::FILE) == HKV_FAILURE)
+  if (VFileAccessManager::GetInstance()->MakePathNative(szFontFilename, nativePathResult, VFileSystemAccessMode::READ, VFileSystemElementType::FILE) == HKV_FAILURE)
   {
     return false;
   }
@@ -753,6 +761,9 @@ void VScaleformManager::OnHandleCallback(IVisCallbackDataObject_cl *pData)
   {
     if (Vision::Editor.IsAnimatingOrPlaying()) 
     {
+      // Trigger call back. May be used to access VScaleformValue objects just before advancing the movies.
+      OnBeforeAdvanceMovies.TriggerCallbacks();
+
       VISION_PROFILE_FUNCTION(PROFILING_ADVANCE);
 
       if (m_bHandleInput) 
@@ -783,12 +794,9 @@ void VScaleformManager::OnHandleCallback(IVisCallbackDataObject_cl *pData)
   {
     for (int i = 0; i < iCount; i++)
     {
-      // Wait for task to finish in order to sync the variables.
+      // Wait for task to finish in order to fire the callbacks.
       // If we do several update steps per frame. RenderMovies() has not been called yet.
       ppInstances[i]->m_pAdvanceTask->WaitUntilFinished();
-
-      // Sync variable values before beginning the next scene update step.
-      ppInstances[i]->SyncScaleformVariables();
 
       ppInstances[i]->HandleScaleformCallbacks();
 
@@ -799,7 +807,7 @@ void VScaleformManager::OnHandleCallback(IVisCallbackDataObject_cl *pData)
     return;
   }
 
-  //prepare for video mode change
+  // Prepare for video mode change
   if (pData->m_pSender == &Vision::Callbacks.OnBeforeVideoChanged)
   {
 #if defined (WIN32) && (defined(_VR_DX9) || defined(_VR_DX11))
@@ -812,7 +820,7 @@ void VScaleformManager::OnHandleCallback(IVisCallbackDataObject_cl *pData)
     return;
   }
 
-  // update the viewport
+  // Update the viewport
   if (pData->m_pSender == &Vision::Callbacks.OnVideoChanged)
   {
 #if defined (WIN32) && (defined(_VR_DX9) || defined(_VR_DX11))
@@ -831,7 +839,7 @@ void VScaleformManager::OnHandleCallback(IVisCallbackDataObject_cl *pData)
     return;
   }
 
-  // device lost
+  // Leave foreground (= sleep mode on Android)
   if (pData->m_pSender == &Vision::Callbacks.OnEnterBackground)
   {
 #if defined (WIN32) && defined(_VR_DX9)
@@ -845,7 +853,6 @@ void VScaleformManager::OnHandleCallback(IVisCallbackDataObject_cl *pData)
     return;
   }
 
-  // device recreated
   if (pData->m_pSender == &Vision::Callbacks.OnEnterForeground)
   {
 #if defined (WIN32) && defined(_VR_DX9) 
@@ -935,11 +942,11 @@ void VScaleformManager::OnHandleCallback(IVisCallbackDataObject_cl *pData)
     }
   #endif
 
-  if(pData->m_pSender == &VInputCallbacks::OnPostTranslateMessage)
+  if (pData->m_pSender == &VInputCallbacks::OnPostTranslateMessage)
   {
     VWindowsMessageDataObject* pObj = (VWindowsMessageDataObject*)pData;
 
-    if(pObj->m_Msg.message == WM_IME_SETCONTEXT)
+    if (pObj->m_Msg.message == WM_IME_SETCONTEXT)
     {
       DefWindowProc(pObj->m_Msg.hwnd, pObj->m_Msg.message, pObj->m_Msg.wParam, 0);
       pObj->m_bProcessed = true;
@@ -948,14 +955,14 @@ void VScaleformManager::OnHandleCallback(IVisCallbackDataObject_cl *pData)
       
     if(m_bHandlesWindowsInput)
     {
-      for (int i = 0;i < iCount; i++)
+      for (int i = 0; i < iCount; i++)
       {
         if (ppInstances[i]->IsFocused())
         { 
           ppInstances[i]->HandleWindowsInputMessage(pObj);
 
-          if(pObj->m_bProcessed)
-            return; //we are done when the focus movie handled the message
+          if (pObj->m_bProcessed)
+            return; // We are done when the focused movie handled the message.
         }
       }
     }
@@ -963,8 +970,8 @@ void VScaleformManager::OnHandleCallback(IVisCallbackDataObject_cl *pData)
     //no window has the focus...
     if (pObj->m_Msg.message == WM_SETFOCUS)
     {
-      float x,y;
-      GetCursorPos(x,y, m_iLastActiveCursor);
+      float x, y;
+      GetCursorPos(x, y, m_iLastActiveCursor);
       ValidateFocus(x, y);
     }
     return;
@@ -1273,7 +1280,8 @@ void VScaleformManager::HandleInputMap()
       {
         KeyEvent keyDownEvent(Event::KeyDown, (Scaleform::KeyCode) m_pGfXKeyMap.GetDataPtr()[i]);
         HandleEvent(&keyDownEvent);
-      } else if (!bNewState && pOldState[i])
+      } 
+      else if (!bNewState && pOldState[i])
       {
         KeyEvent keyUpEvent(Event::KeyUp, (Scaleform::KeyCode) m_pGfXKeyMap.GetDataPtr()[i]);
         HandleEvent(&keyUpEvent);
@@ -1284,7 +1292,7 @@ void VScaleformManager::HandleInputMap()
 
 }
 
-#ifdef _VISION_MOBILE
+#if defined(_VISION_MOBILE)
 
 int VScaleformManager::GetPrimaryTouchPoint()
 {
@@ -1534,9 +1542,9 @@ void VScaleformMovieExclusiveRenderLoop::OnDoRenderLoop(void *pUserData)
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131218)
+ * Havok SDK - Base file, BUILD(#20140327)
  * 
- * Confidential Information of Havok.  (C) Copyright 1999-2013
+ * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok
  * Logo, and the Havok buzzsaw logo are trademarks of Havok.  Title, ownership
  * rights, and intellectual property rights in the Havok software remain in

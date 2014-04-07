@@ -2,7 +2,7 @@
  *
  * Confidential Information of Telekinesys Research Limited (t/a Havok). Not for disclosure or distribution without Havok's
  * prior written consent. This software contains code, techniques and know-how which is confidential and proprietary to Havok.
- * Product and Trade Secret source code contains trade secrets of Havok. Havok Software (C) Copyright 1999-2013 Telekinesys Research Limited t/a Havok. All Rights Reserved. Use of this software is subject to the terms of an end user license agreement.
+ * Product and Trade Secret source code contains trade secrets of Havok. Havok Software (C) Copyright 1999-2014 Telekinesys Research Limited t/a Havok. All Rights Reserved. Use of this software is subject to the terms of an end user license agreement.
  *
  */
 
@@ -62,9 +62,6 @@ namespace Editor
 
     #region Description Dialog
 
-    // Description dialog associated with this scene
-    private ShowDescriptionDlg _descriptionDialog = null;
-
     /// <summary>
     /// Used to handle the "ShowAgain" option when the description dialog of the scene is closed
     /// </summary>
@@ -88,9 +85,6 @@ namespace Editor
     #endregion
 
     #region Scene settings
-
-    EditorSceneSettings _sceneSettings = null;
-    SceneExportProfile _currentProfile = null;
 
     /// <summary>
     /// Gets or sets the scene relevant settings
@@ -252,7 +246,7 @@ namespace Editor
     }
 
 
-    bool _bSceneLoadingInProgress = false;
+
 
     /// <summary>
     /// Returns true while loading the scene
@@ -278,14 +272,16 @@ namespace Editor
       // Check for old scene file format, and refuse to load it.
       try
       {
-        FileStream fs = new FileStream(absFileName, FileMode.Open, FileAccess.Read);
-        long iLen = fs.Length;
-        fs.Close();
-        if (iLen > 0) // this is an old file
+        using (FileStream fs = new FileStream(absFileName, FileMode.Open, FileAccess.Read))
         {
-          String error = String.Format("Loading aborted.\nThe file format of this scene is not supported by recent versions of vForge.\nTo migrate it, please open and then re-save this file in vForge prior to version 2012.3.");
-          EditorManager.ShowMessageBox(error, "Scene loading error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-          return false;
+          long iLen = fs.Length;
+
+          if (iLen > 0) // this is an old file
+          {
+            String error = String.Format("Loading aborted.\nThe file format of this scene is not supported by recent versions of vForge.\nTo migrate it, please open and then re-save this file in vForge prior to version 2012.3.");
+            EditorManager.ShowMessageBox(error, "Scene loading error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            return false;
+          }
         }
       }
       catch (Exception ex)
@@ -365,12 +361,23 @@ namespace Editor
       // Otherwise all layers will be locked automatically (when not locked already by any other user).
       if (!TestManager.IsRunning && !EditorManager.SilentMode && Project.LayerLocking == EditorProject.LayerLocking_e.AskOnSceneOpen)
       {
-        // Open layer lock dialog where user can select the layers to lock
-        LayerLockDlg dlg = new LayerLockDlg();
-        dlg.Scene = this;
+        // user lock selection is not obeyed if a layer backup was detected, then the layer restore selection was responsible for locking the layers
+        if (_useLayersBackupRestore)
+        {
+          foreach (Layer layer in _layersBackupRestoreSelection)
+          {
+            layer.TryLock(this, false);
+          }          
+        }
+        else
+        {
+          // Open layer lock dialog where user can select the layers to lock
+          LayerLockDlg dlg = new LayerLockDlg();
+          dlg.Scene = this;
 
-        // Dialog has only an OK button as canceling the operation doesn't make much sense
-        dlg.ShowDialog();
+          // Dialog has only an OK button as canceling the operation doesn't make much sense
+          dlg.ShowDialog();
+        }
       }
       else
       {
@@ -383,17 +390,6 @@ namespace Editor
         EditorManager.ShowMessageBox("Layer IDs in this scene are not unique. Please contact support", "Layer ID conflict", MessageBoxButtons.OK, MessageBoxIcon.Warning);
       }
 
-      // check UID consistency:
-      bool bForceDirty = false;
-      /*
-      RepairShapeIDVisitor repair = new RepairShapeIDVisitor();
-      if (!repair.CheckScene(this))
-      {
-        bForceDirty = true;
-        EditorManager.ShowMessageBox("The scene contained overlapping unique IDs.\nThis has been repaired.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-        repair.RepairScene(this,false);
-      }
-      */
       // fixup exported layer names and put the Export flag into the layers own flag
       SceneExportProfile exportprofile = CurrentExportProfile;
       exportprofile.FixupLayerNames();
@@ -401,7 +397,18 @@ namespace Editor
         exportprofile.ExportedLayersToScene();
 
       _iSceneversion = SCENE_VERSION_CURRENT; // however, scene version does not make much sense anymore
-      m_bDirty = bForceDirty;
+
+      // Mark all layers that have been restored from a backup as dirty
+      foreach (Layer layer in _layersBackupRestoreSelection)
+      {
+        layer.Dirty = true;
+      }
+
+      // The scene is dirty if any layer was restored from a backup
+      m_bDirty = (_useLayersBackupRestore && _layersBackupRestoreSelection.Count > 0);
+
+      // Layers with backup have been dealt with, clean list for potential next selection
+      _layersBackupRestoreSelection.Clear();      
 
       EditorManager.Progress.SetRange(0.0f, 100.0f); // set back sub-range
       EditorManager.Progress.Percentage = 20.0f; // loaded layer files
@@ -460,14 +467,80 @@ namespace Editor
 
     }
 
+    /// <summary>
+    /// Helper method to detect if interim backup files exist for the layers passed to the method.
+    /// </summary>
+    /// <param name="layers">Dictionary with list of layers to check for backup files. The bool Value should be passed with false for all entries and will be set to true for those entries where a backup exists.</param>
+    /// <returns>True if a layer backup file for any of the layers exists</returns>
+    public bool CheckLayersInterimBackup(Dictionary<FileInfo, bool> layers, string layerDir)
+    {
+      bool hasBackup = false;
+
+      for (int i = 0; i < layers.Count; i++)
+      {
+        FileInfo fileInfo = layers.Keys.ElementAt(i);
+
+        // If the layer does not reside in the layer directory it is a layer reference
+        // In this case do not check for backup files, here we load the layer file in any case
+        // Since the layer cannot be fixed with the backup file from this scene anyways since the 
+        // layer cannot be edited.
+        if (!fileInfo.FullName.StartsWith(layerDir))
+        {
+          continue;
+        }
+
+        string interimBackupFileName = fileInfo.FullName + IScene.InterimBackupFileExtension;
+        FileInfo interimBackupFile = new FileInfo(interimBackupFileName);
+        if (interimBackupFile.Exists)
+        {
+          hasBackup = true;
+
+          // Mark layer as 'has backup layer'
+          layers[fileInfo] = true;
+        }
+      }
+
+      return hasBackup;
+    }
 
     override public bool LoadLayers(LayerCollection newLayers, ProgressStatus progress, FileInfo[] files)
     {
       bool bOK = true;
       float fPercentage = 0.0f;
       string layerDir = LayerDirectoryName;
-      foreach (FileInfo fileInfo in files)
+      
+      Dictionary<FileInfo, bool> layersToLoad = new Dictionary<FileInfo, bool>();
+      foreach (FileInfo file in files)
       {
+        // Key is FileInfo, Value bool says if a layer backup should be loaded instead of the original layer file.
+        // The layer may have been filtered if it belongs to a zone that isn't currently loaded.
+        if (file != null)
+        {
+          layersToLoad.Add(file, false);
+        }
+      }
+
+      // Check if there's any layers with backup files and mark their value with true.
+      _layersBackupRestoreSelection.Clear();
+      if (CheckLayersInterimBackup(layersToLoad, layerDir))
+      {
+        // Open layer lock dialog where user can select the layers to restore from the backup file.
+        LayerRestoreDlg dlg = new LayerRestoreDlg();
+        dlg.RestoreLayerList = layersToLoad;        
+        dlg.ShowDialog();
+
+        // If the user chooses the layers to restore, the layers to restore will be locked, all others won't.
+        _useLayersBackupRestore = true;
+      }
+      else
+      {
+        _useLayersBackupRestore = false;
+      }
+
+      foreach (var fileInfoEntry in layersToLoad)
+      {
+        FileInfo fileInfo = fileInfoEntry.Key;
+
         fPercentage += 100.0f / (float)files.Length;
         if (fileInfo == null || (fileInfo.Attributes & FileAttributes.Directory) != 0) // file info can be null
           continue;
@@ -496,13 +569,26 @@ namespace Editor
           }
         }
 
+        // If the layer is loaded from the backup, it will load the content from the backup file
+        // and lock the layer right away
+        bool useBackupRestore = fileInfoEntry.Value == true;
+
         BinaryFormatter fmt = SerializationHelper.BINARY_FORMATTER;
         try
         {
+          string layerToLoad = fileInfo.FullName;
+
+          // If the layer was marked to load the backup file, add this here
+          if (useBackupRestore)
+          {
+            layerToLoad += IScene.InterimBackupFileExtension;
+          }
+
           // open the layer in read-only mode
-          FileStream fs = new FileStream(fileInfo.FullName, FileMode.Open, FileAccess.Read);
-          layer = (Layer)fmt.Deserialize(fs);
-          fs.Close();
+          using (FileStream fs = new FileStream(layerToLoad, FileMode.Open, FileAccess.Read))
+          {
+            layer = (Layer)fmt.Deserialize(fs);
+          }          
 
           // make sure there is only one layer of type V3DLayer [#18824]
           if (layer is V3DLayer)
@@ -536,6 +622,12 @@ namespace Editor
         newLayers.Add(layer);
         if (progress != null)
           progress.Percentage = fPercentage;
+
+        // If we restore a backup, we will always try to lock the layer and bypass a potential user choice for locking layers
+        if (useBackupRestore)
+        {
+          _layersBackupRestoreSelection.Add(layer);
+        }
       }
 
       return bOK;
@@ -1011,9 +1103,10 @@ namespace Editor
         try
         {
           // open the layer in read-only mode
-          FileStream fs = new FileStream(fileInfo.FullName, FileMode.Open, FileAccess.Read);
-          zone = (Zone)fmt.Deserialize(fs);
-          fs.Close();
+          using (FileStream fs = new FileStream(fileInfo.FullName, FileMode.Open, FileAccess.Read))
+          {
+            zone = (Zone)fmt.Deserialize(fs);
+          }          
         }
         catch (Exception ex)
         {
@@ -1172,6 +1265,7 @@ namespace Editor
       foreach (Layer layer in this.Layers)
       {
         layer.SortingOrder = iSortingKey++;
+
         if (!bSaveToNewLocation)
         {
           if (!layer.OwnsLock)
@@ -1198,11 +1292,25 @@ namespace Editor
             layer.ForceRemoveExternalLock();
           }
         }
+
         if (!bOK)
         {
           _lastSaveErrorMsg = "Could not save layer " + layer.LayerFilename;
         }
       }
+
+      if(bOK)
+      {
+        // Cleanup potential layer interim backup files
+        foreach (Layer layer in this.Layers)
+        {
+          if (!layer.IsReference)
+          {
+            layer.DeleteInterimBackup();
+          }
+        }
+      }      
+
       // STEP 5: Any other files to copy to new location?
       if (bSaveToNewLocation)
       {
@@ -1234,6 +1342,24 @@ namespace Editor
     }
 
     /// <summary>
+    /// Save interim backups of all modified layers
+    /// </summary>
+    public override void SaveSceneLayerInterimBackups()
+    {
+      // Save interim backups of layers if they are dirty
+      int iSortingKey = 1;
+      foreach (Layer layer in this.Layers)
+      {
+        layer.SortingOrder = iSortingKey++;
+
+        if(!layer.Dirty)
+          continue;
+                 
+        layer.SaveInterimBackup();
+      }
+    }
+
+    /// <summary>
     /// Overridden scene close function
     /// </summary>
     /// <returns></returns> 
@@ -1259,6 +1385,14 @@ namespace Editor
       // Stop playback
       EditorManager.EditorMode = EditorManager.Mode.EM_NONE;
       OnRemoveAllEngineInstances();
+
+      // Remove interim layer backup files (has to be done before setting Project.Scene to null)
+      foreach (Layer layer in Layers)
+      {
+        if(!layer.IsReference)
+          layer.DeleteInterimBackup();
+      }
+
       Project.Scene = null;
 
       EditorManager.EngineManager.DeInitScene();
@@ -1286,8 +1420,6 @@ namespace Editor
         SendDirtyFlagChangedEvent();
       }
     }
-
-    private bool m_bDirty;
 
     /// <summary>
     /// Overridden Update function
@@ -1352,8 +1484,6 @@ namespace Editor
         V3DLayer.Postprocessors = value;
       }
     }
-
-    private string _lastSaveErrorMsg = "";
 
     public override string LastSaveErrorMsg
     {
@@ -1682,11 +1812,14 @@ namespace Editor
 
       // Export
 
+
+      bool anyRunAfterExportHandled = false;
+
       if (absPath != null)
         CurrentExportProfile.ExportPath = absPath;
       else
         absPath = AbsoluteExportPath;
-      bool bSuccess = ExportSceneNotSaveSettings(absPath, assetProfiles);
+      bool bSuccess = ExportSceneNotSaveSettings(absPath, assetProfiles, ref anyRunAfterExportHandled);
 
       string absExportPath = absPath;
       if (absExportPath == null)
@@ -1703,26 +1836,56 @@ namespace Editor
 
         if (CurrentExportProfile.RunAfterExport)
         {
-          // Try the PC profiles in order, preferring the native renderer one
 #if _VR_DX9
-          string[] pcProfiles = new string[] { "pcdx9", "pcdx11" };
+          var nativePlatform = TargetDevice_e.TARGETDEVICE_DX9;
 #else
-          string[] pcProfiles = new string[] { "pcdx11", "pcdx9" };
+          var nativePlatform = TargetDevice_e.TARGETDEVICE_DX11;
 #endif
 
-          // In either case, sort so that if one of the PC profiles is currently active it is preferred
-          pcProfiles = pcProfiles.OrderByDescending(profile => profile == EditorManager.ProfileManager.GetActiveProfile().ToString()).ToArray();
+          // Map profile names to profiles
+          var profiles = assetProfiles.Select(profile => EditorManager.ProfileManager.GetProfileByName(profile));
 
-          string launchProfile = pcProfiles.FirstOrDefault(profile => assetProfiles.Contains(profile));
-          if (launchProfile != null)
+          // First order profiles to prefer native renderer type
+          profiles = profiles.OrderByDescending(profile => profile.GetPlatform() == nativePlatform);
+
+          // Then order so that the currently active profile is preferred
+          profiles = profiles.OrderByDescending(profile => profile == EditorManager.ProfileManager.GetActiveProfile());
+
+          // First try out one of the PC profiles
+          var pcProfiles = profiles.Where(profile => profile.GetPlatform() == TargetDevice_e.TARGETDEVICE_DX9 || profile.GetPlatform() == TargetDevice_e.TARGETDEVICE_DX11);
+
+          var launchProfile = pcProfiles.FirstOrDefault();
+
+          // If no PC profile was exported, check if we want to launch a non-PC profile using the PC vPlayer
+          if (launchProfile == null)
           {
-            string sceneForProfile = Path.ChangeExtension(absExportPath, string.Format("{0}.vscene", launchProfile));
+            if (EditorManager.Settings.RunOnDeviceAfterExport)
+            {
+              if (!anyRunAfterExportHandled)
+              {
+                var result = EditorManager.ShowMessageBox("Exported scene could not be run on any device. Launch the device-specific scene in the PC vPlayer instead?", "Running exported scene on device failed", MessageBoxButtons.YesNo);
+                if (result == DialogResult.Yes)
+                {
+                  launchProfile = profiles.FirstOrDefault();
+                }
+              }
+            }
+            else
+            {
+              // If RunOnDeviceAfterExport is disabled, assume that we always want to run on PC
+              launchProfile = profiles.FirstOrDefault();
+            }
+          }
+
+          if(launchProfile != null)
+          {
+            string sceneForProfile = Path.ChangeExtension(absExportPath, string.Format("{0}.vscene", launchProfile.ToString()));
 
             // Launch the vPlayer executable
             string absPlayerPath = Path.Combine(Path.GetDirectoryName(Application.ExecutablePath), "vPlayer.exe");
 
             FileHelper.RunExternalTool("vPlayer", absPlayerPath, "\"" + sceneForProfile + "\"", false);
-          }
+          }          
         }
       }
 
@@ -1829,10 +1992,11 @@ namespace Editor
     /// <summary>
     /// Export the scene to vscene file and do not save the path to the settings
     /// </summary>
-    /// <param name="absPath">the absolute export path. Can be null to use the setting's path</param>
-    /// <param name="assetProfilesToExport">Required list of asset profiles to export</param>
+    /// <param name="absPath">the absolute export path. Can be null to use the setting's path.</param>
+    /// <param name="assetProfilesToExport">Required list of asset profiles to export.</param>
+    /// <param name="anyRunAfterExportHandled">Set to true if a plugin handled running one of the scenes after exporting.</param>
     /// <returns></returns>
-    public bool ExportSceneNotSaveSettings(string absPath, List<string> assetProfilesToExport)
+    public bool ExportSceneNotSaveSettings(string absPath, List<string> assetProfilesToExport, ref bool anyRunAfterExportHandled)
     {
       EditorManager.AssetManager.UpdateAssetTransformationsOnExport = CurrentExportProfile.UpdateAssetTransformations;
 
@@ -1872,6 +2036,14 @@ namespace Editor
         if (!bResult)
         {
           break;
+        }
+
+        if (EditorManager.Settings.RunOnDeviceAfterExport)
+        {
+          if (EditorManager.TriggerSceneEvent(SceneEventArgs.Action.RunAfterExport, false))
+          {
+            anyRunAfterExportHandled = true;
+          }
         }
       }
 
@@ -2181,8 +2353,6 @@ namespace Editor
       this.OnCreateAllEngineInstances(null);
     }
 
-    private List<ShapeBase> restoreVisibility = new List<ShapeBase>();
-
     public override void HideUnsupportedShapes(int targetPlatform)
     {
       foreach (ShapeBase shape in restoreVisibility)
@@ -2344,14 +2514,31 @@ namespace Editor
 
     #endregion
 
+    #region Private Member Variabes
+
+    bool _bSceneLoadingInProgress = false;
+    EditorSceneSettings _sceneSettings = null;
+    SceneExportProfile _currentProfile = null;
+    // Description dialog associated with this scene
+    private ShowDescriptionDlg _descriptionDialog = null;
+    private string _lastSaveErrorMsg = "";
+    private bool m_bDirty;
+    private List<ShapeBase> restoreVisibility = new List<ShapeBase>();
+
+    // Helper variables for scene backup restore
+    private bool _useLayersBackupRestore = false;
+    private List<Layer> _layersBackupRestoreSelection = new List<Layer>();
+
+    #endregion
+
   }
 
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131218)
+ * Havok SDK - Base file, BUILD(#20140328)
  * 
- * Confidential Information of Havok.  (C) Copyright 1999-2013
+ * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok
  * Logo, and the Havok buzzsaw logo are trademarks of Havok.  Title, ownership
  * rights, and intellectual property rights in the Havok software remain in

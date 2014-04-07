@@ -2,7 +2,7 @@
  *
  * Confidential Information of Telekinesys Research Limited (t/a Havok). Not for disclosure or distribution without Havok's
  * prior written consent. This software contains code, techniques and know-how which is confidential and proprietary to Havok.
- * Product and Trade Secret source code contains trade secrets of Havok. Havok Software (C) Copyright 1999-2013 Telekinesys Research Limited t/a Havok. All Rights Reserved. Use of this software is subject to the terms of an end user license agreement.
+ * Product and Trade Secret source code contains trade secrets of Havok. Havok Software (C) Copyright 1999-2014 Telekinesys Research Limited t/a Havok. All Rights Reserved. Use of this software is subject to the terms of an end user license agreement.
  *
  */
 
@@ -173,6 +173,23 @@ public:
   virtual bool UpdateStatus() { return false; }
 
   /// \brief
+  ///   Returns the name of the changelist that matches the given description.
+  ///
+  /// \param szDescription
+  ///   The description of the changelist we are looking for.
+  ///
+  /// \param bCreate
+  ///   Whether the changelist should be created if it does not exist.
+  ///
+  /// \param out_sChangelist
+  ///   The name of the changelist is written to this variable.
+  ///   If bCreate is false and no changelist was found this variable will be set to an empty string.
+  ///
+  /// \return
+  ///   whether the operation could be successfully performed.
+  virtual bool GetChangelistByDescription(const char* szDescription, bool bCreate, VString& out_sChangelist) { out_sChangelist = NULL; return false; };
+
+  /// \brief
   ///   Returns the name of the changelist the revision control system uses to track the changes made
   ///   through the methods of this class.
   ///
@@ -198,9 +215,9 @@ public:
 #endif  //VISION_IVREVISIONCONTROLSYSTEM_HPP
 
 /*
- * Havok SDK - Base file, BUILD(#20131218)
+ * Havok SDK - Base file, BUILD(#20140327)
  * 
- * Confidential Information of Havok.  (C) Copyright 1999-2013
+ * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok
  * Logo, and the Havok buzzsaw logo are trademarks of Havok.  Title, ownership
  * rights, and intellectual property rights in the Havok software remain in

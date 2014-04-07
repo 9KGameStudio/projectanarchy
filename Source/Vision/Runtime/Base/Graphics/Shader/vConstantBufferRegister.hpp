@@ -2,7 +2,7 @@
  *
  * Confidential Information of Telekinesys Research Limited (t/a Havok). Not for disclosure or distribution without Havok's
  * prior written consent. This software contains code, techniques and know-how which is confidential and proprietary to Havok.
- * Product and Trade Secret source code contains trade secrets of Havok. Havok Software (C) Copyright 1999-2013 Telekinesys Research Limited t/a Havok. All Rights Reserved. Use of this software is subject to the terms of an end user license agreement.
+ * Product and Trade Secret source code contains trade secrets of Havok. Havok Software (C) Copyright 1999-2014 Telekinesys Research Limited t/a Havok. All Rights Reserved. Use of this software is subject to the terms of an end user license agreement.
  *
  */
 
@@ -144,6 +144,21 @@ public:
   }
 
   /// \brief
+  ///   Sets a single float value on the target register
+  void SetSingleValueF(VCompiledShaderPass *pSrc, float value)
+  {
+    pSrc->GetConstantBuffer((VShaderStage_e) m_iBuffer)->SetSingleValueF(m_iRegister, value);
+  }
+
+  /// \brief
+  ///   Sets a single float value on the target register if the register is valid
+  void SetSingleValueSafeF(VCompiledShaderPass* pSrc, float value)
+  {
+    if(IsValidRegister())
+      SetSingleValueF(pSrc, value);
+  }
+
+  /// \brief
   ///   Sets the texture object on the sampler. Requires IsValidSampler()==true
   void SetSamplerTexture(VCompiledShaderPass *pSrc, VTextureObject *pTexture)
   {
@@ -175,9 +190,9 @@ private:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131218)
+ * Havok SDK - Base file, BUILD(#20140327)
  * 
- * Confidential Information of Havok.  (C) Copyright 1999-2013
+ * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok
  * Logo, and the Havok buzzsaw logo are trademarks of Havok.  Title, ownership
  * rights, and intellectual property rights in the Havok software remain in

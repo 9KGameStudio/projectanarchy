@@ -2,7 +2,7 @@
  *
  * Confidential Information of Telekinesys Research Limited (t/a Havok). Not for disclosure or distribution without Havok's
  * prior written consent. This software contains code, techniques and know-how which is confidential and proprietary to Havok.
- * Product and Trade Secret source code contains trade secrets of Havok. Havok Software (C) Copyright 1999-2013 Telekinesys Research Limited t/a Havok. All Rights Reserved. Use of this software is subject to the terms of an end user license agreement.
+ * Product and Trade Secret source code contains trade secrets of Havok. Havok Software (C) Copyright 1999-2014 Telekinesys Research Limited t/a Havok. All Rights Reserved. Use of this software is subject to the terms of an end user license agreement.
  *
  */
 
@@ -216,7 +216,7 @@ public:
     void *m_pInternal; ///< do not use
 
     // internal function
-    VBASE_IMPEXP void SerializeMaterialInformation(VChunkFile &file, bool bForOutput, bool bPredefinedUV, int iVersion=-1);
+    VBASE_IMPEXP void SerializeMaterialInformation(VChunkFile &file, bool bForOutput, bool bPredefinedUV, int iVersion=-1, bool bReadFlag = false);
     ///
     /// @}
     ///
@@ -421,11 +421,11 @@ public:
 
   /// \brief
   ///   Internal function: (De-)serializes the mesh information part of this primitive
-  VBASE_IMPEXP void SerializeMeshInformation(VChunkFile &file, int iVersion=-1);
+  VBASE_IMPEXP void SerializeMeshInformation(VChunkFile &file, int iVersion=-1, bool bReadFlag = false);
 
   /// \brief
   ///   Internal function: (De-)serializes the result information part of this primitive
-  VBASE_IMPEXP void SerializeOutputInformation(VChunkFile &file,int iVersion=-1);
+  VBASE_IMPEXP void SerializeOutputInformation(VChunkFile &file,int iVersion=-1, bool bReadFlag = false);
 
   /// \brief
   ///   Internal function
@@ -751,6 +751,7 @@ private:
   VLightmapPrimitive::VLightMaskEntry_t *m_pLightMaskEntry;
 
   bool m_bIncludeEngineShapes;
+  bool m_bReadFlag;
 public:
   VisZoneResource_cl *m_pCurrentZone; ///< just blind data used by vForge
 };
@@ -821,9 +822,9 @@ inline bool VLightmapPrimitive::MeshMaterial_t::GetCustomRadiosityShader(VString
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131218)
+ * Havok SDK - Base file, BUILD(#20140327)
  * 
- * Confidential Information of Havok.  (C) Copyright 1999-2013
+ * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok
  * Logo, and the Havok buzzsaw logo are trademarks of Havok.  Title, ownership
  * rights, and intellectual property rights in the Havok software remain in

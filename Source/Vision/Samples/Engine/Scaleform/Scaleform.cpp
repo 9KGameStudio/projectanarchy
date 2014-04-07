@@ -2,7 +2,7 @@
  *
  * Confidential Information of Telekinesys Research Limited (t/a Havok). Not for disclosure or distribution without Havok's
  * prior written consent. This software contains code, techniques and know-how which is confidential and proprietary to Havok.
- * Product and Trade Secret source code contains trade secrets of Havok. Havok Software (C) Copyright 1999-2013 Telekinesys Research Limited t/a Havok. All Rights Reserved. Use of this software is subject to the terms of an end user license agreement.
+ * Product and Trade Secret source code contains trade secrets of Havok. Havok Software (C) Copyright 1999-2014 Telekinesys Research Limited t/a Havok. All Rights Reserved. Use of this software is subject to the terms of an end user license agreement.
  *
  */
 
@@ -30,16 +30,16 @@
 
 #include <Vision/Runtime/EnginePlugins/EnginePluginsImport.hpp>
 
-#include <Vision/Runtime/EnginePlugins/ThirdParty/ScaleformEnginePlugin/vScaleformManager.hpp>
 #include <Vision/Runtime/EnginePlugins/ThirdParty/ScaleformEnginePlugin/VScaleformMovie.hpp>
-#include <Vision/Runtime/EnginePlugins/ThirdParty/ScaleformEnginePlugin/VScaleformUtil.hpp>
+#include <Vision/Runtime/EnginePlugins/ThirdParty/ScaleformEnginePlugin/VScaleformVariable.hpp>
 
 #include <Vision/Runtime/EnginePlugins/ThirdParty/FmodEnginePlugin/VFmodManager.hpp>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Input/VVirtualThumbStick.hpp>
 
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Input/VFreeCamera.hpp>
 
-bool g_bShowOnTexture = false; // On PC: command line '-rtt', On other platforms set to true : render scaleform video into a texture rather than as a main HUD overlay
+// On PC: command line '-rtt', On other platforms set to true: Render Scaleform video into a texture instead of as a main HUD overlay.
+bool g_bShowOnTexture = false;
 
 class ScaleformApp : public VAppImpl, public IVisCallbackHandler_cl
 {
@@ -67,17 +67,14 @@ private:
   VString m_sMovieName;
 
   VScaleformMovieInstancePtr m_spMovie;
-  VScaleformValue* m_pMainMenuVar;
+  VScaleformVariable m_mainMenuVar;
 
   bool m_bMute;
 #if defined(_VISION_MOBILE)
   VisScreenMask_cl **m_ppTouchPoints;
 #else
-  VisScreenMaskPtr m_spMouse;
+  VisScreenMaskPtr m_spMouseScreenMask;
 #endif
-
-  VisContextCameraPtr m_spCamera;
-  VisRenderContextPtr m_spContext;
 
   VisBaseEntity_cl* pEntity;
   VFreeCamera* pFreeCamera;
@@ -96,73 +93,67 @@ VAPP_IMPLEMENT_SAMPLE(ScaleformApp);
 ScaleformApp::ScaleformApp()
   : m_sMovieName("")
   , m_spMovie(NULL)
-  , m_pMainMenuVar(NULL)
+  , m_mainMenuVar()
   , m_bMute(false)
 #if defined(_VISION_MOBILE)
   , m_ppTouchPoints(NULL)
 #else
-  , m_spMouse(NULL)
+  , m_spMouseScreenMask(NULL)
 #endif
-  , m_spCamera(NULL)
-  , m_spContext(NULL)
   , pEntity(NULL)
   , pFreeCamera(NULL)
   , m_bPseudoFullScreen(false)
   , m_iCurrentXRes(VVIDEO_DEFAULTWIDTH)
   , m_iCurrentYRes(VVIDEO_DEFAULTHEIGHT)
 {
-
 }
 
 // Receive command callbacks and external interface calls.
 // Alternatively a class can be derived from VScaleformMovieInstance and override the OnCommand / OnExternalInterfaceCall function
 void ScaleformApp::OnHandleCallback(IVisCallbackDataObject_cl *pData)
 {
-  if(pData->m_pSender == &VOnFSCommand::OnFSCallback)
+  if (pData->m_pSender == &VOnFSCommand::OnFSCallback)
   { 
-    //this call back is marked as deprecated by scaleform
-    VOnFSCommand *pCommand = (VOnFSCommand *)pData;
+    // This call back is marked as deprecated by Scaleform.
+    VOnFSCommand *pCommand = static_cast<VOnFSCommand*>(pData);
 
-    // output to screen and log
+    // Output to screen and log
     VString sCommand("FS COMMAND: ", 128);
     sCommand += pCommand->m_sCommand + " ARGS:" + pCommand->m_sArgs;
     hkvLog::Info(sCommand.AsChar());
-    Vision::Message.Add(1, sCommand.AsChar());
+    Vision::Message.Add(1, sCommand);
   }
-  else if(pData->m_pSender == &VOnExternalInterfaceCall::OnExternalInterfaceCallback)
+  else if (pData->m_pSender == &VOnExternalInterfaceCall::OnExternalInterfaceCallback)
   {  
-    VOnExternalInterfaceCall *pExternalCall = (VOnExternalInterfaceCall *)pData;
+    VOnExternalInterfaceCall *pExternalCall = static_cast<VOnExternalInterfaceCall*>(pData);
 
-    //handle volume change
-    if(pExternalCall->m_sMethodName == "SetVolume" && pExternalCall->m_uiArgCount==1)
+    // Handle volume change.
+    if (pExternalCall->m_sMethodName == "SetVolume" && pExternalCall->m_uiArgCount==1)
     {
-      VFmodManager::GlobalManager().SetVolumeAll(static_cast<float>(pExternalCall->m_ppArgs[0]->GetNumber()));
-      return;
+      VFmodManager::GlobalManager().SetVolumeAll(static_cast<float>(pExternalCall->m_pArgs[0].GetNumber()));
     }
-    if(pExternalCall->m_sMethodName == "Mute")
+    else if (pExternalCall->m_sMethodName == "Mute")
     {
       m_bMute = !m_bMute;
-      if(m_bMute) Vision::Message.Add(1, "Mute on");
-      else Vision::Message.Add(1, "Mute off");
+      Vision::Message.Add(1, m_bMute ? "Mute on" : "Mute off");
       VFmodManager::GlobalManager().SetMuteAll(m_bMute);
-      return;
     }
-
-    // output to screen and log
-    VString sCommand("EXTERNAL CALL: ", 128);
-    sCommand += pExternalCall->m_sMethodName + "(";
-
-    for(int i=0;i<pExternalCall->m_uiArgCount;i++)
+    else
     {
-      if(i!=0) sCommand += " ";
-      sCommand += pExternalCall->m_ppArgs[i]->ToString();
-      sCommand += ",";
-    }
-    sCommand[sCommand.GetLen()-1] = ')';
+      // Output to screen and log.
+      VString sCommand("EXTERNAL CALL: ", 128);
+      sCommand += pExternalCall->m_sMethodName + "(";
 
-    hkvLog::Info(sCommand.AsChar());
-    Vision::Message.Add(1, sCommand.AsChar());
-    return;
+      for (int i = 0; i < pExternalCall->m_uiArgCount; i++)
+      {
+        if(i != 0) sCommand += ", ";
+        sCommand += pExternalCall->m_pArgs[i].ToString();
+      }
+      sCommand += ')';
+
+      hkvLog::Info(sCommand);
+      Vision::Message.Add(1, sCommand);
+    }
   }
 }
 
@@ -226,9 +217,9 @@ void ScaleformApp::AfterSceneLoaded(bool bLoadingSuccessful)
   }
 #else
   // display our own mouse cursor (optional)
-  m_spMouse = new VisScreenMask_cl("mouseNorm.TGA");
-  m_spMouse->SetTransparency(VIS_TRANSP_ALPHA);
-  m_spMouse->SetVisible(true);
+  m_spMouseScreenMask = new VisScreenMask_cl("mouseNorm.TGA");
+  m_spMouseScreenMask->SetTransparency(VIS_TRANSP_ALPHA);
+  m_spMouseScreenMask->SetVisible(true);
 #endif
 
   pFreeCamera->SetThinkFunctionStatus(false);
@@ -260,7 +251,7 @@ void ScaleformApp::AfterSceneLoaded(bool bLoadingSuccessful)
   {
     // create a movie instance to playback
     m_spMovie = LoadMovie(m_sMovieName.AsChar());
-    m_pMainMenuVar = m_spMovie->GetVariable("_root.mainMenu");
+    m_mainMenuVar = m_spMovie->GetVariable("_root.mainMenu");
   }
   
   VArray<const char*> help;
@@ -299,8 +290,8 @@ bool ScaleformApp::Run()
 #if !defined(_VISION_MOBILE)
   if (GetInputMap()->GetTrigger(TOGGLE_MOUSE_MODE))
   {
-    m_spMouse->SetVisible(! m_spMouse->IsVisible() );
-    bool bMouseInput = m_spMouse->IsVisible()==TRUE;
+    m_spMouseScreenMask->SetVisible(! m_spMouseScreenMask->IsVisible() );
+    bool bMouseInput = m_spMouseScreenMask->IsVisible()==TRUE;
     VScaleformManager::GlobalManager().SetHandleCursorInput(bMouseInput);
     pFreeCamera->SetThinkFunctionStatus(!bMouseInput);
   }
@@ -398,11 +389,11 @@ bool ScaleformApp::Run()
   {
     float x,y;
     VScaleformManager::GlobalManager().GetCursorPos(x,y);
-    m_spMouse->SetPos(x,y);
+    m_spMouseScreenMask->SetPos(x,y);
 
-    if (m_pMainMenuVar!=NULL)
+    if (!m_mainMenuVar.IsUndefined())
     {
-      m_pMainMenuVar->Display_SetXYRotation((m_iCurrentYRes*0.5f-y)*-0.07f, (m_iCurrentXRes*0.5f-x)*0.07f);
+      m_mainMenuVar.Display_SetXYRotation((m_iCurrentYRes*0.5f-y)*-0.07f, (m_iCurrentXRes*0.5f-x)*0.07f);
     }
   }
 #endif
@@ -419,16 +410,10 @@ void ScaleformApp::DeInit()
 #ifdef _VISION_MOBILE
   V_SAFE_DELETE_ARRAY(m_ppTouchPoints);
 #else
-  m_spMouse = NULL; 
+  m_spMouseScreenMask = NULL; 
 #endif
 
-  // delete the movie instance  
-  m_pMainMenuVar = NULL;
   m_spMovie = NULL; 
-
-  // deinit (only relevant if bShowOnTexture was true)
-  m_spCamera = NULL;
-  m_spContext = NULL;
 }
 
 VScaleformMovieInstance* ScaleformApp::LoadMovie(const char* szMovieName)
@@ -469,9 +454,9 @@ void ScaleformApp::ParseCommandLine()
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131218)
+ * Havok SDK - Base file, BUILD(#20140327)
  * 
- * Confidential Information of Havok.  (C) Copyright 1999-2013
+ * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok
  * Logo, and the Havok buzzsaw logo are trademarks of Havok.  Title, ownership
  * rights, and intellectual property rights in the Havok software remain in

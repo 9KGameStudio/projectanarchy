@@ -2,37 +2,35 @@
  *
  * Confidential Information of Telekinesys Research Limited (t/a Havok). Not for disclosure or distribution without Havok's
  * prior written consent. This software contains code, techniques and know-how which is confidential and proprietary to Havok.
- * Product and Trade Secret source code contains trade secrets of Havok. Havok Software (C) Copyright 1999-2013 Telekinesys Research Limited t/a Havok. All Rights Reserved. Use of this software is subject to the terms of an end user license agreement.
+ * Product and Trade Secret source code contains trade secrets of Havok. Havok Software (C) Copyright 1999-2014 Telekinesys Research Limited t/a Havok. All Rights Reserved. Use of this software is subject to the terms of an end user license agreement.
  *
  */
 
 #include <Vision/Runtime/EnginePlugins/ThirdParty/ScaleformEnginePlugin/ScaleformEnginePlugin.hpp>
 
 // GFx includes
-#include "GFx/GFx_Player.h"
-#include "GFx/GFx_Loader.h"
-#include "GFx/GFx_Log.h"
-#include "Render/Renderer2D.h"
-#include "Kernel/SF_Threads.h"
+#include <GFx/GFx_Loader.h>
+#include <GFx/GFx_Log.h>
+#include <Render/Renderer2D.h>
+#include <Kernel/SF_Threads.h>
 
 #if defined (WIN32) && defined(_VR_DX9)
-#include "GFx_Renderer_D3D9.h"
+#include <GFx_Renderer_D3D9.h>
 #elif defined(WIN32) && defined(_VR_DX11)
-#include "GFx_Renderer_D3D1x.h"
+#include <GFx_Renderer_D3D1x.h>
 #elif defined (_VISION_XENON)
-#include "Render/X360/X360_HAL.h"
+#include <Render/X360/X360_HAL.h>
 #elif defined (_VISION_PS3)
-#include "GFx_Renderer_PS3.h"
+#include <GFx_Renderer_PS3.h>
 #elif defined (_VISION_MOBILE)
-#include "GFx_Renderer_GL.h"
+#include <GFx_Renderer_GL.h>
 #endif
 
 #ifdef SF_AMP_SERVER
-#include "GFx_AMP.h"
+#include <GFx_AMP.h>
 #endif
 
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Scripting/VScriptIncludes.hpp>
-#include <Vision/Runtime/EnginePlugins/ThirdParty/ScaleformEnginePlugin/VScaleformUtil.hpp>
 #include <Vision/Runtime/EnginePlugins/ThirdParty/ScaleformEnginePlugin/VScaleformMovie.hpp>
 #include <Vision/Runtime/EnginePlugins/ThirdParty/ScaleformEnginePlugin/vScaleformInternal.hpp>
 
@@ -196,18 +194,14 @@ Scaleform::File* VGFxFileOpener::OpenFile(const char* purl, int flags, int mode)
 //           VScaleformLog            //
 ////////////////////////////////////////
 
-void VScaleformLog::LogMessageVarg(Scaleform::LogMessageType messageType, const char* pfmt, va_list argList )
+void VScaleformLog::LogMessageVarg(Scaleform::LogMessageId messageId, const char* pfmt, va_list argList )
 {
-  const int MSG_MAX = FS_MAX_PATH;
-  char comp[MSG_MAX];
-  vsprintf(comp, pfmt, argList);
-
-#ifdef WIN32 
-  VLocale::UTF8ToMultiByte(comp,-1,comp,MSG_MAX);
-#endif
+  // Use local VString for now. Directly use hkvLog::Info as soon as it supports taking a va_list parameter.
+  VString tmp;
+  tmp.FormatArgList(pfmt, argList);
 
   // Output log to console
-  hkvLog::Info(comp);
+  hkvLog::Info(tmp);
 }
 
 #ifdef SF_AMP_SERVER
@@ -267,9 +261,9 @@ bool VScaleformAmpAppController::HandleAmpRequest(const Scaleform::GFx::AMP::Mes
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131218)
+ * Havok SDK - Base file, BUILD(#20140327)
  * 
- * Confidential Information of Havok.  (C) Copyright 1999-2013
+ * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok
  * Logo, and the Havok buzzsaw logo are trademarks of Havok.  Title, ownership
  * rights, and intellectual property rights in the Havok software remain in

@@ -2,7 +2,7 @@
  *
  * Confidential Information of Telekinesys Research Limited (t/a Havok). Not for disclosure or distribution without Havok's
  * prior written consent. This software contains code, techniques and know-how which is confidential and proprietary to Havok.
- * Product and Trade Secret source code contains trade secrets of Havok. Havok Software (C) Copyright 1999-2013 Telekinesys Research Limited t/a Havok. All Rights Reserved. Use of this software is subject to the terms of an end user license agreement.
+ * Product and Trade Secret source code contains trade secrets of Havok. Havok Software (C) Copyright 1999-2014 Telekinesys Research Limited t/a Havok. All Rights Reserved. Use of this software is subject to the terms of an end user license agreement.
  *
  */
 
@@ -17,6 +17,7 @@
 #include <Vision/Runtime/EnginePlugins/Havok/HavokPhysicsEnginePlugin/vHavokStaticMesh.hpp>
 #include <Vision/Runtime/EnginePlugins/Havok/HavokPhysicsEnginePlugin/vHavokRagdoll.hpp>
 #include <Vision/Runtime/EnginePlugins/Havok/HavokPhysicsEnginePlugin/vHavokCharacterController.hpp>
+#include <Vision/Runtime/EnginePlugins/Havok/HavokPhysicsEnginePlugin/vHavokCharacterControllerHelpers.hpp>
 #include <Vision/Runtime/EnginePlugins/Havok/HavokPhysicsEnginePlugin/vHavokBlockerVolumeComponent.hpp>
 #include <Vision/Runtime/EnginePlugins/Havok/HavokPhysicsEnginePlugin/vHavokProfiler.hpp>
 
@@ -628,7 +629,7 @@ vHavokPhysicsModule::vHavokPhysicsModule()
   m_bDebugRenderStaticMeshes = false;
 
   // Set simulation time step
-  m_fLeftOver = 0.f;
+  m_fAccumulatedTime = 0.0f;
   m_fTimeStep = VHAVOK_BASE_TIME_STEP;
 
   m_iMaxTicksPerFrame = 2;            // use up to two physics steps per frame
@@ -1659,7 +1660,7 @@ void vHavokPhysicsModule::EnableDebugRendering(bool bRigidBodies, bool bRagdolls
 // Simulation Update                                                          //
 // -------------------------------------------------------------------------- //
 
-void vHavokPhysicsModule::OnRunPhysics( float fDuration )
+void vHavokPhysicsModule::OnRunPhysics(float fDuration)
 {
   if (m_bUpdateFilter)
   {
@@ -1674,7 +1675,7 @@ void vHavokPhysicsModule::OnRunPhysics( float fDuration )
     return;
 
   // Update pending duration since last time step
-  m_fLeftOver += fDuration;
+  m_fAccumulatedTime += fDuration;
 
   // if a very very small delta then we can get a situation where Character Controllers have invalid inputs (0) etc
   // and would not have moved any 
@@ -1686,20 +1687,20 @@ void vHavokPhysicsModule::OnRunPhysics( float fDuration )
   {
     m_iNumTicksThisFrame = 1;
 
-    if (m_fMaxTimeStep > 0.0f && m_fLeftOver > m_fMaxTimeStep)
+    if (m_fMaxTimeStep > 0.0f && m_fAccumulatedTime > m_fMaxTimeStep)
     {
-      m_iNumTicksThisFrame = static_cast<int>(m_fLeftOver / m_fMaxTimeStep);
+      m_iNumTicksThisFrame = static_cast<int>(m_fAccumulatedTime / m_fMaxTimeStep);
       m_iNumTicksThisFrame = hkvMath::Min(m_iNumTicksThisFrame, m_iMaxTicksPerFrame);
       m_fTimeStep = m_fMaxTimeStep;
     }
-    else if (m_fLeftOver < m_fMinTimeStep)
+    else if (m_fAccumulatedTime < m_fMinTimeStep)
     {
       m_iNumTicksThisFrame = 0;
       m_fTimeStep = m_fMinTimeStep;
     }
     else
     {
-      m_fTimeStep = m_fLeftOver;
+      m_fTimeStep = m_fAccumulatedTime;
     }
   }
   // Configure this frame for fixed time stepping.
@@ -1711,7 +1712,7 @@ void vHavokPhysicsModule::OnRunPhysics( float fDuration )
     }
     else 
     {
-      m_iNumTicksThisFrame = static_cast<int>(m_fLeftOver / m_fTimeStep);
+      m_iNumTicksThisFrame = static_cast<int>(m_fAccumulatedTime / m_fTimeStep);
 
       // so it can not degenerate into ever decreasing time.
       m_iNumTicksThisFrame = hkvMath::Min(m_iNumTicksThisFrame, m_iMaxTicksPerFrame);
@@ -1724,18 +1725,18 @@ void vHavokPhysicsModule::OnRunPhysics( float fDuration )
   // this code can't be executed from within the task that calls PerformSimulation.
 
   {
-    // Need to step the controllers at actual frame dt as high framerates otherwise
+    // Need to step the controllers at actual frame dt as high frame rates otherwise
     // miss delta motion etc
     int iCount = m_simulatedControllers.Count();
     for (int i = 0; i < iCount; i++)
-      m_simulatedControllers.GetAt(i)->Step(m_fTimeStep, m_iNumTicksThisFrame, fDuration);
+      m_simulatedControllers.GetAt(i)->Step(m_fTimeStep, m_iNumTicksThisFrame, m_fAccumulatedTime);
 
-    const float fAccumulatedTimeStep = static_cast<float>(m_iNumTicksThisFrame) * m_fTimeStep;
-    if (fAccumulatedTimeStep > 0.0f)
+    const float fTotalSimulationTime = static_cast<float>(m_iNumTicksThisFrame) * m_fTimeStep;
+    if (fTotalSimulationTime > 0.0f)
     {
       int iCount = m_simulatedRigidBodies.Count();
       for (int i = 0; i < iCount; i++)
-        m_simulatedRigidBodies.GetAt(i)->Step(fAccumulatedTimeStep);
+        m_simulatedRigidBodies.GetAt(i)->Step(fTotalSimulationTime);
     }
   }
 
@@ -1805,8 +1806,8 @@ void vHavokPhysicsModule::PerformSimulation(bool bTask, bool bWorkerThread)
     iNumTicksThisFrame--;
   }
 
-  // Set the total duration to the remaining time since the last time step
-  m_fLeftOver = hkMath::fmod(m_fLeftOver, m_fTimeStep);
+  // Update the accumulated time since the last simulation step.
+  m_fAccumulatedTime = hkvMath::Max(0.0f, m_fAccumulatedTime - static_cast<float>(m_iNumTicksThisFrame) * m_fTimeStep);
 
   hkCheckDeterminismUtil::workerThreadFinishFrame();
 }
@@ -2628,7 +2629,7 @@ void vHavokPhysicsModule::RemoveRigidBody(vHavokRigidBody *pRigidBody)
 {
   VVERIFY_OR_RET(pRigidBody != NULL);
 
-  RemoveObjectFromQueues(pRigidBody,NULL,NULL,NULL);
+  RemoveObjectFromQueues(pRigidBody, NULL, NULL, NULL);
 
   // It is possible the body was never added to the world!
   if ( m_simulatedRigidBodies.Find(pRigidBody) != -1 )
@@ -3926,9 +3927,9 @@ void vHavokPhysicsModule::FinishDeterminismTest()
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131218)
+ * Havok SDK - Base file, BUILD(#20140327)
  * 
- * Confidential Information of Havok.  (C) Copyright 1999-2013
+ * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok
  * Logo, and the Havok buzzsaw logo are trademarks of Havok.  Title, ownership
  * rights, and intellectual property rights in the Havok software remain in

@@ -2,7 +2,7 @@
  *
  * Confidential Information of Telekinesys Research Limited (t/a Havok). Not for disclosure or distribution without Havok's
  * prior written consent. This software contains code, techniques and know-how which is confidential and proprietary to Havok.
- * Product and Trade Secret source code contains trade secrets of Havok. Havok Software (C) Copyright 1999-2013 Telekinesys Research Limited t/a Havok. All Rights Reserved. Use of this software is subject to the terms of an end user license agreement.
+ * Product and Trade Secret source code contains trade secrets of Havok. Havok Software (C) Copyright 1999-2014 Telekinesys Research Limited t/a Havok. All Rights Reserved. Use of this software is subject to the terms of an end user license agreement.
  *
  */
 
@@ -122,17 +122,26 @@ class vHavokBehaviorComponent : public IVObjectComponent, public hkbWorldListene
 		// Returns whether the specified node is active
 		VHAVOKBEHAVIOR_IMPEXP bool IsNodeActive(const char* nodeName);
 
+		// Returns whether there is a behavior variable of the specified name
+		VHAVOKBEHAVIOR_IMPEXP bool HasVariable(const char *variableName) const;
+
 		// Sets the value of the selected behavior float variable
-		VHAVOKBEHAVIOR_IMPEXP void SetFloatVar(const char* variableName, float value);
+		VHAVOKBEHAVIOR_IMPEXP bool SetFloatVar(const char* variableName, float value);
 
 		// Returns the value of the selected behavior float variable
 		VHAVOKBEHAVIOR_IMPEXP float GetFloatVar(const char* variableName);
 
 		// Sets the value of the selected behavior word variable
-		VHAVOKBEHAVIOR_IMPEXP void SetWordVar(const char* variableName, int value);
+		VHAVOKBEHAVIOR_IMPEXP bool SetWordVar(const char* variableName, int value);
+
+		// Returns the value of the selected behavior word variable
+		VHAVOKBEHAVIOR_IMPEXP int GetWordVar(const char* variableName);
 
 		// Sets the value of the selected behavior float variable
-		VHAVOKBEHAVIOR_IMPEXP void SetBoolVar(const char* variableName, bool value);
+		VHAVOKBEHAVIOR_IMPEXP bool SetBoolVar(const char* variableName, bool value);
+
+		// Returns the value of the selected behavior word variable
+		VHAVOKBEHAVIOR_IMPEXP bool GetBoolVar(const char* variableName);
 
 		// Returns world space transform of the selected bone
 		VHAVOKBEHAVIOR_IMPEXP void GetBoneTransform(const char* boneName, hkvVec3& outPos, hkvMat3& outRot ) const;
@@ -148,7 +157,7 @@ class vHavokBehaviorComponent : public IVObjectComponent, public hkbWorldListene
 		VHAVOKBEHAVIOR_IMPEXP bool GetBoolVar(const char* variableName) const;
 
 		// Triggers a behavior event
-		VHAVOKBEHAVIOR_IMPEXP void TriggerEvent(const char* eventName) const;
+		VHAVOKBEHAVIOR_IMPEXP bool TriggerEvent(const char* eventName) const;
 
 		// Registers a behavior event handler
 		VHAVOKBEHAVIOR_IMPEXP void RegisterEventHandler(const char* eventName);
@@ -218,9 +227,9 @@ class vHavokBehaviorComponent : public IVObjectComponent, public hkbWorldListene
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131218)
+ * Havok SDK - Base file, BUILD(#20140327)
  * 
- * Confidential Information of Havok.  (C) Copyright 1999-2013
+ * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok
  * Logo, and the Havok buzzsaw logo are trademarks of Havok.  Title, ownership
  * rights, and intellectual property rights in the Havok software remain in

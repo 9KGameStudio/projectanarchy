@@ -2,7 +2,7 @@
  *
  * Confidential Information of Telekinesys Research Limited (t/a Havok). Not for disclosure or distribution without Havok's
  * prior written consent. This software contains code, techniques and know-how which is confidential and proprietary to Havok.
- * Product and Trade Secret source code contains trade secrets of Havok. Havok Software (C) Copyright 1999-2013 Telekinesys Research Limited t/a Havok. All Rights Reserved. Use of this software is subject to the terms of an end user license agreement.
+ * Product and Trade Secret source code contains trade secrets of Havok. Havok Software (C) Copyright 1999-2014 Telekinesys Research Limited t/a Havok. All Rights Reserved. Use of this software is subject to the terms of an end user license agreement.
  *
  */
 
@@ -99,6 +99,7 @@ namespace Editor
       // register gizmo listeners
       EditorScene.ShapeChanged += new ShapeChangedEventHandler(visionView.Gizmo.OnShapeChanged);
       EditorScene.PropertyChanged += new CSharpFramework.PropertyChangedEventHandler(visionView.Gizmo.OnPropertyChanged);
+      EditorScene.PropertyChanged += new CSharpFramework.PropertyChangedEventHandler(this.OnPropertyChanged);
       EditorScene.LayerChanged += new CSharpFramework.LayerChangedEventHandler(visionView.Gizmo.OnLayerChanged);
       EditorManager.SceneChanged += new CSharpFramework.SceneChangedEventHandler(visionView.Gizmo.OnSceneChanged);
       EditorManager.ShapeSelectionChanged += new ShapeSelectionChangedEventHandler(visionView.Gizmo.OnSelectionChanged);
@@ -108,9 +109,6 @@ namespace Editor
       // set the default move context
       visionView.SetDefaultContext();
       visionView.Gizmo.DragMode = ShapeDragMode.MOVE;
-      visionView.Gizmo.LocalOrientation = true;
-      visionView.Gizmo.LocalTranslation = true;
-      visionView.Gizmo.LocalScaling = true;
 
       // setup the context menus
       // the item's implementation is in this class because the View doesn't know about actions
@@ -121,12 +119,8 @@ namespace Editor
       ShortCutConfig shortcuts = EditorManager.ShortCuts;
       shortcuts.Add(new MenuItemShortCut(pasteAtCursorToolStripMenuItem, Keys.None));
       shortcuts.Add(new MenuItemShortCut(showGridToolStripMenuItem, Keys.G));
-      shortcuts.Add(new MenuItemShortCut(snapPositionToolStripMenuItem, Keys.None));
-      shortcuts.Add(new MenuItemShortCut(snapRotationToolStripMenuItem, Keys.None));
-      shortcuts.Add(new MenuItemShortCut(relativeGridToolStripMenuItem, Keys.None));
-      shortcuts.Add(new MenuItemShortCut(gridLinesToolStripMenuItem, Keys.None));
-      shortcuts.Add(new MenuItemShortCut(volumeGridToolStripMenuItem, Keys.None));
-      shortcuts.Add(new MenuItemShortCut(setupGridToolStripMenuItem, Keys.None));
+      shortcuts.Add(new MenuItemShortCut(toolStripButton_EnableMoveSnap, Keys.None));
+      shortcuts.Add(new MenuItemShortCut(toolStripButton_EnableAngleSnap, Keys.None));
       shortcuts.Add(new MenuItemShortCut(solidToolStripMenuItem, Keys.None));
       shortcuts.Add(new MenuItemShortCut(wireframeToolStripMenuItem, Keys.None));
       shortcuts.Add(new MenuItemShortCut(sceneOriginToolStripMenuItem, Keys.None));
@@ -589,27 +583,7 @@ namespace Editor
       ContextMenuStrip menu = (ContextMenuStrip)sender;
 
       // grid
-      snapPositionToolStripMenuItem.Checked = EditorApp.ActiveView.Gizmo.MoveGrid.Enabled;
-      snapRotationToolStripMenuItem.Checked = EditorApp.ActiveView.Gizmo.RotateGrid.Enabled;
-      showGridToolStripMenuItem.Checked = EditorApp.ActiveView.ShowGrid;
-      relativeGridToolStripMenuItem.Checked = EditorApp.ActiveView.RelativeGrid;
-      gridLinesToolStripMenuItem.Checked = EditorApp.ActiveView.GridLines;
-      volumeGridToolStripMenuItem.Checked = EditorApp.ActiveView.VolumeGrid;
-
-      // check grid size
-      Vector3I size = EditorApp.ActiveView.Gizmo.MoveGrid.Size;
-      gridSize10ToolStripMenuItem.Checked = (size.X == 10) && (size.Y == 10) && (size.Z == 1);
-	  gridSize25ToolStripMenuItem.Checked = (size.X == 25) && (size.Y == 25) && (size.Z == 1);
-	  gridSize100ToolStripMenuItem.Checked = (size.X == 100) && (size.Y == 100) && (size.Z == 1);
-
-      // check spacing
-      Vector3F v = EditorApp.ActiveView.Gizmo.MoveGrid.Spacing;
-      units2ToolStripMenuItem.Checked = (v.X == 2.0f) && (v.Y == 2.0f);
-      units5ToolStripMenuItem.Checked = (v.X == 5.0f) && (v.Y == 5.0f);
-      units10ToolStripMenuItem.Checked = (v.X == 10.0f) && (v.Y == 10.0f);
-      units25ToolStripMenuItem.Checked = (v.X == 25.0f) && (v.Y == 25.0f);
-      units50ToolStripMenuItem.Checked = (v.X == 50.0f) && (v.Y == 50.0f);
-      units100ToolStripMenuItem.Checked = (v.X == 100.0f) && (v.Y == 100.0f);
+      showGridToolStripMenuItem.Checked = GizmoBase.GridSettings.GridMode != GridSettings.GridRenderMode.Disabled;
 
       // render mode
       solidToolStripMenuItem.Checked = visionView.EngineManager.RenderMode == RenderMode_e.Solid;
@@ -742,124 +716,15 @@ namespace Editor
 
     #region Context Grid
 
-    /// <summary>
-    /// Helper function
-    /// </summary>
-    /// <param name="fUnits"></param>
-    private void SetGridSpacing(float fUnits)
+    private void setupGridToolStripMenuItem_Click(object sender, EventArgs e)
     {
-      EditorApp.ActiveView.Gizmo.MoveGrid.SetSpacing(fUnits, fUnits, fUnits);
-      EditorApp.ActiveView.UpdateView(false);
-    }
-
-    // Set size of grid (number of cells in each dimension)
-    private void SetGridSize(int xSize, int ySize, int zSize)
-    {
-      EditorApp.ActiveView.Gizmo.MoveGrid.SetSize(xSize, ySize, zSize);
-      EditorApp.ActiveView.UpdateView(false);
-    }
-
-    private void snapPositionToolStripMenuItem_Click(object sender, EventArgs e)
-    {
-      snapPositionToolStripMenuItem.Checked = !snapPositionToolStripMenuItem.Checked;
-      EditorApp.ActiveView.Gizmo.MoveGrid.Enabled = snapPositionToolStripMenuItem.Checked;
-      EditorApp.ActiveView.UpdateView(false);
-    }
-
-    private void snapRotationToolStripMenuItem_Click(object sender, EventArgs e)
-    {
-      snapRotationToolStripMenuItem.Checked = !snapRotationToolStripMenuItem.Checked;
-      EditorApp.ActiveView.Gizmo.RotateGrid.Enabled = snapRotationToolStripMenuItem.Checked;
-      EditorApp.ActiveView.UpdateView(false);
+      GridPanel.Instance.Show();
     }
 
     private void showGridToolStripMenuItem_Click(object sender, EventArgs e)
     {
       showGridToolStripMenuItem.Checked = !showGridToolStripMenuItem.Checked;
-      EditorApp.ActiveView.ShowGrid = showGridToolStripMenuItem.Checked;
-      EditorApp.ActiveView.UpdateView(false);
-    }
-
-    private void relativeGridToolStripMenuItem_Click(object sender, EventArgs e)
-    {
-      relativeGridToolStripMenuItem.Checked = !relativeGridToolStripMenuItem.Checked;
-      EditorApp.ActiveView.RelativeGrid = relativeGridToolStripMenuItem.Checked;
-      EditorApp.ActiveView.UpdateView(false);
-    }
-
-    private void gridLinesToolStripMenuItem_Click(object sender, EventArgs e)
-    {
-      gridLinesToolStripMenuItem.Checked = !gridLinesToolStripMenuItem.Checked;
-      EditorApp.ActiveView.GridLines = gridLinesToolStripMenuItem.Checked;
-      EditorApp.ActiveView.UpdateView(false);
-    }
-
-    private void volumeGridToolStripMenuItem_Click(object sender, EventArgs e)
-    {
-      volumeGridToolStripMenuItem.Checked = !volumeGridToolStripMenuItem.Checked;
-      EditorApp.ActiveView.VolumeGrid = volumeGridToolStripMenuItem.Checked;
-      EditorApp.ActiveView.UpdateView(false);
-    }
-
-    private void gridSizeToolStripMenuItem_Click(object sender, EventArgs e)
-    {
-      SetGridSize(10, 10, 1);
-    }
-
-    private void gridSizeToolStripMenuItem1_Click(object sender, EventArgs e)
-    {
-      SetGridSize(25, 25, 1);
-    }
-
-    private void gridSizeToolStripMenuItem2_Click(object sender, EventArgs e)
-    {
-      SetGridSize(100, 100, 1);
-    }
-
-    private void unitsToolStripMenuItem_Click(object sender, EventArgs e)
-    {
-      SetGridSpacing(2.0f);
-    }
-
-    private void unitsToolStripMenuItem1_Click(object sender, EventArgs e)
-    {
-      SetGridSpacing(5.0f);
-    }
-
-    private void unitsToolStripMenuItem2_Click(object sender, EventArgs e)
-    {
-      SetGridSpacing(10.0f);
-    }
-
-    private void unitsToolStripMenuItem3_Click(object sender, EventArgs e)
-    {
-      SetGridSpacing(25.0f);
-    }
-
-    private void unitsToolStripMenuItem4_Click(object sender, EventArgs e)
-    {
-      SetGridSpacing(50.0f);
-    }
-
-    private void unitsToolStripMenuItem5_Click(object sender, EventArgs e)
-    {
-      SetGridSpacing(100.0f);
-    }
-
-    private void setupGridToolStripMenuItem_Click(object sender, EventArgs e)
-    {
-      SetupGridDlg dlg = new SetupGridDlg();
-
-      // set grid data in dialog
-      dlg.MoveGrid = EditorApp.ActiveView.Gizmo.MoveGrid;
-      dlg.RotateGrid = EditorApp.ActiveView.Gizmo.RotateGrid;
-
-      if (dlg.ShowDialog() != DialogResult.OK)
-        return;
-
-      // get it back from dialog
-      EditorApp.ActiveView.Gizmo.MoveGrid = dlg.MoveGrid;
-      EditorApp.ActiveView.Gizmo.RotateGrid = dlg.RotateGrid;
+      GizmoBase.GridSettings.GridMode = showGridToolStripMenuItem.Checked ? GridSettings.GridRenderMode.XYPlane : GridSettings.GridRenderMode.Disabled;
       EditorApp.ActiveView.UpdateView(false);
     }
 
@@ -881,13 +746,8 @@ namespace Editor
 
     private void toolStripButton_Rotate_DropDownOpening(object sender, EventArgs e)
     {
-      toolStripButton_EnableMoveSnap.Checked = EditorApp.ActiveView.Gizmo.RotateGrid.Enabled;
+      toolStripButton_EnableAngleSnap.Checked = EditorApp.ActiveView.Gizmo.RotateGrid.Enabled;
       toolStripButton_localOri.Checked = EditorApp.ActiveView.Gizmo.LocalOrientation;
-    }
-
-    private void toolStripSplitButton_Scale_DropDownOpening(object sender, EventArgs e)
-    {
-      toolStripButton_localScale.Checked = EditorApp.ActiveView.Gizmo.LocalScaling;
     }
 
     #endregion
@@ -1190,9 +1050,6 @@ namespace Editor
       ToolStripButton_IsolateSelection.Enabled = bHasScene && (ToolStripButton_IsolateSelection.Checked || EditorManager.SelectedShapes.Count > 0);
 
       ToolStripSplitButton_Camera.Enabled = bHasScene;
-      ToolStripMenuItem_View_ZoomIn.Enabled = bHasScene && !bPerspective;
-      ToolStripMenuItem_View_ZoomOut.Enabled = bHasScene && !bPerspective;
-      ToolStripMenuItem_View_ZoomDefault.Enabled = bHasScene && !bPerspective;
       ToolStripMenuItem_View_EditClipRange.Enabled = bHasScene;
       toolStripSplitButton_ViewIcons.Enabled = bHasScene;
     }
@@ -1262,12 +1119,6 @@ namespace Editor
       EditorApp.ActiveView.Gizmo.LocalOrientation = toolStripButton_localOri.Checked;
     }
 
-    private void toolStripButton_Scale_Click(object sender, EventArgs e)
-    {
-      EditorApp.ActiveView.Gizmo.DragMode = ShapeDragMode.SCALE;
-      EditorApp.ActiveView.Gizmo.LocalScaling = toolStripButton_localScale.Checked;
-    }
-
     private void toolStripButton_localPos_Click(object sender, EventArgs e)
     {
       EditorApp.ActiveView.Gizmo.LocalTranslation = toolStripButton_localPos.Checked;
@@ -1276,11 +1127,6 @@ namespace Editor
     private void toolStripButton_localOri_Click(object sender, EventArgs e)
     {
       EditorApp.ActiveView.Gizmo.LocalOrientation = toolStripButton_localOri.Checked;
-    }
-
-    private void toolStripButton_localScale_Click(object sender, EventArgs e)
-    {
-      EditorApp.ActiveView.Gizmo.LocalScaling = toolStripButton_localScale.Checked;
     }
 
     private void toolStripButton_StickToGround_Click(object sender, EventArgs e)
@@ -1330,9 +1176,9 @@ namespace Editor
     {
       VisionViewBase.ProjectionMode_e mode = EditorManager.ActiveView.ProjectionMode;
       ToolStripMenuItem_Perspective.Checked = mode == VisionViewBase.ProjectionMode_e.Perspective;
-      ToolStripMenuItem_PerspectiveTop.Enabled = (mode == VisionViewBase.ProjectionMode_e.Perspective);
-      ToolStripMenuItem_PerspectiveFront.Enabled = (mode == VisionViewBase.ProjectionMode_e.Perspective);
-      ToolStripMenuItem_PerspectiveRight.Enabled = (mode == VisionViewBase.ProjectionMode_e.Perspective);
+      ToolStripMenuItem_PerspectiveTop.Enabled = true;
+      ToolStripMenuItem_PerspectiveFront.Enabled = true;
+      ToolStripMenuItem_PerspectiveRight.Enabled = true;
       ToolStripMenuItem_Top.Checked = mode == VisionViewBase.ProjectionMode_e.Top;
       ToolStripMenuItem_Front.Checked = mode == VisionViewBase.ProjectionMode_e.Front;
       ToolStripMenuItem_Right.Checked = mode == VisionViewBase.ProjectionMode_e.Right;
@@ -1344,19 +1190,18 @@ namespace Editor
     private void perspectiveToolStripMenuItem_Perspective_Click(object sender, EventArgs e)
     {
       EditorManager.ActiveView.ProjectionMode = VisionViewBase.ProjectionMode_e.Perspective;
-      ToolStripMenuItem_PerspectiveTop.Enabled = true;
-      ToolStripMenuItem_PerspectiveFront.Enabled = true;
-      ToolStripMenuItem_PerspectiveRight.Enabled = true;
     }
 
     private void perspectiveToolStripMenuItem_PerspectiveTop_Click(object sender, EventArgs e)
     {
+      EditorManager.ActiveView.ProjectionMode = VisionViewBase.ProjectionMode_e.Perspective;
+
       // Calculate distance between camera and focusPoint
       CameraMoveContext context = EditorManager.ActiveView.CurrentContext as CameraMoveContext;
       float distance = (context.FocusPoint - View.CameraPosition).GetLength();
 
       // Reorient perspective camera to a top-down view
-      EditorManager.ActiveView.SetCameraRotation(new Vector3F(0, 90, 0));
+      EditorManager.ActiveView.SetCameraRotation(new Vector3F(90, 90, 0));
 
       // Position focus point relative to camera
       Vector3F cameraPosition = View.CameraPosition;
@@ -1365,12 +1210,14 @@ namespace Editor
 
     private void perspectiveToolStripMenuItem_PerspectiveFront_Click(object sender, EventArgs e)
     {
+      EditorManager.ActiveView.ProjectionMode = VisionViewBase.ProjectionMode_e.Perspective;
+
       // Calculate distance between camera and focusPoint
       CameraMoveContext context = EditorManager.ActiveView.CurrentContext as CameraMoveContext;
       float distance = (context.FocusPoint - View.CameraPosition).GetLength();
 
       // Reorient perspective camera to a top-down view
-      EditorManager.ActiveView.SetCameraRotation(new Vector3F(0, 0, 0));
+      EditorManager.ActiveView.SetCameraRotation(new Vector3F(90, 0, 0));
 
       // Position focus point relative to camera
       Vector3F cameraPosition = View.CameraPosition;
@@ -1379,12 +1226,14 @@ namespace Editor
 
     private void perspectiveToolStripMenuItem_PerspectiveRight_Click(object sender, EventArgs e)
     {
+      EditorManager.ActiveView.ProjectionMode = VisionViewBase.ProjectionMode_e.Perspective;
+
       // Calculate distance between camera and focusPoint
       CameraMoveContext context = EditorManager.ActiveView.CurrentContext as CameraMoveContext;
       float distance = (context.FocusPoint - View.CameraPosition).GetLength();
 
       // Reorient perspective camera to a top-down view
-      EditorManager.ActiveView.SetCameraRotation(new Vector3F(90, 0, 0));
+      EditorManager.ActiveView.SetCameraRotation(new Vector3F(180, 0, 0));
 
       // Position focus point relative to camera
       Vector3F cameraPosition = View.CameraPosition;
@@ -1398,9 +1247,7 @@ namespace Editor
         //the render node changed...
         if (EditorManager.Scene!=null && EditorManager.Scene.RendererNodeClass == IRendererNodeManager.RENDERERNODECLASS_DEFERRED)
         {
-          if( EditorManager.ActiveView.ProjectionMode == VisionViewBase.ProjectionMode_e.Top ||
-              EditorManager.ActiveView.ProjectionMode == VisionViewBase.ProjectionMode_e.Front ||
-              EditorManager.ActiveView.ProjectionMode == VisionViewBase.ProjectionMode_e.Right)
+          if (EditorManager.ActiveView.ProjectionMode != VisionViewBase.ProjectionMode_e.Perspective)
           {
             //switch back to perspective because we do not support deferred + orthogonal
             EditorManager.ActiveView.ProjectionMode = VisionViewBase.ProjectionMode_e.Perspective;
@@ -1423,9 +1270,7 @@ namespace Editor
     {
       // we do not need to perform any extra operations if we are already in orthogonal projection mode
       if ( (EditorManager.Scene != null && EditorManager.Scene.RendererNodeClass != IRendererNodeManager.RENDERERNODECLASS_DEFERRED) ||
-           EditorManager.ActiveView.ProjectionMode == VisionViewBase.ProjectionMode_e.Top ||
-           EditorManager.ActiveView.ProjectionMode == VisionViewBase.ProjectionMode_e.Front ||
-           EditorManager.ActiveView.ProjectionMode == VisionViewBase.ProjectionMode_e.Right)
+           EditorManager.ActiveView.ProjectionMode != VisionViewBase.ProjectionMode_e.Perspective)
       {
         EditorManager.ActiveView.ProjectionMode = mode;
         return;
@@ -1498,21 +1343,6 @@ namespace Editor
     private void rightToolStripMenuItem_Right_Click(object sender, EventArgs e)
     {
       othogonalProjection_enable(VisionViewBase.ProjectionMode_e.Right);
-    }
-
-    private void toolStripButtonZoomIn_Click(object sender, EventArgs e)
-    {
-      EditorManager.ActiveView.OrthographicScale *= (float)Math.Sqrt(0.5);
-    }
-
-    private void toolStripButton_ZoomOut_Click(object sender, EventArgs e)
-    {
-      EditorManager.ActiveView.OrthographicScale *= (float)Math.Sqrt(2.0);
-    }
-
-    private void toolStripButton_Zoom100_Click(object sender, EventArgs e)
-    {
-      EditorManager.ActiveView.OrthographicScale = 1.0f;
     }
 
     private void toolStripButton_ZoomFit_Click(object sender, EventArgs e)
@@ -1758,37 +1588,9 @@ namespace Editor
         new object[3] { null, CurrentDropToFloorAxis, true });
     }
 
-    private void uniformScaleToolStripMenuItem1_Click(object sender, EventArgs e)
-    {
-      SetScalingState(true);
-    }
-
-    private void nonuniformScaleToolStripMenuItem1_Click(object sender, EventArgs e)
-    {
-      SetScalingState(false);
-    }
-
     private void toolStripSplitButton_Scale_ButtonClick(object sender, EventArgs e)
     {
-      if (EditorApp.ActiveView.Gizmo.UseUniformScaling)
-        EditorApp.ActiveView.Gizmo.DragMode = ShapeDragMode.UNIFORMSCALE;
-      else
-        EditorApp.ActiveView.Gizmo.DragMode = ShapeDragMode.SCALE;
-    }
-
-    private void SetScalingState(bool useUniform)
-    {
-      EditorApp.ActiveView.Gizmo.UseUniformScaling = useUniform;
-      if (useUniform)
-      {
-        EditorApp.ActiveView.Gizmo.DragMode = ShapeDragMode.UNIFORMSCALE;
-        ToolStripButton_Scale.Image = global::Editor.Properties.Resources.toolbar_scale_uniform;
-      }
-      else
-      {
-        EditorApp.ActiveView.Gizmo.DragMode = ShapeDragMode.SCALE;
-        ToolStripButton_Scale.Image = global::Editor.Properties.Resources.toolbar_scale_nonuniform;
-      }
+      EditorApp.ActiveView.Gizmo.DragMode = ShapeDragMode.SCALE;
     }
 
     private void toolStripDropDownButton_PerspectiveMode_ButtonClick(object sender, EventArgs e)
@@ -1885,9 +1687,7 @@ namespace Editor
     void normalShadingItem_BeforeChangingShadingMode(EnginePanel.ShadingModeChangedEventArgs e)
     {
       if ( (EditorManager.Scene != null &&  EditorManager.Scene.RendererNodeClass == IRendererNodeManager.RENDERERNODECLASS_DEFERRED) &&
-           (EditorManager.ActiveView.ProjectionMode == VisionViewBase.ProjectionMode_e.Top ||
-            EditorManager.ActiveView.ProjectionMode == VisionViewBase.ProjectionMode_e.Front ||
-            EditorManager.ActiveView.ProjectionMode == VisionViewBase.ProjectionMode_e.Right))
+           (EditorManager.ActiveView.ProjectionMode != VisionViewBase.ProjectionMode_e.Perspective))
       {
         //switch back to perspective because we do not support deferred + orthogonal
         EditorManager.ActiveView.ProjectionMode = VisionViewBase.ProjectionMode_e.Perspective;
@@ -2462,7 +2262,7 @@ namespace Editor
         case GizmoChangedArgs.Action.ModeChanged:
           ToolStripButton_Move.Checked = (e.newMode == ShapeDragMode.MOVE) ? CheckState.Checked : CheckState.Unchecked;
           ToolStripButton_Rotate.Checked = (e.newMode == ShapeDragMode.ROTATE) ? CheckState.Checked : CheckState.Unchecked;
-          ToolStripButton_Scale.Checked = (e.newMode == ShapeDragMode.SCALE || e.newMode == ShapeDragMode.UNIFORMSCALE) ? CheckState.Checked : CheckState.Unchecked;
+          ToolStripButton_Scale.Checked = e.newMode == ShapeDragMode.SCALE;
           ToolStripButton_Link.Checked = (e.newMode == ShapeDragMode.LINK) ? CheckState.Checked : CheckState.Unchecked;
           break;
         case GizmoChangedArgs.Action.LocalOrientationChanged:
@@ -2470,9 +2270,6 @@ namespace Editor
           break;
         case GizmoChangedArgs.Action.LocalTranslationChanged:
           toolStripButton_localPos.CheckState = e.bNewLocalTranslation ? CheckState.Checked : CheckState.Unchecked;
-          break;
-        case GizmoChangedArgs.Action.LocalScalingChanged:
-          toolStripButton_localScale.CheckState = e.bNewLocalScaling ? CheckState.Checked : CheckState.Unchecked;
           break;
         case GizmoChangedArgs.Action.StickObjectsToGroundChanged:
           toolStripButton_StickToGround.CheckState = e.bNewStickObjectsToGround ? CheckState.Checked : CheckState.Unchecked;
@@ -2520,6 +2317,8 @@ namespace Editor
       ToolStripButton_ZoomFit.Image = (EditorManager.SelectedShapes.Count > 0) ? Properties.Resources.frame_selected : Properties.Resources.frame_all;
       ToolStripButton_ZoomFit.ToolTipText = (EditorManager.SelectedShapes.Count > 0) ? "Focus On Selection" : "Focus Scene";
 
+      updateTransformStrip();
+
       // Update focus if enabled
       if (EditorManager.Settings.FocusOnSelection)
         FocusOnSelection();
@@ -2527,15 +2326,466 @@ namespace Editor
       EditorManager.ActiveView.UpdateView(false);
     }
 
+    public void OnPropertyChanged(object sender, PropertyChangedArgs e)
+    {
+      updateTransformStrip();
+    }
+
     #endregion
 
+    private void ToolStripButton_Scale_Click_1(object sender, EventArgs e)
+    {
+      EditorApp.ActiveView.Gizmo.DragMode = ShapeDragMode.SCALE;
+    }
+
+    // Toggle whether the transform strip opperates in relative or absolute mode.
+    bool relativeTransform = false;
+    private void transformStrip_toggleTransformMode_Click(object sender, EventArgs e)
+    {
+      relativeTransform = ((ToolStripButton)sender).Checked;
+
+      ToolStripButton senderButton = (ToolStripButton)sender;
+      if (relativeTransform)
+      {
+        senderButton.Image = Editor.Properties.Resources.toolbar_transform_relative;
+      }
+      else
+      {
+        senderButton.Image = Editor.Properties.Resources.toolbar_transform_absolute;
+      }
+
+      updateTransformStrip();
+    }
+
+    private void transformStrip_KeyDown(object sender, KeyEventArgs e)
+    {
+      // Do not send Escape/Delete to editor event key manager, as they cause incompatible behavior
+      if (e.KeyCode != Keys.Delete
+       && e.KeyCode != Keys.Escape)
+      {
+        EditorManager.EditorComponentKeyDown(null, e);
+      }
+
+      // Enter/Space/Tab commits the current entry
+      if (e.KeyCode == Keys.Enter 
+       || e.KeyCode == Keys.Space 
+       || e.KeyCode == Keys.Tab)
+      {
+        if (relativeTransform && e.KeyCode == Keys.Enter)
+        {
+          this.transformStrip_Leave(sender, e);
+
+          ToolStripTextBox textBox = sender as ToolStripTextBox;
+
+          if (textBox != null)
+            textBox.SelectAll();
+        }
+        else
+        {
+          this.SelectNextControl(this.ActiveControl, true, true, true, true);
+        }
+      }
+    }
+
+    // Filters out letter & symbol keys that are not used in numbers
+    private void transformStripTextBox_KeyPress(object sender, KeyPressEventArgs e)
+    {
+      if (!char.IsDigit(e.KeyChar) && e.KeyChar != '.' && e.KeyChar != '-' && e.KeyChar != ',' && e.KeyChar != '\b')
+      {
+        e.Handled = true;
+      }
+    }
+
+	// Select all textbox text when clicked
+    private void transformStripTextBox_Click(object sender, EventArgs e)
+    {
+      ToolStripTextBox textBox = sender as ToolStripTextBox;
+
+      if (textBox != null)
+        textBox.SelectAll();
+    }
+
+    private void transformStripTextBox_Cancel(object sender, EventArgs e)
+    {
+      updateTransformStrip();
+
+      ToolStripTextBox textBox = sender as ToolStripTextBox;
+
+      if (textBox != null)
+        textBox.SelectAll();
+    }
+
+    // When focus leaves a transform strip element, apply the modification to all selected shapes
+    private void transformStrip_Leave(object sender, EventArgs e)
+    {
+      
+      ToolStripTextBox textBox = sender as ToolStripTextBox;
+
+      if (textBox != null)
+      {
+        try
+        {
+          // Fetch text from current text box and determine field based on textbox id
+          float value = Single.Parse(textBox.Text);
+          String property = "";
+          if (textBox == transformStrip_TranslateX)
+            property = "x";
+          else if (textBox == transformStrip_TranslateY)
+            property = "y";
+          else if (textBox == transformStrip_TranslateZ)
+            property = "z";
+          else if (textBox == transformStrip_Yaw)
+            property = "Yaw";
+          else if (textBox == transformStrip_Pitch)
+            property = "Pitch";
+          else if (textBox == transformStrip_Roll)
+            property = "Roll";
+          else if (textBox == transformStrip_ScaleX)
+            property = "ScaleX";
+          else if (textBox == transformStrip_ScaleY)
+            property = "ScaleY";
+          else if (textBox == transformStrip_ScaleZ)
+            property = "ScaleZ";
+          else if (textBox == transformStrip_ScaleXYZ)
+            property = "UniformScaling";
+
+          // Create a group action to allow for group undo/redo
+          GroupAction groupAction = new GroupAction("Transform Selected");
+
+          // Create property actions for each selected shape
+          foreach (ShapeBase shape in EditorManager.SelectedShapes)
+          {
+            Shape3D shape3D = shape as Shape3D;
+
+            if (shape3D != null)
+            {
+              float newValue = value;
+              float orgValue = 0;
+              bool bAdd = true;
+
+              if (textBox == transformStrip_TranslateX)
+                orgValue = shape3D.Position.X;
+              else if (textBox == transformStrip_TranslateY)
+                orgValue = shape3D.Position.Y;
+              else if (textBox == transformStrip_TranslateZ)
+                orgValue = shape3D.Position.Z;
+              else if (textBox == transformStrip_Yaw)
+                orgValue = shape3D.Orientation.X;
+              else if (textBox == transformStrip_Pitch)
+                orgValue = shape3D.Orientation.Y;
+              else if (textBox == transformStrip_Roll)
+                orgValue = shape3D.Orientation.Z;
+              else if (textBox == transformStrip_ScaleX)
+              {
+                bAdd = false;
+                orgValue = shape3D.ScaleX;
+              }
+              else if (textBox == transformStrip_ScaleY)
+              {
+                bAdd = false;
+                orgValue = shape3D.ScaleY;
+              }
+              else if (textBox == transformStrip_ScaleZ)
+              {
+                bAdd = false;
+                orgValue = shape3D.ScaleZ;
+              }
+              else if (textBox == transformStrip_ScaleXYZ)
+              {
+                bAdd = false;
+                orgValue = shape3D.UniformScaling;
+              }
+
+              // When using relative transforms, apply increment to current value
+              if (relativeTransform)
+              {
+                if (bAdd)
+                  newValue += orgValue;
+                else
+                  newValue *= orgValue;
+              }
+
+              // do not create an undo step, unless the property actually changed
+              if (newValue != orgValue)
+                groupAction.Add(SetPropertyAction.CreateSetPropertyAction(shape3D, property, newValue));
+            }
+          }
+
+          EditorManager.Actions.Add(groupAction);
+        }
+        catch (System.FormatException except)
+        {
+          updateTransformStrip();
+          return;
+        }
+        catch (System.OverflowException except)
+        {
+          updateTransformStrip();
+          return;
+        }
+      }
+    }
+
+    // Updates the visibility and enabled fields of transform strip elements based on current state and selection
+    public void updateTransformStrip()
+    {
+      // Base visibility on editor settings
+      // changing this setting is expensive, as WinForms does not make an early out, so we have to check this ourselves
+      if (transformStrip_EnginePanel.Visible != EditorManager.Settings.ShowTransformStrip)
+        transformStrip_EnginePanel.Visible = EditorManager.Settings.ShowTransformStrip;
+
+      if (!transformStrip_EnginePanel.Visible)
+        return;
+
+	    // Early-out when a clone operation is detected, as clone operations perform incremental add operations for
+	    // each instance, leading to O(n^2) performance
+      CameraMoveContext context = EditorManager.ActiveView.CurrentContext as CameraMoveContext;
+      if (context.CloneSize > 0 && EditorManager.SelectedShapes.Count < context.CloneSize)
+        return;
+
+      // Enable transform strip and update if there are selected shapes
+      if (EditorManager.SelectedShapes.Count > 0)
+      {
+        transformStrip_EnginePanel.Enabled = true;
+
+        bool bMultiSelect = (EditorManager.SelectedShapes.Count > 1);
+
+        // Copying transforms is poorly defined for multiple selections, so disable this option
+        toolStripMenuItem_CopyTranslation.Enabled = !bMultiSelect;
+        toolStripMenuItem_CopyRotation.Enabled = !bMultiSelect;
+        toolStripMenuItem_CopyScale.Enabled = !bMultiSelect;
+
+
+        Shape3D firstSelectedShape = (Shape3D)EditorManager.SelectedShapes[0];
+        if (firstSelectedShape != null)
+        {
+          // For relative transforms, clear strip to "identity" values
+          if (relativeTransform)
+          {
+            transformStrip_TranslateX.Text = "0";
+            transformStrip_TranslateY.Text = "0";
+            transformStrip_TranslateZ.Text = "0";
+
+            transformStrip_Yaw.Text = "0";
+            transformStrip_Pitch.Text = "0";
+            transformStrip_Roll.Text = "0";
+
+            transformStrip_ScaleX.Text = "1";
+            transformStrip_ScaleY.Text = "1";
+            transformStrip_ScaleZ.Text = "1";
+            transformStrip_ScaleXYZ.Text = "1";
+          }
+          // For absolute transforms, update with selected shape transforms
+          else
+          {
+            transformStrip_TranslateX.Text = firstSelectedShape.Position.X.ToString();
+            transformStrip_TranslateY.Text = firstSelectedShape.Position.Y.ToString();
+            transformStrip_TranslateZ.Text = firstSelectedShape.Position.Z.ToString();
+
+            transformStrip_Yaw.Text = firstSelectedShape.Orientation.X.ToString();
+            transformStrip_Pitch.Text = firstSelectedShape.Orientation.Y.ToString();
+            transformStrip_Roll.Text = firstSelectedShape.Orientation.Z.ToString();
+
+            transformStrip_ScaleX.Text = firstSelectedShape.ScaleX.ToString();
+            transformStrip_ScaleY.Text = firstSelectedShape.ScaleY.ToString();
+            transformStrip_ScaleZ.Text = firstSelectedShape.ScaleZ.ToString();
+            transformStrip_ScaleXYZ.Text = firstSelectedShape.UniformScaling.ToString();
+
+            // When multiple shapes are selected, clear all transforms fields that aren't identical for all selected objects
+            if (EditorManager.SelectedShapes.Count > 1)
+            {
+              Vector3F position = firstSelectedShape.Position;
+              Vector3F orientation = firstSelectedShape.Orientation;
+              Vector3F scale = new Vector3F(firstSelectedShape.ScaleX, firstSelectedShape.ScaleY, firstSelectedShape.ScaleZ);
+              float uniformScale = firstSelectedShape.UniformScaling;
+
+              foreach (ShapeBase shape in EditorManager.SelectedShapes)
+              {
+                Shape3D shape3D = shape as Shape3D;
+                if (shape3D != null)
+                {
+                  if (shape3D.Position.X != position.X)
+                    transformStrip_TranslateX.Text = "";
+                  if (shape3D.Position.Y != position.Y)
+                    transformStrip_TranslateY.Text = "";
+                  if (shape3D.Position.Z != position.Z)
+                    transformStrip_TranslateZ.Text = "";
+                  if (shape3D.Orientation.X != orientation.X)
+                    transformStrip_Yaw.Text = "";
+                  if (shape3D.Orientation.Y != orientation.Y)
+                    transformStrip_Pitch.Text = "";
+                  if (shape3D.Orientation.Z != orientation.Z)
+                    transformStrip_Roll.Text = "";
+                  if (shape3D.ScaleX != scale.X)
+                    transformStrip_ScaleX.Text = "";
+                  if (shape3D.ScaleY != scale.Y)
+                    transformStrip_ScaleY.Text = "";
+                  if (shape3D.ScaleZ != scale.Z)
+                    transformStrip_ScaleZ.Text = "";
+                  if (shape3D.UniformScaling != uniformScale)
+                    transformStrip_ScaleXYZ.Text = "";
+                }
+                else
+                {
+                  transformStrip_TranslateX.Text = "";
+                  transformStrip_TranslateY.Text = "";
+                  transformStrip_TranslateZ.Text = "";
+
+                  transformStrip_Yaw.Text = "";
+                  transformStrip_Pitch.Text = "";
+                  transformStrip_Roll.Text = "";
+
+                  transformStrip_ScaleX.Text = "";
+                  transformStrip_ScaleY.Text = "";
+                  transformStrip_ScaleZ.Text = "";
+                  transformStrip_ScaleXYZ.Text = "";
+                  break;
+                }
+              }
+            }
+          }
+        }
+      }
+      // Otherwise clear all text boxes and disable the strip
+      else
+      {
+        transformStrip_EnginePanel.Enabled = false;
+
+        transformStrip_TranslateX.Text = "";
+        transformStrip_TranslateY.Text = "";
+        transformStrip_TranslateZ.Text = "";
+        transformStrip_Yaw.Text = "";
+        transformStrip_Pitch.Text = "";
+        transformStrip_Roll.Text = "";
+        transformStrip_ScaleX.Text = "";
+        transformStrip_ScaleY.Text = "";
+        transformStrip_ScaleZ.Text = "";
+        transformStrip_ScaleXYZ.Text = "";
+      }
+    }
+
+    // Copies selected shape's translation field to a special clipboard. Always uses absolute translation
+    private Vector3F translationClipboard = new Vector3F(0, 0, 0);
+    private void copyTranslationStripMenuItem1_Click(object sender, EventArgs e)
+    {
+      if (EditorManager.SelectedShapes.Count > 0)
+      {
+        Shape3D selectedShape = EditorManager.SelectedShapes[0] as Shape3D;
+        if (selectedShape != null)
+        {
+          translationClipboard.X = selectedShape.Position.X;
+          translationClipboard.Y = selectedShape.Position.Y;
+          translationClipboard.Z = selectedShape.Position.Z;
+        }
+      }
+    }
+
+    // Sets the absolute translation of all selected shapes to the value of the translation clipboard
+    private void pasteTranslationToolStripMenuItem_Click(object sender, EventArgs e)
+    {
+      transformStrip_TranslateX.Text = translationClipboard.X.ToString();
+      transformStrip_TranslateY.Text = translationClipboard.Y.ToString();
+      transformStrip_TranslateZ.Text = translationClipboard.Z.ToString();
+      
+      GroupAction groupAction = new GroupAction("Transform Selected");
+      foreach (ShapeBase shape in EditorManager.SelectedShapes)
+      {
+        Shape3D shape3D = shape as Shape3D;
+        if (shape3D != null)
+        {
+          groupAction.Add(SetPropertyAction.CreateSetPropertyAction(shape3D, "x", translationClipboard.X));
+          groupAction.Add(SetPropertyAction.CreateSetPropertyAction(shape3D, "y", translationClipboard.Y));
+          groupAction.Add(SetPropertyAction.CreateSetPropertyAction(shape3D, "z", translationClipboard.Z));
+        }
+      }
+      EditorManager.Actions.Add(groupAction);
+    }
+
+    // Copies selected shape's rotation field to a special clipboard. Always uses absolute rotation
+    private Vector3F rotationClipboard = new Vector3F(0, 0, 0);
+    private void copyRotationToolStripMenuItem_Click(object sender, EventArgs e)
+    {
+      if (EditorManager.SelectedShapes.Count > 0)
+      {
+        Shape3D selectedShape = EditorManager.SelectedShapes[0] as Shape3D;
+        if (selectedShape != null)
+        {
+          rotationClipboard.X = selectedShape.Yaw;
+          rotationClipboard.Y = selectedShape.Pitch;
+          rotationClipboard.Z = selectedShape.Roll;
+        }
+      }
+    }
+
+    // Sets the absolute rotation of all selected shapes to the value of the rotation clipboard
+    private void pasteRotationToolStripMenuItem_Click(object sender, EventArgs e)
+    {
+      transformStrip_Yaw.Text = rotationClipboard.X.ToString();
+      transformStrip_Pitch.Text = rotationClipboard.Y.ToString();
+      transformStrip_Roll.Text = rotationClipboard.Z.ToString();
+
+      GroupAction groupAction = new GroupAction("Transform Selected");
+      foreach (ShapeBase shape in EditorManager.SelectedShapes)
+      {
+        Shape3D shape3D = shape as Shape3D;
+        if (shape3D != null)
+        {
+          groupAction.Add(SetPropertyAction.CreateSetPropertyAction(shape3D, "Yaw", rotationClipboard.X));
+          groupAction.Add(SetPropertyAction.CreateSetPropertyAction(shape3D, "Pitch", rotationClipboard.Y));
+          groupAction.Add(SetPropertyAction.CreateSetPropertyAction(shape3D, "Roll", rotationClipboard.Z));
+        }
+      }
+      EditorManager.Actions.Add(groupAction);
+    }
+
+    // Copies selected shape's scale field to a special clipboard. Always uses absolute scale
+    private Vector3F scaleClipboard = new Vector3F(1, 1, 1);
+    private void copyScaleToolStripMenuItem_Click(object sender, EventArgs e)
+    {
+      if (EditorManager.SelectedShapes.Count > 0)
+      {
+        Shape3D selectedShape = EditorManager.SelectedShapes[0] as Shape3D;
+        if (selectedShape != null)
+        {
+          scaleClipboard.X = selectedShape.ScaleX;
+          scaleClipboard.Y = selectedShape.ScaleY;
+          scaleClipboard.Z = selectedShape.ScaleZ;
+        }
+      }
+    }
+
+    // Sets the absolute scale of all selected shapes to the value of the scale clipboard
+    private void pasteScaleToolStripMenuItem_Click(object sender, EventArgs e)
+    {
+      transformStrip_ScaleX.Text = scaleClipboard.X.ToString();
+      transformStrip_ScaleY.Text = scaleClipboard.Y.ToString();
+      transformStrip_ScaleZ.Text = scaleClipboard.Z.ToString();
+
+      GroupAction groupAction = new GroupAction("Transform Selected");
+      foreach (ShapeBase shape in EditorManager.SelectedShapes)
+      {
+        Shape3D shape3D = shape as Shape3D;
+        if (shape3D != null)
+        {
+          groupAction.Add(SetPropertyAction.CreateSetPropertyAction(shape3D, "ScaleX", scaleClipboard.X));
+          groupAction.Add(SetPropertyAction.CreateSetPropertyAction(shape3D, "ScaleY", scaleClipboard.Y));
+          groupAction.Add(SetPropertyAction.CreateSetPropertyAction(shape3D, "ScaleZ", scaleClipboard.Z));
+        }
+      }
+      EditorManager.Actions.Add(groupAction);
+    }
+
+    private void ToolStripButton_ZoomFit_ButtonClick(object sender, EventArgs e)
+    {
+      FocusOnSelection();
+    }
   }
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20131218)
+ * Havok SDK - Base file, BUILD(#20140328)
  * 
- * Confidential Information of Havok.  (C) Copyright 1999-2013
+ * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok
  * Logo, and the Havok buzzsaw logo are trademarks of Havok.  Title, ownership
  * rights, and intellectual property rights in the Havok software remain in

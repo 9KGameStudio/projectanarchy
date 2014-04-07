@@ -10389,11 +10389,40 @@ fail:
 }
 
 
+static int _wrap_vHavokBehaviorComponent_HasVariable(lua_State* L) {
+  int SWIG_arg = 0;
+  vHavokBehaviorComponent *arg1 = (vHavokBehaviorComponent *) 0 ;
+  char *arg2 = (char *) 0 ;
+  bool result;
+  
+  SWIG_check_num_args("HasVariable",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("HasVariable",1,"vHavokBehaviorComponent *");
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("HasVariable",1,"vHavokBehaviorComponent *");
+  if(!SWIG_lua_isnilstring(L,2)) SWIG_fail_arg("HasVariable",2,"char const *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_vHavokBehaviorComponent,0))){
+    SWIG_fail_ptr("vHavokBehaviorComponent_HasVariable",1,SWIGTYPE_p_vHavokBehaviorComponent);
+  }
+  
+  arg2 = (char *)lua_tostring(L, 2);
+  result = (bool)(arg1)->HasVariable((char const *)arg2);
+  lua_pushboolean(L,(int)(result!=0)); SWIG_arg++;
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
 static int _wrap_vHavokBehaviorComponent_SetFloatVar(lua_State* L) {
   int SWIG_arg = 0;
   vHavokBehaviorComponent *arg1 = (vHavokBehaviorComponent *) 0 ;
   char *arg2 = (char *) 0 ;
   float arg3 ;
+  bool result;
   
   SWIG_check_num_args("SetFloatVar",3,3)
   if(lua_isnil(L, 1)) SWIG_fail_arg("SetFloatVar",1,"vHavokBehaviorComponent *");
@@ -10407,8 +10436,36 @@ static int _wrap_vHavokBehaviorComponent_SetFloatVar(lua_State* L) {
   
   arg2 = (char *)lua_tostring(L, 2);
   arg3 = (float)lua_tonumber(L, 3);
-  (arg1)->SetFloatVar((char const *)arg2,arg3);
+  result = (bool)(arg1)->SetFloatVar((char const *)arg2,arg3);
+  lua_pushboolean(L,(int)(result!=0)); SWIG_arg++;
+  return SWIG_arg;
   
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_vHavokBehaviorComponent_GetFloatVar(lua_State* L) {
+  int SWIG_arg = 0;
+  vHavokBehaviorComponent *arg1 = (vHavokBehaviorComponent *) 0 ;
+  char *arg2 = (char *) 0 ;
+  float result;
+  
+  SWIG_check_num_args("GetFloatVar",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("GetFloatVar",1,"vHavokBehaviorComponent *");
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("GetFloatVar",1,"vHavokBehaviorComponent *");
+  if(!SWIG_lua_isnilstring(L,2)) SWIG_fail_arg("GetFloatVar",2,"char const *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_vHavokBehaviorComponent,0))){
+    SWIG_fail_ptr("vHavokBehaviorComponent_GetFloatVar",1,SWIGTYPE_p_vHavokBehaviorComponent);
+  }
+  
+  arg2 = (char *)lua_tostring(L, 2);
+  result = (float)(arg1)->GetFloatVar((char const *)arg2);
+  lua_pushnumber(L, (lua_Number) result); SWIG_arg++;
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -10424,6 +10481,7 @@ static int _wrap_vHavokBehaviorComponent_SetWordVar(lua_State* L) {
   vHavokBehaviorComponent *arg1 = (vHavokBehaviorComponent *) 0 ;
   char *arg2 = (char *) 0 ;
   int arg3 ;
+  bool result;
   
   SWIG_check_num_args("SetWordVar",3,3)
   if(lua_isnil(L, 1)) SWIG_fail_arg("SetWordVar",1,"vHavokBehaviorComponent *");
@@ -10437,8 +10495,36 @@ static int _wrap_vHavokBehaviorComponent_SetWordVar(lua_State* L) {
   
   arg2 = (char *)lua_tostring(L, 2);
   arg3 = (int)lua_tonumber(L, 3);
-  (arg1)->SetWordVar((char const *)arg2,arg3);
+  result = (bool)(arg1)->SetWordVar((char const *)arg2,arg3);
+  lua_pushboolean(L,(int)(result!=0)); SWIG_arg++;
+  return SWIG_arg;
   
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_vHavokBehaviorComponent_GetWordVar(lua_State* L) {
+  int SWIG_arg = 0;
+  vHavokBehaviorComponent *arg1 = (vHavokBehaviorComponent *) 0 ;
+  char *arg2 = (char *) 0 ;
+  int result;
+  
+  SWIG_check_num_args("GetWordVar",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("GetWordVar",1,"vHavokBehaviorComponent *");
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("GetWordVar",1,"vHavokBehaviorComponent *");
+  if(!SWIG_lua_isnilstring(L,2)) SWIG_fail_arg("GetWordVar",2,"char const *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_vHavokBehaviorComponent,0))){
+    SWIG_fail_ptr("vHavokBehaviorComponent_GetWordVar",1,SWIGTYPE_p_vHavokBehaviorComponent);
+  }
+  
+  arg2 = (char *)lua_tostring(L, 2);
+  result = (int)(arg1)->GetWordVar((char const *)arg2);
+  lua_pushnumber(L, (lua_Number) result); SWIG_arg++;
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -10454,6 +10540,7 @@ static int _wrap_vHavokBehaviorComponent_SetBoolVar(lua_State* L) {
   vHavokBehaviorComponent *arg1 = (vHavokBehaviorComponent *) 0 ;
   char *arg2 = (char *) 0 ;
   bool arg3 ;
+  bool result;
   
   SWIG_check_num_args("SetBoolVar",3,3)
   if(lua_isnil(L, 1)) SWIG_fail_arg("SetBoolVar",1,"vHavokBehaviorComponent *");
@@ -10467,8 +10554,8 @@ static int _wrap_vHavokBehaviorComponent_SetBoolVar(lua_State* L) {
   
   arg2 = (char *)lua_tostring(L, 2);
   arg3 = (lua_toboolean(L, 3)!=0);
-  (arg1)->SetBoolVar((char const *)arg2,arg3);
-  
+  result = (bool)(arg1)->SetBoolVar((char const *)arg2,arg3);
+  lua_pushboolean(L,(int)(result!=0)); SWIG_arg++;
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -10552,6 +10639,7 @@ static int _wrap_vHavokBehaviorComponent_TriggerEvent(lua_State* L) {
   int SWIG_arg = 0;
   vHavokBehaviorComponent *arg1 = (vHavokBehaviorComponent *) 0 ;
   char *arg2 = (char *) 0 ;
+  bool result;
   
   SWIG_check_num_args("TriggerEvent",2,2)
   if(lua_isnil(L, 1)) SWIG_fail_arg("TriggerEvent",1,"vHavokBehaviorComponent const *");
@@ -10563,8 +10651,8 @@ static int _wrap_vHavokBehaviorComponent_TriggerEvent(lua_State* L) {
   }
   
   arg2 = (char *)lua_tostring(L, 2);
-  ((vHavokBehaviorComponent const *)arg1)->TriggerEvent((char const *)arg2);
-  
+  result = (bool)((vHavokBehaviorComponent const *)arg1)->TriggerEvent((char const *)arg2);
+  lua_pushboolean(L,(int)(result!=0)); SWIG_arg++;
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -10690,8 +10778,11 @@ fail:
 static swig_lua_method swig_vHavokBehaviorComponent_methods[] = {
     {"Remove", _wrap_vHavokBehaviorComponent_Remove}, 
     {"IsNodeActive", _wrap_vHavokBehaviorComponent_IsNodeActive}, 
+    {"HasVariable", _wrap_vHavokBehaviorComponent_HasVariable}, 
     {"SetFloatVar", _wrap_vHavokBehaviorComponent_SetFloatVar}, 
+    {"GetFloatVar", _wrap_vHavokBehaviorComponent_GetFloatVar}, 
     {"SetWordVar", _wrap_vHavokBehaviorComponent_SetWordVar}, 
+    {"GetWordVar", _wrap_vHavokBehaviorComponent_GetWordVar}, 
     {"SetBoolVar", _wrap_vHavokBehaviorComponent_SetBoolVar}, 
     {"GetBoolVar", _wrap_vHavokBehaviorComponent_GetBoolVar}, 
     {"GetBoneTransform", _wrap_vHavokBehaviorComponent_GetBoneTransform}, 

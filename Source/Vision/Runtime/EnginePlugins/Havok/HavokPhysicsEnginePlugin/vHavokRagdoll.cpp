@@ -2,7 +2,7 @@
  *
  * Confidential Information of Telekinesys Research Limited (t/a Havok). Not for disclosure or distribution without Havok's
  * prior written consent. This software contains code, techniques and know-how which is confidential and proprietary to Havok.
- * Product and Trade Secret source code contains trade secrets of Havok. Havok Software (C) Copyright 1999-2013 Telekinesys Research Limited t/a Havok. All Rights Reserved. Use of this software is subject to the terms of an end user license agreement.
+ * Product and Trade Secret source code contains trade secrets of Havok. Havok Software (C) Copyright 1999-2014 Telekinesys Research Limited t/a Havok. All Rights Reserved. Use of this software is subject to the terms of an end user license agreement.
  *
  */
 
@@ -13,6 +13,7 @@
 #include <Vision/Runtime/EnginePlugins/Havok/HavokPhysicsEnginePlugin/vHavokConversionUtils.hpp>
 #include <Vision/Runtime/EnginePlugins/Havok/HavokPhysicsEnginePlugin/vHavokFileStreamAccess.hpp>
 #include <Vision/Runtime/EnginePlugins/Havok/HavokPhysicsEnginePlugin/vHavokCharacterController.hpp>
+#include <Vision/Runtime/EnginePlugins/Havok/HavokPhysicsEnginePlugin/vHavokCharacterControllerHelpers.hpp>
 
 #include <Common/Base/System/Io/Reader/Buffered/hkBufferedStreamReader.h>
 #include <Common/Base/System/Io/IStream/hkIStream.h>
@@ -1166,6 +1167,72 @@ void vHavokRagdoll::ApplyLinearImpulseToRigidBody(int iBoneIndex, const hkvVec3&
   }
 }
 
+void vHavokRagdoll::ApplyForceToVolume(const hkvVec3& force, float deltaT, const hkvBoundingSphere& volume, float falloffExponent)
+{
+  vHavokPhysicsModule* pPhysicsModule = static_cast<vHavokPhysicsModule*>(Vision::GetApplication()->GetPhysicsModule());
+  if (pPhysicsModule == NULL)
+    return;
+
+  hkVector4 f; vHavokConversionUtils::VisVecToPhysVecLocal(force, f);
+  hkVector4 vol; vHavokConversionUtils::VisVecToPhysVecWorld(volume.m_vCenter.getAsVec4(volume.m_fRadius), vol);
+
+  m_pPhysicsWorld->markForWrite();
+
+  for (int iRigidBodyIndex = 0; iRigidBodyIndex < m_rigidBodies.getSize(); ++iRigidBodyIndex)
+  {
+    hkpRigidBody* pRigidBody = m_rigidBodies[iRigidBodyIndex].pRigidBody;
+    const hkVector4& rbPos = pRigidBody->getPosition();
+
+    hkSimdReal distance = rbPos.distanceTo3(vol);
+    distance.div(vol.getW());
+    distance.setSub(1.0f, distance);
+    
+    if (distance.compareGreaterThanZero().allAreSet())
+    {
+      hkSimdReal fraction; fraction.setMax(distance, 0.0f);
+      hkSimdReal finalFraction = hkMath::pow(fraction, falloffExponent);
+
+      hkVector4 finalForce; finalForce.setMul(f, finalFraction);
+      pRigidBody->applyForce(deltaT, finalForce);
+    }
+  }
+
+  m_pPhysicsWorld->unmarkForWrite();
+}
+
+void vHavokRagdoll::ApplyLinearImpulseToVolume(const hkvVec3& impulse, const hkvBoundingSphere& volume, float falloffExponent)
+{
+  vHavokPhysicsModule* pPhysicsModule = static_cast<vHavokPhysicsModule*>(Vision::GetApplication()->GetPhysicsModule());
+  if (pPhysicsModule == NULL)
+    return;
+
+  hkVector4 imp; vHavokConversionUtils::VisVecToPhysVecLocal(impulse, imp);
+  hkVector4 vol; vHavokConversionUtils::VisVecToPhysVecWorld(volume.m_vCenter.getAsVec4(volume.m_fRadius), vol);
+
+  m_pPhysicsWorld->markForWrite();
+
+  for (int iRigidBodyIndex = 0; iRigidBodyIndex < m_rigidBodies.getSize(); ++iRigidBodyIndex)
+  {
+    hkpRigidBody* pRigidBody = m_rigidBodies[iRigidBodyIndex].pRigidBody;
+    const hkVector4& rbPos = pRigidBody->getPosition();
+
+    hkSimdReal distance = rbPos.distanceTo3(vol);
+    distance.div(vol.getW());
+    distance.setSub(1.0f, distance);
+
+    if (distance.compareGreaterThanZero().allAreSet())
+    {
+      hkSimdReal fraction; fraction.setMax(distance, 0.0f);
+      hkSimdReal finalFraction = hkMath::pow(fraction, falloffExponent);
+
+      hkVector4 finalImpulse; finalImpulse.setMul(imp, finalFraction);
+      pRigidBody->applyLinearImpulse(finalImpulse);
+    }
+  }
+
+  m_pPhysicsWorld->unmarkForWrite();
+}
+
 hkvVec3 vHavokRagdoll::GetPositionOfRigidBody(int iBoneIndex) const
 {	
 	if ( (iBoneIndex >=0) && (iBoneIndex < m_rigidBodies.getSize()) )
@@ -1174,7 +1241,7 @@ hkvVec3 vHavokRagdoll::GetPositionOfRigidBody(int iBoneIndex) const
 	  m_pPhysicsWorld->markForRead();
 	  const hkVector4& rbPos= m_rigidBodies[iBoneIndex].pRigidBody->getPosition();
 	  m_pPhysicsWorld->unmarkForRead();
-	  vHavokConversionUtils::PhysVecToVisVecLocal(rbPos, p);
+	  vHavokConversionUtils::PhysVecToVisVecWorld(rbPos, p);
 	  return p;
 	}
 	
@@ -1193,9 +1260,9 @@ END_VAR_TABLE
 //-----------------------------------------------------------------------------------
 
 /*
- * Havok SDK - Base file, BUILD(#20131218)
+ * Havok SDK - Base file, BUILD(#20140327)
  * 
- * Confidential Information of Havok.  (C) Copyright 1999-2013
+ * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok
  * Logo, and the Havok buzzsaw logo are trademarks of Havok.  Title, ownership
  * rights, and intellectual property rights in the Havok software remain in

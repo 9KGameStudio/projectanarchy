@@ -2,7 +2,7 @@
  *
  * Confidential Information of Telekinesys Research Limited (t/a Havok). Not for disclosure or distribution without Havok's
  * prior written consent. This software contains code, techniques and know-how which is confidential and proprietary to Havok.
- * Product and Trade Secret source code contains trade secrets of Havok. Havok Software (C) Copyright 1999-2013 Telekinesys Research Limited t/a Havok. All Rights Reserved. Use of this software is subject to the terms of an end user license agreement.
+ * Product and Trade Secret source code contains trade secrets of Havok. Havok Software (C) Copyright 1999-2014 Telekinesys Research Limited t/a Havok. All Rights Reserved. Use of this software is subject to the terms of an end user license agreement.
  *
  */
 
@@ -83,35 +83,36 @@ VScalefromModelPreview::~VScalefromModelPreview()
 
 void VScalefromModelPreview::Reassign()
 {
-  VASSERT_MSG(m_pMainMovieInstance!=NULL, "Main movie instance invalid!")
+  VASSERT_MSG(m_pMainMovieInstance != NULL, "Main movie instance invalid!")
 
   Scaleform::Ptr<Scaleform::GFx::MovieDef> spMovieDef;
 
-  //use movie def of the main movie if so separate movie has been specified
-  if(m_sMoviePathAndName.IsEmpty())
+  // Use movie def of the main movie if no separate movie has been specified.
+  if (m_sMoviePathAndName.IsEmpty())
   {
-    spMovieDef = *m_pMainMovieInstance->GetGFxMovieInstance()->GetMovieDef();
+    spMovieDef = m_pMainMovieInstance->GetGFxMovieInstance()->GetMovieDef();
   }
   else
   {
-    spMovieDef = *VScaleformManager::GlobalManager().GetLoader()->CreateMovie(
+    spMovieDef = VScaleformManager::GlobalManager().GetLoader()->CreateMovie(
       m_sMoviePathAndName, Scaleform::GFx::Loader::LoadAll|Scaleform::GFx::Loader::LoadWaitCompletion);
+    spMovieDef->Release(); // Must release once release once since CreateMovie sets the RefCount to 1.
   }
 
-  VASSERT_MSG(spMovieDef.GetPtr()!=NULL, "Couldn't find movie definition for child swf");
+  VASSERT_MSG(spMovieDef.GetPtr() != NULL, "Couldn't find movie definition for child swf");
 
-  //grab the image, which will be our target in the SWF file
+  // Grab the image, which will be our target in the SWF file.
   Scaleform::GFx::Resource* pResource = spMovieDef->GetResource(m_sTextureName);
   VASSERT_MSG(pResource, "Cannot find target texture inside specified SWF file!");
   VASSERT_MSG(pResource->GetResourceType() == Scaleform::GFx::Resource::RT_Image, "SWF resource if of wrong type!");
 
-  //It is an image...
-  Scaleform::GFx::ImageResource* pImageResource = (Scaleform::GFx::ImageResource*)pResource;
+  // It must be an image.
+  Scaleform::GFx::ImageResource* pImageResource = static_cast<Scaleform::GFx::ImageResource*>(pResource);
 
-  //grab the target texture
-  VisRenderableTexture_cl *pTexture = m_spModelPreview->GetRenderableTexture();
-  Scaleform::Ptr<Scaleform::Render::TextureImage> spNewTexture = *VScaleformManager::GlobalManager().ConvertTexture(pTexture);
-  VASSERT_MSG(spNewTexture.GetPtr()!=NULL, "Unable to convert texture");
+  // Grab the target texture.
+  VisRenderableTexture_cl* pTexture = m_spModelPreview->GetRenderableTexture();
+  Scaleform::Render::TextureImage* pNewTexture = VScaleformManager::GlobalManager().ConvertTexture(pTexture);
+  VASSERT_MSG(pNewTexture != NULL, "Unable to convert texture");
 
   // Note:
   // =====
@@ -127,7 +128,9 @@ void VScalefromModelPreview::Reassign()
   //Scaleform::GFx::Matrix2F textureMatrix = Scaleform::GFx::Matrix2F::Scaling(scaleParameters.Width, scaleParameters.Height );
   //spNewTexture->SetMatrix(textureMatrix);
 
-  pImageResource->SetImage(spNewTexture);
+  pImageResource->SetImage(pNewTexture);
+  pNewTexture->Release();
+
   m_pMainMovieInstance->GetGFxMovieInstance()->ForceUpdateImages();
 }
 
@@ -149,9 +152,9 @@ void VScalefromModelPreview::OnHandleCallback(IVisCallbackDataObject_cl *pData)
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20131218)
+ * Havok SDK - Base file, BUILD(#20140327)
  * 
- * Confidential Information of Havok.  (C) Copyright 1999-2013
+ * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok
  * Logo, and the Havok buzzsaw logo are trademarks of Havok.  Title, ownership
  * rights, and intellectual property rights in the Havok software remain in
