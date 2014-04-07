@@ -208,19 +208,28 @@
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <Compile Include="Lua\vScaleformMovie.i">
         <DeploymentContent>False</DeploymentContent></Compile>
+    <ClInclude Include="VScaleformArgumentsHelper.hpp">
+        <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="VScaleformMovie.hpp">
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClInclude Include="VScaleformTexture.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="Lua\ScaleformLuaModule_wrapper.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
+    <None Include="Lua\VScaleformLuaHelpers.inl"><DeploymentContent>False</DeploymentContent></None>
+    <Compile Include="Lua\VScaleformVariable.i">
+        <DeploymentContent>False</DeploymentContent></Compile>
     <ClInclude Include="vScaleformAlloc.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <Compile Include="Lua\vScaleformManager.i">
         <DeploymentContent>False</DeploymentContent></Compile>
     <ClInclude Include="vScaleformManager.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClCompile Include="VScaleformVariableManager.cpp">
+        <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="vScaleformModelPreview.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
-    <ClInclude Include="VScaleformTexture.hpp">
+    <ClInclude Include="VScaleformValue.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="VScaleformInternal.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
@@ -230,27 +239,31 @@
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClCompile Include="VScaleformTexture.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
-    <ClInclude Include="VScaleformUtil.hpp">
-        <DeploymentContent>False</DeploymentContent></ClInclude>
-    <Compile Include="Lua\VScaleformUtil.i">
-        <DeploymentContent>False</DeploymentContent></Compile>
     <ClInclude Include="ScaleformEnginePlugin.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="ScaleformAppIncludes.cpp">
         <PrecompiledHeader>NotUsing</PrecompiledHeader>
         <DeploymentContent>False</DeploymentContent></ClCompile>
-    <ClInclude Include="vScaleformInternal.hpp">
+    <ClCompile Include="VScaleformVariable.cpp">
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClInclude Include="VScaleformVariableManager.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
-    <ClCompile Include="VScaleformUtil.cpp">
+    <ClCompile Include="VScaleformValue.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
-    <ClCompile Include="VScaleformMovieIME.cpp">
-        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <Compile Include="Lua\VScaleformValue.i">
+        <DeploymentContent>False</DeploymentContent></Compile>
     <CustomBuild Include="Lua\ScaleformLuaModule.i">
-        <AdditionalInputs>Lua\vScaleformManager.i;Lua\vScaleformMovie.i;Lua\VScaleformUtil.i</AdditionalInputs>
+        <AdditionalInputs>Lua\vScaleformManager.i;Lua\vScaleformMovie.i;Lua\VScaleformValue.i;Lua\VScaleformVariable.i</AdditionalInputs>
         <Outputs>Lua/ScaleformLuaModule_wrapper.cpp</Outputs>
         <FileType>Document</FileType>
         <Command>&quot;$(HAVOK_THIRDPARTY_DIR)\redistsdks\swig\2.0.3\swig.exe&quot; -c++ -lua -verbose -o Lua/ScaleformLuaModule_wrapper.cpp -I..\..\..\..\.. Lua\ScaleformLuaModule.i&#x0D;&#x0A;&quot;..\..\..\..\..\..\Build\StandaloneTools\Iswig\Exe\iswig.exe&quot; --includePre &quot;Vision/Runtime/EnginePlugins/ThirdParty/ScaleformEnginePlugin/ScaleformEnginePlugin.hpp&quot; Lua/ScaleformLuaModule_wrapper.cpp</Command>
         <DeploymentContent>False</DeploymentContent></CustomBuild>
+    <ClInclude Include="VScaleformVariable.hpp">
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClCompile Include="VScaleformMovieIME.cpp">
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClInclude Include="VScaleformInternal.hpp">
+        <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="VScaleformImpExp.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
   </ItemGroup>

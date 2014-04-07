@@ -55,9 +55,9 @@
     <ClCompile Include="EngineInstances\EngineInstanceHeightfieldGenerator.cpp">
         <Filter>EngineInstances</Filter>
         <DeploymentContent>False</DeploymentContent></ClCompile>
-    <ClCompile Include="EngineInstances\EngineInstanceEntity.cpp">
+    <ClInclude Include="EngineInstances\EngineInstanceMobileWater.hpp">
         <Filter>EngineInstances</Filter>
-        <DeploymentContent>False</DeploymentContent></ClCompile>
+        <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="EngineInstances\EngineInstancePath.hpp">
         <Filter>EngineInstances</Filter>
         <DeploymentContent>False</DeploymentContent></ClInclude>
@@ -106,8 +106,8 @@
     <ClInclude Include="EngineInstances\EngineInstanceVisibilityObject.hpp">
         <Filter>EngineInstances</Filter>
         <DeploymentContent>False</DeploymentContent></ClInclude>
-    <ClCompile Include="Tools\ColorGradingTool.cpp">
-        <Filter>Tools</Filter>
+    <ClCompile Include="EngineInstances\EngineInstanceEntity.cpp">
+        <Filter>EngineInstances</Filter>
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClCompile Include="EngineInstances\EngineInstanceTriggerBox.cpp">
         <Filter>EngineInstances</Filter>
@@ -151,6 +151,9 @@
     <ClCompile Include="EngineInstances\EngineInstanceStaticMesh.cpp">
         <Filter>EngineInstances</Filter>
         <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClCompile Include="Tools\ColorGradingTool.cpp">
+        <Filter>Tools</Filter>
+        <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="EngineInstances\EngineInstanceDynLight.hpp">
         <Filter>EngineInstances</Filter>
         <DeploymentContent>False</DeploymentContent></ClInclude>
@@ -169,6 +172,9 @@
     <ClInclude Include="EngineInstances\EngineInstanceLightGridDetailBox.hpp">
         <Filter>EngineInstances</Filter>
         <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClCompile Include="EngineInstances\EngineInstanceMobileWater.cpp">
+        <Filter>EngineInstances</Filter>
+        <DeploymentContent>False</DeploymentContent></ClCompile>
 
   </ItemGroup>
 </Project>

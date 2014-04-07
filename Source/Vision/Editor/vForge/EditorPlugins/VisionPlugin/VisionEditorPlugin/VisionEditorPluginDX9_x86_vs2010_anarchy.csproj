@@ -184,6 +184,8 @@
         <DeploymentContent>False</DeploymentContent></Compile>
     <Compile Include="Shapes\PathShape.cs">
         <DeploymentContent>False</DeploymentContent></Compile>
+    <Compile Include="Shapes\MobileWaterShape.cs">
+        <DeploymentContent>False</DeploymentContent></Compile>
     <Compile Include="Tests\EntityShapeTest.cs">
         <DeploymentContent>False</DeploymentContent></Compile>
     <Compile Include="Actions\LightmapColorMatrixChangedAction.cs">
@@ -197,6 +199,8 @@
         <SubType>Designer</SubType>
         <DeploymentContent>False</DeploymentContent></EmbeddedResource>
     <Compile Include="Shapes\CameraPositionShape.cs">
+        <DeploymentContent>False</DeploymentContent></Compile>
+    <Compile Include="Contexts\ParticleAssetDropContext.cs">
         <DeploymentContent>False</DeploymentContent></Compile>
   </ItemGroup>
   <ItemGroup>

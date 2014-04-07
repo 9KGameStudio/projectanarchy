@@ -160,7 +160,13 @@
     <ClCompile Include="vHavokDisplayHandler.cpp">
         <Filter></Filter>
         <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClCompile Include="HavokPhysicsEnginePluginPCH.cpp">
+        <Filter></Filter>
+        <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="vHavokBallAndSocketConstraintChain.hpp">
+        <Filter></Filter>
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClInclude Include="vHavokCharacterControllerHelpers.hpp">
         <Filter></Filter>
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="vHavokContactListener.hpp">
@@ -328,7 +334,7 @@
     <ClInclude Include="vHavokStiffSpringConstraintChain.hpp">
         <Filter></Filter>
         <DeploymentContent>False</DeploymentContent></ClInclude>
-    <ClCompile Include="HavokPhysicsEnginePluginPCH.cpp">
+    <ClCompile Include="vHavokCharacterControllerHelpers.cpp">
         <Filter></Filter>
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="CharacterControlStates\vCharacterStateClimbing.h">

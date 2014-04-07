@@ -642,6 +642,8 @@
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="Entities\CameraPositionEntity.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClCompile Include="Rendering\Effects\Cloth\ClothMesh.cpp">
+        <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="Resources\VResourcePreview.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="Rendering\PathRendering\IVPathRenderingData\VDebugPathRenderer.cpp">
@@ -768,6 +770,8 @@
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="Rendering\ShadowMapping\VShadowMapGenSpotDir.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClInclude Include="Scripting\Lua\VScriptWorld_wrapper.hpp">
+        <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="Rendering\Effects\Cloth\ClothDeformer.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="Rendering\Effects\MirrorRenderLoop.hpp">
@@ -794,6 +798,8 @@
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="Particles\ParticleConstraint.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClCompile Include="Entities\TriggerDoorEntity.cpp">
+        <DeploymentContent>False</DeploymentContent></ClCompile>
     <Compile Include="Scripting\Lua\hkvVec4.i">
         <DeploymentContent>False</DeploymentContent></Compile>
     <ClInclude Include="Scripting\Lua\VScriptRenderer_wrapper.hpp">
@@ -827,13 +833,13 @@
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClCompile Include="Rendering\Effects\VLensFlareComponent.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
-    <ClInclude Include="Components\VEnginePluginElementManager.hpp">
-        <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="Components\VEntityLODComponent.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="Scripting\VScriptInstance.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="Components\VTimeOfDayComponent.cpp">
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClCompile Include="Rendering\Effects\MobileWater.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="GUI\Controls\VTextControl.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
@@ -843,14 +849,16 @@
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="GUI\IVMenuSystemResource.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
-    <ClCompile Include="Entities\TriggerDoorEntity.cpp">
-        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <Compile Include="Scripting\Lua\VScriptWorld_wrapper.i">
+        <DeploymentContent>False</DeploymentContent></Compile>
     <ClCompile Include="Entities\_DanglingEntity.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClCompile Include="Rendering\Effects\Cloth\_ClothEntity.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
-    <ClCompile Include="Rendering\Effects\Cloth\ClothMesh.cpp">
-        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClInclude Include="Components\VEnginePluginElementManager.hpp">
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClInclude Include="Rendering\Effects\MobileWater.hpp">
+        <DeploymentContent>False</DeploymentContent></ClInclude>
     <Compile Include="Scripting\Lua\VisPathNode_cl.i">
         <DeploymentContent>False</DeploymentContent></Compile>
     <ClCompile Include="GUI\VDialogResource.cpp">

@@ -469,6 +469,8 @@
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="vHavokPhysicsImportExport.h">
         <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClCompile Include="vHavokCharacterControllerHelpers.cpp">
+        <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="vHavokCachedShape.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="vHavokPrismaticConstraint.cpp">
@@ -487,6 +489,8 @@
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <Compile Include="Lua\vHavokRigidBody.i">
         <DeploymentContent>False</DeploymentContent></Compile>
+    <ClInclude Include="vHavokCharacterControllerHelpers.hpp">
+        <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="vHavokConstraintChainRenderer.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="vHavokGenericConstraint.cpp">

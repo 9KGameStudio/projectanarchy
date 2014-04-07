@@ -499,6 +499,8 @@
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="GUI\Controls\VTextControl.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
+    <Compile Include="Scripting\Lua\VScriptWorld_wrapper.i">
+        <DeploymentContent>False</DeploymentContent></Compile>
     <ClCompile Include="Scene\VPrefab.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="Rendering\RenderingHelpers\BufferResolver.hpp">
@@ -572,6 +574,8 @@
     <ClInclude Include="Rendering\MobileForwardRenderer\VMobileForwardRenderLoop.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="Terrain\Geometry\TerrainDecorationEntityModel.hpp">
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClInclude Include="Scripting\Lua\VScriptWorld_wrapper.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="Scene\VGroupInstance.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
@@ -867,6 +871,10 @@
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="GUI\VDialog.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClCompile Include="Rendering\Effects\MobileWater.cpp">
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClInclude Include="Rendering\Effects\MobileWater.hpp">
+        <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="GUI\VDialogResource.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="Animation\Transition\IVTransitionEventTrigger.hpp">

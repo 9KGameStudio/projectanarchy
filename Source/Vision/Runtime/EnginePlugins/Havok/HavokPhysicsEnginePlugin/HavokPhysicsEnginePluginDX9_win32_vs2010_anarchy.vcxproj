@@ -210,6 +210,8 @@
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClCompile Include="vHavokConstraintChainRenderingData.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClInclude Include="vHavokStaticMesh.hpp">
+        <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="HavokPhysicsEnginePluginPCH.h">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="vHavokShapeFactory.cpp">
@@ -236,6 +238,8 @@
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="vHavokPhysicsImportExport.h">
         <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClCompile Include="vHavokCharacterControllerHelpers.cpp">
+        <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="vHavokCachedShape.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="vHavokPrismaticConstraint.cpp">
@@ -254,6 +258,8 @@
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <Compile Include="Lua\vHavokRigidBody.i">
         <DeploymentContent>False</DeploymentContent></Compile>
+    <ClInclude Include="vHavokCharacterControllerHelpers.hpp">
+        <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="vHavokConstraintChainRenderer.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="vHavokGenericConstraint.cpp">
@@ -346,10 +352,6 @@
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClCompile Include="VLineFollowerComponent.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
-    <ClCompile Include="HavokPhysicsEnginePluginPCH.cpp">
-        <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug DLL|win32'">Create</PrecompiledHeader>
-        <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Dev DLL|win32'">Create</PrecompiledHeader>
-        <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="vHavokGenericConstraint.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="vHavokCableConstraintChainRenderer.hpp">
@@ -397,8 +399,10 @@
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="vHavokRigidBody.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
-    <ClInclude Include="vHavokStaticMesh.hpp">
-        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClCompile Include="HavokPhysicsEnginePluginPCH.cpp">
+        <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug DLL|win32'">Create</PrecompiledHeader>
+        <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Dev DLL|win32'">Create</PrecompiledHeader>
+        <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="vHavokConstraintChain.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="vHavokFileStreamAccess.hpp">

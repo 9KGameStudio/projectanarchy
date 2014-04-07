@@ -21,12 +21,6 @@
     <ProjectName>ProjectTemplate</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
-  <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Dev|hkAndroid'">
-    <PlatformToolset>arm-linux-androideabi-4.6</PlatformToolset>
-  </PropertyGroup>
-  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
-  <ImportGroup Label="ExtensionSettings">
-  </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|hkAndroid'">
     <Import Project="$(VISION_SDK)\Build\Vision\PropertySheets\Application_android_arm_vs2010_anarchyDebug.props" />
   </ImportGroup>
@@ -35,6 +29,12 @@
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|hkAndroid'">
     <Import Project="$(VISION_SDK)\Build\Vision\PropertySheets\Application_android_arm_vs2010_anarchyRelease.props" />
+  </ImportGroup>
+  <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Dev|hkAndroid'">
+    <PlatformToolset>arm-linux-androideabi-4.6</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|hkAndroid'">
@@ -77,7 +77,8 @@
       <DeployTool>$(VISION_SDK)\Build\StandaloneTools\Deployment\Exe\deployAndroid.exe</DeployTool>
       <ResDir>..\..\Data\Common\Anarchy\Android</ResDir>
       <Install>true</Install>
-      <WriteExternal>true</WriteExternal>      
+      <WriteExternal>true</WriteExternal>
+      <Internet>true</Internet>
       <Libraries>$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/lib/android/armeabi-v7a/libfmodexL.so;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/lib/android/armeabi-v7a/libfmodeventL.so</Libraries>
       <Assets>..\../Data/Vision/Base/ Data/Vision/Base/;..\../Assets/ Assets/</Assets>
     </Deploy>
@@ -97,6 +98,7 @@
       <ResDir>..\..\Data\Common\Anarchy\Android</ResDir>
       <Install>true</Install>
       <WriteExternal>true</WriteExternal>      
+      <Internet>true</Internet>
       <Libraries>$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/lib/android/armeabi-v7a/libfmodex.so;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/lib/android/armeabi-v7a/libfmodevent.so</Libraries>
       <Assets>..\../Data/Vision/Base/ Data/Vision/Base/;..\../Assets/ Assets/</Assets>
     </Deploy>
@@ -116,6 +118,7 @@
       <ResDir>..\..\Data\Common\Anarchy\Android</ResDir>
       <Install>true</Install>
       <WriteExternal>true</WriteExternal>      
+      <Internet>true</Internet>
       <Libraries>$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/lib/android/armeabi-v7a/libfmodex.so;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/lib/android/armeabi-v7a/libfmodevent.so</Libraries>
       <Assets>..\../Data/Vision/Base/ Data/Vision/Base/;..\../Assets/ Assets/</Assets>
     </Deploy>

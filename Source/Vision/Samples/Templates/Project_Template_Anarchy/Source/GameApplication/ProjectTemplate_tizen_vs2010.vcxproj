@@ -21,6 +21,15 @@
     <ProjectName>ProjectTemplate</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|hkTizen'">
+    <Import Project="$(VISION_SDK)\Build\Vision\PropertySheets\Application_tizen_vs2010_anarchyDebug.props" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Dev|hkTizen'">
+    <Import Project="$(VISION_SDK)\Build\Vision\PropertySheets\Application_tizen_vs2010_anarchyDev.props" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|hkTizen'">
+    <Import Project="$(VISION_SDK)\Build\Vision\PropertySheets\Application_tizen_vs2010_anarchyRelease.props" />
+  </ImportGroup>
   <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Dev|hkTizen'">
     <ConfigurationType>Application</ConfigurationType>
     <PlatformToolset>arm-linux-gnueabi-gcc-4.5</PlatformToolset>
@@ -41,15 +50,6 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
-  </ImportGroup>
-  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|hkTizen'">
-    <Import Project="$(VISION_SDK)\Build\Vision\PropertySheets\Application_tizen_vs2010_anarchyDebug.props" />
-  </ImportGroup>
-  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Dev|hkTizen'">
-    <Import Project="$(VISION_SDK)\Build\Vision\PropertySheets\Application_tizen_vs2010_anarchyDev.props" />
-  </ImportGroup>
-  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|hkTizen'">
-    <Import Project="$(VISION_SDK)\Build\Vision\PropertySheets\Application_tizen_vs2010_anarchyRelease.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|hkTizen'">

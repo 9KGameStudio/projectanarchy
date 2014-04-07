@@ -175,6 +175,9 @@
     <Compile Include="Shapes\PathShape.cs">
         <Filter>Shapes</Filter>
         <DeploymentContent>False</DeploymentContent></Compile>
+    <Compile Include="Shapes\MobileWaterShape.cs">
+        <Filter>Shapes</Filter>
+        <DeploymentContent>False</DeploymentContent></Compile>
     <Compile Include="Tests\EntityShapeTest.cs">
         <Filter>Tests</Filter>
         <DeploymentContent>False</DeploymentContent></Compile>
@@ -192,6 +195,9 @@
         <DeploymentContent>False</DeploymentContent></EmbeddedResource>
     <Compile Include="Shapes\CameraPositionShape.cs">
         <Filter>Shapes</Filter>
+        <DeploymentContent>False</DeploymentContent></Compile>
+    <Compile Include="Contexts\ParticleAssetDropContext.cs">
+        <Filter>Contexts</Filter>
         <DeploymentContent>False</DeploymentContent></Compile>
 
   </ItemGroup>

@@ -34,9 +34,9 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{789E94DE-ED72-4C0F-A6BB-65BE92BCA08C}</ProjectGuid>
-    <RootNamespace>GamePlugin100</RootNamespace>
+    <RootNamespace></RootNamespace>
     <Keyword>Win32Proj</Keyword>
-    <ProjectName>GamePlugin100</ProjectName>
+    <ProjectName>GamePlugin</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug DLL|Win32'" Label="Configuration">

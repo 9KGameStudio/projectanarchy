@@ -16,7 +16,7 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{57A549C5-5B49-47F4-8650-7F147D8B4C06}</ProjectGuid>
-    <RootNamespace>ProjectTemplate100</RootNamespace>
+    <RootNamespace></RootNamespace>
     <Keyword>Win32Proj</Keyword>
     <ProjectName>ProjectTemplate</ProjectName>
   </PropertyGroup>

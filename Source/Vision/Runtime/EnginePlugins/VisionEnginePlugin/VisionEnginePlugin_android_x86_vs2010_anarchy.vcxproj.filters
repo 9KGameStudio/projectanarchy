@@ -295,9 +295,9 @@
     <ClInclude Include="Terrain\Editing\DecorationDensityChannel.hpp">
         <Filter>Terrain\Editing</Filter>
         <DeploymentContent>False</DeploymentContent></ClInclude>
-    <ClCompile Include="Rendering\Effects\Cloth\_ClothEntity.cpp">
-        <Filter>Rendering\Effects\Cloth</Filter>
-        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClInclude Include="Rendering\Effects\VCoronaManager.hpp">
+        <Filter>Rendering\Effects</Filter>
+        <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="Components\VSkeletalBoneProxy.hpp">
         <Filter>Components</Filter>
         <DeploymentContent>False</DeploymentContent></ClInclude>
@@ -316,8 +316,8 @@
     <ClCompile Include="Particles\ParticleGroupBase.cpp">
         <Filter>Particles</Filter>
         <DeploymentContent>False</DeploymentContent></ClCompile>
-    <ClInclude Include="GUI\Controls\VMapLookupControl.hpp">
-        <Filter>GUI\Controls</Filter>
+    <ClInclude Include="Rendering\Effects\MobileWater.hpp">
+        <Filter>Rendering\Effects</Filter>
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="Rendering\MobileForwardRenderer\VMobileForwardRenderer.hpp">
         <Filter>Rendering\MobileForwardRenderer</Filter>
@@ -343,9 +343,9 @@
     <ClCompile Include="GUI\Controls\VListControls.cpp">
         <Filter>GUI\Controls</Filter>
         <DeploymentContent>False</DeploymentContent></ClCompile>
-    <ClInclude Include="Rendering\Effects\VCoronaManager.hpp">
-        <Filter>Rendering\Effects</Filter>
-        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClCompile Include="Rendering\Effects\Cloth\_ClothEntity.cpp">
+        <Filter>Rendering\Effects\Cloth</Filter>
+        <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="Rendering\Effects\VWallmarkManager.hpp">
         <Filter>Rendering\Effects</Filter>
         <DeploymentContent>False</DeploymentContent></ClInclude>
@@ -388,6 +388,9 @@
     <ClCompile Include="Input\VStringInputMap.cpp">
         <Filter>Input</Filter>
         <DeploymentContent>False</DeploymentContent></ClCompile>
+    <Compile Include="Scripting\Lua\VColor.i">
+        <Filter>Scripting\Lua</Filter>
+        <DeploymentContent>False</DeploymentContent></Compile>
     <ClCompile Include="Rendering\Effects\CubeMapHandle.cpp">
         <Filter>Rendering\Effects</Filter>
         <DeploymentContent>False</DeploymentContent></ClCompile>
@@ -412,6 +415,9 @@
     <Compile Include="Scripting\Lua\hkvPlane.i">
         <Filter>Scripting\Lua</Filter>
         <DeploymentContent>False</DeploymentContent></Compile>
+    <ClInclude Include="GUI\Controls\VMapLookupControl.hpp">
+        <Filter>GUI\Controls</Filter>
+        <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="GUI\VGUIContext.hpp">
         <Filter>GUI</Filter>
         <DeploymentContent>False</DeploymentContent></ClInclude>
@@ -622,9 +628,9 @@
     <ClInclude Include="Rendering\Postprocessing\VPostProcessScreenMasks.hpp">
         <Filter>Rendering\Postprocessing</Filter>
         <DeploymentContent>False</DeploymentContent></ClInclude>
-    <ClCompile Include="GUI\IVMenuSystemResource.cpp">
-        <Filter>GUI</Filter>
-        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <Compile Include="Scripting\Lua\VScriptWorld_wrapper.i">
+        <Filter>Scripting\Lua</Filter>
+        <DeploymentContent>False</DeploymentContent></Compile>
     <ClInclude Include="Terrain\Math\LargePosition.hpp">
         <Filter>Terrain\Math</Filter>
         <DeploymentContent>False</DeploymentContent></ClInclude>
@@ -736,9 +742,9 @@
     <ClCompile Include="VisionEnginePluginPCH.cpp">
         <Filter></Filter>
         <DeploymentContent>False</DeploymentContent></ClCompile>
-    <Compile Include="Scripting\Lua\VColor.i">
+    <ClInclude Include="Scripting\Lua\VScriptWorld_wrapper.hpp">
         <Filter>Scripting\Lua</Filter>
-        <DeploymentContent>False</DeploymentContent></Compile>
+        <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="Entities\TriggerBoxEntity.cpp">
         <Filter>Entities</Filter>
         <DeploymentContent>False</DeploymentContent></ClCompile>
@@ -768,6 +774,9 @@
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="Input\VZoomDetector.cpp">
         <Filter>Input</Filter>
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClCompile Include="Rendering\Effects\MobileWater.cpp">
+        <Filter>Rendering\Effects</Filter>
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="Rendering\ShadowMapping\VMobileShadowMapComponentSpotDirectional.hpp">
         <Filter>Rendering\ShadowMapping</Filter>
@@ -895,9 +904,9 @@
     <ClCompile Include="Rendering\PathRendering\IVPathRenderingData\VCablePathRenderer.cpp">
         <Filter>Rendering\PathRendering\IVPathRenderingData</Filter>
         <DeploymentContent>False</DeploymentContent></ClCompile>
-    <ClInclude Include="GUI\VDialogFrame.hpp">
+    <ClCompile Include="GUI\IVMenuSystemResource.cpp">
         <Filter>GUI</Filter>
-        <DeploymentContent>False</DeploymentContent></ClInclude>
+        <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClCompile Include="Components\VEntityLODComponent.cpp">
         <Filter>Components</Filter>
         <DeploymentContent>False</DeploymentContent></ClCompile>
@@ -928,9 +937,9 @@
     <ClInclude Include="Scripting\Lua\VScriptUtil_wrapper.hpp">
         <Filter>Scripting\Lua</Filter>
         <DeploymentContent>False</DeploymentContent></ClInclude>
-    <ClCompile Include="Rendering\Effects\Cloth\ClothMesh.cpp">
-        <Filter>Rendering\Effects\Cloth</Filter>
-        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClInclude Include="GUI\VDialogFrame.hpp">
+        <Filter>GUI</Filter>
+        <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="GUI\Controls\VTextControl.hpp">
         <Filter>GUI\Controls</Filter>
         <DeploymentContent>False</DeploymentContent></ClInclude>
@@ -1080,6 +1089,9 @@
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="Rendering\RendererNode\VRendererNodeCommon.cpp">
         <Filter>Rendering\RendererNode</Filter>
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClCompile Include="Rendering\Effects\Cloth\ClothMesh.cpp">
+        <Filter>Rendering\Effects\Cloth</Filter>
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="Scripting\VScriptManager.hpp">
         <Filter>Scripting</Filter>

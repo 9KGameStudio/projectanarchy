@@ -107,7 +107,7 @@
     </ResourceCompile>
     <Lib>
       <IgnoreAllDefaultLibraries></IgnoreAllDefaultLibraries>
-      <AdditionalDependencies>lua100D.lib;BaseD.lib;VisionD.lib;VisionEnginePluginD.lib;VisionAppD.lib;vHavokD.lib;vFmodEnginePluginD.lib;vHavokAiD.lib;vHavokBehaviorD.lib;vScaleformPluginD.lib;vScaleformUtilsD.lib;vRemoteInputD.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>lua100D.lib;BaseD.lib;VisionD.lib;VisionEnginePluginD.lib;vHavokD.lib;vFmodEnginePluginD.lib;VisionAppD.lib;vHavokAiD.lib;vHavokBehaviorD.lib;vScaleformPluginD.lib;vScaleformUtilsD.lib;vRemoteInputD.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>..\..\..\..\Lib\win32_vs2010_anarchy\debug_dll;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(DXSDK_DIR)/Lib/x86</AdditionalLibraryDirectories>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
@@ -115,7 +115,7 @@
       <AdditionalOptions> /ignore:4221</AdditionalOptions>
     </Lib>
     <Link>
-      <AdditionalDependencies>lua100D.lib;BaseD.lib;VisionD.lib;VisionEnginePluginD.lib;VisionAppD.lib;vHavokD.lib;vFmodEnginePluginD.lib;vHavokAiD.lib;vHavokBehaviorD.lib;vScaleformPluginD.lib;vScaleformUtilsD.lib;vRemoteInputD.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>lua100D.lib;BaseD.lib;VisionD.lib;VisionEnginePluginD.lib;vHavokD.lib;vFmodEnginePluginD.lib;VisionAppD.lib;vHavokAiD.lib;vHavokBehaviorD.lib;vScaleformPluginD.lib;vScaleformUtilsD.lib;vRemoteInputD.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>..\..\..\..\Lib\win32_vs2010_anarchy\debug_dll;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(DXSDK_DIR)/Lib/x86</AdditionalLibraryDirectories>
       <AdditionalOptions> /ignore:4221</AdditionalOptions>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -178,7 +178,7 @@
     </ResourceCompile>
     <Lib>
       <IgnoreAllDefaultLibraries></IgnoreAllDefaultLibraries>
-      <AdditionalDependencies>lua100.lib;Base.lib;Vision.lib;VisionEnginePlugin.lib;VisionApp.lib;vHavok.lib;vFmodEnginePlugin.lib;vHavokAi.lib;vHavokBehavior.lib;vScaleformPlugin.lib;vScaleformUtils.lib;vRemoteInput.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>lua100.lib;Base.lib;Vision.lib;VisionEnginePlugin.lib;vHavok.lib;vFmodEnginePlugin.lib;VisionApp.lib;vHavokAi.lib;vHavokBehavior.lib;vScaleformPlugin.lib;vScaleformUtils.lib;vRemoteInput.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>..\..\..\..\Lib\win32_vs2010_anarchy\dev_dll;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(DXSDK_DIR)/Lib/x86</AdditionalLibraryDirectories>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
@@ -186,7 +186,7 @@
       <AdditionalOptions> /ignore:4221</AdditionalOptions>
     </Lib>
     <Link>
-      <AdditionalDependencies>lua100.lib;Base.lib;Vision.lib;VisionEnginePlugin.lib;VisionApp.lib;vHavok.lib;vFmodEnginePlugin.lib;vHavokAi.lib;vHavokBehavior.lib;vScaleformPlugin.lib;vScaleformUtils.lib;vRemoteInput.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>lua100.lib;Base.lib;Vision.lib;VisionEnginePlugin.lib;vHavok.lib;vFmodEnginePlugin.lib;VisionApp.lib;vHavokAi.lib;vHavokBehavior.lib;vScaleformPlugin.lib;vScaleformUtils.lib;vRemoteInput.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>..\..\..\..\Lib\win32_vs2010_anarchy\dev_dll;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(DXSDK_DIR)/Lib/x86</AdditionalLibraryDirectories>
       <AdditionalOptions> /ignore:4221</AdditionalOptions>
       <GenerateDebugInformation>true</GenerateDebugInformation>

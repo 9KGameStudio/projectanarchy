@@ -256,6 +256,9 @@
     <ClInclude Include="Input\VZoomDetector.hpp">
         <Filter>Input</Filter>
         <DeploymentContent>False</DeploymentContent></ClInclude>
+    <Compile Include="Scripting\Lua\VScriptWorld_wrapper.i">
+        <Filter>Scripting\Lua</Filter>
+        <DeploymentContent>False</DeploymentContent></Compile>
     <ClCompile Include="Terrain\Editing\EditableTerrainSector.cpp">
         <Filter>Terrain\Editing</Filter>
         <DeploymentContent>False</DeploymentContent></ClCompile>
@@ -286,6 +289,9 @@
     <ClCompile Include="Terrain\Geometry\SectorVisibilityZone.cpp">
         <Filter>Terrain\Geometry</Filter>
         <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClInclude Include="Scripting\Lua\VScriptWorld_wrapper.hpp">
+        <Filter>Scripting\Lua</Filter>
+        <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="GUI\Controls\VSliderControl.cpp">
         <Filter>GUI\Controls</Filter>
         <DeploymentContent>False</DeploymentContent></ClCompile>
@@ -303,6 +309,9 @@
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="Terrain\TerrainModule.hpp">
         <Filter>Terrain</Filter>
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClInclude Include="Rendering\Effects\MobileWater.hpp">
+        <Filter>Rendering\Effects</Filter>
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <None Include="Particles\ParticleEmitter.inl">
         <Filter>Particles</Filter>
@@ -352,8 +361,8 @@
     <ClInclude Include="Particles\ParticleConstraint.hpp">
         <Filter>Particles</Filter>
         <DeploymentContent>False</DeploymentContent></ClInclude>
-    <ClInclude Include="Particles\ParticleGroupBase.hpp">
-        <Filter>Particles</Filter>
+    <ClInclude Include="Terrain\Editing\TextureWeightmapChannel.hpp">
+        <Filter>Terrain\Editing</Filter>
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <Compile Include="Scripting\Lua\VTypedObject.i">
         <Filter>Scripting\Lua</Filter>
@@ -436,8 +445,8 @@
     <ClInclude Include="Rendering\Sky\SkyLayer.hpp">
         <Filter>Rendering\Sky</Filter>
         <DeploymentContent>False</DeploymentContent></ClInclude>
-    <ClInclude Include="Terrain\Editing\TextureWeightmapChannel.hpp">
-        <Filter>Terrain\Editing</Filter>
+    <ClInclude Include="Particles\ParticleGroupBase.hpp">
+        <Filter>Particles</Filter>
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="Rendering\NullRenderer\VNullRenderLoop.hpp">
         <Filter>Rendering\NullRenderer</Filter>
@@ -546,6 +555,9 @@
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClCompile Include="Terrain\Math\LargePosition.cpp">
         <Filter>Terrain\Math</Filter>
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClCompile Include="Rendering\Effects\MobileWater.cpp">
+        <Filter>Rendering\Effects</Filter>
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClCompile Include="Terrain\Application\Terrain.cpp">
         <Filter>Terrain\Application</Filter>
@@ -793,9 +805,9 @@
     <Compile Include="Scripting\Lua\ParticleGroupBase.i">
         <Filter>Scripting\Lua</Filter>
         <DeploymentContent>False</DeploymentContent></Compile>
-    <ClInclude Include="Rendering\ShadowMapping\VShadowMapGenSpotDir.hpp">
-        <Filter>Rendering\ShadowMapping</Filter>
-        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClCompile Include="Terrain\Editing\TextureWeightmapChannel.cpp">
+        <Filter>Terrain\Editing</Filter>
+        <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClCompile Include="Entities\VCustomVolumeManager.cpp">
         <Filter>Entities</Filter>
         <DeploymentContent>False</DeploymentContent></ClCompile>
@@ -937,9 +949,9 @@
     <ClInclude Include="Entities\TriggerDoorEntity.hpp">
         <Filter>Entities</Filter>
         <DeploymentContent>False</DeploymentContent></ClInclude>
-    <ClCompile Include="Terrain\Editing\TextureWeightmapChannel.cpp">
-        <Filter>Terrain\Editing</Filter>
-        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClInclude Include="Rendering\ShadowMapping\VShadowMapGenSpotDir.hpp">
+        <Filter>Rendering\ShadowMapping</Filter>
+        <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="Input\VFreeCamera.hpp">
         <Filter>Input</Filter>
         <DeploymentContent>False</DeploymentContent></ClInclude>

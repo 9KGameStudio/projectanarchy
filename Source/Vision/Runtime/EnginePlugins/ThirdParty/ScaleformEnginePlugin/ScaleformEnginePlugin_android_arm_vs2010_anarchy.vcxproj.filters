@@ -7,18 +7,24 @@
 
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Lua\VScaleformUtil.i">
-        <Filter>Lua</Filter>
-        <DeploymentContent>False</DeploymentContent></Compile>
+    <ClCompile Include="VScaleformValue.cpp">
+        <Filter></Filter>
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClCompile Include="VScaleformVariable.cpp">
+        <Filter></Filter>
+        <DeploymentContent>False</DeploymentContent></ClCompile>
     <Compile Include="Lua\vScaleformManager.i">
         <Filter>Lua</Filter>
         <DeploymentContent>False</DeploymentContent></Compile>
     <ClCompile Include="ScaleformEnginePlugin.cpp">
         <Filter></Filter>
         <DeploymentContent>False</DeploymentContent></ClCompile>
-    <ClCompile Include="VScaleformUtil.cpp">
+    <ClInclude Include="VScaleformVariableManager.hpp">
         <Filter></Filter>
-        <DeploymentContent>False</DeploymentContent></ClCompile>
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClInclude Include="VScaleformArgumentsHelper.hpp">
+        <Filter></Filter>
+        <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="Lua\ScaleformLuaModule_wrapper.cpp">
         <Filter>Lua</Filter>
         <DeploymentContent>False</DeploymentContent></ClCompile>
@@ -31,13 +37,19 @@
     <ClCompile Include="VScaleformModelPreview.cpp">
         <Filter></Filter>
         <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClInclude Include="VScaleformVariable.hpp">
+        <Filter></Filter>
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClCompile Include="VScaleformVariableManager.cpp">
+        <Filter></Filter>
+        <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="ScaleformEnginePlugin.hpp">
         <Filter></Filter>
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="VScaleformManager.cpp">
         <Filter></Filter>
         <DeploymentContent>False</DeploymentContent></ClCompile>
-    <ClInclude Include="VScaleformUtil.hpp">
+    <ClInclude Include="VScaleformInternal.hpp">
         <Filter></Filter>
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="VScaleformMovie.cpp">
@@ -46,7 +58,7 @@
     <Compile Include="Lua\vScaleformMovie.i">
         <Filter>Lua</Filter>
         <DeploymentContent>False</DeploymentContent></Compile>
-    <ClInclude Include="vScaleformInternal.hpp">
+    <ClInclude Include="VScaleformValue.hpp">
         <Filter></Filter>
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="VScaleformInternal.cpp">
@@ -64,12 +76,21 @@
     <ClInclude Include="VScaleformMovie.hpp">
         <Filter></Filter>
         <DeploymentContent>False</DeploymentContent></ClInclude>
+    <Compile Include="Lua\VScaleformVariable.i">
+        <Filter>Lua</Filter>
+        <DeploymentContent>False</DeploymentContent></Compile>
     <ClInclude Include="vScaleformAlloc.hpp">
         <Filter></Filter>
         <DeploymentContent>False</DeploymentContent></ClInclude>
+    <None Include="Lua\VScaleformLuaHelpers.inl">
+        <Filter>Lua</Filter>
+        <DeploymentContent>False</DeploymentContent></None>
     <ClCompile Include="VScaleformTexture.cpp">
         <Filter></Filter>
         <DeploymentContent>False</DeploymentContent></ClCompile>
+    <Compile Include="Lua\VScaleformValue.i">
+        <Filter>Lua</Filter>
+        <DeploymentContent>False</DeploymentContent></Compile>
     <ClInclude Include="VScaleformImpExp.hpp">
         <Filter></Filter>
         <DeploymentContent>False</DeploymentContent></ClInclude>
