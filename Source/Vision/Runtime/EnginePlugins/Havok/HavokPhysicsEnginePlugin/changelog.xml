@@ -7,6 +7,12 @@
 
 <changelog name="HavokPhysicsPlugin">
   <!--  Only add NEW features to this section.  Add branch FIXES to the appropriate versions BELOW this one -->
+  <version major="2014" minor="0" fix="5">
+    <added>Added function to ragdoll component to apply force/impulse to bones inside a sphere volume.</added>
+    <fixed>Motion delta loss in character controller when frame rate was higher than maximum physics update rate.</fixed>
+    <fixed>Stability of character controller when walking over small objects. Previously, this has caused the controller to be boosted over larger distances in some cases.</fixed>
+  </version>
+  
   <version major="2013" minor="2" fix="5">
     <changed>For undersized static meshes no physics object is generated anymore.</changed>
     <added>New functions to the vHavokRigidBody component: ApplyForce to a specific point, ApplyTorque, ApplyLinearImpulse to a specific point, and ApplyAngularImpulse.</added>

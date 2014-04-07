@@ -2,27 +2,27 @@
  *
  * Confidential Information of Telekinesys Research Limited (t/a Havok). Not for disclosure or distribution without Havok's
  * prior written consent. This software contains code, techniques and know-how which is confidential and proprietary to Havok.
- * Product and Trade Secret source code contains trade secrets of Havok. Havok Software (C) Copyright 1999-2013 Telekinesys Research Limited t/a Havok. All Rights Reserved. Use of this software is subject to the terms of an end user license agreement.
+ * Product and Trade Secret source code contains trade secrets of Havok. Havok Software (C) Copyright 1999-2014 Telekinesys Research Limited t/a Havok. All Rights Reserved. Use of this software is subject to the terms of an end user license agreement.
  *
  */
 
 #ifndef __VSCALEFORM_INTERNAL_HPP
 #define __VSCALEFORM_INTERNAL_HPP
 
-#include "GFx.h"
+#include <GFx.h>
 
 // GFx includes
-#include "GFx/GFx_Player.h"
-#include "GFx/GFx_Loader.h"
-#include "GFx/GFx_Log.h"
-#include "Render/Renderer2D.h"
+#include <GFx/GFx_Player.h>
+#include <GFx/GFx_Loader.h>
+#include <GFx/GFx_Log.h>
+#include <Render/Renderer2D.h>
 
 #ifdef USE_SF_IME
-#include "GFxIME/GFx_IMEManagerWin32.h"
+#include <GFxIME/GFx_IMEManagerWin32.h>
 #endif
 
 #ifdef SF_AMP_SERVER
-#include "GFx_AMP.h"
+#include <GFx_AMP.h>
 #endif
 
 class VScaleformMovieInstance;
@@ -66,6 +66,7 @@ public:
 
 private:
   bool m_bInitInProgress;
+  bool m_bAdvanceInProgress;
   float m_fTimeDelta;
   VScaleformMovieInstance* m_pMovieInst;
 };
@@ -80,7 +81,7 @@ public:
   VScaleformCommandQueue();
 
   /// \brief  Destructor.
-  ~VScaleformCommandQueue();
+  virtual ~VScaleformCommandQueue();
 
   void Start();
 
@@ -88,7 +89,7 @@ public:
   /// @{
 
   /// \brief Add a command to the renderer queue. Implementation of Scaleform::Render::ThreadCommandQueue.
-  void PushThreadCommand(Scaleform::Render::ThreadCommand* pCommand);
+  virtual void PushThreadCommand(Scaleform::Render::ThreadCommand* pCommand) HKV_OVERRIDE;
 
   void Run();
 
@@ -108,8 +109,8 @@ private:
 class VScaleformExternalInterfaceHandler : public Scaleform::GFx::ExternalInterface
 {
 public:
-  VOVERRIDE void Callback(Scaleform::GFx::Movie* pMovie, const char* pszMethodName,
-    const Scaleform::GFx::Value* pArgs, unsigned int uiArgCount);
+  virtual void Callback(Scaleform::GFx::Movie* pMovie, const char* pszMethodName,
+    const Scaleform::GFx::Value* pArgs, unsigned int uiArgCount) HKV_OVERRIDE;
 };
 
 
@@ -118,7 +119,7 @@ public:
 class VScaleformFSCommandHandler : public Scaleform::GFx::FSCommandHandler
 {
 public:
-    VOVERRIDE void Callback(Scaleform::GFx::Movie* pMovie, const char* szCommand, const char* szArgs);
+    virtual void Callback(Scaleform::GFx::Movie* pMovie, const char* szCommand, const char* szArgs) HKV_OVERRIDE;
 };
 
 /// \brief  Internal wrapper class which allows file opening in Scaleform via Vision file manager.
@@ -129,23 +130,23 @@ public:
   // Override to opens a file using user-defined function and/or GFile class.
   // The default implementation uses buffer-wrapped GSysFile, but only
   // if GFC_USE_SYSFILE is defined.
-  VOVERRIDE Scaleform::File* OpenFile(const char* purl, 
+  virtual Scaleform::File* OpenFile(const char* purl, 
     int flags = Scaleform::FileConstants::Open_Read|Scaleform::FileConstants::Open_Buffered, 
-    int mode = Scaleform::FileConstants::Mode_ReadWrite);
+    int mode = Scaleform::FileConstants::Mode_ReadWrite) HKV_OVERRIDE;
 
   // Returns last modified date/time required for file change detection.
   // Can be implemented to return 0 if no change detection is desired.
   // Default implementation checks file time if GFC_USE_SYSFILE is defined.
-  VOVERRIDE Scaleform::SInt64 GetFileModifyTime(const char *purl) {return 0;}
+  virtual Scaleform::SInt64 GetFileModifyTime(const char *purl) HKV_OVERRIDE { return 0; }
 };
 
 
 /// \brief  Internal wrapper class for the Scaleform log.
-class VScaleformLog : public Scaleform::GFx::Log
+class VScaleformLog : public Scaleform::Log
 {
 public: 
   // We override this function in order to do custom logging.
-  VOVERRIDE void LogMessageVarg(Scaleform::LogMessageType messageType, const char* pfmt, va_list argList);
+  virtual void LogMessageVarg(Scaleform::LogMessageId messageType, const char* pfmt, va_list argList) HKV_OVERRIDE;
 };
 
 
@@ -170,9 +171,9 @@ public:
 #endif // __VSCALEFORM_INTERNAL_HPP
 
 /*
- * Havok SDK - Base file, BUILD(#20131218)
+ * Havok SDK - Base file, BUILD(#20140327)
  * 
- * Confidential Information of Havok.  (C) Copyright 1999-2013
+ * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok
  * Logo, and the Havok buzzsaw logo are trademarks of Havok.  Title, ownership
  * rights, and intellectual property rights in the Havok software remain in

@@ -1,0 +1,59 @@
+<?xml version="1.0" ?>
+
+<!DOCTYPE changelog SYSTEM "../../../../../../Build/Vision/changelog.dtd">
+
+<?xml-stylesheet type="text/xsl" href="../../../../../../Build/Vision/changelog.xsl" ?>
+
+<changelog name="HavokAiPlugin">
+
+  <version major="2013" minor="2" fix="0">
+    <added>Decoration groups can be optionally used as cutters in vForge [#619-8331734].</added>
+    <fixed>The 'EdgeMatchingMetric' nav mesh shape property is now respected when building a nav mesh.</fixed>
+  </version>
+
+  <version major="2013" minor="1" fix="0">
+    <added>SpeedTree 6 (in addition to SpeedTree 5) geometry is now handled when building nav meshes.</added>
+    <changed>Entities that have a Havok Rigid Body component attached where "Motion Type" is anything other than "Fixed" will now be automatically excluded from nav mesh generation.</changed>
+    <fixed>The SnapshotFilename Nav Mesh property is now relative to the project directory and can be specified with the help of a file picker dialog.</fixed>
+  </version>
+
+  <version major="2012" minor="1" fix="2">
+    <added>Havok AI Vision Engine Plugin and Vision Sample for Android.</added>
+    <fixed>Havok AI Property Grid was not resetted when loading a new scene. [HS#7042]</fixed>
+    <fixed>Havok AI NavMeshes were not added or checked out automatically by the exisiting RCS (e.g. Perforce) [HS#7039]</fixed>
+  </version>
+  
+  <version major="8" minor="2" fix="6">
+    <changed>Updated Havok Libraries to version 2011.3</changed>
+  </version>
+  
+  <version major="8" minor="2" fix="5">
+    <added>SpeedTree collision proxy geometry is now handled by nav mesh generation.</added>
+    <changed>Nav mesh data in vForge is now saved to a project subdirectory whose name is the scene name appended with ".NavMeshData". The file name for built nav meshes is now "navmesh.hkt".</changed>
+    <added>'MinDistanceToSeedPoints' and 'BorderPreservationTolerance' have been added to nav mesh shape properties in vForge.</added>
+    <added>Nav meshes can now be generated a tile at a time which can greatly reduce memory consumption. These options are exposed as new nav mesh shape properties in vForge.</added>
+    <added>Separate nav meshes (and corresponding .hkt files) may be generated for each tile which can be used for streaming.</added>
+    <added>The vHavokAiModule can now store multiple nav meshes / query mediators. If more than one nav mesh is prseent when vHavokAiModule::CreateAiWorld() is called, hkaiStreamingManager and hkaiNavMeshInstance objects will be created to facilitate streaming through the hkaiWorld object.</added>
+    <changed>Connection to the Havok Physics world no longer happens automatically when vHavokAiModule::CreateAiWorld() is called. vHavokAiModule::SetConnectToPhysicsWorld() must now be called to control this.</changed>
+    <added>Automated tests have been added to vForge.</added>
+  </version>
+  
+  <version major="8" minor="2" fix="4">
+    <changed>The 'metersConversionFactor' nav mesh shape property in vForge has been removed; 'Vision Units in a Meter' on the Havok Physics panel is now used as the scale factor.</changed>
+    <changed>The nav mesh is now stored internally in meters instead of Vision units. This means that if you are using the nav mesh for direct queries you need to scale your Vision units to meters and back again.</changed>
+    <changed>The nav mesh is no longer exported in the .vscene file within vForge. Loading nav meshes from .vscene files has been deprecated.</changed>
+    <changed>The navmesh_cache.hkt has been renamed to include the scene name in the file name. Applications now need to call vHavokAiModule::LoadNavMesh() with a .hkt file name to load the nav mesh. [#5144]</changed>
+    <added>Connection to the Havok Physics world is now supported when "playing the game" within vForge to allow dynamic nav mesh cutting by rigid bodies. This can be achieved in other applications by calling vHavokAiModule::CreateAiWorld().</added>
+    <added>The AI world is now stepped using multiple threads (provided the vHavokPhysicsModule has a job queue).</added>
+    <changed>The way the nav mesh test path works in vForge has been changed. A test path is now a shape type so any number of paths can be created and saved.</changed>
+    <changed>The nav mesh and test path are no longer drawn in the OnUpdateSceneFinished callback. Instead vHavokAiModule::DrawNavMesh() / vHavokAiModule::ComputeAndDrawPath() should be called directly.</changed>
+    <changed>The HavokAi engine sample has been modified to demonstrate dynamic nav mesh cutting.</changed>
+    <changed>Applications should now use the macros VISION_HAVOK_SYNC_ALL_STATICS() / VISION_HAVOK_UNSYNC_ALL_STATICS() instead of VISION_HAVOK_SYNC_STATICS() / VISION_HAVOK_UNSYNC_STATICS().</changed>
+  </version>
+  
+  <version major="8" minor="2" fix="3">
+    <added>Support for seed points (used to control region removal at the end of nav mesh generation)</added>
+    <added>Support for local settings (used to override global settings during nav mesh generation)</added>
+  </version>
+  
+</changelog>
