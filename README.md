@@ -13,7 +13,7 @@ We are providing a great deal of C++ and C# source access with the SDK, so to he
 Setup
 -----
 
-**You need to first install the full Project Anarchy SDK** to get all the assets for the samples and base data. You can get that from the [downloads page][2] on the Project Anarchy website. For a complete step-by-step guide to using this GitHub source access, please take a look at our page at [http://projectanarchy.com/git][3].
+**You need to first install the full Project Anarchy SDK v2014.0.5** to get all the assets for the samples and base data. You can get that from the [downloads page][2] on the Project Anarchy website. For a complete step-by-step guide to using this GitHub source access, please take a look at our page at [http://projectanarchy.com/git][3].
 
 [1]: http://www.projectanarchy.com
 [2]: http://www.projectanarchy.com/download

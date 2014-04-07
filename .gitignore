@@ -14,6 +14,8 @@ AndroidTemp/
 /AssetMgmt_data/transformed
 /setup/
 
+installLog.txt
+_git_temp/
 Uninstall.app/
 git_*
 ProjectAnarchyEULA.pdf
