@@ -14,7 +14,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "hkbPluginDX9_x86_vs2010_ana
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "hkpPluginDX9_x86_vs2010_anarchy", "..\..\Source\Vision\Editor\vForge\EditorPlugins\Havok\Physics\hkpPlugin\hkpPluginDX9_x86_vs2010_anarchy.csproj", "{DB597B94-5615-4D6C-924B-3B80369FB617}"
 EndProject
-
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug DLL|Mixed Platforms = Debug DLL|Mixed Platforms
@@ -79,5 +78,4 @@ Global
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
-	
 EndGlobal

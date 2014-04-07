@@ -58,7 +58,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "hkpManagedDX9", "..\..\Sour
 		{53B25EFB-8962-48B3-8FBA-847237788084} = {53B25EFB-8962-48B3-8FBA-847237788084}
 	EndProjectSection
 EndProject
-
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug DLL|win32 = Debug DLL|win32
@@ -115,5 +114,4 @@ Global
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
-	
 EndGlobal

@@ -28,7 +28,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UndoableGroupActionEditorPl
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "View2DShapeEditorPluginDX9_x86_vs2010_anarchy", "..\..\Source\Vision\Samples\vForge\View2DShape\View2DShapeEditorPlugin\View2DShapeEditorPluginDX9_x86_vs2010_anarchy.csproj", "{92753E30-CD41-497B-A04F-B25BA16E6044}"
 EndProject
-
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug DLL|Mixed Platforms = Debug DLL|Mixed Platforms
@@ -153,5 +152,4 @@ Global
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
-	
 EndGlobal
