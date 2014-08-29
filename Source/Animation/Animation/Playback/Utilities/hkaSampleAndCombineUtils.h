@@ -10,9 +10,10 @@
 #define HK_BLEND_UTILS_H
 
 #include <Animation/Animation/Rig/hkaSkeleton.h>
+#include <Animation/Animation/Animation/hkaAnimationBinding.h>
 
 	/// Utility class for hkaAnimatedSkeleton
-class hkaSampleAndCombineUtils
+class HK_EXPORT_ANIMATION hkaSampleAndCombineUtils
 {
 public:
 	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_ANIM_RUNTIME,hkaSampleAndCombineUtils);
@@ -102,7 +103,7 @@ public:
 		///     - P' = accumulationPoseInOut[i] after above modification
 		///
 		/// The final pose is a normalized pose.
-	static void HK_CALL blendAdditive(TransformBlendParameters& paramsIn, hkQsTransform* accumulationPoseInOut);
+	static void HK_CALL blendAdditive(TransformBlendParameters& paramsIn, hkQsTransform* accumulationPoseInOut, hkaAnimationBinding::BlendHint blendHint);
 
 		/// Blends in a multiple of the float tracks to an existing set of slots using perFloatTrackWeights: P' = P + t*Q, W' = W + t
 		/// where, for each bone 'i' in the pose:
@@ -138,7 +139,7 @@ public:
 #endif // HK_BLEND_UTILS_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -17,6 +17,8 @@ public:
 
   virtual void SetOwner(VisTypedEngineObject_cl *pOwner);
 
+  VisTypedEngineObject_cl* GetOwner();
+
   int GetComponentID() const;
 
   const char* GetComponentName();
@@ -35,23 +37,6 @@ public:
     }
   }
 };
-
-//Implement this method native in order to return the concrete type instance
-//instead of the base class VisTypedEngineObject_cl
-%native(IVObjectComponent_GetOwner) int IVObjectComponent_GetOwner(lua_State *L);
-%{
-  SWIGINTERN int IVObjectComponent_GetOwner(lua_State *L)
-  {
-    IS_MEMBER_OF(IVObjectComponent) //this will move this function to the method table of the specified class
-
-    SWIG_CONVERT_POINTER(L, 1, IVObjectComponent, pSelf)
-
-    lua_settop(L, 0);
-    LUA_PushObjectProxy(L, pSelf->GetOwner()); //will handle NULL as well
- 
-    return 1;
-  }
-%} 
 
 //add lua tostring and concat operators
 VSWIG_CREATE_CONCAT(IVObjectComponent, 128, "%s", self->GetComponentName()==NULL?self->GetClassTypeId()->m_lpszClassName:self->GetComponentName() )
@@ -101,7 +86,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

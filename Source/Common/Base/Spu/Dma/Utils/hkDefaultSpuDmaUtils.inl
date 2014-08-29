@@ -6,7 +6,6 @@
  *
  */
 
-#include <Common/Base/hkBase.h>
 #include <Common/Base/Spu/Dma/Utils/hkSpuDmaUtils.h>
 
 
@@ -47,13 +46,18 @@ HK_FORCE_INLINE void hkSpuDmaUtils::setChar8InMainMemory( HK_CPU_PTR(hkChar*) ds
 	*dstInMainMemory = value;
 }
 
+HK_FORCE_INLINE void hkSpuDmaUtils::setUint8InMainMemory( HK_CPU_PTR(hkUint8*) dstInMainMemory, hkUint8 value, int dmaGroupId )
+{
+	*dstInMainMemory = value;
+}
+
 HK_FORCE_INLINE void hkSpuDmaUtils::putToMainMemory32( HK_CPU_PTR(hkUint32*) dstInMainMemory, const hkUint32* srcOnSpu, int numWords, int dmaGroupId )
 {
 	hkString::memCpy4(dstInMainMemory, srcOnSpu, numWords);
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

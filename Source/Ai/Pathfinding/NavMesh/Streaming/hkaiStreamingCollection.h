@@ -11,18 +11,53 @@
 #include <Ai/Pathfinding/NavMesh/hkaiNavMesh.h>
 #include <Ai/Pathfinding/NavMesh/hkaiNavMeshInstance.h>
 #include <Ai/Pathfinding/Graph/hkaiDirectedGraphExplicitCost.h>
+#include <Geometry/Internal/DataStructures/DynamicTree/hkcdDynamicAabbTree.h>
 
 class hkaiNavMeshInstance;
 class hkaiNavVolumeInstance;
 class hkaiDirectedGraphInstance;
 class hkaiNavMeshQueryMediator;
 class hkaiNavVolumeMediator;
-class hkcdDynamicAabbTree;
+
+/// The relevant data structure(s) for a section.
+/// Only one of m_instancePtr and m_volumePtr can be non-NULL, as with m_mediator and m_volumeMediator.
+struct HK_EXPORT_AI hkaiStreamingCollectionInstanceInfo
+{
+	//+version(4)
+	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_AI_NAVMESH, hkaiStreamingCollectionInstanceInfo);
+	HK_DECLARE_REFLECTION();
+
+	typedef hkaiTreeHandle TreeHandle;
+
+	HK_FORCE_INLINE hkaiStreamingCollectionInstanceInfo() 
+	:	m_instancePtr(HK_NULL),
+		m_volumeInstancePtr(HK_NULL),
+		m_clusterGraphInstance(HK_NULL),
+		m_mediator(HK_NULL),
+		m_volumeMediator(HK_NULL),
+		m_treeNode( TreeHandle(-1) )
+	{
+	}
+
+	inline bool isEmpty() const
+	{
+		// Can't have mediators without the corresponding structure, so no need to check them.
+		return !(m_instancePtr || m_volumeInstancePtr || m_clusterGraphInstance);
+	}
+
+	hkaiNavMeshInstance* m_instancePtr;
+	hkaiNavVolumeInstance*	m_volumeInstancePtr;
+	hkaiDirectedGraphInstance* m_clusterGraphInstance;
+	const hkaiNavMeshQueryMediator* m_mediator;
+	const hkaiNavVolumeMediator* m_volumeMediator;
+	hkaiTreeHandle m_treeNode;
+};
+
 
 	/// A group of hkaiNavMeshInstances and/or hkaiNavVolumes that have been loaded into the hkaiWorld and connected via stitching.
 	/// This is the main input for path searches (e.g. hkaiPathfindingUtil::findPathInput).
 	/// This is maintained by the hkaiWorld and doesn't need to be handled by the user.
-class hkaiStreamingCollection : public hkReferencedObject
+class HK_EXPORT_AI hkaiStreamingCollection : public hkReferencedObject
 {
 public:
 	//+vtable(true)
@@ -30,45 +65,14 @@ public:
 	HK_DECLARE_REFLECTION();
 	HK_DECLARE_CLASS_ALLOCATOR( HK_MEMORY_CLASS_AI_NAVMESH);
 
-	typedef hkaiTreeHandle TreeHandle;
-
 	hkaiStreamingCollection();
 	
 	~hkaiStreamingCollection();
 
 	hkaiStreamingCollection(hkFinishLoadedObjectFlag f);
 
-		/// The relevant data structure(s) for a section.
-		/// Only one of m_instancePtr and m_volumePtr can be non-NULL, as with m_mediator and m_volumeMediator.
-	struct InstanceInfo
-	{
-		//+version(4)
-		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_AI_NAVMESH, hkaiStreamingCollection::InstanceInfo);
-		HK_DECLARE_REFLECTION();
-
-		HK_FORCE_INLINE InstanceInfo() 
-		:	m_instancePtr(HK_NULL),
-			m_volumeInstancePtr(HK_NULL),
-			m_clusterGraphInstance(HK_NULL),
-			m_mediator(HK_NULL),
-			m_volumeMediator(HK_NULL),
-			m_treeNode( TreeHandle(-1) )
-		{
-		}
-
-		inline bool isEmpty() const
-		{
-			// Can't have mediators without the corresponding structure, so no need to check them.
-			return !(m_instancePtr || m_volumeInstancePtr || m_clusterGraphInstance);
-		}
-
-		hkaiNavMeshInstance* m_instancePtr;
-		hkaiNavVolumeInstance*	m_volumeInstancePtr;
-		hkaiDirectedGraphInstance* m_clusterGraphInstance;
-		const hkaiNavMeshQueryMediator* m_mediator;
-		const hkaiNavVolumeMediator* m_volumeMediator;
-		hkaiTreeHandle m_treeNode;
-	};
+	typedef hkaiTreeHandle TreeHandle;
+	typedef hkaiStreamingCollectionInstanceInfo InstanceInfo;
 
 
 #ifndef HK_PLATFORM_SPU
@@ -222,7 +226,7 @@ public:
 #endif // HKAI_STREAMING_COLLECTION_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

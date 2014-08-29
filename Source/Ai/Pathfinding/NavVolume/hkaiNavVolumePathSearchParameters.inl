@@ -9,8 +9,9 @@
 inline hkaiNavVolumePathSearchParameters::hkaiNavVolumePathSearchParameters() 
 :	m_costModifier( HK_NULL ),
 	m_edgeFilter( HK_NULL ),
-	m_lineOfSightFlags( CHECK_LINE_OF_SIGHT_IF_NO_COST_MODIFIER ),
-	m_heuristicWeight( 1.0f )
+	m_lineOfSightFlags( EARLY_OUT_IF_NO_COST_MODIFIER ),
+	m_heuristicWeight( 1.0f ),
+	m_maximumPathLength( HK_REAL_MAX )
 {
 	m_up.setZero();
 }
@@ -27,40 +28,30 @@ inline hkBool32 hkaiNavVolumePathSearchParameters::operator ==( const hkaiNavVol
 			m_edgeFilter						== o.m_edgeFilter						&&
 			m_lineOfSightFlags					== o.m_lineOfSightFlags					&&
 			m_heuristicWeight					== o.m_heuristicWeight					&&
-			m_bufferSizes						== o.m_bufferSizes
+			m_bufferSizes						== o.m_bufferSizes						&&
+			m_maximumPathLength					== o.m_maximumPathLength
 		);
 }
 
 
 inline void hkaiNavVolumePathSearchParameters::setUp( hkVector4Parameter up )
 {
-	m_up.pack( up );
+	m_up = up;
 }
 
 hkBool32 hkaiNavVolumePathSearchParameters::shouldPerformLineOfSightCheck() const
 {
-	return m_lineOfSightFlags.anyIsSet(CHECK_LINE_OF_SIGHT_ALWAYS) ||
-		( m_lineOfSightFlags.anyIsSet(CHECK_LINE_OF_SIGHT_IF_NO_COST_MODIFIER) && !m_costModifier);
+	return m_lineOfSightFlags.anyIsSet(EARLY_OUT_IF_NO_COST_MODIFIER | EARLY_OUT_ALWAYS);
 }
 
-
-#include <Common/Base/DebugUtil/DeterminismUtil/hkCheckDeterminismUtil.h>
-
-inline void hkaiNavVolumePathSearchParameters::checkDeterminism() const
+hkBool32 hkaiNavVolumePathSearchParameters::canEarlyOutFromLineOfSight() const
 {
-#ifdef HK_ENABLE_DETERMINISM_CHECKS
-
-	hkCheckDeterminismUtil::checkMt(0x51ec62d4, m_up);
-	hkCheckDeterminismUtil::checkMt(0x51ec62da, m_lineOfSightFlags);
-	hkCheckDeterminismUtil::checkMt(0x51ec62dc, m_heuristicWeight);
-
-	hkCheckDeterminismUtil::checkMt(0x51ec62dd, m_bufferSizes.m_maxOpenSetSizeBytes);
-	hkCheckDeterminismUtil::checkMt(0x51ec62de, m_bufferSizes.m_maxSearchStateSizeBytes);
-#endif
+	return m_lineOfSightFlags.anyIsSet(EARLY_OUT_ALWAYS) ||
+		( m_lineOfSightFlags.anyIsSet(EARLY_OUT_IF_NO_COST_MODIFIER) && !m_costModifier);
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

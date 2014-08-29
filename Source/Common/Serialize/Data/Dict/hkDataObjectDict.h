@@ -23,7 +23,7 @@ class hkDataObjectDict;
 	/// (with patch versioning) if required, and copy it to native
 	/// objects. And you may also use it to save world content to a
 	/// tagfile.
-class hkDataWorldDict : public hkDataWorld
+class HK_EXPORT_COMMON hkDataWorldDict : public hkDataWorld
 {
 	public:
 		HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE);
@@ -100,7 +100,7 @@ class hkDataWorldDict : public hkDataWorld
 #endif // HK_DATA_DICT_OBJECT
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

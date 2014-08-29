@@ -101,7 +101,7 @@ public:
   /// \brief
   ///   This function creates mesh buffer objects from the lightmap mesh information passed to this
   ///   function. vLux uses it for radiosity.
-  static VISION_APIFUNC void CreateLightmapMeshes(VLightmapSceneInfo &meshInfo, VLightmapSceneInfo *pLightmapInfo=NULL, IVLightGridTracer_cl *pLightTracer=NULL);
+  static VISION_APIFUNC void CreateLightmapMeshes(VLightmapSceneInfo &meshInfo, VLightmapSceneInfo *pLightmapInfo=NULL, IVLightGridTracer_cl *pLightTracer=NULL, float fRelObjectClipDistance = 2.0f);
  
   
   ///
@@ -113,7 +113,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

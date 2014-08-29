@@ -11,7 +11,8 @@
 #include <Vision/Runtime/Engine/System/Vision.hpp>
 #include <Vision/Runtime/Engine/System/Resource/VisApiResource.hpp>
 
-unsigned int hkvCollisionMeshAsset::s_iAssetTypeIndex = HKV_INVALID_INDEX;
+hkvAssetTypeInfo* hkvCollisionMeshAsset::s_typeInfo = NULL;
+const hkvAssetTypeInfoHandle* hkvCollisionMeshAsset::s_typeInfoHandle = NULL;
 
 /////////////////////////////////////////////////////////////////////////////
 // hkvCollisionMeshAsset static functions
@@ -19,24 +20,27 @@ unsigned int hkvCollisionMeshAsset::s_iAssetTypeIndex = HKV_INVALID_INDEX;
 
 void hkvCollisionMeshAsset::StaticInit()
 {
-  hkvAssetTypeInfo ti;
-  ti.m_name = "CollisionMesh";
-  ti.m_createFunc = &CreateAsset;
-  ti.m_supportedFileExtensions.pushBack("vcolmesh");
-  ti.m_szTypeIconQt = ":/Icons/Icons/CollisionMeshAsset.png";
+  s_typeInfo = new hkvAssetTypeInfo();
+  s_typeInfo->m_name = "CollisionMesh";
+  s_typeInfo->m_createFunc = &CreateAsset;
+  s_typeInfo->m_supportedFileExtensions.pushBack("vcolmesh");
+  s_typeInfo->m_szTypeIconQt = ":/Icons/Icons/CollisionMeshAsset.png";
 
-  ti.m_resourceManagerName = VIS_RESOURCEMANAGER_COLLISIONMESHES;
+  s_typeInfo->m_resourceManagerName = VIS_RESOURCEMANAGER_COLLISIONMESHES;
 
-  // register at the hkvAssetTypeManager and store the asset type index in static variable.
-  s_iAssetTypeIndex = hkvAssetTypeManager::getGlobalInstance()->addAssetType(ti);
+  // register at the hkvAssetTypeManager and store the asset type handle in static variable.
+  s_typeInfoHandle = hkvAssetTypeManager::getGlobalInstance()->addAssetType(*s_typeInfo);
 }
 
 
 void hkvCollisionMeshAsset::StaticDeInit()
 {
   // de-register at the hkvAssetTypeManager
-  hkvAssetTypeManager::getGlobalInstance()->removeAssetType(s_iAssetTypeIndex);
-  s_iAssetTypeIndex = HKV_INVALID_INDEX;
+  hkvAssetTypeManager::getGlobalInstance()->removeAssetType(*s_typeInfoHandle);
+  s_typeInfoHandle = NULL;
+
+  delete s_typeInfo;
+  s_typeInfo = NULL;
 }
 
 
@@ -54,7 +58,7 @@ hkvAsset* hkvCollisionMeshAsset::CreateAsset()
 // hkvCollisionMeshAsset public functions
 /////////////////////////////////////////////////////////////////////////////
 
-hkvCollisionMeshAsset::hkvCollisionMeshAsset()
+hkvCollisionMeshAsset::hkvCollisionMeshAsset() : hkvAsset(s_typeInfo)
 {
 
 }
@@ -70,30 +74,13 @@ hkvCollisionMeshAsset::~hkvCollisionMeshAsset()
 // hkvCollisionMeshAsset public override functions
 /////////////////////////////////////////////////////////////////////////////
 
-unsigned int hkvCollisionMeshAsset::getTypeIndex() const
+const hkvAssetTypeInfoHandle& hkvCollisionMeshAsset::getTypeInfoHandle() const
 {
-  return s_iAssetTypeIndex;
-}
-
-
-const char* hkvCollisionMeshAsset::getTypeName() const
-{
-  return "CollisionMesh";
-}
-
-// testing
-void hkvCollisionMeshAsset::getSpecificProperties(hkvPropertyList& properties, hkvProperty::Purpose purpose) const
-{
-  // TODO
-}
-
-void hkvCollisionMeshAsset::setSpecificProperty(const hkvProperty& prop, const hkArray<hkStringPtr>& path, unsigned int iStackIndex, hkvProperty::Purpose purpose)
-{
-  // TODO
+  return *s_typeInfoHandle;
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

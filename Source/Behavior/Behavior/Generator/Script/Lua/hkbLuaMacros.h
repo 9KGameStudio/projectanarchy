@@ -25,11 +25,11 @@
 		#define HKB_CONFIG_HAVOK_SCRIPT_SYMBOLS HKB_HAVOK_SCRIPT_SYMBOLS_EXTERNAL
 		
 		// Must have script path set if linking externally.  Uncomment the next line and set to correct local path
-		// #define HKB_HAVOK_SCRIPT_DIRECTORY_PATH ../Tools/HavokScript
+		// #define HKB_HAVOK_SCRIPT_DIRECTORY_PATH Script
 
 		// Used for internal testing only
 		#if defined(HKB_BUILD_SET_SCRIPT_DIRECTORY_PATH)
-			#define HKB_HAVOK_SCRIPT_DIRECTORY_PATH ../Tools/HavokScript
+			#define HKB_HAVOK_SCRIPT_DIRECTORY_PATH Script
 		#endif
 
 		#if !defined(HKB_HAVOK_SCRIPT_DIRECTORY_PATH)
@@ -51,7 +51,7 @@
 
 		// default
 		#define HKB_CONFIG_HAVOK_SCRIPT_SYMBOLS HKB_HAVOK_SCRIPT_SYMBOLS_INTERNAL
-		#define HKB_HAVOK_SCRIPT_DIRECTORY_PATH ../Tools/HavokScript
+		#define HKB_HAVOK_SCRIPT_DIRECTORY_PATH Script
 		#if !defined(HKS_BUILDRELEASE) && !defined(HKS_BUILDDEVEL) && !defined(HKS_BUILDDEBUG)
 			#define	HKS_BUILDDEVEL
 		#endif
@@ -128,7 +128,7 @@
 #endif // HKB_LUA_MACROS_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

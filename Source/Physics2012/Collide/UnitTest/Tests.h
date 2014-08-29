@@ -13,7 +13,6 @@ HK_TEST_DECLARE(BoxBoxTest)
 HK_TEST_DECLARE(ExtremeCasesGskTest)
 HK_TEST_DECLARE(shapeCollectionCastRay_main)
 HK_TEST_DECLARE(spherebox_main)
-HK_TEST_DECLARE(aabb_main)
 HK_TEST_DECLARE(ContinuousGskTest_main)
 HK_TEST_DECLARE(degenerate_triangles)
 HK_TEST_DECLARE(mopp_main)
@@ -33,7 +32,7 @@ HK_TEST_DECLARE(tricontainspoint_main)
 HK_TEST_DECLARE(degeneracy_main)
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -14,7 +14,7 @@
 #ifdef SUPPORTS_SHADOW_MAPS
   #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/ShadowMapping/IVShadowMapComponent.hpp>
 
-  #if defined(_VISION_PSP2) || defined( _VISION_MOBILE ) || defined( HK_ANARCHY ) || defined( _VISION_APOLLO )    // TODO: Have Apollo define _VISION_MOBILE.
+  #if defined(_VISION_PSP2) || defined( _VISION_MOBILE ) || defined(_VISION_NACL) || defined( HK_ANARCHY ) || defined( _VISION_APOLLO )    // TODO: Have Apollo define _VISION_MOBILE.
     #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/ShadowMapping/VMobileShadowMapComponentSpotDirectional.hpp>
   #else
     #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/ShadowMapping/VShadowMapComponentPoint.hpp>
@@ -22,7 +22,7 @@
   #endif
 #endif
 
-#if defined( _VISION_MOBILE ) || defined( HK_ANARCHY ) || defined( _VISION_APOLLO )    // TODO: Have Apollo define _VISION_MOBILE.
+#if defined( _VISION_MOBILE ) || defined(_VISION_NACL) || defined( HK_ANARCHY ) || defined( _VISION_APOLLO )    // TODO: Have Apollo define _VISION_MOBILE.
   #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/MobileForwardRenderer/VMobileForwardRenderer.hpp>
 #else
   #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/ForwardRenderer/ForwardRenderer.hpp>
@@ -49,7 +49,7 @@ void VAppHelper::SetShadowsForLight(VisLightSource_cl *pLight, bool bStatus)
   }
   else if (pComponent == NULL)
   {
-#if defined(_VISION_PSP2) || defined(_VISION_MOBILE) || defined(HK_ANARCHY) || defined(_VISION_APOLLO) // TODO: Have Apollo define _VISION_MOBILE.
+#if defined(_VISION_PSP2) || defined(_VISION_MOBILE) || defined(_VISION_NACL) || defined(HK_ANARCHY) || defined(_VISION_APOLLO) // TODO: Have Apollo define _VISION_MOBILE.
 
     const unsigned int nShadowMapSize = 512;
     // Note: shadows for VIS_LIGHT_POINT not supported
@@ -101,7 +101,7 @@ void VAppHelper::SetShadowsForLight(VisLightSource_cl *pLight, bool bStatus)
 
 void VAppHelper::CreateForwardRenderer()
 {
-#if defined(_VISION_MOBILE) || defined(HK_ANARCHY) || defined(_VISION_APOLLO) // TODO: Have Apollo define _VISION_MOBILE.
+#if defined(_VISION_MOBILE) || defined(_VISION_NACL) || defined(HK_ANARCHY) || defined(_VISION_APOLLO) // TODO: Have Apollo define _VISION_MOBILE.
   VRendererNodeCommon *pRenderer = new VMobileForwardRenderingSystem(Vision::Contexts.GetMainRenderContext());
 #else
   VRendererNodeCommon *pRenderer = new VForwardRenderingSystem(Vision::Contexts.GetMainRenderContext());
@@ -151,7 +151,7 @@ float VAppHelper::GetUIScalingFactor()
 
   fScale = (vRes.x / fReferenceResolution) * fKernscheFakeKonstante * hkvMath::pow(fReferenceDisplaySize / fDisplaySizeInInch, fBagarscherFakeExponent);
 
-#elif !defined(WIN32)
+#elif !defined(_VISION_WIN32)
   fScale = vRes.x / fReferenceResolution;
 
 #endif
@@ -160,7 +160,7 @@ float VAppHelper::GetUIScalingFactor()
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

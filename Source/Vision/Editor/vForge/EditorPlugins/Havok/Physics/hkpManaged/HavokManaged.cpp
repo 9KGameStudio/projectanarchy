@@ -37,6 +37,7 @@ namespace HavokManaged
     Attachments   = vHavokPhysicsModule::HK_LAYER_COLLIDABLE_ATTACHMENTS,
     Foot_IK       = vHavokPhysicsModule::HK_LAYER_COLLIDABLE_FOOT_IK,
     Debris        = vHavokPhysicsModule::HK_LAYER_COLLIDABLE_DEBRIS,
+    Decoration    = vHavokPhysicsModule::HK_LAYER_COLLIDABLE_DECORATION,
     Custom0       = vHavokPhysicsModule::HK_LAYER_COLLIDABLE_CUSTOM0,
     Custom1       = vHavokPhysicsModule::HK_LAYER_COLLIDABLE_CUSTOM1,
     Custom2       = vHavokPhysicsModule::HK_LAYER_COLLIDABLE_CUSTOM2,
@@ -46,11 +47,10 @@ namespace HavokManaged
 
   public ref struct WorldSetupSettings
   {
-    float m_havokToVisionScale; //eg 50x, 100x
+    float m_havokToVisionScale;
     int m_staticGeomMode;
     int m_mergedStaticWeldingType;
-
-};
+  };
 
   public ref struct WorldRuntimeSettings
   {
@@ -66,7 +66,7 @@ namespace HavokManaged
     float m_gravityX;
     float m_gravityY;
     float m_gravityZ;
-    bool m_shapeCaching;
+    bool m_diskShapeCaching;
     array<unsigned int>^ m_collisionGroupMasks;
   
     int m_solverIterations; // 2,4,8
@@ -80,19 +80,19 @@ namespace HavokManaged
   
     static void InitManagedModule()
     {
-      //Init the entity plugin directly since we link statically to it
+      // Init the entity plugin directly since we link statically to it
       GetEnginePlugin_vHavok()->InitEnginePlugin();
     }
 
     static void DeInitManagedModule()
     {
-      //Deinit the entity plugin directly since we link statically to it
+      // Deinit the entity plugin directly since we link statically to it
       GetEnginePlugin_vHavok()->DeInitEnginePlugin();
     }
 
     static String^ GetVersionInfo()
     {
-      return gcnew String( vHavokPhysicsModule_GetVersionString() );
+      return gcnew String(vHavokPhysicsModule_GetVersionString());
     }
 
     static bool IsSimulationRunning()
@@ -116,14 +116,14 @@ namespace HavokManaged
       return false;
     }
 
-    static void EnableDebugRendering (bool bRigidBodies, bool bRagdolls, bool bCharacterControlers, 
+    static void EnableDebugRendering (bool bRigidBodies, bool bRagdolls, bool bCharacterControllers, 
       bool bTriggerVolumes, bool bBlockerVolumes, bool bStaticMeshes)
     {
-      vHavokPhysicsModule *pInst = vHavokPhysicsModule::GetInstance();
+      vHavokPhysicsModule* pModule = vHavokPhysicsModule::GetInstance();
 
-      if (pInst != NULL)
+      if (pModule != NULL)
       {
-        pInst->EnableDebugRendering (bRigidBodies, bRagdolls, bCharacterControlers, 
+        pModule->EnableDebugRendering(bRigidBodies, bRagdolls, bCharacterControllers, 
           bTriggerVolumes, bBlockerVolumes, bStaticMeshes);
       }
     }
@@ -166,7 +166,7 @@ namespace HavokManaged
       worldSettings->m_gravityX = p.m_vGravity.x;
       worldSettings->m_gravityY = p.m_vGravity.y;
       worldSettings->m_gravityZ = p.m_vGravity.z;
-      worldSettings->m_shapeCaching = p.m_bEnableShapeCaching;
+      worldSettings->m_diskShapeCaching = p.m_bEnableDiskShapeCaching;
       worldSettings->m_disableConstrainedBodiesCollisions	= p.m_bEnableConstraintCollisionFilter;
 	    worldSettings->m_enableLegacyCompoundShapes = p.m_bEnableLegacyCompoundShapes;
 
@@ -186,7 +186,7 @@ namespace HavokManaged
       p.m_fBroadphaseManualSize = worldSettings->m_broadPhaseSizeManual;
       hkvVec3 g(worldSettings->m_gravityX, worldSettings->m_gravityY, worldSettings->m_gravityZ);
       p.m_vGravity = g;
-      p.m_bEnableShapeCaching = worldSettings->m_shapeCaching; 
+      p.m_bEnableDiskShapeCaching = worldSettings->m_diskShapeCaching; 
 	    p.m_bEnableConstraintCollisionFilter	= worldSettings->m_disableConstrainedBodiesCollisions;
 	    p.m_bEnableLegacyCompoundShapes	= worldSettings->m_enableLegacyCompoundShapes;
       for (int i=0;i<32;i++)
@@ -215,19 +215,19 @@ namespace HavokManaged
       }
     }
 
-    static void SetVisualDebuggerPort( int port )
+    static void SetVisualDebuggerPort(int port)
     {
-      if (vHavokPhysicsModule *pInst = vHavokPhysicsModule::GetInstance())
+      vHavokPhysicsModule *pModule = vHavokPhysicsModule::GetInstance();
+      if (pModule != nullptr)
       {
-        pInst->SetVisualDebuggerPort(port);
+        pModule->SetVisualDebuggerPort(port);
       }
     }
-
   }; 
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

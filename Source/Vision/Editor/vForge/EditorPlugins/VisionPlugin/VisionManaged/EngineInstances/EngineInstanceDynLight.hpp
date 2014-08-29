@@ -130,7 +130,7 @@ namespace VisionManaged
 
 
     void SetLightType(LightSourceType_e eType, float fSpotAngle, String ^sProjectedTex);
-    void SetIntensity(float fIntensity);
+    void SetIntensity(float fRadius);
     void SetLightColor(UINT col)
     {
       m_iColor=col;
@@ -172,7 +172,7 @@ namespace VisionManaged
   private:
     // these values have also to be stored here because of color animation (e.g. GetColor only returns the *current* light color)
     unsigned int m_iColor; // used as VColorRef
-    float m_fIntensity;
+    float m_fRadius, m_fMultiplier;
     unsigned int m_iVisibleBitmask;
     bool m_bAnimated, m_bSceneAnimated, m_bEnabled, m_bShowCorona, m_bExportAsStatic, m_bPreviewStatic, m_bExportWhenNotRelevant;
     float m_fAnimTime, m_fAnimPhase;
@@ -185,7 +185,7 @@ namespace VisionManaged
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

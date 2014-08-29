@@ -63,18 +63,27 @@ const hkVersionRegistry::Updater* hkVersionRegistry::StaticLinkedUpdaters[] =
 	{ \
 		extern const hkStaticClassNameRegistry hkHavokDefaultClassRegistry; \
 	}
-#	include <Common/Compat/Deprecated/Compat/hkHavokVersionClasses.h>
+#	define HK_HAVOK_COMMON_CLASSES_VERSION(HKVER) \
+	namespace hkHavok##HKVER##Classes \
+	{ \
+		extern HK_EXPORT_COMMON const hkStaticClassNameRegistry hkHavokDefaultClassRegistry; \
+	}
+
+#	include <Common/Compat/Deprecated/Compat/hkHavokVersionClasses.h> 
 #	undef HK_HAVOK_CLASSES_VERSION
+#	undef HK_HAVOK_COMMON_CLASSES_VERSION
 
 	// List of all versions and corresponding classes
 #	define HK_HAVOK_CLASSES_VERSION(HKVER) &hkHavok##HKVER##Classes::hkHavokDefaultClassRegistry,
+#	define HK_HAVOK_COMMON_CLASSES_VERSION(HKVER) &hkHavok##HKVER##Classes::hkHavokDefaultClassRegistry,
 
 	const hkStaticClassNameRegistry* hkVersionRegistry::StaticLinkedClassRegistries[] =
 	{
-#		include <Common/Compat/Deprecated/Compat/hkHavokVersionClasses.h>
+#		include <Common/Compat/Deprecated/Compat/hkHavokVersionClasses.h> 
 		HK_NULL
 	};
 #	undef HK_HAVOK_CLASSES_VERSION
+#	undef HK_HAVOK_COMMON_CLASSES_VERSION
 
 #else
 
@@ -92,7 +101,7 @@ const hkVersionRegistry::Updater* hkVersionRegistry::StaticLinkedUpdaters[] =
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

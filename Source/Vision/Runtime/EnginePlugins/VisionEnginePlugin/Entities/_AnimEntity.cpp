@@ -16,14 +16,15 @@
 #include <Vision/Runtime/Engine/Animation/VisApiVertexAnimDeformer.hpp>
 #include <Vision/Runtime/Engine/Animation/VisApiMorphingDeformer.hpp>
 #include <Vision/Runtime/Engine/SceneElements/VisApiPath.hpp>
-#include <Vision/Runtime/Base/System/Memory/VMemDbg.hpp>
+
 
 // AnimEntity_cl is deprecated, but we don't need deprecation warnings for the method implementations.
 #pragma  warning(disable: 4996)
 
 #define ANIMENTITY_VERSION_2        2     // Follow Path
 #define ANIMENTITY_VERSION_3        3     // Skinning Mode option.
-#define ANIMENTITY_VERSION_CURRENT  3     // Current version
+#define ANIMENTITY_VERSION_4        4     // offset and speed
+#define ANIMENTITY_VERSION_CURRENT  4     // Current version
 
 extern VModule g_VisionEngineModule;
 
@@ -33,6 +34,9 @@ V_IMPLEMENT_SERIAL( AnimEntity_cl, VisBaseEntity_cl, 0, &g_VisionEngineModule );
 AnimEntity_cl::AnimEntity_cl()
 {
   Vision::Callbacks.OnAfterSceneLoaded += this;
+  
+  PlaybackSpeed = 1.0f;
+  PlaybackOffset = 0.0f;
 
   PathTime = 0.f;
   m_pFollowPath = NULL;
@@ -48,7 +52,7 @@ AnimEntity_cl::~AnimEntity_cl()
 
 bool AnimEntity_cl::StartAnimation(const char *szAnimName)
 {
-  bool result = VSimpleAnimationComponent::StartAnimation(this,szAnimName);
+  bool result = VSimpleAnimationComponent::StartAnimation(this, szAnimName, PlaybackSpeed, PlaybackOffset);
   if (result)
   {
     VisAnimConfig_cl* pConfig = GetAnimConfig();
@@ -78,7 +82,7 @@ void AnimEntity_cl::InitFunction()
 
 void AnimEntity_cl::MessageFunction( int iID, INT_PTR iParamA, INT_PTR iParamB )
 {
-#ifdef WIN32
+#ifdef _VISION_WIN32
   if ( iID == VIS_MSG_EDITOR_PROPERTYCHANGED )
   {
     const char *szPropertyName = (const char *) iParamA;
@@ -125,6 +129,13 @@ void AnimEntity_cl::MessageFunction( int iID, INT_PTR iParamA, INT_PTR iParamB )
 #endif
 
   VisBaseEntity_cl::MessageFunction( iID, iParamA, iParamB );
+}
+
+
+void AnimEntity_cl::OnVariableValueChanged(VisVariable_cl *pVar, const char * value)
+{
+  VisBaseEntity_cl::OnVariableValueChanged(pVar, value);
+
 }
 
 void AnimEntity_cl::OnHandleCallback(IVisCallbackDataObject_cl *pData)
@@ -174,6 +185,8 @@ void AnimEntity_cl::Serialize( VArchive &ar )
       ar >> m_pFollowPath;
     if (iVersion>=ANIMENTITY_VERSION_3)
       ar >> SkinningMode;
+    if (iVersion>=ANIMENTITY_VERSION_4)
+      ar >> PlaybackSpeed >> PlaybackOffset;
 
     InitFunction();
   } 
@@ -185,6 +198,7 @@ void AnimEntity_cl::Serialize( VArchive &ar )
     ar << PathTime;
     ar << m_pFollowPath; // ANIMENTITY_VERSION_2
     ar << SkinningMode;  // ANIMENTITY_VERSION_3
+    ar << PlaybackSpeed << PlaybackOffset; //ANIMENTITY_VERSION_4
 
   }
 }
@@ -194,7 +208,7 @@ void AnimEntity_cl::Serialize( VArchive &ar )
 // Variable Attributes                                                        //
 // -------------------------------------------------------------------------- //
 
-#ifdef WIN32
+#ifdef _VISION_WIN32
 
 void AnimEntity_cl::GetVariableAttributes(VisVariable_cl *pVariable, VVariableAttributeInfo &destInfo)
 {
@@ -218,58 +232,12 @@ void AnimEntity_cl::GetVariableAttributes(VisVariable_cl *pVariable, VVariableAt
 // *** variables which have to be initialised or which have to be available in the editor.
 START_VAR_TABLE(AnimEntity_cl,VisBaseEntity_cl,"animated entity", VFORGE_HIDECLASS, NULL )
   DEFINE_VAR_STRING(AnimEntity_cl, AnimationName, "Animation name to start", "", 128, 0, "dropdownlist(Animation)");
+  DEFINE_VAR_FLOAT(AnimEntity_cl, PlaybackSpeed, "Relative speed multiplier for playback (1=normal speed)", "1.0", 0, 0);
+  DEFINE_VAR_FLOAT(AnimEntity_cl, PlaybackOffset, "Relative playback time offset (0=from start, 0.5=middle of the animation)", "0.0", 0, "Slider(0,1,1001)");
   DEFINE_VAR_STRING(AnimEntity_cl, PathKey, "Path key to follow", "", 128, 0, 0);
   DEFINE_VAR_FLOAT(AnimEntity_cl, PathTime, "Time for one path cycle", "10.0", 0, 0);
   DEFINE_VAR_ENUM(AnimEntity_cl, SkinningMode, "Skinning Mode(test purpose for DX9 Hardware skinning)", "SKINNINGMODE_DEFAULT","SKINNINGMODE_DEFAULT,SKINNINGMODE_SOFTWARE,SKINNINGMODE_HARDWARE", 0, 0);
 END_VAR_TABLE
-
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////
-// class StaticCollisionEntity_cl
-//////////////////////////////////////////////////////////////////////////////////////////////////////
-
-V_IMPLEMENT_SERIAL( StaticCollisionEntity_cl, VisBaseEntity_cl, 0, &g_VisionEngineModule );
-
-
-void StaticCollisionEntity_cl::CommonInit()
-{
-  IVisPhysicsModule_cl *pPhysMod = Vision::GetApplication()->GetPhysicsModule();
-  if (!pPhysMod)
-  {
-    hkvLog::Warning("No physics module set.");
-    return;
-  }
-  if (pPhysMod->GetType()!=IVisPhysicsModule_cl::VISION)
-  {
-    hkvLog::Warning("Physics module must be of type Vision");
-    return;
-  }
-
-  SetTraceAccuracy(VIS_TRACEACC_POLYGONS);
-}
-
-
-void StaticCollisionEntity_cl::Serialize( VArchive &ar )
-{
-  VisBaseEntity_cl::Serialize(ar);
-  char iVersion, iCurrentVersion = 0;
-  if (ar.IsLoading())
-  {
-    CommonInit();
-    ar >> iVersion; VASSERT(iVersion<=iCurrentVersion);
-  } 
-  else
-  {
-    ar << iCurrentVersion;
-  }
-}
-
-
-
-START_VAR_TABLE(StaticCollisionEntity_cl,VisBaseEntity_cl,"static entity that uses collision",0, NULL )
-END_VAR_TABLE
-
-
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -444,7 +412,7 @@ void VSimpleAnimationComponent::SetPaused(bool bEnabled)
   }
 }
 
-/*static*/ bool VSimpleAnimationComponent::StartAnimation(VisBaseEntity_cl *pEntity, const char *szAnimName)
+/*static*/ bool VSimpleAnimationComponent::StartAnimation(VisBaseEntity_cl *pEntity, const char *szAnimName, float fSpeed, float fOffset)
 {
   if (pEntity == NULL)
     return false;
@@ -486,7 +454,9 @@ void VSimpleAnimationComponent::SetPaused(bool bEnabled)
     if (pConfig)
     {
       VisSkeletalAnimControl_cl* pSkeletalAnimControl = VisSkeletalAnimControl_cl::Create(pMesh->GetSkeleton(), 
-        pAnimSequenceSkeletal, VANIMCTRL_LOOP|VSKELANIMCTRL_DEFAULTS, 1.0f, true);
+        pAnimSequenceSkeletal, VANIMCTRL_LOOP|VSKELANIMCTRL_DEFAULTS, fSpeed, true);
+      pSkeletalAnimControl->SetCurrentSequencePosition(fOffset);
+
       // set it as the input for the final skeletal result
       pFinalSkeletalResult->SetSkeletalAnimInput(pSkeletalAnimControl);
       // and add the entity as an events listener
@@ -506,8 +476,9 @@ void VSimpleAnimationComponent::SetPaused(bool bEnabled)
 
       // if a vertex animation has been found create a control for it
       VisVertexAnimControl_cl* pVertexAnimControl = VisVertexAnimControl_cl::Create(pAnimSequenceVertex, 
-        VANIMCTRL_LOOP|VSKELANIMCTRL_DEFAULTS, 1.0f, true);
-      // add it to the vertex anim deformer
+        VANIMCTRL_LOOP|VSKELANIMCTRL_DEFAULTS, fSpeed, true);
+      pVertexAnimControl->SetCurrentSequencePosition(fOffset);
+       // add it to the vertex anim deformer
       pVertexAnimDeformer->AddVertexAnimControl(pVertexAnimControl, 1.0f);
       // and add the entity as an events listener
       pVertexAnimControl->AddEventListener(pEntity);
@@ -552,13 +523,13 @@ void VSimpleAnimationComponentManager::OnHandleCallback(IVisCallbackDataObject_c
   }
 }
 
-START_VAR_TABLE(VSimpleAnimationComponent, IVObjectComponent, "Component for simple entity model animation playback", VVARIABLELIST_FLAGS_NONE, "Simple Animation" )
+START_VAR_TABLE(VSimpleAnimationComponent, IVObjectComponent, "Can be attached to entities that have a model assigned to enable a single animation playback.", VVARIABLELIST_FLAGS_NONE, "Simple Animation" )
   DEFINE_VAR_VSTRING(VSimpleAnimationComponent, AnimationName, "Name of the animation to playback", "", 0, 0, "dropdownlist(Animation)");
   DEFINE_VAR_BOOL(VSimpleAnimationComponent, UseMotionDelta, "If the component should be using the motion delta of the animation or not", FALSE, 0, 0);
 END_VAR_TABLE
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

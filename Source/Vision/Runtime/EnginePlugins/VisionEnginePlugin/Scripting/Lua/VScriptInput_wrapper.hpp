@@ -13,6 +13,7 @@
 
 #include <Vision/Runtime/Base/VGL/VGL.hpp>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Input/VStringInputMap.hpp>
+#include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Input/VStringInputMapManager.hpp>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Input/VVirtualThumbStick.hpp>
 
 // Generic
@@ -233,7 +234,7 @@ public:
   inline bool SetMousePosition(float fInsideViewportX, float fInsideViewportY)
   {
     #ifdef SUPPORTS_MOUSE
-      Vision::Mouse.SetPosition(fInsideViewportX, fInsideViewportY);
+      VGLSetMousePosition(static_cast<int>(fInsideViewportX), static_cast<int>(fInsideViewportY));
       return true;
     #else
       return false;
@@ -245,9 +246,15 @@ public:
     #ifdef SUPPORTS_MOUSE
       switch(iButton)
       {
-        case BUTTON_LEFT: return Vision::Mouse.IsLeftButtonPressed() == TRUE;
-        case BUTTON_MIDDLE: return Vision::Mouse.IsMiddleButtonPressed() == TRUE;
-        case BUTTON_RIGHT: return Vision::Mouse.IsRightButtonPressed() == TRUE;
+      case BUTTON_LEFT:
+        return VInputManager::GetMouse().GetControlValue(CT_MOUSE_LEFT_BUTTON, 0.0f) != 0.0f;
+
+        case BUTTON_MIDDLE:
+          return VInputManager::GetMouse().GetControlValue(CT_MOUSE_MIDDLE_BUTTON, 0.0f) != 0.0f;
+
+        case BUTTON_RIGHT:
+          return VInputManager::GetMouse().GetControlValue(CT_MOUSE_RIGHT_BUTTON, 0.0f) != 0.0f;
+
         default: return false;
       }
     #else
@@ -255,52 +262,34 @@ public:
     #endif
   }
 
-  inline float GetMouseWheelDelta(bool bApllyTimeDiff = true)
+  inline float GetMouseWheelDelta()
   {
     #ifdef SUPPORTS_MOUSE
-      if(bApllyTimeDiff)
-      {
-        VScriptResourceManager* pMan = (VScriptResourceManager*) Vision::GetScriptManager();
-        VASSERT(pMan);
-
-        // script thinking delta or simulation tick delta
-        float fTimeDiff = pMan->GetThinkInterval();
-        if(fTimeDiff<=0) fTimeDiff = Vision::GetTimer()->GetTimeDifference();
-
-        return (float)Vision::Mouse.GetWheelDelta()*fTimeDiff;
-      }
-      else
-      {
-        return (float)Vision::Mouse.GetWheelDelta();
-      }
+      return VInputManager::GetMouse().GetControlValue(CT_MOUSE_WHEEL, false);
     #else
       return 0;
     #endif
   }
 
-  inline VStringInputMap * CreateMap(const char * szMapName, int iNumTriggers=32, int iNumAlternatives=4)
+  inline VStringInputMap* CreateMap(int iNumTriggers=32, int iNumAlternatives=4)
   {
-    // Check if map already exists
-    VStringInputMap* pMap = VStringInputMap::FindByKey(szMapName);
-    if (pMap != NULL)
-    {
-      V_SAFE_DELETE(pMap);
-    }
-
-    return new VStringInputMap(szMapName, iNumTriggers, iNumAlternatives);
+    return new VStringInputMap(iNumTriggers, iNumAlternatives);
   }
 
-  inline VStringInputMap * GetMap(const char * szMapName)
+  inline VStringInputMap* GetMap(unsigned int iIndex)
   {
-    return VStringInputMap::FindByKey(szMapName);
+    return VStringInputMapManager::GlobalManager().GetInstance(iIndex);
   }
 
-  inline void DestroyMap(VStringInputMap * pMap)
+  inline void DestroyMap(unsigned int iIndex)
   {
-    if (pMap != NULL)
-    {
-      V_SAFE_DELETE(pMap);
-    }
+    VStringInputMap *pMap = VStringInputMapManager::GlobalManager().GetInstance(iIndex);  
+    V_SAFE_DELETE(pMap);
+  }
+
+  inline void DestroyMap(VStringInputMap *pMap)
+  {
+    V_SAFE_DELETE(pMap);
   }
 
   // Virtual Thumbstick
@@ -396,7 +385,7 @@ private:
 #endif // __VSCRIPTINPUT_WRAPPER_HPP
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

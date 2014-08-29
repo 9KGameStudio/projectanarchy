@@ -16,7 +16,7 @@
 RPG_PlayerControllerInput::RPG_PlayerControllerInput()
   : m_buttons(0),
   m_targetEntity(NULL),
-  m_targetPoint()
+  m_targetPoint(0, 0, 0)
 {
 }
 
@@ -362,7 +362,7 @@ void RPG_PlayerControllerState::PowerAttacking::OnTick(RPG_ControllerComponent *
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

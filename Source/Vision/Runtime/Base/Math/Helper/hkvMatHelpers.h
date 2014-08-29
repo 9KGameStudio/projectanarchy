@@ -65,7 +65,7 @@ private:
   float& m_Float;
 };
 
-#if defined (WIN32) && defined (HK_DEBUG_SLOW)
+#if defined (_VISION_WIN32) && defined (HK_DEBUG_SLOW)
   #define hkvPlatformElementFloat hkvMat_ElementFloat
 #else
   #define hkvPlatformElementFloat float&
@@ -75,7 +75,7 @@ private:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

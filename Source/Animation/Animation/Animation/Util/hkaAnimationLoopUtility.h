@@ -14,7 +14,7 @@ class hkaInterleavedUncompressedAnimation;
 /// This utility forces an animation to loop
 /// It cross fades the start and the end of an interleaved animation over a number of frames.
 /// Typically this is done in the tool chain, ideally after motion has been extracted.
-class hkaAnimationLoopUtility
+class HK_EXPORT_ANIMATION hkaAnimationLoopUtility
 {
 	public:
 			/// Create a looping animation by cross fading the beginning and end of the animation over a number of frames
@@ -25,7 +25,7 @@ class hkaAnimationLoopUtility
 #endif // HK_ANIMATION_LOOP_UTILITY_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -21,6 +21,7 @@ using CSharpFramework.Shapes;
 using CSharpFramework.Actions;
 using CSharpFramework.DynamicProperties;
 using CSharpFramework.Math;
+using VisionManaged;
 
 
 namespace HavokEditorPlugin
@@ -65,7 +66,8 @@ namespace HavokEditorPlugin
       creators = new IShapeCreatorPlugin[]
                  {
                    new HavokConstraintShapeCreator(),
-                   new HavokConstraintChainShapeCreator()
+                   new HavokConstraintChainShapeCreator(),
+                   new HavokResourceShapeCreator()
                  };
 
       foreach (IShapeCreatorPlugin plugin in creators)
@@ -80,9 +82,10 @@ namespace HavokEditorPlugin
       TestSuite testSuite = testBuilder.Build(typeof(EditorPlugin).Assembly.FullName);
       TestManager.AddTestSuite(testSuite);
 
+      IProject.ProjectUnloaded += new EventHandler(IProject_ProjectUnloaded);
+
       return true;
     }
-
 
     #endregion
 
@@ -98,6 +101,8 @@ namespace HavokEditorPlugin
       foreach (IShapeCreatorPlugin plugin in creators)
         EditorManager.ShapeCreatorPlugins.Remove( plugin );
 
+      IProject.ProjectUnloaded -= new EventHandler(IProject_ProjectUnloaded);
+
       _panel.Close();
       _panel.Dispose();
       _panel = null;
@@ -108,13 +113,17 @@ namespace HavokEditorPlugin
     IShapeCreatorPlugin[] creators;
 
     #endregion
+
+    void IProject_ProjectUnloaded(object sender, EventArgs e)
+    {
+      // make sure we use the default settings again, not the ones set from the last open scene
+      HavokManaged.ManagedModule.ResetWorldSettings();
+    }
   }
-
-
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

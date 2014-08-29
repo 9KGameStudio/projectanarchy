@@ -14,7 +14,7 @@
 	/// when the allocations are in pure LIFO order, but can handle a few
 	/// out of order frees with only a small penalty.
 	/// Requests larger than the slab size are forwarded to another allocator.
-class hkLifoAllocator : public hkMemoryAllocator
+class HK_EXPORT_COMMON hkLifoAllocator : public hkMemoryAllocator
 {
 	//+hk.MemoryTracker(ignore=True)
 	public:
@@ -94,7 +94,7 @@ class hkLifoAllocator : public hkMemoryAllocator
 #endif // HK_BASE_LIFO_ALLOCATOR_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

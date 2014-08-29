@@ -13,7 +13,7 @@
 	/// This class is used to debug the internal core of Havok.
 	/// This class in not intended to be used by clients yet.
 	/// This is a draft impl. meant to be rewritten.
-class hkGlobalProperties : public hkReferencedObject, public hkSingleton<hkGlobalProperties>
+class HK_EXPORT_COMMON hkGlobalProperties : public hkReferencedObject, public hkSingleton<hkGlobalProperties>
 {
 	public:
 	
@@ -42,7 +42,7 @@ HK_SINGLETON_SPECIALIZATION_DECL(hkGlobalProperties);
 #endif // HKBASE_GLOBAL_PROPERTIES_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

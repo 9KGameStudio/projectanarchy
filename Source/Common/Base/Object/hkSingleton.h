@@ -17,7 +17,7 @@
 /// You will also need to put a HK_SINGLETON_IMPLEMENTATION
 /// macro into its cpp.
 template <typename T>
-class hkSingleton
+class HK_EXPORT_COMMON hkSingleton
 {
 	public:
 
@@ -34,7 +34,7 @@ class hkSingleton
 		{
 			if(hkSingleton<T>::s_instance)
 			{
-				hkSingleton<T>::s_instance->removeReferenceLockUnchecked();
+				hkSingleton<T>::s_instance->removeReference();
 			}
 			hkSingleton<T>::s_instance = t;
 		}
@@ -42,10 +42,10 @@ class hkSingleton
 		/// Remove a reference to the existing singleton and use the supplied one instead adding a reference to it.
 		static void HK_CALL replaceInstanceAndAddReference(T* t)
 		{
-			t->addReferenceLockUnchecked();
+			t->addReference();
 			if (hkSingleton<T>::s_instance)
 			{
-				hkSingleton<T>::s_instance->removeReferenceLockUnchecked();
+				hkSingleton<T>::s_instance->removeReference();
 			}
 			hkSingleton<T>::s_instance = t;			
 		}
@@ -60,15 +60,15 @@ class hkSingleton
 
 		hkSingleton() { }
 
-		hkSingleton(const hkSingleton&); //not implemented
-		hkSingleton& operator= (const hkSingleton&); //not implemented
+		hkSingleton(const hkSingleton&) {}; //not implemented
+		hkSingleton& operator= (const hkSingleton&) { return *this; }; //not implemented
 };
 
-extern struct hkSingletonInitNode* hkSingletonInitList;
+extern struct HK_EXPORT_COMMON hkSingletonInitNode* hkSingletonInitList;
 
 /// An internal class for registering global instances. You will not need to
 /// use it except for very low level hacking.
-struct hkSingletonInitNode
+struct HK_EXPORT_COMMON hkSingletonInitNode
 {
 	typedef hkReferencedObject* (HK_CALL *SingletonCreationFunction)();
 	hkSingletonInitNode(const char* name, SingletonCreationFunction func, void** ptr)
@@ -132,10 +132,26 @@ private:
 #define HK_SINGLETON_SPECIALIZATION_DECL(BASE_CLASS) \
 	template<> BASE_CLASS* hkSingleton<BASE_CLASS>::s_instance
 
+// hkSingleton, as nearly all used in Common DLL, are assumed Common export. For other DLLs, you can export your own, or if you dont want it exported (a simple local Singleton), then you can use this
+#if defined(__HAVOK_PARSER__) || !defined(HK_DYNAMIC_DLL)
+
+#define hkLocalSingleton hkSingleton 
+#define HK_LOCAL_SINGLETON_IMPLEMENTATION(BASE_CLASS)                       HK_SINGLETON_IMPLEMENTATION(BASE_CLASS) 
+#define HK_LOCAL_SINGLETON_CUSTOM_IMPLEMENTATION(BASE_CLASS, CUSTOM_CLASS)  HK_SINGLETON_CUSTOM_IMPLEMENTATION(BASE_CLASS, CUSTOM_CLASS) 
+#define HK_LOCAL_SINGLETON_CUSTOM_CALL(BASE_CLASS, FUNC) 					HK_SINGLETON_CUSTOM_CALL(BASE_CLASS, FUNC) 
+#define HK_LOCAL_SINGLETON_MANUAL_IMPLEMENTATION(BASE_CLASS)				HK_SINGLETON_MANUAL_IMPLEMENTATION(BASE_CLASS)
+#define HK_LOCAL_SINGLETON_SPECIALIZATION_DECL(BASE_CLASS) 			  		HK_SINGLETON_SPECIALIZATION_DECL(BASE_CLASS) 
+
+#else
+
+#include <Common/Base/Object/hkLocalSingleton.h>
+
+#endif
+
 #endif // HKBASE_HKSINGLETON_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -15,7 +15,7 @@
 /// The commands are given a maximum size, and their first internal byte
 /// indicates whether they are the last of a sequence representing one big
 /// chunk of data.
-class hkVdbCommandWriter : public hkStreamWriter
+class HK_EXPORT_COMMON hkVdbCommandWriter : public hkStreamWriter
 {
 	public:
 
@@ -50,7 +50,7 @@ class hkVdbCommandWriter : public hkStreamWriter
 #endif // HKBASE_VDB_COMMAND_WRITER_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -30,15 +30,15 @@ class hkbManualSelectorGeneratorInternalState : public hkReferencedObject
 		{
 		}
 
-		hkInt8 m_currentGeneratorIndex;
-		hkInt8 m_generatorIndexAtActivate;
+		hkInt16 m_currentGeneratorIndex;
+		hkInt16 m_generatorIndexAtActivate;
 		hkArray< hkbStateMachine::ActiveTransitionInfo > m_activeTransitions;
 };
 
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

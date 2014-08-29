@@ -48,7 +48,7 @@
 ///      and overload the == operator to check both possibilities.
 ///      Note that the storage is (imag, real): ((xyz), w)
 HK_PASS_IN_REG
-class hkQuaternionf
+class HK_EXPORT_COMMON hkQuaternionf
 {
 	public:
 
@@ -182,6 +182,7 @@ class hkQuaternionf
 			/// // ang is now 0.7 radians (and a call to getAxis() will return (-1,0,0) )
 			/// \endcode
 		HK_FORCE_INLINE hkFloat32 getAngle() const;
+		hkSimdFloat32 getAngleSr() const;
 
 			/// Return the normalized axis of rotation IF DEFINED.
 			/// The axis is not defined for a zero rotation (getAngle() returns 0.0f, or getReal() returns 1 or -1).
@@ -247,7 +248,7 @@ class hkQuaternionf
 #endif //HK_MATH_QUATERNIONf_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

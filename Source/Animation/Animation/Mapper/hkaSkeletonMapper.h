@@ -11,15 +11,16 @@
 
 #include <Animation/Animation/Mapper/hkaSkeletonMapperData.h>
 #include <Animation/Animation/Rig/hkaSkeleton.h>
+#include <Animation/Animation/Animation/hkaAnimationBinding.h>
 
 class hkaPose;
 class hkaAnimationBinding;
 
-extern const hkClass hkaSkeletonMapperClass;
+extern HK_EXPORT_ANIMATION const hkClass hkaSkeletonMapperClass;
 
 /// This run-time class converts a pose from one skeleton (A) to another (B). The poses can be specified by either hkaPose objects or arrays of transforms.
 /// It uses mapping data (hkaSkeletonMapperData), which can be created using the hkaSkeletonMapperUtils utility class.
-class hkaSkeletonMapper : public hkReferencedObject
+class HK_EXPORT_ANIMATION hkaSkeletonMapper : public hkReferencedObject
 {
 	public:
 
@@ -45,7 +46,8 @@ class hkaSkeletonMapper : public hkReferencedObject
 
 			/// Maps a pose from one skeleton to another, matching model space configurations.
 			/// Used for mapping the pose between ragdoll and hi-res skeletons
-			/// \param poseAModelSpace      The poseA in model space. The number of elements must be equal to mapping.m_skeletonA->m_numBones
+			/// \param poseAModelSpace      The poseA in model space. The number of elements must be equal to
+			///								mapping.m_skeletonA->m_numBones
 			/// \param originalPoseBLocalSpace The poseB in local space. The number of elements must be equal to mapping.m_skeletonB->m_numBones.
 			///                                This pose is used as an additional input to calculate output bones which do
 			///                                not map simply to an input bone
@@ -53,69 +55,109 @@ class hkaSkeletonMapper : public hkReferencedObject
 			/// \param poseBModelSpaceInOut The output pose. The number of elements must be equal to mapping.m_skeletonB->m_numBones.
 			///                             Typically for all mapped bones, this array is a simply output parameter. For unmapped bones
 			///                             (especially the root bone), the output may be untouched
-			/// \param source Chooses between no adjustment, using the reference pose or the current pose when adjusting bone lengths. Usually the current pose is the best choice.
-		void HK_CALL mapPose(const hkQsTransform* poseAModelSpace, const hkQsTransform* originalPoseBLocalSpace, hkQsTransform* poseBModelSpaceInOut, ConstraintSource source ) const;
+			/// \param source	Chooses between no adjustment, using the reference pose or the current pose when adjusting
+			///					bone lengths. Usually the current pose is the best choice.
+		void HK_CALL mapPose(
+			const hkQsTransform* poseAModelSpace,
+			const hkQsTransform* originalPoseBLocalSpace,
+			hkQsTransform* poseBModelSpaceInOut,
+			ConstraintSource source ) const;
 
 
 			/// Maps a pose from a skeleton to another in local space.
 			/// Used for animation retargeting from one skeleton to another
-			/// \param poseALocalSpace      The poseA in model space. The number of elements must be equal to mapping.m_skeletonA->m_numBones
-			/// \param poseBLocalSpaceInOut The output pose. The number of elements must be equal to mapping.m_skeletonB->m_numBones. This pose should be initialized, as the transform of some of the bones in B may be used.  Should be initialized to the reference pose when used with retargeting.                             
-		void HK_CALL mapPoseLocalSpace(	const hkQsTransform* poseALocalSpace, hkQsTransform* poseBLocalSpaceInOut, bool additive ) const;
+			/// \param poseALocalSpace      The poseA in model space. The number of elements must be equal to
+			///								mapping.m_skeletonA->m_numBones
+			/// \param poseBLocalSpaceInOut The output pose. The number of elements must be equal to
+			///								mapping.m_skeletonB->m_numBones. This pose should be initialized, as the
+			///								transform of some of the bones in B may be used.  Should be initialized to
+			///								the reference pose when used with retargeting.                             
+		void HK_CALL mapPoseLocalSpace(
+			const hkQsTransform* poseALocalSpace,
+			hkQsTransform* poseBLocalSpaceInOut,
+			hkaAnimationBinding::BlendHint blendHint ) const;
 
 			/// Maps a pose from a skeleton to another in local space.
 			/// Used for animation retargeting from one skeleton to another
-			/// \param poseALocalSpace      The poseA in model space. The number of elements must be equal to mapping.m_skeletonA->m_numBones
-			/// \param poseBLocalSpaceInOut The output pose. The number of elements must be equal to mapping.m_skeletonB->m_numBones. This pose should be initialized, as the transform of some of the bones in B may be used.  Should be initialized to the reference pose when used with retargeting.                             
+			/// \param poseALocalSpace      The poseA in model space. The number of elements must be equal to
+			///								mapping.m_skeletonA->m_numBones
+			/// \param poseBLocalSpaceInOut The output pose. The number of elements must be equal to
+			///								mapping.m_skeletonB->m_numBones. This pose should be initialized, as the
+			///								transform of some of the bones in B may be used.  Should be initialized to
+			///								the reference pose when used with retargeting.                             
 			/// \param boneToTrackIndicesA	Optional mapping from bones to tracks (for sparse poses)
 			/// \param boneToTrackIndicesB	Optional mapping from bones to tracks (for sparse poses)
 			/// \param weightsA             The optional bone weights associated with poseA.
-			/// \param weightsBOut          The optional bone weights associated with poseB.  The bone weights from weightsA will be mapped to weightsBOut. The weights of unmapped bones will be left unchanged in weightsBOut.
-		void HK_CALL mapPoseLocalSpace(	const hkQsTransform* poseALocalSpace, hkQsTransform* poseBLocalSpaceInOut,
-										const hkInt16* boneToTrackIndicesA, const hkInt16* boneToTrackIndicesB, bool additive,
-										const hkReal* weightsA = HK_NULL, hkReal* weightsBOut = HK_NULL ) const;
+			/// \param weightsBOut          The optional bone weights associated with poseB.  The bone weights from
+			///								weightsA will be mapped to weightsBOut. The weights of unmapped bones will
+			///								be left unchanged in weightsBOut.
+		void HK_CALL mapPoseLocalSpace(
+			const hkQsTransform* poseALocalSpace,
+			hkQsTransform* poseBLocalSpaceInOut,
+			const hkInt16* boneToTrackIndicesA,
+			const hkInt16* boneToTrackIndicesB,
+			hkaAnimationBinding::BlendHint blendHint,
+			const hkReal* weightsA = HK_NULL,
+			hkReal* weightsBOut = HK_NULL ) const;
+
 		/// Maps a pose from a skeleton to another in local space.
 		/// Used for animation retargeting from one skeleton to another
 		/// \param poseALocalSpace      The poseA in model space. The number of elements must be equal to numBonesA
-		/// \param poseBLocalSpaceInOut The output pose. The number of elements must be equal to numBonesB. This pose should be initialized, as the transform of some of the bones in B may be used.  Should be initialized to the reference pose when used with retargeting.
+		/// \param poseBLocalSpaceInOut The output pose. The number of elements must be equal to numBonesB. This pose
+		///								should be initialized, as the transform of some of the bones in B may be used.
+		///								Should be initialized to the reference pose when used with retargeting.
 		/// \param partitionIndicesA	The partition indices corresponding to poseA.
-		/// \param mapToFullPose		Whether the poses coming in and out are partial poses (need to map densely) or they are full poses (need to map sparsely)
+		/// \param mapToFullPose		Whether the poses coming in and out are partial poses (need to map densely) or
+		///								they are full poses (need to map sparsely)
 		/// \param weightsA             The optional bone weights associated with poseA.
-		/// \param weightsBOut          The optional bone weights associated with poseB.  The bone weights from weightsA will be mapped to weightsBOut. The weights of unmapped bones will be left unchanged in weightsBOut.
-		void HK_CALL mapPoseLocalSpace(	const hkQsTransform* poseALocalSpace,
-										hkQsTransform* poseBLocalSpaceInOut,
-										const hkArray<hkInt16>& partitionIndicesA,
-										bool additive,
-										bool mapToFullPose = true,
-										const hkReal* weightsA = HK_NULL, 
-										hkReal* weightsBOut = HK_NULL ) const;
+		/// \param weightsBOut          The optional bone weights associated with poseB.  The bone weights from weightsA
+		///								will be mapped to weightsBOut. The weights of unmapped bones will be left
+		///								unchanged in weightsBOut.
+		void HK_CALL mapPoseLocalSpace(
+			const hkQsTransform* poseALocalSpace,
+			hkQsTransform* poseBLocalSpaceInOut,
+			const hkArray<hkInt16>& partitionIndicesA,
+			hkaAnimationBinding::BlendHint blendHint,
+			bool mapToFullPose = true,
+			const hkReal* weightsA = HK_NULL,
+			hkReal* weightsBOut = HK_NULL ) const;
 
 		/// Maps a pose from a skeleton to another in local space.
 		/// Used for animation retargeting from one skeleton to another
-		/// \param poseALocalSpace      The poseA in model space. The number of elements must be equal to mapping.m_skeletonA->m_numBones
-		/// \param poseBLocalSpaceInOut The output pose. The number of elements must be equal to mapping.m_skeletonB->m_numBones. This pose should be initialized, as the transform of some of the bones in B may be used.  Should be initialized to the reference pose when used with retargeting.                             
+		/// \param poseALocalSpace      The poseA in model space. The number of elements must be equal to
+		///								mapping.m_skeletonA->m_numBones
+		/// \param poseBLocalSpaceInOut The output pose. The number of elements must be equal to
+		///								mapping.m_skeletonB->m_numBones. This pose should be initialized, as the
+		///								transform of some of the bones in B may be used.  Should be initialized to the
+		///								reference pose when used with retargeting.                             
 		/// \param boneToTrackIndicesA	Optional mapping from bones to tracks (for sparse poses)
 		/// \param boneToTrackIndicesB	Optional mapping from bones to tracks (for sparse poses)
 		/// \param partitionIndicesA	The partition indices corresponding to poseA.
-		/// \param mapToFullPose		Whether the poses coming in and out are partial poses (need to map densely) or they are full poses (need to map sparsely)
+		/// \param mapToFullPose		Whether the poses coming in and out are partial poses (need to map densely) or
+		///								they are full poses (need to map sparsely)
 		/// \param weightsA             The optional bone weights associated with poseA.
-		/// \param weightsBOut          The optional bone weights associated with poseB.  The bone weights from weightsA will be mapped to weightsBOut. The weights of unmapped bones will be left unchanged in weightsBOut.
-		void HK_CALL mapPoseLocalSpace(	const hkQsTransform* poseALocalSpace, 
-										hkQsTransform* poseBLocalSpaceInOut,
-										const hkInt16* boneToTrackIndicesA, 
-										const hkInt16* boneToTrackIndicesB,
-										const hkArray<hkInt16>& partitionIndicesA,
-										bool additive,
-										bool mapToFullPose = true,
-										const hkReal* weightsA = HK_NULL, 
-										hkReal* weightsBOut = HK_NULL ) const;
+		/// \param weightsBOut          The optional bone weights associated with poseB.  The bone weights from weightsA
+		///								will be mapped to weightsBOut. The weights of unmapped bones will be left
+		///								unchanged in weightsBOut.
+		void HK_CALL mapPoseLocalSpace(
+			const hkQsTransform* poseALocalSpace,
+			hkQsTransform* poseBLocalSpaceInOut,
+			const hkInt16* boneToTrackIndicesA,
+			const hkInt16* boneToTrackIndicesB,
+			const hkArray<hkInt16>& partitionIndicesA,
+			hkaAnimationBinding::BlendHint blendHint,
+			bool mapToFullPose = true,
+			const hkReal* weightsA = HK_NULL,
+			hkReal* weightsBOut = HK_NULL ) const;
 
 			/// Maps a pose from one skeleton to another, using hkaPose objects.
 			/// May be used for either Ragdoll mapping, or animation retargeting
-			/// \param poseAIn    The input pose. The skeleton of poseAIn should be the same skeleton as m_mapping.m_skeletonA
-			/// \param poseBInOut The output pose. This pose should be initialized, as the transform of some of the bones in B may be used. Should be initialized to the reference pose when used with retargeting.
-			///                   The skeleton of poseBInOut should be the same skeleton as in m_mapping.m_skeletonB
-			/// \param source     Chooses between no adjustment, using the reference pose or the current pose when adjusting bone lengths. Usually the current pose is the best choice.
+			/// \param poseAIn		The input pose. The skeleton of poseAIn should be the same skeleton as m_mapping.m_skeletonA
+			/// \param poseBInOut	The output pose. This pose should be initialized, as the transform of some of the bones
+			///						in B may be used. Should be initialized to the reference pose when used with retargeting.
+			///						The skeleton of poseBInOut should be the same skeleton as in m_mapping.m_skeletonB
+			/// \param source		Chooses between no adjustment, using the reference pose or the current pose when
+			///						adjusting bone lengths. Usually the current pose is the best choice.
 		void HK_CALL mapPose(const hkaPose& poseAIn, hkaPose& poseBInOut, ConstraintSource source = NO_CONSTRAINTS ) const;
 
 
@@ -132,7 +174,11 @@ class hkaSkeletonMapper : public hkReferencedObject
 			/// using the mapping from the hkaSkeletonMapperData.
 			/// Unmapped bones and incomplete chains in skeletonA
 			/// are culled from the dst arrays.
-		void initializeBindingMaps( const hkaAnimationBinding* binding, hkArray< hkInt16 >& srcBoneToTrackIndicesOut, hkArray< hkInt16 >& dstBoneToTrackIndicesOut, hkArray< hkInt16 >& dstTrackToBoneIndicesOut ) const;
+		void initializeBindingMaps(
+			const hkaAnimationBinding* binding,
+			hkArray< hkInt16 >& srcBoneToTrackIndicesOut,
+			hkArray< hkInt16 >& dstBoneToTrackIndicesOut,
+			hkArray< hkInt16 >& dstTrackToBoneIndicesOut ) const;
 	
 
 			/// The following utility functions typically do not need to be
@@ -144,13 +190,34 @@ class hkaSkeletonMapper : public hkReferencedObject
 			/// combined one, respectively. The additive pose may
 			/// be full, or sparse. Sparse poses must specify the
 			/// boneToTrack mapping; full poses may leave this null.
-		static void combinedPoseFromAdditivePoseAndReferencePose( const hkQsTransform* additivePose, const hkQsTransform* referencePose, const hkInt16* boneToTrackIndices, hkInt32 startBoneIndex, hkInt32 numBones, hkQsTransform* combinedPoseOut );
-		static void additivePoseFromCombinedPoseAndReferencePose( const hkQsTransform* combinedPose, const hkQsTransform* referencePose, const hkInt16* boneToTrackIndices, hkInt32 startBoneIndex, hkInt32 numBones, hkQsTransform* additivePoseOut );
+		static void combinedPoseFromAdditivePoseAndReferencePose(
+			const hkQsTransform* additivePose,
+			const hkQsTransform* referencePose,
+			const hkInt16* boneToTrackIndices,
+			hkInt32 startBoneIndex,
+			hkInt32 numBones,
+			hkaAnimationBinding::BlendHint additiveHint,
+			hkQsTransform* combinedPoseOut );
+		static void additivePoseFromCombinedPoseAndReferencePose(
+			const hkQsTransform* combinedPose,
+			const hkQsTransform* referencePose,
+			const hkInt16* boneToTrackIndices,
+			hkInt32 startBoneIndex,
+			hkInt32 numBones,
+			hkaAnimationBinding::BlendHint additiveHint,
+			hkQsTransform* additivePoseOut );
 	
 			/// Lower level worker function that implements both
 			/// combinedPoseFromAdditivePoseAndReferencePose or
 			/// additivePoseFromCombinedPoseAndReferencePose
-		static void combineSparsePoseWithFullPose( const hkQsTransform* sparsePose, const hkQsTransform* fullPose, const hkInt16* sparsePoseBoneToTrackIndices, hkInt32 startBoneIndex, hkInt32 numBones, hkQsTransform* sparseMulFull_sparseOut );
+		static void combineSparsePoseWithFullPose(
+			const hkQsTransform* sparsePose,
+			const hkQsTransform* fullPose,
+			const hkInt16* sparsePoseBoneToTrackIndices,
+			hkInt32 startBoneIndex,
+			hkInt32 numBones,
+			hkaAnimationBinding::BlendHint additiveHint,
+			hkQsTransform* sparseMulFull_sparseOut );
 
 
 	public:
@@ -176,7 +243,7 @@ class hkaSkeletonMapper : public hkReferencedObject
 														const hkInt16* boneToTrackIndicesA, 
 														const hkInt16* boneToTrackIndicesB,
 														const hkArray<hkInt16>& partitionIndicesA,
-														bool additive,
+														hkaAnimationBinding::BlendHint blendHint,
 														bool mapToFullPose,
 														const hkReal* weightsA, 
 														hkReal* weightsBOut );
@@ -192,7 +259,7 @@ class hkaSkeletonMapper : public hkReferencedObject
 #endif // HK_SKELETON_MAPPER_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

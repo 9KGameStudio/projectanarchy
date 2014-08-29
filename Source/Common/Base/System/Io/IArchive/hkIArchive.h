@@ -8,12 +8,12 @@
 #ifndef HK_BASE_IARCHIVE_H
 #define HK_BASE_IARCHIVE_H
 
-class hkStreamReader;
+#include <Common/Base/System/Io/Reader/hkStreamReader.h>
 
 /// Endian-aware binary formatted data reader.
 /// The data may optionally be byteswapped as it is read.
 /// The default is to read in little endian format.
-class hkIArchive: public hkReferencedObject
+class HK_EXPORT_COMMON hkIArchive : public hkReferencedObject
 {
 	public:
 
@@ -154,7 +154,7 @@ typedef hkIArchive hkIfArchive;
 #endif // HK_BASE_IARCHIVE_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

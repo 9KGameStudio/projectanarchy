@@ -12,14 +12,14 @@
 #include <Ai/Pathfinding/hkaiBaseTypes.h>
 #include <Ai/Pathfinding/NavMesh/Streaming/hkaiStreamingSet.h>
 
-extern const class hkClass hkaiNavMeshEdgeClass;
-extern const class hkClass hkaiNavMeshFaceClass;
-extern const class hkClass hkaiNavMeshClass;
+extern HK_EXPORT_AI const class hkClass hkaiNavMeshEdgeClass;
+extern HK_EXPORT_AI const class hkClass hkaiNavMeshFaceClass;
+extern HK_EXPORT_AI const class hkClass hkaiNavMeshClass;
 
 /// This contains the nav mesh data which is central to most of the pathfinding in Havok A.I.
 /// 
 /// The nav mesh represents navigable space as a set of connected convex faces.
-class hkaiNavMesh : public hkReferencedObject
+class HK_EXPORT_AI hkaiNavMesh : public hkReferencedObject
 {
 	public:
 		//+vtable(true)
@@ -30,11 +30,11 @@ class hkaiNavMesh : public hkReferencedObject
 		HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_AI_NAVMESH);
 		HK_DECLARE_REFLECTION();
 
-		typedef hkInt32 FaceIndex;
-		typedef hkInt32 EdgeIndex;
-		typedef hkInt32 VertexIndex;
-		typedef hkInt32 FaceData;
-		typedef hkInt32 EdgeData;
+		typedef hkaiNavMeshFaceIndex FaceIndex;
+		typedef hkaiNavMeshEdgeIndex EdgeIndex;
+		typedef hkaiNavMeshVertexIndex VertexIndex;
+		typedef hkaiNavMeshFaceData FaceData;
+		typedef hkaiNavMeshEdgeData EdgeData;
 
 			/// These flags are used when dynamic nav meshes are generated.
 		enum FaceFlagBits
@@ -77,7 +77,7 @@ class hkaiNavMesh : public hkReferencedObject
 
 		/// A face represents a convex region of navigable space.
 		/// It is an ordered list of edges. The edges are wound CCW
-		struct Face
+		struct HK_EXPORT_AI Face
 		{
 			//+version(6)
 			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_AI_NAVMESH, hkaiNavMesh::Face);
@@ -143,7 +143,7 @@ class hkaiNavMesh : public hkReferencedObject
 		typedef hkFlags<EdgeFlagBits, hkUint8> EdgeFlags;
 
 			/// A half edge on a convex face
-		struct Edge
+		struct HK_EXPORT_AI Edge
 		{
 			//+version(8)
 			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_AI_NAVMESH, hkaiNavMesh::Edge);
@@ -284,7 +284,6 @@ class hkaiNavMesh : public hkReferencedObject
 			/// Get the local-space vertices for the given edge (same as getEdgePoints but keeps the same interface as hkaiNavMeshInstance)
 		inline void getEdgeLocalPoints( const hkaiNavMesh::Edge& edge, hkVector4& edgeA, hkVector4& edgeB ) const;
 
-		HK_FORCE_INLINE void setMaxGlobalClearance(hkReal value);
 #endif
 
 
@@ -335,12 +334,26 @@ class hkaiNavMesh : public hkReferencedObject
 		/// Expand the face array, and return a pointer to the start of the new faces.
 		hkaiNavMesh::Face* expandFacesBy(int n, int estimatedMaxNumFace = -1);
 
-		/// Add new edges and edgeData to the end of the edge array.
-		/// The edgeData array must be m_edgeDataStriding*numEdges in size.
-		hkResult appendEdges( const Edge* edges, EdgeData* edgeData, int numEdges );
+#ifndef HK_PLATFORM_SPU
+		/// Information to add an edge.
+		struct AddEdgeContext
+		{
+			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_AI, AddEdgeContext);
+			inline AddEdgeContext();
+			hkaiNavMesh::Edge m_edge;
+			hkaiNavMesh::EdgeData m_data[hkaiNavMesh::MAX_DATA_PER_EDGE];
+		};
+
+		void getEdgeContext( hkaiNavMesh::EdgeIndex eIdx, AddEdgeContext& ctx ) const;
+		void getEdgeDataForContext( hkaiNavMesh::EdgeIndex eIdx, AddEdgeContext& ctx ) const;
+		/// Add new edges to the end of the edge array. The start of the new edges is returned.
+		hkaiNavMesh::Edge* appendEdges( const AddEdgeContext* ctxs, int numEdges );
+
+		hkaiNavMesh::Edge* setEdges( int startEdgeIndex, const AddEdgeContext* ctxs, int numEdges );
 
 		/// Expand the edge array, and return a pointer to the start of the new edges
 		hkaiNavMesh::Edge* expandEdgesBy(int n, int estimatedMaxNumEdges = -1);
+#endif
 
 		hkResult setFacesSize( int n );
 		hkResult setEdgesSize( int n );
@@ -393,22 +406,45 @@ class hkaiNavMesh : public hkReferencedObject
 			/// This is set during nav mesh generation if hkaiNavMeshGenerationSettings::m_characterWidthUsage
 			/// is set to hkaiNavMeshGenerationSettings::SHRINK_NAV_MESH
 		hkReal						m_erosionRadius;
-
+		
 			/// User-defined data - Havok never touches this.
 		hkUlong						m_userData; //+default(0)
-
 
 	protected:
 		hkaiNavMesh( const hkaiNavMesh& other );
 		void operator=(const hkaiNavMesh& other);
 };
 
+HK_FORCE_INLINE hkaiNavMesh::FaceIndex hkaiGetOppositeFaceIndex( const hkaiNavMesh::Edge& edge)
+{
+	if (edge.getOppositeFaceKeyUnchecked() == HKAI_INVALID_PACKED_KEY )
+	{
+		return hkaiNavMesh::INVALID_FACE_INDEX;
+	}
+	else
+	{
+		return edge.getOppositeFaceIndex();
+	}
+}
+
+HK_FORCE_INLINE hkaiNavMesh::EdgeIndex hkaiGetOppositeEdgeIndex( const hkaiNavMesh::Edge& edge)
+{
+	if (edge.getOppositeEdgeKeyUnchecked() == HKAI_INVALID_PACKED_KEY )
+	{
+		return hkaiNavMesh::INVALID_EDGE_INDEX;
+	}
+	else
+	{
+		return edge.getOppositeEdgeIndex();
+	}
+}
+
 #include <Ai/Pathfinding/NavMesh/hkaiNavMesh.inl>
 
 #endif //HKAI_NAVMESH_GEOMETRY_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

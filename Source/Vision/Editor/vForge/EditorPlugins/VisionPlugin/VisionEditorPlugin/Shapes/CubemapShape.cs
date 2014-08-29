@@ -445,10 +445,10 @@ namespace VisionEditorPlugin.Shapes
     }
 
     /// <summary>
-    /// If ContinuousUpdate is enabled, this defines the time interval (in seconds) between two rendering. 0 updates it every frame.
+    /// If DynamicUpdate is enabled, this defines the time interval (in seconds) between two renders. 0 updates it every frame.
     /// </summary>
     [SortedCategory(CAT_UPDATE, CATORDER_UPDATE), PropertyOrder(2),
-    Description("If ContinuousUpdate is enabled, this defines the time interval (in seconds) between two rendering. 0 updates it every frame."), DefaultValue(0f)]
+    Description("If DynamicUpdate is enabled, this defines the time interval (in seconds) between two renders. 0 updates it every frame."), DefaultValue(0f)]
     public float UpdateInterval
     {
       get {return _fUpdateInterval;}
@@ -461,10 +461,10 @@ namespace VisionEditorPlugin.Shapes
     }
 
     /// <summary>
-    /// If ContinuousUpdate is enabled, this defines whether one tick only renders one cubemap face at a time, so 6 consecutive frames make up the new cubemap. With this feature the update impact is distributed over frames.
+    /// If DynamicUpdate is set to true, this enables the rendering of only one cubemap face per frame. The rendering of the full cubemap is distributed over 6 consecutive frames.
     /// </summary>
     [SortedCategory(CAT_UPDATE, CATORDER_UPDATE), PropertyOrder(2),
-    Description("If ContinuousUpdate is enabled, this defines whether one tick only renders one cubemap face at a time, so 6 consecutive frames make up the new cubemap. With this feature the update impact is distributed over frames."), DefaultValue(false)]
+    Description("If DynamicUpdate is set to true, this enables the rendering of only one cubemap face per frame. The rendering of the full cubemap is distributed over 6 consecutive frames."), DefaultValue(false)]
     public bool AlternatingFaceUpdate
     {
       get { return _bAlternate; }
@@ -511,11 +511,11 @@ namespace VisionEditorPlugin.Shapes
       }
 
     /// <summary>
-    /// Number of blur passes for cubemap.
+    /// Number of Gaussian blur passes for cubemap.
     /// </summary>
     [SortedCategory(CAT_CUBEMAP, CATORDER_CUBEMAP), PropertyOrder(5),
     TypeConverter(typeof(IntListTypeConverter)),AllowedIntValues(new int[] {0,1,2,3,4,5,6,7,8,9,10}),
-    Description("Number of gaussian blur passes for cubemap (0 is fastest)."), DefaultValue(0)]
+    Description("Number of Gaussian blur passes for cubemap (0 is fastest)."), DefaultValue(0)]
     public int NumBlurPasses
     {
       get {return _iPasses;}
@@ -780,7 +780,7 @@ namespace VisionEditorPlugin.Shapes
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -46,7 +46,7 @@ VBASE_IMPEXP IVMemoryManager* GetVMemoryManager();
 ///  The previous memory manager
 VBASE_IMPEXP IVMemoryManager* SetVMemoryManager(IVMemoryManager* pManager);
 
-#if defined( WIN32 ) && !defined( _VISION_WINRT )
+#if defined(_VISION_WIN32) && !defined(_VISION_WINRT)
 
 // Dynamically linked - we need to fetch the default manager through the .exe
 #define DEFINE_MEMORYMANAGER(manager)         \
@@ -68,9 +68,15 @@ VBASE_IMPEXP IVMemoryManager* SetVMemoryManager(IVMemoryManager* pManager);
 
 #endif
 
-#define DEFINE_DEFAULT_MEMORYMANAGER DEFINE_MEMORYMANAGER(GetDefaultVMemoryManager())
-#define DEFINE_TRACKING_MEMORYMANAGER DEFINE_MEMORYMANAGER(GetTrackingVMemoryManager())
-#define DEFINE_GUARDING_MEMORYMANAGER DEFINE_MEMORYMANAGER(GetGuardingMemoryManager())
+#ifdef _MSC_VER
+#define DEFINE_DEFAULT_MEMORYMANAGER __pragma(message(__FILE__ "(" V_STRINGIZE(__LINE__) ") : Error: This macro was removed. Please use VAPP_IMPLEMENT_SAMPLE_WITH_MEMORYMANAGER and DEFAULT_MEMORYMANAGER instead.") )
+#define DEFINE_TRACKING_MEMORYMANAGER __pragma(message(__FILE__ "(" V_STRINGIZE(__LINE__) ") : Error: This macro was removed. Please use VAPP_IMPLEMENT_SAMPLE_WITH_MEMORYMANAGER and TRACKING_MEMORYMANAGER instead.") )
+#define DEFINE_GUARDING_MEMORYMANAGER __pragma(message(__FILE__ "(" V_STRINGIZE(__LINE__) ") : Error: This macro was removed. Please use VAPP_IMPLEMENT_SAMPLE_WITH_MEMORYMANAGER and GUARDING_MEMORYMANAGER instead.") )
+#endif
+
+#define DEFAULT_MEMORYMANAGER GetDefaultVMemoryManager()
+#define TRACKING_MEMORYMANAGER GetTrackingVMemoryManager()
+#define GUARDING_MEMORYMANAGER GetGuardingMemoryManager()
 
 /// \brief
 ///   Low level memory manager interface
@@ -191,7 +197,7 @@ public:
 #endif // DC_VMEMORYMANAGER_HPP
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

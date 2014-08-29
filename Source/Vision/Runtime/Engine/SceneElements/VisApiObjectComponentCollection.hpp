@@ -27,7 +27,6 @@ public:
   /// @{
   ///
 
-
   /// \brief
   ///   Constructor
   VISION_APIFUNC VObjectComponentCollection();
@@ -64,7 +63,6 @@ public:
     if (idx>=0)
       RemoveAt(idx);
   }
-
 
   /// \brief
   ///   Returns the current array of pointers
@@ -146,6 +144,15 @@ public:
   /// \brief
   ///   Loops through the collection and returns the first instance (or NULL) with the exact
   ///   specified type name and component name. Be aware that this method will not use cached results.
+  template<typename T>
+  T* GetComponentOfTypeAndName(const char *szComponentName) const
+  {
+    return static_cast<T*>(GetComponentOfTypeAndName(T::GetClassTypeId(), szComponentName));
+  }
+
+  /// \brief
+  ///   Loops through the collection and returns the first instance (or NULL) with the exact
+  ///   specified type name and component name. Be aware that this method will not use cached results.
   inline IVObjectComponent* GetComponentOfTypeAndName(VType *pType, const char *szComponentName) const;
 
   /// \brief
@@ -185,11 +192,6 @@ public:
   inline IVObjectComponent* GetComponentOfBaseType(VType *pBaseType) const;
 
   /// \brief
-  ///   Loops through the collection and returns the first instance (or NULL) of specified type name
-  ///  (or derived class) and component name. Be aware that this method will not use cached results.
-  inline IVObjectComponent* GetComponentOfBaseTypeAndName(VType *pType, const char *szComponentName) const;
-
-  /// \brief
   ///   Loops through the collection and returns the first instance (or NULL) of specified type
   ///   name (or derived class).
   ///   
@@ -198,6 +200,20 @@ public:
   /// \param szTypeName
   ///   Class name (as used in RTTI) of the component to find
   VISION_APIFUNC IVObjectComponent* GetComponentOfBaseType(const char *szTypeName) const;
+
+  /// \brief
+  ///   Loops through the collection and returns the first instance (or NULL) of specified type name
+  ///  (or derived class) and component name. Be aware that this method will not use cached results.
+  template<typename T>
+  T* GetComponentOfBaseTypeAndName(const char *szComponentName) const
+  {
+    return static_cast<T*>(GetComponentOfBaseTypeAndName(T::GetClassTypeId(), szComponentName));
+  }
+
+  /// \brief
+  ///   Loops through the collection and returns the first instance (or NULL) of specified type name
+  ///  (or derived class) and component name. Be aware that this method will not use cached results.
+  inline IVObjectComponent* GetComponentOfBaseTypeAndName(VType *pType, const char *szComponentName) const;
 
   /// \brief
   ///   Loops through the collection and returns the first instance (or NULL) of specified type
@@ -219,8 +235,6 @@ public:
   ///   Implements serialization for all objects inside this collection. Checks each for
   ///   VIS_OBJECTCOMPONENTFLAG_NOSERIALIZE flag
   VISION_APIFUNC void SerializeX( VArchive &ar );
-
-
 
   // serialization
   V_DECLARE_SERIALX( VObjectComponentCollection, VISION_APIFUNC )
@@ -248,7 +262,7 @@ private:
 #endif  // VISAPIOBJECTCOMPONENT_HPP_INCLUDED
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -116,7 +116,7 @@ bool hkvCollectionTransformationRule::executeTransformation(const hkvTransformat
 }
 
 
-bool hkvCollectionTransformationRule::queryOutputFileSpecs(const hkvTransformationInput& input, hkvTransformationOutput& output) const
+bool hkvCollectionTransformationRule::queryOutputFileSpecs(const hkvTransformationInput& input, hkvTransformationOutput& output, bool forLookUpTable) const
 {
   Context context(input, output);
 
@@ -155,7 +155,7 @@ hkResult hkvCollectionTransformationRule::runConversion(Context& context) const
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

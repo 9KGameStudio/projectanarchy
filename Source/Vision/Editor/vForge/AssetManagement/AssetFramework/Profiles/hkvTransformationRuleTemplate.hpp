@@ -11,10 +11,8 @@
 #ifndef HKVTRANSFORMATIONRULETEMPLATE_HPP_INCLUDED
 #define HKVTRANSFORMATIONRULETEMPLATE_HPP_INCLUDED
 
-#include <Vision/Editor/vForge/AssetManagement/AssetFramework/TransformationRules/hkvTransformationRule.hpp>
+#include <Vision/Editor/vForge/AssetManagement/AssetFramework/TransformationRules/hkvTransformationRuleContainer.hpp>
 #include <Common/Base/Container/StringMap/hkStorageStringMap.h>
-
-class hkvProfileManager;
 
 /// \brief
 ///   This class stores for each profile a transformation rule for a specific asset type.
@@ -79,15 +77,14 @@ private:
   ASSETFRAMEWORK_IMPEXP hkvTransformationRule* getTransformRule(const char* profileName, const char* transformRuleType) const;
 
 private:
+  hkvTransformRuleContainer m_container;
   hkStringPtr m_templateName;
-  hkStringPtr m_assetType;
-  mutable hkStorageStringMap<hkvTransformationRule*> m_profileRules; // Maps profiles to hkvTransformationRule
 };
 
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

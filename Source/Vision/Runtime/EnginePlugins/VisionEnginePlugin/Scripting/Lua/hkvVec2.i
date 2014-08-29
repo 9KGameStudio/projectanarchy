@@ -48,25 +48,13 @@ public:
   void normalize();
   const hkvVec2 getNormalized() const;
   
-  %extend 
-  {
-    bool normalizeIfNotZero()
-    {
-      return self->normalizeIfNotZero()==HKV_SUCCESS;
-    }
-  }
+  hkvResult normalizeIfNotZero();
   
   float normalizedEnsureUnitLength(float fEpsilon = HKVMATH_EPSILON, const hkvVec2& vFallback = hkvVec2(1.0f, 0.0f));
   float getDistanceTo(const hkvVec2& rhs) const;
   float getDistanceToSquared(const hkvVec2& rhs) const;
 
-  %extend 
-  {
-    bool setLength(float f, float fEpsilon = HKVMATH_SMALL_EPSILON)
-    {
-      return self->setLength(f, fEpsilon)==HKV_SUCCESS;
-    }
-  }
+  hkvResult setLength(float f, float fEpsilon = HKVMATH_SMALL_EPSILON);
 
   void setMin(const hkvVec2& rhs);
   void setMax(const hkvVec2& rhs);
@@ -810,7 +798,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

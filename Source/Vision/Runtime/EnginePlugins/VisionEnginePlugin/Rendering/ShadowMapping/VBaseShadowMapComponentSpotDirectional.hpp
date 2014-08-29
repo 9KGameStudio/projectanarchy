@@ -69,7 +69,7 @@ public:
   ///   Overridden from base class.
   EFFECTS_IMPEXP virtual bool SetVariable(const char *szName, const char *szValue) HKV_OVERRIDE;
 
-#if defined(WIN32) || defined(_VISION_DOC)
+#if defined(_VISION_WIN32) || defined(_VISION_DOC)
 
   /// \brief
   ///   Overridden from base class.
@@ -96,7 +96,10 @@ public:
 
   /// \brief
   ///   Returns the number of cascades for cascaded shadow mapping (between 1 and 4).
-  inline unsigned int GetCascadeCount() const { return CascadeCount; }
+  EFFECTS_IMPEXP virtual unsigned int GetCascadeCount() const HKV_OVERRIDE
+  { 
+    return CascadeCount; 
+  }
 
   /// \brief
   ///   Sets the number of cascades for cascaded shadow mapping (must be between 1 and 4).
@@ -172,22 +175,6 @@ public:
   EFFECTS_IMPEXP virtual void SetOverestimateCascades(BOOL bOverestimate);
 
   /// \brief
-  ///   Returns the value previously set with SetShadowMapCameraUpdateInterval.
-  inline float GetShadowMapCameraUpdateInterval() const { return CameraUpdateInterval; }
-
-  /// \brief
-  ///   If cascade overestimation is enabled, this sets the distance the camera has to move before the shadow map projection is recomputed. Default is 200 units.
-  EFFECTS_IMPEXP void SetShadowMapCameraUpdateInterval(float fInterval);
-
-  /// \brief
-  ///   Returns the value previously set with SetShadowMapCameraUpdateAngle.
-  inline float GetShadowMapCameraUpdateAngle() const { return CameraUpdateAngle; }
-
-  /// \brief
-  ///   If cascade overestimation is enabled, this sets the angle the camera has to move before the shadow map projection is recomputed. Default is 5 degrees.
-  EFFECTS_IMPEXP void SetShadowMapCameraUpdateAngle(float fAngle);
-
-  /// \brief
   ///   Returns the distance at which shadows start to fade out
   inline float GetShadowFadeOutStart() const { return FadeOutStart; }
 
@@ -213,13 +200,14 @@ public:
 #endif
 
 protected:
+  // Clones properties to the target shadow map component. Used by EnableForRendererNode.
+  EFFECTS_IMPEXP virtual void CloneProperties(IVShadowMapComponent* pTargetComponent) HKV_OVERRIDE;
+
   // Vartable Properties
   unsigned int CascadeCount;
   VCascadeSelectionMethod_e CascadeSelection;
   float CascadeRange[MAX_SHADOW_PARTS_COUNT];
   BOOL OverestimateCascades;
-  float CameraUpdateInterval;
-  float CameraUpdateAngle;
   float FadeOutStart;
   float FadeOutEnd;
 };
@@ -228,7 +216,7 @@ protected:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140624)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

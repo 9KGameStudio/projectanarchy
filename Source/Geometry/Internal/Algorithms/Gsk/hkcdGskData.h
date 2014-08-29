@@ -17,7 +17,7 @@
 namespace hkcdGsk
 {
 		/// The cache for GSK. Stores the dimensions of the current simplices for both shapes A and B, together with the vertex indices of each simplex.
-	struct Cache
+	struct HK_EXPORT_COMMON Cache
 	{
 		typedef hkUint8 VertexId;
 
@@ -51,7 +51,7 @@ namespace hkcdGsk
 
 
 		/// Low level GJK and GSK output data
-	struct GetClosestPointInput
+	struct HK_EXPORT_COMMON GetClosestPointInput
 	{
 		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(0, GetClosestPointInput);
 		GetClosestPointInput()
@@ -70,7 +70,7 @@ namespace hkcdGsk
 	};
 
 		/// Low level GJK and GSK output data
-	struct GetClosestPointOutput
+	struct HK_EXPORT_COMMON GetClosestPointOutput
 	{
 		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(0, GetClosestPointOutput);
 
@@ -104,7 +104,7 @@ namespace hkcdGsk
 	// Linear cast input and output
 
 		/// Linear cast input
-	struct LinearCastInput
+	struct HK_EXPORT_COMMON LinearCastInput
 	{
 		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(0, LinearCastInput);
 
@@ -125,7 +125,7 @@ namespace hkcdGsk
 	};
 
 		/// Linear cast output
-	struct LinearCastOutput
+	struct HK_EXPORT_COMMON LinearCastOutput
 	{
 		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(0, LinearCastOutput);
 		hkSimdReal m_fractionInOut;
@@ -134,7 +134,7 @@ namespace hkcdGsk
 
 
 		/// Ray cast input
-	struct RayCastInput : public LinearCastInput
+	struct HK_EXPORT_COMMON RayCastInput : public LinearCastInput
 	{
 		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(0, RayCastInput);
 
@@ -147,7 +147,7 @@ namespace hkcdGsk
 		}
 	};
 
-	struct RayCastOutput
+	struct HK_EXPORT_COMMON RayCastOutput
 	{
 		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(0, RayCastOutput);
 
@@ -161,7 +161,7 @@ namespace hkcdGsk
 #endif // HKCD_INTERNAL_GSK_DATA_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

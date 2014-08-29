@@ -10,15 +10,41 @@
 
 #include <Common/GeometryUtilities/Mesh/hkMeshTexture.h>
 
-extern const class hkClass hkMemoryMeshTextureClass;
+extern HK_EXPORT_COMMON const class hkClass hkMemoryMeshTextureClass;
 
 	/// A memory based implementation of an hkMeshTexture
-class hkMemoryMeshTexture: public hkMeshTexture
+class HK_EXPORT_COMMON hkMemoryMeshTexture : public hkMeshTexture
 {
-	public:
-		//+version(2)		
-		HK_DECLARE_REFLECTION();
+	//+version(2)	
 
+	public:
+
+		/// Texture sampler
+		class HK_EXPORT_COMMON Sampler : public hkMeshTexture::Sampler
+		{
+		public:
+
+			HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE);
+
+			/// Samples the texture at the given texel
+			virtual void sample(hkVector4Parameter uvIn, hkVector4& texelOut) const HK_OVERRIDE;
+
+			/// Returns an image at the specified mip level
+			virtual hkImage* getImage(int mipLevel) const HK_OVERRIDE;
+
+		public:
+
+			/// Constructor
+			Sampler(const hkStringPtr& imgFilename);
+
+		protected:
+
+			hkStringPtr m_imgFilename;
+		};
+
+	public:
+	
+		HK_DECLARE_REFLECTION();
 		HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_SCENE_DATA);
 
 			/// Default Ctor
@@ -63,7 +89,7 @@ class hkMemoryMeshTexture: public hkMeshTexture
 		virtual bool isReadOnly() const HK_OVERRIDE { return false; }
 
 			// hkMeshTexture implementation
-		virtual Sampler* createSampler() const HK_OVERRIDE;
+		virtual hkMeshTexture::Sampler* createSampler() const HK_OVERRIDE;
 
 		/// Tests whether two textures are equal
 		virtual bool equals(const hkMeshTexture* other) const HK_OVERRIDE;
@@ -92,7 +118,7 @@ class hkMemoryMeshTexture: public hkMeshTexture
 #endif	//HK_MEMORY_MESH_TEXTURE_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

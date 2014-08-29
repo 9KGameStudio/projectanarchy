@@ -14,6 +14,7 @@
 #include <Ai/Internal/Boolean/hkaiUniqueEdges.h>
 #include <Common/Base/Container/BitField/hkBitField.h>
 
+
 /// The hkaiGeometryExtrudeUtil provides functionality to extrude hkaiEdgeGeometry. There are two styles
 /// of extrusion handled via the 'extrude' and 'silhouetteExtrude'. The 'extrude' method does extrusion, by
 /// looking for edges which are not shared in the original model. These edges are extruded using a quad that
@@ -26,14 +27,14 @@
 /// extrusion. The technique works correctly with closed geometry. There is an issue when there are faces that contain the
 /// extrusion direction vector. In this situation the extrusion edge can be determined to be either the top or the bottom of
 /// the face - and may flip between the two due to numeric precision issues.
-class hkaiGeometryExtrudeUtil
+class HK_EXPORT_AI hkaiGeometryExtrudeUtil
 {
 	public:
 		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_AI, hkaiGeometryExtrudeUtil );
 		typedef hkaiEdgeGeometry::Edge Edge;
 
 			/// A map used to reorder indices.
-		struct IndexMap
+		struct HK_EXPORT_AI IndexMap
 		{
 			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_AI, IndexMap );
 			IndexMap();
@@ -80,7 +81,7 @@ class hkaiGeometryExtrudeUtil
 #endif // HKAI_GEOMETRY_EXTRUDE_UTIL_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

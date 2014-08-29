@@ -11,7 +11,8 @@
 #include <Vision/Runtime/Engine/System/Vision.hpp>
 #include <Vision/Runtime/Engine/System/Resource/VisApiResource.hpp>
 
-unsigned int hkvAnimationAsset::s_iAssetTypeIndex = HKV_INVALID_INDEX;
+hkvAssetTypeInfo* hkvAnimationAsset::s_typeInfo = NULL;
+const hkvAssetTypeInfoHandle* hkvAnimationAsset::s_typeInfoHandle = NULL;
 
 /////////////////////////////////////////////////////////////////////////////
 // hkvAnimationAsset static functions
@@ -19,24 +20,27 @@ unsigned int hkvAnimationAsset::s_iAssetTypeIndex = HKV_INVALID_INDEX;
 
 void hkvAnimationAsset::StaticInit()
 {
-  hkvAssetTypeInfo ti;
-  ti.m_name = "Animation";
-  ti.m_createFunc = &CreateAsset;
-  ti.m_supportedFileExtensions.pushBack("anim");
-  ti.m_szTypeIconQt = ":/Icons/Icons/AnimationAsset.png";
+  s_typeInfo = new hkvAssetTypeInfo();
+  s_typeInfo->m_name = "Animation";
+  s_typeInfo->m_createFunc = &CreateAsset;
+  s_typeInfo->m_supportedFileExtensions.pushBack("anim");
+  s_typeInfo->m_szTypeIconQt = ":/Icons/Icons/AnimationAsset.png";
 
-  ti.m_resourceManagerName = VIS_RESOURCEMANAGER_ANIMATIONS;
+  s_typeInfo->m_resourceManagerName = VIS_RESOURCEMANAGER_ANIMATIONS;
 
-  // register at the hkvAssetTypeManager and store the asset type index in static variable.
-  s_iAssetTypeIndex = hkvAssetTypeManager::getGlobalInstance()->addAssetType(ti);
+  // register at the hkvAssetTypeManager and store the asset type handle in static variable.
+  s_typeInfoHandle = hkvAssetTypeManager::getGlobalInstance()->addAssetType(*s_typeInfo);
 }
 
 
 void hkvAnimationAsset::StaticDeInit()
 {
   // de-register at the hkvAssetTypeManager
-  hkvAssetTypeManager::getGlobalInstance()->removeAssetType(s_iAssetTypeIndex);
-  s_iAssetTypeIndex = HKV_INVALID_INDEX;
+  hkvAssetTypeManager::getGlobalInstance()->removeAssetType(*s_typeInfoHandle);
+  s_typeInfoHandle = NULL;
+
+  delete s_typeInfo;
+  s_typeInfo = NULL;
 }
 
 
@@ -54,7 +58,7 @@ hkvAsset* hkvAnimationAsset::CreateAsset()
 // hkvAnimationAsset public functions
 /////////////////////////////////////////////////////////////////////////////
 
-hkvAnimationAsset::hkvAnimationAsset()
+hkvAnimationAsset::hkvAnimationAsset() : hkvAsset(s_typeInfo)
 {
 
 }
@@ -70,30 +74,13 @@ hkvAnimationAsset::~hkvAnimationAsset()
 // hkvAnimationAsset public override functions
 /////////////////////////////////////////////////////////////////////////////
 
-unsigned int hkvAnimationAsset::getTypeIndex() const
+const hkvAssetTypeInfoHandle& hkvAnimationAsset::getTypeInfoHandle() const
 {
-  return s_iAssetTypeIndex;
-}
-
-
-const char* hkvAnimationAsset::getTypeName() const
-{
-  return "Animation";
-}
-
-
-void hkvAnimationAsset::getSpecificProperties(hkvPropertyList& properties, hkvProperty::Purpose purpose) const
-{
-  // TODO
-}
-
-void hkvAnimationAsset::setSpecificProperty(const hkvProperty& prop, const hkArray<hkStringPtr>& path, unsigned int iStackIndex, hkvProperty::Purpose purpose)
-{
-  // TODO
+  return *s_typeInfoHandle;
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

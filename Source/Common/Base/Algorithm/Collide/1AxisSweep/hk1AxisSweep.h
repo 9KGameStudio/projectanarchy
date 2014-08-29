@@ -12,7 +12,7 @@
 #include <Common/Base/Types/Geometry/Aabb/hkAabb.h>
 #include <Common/Base/Algorithm/Sort/hkRadixSort.h>
 
-struct hkKeyPair
+struct HK_EXPORT_COMMON hkKeyPair
 {
 	HK_DECLARE_PLACEMENT_ALLOCATOR();
 	hkUint32 m_keyA;
@@ -20,12 +20,12 @@ struct hkKeyPair
 };
 
 	/// Utility to quickly find overlapping pairs of AABBs
-class hk1AxisSweep
+class HK_EXPORT_COMMON hk1AxisSweep
 {
 	public:
 		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE,hk1AxisSweep);
 
-		struct AabbInt : public hkAabbUint32
+		struct HK_EXPORT_COMMON AabbInt : public hkAabbUint32
 		{
 			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_CDINFO, hk1AxisSweep::AabbInt );
 
@@ -95,7 +95,7 @@ class hk1AxisSweep
 		///			// Do something with pair
 		///		}
 		/// \endcode
-		struct IteratorAA
+		struct HK_EXPORT_COMMON IteratorAA
 		{
 			public:
 				HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_CDINFO, hk1AxisSweep::IteratorAA );
@@ -132,7 +132,7 @@ class hk1AxisSweep
 		///			// Do something with pair
 		///		}
 		/// \endcode
-		struct IteratorAB
+		struct HK_EXPORT_COMMON IteratorAB
 		{
 			public:
 				HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_CDINFO, hk1AxisSweep::IteratorAB );
@@ -164,10 +164,10 @@ class hk1AxisSweep
 				int m_numA;
 				int m_numB;
 
-				HK_ON_DEBUG(const hk1AxisSweep::AabbInt* HK_RESTRICT m_originalA);
-				HK_ON_DEBUG(const hk1AxisSweep::AabbInt* HK_RESTRICT m_originalB);
-				HK_ON_DEBUG(int m_totalNumA);
-				HK_ON_DEBUG(int m_totalNumB);
+				HK_DEBUG_ONLY_MEMBER(const hk1AxisSweep::AabbInt* HK_RESTRICT, m_originalA);
+				HK_DEBUG_ONLY_MEMBER(const hk1AxisSweep::AabbInt* HK_RESTRICT, m_originalB);
+				HK_DEBUG_ONLY_MEMBER(int, m_totalNumA);
+				HK_DEBUG_ONLY_MEMBER(int, m_totalNumB);
 		};
 
 			/// This returns all overlapping AABB pairs, where one AABB is from the first list, and the other from the second list.
@@ -199,7 +199,7 @@ class hk1AxisSweep
 #endif // HK_INTERNAL_1AXIS_SWEEP_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

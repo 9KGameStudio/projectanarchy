@@ -83,9 +83,6 @@ class hkbVariableValueSet : public hkReferencedObject
 			/// Assignment operator.
 		void operator = ( const hkbVariableValueSet& valueSet );
 		
-			/// Copys word and quad values only.  Does not copy objects.
-		void copyWordAndQuadValues( const hkbVariableValueSet& valueSet );
-		
 			/// Remove all values.
 		void clear();
 
@@ -121,7 +118,7 @@ class hkbVariableValueSet : public hkReferencedObject
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

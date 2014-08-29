@@ -36,7 +36,12 @@ class hkbHandIkDriver : public hkReferencedObject
 		hkbHandIkDriver();
 
 			/// Do the hand ik.
-		void doHandIk( const hkbContext& context, hkbGeneratorOutput& inOut, hkReal timestep, bool fixup = false );
+		void doHandIk(
+			const hkbContext& context,
+			hkbGeneratorOutput& inOut,
+			const hkPointerMap<hkbCharacter*,hkbGeneratorOutput*>& characterOutputs,
+			hkReal timestep,
+			bool fixup = false );
 
 			/// Reset the handIk driver to its initial state.
 		void reset();
@@ -94,42 +99,49 @@ class hkbHandIkDriver : public hkReferencedObject
 			// setup the hand ik driver
 		void resetInternal( const hkbContext& context, const hkbHandIkDriverInfo& info );
 
-		void doArmIKModelSpace( int handIndex, 
-								hkReal firstJointGain, 
-								hkReal secondJointGain, 
-								hkReal endJointGain, 
-								const hkVector4& targetInModelSpace, 
-								const hkQuaternion& targetRotationInModelSpace,
-								const hkbHandIkDriverInfo& info,
-								hkaPose& poseInOut );
-		void doArmIKWorldSpace( int handIndex, 
-								hkReal firstJointGain, 
-								hkReal secondJointGain, 
-								hkReal endJointGain, 
-								const hkVector4& targetInWorldSpace, 
-								const hkQuaternion& targetRotationInModelSpace, 
-								const hkQsTransform& worldFromModel,
-								const hkbHandIkDriverInfo& info,
-								hkaPose& poseInOut );
-		void orientHand(	int handIndex, 
-							hkReal fractionToRotate, 
-							const hkVector4& desiredUpMS, 
-							const hkQsTransform& worldFromModel,
-							const hkbHandIkDriverInfo& info,
-							hkaPose& poseInOut );
+		void doArmIKModelSpace(
+			int handIndex,
+			hkReal firstJointGain,
+			hkReal secondJointGain,
+			hkReal endJointGain,
+			const hkVector4& targetInModelSpace,
+			const hkQuaternion& targetRotationInModelSpace,
+			const hkbHandIkDriverInfo& info,
+			hkaPose& poseInOut );
 
-		void computeTargetFromHandle(	const hkbContext& context,
-										const hkbGeneratorOutput& inOut,
-										const hkbHandIkDriverInfo& info,
-										const hkbHandIkControlData& controlData, 
-										InternalHandData& handData,
-										hkReal timestep );
+		void doArmIKWorldSpace(
+			int handIndex, 
+			hkReal firstJointGain, 
+			hkReal secondJointGain, 
+			hkReal endJointGain, 
+			const hkVector4& targetInWorldSpace, 
+			const hkQuaternion& targetRotationInModelSpace, 
+			const hkQsTransform& worldFromModel,
+			const hkbHandIkDriverInfo& info,
+			hkaPose& poseInOut );
+
+		void orientHand(
+			int handIndex, 
+			hkReal fractionToRotate, 
+			const hkVector4& desiredUpMS, 
+			const hkQsTransform& worldFromModel,
+			const hkbHandIkDriverInfo& info,
+			hkaPose& poseInOut );
+
+		void computeTargetFromHandle(
+			const hkbContext& context,
+			const hkbGeneratorOutput& inOut,
+			const hkPointerMap<hkbCharacter*,hkbGeneratorOutput*>& characterOutputs,
+			const hkbHandIkDriverInfo& info,
+			const hkbHandIkControlData& controlData, 
+			InternalHandData& handData,
+			hkReal timestep );
 };
 
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

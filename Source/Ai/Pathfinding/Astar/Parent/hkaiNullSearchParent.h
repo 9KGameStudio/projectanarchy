@@ -5,20 +5,22 @@
  * Product and Trade Secret source code contains trade secrets of Havok. Havok Software (C) Copyright 1999-2014 Telekinesys Research Limited t/a Havok. All Rights Reserved. Use of this software is subject to the terms of an end user license agreement.
  *
  */
-#ifndef DEMOS_NULL_SEARCH_PARENT_H
-#define DEMOS_NULL_SEARCH_PARENT_H
+#ifndef HKAI_NULL_SEARCH_PARENT_H
+#define HKAI_NULL_SEARCH_PARENT_H
+
+#include <Ai/Pathfinding/hkaiBaseTypes.h>
 
 /// Empty implementation of the A* Parent interface.
 struct hkaiNullSearchParent
 {
-	void setParent( int nid, int pid ) { }
-	void setParentCurrent( int nid, int pid ) { }
+	void setParent( hkaiPackedKey nid, hkaiPackedKey pid ) { }
+	void setParentCurrent( hkaiPackedKey nid, hkaiPackedKey pid ) { }
 };
 
-#endif // DEMOS_NULL_SEARCH_PARENT_H
+#endif // HKAI_NULL_SEARCH_PARENT_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

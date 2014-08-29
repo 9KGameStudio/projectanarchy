@@ -11,7 +11,7 @@
 
 /// An hkStopwatch provides high resolution timing.
 /// Time is stored internally as a 64 bit integer.
-class hkStopwatch
+class HK_EXPORT_COMMON hkStopwatch
 {
 	public:
 
@@ -89,7 +89,7 @@ class hkStopwatch
 #endif // HKBASE_HKSTOPWATCH_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

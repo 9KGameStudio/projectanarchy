@@ -11,10 +11,10 @@
 
 #include <Common/GeometryUtilities/Mesh/hkMeshShape.h>
 
-extern const hkClass hkSkinBindingClass;
+extern HK_EXPORT_COMMON const hkClass hkSkinBindingClass;
 
 /// A skinned mesh
-class hkSkinBinding : public hkMeshShape
+class HK_EXPORT_COMMON hkSkinBinding : public hkMeshShape
 {
 	public:
 
@@ -67,6 +67,7 @@ class hkSkinBinding : public hkMeshShape
 
 		/// Returns the bone names
 		HK_FORCE_INLINE const hkStringPtr* getBoneNames() const	{	return m_boneNames.begin();	}
+		HK_FORCE_INLINE hkStringPtr* accessBoneNames()			{	return m_boneNames.begin();	}
 
 	protected:
 
@@ -78,7 +79,7 @@ class hkSkinBinding : public hkMeshShape
 #endif	// HK_SKIN_BINDING_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

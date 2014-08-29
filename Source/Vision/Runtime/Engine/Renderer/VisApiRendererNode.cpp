@@ -395,7 +395,7 @@ IVRendererNode* IVRendererNode::ReadFromStream(IVFileInStream *pIn)
   int iVers;
   archive >> iVers;
   archive.SetLoadingVersion(iVers);
-  IVRendererNode *pRenderer = (IVRendererNode *)archive.ReadObject(NULL);
+  IVRendererNode *pRenderer = archive.ReadObject<IVRendererNode>();
   archive.Close();
 
   return pRenderer;
@@ -469,7 +469,7 @@ VScopedRendererNodeDeinit::~VScopedRendererNodeDeinit()
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

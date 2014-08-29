@@ -28,6 +28,24 @@ struct hkvStringSafeLessI
 };
 
 
+/// \brief A template to execute a lambda function on scope exit.
+template <typename F>
+struct hkvScopeExit
+{
+  hkvScopeExit(F f) : m_f(f) {}
+  ~hkvScopeExit() { m_f(); }
+  F m_f;
+};
+
+
+/// \brief Helper function to instantiate a hkvScopeExit object.
+template <typename F>
+hkvScopeExit<F> onScopeExit(F f)
+{
+  return hkvScopeExit<F>(f);
+}
+
+
 class hkvStringHelper
 {
 public:
@@ -113,7 +131,11 @@ namespace hkvSystemHelper
 {
   ASSETFRAMEWORK_IMPEXP const char* formatErrorMessage(hkUint32 errorCode, hkStringBuf& out_buffer);
   ASSETFRAMEWORK_IMPEXP hkResult getEnvironmentVariable(const char* name, hkStringBuf& out_value);
+  ASSETFRAMEWORK_IMPEXP hkResult getRegistryStringVariable(const char* path, const char* name, hkStringBuf& out_value);
   ASSETFRAMEWORK_IMPEXP const char* makeUserIdString(hkStringBuf& out_buffer);
+  ASSETFRAMEWORK_IMPEXP bool is64BitOS();
+  ASSETFRAMEWORK_IMPEXP bool getProgramFiles32Dir(hkStringBuf& out_buffer);
+  ASSETFRAMEWORK_IMPEXP bool getProgramFiles64Dir(hkStringBuf& out_buffer);
 }
 
 
@@ -295,7 +317,7 @@ private:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

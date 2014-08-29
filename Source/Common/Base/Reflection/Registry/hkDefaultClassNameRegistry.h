@@ -14,7 +14,7 @@
 
 	/// Class name registry singleton. This singleton provides access to all registered runtime classes.
 	/// The registry name is HAVOK_SDK_VERSION_STRING.
-class hkDefaultClassNameRegistry : public hkDynamicClassNameRegistry, public hkSingleton<hkDefaultClassNameRegistry>
+class HK_EXPORT_COMMON hkDefaultClassNameRegistry : public hkDynamicClassNameRegistry, public hkSingleton<hkDefaultClassNameRegistry>
 {
 	public:
 		HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE);
@@ -28,7 +28,7 @@ HK_SINGLETON_SPECIALIZATION_DECL(hkDefaultClassNameRegistry);
 #endif // HK_DEFAULT_CLASS_NAME_REGISTRY_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

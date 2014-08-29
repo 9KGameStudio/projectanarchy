@@ -30,21 +30,6 @@ public:
 
   %extend{
   
-    void SetCoronaTexture(const char *textureFile)
-    {
-      IVObjectComponent* pComponent = self->GetCoronaComponent();
-      pComponent->SetVariable("CoronaTexture", textureFile);
-    }
-  
-    void SetupAppearance(bool bUseCorona, bool bUseLensFlares)
-    {
-      IVObjectComponent* pComponent = self->GetCoronaComponent();
-      pComponent->SetVariable("Enabled", bUseCorona == true ? "True" : "False");
-      
-      pComponent = self->GetLensFlareComponent();
-      pComponent->SetVariable("Enabled", bUseLensFlares == true ? "True" : "False");
-    }
-    
     VSWIG_CONVERT_BOOL_GETTER_CONST(GetTriggered);
     
     int GetType() const
@@ -57,69 +42,6 @@ public:
       self->SetType((VisLightSourceType_e) iType);
     }
     
-    void SetCoronaScaleMode(int iScaleMode)
-    {
-      IVObjectComponent* pComponent = self->GetCoronaComponent();
-
-      pComponent->SetVariable("CoronaFixedSize", (iScaleMode & VIS_CORONASCALE_DISTANCE) > 0 ? "False" : "True");
-      pComponent->SetVariable("CoronaScaleWithIntensity", (iScaleMode & VIS_CORONASCALE_VISIBLEAREA) > 0 ? "True" : "False");
-      pComponent->SetVariable("CoronaGlobalFadeOut", (iScaleMode & VIS_CORONASCALE_USEFADEOUT) > 0 ? "True" : "False");
-      pComponent->SetVariable("CoronaRotate", (iScaleMode & VIS_CORONASCALE_ROTATING) > 0 ? "True" : "False");
-    }
-    
-    int GetCoronaScaleMode()
-    {
-      IVObjectComponent* pComponent = self->GetCoronaComponent();
-
-      int iFlags = 0;
-      char szText[256] = "";
-      pComponent->GetVariableValue("CoronaFixedSize", szText);
-      if (strcmp(szText, "False"))
-      {
-        iFlags |= VIS_CORONASCALE_DISTANCE;
-      }
-      pComponent->GetVariableValue("CoronaScaleWithIntensity", szText);
-      if (strcmp(szText, "False"))
-      {
-        iFlags |= VIS_CORONASCALE_VISIBLEAREA;
-      }
-      pComponent->GetVariableValue("CoronaGlobalFadeOut", szText);
-      if (strcmp(szText, "False"))
-      {
-        iFlags |= VIS_CORONASCALE_USEFADEOUT;
-      }
-      pComponent->GetVariableValue("CoronaRotate", szText);
-      if (strcmp(szText, "False"))
-      {
-        iFlags |= VIS_CORONASCALE_ROTATING;
-      }
-
-      return iFlags;
-    }
-    
-    void SetCoronaScale(float fScale)
-    {
-      IVObjectComponent* pComponent = self->GetCoronaComponent();
-
-	  char szText[256];
-	  sprintf(szText, "%f", fScale);
-	  pComponent->SetVariable("CoronaScaling", szText);
-    }
-    
-    float GetCoronaScale()
-    {
-      IVObjectComponent* pComponent = self->GetCoronaComponent();
-
-      char szText[256] = "";
-      pComponent->GetVariableValue("CoronaScaling", szText);
-
-      float fValue = 1.0f;
-      if (sscanf (szText, "%f", &fValue) == 1)
-      {
-        return fValue;
-      }
-      return 1.0f;
-    }
   }
 
   void Trigger();
@@ -314,50 +236,6 @@ public:
   /// \return The angle of a spotlight or projected light. 
   number GetProjectionAngle();
   
-  /// \brief Enables or disables corona and lensflare effects.
-  /// \param useCorona Set to true to use a corona (billboard texture at the light source location).
-  /// \param useLensFlares Set to true to show lens flare effects.
-  void SetupAppearance(boolean useCorona, boolean useLensFlares);
-  
-  /// \brief Set the corona texture.
-  /// \param textureFile The file path of the new corona texture.
-  void SetCoronaTexture(string textureFile);
-  
-  /// \brief Set the scale of the corona.
-  /// \param scale The scaling of the corona texture.
-  void SetCoronaScale(number scale);
-  
-  /// \brief Get the scaling of the corona. 
-  /// \return The scaling of the corona texture. 
-  number GetCoronaScale();
-      
-  /// \brief Set the scale and rotation mode for this light source's corona. 
-  /// \param scaleMode The mode could be one ot the following values:
-  ///   - CORONA_DISTANCE_SCALE: Scale the corona's size according to distance, similar to regular scene geometry. 
-  ///   - CORONA_AREA_SCALE : Scale the corona's size according to the percentage of its check block size that is currently visible. 
-  ///   - CORONA_FADEOUT_SCALE : Fade out the corona (according to the parameters globally set with the VCoronaComponent::SetGlobalCoronaFadeOutDistance method). 
-  ///   - CORONA_ROTATING_SCALE : The corona will rotate as the camera moves relative to the light source. 
-  ///   - CORONA_NO_SCALE : All features will be disabled.
-  /// \par Example
-  ///   \code
-  ///     function OnCreate(self) -- lua script attached to a light source
-  ///       self:SetCoronaScaleMode(Vision.CORONA_FADEOUT_SCALE)
-  ///     end
-  ///   \endcode
-  /// \see GetCoronaScaleMode
-  void SetCoronaScaleMode(number scaleMode);
-  
-  /// \brief Get the scale mode of the corona. 
-  /// \details
-  ///   The scale mode could be one ot the following values:
-  ///   - CORONA_DISTANCE_SCALE: Scale the corona's size according to distance, similar to regular scene geometry. 
-  ///   - CORONA_AREA_SCALE : Scale the corona's size according to the percentage of its check block size that is currently visible. 
-  ///   - CORONA_FADEOUT_SCALE : Fade out the corona (according to the parameters globally set with the VCoronaComponent::SetGlobalCoronaFadeOutDistance method). 
-  ///   - CORONA_ROTATING_SCALE : The corona will rotate as the camera moves relative to the light source. 
-  /// \return The scale mode. 
-  /// \see SetCoronaScaleMode
-  number GetCoronaScaleMode();  
-  
   /// \brief Set the projection texture to be used for a spotlight. 
   /// \param texture The texture file used for projection.
   void SetProjectionTexture(string texture);
@@ -399,7 +277,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

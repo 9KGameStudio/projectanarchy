@@ -676,6 +676,28 @@ void VScaleformValue::Display_SetFOV(float fFov)
   InternalGetGFxValue().SetDisplayInfo(info);
 }
 
+bool VScaleformValue::Display_GotoFrame(unsigned int uiFrameIndex, bool bPlay)
+{
+  if (!PerformDisplayInfoCheck())
+    return false;
+
+  if (bPlay)
+    return InternalGetGFxValue().GotoAndPlay(uiFrameIndex);
+  else
+    return InternalGetGFxValue().GotoAndStop(uiFrameIndex);
+}
+
+bool VScaleformValue::Display_GotoLabeledFrame(const char* szLabel, bool bPlay)
+{
+  if (!PerformDisplayInfoCheck())
+    return false;
+
+  if (bPlay)
+    return InternalGetGFxValue().GotoAndPlay(szLabel);
+  else
+    return InternalGetGFxValue().GotoAndStop(szLabel);
+}
+
 //-----------------------------------------------------------------------------------
 // Arrays
 
@@ -901,7 +923,7 @@ void VScaleformValue::RemoveFromObjectReferences()
 //-----------------------------------------------------------------------------------
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

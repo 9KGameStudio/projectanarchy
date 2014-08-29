@@ -133,28 +133,40 @@
 %include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Scripting/Lua/VScriptFileSystem_wrapper.i>;
 %include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Scripting/Lua/VScriptApp_wrapper.i>;
 
-%native(Assert) int Vision_Assert(lua_State *L);
-%{
-  int Vision_Assert(lua_State *L)
-  {
-    #ifdef _DEBUG
-      DECLARE_ARGS_OK;
-      
-      GET_ARG(1, bool, bCondition);
-      GET_OPT_ARG(2, const char *, szMessage, "Lua script assertion failed!");
+void Assert(bool bCondition, const char* szMessage = "Lua script assertion failed!");
 
-      if (ARGS_OK)
-      {
-        VASSERT_MSG(bCondition, szMessage);
-      }
-      else
-      {
-        VASSERT_MSG(bCondition, "Invalid Assertion, use: Vision.Assert(condition, message)");
-      }
-    #endif
-    return 0;
+%{
+  static void Assert(bool bCondition, const char* szMessage = "Lua script assertion failed!")
+  {
+    VASSERT_MSG(bCondition, szMessage);
   }
 %}
+
+%native(IsAlive) int Vision_IsAlive(lua_State *L);
+%{
+  int Vision_IsAlive(lua_State *L)
+  {
+    return SWIG_Lua_isalive(L);
+  }
+%}
+
+%native(IsSame) int Vision_IsSame(lua_State *L);
+%{
+  int Vision_IsSame(lua_State *L)
+  {
+    return SWIG_Lua_equal(L);
+  }
+%}
+
+%native(GetTypeName) int Vision_GetTypeName(lua_State *L);
+%{
+  int Vision_GetTypeName(lua_State *L)
+  {
+    return SWIG_Lua_type(L);
+  }
+%}
+
+
 #else
 
 /// \brief MODULE: The Lua \b Vision module contains all generated wrapper classes of the VisionEnginePlugin.
@@ -195,6 +207,30 @@ public:
   ///     end
   ///   \endcode
   static void Assert(boolean condition, string message = nil);
+
+  /// \brief Tests if a given object referencing a native engine object has not been deleted yet.
+  /// \param o The object to test
+  /// \par Example
+  ///   \code
+  ///     function RecreateMyGlobalEntity(self)
+  ///       -- Test if the engine object referenced by G.MyEntity hasn't been deleted yet
+  ///       if Vision.IsAlive(G.MyEntity) then
+  ///         G.MyEntity:Remove()
+  ///       end
+  ///       G.MyEntity = Game:CreateEntity(Vision.hkvVec3(1, 2, 3), "VisBaseEntity_cl")
+  ///     end
+  ///   \endcode
+  /// \return False if the object is either nil or has already been deleted, true otherwise.
+  static boolean IsAlive(VTypedObject o);
+
+  /// \brief Tests if a two objects reference the same instance of a native engine object.
+  /// \param o1 First variable to be tested with o2.
+  /// \param o2 Second variable to be tested with o1.
+  /// \return true if both objects reference the same native engine object, otherwise false.
+  static boolean IsSame(VTypedObject o1, VTypedObject o2);
+
+  /// \brief Returns a string containing a string representation of the type of the passed object that can be used for debugging.
+  static string GetTypeName(mixed object);
   
   /// @}
   /// @name Callbacks for Scene- and GameScripts
@@ -530,7 +566,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

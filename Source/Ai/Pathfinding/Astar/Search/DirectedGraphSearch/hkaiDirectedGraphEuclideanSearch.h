@@ -9,16 +9,10 @@
 #ifndef HK_AI_DIRECTED_GRAPH_SEARCH_H
 #define HK_AI_DIRECTED_GRAPH_SEARCH_H
 
-#include <Ai/Pathfinding/Multithreaded/hkaiPathfindingJobs.h>
-
 #include <Ai/Pathfinding/Astar/hkaiAstarParameters.h>
-
 #include <Ai/Pathfinding/Astar/Heuristic/hkaiGraphDistanceHeuristic.h>
-
 #include <Ai/Pathfinding/Astar/SearchState/hkaiHashSearchState.h>
-
 #include <Ai/Pathfinding/Astar/OpenSet/hkaiHeapOpenSet.h>
-
 #include <Ai/Pathfinding/Graph/hkaiDirectedGraphExplicitCost.h>
 #include <Ai/Pathfinding/Graph/hkaiDirectedGraphVisitor.h>
 
@@ -34,14 +28,14 @@ struct hkaiDirectedGraphEuclideanSearch
 	typedef hkaiGraphDistanceHeuristic<Graph> Heuristic;
 	typedef hkaiHashSearchState SearchState;
 	typedef hkaiHeapOpenSet OpenSet;
-	typedef hkUint32 SearchIndex;
+	typedef hkaiPackedKey SearchIndex;
 
 	hkaiDirectedGraphEuclideanSearch(const hkaiSearchMemoryInfo& memInfo);
 
 		/// Initialize the graph
-	void init(const Graph* graph, hkUint32 startNode, int endNode);
+	void init(const Graph* graph, hkaiPackedKey startNode, hkaiPackedKey endNode);
 
-	void init(const Graph* graph, const hkUint32* startNodePtr, int numStartNodes, int endNode);
+	void init(const Graph* graph, const hkaiPackedKey* startNodePtr, int numStartNodes, hkaiPackedKey endNode);
 	
 		/// Set the start node. This should be called *after* settings the end node, so that the cost estimate
 		/// for the start node can be computed.
@@ -58,13 +52,18 @@ struct hkaiDirectedGraphEuclideanSearch
 		return m_state.getParent(nid);
 	}
 
-	inline int isStart(int nid) const
+	inline const SearchState::Node* getParent(const SearchState::Node* nodePtr) const
+	{
+		return m_state.getParent(nodePtr);
+	}
+
+	inline int isStart(hkaiPackedKey nid) const
 	{
 		//return m_state.getNodeState(nid).isStart();
 		return m_state.isStart(nid);
 	}
 	
-	inline hkReal getCost(int nid)
+	inline hkReal getCost(hkaiPackedKey nid)
 	{
 		//return m_state.getNodeState(nid).getGCost();
 		m_state.nextNode( nid );
@@ -87,7 +86,7 @@ struct hkaiDirectedGraphEuclideanSearch
 #endif // HK_SPU_AI_DIRECTED_GRAPH_ASTAR_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

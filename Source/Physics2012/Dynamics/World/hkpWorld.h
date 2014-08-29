@@ -90,7 +90,7 @@ class hkWorldMemoryAvailableWatchDog;
 class hkpBodyOperation;
 
 class hkJobQueue;
-class hkJobThreadPool;
+class hkThreadPool;
 class hkdWorld;
 
 struct hkpWorldRayCastCommand;
@@ -107,7 +107,7 @@ struct hkOperationParameter;
 
 extern "C" void HK_CALL hkAgentNnMachine_AssertTrackValidity( struct hkpAgentNnTrack& track );
 //#define CHECK_TRACK(track) hkAgentNnMachine_AssertTrackValidity(track)
-#define CHECK_TRACK(track) 
+#define CHECK_TRACK(track)
 
 
 
@@ -485,7 +485,7 @@ class hkpWorld : public hkReferencedObject
 			/// Checks the current state of the engine using the hkCheckDeterminismUtil.
 			/// ###ACCESS_CHECKS###( [island->m_world,HK_ACCESS_RO] [island,HK_ACCESS_RW] );
 		void checkDeterminism();
-			
+
 			/// Checks determinism of isolated broadphase information for a single island.
 		void checkDeterminismOfIslandBroadPhase(const hkpSimulationIsland* island);
 
@@ -771,7 +771,7 @@ class hkpWorld : public hkReferencedObject
 
 			/// Multithreaded cast rays into the world and do callbacks for every hit.
 			/// Commands are divided into several jobs by numCommandsPerJob.
-		void castRayMt(hkpWorldRayCastCommand* commandArray, int numCommands, hkJobQueue* jobQueue, hkJobThreadPool* jobThreadPool, 
+		void castRayMt(hkpWorldRayCastCommand* commandArray, int numCommands, hkJobQueue* jobQueue, hkThreadPool* threadPool,
 			hkSemaphoreBusyWait*	semaphore, int numCommandsPerJob = 32 ) const;
 
 			/// Cast a shape within the world.
@@ -793,7 +793,7 @@ class hkpWorld : public hkReferencedObject
 
 			/// Cast shapes within the world.
 			/// Multithreaded version of linearCast. Number of commands per job is specified at the last argument.
-		void linearCastMt( hkpWorldLinearCastCommand* commandArray, int numCommands, hkJobQueue* jobQueue, hkJobThreadPool* jobThreadPool,
+		void linearCastMt( hkpWorldLinearCastCommand* commandArray, int numCommands, hkJobQueue* jobQueue, hkThreadPool* threadPool,
 			hkSemaphoreBusyWait* semaphore, int numCommandsPerJob = 32 ) const;
 
 			/// Get the closest points to a hkpCollidable (= [shape,transform,filterInfo] ).
@@ -803,13 +803,13 @@ class hkpWorld : public hkReferencedObject
 			/// structure, and change the shape collection collision filter, and the collision tolerance used.
 			/// (Note: If using your own collision input, make sure you start by copying the world collision input, so that
 			/// you use the default hkpCollisionDispatcher.)
-			/// 
+			///
 			/// ###ACCESS_CHECKS###( [this,HK_ACCESS_RO] );
 		void getClosestPoints( const hkpCollidable* collA, const hkpCollisionInput& input, hkpCdPointCollector& collector) const;
 
 			/// Get the closest points to a hkpCollidable (= [shape,transform,filterInfo] ).
 			/// Multithreaded version of GetClosestPoints.
-		void getClosestPointsMt(hkpWorldGetClosestPointsCommand* commandArray, int numCommands, hkJobQueue* jobQueue, hkJobThreadPool* jobThreadPool,
+		void getClosestPointsMt(hkpWorldGetClosestPointsCommand* commandArray, int numCommands, hkJobQueue* jobQueue, hkThreadPool* threadPool,
 			hkSemaphoreBusyWait* semaphore, int numCommandsPerJob = 32 ) const;
 
 			/// Get all shapes which are penetrating the collidable.
@@ -819,7 +819,7 @@ class hkpWorld : public hkReferencedObject
 			/// structure, and change the shape collection collision filter, and the collision tolerance used.
 			/// (Note: If using your own collision input, make sure you start by copying the world collision input, so that
 			/// you use the default hkpCollisionDispatcher.)
-			/// 
+			///
 			/// ###ACCESS_CHECKS###( [this,HK_ACCESS_RO] );
 		void getPenetrations( const hkpCollidable* collA, const hkpCollisionInput& input, hkpCdBodyPairCollector& collector) const;
 
@@ -952,7 +952,7 @@ class hkpWorld : public hkReferencedObject
 			/// Step the world multithreaded. You must pass in a jobQueue, and a threadPool. This
 			/// will utilize the threads of the thread pool for all multi-threading parts of the
 			/// step.
-		hkpStepResult stepMultithreaded( hkJobQueue* jobQueue, hkJobThreadPool* threadPool, hkReal physicsDeltaTime );
+		hkpStepResult stepMultithreaded( hkJobQueue* jobQueue, hkThreadPool* threadPool, hkReal physicsDeltaTime );
 
 			/// This function is called internally by stepMultiThreaded() and may be used instead, to
 			/// get finer control over multithreading.
@@ -960,7 +960,7 @@ class hkpWorld : public hkReferencedObject
 			/// This function leaves the world in a markForRead() state, for stepProcesMt(). This state is
 			/// reset in finishMtStep().
 		hkpStepResult initMtStep( hkJobQueue* jobQueue, hkReal physicsDeltaTime );
-			
+
 			/// This function is called internally by stepMultiThreaded() and may be used instead, to
 			/// get finer control over multithreading.
 			/// This function performs continuous simulation, and performs any single threaded cleanup necessary.
@@ -969,7 +969,7 @@ class hkpWorld : public hkReferencedObject
 			/// Leaving these values at their defaults will mean all continuous simulation is performed single threaded.
 			/// Only one thread must call this function. It must be
 			/// called when all threads have returned from calling stepProcessMt.
-		hkpStepResult finishMtStep( hkJobQueue* jobQueue = HK_NULL, hkJobThreadPool* threadPool = HK_NULL );
+		hkpStepResult finishMtStep( hkJobQueue* jobQueue = HK_NULL, hkThreadPool* threadPool = HK_NULL );
 
 
 			//
@@ -1155,13 +1155,13 @@ class hkpWorld : public hkReferencedObject
 #	ifdef HK_ENABLE_DETERMINISM_CHECKS
 		static void HK_CALL checkDeterminismInAgentNnTracks(const class hkpWorld* world);
 		static void HK_CALL checkDeterminismInAgentNnTracks(const class hkpSimulationIsland* island);
-#	endif 
 
-#	if defined HK_ENABLE_INTERNAL_DATA_RANDOMIZATION
-		// This function randomizes internal state of the engine. 
+#	if defined HKP_ENABLE_INTERNAL_DATA_RANDOMIZATION
+		// This function randomizes internal state of the engine.
 		// This may be useful when searching for multithreading non-determinism issues.
 			/// ###ACCESS_CHECKS###( [this,HK_ACCESS_RW] );
-		void randomizeInternalState(); 
+		void randomizeInternalState();
+#	endif
 #	endif
 
 
@@ -1261,7 +1261,7 @@ class hkpWorld : public hkReferencedObject
 		//hkBool m_enableForceLimitBreachedSecondaryEventsFromToiSolver;
 		int m_maxSectorsPerMidphaseCollideTask;
 		int m_maxSectorsPerNarrowphaseCollideTask;
-		hkBool m_processToisMultithreaded;		
+		hkBool m_processToisMultithreaded;
 		int m_maxEntriesPerToiMidphaseCollideTask;
 		int m_maxEntriesPerToiNarrowphaseCollideTask;
 		int m_maxNumToiCollisionPairsSinglethreaded;
@@ -1296,9 +1296,9 @@ class hkpWorld : public hkReferencedObject
 		hkUint32 m_lastEntityUid;
 			// This is only needed when using determinism checks.
 		hkUint32 m_lastIslandUid;
-		
+
 	public:
-	
+
 		hkUint32 m_lastConstraintUid;
 
 		friend class hkpWorldOperationUtil;
@@ -1334,19 +1334,19 @@ class hkpWorld : public hkReferencedObject
 		class hknpWorld*						m_npWorld; //+nosave
 
 	public:
-	
+
 			//
 			// These members are for internal use only
 			//
 		struct hkpWorldDynamicsStepInfo m_dynamicsStepInfo; //+reflected(false)
 
 		// Min and Max extents of broadphase
-		// Needed for when construction info is retrieved		
+		// Needed for when construction info is retrieved
 		hkVector4 m_broadPhaseExtents[2];
 		int			m_broadPhaseNumMarkers;
 		int			m_sizeOfToiEventQueue;
 		hkInt32		m_broadPhaseQuerySize;
-		hkInt32		m_broadPhaseUpdateSize;		
+		hkInt32		m_broadPhaseUpdateSize;
         hkEnum<hkpWorldCinfo::ContactPointGeneration, hkInt8> m_contactPointGeneration; // +nosave
 
 			/// Use hkpStaticCompoundShape and hkpBvCompressedMeshShape on SPU
@@ -1360,7 +1360,7 @@ class hkpWorld : public hkReferencedObject
 #endif // HKP_WORLD_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

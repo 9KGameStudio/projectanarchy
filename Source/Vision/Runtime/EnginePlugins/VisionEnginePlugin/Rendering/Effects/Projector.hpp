@@ -368,6 +368,9 @@ public:
   ///   calls Remove
   EFFECTS_IMPEXP virtual void DisposeObject();
 
+  EFFECTS_IMPEXP virtual bool GetZoneLocalSpacePosition(hkvVec3& vDest);
+  EFFECTS_IMPEXP virtual void OnReposition(const VisZoneRepositionInfo_t &info, const hkvVec3 &vLocalPos);
+  EFFECTS_IMPEXP virtual void OnSerialized(VArchive& ar);
 
   V_DECLARE_SERIAL_DLLEXP( VProjectedWallmark, EFFECTS_IMPEXP )
 
@@ -376,7 +379,7 @@ public:
   ///
 
 private:
-friend class VWallmarkManager;
+  friend class VWallmarkManager;
 
   VProjectedWallmark(
     const hkvVec3& origin, 
@@ -388,6 +391,7 @@ friend class VWallmarkManager;
     VIS_TransparencyType eTransp, 
     VColorRef iColor, float fLifeTime, float fFadeOutTime);
 
+  void CommonInit();
 
 
 protected: ///< data
@@ -420,6 +424,8 @@ protected: ///< data
 
   VCompiledEffectPtr m_spCustomEffect;
   VCompiledTechniquePtr m_spCustomTechnique[STATIC_GEOMETRY_TYPE_FIRSTCUSTOM]; ///< array for every engine type
+
+  hkvVec3 m_vZoneLocalSpacePos;         ///< origin
 };
 
 
@@ -451,7 +457,7 @@ protected:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

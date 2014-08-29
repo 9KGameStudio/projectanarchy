@@ -10,6 +10,7 @@
 //
 //HK_REFLECTION_PARSER_EXCLUDE_FILE
 HK_TEST_DECLARE(astar_main)
+HK_TEST_DECLARE(volumeAstar_main)
 HK_TEST_DECLARE(directedGraphMain)
 HK_TEST_DECLARE(LineOfSightUtil_main)
 HK_TEST_DECLARE(Convex2dUtilsTests_main)
@@ -17,14 +18,14 @@ HK_TEST_DECLARE(math2dTests_main)
 HK_TEST_DECLARE(emptyNavMeshMain)
 HK_TEST_DECLARE(nav_mesh_gen_utils_main)
 HK_TEST_DECLARE(navMeshInputValidationTest_main)
+HK_TEST_DECLARE(testFindMaximumAmongQuadratics_random)
 HK_TEST_DECLARE(nav_mesh_utils_main)
 HK_TEST_DECLARE(nonplanar_cast_test)
-HK_TEST_DECLARE(testCalcTangentDirs)
-HK_TEST_DECLARE(testCalcForwardVector)
+HK_TEST_DECLARE(testEdgePathSteering_main)
 HK_TEST_DECLARE(testLocalSteeringUtils)
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

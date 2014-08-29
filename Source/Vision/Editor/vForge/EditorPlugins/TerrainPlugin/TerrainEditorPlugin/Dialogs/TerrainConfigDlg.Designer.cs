@@ -69,7 +69,6 @@ namespace TerrainEditorPlugin.Dialogs
       // 
       // button_OK
       // 
-      this.button_OK.DialogResult = System.Windows.Forms.DialogResult.OK;
       this.button_OK.Location = new System.Drawing.Point(337, 22);
       this.button_OK.Name = "button_OK";
       this.button_OK.Size = new System.Drawing.Size(76, 26);

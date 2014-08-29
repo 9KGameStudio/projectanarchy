@@ -109,10 +109,6 @@ class hkbBlendingTransitionEffect : public hkbTransitionEffect
 		//////////////////////////////////
 
 		virtual bool isDone() HK_OVERRIDE;
-		
-		virtual void setFromGenerator( hkbGenerator* fromGen ) HK_OVERRIDE;
-
-		virtual void setToGenerator( hkbGenerator* toGen ) HK_OVERRIDE;
 
 		virtual hkReal getFromGeneratorBlendOutTime() HK_OVERRIDE;
 
@@ -173,10 +169,7 @@ class hkbBlendingTransitionEffect : public hkbTransitionEffect
 			// Get the duration of the transition.
 		virtual hkReal getTransitionDuration() const;
 
-			// Is this the first frame of the transition.
-		virtual bool isFirstFrame() const;
-
-		HKB_BEGIN_INTERNAL_STATE(1);
+		HKB_BEGIN_INTERNAL_STATE(2);
 
 			// The most recent world-from-model for the from-generator (used when m_alignmentBone is set).
 		mutable hkVector4 m_fromPos; //+nosave
@@ -199,10 +192,6 @@ class hkbBlendingTransitionEffect : public hkbTransitionEffect
 			// The number of seconds the transition has been active.
 		hkReal m_timeInTransition; //+nosave
 
-			// Whether to reset the to generator on the next frame.
-			// This happens during self-transition.
-		hkBool m_resetToGenerator; //+nosave
-
 			// Effective self transition mode of the to-generator to be applied when updateSync() is called.
 			// After this is applied it is changed to SELF_TRANSITION_MODE_CONTINUE to avoid applying more than once.
 		hkEnum< hkbTransitionEffect::SelfTransitionMode, hkInt8 > m_toGeneratorSelfTranstitionMode; //+nosave
@@ -218,12 +207,6 @@ class hkbBlendingTransitionEffect : public hkbTransitionEffect
 
 		HKB_END_INTERNAL_STATE();
 
-			// The generator that is being transitioned from (not reference counted)
-		hkbGenerator* m_fromGenerator; //+nosave
-
-			// The generator that is being transitioned to (not reference counted)
-		hkbGenerator* m_toGenerator; //+nosave
-
 	public:
 		
 		hkbBlendingTransitionEffect( hkFinishLoadedObjectFlag flag );
@@ -238,7 +221,7 @@ class hkbBlendingTransitionEffect : public hkbTransitionEffect
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

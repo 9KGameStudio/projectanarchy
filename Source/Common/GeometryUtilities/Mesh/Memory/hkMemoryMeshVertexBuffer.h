@@ -11,10 +11,10 @@
 
 #include <Common/GeometryUtilities/Mesh/hkMeshVertexBuffer.h>
 
-extern const hkClass hkMemoryMeshVertexBufferClass;
+extern HK_EXPORT_COMMON const hkClass hkMemoryMeshVertexBufferClass;
 
 	/// A memory implementation of a hkMeshVertexBuffer
-class hkMemoryMeshVertexBuffer: public hkMeshVertexBuffer
+class HK_EXPORT_COMMON hkMemoryMeshVertexBuffer : public hkMeshVertexBuffer
 {
     public:
         //+version(1)
@@ -123,7 +123,7 @@ class hkMemoryMeshVertexBuffer: public hkMeshVertexBuffer
 #endif // HK_MEMORY_MESH_VERTEX_BUFFER_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

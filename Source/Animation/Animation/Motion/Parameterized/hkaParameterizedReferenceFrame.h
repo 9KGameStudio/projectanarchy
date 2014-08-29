@@ -10,10 +10,10 @@
 
 #include <Animation/Animation/Motion/Default/hkaDefaultAnimatedReferenceFrame.h>
 
-extern const hkClass hkaParameterizedReferenceFrameClass;
+extern HK_EXPORT_ANIMATION const hkClass hkaParameterizedReferenceFrameClass;
 
 /// Interface for a range of parametrized reference frames
-class hkaParameterizedReferenceFrame : public hkaDefaultAnimatedReferenceFrame
+class HK_EXPORT_ANIMATION hkaParameterizedReferenceFrame : public hkaDefaultAnimatedReferenceFrame
 {
 	public:
 		HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_ANIM_MOTION);
@@ -46,7 +46,7 @@ class hkaParameterizedReferenceFrame : public hkaDefaultAnimatedReferenceFrame
 #endif // HKA_PARAMETERIZED_REFERENCE_FRAME_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

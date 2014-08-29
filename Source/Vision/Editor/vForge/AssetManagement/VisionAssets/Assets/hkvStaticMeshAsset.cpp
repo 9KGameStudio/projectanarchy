@@ -14,7 +14,8 @@
 #include <Vision/Runtime/Engine/System/Vision.hpp>
 #include <Vision/Runtime/Engine/System/Resource/VisApiResource.hpp>
 
-unsigned int hkvStaticMeshAsset::s_iAssetTypeIndex = HKV_INVALID_INDEX;
+hkvAssetTypeInfo* hkvStaticMeshAsset::s_typeInfo = NULL;
+const hkvAssetTypeInfoHandle* hkvStaticMeshAsset::s_typeInfoHandle = NULL;
 const char* const hkvStaticMeshAsset::s_lodDistanceCustomType = "MeshLODDistances";
 
 /////////////////////////////////////////////////////////////////////////////
@@ -23,27 +24,30 @@ const char* const hkvStaticMeshAsset::s_lodDistanceCustomType = "MeshLODDistance
 
 void hkvStaticMeshAsset::StaticInit()
 {
-  hkvAssetTypeInfo ti;
-  ti.m_name = "StaticMesh";
-  ti.m_createFunc = &CreateAsset;
-  ti.m_supportedFileExtensions.pushBack("vmesh");
-  ti.m_szTypeIconQt = ":/Icons/Icons/StaticMeshAsset.png";
+  s_typeInfo = new hkvAssetTypeInfo();
+  s_typeInfo->m_name = "StaticMesh";
+  s_typeInfo->m_createFunc = &CreateAsset;
+  s_typeInfo->m_supportedFileExtensions.pushBack("vmesh");
+  s_typeInfo->m_szTypeIconQt = ":/Icons/Icons/StaticMeshAsset.png";
 
-  ti.m_resourceManagerName = VIS_RESOURCEMANAGER_MESHES;
-  ti.m_useEngineForDependencies = true;
-  ti.m_useEngineForThumbnails = true;
-  ti.m_useEngineForPropertyHint = true;
+  s_typeInfo->m_resourceManagerName = VIS_RESOURCEMANAGER_MESHES;
+  s_typeInfo->m_useEngineForDependencies = true;
+  s_typeInfo->m_useEngineForThumbnails = true;
+  s_typeInfo->m_useEngineForPropertyHint = true;
 
-  // register at the hkvAssetTypeManager and store the asset type index in static variable.
-  s_iAssetTypeIndex = hkvAssetTypeManager::getGlobalInstance()->addAssetType(ti);
+  // register at the hkvAssetTypeManager and store the asset type handle in static variable.
+  s_typeInfoHandle = hkvAssetTypeManager::getGlobalInstance()->addAssetType(*s_typeInfo);
 }
 
 
 void hkvStaticMeshAsset::StaticDeInit()
 {
   // de-register at the hkvAssetTypeManager
-  hkvAssetTypeManager::getGlobalInstance()->removeAssetType(s_iAssetTypeIndex);
-  s_iAssetTypeIndex = HKV_INVALID_INDEX;
+  hkvAssetTypeManager::getGlobalInstance()->removeAssetType(*s_typeInfoHandle);
+  s_typeInfoHandle = NULL;
+
+  delete s_typeInfo;
+  s_typeInfo = NULL;
 }
 
 
@@ -62,6 +66,8 @@ hkvAsset* hkvStaticMeshAsset::CreateAsset()
 /////////////////////////////////////////////////////////////////////////////
 
 hkvStaticMeshAsset::hkvStaticMeshAsset()
+  : hkvAsset(s_typeInfo)
+  , m_useCustomLodDistances(false)
 {
 
 }
@@ -77,15 +83,9 @@ hkvStaticMeshAsset::~hkvStaticMeshAsset()
 // hkvStaticMeshAsset public override functions
 /////////////////////////////////////////////////////////////////////////////
 
-unsigned int hkvStaticMeshAsset::getTypeIndex() const
+const hkvAssetTypeInfoHandle& hkvStaticMeshAsset::getTypeInfoHandle() const
 {
-  return s_iAssetTypeIndex;
-}
-
-
-const char* hkvStaticMeshAsset::getTypeName() const
-{
-  return "StaticMesh";
+  return *s_typeInfoHandle;
 }
 
 
@@ -125,6 +125,7 @@ void hkvStaticMeshAsset::getSpecificProperties(hkvPropertyList& properties, hkvP
   properties.push_back(hkvProperty::groupStart("Model"));
   properties.back().setDescription("Asset specific properties and settings.");
 
+  properties.push_back(hkvProperty("UseCustomLODDistances", m_useCustomLodDistances, flags, "Whether to apply the custom LOD switch distances defined in a separate property."));
   properties.push_back(hkvProperty("LODSwitchDistances", m_lodDistances, s_lodDistanceCustomType, flags, "The viewing distances up to which each detail level of the model will be displayed. If this list has no entries, the mesh does not support multiple levels of detail. A distance value of -1 means 'infinity'."));
 
   properties.push_back(hkvProperty::groupEnd());
@@ -137,7 +138,11 @@ void hkvStaticMeshAsset::setSpecificProperty(const hkvProperty& prop, const hkAr
 
   if ((stackSize == 1) && (hkvStringHelper::safeCompare(path.back(), "Model") == 0))
   {
-    if (hkvStringHelper::safeCompare(prop.getName(), "LODSwitchDistances") == 0)
+    if (hkvStringHelper::safeCompare(prop.getName(), "UseCustomLODDistances") == 0)
+    {
+      m_useCustomLodDistances = prop.getBool();
+    }
+    else if (hkvStringHelper::safeCompare(prop.getName(), "LODSwitchDistances") == 0)
     {
       m_lodDistances = prop.getArray();
     }
@@ -145,7 +150,7 @@ void hkvStaticMeshAsset::setSpecificProperty(const hkvProperty& prop, const hkAr
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

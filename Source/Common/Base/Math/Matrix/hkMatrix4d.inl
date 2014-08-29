@@ -233,7 +233,7 @@ HK_FORCE_INLINE void hkMatrix4d::setDiagonal( hkDouble64 m00, hkDouble64 m11, hk
 HK_FORCE_INLINE void hkMatrix4d::setDiagonal( hkSimdDouble64Parameter m00, hkSimdDouble64Parameter m11, hkSimdDouble64Parameter m22, hkSimdDouble64Parameter m33 )
 {
 #if (HK_CONFIG_SIMD == HK_CONFIG_SIMD_ENABLED)
-	const hkVector4d* HK_RESTRICT id = (const hkVector4d* HK_RESTRICT)(g_vectordConstants + HK_QUADREAL_1000);
+	const hkVector4d* HK_RESTRICT id = (const hkVector4d*)(g_vectordConstants + HK_QUADREAL_1000);
 	m_col0.setMul(id[0], m00);
 	m_col1.setMul(id[1], m11);
 	m_col2.setMul(id[2], m22);
@@ -250,7 +250,7 @@ HK_FORCE_INLINE void hkMatrix4d::setDiagonal( hkSimdDouble64Parameter m00, hkSim
 HK_FORCE_INLINE void hkMatrix4d::setDiagonal( hkVector4dParameter v )
 {
 #if (HK_CONFIG_SIMD == HK_CONFIG_SIMD_ENABLED)
-	const hkVector4d* HK_RESTRICT id = (const hkVector4d* HK_RESTRICT)(g_vectordConstants + HK_QUADREAL_1000);
+	const hkVector4d* HK_RESTRICT id = (const hkVector4d*)(g_vectordConstants + HK_QUADREAL_1000);
 	m_col0.setMul(id[0], v);
 	m_col1.setMul(id[1], v);
 	m_col2.setMul(id[2], v);
@@ -267,7 +267,7 @@ HK_FORCE_INLINE void hkMatrix4d::setDiagonal( hkVector4dParameter v )
 HK_FORCE_INLINE void hkMatrix4d::getDiagonal( hkVector4d& v ) const
 {
 #if (HK_CONFIG_SIMD == HK_CONFIG_SIMD_ENABLED)
-	const hkVector4d* HK_RESTRICT id = (const hkVector4d* HK_RESTRICT)(g_vectordConstants + HK_QUADREAL_1000);
+	const hkVector4d* HK_RESTRICT id = (const hkVector4d*)(g_vectordConstants + HK_QUADREAL_1000);
 	v.setZero();
 	v.addMul(id[0], m_col0);
 	v.addMul(id[1], m_col1);
@@ -280,7 +280,7 @@ HK_FORCE_INLINE void hkMatrix4d::getDiagonal( hkVector4d& v ) const
 
 HK_FORCE_INLINE void hkMatrix4d::setIdentity()
 {
-	const hkVector4d* HK_RESTRICT id = (const hkVector4d* HK_RESTRICT)(g_vectordConstants + HK_QUADREAL_1000);
+	const hkVector4d* HK_RESTRICT id = (const hkVector4d*)(g_vectordConstants + HK_QUADREAL_1000);
 	m_col0 = id[0];
 	m_col1 = id[1];
 	m_col2 = id[2];
@@ -391,7 +391,7 @@ HK_FORCE_INLINE bool hkMatrix4d::isApproximatelyEqual( const hkMatrix4d& m, hkSi
 HK_FORCE_INLINE hkBool32 hkMatrix4d::isApproximatelyIdentity( hkSimdDouble64Parameter epsilon) const
 {
 	hkVector4d epsilon_v; epsilon_v.setAll(epsilon);
-	const hkVector4d* HK_RESTRICT id = (const hkVector4d* HK_RESTRICT)(g_vectordConstants + HK_QUADREAL_1000);
+	const hkVector4d* HK_RESTRICT id = (const hkVector4d*)(g_vectordConstants + HK_QUADREAL_1000);
 
 	hkVector4d t0; t0.setSub(m_col0, id[0]);	t0.setAbs( t0 );
 	hkVector4d t1; t1.setSub(m_col1, id[1]);	t1.setAbs( t1 );
@@ -512,7 +512,7 @@ HK_FORCE_INLINE void hkMatrix4d::_add( const hkMatrix4d& a )
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

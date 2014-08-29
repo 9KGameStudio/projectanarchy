@@ -9,11 +9,12 @@
 #ifndef HKP_VELOCITY_ACCUMULATOR_H
 #define HKP_VELOCITY_ACCUMULATOR_H
 
+#include <Physics/Constraint/hkpConstraintExport.h>
 
 /// This is a simplified rigid body as it is used by the constraint solver.
 /// Note: This class has different purposes, whether it is used for setting up the constraint solver
 /// input (hkConstraintDate::buildJacobian()), or when it is used as a solver output.
-class hkpVelocityAccumulator
+class HK_EXPORT_PHYSICS hkpVelocityAccumulator
 {
 	public:
 
@@ -99,9 +100,9 @@ class hkpVelocityAccumulator
 		{
 			// We need to be in build Jacobians mode!
 			HK_ASSERT(0x6aede27a, m_context == ACCUMULATOR_CONTEXT_BUILD_JACOBIANS);
-			m_scratch0 = hkVector4::getConstant<HK_QUADREAL_1000>();
-			m_scratch1 = hkVector4::getConstant<HK_QUADREAL_0100>();
-			m_scratch2 = hkVector4::getConstant<HK_QUADREAL_0010>();
+			m_scratch0.setConstant<HK_QUADREAL_1000>();
+			m_scratch1.setConstant<HK_QUADREAL_0100>();
+			m_scratch2.setConstant<HK_QUADREAL_0010>();
 		}
 
 			/// Get The matrix converting from world to principle axis space.
@@ -218,7 +219,7 @@ class hkpVelocityAccumulator2 : public hkpVelocityAccumulator
 #endif // HKP_VELOCITY_ACCUMULATOR_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

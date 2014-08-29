@@ -191,7 +191,7 @@ HK_FORCE_INLINE void hkQsTransformd::blendNormalize( hkSimdDouble64Parameter tot
 	// If weight is almost one, we don't blend our translation and scale
 	// otherwise, weight all accumulators by inverse
 	{
-		hkSimdDouble64 invWeight; invWeight.setReciprocal<HK_ACC_23_BIT,HK_DIV_SET_ZERO_AND_ONE>(totalWeight);
+		hkSimdDouble64 invWeight; invWeight.setReciprocal<HK_ACC_MID,HK_DIV_SET_ZERO_AND_ONE>(totalWeight);
 		m_translation.mul(invWeight);
 		m_scale.mul(invWeight);
 	}
@@ -340,7 +340,7 @@ HK_FORCE_INLINE hkBool32 hkQsTransformd::isScaleUniform() const
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -5,7 +5,7 @@
  * Product and Trade Secret source code contains trade secrets of Havok. Havok Software (C) Copyright 1999-2014 Telekinesys Research Limited t/a Havok. All Rights Reserved. Use of this software is subject to the terms of an end user license agreement.
  *
  */
-
+#ifndef HK_PLATFORM_SPU
 inline hkaiNavMeshInstance::AddFaceContext::AddFaceContext()
 {
 	for (int i=0; i<hkaiNavMesh::MAX_DATA_PER_FACE; i++)
@@ -14,11 +14,12 @@ inline hkaiNavMeshInstance::AddFaceContext::AddFaceContext()
 
 
 inline hkaiNavMeshInstance::AddEdgeContext::AddEdgeContext()
-: m_cutInfo(hkaiNavMeshInstance::NOT_CUT_EDGE)
+:	hkaiNavMesh::AddEdgeContext(),
+	m_cutInfo(hkaiNavMeshInstance::NOT_CUT_EDGE)
 {
-	for (int i=0; i<hkaiNavMesh::MAX_DATA_PER_EDGE; i++)
-		m_data[i] = 0;
+
 }
+#endif
 
 
 // Templated utility function to look up an edge or face from the given index.
@@ -166,6 +167,36 @@ inline T* hkaiNavMeshInstance_getWritable(const T* originalArray, int numOrigina
 	}
 }
 
+template<typename T, typename DATA>
+inline DATA* hkaiNavMeshInstance_getWritableData(const T* originalArray, int numOriginal, hkArray<T>& instancedArray, 
+	hkArray<DATA>& ownedData, const DATA* originalData, hkArray<DATA>& instancedData,
+	hkArray<int>& instanceMap, int index, int dataStriding, hkBool32 instanceIfNotAlready) 
+{
+	if (index >= numOriginal)
+	{
+		// Looking for a struct edge created by cutting.
+		return &ownedData[ dataStriding * (index - numOriginal) ];
+	}
+
+	// Do a map lookup. If the map is empty, always use the instanced struct
+	int mappedIdx = instanceMap.getSize() ? instanceMap[index] : index;
+
+	HK_ASSERT(0x6779775e, instanceIfNotAlready || mappedIdx != -1);
+
+	if ( HK_VERY_UNLIKELY(!instanceIfNotAlready && mappedIdx == -1) )
+	{
+		// fail fast - never allow write-access to the original struct.
+		return HK_NULL;
+	}
+
+	if (mappedIdx == -1)
+	{
+		hkaiNavMeshInstance_instance(originalArray, instancedArray, originalData, instancedData, instanceMap, index, dataStriding );
+		mappedIdx = instanceMap[index];
+	}
+	return &instancedData[ dataStriding * mappedIdx ];
+}
+
 #ifndef HK_PLATFORM_SPU
 template<typename DATA>
 inline DATA HK_CALL hkaiNavMeshInstance::getUserDataFromMainMemory(const DATA* dataPtr)
@@ -267,16 +298,16 @@ inline const hkaiNavMesh::FaceData* hkaiNavMeshInstance::getFaceDataPtr( hkaiNav
 
 inline hkaiNavMesh::EdgeData* hkaiNavMeshInstance::getWritableEdgeDataPtr( hkaiNavMesh::EdgeIndex eIdx, hkBool32 instanceIfNotAlready )
 {
-	getWritableEdge(eIdx, instanceIfNotAlready); // instance if needed
-	return hkaiNavMeshInstance_getWritable(m_originalEdgeData, m_numOriginalEdges, m_instancedEdgeData, m_ownedEdgeData, 
-		m_originalEdgeData, m_instancedEdgeData, m_edgeMap, eIdx, getEdgeDataStriding(), false );
+	return hkaiNavMeshInstance_getWritableData( m_originalEdges, m_numOriginalEdges, m_instancedEdges,
+		m_ownedEdgeData, m_originalEdgeData, m_instancedEdgeData,												
+		m_edgeMap, eIdx, getEdgeDataStriding(), instanceIfNotAlready );
 }
 
 inline hkaiNavMesh::FaceData* hkaiNavMeshInstance::getWritableFaceDataPtr( hkaiNavMesh::FaceIndex fIdx, hkBool32 instanceIfNotAlready )
 {
-	getWritableFace(fIdx, instanceIfNotAlready); // instance if needed
-	return hkaiNavMeshInstance_getWritable( m_originalFaceData, m_numOriginalFaces, m_instancedFaceData, m_ownedFaceData, 
-		m_originalFaceData, m_instancedFaceData, m_faceMap, fIdx, getFaceDataStriding(), false );
+	return hkaiNavMeshInstance_getWritableData( m_originalFaces, m_numOriginalFaces, m_instancedFaces,
+		m_ownedFaceData, m_originalFaceData, m_instancedFaceData,
+		m_faceMap, fIdx, getFaceDataStriding(), instanceIfNotAlready );
 }
 
 inline const hkaiReferenceFrame& hkaiNavMeshInstance::getReferenceFrame() const
@@ -502,10 +533,18 @@ inline void hkaiNavMeshInstance::setNumInstancedEdges( int numInstancedEdges )
 	m_instancedEdges.setSize( numInstancedEdges );
 	m_instancedEdgeData.setSize( getEdgeDataStriding() * numInstancedEdges );
 }
+
+inline void hkaiNavMeshInstance::setLayer( hkaiLayer layer )
+{
+	HK_ASSERT2(0x799e5e19, hkMath::countBitsSet(layer) == 1, "Instance must belong to exactly one layer.");
+	HK_WARN_ONCE_ON_DEBUG_IF( m_runtimeId != HKAI_INVALID_RUNTIME_INDEX, 0x38bf6446, "Changing the layer of a loaded instance is a very bad idea." );
+	m_layer = layer;
+}
+
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

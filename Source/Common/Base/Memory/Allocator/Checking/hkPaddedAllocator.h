@@ -9,7 +9,7 @@
 #define HKBASE_hkPaddedAllocator_H
 
 	/// Pads allocations and checks that padding is unmodified on free.
-class hkPaddedAllocator : public hkMemoryAllocator
+class HK_EXPORT_COMMON hkPaddedAllocator : public hkMemoryAllocator
 {
 	//+hk.MemoryTracker(ignore=True)
 public:
@@ -71,7 +71,7 @@ public:
 #endif // HKBASE_hkPaddedAllocator_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

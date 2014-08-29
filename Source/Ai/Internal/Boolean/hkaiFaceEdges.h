@@ -9,6 +9,7 @@
 #define HKAI_FACE_EDGES_H
 
 #include <Ai/Internal/Boolean/hkaiEdgeGeometry.h>
+#include <Common/Base/Algorithm/Sort/hkSort.h>
 
 /// The hkaiFaceEdges class provides a fast and convenient way of determine all of the edges that belong to
 /// a face of hkaiEdgeGeometry. The class holds pointers to the edges stored in the hkaiEdgeGeometry that is being
@@ -44,12 +45,28 @@ class hkaiFaceEdges
 	protected:
 		hkArray<const hkaiEdgeGeometry::Edge*> m_faceEdges;
 		hkArray<const hkaiEdgeGeometry::Edge*const*> m_faceStartEdges;
+
+		struct EdgeFacePair
+		{
+			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_AI, EdgeFacePair);
+			HK_DECLARE_POD_TYPE();
+			HK_FORCE_INLINE hkBool32 operator<(const EdgeFacePair& other) const
+			{
+				return m_face < other.m_face;
+			}
+
+			hkaiEdgeGeometry::FaceIndex m_face;
+			const hkaiEdgeGeometry::Edge* m_edge;
+		};
+
+		hkArray<EdgeFacePair> m_sortArray;
+		hkArray<hkRadixSort::SortData32> m_sortBuffer;
 };
 
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

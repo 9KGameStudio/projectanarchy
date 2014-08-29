@@ -11,8 +11,8 @@
 
 #include <Physics/Constraint/Data/hkpConstraintData.h>
 
-extern const class hkClass hkpRagdollLimitsDataAtomsClass;
-extern const hkClass hkpRagdollLimitsDataClass;
+extern HK_EXPORT_PHYSICS const class hkClass hkpRagdollLimitsDataAtomsClass;
+extern HK_EXPORT_PHYSICS const hkClass hkpRagdollLimitsDataClass;
 
 
 /// This is a version of a hkRagdollConstraint with removed linear constraints.
@@ -20,7 +20,7 @@ extern const hkClass hkpRagdollLimitsDataClass;
 /// Once a chain has been defined, this constraint can be simply overlayed on top of it to impose additional
 /// angular constraints. When this constraint is used together with hkpPoweredChainData, care should be taken not
 /// to set the target in the powered chain data to lay outside the limits defined here.
-class hkpRagdollLimitsData : public hkpConstraintData
+class HK_EXPORT_PHYSICS hkpRagdollLimitsData : public hkpConstraintData
 {
 	public:
 
@@ -175,7 +175,7 @@ class hkpRagdollLimitsData : public hkpConstraintData
 #endif // HKP_RAGDOLL_LIMITS_DATA_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

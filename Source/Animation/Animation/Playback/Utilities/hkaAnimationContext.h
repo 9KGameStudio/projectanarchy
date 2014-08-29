@@ -10,10 +10,10 @@
 #define HKA_ANIMATION_VDB_CONTEXT_H
 
 #include <Common/Visualize/hkProcessContext.h>
-
+#include <Animation/Internal/hkaExport.h>
 
 	/// This context is currently used to store timer data
-class hkaAnimationContext : public hkReferencedObject, public hkProcessContext
+class HK_EXPORT_ANIMATION hkaAnimationContext : public hkReferencedObject, public hkProcessContext
 {	
 	public:
 
@@ -30,7 +30,7 @@ class hkaAnimationContext : public hkReferencedObject, public hkProcessContext
 #endif // HKA_ANIMATION_VDB_CONTEXT_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

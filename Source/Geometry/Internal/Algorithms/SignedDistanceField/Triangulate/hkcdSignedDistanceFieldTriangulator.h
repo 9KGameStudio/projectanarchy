@@ -16,10 +16,10 @@
 #include <Common/Base/Types/Geometry/hkGeometry.h>
 
 
-struct hkcdSignedDistanceFieldTriangulator
+struct HK_EXPORT_COMMON hkcdSignedDistanceFieldTriangulator
 {
 
-	struct Function
+	struct HK_EXPORT_COMMON Function
 	{
 		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_UTILITIES, Function );
 
@@ -27,7 +27,7 @@ struct hkcdSignedDistanceFieldTriangulator
 		virtual	hkReal	evaluate(const hkVector4& position, hkVector4* normal = HK_NULL) const=0;
 	};
 
-	struct Config
+	struct HK_EXPORT_COMMON Config
 	{
 		Config() : m_maxDepth(7),  m_sharpnessPasses(8), m_fairingPasses(4), m_minCurvature(10.0f * HK_REAL_DEG_TO_RAD), m_scale(1.0f) {}
 
@@ -44,7 +44,7 @@ struct hkcdSignedDistanceFieldTriangulator
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

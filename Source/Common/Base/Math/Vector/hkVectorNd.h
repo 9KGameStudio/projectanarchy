@@ -9,7 +9,7 @@
 #define HK_MATH_VECTOR_Nd_H
 
 /// A column vector of any size.
-class hkVectorNd
+class HK_EXPORT_COMMON hkVectorNd
 {
 	friend class hkMatrixdNm;
 	public:
@@ -139,7 +139,7 @@ class hkVectorNd
 		void _setSizeAndZeroLast(int size);
 
 		// For clearing out the end bits
-		static const hkVector4dComparison::Mask s_zeroMask[4];
+		static const hkVector4ComparisonMask::Mask s_zeroMask[4];
 
 
 		hkVector4d* m_elements;
@@ -184,7 +184,7 @@ class hkInplaceVectorNd: public hkVectorNd
 #endif //HK_MATH_VECTOR_Nd_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

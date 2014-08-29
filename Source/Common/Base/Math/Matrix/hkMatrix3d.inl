@@ -269,14 +269,31 @@ HK_FORCE_INLINE void hkMatrix3d::setInverseSymmetric(const hkMatrix3d& src)
 	hkVector4d r1; r1.setCross(c2, c0);
 	hkVector4d r2; r2.setCross(c0, c1);
 
-	// Compute 1 / determinant. Set it to zero in case of singular matrices!
-	
 	const hkSimdDouble64 determinant = c0.dot<3>(r0);
-	const hkVector4dComparison cmp = determinant.greater(hkSimdDouble64_Eps);
 
-	hkSimdDouble64 dInv;	
+	// Compute 1 / determinant. Set it to zero in case of singular matrices!
+	// We detect singularity by scaling the determinant by the inverse
+	// L1 norms of the columns of the matrix and comparing to epsilon.
+	hkVector4dComparison isNotSingular;
+	{
+		hkSimdDouble64 absDet; absDet.setAbs(determinant);
+
+		hkVector4d c0_abs; c0_abs.setAbs(c0);
+		hkVector4d c1_abs; c1_abs.setAbs(c1);
+		hkVector4d c2_abs; c2_abs.setAbs(c2);
+
+		isNotSingular = absDet.greater
+		(
+			hkSimdDouble64_Eps
+			* c0_abs.horizontalAdd<3>()
+			* c1_abs.horizontalAdd<3>()
+			* c2_abs.horizontalAdd<3>()
+		);
+	}
+
+	hkSimdDouble64 dInv;
 	dInv.setReciprocal(determinant);
-	dInv.zeroIfFalse(cmp);
+	dInv.zeroIfFalse(isNotSingular);
 
 	m_col0.setMul(r0, dInv);
 	m_col1.setMul(r1, dInv);
@@ -380,7 +397,7 @@ HK_FORCE_INLINE void hkMatrix3d::_setSubDiag(const hkMatrix3d& A, hkSimdDouble64
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

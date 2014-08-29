@@ -31,11 +31,10 @@ enum VAppFlags
   VAPP_MOUSE_NONEXCLUSIVE           =  16,   ///< Non-exclusive mouse mode. Unhides the cursor and allows you to click on other windows. Not suitable for FPS controls in a window.
   VAPP_KEYBOARD_NONEXCLUSIVE        =  32,   ///< Non-exclusive keyboard mode in DirectInput
   VAPP_USE_DINPUT_KEYBOARD          =  64,   ///< Use DirectInput for the keyboard.
-  VAPP_USE_DINPUT_MOUSE             = 128,   ///< Use DirectInput for the mouse.
-  VAPP_USE_DINPUT                   = VAPP_USE_DINPUT_KEYBOARD | VAPP_USE_DINPUT_MOUSE,   ///< Use DirectInput for mouse and keyboard.
+  VAPP_USE_DINPUT                   = VAPP_USE_DINPUT_KEYBOARD,   ///< Use DirectInput for mouse and keyboard.
   VAPP_PEEK_ALL_MESSAGES_DEPRECATED = 256,   ///< Deprecated, use VWindow::SetPickAllMessage() instead.
   VAPP_DEFER_IM_SHADER_CREATION     = 512,   ///< Don't create immediate mode shaders.
-  VAPP_INIT_DEFAULTS_DEBUG          = VAPP_INIT_INPUT | VAPP_USE_DINPUT, ///< Defaults for initializing the engine in debug: Init the input and use DirectInput and show the cursor.
+  VAPP_INIT_DEFAULTS_DEBUG          = VAPP_INIT_INPUT | VAPP_USE_DINPUT | VAPP_MOUSE_HIDECURSOR, ///< Defaults for initializing the engine in debug: Init the input and use DirectInput and hide the cursor.
   VAPP_INIT_DEFAULTS_RELEASE        = VAPP_INIT_INPUT | VAPP_USE_DINPUT | VAPP_MOUSE_HIDECURSOR ///< Defaults for initializing the engine in release: Init the input and use DirectInput and hide the cursor.
 };
 
@@ -74,25 +73,34 @@ public:
   /// \param uiInitFlags
   ///   A logical combination of flags listed in the VAppFlags enum.
   VisAppConfig_cl(int iXRes = VVIDEO_DEFAULTWIDTH, int iYRes = VVIDEO_DEFAULTHEIGHT, unsigned int uiInitFlags = VAPP_INIT_DEFAULTS)
-    : m_videoConfig(iXRes, iYRes), m_uiInitFlags(uiInitFlags)
+    : m_uiInitFlags(uiInitFlags)
+    , m_videoConfig(iXRes, iYRes)
   {
-#ifdef WIN32
+#ifdef _VISION_WIN32
     m_videoConfig.m_szWindowTitle = "Vision Application";
 #endif
 
     m_sFileSystemRootName = "havok_sdk";
+
+    // Relative path from application path to the SDK path.
+    // Used to determine m_sFileSystemRootName in VAppWin::SetupPlatformRootFileSystem().
+    // By default it would be expected that your application is in e.g. a folder such as 'Bin/win_vs2010_anarchy/Debug/MyGameApp.exe'
+    // relative to the project path, so we would go up four levels to determine the SDK path.
+    // If your folder structure is different, you need to adapt this.
+    m_sFileSystemRootPathRelative = "../../../../";
   }
 
   unsigned int m_uiInitFlags;
   
-#if defined(WIN32) && !defined(_VISION_WINRT)
+#if defined(_VISION_WIN32) && !defined(_VISION_WINRT)
   VWindowConfig m_windowConfig; ///< Window configuration
 #endif
 
   VVideoConfig m_videoConfig;   ///< Video configuration
-  VisConfig_t m_engineConfig;  ///< Engine configuration
+  VisConfig_t m_engineConfig;   ///< Engine configuration
 
   VString m_sFileSystemRootName;
+  VString m_sFileSystemRootPathRelative; ///< Relative path from application path to the SDK path
 
 #ifdef _VISION_PS3
   VGcmConfig m_gcmConfig;
@@ -169,7 +177,8 @@ struct VisAppLoadSettings
     LF_ForceMobileMode        = V_BIT(1), ///< Forces the loader to use a VisionMobileShaderProvider and a simple Lightgrid, regardless of what is set in the vscene file.
     LF_UsePrewarming          = V_BIT(2), ///< Prewarms all resources by rendering every mesh once with the assigned shader which which forces the graphics driver to create its internal objects. This prevents stuttering after scene loading.
     LF_UseInterleavedLoading  = V_BIT(3) | LF_UseStreamingIfExists, ///< Does not load the whole scene at once but only a certain amount of chunks per frame. You have to call IsFinished periodically to advance the scene file loading. Also enables LF_UseStreamingIfExists.
-    LF_LoadTimeStepSettings   = V_BIT(4),  ///< Time Stepping settings are loaded by default. Omit this flag if time stepping settings should always be set manually.
+    LF_LoadTimeStepSettings   = V_BIT(4), ///< Time Stepping settings are loaded by default. Omit this flag if time stepping settings should always be set manually.
+    LF_LoadRendererNode       = V_BIT(5), ///< Loads the renderer node during deserialization. Remove this flag if you want to set the renderer node yourself (either before or after loading the scene).
 
     LF_PlatformDefault = 
 #if defined(NEEDS_SCENE_STREAMING)
@@ -178,7 +187,7 @@ struct VisAppLoadSettings
 #if defined(NEEDS_SCENE_PREWARMING)
     LF_UsePrewarming |
 #endif
-    LF_LoadTimeStepSettings
+    LF_LoadTimeStepSettings | LF_LoadRendererNode
   };
 
   VISION_APIFUNC VisAppLoadSettings();
@@ -391,6 +400,10 @@ public:
   /// \sa IVisApp_cl::InitEngine
   /// \sa IVisApp_cl::DeInitEngine
   virtual bool InitEngine(VisAppConfig_cl *pConfig = NULL) = 0;
+
+  /// \brief 
+  ///   Creates the renderer node which should be used by the engine
+  virtual IVRendererNode* CreateRendererNode() = 0;
 
   /// \brief
   ///   Deinitializes the engine
@@ -648,7 +661,7 @@ typedef VSmartPtr<IVisSceneManager_cl> IVisSceneManagerPtr;
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -19,11 +19,12 @@ class VMobileForwardRenderingSystem;
 typedef VSmartPtr<VMobileForwardRenderingSystem> VMobileForwardRenderingSystemPtr;
 
 // Versions
-#define VMOBILE_FORWARDRENDERER_VERSION_0        0                                  // Initial version
-#define VMOBILE_FORWARDRENDERER_VERSION_1        1                                  // Migrated to common base class VRendererNodeCommon
-#define VMOBILE_FORWARDRENDERER_VERSION_2        2                                  // Resolution Mode support
-#define VMOBILE_FORWARDRENDERER_VERSION_3        3                                  // Resolution Tolerance
-#define VMOBILE_FORWARDRENDERER_VERSION_CURRENT  VMOBILE_FORWARDRENDERER_VERSION_3  // Current version
+#define VMOBILE_FORWARDRENDERER_VERSION_0        0    // Initial version
+#define VMOBILE_FORWARDRENDERER_VERSION_1        1    // Migrated to common base class VRendererNodeCommon
+#define VMOBILE_FORWARDRENDERER_VERSION_2        2    // Resolution Mode support
+#define VMOBILE_FORWARDRENDERER_VERSION_3        3    // Resolution Tolerance
+#define VMOBILE_FORWARDRENDERER_VERSION_4        4    // Interleaved translucency sorting
+#define VMOBILE_FORWARDRENDERER_VERSION_CURRENT  4    // Current version
 
 
 /// \brief
@@ -149,6 +150,25 @@ public:
   }
 
   /// \brief
+  ///   Use this method to enforce rendering into an off-screen context.
+  /// 
+  /// \param pObject
+  ///   The object which indicates that it needs/does not need an off-screen context.
+  ///
+  /// \param bStatus
+  ///   True to enforce rendering into an off-screen context, false to indicate that the specified object 
+  ///   does not require rendering into an off-screen context.
+  ///
+  /// \note
+  ///   As soon as the state of enforcing the rendering into an off-screen context changes the renderer will be 
+  ///   re-initialized.
+  EFFECTS_IMPEXP virtual void SetRequiresOffscreenContext(void* pObject, bool bStatus) HKV_OVERRIDE;
+
+  /// \brief
+  ///   Returns whether the renderer node is enforced to render into an off-screen context.
+  EFFECTS_IMPEXP virtual bool GetRequiresOffscreenContext() const HKV_OVERRIDE;
+
+  /// \brief
   ///   Initializes the mobile forward rendering system.
   ///
   /// \sa
@@ -197,7 +217,27 @@ public:
   ///   Returns whether bilinear filtering is used for upscaling the render target. Only meaningful if upscaling is actually used, i.e. the rendering resolution differs from the target/display resolution.
   inline bool GetUpscaleFiltering() const { return UseUpscaleFiltering ? true : false; }
 
-  
+  /// \brief
+  ///   Returns whether the Mobile Forward Rendering System is using interleaved translucency sorting.
+  ///
+  /// \return
+  ///   Whether interleaved translucency sorting is used or not
+  inline bool IsUsingInterleavedTranslucencySorting() const { return UseInterleavedTranslucencySorting != FALSE; }
+
+  /// \brief
+  ///   Specifies whether interleaved translucency sorting should be used.
+  ///
+  /// The renderer node may not be initialized when changing this setting.
+  ///
+  /// \param bUseInterleavedTranslucencySorting
+  ///   If true, the Mobile Forward Rendering System will render all kind of translucenct objects from far to near.
+  ///   This feature enables a better visual appearance, but may cost some performance, because - based of the order
+  ///   of different type of objects, more state changes on the GPU could be required.
+  ///   If false, the traditional sorting is used, where each type of object (e.g. entities, static sub meshes,
+  ///   particles) are only sorted within each self and the render order (e.g. first all static sub meshes, then
+  ///   all entities etc.) is fixed.
+  EFFECTS_IMPEXP virtual void SetUseInterleavedTranslucencySorting(bool bUseInterleavedTranslucencySorting);
+
   static EFFECTS_IMPEXP VCallback OnSetResolution;  ///< Callback triggered by the VMobileForwardRenderer whenever it needs to determine the rendering resolution.
 
 
@@ -209,8 +249,8 @@ public:
   // INTERNAL:
   EFFECTS_IMPEXP void GetTargetSizeFromDeviceDPI(const int *pOriginalSize, int *pTargetSize) const;
   EFFECTS_IMPEXP void DetermineRenderResolution();
-  EFFECTS_IMPEXP void SetUpscaling(bool bStatus, int iWidth, int iHeight);
-  inline bool IsUsingUpscaling() const { return m_spUpscaleTargetContext != NULL; }
+  EFFECTS_IMPEXP void SetUpscaling(bool bStatus);
+  EFFECTS_IMPEXP bool IsUsingUpscaling() const;
 
   EFFECTS_IMPEXP void CreateOffscreenContext();
   EFFECTS_IMPEXP void RemoveOffscreenContext();
@@ -240,16 +280,18 @@ public:
   float DesiredRenderingDpi;
   float ResolutionTolerance;
   BOOL UseUpscaleFiltering;
+  BOOL UseInterleavedTranslucencySorting;
 
 #endif
 
 protected:
+  int m_iOffscreenContextSize[2];
+  bool m_bOffscreenContextRequired;
+  VMap<void*, bool> m_objectsRequiringOffscreenContext;
+
   VisRenderableTexturePtr m_spOffscreenRenderTarget;
   VisRenderableTexturePtr m_spOffscreenDepthStencilTarget;
   VisRenderContextPtr m_spOffscreenContext;
-  VisRenderContextPtr m_spUpscaleTargetContext;
-  VisRenderContextPtr m_spOriginalSizeTargetContext;
-  VisRenderContextPtr m_spStoreFinalTargetContext;
 
   IVisShaderProviderPtr oldShaderProvider;
   IVisShaderProviderPtr mobileShaderProvider;
@@ -259,7 +301,7 @@ protected:
 #endif  // VMOBILE_FORWARDRENDERER_HPP_INCLUDED
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -25,11 +25,31 @@ HK_FORCE_INLINE void hkcdPlanarGeometryPlanesCollection::getPlane(PlaneId planeI
 }
 
 //
+//	Advanced use. Accesses the plane having the given Id.
+
+HK_FORCE_INLINE hkcdPlanarGeometryPlanesCollection::Plane& hkcdPlanarGeometryPlanesCollection::accessPlane(PlaneId planeId)
+{
+	HK_ASSERT(0x3296464, !(planeId.value() & hkcdPlanarGeometryPrimitives::FLIPPED_PLANE_FLAG));
+	const int idx = planeId.value() & (~hkcdPlanarGeometryPrimitives::FLIPPED_PLANE_FLAG);
+	return m_planes[idx];
+}
+
+//
 //	Gets the requested world boundary plane
 
 HK_FORCE_INLINE const hkcdPlanarGeometryPrimitives::Plane& hkcdPlanarGeometryPlanesCollection::getBoundaryPlane(Bounds b) const
 {
 	return m_planes[b];
+}
+
+//
+//	Allocates a new plane
+
+HK_FORCE_INLINE hkcdPlanarGeometryPlanesCollection::PlaneId hkcdPlanarGeometryPlanesCollection::allocPlane()
+{
+	const PlaneId planeId(m_planes.getSize());
+	m_planes.expandOne();
+	return planeId;
 }
 
 //
@@ -129,9 +149,9 @@ HK_FORCE_INLINE void hkcdPlanarGeometryPlanesCollection::clearCaches()
 HK_FORCE_INLINE void hkcdPlanarGeometryPlanesCollection::lock() const
 {
 #if !defined(HK_PLATFORM_SPU)
-	m_criticalAccess.enter();
+	m_criticalAccess->enter();
 #else
-	hkCriticalSection::enter(&m_criticalAccess);
+	hkCriticalSection::enter(m_criticalAccess);
 #endif
 }
 
@@ -141,14 +161,14 @@ HK_FORCE_INLINE void hkcdPlanarGeometryPlanesCollection::lock() const
 HK_FORCE_INLINE void hkcdPlanarGeometryPlanesCollection::unlock() const
 {
 #if !defined(HK_PLATFORM_SPU)
-	m_criticalAccess.leave();
+	m_criticalAccess->leave();
 #else
-	hkCriticalSection::leave(&m_criticalAccess);
+	hkCriticalSection::leave(m_criticalAccess);
 #endif
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

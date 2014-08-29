@@ -14,6 +14,7 @@
 	/// State context that relates a silhouette generator to a particular nav mesh section
 struct hkaiSilhouetteGeneratorSectionContext
 {
+	//+version(1)
 	HK_DECLARE_REFLECTION();
 	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_AI_NAVMESH,hkaiSilhouetteGeneratorSectionContext);
 
@@ -52,7 +53,7 @@ public:
 #endif // HK_AI_SILHOUETTE_GENERATOR_SECTION_CONTEXT
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

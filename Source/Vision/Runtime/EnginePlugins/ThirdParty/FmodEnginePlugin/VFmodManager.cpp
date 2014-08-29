@@ -10,6 +10,7 @@
 #include <Vision/Runtime/Engine/SceneElements/VisApiTriggerComponent.hpp>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Scripting/VScriptManager.hpp>
 #include <Vision/Runtime/EnginePlugins/ThirdParty/FmodEnginePlugin/VFmodManager.hpp>
+#include <Vision/Runtime/EnginePlugins/ThirdParty/FmodEnginePlugin/VFmodIncludes.hpp>
 
 #if defined(_VISION_XENON)
 #include <Vision/Runtime/EnginePlugins/ThirdParty/FmodEnginePlugin/VFmodXenon.inl>
@@ -17,7 +18,7 @@
 VMapPtrToUInt g_FmodAllocations;
 #endif
 
-#include <Vision/Runtime/Base/System/Memory/VMemDbg.hpp>
+
 
 
 // static variables
@@ -32,6 +33,7 @@ FMOD_RESULT F_CALLBACK VisionFM_Open(const char *name, int unicode, unsigned int
 FMOD_RESULT F_CALLBACK VisionFM_Close(void *handle, void *userdata);
 FMOD_RESULT F_CALLBACK VisionFM_Read(void *handle, void *buffer, unsigned int sizebytes, unsigned int *bytesread, void *userdata);
 FMOD_RESULT F_CALLBACK VisionFM_Seek(void *handle, unsigned int pos, void *userdata);
+FMOD_RESULT F_CALLBACK VisionFM_System(FMOD_SYSTEM *system, FMOD_SYSTEM_CALLBACKTYPE type, void *commanddata1, void *commanddata2);
 
 // forward declaration of Fmod memory callbacks
 void* F_CALLBACK VisionFM_Alloc(unsigned int size, FMOD_MEMORY_TYPE type, const char *sourcestr);
@@ -47,27 +49,32 @@ extern "C" int luaopen_FireLight(lua_State *);
 // -------------------------------------------------------------------------- //
 // Constructor/ Destructor                                                 
 // -------------------------------------------------------------------------- //
-VFmodManager::VFmodManager() 
-{
-  m_bAnyStopped = false;
-  m_pListenerObject = NULL;
-
-  m_pSoundResourceManager = NULL;
-  m_pEventGroupManager = NULL;
-
-  m_pEventSystem = NULL;
-  m_pSystem = NULL;
-  pMemoryPool = NULL;
-  m_pMasterGroup = NULL;
-  m_pMusicGroup = NULL;
-
-  m_fTimeLeftOver = 0.0f;
-
+VFmodManager::VFmodManager() :
+    m_pSoundResourceManager(NULL)
+  , m_pEventGroupManager(NULL)
+  , m_config()
+  , m_soundInstances()
+  , m_events()
+  , m_collisionMeshes()
+  , m_reverbs()
+  , m_pListenerObject(NULL)
+  , m_bOutputDevicePresent(false)
+  , m_bAnyStopped(false)
+  , m_pEventSystem(NULL)
+  , m_pSystem(NULL)
+  , pMemoryPool(NULL)
+  , m_pMasterGroup(NULL)
+  , m_pMusicGroup(NULL)
 #if defined(_VISION_MOBILE)
-  m_bMasterGroupPausedInForeground = false;
-  m_bMusicGroupPausedInForeground = false;
-  m_bMasterEventCategoryPausedInForeground = false;
+  , m_bMasterGroupPausedInForeground(false)
+  , m_bMusicGroupPausedInForeground(false)
+  , m_bMasterEventCategoryPausedInForeground(false)
 #endif
+  , m_vLastListenerPosition(0)
+  , m_bLastListenerPositionValid(false)
+  , m_iFrameOfLastUpdate(0)
+  , m_fTimeLeftOver(0.0f)
+{
 }
 
 VFmodManager::~VFmodManager()
@@ -116,7 +123,6 @@ void VFmodManager::OneTimeInit()
 #endif
  
   IVScriptManager::OnRegisterScriptFunctions += this;
-  IVScriptManager::OnScriptProxyCreation += this;
 }
 
 void VFmodManager::OneTimeDeInit()
@@ -140,12 +146,11 @@ void VFmodManager::OneTimeDeInit()
 #endif
 
   IVScriptManager::OnRegisterScriptFunctions -= this;
-  IVScriptManager::OnScriptProxyCreation -= this;
 }
 
 bool VFmodManager::IsInitialized() const
 {
-  return (m_pEventSystem != NULL);
+  return (m_pEventSystem != NULL) && m_bOutputDevicePresent;
 }
 
 void VFmodManager::InitFmodSystem()
@@ -214,6 +219,9 @@ void VFmodManager::InitFmodSystem()
   // install file manager callbacks
   FMOD_ERRORCHECK(m_pSystem->setFileSystem(VisionFM_Open, VisionFM_Close, VisionFM_Read, VisionFM_Seek, NULL, NULL, 4096));
 
+  //listen to system events (eg. new device - headphones)
+  FMOD_ERRORCHECK(m_pSystem->setCallback(VisionFM_System));
+
 #ifdef _VISION_ANDROID
   // Increase DSP buffer size on Android
   {
@@ -228,6 +236,52 @@ void VFmodManager::InitFmodSystem()
     #endif
   }
 #endif
+
+  VFmodSoundInit_e initResult = InitDevice();
+
+  switch(initResult)
+  {
+    case VFMODSOUNDINIT_NO_HARDWARE: hkvLog::Warning("No sound card present!"); break;
+    case VFMODSOUNDINIT_NO_SPEAKERS: hkvLog::Warning("No speakers or headphones connected."); break;
+    default: //case VSOUNDINIT_OK:
+      hkvLog::Info("Sound successfully initialized.");
+      break;
+  }
+}
+
+bool VFmodManager::ResetDriver()
+{
+  if(m_pSystem==NULL)
+    return false;
+
+  int maxDrivers;  
+  FMOD_RESULT res = m_pSystem->getNumDrivers(&maxDrivers);
+
+  if(res!=FMOD_OK)
+    return false;
+
+  for(int i=0;i<maxDrivers;i++)
+  {
+    FMOD_GUID guid;
+    res = m_pSystem->getDriverInfo(i, NULL, 0, &guid);
+
+    if(res==FMOD_OK)
+    { 
+      res = m_pSystem->setDriver(i);
+      if(res==FMOD_OK)
+        return true;
+    }
+  }
+
+  return false;
+}
+
+VFmodManager::VFmodSoundInit_e VFmodManager::InitDevice()
+{
+  bool bOutputPresent = ResetDriver();
+
+  if(!bOutputPresent || m_bOutputDevicePresent) //no further actions needed
+    return VFMODSOUNDINIT_NO_SPEAKERS;
 
 #ifndef _VISION_PS3
 
@@ -248,15 +302,17 @@ void VFmodManager::InitFmodSystem()
 
 #endif
 
-  // In case of missing sound card, we need to deinitialize the Fmod Event System.
+  // In case of missing sound card, we need to de-initialize the Fmod Event System.
   // However it is still ensured, that the application can be run, by preventing calls to native Fmod functions.
   if(result != FMOD_OK) 
   {
     DeInitFmodSystem();
-    hkvLog::Warning("The application will run without sound output!");
-    return;
+    return VFMODSOUNDINIT_NO_HARDWARE;
   }
+  m_bOutputDevicePresent = true;
 
+  VisionFM_System(NULL, FMOD_SYSTEM_CALLBACKTYPE_DEVICELISTCHANGED, NULL, NULL);
+  
   FMOD_ERRORCHECK(m_pSystem->set3DSettings(1.0, m_config.fFmodToVisionScale, 1.0f));
 
   // get the master channel group where all sound instances go to initially
@@ -269,6 +325,8 @@ void VFmodManager::InitFmodSystem()
 
   IVisCallbackDataObject_cl data(&OnAfterInitializeFmod);
   OnAfterInitializeFmod.TriggerCallbacks(&data);
+
+  return VFMODSOUNDINIT_OK;
 }
 
 void VFmodManager::DeInitFmodSystem()
@@ -281,10 +339,16 @@ void VFmodManager::DeInitFmodSystem()
 
   if (m_pEventSystem)
   { 
-    m_pMusicGroup->release();
-    m_pMusicGroup = NULL;
+    if(m_pMusicGroup!=NULL)
+    {
+      m_pMusicGroup->release();
+      m_pMusicGroup = NULL;
+    }
 
-    FMOD_ERRORCHECK( m_pEventSystem->release());
+    if(m_pEventSystem!=NULL)
+    {
+      FMOD_ERRORCHECK( m_pEventSystem->release());
+    }
 #ifdef VFMOD_SUPPORTS_NETWORK
     if (m_config.bUseNetworkSystem)
       FMOD::NetEventSystem_Shutdown();
@@ -292,6 +356,8 @@ void VFmodManager::DeInitFmodSystem()
     m_pEventSystem = NULL;
     m_pSystem = NULL;
   }
+
+  m_bOutputDevicePresent = false;
 
   if (pMemoryPool)
   {
@@ -386,7 +452,7 @@ FMOD::EventProject* VFmodManager::LoadEventProject(const char *szEventProjectPat
       FMOD_WARNINGCHECK(m_pEventSystem->load(sEventProjectPath, 0, &pEventProject));
       if (!pEventProject)
         return NULL;
-      hkvLog::Warning("Fmod Warning: platform-specific %s.fev could not be loaded, fall back to platform-nonspecific version", sEventProjectPath.AsChar());
+      hkvLog::Warning("Fmod Warning: platform-specific %s could not be loaded, fall back to platform-nonspecific version", sEventProjectPath.AsChar());
     }
   }
 
@@ -590,30 +656,6 @@ void VFmodManager::OnHandleCallback(IVisCallbackDataObject_cl *pData)
     return;
   }
 
-  if (pData->m_pSender==&IVScriptManager::OnScriptProxyCreation)
-  {
-    VScriptCreateStackProxyObject * pScriptData = (VScriptCreateStackProxyObject *)pData;
-
-    //process data only as far as not handled until now
-    if (!pScriptData->m_bProcessed)
-    {
-      int iRetParams = 0;
-      if (pScriptData->m_pInstance->IsOfType(V_RUNTIME_CLASS(VFmodSoundObject)))
-        iRetParams = LUA_CallStaticFunction(pScriptData->m_pLuaState,"FireLight","VFmodSoundObject","Cast","O>O",pScriptData->m_pInstance);
-      else if (pScriptData->m_pInstance->IsOfType(V_RUNTIME_CLASS(VFmodEvent)))
-        iRetParams = LUA_CallStaticFunction(pScriptData->m_pLuaState,"FireLight","VFmodEvent","Cast","O>O",pScriptData->m_pInstance);
-
-      if (iRetParams>0)
-      {
-        if(lua_isnil(pScriptData->m_pLuaState, -1))   
-          lua_pop(pScriptData->m_pLuaState, iRetParams);
-        else                                         
-          pScriptData->m_bProcessed = true;
-      }
-    }
-    return;
-  }
-
   if(pData->m_pSender==&IVScriptManager::OnRegisterScriptFunctions)
   {
     IVScriptManager* pSM = Vision::GetScriptManager();
@@ -701,19 +743,40 @@ void VFmodManager::OnHandleCallback(IVisCallbackDataObject_cl *pData)
 
 void VFmodManager::RunTick(float fTimeDelta)
 {
-  if (!IsInitialized())
-    return;
-
   VISION_PROFILE_FUNCTION(PROFILING_FMOD_OVERALL);
+
+  if (!IsInitialized())
+  {
+    if (!IsOutputDevicePresent())
+      InitDevice();
+
+    return; 
+  }
 
   // profiling scope
   {
     VISION_PROFILE_FUNCTION(PROFILING_FMOD_PUREUPDATE);
 
     VASSERT(m_pEventSystem!=NULL);
-    
+
     // update Fmod listener attributes
-    VisObject3D_cl *pListener = m_pListenerObject ? m_pListenerObject : Vision::Camera.GetMainCamera();
+    VisObject3D_cl *pListener = m_pListenerObject;
+    if (pListener == NULL)
+    {
+      // The listener is the main camera. Check for teleportation since the last Fmod update, in
+      // which case we won't use the position difference to calculate the listener speed.
+      VisContextCamera_cl* pCamera = Vision::Camera.GetMainCamera();
+      VisRenderContext_cl* pContext = VisRenderContext_cl::GetMainRenderContext();
+      if (pCamera != NULL && pContext != NULL)
+      {
+        if (m_bLastListenerPositionValid && pCamera->GetLastTeleported() > m_iFrameOfLastUpdate)
+          m_bLastListenerPositionValid = false;
+
+        m_iFrameOfLastUpdate = pContext->GetLastRenderedFrame();
+        pListener = pCamera;
+      }
+    }
+
     if (!pListener)
       return;
 
@@ -722,29 +785,34 @@ void VFmodManager::RunTick(float fTimeDelta)
             vRight(pListener->GetObjDir_Right()),
             vUp(pListener->GetObjDir_Up());
 
+    // Determine the camera velocity based on the previous known position
+    hkvVec3 vCamVel(m_bLastListenerPositionValid && (fTimeDelta > 0.f) ? (vCamPos - m_vLastListenerPosition) * (1.f / fTimeDelta) : hkvVec3::ZeroVector());
+    m_vLastListenerPosition = vCamPos;
+    m_bLastListenerPositionValid = true;
+
     vUp = -vUp; // compensate for coordinate system
-    m_pEventSystem->set3DListenerAttributes(0, (FMOD_VECTOR *)&vCamPos, NULL, (FMOD_VECTOR *)&vDir, (FMOD_VECTOR *)&vUp); // no speed (yet)
-    
-    
+    m_pEventSystem->set3DListenerAttributes(0, (FMOD_VECTOR *)&vCamPos, (FMOD_VECTOR *)&vCamVel, (FMOD_VECTOR *)&vDir, (FMOD_VECTOR *)&vUp);
+
     // update all sound objects 
-    SoundInstances().Update();
+    SoundInstances().Update(fTimeDelta);
 
     // update all events 
-    Events().Update();
+    Events().Update(fTimeDelta);
 
     // update Fmod event system
     m_fTimeLeftOver += fTimeDelta;
     if (m_fTimeLeftOver > m_config.fTimeStep)
     { 
       m_pEventSystem->update();
+
 #ifdef VFMOD_SUPPORTS_NETWORK
       if (m_config.bUseNetworkSystem)
         FMOD::NetEventSystem_Update();
 #endif
       m_fTimeLeftOver = hkvMath::mod (m_fTimeLeftOver, m_config.fTimeStep);
     }
-  } 
-  
+  }
+
   // do not purge sounds/ events in vForge, in order to allow toggling playback via hotspot button
   if (Vision::Editor.IsInEditor())
     return;  
@@ -767,6 +835,12 @@ bool VFmodManager::GetMemoryStats(int *pCurrentMemSize, int *pMaxMemSize, bool b
     return false;
   FMOD_RESULT result = FMOD::Memory_GetStats(pCurrentMemSize, pMaxMemSize, bBlocking);
   return (result==FMOD_OK);
+}
+
+void VFmodManager::SetListenerObject(VisObject3D_cl *pListener)
+{ 
+  m_pListenerObject = pListener;
+  m_bLastListenerPositionValid = false;
 }
 
 bool VFmodManager::SetAmbientReverbProperties(VFmodReverbProps &properties)
@@ -890,6 +964,14 @@ FMOD_RESULT F_CALLBACK VisionFM_Seek(void *handle, unsigned int pos, void *userd
 }
 
 
+FMOD_RESULT F_CALLBACK VisionFM_System(FMOD_SYSTEM *system, FMOD_SYSTEM_CALLBACKTYPE type, void *commanddata1, void *commanddata2)
+{
+  if(type==FMOD_SYSTEM_CALLBACKTYPE_DEVICELISTCHANGED) //this usually happens when headphones get plugged/unplugged
+    VFmodManager::GlobalManager().ResetDriver();
+
+  return FMOD_OK;
+}
+
 // -------------------------------------------------------------------------- //
 // Fmod memory callbacks                                           
 // -------------------------------------------------------------------------- //
@@ -963,7 +1045,7 @@ void FMOD_ErrorCheck(FMOD_RESULT result, bool bFatal, int line, const char *szFi
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

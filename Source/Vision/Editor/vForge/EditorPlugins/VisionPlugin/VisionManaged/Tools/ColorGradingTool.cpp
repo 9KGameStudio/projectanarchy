@@ -64,6 +64,96 @@ struct LUT_t
   VColorRef *m_pDownSampled;
 };
 
+static bool WriteColorGradingTexture(int iEdgeSize, VColorRef* pFinal, const char* szFile)
+{
+  FILE* pFile = fopen(szFile, "wbN");
+
+  if (!pFile)
+  {
+    return false;
+  }
+
+  struct DDS_PIXELFORMAT 
+  {
+    DWORD dwSize;
+    DWORD dwFlags;
+    DWORD dwFourCC;
+    DWORD dwRGBBitCount;
+    DWORD dwRBitMask;
+    DWORD dwGBitMask;
+    DWORD dwBBitMask;
+    DWORD dwABitMask;
+  };
+
+  struct DDS_HEADER
+  {
+    DWORD           dwSize;
+    DWORD           dwFlags;
+    DWORD           dwHeight;
+    DWORD           dwWidth;
+    DWORD           dwPitchOrLinearSize;
+    DWORD           dwDepth;
+    DWORD           dwMipMapCount;
+    DWORD           dwReserved1[11];
+    DDS_PIXELFORMAT ddspf;
+    DWORD           dwCaps;
+    DWORD           dwCaps2;
+    DWORD           dwCaps3;
+    DWORD           dwCaps4;
+    DWORD           dwReserved2;
+
+  };
+
+  const DWORD vDDPF_RGB = 0x40;
+  const DWORD vDDPF_ALPHAPIXELS = 0x1;
+
+  const DWORD DDSD_CAPS         = 0x1;
+  const DWORD DDSD_HEIGHT       = 0x2;
+  const DWORD DDSD_WIDTH        = 0x4;
+  const DWORD DDSD_PIXELFORMAT  = 0x1000;
+  const DWORD DDSD_MIPMAPCOUNT  = 0x20000;
+  const DWORD DDSD_DEPTH        = 0x800000;
+
+  const DWORD DDSCAPS_COMPLEX   = 0x8;
+  const DWORD DDSCAPS_TEXTURE   = 0x1000;
+
+  const DWORD DDSCAPS2_VOLUME   = 	0x200000;
+
+  V_COMPILE_ASSERT(sizeof(DDS_PIXELFORMAT) == 32);
+  V_COMPILE_ASSERT(sizeof(DDS_HEADER) == 124);
+
+  DDS_HEADER h;
+  memset(&h, 0, sizeof(h));
+  h.dwSize = sizeof(DDS_HEADER);
+  h.dwFlags = DDSD_CAPS | DDSD_HEIGHT | DDSD_WIDTH | DDSD_PIXELFORMAT | DDSD_DEPTH;
+  h.dwHeight = iEdgeSize;
+  h.dwWidth = iEdgeSize;
+  h.dwDepth = iEdgeSize;
+  h.dwPitchOrLinearSize = 0;
+  h.dwMipMapCount = 1;
+  h.dwCaps = DDSCAPS_TEXTURE | DDSCAPS_COMPLEX;
+  h.ddspf.dwFlags = vDDPF_RGB | vDDPF_ALPHAPIXELS;
+  h.ddspf.dwSize = sizeof(DDS_PIXELFORMAT);
+  h.ddspf.dwFourCC = 0;
+  h.ddspf.dwRGBBitCount = 32;
+  h.ddspf.dwRBitMask = 0x00ff0000;
+  h.ddspf.dwGBitMask = 0x0000ff00;
+  h.ddspf.dwBBitMask = 0x000000ff;
+  h.ddspf.dwABitMask = 0xff000000;
+  h.dwCaps2 = DDSCAPS2_VOLUME;
+
+  DWORD dwMagic = ' SDD';
+
+  fwrite(&dwMagic, sizeof(DWORD), 1, pFile);
+  fwrite(&h, sizeof(DDS_HEADER), 1, pFile);
+
+  VCompressionHelper::UnSwizzleData(pFinal, (UBYTE*) pFinal, iEdgeSize * iEdgeSize * iEdgeSize, "BGRA", 4);
+
+  fwrite(pFinal, sizeof(VColorRef) * iEdgeSize * iEdgeSize * iEdgeSize, 1, pFile);
+
+  fclose(pFile);
+  return true;
+}
 
 String ^ ColorGradingTool::CreateGradingLUT(String ^origFile, String ^targetFile, String ^tragetLUTFile, int iEdgeSize)
 {
@@ -134,16 +224,7 @@ String ^ ColorGradingTool::CreateGradingLUT(String ^origFile, String ^targetFile
   }
   pTex->UpdateBox(0, 0,0,0, iEdgeSize,iEdgeSize,iEdgeSize, iEdgeSize*sizeof(VColorRef),iEdgeSize*iEdgeSize*sizeof(VColorRef),pFinal, V_TEXTURE_LOCKFLAG_DISCARDABLE);
 
-  bool bRes = false;
-
-#if defined(_VR_DX11) && _VR_DX11_SUPPORTS_D3DX
-    bRes = D3DX11SaveTextureToFile(VVideo::GetD3DDeviceContext(), pTex->GetD3DResource(),D3DX11_IFF_DDS,sDest.AsChar())==S_OK;
-#elif !defined(_VR_DX11)
-    bRes = D3DXSaveTextureToFile(sDest.AsChar(),D3DXIFF_DDS,pTex->GetD3DInterface(),NULL)==S_OK;
-#else
-    delete pLUT;
-    return "Saving of 3D textures is not supported in this build (D3DX is not available). Please try another vForge build, such as DX9 or a Visual Studio 2010 build.";
-#endif
+  bool bRes = WriteColorGradingTexture(iEdgeSize, pFinal, sDest.AsChar());
 
   delete pLUT;
 
@@ -165,7 +246,7 @@ String ^ ColorGradingTool::CreateGradingLUT(String ^origFile, String ^targetFile
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -6,8 +6,6 @@
  *
  */
 
-#if !defined(HK_PLATFORM_SPU)
-
 HK_FORCE_INLINE hkpConstraintData::hkpConstraintData()
 {
 	//HK_ASSERT3(0x59ba4bcb, (hkUlong(this) & 0xf) == 0, "Address '" << (void*)this <<"' of hkpConstraintData is not 16 byte aligned" );
@@ -19,10 +17,8 @@ hkpConstraintData::~hkpConstraintData()
 
 }
 
-#endif
-
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

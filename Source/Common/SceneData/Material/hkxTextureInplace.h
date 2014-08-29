@@ -9,11 +9,11 @@
 #define HKSCENEDATA_MATERIAL_HKXTEXTUREINPLACE_HKCLASS_H
 
 /// hkxTextureInplace meta information
-extern const class hkClass hkxTextureInplaceClass;
+extern HK_EXPORT_COMMON const class hkClass hkxTextureInplaceClass;
 
 /// A memory based (inplace in the import cinfo) texture. Limited representation at
 /// the moment.
-class hkxTextureInplace : public hkReferencedObject
+class HK_EXPORT_COMMON hkxTextureInplace : public hkReferencedObject
 {
 	//+vtable(true)
 	//+version(1)
@@ -24,6 +24,9 @@ class hkxTextureInplace : public hkReferencedObject
 
 		hkxTextureInplace() { }
 		hkxTextureInplace(hkFinishLoadedObjectFlag f) : hkReferencedObject(f), m_data(f), m_name(f), m_originalFilename(f) { }
+
+		/// Compares this texture with another. Returns true if they are equal
+		bool equals(const hkxTextureInplace* other) const;
 
 		//
 		// Members
@@ -44,7 +47,7 @@ class hkxTextureInplace : public hkReferencedObject
 #endif // HKSCENEDATA_MATERIAL_HKXTEXTUREINPLACE_HKCLASS_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

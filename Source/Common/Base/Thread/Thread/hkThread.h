@@ -9,7 +9,7 @@
 #define HKBASE_HK_THREAD_H
 
 /// A platform independent wrapper for a thread
-class hkThread
+class HK_EXPORT_COMMON hkThread
 {
 	public:
 
@@ -23,10 +23,18 @@ class hkThread
 
 		// On Win32 and Xbox360, a stack size of 0 means the thread defaults to the executable's stack size
 		// On PlayStation(R)3, we explicitly set the stack size to 256K
+		// On PlayStation(R)4, we explicitly set the stack size to 512K in Debug/Dev configurations and 128K in Release.
 		// On other platforms (e.g. posix), this is ignored
 		enum {
 #ifdef HK_PLATFORM_PS3_PPU
 			HK_THREAD_DEFAULT_STACKSIZE = 0x40000,
+#elif defined(HK_PLATFORM_PS4)
+#	ifdef HK_DEBUG
+			HK_THREAD_DEFAULT_STACKSIZE = 0x80000,
+#	else
+			HK_THREAD_DEFAULT_STACKSIZE = 0x20000,
+#endif // PS4
+
 #else
 			HK_THREAD_DEFAULT_STACKSIZE = 0,
 #endif
@@ -70,7 +78,7 @@ class hkThread
 #endif // HKBASE_HK_THREAD_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

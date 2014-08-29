@@ -16,7 +16,7 @@ using CSharpFramework.Shapes;
 using ManagedBase;
 using CSharpFramework.Scene;
 
-namespace VisionEditorPlugin.Tests
+namespace EditorTests.Basic
 {
   [TestFixture]
   public class MaterialPickingTest
@@ -126,7 +126,7 @@ namespace VisionEditorPlugin.Tests
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

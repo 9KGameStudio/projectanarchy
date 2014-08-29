@@ -28,7 +28,7 @@
 	/// one mount, it will still be present after removing the first one.
 	/// Similarly when iterating, a file with the same name but different 
 	/// contents may be returned.
-class hkUnionFileSystem : public hkFileSystem
+class HK_EXPORT_COMMON hkUnionFileSystem : public hkFileSystem
 {
 	public:
 
@@ -47,7 +47,7 @@ class hkUnionFileSystem : public hkFileSystem
 		virtual hkFileSystem* resolvePath( const char* pathIn, hkStringBuf& pathOut );
 
 			/// 
-		struct Mount
+		struct HK_EXPORT_COMMON Mount
 		{
 			HK_DECLARE_PLACEMENT_ALLOCATOR();
 
@@ -71,7 +71,7 @@ class hkUnionFileSystem : public hkFileSystem
 #endif //HK_hkUnionFileSystem_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

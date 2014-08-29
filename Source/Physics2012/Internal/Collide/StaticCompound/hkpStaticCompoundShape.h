@@ -16,7 +16,7 @@
 
 struct hkpAabbCastCollector;
 
-extern const hkClass hkcdStaticTreeDefaultTreeStorage6Class;
+extern HK_EXPORT_COMMON const hkClass hkcdStaticTreeDefaultTreeStorage6Class;
 
 	/// A shape containing a static set of other hkpShape instances, positioned using hkQsTransforms,
 	/// which allow for non-uniform scaling. A bounding volume wraps the instance AABBs, so it it not
@@ -276,7 +276,7 @@ class hkpStaticCompoundShape : public hkpBvTreeShape, public hkpShapeContainer
 #endif // HKP_STATIC_COMPOUND_SHAPE_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

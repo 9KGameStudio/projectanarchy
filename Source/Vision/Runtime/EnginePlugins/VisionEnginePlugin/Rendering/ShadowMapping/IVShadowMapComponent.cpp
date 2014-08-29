@@ -36,6 +36,7 @@ IVShadowMapComponent::IVShadowMapComponent() :
   Bias[2] = 18.0f;
   Bias[3] = 54.0f;
   SlopeScaled[0] = SlopeScaled[1] = SlopeScaled[2] = SlopeScaled[3] = 0.0f;
+  m_componentMap[m_iRendererNodeIndex] = this;
 
   Vision::Callbacks.OnVisibilityPerformed += this;
   Vision::Callbacks.OnRendererNodeChanged += this;
@@ -65,6 +66,7 @@ IVShadowMapComponent::IVShadowMapComponent(int iRendererNodeIndex) :
   m_bIsInitialized(false)
 {
   m_iRendererNodeIndex = iRendererNodeIndex;
+  m_componentMap[m_iRendererNodeIndex] = this;
 
   Bias[0] = 2.0f;
   Bias[1] = 6.0f;
@@ -95,6 +97,12 @@ IVShadowMapComponent::~IVShadowMapComponent()
 
   m_pRendererNode = NULL;
   DeInitializeRenderer();
+
+  for (int i = 0; i < m_componentCopyList.GetSize(); ++i)
+  {
+    m_componentCopyList[i]->SetOwner(NULL);
+    delete m_componentCopyList[i];
+  }
 }
 
 bool IVShadowMapComponent::InitializeRenderer()
@@ -143,6 +151,28 @@ void IVShadowMapComponent::DeInitializeRenderer()
   m_pRendererNode = NULL;
 
   m_bIsInitialized = false;
+}
+
+void IVShadowMapComponent::CloneProperties(IVShadowMapComponent* pTargetComponent)
+{
+  pTargetComponent->SetShadowMapSize(ShadowMapSize);
+  pTargetComponent->SetBias(Bias, 4);
+  pTargetComponent->SetSlopeScaled(SlopeScaled, 4);  
+  pTargetComponent->SetFilterBitmask(FilterBitmask);
+  pTargetComponent->SetGeometryTypes(GeometryTypes);
+  pTargetComponent->SetUseQuarterSizeShadowTexture(UseQuarterSizeShadowTexture);  
+  pTargetComponent->SetShadowMappingMode(ShadowMappingMode);  
+  pTargetComponent->SetSampleRadius(SampleRadius);
+  pTargetComponent->SetUseSurfaceSpecificShadowShaders(UseSurfaceSpecificShadowShaders);
+  pTargetComponent->SetNearClip(NearClip);
+  pTargetComponent->SetFrontFacingShadows(FrontFacingShadows);
+  pTargetComponent->SetEnabled(Enabled);
+  pTargetComponent->SetGeometryTypes(GeometryTypes);
+  pTargetComponent->SetAmbientColor(AmbientColor);
+  pTargetComponent->SetShadowBoxExtrudeMultiplier(ShadowBoxExtrudeMultiplier);
+  pTargetComponent->SetSampleRadiusScaleWithDistance(SampleRadiusScaleWithDistance);
+  pTargetComponent->SetMaxDistanceToBlocker(MaxDistanceToBlocker);
+  pTargetComponent->SetUseSurfaceSpecificShadowShaders(UseSurfaceSpecificShadowShaders);
 }
 
 IVShadowMapFormat* IVShadowMapComponent::GetShadowMapFormat() const 
@@ -272,7 +302,7 @@ bool IVShadowMapComponent::SetVariable(const char *szName, const char *szValue)
   return true;
 }
 
-#if defined(WIN32) || defined(_VISION_DOC)
+#if defined(_VISION_WIN32) || defined(_VISION_DOC)
 
 void IVShadowMapComponent::GetVariableAttributes(VisVariable_cl* pVariable, VVariableAttributeInfo& destInfo)
 {
@@ -293,6 +323,16 @@ void IVShadowMapComponent::GetVariableAttributes(VisVariable_cl* pVariable, VVar
     if (!strcmp(pVariable->GetName(), "MaxDistanceToBlocker"))
       destInfo.m_bHidden = true;
   }
+
+  // if the name is related to the cascade array, only show the ones that are enabled:
+  const char *pArrayPos = strchr(pVariable->GetName(), '[');
+  if (pArrayPos!=NULL)
+  {
+    int iArrayIndex = (int)(pArrayPos[1]-'0');
+    if (iArrayIndex >= (int)GetCascadeCount())
+      destInfo.m_bHidden = true;
+  }
+
 }
 
 #endif
@@ -435,7 +475,6 @@ void IVShadowMapComponent::SetShadowMappingMode(VShadowMappingMode_e mode)
   }
 }
 
-
 void IVShadowMapComponent::SetShadowMapSize(unsigned int size)
 {
   ShadowMapSize = size;
@@ -540,6 +579,47 @@ void IVShadowMapComponent::SetEnabled(BOOL enabled)
     Disable();
 }
 
+void IVShadowMapComponent::EnableForRendererNode(int iRendererNodeIndex)
+{
+  if (iRendererNodeIndex == 0)
+  {
+    Enable();
+  }
+  else if (m_iRendererNodeIndex == 0)
+  {
+    // Create the copy instance and reassign renderer node index
+    IVShadowMapComponent* pShadowComponentCopy = static_cast<IVShadowMapComponent *>(GetTypeId()->CreateInstance());
+    pShadowComponentCopy->m_iRendererNodeIndex = iRendererNodeIndex;
+    // Clone source component properties
+    CloneProperties(pShadowComponentCopy);
+    // Initialize the copy
+    pShadowComponentCopy->SetOwner(GetOwner());
+    // Add the copy to the component copy list for memory management
+    m_componentCopyList.Append(pShadowComponentCopy);
+    // Update the component map (used by GetShadowMapComponent)
+    m_componentMap[iRendererNodeIndex] = pShadowComponentCopy;
+  }
+}
+
+void IVShadowMapComponent::DisableForRendererNode(int iRendererNodeIndex)
+{
+  if (iRendererNodeIndex == 0)
+  {
+    Disable();
+  }
+  else
+  {
+     IVShadowMapComponent* pComponentCopy = static_cast<IVShadowMapComponent*>(m_componentMap[iRendererNodeIndex]);
+     // Update the component list
+     m_componentCopyList.RemoveAt(m_componentCopyList.Find(pComponentCopy));
+     // Release the component copy
+     pComponentCopy->SetOwner(NULL);
+     delete pComponentCopy;
+     // Update the component map (used by GetShadowMapComponent)
+     m_componentMap[iRendererNodeIndex] = NULL;
+  }
+}
+
 VisMeshBuffer_cl* IVShadowMapComponent::GetLightVolumeMeshBuffer()
 {
   return m_pLightVolumeMeshBuffer;
@@ -553,7 +633,7 @@ void IVShadowMapComponent::GetLightVolumeMeshBufferIndexAndCount(int iCascade, i
 
 IVShadowMapComponent *IVShadowMapComponent::GetShadowMapComponent(VisLightSource_cl *pLight, VRendererNodeCommon *pRendererNode)
 {
-#if defined (WIN32)
+#if defined (_VISION_WIN32)
   if (Vision::Editor.GetIgnoreAdvancedEffects())
     return NULL;
 #endif
@@ -564,9 +644,15 @@ IVShadowMapComponent *IVShadowMapComponent::GetShadowMapComponent(VisLightSource
   {
     if (IVShadowMapComponent *pShadowMapComponent = vdynamic_cast<IVShadowMapComponent*>(*pComponents))
     {
-      if (pShadowMapComponent->IsEnabled() && pShadowMapComponent->GetRendererNode() == pRendererNode)
+      if (pShadowMapComponent->IsEnabled())
       {
-        return pShadowMapComponent;
+        int iRendererNodeIndex = Vision::Renderer.GetRendererNodeIndex(pRendererNode);
+        IVShadowMapComponent* pRendererNodeComponent = static_cast<IVShadowMapComponent*>(pShadowMapComponent->m_componentMap[iRendererNodeIndex]);
+        if (pRendererNodeComponent)
+        {
+          VASSERT(pRendererNodeComponent->GetRendererNode() == pRendererNode);
+          return pRendererNodeComponent;
+        }
       }
     }
   }
@@ -581,27 +667,27 @@ START_VAR_TABLE(IVShadowMapComponent, IVObjectComponent, "Abstract ShadowMap Com
   DEFINE_VAR_BOOL(IVShadowMapComponent, UseQuarterSizeShadowTexture, "Use quarter screen resolution for shadow calculation to increase performance", "FALSE", 0, 0);
   DEFINE_VAR_ENUM(IVShadowMapComponent, ShadowMappingMode, "Shadow-Mapping Mode", "PCF4", "PCF4,PCF8,PCF8 randomized,PCF16,PCF16 randomized,PCSS16,PCSS16 randomized,CHS,DEBUG", 0, 0);
   DEFINE_VAR_INT(IVShadowMapComponent, ShadowMapSize, "Shadow Map Resolution", "512", 0, "Clamp(1,65536)");
-  DEFINE_VAR_FLOAT(IVShadowMapComponent, SampleRadius, "A higher Sample Radius results in softer shadows but can introduce more artefacts", "2", 0, 0);
+  DEFINE_VAR_FLOAT(IVShadowMapComponent, SampleRadius, "A higher Sample Radius results in softer shadows but can introduce more artefacts", "2", DISPLAY_HINT_GLOBALUNITSCALED, 0);
   DEFINE_VAR_FLOAT(IVShadowMapComponent, SampleRadiusScaleWithDistance, "Scale factor to increase the sample radius with the distance to the camera", "0", 0, 0);
-  DEFINE_VAR_FLOAT(IVShadowMapComponent, MaxDistanceToBlocker, "Maximum distance to blocker at which the sample radius reaches it's full size", "1000", 0, 0);
+  DEFINE_VAR_FLOAT(IVShadowMapComponent, MaxDistanceToBlocker, "Maximum distance to blocker at which the sample radius reaches it's full size", "1000", DISPLAY_HINT_GLOBALUNITSCALED, 0);
   DEFINE_VAR_BOOL(IVShadowMapComponent, UseSurfaceSpecificShadowShaders, "Use surface specific shadowmap shader", "FALSE", 0, 0);
-  DEFINE_VAR_FLOAT(IVShadowMapComponent, Bias[0], "Depth Bias for Cascade 0", "2.0", 0, 0);
+  DEFINE_VAR_FLOAT(IVShadowMapComponent, Bias[0], "Depth Bias for Cascade 0", "2.0", DISPLAY_HINT_GLOBALUNITSCALED, 0);
   DEFINE_VAR_FLOAT(IVShadowMapComponent, SlopeScaled[0], "Slope-scale Depth Bias for Cascade 0", "0.0", 0, 0);
-  DEFINE_VAR_FLOAT(IVShadowMapComponent, Bias[1], "Depth Bias for Cascade 1", "6.0", 0, 0);
+  DEFINE_VAR_FLOAT(IVShadowMapComponent, Bias[1], "Depth Bias for Cascade 1", "6.0", DISPLAY_HINT_GLOBALUNITSCALED, 0);
   DEFINE_VAR_FLOAT(IVShadowMapComponent, SlopeScaled[1], "Slope-scale Depth Bias for Cascade 1", "0.0", 0, 0);
-  DEFINE_VAR_FLOAT(IVShadowMapComponent, Bias[2], "Depth Bias for Cascade 2", "18.0", 0, 0);
+  DEFINE_VAR_FLOAT(IVShadowMapComponent, Bias[2], "Depth Bias for Cascade 2", "18.0", DISPLAY_HINT_GLOBALUNITSCALED, 0);
   DEFINE_VAR_FLOAT(IVShadowMapComponent, SlopeScaled[2], "Slope-scale Depth Bias for Cascade 2", "0.0", 0, 0);
-  DEFINE_VAR_FLOAT(IVShadowMapComponent, Bias[3], "Depth Bias for Cascade 3", "54.0", 0, 0);
+  DEFINE_VAR_FLOAT(IVShadowMapComponent, Bias[3], "Depth Bias for Cascade 3", "54.0", DISPLAY_HINT_GLOBALUNITSCALED, 0);
   DEFINE_VAR_FLOAT(IVShadowMapComponent, SlopeScaled[3], "Slope-scale Depth Bias for Cascade 3", "0.0", 0, 0);
   DEFINE_VAR_INT(IVShadowMapComponent, FilterBitmask, "Context filter bitmask", "65535", 0, "Bitmask");
-  DEFINE_VAR_FLOAT(IVShadowMapComponent, NearClip, "Near Clipping Distance", "10.0", 0, "Clamp(0.001, 32000)");
+  DEFINE_VAR_FLOAT(IVShadowMapComponent, NearClip, "Near Clipping Distance", "10.0", DISPLAY_HINT_GLOBALUNITSCALED, "Clamp(0.001, 32000)");
   DEFINE_VAR_COLORREF(IVShadowMapComponent, AmbientColor, "Ambient Color for combining static and dynamic Shadows", "128,128,128,255", 0, 0);
   DEFINE_VAR_FLOAT(IVShadowMapComponent, ShadowBoxExtrudeMultiplier, "This factor multiplied by the height of a shadow caster defines how far the bounding box is extruded to determine shadow receiver", "1.5", 0, 0);
   DEFINE_VAR_BOOL(IVShadowMapComponent, FrontFacingShadows, "Triangles facing the light source (instead of away from it) cast shadows", "FALSE", 0, 0);
 END_VAR_TABLE
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140624)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -12,7 +12,7 @@
 #include <Vision/Runtime/Engine/SceneElements/VisApiPath.hpp>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Entities/PathCameraEntity.hpp>
 #include <Vision/Runtime/Base/ThirdParty/tinyXML/TinyXMLHelper.hpp>
-#include <Vision/Runtime/Base/System/Memory/VMemDbg.hpp>
+
 
 
 ///-------------------------------------------------------------------------///
@@ -488,7 +488,7 @@ void VLineFollowerComponent::Serialize(VArchive &ar)
   }
 }
 
-START_VAR_TABLE(VLineFollowerComponent, IVObjectComponent,"Line Follower Component", VVARIABLELIST_FLAGS_NONE, "Line Follower" )
+START_VAR_TABLE(VLineFollowerComponent, IVObjectComponent,"Can be attached to entities to make them follow a path.", VVARIABLELIST_FLAGS_NONE, "Line Follower" )
   DEFINE_VAR_STRING (VLineFollowerComponent, Path_Key, "Key of the path to follow", "", 128, 0, NULL);
   DEFINE_VAR_FLOAT  (VLineFollowerComponent, Path_NumberSteps, "Approximate Path with a given number of steps", "50.0", 0, "Clamp(0,10000)");
   DEFINE_VAR_FLOAT  (VLineFollowerComponent, Path_TriggerDistance, "Distance to trigger new destination calculation", "40.0", 0, "Clamp(0,1e12)");
@@ -503,7 +503,7 @@ START_VAR_TABLE(VLineFollowerComponent, IVObjectComponent,"Line Follower Compone
 END_VAR_TABLE
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

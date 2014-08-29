@@ -18,7 +18,7 @@
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Terrain/Application/EditableTerrain.hpp>
 
 
-#include <Vision/Runtime/Base/System/Memory/VMemDbg.hpp>
+
 
 
 // helper macro
@@ -470,7 +470,7 @@ void VTerrain::Serialize( VArchive &ar )
     ar >> iCountX >> iCountY;
     VASSERT_MSG(iCountX==m_Config.m_iSectorCount[0] && iCountY==m_Config.m_iSectorCount[1],"Please re-export terrain");
     FOREACH_SECTOR
-      VSectorVisibilityZone *pZone = (VSectorVisibilityZone *)ar.ReadObject(V_RUNTIME_CLASS(VSectorVisibilityZone));
+      VSectorVisibilityZone *pZone = ar.ReadObject<VSectorVisibilityZone>();
       pSector->m_spSectorZone = pZone;
       pZone->m_pTerrain = this;
       pZone->m_pSector = pSector;
@@ -882,7 +882,7 @@ void VTerrain::RemoveDecorationInstances(const VLargeBoundingBox &bbox)
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

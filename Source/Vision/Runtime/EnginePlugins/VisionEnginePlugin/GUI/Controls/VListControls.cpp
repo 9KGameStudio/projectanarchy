@@ -8,7 +8,6 @@
 
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/VisionEnginePluginPCH.h>         // precompiled header
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/GUI/VMenuIncludes.hpp>
-#include <Vision/Runtime/Base/System/Memory/VMemDbg.hpp>
 
 #define V_MOUSE_WHEEL_SCROLL_SPEED 20.0f
 
@@ -38,6 +37,7 @@ void VListControlItem::CommonInit()
   m_bClipped = true;
   m_bFullyVisible = false;
   m_iData=0;
+  m_bCachedTextRectValid = false;
 
   m_iCustomHeight = -1;
 
@@ -161,6 +161,7 @@ void VListControlItemCollection::Add(VListControlItem *pItem, int iInsertBefore,
     pItem->m_Text.FinishSetup();
   }
   VRefCountedCollection<VListControlItem>::Insert(pItem,iInsertBefore);
+  pItem->m_iIndex = this->Find(pItem);
 }
 
 bool VListControlItemCollection::Build(TiXmlElement *pNode, const char *szPath, bool bWrite)
@@ -188,22 +189,26 @@ bool VListControlItemCollection::Build(TiXmlElement *pNode, const char *szPath, 
 VListControlItem *VListControlItemCollection::FindItemByDataValue(int iValue) const
 {
   for (int i=0;i<Count();i++)
+  {
     if (GetAt(i)->GetData()==iValue)
       return GetAt(i);
+  }
   return NULL;
 }
 
 VListControlItem *VListControlItemCollection::FindItemByUserData(const void *pData) const
 {
   for (int i=0;i<Count();i++)
+  {
     if (GetAt(i)->GetUserData()==pData)
       return GetAt(i);
+  }
   return NULL;
 }
 
 void VListControlItemCollection::MeasureItems(const VRectanglef &area, hkvVec2 &vStartPos)
 {
-  for (int i=0;i<Count();i++)
+  for (int i = 0; i < Count(); i++)
   {
     GetAt(i)->m_iIndex = i;
     GetAt(i)->OnMeasureItem(area,vStartPos);
@@ -212,12 +217,12 @@ void VListControlItemCollection::MeasureItems(const VRectanglef &area, hkvVec2 &
 
 hkvVec2 VListControlItemCollection::GetSize() const
 {
-  hkvVec2 vSize;
-  for (int i=0;i<Count();i++)
+  hkvVec2 vSize = hkvVec2::ZeroVector();
+  for (int i = 0; i < Count(); i++)
   {
     hkvVec2 vItemSize = GetAt(i)->GetSize();
-    vSize.x = hkvMath::Max(vSize.x,vItemSize.x);
-    VASSERT(vItemSize.y>0.f); // not initialized!!
+    vSize.x = hkvMath::Max(vSize.x, vItemSize.x);
+    VASSERT(vItemSize.y > 0.f); // not initialized!!
     vSize.y += vItemSize.y;
   }
   return vSize;
@@ -286,8 +291,9 @@ void VListControl::Serialize( VArchive &ar )
     if (iLocalVersion>=1)
       ar >> m_fIconSize >> m_vIconOfs;
     m_Items.SerializeX(ar);
-    m_spVScrollbar = (VSliderControl *)ar.ReadObject(V_RUNTIME_CLASS(VSliderControl));
-  } else
+    m_spVScrollbar = ar.ReadObject<VSliderControl>();
+  } 
+  else
   {
     ar << iLocalVersion;
     ar << m_bAllowSelection << m_iBackgroundCol;
@@ -520,8 +526,12 @@ void VListControl::OnDragging(const hkvVec2 &vMouseDelta)
 
   if (m_spVScrollbar && (GetContext() != NULL) && GetContext()->GetSwipeToScroll())
   {
-    const hkvVec2 vScale = m_spVScrollbar->GetMoveRange().compDiv((m_Items.GetSize() - GetSize()));
-    m_spVScrollbar->GetSlider()->OnDragging(-vMouseDelta.compMul(vScale));
+    // Prevent NaN.
+    if (m_Items.GetSize().y == GetSize().y)
+      return;
+    
+    const float fScale = m_spVScrollbar->GetMoveRange().y / (m_Items.GetSize().y - GetSize().y);
+    m_spVScrollbar->GetSlider()->OnDragging(-vMouseDelta * fScale);
   }
 }
 
@@ -666,8 +676,8 @@ void VListControl::TickScrollbar(float fDeltaTime)
 
 #if defined(SUPPORTS_MOUSE)
     VRectanglef rect = GetBoundingBox();
-    float fX = static_cast<float>(VInputManager::GetMouse().GetRawControlValue(CT_MOUSE_RAW_CURSOR_X));
-    float fY = static_cast<float>(VInputManager::GetMouse().GetRawControlValue(CT_MOUSE_RAW_CURSOR_Y));
+    float fX = static_cast<float>(VInputManager::GetMouse().GetRawControlValue(CT_MOUSE_ABS_X));
+    float fY = static_cast<float>(VInputManager::GetMouse().GetRawControlValue(CT_MOUSE_ABS_Y));
 
     if (IsVisible() && rect.IsInside(fX, fY))
     {
@@ -690,7 +700,7 @@ void VListControl::TickScrollbar(float fDeltaTime)
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

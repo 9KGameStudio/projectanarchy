@@ -44,7 +44,7 @@ class hkTree
 		inline hkTree();
 
 			/// Destroy a tree and each of its nodes.
-		~hkTree();
+		inline ~hkTree();
 
 			// 
 			// Insert/remove
@@ -110,7 +110,7 @@ class hkTree
 #endif //HK_BASE_TREE_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

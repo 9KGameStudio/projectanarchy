@@ -13,12 +13,12 @@
 #include <Physics/Constraint/Data/PointToPath/hkpParametricCurve.h>
 #include <Physics/Constraint/Atom/Bridge/hkpBridgeConstraintAtom.h>
 
-extern const hkClass hkpPointToPathConstraintDataClass;
+extern HK_EXPORT_PHYSICS const hkClass hkpPointToPathConstraintDataClass;
 
 
 /// A constraint where one body is free to move along a specified path relative to the other.
 /// Body A is the attached body, while the path is on body B.
-class hkpPointToPathConstraintData : public hkpConstraintData
+class HK_EXPORT_PHYSICS hkpPointToPathConstraintData : public hkpConstraintData
 {
 	public:
 
@@ -179,7 +179,7 @@ class hkpPointToPathConstraintData : public hkpConstraintData
 #endif	// HKP_POINT_TO_PATH_CONSTRAINT_DATA_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

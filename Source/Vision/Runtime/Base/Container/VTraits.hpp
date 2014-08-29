@@ -15,8 +15,8 @@
 namespace VTraits 
 {
   #if !defined _VISION_DOC
-  typedef char Yes; 
-  typedef int No;
+  typedef char (&Yes)[1];
+  typedef char (&No)[2];
   #endif
 
   /// \brief
@@ -36,19 +36,28 @@ namespace VTraits
 #endif // _VISION_DOC
   };
 
+#if !defined _VISION_DOC
+  namespace Internal
+  {
+    template <typename B, typename D>
+    struct IsBaseOfHost
+    {
+      operator B*() const;
+      operator D*();
+    };
+  }
+#endif
+
   /// \brief Checks if a class is derived from another class.
   template <typename B, typename D>
   struct IsBaseOf
   {
 #if !defined _VISION_DOC
-  private:
-    static Yes Test(B*);
-    static No Test(...);
+    template <typename T> 
+    static Yes check(D*, T);
+    static No check(B*, int);
 
-    static D* TestType(void);
-
-  public:
-    static const bool value = sizeof(Test(TestType())) == sizeof(Yes);
+    static const bool value = sizeof(check(Internal::IsBaseOfHost<B,D>(), int())) == sizeof(Yes);
 #endif
   };
 
@@ -84,7 +93,7 @@ namespace VTraits
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

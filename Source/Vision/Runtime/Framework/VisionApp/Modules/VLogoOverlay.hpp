@@ -18,7 +18,7 @@
 /// \ingroup VisionAppFramework
 class VLogoOverlay : public VAppModule
 {
-  V_DECLARE_DYNCREATE(VLogoOverlay);
+  V_DECLARE_DYNCREATE_DLLEXP(VLogoOverlay, VAPP_IMPEXP);
 
 public:
   enum Alignment
@@ -34,18 +34,19 @@ public:
 	VLogoOverlay(Alignment eAlignment = ALIGN_BOTTOMRIGHT) : VAppModule(), m_eAlignment(eAlignment) {}
 	virtual ~VLogoOverlay() {}
 
-  virtual void Init() HKV_OVERRIDE;
-  virtual void DeInit() HKV_OVERRIDE;
+  VAPP_IMPEXP virtual void Init() HKV_OVERRIDE;
+  VAPP_IMPEXP virtual void DeInit() HKV_OVERRIDE;
 
-  virtual void OnHandleCallback(IVisCallbackDataObject_cl* pData) HKV_OVERRIDE;
+  VAPP_IMPEXP virtual void OnHandleCallback(IVisCallbackDataObject_cl* pData) HKV_OVERRIDE;
 
-  void SetAlignment(Alignment eAlignment);
+  VAPP_IMPEXP void SetAlignment(Alignment eAlignment);
   inline Alignment GetAlignment() const { return m_eAlignment; }
 
 protected:
-  virtual void RefreshLayout();
-  const VRectanglef GetScreenExtents() const;
+  VAPP_IMPEXP virtual void RefreshLayout();
+  VAPP_IMPEXP const VRectanglef GetScreenExtents() const;
 
+private:
   VisScreenMaskPtr m_spLogoOverlay;
   Alignment m_eAlignment;
 };
@@ -53,7 +54,7 @@ protected:
 #endif //__V_LOGO_OVERLAY
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -31,6 +31,7 @@ inline hkaiRuntimeIndex hkaiNavMeshQueryMediator::getRuntimeIndexForMeshInstance
 
 inline hkaiNavMeshQueryMediator::QueryInputBase::QueryInputBase()
 :	m_filterInfo(0),
+	m_layers(HKAI_ALL_LAYERS),
 	m_userData(0),
 	m_hitFilter(HK_NULL),
 	m_instance(HK_NULL),
@@ -101,6 +102,12 @@ inline hkaiNavMeshQueryMediator::RaycastInput::RaycastInput()
 	m_to = hkVector4::getConstant<HK_QUADREAL_MAX>();
 }
 
+inline hkaiNavMeshQueryMediator::SphereCastInput::SphereCastInput()
+:	RaycastInput()
+{
+	m_radius = hkSimdReal_Minus1;
+}
+
 inline hkaiNavMeshQueryMediator::BidirectionalRaycastInput::BidirectionalRaycastInput(const QueryInputBase& base)
 :	QueryInputBase(base)
 {
@@ -112,6 +119,12 @@ inline hkaiNavMeshQueryMediator::BidirectionalRaycastInput::BidirectionalRaycast
 {
 	m_center = hkVector4::getConstant<HK_QUADREAL_MAX>();
 	m_forwardTo = hkVector4::getConstant<HK_QUADREAL_MAX>();
+}
+
+inline hkaiNavMeshQueryMediator::AabbQueryInput::AabbQueryInput( const QueryInputBase& base)
+:	QueryInputBase(base)
+{
+	m_aabb.setEmpty();
 }
 
 inline hkaiNavMeshQueryMediator::AabbQueryInput::AabbQueryInput()	
@@ -129,7 +142,7 @@ inline hkaiNavMeshQueryMediator::CoherentInput::CoherentInput()
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

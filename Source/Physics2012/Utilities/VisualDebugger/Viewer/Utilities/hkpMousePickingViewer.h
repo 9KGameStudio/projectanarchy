@@ -55,15 +55,13 @@ class hkpMousePickingViewer : public hkpWorldViewerBase
 
 			/// Removes the hkpMouseSpringAction from the world freeing the attached object.
 		void releaseObject();
-
+		
+		/// Constructor, made public for internal demo use only.
+		hkpMousePickingViewer(const hkArray<hkProcessContext*>& contexts);
+		/// Destructor, made public for internal demo use only.
+		~hkpMousePickingViewer();
 
 	protected:
-
-		/// Constructor.
-		hkpMousePickingViewer(const hkArray<hkProcessContext*>& contexts);
-
-		/// Destructor.
-		~hkpMousePickingViewer();
 
 		hkpWorld* m_currentWorld; 
 		hkpMouseSpringAction* m_mouseSpring;
@@ -74,7 +72,7 @@ class hkpMousePickingViewer : public hkpWorldViewerBase
 #endif // HK_MOUSE_PICKING_HANDLER
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -10,7 +10,7 @@
 #include <Vision/Runtime/EnginePlugins/ThirdParty/FmodEnginePlugin/VFmodManager.hpp>
 #include <Vision/Runtime/EnginePlugins/ThirdParty/FmodEnginePlugin/VFmodEventGroup.hpp>
 
-#include <Vision/Runtime/Base/System/Memory/VMemDbg.hpp>
+
 
 
 VManagedResource* VFmodEventGroupManager::CreateResource(const char *szFilename, VResourceSnapshotEntry *pExtraInfo)
@@ -99,7 +99,7 @@ bool VFmodEventGroup::GetInfo(int *pGroupIndex, char **pszGroupName) const
 bool VFmodEventGroup::IsReady() const
 {
   if (!VFmodManager::GlobalManager().IsInitialized())
-    return true;
+    return false;
 
   VASSERT(m_pEventGroup!=NULL);
   FMOD_EVENT_STATE eventState;
@@ -117,7 +117,7 @@ BOOL VFmodEventGroup::Reload()
 {
   VFmodManager &manager = VFmodManager::GlobalManager();
   if (!manager.IsInitialized())
-    return TRUE;
+    return FALSE;
 
   VASSERT(!m_pEventGroup);
 
@@ -190,7 +190,7 @@ void VFmodEventGroup::GetDependencies(VResourceSnapshot &snapshot)
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -15,6 +15,8 @@
 
 #include <Vision/Runtime/Base/Container/VRingBuffer.hpp>
 
+#include <Vision/Runtime/Base/System/Threading/SyncPrimitive/VConditionVariable.hpp>
+
   class VMessage;
 
   /// \brief
@@ -178,8 +180,8 @@
       //! Stores the list of received messages. 
       VArray<VMessage*> m_aReceivedMessages;
 
-      //! The mutex guarding the receive queue. 
-      VMutex m_ReceiveQueueMutex;
+      //! The condition guarding the receive queue. 
+      VConditionVariable m_receiveQueueNonEmpty;
       
       //! The mutex guarding the send queue. 
       VMutex m_SendQueueMutex;
@@ -203,8 +205,6 @@
       VMessage* m_pCurrentMessage;
 
       VRingBuffer<char, 16 * 1024> m_ringBuffer;
-
-      VEvent m_receiveQueueNonEmptyEvent;
       VEvent m_sendQueueEmptyEvent;
 
 #if defined(HK_DEBUG_SLOW)
@@ -220,7 +220,7 @@
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

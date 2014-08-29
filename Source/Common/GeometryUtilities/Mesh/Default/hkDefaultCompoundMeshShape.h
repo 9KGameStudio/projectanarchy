@@ -15,7 +15,7 @@
 
 class hkMeshSystem;
 
-extern const hkClass hkDefaultCompoundMeshShapeClass;
+extern HK_EXPORT_COMMON const hkClass hkDefaultCompoundMeshShapeClass;
 
 /// A simple default implementation of hkMeshShape, which could be used as a default implementation for compound shapes
 ///
@@ -35,7 +35,7 @@ extern const hkClass hkDefaultCompoundMeshShapeClass;
 /// taken can be achieved by using the getClassType method.
 ///
 /// \sa hkMeshShape
-class hkDefaultCompoundMeshShape: public hkMeshShape
+class HK_EXPORT_COMMON hkDefaultCompoundMeshShape : public hkMeshShape
 {
     public:
         HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_SCENE_DATA);
@@ -72,7 +72,7 @@ class hkDefaultCompoundMeshShape: public hkMeshShape
 		// Members
 		//
 
-        struct MeshSection
+        struct HK_EXPORT_COMMON MeshSection
         {
             int m_shapeIndex;
             int m_sectionIndex;
@@ -98,7 +98,7 @@ extern const hkClass hkDefaultCompoundMeshBodyClass;
 /// For an implementation of this - look at the hkgMeshSystem implementation.
 ///
 /// \sa hkMeshBody
-class hkDefaultCompoundMeshBody: public hkMeshBody
+class HK_EXPORT_COMMON hkDefaultCompoundMeshBody : public hkMeshBody
 {
     public:
         HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_SCENE_DATA);
@@ -183,7 +183,7 @@ class hkDefaultCompoundMeshBody: public hkMeshBody
 #endif // HK_DEFAULT_COMPOUND_MESH_SHAPE_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

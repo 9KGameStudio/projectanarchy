@@ -834,6 +834,28 @@ public:
   VBASE_IMPEXP static bool IsPathCanonical(const char* szPath);
 
   /// \brief
+  ///   From a given path, extracts that part that lies below a specified start path.
+  ///
+  /// This function succeeds if \c szPath starts with \c szPath, and if either both are
+  /// identical, or the end of \c szStart with \c szPath falls on a path separator. This 
+  /// means that matches going halfway into a path component of \c szPath are not considered
+  /// valid.
+  ///
+  /// \param szPath
+  ///   the path to examine
+  /// \param szStart
+  ///   the path \c szPath needs to start with
+  /// \param bCaseSensitive
+  ///   whether the path comparison should be performed case-sensitive
+  /// \param sPathBelow
+  ///   output parameter; if this function is successful, it contains the part of \c szPath
+  ///   that is below \c szStart. This string will be empty if both input paths are the same.
+  /// \return
+  ///   whether this function succeeded.
+  VBASE_IMPEXP static hkvResult ExtractPathBelow(const char* szPath, 
+    const char* szStart, bool bCaseSensitive, VStaticString<FS_MAX_PATH>& sPathBelow);
+
+  /// \brief
   ///   Canonicalizes a path.
   ///
   /// Canonicalization removes empty or neutral ('.') path components, and resolves upward 
@@ -1058,7 +1080,7 @@ private:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140701)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

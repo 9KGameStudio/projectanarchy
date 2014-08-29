@@ -219,9 +219,14 @@ namespace TerrainEditorPlugin.Dialogs
       const int iWarningCount = 64; // warn for more than 64 sectors
       if (this.Config._sectorCount.Width>iWarningCount ||Config._sectorCount.Height>iWarningCount)
       {
-        string s = string.Format("The terrain has more than {0} sectors in one dimension (width and/or height).\nTerrain editing or the runtime might become instable with this large amount of sectors.",iWarningCount);
-        EditorManager.ShowMessageBox(this, s, "Terrain is very large", MessageBoxButtons.OK, MessageBoxIcon.Information);
-    }
+        string s = string.Format("The terrain has more than {0} sectors in one or both dimensions.\nTerrain editing or the runtime might become unstable with this large amount of sectors.\n\nDo you really want to continue?", iWarningCount);
+        DialogResult msgRes = EditorManager.ShowMessageBox(this, s, "Terrain is very large", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+        if (msgRes != DialogResult.Yes)
+        {
+          return;
+        }
+      }
+      DialogResult = DialogResult.OK;
     }
 
     #region Import Combobox
@@ -625,7 +630,7 @@ namespace TerrainEditorPlugin.Dialogs
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

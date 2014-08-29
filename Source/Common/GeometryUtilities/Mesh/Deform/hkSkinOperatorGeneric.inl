@@ -204,7 +204,7 @@ void _skinGeneric (const hkSkinOperator::Parameters& parameters)
 	}
 }
 
-class SimdSkinInput
+class HK_EXPORT_COMMON SimdSkinInput
 {
 	public:
 
@@ -225,7 +225,7 @@ class SimdSkinInput
 		}
 };
 
-class SimdSkinOutput
+class HK_EXPORT_COMMON SimdSkinOutput
 {
 	public:
 
@@ -265,7 +265,7 @@ class SimdSkinOutput
 		}
 };
 
-class EmptySkinInputOutput
+class HK_EXPORT_COMMON EmptySkinInputOutput
 {
 	public:
 
@@ -415,7 +415,7 @@ typedef Double64SkinOutput SKIN_DOUBLE64_OUT;
 typedef EmptySkinInputOutput SKIN_IGNORE;
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -44,6 +44,7 @@ class VStateGroupRasterizerDX11 : public VStateGroupRasterizerBase
       VStateGroupRasterizerBase::ComputeHash();
 
       m_spRasterizerState = NULL;
+
       D3D_RASTERIZER_DESC rasterizerDesc;
       GetD3DDesc(rasterizerDesc);
       VVideo::GetD3DDevice()->CreateRasterizerState(&rasterizerDesc, &m_spRasterizerState.m_pPtr);
@@ -65,9 +66,7 @@ class VStateGroupRasterizerDX11 : public VStateGroupRasterizerBase
         rasterizerDesc.DepthClipEnable = TRUE;
       rasterizerDesc.ScissorEnable = (m_cFlags&VSHADER_RASTERIZERSTATEBIT_SCISSORTEST) ? TRUE : FALSE;
       rasterizerDesc.MultisampleEnable = (m_cFlags&VSHADER_RASTERIZERSTATEBIT_MULTISAMPLE) ? TRUE : FALSE;
-      #ifdef _VR_DX11
-        rasterizerDesc.AntialiasedLineEnable = FALSE;
-      #endif
+      rasterizerDesc.AntialiasedLineEnable = FALSE;
     }
 
     /// \brief
@@ -263,7 +262,7 @@ class VStateGroupBlendDX11 : public VStateGroupBlendBase
 };
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

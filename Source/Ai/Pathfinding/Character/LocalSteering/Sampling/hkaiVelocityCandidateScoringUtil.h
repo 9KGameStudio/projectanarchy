@@ -69,7 +69,7 @@ struct hkaiVelocityCandidateScoringParameters
 /// In each case, the agent and the obstacle need not be coplanar, but will be treated as though 
 /// they are coplanar (in a plane normal to the up-vector). All velocity candidates should be 
 /// tangent to this plane.
-class hkaiVelocityCandidateScoringUtil
+class HK_EXPORT_AI hkaiVelocityCandidateScoringUtil
 {
 public:
 
@@ -175,24 +175,23 @@ public:
 	/// Determines the best velocity candidate, given ttc, progress and bonuses for each candidate.
 	static void HK_CALL chooseBestCandidate(
 		hkaiVelocityCandidateGenerator const& velocityCandidates, 
-		hkaiVelocityCandidateScores const& timesToStaticCollision, 
-		hkaiVelocityCandidateScores const& timesToDynamicCollision,
+		hkaiVelocityCandidateScores const& timesToCollision, 
 		hkaiVelocityCandidateScores const& bonuses,
 		hkVector4Parameter bonusVector,
-		hkReal radialMultiplier,
-		hkReal wallFollowingAngle,
-		hkReal collisionPenalty,
-		hkReal desiredSpeed,
-		hkReal wallSearchDistance,
-		hkReal dodgingPenalty,
+		hkSimdRealParameter radialMultiplier,
+		hkSimdRealParameter wallFollowingAngle,
+		hkSimdRealParameter collisionPenalty,
+		hkSimdRealParameter desiredSpeed,
+		hkSimdRealParameter wallSearchDistance,
+		hkSimdRealParameter dodgingPenalty,
 		hkVector4Parameter localGoalPlane,
 		hkVector4 & bestCandidate);
 
 	static hkBool32 HK_CALL calcWallFollowingDir(
 		hkaiVelocityCandidateGenerator const& velocityCandidatesIn,
-		hkaiVelocityCandidateScores const& timesToStaticCollision, 
+		hkaiVelocityCandidateScores const& timesToCollision, 
 		hkSimdRealParameter searchDistance,
-		hkReal wallFollowingAngle,
+		hkSimdRealParameter wallFollowingAngle,
 		hkSimdReal & forwardFactorOut,
 		hkSimdReal & rightFactorOut);
 };
@@ -202,7 +201,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

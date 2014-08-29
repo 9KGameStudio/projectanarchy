@@ -128,6 +128,20 @@ public:
     fFar = m_fFar;
   }
 
+  /// \brief Sets the scaling value for LOD clipping. Values larger than 1.0 cause more aggressive clipping. A value of 0.0 turns off LOD changes and far clipping whatsoever
+  VISION_APIFUNC void setLODScaling(float fScale)
+  {
+    VASSERT(fScale>=0.f);
+    m_fLODScale = fScale;
+  }
+
+  /// \brief Returns the LOD scaling value previously set.
+  VISION_APIFUNC float getLODScaling() const
+  {
+    return m_fLODScale;
+  }
+
+
   /// \brief Sets the projection width and height to be used when the projection type is VIS_PROJECTIONTYPE_ORTHOGRAPHIC.
   VISION_APIFUNC void setOrthographicSize(float fWidth, float fHeight);
 
@@ -161,6 +175,7 @@ private:
   float m_fFovX;
   float m_fFovY;
   float m_fDisplayAspectRatio;
+  float m_fLODScale;
 
   float m_fOrthographicWidth;
   float m_fOrthographicHeight;
@@ -172,7 +187,7 @@ private:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

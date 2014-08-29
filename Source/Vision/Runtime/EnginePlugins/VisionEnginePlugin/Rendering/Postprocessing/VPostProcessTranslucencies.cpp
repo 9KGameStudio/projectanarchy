@@ -11,6 +11,7 @@
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/RenderingHelpers/RenderingOptimizationHelpers.hpp>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/RenderingHelpers/ScratchTexturePool.hpp>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/Postprocessing/VPostProcessTranslucencies.hpp>
+#include <Vision/Runtime/Engine/Visibility/VisionTranslucencySorter.hpp>
 
 V_IMPLEMENT_DYNAMIC(VPostProcessTranslucencies, VPostProcessingBaseComponent, &g_VisionEngineModule);
 
@@ -18,7 +19,7 @@ VPostProcessTranslucencies::VPostProcessTranslucencies(bool bQuarterSizeParticle
 {
   m_bQuarterSizeParticles = bQuarterSizeParticles;
 
-#if defined (WIN32)
+#if defined (_VISION_WIN32)
   if (m_bQuarterSizeParticles)
   {
     hkvLog::Warning("Win32 version does not support quarter-size particle rendering.");
@@ -96,7 +97,6 @@ void VPostProcessTranslucencies::DeInitializePostProcessor()
   m_bIsInitialized = false;
 }
 
-
 void VPostProcessTranslucencies::Execute()
 {
   INSERT_PERF_MARKER_SCOPE("VPostProcessTranslucencies");
@@ -105,8 +105,6 @@ void VPostProcessTranslucencies::Execute()
   IVisVisibilityCollector_cl *pVisCollector = pContext->GetVisibilityCollector();
   VASSERT(pVisCollector != NULL);
 
-  const VisStaticGeometryInstanceCollection_cl *pVisibleTransparentGeoInstances = pVisCollector->GetVisibleStaticGeometryInstancesForPass(VPT_TransparentPass);
-  const VisEntityCollection_cl *pVisibleEntities = pVisCollector->GetVisibleEntitiesForPass(VPT_TransparentPass);
   const VisEntityCollection_cl *pVisibleForeGroundEntities = pVisCollector->GetVisibleForeGroundEntities();
 
   m_VisibilityObjectCollector.HandleVisibleVisibilityObjects();
@@ -124,25 +122,38 @@ void VPostProcessTranslucencies::Execute()
   // Mask out entities which are "always in foreground"
   MaskOutForegroundEntities(*pVisibleForeGroundEntities);
 
-  VisionRenderLoop_cl::RenderHook(*pVisibleMeshBuffer, pVisibleParticleGroups, VRH_PRE_TRANSPARENT_PASS_GEOMETRY, true);
+  if (pVisCollector->GetInterleavedTranslucencySorter() == NULL)
+  {
+    // --- Traditional transparency sorting (default)
+    const VisStaticGeometryInstanceCollection_cl *pVisibleTransparentGeoInstances = pVisCollector->GetVisibleStaticGeometryInstancesForPass(VPT_TransparentPass);
+    const VisEntityCollection_cl *pVisibleEntities = pVisCollector->GetVisibleEntitiesForPass(VPT_TransparentPass);
 
-  // render transparent pass surface shaders on translucent static geometry instances
-  Vision::RenderLoopHelper.RenderStaticGeometrySurfaceShaders(*pVisibleTransparentGeoInstances, VPT_TransparentPass);
+    VisionRenderLoop_cl::RenderHook(*pVisibleMeshBuffer, pVisibleParticleGroups, VRH_PRE_TRANSPARENT_PASS_GEOMETRY, true);
 
-  VisionRenderLoop_cl::RenderHook(*pVisibleMeshBuffer, pVisibleParticleGroups, VRH_PRE_TRANSPARENT_PASS_ENTITIES, true);
+    // render transparent pass surface shaders on translucent static geometry instances
+    Vision::RenderLoopHelper.RenderStaticGeometrySurfaceShaders(*pVisibleTransparentGeoInstances, VPT_TransparentPass);
 
-  // Render transparent pass shaders on entities
-  DrawEntitiesShaders(*pVisibleEntities, VPT_TransparentPass);
+    VisionRenderLoop_cl::RenderHook(*pVisibleMeshBuffer, pVisibleParticleGroups, VRH_PRE_TRANSPARENT_PASS_ENTITIES, true);
 
-  VisionRenderLoop_cl::RenderHook(*pVisibleMeshBuffer, pVisibleParticleGroups, VRH_POST_TRANSPARENT_PASS_GEOMETRY, true);
+    // Render transparent pass shaders on entities
+    DrawEntitiesShaders(*pVisibleEntities, VPT_TransparentPass);
 
-  VisionRenderLoop_cl::RenderHook(*pVisibleMeshBuffer, pVisibleParticleGroups, VRH_DECALS, true);
+    VisionRenderLoop_cl::RenderHook(*pVisibleMeshBuffer, pVisibleParticleGroups, VRH_POST_TRANSPARENT_PASS_GEOMETRY, true);
 
-  RenderParticles(pVisibleMeshBuffer, pVisibleParticleGroups);
+    VisionRenderLoop_cl::RenderHook(*pVisibleMeshBuffer, pVisibleParticleGroups, VRH_DECALS, true);
 
-   // Render visible foreground entities (see DrawForegroundEntities)
+    RenderParticles(pVisibleMeshBuffer, pVisibleParticleGroups);
+  }
+  else
+  {
+    // --- Interleaved transparency sorting
+    pVisCollector->GetInterleavedTranslucencySorter()->OnRender(pVisCollector, true);
+  }
+
+  // Render visible foreground entities (see DrawForegroundEntities)
   DrawTransparentForegroundEntities(*pVisibleForeGroundEntities);
 
+  // Coronas and flares will be still rendered after the other interleaved sorted objects were rendered (lensflare and coronas don't must be always rendered "on top") 
   VisionRenderLoop_cl::RenderHook(*pVisibleMeshBuffer, pVisibleParticleGroups, VRH_CORONAS_AND_FLARES, true);
 }
 
@@ -455,7 +466,7 @@ void VPostProcessTranslucencies::RestorePreviousContext()
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

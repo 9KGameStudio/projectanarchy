@@ -18,26 +18,25 @@ HK_FORCE_INLINE void HK_CALL _lerp2( const hkSweptTransformd& sweptTrans, hkSimd
 {
 	hkVector4d rot0 = sweptTrans.m_rotation0.m_vec;
 	hkVector4d rot1 = sweptTrans.m_rotation1.m_vec;
-	const hkSimdDouble64 half = hkSimdDouble64_Inv2;
-	const hkSimdDouble64 two = hkSimdDouble64_2;
+	const hkSimdDouble64 half = hkSimdDouble64_Half;
 	const hkSimdDouble64 one = hkSimdDouble64_1;
 	{
 		quatOut.m_vec.setAdd( rot0, rot1 );
 		const hkSimdDouble64 len2 = quatOut.m_vec.lengthSquared<4>();
 		hkSimdDouble64 threequarter; threequarter.setFromFloat(0.75f);
-		hkSimdDouble64 oneeighth; oneeighth.setFromFloat(0.125f);
-		hkSimdDouble64 r = threequarter - oneeighth * len2;
+		hkSimdDouble64 r = threequarter - hkSimdDouble64_Inv8 * len2;
 		r = r * ((one + half) - half * len2 * r * r);
 		quatOut.m_vec.mul(r);
 	}
 
-	if ( st < half )
+	hkSimdDouble64 two_st = st + st;
+	if ( st.isLess(half) )
 	{
-		quatOut.m_vec.setInterpolate( rot0, quatOut.m_vec, st * two);
+		quatOut.m_vec.setInterpolate( rot0, quatOut.m_vec, two_st);
 	}
 	else
 	{
-		quatOut.m_vec.setInterpolate( quatOut.m_vec, rot1, (two * st) - one);
+		quatOut.m_vec.setInterpolate( quatOut.m_vec, rot1, two_st - one);
 	}
 	quatOut.normalize();
 }
@@ -166,7 +165,7 @@ HK_FORCE_INLINE void HK_CALL _stepMotionState( const hkStepInfo& info,
 		if ( linVelSq > stateMaxLin * stateMaxLin )
 		{
 			//HK_WARN_ONCE(0xf0327683, "Object exceeding maximum velocity, velocity clipped" );
-			const hkSimdDouble64 f = stateMaxLin * linVelSq.sqrtInverse<HK_ACC_23_BIT,HK_SQRT_IGNORE>();
+			const hkSimdDouble64 f = stateMaxLin * linVelSq.sqrtInverse<HK_ACC_MID,HK_SQRT_IGNORE>();
 			linearVelocity.mul( f );
 		}
 	}
@@ -318,7 +317,7 @@ HK_FORCE_INLINE void HK_CALL getVelocity( const hkMotionState& ms, hkVector4d& l
 } // namespace hkSweptTransformUtil
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

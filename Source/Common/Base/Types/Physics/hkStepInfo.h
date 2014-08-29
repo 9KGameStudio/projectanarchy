@@ -10,7 +10,7 @@
 #define HK_MATH_STEP_INFO_H
 
 /// Stores step delta time and inverse delta time for simulation step.
-class hkStepInfo
+class HK_EXPORT_COMMON hkStepInfo
 {
 	public:
 		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_BASE_CLASS, hkStepInfo );
@@ -49,7 +49,7 @@ class hkStepInfo
 #endif // HK_MATH_STEP_INFO_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

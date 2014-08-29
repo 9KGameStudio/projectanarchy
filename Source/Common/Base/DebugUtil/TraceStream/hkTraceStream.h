@@ -10,9 +10,9 @@
 
 #include <Common/Base/System/Io/OStream/hkOStream.h>
 
-extern const class hkClass hkTraceStreamTitleClass;
+extern HK_EXPORT_COMMON const class hkClass hkTraceStreamTitleClass;
 
-extern const class hkClass hkTraceStreamClass;
+extern HK_EXPORT_COMMON const class hkClass hkTraceStreamClass;
 
 	/// This class is used to debug the internal core of Havok.
 	/// This class in not intended to be used by clients yet.
@@ -93,7 +93,7 @@ HK_SINGLETON_SPECIALIZATION_DECL(hkTraceStream);
 #endif // HKBASE_TRACE_STREAM_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

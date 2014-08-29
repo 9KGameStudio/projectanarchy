@@ -16,7 +16,7 @@ class hkSpuDmaReader;
 class hkpSolverResults;
 
 
-struct hkpSolverElemTemp
+struct HK_EXPORT_PHYSICS hkpSolverElemTemp
 {
 	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_CONSTRAINT_SOLVER, hkpSolverElemTemp );
 
@@ -31,7 +31,7 @@ struct hkpSolverElemTemp
 #endif // HKP_CONSTRAINT_SOLVER_ELEM_TEMP_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

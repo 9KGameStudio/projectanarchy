@@ -30,7 +30,7 @@ enum VParticleRenderingMode_e
   PARTICLE_RENDERING_MODE_QUARTERSIZE = 2   ///< Particles are rendered at a quarter of the render-target resolution, potentially resulting in a significant performance gain in scene with lots of overdraw resulting from particles
 };
 
-#ifdef WIN32
+#ifdef _VISION_WIN32
 #define PARTICLE_RENDERING_MODE_PLATFORMDEFAULT PARTICLE_RENDERING_MODE_FULLSIZE
 #elif defined _VISION_WIIU
 // TODO WIIU: fix quarter-size rendering
@@ -115,6 +115,26 @@ public:
   /// \brief
   ///   Returns whether the renderer node uses HDR rendering. Implementations should return the correct value here.
   EFFECTS_IMPEXP virtual bool GetUseHDR() const { return false; }
+
+  /// \brief
+  ///   Use this method to enforce rendering into an off-screen context. Implementations may choose to ignore this.
+  /// 
+  /// \param pObject
+  ///   The object which indicates that it needs/ does not need an off-screen context.
+  ///
+  /// \param bStatus
+  ///   True to enforce rendering into an off-screen context, false to indicate that the specified object 
+  ///   does not require rendering into an off-screen context.
+  ///
+  /// \note
+  ///   As soon as the state of enforcing the rendering into an off-screen context changes the renderer will be 
+  ///   re-initialized.
+  EFFECTS_IMPEXP virtual void SetRequiresOffscreenContext(void* pObject, bool bStatus) {};
+
+  /// \brief
+  ///   Returns whether the renderer node is enforced to render into an off-screen context. 
+  ///   Implementations should return the correct value here.
+  EFFECTS_IMPEXP virtual bool GetRequiresOffscreenContext() const {  return false; }
 
   /// @}
 
@@ -328,7 +348,6 @@ public:
   /// \brief internal method to set color buffer resolver flags
   EFFECTS_IMPEXP bool SetResolveColorBufferFlag(void* pObject, bool bStatus, VResolvedBufferUsage_e flag);
 
-
   /// \brief
   ///   Manually resolves the color buffer
   EFFECTS_IMPEXP bool ResolveColorBufferManually();
@@ -428,7 +447,6 @@ protected:
   /// Call this method from within the DeInitializeRenderer method of your Renderer Node implementation.
   EFFECTS_IMPEXP void DeInitializeSharedFeatures();
 
-
   /// \brief
   ///  Initializes all attached and active post processors and assigns them a target context.
   ///
@@ -442,6 +460,16 @@ protected:
   /// Call this method from within the DeInitializeRenderer method of your Renderer Node implementation
   /// after setting m_bInitialized = false.
   EFFECTS_IMPEXP virtual void DeInitializePostProcessors();
+
+  /// \brief
+  ///  Gets the type of the default copy post processor for the Renderer Node.
+  ///
+  /// Implement this method in your custom Renderer Node implementation to be able to define a specific copy
+  /// post processor type for your use. The returned type must be derived by VPostProcessingBaseComponent.
+  ///
+  /// \returns
+  ///   A pointer to the type of the copy post processor to use.
+  EFFECTS_IMPEXP virtual VType* GetDefaultCopyPostprocessorType();
 
   /// \brief 
   ///   Saves and disables the global wire frame state.
@@ -459,7 +487,7 @@ protected:
   /// \brief
   ///   Overwritten callback handler function making sure that renderer nodes always gets
   ///   called first if the video resolution changes (OnVideoChanged). 
-  EFFECTS_IMPEXP virtual int GetCallbackSortingKey(VCallback *pCallback) HKV_OVERRIDE
+  EFFECTS_IMPEXP virtual int64 GetCallbackSortingKey(VCallback *pCallback) HKV_OVERRIDE
   {
      return (pCallback == &Vision::Callbacks.OnVideoChanged) ? -1000 : 0;
   }
@@ -468,8 +496,8 @@ protected:
   EFFECTS_IMPEXP static VisMeshBufferObjectCollection_cl s_MeshBufferObjectCollection;
 
 protected:
-  bool m_bUsesDirectRenderToFinalTargetContext;              ///< Renderer node implementations can choose to set this to true if they don't have any PP effects which require an offscreen RT. The VRendererNodeCommon will then refrain from creating a simply copy postprocessor for the final copy operation and assume that the renderer node outputs directly to the backbuffer.
-
+  bool m_bUsesDirectRenderToFinalTargetContext;    ///< Renderer node implementations can choose to set this to true if they don't have any PP effects which require an offscreen RT. The VRendererNodeCommon will then refrain from creating a simply copy postprocessor for the final copy operation and assume that the renderer node outputs directly to the backbuffer.
+  
 private:
 
   bool m_bSavedGlobalWireframeState;
@@ -512,7 +540,7 @@ private:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140715)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

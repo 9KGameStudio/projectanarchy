@@ -9,7 +9,7 @@
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/VisionEnginePluginPCH.h>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Particles/Curve.hpp>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/RenderingHelpers/TimeOfDay.hpp>
-#include <Vision/Runtime/Base/System/Memory/VMemDbg.hpp>
+
 
 
 VTimeOfDayFactory VTimeOfDayFactory::g_Instance;
@@ -36,35 +36,22 @@ VTimeOfDay::VTimeOfDay(float fDayTime, float fSunRiseTime, float fSunSetTime)
 
 VTimeOfDay::~VTimeOfDay()
 {
-  m_spAmbientColor = NULL;
-  m_spFullbrightColor = NULL;
-  m_spDawnWeight = NULL;
-  m_spDuskWeight = NULL;
-  m_spNightWeight = NULL;
-
-  m_spFogStart = NULL;
-  m_spFogEnd = NULL;
-  m_spFogColor = NULL;
-  m_spHeightFogStart = NULL;
-  m_spHeightFogEnd = NULL;
-  m_spHeightFogColor = NULL;
-  m_spHeightFogDensity = NULL;
-  m_spHeightFogHalfDensityHeight = NULL;
+  DeInit();
 }
 
 void VTimeOfDay::SetSunPathOrientation(float fYaw, float fPitch, float fRoll)
 {
-  m_vSunPathEuler.set (fYaw, fPitch, fRoll);
-  m_SunPathOrientation.setFromEulerAngles (fRoll, fPitch, fYaw);
+  m_vSunPathEuler.set(fYaw, fPitch, fRoll);
+  m_SunPathOrientation.setFromEulerAngles(fRoll, fPitch, fYaw);
 }
 
 void VTimeOfDay::SetDayTime(float fTime)
 { 
   m_fDayTime = fTime; 
   if (m_fDayTime>1.0f) 
-    m_fDayTime = hkvMath::mod (m_fDayTime,1.0f); 
-  else if (m_fDayTime<0.0f) 
-    SetDayTime(hkvMath::mod (m_fDayTime,1.0f)+1.f);
+    m_fDayTime = hkvMath::mod(m_fDayTime,1.0f); 
+  else if(m_fDayTime<0.0f) 
+    SetDayTime(hkvMath::mod(m_fDayTime,1.0f)+1.f);
 
   InvalidateLightGridColors();
 }
@@ -77,7 +64,14 @@ float VTimeOfDay::GetDayTime()
 void VTimeOfDay::DeInit()
 {
   m_spAmbientColor = NULL;
-  m_spFullbrightColor = NULL;
+  m_spSunColor = NULL;
+  m_spBackLightColor = NULL;
+  m_spMoonColor = NULL;
+
+  m_spSunIntensity = NULL;
+  m_spBackLightIntensity = NULL;
+  m_spMoonIntensity = NULL;
+
   m_spDawnWeight = NULL;
   m_spDuskWeight = NULL;
   m_spNightWeight = NULL;
@@ -92,62 +86,68 @@ void VTimeOfDay::DeInit()
   m_spHeightFogHalfDensityHeight = NULL;
 }
 
-
 void VTimeOfDay::EvaluateSunDir(hkvVec3& pos)
 {
   EvaluateSunDirAtDaytime(pos, m_fDayTime);
 }
 
-
 void VTimeOfDay::EvaluateSunDirAtDaytime(hkvVec3& pos, float fTime)
 {
   // Time of Day [0..1] converted for sinus / cosinus 
-  float w = fTime * (hkvMath::pi () * 2.0f);
+  float w = fTime * (hkvMath::pi() * 2.0f);
 
   // Parameter a: Shift the respective curve (here cosinus) on the X axis
-  float a = -(m_fSunRiseTime + m_fSunSetTime) * 2.0f * hkvMath::pi ();
+  float a = -(m_fSunRiseTime + m_fSunSetTime) * 2.0f * hkvMath::pi();
 
   // Parameter b: Shift the respective curve (here cosinus) on the Y axis
-  float b = hkvMath::cosRad ((m_fSunRiseTime - m_fSunSetTime) * hkvMath::pi ());
+  float b = hkvMath::cosRad((m_fSunRiseTime - m_fSunSetTime) * hkvMath::pi());
 
   if (m_bOldOrientationStyle)
   {
-    pos.x = hkvMath::sinRad (w);
-    pos.y = hkvMath::cosRad (w);
-    pos.z = -1.5f*hkvMath::cosRad (w) + 0.2f; // we want 12:00 to be high noon :-)
+    pos.x = hkvMath::sinRad(w);
+    pos.y = hkvMath::cosRad(w);
+    pos.z = -1.5f*hkvMath::cosRad(w) + 0.2f; // we want 12:00 to be high noon :-)
 
     // the direction should always be normalized so we can use it directly in vertex programs
     pos.normalizeIfNotZero();
   } 
   else
   {
-    pos.set(hkvMath::sinRad (w),hkvMath::cosRad (w + a) + b,0.f);
+    pos.set(hkvMath::sinRad(w),hkvMath::cosRad(w + a) + b,0.f);
     pos = m_SunPathOrientation * pos;
   }
 }
 
-
 void VTimeOfDay::EvaluateColorValue(float falloff, VColorRef &iColor, float &fDawnWeight, float &fDuskWeight, float &fNightWeight)
+{
+  EvaluateColorValue(falloff, iColor);
+  EvaluateSkyLayersIntensity(fDawnWeight, fDuskWeight, fNightWeight);
+}
+
+void VTimeOfDay::EvaluateColorValue(float falloff, VColorRef &iColor)
 {
   VASSERT(falloff>=0.f && falloff<=1.f);
 
-  float fx1 = 0.5f + 0.5f*hkvMath::cosRad (falloff * hkvMath::pi ());
+  float fx1 = 0.5f + 0.5f*hkvMath::cosRad(falloff * hkvMath::pi());
   float fx2 = 1.f-fx1;
 
   float fColor[3];
   fColor[0] = m_spAmbientColor->GetCurveR().GetValue(m_fDayTime) * fx1 +
-    m_spFullbrightColor->GetCurveR().GetValue(m_fDayTime) * fx2;
+    m_spSunColor->GetCurveR().GetValue(m_fDayTime) * fx2;
   fColor[1] = m_spAmbientColor->GetCurveG().GetValue(m_fDayTime) * fx1 +
-    m_spFullbrightColor->GetCurveG().GetValue(m_fDayTime) * fx2;
+    m_spSunColor->GetCurveG().GetValue(m_fDayTime) * fx2;
   fColor[2] = m_spAmbientColor->GetCurveB().GetValue(m_fDayTime) * fx1 +
-    m_spFullbrightColor->GetCurveB().GetValue(m_fDayTime) * fx2;
+    m_spSunColor->GetCurveB().GetValue(m_fDayTime) * fx2;
 
   iColor.SetRGBA((UBYTE)(fColor[0]*255.0f), (UBYTE)(fColor[1]*255.0f),
     (UBYTE)(fColor[2]*255.0f), 255);
+}
 
-  fDawnWeight   = m_spDawnWeight->GetValue(m_fDayTime);
-  fDuskWeight   = m_spDuskWeight->GetValue(m_fDayTime);
-  fNightWeight  = m_spNightWeight->GetValue(m_fDayTime);
+void VTimeOfDay::EvaluateSkyLayersIntensity(float &fDawnWeight, float &fDuskWeight, float &fNightWeight)
+{
+  fDawnWeight  = m_spDawnWeight->GetValue(m_fDayTime);
+  fDuskWeight  = m_spDuskWeight->GetValue(m_fDayTime);
+  fNightWeight = m_spNightWeight->GetValue(m_fDayTime);
 }
 
 void VTimeOfDay::UpdateFogParameters()
@@ -175,8 +175,8 @@ void VTimeOfDay::EvaluateDepthFog(VColorRef &iFogColor, float &fogStart, float &
   int sample = ((int)fTime)%sampleCount;
   int nextSample = (sample+1)%sampleCount;
 
-  // linearely interpolate in y-direction
-  float fy2 = hkvMath::mod (fTime,1.f);
+  // linearly interpolate in y-direction
+  float fy2 = hkvMath::mod(fTime,1.f);
   float fy1 = 1.f-fy2;
 
   VisBitmap_cl* bitmap = m_spFogColor->GetLookupBitmap();
@@ -201,8 +201,8 @@ void VTimeOfDay::EvaluateHeightFog(VColorRef &iFogColor, float &fogStart, float 
   int sample = ((int)fTime)%sampleCount;
   int nextSample = (sample+1)%sampleCount;
 
-  // linearely interpolate in y-direction
-  float fy2 = hkvMath::mod (fTime,1.f);
+  // linearly interpolate in y-direction
+  float fy2 = hkvMath::mod(fTime,1.f);
   float fy1 = 1.f-fy2;
 
   VisBitmap_cl* bitmap = m_spHeightFogColor->GetLookupBitmap();
@@ -220,112 +220,196 @@ void VTimeOfDay::EvaluateHeightFog(VColorRef &iFogColor, float &fogStart, float 
 
 void VTimeOfDay::SetDefaultCurves()
 {
+  // Note: these curves should match the default curves defined in Renderer.cs
+
+  // Ambient color
   m_spAmbientColor = new VColorCurve();
   VCurvePoint2D ambientColorRG[] =
   {
-    {hkvVec2(0.0f, 45.0f/255.0f), hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)},
-    {hkvVec2(0.558f, 96.0f/255.0f), hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)},
-    {hkvVec2(1.0f, 45.0f/255.0f), hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)}
+    {hkvVec2(0.0f,   0.18f), hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)},
+    {hkvVec2(0.5f,   0.37f), hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)},
+    {hkvVec2(1.0f,   0.18f), hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)}
   };
   VCurvePoint2D ambientColorB[] =
   {
-    {hkvVec2(0.0f, 45.0f/255.0f), hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)},
-    {hkvVec2(0.558f, 128.0f/255.0f), hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)},
-    {hkvVec2(1.0f, 45.0f/255.0f), hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)}
+    {hkvVec2(0.0f,   0.18f), hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)},
+    {hkvVec2(0.5f,   0.50f), hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)},
+    {hkvVec2(1.0f,   0.18f), hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)}
   };
   m_spAmbientColor->GetCurveR().SetPoints(ambientColorRG, 3);
   m_spAmbientColor->GetCurveG().SetPoints(ambientColorRG, 3);
-  m_spAmbientColor->GetCurveB().SetPoints(ambientColorB, 3);
+  m_spAmbientColor->GetCurveB().SetPoints(ambientColorB,  3);
 
-  m_spFullbrightColor = new VColorCurve();
-  VCurvePoint2D fullbrightColorR[] =
+  // Sun color
+  m_spSunColor = new VColorCurve();
+  VCurvePoint2D sunColorR[] =
   {
-    {hkvVec2(0.0f, 64.0f/255.0f), hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)},
-    {hkvVec2(0.558f, 192.0f/255.0f), hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)},
-    {hkvVec2(1.0f, 99.0f/255.0f), hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)}
+    {hkvVec2(0.0f,   0.35f), hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)},
+    {hkvVec2(0.5f,   0.75f), hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)},
+    {hkvVec2(1.0f,   0.35f), hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)}
   };
-  VCurvePoint2D fullbrightColorG[] =
+  VCurvePoint2D sunColorG[] =
   {
-    {hkvVec2(0.0f, 64.0f/255.0f), hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)},
-    {hkvVec2(0.558f, 192.0f/255.0f), hkvVec2(-0.2f, 0.0f), hkvVec2(0.1f, 0.0f)},
-    {hkvVec2(1.0f, 88.0f/255.0f), hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)}
+    {hkvVec2(0.0f,   0.30f), hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)},
+    {hkvVec2(0.5f,   0.75f), hkvVec2(-0.2f, 0.0f), hkvVec2(0.1f, 0.0f)},
+    {hkvVec2(1.0f,   0.30f), hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)}
   };
-  VCurvePoint2D fullbrightColorB[] =
+  VCurvePoint2D sunColorB[] =
   {
-    {hkvVec2(0.0f, 92.0f/255.0f), hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)},
-    {hkvVec2(0.558f, 223.0f/255.0f), hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)},
-    {hkvVec2(1.0f, 88.0f/255.0f), hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)}
+    {hkvVec2(0.0f,   0.35f), hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)},
+    {hkvVec2(0.5f,   0.87f), hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)},
+    {hkvVec2(1.0f,   0.35f), hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)}
   };
-  m_spFullbrightColor->GetCurveR().SetPoints(fullbrightColorR, 3);
-  m_spFullbrightColor->GetCurveG().SetPoints(fullbrightColorG, 3);
-  m_spFullbrightColor->GetCurveB().SetPoints(fullbrightColorB, 3);
+  m_spSunColor->GetCurveR().SetPoints(sunColorR, 3);
+  m_spSunColor->GetCurveG().SetPoints(sunColorG, 3);
+  m_spSunColor->GetCurveB().SetPoints(sunColorB, 3);
 
+  // Backlight color
+  m_spBackLightColor = new VColorCurve();
+  VCurvePoint2D backLightColorR[] =
+  {
+    {hkvVec2(0.0f,   0.50f), hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)},
+    {hkvVec2(0.5f,   0.37f), hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)},
+    {hkvVec2(1.0f,   0.50f), hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)}
+  };
+  VCurvePoint2D backLightColorGB[] =
+  {
+    {hkvVec2(0.0f,   0.37f), hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)},
+    {hkvVec2(0.5f,   0.37f), hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)},
+    {hkvVec2(1.0f,   0.37f), hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)}
+  };
+  m_spBackLightColor->GetCurveR().SetPoints(backLightColorR,  3);
+  m_spBackLightColor->GetCurveG().SetPoints(backLightColorGB, 3);
+  m_spBackLightColor->GetCurveB().SetPoints(backLightColorGB, 3);
+
+  // Moon color
+  m_spMoonColor = new VColorCurve();
+  VCurvePoint2D moonColorRG[] =
+  {
+    {hkvVec2(0.0f,   0.75f), hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)},
+    {hkvVec2(0.5f,   0.25f), hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)},
+    {hkvVec2(1.0f,   0.75f), hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)}
+  };
+  VCurvePoint2D moonColorB[] =
+  {
+    {hkvVec2(0.0f,   0.75f), hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)},
+    {hkvVec2(0.5f,   0.87f), hkvVec2(-0.2f, 0.0f), hkvVec2(0.1f, 0.0f)},
+    {hkvVec2(1.0f,   0.75f), hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)}
+  };
+  m_spMoonColor->GetCurveR().SetPoints(moonColorRG, 3);
+  m_spMoonColor->GetCurveG().SetPoints(moonColorRG, 3);
+  m_spMoonColor->GetCurveB().SetPoints(moonColorB,  3);
+
+  // Sun intensity
+  m_spSunIntensity = new VCurve2D();
+  VCurvePoint2D sunIntensity[] =
+  {
+    {hkvVec2(0.0f, 0.0f), hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)},
+    {hkvVec2(0.2f, 0.0f), hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)},
+    {hkvVec2(0.5f, 1.0f), hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)},
+    {hkvVec2(0.8f, 0.0f), hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)},
+    {hkvVec2(1.0f, 0.0f), hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)}
+  };
+  m_spSunIntensity->SetPoints(sunIntensity, 5);
+
+  // Back light intensity
+  m_spBackLightIntensity = new VCurve2D();
+  VCurvePoint2D backLightIntensity[] =
+  {
+    {hkvVec2(0.0f, 0.0f),  hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)},
+    {hkvVec2(0.2f, 0.0f),  hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)},
+    {hkvVec2(0.5f, 0.35f), hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)},
+    {hkvVec2(0.8f, 0.0f),  hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)},
+    {hkvVec2(1.0f, 0.0f),  hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)}
+  };
+  m_spBackLightIntensity->SetPoints(backLightIntensity, 5);
+
+  // Moon intensity
+  m_spMoonIntensity = new VCurve2D();
+  VCurvePoint2D moonIntensity[] =
+  {
+    {hkvVec2(0.0f,  0.38f), hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)},
+    {hkvVec2(0.35f, 0.0f),  hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)},
+    {hkvVec2(0.5f,  0.0f),  hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)},
+    {hkvVec2(0.65f, 0.0f),  hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)},
+    {hkvVec2(1.0f,  0.38f), hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)}
+  };
+  m_spMoonIntensity->SetPoints(moonIntensity, 5);
+
+  // Dawn sky weight
   m_spDawnWeight = new VCurve2D();
   VCurvePoint2D dawnWeight[] = 
   {
-    {hkvVec2(0.0f, 0.0f), hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)},
-    {hkvVec2(0.5f, 0.0f), hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)},
+    {hkvVec2(0.0f,  0.0f), hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)},
+    {hkvVec2(0.5f,  0.0f), hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)},
     {hkvVec2(0.75f, 1.0f), hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)},
-    {hkvVec2(1.0f, 0.0f), hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)}
+    {hkvVec2(1.0f,  0.0f), hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)}
   };
   m_spDawnWeight->SetPoints(dawnWeight, 4);
 
+  // Dusk sky weight
   m_spDuskWeight = new VCurve2D();
   VCurvePoint2D duskWeight[] = 
   {
-    {hkvVec2(0.0f, 0.0f), hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)},
+    {hkvVec2(0.0f,  0.0f),  hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)},
     {hkvVec2(0.25f, 0.75f), hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)},
-    {hkvVec2(0.5f, 0.0f), hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)},
-    {hkvVec2(1.0f, 0.0f), hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)}
+    {hkvVec2(0.5f,  0.0f),  hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)},
+    {hkvVec2(1.0f,  0.0f),  hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)}
   };
   m_spDuskWeight->SetPoints(duskWeight, 4);
 
+  // Night sky weight
   m_spNightWeight = new VCurve2D();
   VCurvePoint2D nightWeight[] = 
   {
-    {hkvVec2(0.0f, 1.0f), hkvVec2(-0.2f, 0.0f), hkvVec2(0.2f, 0.0f)},
+    {hkvVec2(0.0f,  1.0f), hkvVec2(-0.2f, 0.0f), hkvVec2(0.2f, 0.0f)},
     {hkvVec2(0.35f, 0.0f), hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)},
     {hkvVec2(0.65f, 0.0f), hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)},
-    {hkvVec2(1.0f, 1.0f), hkvVec2(-0.2f, 0.0f), hkvVec2(0.2f, 0.0f)}
+    {hkvVec2(1.0f,  1.0f), hkvVec2(-0.2f, 0.0f), hkvVec2(0.2f, 0.0f)}
   };
   m_spNightWeight->SetPoints(nightWeight, 4);
 
+  // Fog color
   m_spFogColor = new VColorCurve();
   VCurvePoint2D fogColor[] =
   {
-    {hkvVec2(0.0f, 0.125f), hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)},
-    {hkvVec2(0.558f, 0.498f), hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)},
-    {hkvVec2(1.0f, 0.192f), hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)}
+    {hkvVec2(0.0f,   0.15f), hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)},
+    {hkvVec2(0.5f,   0.50f), hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)},
+    {hkvVec2(1.0f,   0.15f), hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)}
   };
   m_spFogColor->GetCurveR().SetPoints(fogColor, 3);
   m_spFogColor->GetCurveG().SetPoints(fogColor, 3);
   m_spFogColor->GetCurveB().SetPoints(fogColor, 3);
 
+  // Height fog color
   m_spHeightFogColor = new VColorCurve();
   m_spHeightFogColor->GetCurveR().SetPoints(fogColor, 3);
   m_spHeightFogColor->GetCurveG().SetPoints(fogColor, 3);
   m_spHeightFogColor->GetCurveB().SetPoints(fogColor, 3);
 
+  // Fog start
   m_spFogStart = new VCurve2D();
   VCurvePoint2D fogStart[] = 
   {
-    {hkvVec2(0.0f, 0.1406f), hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)},
-    {hkvVec2(0.3f, 0.0044f), hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)},
-    {hkvVec2(0.558f, 0.5f), hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)},
-    {hkvVec2(1.0f, 0.1747f), hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)}
+    {hkvVec2(0.0f,   0.1406f), hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)},
+    {hkvVec2(0.3f,   0.0044f), hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)},
+    {hkvVec2(0.558f, 0.5f),    hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)},
+    {hkvVec2(1.0f,   0.1747f), hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)}
   };    
   m_spFogStart->SetPoints(fogStart, 4);
 
+  // Fog end
   m_spFogEnd = new VCurve2D();
   VCurvePoint2D fogEnd[] = 
   {
-    {hkvVec2(0.0f, 0.25f), hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)},
-    {hkvVec2(0.3f, 0.1484f), hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)},
+    {hkvVec2(0.0f,   0.25f),   hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)},
+    {hkvVec2(0.3f,   0.1484f), hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)},
     {hkvVec2(0.558f, 0.8828f), hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)},
-    {hkvVec2(1.0f, 0.3148f), hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)}
+    {hkvVec2(1.0f,   0.3148f), hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)}
   };
   m_spFogEnd->SetPoints(fogEnd, 4);
 
+  // Height fog start
   m_spHeightFogStart = new VCurve2D();
   VCurvePoint2D heightFogStart[] = 
   {
@@ -335,6 +419,7 @@ void VTimeOfDay::SetDefaultCurves()
   };
   m_spHeightFogStart->SetPoints(heightFogStart, 3);
 
+  // Height fog end
   m_spHeightFogEnd = new VCurve2D();
   VCurvePoint2D heightFogEnd[] = 
   {
@@ -344,6 +429,7 @@ void VTimeOfDay::SetDefaultCurves()
   };
   m_spHeightFogEnd->SetPoints(heightFogEnd, 3);
 
+  // Height fog density
   VCurvePoint2D fogDensity[] =
   {
     {hkvVec2(0.0f, 0.001f),  hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)},
@@ -353,17 +439,25 @@ void VTimeOfDay::SetDefaultCurves()
   m_spHeightFogDensity = new VCurve2D();
   m_spHeightFogDensity->SetPoints(fogDensity, 3);
 
+  // Height fog half density
   VCurvePoint2D fogHalfDensityHeight[] =
   {
-    {hkvVec2(0.0f, 1500.0f),  hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)},
+    {hkvVec2(0.0f, 1500.0f), hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)},
     {hkvVec2(0.5f, 1000.0f), hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)},
-    {hkvVec2(1.0f, 1500.0f),  hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)}
+    {hkvVec2(1.0f, 1500.0f), hkvVec2(-0.1f, 0.0f), hkvVec2(0.1f, 0.0f)}
   };
   m_spHeightFogHalfDensityHeight = new VCurve2D();
   m_spHeightFogHalfDensityHeight->SetPoints(fogHalfDensityHeight, 3);
   
   m_spAmbientColor->UpdateCurve();
-  m_spFullbrightColor->UpdateCurve();
+  m_spSunColor->UpdateCurve();
+  m_spBackLightColor->UpdateCurve();
+  m_spMoonColor->UpdateCurve();
+
+  m_spSunIntensity->UpdateCurve();
+  m_spBackLightIntensity->UpdateCurve();
+  m_spMoonIntensity->UpdateCurve();
+
   m_spDawnWeight->UpdateCurve();
   m_spDuskWeight->UpdateCurve();
   m_spNightWeight->UpdateCurve();
@@ -380,7 +474,6 @@ void VTimeOfDay::SetDefaultCurves()
   m_spHeightFogDensity->UpdateCurve();
   m_spHeightFogHalfDensityHeight->UpdateCurve();
 }
-
 
 void VTimeOfDay::GetSunDirection(hkvVec3& vDirection)
 {
@@ -399,35 +492,44 @@ void VTimeOfDay::GetSunDirectionAtDayTime(hkvVec3& vDirection, float fTime)
 VColorRef VTimeOfDay::GetSunColor()
 {
   VColorRef iColor;
-  float fDummy;
-  EvaluateColorValue(1.0f, iColor, fDummy, fDummy, fDummy);
-
-  hkvVec3 vDirection(hkvNoInitialization);
-  EvaluateSunDir(vDirection);
-  vDirection *= -1.0f;
-  vDirection.normalizeIfNotZero();
-  float fBelowHorizonMultiplier = hkvMath::pow (hkvMath::Max(-vDirection.z, 0.0f), 0.65f);
-
-  hkvVec3 vColor = iColor.ToFloat();
-  vColor *= fBelowHorizonMultiplier;
-  iColor.FromFloat(vColor);
-
+  iColor.r = (UBYTE)(m_spSunColor->GetCurveR().GetValue(m_fDayTime) * 255.0f);
+  iColor.g = (UBYTE)(m_spSunColor->GetCurveG().GetValue(m_fDayTime) * 255.0f);
+  iColor.b = (UBYTE)(m_spSunColor->GetCurveB().GetValue(m_fDayTime) * 255.0f);
+  iColor.a = 255;
   return iColor;
 }
 
 VColorRef VTimeOfDay::GetAmbientColor()
 {
   VColorRef iColor;
-  float fDummy;
-  EvaluateColorValue(0.1f, iColor, fDummy, fDummy, fDummy);
+  iColor.r = (UBYTE)(m_spAmbientColor->GetCurveR().GetValue(m_fDayTime) * 255.0f);
+  iColor.g = (UBYTE)(m_spAmbientColor->GetCurveG().GetValue(m_fDayTime) * 255.0f);
+  iColor.b = (UBYTE)(m_spAmbientColor->GetCurveB().GetValue(m_fDayTime) * 255.0f);
+  iColor.a = 255;
   return iColor;
 }
 
+VColorRef VTimeOfDay::GetMoonColor()
+{
+  VColorRef iColor;
+  iColor.r = (UBYTE)(m_spMoonColor->GetCurveR().GetValue(m_fDayTime) * 255.0f);
+  iColor.g = (UBYTE)(m_spMoonColor->GetCurveG().GetValue(m_fDayTime) * 255.0f);
+  iColor.b = (UBYTE)(m_spMoonColor->GetCurveB().GetValue(m_fDayTime) * 255.0f);
+  iColor.a = 255;
+  return iColor;
+}
 
+VColorRef VTimeOfDay::GetBackLightColor()
+{
+  VColorRef iColor;
+  iColor.r = (UBYTE)(m_spBackLightColor->GetCurveR().GetValue(m_fDayTime) * 255.0f);
+  iColor.g = (UBYTE)(m_spBackLightColor->GetCurveG().GetValue(m_fDayTime) * 255.0f);
+  iColor.b = (UBYTE)(m_spBackLightColor->GetCurveB().GetValue(m_fDayTime) * 255.0f);
+  iColor.a = 255;
+  return iColor;
+}
 
-
-
-V_IMPLEMENT_SERIAL( VTimeOfDay, VisTypedEngineObject_cl, 0, &g_VisionEngineModule );
+V_IMPLEMENT_SERIAL( VTimeOfDay, IVTimeOfDay, 0, &g_VisionEngineModule );
 
 void VTimeOfDay::Serialize( VArchive &ar )
 {
@@ -480,7 +582,15 @@ void VTimeOfDay::Serialize( VArchive &ar )
   }
 
   m_spAmbientColor->SerializeX(ar);
-  m_spFullbrightColor->SerializeX(ar);
+  m_spSunColor->SerializeX(ar);
+  if ( iLocalVersion >= TIMEOFDAY_VERSION_8 )
+  {
+    m_spBackLightColor->SerializeX(ar);
+    m_spMoonColor->SerializeX(ar);
+    m_spSunIntensity->SerializeX(ar);
+    m_spBackLightIntensity->SerializeX(ar);
+    m_spMoonIntensity->SerializeX(ar);
+  }
 
   // in theory we could skip this serialization block if m_bControlSky is false
   m_spDawnWeight->SerializeX(ar);
@@ -506,16 +616,16 @@ void VTimeOfDay::Serialize( VArchive &ar )
 
   if(iLocalVersion >= TIMEOFDAY_VERSION_5 && !m_bOldOrientationStyle)
   {
-    hkvVec4 vSun = m_vSunPathEuler.getAsVec4 (0.0f);
-    SerializeX (ar, vSun);
-    m_vSunPathEuler = vSun.getAsVec3 ();
+    hkvVec4 vSun = m_vSunPathEuler.getAsVec4(0.0f);
+    SerializeX(ar, vSun);
+    m_vSunPathEuler = vSun.getAsVec3();
 
     SetSunPathOrientation(m_vSunPathEuler.x, m_vSunPathEuler.y, m_vSunPathEuler.z);
   }
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140728)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

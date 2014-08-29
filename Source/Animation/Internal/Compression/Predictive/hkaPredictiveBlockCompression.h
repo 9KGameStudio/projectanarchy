@@ -67,7 +67,7 @@ const hkUint8* decodeAdjacentFrames(const hkUint8* data, int whichFrame, hkInt16
 #if defined(HK_INT_VECTOR_NATIVE_MISALIGNED) && \
 	defined(HK_INT_VECTOR_NATIVE_BITSHIFT128) && \
 	defined(HK_INT_VECTOR_NATIVE_VARIABLESHIFT) && \
-	defined(HK_INT_VECTOR_NATIVE_VPERM) && \
+	defined(HK_INT_VECTOR_NATIVE_PERMUTE8) && \
 	defined(HK_INT_VECTOR_NATIVE_FLOATCONV)
 #		define HK_PREDICTIVE_DEFAULT_DECODER VectorDecoder
 #		define HK_PREDICTIVE_BUILD_VECTOR_DECODER
@@ -102,7 +102,7 @@ namespace ScalarEncoder
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

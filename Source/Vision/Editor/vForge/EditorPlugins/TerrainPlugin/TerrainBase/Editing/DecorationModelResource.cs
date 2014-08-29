@@ -1092,6 +1092,14 @@ namespace TerrainBase.Editing
       set { _owner.FarClipDistance = value; }
     }
 
+    [SortedCategory("Shader properties", 3), PropertyOrder(1)]
+    [EditorAttribute(typeof(SliderEditor), typeof(UITypeEditor)), SliderRange(0.0f, 200.0f, 200)]
+    [Description("Percentage of wind modifier applied to this type")]
+    public float ApplyWind
+    {
+        get { return _owner.ApplyWind; }
+        set { _owner.ApplyWind = value; }
+    }
   }
 
   #endregion
@@ -1101,7 +1109,7 @@ namespace TerrainBase.Editing
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

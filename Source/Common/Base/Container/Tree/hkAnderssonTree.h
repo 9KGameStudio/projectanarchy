@@ -20,7 +20,7 @@
 /// need to consider seven different shapes to properly balance the tree. An AA tree on the other hand only
 /// needs to consider two shapes due to the strict requirement that only right links can be red.
 /// See http://en.wikipedia.org/wiki/Aa_tree
-class hkAATree
+class HK_EXPORT_COMMON hkAATree
 {
 	public:
 
@@ -49,7 +49,7 @@ class hkAATree
 
 	protected:
 
-		struct Node
+		struct HK_EXPORT_COMMON Node
 		{
 			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_TREE, hkAATree::Node);
 
@@ -62,7 +62,7 @@ class hkAATree
 
 	public:
 
-		struct Iterator
+		struct HK_EXPORT_COMMON Iterator
 		{
 			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_TREE, hkAATree::Iterator);
 
@@ -101,7 +101,7 @@ class hkAATree
 #endif //HK_ANDERSSON_TREE_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

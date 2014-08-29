@@ -151,9 +151,15 @@ namespace VisionManaged
     VGMaterial *FindCompatible(VisStaticSubmeshInstance_cl *pSubMeshInst, int* index=NULL) const
     {
       MaterialMappingEntry_t *pList = m_List.GetDataPtr();
+      VisSurface_cl* pSearchForMaterial = pSubMeshInst->GetSurface()->GetOverrideMaterial();
       for (int i=0;i<m_iEntryCount;i++,pList++)
       {
-        if (pList->m_pSubMeshInst->GetSurface()==pSubMeshInst->GetSurface() && pList->m_pSubMeshInst->GetLightmapTexture(0)==pSubMeshInst->GetLightmapTexture(0))
+        VisSurface_cl* pCurMaterial = pList->m_pSubMeshInst->GetSurface()->GetOverrideMaterial();
+        if ((pSearchForMaterial == pCurMaterial || pSearchForMaterial->IsSimilar(pCurMaterial))
+            && pList->m_pSubMeshInst->GetLightmapTexture(0) == pSubMeshInst->GetLightmapTexture(0)
+            && pList->m_pSubMeshInst->GetLightmapTexture(1) == pSubMeshInst->GetLightmapTexture(1)
+            && pList->m_pSubMeshInst->GetLightmapTexture(2) == pSubMeshInst->GetLightmapTexture(2)
+            && pList->m_pSubMeshInst->GetLightmapTexture(3) == pSubMeshInst->GetLightmapTexture(3))
         {
           if(index)
             *index = i;
@@ -294,7 +300,7 @@ The asssignment would be more complicated, i.e. check per submesh which settings
       int iNumTris = VisMeshBuffer_cl::GetCalcPrimitiveCount(primtype,iNumIndices,iNumIndices);
       if (iNumTris<=0) // should not happen though (but important to check because it will confuse lightmapping order otherwise [#2290])
         continue; 
-      VisSurface_cl *pSrf = pSubMeshInst->GetSurface();
+      VisSurface_cl *pSrf = pSubMeshInst->GetSurface()->GetOverrideMaterial();
       VTextureObject *pLightmap = pSubMeshInst->GetLightmapTexture(0);
       hkvVec4 vLMScaleOfs = pSubMeshInst->GetLightmapScaleOffset();
       int matIndex;
@@ -370,7 +376,7 @@ The asssignment would be more complicated, i.e. check per submesh which settings
       MaterialMappingTable m_MaterialLookup;
 
       hkvVec3 vPivot(_x,_y,_z);
-      hkvVec3 vLGPivot;
+      hkvVec3 vLGPivot(0);
       int iValidCount = 0;
 
       VRefCountedCollection<VisVisibilityObject_cl> linkedVisObj;
@@ -462,17 +468,16 @@ The asssignment would be more complicated, i.e. check per submesh which settings
         // Generate tangents, merge materials, write mesh and collision mesh.
         VGBackend meshBackend;
         VGProcessor_TangentGenerator tg;  // @@@ wrong - shouldn't enforce tangents that maybe weren't even there, or modify existing ones.
-        VGProcessor_MaterialMerger   mm;
         VGProcessor_Baker            bk;
         VGProcessor_Recenterer       rc;
         VGProcessor_VisionExporter   ve;
         VGProcessor_VisionExporter   vc;
 
-        mm.SetMergeScheme(VGProcessor_MaterialMerger::VGMS_NOTHING); // material merging was done outside
 
         bk.SetFlags(VGProcessor_Baker::VGBF_TRANSFORMS);
 
         hkvMat4 customCenter;
+        customCenter.setIdentity();
         customCenter.setTranslation(vPivot);
         customCenter.invert();
         customCenter.setRow (3, hkvVec4 (0, 0, 0, 1));
@@ -486,7 +491,6 @@ The asssignment would be more complicated, i.e. check per submesh which settings
         vc.SetOutStream(pCollOutStream);
 
         meshBackend.AddProcessor(&tg);
-        meshBackend.AddProcessor(&mm);
         meshBackend.AddProcessor(&bk);
         meshBackend.AddProcessor(&rc);
         meshBackend.AddProcessor(&ve);
@@ -511,6 +515,7 @@ The asssignment would be more complicated, i.e. check per submesh which settings
       VString sObjectKey;
       ConversionUtils::StringToVString(_objectKey,sObjectKey);
       hkvMat4 transform;
+      transform.setIdentity();
       transform.setTranslation(vPivot);
       m_pMeshInst = pRes->CreateInstance(transform, NULL, false); // no physics notification
       m_pMeshInst->SetParentZone(pNativeZone);
@@ -569,6 +574,8 @@ The asssignment would be more complicated, i.e. check per submesh which settings
         }
       }
 
+      const VArray<int, int> materialRemapping = scene.GetMaterialRemapping();
+
       // per submesh properties
       for (int i=0;i<m_pMeshInst->GetSubmeshInstanceCount();i++)
       {
@@ -578,7 +585,8 @@ The asssignment would be more complicated, i.e. check per submesh which settings
         pSubMeshInst->SetCastDynamicShadows(bFinal);
 
         // copy lightmap references
-        int iSrfIndex = pSubMesh->GetSurfaceIndex(); // relies on materials not re-sorted, duplicated or collapsed
+        int iSrfIndex = pSubMesh->GetSurfaceIndex();
+        iSrfIndex = (iSrfIndex >= materialRemapping.GetLength()) ? iSrfIndex : materialRemapping[iSrfIndex];
         VisStaticSubmeshInstance_cl *pOrigSubMeshInst = m_MaterialLookup.GetSubMeshInst(iSrfIndex);
         for (int j=0;j<4;j++)
         {
@@ -632,7 +640,7 @@ The asssignment would be more complicated, i.e. check per submesh which settings
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

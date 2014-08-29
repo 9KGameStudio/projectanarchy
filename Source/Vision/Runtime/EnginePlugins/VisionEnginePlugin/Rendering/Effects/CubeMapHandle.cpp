@@ -33,7 +33,11 @@ public:
 
   CubeMapHandle_cl* m_pCubeMapHandle;
   int m_iFace;
+
+  V_DECLARE_DYNAMIC(FlipAndBlurRenderLoop_cl);
 };
+
+V_IMPLEMENT_DYNAMIC(FlipAndBlurRenderLoop_cl, IVisRenderLoop_cl, &g_VisionEngineModule);
 
 IVisRenderLoopPtr CubeMapHandle_cl::s_spDefaultRenderLoop;
 
@@ -864,16 +868,17 @@ void CubeMapHandle_cl::SetContextOrientation()
     if(m_spRenderContext[i] == NULL)
       continue;
 
-    hkvVec3 vLookDir,vLookRight,vLookUp;
+    hkvVec3 vLookDir(0.0f), vLookRight(0.0f), vLookUp(0.0f);
+
     switch (i)
     {
       // directly taken from the DX9 documentation diagram (see "Cubic Environment Mapping")
-    case 0:vLookDir.x = ( 1.f);vLookRight.z = (-1.f);vLookUp.y = ( 1.f);break; // + X
-    case 1:vLookDir.x = (-1.f);vLookRight.z = ( 1.f);vLookUp.y = ( 1.f);break; // - X 
-    case 2:vLookDir.y = ( 1.f);vLookRight.x = ( 1.f);vLookUp.z = (-1.f);break; // + Y
-    case 3:vLookDir.y = (-1.f);vLookRight.x = ( 1.f);vLookUp.z = ( 1.f);break; // - Y 
-    case 4:vLookDir.z = ( 1.f);vLookRight.x = ( 1.f);vLookUp.y = ( 1.f);break; // + Z
-    case 5:vLookDir.z = (-1.f);vLookRight.x = (-1.f);vLookUp.y = ( 1.f);break; // - Z 
+    case 0: vLookDir.x = ( 1.f);  vLookRight.z = (-1.f);  vLookUp.y = ( 1.f); break; // + X
+    case 1: vLookDir.x = (-1.f);  vLookRight.z = ( 1.f);  vLookUp.y = ( 1.f); break; // - X 
+    case 2: vLookDir.y = ( 1.f);  vLookRight.x = ( 1.f);  vLookUp.z = (-1.f); break; // + Y
+    case 3: vLookDir.y = (-1.f);  vLookRight.x = ( 1.f);  vLookUp.z = ( 1.f); break; // - Y 
+    case 4: vLookDir.z = ( 1.f);  vLookRight.x = ( 1.f);  vLookUp.y = ( 1.f); break; // + Z
+    case 5: vLookDir.z = (-1.f);  vLookRight.x = (-1.f);  vLookUp.y = ( 1.f); break; // - Z 
     default:
       return;
     }
@@ -998,7 +1003,7 @@ DEFINE_VAR_BOOL(CubeMapHandle_cl, m_bGenMipMaps, "generate mip maps after render
 END_VAR_TABLE
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

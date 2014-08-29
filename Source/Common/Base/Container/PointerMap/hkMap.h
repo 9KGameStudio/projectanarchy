@@ -17,7 +17,7 @@ struct hkMapOperations
 	{
 		// We ignore the lowest four bits on the address, since most addresses will be 16-byte aligned
 		// knuths multiplicative golden hash
-		return unsigned((hkUlong(key) >> 4) * 2654435761U) & mod;
+		return unsigned(((hkUlong(key) >> 4) * 2654435761U)  & ( (unsigned)(-1) )) & mod;
 	}
 	inline static void invalidate( KEY& key )
 	{
@@ -35,9 +35,9 @@ struct hkMapOperations
 
 // Specialized version without shifting away the bottom bits
 template <>
-struct hkMapOperations<int>
+struct HK_EXPORT_COMMON hkMapOperations<int>
 {
-	inline static unsigned hash( int key, unsigned mod ) { return (unsigned(key) * 2654435761U) & mod; }
+	inline static unsigned hash( int key, unsigned mod ) { return ((unsigned(key) * 2654435761U) & ( (unsigned)(-1) )) & mod; }
 	inline static void invalidate( int& key ) { key = int(-1); }
 	inline static hkBool32 isValid( int key ) { return key != int(-1); }
 	inline static hkBool32 equal( int key0, int key1 ) { return key0 == key1; }
@@ -322,7 +322,7 @@ inline hkBool hkMapBase<KEY,VAL,OPS>::isValid( Iterator it ) const
 #endif // HKBASE_MAP_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

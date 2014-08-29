@@ -10,7 +10,7 @@
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Terrain/Editing/DecorationDensityChannel.hpp>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Terrain/Editing/EditableTerrainSector.hpp>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Terrain/Application/EditableTerrain.hpp>
-#include <Vision/Runtime/Base/System/Memory/VMemDbg.hpp>
+
 
 
 void VDecorationDensityChannel::GetLockInfo(VTerrainSector *pSector, VTerrainLockObject &destInfo)
@@ -29,7 +29,7 @@ void VDecorationDensityChannel::GetLockInfo(VTerrainSector *pSector, VTerrainLoc
 VDecorationDensityChannel *VDecorationDensityChannel::ChunkFileExchange(VChunkFile &file, VDecorationDensityChannel *pChannel, VEditableTerrain *pTerrain)
 {
   const VTerrainConfig &cfg(pTerrain->m_Config);
-  int iVersion = 8;
+  int iVersion = TERRAINDECORATION_SERIALIZE_CURRENTVERSION;
   char szModelFilename[FS_MAX_PATH];
   if (file.IsLoading())
   {
@@ -102,7 +102,7 @@ VDecorationDensityChannel *VDecorationDensityChannelCollection::GetModelChannel(
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

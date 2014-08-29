@@ -15,7 +15,7 @@ struct hkaiSilhouetteGeneratorSectionContext;
 
 	/// A class that customization of silhouette behavior in hkaiOverlapManager.
 	/// If no controller is specified, an hkaiDefaultSilhouettePriorityController will be used.
-class hkaiSilhouettePriorityController : public hkReferencedObject
+class HK_EXPORT_AI hkaiSilhouettePriorityController : public hkReferencedObject
 {
 	public:
 		HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_AI_NAVMESH);
@@ -33,7 +33,7 @@ class hkaiSilhouettePriorityController : public hkReferencedObject
 				const hkQTransform& previousRelativeTransform, const hkQTransform& currentRelativeTransform) const = 0;
 
 			/// Sort the generators on a given face from highest importance to lowest.
-			/// This is needed when there are more than hkaiNavMeshCutFaceJob::MAX_MATERIALS distinct silhouette materials.
+			/// This is needed when there are more than hkaiNavMeshCutFaceTask::MAX_MATERIALS distinct silhouette materials.
 			/// In this case, the lowest-priority materials will be used as cutting instead of painting silhouettes.
 			/// Also, the order of contexts may change even when no generators move, so some spatial information should
 			/// be used as a sorting criterion to avoid flickering in the triangulation.
@@ -41,7 +41,7 @@ class hkaiSilhouettePriorityController : public hkReferencedObject
 };
 
 	/// Default implementation of the hkaiSilhouettePriorityController inteface.
-class hkaiDefaultSilhouettePriorityController : public hkaiSilhouettePriorityController
+class HK_EXPORT_AI hkaiDefaultSilhouettePriorityController : public hkaiSilhouettePriorityController
 {
 	public:
 		HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_AI_NAVMESH);
@@ -61,7 +61,7 @@ class hkaiDefaultSilhouettePriorityController : public hkaiSilhouettePriorityCon
 #endif // HK_AI_OVERLAP_MANAGER
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

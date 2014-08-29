@@ -15,7 +15,7 @@
 ///
 /// Pre is pre the current position. From the start of the current position forwards.
 /// Post is the num characters (including current char) after position
-class hkParserBuffer : public hkReferencedObject
+class HK_EXPORT_COMMON hkParserBuffer : public hkReferencedObject
 {
 	public:
 		HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE);
@@ -117,7 +117,7 @@ class hkParserBuffer : public hkReferencedObject
 #endif // HK_PARSER_BUFFER_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

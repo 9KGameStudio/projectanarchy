@@ -18,7 +18,7 @@ class hkaSkeletonMapper;
 
 /// This class represents a simple animation control.
 /// It provides basic support for varying playback speed, fading and looping
-class hkaDefaultAnimationControl : public hkaAnimationControl
+class HK_EXPORT_ANIMATION hkaDefaultAnimationControl : public hkaAnimationControl
 {
 	public:
 		HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_ANIM_CONTROL);
@@ -215,7 +215,7 @@ class hkaDefaultAnimationControl : public hkaAnimationControl
 		class hkaDefaultAnimationControlMapperData* m_mapper;
 };
 
-class hkaDefaultAnimationControlMapperData : public hkReferencedObject
+class HK_EXPORT_ANIMATION hkaDefaultAnimationControlMapperData : public hkReferencedObject
 {
 public:
 	HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_ANIM_RUNTIME);
@@ -235,7 +235,7 @@ public:
 #endif // HK_DEFAULT_CONTROL_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

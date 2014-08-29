@@ -15,7 +15,7 @@
 #include <Ai/Pathfinding/Character/hkaiCharacter.h>
 
 	/// Convenience abstract base class for behaviors managing a single character.
-class hkaiSingleCharacterBehavior : public hkaiBehavior
+class HK_EXPORT_AI hkaiSingleCharacterBehavior : public hkaiBehavior
 {
 public:
 	HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_AI_STEERING);
@@ -28,6 +28,9 @@ public:
 	virtual void requestPathWithMultipleGoals(const hkVector4* goals, int numGoals, int priority = 0) HK_OVERRIDE;
 
 	virtual void requestVolumePathWithMultipleGoals(const hkVector4* goals, int numGoals, int priority = 0) HK_OVERRIDE;
+
+	virtual bool getNavMeshPathImmediately( const ImmediatePathInfo& immediatePathInfo ) HK_OVERRIDE;
+	virtual bool getNavVolumePathImmediately( const ImmediatePathInfo& immediatePathInfo ) HK_OVERRIDE;
 
 	virtual int getNumCharacters() const HK_OVERRIDE { return 1; }
 
@@ -49,18 +52,49 @@ public:
 		return hkaiCharacter::STATE_MANUAL_CONTROL;
 	}
 
+		/// Returns m_immediateNavMeshRequest if that is non-NULL, otherwise gets the path request from the hkaiWorld.
+	hkaiNavMeshPathRequestInfo* getCompletedNavMeshPathRequest();
+
+		/// Returns m_immediateNavVolumeRequest if that is non-NULL, otherwise gets the path request from the hkaiWorld.
+	hkaiNavVolumePathRequestInfo* getCompletedNavVolumePathRequest();
+
+	virtual void getGoalPoints( hkArray<hkVector4>::Temp& goalsOut ) const HK_OVERRIDE;
+
+	virtual int getCurrentGoalIndex() const HK_OVERRIDE;
+
 
 protected:
 
 	hkRefPtr<hkaiCharacter> m_character;
 
 	hkaiCharacterUtil::CallbackType m_callbackType;
+
+		/// Used getNavMeshPathImmediately().
+	hkRefPtr< hkaiNavMeshPathRequestInfo > m_immediateNavMeshRequest;
+
+		/// Used by getNavVolumePathImmediately()
+	hkRefPtr< hkaiNavVolumePathRequestInfo > m_immediateNavVolumeRequest;
+
+		/// Saved goal information.
+	struct HK_EXPORT_AI RequestedGoalPoint
+	{
+		hkVector4 m_position;	
+			/// Runtime index of the section this goal point is attached to
+		hkaiRuntimeIndex m_sectionId;
+	};
+
+		/// The goal points that were last requested, stored for repath requests
+	hkArray< RequestedGoalPoint > m_requestedGoalPoints;
+
+		/// Index of the current request goal.
+	int m_currentGoalIndex;
+
 };
 
 #endif // HK_AI_SINGLE_CHARACTER_BEHAVIOR_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

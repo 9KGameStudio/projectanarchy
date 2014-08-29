@@ -68,7 +68,7 @@ class hkpCharacterProxyJobUtil
 					/// On CPU, if you wish to implement a custom addCdPoint function it is
 					/// necessary to supply a function pointer to a (factory) function which
 					/// returns a new instance of a hkpCpuCharacterProxyCollector.
-				hkCreateCdPointCollectorOnCpuFunc m_createCdPointCollectorOnCpuFunc;			
+				hkCreateCdPointCollectorOnCpuFunc m_createCdPointCollectorOnCpuFunc;
 
 				//
 				// Broadphase: You need only supply these for SPU, as the world's broadphase will
@@ -76,18 +76,18 @@ class hkpCharacterProxyJobUtil
 				//
 
 					/// On SPU, world linear casts will be performed with this broadphase.
-				hkpBroadPhase* m_broadphase;		
+				hkpBroadPhase* m_broadphase;
 
 		};
 
 		//
 		// Interface for synchronous multithreading.
 		//
-			
+
 			/// Build and perform integrate jobs. After jobs have been processed, update the broad
 			/// phase AABBs from the characters and apply impulses to colliding bodies (if any)
 			/// stored in the command. Stack allocations are used for temporary buffer.
-		static void HK_CALL simulateCharactersSynchronously( class hkJobThreadPool* threadPool, const class JobData& mtData );
+		static void HK_CALL simulateCharactersSynchronously( class hkThreadPool* threadPool, const class JobData& mtData );
 
 		//
 		// Interface for asynchronous multithreading.
@@ -107,7 +107,7 @@ class hkpCharacterProxyJobUtil
 			/// Update all characters using the results in the buffer.
 			/// \param buffer the buffer previously passed to buildAndAddJobs.
 		static void HK_CALL handleResults( const JobData& mtData , void* buffer );
-	
+
 	public:
 		//
 		// Internal
@@ -133,7 +133,7 @@ class hkpCharacterProxyJobUtil
 			hkpTriggerVolume** m_triggerVolumeStorage;
 
 				/// The headers of the character proxy jobs.
-			hkpCharacterProxyJobHeader* m_jobHeaders;	
+			hkpCharacterProxyJobHeader* m_jobHeaders;
 		};
 
 			/// Fills out a CharacterJobBatch struct with pointers into the provided buffer.
@@ -143,7 +143,7 @@ class hkpCharacterProxyJobUtil
 #endif // HK_CHARACTER_PROXY_JOB_UTIL_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

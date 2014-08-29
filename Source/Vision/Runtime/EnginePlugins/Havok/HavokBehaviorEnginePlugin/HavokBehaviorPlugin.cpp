@@ -10,9 +10,10 @@
 #include <Vision/Runtime/EnginePlugins/Havok/HavokBehaviorEnginePlugin/vHavokBehaviorModule.hpp>
 #include <Vision/Runtime/EnginePlugins/Havok/HavokBehaviorEnginePlugin/vHavokBehaviorComponent.hpp>
 #include <Vision/Runtime/EnginePlugins/Havok/HavokPhysicsEnginePlugin/vHavokPhysicsModule.hpp>
+#include <Vision/Runtime/EnginePlugins/Havok/HavokPhysicsEnginePlugin/vHavokSync.inl>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Scripting/VScriptIncludes.hpp>
 
-#include <Vision/Runtime/Base/System/Memory/VMemDbg.hpp> // redefines new (have to include AFTER Havok headers as they define per class new which will not work if 'new' is #defined to something else
+ // redefines new (have to include AFTER Havok headers as they define per class new which will not work if 'new' is #defined to something else
 
 VIMPORT IVisPlugin_cl* GetEnginePlugin_vHavok();
 
@@ -63,6 +64,8 @@ VEXPORT IVisPlugin_cl* GetEnginePlugin()
 // Initialize the plugin
 void vHavokBehavior_cl::OnInitEnginePlugin()
 {
+  VISION_HAVOK_SYNC_STATICS();
+
 	hkvLog::Info( "vHavokBehavior_cl:OnInitEnginePlugin()" );
 
 #if ( (defined _DLL) || (defined _WINDLL) ) && !defined(VBASE_LIB)
@@ -75,15 +78,11 @@ void vHavokBehavior_cl::OnInitEnginePlugin()
 
 	vHavokBehaviorModule* module = vHavokBehaviorModule::GetInstance();
 
-#ifdef VLUA_USE_SWIG_BINDING
 	IVScriptManager::OnRegisterScriptFunctions += module;
-	IVScriptManager::OnScriptProxyCreation += module;
-#endif
 
 	// Register physics callbacks
 	vHavokPhysicsModule::OnBeforeInitializePhysics += module;
 	vHavokPhysicsModule::OnAfterDeInitializePhysics += module;
-	vHavokPhysicsModule::OnUnsyncHavokStatics += module;
 	vHavokPhysicsModule::OnBeforeWorldCreated += module;
 
 	// Register VDB callbacks
@@ -105,26 +104,23 @@ void vHavokBehavior_cl::OnDeInitEnginePlugin()
 	{
 		vHavokPhysicsModule::OnBeforeInitializePhysics -= module;
 		vHavokPhysicsModule::OnAfterDeInitializePhysics -= module;
-		vHavokPhysicsModule::OnUnsyncHavokStatics -= module;
 		vHavokPhysicsModule::OnBeforeWorldCreated -= module;
 		vHavokVisualDebugger::OnCreatingContexts -= module;
 		vHavokVisualDebugger::OnAddingDefaultViewers -= module;
 
-#ifdef VLUA_USE_SWIG_BINDING
 		IVScriptManager::OnRegisterScriptFunctions -= module;
-		IVScriptManager::OnScriptProxyCreation -= module;
-#endif
-
 	}
 
 	Vision::UnregisterModule(&g_vHavokBehaviorModule);
 
 	// To match the VISION_PLUGIN_ENSURE_LOADED
 	GetEnginePlugin_vHavok()->DeInitEnginePlugin();
+
+  VISION_HAVOK_UNSYNC_STATICS();
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

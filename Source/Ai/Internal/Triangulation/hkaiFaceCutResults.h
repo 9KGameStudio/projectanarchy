@@ -56,8 +56,14 @@ HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE,hkaiFaceCutResults);
 		/// Special return value if no cuts were performed.
 	enum ResultsBits
 	{
+			/// Succeeded, nothing special
+		RESULT_OK = 0,
+
 			/// No cutting was performed (i.e. no overlapping silhouettes)
-		RESULT_NO_CUTS = 1
+		RESULT_NO_CUTS = 1,
+
+			/// The task couldn't be run on SPU, so re-run it on PPU (PlayStation(R)3 only)
+		RESULT_RERUN_ON_PPU = 2,
 	};
 
 	typedef hkFlags<ConnectivityTypes, hkUint8> ConnectivityFlags;
@@ -98,7 +104,7 @@ HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE,hkaiFaceCutResults);
 	PolyPointer getFirstPolyPointer() const ;
 	PolyPointer getNextPolyPointer(PolyPointer h) const;
 
-	HK_ALIGN16(hkUint32)				m_originalFace;
+	HK_ALIGN16(hkaiPackedKey)			m_originalFace;
 	hkInt16								m_numPolys;
 	hkInt16								m_numEdges;
 	hkInt16								m_numVertices;
@@ -122,13 +128,13 @@ HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE,hkaiFaceCutResults);
 #endif
 
 		/// Returns the pointer where the data is written to.
-	inline hkUint32* init(int numPolys, int numEdges);
+	inline hkUint32* init(int numPolys, int numEdges, int numVerts = -1);
 	inline void writePolyInfo(PolyOutput& dataPtr, int material, int numEdges, const hkArrayBase<hkUint32>& edgeIndices, const hkArrayBase<hkUint32>& connectivity, const hkArrayBase<hkaiFaceCutResults::ConnectivityFlags>& flags );
 
 	/// Required size for all polygon data (indices, connectivity, and flags)
 	static int getPolyDataSize(int numPolys, int numEdges);
 	/// Total required size (getPolyDataSize() + vertex data)
-	static int getRequiredSize(int numPolys, int numEdges);
+	static int getRequiredSize(int numPolys, int numEdges, int numVerts = -1);
 
 protected:
 
@@ -144,7 +150,7 @@ protected:
 #endif // HK_FACE_CUT_RESULTS_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -106,14 +106,6 @@ struct hkaiIndexedSearchState
 	}
 	
 	// Estimate
-
-	hkBool32 estimatedCostLess( SearchIndex a, SearchIndex b ) const
-	{
-		PathCost ca = m_states[a].m_gCost + m_heuristicWeight * m_states[a].m_hCost;
-		PathCost cb = m_states[b].m_gCost + m_heuristicWeight * m_states[b].m_hCost;
-		return ca < cb;
-	}
-
 	PathCost estimatedCost( SearchIndex i ) const
 	{
 		const PathCost c = (PathCost) (m_states[i].m_gCost + m_heuristicWeight * m_states[i].m_hCost);
@@ -173,7 +165,7 @@ struct hkaiIndexedSearchState
 #endif // HKAI_INDEXED_ASTAR_SEARCHSTATE_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

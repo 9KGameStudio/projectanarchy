@@ -23,7 +23,7 @@ class hkStreamWriter;
 
 /// This holds the control over Processes and their life cycle.
 /// It is in itself a master process (can send and recv process related commands too)
-class hkServerProcessHandler : public hkReferencedObject,
+class HK_EXPORT_COMMON hkServerProcessHandler : public hkReferencedObject,
 			public hkProcessHandler, public hkProcess
 {
 	public:
@@ -76,7 +76,7 @@ class hkServerProcessHandler : public hkReferencedObject,
 #endif // HK_VISUALIZE_SERVER_PROCESS_SCHEDULER_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

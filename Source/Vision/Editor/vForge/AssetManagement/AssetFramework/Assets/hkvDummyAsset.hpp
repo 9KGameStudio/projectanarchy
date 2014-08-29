@@ -48,8 +48,11 @@ public: // public functions
   void setLoaderPath(const char* loaderPath);
 
 public: // overrides
-  VOVERRIDE hkUint32 getTypeIndex() const;
-  VOVERRIDE const char* getTypeName() const;
+  virtual const hkvAssetTypeInfoHandle& getTypeInfoHandle() const HKV_OVERRIDE;
+  virtual const char* getTypeName() const HKV_OVERRIDE;
+
+  virtual const char* getSubtypeName() const HKV_OVERRIDE;
+  virtual void setSubtypeByName(const char* name) HKV_OVERRIDE;
 
   virtual void makeDependencyList(std::vector<hkStringPtr>& out_list) const HKV_OVERRIDE;
   virtual void updateDependenciesFromList() HKV_OVERRIDE;
@@ -67,17 +70,19 @@ public: // overrides
 private:
   hkFileSystem::TimeStamp m_deleteTime;
   hkStringPtr m_assetType;
+  hkStringPtr m_assetSubtype;
   hkRefPtr<hkvTrackedFileDummy> m_trackedFileDummy;
   hkvPropertyList m_properties;
 
-  static hkUint32 s_assetTypeIndex;
+  static hkvAssetTypeInfo* s_typeInfo;
+  static const hkvAssetTypeInfoHandle* s_typeInfoHandle;
   static hkUint32 s_dummyCount;
 };
 
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -77,8 +77,8 @@ struct hkaiHierarchicalNavMeshHeuristic
 		// These are defined separately for SPU and CPU implementations
 		//
 		inline const hkaiNavMesh::Edge& getEdge(hkaiPackedKey edgeId) const;
-		inline ClusterKey getClusterForFace(FaceKey faceKey) const;
-		inline ClusterKey getClusterForFace(const hkaiNavMesh::Face& face, hkaiRuntimeIndex sectionId) const;
+		inline ClusterKey getClusterKeyForFace(FaceKey faceKey) const;
+		inline ClusterKey getClusterKeyForFace(const hkaiNavMesh::Face& face, hkaiRuntimeIndex sectionId) const;
 
 
 		inline void getEdgePosition(EdgeKey edgeId, hkVector4& posOut) const;
@@ -89,7 +89,7 @@ struct hkaiHierarchicalNavMeshHeuristic
 		inline hkSimdReal getMinDistanceToGoals( hkVector4Parameter edgePosition ) const;
 
 		// sets goalIndexOut to the index of the goal cluster that the face is adjacent to, or -1 if not adjacent
-		bool isFaceChunkAdjacentToGoalChunk(CoarseGraph::NodeIndex faceIndex, int& goalClusterOut, CoarseGraph::EdgeCost& costOut) const;
+		bool isFaceChunkAdjacentToGoalChunk(ClusterKey faceIndex, int& goalClusterOut, CoarseGraph::EdgeCost& costOut) const;
 
 		hkSimdReal adjacentDistance(hkVector4Parameter startPosition, hkVector4Parameter startCenter,
 			hkVector4Parameter endPosition, hkVector4Parameter endCenter, CoarseGraph::EdgeCost edgeCost) const;
@@ -126,7 +126,7 @@ struct hkaiHierarchicalNavMeshHeuristic
 #endif // HKAI_ASTAR_HIERARCHICAL_HEURISTIC_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

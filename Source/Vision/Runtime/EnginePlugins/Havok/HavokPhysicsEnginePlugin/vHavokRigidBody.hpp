@@ -32,7 +32,8 @@ class hkResource;
 #define VHAVOKRIGIDBODY_VERSION_9        9     // Activation/deactivation of collision
 #define VHAVOKRIGIDBODY_VERSION_10       10    // Welding type for mesh rigid bodies
 #define VHAVOKRIGIDBODY_VERSION_11       11    // Shape shrinker support on convex shapes
-#define VHAVOKRIGIDBODY_VERSION_CURRENT  11    // Current version
+#define VHAVOKRIGIDBODY_VERSION_12       12    // Gravity factor
+#define VHAVOKRIGIDBODY_VERSION_CURRENT  12    // Current version
 
 #if defined(HAVOK_SDK_VERSION_MAJOR) && (HAVOK_SDK_VERSION_MAJOR >= 2012)
 typedef hkMassProperties hkpMassProperties;
@@ -544,7 +545,7 @@ public:
   ///   Structure that can be modified to affect the editor's displaying 
   ///   of the respective variable (read-only, hidden).
   ///
-  #ifdef WIN32
+  #ifdef _VISION_WIN32
   VHAVOK_IMPEXP virtual void GetVariableAttributes(VisVariable_cl *pVariable, VVariableAttributeInfo &destInfo) HKV_OVERRIDE;
   #endif
 
@@ -595,6 +596,7 @@ public:
   /// \brief
   ///   Updates the owner object's transformation according to the rigid body in the physics world.
   VHAVOK_IMPEXP void UpdateOwner();
+  VHAVOK_IMPEXP void Reposition();
 
   ///
   /// \brief
@@ -830,6 +832,15 @@ public:
   ///
   VHAVOK_IMPEXP void SetMass(float fMass);
 
+  ///
+  /// \brief
+  ///   Returns the mass in kg.
+  ///
+  inline float GetMass() const
+  {
+    return Havok_Mass;
+  }
+
   /// \brief
   ///   Sets the motion type of this rigid body.
   /// \param type
@@ -849,10 +860,37 @@ public:
   VHAVOK_IMPEXP void SetRestitution(float fRestitution);
 
   /// \brief
+  ///   Returns the restitution of this rigid body.
+  inline float GetRestitution() const
+  {
+    return Havok_Restitution;
+  }
+
+  /// \brief
   ///   Sets the friction of this rigid body.
   /// \param fFriction
   ///   The new friction value; should be between 0.0 and 1.0.
   VHAVOK_IMPEXP void SetFriction(float fFriction);
+
+  /// \brief
+  ///   Returns the friction of this rigid body.
+  inline float GetFriction() const
+  {
+    return Havok_Friction;
+  }
+
+  /// \brief
+  ///   Sets the gravity factor of this rigid body.
+  /// \param fGravityFactor
+  ///   The new gravity factor.
+  VHAVOK_IMPEXP void SetGravityFactor(float fGravityFactor);
+
+  /// \brief
+  ///   Returns the gravity factor of this rigid body.
+  inline float GetGravityFactor() const
+  {
+    return Havok_GravityFactor;
+  }
 
   /// \brief
   ///   Sets the collision parameters of this rigid body.
@@ -906,10 +944,31 @@ public:
 
   /// \brief
   ///   Returns the activation status of this object.
-  ///
-  /// \return
-  ///   Indicates the rigid body is active.
-  VHAVOK_IMPEXP bool GetActive() const;
+  inline bool GetActive() const
+  {
+    return Havok_Active;
+  }
+
+  /// \brief
+  ///   Sets whether tight-fit is enabled.
+  inline void SetTightFit(bool bEnabled)
+  {
+    Havok_TightFit = bEnabled;
+  }
+
+  /// \brief
+  ///  Returns whether the rigid body shape fits tightly around the object.
+  inline bool GetTightFit() const
+  {
+    return Havok_TightFit;
+  }
+
+  /// \brief
+  ///   Returns whether or not the rigid body is valid.
+  inline bool IsInitialized() const
+  {
+    return (m_spRigidBody != NULL);
+  }
 
   ///
   /// @}
@@ -1074,7 +1133,6 @@ protected:
   vHavokPhysicsModule *m_pModule;         ///< Reference to Havok Physics Module
   hkvVec3 m_vCenterOfMassOffset;          ///< Offset which compensates for collision bbox pivot not being equal to model pivot
   bool m_bAddedToWorld;                   ///< Whether the Rigid Body is currently added to Havok World
-  const char *m_szShapeCacheId;           ///< ID of shape of the rigid body in runtime cache table (points to memory in cache table).
 
   hkvVec3 m_vTempDeserializedLinearVel;   ///< Deserialized linear velocity. Temporarily stored until deserialization is finished and rigid body is available.
   hkvVec3 m_vTempDeserializedAngularVel;  ///< Deserialized angular velocity. Temporarily stored until deserialization is finished and rigid body is available.
@@ -1097,8 +1155,9 @@ public:
   BOOL Havok_NoDeactivate;                ///< Whether to keep this rigid body always active
 
   float Havok_Mass;                       ///< The mass of this RB in kilograms
+  float Havok_GravityFactor;              ///< Gravity factor this RB
   int Havok_InertiaTensorComputeMode;     ///< Inertia tensor computation mode
-  float Havok_SurfaceThickness;           ///< The surface thickness for surface inertia tensor computation
+  float Havok_SurfaceThickness;				  ///< The surface thickness for surface inertia tensor computation
   hkvVec3 Havok_InertiaTensorAxisScaling; ///< Factors to scale the inertia tensor's axes with
   float Havok_InertiaTensorScaling;       ///< Factor to scale all components of the inertia tensor with
 
@@ -1135,7 +1194,7 @@ public:
 #endif // VHAVOKRIGIDBODY_HPP_INCLUDED
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

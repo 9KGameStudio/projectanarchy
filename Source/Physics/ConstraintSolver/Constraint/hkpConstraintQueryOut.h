@@ -15,7 +15,7 @@ struct hkpConstraintRuntime;
 
 /// A class containing a few pointers to buffers, where we expect
 /// the results of an hkpConstraintData::buildJacobian() call
-class hkpConstraintQueryOut
+class HK_EXPORT_PHYSICS hkpConstraintQueryOut
 {
 	public:
 
@@ -36,7 +36,7 @@ class hkpConstraintQueryOut
 #endif // HKP_CONSTRAINT_QUERY_OUT_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

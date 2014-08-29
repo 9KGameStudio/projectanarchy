@@ -95,12 +95,9 @@ protected:
   // If specified light has a shadow map component attached that is compatible to VMobileForwardRenderingSystem, 
   // then the corresponding pointer to the component is returned, otherwise NULL. 
   IVShadowMapComponent* GetCompatibleShadowMapComponent(VisLightSource_cl *pLight);
-  
-  // Calculates approximated light influence area in screen space
-  int GetLightInfluenceArea(VisLightSource_cl *pLight);
 
   // The light with the highest priority will be rendered in the base pass.
-  int GetLightPriority(VisLightSource_cl *pLight);
+  unsigned int GetLightPriority(VisLightSource_cl *pLight);
 
   // Determines which lights have to rendered in current frame
   void DetermineRelevantLights();
@@ -122,7 +119,7 @@ protected:
 #endif // VMOBILE_FORWARDRENDERLOOP_HPP_INCLUDED
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

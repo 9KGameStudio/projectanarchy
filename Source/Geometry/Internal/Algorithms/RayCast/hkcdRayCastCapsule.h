@@ -11,6 +11,8 @@
 #define	HKCD_INTERSECTIONS_RAY_CAPSULE
 
 #include <Geometry/Internal/Types/hkcdRay.h>
+#include <Geometry/Internal/Types/hkcdRayBundle.h>
+
 
 	/// Hit type for hkcdRayCastCapsule
 enum hkcdRayCastCapsuleHitType
@@ -25,21 +27,23 @@ enum hkcdRayCastCapsuleHitType
 	/// Raycast against a capsule.
 	/// See \ref RayCastDocumentation for common input and output parameter descriptions.
 	/// \param[out] hitTypeOut the part of the capsule hit (the ends or cylindrical "body")
-HK_FORCE_INLINE hkInt32 hkcdRayCastCapsule(const hkcdRay& ray,
-											hkVector4Parameter vertex0,
-											hkVector4Parameter vertex1,
-											hkSimdRealParameter radius, 
-											hkSimdReal* HK_RESTRICT fractionInOut,
-											hkVector4* HK_RESTRICT normalOut,
-											hkcdRayCastCapsuleHitType* HK_RESTRICT hitTypeOut,
-											hkcdRayQueryFlags::Enum flags 
-											);
+HK_FORCE_INLINE hkcdRayCastResult hkcdRayCastCapsule(
+	const hkcdRay& ray,
+	hkVector4Parameter vertex0,
+	hkVector4Parameter vertex1,
+	hkSimdRealParameter radius,
+	hkSimdReal* HK_RESTRICT fractionInOut,
+	hkVector4* HK_RESTRICT normalOut,
+	hkcdRayCastCapsuleHitType* HK_RESTRICT hitTypeOut,
+	hkFlags<hkcdRayQueryFlags::Enum,hkUint32> flags );
 
 
 	/// Bundle version or ray capsule intersection check.
-HK_FORCE_INLINE hkVector4Comparison hkcdRayBundleCapsuleIntersect( const hkcdRayBundle& rayBundle,
-																  hkVector4Parameter vertex0, hkVector4Parameter vertex1, hkSimdRealParameter radius, 
-																  hkVector4& fractionsInOut, hkFourTransposedPoints& normalsOut );
+HK_FORCE_INLINE hkVector4Comparison hkcdRayBundleCapsuleIntersect(
+	const hkcdRayBundle& rayBundle,
+	hkVector4Parameter vertex0, hkVector4Parameter vertex1, hkSimdRealParameter radius, 
+	hkVector4& fractionsInOut, hkFourTransposedPoints& normalsOut );
+
 
 
 	/// Bundle version of hkcdRayCastCapsule
@@ -56,7 +60,7 @@ HK_FORCE_INLINE hkVector4Comparison hkcdRayBundleCapsuleIntersect( const hkcdRay
 #endif // HKCD_INTERSECTIONS_RAY_CAPSULE
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -8,7 +8,7 @@
 
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/VisionEnginePluginPCH.h>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Components/VFollowPathComponent.hpp>
-#include <Vision/Runtime/Base/System/Memory/VMemDbg.hpp>
+
 
 
 /// =========================================================================== ///
@@ -100,10 +100,13 @@ void VFollowPathComponent::PerFrameUpdate()
       m_pPath->EvalPointSmooth(fCurrentParam, vPos, &vDir, NULL);
     else
       m_pPath->EvalPoint(fCurrentParam, vPos, &vDir, NULL);
-    pObject3D->SetUseEulerAngles(true); 
-    pObject3D->SetPosition(vPos + PositionOffset);
-    pObject3D->SetDirection(vDir);
-    pObject3D->IncOrientation(OrientationOffset);
+
+    // set orientation in view direction and offset by euler angles. 
+    hkvMat3 rotation_dir(hkvNoInitialization), rotation(hkvNoInitialization);
+    rotation_dir.setLookInDirectionMatrix (vDir);
+    rotation.setFromEulerAngles(OrientationOffset.z,OrientationOffset.y,OrientationOffset.x); // this could be pre-computed
+
+    pObject3D->SetPositionAndRotation(vPos + PositionOffset, rotation_dir.multiply(rotation));
   }
   else
   {
@@ -143,6 +146,7 @@ void VFollowPathComponent::SetOwner(VisTypedEngineObject_cl *pOwner)
   if (pOwner != NULL)
   {
     VFollowPathComponentManager::GlobalManager().Instances().AddUnique(this);
+    pOwner->SetObjectFlag(VObjectFlag_AutoRepositioningDelta); // since this component takes over position control, we can't restore position from zone's local pos
   }
   else
   {
@@ -264,7 +268,7 @@ void VFollowPathComponentManager::OnHandleCallback(IVisCallbackDataObject_cl *pD
 /// VFollowPathComponent Variable Table                                         ///
 /// =========================================================================== ///
 
-START_VAR_TABLE(VFollowPathComponent,IVObjectComponent, "Follow Path Component. Can be attached to any 3D object that will follow a path shape specified with the path key.", VVARIABLELIST_FLAGS_NONE, "Follow Path" )
+START_VAR_TABLE(VFollowPathComponent,IVObjectComponent, "Can be attached to any 3D object to make it follow a path shape specified with the path key.", VVARIABLELIST_FLAGS_NONE, "Follow Path" )
   DEFINE_VAR_VSTRING(VFollowPathComponent, PathKey, "The object key of the path shape to follow. Obsolete if a PathObject is specified directly", "", 0,0, NULL);
   DEFINE_VAR_OBJECT_REFERENCE(VFollowPathComponent, PathObject, "Reference to the path the owner object should move on", NULL, 0, 0);
   DEFINE_VAR_FLOAT(VFollowPathComponent, Time, "The time the owner object needs to move along the path", "5.0", 0, NULL);
@@ -277,7 +281,7 @@ START_VAR_TABLE(VFollowPathComponent,IVObjectComponent, "Follow Path Component. 
 END_VAR_TABLE
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

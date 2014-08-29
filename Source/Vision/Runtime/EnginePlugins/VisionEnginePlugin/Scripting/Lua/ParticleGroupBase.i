@@ -16,33 +16,48 @@ public:
  
   %rename(Remove) Dispose();
   inline void Dispose();
- 
+
   %extend{
     VSWIG_BITMASK_SETTER(SetVisibleBitmask);
-    
+
     const char * GetName()
     {
       return self->GetSourceEffect()->GetFilename();
     }
-    
+
     void IncPosition(float x, float y, float z, bool bMoveParticles = false)
     {
       self->IncPosition(hkvVec3(x,y,z), bMoveParticles);
     }
-    
+
     void ContinueSimulationWhenInvisible(bool bContinue)
     {
         self->SetHandleWhenVisible(!bContinue); //this is a very confusing method name
     }
-    
+
     hkvAlignedBBox GetLocalBoundingBox()
     {
+      hkvLog::Warning("VisParticleEffect_cl::GetLocalBoundingBox: Note this function is deprecated. Use GetLocalSpaceBoundingBox or GetWorldSpaceBoundingBox instead. Refer to VisParticleEffect_cl::GetLocalBoundingBox for further information.");
       hkvAlignedBBox box;
       self->GetLocalBoundingBox(box);
       return box;
     }
+
+    hkvAlignedBBox GetLocalSpaceBoundingBox()
+    {
+      hkvAlignedBBox box;
+      self->GetLocalSpaceBoundingBox(box);
+      return box;
+    }
+
+    hkvAlignedBBox GetWorldSpaceBoundingBox()
+    {
+      hkvAlignedBBox box;
+      self->GetWorldSpaceBoundingBox(box);
+      return box;
+    }
   }
-  
+
   inline void SetVisible(bool bStatus);
   bool IsVisible() const;
 
@@ -175,10 +190,21 @@ public:
   /// @name Bounding Box
   /// @{
   
-  /// \brief Get the local bounding box (merged from all children).
+  /// \brief Get the local bounding box of the layer descriptors (merged from all children).
   /// \return The local bounding box.
+  /// \deprecated Use either GetLocalSpaceBoundingBox or GetWorldSpaceBoundingBox
   hkvAlignedBBox GetLocalBoundingBox();
   
+  /// \brief Get the local space bounding box (merged from all children).
+  /// \return The local space bounding box.
+  /// \see GetWorldSpaceBoundingBox
+  hkvAlignedBBox GetLocalSpaceBoundingBox();
+
+  /// \brief Get the world space bounding box (merged from all children).
+  /// \return The world space bounding box.
+  /// \see GetLocalSpaceBoundingBox
+  hkvAlignedBBox GetWorldSpaceBoundingBox();
+
   /// @}
   /// @name Particle Effect Control
   /// @{
@@ -257,7 +283,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -30,7 +30,6 @@
 
 //deprecated
 #include <Vision/Runtime/Engine/Input/VisApiKey.hpp>
-#include <Vision/Runtime/Engine/Input/VisApiMouse.hpp>
 
 #include <Vision/Runtime/Engine/System/VisionConsoleManager.hpp>
 #include <Vision/Runtime/Engine/Input/VisApiInput.hpp>
@@ -65,7 +64,6 @@
 #include <Vision/Runtime/Engine/Profiling/VisApiProfiling.hpp>
 
 #include <Vision/Runtime/Engine/Renderer/VisApiRenderer.hpp>
-#include <Vision/Runtime/Engine/Renderer/Context/VisApiRenderContext.hpp>
 
 #include <Vision/Runtime/Engine/Renderer/State/VisApiRenderStates.hpp>
 
@@ -75,7 +73,6 @@
 
 #include <Vision/Runtime/Engine/System/VisApiGame.hpp>
 #include <Vision/Runtime/Engine/Physics/VisApiCollisionToolkit.hpp>
-#include <Vision/Runtime/Engine/Input/VisApiMouse.hpp>
 #include <Vision/Runtime/Engine/Network/IVisApiNetworkManager.hpp>
 
 
@@ -111,7 +108,6 @@
 #include <Vision/Runtime/Engine/System/IO/VisApiFile.hpp>
 
 #include <Vision/Runtime/Engine/Physics/VisApiPhysics.hpp>
-#include <Vision/Runtime/Base/Math/BoundingVolume/hkvAlignedBBox.h>
 
 #include <Vision/Runtime/Engine/System/Resource/VisApiResource.hpp>
 
@@ -119,7 +115,6 @@
 
 #include <Vision/Runtime/Engine/System/PluginSystem/VisApiPluginManager.hpp>
 #include <Vision/Runtime/Engine/System/VisApiEditorManager.hpp>
-#include <Vision/Runtime/Engine/System/VisApiBrowser.hpp>
 #include <Vision/Runtime/Engine/Animation/VisApiAnimManager.hpp>
 
 #include <Vision/Runtime/Engine/SceneManagement/VisionSceneManager.hpp>
@@ -180,11 +175,6 @@ public:
   VISION_APIDATA static VisKey_cl Key;     ///< Deprecated; use VInput instead
 #endif
 
-#ifdef SUPPORTS_MOUSE
-  VISION_APIDATA static VisMouse_cl Mouse; ///< Deprecated; use VInput instead
-#endif
-
-
 #if defined (_VISION_XENON)
   VISION_APIDATA static VisXenonDCHandler_cl XenonDCHandler;      ///< Xenon debug channel initialisation and handling
 #endif
@@ -232,10 +222,6 @@ public:
   VISION_APIDATA static VisResourceSystem_cl ResourceSystem;      ///< Resource system
   VISION_APIDATA static VisAnimManager_cl Animations;             ///< Animation system
   VISION_APIDATA static VisPersistentData_cl PersistentData;      ///< Persistent Data
-
-#ifdef SUPPORTS_BROWSER
-  VISION_APIDATA static VisBrowserManager_cl Browser;             ///< Browser manager
-#endif
   ///
   /// @}
   ///
@@ -283,15 +269,6 @@ public:
   /// \brief
   ///   Indicates whether the engine is currently in the process of initialization.
   VISION_APIFUNC static BOOL IsInitializing();
-
-  /// \brief
-  ///   DEPRECATED: Call Vision::InitWorld() instead if you just want to clear and
-  ///   re-init the World object. Alternatively, if you want to just De-init the 
-  ///   World object (e.g. before shutting down), you can call Vision::DeInitWorld() 
-  ///   instead. Calling either of these is not necessary before using a VSceneLoader
-  ///   however.
-  HKV_DEPRECATED_2012_1 VISION_APIFUNC static void LoadWorld(const char *shouldBeNull)
-  { ASSERT(shouldBeNull); InitWorld(); } 
 
   /// \brief
   ///   Prepares an empty world for loading a new scene
@@ -817,7 +794,7 @@ void VISION_APIFUNC VisionInterReleaseDebugLinkingCheck();
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

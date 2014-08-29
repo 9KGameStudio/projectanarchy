@@ -20,7 +20,7 @@ class hkOstream;
 /// secondary type. This is done to allow for a more flexible way to configure and custom implement command dispatchers.
 /// Commands should be stream-able between platforms of the same endianness like between PPU and SPU, therefore they
 /// have no vtable.
-class hkCommand
+class HK_EXPORT_COMMON hkCommand
 {
 	public:
 
@@ -63,7 +63,7 @@ class hkCommand
 
 
 /// Command dispatcher which dispatches commands using the secondary type.
-class hkSecondaryCommandDispatcher : public hkReferencedObject
+class HK_EXPORT_COMMON hkSecondaryCommandDispatcher : public hkReferencedObject
 {
 	public:
 
@@ -78,7 +78,7 @@ class hkSecondaryCommandDispatcher : public hkReferencedObject
 
 
 /// Implementation of hkCommandProcessor which streams into a block stream.
-class hkBlockStreamCommandWriter HK_ON_CPU( :public hkSecondaryCommandDispatcher )
+class HK_EXPORT_COMMON hkBlockStreamCommandWriter HK_ON_CPU( :public hkSecondaryCommandDispatcher )
 {
 	public:
 
@@ -103,7 +103,7 @@ class hkBlockStreamCommandWriter HK_ON_CPU( :public hkSecondaryCommandDispatcher
 };
 
 /// command dispatcher which dispatches using the primary type
-class hkPrimaryCommandDispatcher
+class HK_EXPORT_COMMON hkPrimaryCommandDispatcher
 {
 	public:
 
@@ -129,7 +129,7 @@ class hkPrimaryCommandDispatcher
 #endif //HK_COMMAND_STREAM_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

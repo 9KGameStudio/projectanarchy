@@ -159,12 +159,12 @@ void vHavokContactListener::contactPointCallback (const hkpContactPointEvent &ev
           {
             const hkvBvCompressedMeshShape *pMeshShape = (hkvBvCompressedMeshShape*)(pShape);
             VASSERT(key != HK_INVALID_SHAPE_KEY);
-            const hkvMeshMaterialCache* matCache = (const hkvMeshMaterialCache*) ( pMeshShape->m_userData );
-            if (matCache)
+            const hkvMeshMaterialCache& matCache = pMeshShape->GetMaterialCache();
+            if (!matCache.isEmpty())
             {
               hkUint32 matId = pMeshShape->getPrimitiveUserData( key );
-              VASSERT(matId <= (hkUint32)matCache->getSize());
-              const hkvMeshMaterial& pMaterial = (*matCache)[matId];
+              VASSERT(matId <= (hkUint32)matCache.getSize());
+              const hkvMeshMaterial& pMaterial = matCache[matId];
         
               pInfo->m_Materials[i].fDynamicFriction = pMaterial.m_fFriction;
               pInfo->m_Materials[i].fRestitution = pMaterial.m_fRestitution;
@@ -300,7 +300,7 @@ void vHavokCollisionListener::contactPointRemovedCallback(hkpContactPointRemoved
 */
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

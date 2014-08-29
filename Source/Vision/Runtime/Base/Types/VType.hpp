@@ -26,6 +26,14 @@ struct V_REGISTER_CLASS;
 #include <Vision/Runtime/Base/Container/VLinkedList.hpp>
 #include <Vision/Runtime/Base/Container/VTraits.hpp>
 
+#if defined(_MSC_VER) && defined(_CPPRTTI) && defined(HK_DEBUG_SLOW)
+#define V_ENABLE_RTTI_VALIDATION
+#endif
+
+#if defined(V_ENABLE_RTTI_VALIDATION)
+#include <typeinfo>
+#endif
+
 class VCallback;
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -49,7 +57,7 @@ enum VVarChangeRes_e
 {
   VCHANGE_IS_REDUNDANT, ///< the variable is already set to the specified value, OnVariableValueChanged will not occur, set is successful
   VCHANGE_IS_CANCELLED, ///< the variable cannot be changed to the specified value, OnVariableValueChanged will not occur, set is unsuccessful
-  VCHANGE_IS_ALLOWED,   ///< the variable can be changed to the specified value, OnVariableValueChanged will occur, set is successful
+  VCHANGE_IS_ALLOWED, ///< the variable can be changed to the specified value, OnVariableValueChanged will occur, set is successful
 };
 
 /// \brief
@@ -72,20 +80,20 @@ public:
 
 #ifndef _VISION_DOC
 
-  class VisVariable_cl;
+class VisVariable_cl;
 
-  #define VARIABLE_ELEM LinkedList_Element_cl<VisVariable_cl*>
+#define VARIABLE_ELEM LinkedList_Element_cl<VisVariable_cl *>
 
-  class VARIABLE_LIST : public LinkedList_cl<VisVariable_cl*>
-  {
-  public:
-    VBASE_IMPEXP VARIABLE_LIST(const char* szDesc, int iFlags, const char* szModel);
-    VBASE_IMPEXP ~VARIABLE_LIST();
+class VARIABLE_LIST : public LinkedList_cl<VisVariable_cl *>
+{
+public:
+  VBASE_IMPEXP VARIABLE_LIST(const char *szDesc, int iFlags, const char *szModel);
+  VBASE_IMPEXP ~VARIABLE_LIST();
 
-    const char *m_szVarList_Desc;
-    VVARIABLELIST_FLAGS_e m_iVarList_Flags;
-    const char *m_szCustomModel;
-  };
+  const char *m_szVarList_Desc;
+  VVARIABLELIST_FLAGS_e m_iVarList_Flags;
+  const char *m_szCustomModel;
+};
 
 #endif //_VISION_DOC
 
@@ -309,30 +317,24 @@ public:
   VBASE_IMPEXP static VisVariableObjectValueConverter *s_pStringToShaderEffectConverter;
 };  
 
-
-
-///////////////////////////////////////////////////////
-// base class helper macros
-///////////////////////////////////////////////////////
-
-#ifdef _WIN64  
-  #define EXPECTED_VTYPE_SIZE   88
-  #define EXPECTED_VTYPE_OFFSET 24
-#else  
-  #define EXPECTED_VTYPE_SIZE   48
-  #define EXPECTED_VTYPE_OFFSET 16
-#endif
-
-
 /// \brief
 ///   Macro that has to be put into the header declaration to add RTTI capabilities to a class.
 ///
 /// See RTTI documentation for differences regarding V_DECLARE_xyz macros
+#if defined(V_ENABLE_RTTI_VALIDATION)
+#define V_DECLARE_DYNAMIC(class_name) \
+public: \
+  static VType* GetRealParentClassId(); \
+  static VType class##class_name; \
+  static VType *GetClassTypeId(); \
+  virtual VType *GetTypeId() const;
+#else
 #define V_DECLARE_DYNAMIC(class_name) \
 public: \
   static VType class##class_name; \
   static VType *GetClassTypeId(); \
   virtual VType *GetTypeId() const;
+#endif
 
 /// \brief
 ///   Macro that has to be put into the header declaration to add RTTI capabilities to a class.
@@ -398,11 +400,20 @@ public: \
 ///
 /// Same as V_DECLARE_DYNAMIC but with DLL linkage type so functions can be exported. Required when plugin functionality
 /// should be accessible outside the plugin.
+#if defined(V_ENABLE_RTTI_VALIDATION)
+#define V_DECLARE_DYNAMIC_DLLEXP(class_name, imp_exp_spec) \
+public: \
+  static VType* GetRealParentClassId(); \
+  static imp_exp_spec VType class##class_name; \
+  static imp_exp_spec VType *GetClassTypeId(); \
+  virtual imp_exp_spec VType *GetTypeId() const;
+#else
 #define V_DECLARE_DYNAMIC_DLLEXP(class_name, imp_exp_spec) \
 public: \
   static imp_exp_spec VType class##class_name; \
   static imp_exp_spec VType *GetClassTypeId(); \
   virtual imp_exp_spec VType *GetTypeId() const;
+#endif
 
 /// \brief
 ///   Optionally adds a variable table to this class. This macro must be specified in the header.
@@ -443,9 +454,27 @@ public: \
 
 /// \brief
 ///   Base macro that has to be put into the cpp to add RTTI capabilities to a class.
+
+#if defined(V_ENABLE_RTTI_VALIDATION)
 #define V_IMPLEMENT_RUNTIMECLASS(class_name, base_class_name, wSchema, pfnNew, plugin_source) \
+   V_IMPLEMENT_RUNTIMECLASS_NO_BASE_CHECK(class_name, base_class_name, wSchema, pfnNew, plugin_source) \
+    VType* class_name::GetRealParentClassId() { return __super::GetClassTypeId(); }
+#else
+#define V_IMPLEMENT_RUNTIMECLASS(class_name, base_class_name, wSchema, pfnNew, plugin_source) \
+    V_IMPLEMENT_RUNTIMECLASS_NO_BASE_CHECK(class_name, base_class_name, wSchema, pfnNew, plugin_source)
+#endif
+
+#if defined(V_ENABLE_RTTI_VALIDATION)
+#define V_RTTI_VALIDATATION_ADD_MEMBERS(class_name) , class_name::GetRealParentClassId, &typeid(class_name)
+#else
+#define V_RTTI_VALIDATATION_ADD_MEMBERS(class_name)
+#endif
+
+
+#define V_IMPLEMENT_RUNTIMECLASS_NO_BASE_CHECK(class_name, base_class_name, wSchema, pfnNew, plugin_source) \
   VType class_name::class##class_name = { \
     #class_name, pfnNew, sizeof(class class_name), wSchema,   \
+    /* m_iClassOffset   = */ (int)((char*)(16) - (char*)((VTypedObject*)(class_name*)(16))), \
     /* m_pBaseClass     = */ V_RUNTIME_CLASS(base_class_name),\
     /* m_pModule        = */ plugin_source,   \
     /* m_pParamDesc     = */ NULL,            \
@@ -453,14 +482,14 @@ public: \
     /* m_bFullParamInit = */ FALSE,   \
     /* m_pVarList       = */ NULL,    \
     /* m_iReserved  = */ 0, \
-    /* m_pNextType      = */ NULL };  \
+    /* m_pNextType      = */ NULL, \
+    /* m_pSwigTypeInfo  = */ NULL \
+    V_RTTI_VALIDATATION_ADD_MEMBERS(class_name) };  \
   VType *class_name::GetClassTypeId()                               \
     {                                                               \
-     V_COMPILE_ASSERT( sizeof(class_name::class##class_name)== EXPECTED_VTYPE_SIZE ); \
-     V_COMPILE_ASSERT( offsetof(VType,m_pBaseClass) == EXPECTED_VTYPE_OFFSET ); \
      return V_RUNTIME_CLASS(class_name);                            \
     }                                                               \
-  VType *class_name::GetTypeId() const \
+    VType *class_name::GetTypeId() const \
     { return V_RUNTIME_CLASS(class_name); } \
   V_REGISTER_CLASS _init_##class_name(V_RUNTIME_CLASS(class_name)); 
 
@@ -493,7 +522,7 @@ public: \
   V_IMPLEMENT_RUNTIMECLASS(class_name, base_class_name, wSchema, \
     class_name::CreateObject,plugin_source) \
     VArchive& operator>>( VArchive& ar, class_name* &pObj ) \
-    { pObj = (class_name*)ar.ReadObject( V_RUNTIME_CLASS(class_name) ); \
+    { pObj = ar.ReadObject<class_name>(); \
       return ar; } \
 
 /// \brief
@@ -504,7 +533,7 @@ public: \
     V_IMPLEMENT_RUNTIMECLASS(class_name, base_class_name, wSchema, \
     NULL,plugin_source) \
     VArchive& operator>>( VArchive& ar, class_name* &pObj ) \
-    { pObj = (class_name*)ar.ReadObject( V_RUNTIME_CLASS(class_name) ); \
+    { pObj = ar.ReadObject<class_name>(); \
     return ar; } \
 
 
@@ -513,8 +542,14 @@ public: \
 //Macro for declaring first serializable base object (VTypedObject)
 //We don't define operator>> because VArchive does that
 //We don't define  CreateObject because you shouldn't create a VTypedObject
+#if defined(V_ENABLE_RTTI_VALIDATION)
 #define V_IMPLEMENT_SERIAL_VTYPEDOBJECT(class_name, base_class_name, wSchema,plugin_source) \
-  V_IMPLEMENT_RUNTIMECLASS(class_name, base_class_name, wSchema, NULL ,plugin_source)
+  V_IMPLEMENT_RUNTIMECLASS_NO_BASE_CHECK(class_name, base_class_name, wSchema, NULL ,plugin_source) \
+  VType* class_name::GetRealParentClassId() { return NULL; }
+#else
+#define V_IMPLEMENT_SERIAL_VTYPEDOBJECT(class_name, base_class_name, wSchema,plugin_source) \
+  V_IMPLEMENT_RUNTIMECLASS_NO_BASE_CHECK(class_name, base_class_name, wSchema, NULL ,plugin_source)
+#endif
   
 /// \brief
 ///   Helper macro to create an instance of the passed class name
@@ -526,6 +561,7 @@ public: \
 
 class VParamDesc;
 struct VModule;
+struct swig_type_info;
 
 
 /// \brief
@@ -538,9 +574,10 @@ struct VType
 public:
   const char* m_lpszClassName;  ///< The class name
   VTypedObject* (*m_pfnCreateObject)(); ///< Creator function; If NULL it refers to an abstract class
-  UINT   m_nObjectSize; ///< Internal use
-  WORD   m_wSchema;     ///< Internal use
-  VType* m_pBaseClass;  ///< The parent class in the hierarchy (or NULL for VTypedObject)
+  UINT   m_nObjectSize;  ///< Internal use
+  WORD   m_wSchema;      ///< Internal use
+  int    m_iClassOffset; ///< The pointer offset between an instance of this class and its VTypedObject base object
+  VType* m_pBaseClass;   ///< The parent class in the hierarchy (or NULL for VTypedObject)
 
   VModule *m_pModule;                 ///< Pointer to the plugin(dll) this class comes from
   VParamDesc *m_pParamDesc;           ///< For VParamContainer derived classes (not valid during startup)
@@ -550,6 +587,13 @@ public:
   
   UINT m_iInstances;                  ///< Do not remove. Reserved for later use (number of instances). [FR]
   VType* m_pNextType;                 ///< Linked list implementation
+
+  swig_type_info* m_pSwigTypeInfo;    ///< Pointer to corresponding SWIG type
+
+#if defined(V_ENABLE_RTTI_VALIDATION)
+  VType*          (*m_pfnGetRealParentClass)(); ///< Used to check that the RTTI declaration is correct
+  const type_info* m_pStdTypeInfo;         ///< Used to check that the RTTI declaration is correct
+#endif
 
 // Operations
 public:
@@ -590,7 +634,43 @@ public:
     return m_pVarList!=NULL && (m_pVarList->m_iVarList_Flags & VFORGE_HIDECLASS)>0;
   }
 
+  /// \brief Casts a VTypedObject pointer to a derived class in cases where the destination type identifier is not available at compile time.
+  ///
+  /// The result is equivalent to reinterpret_cast<void*>(static_cast<DestType*>(pObject)). Note that no runtime type checks are performed.
+  ///
+  /// \param pObject The pointer that should be cast.
+  /// \param pDestType The destination type.
+  /// \returns A pointer of the destination type, reinterpreted as void*.
+  static VBASE_IMPEXP void* CastTo(VTypedObject* pObject, const VType* pDestType)
+  {
+    return pObject ? (reinterpret_cast<char*>(pObject) + pDestType->m_iClassOffset) : NULL;
+  }
 
+  /// \brief Casts an object pointer to its VTypedObject subobject in cases where the source type identifier is not available at compile time.
+  ///
+  /// The result is equivalent to static_cast<VTypedObject*>(reinterpret_cast<SourceType*>(pObject)). Note that no runtime type checks are performed.
+  ///
+  /// \param pObject The pointer that should be cast, reinterpreted as void*.
+  /// \param pSourceType The source type.
+  /// \returns A pointer to the VTypedObject base object.
+  static VBASE_IMPEXP VTypedObject* CastFrom(void* pObject, const VType* pSourceType)
+  {
+    return pObject ? reinterpret_cast<VTypedObject*>(reinterpret_cast<char*>(pObject) - pSourceType->m_iClassOffset) : NULL;
+  }
+
+  /// \brief Casts an object pointer to another class in cases where neither the source nor destination type identifier is not available at compile time.
+  ///
+  /// The result is equivalent to reinterpret_cast<void*>(static_cast<DestType*>(reinterpret_cast<SourceType*>(pObject))). Note that no runtime type checks are performed.
+  ///
+  /// \param pObject The pointer that should be cast, reinterpreted as void*.
+  /// \param pSourceType The source type.
+  /// \param pDestType The destination type.
+  /// \returns A pointer of the destination type, reinterpreted as void*.
+  //
+  static VBASE_IMPEXP void* CastFromTo(void* pObject, const VType* pSourceType, const VType* pDestType)
+  {
+    return CastTo(CastFrom(pObject, pSourceType), pDestType);
+  }
 };
 
 
@@ -606,25 +686,31 @@ struct V_REGISTER_CLASS
 
 /// \brief
 ///   Enum that stores bitflags for VTypedObject specific flags 
+/// Notice that these flags are not serialized as part of the normal serialization process of VTypedObject.
 enum VObjectFlags_e
 {
   VObjectFlag_None = 0,
-  VObjectFlag_BusySerializing               = V_BIT(0),   ///< this flag is set during serialization operations (see VTypedObject::IsBusySerializing)
-  VObjectFlag_IsNetworkReplica              = V_BIT(1),   ///< Used by network implementations to mark specific game objects as replica
-  VObjectFlag_NetworkObjectExistsRemotely   = V_BIT(2),   ///< Used by network implementations to mark specific game objects as replica
-  VObjectFlag_InsideSerializationSession    = V_BIT(4),   ///< This bit is set during saving. vForge sets it for all objects that are going to be included into the serialization session
-  VObjectFlag_AutoDispose                   = V_BIT(5),   ///< set this flag so that a scene object (entity, light, ...) is automatically removed from scene (and usually deleted) once the user releases all its own (smart pointer-) references.
-  VObjectFlag_Disposed                      = V_BIT(6),   ///< this bit is set when the object is disposed
-  VObjectFlag_Disposing                     = V_BIT(7),   ///< disposing is in progress
+  VObjectFlag_BusySerializing              = V_BIT(0),   ///< this flag is set during serialization operations (see VTypedObject::IsBusySerializing)
+  VObjectFlag_IsNetworkReplica             = V_BIT(1),   ///< Used by network implementations to mark specific game objects as replica
+  VObjectFlag_NetworkObjectExistsRemotely  = V_BIT(2),   ///< Used by network implementations to mark specific game objects as replica
+  VObjectFlag_InsideSerializationSession   = V_BIT(4),   ///< This bit is set during saving. vForge sets it for all objects that are going to be included into the serialization session
+  VObjectFlag_AutoDispose                  = V_BIT(5),   ///< set this flag so that a scene object (entity, light, ...) is automatically removed from scene (and usually deleted) once the user releases all its own (smart pointer-) references.
+  VObjectFlag_Disposed                     = V_BIT(6),   ///< this bit is set when the object is disposed
+  VObjectFlag_Disposing                    = V_BIT(7),   ///< disposing is in progress
+  VObjectFlag_TriggerCallbackOnDispose     = V_BIT(8),   ///< triggers OnObjectDisposed when the object is being disposed.
+  VObjectFlag_TriggerCallbackOnDelete      = V_BIT(9),   ///< triggers OnObjectDeleted when the object is being deleted.
+  VObjectFlag_NoAutoRepositioning          = V_BIT(10),   ///< exclude this object from automatic zone repositioning
+  VObjectFlag_AutoRepositioningDelta       = V_BIT(11),   ///< a mode where the reposition delta is simply added to the current position rather than calculating from zone local position
+  VObjectFlag_FinishPlaybackOnDispose      = V_BIT(12),  ///< if this flag is set the object will be removed when its lifetime is over after being disposed (useful for particles, fmod sounds, trackmarks, ...)
 
-  VObjectFlag_UserBit0                      = V_BIT(16),  ///< this bit can be used for custom purposes (not used by the engine)
-  VObjectFlag_UserBit1                      = V_BIT(17),  ///< this bit can be used for custom purposes (not used by the engine)
-  VObjectFlag_UserBit2                      = V_BIT(18),  ///< this bit can be used for custom purposes (not used by the engine)
-  VObjectFlag_UserBit3                      = V_BIT(19),  ///< this bit can be used for custom purposes (not used by the engine)
-  VObjectFlag_UserBit4                      = V_BIT(20),  ///< this bit can be used for custom purposes (not used by the engine)
-  VObjectFlag_UserBit5                      = V_BIT(21),  ///< this bit can be used for custom purposes (not used by the engine)
-  VObjectFlag_UserBit6                      = V_BIT(22),  ///< this bit can be used for custom purposes (not used by the engine)
-  VObjectFlag_UserBit7                      = V_BIT(23),  ///< this bit can be used for custom purposes (not used by the engine)
+  VObjectFlag_UserBit0     = V_BIT(16),  ///< this bit can be used for custom purposes (not used by the engine)
+  VObjectFlag_UserBit1     = V_BIT(17),  ///< this bit can be used for custom purposes (not used by the engine)
+  VObjectFlag_UserBit2     = V_BIT(18),  ///< this bit can be used for custom purposes (not used by the engine)
+  VObjectFlag_UserBit3     = V_BIT(19),  ///< this bit can be used for custom purposes (not used by the engine)
+  VObjectFlag_UserBit4     = V_BIT(20),  ///< this bit can be used for custom purposes (not used by the engine)
+  VObjectFlag_UserBit5     = V_BIT(21),  ///< this bit can be used for custom purposes (not used by the engine)
+  VObjectFlag_UserBit6     = V_BIT(22),  ///< this bit can be used for custom purposes (not used by the engine)
+  VObjectFlag_UserBit7     = V_BIT(23),  ///< this bit can be used for custom purposes (not used by the engine)
 };
 
 
@@ -774,35 +860,35 @@ public:
   ///   Sets the specific object flag (not overwriting other flags)
   inline void SetObjectFlag(VObjectFlags_e eFlag)
   {
-    m_eObjectFlags |= eFlag;
+    m_iObjectFlags |= eFlag;
   }
 
   /// \brief
   ///   Clears the specific object flag (not overwriting other flags)
   inline void RemoveObjectFlag(VObjectFlags_e eFlag)
   {
-    m_eObjectFlags &= (~eFlag);
+    m_iObjectFlags &= (~eFlag);
   }
 
   /// \brief
   ///   Tests whether the passed bit is set (If multiple bits are passed it tests whether any is set, i.e. the result of logical AND is not null)
   inline bool IsObjectFlagSet(VObjectFlags_e eFlag) const
   {
-    return (m_eObjectFlags & eFlag) > 0;
+    return (m_iObjectFlags & eFlag) > 0;
   }
 
   /// \brief
   ///   Returns the full bitmask
   inline int GetObjectFlags() const
   {
-    return m_eObjectFlags;
+    return m_iObjectFlags;
   }
 
   /// \brief
   ///   Sets the full bitmask - overwrite the status of all bits
   inline void SetObjectFlags(int iAllFlags)
   {
-    m_eObjectFlags = iAllFlags;
+    m_iObjectFlags = iAllFlags;
   }
 
   /// \brief
@@ -813,12 +899,11 @@ public:
   }
 
 protected:
-    int m_eObjectFlags; ///< Some internal flags (of enum type VObjectFlags_e)
+  VType* m_pRegisteredAtType;  ///< Store type info in order to access it in the destructor (vtable might have already been destroyed).
+  int m_iObjectFlags; ///< Some internal flags (of enum type VObjectFlags_e). Notice that these flags are not serialized as part of the serialization process of VTypedObject.
 
-    VType *m_pRegisteredAtType;  ///< Do not remove. Reserved for later use (m_pRegisteredAtType) [FR]
-
-    VBASE_IMPEXP VTypedObject(); ///< Prevents direct instantiation.
-    VBASE_IMPEXP virtual ~VTypedObject(); ///< Declares virtual destructor to get the right delete operator if different memory handlers/models are used.
+  VBASE_IMPEXP VTypedObject(); ///< Prevents direct instantiation.
+  VBASE_IMPEXP virtual ~VTypedObject(); ///< Declares virtual destructor to get the right delete operator if different memory handlers/models are used.
 
 public:
   ///
@@ -870,7 +955,7 @@ public:
   ///   The value that has been set.
   VBASE_IMPEXP virtual void OnVariableValueChanged(VisVariable_cl *pVar, const char * value) {}
 
-#if defined(WIN32) || defined(_VISION_DOC)
+#if defined(_VISION_WIN32) || defined(_VISION_DOC)
   
   /// \brief
   ///   Overridable that is called by the editor to retrieve per-instance variable display hints. 
@@ -904,11 +989,15 @@ public:
   
   /// \brief
   ///   Writes the current variable value into the passed string buffer
-  VBASE_IMPEXP virtual bool GetVariableValue(const char* name, char* value) const;
+  VBASE_IMPEXP virtual bool GetVariableValue(const char * name, char * value) const;
 
   /// \brief
   ///   Looks up the type's variable by name
-  VBASE_IMPEXP VisVariable_cl *GetVariable(const char* name);
+  VBASE_IMPEXP VisVariable_cl *GetVariable(const char *name);
+
+  /// \brief
+  ///   Looks up the type's variable by display name
+  VBASE_IMPEXP VisVariable_cl *GetVariableByDisplayName(const char* name);
 
   /// \brief
   ///   Returns the number of variables associated with the object's type
@@ -916,7 +1005,7 @@ public:
 
   /// \brief
   ///   Returns the name of the n-th variable where iIndex must be [0..GetNumVariables()-1]
-  VBASE_IMPEXP const char *GetVariableName(int iIndex) const;
+  VBASE_IMPEXP const char *GetVariableName( int iIndex ) const;
 
   /// \brief
   ///   Loads the default values for all variables in this object
@@ -929,13 +1018,24 @@ public:
   static void VTypedObject_DeInitVarList(class VARIABLE_LIST* pList) {}
 
   /// \brief
-  ///   Static callback that is called for every typed object in its VTypedObject::DisposeObject function. The passed data object can be casted to VTypedObjectCallbackData
+  ///   Static callback that is called for typed objects with the VObjectFlag_TriggerCallbackOnDispose flag 
+  ///   when being disposed. 
+  ///
+  /// The passed data object can be casted to VTypedObjectCallbackData.
   static VBASE_IMPEXP VCallback OnObjectDisposed;
+
+  /// \brief
+  ///   Static callback that is called for typed objects with the VObjectFlag_TriggerCallbackOnDelete flag 
+  ///   when being destroyed. 
+  ///
+  /// The passed data object can be casted to VTypedObjectCallbackData.
+  /// Note that the object passed in VTypedObjectCallbackData is not valid anymore.
+  /// It may only be used to retrieve the object's address.
+  static VBASE_IMPEXP VCallback OnObjectDeleted;
+
   ///
   /// @}
   ///
-private:
-
 };
 
 /// \brief
@@ -979,8 +1079,8 @@ TargetTypePointer vdynamic_cast(SourceType* pObject)
   }
 
   // MSVC specific define indicating C++ RTTI presence - use this to check if our own RTTI is correct.
-#if defined(_CPPRTTI) && defined(HK_DEBUG)
-  VASSERT_MSG(pResult == dynamic_cast<TargetTypePointer>(pObject), "Vision RTTI dynamic cast result differs the from C++ RTTI dynamic cast result - Did you forget to implement the Vision RTTI macros correctly?");
+#if defined(V_ENABLE_RTTI_VALIDATION)
+  VASSERT_MSG(typeid(TargetType) == *TargetType::GetClassTypeId()->m_pStdTypeInfo, "Type '%s' being casted to is missing its Vision RTTI (V_DECLARE_*/V_IMPLEMENT_* macros)", typeid(TargetType).name());
 #endif
 
   return pResult;
@@ -989,14 +1089,14 @@ TargetTypePointer vdynamic_cast(SourceType* pObject)
 
 #if !defined(_VISION_DOC)
 
-  // Overload provided for smart pointer type.
-  template<typename Type> class VSmartPtr;
+// Overload provided for smart pointer type.
+template<typename Type> class VSmartPtr;
 
   template<typename TargetTypePointer, typename Type>
   TargetTypePointer vdynamic_cast(const VSmartPtr<Type>& spObject)
-  {
-    return vdynamic_cast<TargetTypePointer>(spObject.GetPtr());
-  }
+{
+  return vdynamic_cast<TargetTypePointer>(spObject.GetPtr());
+}
 
 #endif
 
@@ -1033,20 +1133,20 @@ TargetTypePointer vstatic_cast(VTypedObject* pObject)
 
 #ifndef _VISION_DOC
 
-  //class VNull is a workaround so we can have classes with base class NULL
-  //(Used only for VTypedObject, since this is the first class in the hierarchy)
-  class VNull
-  {
-  public:
-    static int classVNull;
-  }; 
+//class VNull is a workaround so we can have classes with base class NULL
+//(Used only for VTypedObject, since this is the first class in the hierarchy)
+class VNull
+{
+public:
+  static int classVNull;
+}; 
 
 #endif // _VISION_DOC
 
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

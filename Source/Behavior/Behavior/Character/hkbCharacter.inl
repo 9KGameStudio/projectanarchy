@@ -56,6 +56,20 @@ HK_FORCE_INLINE hkbAiControlDriver* hkbCharacter::getAiControlDriver() const
 	return reinterpret_cast<hkbAiControlDriver*>(m_aiControlDriver.val());
 }
 
+HK_FORCE_INLINE hkbCharacter::Capabilities hkbCharacter::getCapabilities() const
+{
+	// We always ensure that the capabilities we return reflect our internal state,
+	// Not what we want it to be.  This means that it can be used in place of null checks.
+	Capabilities currentCapabilities = m_effectiveCapabilities;
+	clearUnsupportedBits( currentCapabilities, false );
+	return currentCapabilities;
+}
+
+HK_FORCE_INLINE bool hkbCharacter::isCapableOf( Capabilities capabilities ) const
+{
+	return ( getCapabilities() & capabilities ) == capabilities;
+}
+
 HK_FORCE_INLINE const hkbAnimationBindingSet* hkbCharacter::getAnimationBindingSet() const
 {
 	if ( m_animationBindingSet != HK_NULL )
@@ -75,13 +89,7 @@ HK_FORCE_INLINE const hkbAnimationBindingSet* hkbCharacter::getAnimationBindingS
 HK_FORCE_INLINE void hkbCharacter::setSetup( hkbCharacterSetup* setup )
 {
 	m_setup = setup;
-	allocateGeneratorOutput();
-}
-
-HK_FORCE_INLINE void hkbCharacter::setRagdollInterface( hkbRagdollInterface* ragdoll )
-{	
-	m_ragdollDriver->setRagdollInterface(ragdoll);
-	allocateGeneratorOutput();
+	refreshOutput();
 }
 
 HK_FORCE_INLINE hkbBehaviorGraph* hkbCharacter::getBehavior() const
@@ -109,6 +117,12 @@ HK_FORCE_INLINE hkReal hkbCharacter::getWorldFromModelFeedback() const
 	return 0.0f;
 }
 
+HK_FORCE_INLINE void hkbCharacter::setLod( hkInt16 lodLevel, hkInt16 lodTrackLimit )
+{
+	m_currentLod = lodLevel;
+	m_numTracksInLod = lodTrackLimit;
+}
+
 HK_FORCE_INLINE hkbEventQueue* hkbCharacter::getEventQueue() const
 {
 	return m_eventQueue;
@@ -119,39 +133,55 @@ HK_FORCE_INLINE hkbGeneratorOutput* hkbCharacter::getGeneratorOutput() const
 	return m_generatorOutput;
 }
 
+HK_FORCE_INLINE void hkbCharacter::getOutputSetup( hkbGeneratorOutput::OutputSetup& setup ) const
+{
+	getOutputSetupInternal( setup );
+	HK_ON_DEBUG( checkOutputConsistency( setup ); )
+}
+
 HK_FORCE_INLINE void hkbCharacter::setWorldFromModel( const hkQsTransform& worldFromModel )
 {
+	HK_ASSERT2( 0x22440320, m_generatorOutput != HK_NULL, "The character must be activated to set the worldFromModel");
 	m_generatorOutput->accessWorldFromModel() = worldFromModel;	
 }
 
 HK_FORCE_INLINE const hkQsTransform& hkbCharacter::getWorldFromModel() const
 {
+	HK_ASSERT2( 0x22440321, m_generatorOutput != HK_NULL, "The character must be activated to get the worldFromModel");
 	return m_generatorOutput->getWorldFromModel();
 }
 
 HK_FORCE_INLINE hkQsTransform& hkbCharacter::accessWorldFromModel() const
 {
+	HK_ASSERT2( 0x22440322, m_generatorOutput != HK_NULL, "The character must be activated to access the worldFromModel");
 	return m_generatorOutput->accessWorldFromModel();
 }
 
 HK_FORCE_INLINE const hkQsTransform* hkbCharacter::getPoseLocal() const
-{	
+{
+	HK_ASSERT2( 0x22440323, m_generatorOutput != HK_NULL, "The character must be activated to get the local pose");
 	return m_generatorOutput->getPoseLocal();
 }
 
 HK_FORCE_INLINE hkQsTransform* hkbCharacter::accessPoseLocal() const
-{	
+{
+	HK_ASSERT2( 0x22440324, m_generatorOutput != HK_NULL, "The character must be activated to access the local pose");
 	return m_generatorOutput->accessPoseLocal();
 }
 
 HK_FORCE_INLINE int hkbCharacter::getNumPoseLocal() const
 {
+	HK_ASSERT2( 0x22440325, m_generatorOutput != HK_NULL, "The character must be activated to get info about the local pose");
+	// Character pose should always be full no matter what comparable output is made (getOutputSetup).
+	// This is because we always force a dense pose for the character output.
+	HK_ASSERT( 0x22440235, m_generatorOutput->getNumPoseLocal() == m_setup->m_animationSkeleton->m_bones.getSize() );
 	return m_generatorOutput->getNumPoseLocal();
 }
 
 HK_FORCE_INLINE hkbRagdollInterface* hkbCharacter::getRagdollInterface() const
 {
-	return getRagdollDriver()->getRagdollInterface();
+	HK_ASSERT2( 0x22440232, ( m_ragdollDriver == HK_NULL ) || ( m_ragdollDriver->getRagdollInterface() == m_ragdollInterface ), "Inconsistent ragdolls." );
+	return m_ragdollInterface;
 }
 
 HK_FORCE_INLINE hkbWorld* hkbCharacter::getWorld() const
@@ -169,17 +199,8 @@ HK_FORCE_INLINE hkbProjectAssetManager* hkbCharacter::getAssetManager() const
 	return m_assetManager;
 }
 
-HK_FORCE_INLINE void hkbCharacter::setAssetManager( hkbProjectAssetManager* assetManager )
-{
-	if ( m_assetManager )
-	{
-		m_assetManager->unloadCharacterInstanceInternal( this );
-	}
-	m_assetManager = assetManager;
-}
-
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

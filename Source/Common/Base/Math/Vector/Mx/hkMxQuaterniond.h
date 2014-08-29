@@ -26,7 +26,7 @@
 ///
 /// \sa hkMxVectord
 template <int M>
-class hkMxQuaterniond : public hkMxVectord<M>
+class HK_EXPORT_COMMON hkMxQuaterniond : public hkMxVectord<M>
 {
 public:
 
@@ -58,9 +58,9 @@ public:
 };
 
 #if defined(HK_COMPILER_HAS_INTRINSICS_IA32)
-	#include <Common/Base/Math/Vector/Mx/hkMxQuaterniond.inl>
+	#include <Common/Base/Math/Vector/Mx/hkMxQuaterniond.inl> 
 #else
-	#include <Common/Base/Math/Vector/Mx/hkMxQuaterniond.inl>
+	#include <Common/Base/Math/Vector/Mx/hkMxQuaterniond.inl> 
 #endif
 
 // convenient shortcut
@@ -69,7 +69,7 @@ typedef hkMxQuaterniond<4>	  hk4xQuaterniond;
 #endif // HK_MXQUATERNIONd_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

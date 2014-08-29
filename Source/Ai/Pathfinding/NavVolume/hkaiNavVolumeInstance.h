@@ -11,13 +11,14 @@
 #include <Common/Base/Types/Geometry/Aabb/hkAabb.h>
 #include <Ai/Pathfinding/NavVolume/hkaiNavVolume.h>
 
-extern const class hkClass hkaiNavVolumeInstanceClass;
+extern HK_EXPORT_AI const class hkClass hkaiNavVolumeInstanceClass;
 
 	/// A runtime instance of an hkaiNavVolume
-class hkaiNavVolumeInstance : public hkReferencedObject
+class HK_EXPORT_AI hkaiNavVolumeInstance : public hkReferencedObject
 {
 	public:
 
+		//+version(1)
 		HK_DECLARE_CLASS_ALLOCATOR( HK_MEMORY_CLASS_AI_NAVMESH );
 		HK_DECLARE_REFLECTION();
 
@@ -29,7 +30,7 @@ class hkaiNavVolumeInstance : public hkReferencedObject
 		typedef hkInt32 CellData;
 
 			/// Additional owned edges for a cell
-		struct CellInstance
+		struct HK_EXPORT_AI CellInstance
 		{
 			HK_DECLARE_REFLECTION();
 
@@ -60,6 +61,9 @@ class hkaiNavVolumeInstance : public hkReferencedObject
 		HK_FORCE_INLINE const hkaiNavVolume::Cell& getCell(CellIndex cellIndex) const;
 		HK_FORCE_INLINE void getInstancedCell( CellIndex n, CellInstance& cellOut ) const;
 		HK_FORCE_INLINE int getNumCells() const { return m_numOriginalCells; }
+
+		HK_FORCE_INLINE hkaiLayer getLayer() const { return m_layer; }
+		HK_FORCE_INLINE void setLayer( hkaiLayer layer );
 
 		
 #ifndef HK_PLATFORM_SPU
@@ -131,12 +135,16 @@ protected:
 			/// Owned edges, referenced by instanced cells.
 		hkArray<hkaiNavVolume::Edge>	m_ownedEdges;
 
-		/// Unique section ID of this volume.
+			/// Unique section ID of this volume.
 		hkaiSectionUid					m_sectionUid; //+default(0)
 
-		/// Runtime ID of this volume.
-		/// Only assigned when the volume is loaded.
+			/// Runtime ID of this volume.
+			/// Only assigned when the volume is loaded.
 		hkaiRuntimeIndex				m_runtimeId; //+default(0)
+
+			/// Bitfield to represent which layer the instance belongs to.
+		hkaiLayer						m_layer; //+default( HKAI_DEFAULT_LAYER );
+
 
 			/// Instance-specific translation
 		hkVector4						m_translation;
@@ -153,7 +161,7 @@ protected:
 #endif // HKAI_NAV_VOLUME_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

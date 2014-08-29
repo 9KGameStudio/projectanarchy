@@ -12,11 +12,14 @@
 #define TOL_DET_3_XYW		19.0f
 #define TOL_DET_3_XYZ		(TOL_DET_3_XYW * INV_2_POW_24)
 #define TOL_DET_4			1.0e-7f	/*97.0f*/
+#define FAST_PREDICATE_LOG_TOLERANCE	(2)
+#define TOL_FAST_PREDICATE	(1 << FAST_PREDICATE_LOG_TOLERANCE)
 
 //
 //	Debug flags
 
 #define HKND_ENABLE_DEBUG_ORIENTATION_CACHE_INCONSISTENCIES		(0)
+#define HKND_ENABLE_DEBUG_FAST_PREDICATE_CHECK					(0)
 
 //
 //	Returns true if the given planes are coplanar (i.e. coincident)
@@ -24,7 +27,7 @@
 //		| ax ay az aw |
 //		| bx by bz bw |
 
-HK_FORCE_INLINE hkcdPlanarGeometryPredicates::Coplanarity HK_CALL hkcdPlanarGeometryPredicates::coplanar(PlaneParam planeA, PlaneParam planeB)
+inline hkcdPlanarGeometryPredicates::Coplanarity HK_CALL hkcdPlanarGeometryPredicates::coplanar(PlaneParam planeA, PlaneParam planeB)
 {
 	// All planes are fully simplified, so any two coplanar planes must match identically
 	hkVector4d dEqnA;	dEqnA.setAbs(planeA.getApproxEquation());
@@ -61,13 +64,13 @@ HK_FORCE_INLINE int HK_CALL hkcdPlanarGeometryPredicates::sameOrientation(PlaneP
 	hkSimdInt<128> iOffsetA;	planeA.getExactOffset(iOffsetA);
 	hkSimdInt<128> iOffsetB;	planeB.getExactOffset(iOffsetB);
 
-	hkVector4dComparison pA;	pA.setSelect<hkVector4Comparison::MASK_XYZ>(dNrmA.lessZero(),	iOffsetA.lessZero<hkVector4dComparison>());	// [ax < 0, ay < 0, az < 0, aw < 0]
-	hkVector4dComparison nA;	nA.setSelect<hkVector4Comparison::MASK_XYZ>(dNrmA.equalZero(),	iOffsetA.equalZero<hkVector4dComparison>());// [ax == 0, ay == 0, az == 0, aw == 0]
+	hkVector4dComparison pA;	pA.setSelect<hkVector4ComparisonMask::MASK_XYZ>(dNrmA.lessZero(),	iOffsetA.lessZero<hkVector4dComparison>());	// [ax < 0, ay < 0, az < 0, aw < 0]
+	hkVector4dComparison nA;	nA.setSelect<hkVector4ComparisonMask::MASK_XYZ>(dNrmA.equalZero(),	iOffsetA.equalZero<hkVector4dComparison>());// [ax == 0, ay == 0, az == 0, aw == 0]
 								nA.setOr(nA, pA);												// [ax <= 0, ay <= 0, az <= 0, aw <= 0]
 								pA.setNot(pA);													// [ax >= 0, ay >= 0, az >= 0, aw >= 0]
 
-	hkVector4dComparison pB;	pB.setSelect<hkVector4Comparison::MASK_XYZ>(dNrmB.lessZero(),	iOffsetB.lessZero<hkVector4dComparison>());	// [bx < 0, by < 0, bz < 0, bw < 0]
-	hkVector4dComparison nB;	nB.setSelect<hkVector4Comparison::MASK_XYZ>(dNrmB.equalZero(),	iOffsetB.equalZero<hkVector4dComparison>());// [bx == 0, by == 0, bz == 0, bw == 0]
+	hkVector4dComparison pB;	pB.setSelect<hkVector4ComparisonMask::MASK_XYZ>(dNrmB.lessZero(),	iOffsetB.lessZero<hkVector4dComparison>());	// [bx < 0, by < 0, bz < 0, bw < 0]
+	hkVector4dComparison nB;	nB.setSelect<hkVector4ComparisonMask::MASK_XYZ>(dNrmB.equalZero(),	iOffsetB.equalZero<hkVector4dComparison>());// [bx == 0, by == 0, bz == 0, bw == 0]
 								nB.setOr(nB, pB);												// [bx <= 0, by <= 0, bz <= 0, bw <= 0]
 								pB.setNot(pB);													// [bx >= 0, by >= 0, bz >= 0, bw >= 0]
 	
@@ -94,7 +97,7 @@ HK_FORCE_INLINE hkcdPlanarGeometryPredicates::Orientation HK_CALL hkcdPlanarGeom
 //
 //	Approximates the intersection (i.e. in fixed coordinates) of the 3 given planes
 
-HK_FORCE_INLINE void HK_CALL hkcdPlanarGeometryPredicates::approximateIntersection(const Plane (&planes)[3], hkIntVector& intersectionOut)
+inline void HK_CALL hkcdPlanarGeometryPredicates::approximateIntersection(const Plane (&planes)[3], hkIntVector& intersectionOut)
 {
 	hkSimdInt<256> detX, detY, detZ, detW;
 	computeIntersectionDeterminants(planes, &detX, &detY, &detZ, &detW);
@@ -110,46 +113,82 @@ HK_FORCE_INLINE void HK_CALL hkcdPlanarGeometryPredicates::approximateIntersecti
 //
 //	Approximates the intersection (in floating point precision) of the 3 given planes. Faster but less accurate then the floating point version
 
-HK_FORCE_INLINE void HK_CALL hkcdPlanarGeometryPredicates::approximateIntersectionFast(const Plane (&planes)[3], hkVector4d& intersectionOut)
+inline void HK_CALL hkcdPlanarGeometryPredicates::approximateIntersectionFast(const Plane (&planes)[3], hkVector4d& intersectionOut)
 {
-	ApproxPlaneEqn dets;
+	typedef hkcdMathErrorBoundsCalculator::Vector	Vec;
+	typedef hkcdMathErrorBoundsCalculator::Scalar	Num;
+
+	ApproxVertex dets;
 	computeIntersectionDeterminants(planes[0].getApproxEquation(), planes[1].getApproxEquation(), planes[2].getApproxEquation(), dets);
 
 	// Divide by DW to get the points
-	intersectionOut.setComponent<0>(dets.getComponent<0>()/dets.getComponent<3>());
-	intersectionOut.setComponent<1>(dets.getComponent<1>()/dets.getComponent<3>());
-	intersectionOut.setComponent<2>(dets.getComponent<2>()/dets.getComponent<3>());
-	intersectionOut.setComponent<3>(intersectionOut.getComponent<2>());
+	Num dx;	dets.getComponent<0>(dx);
+	Num dy;	dets.getComponent<1>(dy);
+	Num dz;	dets.getComponent<2>(dz);
+	Num dw;	dets.getComponent<3>(dw);
+	dx.setDiv(dx, dw);
+	dy.setDiv(dy, dw);
+	dz.setDiv(dz, dw);
+
+	// Check precision. If too imprecise, fall back to the fixed-point implementation
+	hkVector4d err;	err.set(dx.m_err, dy.m_err, dz.m_err, dz.m_err);
+	hkVector4d tol;	tol.setAll(1.0f);
+	if ( err.less(tol).anyIsSet() )
+	{
+		intersectionOut.set(dx.m_val, dy.m_val, dz.m_val, dz.m_val);
+	}
+	else
+	{
+		hkIntVector iI;
+		approximateIntersection(planes, iI);
+		intersectionOut.set((hkDouble64)iI.getComponent<0>(), (hkDouble64)iI.getComponent<1>(), (hkDouble64)iI.getComponent<2>(), (hkDouble64)iI.getComponent<3>());
+	}
 }
 
-HK_FORCE_INLINE void HK_CALL hkcdPlanarGeometryPredicates::computeIntersectionDeterminants(ApproxPlaneEqnParam planeEqnA, ApproxPlaneEqnParam planeEqnB, ApproxPlaneEqnParam planeEqnC, ApproxPlaneEqn& determinantsOut)
+inline void HK_CALL hkcdPlanarGeometryPredicates::computeIntersectionDeterminants(hkVector4dParameter planeEqnA, hkVector4dParameter planeEqnB, hkVector4dParameter planeEqnC, ApproxVertex& determinantsOut)
 {
+	typedef hkcdMathErrorBoundsCalculator::Vector	Vec;
+	typedef hkcdMathErrorBoundsCalculator::Scalar	Num;
+
+	Vec eqnA;	eqnA.set(planeEqnA);
+	Vec eqnB;	eqnB.set(planeEqnB);
+	Vec eqnC;	eqnC.set(planeEqnC);
+
 	// Compute components
-	hkVector4d xA, xB, temp;
+	Vec xA, xB, temp;
 	{
-		xA.setPermutation<hkVectorPermutation::WYZX>(planeEqnA);	// [aw, ay, az]
-		xB.setPermutation<hkVectorPermutation::WYZX>(planeEqnB);	// [bw, by, bz]
-		temp.setPermutation<hkVectorPermutation::WYZX>(planeEqnC);	// [cw, cy, cz]
+		xA.setPermutation<hkVectorPermutation::WYZX>(eqnA);		// [aw, ay, az]
+		xB.setPermutation<hkVectorPermutation::WYZX>(eqnB);		// [bw, by, bz]
+		temp.setPermutation<hkVectorPermutation::WYZX>(eqnC);	// [cw, cy, cz]
 		xB.setCross(xB, temp);
 	}
-	hkVector4d yA, yB;
+	Vec yA, yB;
 	{
-		yA.setPermutation<hkVectorPermutation::XWZY>(planeEqnA);	// [ax, aw, az]
-		yB.setPermutation<hkVectorPermutation::XWZY>(planeEqnB);	// [ay, bw, bz]
-		temp.setPermutation<hkVectorPermutation::XWZY>(planeEqnC);	// [az, cw, cz]
+		yA.setPermutation<hkVectorPermutation::XWZY>(eqnA);		// [ax, aw, az]
+		yB.setPermutation<hkVectorPermutation::XWZY>(eqnB);		// [ay, bw, bz]
+		temp.setPermutation<hkVectorPermutation::XWZY>(eqnC);	// [az, cw, cz]
 		yB.setCross(yB, temp);
 	}
-	hkVector4d zA, zB;	
+	Vec zA, zB;	
 	{
-		zA.setPermutation<hkVectorPermutation::XYWZ>(planeEqnA);	// [ax, ay, aw]
-		zB.setPermutation<hkVectorPermutation::XYWZ>(planeEqnB);	// [ay, by, bw]
-		temp.setPermutation<hkVectorPermutation::XYWZ>(planeEqnC);	// [az, cy, cw]
+		zA.setPermutation<hkVectorPermutation::XYWZ>(eqnA);		// [ax, ay, aw]
+		zB.setPermutation<hkVectorPermutation::XYWZ>(eqnB);		// [ay, by, bw]
+		temp.setPermutation<hkVectorPermutation::XYWZ>(eqnC);	// [az, cy, cw]
 		zB.setCross(zB, temp);
 	}
 
-	temp.setCross(planeEqnB, planeEqnC);
-	temp.set(xA.dot<3>(xB), yA.dot<3>(yB), zA.dot<3>(zB), planeEqnA.dot<3>(temp));
-	hkVector4dComparison maskXYZ;	maskXYZ.set<hkVector4Comparison::MASK_XYZ>();
+	temp.setCross(eqnB, eqnC);
+
+	{
+		Num dx;	Vec::dot<3>(xA, xB, dx);
+		Num dy;	Vec::dot<3>(yA, yB, dy);
+		Num dz;	Vec::dot<3>(zA, zB, dz);
+		Num dw;	Vec::dot<3>(eqnA, temp, dw);
+	
+		temp.set(dx, dy, dz, dw);
+	}
+
+	hkVector4dComparison maskXYZ;	maskXYZ.set<hkVector4ComparisonMask::MASK_XYZ>();
 	determinantsOut.setFlipSign(temp, maskXYZ);
 }
 
@@ -173,10 +212,10 @@ HK_FORCE_INLINE hkcdPlanarGeometryPredicates::Orientation HK_CALL hkcdPlanarGeom
 {
 	HK_ON_DEBUG(m_numApproxCalls++);
 
-	const ApproxPlaneEqn fEqnA	= ptPlaneA.getApproxEquation();
-	const ApproxPlaneEqn fEqnB	= ptPlaneB.getApproxEquation();
-	const ApproxPlaneEqn fEqnC	= ptPlaneC.getApproxEquation();
-	const ApproxPlaneEqn fEqnD	= planeD.getApproxEquation();
+	const hkVector4d fEqnA	= ptPlaneA.getApproxEquation();
+	const hkVector4d fEqnB	= ptPlaneB.getApproxEquation();
+	const hkVector4d fEqnC	= ptPlaneC.getApproxEquation();
+	const hkVector4d fEqnD	= planeD.getApproxEquation();
 
 	hkVector4d nAB;		nAB.setCross(fEqnA, fEqnB);
 	hkVector4d nBC;		nBC.setCross(fEqnB, fEqnC);
@@ -200,6 +239,18 @@ HK_FORCE_INLINE hkcdPlanarGeometryPredicates::Orientation HK_CALL hkcdPlanarGeom
 }
 
 //
+//	Computes the orientation of the point (ptPlaneA, ptPlaneB, ptPlaneC) with respect to the planeD
+
+HK_FORCE_INLINE hkcdPlanarGeometryPredicates::Orientation HK_CALL hkcdPlanarGeometryPredicates::approximateOrientation(hkVector4dParameter p, PlaneParam plane)
+{
+	const hkVector4d& planeEqn		= plane.getApproxEquation();
+	hkVector4d pc;					pc.setXYZ_W(p, hkSimdDouble64_1);
+	const hkSimdDouble64 dotRes		= pc.dot<4>(planeEqn);
+	hkSimdDouble64 absDotRes;		absDotRes.setAbs(dotRes);
+	return ( dotRes.isLessZero() ) ? BEHIND : (( dotRes.isEqualZero() ) ? ON_PLANE : IN_FRONT_OF);
+}
+
+//
 //	Computes the Det3
 
 HK_FORCE_INLINE hkBool32 hkcdPlanarGeometryPredicates::computeApproxDet3(const Plane& planeA, const Plane& planeB, const Plane& planeC, hkVector4dComparison& det3LessZero, hkVector4dComparison& det3EqualZero)
@@ -210,7 +261,7 @@ HK_FORCE_INLINE hkBool32 hkcdPlanarGeometryPredicates::computeApproxDet3(const P
 
 	// Set output
 	det3LessZero	= det3.lessZero();
-	det3EqualZero	.set<hkVector4Comparison::MASK_NONE>();	// Always false, as we switch to fixed precision if too close to zero!
+	det3EqualZero	.set<hkVector4ComparisonMask::MASK_NONE>();	// Always false, as we switch to fixed precision if too close to zero!
 	HK_ON_DEBUG(m_numApproxCalls++);
 	HK_ON_DEBUG(m_numApproxDet3++);
 
@@ -268,7 +319,7 @@ HK_FORCE_INLINE hkBool32 hkcdPlanarGeometryPredicates::computeApproxDet4(const P
 	hkSimdDouble64 det4;			det4.setAdd(detLeft, detRight);
 	hkSimdDouble64 absDet;			absDet.setAbs(det4);
 	det4LessZero					= det4.lessZero();
-	det4EqualZero.set<hkVector4Comparison::MASK_NONE>();	// Always false, as we switch to fixed precision if too close to zero!
+	det4EqualZero.set<hkVector4ComparisonMask::MASK_NONE>();	// Always false, as we switch to fixed precision if too close to zero!
 	HK_ON_DEBUG(m_numApproxCalls++);
 	HK_ON_DEBUG(m_numApproxDet4++);
 
@@ -371,10 +422,151 @@ HK_FORCE_INLINE void hkcdPlanarGeometryPredicates::OrientationCacheBase<N>::rese
 #endif
 
 //
+//	Computes the orientation of the point p defined by (ptPlaneA, ptPlaneB, ptPlaneC) with respect to the planeD, using an orientation cache
+
+template <int N>
+inline hkcdPlanarGeometryPredicates::Orientation HK_CALL hkcdPlanarGeometryPredicates::orientation(hkVector4dParameter p, PlaneParam ptPlaneA, PlaneParam ptPlaneB, PlaneParam ptPlaneC, PlaneParam planeD, hkIntVectorParameter planeIds, OrientationCacheBase<N>* orientationCache)
+{
+	Orientation ori;
+	HK_ON_DEBUG(m_numFastCalls++;)
+#if ( HKND_ENABLE_DEBUG_FAST_PREDICATE_CHECK )
+		double dRes = -1.0;
+#endif
+
+	// Fast on plane test
+	const int mask	= ~hkcdPlanarGeometryPrimitives::FLIPPED_PLANE_FLAG;
+	hkIntVector intMask;			intMask.setAll(mask);
+	hkIntVector origPlaneIds;		origPlaneIds.setAnd(planeIds, intMask);
+	hkIntVector compVec;			compVec.setAll(origPlaneIds.getComponent<3>());
+	if ( origPlaneIds.equalS32(compVec).anyIsSet<hkVector4ComparisonMask::MASK_XYZ>() ) 
+	{
+		ori = ON_PLANE;
+	}
+	else
+	{
+#if ( HKND_ENABLE_DEBUG_FAST_PREDICATE_CHECK )
+		Plane planes[3];
+		planes[0] = ptPlaneA;	planes[1] = ptPlaneB;	planes[2] = ptPlaneC;
+		hkVector4d vCheck;
+		approximateIntersectionFast(planes, vCheck);
+		if ( vCheck.distanceTo(p).isGreater(hkSimdDouble64::fromFloat(2.0f)) )
+		{
+			HK_REPORT("Input point bad cache value!!");
+			HK_BREAKPOINT(0);
+		}
+#endif
+
+		// Do a quick point/plane check 
+		const hkVector4d& plane			= planeD.getApproxEquation();
+		hkVector4d pc;					pc.setXYZ_W(p, hkSimdDouble64_1);
+		const hkSimdDouble64 dotRes		= pc.dot<4>(plane);
+		hkSimdDouble64 absDotRes;		absDotRes.setAbs(dotRes);
+#if ( HKND_ENABLE_DEBUG_FAST_PREDICATE_CHECK )
+		dRes = absDotRes.getReal();
+#endif
+
+		if ( absDotRes.isGreaterEqual(hkSimdDouble64::fromFloat(TOL_FAST_PREDICATE)) )
+		{
+			ori = ( dotRes.isLessZero() ) ? BEHIND : IN_FRONT_OF;
+		}
+		else
+		{
+			// Not reliable ? call the more involved, possibly exact arithmetic
+			HK_ON_DEBUG(m_numFastCallsFailed++);
+			ori = orientation(ptPlaneA, ptPlaneB, ptPlaneC, planeD, planeIds, orientationCache);
+		}	
+	}
+
+#if ( HKND_ENABLE_DEBUG_FAST_PREDICATE_CHECK )
+	const Orientation oriRef = orientation(ptPlaneA, ptPlaneB, ptPlaneC, planeD, planeIds, orientationCache);
+	if ( ori != oriRef )
+	{	
+		hkStringBuf strb;
+
+		{
+			const hkUint32* buf = reinterpret_cast<const hkUint32*>(&p);
+			strb.printf("Point: [%lf, %lf, %lf, %lf]. [0x%08X.%08X, 0x%08X.%08X, 0x%08X.%08X, 0x%08X.%08X]",
+				p(0), p(1), p(2), p(3),
+				buf[0], buf[1], buf[2], buf[3], buf[4], buf[5], buf[6], buf[7]);
+			HK_REPORT(strb);
+		}
+		
+		{
+			hkInt64Vector4 iN;	ptPlaneA.getExactNormal(iN);
+			hkSimdInt<128> iO;	ptPlaneA.getExactOffset(iO);
+			hkVector4d deq		= ptPlaneA.getApproxEquation();
+			const hkUint32* buf = reinterpret_cast<const hkUint32*>(&deq);
+
+			strb.printf("ptPlaneA: [0x%08X.%08X, 0x%08X.%08X, 0x%08X.%08X, 0x%08X.%08X.%08X.%08X]. [%lf, %lf, %lf, %lf]. [0x%08X.%08X, 0x%08X.%08X, 0x%08X.%08X, 0x%08X.%08X]", 
+				(iN.getComponent<0>() >> 32L) & 0xFFFFFFFF,	(iN.getComponent<0>() & 0xFFFFFFFF),
+				(iN.getComponent<1>() >> 32L) & 0xFFFFFFFF,	(iN.getComponent<1>() & 0xFFFFFFFF),
+				(iN.getComponent<2>() >> 32L) & 0xFFFFFFFF,	(iN.getComponent<2>() & 0xFFFFFFFF),
+				iO.getWord<3>(), iO.getWord<2>(), iO.getWord<1>(), iO.getWord<0>(),
+				deq(0), deq(1), deq(2), deq(3),
+				buf[0], buf[1], buf[2], buf[3], buf[4], buf[5], buf[6], buf[7]);
+			HK_REPORT(strb);
+		}
+		{
+			hkInt64Vector4 iN;	ptPlaneB.getExactNormal(iN);
+			hkSimdInt<128> iO;	ptPlaneB.getExactOffset(iO);
+			hkVector4d deq		= ptPlaneB.getApproxEquation();
+			const hkUint32* buf = reinterpret_cast<const hkUint32*>(&deq);
+
+			strb.printf("ptPlaneB: [0x%08X.%08X, 0x%08X.%08X, 0x%08X.%08X, 0x%08X.%08X.%08X.%08X]. [%lf, %lf, %lf, %lf]. [0x%08X.%08X, 0x%08X.%08X, 0x%08X.%08X, 0x%08X.%08X]", 
+				(iN.getComponent<0>() >> 32L) & 0xFFFFFFFF,	(iN.getComponent<0>() & 0xFFFFFFFF),
+				(iN.getComponent<1>() >> 32L) & 0xFFFFFFFF,	(iN.getComponent<1>() & 0xFFFFFFFF),
+				(iN.getComponent<2>() >> 32L) & 0xFFFFFFFF,	(iN.getComponent<2>() & 0xFFFFFFFF),
+				iO.getWord<3>(), iO.getWord<2>(), iO.getWord<1>(), iO.getWord<0>(),
+				deq(0), deq(1), deq(2), deq(3),
+				buf[0], buf[1], buf[2], buf[3], buf[4], buf[5], buf[6], buf[7]);
+			HK_REPORT(strb);
+		}
+		{
+			hkInt64Vector4 iN;	ptPlaneC.getExactNormal(iN);
+			hkSimdInt<128> iO;	ptPlaneC.getExactOffset(iO);
+			hkVector4d deq		= ptPlaneC.getApproxEquation();
+			const hkUint32* buf = reinterpret_cast<const hkUint32*>(&deq);
+
+			strb.printf("ptPlaneC: [0x%08X.%08X, 0x%08X.%08X, 0x%08X.%08X, 0x%08X.%08X.%08X.%08X]. [%lf, %lf, %lf, %lf]. [0x%08X.%08X, 0x%08X.%08X, 0x%08X.%08X, 0x%08X.%08X]", 
+				(iN.getComponent<0>() >> 32L) & 0xFFFFFFFF,	(iN.getComponent<0>() & 0xFFFFFFFF),
+				(iN.getComponent<1>() >> 32L) & 0xFFFFFFFF,	(iN.getComponent<1>() & 0xFFFFFFFF),
+				(iN.getComponent<2>() >> 32L) & 0xFFFFFFFF,	(iN.getComponent<2>() & 0xFFFFFFFF),
+				iO.getWord<3>(), iO.getWord<2>(), iO.getWord<1>(), iO.getWord<0>(),
+				deq(0), deq(1), deq(2), deq(3),
+				buf[0], buf[1], buf[2], buf[3], buf[4], buf[5], buf[6], buf[7]);
+			HK_REPORT(strb);
+		}
+		{
+			hkInt64Vector4 iN;	planeD.getExactNormal(iN);
+			hkSimdInt<128> iO;	planeD.getExactOffset(iO);
+			hkVector4d deq		= planeD.getApproxEquation();
+			const hkUint32* buf = reinterpret_cast<const hkUint32*>(&deq);
+
+			strb.printf("planeD: [0x%08X.%08X, 0x%08X.%08X, 0x%08X.%08X, 0x%08X.%08X.%08X.%08X]. [%lf, %lf, %lf, %lf]. [0x%08X.%08X, 0x%08X.%08X, 0x%08X.%08X, 0x%08X.%08X]", 
+				(iN.getComponent<0>() >> 32L) & 0xFFFFFFFF,	(iN.getComponent<0>() & 0xFFFFFFFF),
+				(iN.getComponent<1>() >> 32L) & 0xFFFFFFFF,	(iN.getComponent<1>() & 0xFFFFFFFF),
+				(iN.getComponent<2>() >> 32L) & 0xFFFFFFFF,	(iN.getComponent<2>() & 0xFFFFFFFF),
+				iO.getWord<3>(), iO.getWord<2>(), iO.getWord<1>(), iO.getWord<0>(),
+				deq(0), deq(1), deq(2), deq(3),
+				buf[0], buf[1], buf[2], buf[3], buf[4], buf[5], buf[6], buf[7]);
+			HK_REPORT(strb);
+		}
+
+		HK_REPORT("Plane Ids " << planeIds.getComponent<0>() << ", " << planeIds.getComponent<1>() << ", " << planeIds.getComponent<2>() << ", " << planeIds.getComponent<3>());
+
+		HK_REPORT("Fast predicate check failure (returned " << ori << ", ref is " << oriRef << ". dist is " << dRes << "!!");
+		HK_BREAKPOINT(0);
+	}	
+#endif
+
+	return ori;
+}
+
+//
 //	Computes the orientation of the point (ptPlaneA, ptPlaneB, ptPlaneC) with respect to the planeD, using an orientation cache
 
 template <int N>
-HK_FORCE_INLINE hkcdPlanarGeometryPredicates::Orientation HK_CALL hkcdPlanarGeometryPredicates::orientation(PlaneParam ptPlaneA, PlaneParam ptPlaneB, PlaneParam ptPlaneC, PlaneParam planeD, hkIntVectorParameter planeIds, OrientationCacheBase<N>* orientationCache)
+inline hkcdPlanarGeometryPredicates::Orientation HK_CALL hkcdPlanarGeometryPredicates::orientation(PlaneParam ptPlaneA, PlaneParam ptPlaneB, PlaneParam ptPlaneC, PlaneParam planeD, hkIntVectorParameter planeIds, OrientationCacheBase<N>* orientationCache)
 {
 	Orientation retVal;
 
@@ -399,7 +591,7 @@ HK_FORCE_INLINE hkcdPlanarGeometryPredicates::Orientation HK_CALL hkcdPlanarGeom
 			{
 				v.setShiftLeft32(planeIds, shift);
 				v.setShiftRight32(v, shift);
-				v.setSelect<hkVector4Comparison::MASK_XYZ>(v, planeIds);
+				v.setSelect<hkVector4ComparisonMask::MASK_XYZ>(v, planeIds);
 				v.setSortS32<3, HK_SORT_ASCENDING>(v);
 			}
 
@@ -459,7 +651,7 @@ HK_FORCE_INLINE hkcdPlanarGeometryPredicates::Orientation HK_CALL hkcdPlanarGeom
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -462,6 +462,36 @@ namespace TerrainManaged
     return (SectorPhysicsType_e)pSector->GetPhysicsType();
   }
 
+  void EngineInstanceTerrain::SetSectorPhysicsTightFit(int x, int y, bool bTightFit)
+  {
+    if (!m_pTerrain || m_bIsReference)
+      return;
+
+    VEditableTerrainSector *pSector = m_pTerrain->GetSector(x,y);
+    if (pSector->GetPhysicsTightFit() == bTightFit)
+      return;
+
+    pSector->SetPhysicsTightFit(bTightFit);
+    pSector->SetEditorFlag(SECTOR_EDITORFLAG_HEIGHTMAPDIRTY | SECTOR_EDITORFLAG_SECTORFILEDIRTY);
+    if (pSector->m_pTile)
+    {
+      IVisPhysicsModule_cl *pPM = Vision::GetApplication()->GetPhysicsModule();
+      if (pPM != NULL)
+      {
+        pPM->OnTerrainSectorRemoved(pSector);
+        pPM->OnTerrainSectorCreated(pSector);
+      }
+    }
+  }
+
+  bool EngineInstanceTerrain::GetSectorPhysicsTightFit(int x, int y)
+  {
+    if (!m_pTerrain)
+      return false;
+    VEditableTerrainSector *pSector = m_pTerrain->GetSector(x,y);
+    return pSector->GetPhysicsTightFit();
+  }
+
   void EngineInstanceTerrain::AssignGeometryToVisibiltyZone(int iSectorX, int iSectorY, VisibilityZoneShape ^pZone)
   {
     if (!m_pTerrain)
@@ -485,9 +515,8 @@ namespace TerrainManaged
   bool EngineInstanceTerrain::CreateFromCurrentV3D(TerrainBase::Config::TerrainConfig ^pConfig)
   {
       return false;
-    }
+  }
 
-  
   bool EngineInstanceTerrain::ApplyHeightmapFilter(IHeightmapFilter ^filter, ProgressStatus ^progress)
   {
     if (!m_pTerrain || m_bIsReference)
@@ -1489,6 +1518,12 @@ namespace TerrainManaged
     
     // Update terrain config
     m_pTerrain->UpdateDefaultEffectSettingsInConfig();
+
+    // Update backing status if backing is on to ensure that outdated baked textures will be rebaked.
+    if (m_pTerrain->m_bUseBakedTextures)
+    {
+      m_pTerrain->SetUseBakedTextures(true, true);
+    }
   }
 
   // this function covers all combinations of added textures, removed textures and order change
@@ -1765,12 +1800,10 @@ namespace TerrainManaged
     VString sFilename;
     ConversionUtils::StringToVString(filename,sFilename);
     VisBitmap_cl *pSlopeBmp = VisBitmap_cl::LoadBitmapFromFile(sFilename);
-    if (!pSlopeBmp)
+    if (!pSlopeBmp || !pSlopeBmp->IsLoaded())
       return;
 
-    pSlopeBmp->EnsureLoaded();
-    if (!pSlopeBmp->IsLoaded())
-      return;
+    pSlopeBmp->CheckFileModified(); // in case the bitmap has changed
 
     VTextureWeightmapChannelResource *pResR = pDestR ? m_pTerrain->m_WeightmapChannels.FindByID(pDestR->ID) : NULL;
     VTextureWeightmapChannelResource *pResG = pDestG ? m_pTerrain->m_WeightmapChannels.FindByID(pDestG->ID) : NULL;
@@ -2448,9 +2481,9 @@ namespace TerrainManaged
     if (m_pTerrain->m_Config.m_sNativeProjectDir.IsEmpty())
       return;
 
-    // Disable automatic asset transformation
-    bool bAutomaticAssetTransform = EditorManager::AssetManager->AutomaticAssetTransform;
-    EditorManager::AssetManager->AutomaticAssetTransform = false;
+    // Disable background processing
+    bool bBackgroundProsessing = EditorManager::AssetManager->BackgroundProcessing;
+    EditorManager::AssetManager->BackgroundProcessing = false;
 
     // Ensure everything is saved
     SaveToFile();
@@ -2742,8 +2775,8 @@ namespace TerrainManaged
     if (bExportPrefab)
       ExportPrefab();
 
-    // Restore automatic asset transformation status
-    EditorManager::AssetManager->AutomaticAssetTransform = bAutomaticAssetTransform;
+    // Restore background processing
+    EditorManager::AssetManager->BackgroundProcessing = bBackgroundProsessing;
   }
 
   void EngineInstanceTerrain::ExportPrefab()
@@ -2897,11 +2930,10 @@ namespace TerrainManaged
 
     return pSettings;
   }
-
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140624)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

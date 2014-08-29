@@ -7,14 +7,13 @@
  */
 
 HK_FORCE_INLINE hkReferencedObject::hkReferencedObject()
-: m_memSizeAndFlags(0xffff), m_referenceCount(1)
-{
-}
+:	m_memSizeAndRefCount(0xFFFF0001)
+{}
 
 HK_FORCE_INLINE hkReferencedObject::hkReferencedObject( const hkReferencedObject& originalObject )
-: hkBaseObject(), m_memSizeAndFlags(0xffff), m_referenceCount(1) 
-{
-}
+:	hkBaseObject()
+,	m_memSizeAndRefCount(0xFFFF0001)
+{}
 
 HK_FORCE_INLINE void hkReferencedObject::operator=( const hkReferencedObject& originalObject )
 {
@@ -24,17 +23,161 @@ HK_FORCE_INLINE void hkReferencedObject::operator=( const hkReferencedObject& or
 
 HK_FORCE_INLINE int hkReferencedObject::getReferenceCount() const
 {
-	return m_referenceCount;
+	return (m_memSizeAndRefCount & 0xFFFF);
+}
+
+HK_FORCE_INLINE int hkReferencedObject::getMemorySizeAndFlags() const
+{
+	return (m_memSizeAndRefCount >> 16) & 0xFFFF;
 }
 
 
 HK_FORCE_INLINE int hkReferencedObject::getAllocatedSize() const
 {
-	return m_memSizeAndFlags & MASK_MEMSIZE;
+	return getMemorySizeAndFlags() & 0x7FFF;
+}
+
+//
+//	Sets the memory size and flags
+
+inline void hkReferencedObject::setMemorySizeAndFlags(int newMemSizeAndFlags)
+{
+#if defined(HK_PLATFORM_SPU)
+
+	m_memSizeAndRefCount = (newMemSizeAndFlags << 16) | (m_memSizeAndRefCount & 0xFFFF);
+
+#else
+
+	// Set the reference count atomically
+	hkUint32 volatile* addr = &m_memSizeAndRefCount;
+	hkUint32 oldVal, newVal;
+	do
+	{
+		// Read current state and change
+		oldVal = *addr;
+		newVal = (newMemSizeAndFlags << 16) | (oldVal & 0xFFFF);
+	} while ( !hkAtomic::compareAndSwap<hkUint32>(addr, oldVal, newVal) );
+
+	// We will only get here if we succeeded in setting both memSizeAndFlags and referenceCount in the same go
+#endif
+}
+
+//
+//	Sets the reference count
+
+inline void hkReferencedObject::setReferenceCount(int newRefCount)
+{
+#if defined(HK_PLATFORM_SPU)
+
+	m_memSizeAndRefCount = (m_memSizeAndRefCount & 0xFFFF0000) | (newRefCount & 0xFFFF);
+
+#else
+
+	// Set the reference count atomically
+	hkUint32 volatile* addr = &m_memSizeAndRefCount;
+	hkUint32 oldVal, newVal;
+	do
+	{
+		// Read current state and change
+		oldVal = *addr;
+		newVal = (oldVal & 0xFFFF0000) | (newRefCount & 0xFFFF);
+	} while ( !hkAtomic::compareAndSwap<hkUint32>(addr, oldVal, newVal) );
+
+	// We will only get here if we succeeded in setting both memSizeAndFlags and referenceCount in the same go
+#endif
+}
+
+//
+//	Sets the memory size, flags and reference count
+
+inline void hkReferencedObject::setMemorySizeFlagsAndReferenceCount(int newMemSizeAndFlags, int newRefCount)
+{
+#if defined(HK_PLATFORM_SPU)
+	setMemorySizeAndFlags(newMemSizeAndFlags);
+	setReferenceCount(newRefCount);
+#else
+
+	// Set the reference count atomically
+	hkUint32 volatile* addr = &m_memSizeAndRefCount;
+	const hkUint32 newVal	= (newMemSizeAndFlags << 16) | (newRefCount & 0xFFFF);
+	hkUint32 oldVal;
+	do
+	{
+		// Read current state
+		oldVal = *addr;
+	} while ( !hkAtomic::compareAndSwap<hkUint32>(addr, oldVal, newVal) );
+
+	// We will only get here if we succeeded in setting both memSizeAndFlags and referenceCount in the same go
+#endif
+}
+
+//
+//	Atomically increments the reference count
+
+inline void hkReferencedObject::addReference() const
+{
+#if !defined(HK_PLATFORM_SPU)
+	// We don't bother keeping references if the reference is going to be ignored.
+	if ( getMemorySizeAndFlags() != 0 )
+	{
+		hkUint32 volatile* addr = const_cast<hkUint32*>(&m_memSizeAndRefCount);
+		hkUint32 oldVal, newVal;
+		do
+		{
+			// Get old value
+			oldVal = *addr;
+			newVal = (oldVal & 0xFFFF0000) | (((oldVal & 0xFFFF) + 1) & 0xFFFF);
+
+			// Loop until we can set it
+		} while ( !hkAtomic::compareAndSwap<hkUint32>(addr, oldVal, newVal) );
+
+#	if defined(HK_DEBUG)
+		if ( (newVal & 0xFFFF) <= 1 )
+		{
+			extern void HK_CALL hkReferenceCountError(const hkReferencedObject*,const char*);
+			hkReferenceCountError(this, "addReference");
+		}
+#	endif
+	}
+#endif
+}
+
+//
+//	Atomically decrements the reference count
+
+inline void hkReferencedObject::removeReference() const
+{
+#if !defined(HK_PLATFORM_SPU)
+	if ( getMemorySizeAndFlags() != 0 )	
+	{
+		hkUint32 volatile* addr = const_cast<hkUint32*>(&m_memSizeAndRefCount);
+		hkUint32 oldVal, newVal;
+		do
+		{
+			// Read old state
+			oldVal = *addr;
+			newVal = (oldVal & 0xFFFF0000) | (((oldVal & 0xFFFF) - 1) & 0xFFFF);
+
+			// Loop until we can set it
+		} while ( !hkAtomic::compareAndSwap<hkUint32>(addr, oldVal, newVal) );
+
+		if ( (newVal & 0xFFFF) == 0 )
+		{
+			deleteThisReferencedObject();
+		}
+#	if defined(HK_DEBUG)
+		else if ( (newVal & 0xFFFF) == 0xFFFF )	// Negative!
+		{
+			extern void HK_CALL hkReferenceCountError(const hkReferencedObject*,const char*);
+			hkReferenceCountError(this, "removeReference");
+		}
+#	endif
+	}
+#endif
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

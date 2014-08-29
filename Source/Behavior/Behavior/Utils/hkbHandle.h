@@ -45,7 +45,7 @@ class hkbHandle : public hkReferencedObject
 		void getWorldFromHandleTransform(
 			hkbPhysicsInterface* physicsInterface,
 			hkTransform& worldFromHandle,
-			const hkbGeneratorOutput* output = HK_NULL ) const;
+			const hkPointerMap<hkbCharacter*,hkbGeneratorOutput*>* characterOutputs = HK_NULL) const;
 
 			/// Get the transform from the coordinates of m_frame to the
 			/// world coordinates.  If m_frame is HK_NULL, the transform from
@@ -92,7 +92,7 @@ class hkbHandle : public hkReferencedObject
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -9,16 +9,16 @@
 #include <Vision/Runtime/EnginePlugins/ThirdParty/FmodEnginePlugin/FmodEnginePlugin.hpp>
 #include <Vision/Runtime/EnginePlugins/ThirdParty/FmodEnginePlugin/VFmodManager.hpp>
 
-#include <Vision/Runtime/Base/System/Memory/VMemDbg.hpp>
 
-VFmodAnimationEventSoundTrigger::VFmodAnimationEventSoundTrigger(int iComponentFlags) : IVAnimationEventTrigger(iComponentFlags)
+
+VFmodAnimationEventSoundTrigger::VFmodAnimationEventSoundTrigger(int iComponentFlags) : IVTransitionEventTrigger(iComponentFlags)
 {
 }
 
 bool VFmodAnimationEventSoundTrigger::CommonInit()
 {
   // Initialize base component
-  if (!IVAnimationEventTrigger::CommonInit())
+  if (!IVTransitionEventTrigger::CommonInit())
     return false;
 
   // Fill the event trigger info
@@ -69,12 +69,12 @@ void VFmodAnimationEventSoundTrigger::OnAnimationEvent()
 }
 
 // Register the class in the engine module so it is available for RTTI
-V_IMPLEMENT_SERIAL(VFmodAnimationEventSoundTrigger, IVAnimationEventTrigger, 0, &g_FmodModule);
+V_IMPLEMENT_SERIAL(VFmodAnimationEventSoundTrigger, IVTransitionEventTrigger, 0, &g_FmodModule);
 
 void VFmodAnimationEventSoundTrigger::Serialize( VArchive &ar )
 {
   char iLocalVersion = V_VFMODANIMATIONEVENTSOUNDTRIGGER_VERSION_CURRENT;
-  IVAnimationEventTrigger::Serialize(ar);
+  IVTransitionEventTrigger::Serialize(ar);
 
   if (ar.IsLoading())
   {
@@ -93,12 +93,12 @@ void VFmodAnimationEventSoundTrigger::Serialize( VArchive &ar )
   }
 }
 
-START_VAR_TABLE(VFmodAnimationEventSoundTrigger, IVAnimationEventTrigger, "Animation Event Sound Trigger Component.", VCOMPONENT_ALLOW_MULTIPLE, "Event Sound Trigger")
+START_VAR_TABLE(VFmodAnimationEventSoundTrigger, IVTransitionEventTrigger, "Animation Event Sound Trigger Component.", VCOMPONENT_ALLOW_MULTIPLE, "Event Sound Trigger")
   DEFINE_VAR_VSTRING (VFmodAnimationEventSoundTrigger, SoundFilename, "Filename of the sound effect", "", 0, 0, "filepicker(.wav,.ogg,.mp3)");
 END_VAR_TABLE
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -39,7 +39,7 @@ public: // Interface
   ASSETFRAMEWORK_IMPEXP VOVERRIDE bool getRelativeStaticTargetPath(const hkvAsset& asset, hkStringBuf& out_path) const HKV_OVERRIDE;
 
   ASSETFRAMEWORK_IMPEXP virtual bool executeTransformation(const hkvTransformationInput& input, hkvTransformationOutput& output) const HKV_OVERRIDE;
-  ASSETFRAMEWORK_IMPEXP virtual bool queryOutputFileSpecs(const hkvTransformationInput& input, hkvTransformationOutput& output) const HKV_OVERRIDE;
+  ASSETFRAMEWORK_IMPEXP virtual bool queryOutputFileSpecs(const hkvTransformationInput& input, hkvTransformationOutput& output, bool forLookUpTable) const HKV_OVERRIDE;
 
 private:
   static hkUint32 s_ruleTypeIndex;
@@ -48,7 +48,7 @@ private:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

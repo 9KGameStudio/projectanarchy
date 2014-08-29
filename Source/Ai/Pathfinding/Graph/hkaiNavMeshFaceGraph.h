@@ -17,6 +17,7 @@
 
 #include <Ai/Pathfinding/Astar/SearchState/hkaiHashSearchState.h>
 #include <Ai/Pathfinding/Astar/Heuristic/hkaiGraphDistanceHeuristic.h>
+#include <Common/Base/Monitor/hkMonitorStream.h>
 
 
 /// A simple graph on a nav mesh, that treats the faces as nodes in the graph.
@@ -34,6 +35,8 @@ HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE,hkaiNavMeshFaceGraph)
 	typedef hkaiHashSearchState SearchState;
 
 	HK_FORCE_INLINE hkaiNavMeshFaceGraph();
+	inline void setCollection( const hkaiStreamingCollection* collection );
+	const hkaiStreamingCollection* getCollection() const { return m_collection; }
 
 	HK_FORCE_INLINE int getNumNodes() const;
 
@@ -60,6 +63,9 @@ HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE,hkaiNavMeshFaceGraph)
 
 	HK_FORCE_INLINE hkSimdReal distanceFromPosition(hkVector4Parameter posA, hkVector4Parameter posB) const;
 
+	HK_FORCE_INLINE void getFaceCentroid( hkaiNavMesh::FaceIndex faceIndex, hkVector4& vecOut) const;
+	HK_FORCE_INLINE void getFaceNormal( hkaiNavMesh::FaceIndex faceIndex, hkVector4& vecOut) const;
+
 	//
 	// Begin hkaiAster Listener interface
 	//
@@ -72,8 +78,12 @@ HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE,hkaiNavMeshFaceGraph)
 	HK_FORCE_INLINE void openNodeAdjusted(SearchIndex nid) {}
 	HK_FORCE_INLINE void nodeClosed(SearchIndex) {}
 
+protected:
 		/// Nav mesh to be searched
 	const hkaiStreamingCollection* m_collection;
+	const hkaiNavMesh* m_navMesh;
+
+public:
 
 		/// Traversal info for the current search
 	hkaiAgentTraversalInfo m_info;
@@ -94,13 +104,16 @@ HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE,hkaiNavMeshFaceGraph)
 	hkSimdReal m_searchSphereRadius;
 	hkSimdReal m_searchCapsuleRadius;
 
+	// Cached info
+	hkArray< hkVector4 > m_cachedCentroids;
+	hkArray< hkVector4 > m_cachedNormals;
 };
 
 #include <Ai/Pathfinding/Graph/hkaiNavMeshFaceGraph.inl>
 #endif // HKAI_NAV_MESH_FACE_GRAPH_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

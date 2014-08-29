@@ -25,33 +25,15 @@ public:
   int GetEditorMode();
   
   const char * GetPlatformName();
-  
-};
 
-//we need the Lua state for this operation so the implementation is native
-%native(LoadScript) int VScriptApp_wrapper_LoadScript(lua_State *L);
-%{
-  SWIGINTERN int VScriptApp_wrapper_LoadScript(lua_State *L)
+  %extend
   {
-    IS_MEMBER_OF(VScriptApp_wrapper) //this will move this function to the method table of the specified class
-
-    DECLARE_ARGS_OK;
-
-    //we can ignore arg1 because it is a static function
-
-    GET_ARG(2, const char *, szFileName);
-    
-    bool bSuccess = false;
-    
-    if (ARGS_OK)
+    bool LoadScript(const char* szFileName, VCaptureSwigEnvironment* env)
     {
-      bSuccess = VScriptApp_wrapper::LoadScript(L, szFileName);
+      return VScriptApp_wrapper::LoadScript(env->GetLuaState(), szFileName);
     }
-    
-    lua_pushboolean(L, bSuccess ? TRUE : FALSE);
-    return 1;
   }
-%}
+};
 
 #else
 
@@ -84,7 +66,7 @@ public:
   /// \brief Check if the application is running in the vForge editor.
   /// \return true if the application runs in the editor, otherwise false.
   /// \see IsInEditor
-  boolean GetEditorMode();
+  boolean IsInEditor();
   
   /// \brief Checks the current operating mode of the editor.
   /// \return The edot mode as one of the following values:
@@ -106,6 +88,15 @@ public:
   /// @name General Purpose
   /// @{
   
+  /// \brief Returns the name of the current platform as string.
+  /// \return The name of the platform ("WIN32DX9", "ANDROID", "IOS", "TIZEN", ...)
+  /// \par Example
+  ///   \code
+  ///     local isWindows = Application:GetPlatformName()=="WIN32DX9"
+  ///     GUI:SetCursorVisible(isWindows)
+  ///   \endcode
+  string GetPlatformName();
+
   /// \brief Loads a script file. Similar to LUA's dofile, but this one uses the vision file system. 
   /// \param filename The script file to load.
   void LoadScript(string filename);
@@ -127,7 +118,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

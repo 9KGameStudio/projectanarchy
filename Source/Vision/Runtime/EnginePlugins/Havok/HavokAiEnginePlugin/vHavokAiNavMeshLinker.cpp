@@ -55,7 +55,7 @@ bool vHavokAiNavMeshLinker::LinkNavMeshes(const NavMeshLinkSetting& navMeshLinkS
 	hkLocalArray<hkaiNavMesh*> havokAiNavMeshes(numNavMeshes);
 	hkLocalArray<hkaiNavMeshInstance*> havokAiInstances(numNavMeshes);
 	hkLocalArray<hkaiNavMeshQueryMediator*> havokAiMediators(numNavMeshes);
-	hkLocalArray<hkAabb> aabbs(numNavMeshes);
+	hkLocalArray<hkaiStreamingUtils::AabbInfo> aabbInfos(numNavMeshes);
 	hkLocalArray<hkaiSectionUid> arrayIndexToUid(numNavMeshes);
 	{
 		for (int idx = 0; idx < numNavMeshes; ++idx)
@@ -85,9 +85,10 @@ bool vHavokAiNavMeshLinker::LinkNavMeshes(const NavMeshLinkSetting& navMeshLinkS
 			havokAiMediators.pushBack(havokMediator);
 			havokAiNavMeshes.pushBack(havokNavMesh);
 
-			hkAabb aabb;
-			havokInstance->getAabb(aabb);
-			aabbs.pushBack(aabb);
+			hkaiStreamingUtils::AabbInfo aabbInfo;
+			havokInstance->getAabb(aabbInfo.m_aabb);
+			aabbInfo.m_layer = havokInstance->getLayer();
+			aabbInfos.pushBack(aabbInfo);
 		}
 	}
 
@@ -96,7 +97,7 @@ bool vHavokAiNavMeshLinker::LinkNavMeshes(const NavMeshLinkSetting& navMeshLinkS
 	{
 		// Find overlaps between AABBs
 		hkArray<hkKeyPair>::Temp pairs;
-		hkaiStreamingUtils::findPotentialDependencies(aabbs, pairs);
+		hkaiStreamingUtils::findPotentialDependencies(aabbInfos, pairs);
 
 #if defined(HAVOK_SDK_VERSION_MAJOR) && (HAVOK_SDK_VERSION_MAJOR < 2012)
 		hkaiStreamingUtils::EdgeRemap edgeRemap;
@@ -116,6 +117,7 @@ bool vHavokAiNavMeshLinker::LinkNavMeshes(const NavMeshLinkSetting& navMeshLinkS
 			VASSERT(havokAiInstances[indexB]->getOriginalMesh() == havokAiNavMeshes[indexB]);
 
 			hkaiStreamingUtils::FindEdgeOverlapInput input;
+			input.m_up.set(0,0,1);
 			input.m_meshA = havokAiNavMeshes[indexA];
 			input.m_uidA = uidA;
 			input.m_mediatorA = havokAiMediators[indexA];
@@ -123,14 +125,14 @@ bool vHavokAiNavMeshLinker::LinkNavMeshes(const NavMeshLinkSetting& navMeshLinkS
 			input.m_uidB = uidB;
 			input.m_mediatorB = havokAiMediators[indexB];
 
-      // set link settings
-      input.m_edgeMatchTolerance = navMeshLinkSetting.m_edgeMatchTolerance;
-      input.m_edgeMatchingParams.m_maxStepHeight = navMeshLinkSetting.m_maxStepHeight;
-      input.m_edgeMatchingParams.m_maxOverhang = navMeshLinkSetting.m_maxOverhang; // slightly bigger than the default, since the meshes were built independently.
-      input.m_edgeMatchingParams.m_maxSeparation = navMeshLinkSetting.m_maxSeparation;
-      input.m_edgeMatchingParams.m_cosPlanarAlignmentAngle = navMeshLinkSetting.m_cosPlanarAlignmentAngle;
-      input.m_edgeMatchingParams.m_cosVerticalAlignmentAngle = navMeshLinkSetting.m_cosVerticalAlignmentAngle;
-      input.m_edgeMatchingParams.m_minEdgeOverlap = navMeshLinkSetting.m_minEdgeOverlap;
+			// set link settings
+			input.m_edgeMatchTolerance = navMeshLinkSetting.m_edgeMatchTolerance;
+			input.m_edgeMatchingParams.m_maxStepHeight = navMeshLinkSetting.m_maxStepHeight;
+			input.m_edgeMatchingParams.m_maxOverhang = navMeshLinkSetting.m_maxOverhang; // slightly bigger than the default, since the meshes were built independently.
+			input.m_edgeMatchingParams.m_maxSeparation = navMeshLinkSetting.m_maxSeparation;
+			input.m_edgeMatchingParams.m_cosPlanarAlignmentAngle = navMeshLinkSetting.m_cosPlanarAlignmentAngle;
+			input.m_edgeMatchingParams.m_cosVerticalAlignmentAngle = navMeshLinkSetting.m_cosVerticalAlignmentAngle;
+			input.m_edgeMatchingParams.m_minEdgeOverlap = navMeshLinkSetting.m_minEdgeOverlap;
 
 			// For each overlapping pair of AABBs, try to match up edges between the meshes
 
@@ -155,7 +157,7 @@ bool vHavokAiNavMeshLinker::LinkNavMeshes(const NavMeshLinkSetting& navMeshLinkS
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

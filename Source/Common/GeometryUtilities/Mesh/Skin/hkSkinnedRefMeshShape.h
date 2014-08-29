@@ -12,10 +12,10 @@
 #include <Common/GeometryUtilities/Mesh/hkMeshShape.h>
 #include <Common/GeometryUtilities/Mesh/Skin/hkSkinnedMeshShape.h>
 
-extern const hkClass hkSkinnedRefMeshShapeClass;
+extern HK_EXPORT_COMMON const hkClass hkSkinnedRefMeshShapeClass;
 
 	/// Mesh shape that references a sub-set of the bones in a hkSkinnedMeshShape
-class hkSkinnedRefMeshShape : public hkMeshShape
+class HK_EXPORT_COMMON hkSkinnedRefMeshShape : public hkMeshShape
 {
 	//+version(1)
 
@@ -27,7 +27,7 @@ class hkSkinnedRefMeshShape : public hkMeshShape
 	public:
 
 			/// Constructor
-		hkSkinnedRefMeshShape(hkSkinnedMeshShape* fullSkin, const short* bones, const hkQTransform* localFromRootTransforms, int numBones);
+		hkSkinnedRefMeshShape(hkSkinnedMeshShape* fullSkin, const short* bones, const hkQTransformType* localFromRootTransforms, int numBones);
 
 			/// Constructor
 		hkSkinnedRefMeshShape(hkSkinnedMeshShape* fullSkin);
@@ -53,7 +53,7 @@ class hkSkinnedRefMeshShape : public hkMeshShape
 		HK_FORCE_INLINE const hkQTransform* getTransforms() const			{ return reinterpret_cast<const hkQTransform*>(m_localFromRootTransforms.begin()); }
 
 			/// Creates a compound mesh by merging all the given Vision meshes
-		static hkSkinnedRefMeshShape* HK_CALL create(const hkMeshShape*const* shapes, const hkQTransform* transforms, int numShapes);
+		static hkSkinnedRefMeshShape* HK_CALL create(const hkMeshShape*const* shapes, const hkQTransformType* transforms, int numShapes);
 
 	public:
 
@@ -94,7 +94,7 @@ class hkSkinnedRefMeshShape : public hkMeshShape
 #endif	//	HK_SKINNED_REF_MESH_SHAPE_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

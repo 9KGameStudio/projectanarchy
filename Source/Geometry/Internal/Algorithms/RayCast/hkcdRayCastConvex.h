@@ -14,17 +14,19 @@
 #include <Common/Base/Math/Vector/hkIntVector.h>
 #include <Geometry/Internal/Types/hkcdRay.h>
 
+
 	/// Raycast against a convex shape, given as a collection of boundary planes.
 	/// If you don't have the planeEquations, use hkGsk::rayCast instead.
 	/// See \ref RayCastDocumentation for common input and output parameter descriptions.
 	/// \note The planeEquations array is read in batches of 4 vectors, so a minimum of 4 plane equations must be passed in.
-	HK_FORCE_INLINE hkInt32 HK_CALL hkcdRayCastConvex(const hkcdRay& ray,
-														const hkVector4* HK_RESTRICT planeEquations,
-														int numPlaneEquations,
-														hkSimdReal* HK_RESTRICT fractionInOut,
-														hkVector4* HK_RESTRICT normalOut,
-														hkcdRayQueryFlags::Enum flags
-														);
+HK_FORCE_INLINE hkcdRayCastResult HK_CALL hkcdRayCastConvex(
+	const hkcdRay& ray,
+	const hkVector4* HK_RESTRICT planeEquations,
+	int numPlaneEquations,
+	hkSimdRealParameter planeExpansion,	// This shifts all planes outwards
+	hkSimdReal* HK_RESTRICT fractionInOut,
+	hkVector4* HK_RESTRICT normalOut,
+	hkFlags<hkcdRayQueryFlags::Enum,hkUint32> flags );
 
 
 #include <Geometry/Internal/Algorithms/RayCast/hkcdRayCastConvex.inl>
@@ -32,7 +34,7 @@
 #endif	//	HKCD_RAY_PLANE_INTERSECTION_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

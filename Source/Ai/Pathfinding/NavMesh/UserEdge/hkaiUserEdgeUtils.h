@@ -10,19 +10,21 @@
 
 #include <Ai/Pathfinding/hkaiBaseTypes.h>
 #include <Ai/Pathfinding/NavMesh/hkaiNavMesh.h>
+#include <Common/Base/Container/Set/hkSet.h>
+
 class hkaiNavMesh;
 class hkaiNavMeshInstance;
 class hkaiStreamingCollection;
 
-extern const hkClass hkaiUserEdgeUtilsClass;
-extern const hkClass hkaiUserEdgeUtilsObbClass;
-extern const hkClass hkaiUserEdgeUtilsUserEdgeSetupClass;
-extern const hkClass hkaiUserEdgeUtilsUserEdgePairClass;
-extern const hkClass hkaiUserEdgeSetupArrayClass;
-extern const hkClass hkaiUserEdgePairArrayClass;
+extern HK_EXPORT_AI const hkClass hkaiUserEdgeUtilsClass;
+extern HK_EXPORT_AI const hkClass hkaiUserEdgeUtilsObbClass;
+extern HK_EXPORT_AI const hkClass hkaiUserEdgeUtilsUserEdgeSetupClass;
+extern HK_EXPORT_AI const hkClass hkaiUserEdgeUtilsUserEdgePairClass;
+extern HK_EXPORT_AI const hkClass hkaiUserEdgeSetupArrayClass;
+extern HK_EXPORT_AI const hkClass hkaiUserEdgePairArrayClass;
 
 /// Miscellaneous utility functions for manipulating user edges in nav meshes
-class hkaiUserEdgeUtils
+class HK_EXPORT_AI hkaiUserEdgeUtils
 {
 	HK_DECLARE_REFLECTION();
 	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE, hkaiUserEdgeUtils);
@@ -31,7 +33,7 @@ class hkaiUserEdgeUtils
 		/// A simple OBB representation used as input for offline user edge setup.
 		/// The OBB will be treated as a 2D quad and intersected with the navmesh; the shortest dimension is ignored.
 		/// Note that the format here is the same as in hkGeometryUtility::calcObb.
-	struct Obb
+	struct HK_EXPORT_AI Obb
 	{
 	public:
 		HK_DECLARE_REFLECTION();
@@ -89,7 +91,7 @@ class hkaiUserEdgeUtils
 		/// Input to hkaiUserEdgeUtils::createUserEdgePairs() representing a desired pair of user edges.
 		/// This can be set up e.g., in a level editor then used after nav mesh generation.
 		/// The OBBs are specified in world space by default; this can be changed with m_space.
-	struct UserEdgeSetup
+	struct HK_EXPORT_AI UserEdgeSetup
 	{
 		// +version(2)
 		HK_DECLARE_REFLECTION();
@@ -132,7 +134,7 @@ class hkaiUserEdgeUtils
 	};
 
 		/// Information for a pair of user edges. Can be added to the nav mesh, and updated after nav mesh cutting.
-	struct UserEdgePair
+	struct HK_EXPORT_AI UserEdgePair
 	{
 		//+version(1)
 		HK_DECLARE_REFLECTION();
@@ -223,7 +225,7 @@ class hkaiUserEdgeUtils
 	};
 
 		/// Controls the behavior of adding user edges.
-	struct UpdateParameters
+	struct HK_EXPORT_AI UpdateParameters
 	{
 		HK_FORCE_INLINE UpdateParameters()
 		:	m_clearanceResetMode(RESET_CLEARANCE_CACHE),
@@ -258,7 +260,7 @@ class hkaiUserEdgeUtils
 	//
 	
 		/// Controls the behavior of updating cut nav meshes.
-	struct CutMeshUpdateParameters : public UpdateParameters
+	struct HK_EXPORT_AI CutMeshUpdateParameters : public UpdateParameters
 	{
 		HK_FORCE_INLINE CutMeshUpdateParameters()
 		: UpdateParameters(),
@@ -285,7 +287,7 @@ class hkaiUserEdgeUtils
 	//
 
 		/// Controls the behavior of removing user edges.
-	struct RemoveParameters
+	struct HK_EXPORT_AI RemoveParameters
 	{
 		HK_FORCE_INLINE RemoveParameters()
 			:	m_updateHierarchyGraphs(true)
@@ -299,15 +301,17 @@ class hkaiUserEdgeUtils
 	static void HK_CALL removeUserEdges( hkaiNavMeshInstance& meshInstance, hkaiStreamingCollection* collection );
 
 		/// Removes user edges from specific faces in a collection
-	static int HK_CALL removeUserEdgesFromFaces( hkaiStreamingCollection* collection, const hkArrayBase<hkaiPackedKey>& faceKeys, const RemoveParameters& params = RemoveParameters() );
+		/// Sections which are modified will be added to the modifiedSections set.
+	static int HK_CALL removeUserEdgesFromFaces( hkaiStreamingCollection* collection, const hkArrayBase<hkaiPackedKey>& faceKeys, hkSet<hkaiRuntimeIndex>* modifiedSections, const RemoveParameters& params = RemoveParameters() );
 	
 		/// Removes user edges from a specific face in a collection. Returns the number of user edges removed.
-	static int HK_CALL removeUserEdgesFromFace( hkaiStreamingCollection* collection,  hkaiPackedKey faceKey, const RemoveParameters& params = RemoveParameters() );
+		/// Sections which are modified will be added to the modifiedSections set.
+	static int HK_CALL removeUserEdgesFromFace( hkaiStreamingCollection* collection,  hkaiPackedKey faceKey, hkSet<hkaiRuntimeIndex>* modifiedSections, const RemoveParameters& params = RemoveParameters() );
 
 };
 
 	/// Utility class for serialization of a hkaiUserEdgeUtils::UserEdgeSetup array
-class hkaiUserEdgeSetupArray : public hkReferencedObject
+class HK_EXPORT_AI hkaiUserEdgeSetupArray : public hkReferencedObject
 {
 public:
 	HK_DECLARE_REFLECTION();
@@ -327,7 +331,7 @@ public:
 };
 
 	/// Utility class for serialization of a hkaiUserEdgeUtils::UserEdgePair array
-class hkaiUserEdgePairArray : public hkReferencedObject
+class HK_EXPORT_AI hkaiUserEdgePairArray : public hkReferencedObject
 {
 public:
 	HK_DECLARE_REFLECTION();
@@ -350,7 +354,7 @@ public:
 #endif // HKAI_USER_EDGE_UTILS_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

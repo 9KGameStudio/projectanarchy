@@ -23,11 +23,15 @@ namespace hkSerializationCheckingUtils
 		/// e.g., members of type of a non-serializable class are defined
 		/// with '+nosave' or '+serialized(false)' annotations and are not embedded objects.
 		/// A human readable report is written to the output stream.
+	HK_EXPORT_COMMON hkResult HK_CALL verifyClassReflection(const hkClass& klass, const hkClassNameRegistry& classRegistry, hkOstream& output);
+
+		/// Verify all registered class reflections.
+		/// A human readable report is written to the output stream.
 		/// The check will fail if memoryManagedPrefixes is non-NULL and a class that begins with one of the prefixes isn't properly memory-managed.
-	hkResult HK_CALL verifyReflection(const hkClassNameRegistry& classRegistry, hkOstream& output, const char** memoryManagedPrefixes = HK_NULL, int numPrefixes = 0, bool reportNonMemoryManaged = true);
+	HK_EXPORT_COMMON hkResult HK_CALL verifyReflection(const hkClassNameRegistry& classRegistry, hkOstream& output, const char** memoryManagedPrefixes = HK_NULL, int numPrefixes = 0, bool reportNonMemoryManaged = true);
 
 		/// Utility class for conditionally outputting error messages.
-	struct DeferredErrorStream : public hkStreamWriter
+	struct HK_EXPORT_COMMON DeferredErrorStream : public hkStreamWriter
 	{
 		HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_STREAM);
 
@@ -47,7 +51,7 @@ namespace hkSerializationCheckingUtils
 #endif // HKSERIALZE_SERIALIZATION_CHECKING_UTILS_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -11,7 +11,7 @@
 
 #include <Physics/Constraint/Motor/LimitedForce/hkpLimitedForceConstraintMotor.h>
 
-extern const hkClass hkpPositionConstraintMotorClass;
+extern HK_EXPORT_PHYSICS const hkClass hkpPositionConstraintMotorClass;
 
 
 /// A motor which tries to reach a desired position/angle given a maxForce and a recovery speed.
@@ -21,7 +21,7 @@ extern const hkClass hkpPositionConstraintMotorClass;
 ///    This can lead to a small jitter, the first time the motor is activated.
 ///    To reduce this jitter, you can either try to fade in the motor's maxForce or
 ///    set the maxForce to some reasonable value.
-class hkpPositionConstraintMotor : public hkpLimitedForceConstraintMotor
+class HK_EXPORT_PHYSICS hkpPositionConstraintMotor : public hkpLimitedForceConstraintMotor
 {
 	public:
 
@@ -56,7 +56,7 @@ class hkpPositionConstraintMotor : public hkpLimitedForceConstraintMotor
 #endif // HKP_POSITION_CONSTRAINT_MOTOR_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

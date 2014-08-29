@@ -27,26 +27,41 @@ class VDebugShadingModes : public VAppModule
   V_DECLARE_DYNCREATE(VDebugShadingModes);
 
 public:
-	VDebugShadingModes();
+	VAPP_IMPEXP VDebugShadingModes();
 	virtual ~VDebugShadingModes() {}
 
-  virtual void Init() HKV_OVERRIDE;
-  virtual void DeInit() HKV_OVERRIDE;
+  VAPP_IMPEXP virtual void Init() HKV_OVERRIDE;
+  VAPP_IMPEXP virtual void DeInit() HKV_OVERRIDE;
 
-  virtual void OnHandleCallback(IVisCallbackDataObject_cl* pData) HKV_OVERRIDE;
+  VAPP_IMPEXP virtual void OnHandleCallback(IVisCallbackDataObject_cl* pData) HKV_OVERRIDE;
 
 protected:
+  /// \brief
+  ///   Sets debug shading mode.
+  /// 
+  /// \param iDebugShadingModeIndex
+  ///   Index of used debug shading shader. -1 will disable debug shading.
+  VAPP_IMPEXP void SetDebugShadingMode(int iDebugShadingModeIndex);
+
   IVRendererNodePtr m_spBackupRendererNode;
-  VSmartPtr<VShaderEffectLib> m_spDebugShadingShaderLib;
-  VRefCountedCollection<VCompiledEffect> m_debugShadingEffects;
+  
+  VSmartPtr<VShaderEffectLib> m_spGeometryDebugShadingLib;
+  VRefCountedCollection<VCompiledEffect> m_debugGeometryShadingEffects;
+  
+  VSmartPtr<VShaderEffectLib> m_spParticleDebugShadingLib;
+  VRefCountedCollection<VCompiledEffect> m_debugParticleShadingEffects;
+
   VSmartPtr<VisDebugShadingRenderLoop_cl> m_spDebugShadingRenderLoop;
-  int m_iCurrentDebugShadingMode;
+  int m_iCurrentDebugShadingMode; 
+  bool m_bParticleDebugShading;
+
+  static const int s_iParticleShadingOnOffAction = -10;
 };
 
 #endif //__V_DEBUG_SHADING_MODES
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

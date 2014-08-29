@@ -15,7 +15,7 @@ class hkaPose;
 /// is defined as a chain of bones (defined with an start and end bone) + a target position in model space; the solver will rotate the
 /// bones in the chain to try to make then end bone match the target position. This is done over a number of iterations over the bones
 /// in the chain, incrementally reaching closer to the target.
-class hkaCcdIkSolver : public hkReferencedObject
+class HK_EXPORT_ANIMATION hkaCcdIkSolver : public hkReferencedObject
 {
 	public:
 
@@ -23,7 +23,7 @@ class hkaCcdIkSolver : public hkReferencedObject
 
 		/// A constraint to be solved by the hkIkSolver. A constraint specified a chain of bones
 		/// and a desired world transformation for the end bone (end effector)
-		struct IkConstraint
+		struct HK_EXPORT_ANIMATION IkConstraint
 		{
 			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_ANIM_RUNTIME, hkaCcdIkSolver::IkConstraint );
 
@@ -71,7 +71,7 @@ class hkaCcdIkSolver : public hkReferencedObject
 #endif // INC_HKA_CCD_IKSOLVER_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -288,6 +288,10 @@ public:
   ///   translation and rotation values used to configure the shader.
   EFFECTS_IMPEXP void SetReferenceObject(VisObject3D_cl *pRefObject);
 
+  /// \brief
+  ///   Sets up projection relevant register in the user constant buffer of the shader (following naming conventions of standard mirror shaders)
+  EFFECTS_IMPEXP void SetupShaderProjection(VCompiledShaderPass *shader, const hkvVec3 &instancePos, const hkvMat3& instanceRotation);
+
   ///
   /// @}
   ///
@@ -398,10 +402,10 @@ public:
 #endif //_VISION_DOC
 
 protected:
+  void CommonInit();
   EFFECTS_IMPEXP VisMirror_cl(); ///< Reserved for serialization (doesn't call InitMirror)
   friend class VisMirrorManager_cl;
   void  GetWorldSpaceVertices(hkvVec3* pVert) const;
-  void  SetupSingleShaderProjection(VCompiledShaderPass *shader, const hkvVec3& campos, const hkvMat3 &camrot);
   void  PrepareProjectionPlanes();
   void  RecreateRenderTarget();
   void  FreeRenderTarget();
@@ -508,7 +512,7 @@ private:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

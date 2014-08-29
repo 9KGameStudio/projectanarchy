@@ -14,13 +14,24 @@
 // - The corresponding reflection database (reflection.db) is deleted
 // - The --force-output or --force-rebuild option is added to the pre-build generateReflection.py execution
 
-HK_CLASS(hkcdShape)
-HK_STRUCT(hkcdShapeDispatchType)
-HK_STRUCT(hkcdShapeInfoCodecType)
-HK_STRUCT(hkcdShapeType)
+HK_CLASS(HK_EXPORT_COMMON,hkcdPlanarCsgOperand)
+HK_CLASS(HK_EXPORT_COMMON,hkcdPlanarEntity)
+HK_CLASS(HK_EXPORT_COMMON,hkcdPlanarGeometry)
+HK_CLASS(HK_EXPORT_COMMON,hkcdPlanarGeometryPlanesCollection)
+HK_CLASS(HK_EXPORT_COMMON,hkcdPlanarGeometryPolygonCollection)
+HK_CLASS(HK_EXPORT_COMMON,hkcdPlanarGeometryPrimitivesCollection28)
+HK_CLASS(HK_EXPORT_COMMON,hkcdPlanarSolid)
+HK_CLASS(HK_EXPORT_COMMON,hkcdPlanarSolidNodeStorage)
+HK_CLASS(HK_EXPORT_COMMON,hkcdShape)
+HK_STRUCT(HK_EXPORT_COMMON,hkcdPlanarCsgOperandGeomSource)
+HK_STRUCT(HK_EXPORT_COMMON,hkcdPlanarGeometryPrimitivesPlane)
+HK_STRUCT(HK_EXPORT_COMMON,hkcdPlanarSolidNode)
+HK_STRUCT(HK_EXPORT_COMMON,hkcdShapeDispatchType)
+HK_STRUCT(HK_EXPORT_COMMON,hkcdShapeInfoCodecType)
+HK_STRUCT(HK_EXPORT_COMMON,hkcdShapeType)
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -13,6 +13,9 @@
 
 #include <Vision/Runtime/Engine/SceneElements/VisApiBaseEntity.hpp>
 
+#ifdef SearchPath 
+#undef SearchPath
+#endif
 
 class VisLightSource_cl;
 class VisBaseEntity_cl;
@@ -97,11 +100,14 @@ public:
 
   
   /// \brief
-  ///   Create a new entity by classname
+  ///   Create a new entity by classname.
   /// 
   /// CreateEntity creates a new entity of the class "classname", initialises the variables and
   /// calls the InitFunction of the entity. If the model has not been used before, then the model
   /// will also be loaded.
+  ///
+  /// If the class type is known at compile time, prefer the overload that takes the entity type
+  /// as a template argument.
   /// 
   /// \param className
   ///   The class name of the new entity, e.g. "Player_cl". Must be a registered entity class.
@@ -134,6 +140,51 @@ public:
   VISION_APIFUNC VisBaseEntity_cl *CreateEntity(const char *className, const hkvVec3& origin, const char *customModelFile = NULL, const char *szVarString = NULL);
 
   /// \brief
+  ///   Create a new entity by class type.
+  /// 
+  /// CreateEntity creates a new entity of the class type given by the template argument, initialises the variables and
+  /// calls the InitFunction of the entity. If the model has not been used before, then the model
+  /// will also be loaded.
+  /// 
+  /// \param origin
+  ///   Spawn position of the new entity.
+  /// 
+  /// \param customModelFile
+  ///   Filename of the model file.
+  /// 
+  /// \param szVarString
+  ///   Variable string which define a set of properties of the entity (see
+  ///   VisBaseEntity_cl::SetVariablesByString). The "origin" can't be set via the variable string,
+  ///   the function parameter has to be used instead
+  /// 
+  /// \return
+  ///   T *newEntity: Pointer to the new entity, or NULL if the entity could not be created.
+  /// 
+  /// \sa VisBaseEntity_cl::SetModel
+  /// \sa VisBaseEntity_cl::SetVariablesByString
+  /// \sa VisObject3D_cl::AttachToParent
+  /// 
+  /// \example
+  ///   \code
+  ///   hkvVec3 playerOrigin;
+  ///   Player_cl *newPlayer = Vision::Game.CreateEntity<Player_cl>(playerOrigin);
+  ///   Vision::Game.CreateEntity<VisBaseEntity_cl>(hkvVec3(0,0,0), "chair.model", " orientation=\"70.000/0.000/0.000\", entityKey=\"\" ");
+  ///   \endcode
+  template<typename T> T *CreateEntity(const hkvVec3& origin, const char *customModelFile = NULL, const char *szVarString = NULL)
+  {
+    HKVVEC3_INITIALIZATION_CHECK(&origin);
+
+    VisEntityTemplate_cl templ;
+
+    templ.m_pClassType = T::GetClassTypeId();
+    templ.m_vPosition = origin;
+    templ.m_pszModelFile = customModelFile;
+    templ.m_pszVarString = szVarString;
+
+    return vstatic_cast<T*>(CreateEntity(templ));
+  }
+
+  /// \brief
   ///   Create a new entity from a template
   VISION_APIFUNC VisBaseEntity_cl *CreateEntity(VisEntityTemplate_cl &templ);
 
@@ -146,12 +197,13 @@ public:
   /// \brief
   ///   Search for an entity (or multiple entities) with a given entity key
   /// 
-  /// SearchEntity looks for all the entities with a given entity key, and returns the first one
+  /// SearchEntity interates through all the entities in the scene and returns the first one
   /// which has the given key. If the storageArray parameter is defined, then this function will
   /// additionally store all the entities which have been found in that array.
   /// 
   /// This function wraps around VisElementManager_cl::FindByKey for the element manager of the
-  /// entity class .
+  /// entity class.
+  /// To search for entities locally in a sub-graph, the VisObject3D_cl::FindObjectByKey can be used. 
   /// 
   /// \param entityKey
   ///   Entity Key to search for.
@@ -193,20 +245,6 @@ public:
   /// 
   /// \sa VDynamicMesh
   VISION_APIFUNC VDynamicMesh* LoadDynamicMesh(const char *szFilename, bool bForceLoad, bool bLoadAnim = true);
-
-  /// \brief
-  ///   Deprecated. Use Vision::Game.LoadDynamicMesh instead
-  HKV_DEPRECATED_2012_1 inline VDynamicMesh* LoadModel(const char *szFilename, bool bForceLoad, bool bLoadAnim = true)
-  {
-    return LoadDynamicMesh(szFilename, bForceLoad, bLoadAnim);
-  }
-
-
-  /// \brief
-  ///   Deprecated function, use VDynamicMesh::GetResourceManager().PurgeUnusedResources instead
-  HKV_DEPRECATED_2012_1 VISION_APIFUNC int PurgeUnusedModels(float fSeconds);
-
-
 
   /// \brief
   ///   Removes one or more entities specified by key 
@@ -1099,7 +1137,7 @@ inline float VisGame_cl::GetFloatRandNeg()
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

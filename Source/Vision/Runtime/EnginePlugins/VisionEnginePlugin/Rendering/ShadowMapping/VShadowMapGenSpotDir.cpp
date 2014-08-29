@@ -16,8 +16,6 @@ VShadowMapGenSpotDir::VShadowMapGenSpotDir(IVRendererNode *pRendererNode, VisLig
   m_fFovX(0.0f), m_fFovY(0.0f), m_fNear(0.0f)
 {
   // Force update by invalidating the last stored values
-  m_vLastCameraPos.set(FLT_MAX,FLT_MAX,FLT_MAX);
-  m_vLastCameraDir.set(FLT_MAX,FLT_MAX,FLT_MAX);
   m_vLastLightDir.set(FLT_MAX,FLT_MAX,FLT_MAX);
 }
 
@@ -33,10 +31,6 @@ bool VShadowMapGenSpotDir::Initialize()
 
 void VShadowMapGenSpotDir::Update(bool force)
 {
-  VisContextCamera_cl *pMainCam = m_pRendererNode->GetReferenceContext()->GetCamera();
-  VASSERT(pMainCam);
-  float fCamAngle = hkvMath::Abs (hkvMath::acosDeg (pMainCam->GetDirection().dot (m_vLastCameraDir)));
-  hkvVec3 vCamMove = pMainCam->GetPosition() - m_vLastCameraPos;
   m_pRendererNode->GetReferenceContext()->GetViewFrustum(m_MainViewFrustum);
 
   float fFovX, fFovY;
@@ -52,7 +46,7 @@ void VShadowMapGenSpotDir::Update(bool force)
     bool bOverestimateCascades = pComponent->GetOverestimateCascades() ? true : false;
     if (bOverestimateCascades)
     {
-      if (m_fFovX != fFovX || m_fFovY != fFovY || m_fNear != fNear)
+      if (force || m_fFovX != fFovX || m_fFovY != fFovY || m_fNear != fNear)
       {
         // In case user switches the FOV at runtime we need to update it here
         float fStartDistance = fNear;
@@ -66,51 +60,39 @@ void VShadowMapGenSpotDir::Update(bool force)
         m_fFovX = fFovX;
         m_fFovY = fFovY;
         m_fNear = fNear;
-        force = true;
       }
 
-      if (force || m_vLastLightPos != m_pLightSource->GetPosition() || 
-        m_vLastLightDir != m_pLightSource->GetDirection() || 
-        vCamMove.getLength() > pComponent->GetShadowMapCameraUpdateInterval() || 
-        fCamAngle > pComponent->GetShadowMapCameraUpdateAngle())
+      for (int iCascade = 0; iCascade < m_iNumParts; iCascade++)
       {
-        for (int iCascade = 0; iCascade < m_iNumParts; iCascade++)
-        {
-          VShadowMapPart& part = m_pParts[iCascade];
+        VShadowMapPart& part = m_pParts[iCascade];
           
-          VisContextCamera_cl* pCam = part.GetRenderContext()->GetCamera();
-          VisContextCamera_cl *pReferenceCam = m_pRendererNode->GetReferenceContext()->GetCamera();
+        VisContextCamera_cl* pCam = part.GetRenderContext()->GetCamera();
+        VisContextCamera_cl *pReferenceCam = m_pRendererNode->GetReferenceContext()->GetCamera();
 
-          hkvVec3 vCascadeCenter = pReferenceCam->GetPosition() + pReferenceCam->GetDirection() * part.m_fCenterOffset;
-          pCam->SetDirection(GetDirection());
+        const hkvVec3 vCascadeCenter = pReferenceCam->GetPosition() + pReferenceCam->GetDirection() * part.m_fCenterOffset;
+        pCam->SetDirection(GetDirection());
 
-          float fRadius = part.m_fRadius + pComponent->GetShadowMapCameraUpdateInterval();
+        const float fRadius = part.m_fRadius;
 
-          float fCameraDistanceFromCenter = fFar;
-          hkvVec3 vCamPos = vCascadeCenter - GetDirection() * fCameraDistanceFromCenter;
-          pCam->SetPosition(vCamPos);
+        const float fCameraDistanceFromCenter = fFar;
+        hkvVec3 vCamPos = vCascadeCenter - GetDirection() * fCameraDistanceFromCenter;
+        pCam->SetPosition(vCamPos);
 
-          //snapping
-          hkvVec3 offset = pCam->GetWorldToCameraTransformation().getColumn(3).getAsVec3();
+        //snapping
+        hkvVec3 offset = pCam->GetWorldToCameraTransformation().getColumn(3).getAsVec3();
 
-          float fPixelSize = (fRadius * 2) / (float)m_pShadowComponent->GetShadowMapSize();
-          offset.x -= floorf(offset.x / fPixelSize) * fPixelSize;
-          offset.y -= floorf(offset.y / fPixelSize) * fPixelSize;
+        const float fPixelSize = (fRadius * 2) / (float)m_pShadowComponent->GetShadowMapSize();
+        offset.x -= floorf(offset.x / fPixelSize) * fPixelSize;
+        offset.y -= floorf(offset.y / fPixelSize) * fPixelSize;
           
-          vCamPos -= pCam->GetObjDir_Right() * offset.x - pCam->GetObjDir_Up() * offset.y;
-          pCam->SetPosition(vCamPos);
+        vCamPos -= pCam->GetObjDir_Right() * offset.x - pCam->GetObjDir_Up() * offset.y;
+        pCam->SetPosition(vCamPos);
           
           
-          // Set far clip plane so that we have z = 1 at the far side of the sphere - the shader expects this when using the BoundingBox cascade selection method.
-          part.GetRenderContext()->SetClipPlanes(0.0f, fCameraDistanceFromCenter + fRadius);
-          part.GetRenderContext()->SetOrthographicSize(fRadius * 2, fRadius * 2);
-          part.Update();
-        }
-
-        m_vLastLightPos = m_pLightSource->GetPosition();
-        m_vLastLightDir = m_pLightSource->GetDirection();
-        m_vLastCameraPos = pMainCam->GetPosition();
-        m_vLastCameraDir = pMainCam->GetDirection();
+        // Set far clip plane so that we have z = 1 at the far side of the sphere - the shader expects this when using the BoundingBox cascade selection method.
+        part.GetRenderContext()->SetClipPlanes(0.0f, fCameraDistanceFromCenter + fRadius);
+        part.GetRenderContext()->SetOrthographicSize(fRadius * 2, fRadius * 2);
+        part.Update();
       }
     }
     else
@@ -167,10 +149,9 @@ void VShadowMapGenSpotDir::Update(bool force)
           + pCam->GetObjDir_Up() * ((fMinUp + fMaxUp)*0.5f)
           + pCam->GetDirection() * fMinDist;
 
-        float fPadding = pComponent->GetShadowMapCameraUpdateInterval();
         pCam->SetPosition(vCamPos);
         part.GetRenderContext()->SetClipPlanes(0.0f, fMaxDist - fMinDist);
-        part.GetRenderContext()->SetOrthographicSize(fMaxRight - fMinRight + fPadding, fMaxUp - fMinUp + fPadding);
+        part.GetRenderContext()->SetOrthographicSize((fMaxRight - fMinRight), (fMaxUp - fMinUp));
 
         part.Update();
       }
@@ -191,15 +172,12 @@ void VShadowMapGenSpotDir::Update(bool force)
 
       pCam->SetDirection(GetDirection());
       pCam->SetPosition(GetPosition());
-
-	  float lightRadius = m_pLightSource->GetRadius();
-	  const float nearClip = m_pShadowComponent->GetNearClip();
-
-	  if(nearClip > lightRadius )
-		  lightRadius = nearClip;
-
-      part.GetRenderContext()->SetClipPlanes(nearClip, lightRadius);
-      const float fAngle = m_pLightSource->GetProjectionAngle();
+      float fNear = m_pShadowComponent->GetNearClip();
+      float fFar = m_pLightSource->GetRadius();
+      if (fNear>=fFar) 
+        fNear = fFar*0.5f;
+      part.GetRenderContext()->SetClipPlanes(fNear, fFar);
+      float fAngle = m_pLightSource->GetProjectionAngle();
       part.GetRenderContext()->SetFOV(fAngle, fAngle);
 
       part.Update();
@@ -311,7 +289,7 @@ bool VShadowMapGenSpotDir::IsMeshInsideOrthoShadowVolume(const VisStaticGeometry
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

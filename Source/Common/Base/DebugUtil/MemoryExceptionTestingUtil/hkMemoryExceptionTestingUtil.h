@@ -57,7 +57,7 @@ HK_FORCE_INLINE bool hkHasMemoryAvailable(int id, int size)
 }
 #endif
 
-class hkMemoryExceptionTestingUtil
+class HK_EXPORT_COMMON hkMemoryExceptionTestingUtil
 {
 	public:
 		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_BASE_CLASS, hkMemoryExceptionTestingUtil );
@@ -99,7 +99,7 @@ class hkMemoryExceptionTestingUtil
 #endif // HK_MEMORY_EXCEPTION_TESTING_UTIL_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

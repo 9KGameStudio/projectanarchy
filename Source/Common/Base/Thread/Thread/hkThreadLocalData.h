@@ -16,13 +16,9 @@
 #	define HK_XBOX360_EXPLICIT_TLS 0
 #endif
 
-// disable TLS on PS3 if we want to build a PRX (internal builds only).
+// disable TLS on PlayStation(R)3 if we want to build a PRX (internal builds only).
 #ifdef HK_PS3_PRX_BUILD
-# if (HAVOK_BUILD_NUMBER == 0)
 #	define HK_PS3_NO_TLS
-# else
-#  error PRX is for internal builds only
-# endif
 #endif
 
 #if (HK_CONFIG_THREAD == HK_CONFIG_MULTI_THREADED) && !defined(HK_PLATFORM_SPU)
@@ -32,7 +28,7 @@
 #		define HK_THREAD_LOCAL(TYPE) __thread TYPE
 #	elif defined(HK_PLATFORM_TIZEN)
 
-#		include <pthread.h>
+#		include <pthread.h> 
 
 			template < typename T > 
 			class hkThreadLocalData
@@ -118,7 +114,7 @@
 #		ifdef HK_PLATFORM_LRBSIM
 #		include <common/winpthread.h>
 #		else
-#		include <pthread.h>
+#		include <pthread.h> 
 #		endif
 
 			template < typename T > 
@@ -173,7 +169,7 @@
 #endif // HKBASE_HK_THREAD_LOCAL_POINTER_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

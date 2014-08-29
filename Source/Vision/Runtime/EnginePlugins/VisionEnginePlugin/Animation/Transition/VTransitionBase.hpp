@@ -22,7 +22,7 @@ class VTransitionManager;
 typedef VSmartPtr<VTransitionTable> VTransitionTablePtr;
 
 // These feature are only supported on PC
-#ifdef WIN32
+#ifdef _VISION_WIN32
   #define TRANSITION_SUPPORTS_SAVING
 #endif
 
@@ -1625,7 +1625,7 @@ protected:
 #endif // VTRANSITIONBASE_HPP_INCLUDED
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

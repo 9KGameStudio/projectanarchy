@@ -82,6 +82,14 @@ public:
   /// \param remove
   ///   The element that should be removed. It must not be NULL and it has to be part of the list. No validation is performed.
   void Remove(LinkedList_Element_cl<TL> *remove);
+
+  /// \brief
+  ///   Finds the list element matching the given item.
+  const LinkedList_Element_cl<TL>* Find(const TL& item) const;
+
+  /// \brief
+  ///   Finds the list element matching the given item.
+  LinkedList_Element_cl<TL>* Find(const TL& item);
   
   /// \brief
   ///   Removes all the elements from the linked list and reinitializes the linked list
@@ -121,7 +129,14 @@ public:
   ///   Comparison function to use to classify elements to sort
   void Sort(typename LinkedList_Element_cl<TL>::CompareFunc compare);
 
-  /// \brief  Intersect with the specified Liked list. All elements not found in the other linked list will be removed.
+  /// \brief  Removes all elements contained in the specified linked list.
+  ///
+  /// \param  other The linked list to remove.
+  ///
+  /// \return The number of removed elements.
+  int RemoveAll(const LinkedList_cl<TL> &other);
+
+  /// \brief  Intersect with the specified linked list. All elements not found in the other linked list will be removed.
   ///
   /// \param  other The linked list used to perform the intersection.
   ///
@@ -159,9 +174,6 @@ public:
 
   LinkedList_Element_cl<TL> *first;           ///< pointer to the first element
   LinkedList_Element_cl<TL> *last;             ///< pointer to the last element
-
-private:
-  mutable LinkedList_Element_cl<TL> *found;    ///< temporary pointer to an element
 };
 
 
@@ -262,14 +274,14 @@ template<class TL> void LinkedList_cl<TL>::RemoveAt(int index)
 
 template<class TL> BOOL LinkedList_cl<TL>::Remove(const TL& killvalue)
 {
-  if (IsEntry(killvalue)) 
+  if (LinkedList_Element_cl<TL>* pFound = Find(killvalue)) 
   {
-    Remove(found);
-    found = NULL;
+    Remove(pFound);
+    return TRUE;
   } 
 
   // fail if not found
-  return(FALSE);
+  return FALSE;
 }
 
 
@@ -322,6 +334,24 @@ template<class TL> void LinkedList_cl<TL>::Remove(LinkedList_Element_cl<TL> *rem
   remove=NULL;
 }
 
+template<class TL> const LinkedList_Element_cl<TL>* LinkedList_cl<TL>::Find(const TL& item) const
+{
+  return const_cast<LinkedList_cl<TL>*>(this)->Find(item);
+}
+
+template<class TL> LinkedList_Element_cl<TL>* LinkedList_cl<TL>::Find(const TL& item)
+{
+  for (LinkedList_Element_cl<TL>* pCurrent = first; pCurrent; pCurrent = pCurrent->next)
+  {
+    if (pCurrent->value == item)
+    {
+      return pCurrent;
+    }
+  }
+
+  return NULL;
+}
+
 
 template<class TL> void LinkedList_cl<TL>::Clear()
 {
@@ -352,23 +382,33 @@ template<class TL> BOOL LinkedList_cl<TL>::IsEmpty() const
 
 
 template<class TL> BOOL LinkedList_cl<TL>::IsEntry(const TL& searchvalue) const
-
 {
-  LinkedList_Element_cl<TL> *a;
-  a=first;
-  while (a!=NULL) {
-    if (a->value==searchvalue) {
-      found=a;
-      return(TRUE);
-    }
-    a=a->next;
+  return Find(searchvalue) != NULL;
+}
+
+template<class TL> int LinkedList_cl<TL>::RemoveAll(const LinkedList_cl<TL> &other)
+{
+  if (first == NULL || other.IsEmpty())
+  {
+    return 0;
   }
-  return(FALSE);
+
+  int iCount = 0;
+
+ for (LinkedList_Element_cl<TL> *pCurrent = other.first; pCurrent; pCurrent = pCurrent->next)
+ {
+   if (Remove(pCurrent->value))
+   {
+     iCount++;
+   }
+ }
+
+  return iCount;
 }
 
 template<class TL> int LinkedList_cl<TL>::IntersectWith(const LinkedList_cl<TL> &other)
 {
-  //check if the current list has ant elements
+  //check if the current list has any elements
   if(first==NULL) return 0;
 
   int iCount = 0;
@@ -521,7 +561,7 @@ template<class TL> LinkedList_cl<TL>::~LinkedList_cl()
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

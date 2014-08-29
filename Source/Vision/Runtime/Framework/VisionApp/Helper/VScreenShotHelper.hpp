@@ -10,6 +10,7 @@
 #define __V_SCREEN_SHOT_HELPER
 
 #include <Vision/Runtime/Engine/System/Vision.hpp>
+#include <Vision/Runtime/Framework/VisionApp/VAppImportExport.hpp>
 
 /// \brief
 ///   Helper class used to save a screenshot to file.
@@ -18,14 +19,14 @@
 class VScreenShotHelper : public VRefCounter
 {
 public:
-  VScreenShotHelper();
-  ~VScreenShotHelper();
+  VAPP_IMPEXP VScreenShotHelper();
+  VAPP_IMPEXP ~VScreenShotHelper();
 
   /// \brief
   ///   Capture current framebuffer content.
   ///
   /// Note: This function should be called within Vision's OnBeforeSwapBuffers callback.
-  void Capture();
+  VAPP_IMPEXP void Capture();
 
   /// \brief
   ///   Returns if there is pending data that could be saved.
@@ -45,7 +46,7 @@ public:
   ///
   /// \param fSaturation
   ///   Saturation value used for color correction.
-  bool SaveBufferToFile(const char* szCacheDirectory, const char* szFileName, float fBrightness, float fSaturation);
+  VAPP_IMPEXP bool SaveBufferToFile(const char* szCacheDirectory, const char* szFileName, float fBrightness, float fSaturation);
 
   /// \brief
   ///   Returns the path to the last screen shot that was saved.
@@ -64,7 +65,7 @@ protected:
 #endif //__V_SCREEN_SHOT_HELPER
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

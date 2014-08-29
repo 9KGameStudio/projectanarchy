@@ -19,7 +19,7 @@ class hkbManualSelectorGenerator : public hkbGenerator
 {
 	public:
 
-		//+version(2)
+		//+version(3)
 		HK_DECLARE_CLASS_ALLOCATOR( HK_MEMORY_CLASS_BEHAVIOR );
 		HK_DECLARE_REFLECTION();
 
@@ -88,26 +88,32 @@ class hkbManualSelectorGenerator : public hkbGenerator
 		hkArray<hkbGenerator*> m_generators; //+hk.Description("The child generators that can be selected.")
 
 			/// use this to select a generator from the above list
-		hkInt8 m_selectedGeneratorIndex; //+default(0)+hk.Description("The index of the selected child generator.")
+		hkInt16 m_selectedGeneratorIndex; //+default(0)
+										  //+hk.Description("The index of the selected child generator.")
+		
+			/// A custom selector that chooses the m_selectedGeneratorIndex
+		hkRefPtr<hkbCustomIdSelector> m_indexSelector; //+hk.Description("A pointer to a custom id selector for choosing the selected generator index.")
 
 			/// use to dictate if the generator can change the active subgraph after activation
-		hkBool m_selectedIndexCanChangeAfterActivate; //+default(true)+hk.Description("If true the selected index can change anytime.  If false it can only change during activation.  To reset the node must be reset.")
+		hkBool m_selectedIndexCanChangeAfterActivate; //+default(true)
+													  //+hk.Description("If true the selected index can change anytime.  If false it can only change during activation.  To reset the node must be reset.")
 
 			/// template transition effect used when changing selected generators.
-		hkbTransitionEffect* m_generatorChangedTransitionEffect; //+default(HK_NULL)+hk.Description("An optional transition effect used when changing active generators.")
+		hkbTransitionEffect* m_generatorChangedTransitionEffect; //+default(HK_NULL)
+																 //+hk.Description("An optional transition effect used when changing active generators.")
 
 	private:
 
 			// return the above member, with bounds checking
-		hkInt8 getSelectedGeneratorIndex();
+		hkInt16 getSelectedGeneratorIndex( const hkbContext& context );
 
 		HKB_BEGIN_INTERNAL_STATE(0);
 
 			// the current generator that has been selected
-		hkInt8 m_currentGeneratorIndex; 
+		hkInt16 m_currentGeneratorIndex; //+nosave
 
 			// the index of the generator at activation time
-		hkInt8 m_generatorIndexAtActivate;
+		hkInt16 m_generatorIndexAtActivate; //+nosave
 
 			// instances of active transitions
 		hkArray< hkbStateMachine::ActiveTransitionInfo > m_activeTransitions; //+nosave
@@ -122,7 +128,7 @@ class hkbManualSelectorGenerator : public hkbGenerator
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

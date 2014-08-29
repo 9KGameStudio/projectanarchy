@@ -6,11 +6,48 @@
  *
  */
 
+#ifndef HK_MATH_Q_TRANSFORM_H
+#define HK_MATH_Q_TRANSFORM_H
+
 #include <Common/Base/Math/QTransform/hkQTransformf.h>
 #include <Common/Base/Math/QTransform/hkQTransformd.h>
 
+#if defined(HK_REAL_IS_DOUBLE)
+	typedef hkQTransformd hkQTransformType;
+#else
+	typedef hkQTransformf hkQTransformType;
+#endif
+
+/// Reflected hkQTransform
+struct hkQTransform : public hkQTransformType
+{
+	//+version(2)
+	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_MATH, hkQTransform);
+	HK_DECLARE_REFLECTION();
+
+	/// Default constructor - all elements are uninitialized.
+	HK_FORCE_INLINE hkQTransform();
+
+	/// Creates a new hkQTransformf using the rotation quaternion q and translation t.
+#if defined(HK_REAL_IS_DOUBLE)
+	HK_FORCE_INLINE hkQTransform(hkQuaterniondParameter q, hkVector4dParameter t);
+#else
+	HK_FORCE_INLINE hkQTransform(hkQuaternionfParameter q, hkVector4fParameter t);
+#endif
+
+	/// Copy constructor
+	HK_FORCE_INLINE hkQTransform(const hkQTransformType& qt);
+
+	HK_FORCE_INLINE hkQTransform(class hkFinishLoadedObjectFlag f);
+
+	/// Returns a global identity transform.
+	HK_FORCE_INLINE static const hkQTransform& HK_CALL getIdentity();
+};
+
+#endif	// HK_MATH_Q_TRANSFORM_H
+
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

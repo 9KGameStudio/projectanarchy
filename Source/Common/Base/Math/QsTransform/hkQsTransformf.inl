@@ -103,7 +103,7 @@ HK_FORCE_INLINE void hkQsTransformf::set(hkVector4fParameter translation, hkQuat
 
 HK_FORCE_INLINE /*static*/ const hkQsTransformf& HK_CALL hkQsTransformf::getIdentity()
 {
-	extern hkFloat32 hkQsTransformf_identityStorage[];
+	extern HK_EXPORT_COMMON hkFloat32 hkQsTransformf_identityStorage[];
 	union { const hkFloat32* r; const hkQsTransformf* q; } r2q;
 	r2q.r = hkQsTransformf_identityStorage;
 	return *r2q.q;
@@ -191,7 +191,7 @@ HK_FORCE_INLINE void hkQsTransformf::blendNormalize( hkSimdFloat32Parameter tota
 	// If weight is almost one, we don't blend our translation and scale
 	// otherwise, weight all accumulators by inverse
 	{
-		hkSimdFloat32 invWeight; invWeight.setReciprocal<HK_ACC_23_BIT,HK_DIV_SET_ZERO_AND_ONE>(totalWeight);
+		hkSimdFloat32 invWeight; invWeight.setReciprocal<HK_ACC_MID,HK_DIV_SET_ZERO_AND_ONE>(totalWeight);
 		m_translation.mul(invWeight);
 		m_scale.mul(invWeight);
 	}
@@ -340,7 +340,7 @@ HK_FORCE_INLINE hkBool32 hkQsTransformf::isScaleUniform() const
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

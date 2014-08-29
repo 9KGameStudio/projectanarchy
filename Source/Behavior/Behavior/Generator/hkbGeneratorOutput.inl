@@ -168,10 +168,10 @@ HK_FORCE_INLINE void hkbGeneratorOutput::clearTracks()
 	for( int i = 0; i < m_tracks->m_masterHeader.m_numTracks; i++ )
 	{
 		m_tracks->m_trackHeaders[i].m_onFraction = 0.0f;
-		m_tracks->m_trackHeaders[i].m_flags.andWith( ~TRACK_FLAG_ADDITIVE_POSE );
+		m_tracks->m_trackHeaders[i].m_flags.andWith( ~( TRACK_FLAG_ADDITIVE_POSE | TRACK_FLAG_ADDITIVE_DEPRECATED_POSE ) );
 		
 		// clear the sparse and palette tracks
-		if ( m_tracks->m_trackHeaders[i].m_flags.anyIsSet( hkbGeneratorOutput::TRACK_FLAG_PALETTE | hkbGeneratorOutput::TRACK_FLAG_SPARSE ) )
+		if ( m_tracks->m_trackHeaders[i].m_flags.anyIsSet( TRACK_FLAG_PALETTE | TRACK_FLAG_SPARSE ) )
 		{
 			m_tracks->m_trackHeaders[i].m_numData = 0;
 		}
@@ -180,7 +180,7 @@ HK_FORCE_INLINE void hkbGeneratorOutput::clearTracks()
 
 HK_FORCE_INLINE bool hkbGeneratorOutput::trackExists( int trackId ) const 
 {
-	return m_tracks->m_masterHeader.m_numTracks > trackId;
+	return (m_tracks->m_masterHeader.m_numTracks > trackId) && (m_tracks->m_trackHeaders[trackId].m_flags.noneIsSet(TRACK_FLAG_DISABLED));
 }
 
 HK_FORCE_INLINE void hkbGeneratorOutput::setValid( int trackId ) 
@@ -295,14 +295,45 @@ HK_FORCE_INLINE int hkbGeneratorOutput::getNumTracks() const
 	return m_tracks->m_masterHeader.m_numTracks;
 }
 
-HK_FORCE_INLINE int hkbGeneratorOutput::getNumPoseLocal() const
+HK_FORCE_INLINE int hkbGeneratorOutput::getNumEnabledTracks() const
 {
-	if ( trackExists( TRACK_POSE ) )
+	int count = 0;
+	for ( int trackId = 0; trackId < m_tracks->m_masterHeader.m_numTracks; trackId++ )
+		if ( m_tracks->m_trackHeaders[trackId].m_flags.noneIsSet(TRACK_FLAG_DISABLED) )
+		{
+			count++;
+		}
+	return count;
+}
+
+HK_FORCE_INLINE int hkbGeneratorOutput::getNumData( int trackId ) const
+{
+	if ( trackExists( trackId ) )
 	{
-		return m_tracks->m_trackHeaders[TRACK_POSE].m_numData;
+		return m_tracks->m_trackHeaders[trackId].m_numData;
 	}
 
 	return 0;
+}
+
+HK_FORCE_INLINE int hkbGeneratorOutput::getCapacity( int trackId ) const
+{
+	if ( trackExists( trackId ) )
+	{
+		return m_tracks->m_trackHeaders[trackId].m_capacity;
+	}
+
+	return 0;
+}
+
+HK_FORCE_INLINE int hkbGeneratorOutput::getNumPoseLocal() const
+{
+	return getNumData( TRACK_POSE );
+}
+
+HK_FORCE_INLINE int hkbGeneratorOutput::getNumRagdollBones() const
+{
+	return getCapacity( START_OF_RAGDOLL_TRACKS );
 }
 
 HK_FORCE_INLINE int hkbGeneratorOutput::getNumBoneWeights() const
@@ -322,22 +353,12 @@ HK_FORCE_INLINE const hkbGeneratorPartitionInfo& hkbGeneratorOutput::getPartitio
 
 HK_FORCE_INLINE int hkbGeneratorOutput::getNumFloats() const
 {
-	if ( trackExists( TRACK_FLOAT_SLOTS ) )
-	{
-		return m_tracks->m_trackHeaders[TRACK_FLOAT_SLOTS].m_numData;
-	}
-
-	return 0;
+	return getNumData( TRACK_FLOAT_SLOTS );
 }
 
 HK_FORCE_INLINE int hkbGeneratorOutput::getNumAttributes() const
 {
-	if ( trackExists( TRACK_ATTRIBUTES ) )
-	{
-		return m_tracks->m_trackHeaders[TRACK_ATTRIBUTES].m_numData;
-	}
-
-	return 0;
+	return getNumData( TRACK_ATTRIBUTES );
 }
 
 HK_FORCE_INLINE hkReal* hkbGeneratorOutput::accessTrackDataReal( int trackId )
@@ -388,14 +409,31 @@ HK_FORCE_INLINE hkbGeneratorPartitionInfo& hkbGeneratorOutput::accessPartitionIn
 	return *reinterpret_cast<hkbGeneratorPartitionInfo*>( (accessBoneWeights() + HK_NEXT_MULTIPLE_OF(4, getNumBoneWeights())) );
 }
 
-HK_FORCE_INLINE void hkbGeneratorOutput::setPoseAdditive()
+HK_FORCE_INLINE void hkbGeneratorOutput::setPoseAdditive( hkInt8 additiveFlag )
 {
-	accessTrackHeader( TRACK_POSE ).m_flags.orWith( TRACK_FLAG_ADDITIVE_POSE );
+	if ( HK_VERY_LIKELY( ( additiveFlag == (hkInt8)TRACK_FLAG_ADDITIVE_POSE ) ^ ( additiveFlag == (hkInt8)TRACK_FLAG_ADDITIVE_DEPRECATED_POSE ) ) )
+	{
+		accessTrackHeader( TRACK_POSE ).m_flags.orWith( additiveFlag );
+	}
+	else
+	{
+		HK_ASSERT2( 0x22440343, ( additiveFlag == 0 ), "Incorrect type of additive flag" );
+	}
 }
 
 HK_FORCE_INLINE bool hkbGeneratorOutput::isPoseAdditive() const
 {
-	return ( getTrack( TRACK_POSE ).getTrackHeader()->m_flags.get( TRACK_FLAG_ADDITIVE_POSE ) != 0 );
+	return getTrack( TRACK_POSE ).getTrackHeader()->m_flags.anyIsSet( TRACK_FLAG_ADDITIVE_POSE | TRACK_FLAG_ADDITIVE_DEPRECATED_POSE );
+}
+
+HK_FORCE_INLINE hkInt8 hkbGeneratorOutput::getPoseAdditive() const
+{
+	if ( isPoseAdditive() )
+	{
+		return (hkInt8)(HK_VERY_LIKELY( getTrack( TRACK_POSE ).getTrackHeader()->m_flags.anyIsSet( TRACK_FLAG_ADDITIVE_POSE ) ) ? TRACK_FLAG_ADDITIVE_POSE : TRACK_FLAG_ADDITIVE_DEPRECATED_POSE);
+	}
+
+	return 0;
 }
 
 HK_FORCE_INLINE void hkbGeneratorOutput::clearPoseData()
@@ -415,7 +453,7 @@ HK_FORCE_INLINE void hkbGeneratorOutput::clearPoseData()
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

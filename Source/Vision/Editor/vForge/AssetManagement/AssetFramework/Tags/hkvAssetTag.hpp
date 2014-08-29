@@ -33,7 +33,7 @@ public:
   ASSETFRAMEWORK_IMPEXP hkvAssetTags(const hkvAssetTags& rhs);
   ASSETFRAMEWORK_IMPEXP ~hkvAssetTags();
   ASSETFRAMEWORK_IMPEXP void operator= (const hkvAssetTags& rhs);
-  ASSETFRAMEWORK_IMPEXP hkBool operator< (const hkvAssetTags& rhs) const;
+  ASSETFRAMEWORK_IMPEXP bool operator< (const hkvAssetTags& rhs) const;
 
   ASSETFRAMEWORK_IMPEXP void clearTags();
   ASSETFRAMEWORK_IMPEXP void setTags(const char* tags);
@@ -42,11 +42,11 @@ public:
   ASSETFRAMEWORK_IMPEXP void addTag(hkUint32 tagIndex);
   ASSETFRAMEWORK_IMPEXP void removeTag(const char* tag);
   ASSETFRAMEWORK_IMPEXP void removeTag(hkUint32 tagIndex);
-  ASSETFRAMEWORK_IMPEXP hkBool isTagSet(const char* tag) const;
-  ASSETFRAMEWORK_IMPEXP hkBool isTagSet(hkUint32 tagIndex) const;
-  ASSETFRAMEWORK_IMPEXP hkBool isAnyBitSet() const;
+  ASSETFRAMEWORK_IMPEXP bool isTagSet(const char* tag) const;
+  ASSETFRAMEWORK_IMPEXP bool isTagSet(hkUint32 tagIndex) const;
+  ASSETFRAMEWORK_IMPEXP bool isAnyBitSet() const;
 
-  ASSETFRAMEWORK_IMPEXP hkBool contains(const hkvAssetTags& rhs) const;
+  ASSETFRAMEWORK_IMPEXP bool contains(const hkvAssetTags& rhs) const;
   ASSETFRAMEWORK_IMPEXP void writeTags(hkStringBuf& out_tags) const;
 
 private:
@@ -68,7 +68,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

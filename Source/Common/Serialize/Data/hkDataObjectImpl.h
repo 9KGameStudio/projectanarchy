@@ -20,7 +20,7 @@
 // We need an empty base class with vtable to force the vtable to be at
 // the start of the object. We rely on hkDataRefCounted having the same memory
 // layout as hkReferencedObject
-class hkDataRefCountedBase
+class HK_EXPORT_COMMON hkDataRefCountedBase
 {
 	//+hk.MemoryTracker(ignore=True)
 public:
@@ -44,9 +44,9 @@ protected:
 	/// This class defines private reference counting
 	/// for objects that define and manage reflected data.
 #if defined(HK_PLATFORM_WIIU)
-class hkDataRefCounted : public hkDataRefCountedBase
+class HK_EXPORT_COMMON hkDataRefCounted : public hkDataRefCountedBase
 #else
-class hkDataRefCounted
+class HK_EXPORT_COMMON hkDataRefCounted
 #endif
 {
 	//+hk.MemoryTracker(ignore=True)
@@ -55,7 +55,7 @@ class hkDataRefCounted
 		HK_DECLARE_CLASS_ALLOCATOR_UNCHECKED(HK_MEMORY_CLASS_SERIALIZE, heap);
 
 		virtual ~hkDataRefCounted() { HK_ASSERT(0x6ee903de, (m_count&~1)==0 ); }
-		hkDataRefCounted() : m_memSize(0xffff), m_externalCount(0), m_count(0)
+		hkDataRefCounted() : m_memSizeAndExternalCount(0xffff0000), m_count(0)
 		{
 		}
 		void addReference() const
@@ -68,7 +68,7 @@ class hkDataRefCounted
 			HK_ASSERT(0x5557d720, m_count > 0);
 			if(--m_count == 0 )
 			{
-				HK_ASSERT(0x5557d722, m_externalCount == 0);
+				HK_ASSERT(0x5557d722, (m_memSizeAndExternalCount & 0xFFFF) == 0);
 				delete this;
 			}
 		}
@@ -79,23 +79,22 @@ class hkDataRefCounted
 
 		void addExternalReference() const
 		{
-			HK_ASSERT(0x5557d72b, m_externalCount >= 0);
-			++m_externalCount;
+			HK_ASSERT(0x5557d72b, int(m_memSizeAndExternalCount & 0xFFFF) >= 0);
+			m_memSizeAndExternalCount = (m_memSizeAndExternalCount & 0xFFFF0000) | (((m_memSizeAndExternalCount & 0xFFFF) + 1) & 0xFFFF);
 			addReference();
 		}
 		void removeExternalReference() const
 		{
-			HK_ASSERT(0x5557d72a, m_externalCount > 0);
-			--m_externalCount;
+			HK_ASSERT(0x5557d72a, int(m_memSizeAndExternalCount & 0xFFFF) > 0);
+			m_memSizeAndExternalCount = (m_memSizeAndExternalCount & 0xFFFF0000) | (((m_memSizeAndExternalCount & 0xFFFF) - 1) & 0xFFFF);
 			removeReference();
 		}
 		int getExternalReferenceCount() const
 		{
-			return m_externalCount;
+			return m_memSizeAndExternalCount & 0xFFFF;
 		}
 
-		mutable hkUint16 m_memSize;
-		mutable hkInt16 m_externalCount;
+		mutable hkUint32 m_memSizeAndExternalCount;	/// Must match one to one with hkReferencedObject m_memSizeAndRefCount ...
 		mutable hkInt32 m_count;
 };
 
@@ -106,7 +105,7 @@ class hkDataRefCounted
 
 	/// This abstract class defines common private interfaces
 	/// required to manage a reflected array of data.
-class hkDataArrayImpl : public hkDataRefCounted
+class HK_EXPORT_COMMON hkDataArrayImpl : public hkDataRefCounted
 {
 	//+hk.MemoryTracker(ignore=True)
 	public:
@@ -167,7 +166,7 @@ class hkDataArrayImpl : public hkDataRefCounted
 
 	/// This abstract class defines common private interfaces
 	/// required to define reflected data.
-class hkDataClassImpl : public hkDataRefCounted
+class HK_EXPORT_COMMON hkDataClassImpl : public hkDataRefCounted
 {
 	//+hk.MemoryTracker(ignore=True)
 	public:
@@ -200,7 +199,7 @@ class hkDataClassImpl : public hkDataRefCounted
 
 	/// This abstract class defines common private interfaces
 	/// required to manage reflected data.
-class hkDataObjectImpl : public hkDataRefCounted
+class HK_EXPORT_COMMON hkDataObjectImpl : public hkDataRefCounted
 {
 	//+hk.MemoryTracker(ignore=True)
 	public:
@@ -244,6 +243,7 @@ class hkDataObjectImpl : public hkDataRefCounted
 		virtual hkBool32 createdDuringPatching() const = 0;
 
 		virtual void destroy() = 0;
+		virtual void destroyMember( const char* name ) = 0;
 
 		virtual void getAllMemberHandles(hkArrayBase<MemberHandle>& handles) const = 0;
 
@@ -256,7 +256,7 @@ class hkDataObjectImpl : public hkDataRefCounted
 #endif // HK_DATA_OBJECT_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

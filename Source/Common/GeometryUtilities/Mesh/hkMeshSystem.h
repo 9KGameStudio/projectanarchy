@@ -18,7 +18,7 @@ struct hkMeshSectionCinfo;
 struct hkVertexFormat;
 struct hkIndexedTransformSetCinfo;
 
-extern const hkClass hkMeshSystemClass;
+extern HK_EXPORT_COMMON const hkClass hkMeshSystemClass;
 
 /// The hkMeshSystem interface is designed to be a fairly low level interface to a rendering system.
 ///
@@ -55,7 +55,7 @@ extern const hkClass hkMeshSystemClass;
 /// is that it is not possible to have all instantiations of bodies vertex buffers change by altering a single vertex buffer.
 ///
 /// \sa hkMeshMaterial hkMeshVertexBuffer hkMeshShape hkMeshBody
-class hkMeshSystem: public hkReferencedObject
+class HK_EXPORT_COMMON hkMeshSystem : public hkReferencedObject
 {
 	public:
 		HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_SCENE_DATA);
@@ -118,7 +118,7 @@ class hkMeshSystem: public hkReferencedObject
 #endif // HK_MESH_SYSTEM_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

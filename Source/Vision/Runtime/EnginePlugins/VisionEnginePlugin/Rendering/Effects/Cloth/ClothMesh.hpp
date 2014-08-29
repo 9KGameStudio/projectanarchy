@@ -46,7 +46,7 @@ struct ClothParticle_t : public Particle_t
     valid = 1;
     size = 1.f;
     SetNormalIndices(INDEX_UNINITIALIZED,INDEX_UNINITIALIZED);
-    velocity[0] = velocity[1] = velocity[2] = 0.f;
+    m_vVelocity.setZero();
   }
   inline void SetNormalIndices(unsigned short v1,unsigned short v2)
   {
@@ -207,7 +207,7 @@ private:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

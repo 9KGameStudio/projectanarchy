@@ -13,6 +13,7 @@
 #include <Common/Base/Container/StringMap/hkStorageStringMap.h>
 #include <Animation/Animation/Rig/hkaBoneAttachment.h>
 #include <Behavior/Utilities/Physics/hkbPhysicsBaseTypes.h>
+#include <Behavior/Behavior/Character/hkbCharacter.h>
 
 class hkStreamReader;
 class hkaMeshBinding;
@@ -21,7 +22,6 @@ class hkaSkeletonMapper;
 class hkbAnimationBindingSet;
 class hkbAssetLoader;
 class hkbBehaviorGraph;
-class hkbCharacter;
 class hkbCharacterData;
 class hkbCharacterSetup;
 class hkbProjectData;
@@ -99,6 +99,7 @@ class hkbProjectAssetManager : public hkReferencedObject
 			const char* characterName,
 			const char* behaviorName,
 			hkbWorld* world = HK_NULL,
+			hkbCharacter::Capabilities characterCapabilities = hkbCharacter::STANDARD_CAPABILITIES,
 			const hkStringMap<int>* annotationToEventIdMap = HK_NULL,
 			const hkStringMap<int>* eventNameToEventIdMap = HK_NULL,
 			const hkArrayBase<const char*>* assetsToLoad = HK_NULL,
@@ -109,6 +110,7 @@ class hkbProjectAssetManager : public hkReferencedObject
 		hkbCharacter* createCharacter(
 			const char* characterName,
 			hkbWorld* world = HK_NULL,
+			hkbCharacter::Capabilities characterCapabilities = hkbCharacter::STANDARD_CAPABILITIES,
 			const hkStringMap<int>* annotationToEventIdMap = HK_NULL,
 			const hkStringMap<int>* eventNameToEventIdMap = HK_NULL,
 			const hkArrayBase<const char*>* assetsToLoad = HK_NULL,
@@ -288,7 +290,7 @@ class hkbProjectAssetManager : public hkReferencedObject
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

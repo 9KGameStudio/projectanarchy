@@ -21,6 +21,35 @@ public:
     //implemented native:
     //VisBaseEntity_cl * CreateEntity(const hkvVec3* pPos, const char *szClassName = "VisBaseEntity_cl", const char *szModelFile = NULL , const char* szKey = NULL, const char *szVarString = NULL)
     
+    void LoadRenderConfig(const char * szRendererName)
+    {
+      IVFileInStream* pIn = Vision::File.Open(szRendererName);
+      VASSERT_MSG(pIn != NULL, "Failed to load renderer setup <%s>", szRendererName);
+      if (pIn==NULL)
+        return;
+
+      IVRendererNode* pRenderer = IVRendererNode::ReadFromStream(pIn);
+      VASSERT(pRenderer != NULL);
+      pIn->Close();
+
+      pRenderer->SetFinalTargetContext(VisRenderContext_cl::GetMainRenderContext());
+      pRenderer->InitializeRenderer();
+      VSmartPtr<IVRendererNode> spOldRenderer = Vision::Renderer.GetRendererNode(0);
+      Vision::Renderer.SetRendererNode(0, pRenderer);
+
+      //deinitialize old renderer node
+      if (spOldRenderer != NULL)
+      {
+        spOldRenderer->DeInitializeRenderer();
+        spOldRenderer = NULL;
+      }
+    }
+
+    unsigned int GetEntityCount()
+    {
+      return VisBaseEntity_cl::ElementManagerGetSize();
+    }
+
     VisLightSource_cl * CreateLight(const hkvVec3* pPos, int iType = LIGHT_POINT, float fRadius = 100, const char* szKey = NULL)
     {
       if(pPos!=NULL)
@@ -33,11 +62,21 @@ public:
       return NULL;
     }
 
+    unsigned int GetLightCount()
+    {
+      return VisLightSource_cl::ElementManagerGetSize();
+    }
+
     VisPath_cl * CreatePath(int iNodes = -1, bool bClosed = false, const char * szKey = NULL)
     {
       if(iNodes==-1)
         return new VisPath_cl();
       return new VisPath_cl(iNodes, bClosed, szKey);
+    }
+
+    unsigned int GetPathCount()
+    {
+      return VisPath_cl::ElementManagerGetSize();
     }
     
     VisPathNode_cl * CreatePathNode(const hkvVec3* pPos, const char * szKey = NULL)
@@ -52,7 +91,7 @@ public:
       return NULL;
     }
     
-    VisParticleEffect_cl * CreateEffect(const hkvVec3*  pPos, const char * szEffectFile, const char * szKey = NULL)
+    VisParticleEffect_cl * CreateEffect(const hkvVec3*  pPos, const char * szEffectFile, const char * szKey = NULL, unsigned int uiRandomSeed = 0)
     {
       if(pPos!=NULL && szEffectFile!=NULL)
       {
@@ -60,7 +99,7 @@ public:
         if(pResource==NULL)
           return NULL;
         
-        VisParticleEffect_cl *pEffect = pResource->CreateParticleEffectInstance(*pPos, hkvVec3::ZeroVector());
+        VisParticleEffect_cl *pEffect = pResource->CreateParticleEffectInstance(*pPos, hkvVec3::ZeroVector(), uiRandomSeed);
         if(szKey!=NULL)
           pEffect->SetObjectKey(szKey);
         return pEffect;
@@ -78,7 +117,7 @@ public:
           return NULL;
         
         // create an instance
-        hkvMat4 transform;
+        hkvMat4 transform = hkvMat4::IdentityMatrix();
         transform.setTranslation(*pPos);
         VisStaticMeshInstance_cl *pMeshInst = pRes->CreateInstance(transform, NULL, bNotifyPhysics);
         
@@ -88,6 +127,11 @@ public:
         return pMeshInst;
       }
       return NULL;
+    }
+
+    unsigned int GetStaticMeshInstanceCount()
+    {
+      return VisStaticMeshInstance_cl::ElementManagerGetSize();
     }
     
     VDynamicMesh * CreateDynamicMesh(const char * szDynamicMeshFile, bool bForceLoad, bool bLoadAnim=true)
@@ -196,6 +240,11 @@ public:
         
       return pCamera;
     }
+
+    unsigned int GetCameraCount()
+    {
+      return VisContextCamera_cl::ElementManagerGetSize();
+    }
     
     VisScreenMask_cl * CreateScreenMask(float x, float y, const char * szTexturePath, const char * szKey = NULL)
     {
@@ -212,6 +261,10 @@ public:
       return pMask;
     }
     
+    unsigned int GetScreenMaskCount()
+    {
+      return VisScreenMask_cl::ElementManagerGetSize();
+    }
   }
 
   // "getters"
@@ -223,12 +276,28 @@ public:
         return NULL;
       return VisLightSource_cl::FindByKey(szKey, NULL);
     }
+
+    VisLightSource_cl * GetLight(int i)
+    {
+      unsigned int index = (unsigned int)i; //swig cannot handle unsigned input parameters
+      if(index<1 || index>VisLightSource_cl::ElementManagerGetSize())
+        return NULL; //Lua starts indices with 1
+      return VisLightSource_cl::ElementManagerGet(index-1);
+    }
     
     VisPath_cl * GetPath(const char * szKey)
     {
       if(szKey==NULL)
         return NULL;
       return VisPath_cl::FindByKey(szKey,NULL);
+    }
+
+    VisPath_cl * GetPath(int i)
+    {
+      unsigned int index = (unsigned int)i; //swig cannot handle unsigned input parameters
+      if(index<1 || index>VisPath_cl::ElementManagerGetSize())
+        return NULL; //Lua starts indices with 1
+      return VisPath_cl::ElementManagerGet(index-1);
     }
     
     VisParticleEffect_cl * GetEffect(const char * szKey)
@@ -244,6 +313,14 @@ public:
         return NULL;
       return VisStaticMeshInstance_cl::FindByKey(szKey,NULL);
     }
+
+    VisStaticMeshInstance_cl * GetStaticMeshInstance(int i)
+    {
+      unsigned int index = (unsigned int)i; //swig cannot handle unsigned input parameters
+      if(index<1 || index>VisStaticMeshInstance_cl::ElementManagerGetSize())
+        return NULL; //Lua starts indices with 1
+      return VisStaticMeshInstance_cl::ElementManagerGet(index-1);
+    }
     
     VDynamicMesh * GetDynamicMesh(const char * szDynamicMeshFile)
     {
@@ -258,12 +335,28 @@ public:
         return VisRenderContext_cl::GetMainRenderContext()->GetCamera();
       return VisContextCamera_cl::FindByKey(szKey, NULL);
     }
+
+    VisContextCamera_cl * GetCamera(int i)
+    {
+      unsigned int index = (unsigned int)i; //swig cannot handle unsigned input parameters
+      if(index<1 || index>VisContextCamera_cl::ElementManagerGetSize())
+        return NULL; //Lua starts indices with 1
+      return VisContextCamera_cl::ElementManagerGet(index-1);
+    }
     
     VisScreenMask_cl * GetScreenMask(const char * szKey)
     {
       if(szKey==NULL)
         return NULL;
       return VisScreenMask_cl::FindByKey(szKey,NULL);
+    }
+
+    VisScreenMask_cl * GetScreenMask(int i)
+    {
+      unsigned int index = (unsigned int)i; //swig cannot handle unsigned input parameters
+      if(index<1 || index>VisScreenMask_cl::ElementManagerGetSize())
+        return NULL; //Lua starts indices with 1
+      return VisScreenMask_cl::ElementManagerGet(index-1);
     }
 
     CubeMapHandle_cl * GetCubeMap(const char * szKey)
@@ -311,6 +404,19 @@ public:
       VActionManager *pManager = Vision::GetActionManager();
       return pManager->Execute(szAction, FALSE) == TRUE;
     }
+
+    void WaitSeconds(float fSec, VCaptureSwigEnvironment* env)
+    {
+      lua_State* L = env->GetLuaState();
+
+      //Find out which script instance we are calling this from
+      VScriptInstance*  pScript = VScriptResourceManager::GetScriptInstanceForState(L);
+      VASSERT(pScript);
+      
+      pScript->WaitSeconds(L, fSec);
+    
+      env->SetNumReturnValues(lua_yield(L, 0));
+    }
   }
   
 };
@@ -348,6 +454,10 @@ public:
     {
       pEntity = Vision::Game.CreateEntity(szClassName, *pPos, szModelFile, szVarString);
       if(pEntity!=NULL && szKey) pEntity->SetObjectKey(szKey);
+    }
+    else
+    {
+      hkvLog::Warning("LUA method Game:CreateEntity - parameter pos is not valid, entity will not be created");
     }
     
     //will handle NULL as well
@@ -411,31 +521,6 @@ public:
   }
 %}
 
-%native(VisGame_cl_WaitSeconds) int VisGame_cl_WaitSeconds(lua_State *L);
-%{
-  SWIGINTERN int VisGame_cl_WaitSeconds(lua_State *L)
-  {
-    IS_MEMBER_OF(VisGame_cl) //this will move this function to the method table of the specified class
-
-    DECLARE_ARGS_OK;
-
-    //we can ignore arg1 because it is a static function
-
-    GET_ARG(2, float, fSec);
-    
-    if(ARGS_OK)
-    {
-      //Find out which script instance we are calling this from
-      VScriptInstance*  pScript = VScriptResourceManager::GetScriptInstanceForState(L);
-      VASSERT(pScript);
-      
-      pScript->WaitSeconds(L, fSec);
-    }
-    
-    return lua_yield(L, 0);
-  }
-%}
-
 //Implement this method native in order to return the concrete type instance
 //instead of the base class VisObject3D_cl
 %native(VisGame_cl_GetEntity) int VisGame_cl_GetEntity(lua_State *L);
@@ -444,18 +529,29 @@ public:
   {
     IS_MEMBER_OF(VisGame_cl) //this will move this function to the method table of the specified class
 
-    if(!lua_isstring(L,2))
+    int iType = lua_type(L, 2);
+
+    VisBaseEntity_cl *pEntity = NULL;
+
+    if(iType==LUA_TNUMBER)
     {
-      luaL_error(L, "Expected a string value as parameter 2 for VisGame_cl_GetEntity");
+      unsigned int iIndex = (int)lua_tonumber(L, 2);
+      if(iIndex>0 && iIndex<=VisBaseEntity_cl::ElementManagerGetSize())
+        pEntity = VisBaseEntity_cl::ElementManagerGet(iIndex-1); //Lua indices start with 1
+    }
+    else if(iType==LUA_TSTRING)
+    {
+      const char * pKey = lua_tostring(L, 2);
+      pEntity = Vision::Game.SearchEntity(pKey);
+    }
+    else
+    {
+      luaL_error(L, "Expected a numeric or string value as parameter 2 for VisGame_cl_GetEntity");
       lua_pushnil(L);                                     //stack: ..., nil
       return 1;                                           //return 1 stack item (nil)
     }
-    
-    const char * pszKey = lua_tostring(L, 2);       
-    
-    VisBaseEntity_cl * pObj = Vision::Game.SearchEntity(pszKey);
-      
-    LUA_PushObjectProxy(L, pObj); //will handle NULL as well
+          
+    LUA_PushObjectProxy(L, pEntity); //will handle NULL as well
 
     return 1;
   }
@@ -519,6 +615,12 @@ public:
 
     //param #2: the position where to spawn the prefab
     SWIG_CONVERT_POINTER(L, 2, hkvVec3, pPos)    
+    if(pPos == NULL)
+    {
+      hkvLog::Warning("LUA method Game:InstantiatePrefab(pos,..) - parameter pos is not valid");
+      lua_pushnil(L);                                       //stack: ..., nil
+      return 1;                                             //return 1 stack item (nil)
+    }
     
     //param #3: the prefab file
     const char * szFilename = lua_isstring(L, 3) ? lua_tostring(L, 3) : NULL;
@@ -529,7 +631,7 @@ public:
     {
       if( !SWIG_IsOK(SWIG_ConvertPtr(L, 4,(void**)&pParent, SWIGTYPE_p_VisObject3D_cl,0)) )
       {
-        luaL_error(L, "Unable to convert parent paremter 4 to VisObject3D_cl");
+        luaL_error(L, "Unable to convert parent parameter 4 to VisObject3D_cl");
         lua_pushnil(L);                                     //stack: ..., nil
         return 1;                                           //return 1 stack item (nil)
       }
@@ -602,12 +704,17 @@ public:
   /// \see GetEntity
   mixed CreateEntity(hkvVec3 pos, string className = "VisBaseEntity_cl", string modelFile = nil , string key = nil, string varString = nil);
   
+  /// \brief Loads and switches to a different RendererNode.
+  /// \param szRendererName VRenderer filename.
+  /// \par Example
+  ///   \code
+  ///     Game:LoadRenderConfig("Renderer/CustomNode.VRenderer")
+  ///   \endcode
+  void LoadRenderConfig(const char * szRendererName);
+
   /// \brief Create a light source.
   /// \param pos The position where to create the entity.
-  /// \param type (\b optional) The tyoe of light source, possible vlueas are:
-  ///  - LIGHT_POINT : A point light.
-  ///  - LIGHT_DIRECTED : A directional light.
-  ///  - LIGHT_SPOT: A spot light.
+  /// \param type (\b optional) The type of light source: LIGHT_POINT (a point light), LIGHT_DIRECTED (a directional light), LIGHT_SPOT (a spot light)
   /// \param radius (\b optional) The radius of the light source.
   /// \param key (\b optional) The object key, which can be used to search for the light ( Game:GetLight(key) ).
   /// \return A light source instance.
@@ -655,6 +762,7 @@ public:
   /// \param pos The position where to create the particle effect.
   /// \param effectFile The class name of the entity instance.
   /// \param key (\b optional) The object key, which can be used to search for the particle effect ( Game:GetEffect(key) ).
+  /// \param randomSeed The random seed used to create the effect.
   /// \return A particle effect instance or nil.
   /// \par Example
   ///   \code
@@ -663,7 +771,7 @@ public:
   ///     end
   ///   \endcode
   /// \see GetEffect
-  VisParticleEffect_cl CreateEffect(hkvVec3 pos, string effectFile, string key = nil);
+  VisParticleEffect_cl CreateEffect(hkvVec3 pos, string effectFile, string key = nil, uint randomSeed = 0);
   
   /// \brief Create a static mesh instance.
   /// \param pos The position where to create the static mesh instance.
@@ -700,9 +808,11 @@ public:
   mixed CreateComponent(string typeName, string componentName = nil);
 
 
-  /// \brief Instantiate a prefab.
+  /// \brief Instantiate a prefab through its binary (vprefab).
+  /// \note Make sure that the vprefab (binary version of the prefab) exists.
+  ///       Eg. by exporting the scene or manually saving the binary version (context menu, relevant operations).
   /// \param pos The position where to instantiate the prefab
-  /// \param prefabFilename The filename of the prefab binary resource.
+  /// \param vprefabFilename The filename of the binary vprefab resource.
   /// \param optionalParent (\b optional) Specify a parent for all created objects (e.g. to rotate or move them all together).
   /// \return A table containing all created objects available in Lua Script (instances of VTypedObject or dereived)
   /// \par Example
@@ -712,7 +822,7 @@ public:
   ///       Debug:PrinLine("Instantiated " .. #objects .. " child objects via prefab!")
   ///     end
   ///   \endcode
-  table InstantiatePrefab(hkvVec3 pos, string prefabFilename, VisObject3D_cl optionalParent);
+  table InstantiatePrefab(hkvVec3 pos, string vprefabFilename, VisObject3D_cl optionalParent = nil);
 
 
   /// \brief Create a dynamic mesh.
@@ -823,7 +933,7 @@ public:
   /// @{
   
   /// \brief Search for an entity with the specified object key.
-  /// \param key The search key.
+  /// \param keyOrIndex The search key as string or numeric index of the entity starting with 1.
   /// \return An entity or nil if there is no entity with the specified object key.
   /// \par Example
   ///   \code
@@ -831,10 +941,13 @@ public:
   ///     local myEntity = Game:GetEntity("SpaceShip01")
   ///     ...
   ///   \endcode
-  mixed GetEntity(string key);
+  mixed GetEntity(mixed keyOrIndex);
+
+  /// \brief Get the number of currently existing entities.
+  number GetEntityCount();
   
   /// \brief Search for a light source with the specified object key.
-  /// \param key The search key.
+  /// \param keyOrIndex The search key as string or numeric index of the entity starting with 1.
   /// \return A light source or nil if there is no light source with the specified object key.
   /// \par Example
   ///   \code
@@ -842,10 +955,13 @@ public:
   ///     local beacon = Game:GetLight("Beacon")
   ///     ...
   ///   \endcode
-  VisLightSource_cl GetLight(string key);
+  VisLightSource_cl GetLight(mixed keyOrIndex);
+
+  /// \brief Get the number of currently existing light sources.
+  number GetLightCount();
   
   /// \brief Search for a path with the specified object key.
-  /// \param key The search key.
+  /// \param keyOrIndex The search key as string or numeric index of the entity starting with 1.
   /// \return A path or nil if there is no path with the specified object key.
   /// \par Example
   ///   \code
@@ -853,7 +969,10 @@ public:
   ///     local loop = Game:GetPath("OuterLoop")
   ///     ...
   ///   \endcode
-  VisPath_cl GetPath(string key);
+  VisPath_cl GetPath(mixed keyOrIndex);
+
+  /// \brief Get the number of currently existing paths.
+  number GetPathCount();
   
   /// \brief Search for a particle effect with the specified object key.
   /// \param key The search key.
@@ -867,7 +986,7 @@ public:
   VisParticleEffect_cl GetEffect(string key);
   
   /// \brief Search for a static mesh instance with the specified object key.
-  /// \param key The search key.
+  /// \param keyOrIndex The search key as string or numeric index of the entity starting with 1.
   /// \return A static mesh instance or nil if there is no static mesh instance with the specified object key.
   /// \par Example
   ///   \code
@@ -875,8 +994,11 @@ public:
   ///     local myCastle = Game:GetStaticMeshInstance("Castle")
   ///     ...
   ///   \endcode
-  VisStaticMeshInstance_cl GetStaticMeshInstance(string key);
+  VisStaticMeshInstance_cl GetStaticMeshInstance(mixed keyOrIndex);
   
+  /// \brief Get the number of currently existing static mesh instances.
+  number GetStaticMeshInstanceCount();
+
   /// \brief Search for a dynamic mesh using the filename.
   /// \param filename The filename of the mesh.
   /// \return A dynamic mesh or nil if there is no dynamic mesh with that filename.
@@ -889,7 +1011,7 @@ public:
   VDynamicMesh GetDynamicMesh(string filename);
   
   /// \brief Search for a context camera with the specified object key or the context camera of the main render context - \b please \b check \b the \b details \b !
-  /// \param key (\b optional) The search key - skip this parameter to get the camera context of the main render context.
+  /// \param keyOrIndex (\b optional) The search key or numeric index starting with 1 - skip this parameter to get the camera context of the main render context.
   /// \return A camera context or nil if there is no context camera with the specified object key.
   /// \note \b IMPORTANT: If you would like to control the camera via VisObject3D_cl::IncOrientation / VisObject3D_cl::SetOrientation,
   ///   you have to enable Euler angles using VisObject3D_cl::SetUseEulerAngles(true) since this is not default!
@@ -901,10 +1023,13 @@ public:
   ///     ...
   ///   \endcode
   /// \see VisObject3D_cl::SetUseEulerAngles
-  VisContextCamera_cl GetCamera(string key = nil);
+  VisContextCamera_cl GetCamera(mixed keyOrIndex = nil);
+
+  /// \brief Get the number of currently existing cameras.
+  number GetCameraCount();
 
   /// \brief Search for a screen mask using the key.
-  /// \param key The search key for the screen mask.
+  /// \param keyOrIndex The search key for the screen mask.
   /// \return A screen mask or nil if there is no screen mask with the specified key.
   /// \par Example
   ///   \code
@@ -912,7 +1037,10 @@ public:
   ///     local splashScreenMask = Game:GetScreenMask("SPLASH")
   ///     ...
   ///   \endcode
-  VisScreenMask_cl GetScreenMask(string key)
+  VisScreenMask_cl GetScreenMask(mixed keyOrIndex);
+
+  /// \brief Get the number of currently existing screen masks.
+  number GetScreenMaskCount();
   
   /// \brief Search for a vubemap using the key.
   /// \param key The search key for the cubemap.
@@ -923,7 +1051,7 @@ public:
   ///     local cubeMap = Game:GetCubeMap("MyCubemap01")
   ///     ...
   ///   \endcode
-  CubeMapHandle_cl GetCubeMap(string key)
+  CubeMapHandle_cl GetCubeMap(string key);
   
   /// \brief Search for an arbitrary game object using the object key.
   /// \param key The search key.
@@ -1014,7 +1142,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

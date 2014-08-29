@@ -228,9 +228,12 @@ private:
 /// This is just a helper class for compatibility reasons.
 template<class ELEMTYPE> class VisRMElementManager_cl
 {
-public:
-  inline virtual ~VisRMElementManager_cl(){;}
+protected:
+  inline ~VisRMElementManager_cl()
+  {
+  }
 
+public:
   /// \brief
   ///   Gets the number of elements (=number of resources) in the resource manager.
   /// 
@@ -771,7 +774,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

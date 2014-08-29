@@ -30,10 +30,9 @@ HK_FORCE_INLINE	const hkSimdReal HK_CALL hkcdPointConvexQuadDistanceSquared(hkVe
 		hkVector4 pointDistSq;	p.dot3(p, pointDistSq);														// = [AP, BP, CP, DP] ^ 2
 		hkVector4 edgeLenSq;	edges.dot3(edges, edgeLenSq);												// = [AB, BC, CD, DA] ^ 2
 		hkVector4 proj;			p.dot3(edges, proj);														// = [AP.AB, BP.BC, CP.CD, DP.DA]
-		hkVector4 invEdgeLenSq;	invEdgeLenSq.setReciprocal<HK_ACC_23_BIT, HK_DIV_SET_ZERO>(edgeLenSq);		// = 1 / / [AB, BC, CD, DA] ^ 2
+		hkVector4 invEdgeLenSq;	invEdgeLenSq.setReciprocal<HK_ACC_MID, HK_DIV_SET_ZERO>(edgeLenSq);		// = 1 / / [AB, BC, CD, DA] ^ 2
 		hkVector4 tEdge;		tEdge.setMul(proj, invEdgeLenSq);											// = [AP.AB / AB^2, BP.BC / BC^2, CP.CD / CD^2, DP.DA / DA^2]
-		tEdge.setMax(tEdge, hkVector4::getConstant<HK_QUADREAL_0>());										// Clamp intersection points to edge borders
-		tEdge.setMin(tEdge, hkVector4::getConstant<HK_QUADREAL_1>());
+		tEdge.setClampedZeroOne(tEdge);																		// Clamp intersection points to edge borders
 
 		// Compute edge intersection points
 		p.subMulT(edges, tEdge);	// = [AP - (AP.AB / AB^2) * AB, ...]
@@ -72,7 +71,7 @@ HK_FORCE_INLINE	const hkSimdReal HK_CALL hkcdPointConvexQuadDistanceSquared(hkVe
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

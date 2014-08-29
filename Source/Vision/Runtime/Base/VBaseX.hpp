@@ -24,7 +24,7 @@
 
 extern bool g_bVBaseDeinitializing;
 
-#if defined(WIN32) || defined(_VISION_WINRT)
+#if defined(_VISION_WIN32) || defined(_VISION_WINRT)
 
   #ifdef _VR_DX9
     #include <d3d9.h>
@@ -46,14 +46,14 @@ extern bool g_bVBaseDeinitializing;
     #else // Newer DX sdks (Win8 etc)
       #include <d3d11_1.h>
     #endif
-    #ifndef _VISION_APOLLO
+    #ifndef _VISION_WINPHONE
       #include <D3Dcompiler.h>
     #endif
   #endif
   
 #endif
 
-#if defined(WIN32) || defined(_VISION_WINRT)
+#if defined(_VISION_WIN32) || defined(_VISION_WINRT)
 
   #ifdef _VR_DX9
       
@@ -99,33 +99,23 @@ extern bool g_bVBaseDeinitializing;
   const D3DMULTISAMPLE_TYPE g_MultiSampleTypes[5]={D3DMULTISAMPLE_NONE, D3DMULTISAMPLE_2_SAMPLES, D3DMULTISAMPLE_4_SAMPLES, D3DMULTISAMPLE_4_SAMPLES, D3DMULTISAMPLE_4_SAMPLES};
   const unsigned int g_PresentationInterval[2]={D3DPRESENT_INTERVAL_IMMEDIATE, D3DPRESENT_INTERVAL_ONE};
 
-
-
-#elif defined (_VISION_POSIX)
-  // @@@L more to come...
-  #define HWND void*
-
 #elif defined(_VISION_PSP2)
   #include <assert.h>
 
 #endif
 
-#ifdef _VISION_IOS
+#if defined(_VISION_IOS)
 
   // Import the OpenGL ES2 headers of the iOS SDK
   #import <OpenGLES/ES2/gl.h>
   #import <OpenGLES/ES2/glext.h>
 
-#endif
-
-#ifdef _VISION_ANDROID
+#elif defined(_VISION_ANDROID) || defined(_VISION_NACL)
 
   #include <GLES2/gl2.h>
   #include <GLES2/gl2ext.h>
 
-#endif
-
-#ifdef _VISION_TIZEN
+#elif defined(_VISION_TIZEN)
 
   #include <osp/egl.h>
   #include <osp/eglext.h>
@@ -134,13 +124,15 @@ extern bool g_bVBaseDeinitializing;
 
 #endif
 
+
+
   
 #include <Vision/Runtime/Base/Graphics/Video/VVideoCaps.hpp>
 
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

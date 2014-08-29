@@ -5,12 +5,81 @@
  * Product and Trade Secret source code contains trade secrets of Havok. Havok Software (C) Copyright 1999-2014 Telekinesys Research Limited t/a Havok. All Rights Reserved. Use of this software is subject to the terms of an end user license agreement.
  *
  */
+#ifndef __HAVOK_PARSER__
+
+
+
+//
+//	Accessors (Node Storage)
+
+HK_FORCE_INLINE const hkcdPlanarSolid::Node& hkcdPlanarSolid::NodeStorage::getNode(NodeId nodeId) const
+{
+	return m_storage[nodeId.value()];
+}
+
+HK_FORCE_INLINE hkcdPlanarSolid::Node& hkcdPlanarSolid::NodeStorage::accessNode(NodeId nodeId)
+{
+	return m_storage[nodeId.value()];
+}
+
+//
+//	Allocation (Node Storage)
+
+HK_FORCE_INLINE hkcdPlanarSolid::NodeId hkcdPlanarSolid::NodeStorage::allocate()
+{
+	// Check if space
+	if ( m_firstFreeNodeId.isValid() )
+	{
+		const NodeId ret	= m_firstFreeNodeId;
+		m_firstFreeNodeId	= getNode(m_firstFreeNodeId).m_nextFreeNodeId;
+		accessNode(ret).m_nextFreeNodeId = NodeId::invalid();
+		return ret;
+	}
+	else
+	{
+		m_storage.expandOne().m_nextFreeNodeId = NodeId::invalid();
+		return NodeId(m_storage.getSize() - 1);
+	}
+}
+
+HK_FORCE_INLINE void hkcdPlanarSolid::NodeStorage::clear()
+{
+	m_storage.clear();
+	m_firstFreeNodeId		= NodeId::invalid();
+}
+
+HK_FORCE_INLINE int hkcdPlanarSolid::NodeStorage::getCapacity() const
+{
+	return m_storage.getSize();
+}
+
+HK_FORCE_INLINE void hkcdPlanarSolid::NodeStorage::release(NodeId nodeId)
+{
+	accessNode(nodeId).m_nextFreeNodeId = m_firstFreeNodeId;
+	accessNode(nodeId).clear();
+	m_firstFreeNodeId = nodeId;
+}
+
+//
+//	Other (Node storage)
+
+HK_FORCE_INLINE void hkcdPlanarSolid::NodeStorage::swapStorage(hkArray<Node>& storage)
+{
+	m_storage.swap(storage);
+	m_firstFreeNodeId		= NodeId::invalid();
+}
+
+HK_FORCE_INLINE void hkcdPlanarSolid::NodeStorage::compact()
+{
+	m_storage.optimizeCapacity(0, true);
+	m_firstFreeNodeId		= NodeId::invalid();
+}
 
 //
 //	Gets the node having the given Id.
 
-HK_FORCE_INLINE const hkcdPlanarSolid::Node& hkcdPlanarSolid::getNode(NodeId nodeId) const	{	return (*m_nodes)[nodeId];	}
-HK_FORCE_INLINE hkcdPlanarSolid::Node& hkcdPlanarSolid::accessNode(NodeId nodeId)			{	return (*m_nodes)[nodeId];	}
+HK_FORCE_INLINE const hkcdPlanarSolid::Node& hkcdPlanarSolid::getNode(NodeId nodeId) const	{	return m_nodes->getNode(nodeId);	}
+HK_FORCE_INLINE hkcdPlanarSolid::Node& hkcdPlanarSolid::accessNode(NodeId nodeId)			{	return m_nodes->accessNode(nodeId);	}
 
 //
 //	Returns the nodes
@@ -99,7 +168,7 @@ HK_FORCE_INLINE hkcdPlanarSolid::NodeId hkcdPlanarSolid::createNode(PlaneId spli
 HK_FORCE_INLINE hkcdPlanarSolid::NodeId hkcdPlanarSolid::createInsideNode(NodeId parentId)
 {
 	NodeId inNodeId				= m_nodes->allocate();
-	Node& nodeIn				= (*m_nodes)[inNodeId];
+	Node& nodeIn				= accessNode(inNodeId);
 	nodeIn.m_left				= NodeId::invalid();
 	nodeIn.m_right				= NodeId::invalid();
 	nodeIn.m_typeAndFlags		= NODE_TYPE_IN;
@@ -112,7 +181,7 @@ HK_FORCE_INLINE hkcdPlanarSolid::NodeId hkcdPlanarSolid::createInsideNode(NodeId
 HK_FORCE_INLINE hkcdPlanarSolid::NodeId hkcdPlanarSolid::createOutsideNode(NodeId parentId)
 {
 	NodeId outNodeId			= m_nodes->allocate();
-	Node& nodeOut				= (*m_nodes)[outNodeId];
+	Node& nodeOut				= accessNode(outNodeId);
 	nodeOut.m_left				= NodeId::invalid();
 	nodeOut.m_right				= NodeId::invalid();
 	nodeOut.m_typeAndFlags		= NODE_TYPE_OUT;
@@ -125,7 +194,7 @@ HK_FORCE_INLINE hkcdPlanarSolid::NodeId hkcdPlanarSolid::createOutsideNode(NodeI
 HK_FORCE_INLINE hkcdPlanarSolid::NodeId hkcdPlanarSolid::createUnknownNode(NodeId parentId)
 {
 	NodeId unknownNodeId		= m_nodes->allocate();
-	Node& nodeUnknown			= (*m_nodes)[unknownNodeId];
+	Node& nodeUnknown			= accessNode(unknownNodeId);
 	nodeUnknown.m_left			= NodeId::invalid();
 	nodeUnknown.m_right			= NodeId::invalid();
 	nodeUnknown.m_typeAndFlags	= NODE_TYPE_UNKNOWN;
@@ -295,8 +364,10 @@ HK_FORCE_INLINE void hkcdPlanarSolid::ArrayMgr::reset()
 	m_arrays.clear();
 }
 
+#endif
+
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

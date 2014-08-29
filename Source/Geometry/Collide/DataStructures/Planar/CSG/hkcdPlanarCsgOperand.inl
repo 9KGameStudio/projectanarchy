@@ -29,22 +29,22 @@ HK_FORCE_INLINE void hkcdPlanarCsgOperand::setGeometry(hkcdPlanarGeometry* geom)
 	m_geometry = geom;
 }
 
-// 
-// 	Gets / sets the geometry info
+//
+//	Gets / sets the dangling geometry
 
-HK_FORCE_INLINE const hkcdPlanarCsgOperand::GeomExtraInfos* hkcdPlanarCsgOperand::getGeomInfos() const
+HK_FORCE_INLINE const hkcdPlanarGeometry* hkcdPlanarCsgOperand::getDanglingGeometry() const
 {
-	return m_geomInfos;
+	return m_danglingGeometry;
 }
 
-HK_FORCE_INLINE hkcdPlanarCsgOperand::GeomExtraInfos* hkcdPlanarCsgOperand::accessGeomInfos()
+HK_FORCE_INLINE hkcdPlanarGeometry* hkcdPlanarCsgOperand::accessDanglingGeometry()
 {
-	return m_geomInfos;
+	return m_danglingGeometry;
 }
 
-HK_FORCE_INLINE void hkcdPlanarCsgOperand::setGeomInfos(GeomExtraInfos* geomInfo)
+HK_FORCE_INLINE void hkcdPlanarCsgOperand::setDanglingGeometry(hkcdPlanarGeometry* geom)
 {
-	m_geomInfos = geomInfo;
+	m_danglingGeometry = geom;
 }
 
 //
@@ -129,7 +129,7 @@ HK_FORCE_INLINE hkcdPlanarGeometryPlanesCollection* hkcdPlanarCsgOperand::access
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

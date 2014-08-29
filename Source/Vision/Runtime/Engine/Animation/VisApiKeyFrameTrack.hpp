@@ -234,8 +234,7 @@ public:
     return &m_pKeyFrameList[iFrameNumber];
   }
 
-private:
-friend class VisSkeletalAnimSequence_cl;
+public:
   VisTranslationKeyFrame_cl* m_pKeyFrameList;    ///< List of keyframes sorted by time
   hkvVec4* m_pTranslations;
 };
@@ -281,8 +280,7 @@ public:
     return &m_pKeyFrameList[iFrameNumber];
   }
 
-private:
-friend class VisSkeletalAnimSequence_cl;
+public:
   VisRotationKeyFrame_cl* m_pKeyFrameList;    ///< List of keyframes sorted by time
   hkvQuat* m_pRotations;
 };
@@ -328,8 +326,7 @@ public:
     return &m_pKeyFrameList[iFrameNumber];
   }
 
-private:
-friend class VisSkeletalAnimSequence_cl;
+public:
   hkvVec4* m_pScalings;
   VisScalingKeyFrame_cl* m_pKeyFrameList;    ///< List of keyframes sorted by time
 };
@@ -373,7 +370,7 @@ public:
     return &m_pKeyFrameList[iFrameNumber];
   }
 
-private:
+public:
   VisVertexDeltaKeyFrame_cl* m_pKeyFrameList;    ///< List of keyframes sorted by time
 };
 
@@ -415,7 +412,7 @@ public:
     return &m_pKeyFrameList[iFrameNumber];
   }
 
-private:
+public:
   VisOffsetDeltaKeyFrame_cl* m_pKeyFrameList;    ///< List of keyframes sorted by time
 };
 
@@ -477,7 +474,7 @@ public:
   ///   Axis index used for rotation.
   inline void SetRotationDeltaAxis(signed char scAxis) {m_scAxis = scAxis;}
 
-private:
+public:
   VisRotationDeltaKeyFrame_cl* m_pKeyFrameList;   ///< List of keyframes sorted by time
   // the rotation delta axis is the same for all keyframes of one track
   signed char m_scAxis;                           ///< -1 or 0..2 for pitch, roll and yaw (x,y,z axis)
@@ -521,14 +518,14 @@ public:
     return &m_pKeyFrameList[iFrameNumber];
   }
 
-private:
+public:
   VisVisibilityBoundingBoxKeyFrame_cl* m_pKeyFrameList;    ///< List of keyframes sorted by time
 };
 
 #endif //VIS_KEYFRAME_TRACK_HPP_INCLUDED
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

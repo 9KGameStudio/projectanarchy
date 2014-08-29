@@ -48,14 +48,17 @@ struct hkaiNavVolumeCellPairInfo
 	{
 		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_AI,hkaiNavVolumeCellPairInfo::CellInfo);
 
-		/// The key of the cell.
+			/// The key of the cell.
 		HK_PAD_ON_SPU( hkaiPackedKey ) m_cellKey;
 
-		/// A pointer to the cell
+			/// A pointer to the cell
 		HK_PAD_ON_SPU( const hkaiNavVolume::Cell* ) m_cell;
 
-		/// The position in the cell (or the start/end position of the search)
+			/// The position in the cell (or the start/end position of the search).
 		hkVector4 m_position;
+
+			/// The AABB of the cell.
+		hkAabb m_aabb;
 
 		inline CellInfo();
 		inline void validate( const hkaiNavVolumeAccessor* vol = HK_NULL ) const;
@@ -75,6 +78,9 @@ struct hkaiNavVolumeCellPairInfo
 	/// Pointer to the edge
 	HK_PAD_ON_SPU( const hkaiNavVolume::Edge*	) m_edge;
 
+	/// AABB of the portal between the cells.
+	hkAabb m_portalAabb;
+
 	inline hkaiNavVolumeCellPairInfo();
 	inline void validate( const hkaiNavVolumeAccessor* volume ) const;
 };
@@ -84,7 +90,7 @@ struct hkaiNavVolumeCellPairInfo
 #endif // HK_AI_NAVVOLUME_CELL_PAIR_INFO_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

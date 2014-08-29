@@ -482,46 +482,7 @@ public:
   }
 
   /// \brief
-  ///  For shadowmap lights only:  sets the shadowmap texture that will be used to modulate the light's framebuffer contribution.
-  inline void SetShadowTexture(VTextureObject *pTex)
-  {
-    if (m_iSamplerShadowTexture>=0)
-    {
-      VStateGroupTexture *pStateGroupTexture = GetStateGroupTexture(VSS_PixelShader, m_iSamplerShadowTexture);
-      if (pStateGroupTexture != NULL)
-        pStateGroupTexture->m_spCustomTex = pTex;
-    }
-  }
-
-  /// \brief
-  ///  Gets called every time before a light gets rendered
-  VISION_APIDATA virtual void OnBeforeLightRendered(const VisLightSource_cl* pLight){};
-
-#ifndef _VISION_DOC
-
-  VConstantBufferRegister m_RegPos, m_RegRadius, m_RegAngle, m_RegColor, m_RegDirection, m_RegDirectionPS;
-  int m_iSamplerAttenuation, m_iSamplerShadowTexture;
-
-  // shader overrides
-  V_DECLARE_SERIAL_DLLEXP( VDynamicLightShaderBase, VISION_APIDATA )
-  VISION_APIDATA virtual void PostCompileFunction(VShaderEffectResource *pSourceFX,VShaderPassResource *pSourceShader) HKV_OVERRIDE;
-
-#endif
-
-};
-
-
-/// \brief
-///   Extended class for dynamic light shaders.
-///
-/// This class extends the base class functionality with some specific methods.
-///
-class VDynamicLightShader : public VDynamicLightShaderBase
-{
-public:
-
-  /// \brief
-  ///   For spot ligths only: Stores the spot light's projection planes in the respective sampler.
+  ///   For spot lights only: Stores the spot light's projection planes in the respective sampler.
   ///
   /// \param px
   ///   Projection plane in u direction.
@@ -556,6 +517,59 @@ public:
   }
 
   /// \brief
+  ///  For shadowmap lights only:  sets the shadowmap texture that will be used to modulate the light's framebuffer contribution.
+  inline void SetShadowTexture(VTextureObject *pTex)
+  {
+    if (m_iSamplerShadowTexture>=0)
+    {
+      VStateGroupTexture *pStateGroupTexture = GetStateGroupTexture(VSS_PixelShader, m_iSamplerShadowTexture);
+      if (pStateGroupTexture != NULL)
+        pStateGroupTexture->m_spCustomTex = pTex;
+    }
+  }
+
+  /// \brief
+  ///   Sets the sampler for the shadow texture.
+  inline void SetShadowSampler(VStateGroupSampler *pSampler)
+  {
+    if (m_iSamplerShadowTexture >= 0) 
+    {
+      VStateGroupSampler *pStateGroupSampler = GetStateGroupSampler(VSS_PixelShader, m_iSamplerShadowTexture);
+      if (pStateGroupSampler != NULL)
+      {
+        *pStateGroupSampler = *pSampler;
+      }
+    }
+  }
+
+  /// \brief
+  ///  Gets called every time before a light gets rendered
+  VISION_APIDATA virtual void OnBeforeLightRendered(const VisLightSource_cl* pLight){};
+
+#ifndef _VISION_DOC
+
+  VConstantBufferRegister m_RegPos, m_RegRadius, m_RegAngle, m_RegColor, m_RegDirection, m_RegDirectionPS, m_RegPlanes[3];
+  int m_iSamplerAttenuation, m_iSamplerProjection, m_iSamplerShadowTexture;
+
+  // shader overrides
+  V_DECLARE_SERIAL_DLLEXP( VDynamicLightShaderBase, VISION_APIDATA )
+  VISION_APIDATA virtual void PostCompileFunction(VShaderEffectResource *pSourceFX,VShaderPassResource *pSourceShader) HKV_OVERRIDE;
+
+#endif
+
+};
+
+
+/// \brief
+///   Extended class for dynamic light shaders.
+///
+/// This class extends the base class functionality with some specific methods.
+///
+class VDynamicLightShader : public VDynamicLightShaderBase
+{
+public:
+
+  /// \brief
   ///  Sets the screen resolution
   inline void SetScreenSize(int iWidth, int iHeight)
   {
@@ -569,8 +583,7 @@ public:
 
   #ifndef _VISION_DOC
 
-  VConstantBufferRegister m_RegPlanes[3], m_RegInvScreenRes;
-  int m_iSamplerProjection;
+  VConstantBufferRegister m_RegInvScreenRes;
 
   // shader overrides
   V_DECLARE_SERIAL_DLLEXP( VDynamicLightShader, VISION_APIDATA )
@@ -583,7 +596,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

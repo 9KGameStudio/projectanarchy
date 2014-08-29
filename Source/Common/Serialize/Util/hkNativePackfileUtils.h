@@ -20,12 +20,12 @@ namespace hkNativePackfileUtils
 		/// Simple interface to load from an in memory buffer.
 		/// The returned hkResource contains a copy of the persistent parts of the buffer, thus the
 		/// buffer may be freed after loading.
-	hkResource* HK_CALL load(const void* packfileData, int dataSize, const hkTypeInfoRegistry* userRegistry = HK_NULL);
+	HK_EXPORT_COMMON hkResource* HK_CALL load(const void* packfileData, int dataSize, const hkTypeInfoRegistry* userRegistry = HK_NULL);
 
 		/// Calculates size for memory block in bytes required to store only objects
 		/// from native packfile. Returns -1 if the packfileData header is invalid.
 		/// Use validatePackfileHeader to find the exact error.
-	int HK_CALL getRequiredBufferSize(const void* packfileData, int dataSize);
+	HK_EXPORT_COMMON int HK_CALL getRequiredBufferSize(const void* packfileData, int dataSize);
 
 		/// Load buffer from a preallocated memory chunk.
 		/// Given a native binary packfile that is already in
@@ -41,7 +41,7 @@ namespace hkNativePackfileUtils
 		/// of the packfile.
 		/// The "packfileData" content is not modified and is not in use when the
 		/// hkNativePackfileUtils::load is complete.
-	void* HK_CALL load(const void* packfileData, int dataSize, void* outBuffer, int outBufferSize, const hkTypeInfoRegistry* userRegistry = HK_NULL);
+	HK_EXPORT_COMMON void* HK_CALL load(const void* packfileData, int dataSize, void* outBuffer, int outBufferSize, const hkTypeInfoRegistry* userRegistry = HK_NULL);
 
 		/// Load a native packfile in place. The objects are not copied, all pointer fixups are
 		/// carried out and objects are finished, using userRegistry if supplied, hkBuiltinTypeRegistry
@@ -49,40 +49,40 @@ namespace hkNativePackfileUtils
 		///
 		/// The packfile is loaded into the same buffer, and does not take ownership of the contained objects.
 		/// The buffer must remain allocated for the lifetime of the objects, and can not be loaded more than once
-	void* HK_CALL loadInPlace(void* packfileData, int dataSize, const hkTypeInfoRegistry* userRegistry = HK_NULL, const char** errOut = HK_NULL);
+	HK_EXPORT_COMMON void* HK_CALL loadInPlace(void* packfileData, int dataSize, const hkTypeInfoRegistry* userRegistry = HK_NULL, const char** errOut = HK_NULL);
 
 		/// Get the name of the toplevel object in packfileData.
 		/// Call this method on the raw packfileData, not the outputBuffer of load() for instance.
 		/// Returns null on error (for instance if the magic number doesn't seem to be a packfile or dataSize too small because of a short read).
-	const char* HK_CALL getContentsClassName(const void* packfileData, int dataSize);
+	HK_EXPORT_COMMON const char* HK_CALL getContentsClassName(const void* packfileData, int dataSize);
 
 		/// Get the imports/exports a loaded packfile.
-	void HK_CALL getImportsExports(const void* loadedBuffer, hkArray<hkResource::Export>& expOut, hkArray<hkResource::Import>& impOut );
+	HK_EXPORT_COMMON void HK_CALL getImportsExports(const void* loadedBuffer, hkArray<hkResource::Export>& expOut, hkArray<hkResource::Import>& impOut );
 		/// Get the imports/exports a loaded packfile.
-	void HK_CALL getImportsExportsInPlace(const void* loadedBuffer, hkArray<hkResource::Export>& expOut, hkArray<hkResource::Import>& impOut );
+	HK_EXPORT_COMMON void HK_CALL getImportsExportsInPlace(const void* loadedBuffer, hkArray<hkResource::Export>& expOut, hkArray<hkResource::Import>& impOut );
 
 		/// Unload (destruct) objects in the buffer previously loaded with the hkNativePackfileUtils::load.
 		/// This function must be called when the packfile lifetime is finished.
 		/// The "buffer" content is not in use when the hkNativePackfileUtils::unload is
 		/// complete, and it can be released. loadedBuffer points to the buffer, not the top-level
 		/// object
-	void HK_CALL unload(void* loadedBuffer, int bufferSize);
+	HK_EXPORT_COMMON void HK_CALL unload(void* loadedBuffer, int bufferSize);
 		/// Unload (destruct) objects in the buffer previously loaded with the hkNativePackfileUtils::loadInPlace.
 		/// This function must be called when the packfile lifetime is finished.
 		/// The "buffer" content is not in use when the hkNativePackfileUtils::unloadInPlace is
 		/// complete, and it can be released. loadedBuffer points to the buffer, not the top-level
 		/// object
-	void HK_CALL unloadInPlace(void* loadedBuffer, int bufferSize);
+	HK_EXPORT_COMMON void HK_CALL unloadInPlace(void* loadedBuffer, int bufferSize);
 
 		/// Check that the header is valid. If errOut is not null, a more detailed
 		/// description is written on failure.
-	hkResult HK_CALL validatePackfileHeader(const void* packfileData, const char**errOut );
+	HK_EXPORT_COMMON hkResult HK_CALL validatePackfileHeader(const void* packfileData, const char**errOut );
 }
 
 #endif // HK_NATIVE_PACKFILE_UTILS_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

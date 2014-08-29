@@ -667,6 +667,19 @@ class VisRenderLoopHelper_cl
     VISION_APIFUNC void SetLightGrid(VLightGrid_cl * pGrid);
 
     /// \brief
+    ///   Resets the entities light grid information to the ambient term.
+    ///
+    /// Use this function if you did remove the lightgrid and need to clear the entities' light grid 
+    /// information to the default
+    ///
+    /// \param pLightGridData
+    ///   the light grid data to reset
+    ///
+    /// \param ambientColor
+    ///   the ambient color to use
+    VISION_APIFUNC void SetLightgridToAmbient(LightGridData_t* pLightGridData, VColorRef ambientColor);
+
+    /// \brief
     ///   Tracks the light grid colors of an entity into shader constants.
     /// 
     /// The entity's position is used to perform the light grid lookup in the global light grid. The
@@ -758,10 +771,13 @@ class VisRenderLoopHelper_cl
     /// 
     /// Entity or static meshes using cached light grid data will subsequently recompute their
     /// illumination data the next frame they are rendered.
+    ///
+    /// \param resetLightgridData
+    ///   If the light grid information on the entities and static meshes should be reset.
     /// 
     /// \sa VLightGrid_cl
     /// \sa VisRenderLoopHelper_cl::TrackLightGridInfo
-    VISION_APIFUNC void InvalidateLightgrid();
+    VISION_APIFUNC void InvalidateLightgrid(bool resetLightgridData = false);
 
     /// \brief
     ///   Indicates whether the scene has valid lightmaps.
@@ -1789,64 +1805,6 @@ class VisRenderLoopHelper_cl
     ///   platform.
     VISION_APIFUNC VCompiledTechnique *GetClearScreenTechnique(int iNumRTs);
 
-    /// \brief
-    ///   Sets the default shader effect for particle groups.
-    /// 
-    /// When using hardware spanning for particle groups, the vertex shader is responsible for
-    /// computing the final vertex positions for each corner vertex of a particle. If no shaders
-    /// are assigned to a particle group using hardware spanning, the default shader (set with this
-    /// method) will be used.
-    /// 
-    /// By default, the engine loads the default implementation of the shader and sets it using
-    /// this method. It is normally not required to modify it or to use a different shader.
-    /// 
-    /// \param pParticleEffect
-    ///   The shader effect
-    /// 
-    /// \sa VisParticleGroup_cl::SetHardwareSpanning
-    /// \sa VisRenderLoopHelper_cl::GetDefaultParticleShader
-    VISION_APIFUNC void SetDefaultParticleEffect(VCompiledEffect *pParticleEffect);
-
-    /// \brief
-    ///   Returns one of the shaders in the effect previously set with SetDefaultParticleEffect.
-    /// 
-    /// \param iFlags
-    ///   The shader type to obtain from the effect. The flags can be combined. Valid flags are:
-    ///   \li PARTICLESHADERFLAGS_HARDWARESPANNING: The shader must provide hardware vertex spanning
-    ///   \li PARTICLESHADERFLAGS_SMOOTHANIMATION: The shader uses animation and smooth transition between the frames.
-    ///
-    /// \return
-    ///   VCompiledShaderPass *pShader: The particle shader, or NULL if the requested type is not available in the default particle effect.
-    /// 
-    /// \sa VisParticleGroup_cl::SetHardwareSpanning
-    /// \sa VisRenderLoopHelper_cl::SetDefaultParticleShader
-    inline VCompiledShaderPass *GetDefaultParticleShader(VisParticleGroup_cl::ParticleShaderFlags_e iFlags=VisParticleGroup_cl::PARTICLESHADERFLAGS_NONE) const 
-    { 
-      return m_spParticleShader[iFlags];  ///< direct lookup in the array
-    }
-
-    /// \brief
-    ///   Sets up a shader technique config (inclusion/exclusion flags) that can be used to get the
-    ///   appropriate particle shader technique.
-    /// 
-    /// \param iFlags
-    ///   Supported bitflags are:
-    ///   \li PARTICLESHADERFLAGS_HARDWARESPANNING: The engine uses hardware particle spanning (not
-    ///     supported on PC)
-    ///   \li PARTICLESHADERFLAGS_SMOOTHANIMATION: The particle group uses a smooth fading between
-    ///     animated frames
-    /// 
-    /// \param config
-    ///   Out: The destination config. Inclusion and exclusion tags are applied here.
-    VISION_APIFUNC void GetParticleEffectConfig(VisParticleGroup_cl::ParticleShaderFlags_e iFlags, VTechniqueConfig &config);
-
-    /// \brief
-    ///   Sets the start register for tracking per instance vertex shader constants. The default start register is 38 (see constant table layout in vForge). Only relevant for DX9-style vertex shader constant tables.
-    VISION_APIFUNC void SetParticlePropertiesVSRegister(int iRegister=38);
-
-    /// \brief
-    ///   Returns the current start register for tracking per instance vertex shader constants. The default start register is 38 (see constant table layout in vForge).
-    VISION_APIFUNC int GetParticlePropertiesVSRegister() const;
 
     /// \brief
     ///   Returns a shader pass instance that outputs plain diffuse color in the pixel shader.
@@ -2177,7 +2135,7 @@ class VisRenderLoopHelper_cl
     VISION_APIFUNC bool CompareLightFrustumDistances(const hkvAlignedBBox &bbox, const VisFrustum_cl *pViewFrustum, float *fLightFrustumDistances);
 
 
-    #ifdef WIN32
+    #ifdef _VISION_WIN32
     
     /// \brief
     ///   Temporarily replaces the render targets that are used on graphics API level. Should not be used.
@@ -2210,7 +2168,6 @@ class VisRenderLoopHelper_cl
     int m_iCurrentVisQueryHandle;
 
     VLightGridPtr m_spLightGrid;
-    VCompiledShaderPassPtr m_spParticleShader[VisParticleGroup_cl::PARTICLESHADERFLAGS_ALLFLAGS+1];  
     VCompiledShaderPassPtr m_spMemexportSkinningShaderMatrix;
     VCompiledShaderPassPtr m_spMemexportSkinningShaderQuat;
     VCompiledShaderPassPtr m_spComputeSkinningShaderMatrix;
@@ -2235,7 +2192,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -38,6 +38,7 @@ namespace VisionManaged
     m_pFXFile = nullptr;
     m_iVisibleBitmask = 0xffffffff;
     m_bVisible = true;
+    m_bRemoveWhenFinished = true;
     m_uiRandomBaseSeed = 0;
     m_pMeshEmitterEntity = NULL;
   }
@@ -88,6 +89,27 @@ namespace VisionManaged
     }
   }
 
+  void EngineInstanceParticleGroup::OnLinksChanged()
+  {
+    if (m_pGroup == nullptr)
+      return;
+
+    // Check whether the restart target component is connected to any source
+    VisTriggerTargetComponent_cl* pTriggerTargetComponent = 
+      m_pGroup->Components().GetComponentOfBaseTypeAndName<VisTriggerTargetComponent_cl>(PARTICLETRIGGER_RESTART);
+
+    if (pTriggerTargetComponent == NULL)
+    {
+      m_pGroup->SetRemoveWhenFinished(m_bRemoveWhenFinished);
+      return;
+    }
+
+    // If that is the case, it shouldn't be removed when it has finished, so override the setting.
+    if (pTriggerTargetComponent->m_Sources.Count() > 0)
+      m_pGroup->SetRemoveWhenFinished(false);
+    else
+      m_pGroup->SetRemoveWhenFinished(m_bRemoveWhenFinished); // Set actual value.
+  }
 
   bool EngineInstanceParticleGroup::SetEffectFile(String ^effect)
   {
@@ -122,38 +144,25 @@ namespace VisionManaged
     // restore parent
     if ( pOldParent )
       m_pGroup->AttachToParent(pOldParent);
-
     
     // add trigger target components - only inside vForge. They are only serialized when used.
     VisTriggerTargetComponent_cl *pComp;
 
-
     // pause target
-    pComp = new VisTriggerTargetComponent_cl(PARTICLETRIGGER_PAUSE,VIS_OBJECTCOMPONENTFLAG_SERIALIZEWHENRELEVANT);
+    pComp = new VisTriggerTargetComponent_cl(PARTICLETRIGGER_PAUSE, VIS_OBJECTCOMPONENTFLAG_SERIALIZEWHENRELEVANT);
     m_pGroup->AddComponent(pComp);
 
     // unpause target
-    pComp = new VisTriggerTargetComponent_cl(PARTICLETRIGGER_RESUME,VIS_OBJECTCOMPONENTFLAG_SERIALIZEWHENRELEVANT);
+    pComp = new VisTriggerTargetComponent_cl(PARTICLETRIGGER_RESUME, VIS_OBJECTCOMPONENTFLAG_SERIALIZEWHENRELEVANT);
     m_pGroup->AddComponent(pComp);
 
     // restart target
-    pComp = new VisTriggerTargetComponent_cl(PARTICLETRIGGER_RESTART,VIS_OBJECTCOMPONENTFLAG_SERIALIZEWHENRELEVANT);
+    pComp = new VisTriggerTargetComponent_cl(PARTICLETRIGGER_RESTART, VIS_OBJECTCOMPONENTFLAG_SERIALIZEWHENRELEVANT);
     m_pGroup->AddComponent(pComp);
 
     return true;
   }
 
-  /*
-  void EngineInstanceParticleGroup::SetEffectKey(String ^fxkey)
-  {
-    if (!m_pGroup)
-      return;
-
-    VString sKey;
-    ConversionUtils::StringToVString(fxkey,sKey);
-    m_pGroup->SetEffectKey(sKey.IsEmpty() ? NULL : sKey.AsChar());
-  }
-*/
   void EngineInstanceParticleGroup::SetAmbientColor(unsigned int iColor)
   {
     VColorRef color;
@@ -162,8 +171,6 @@ namespace VisionManaged
       m_pGroup->SetAmbientColor(color);
     UpdateParticleColors();
   }
-
-
 
   void EngineInstanceParticleGroup::SetPosition(float x,float y,float z)
   {
@@ -181,7 +188,6 @@ namespace VisionManaged
     m_pGroup->ReComputeVisibility(); // new center of the bounding box
   }
 
-
   void EngineInstanceParticleGroup::SetOrientation(float yaw,float pitch,float roll)
   {
     m_fYaw = yaw;
@@ -197,7 +203,6 @@ namespace VisionManaged
       m_pGroup->UpdateVisibilityBoundingBox();
     }
   }
-
 
   void EngineInstanceParticleGroup::SetScaling(float x,float y, float z)
   {
@@ -255,69 +260,60 @@ namespace VisionManaged
 
     VisParticleEmitter_cl *pEmitter =  pGroup->GetEmitter();
     VIS_EMITTER_TYPE_e eType = pEmitter->GetType();
-    hkvVec3 vParam = pEmitter->m_vParam.getAsVec3 ();
-    vParam *= pGroup->GetScaling(); // scale the emitter extent
-    float fConeAngle = pEmitter->m_fConeAngle;
-    hkvVec3 vPos(m_fPosX, m_fPosY, m_fPosZ);
-    
     VisParticleEffect_cl *pParentEffect = pGroup->GetParentEffect();
 
-    hkvVec3 vDir = (pParentEffect!=NULL) ? pParentEffect->GetDirection() : m_pGroup->GetDirection();
-    hkvMat3 mRotMat = (pParentEffect!=NULL) ? pParentEffect->GetRotationMatrix() : m_pGroup->GetRotationMatrix();
+
+    hkvMat3 mRelRotMat;
+    hkvVec3 relativeOrientation = pGroup->GetDescriptor()->m_vRelativeOrientation;
+    mRelRotMat.setFromEulerAngles(relativeOrientation.z, relativeOrientation.y, relativeOrientation.x);
+    hkvMat3 mShapeRotMat = (pParentEffect != NULL) ? pParentEffect->GetRotationMatrix() : m_pGroup->GetRotationMatrix();
+    hkvMat3 mRotMat = mShapeRotMat * mRelRotMat;
+
+    hkvVec3 vParam = pEmitter->m_vParam.getAsVec3();
+    vParam *= pGroup->GetScaling(); // scale the emitter extent
+
+    float fConeAngle = pEmitter->m_fConeAngle * 2;
+
+    hkvVec3 vPos(m_fPosX, m_fPosY, m_fPosZ);
+    vPos += mShapeRotMat * pGroup->GetDescriptor()->m_vRelativePosition;
+
+    hkvVec3 vDir = mRotMat.getColumn(0);
 
     VSimpleRenderState_t state(VIS_TRANSP_ALPHA, RENDERSTATEFLAG_FRONTFACE);
+    const VColorRef coneColor(255, 150, 0, 50);
+    const VColorRef shapeColor(255, 255, 0, 50);
+    const float fConeLength = 100.0f;
 
     switch (eType)
     {
       case EMITTER_TYPE_UNKNOWN: break;
       case EMITTER_TYPE_POINT:
-        pRI->RenderSphere(vPos, 1, VColorRef(255,255,0,50), state);
-        if (fConeAngle>=0.f)
-          pRI->RenderCone(vPos, vDir, fConeAngle * 2.0f, 100.f, VColorRef(255,150,0,50), state);
+        pRI->RenderSphere(vPos, 1, shapeColor, state);
+        if (fConeAngle >= 0.f)
+          pRI->RenderCone(vPos, vDir, fConeAngle, fConeLength, coneColor, state);
         
         break; 
       case EMITTER_TYPE_SPHERE: 
-        pRI->RenderSphere(vPos, vParam.x, VColorRef(255,255,0,50), state);
+        pRI->RenderSphere(vPos, vParam.x, shapeColor, state);
         
-        if (fConeAngle>=0.f)
+        if (fConeAngle >= 0.f)
         {
+          const hkvVec3 dirs[6] = { hkvVec3(0, 0, 1), hkvVec3(0, 0, -1), hkvVec3(1, 0, 0),
+                                    hkvVec3(-1, 0, 0), hkvVec3(0, 1, 0), hkvVec3(0, -1, 0) };
           if(pEmitter->m_bEmitFromSurface)
           {
-            hkvVec3 up(0,0,vParam.x);
-            up = mRotMat * up;
-            pRI->RenderCone(vPos+up, up.getNormalized(), fConeAngle * 2.0f, 100.f, VColorRef(255,150,0,50), state);
-
-            up.set(0,0,-vParam.x);
-            up = mRotMat * up;
-            pRI->RenderCone(vPos+up, up.getNormalized(), fConeAngle * 2.0f, 100.f, VColorRef(255,150,0,50), state);
-
-            up.set(vParam.x,0,0);
-            up = mRotMat * up;
-            pRI->RenderCone(vPos+up, up.getNormalized(), fConeAngle * 2.0f, 100.f, VColorRef(255,150,0,50), state);
-
-            up.set(-vParam.x,0,0);
-            up = mRotMat * up;
-            pRI->RenderCone(vPos+up, up.getNormalized(), fConeAngle * 2.0f, 100.f, VColorRef(255,150,0,50), state);
-
-            up.set(0,vParam.x,0);
-            up = mRotMat * up;
-            pRI->RenderCone(vPos+up, up.getNormalized(), fConeAngle * 2.0f, 100.f, VColorRef(255,150,0,50), state);
-
-            up.set(0,-vParam.x,0);
-            up = mRotMat * up;
-            pRI->RenderCone(vPos+up, up.getNormalized(), fConeAngle * 2.0f, 100.f, VColorRef(255,150,0,50), state);
+            for (int i = 0; i < 6; ++i)
+            {
+              hkvVec3 up = mRotMat * dirs[i];
+              pRI->RenderCone(vPos + up * vParam.x, up, fConeAngle, fConeLength, coneColor, state);
+            }
           }
           else
           {
-            pRI->RenderCone(vPos+hkvVec3(0,0, vParam.x), vDir, fConeAngle * 2.0f, 100.f, VColorRef(255,150,0,50), state);
-            pRI->RenderCone(vPos+hkvVec3(0,0,-vParam.x), vDir, fConeAngle * 2.0f, 100.f, VColorRef(255,150,0,50), state);
-            pRI->RenderCone(vPos+hkvVec3( vParam.x,0,0), vDir, fConeAngle * 2.0f, 100.f, VColorRef(255,150,0,50), state);
-            pRI->RenderCone(vPos+hkvVec3(-vParam.x,0,0), vDir, fConeAngle * 2.0f, 100.f, VColorRef(255,150,0,50), state);
-            pRI->RenderCone(vPos+hkvVec3(0, vParam.x,0), vDir, fConeAngle * 2.0f, 100.f, VColorRef(255,150,0,50), state);
-            pRI->RenderCone(vPos+hkvVec3(0,-vParam.x,0), vDir, fConeAngle * 2.0f, 100.f, VColorRef(255,150,0,50), state);
-            pRI->RenderCone(vPos, vDir, fConeAngle * 2.0f, 100.f, VColorRef(255,150,0,50), state);
+            for (int i = 0; i < 6; ++i)
+              pRI->RenderCone(vPos + dirs[i] * vParam.x, vDir, fConeAngle, fConeLength, coneColor, state);
+            pRI->RenderCone(vPos, vDir, fConeAngle, 100.f, coneColor, state);
           }
-          
         }
 
         break;
@@ -330,142 +326,71 @@ namespace VisionManaged
         const hkvMat4 mTransformation (mRotMat,vPos);
         mTransformation.transformPositions (corners, 8);
 
-        pRI->RenderBox(corners, sizeof(hkvVec3), VColorRef(255,255,0,50),state);
+        pRI->RenderBox(corners, sizeof(hkvVec3), shapeColor, state);
 
         if (fConeAngle>=0.f)
         {
           if(pEmitter->m_bEmitFromSurface)
           {
-            hkvMat3 rotMat = m_pGroup->GetRotationMatrix();
-
-            hkvVec3 up(0,0,1);
-            up = rotMat * up;
-
-            //5 for every side
-            pRI->RenderCone(vPos+up*vParam.z, up, fConeAngle * 2.0f, 100.f, VColorRef(255,150,0,50), state);
-            //if(fConeAngle<45)
-            //  for(int i=1;i<8;i+=2)
-            //    pRI->RenderCone(corners[i], up, fConeAngle * 2.0f, 100.f, VColorRef(255,150,0,50), state);
-
-            up.set(0,0,-1);
-            up = rotMat * up;
-            pRI->RenderCone(vPos+up*vParam.z, up, fConeAngle * 2.0f, 100.f, VColorRef(255,150,0,50), state);
-            //if(fConeAngle<45)
-            //  for(int i=0;i<8;i+=2)
-            //    pRI->RenderCone(corners[i], up, fConeAngle * 2.0f, 100.f, VColorRef(255,150,0,50), state);
-
-            up.set(1,0,0);
-            up = rotMat * up;
-            pRI->RenderCone(vPos+up*vParam.x, up, fConeAngle * 2.0f, 100.f, VColorRef(255,150,0,50), state);
-            //if(fConeAngle<45)
-            //  for(int i=4;i<8;i++)
-            //    pRI->RenderCone(corners[i], up, fConeAngle * 2.0f, 100.f, VColorRef(255,150,0,50), state);
-
-            up.set(-1,0,0);
-            up = rotMat * up;
-            pRI->RenderCone(vPos+up*vParam.x, up, fConeAngle * 2.0f, 100.f, VColorRef(255,150,0,50), state);
-            //if(fConeAngle<45)
-            //  for(int i=0;i<4;i++)
-            //    pRI->RenderCone(corners[i], up, fConeAngle * 2.0f, 100.f, VColorRef(255,150,0,50), state);
-
-            up.set(0,-1,0);
-            up = rotMat * up;
-            pRI->RenderCone(vPos+up*vParam.y, up, fConeAngle * 2.0f, 100.f, VColorRef(255,150,0,50), state);
-            //if(fConeAngle<45)
-            //  for(int i=0;i<4;i++)
-            //    pRI->RenderCone(corners[i>1?i+2:i], up, fConeAngle * 2.0f, 100.f, VColorRef(255,150,0,50), state);
-
-            up.set(0,1,0);
-            up = rotMat * up;
-            pRI->RenderCone(vPos+up*vParam.y, up, fConeAngle * 2.0f, 100.f, VColorRef(255,150,0,50), state);
-            //if(fConeAngle<45)
-            //  for(int i=0;i<4;i++)
-            //    pRI->RenderCone(corners[i>1?i+4:i+2], up, fConeAngle * 2.0f, 100.f, VColorRef(255,150,0,50), state);
-
+            const hkvVec3 directions[6] = { hkvVec3(0, 0, 1), hkvVec3(0, 0, -1), hkvVec3(1, 0, 0), hkvVec3(-1, 0, 0), hkvVec3(0, -1, 0), hkvVec3(0, 1, 0) };
+            for (int i = 0; i < 6; ++i)
+            {
+              pRI->RenderCone(vPos + mRotMat * directions[i].compMul(vParam), mRotMat.transformDirection(directions[i]), fConeAngle, fConeLength, coneColor, state);
+            }
           }
           else
           {
-            if(fConeAngle<45)
-              for(int i=0;i<8;i++)
-                pRI->RenderCone(corners[i], vDir, fConeAngle * 2.0f, 100.f, VColorRef(255,150,0,50), state);
-
-            pRI->RenderCone(vPos, vDir, fConeAngle * 2.0f, 100.f, VColorRef(255,150,0,50), state);
+            for (int i = 0; i < 8; i++)
+              pRI->RenderCone(corners[i], vDir, fConeAngle, 100.f, coneColor, state);
+            pRI->RenderCone(vPos, vDir, fConeAngle, 100.f, coneColor, state);
           }
         }
         break;
       }
       case EMITTER_TYPE_PLANE:
       {
-        hkvVec3 vRight = m_pGroup->GetObjDir_Right();
-        hkvVec3 vUp = m_pGroup->GetObjDir_Up();
+        hkvVec3 vRight = mRotMat.getAxis(1);
+        hkvVec3 vUp = mRotMat.getAxis(2);
         vRight.setLength(vParam.x);
         vUp.setLength(vParam.y);
-        pRI->RenderPlane(vRight, vUp, vPos, VColorRef(255,255,0,50),state);
+        pRI->RenderPlane(vRight, vUp, vPos, shapeColor, state);
 
         if (fConeAngle>=0.f)
         {
-          pRI->RenderCone(vPos, vDir, fConeAngle * 2.0f, 100.f, VColorRef(255,150,0,50), state);
+          pRI->RenderCone(vPos, vDir, fConeAngle, 100.f, coneColor, state);
 
-          if(fConeAngle<45)
-          {
-            hkvMat3 rotMat = m_pGroup->GetRotationMatrix();
-
-            hkvVec3 corner(0,vParam.x*0.7f,vParam.y*0.7f);
-            corner = rotMat * corner;
-            pRI->RenderCone(vPos+corner, vDir, fConeAngle * 2.0f, 100.f, VColorRef(255,150,0,50), state);
-
-            corner = hkvVec3(0,vParam.x*0.7f,-vParam.y*0.7f);
-            corner = rotMat * corner;
-            pRI->RenderCone(vPos+corner, vDir, fConeAngle * 2.0f, 100.f, VColorRef(255,150,0,50), state);
-
-            corner = hkvVec3(0,-vParam.x*0.7f,vParam.y*0.7f);
-            corner = rotMat * corner;
-            pRI->RenderCone(vPos+corner, vDir, fConeAngle * 2.0f, 100.f, VColorRef(255,150,0,50), state);
-
-            corner = hkvVec3(0,-vParam.x*0.7f,-vParam.y*0.7f);
-            corner = rotMat * corner;
-            pRI->RenderCone(vPos+corner, vDir, fConeAngle * 2.0f, 100.f, VColorRef(255,150,0,50), state);
-          }
+          const hkvVec3 corners[4] = { hkvVec3(0, vParam.x, vParam.y), hkvVec3(0, vParam.x, -vParam.y),
+                                      hkvVec3(0, -vParam.x, vParam.y), hkvVec3(0, -vParam.x, -vParam.y) };
+          for (int i = 0; i < 4; ++i)
+            pRI->RenderCone(vPos + mRotMat * (corners[i] * 0.7f), vDir, fConeAngle, fConeLength, coneColor, state);
         }
         break;
       }
       case EMITTER_TYPE_RAY:
-        pRI->RenderCylinder(vPos, vDir*vParam.x, 10.0f, VColorRef(255,255,0,50), state, RENDERSHAPEFLAGS_LINES|RENDERSHAPEFLAGS_SOLID);
+        pRI->RenderCylinder(vPos, vDir*vParam.x, 10.0f, shapeColor, state, RENDERSHAPEFLAGS_LINES | RENDERSHAPEFLAGS_SOLID);
 
         if (fConeAngle>=0.f)
         {
           if(pEmitter->m_bEmitFromSurface)
           {
-            hkvMat3 rotMat = m_pGroup->GetRotationMatrix();
+            const hkvVec3 normals[8] = { hkvVec3(0, 0, 1), hkvVec3(0, 0, -1), hkvVec3(0,  1, 0), hkvVec3(0, -1,  0),
+                                         hkvVec3(0, 1, 1), hkvVec3(0, 1, -1), hkvVec3(0, -1, 1), hkvVec3(0, -1, -1) };
 
-            hkvVec3 normals[8];
-            normals[0].set(0,  0, 1);
-            normals[1].set(0,  0,-1);
-            normals[2].set(0,  1, 0);
-            normals[3].set(0, -1, 0);
-            normals[4].set(0,  1, 1);
-            normals[5].set(0,  1,-1);
-            normals[6].set(0, -1, 1);
-            normals[7].set(0, -1,-1);
-
-            //we reduce the number of cones when overlapping
+            // we reduce the number of cones when overlapping
             const int numOfCones = fConeAngle>22.5f ? (fConeAngle>45 ? 2 : 4) : 8;
             for(int i=0;i<numOfCones;i++)
             {
-              normals[i] = rotMat * normals[i];
-              normals[i].normalize();
-
-              pRI->RenderCone(vPos, normals[i], fConeAngle * 2.0f, 100.f, VColorRef(255,150,0,50), state);
-              pRI->RenderCone(vPos+vDir*vParam.x, normals[i], fConeAngle * 2.0f, 100.f, VColorRef(255,150,0,50), state);
-              pRI->RenderCone(vPos+vDir*vParam.x*0.5f, normals[i], fConeAngle * 2.0f, 100.f, VColorRef(255,150,0,50), state);
+              hkvVec3 normal = mRotMat.transformDirection(normals[i]);
+              pRI->RenderCone(vPos, normal, fConeAngle, 100.f, coneColor, state);
+              pRI->RenderCone(vPos + vDir*vParam.x, normal, fConeAngle, fConeLength, coneColor, state);
+              pRI->RenderCone(vPos + vDir*vParam.x*0.5f, normal, fConeAngle, fConeLength, coneColor, state);
             }
-   
           }
           else
           {
-            pRI->RenderCone(vPos, vDir, fConeAngle * 2.0f, 100.f, VColorRef(255,150,0,50), state);
-            pRI->RenderCone(vPos+vDir*vParam.x, vDir, fConeAngle * 2.0f, 100.f, VColorRef(255,150,0,50), state);
-            pRI->RenderCone(vPos+vDir*vParam.x*0.5f, vDir, fConeAngle * 2.0f, 100.f, VColorRef(255,150,0,50), state);
+            pRI->RenderCone(vPos, vDir, fConeAngle, 100.f, coneColor, state);
+            pRI->RenderCone(vPos + vDir*vParam.x, vDir, fConeAngle, fConeLength, coneColor, state);
+            pRI->RenderCone(vPos + vDir*vParam.x*0.5f, vDir, fConeAngle, fConeLength, coneColor, state);
           }
         }
         break;
@@ -473,19 +398,16 @@ namespace VisionManaged
       case EMITTER_TYPE_MESH:
         if(m_pMeshEmitterEntity!=NULL)
         {
-          m_pMeshEmitterEntity->DebugRenderMesh(VColorRef(255,150,0,50));
-
-          if (fConeAngle>=0.f)
-          {
-            hkvAlignedBBox bbox;
-            m_pMeshEmitterEntity->GetCollisionBoundingBox(bbox, true);
-            pRI->RenderCone(bbox.getCenter(), vDir, fConeAngle * 2.0f, 100.f, VColorRef(255,150,0,50), state);
-          }
+          m_pMeshEmitterEntity->DebugRenderMesh(shapeColor);
+          hkvAlignedBBox bbox;
+          m_pMeshEmitterEntity->GetCollisionBoundingBox(bbox, true);
+          vPos = bbox.getCenter();
+          vDir = m_pMeshEmitterEntity->GetDirection();
         }
-
-        if (fConeAngle>=0.f)
-          pRI->RenderCone(vPos, vDir, fConeAngle * 2.0f, 100.f, VColorRef(255,150,0,50), state);
-
+        if (fConeAngle >= 0.f)
+        {
+          pRI->RenderCone(vPos, vDir, fConeAngle, fConeLength, coneColor, state);
+        }
         break;
       
       default:
@@ -510,7 +432,7 @@ namespace VisionManaged
     bBox.setInvalid();
     bBox.expandToInclude( orientedBBox );
 
-    pRI->DrawLineBox(bBox, (iLayer==g_CurrentPreviewLayer) ? V_RGBA_RED : VColorRef(255,150,0,50), 1.f);
+    pRI->DrawLineBox(bBox, (iLayer == g_CurrentPreviewLayer) ? V_RGBA_RED : VColorRef(255, 150, 0, 50), 1.f);
   }
 
   void EngineInstanceParticleGroup::RenderPreview_PhysicsProperties(int iLayer, VisionViewBase ^view, IVRenderInterface *pRI, ParticleGroupBase_cl *pGroup)
@@ -568,6 +490,8 @@ namespace VisionManaged
       return false;
 
     hkvAlignedBBox mergedBox;
+    mergedBox.setInvalid();
+
     // merge the initial visibility bounding boxes of all particle layers
     for (int i=0;i<m_pGroup->GetParticleGroupCount();i++)
     {
@@ -644,7 +568,10 @@ namespace VisionManaged
   {
     if ( !m_pGroup )
       return;
-    m_pGroup->SetRemoveWhenFinished(value);			
+
+    m_bRemoveWhenFinished = value;
+
+    OnLinksChanged(); // Decide if we need to override the value.		
   }
 
   void EngineInstanceParticleGroup::Restart()
@@ -670,6 +597,32 @@ namespace VisionManaged
       if (pEntity!=NULL && pEntity->GetAnimConfig())
         pEntity->GetAnimConfig()->GetCurrentVertexResult(); // enforce update of the collision mesh
       m_pGroup->RespawnAllParticles(true);
+    }
+  }
+
+  void EngineInstanceParticleGroup::SetPreferredDirLightKey(String ^dirLightKey)
+  {
+    if (!m_pGroup)
+      return;
+
+    VString sDirLightKeyVString;
+    ConversionUtils::StringToVString(dirLightKey, sDirLightKeyVString);
+    m_pGroup->SetPreferredDirLightKey(sDirLightKeyVString);
+  }
+
+  void EngineInstanceParticleGroup::SetLightSamplingOffset(Vector3F lightSamplingOffset)
+  {
+    if (m_pGroup)
+      m_pGroup->SetLightSamplingOffset(hkvVec3(lightSamplingOffset.X, lightSamplingOffset.Y, lightSamplingOffset.Z));
+  }
+
+  void EngineInstanceParticleGroup::SetRandomBaseSeed(unsigned int uiBaseSeed)
+  { 
+    m_uiRandomBaseSeed = uiBaseSeed; 
+    if (m_pGroup) 
+    {
+      m_pGroup->SetRandomBaseSeed(uiBaseSeed); 
+      m_pGroup->Restart();
     }
   }
 
@@ -879,7 +832,7 @@ namespace VisionManaged
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -33,6 +33,14 @@ public:
     m_RegShadowParams.SetRegisterValueSafeF(this, pParams);
   }
 
+  inline void SetShadowMapSize(int iShadowMapWidth, int iShadowMapHeight)
+  {
+    float fShadowMapWidth = (float)iShadowMapWidth;
+    float fShadowMapHeight = (float)iShadowMapHeight;
+    float pParams[4] = { fShadowMapWidth, fShadowMapHeight, 1.0f/fShadowMapWidth, 1.0f/fShadowMapHeight };
+    m_RegShadowMapSize.SetRegisterValueSafeF(this, pParams);
+  }
+
   // Set color for subtractive shadows
   inline void SetShadowColor(const VColorRef &shadowColor)
   {
@@ -43,7 +51,7 @@ public:
 
 #ifndef _VISION_DOC
 
-  VConstantBufferRegister m_RegLightProjection, m_RegShadowParams, m_RegShadowColor;
+  VConstantBufferRegister m_RegLightProjection, m_RegShadowParams, m_RegShadowMapSize, m_RegShadowColor;
  
   // shader overrides
   V_DECLARE_SERIAL_DLLEXP(VMobileDynamicLightShader, VISION_APIDATA)
@@ -108,6 +116,10 @@ public:
   ///   Implements IVisRenderLoop_cl
   VISION_APIFUNC virtual void OnHandleCallback(IVisCallbackDataObject_cl *pData) HKV_OVERRIDE;
 
+  /// \brief
+  ///   Overridden function for particle effect config. Will additionally set LIGHTING_MOBILE where appropriate. See base class.
+  VISION_APIFUNC virtual void GetParticleEffectConfig(VisParticleGroup_cl::ParticleShaderFlags_e iFlags, VTechniqueConfig &config) const HKV_OVERRIDE;
+
   ///
   /// @}
   ///
@@ -134,7 +146,7 @@ private:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -40,6 +40,15 @@ public:
 		/// The current position of the character controller.
 	virtual void getPosition( hkVector4& positionOut ) const = 0;
 
+		/// Set the current position of the character controller.
+		/// This function will issue a warning.  It is not wise to directly set the position of a character controller.
+		/// This an expensive operation and can cause the character to go from not penetrating to deeply penetrating
+		/// another rigid body.  Additionally, parts of the system may have previous position information which will immediately
+		/// become invalid (Eg. FootIk).  It is much better to adjust the character controller's velocity so that it reaches
+		/// the desired position when it's integrated.  This could, for example, be accomplished by overriding
+		/// applyVelocityModifiers and adjusting the velocity in the next call to get from previous position to the new position.
+	virtual void setPosition( hkVector4Parameter position ) = 0;
+
 		/// The current linear velocity of the character controller.
 	virtual void getLinearVelocity( hkVector4& linearVelocityOut ) const = 0;
 
@@ -55,7 +64,7 @@ public:
 #endif // HKB_CHARACTER_CONTROLLER_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

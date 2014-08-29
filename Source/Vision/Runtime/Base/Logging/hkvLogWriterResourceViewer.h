@@ -13,7 +13,7 @@
 
 #include <Vision/Runtime/Base/Logging/hkvLog.h>
 
-#ifdef WIN32
+#ifdef _VISION_WIN32
 
 namespace hkvLogWriter
 {
@@ -56,7 +56,7 @@ namespace hkvLogWriter
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -148,15 +148,22 @@ public:
 
 
   /// \brief
-  ///   Set the maximum intensity for the animation curve
+  ///   Set the maximum multiplier used for the animation curve
   /// 
   /// The lookup alpha will be modulated with this intensity.
   /// 
   /// This value only affects the color animation curve.
   /// 
-  /// \param fMaxIntensity
-  ///   The maximum intensity.
-  VISION_APIFUNC void SetAnimMaxIntensity(float fMaxIntensity);
+  /// \param fMaxMultiplier
+  ///   The maximum multiplier.
+  VISION_APIFUNC void SetAnimMaxMultiplier(float fMaxMultiplier);
+
+  /// \brief
+  ///   Deprecated. Use SetAnimMaxMultiplier instead
+  inline void SetAnimMaxIntensity(float fMaxIntensity)
+  {
+    SetAnimMaxMultiplier(fMaxIntensity);
+  }
 
 
   /// \brief
@@ -279,7 +286,7 @@ private:
   // curve related
   VisBitmapPtr m_spLookup;              ///< Smart pointer to lookup texture
   float m_fCurveSpeed, m_fCurvePhase;   ///< Curve speed of the color animation
-  float m_fMaxIntensity;                ///< Maximun intensity of the color animation curve
+  float m_fMaxMultiplier;               ///< Backup of the light's original multiplier value
   UBYTE m_ModColor[3];                  ///< Modulate color that can be used to modify the color animation result
   bool m_bRemoveLightWhenFinished;      ///< True if it should remove light when animation is finished otherwise it will loop. Default is false
 };
@@ -288,7 +295,7 @@ private:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

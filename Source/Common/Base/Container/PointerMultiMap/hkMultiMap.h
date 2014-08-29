@@ -10,7 +10,7 @@
 #define HKBASE_MULTI_MAP_H
 
 template <typename KEY>
-struct hkMultiMapOperations
+struct HK_EXPORT_COMMON hkMultiMapOperations
 {
 	inline static unsigned hash( KEY key, unsigned mod )
 	{
@@ -25,7 +25,7 @@ struct hkMultiMapOperations
 
 // Operations for integral types - the difference is the hash, doesn't throw away the bottom bits
 // which are significant for most uses of integral types.
-struct hkMultiMapIntegralOperations
+struct HK_EXPORT_COMMON hkMultiMapIntegralOperations
 {
 	inline static unsigned hash( hkUlong key, unsigned mod ) { return (unsigned(key) * 2654435761U) & mod; }
 	inline static void invalidate( hkUlong& key ) { key = hkUlong(-1); }
@@ -285,7 +285,7 @@ inline hkBool hkMultiMap<KEY,VAL,OPS,ALLOC>::isValid( Iterator it ) const
 #endif // HKBASE_HKPOINTERMAPBASE_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

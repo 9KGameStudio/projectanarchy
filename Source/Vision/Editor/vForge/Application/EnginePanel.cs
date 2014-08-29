@@ -40,13 +40,6 @@ namespace Editor
   /// </summary>
   public partial class EnginePanel : DockableForm
   {
-    #region Members
-
-    private IContainer components;
-    ToolStripHelpButton _helpbutton = null;
-    
-    #endregion Members
-
     /// <summary>
     /// get the view
     /// </summary>
@@ -152,10 +145,10 @@ namespace Editor
       shortcuts.Add(new MenuItemShortCut(ToolStripMenuItem_Top, Keys.Alt | Keys.Control | Keys.T));
       shortcuts.Add(new MenuItemShortCut(ToolStripMenuItem_Front, Keys.Alt | Keys.Control | Keys.F));
       shortcuts.Add(new MenuItemShortCut(ToolStripMenuItem_Right, Keys.Alt | Keys.Control | Keys.R));
-      shortcuts.Add(new ToolStripItemShortCut(ToolStripButton_ZoomFit, Keys.F));
+      shortcuts.Add(new ToolStripSplitButtonShortCut(ToolStripButton_ZoomFit, Keys.F));
       shortcuts.Add(new ToolStripItemShortCut(ToolStripButton_IsolateSelection, Keys.I));
 
-      shortcuts.Add(new ToolStripItemShortCut(ToolStripSplitButton_MoveSensitivity, Keys.Alt | Keys.Control | Keys.U));
+      shortcuts.Add(new ToolStripSplitButtonShortCut(ToolStripSplitButton_MoveSensitivity, Keys.Alt | Keys.Control | Keys.U));
 
       // Alignment shortcuts
       shortcuts.Add(new MenuItemShortCut(AlignToGridToolStripMenuItem, Keys.Alt | Keys.Control | Keys.G));
@@ -182,7 +175,6 @@ namespace Editor
       }
       UpdateToolbarStatus();
     }
-
 
     /// Clean up any resources being used.
     /// </summary>
@@ -218,7 +210,7 @@ namespace Editor
     /// Helper function
     /// </summary>
     /// <param name="targetPos"></param>
-    void MoveSelectionToPosition(Vector3F targetPos)
+    static public void MoveSelectionToPosition(Vector3F targetPos)
     {
       ShapeCollection shapes = EditorApp.ActiveView.Gizmo.Shapes;
       if (shapes == null || shapes.Count == 0)
@@ -481,7 +473,7 @@ namespace Editor
             }
             else
             {
-              // Enable "Use Visiblity"
+              // Enable "Use Visibility"
               EditorManager.VisibilityBuilder.UseInEngine = true;
             }
           }
@@ -492,7 +484,7 @@ namespace Editor
             EditorManager.VisibilityBuilder.UseInEngine)
           {
             if (EditorManager.ShowMessageBox(EditorManager.MainForm,
-              "You're about to disable displaying visiblity information.\n" +
+              "You're about to disable displaying visibility information.\n" +
               "Do you want to disable \"Use Visibility\" too?", "Use Visibility?", MessageBoxButtons.YesNo,
               MessageBoxIcon.Question, DialogResult.Yes) == DialogResult.Yes)
             {
@@ -620,8 +612,8 @@ namespace Editor
         pasteAtCursorToolStripMenuItem.Enabled = false;
 
       // view effects
-      ToolStripItemCollection shadingItems = shadingModes_ensureToolStripItems(shadingToolStripMenuItem.DropDownItems);
-      shadingModes_evaluateCheckMark(shadingItems);
+      shadingModes_ensureToolStripItems(shadingToolStripMenuItem);
+      shadingModes_evaluateCheckMark(shadingToolStripMenuItem.DropDownItems);
 
 
       Pick_UV0_ToolStripMenuItem.Enabled = bHasScene;
@@ -637,12 +629,16 @@ namespace Editor
     {
       float fFarClip = EditorManager.ActiveView.FarClipPlane;
       ZoneCollection zones = new ZoneCollection();
+      Vector3D pivot = EditorManager.Scene.GlobalPivot;
       foreach (Zone zone in EditorManager.Scene.Zones)
       {
         BoundingBox zoneBox = bInsideCachedRadius ? zone.AbsoluteBoundingBox : zone.AssignmentBoundingBox;
         if (zoneBox == null || !zoneBox.Valid)
           zoneBox = zone.AssignmentBoundingBox;
-        float fDist = zoneBox.GetDistance(pos);
+        if (!zoneBox.Valid)
+          continue;
+        Vector3F offset = new Vector3F((float)(pivot.X - zone.ZonePivot.X), (float)(pivot.Y - zone.ZonePivot.Y), (float)(pivot.Z - zone.ZonePivot.Z)); 
+        float fDist = zoneBox.GetDistanceXY(pos + offset);
         if (fDist <= 0.0f || (bInsideCachedRadius && fDist <= zone.GetFinalLoadedDistance(fFarClip)))
           zones.Add(zone);
       }
@@ -1109,7 +1105,7 @@ namespace Editor
 
     private void toolStripButton_Move_Click(object sender, EventArgs e)
     {
-      EditorApp.ActiveView.Gizmo.DragMode = ShapeDragMode.MOVE;
+      EditorApp.ActiveView.Gizmo.DragMode = toolStripButton_VertexSnapping.Checked ? ShapeDragMode.NONE : ShapeDragMode.MOVE;
       EditorApp.ActiveView.Gizmo.LocalTranslation = toolStripButton_localPos.Checked;
     }
 
@@ -1129,9 +1125,24 @@ namespace Editor
       EditorApp.ActiveView.Gizmo.LocalOrientation = toolStripButton_localOri.Checked;
     }
 
-    private void toolStripButton_StickToGround_Click(object sender, EventArgs e)
+
+    private void toolStripButton_TranslationMode_Click(object sender, EventArgs e)
     {
-      EditorApp.ActiveView.Gizmo.StickObjectsToGround = toolStripButton_StickToGround.Checked;
+      if (sender == toolStripButton_StickToGround && toolStripButton_StickToGround.Checked)
+      {
+        EditorApp.ActiveView.Gizmo.DragMode = ShapeDragMode.MOVE;
+        EditorApp.ActiveView.Gizmo.GizmoTranslationMode = CSharpFramework.GizmoBase.TranslationMode.ObjectsStickToGround;
+      }
+      else if (sender == toolStripButton_VertexSnapping && toolStripButton_VertexSnapping.Checked)
+      {
+        EditorApp.ActiveView.Gizmo.DragMode = ShapeDragMode.NONE;
+        EditorApp.ActiveView.Gizmo.GizmoTranslationMode = CSharpFramework.GizmoBase.TranslationMode.SnapToVertices;
+      }
+      else
+      {
+        EditorApp.ActiveView.Gizmo.DragMode = ShapeDragMode.MOVE;
+        EditorApp.ActiveView.Gizmo.GizmoTranslationMode = CSharpFramework.GizmoBase.TranslationMode.StandardTranslation;
+      }
     }
 
     private void toolStripButton_Link_Click(object sender, EventArgs e)
@@ -1286,8 +1297,9 @@ namespace Editor
         {
           DialogResult result = MessageBox.Show("Orthogonal Projection is not supported for the Deferred Renderer Node. " +
               "You can however use a different 'Shading Mode' and then use the Orthogonal " +
-              "Projection. Do you want to automatically switch to 'Shaded Lighting' and " +
-              "then enable the Orthogonal Projection when using this menu option?",
+              "Projection. Do you want to switch to 'Shaded Lighting' and " +
+              "then enable the Orthogonal Projection when using this menu option? The shading mode will "+
+              "be set back after switching back to Perspective Projection.",
               "Orthogonal Projection", MessageBoxButtons.YesNo, MessageBoxIcon.Information);
 
           if (result == DialogResult.Yes)
@@ -1320,6 +1332,9 @@ namespace Editor
             engineManager.SetReplacementRenderLoopEffect(i);
             EditorManager.ActiveView.ProjectionMode = mode;
             EditorManager.ActiveView.UpdateView(true);
+
+            // Mark that we want to restore normal shading mode when changing back
+            _restorePerspectiveNormalShadingMode = true;
             return true;
           }
         }
@@ -1636,9 +1651,8 @@ namespace Editor
       }
 
       // Add view effects to engine toolbar
-      ToolStripItemCollection shadingItemsToolbar = shadingModes_ensureToolStripItems(ToolStripSplitButton_Rendering.DropDownItems, NUM_OF_SHADING_MODES_MIN, 3);
-      shadingModes_evaluateCheckMark(shadingItemsToolbar);
-
+      shadingModes_ensureToolStripItems(ToolStripSplitButton_Rendering, NUM_OF_SHADING_MODES_MIN, 3);
+      shadingModes_evaluateCheckMark(ToolStripSplitButton_Rendering.DropDownItems);
     }
 
     private void shadingModes_evaluateCheckMark(ToolStripItemCollection items)
@@ -1653,19 +1667,20 @@ namespace Editor
       }
     }
 
-    private ToolStripItemCollection shadingModes_ensureToolStripItems(ToolStripItemCollection items, int minCount = 1, int toolStipInsertionIndex = 0)
+    private void shadingModes_ensureToolStripItems(ToolStripDropDownItem targetToolStrip, int minCount = 1, int toolStipInsertionIndex = 0)
     {
-      Debug.Assert(items != null);
+      Debug.Assert(targetToolStrip.DropDownItems != null);
 
       // First time - Third Item is separator
-      if (items.Count < minCount)
+      if (targetToolStrip.DropDownItems.Count < minCount)
       {
         // Insert normal shading mode
         ShadingEffectMenuItem item = new ShadingEffectMenuItem(
-          ShadingEffectMenuItem.NORMAL_SHADING_STRING, ShadingEffectMenuItem.NORMAL_SHADING_INDEX, ToolStripSplitButton_Rendering);
+          ShadingEffectMenuItem.NORMAL_SHADING_STRING, ShadingEffectMenuItem.NORMAL_SHADING_INDEX, targetToolStrip);
 
         item.BeforeChangingShadingMode += normalShadingItem_BeforeChangingShadingMode;
-        items.Insert(toolStipInsertionIndex, item);
+        item.AfterChangingShadingMode += new ShadingEffectMenuItem.ShadingModeChanged(item_AfterChangingShadingMode);
+        targetToolStrip.DropDownItems.Insert(toolStipInsertionIndex, item);
 
         // Add all rendering effects that are loaded by the engine manager for this purpose:
         VisionEngineManager em = (VisionEngineManager)EditorManager.EngineManager;
@@ -1676,12 +1691,37 @@ namespace Editor
         for (int i = 0; i < names.Count; i++)
         {
           ShadingEffectMenuItem shadingMenuItem = new ShadingEffectMenuItem(
-            names[i], ShadingEffectMenuItem.NORMAL_SHADING_INDEX + 1 + i, ToolStripSplitButton_Rendering);
-          items.Insert(i + toolStipInsertionIndex + 1, shadingMenuItem);
+            names[i], ShadingEffectMenuItem.NORMAL_SHADING_INDEX + 1 + i, targetToolStrip);
+          shadingMenuItem.AfterChangingShadingMode += new ShadingEffectMenuItem.ShadingModeChanged(item_AfterChangingShadingMode);
+          targetToolStrip.DropDownItems.Insert(i + toolStipInsertionIndex + 1, shadingMenuItem);
         }
-      }
 
-      return items;
+        // Add a check box for particle debug rendering on/off.
+        targetToolStrip.DropDownItems.Add(new ToolStripSeparator());
+        VisionEngineManager visionEngineManager = (VisionEngineManager)EditorManager.EngineManager;
+        ToolStripMenuItem particleDebugRendering = new ToolStripMenuItem("Particle Debug Rendering", global::Editor.Properties.Resources.view_particle_debug);
+        particleDebugRendering.Click += (System.EventHandler)((sender, arg) =>
+          {
+            visionEngineManager.ParticleDebugRendering = !visionEngineManager.ParticleDebugRendering;
+            ((ToolStripMenuItem)sender).Checked = visionEngineManager.ParticleDebugRendering;
+            // Keep menu open.
+            if (targetToolStrip.GetType() == typeof(ToolStripSplitButton))
+            {
+              EditorManager.ActiveView.UpdateView(true);
+              targetToolStrip.ShowDropDown();
+            }
+          });
+        particleDebugRendering.ImageScaling = ToolStripItemImageScaling.None;
+        particleDebugRendering.Checked = visionEngineManager.ParticleDebugRendering;
+        targetToolStrip.DropDownItems.Add(particleDebugRendering);
+      }
+    }
+
+    void item_AfterChangingShadingMode(EnginePanel.ShadingModeChangedEventArgs e)
+    {
+      // After manually changing shading mode, revert possibly set flag that a shading mode should be restored
+      // after a manual shading mode change
+      _restorePerspectiveNormalShadingMode = false;
     }
 
     void normalShadingItem_BeforeChangingShadingMode(EnginePanel.ShadingModeChangedEventArgs e)
@@ -2271,8 +2311,9 @@ namespace Editor
         case GizmoChangedArgs.Action.LocalTranslationChanged:
           toolStripButton_localPos.CheckState = e.bNewLocalTranslation ? CheckState.Checked : CheckState.Unchecked;
           break;
-        case GizmoChangedArgs.Action.StickObjectsToGroundChanged:
-          toolStripButton_StickToGround.CheckState = e.bNewStickObjectsToGround ? CheckState.Checked : CheckState.Unchecked;
+        case GizmoChangedArgs.Action.TranslationModeChanged:
+          toolStripButton_StickToGround.Checked = e.newTranslationMode == CSharpFramework.GizmoBase.TranslationMode.ObjectsStickToGround;
+          toolStripButton_VertexSnapping.Checked = e.newTranslationMode == CSharpFramework.GizmoBase.TranslationMode.SnapToVertices;
           break;
       }
 
@@ -2307,6 +2348,14 @@ namespace Editor
 
     void VisionViewBase_ProjectionModeChanged(object sender, EventArgs e)
     {
+      // If we change to perspective mode, check if flag was set to restore normal shading mode
+      if (EditorManager.ActiveView.ProjectionMode == VisionViewBase.ProjectionMode_e.Perspective &&
+        _restorePerspectiveNormalShadingMode)
+      {
+        VisionEngineManager engineManager = (VisionEngineManager)EditorManager.EngineManager;
+        engineManager.SetReplacementRenderLoopEffect(ShadingEffectMenuItem.NORMAL_SHADING_INDEX);
+        _restorePerspectiveNormalShadingMode = false;
+      }
       UpdateToolbarStatus();
     }
 
@@ -2337,6 +2386,23 @@ namespace Editor
     {
       EditorApp.ActiveView.Gizmo.DragMode = ShapeDragMode.SCALE;
     }
+
+    private void propertiesToolStripMenuItem_Click(object sender, EventArgs e)
+    {
+      PropertyPanel pp = (EditorManager.MainForm as Form1).PropertyEditorPanel;
+      pp.Show();
+      pp.Focus();
+    }
+
+    #region Private Members
+
+    private IContainer components;
+    ToolStripHelpButton _helpbutton = null;
+
+    // Flag to mark if the normal shading mode should be restored when changing
+    // to perspective mode (again). This is used after switching to orthogonal
+    // mode in deferred rendering, which changes the shading mode.
+    private bool _restorePerspectiveNormalShadingMode = false;
 
     // Toggle whether the transform strip opperates in relative or absolute mode.
     bool relativeTransform = false;
@@ -2513,12 +2579,12 @@ namespace Editor
 
           EditorManager.Actions.Add(groupAction);
         }
-        catch (System.FormatException except)
+        catch (System.FormatException)
         {
           updateTransformStrip();
           return;
         }
-        catch (System.OverflowException except)
+        catch (System.OverflowException)
         {
           updateTransformStrip();
           return;
@@ -2540,6 +2606,10 @@ namespace Editor
 	    // Early-out when a clone operation is detected, as clone operations perform incremental add operations for
 	    // each instance, leading to O(n^2) performance
       CameraMoveContext context = EditorManager.ActiveView.CurrentContext as CameraMoveContext;
+
+      if ( context == null )
+          return;
+
       if (context.CloneSize > 0 && EditorManager.SelectedShapes.Count < context.CloneSize)
         return;
 
@@ -2774,6 +2844,7 @@ namespace Editor
       }
       EditorManager.Actions.Add(groupAction);
     }
+    #endregion
 
     private void ToolStripButton_ZoomFit_ButtonClick(object sender, EventArgs e)
     {
@@ -2783,7 +2854,7 @@ namespace Editor
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140624)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

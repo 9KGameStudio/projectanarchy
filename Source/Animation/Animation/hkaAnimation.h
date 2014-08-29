@@ -10,12 +10,17 @@
 #define HK_ANIMATION_ANIMATION_H
 
 #include <Common/Base/hkBase.h>
+#include <Animation/Internal/hkaExport.h>
 #include <Animation/Animation/Animation/hkaAnimation.h>
+
+// Uncomment this to generated results that are in a deprecated format.
+// If using these results, you should set the blendHint to be ADDITIVE_DEPRECATED.
+//#define HKA_USE_ADDITIVE_DEPRECATED
 
 #endif // HK_ANIMATION_ANIMATION_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

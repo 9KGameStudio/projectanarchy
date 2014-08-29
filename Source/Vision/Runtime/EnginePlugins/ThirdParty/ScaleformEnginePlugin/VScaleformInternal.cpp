@@ -14,9 +14,9 @@
 #include <Render/Renderer2D.h>
 #include <Kernel/SF_Threads.h>
 
-#if defined (WIN32) && defined(_VR_DX9)
+#if defined (_VISION_WIN32) && defined(_VR_DX9)
 #include <GFx_Renderer_D3D9.h>
-#elif defined(WIN32) && defined(_VR_DX11)
+#elif defined(_VISION_WIN32) && defined(_VR_DX11)
 #include <GFx_Renderer_D3D1x.h>
 #elif defined (_VISION_XENON)
 #include <Render/X360/X360_HAL.h>
@@ -32,7 +32,7 @@
 
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Scripting/VScriptIncludes.hpp>
 #include <Vision/Runtime/EnginePlugins/ThirdParty/ScaleformEnginePlugin/VScaleformMovie.hpp>
-#include <Vision/Runtime/EnginePlugins/ThirdParty/ScaleformEnginePlugin/vScaleformInternal.hpp>
+#include <Vision/Runtime/EnginePlugins/ThirdParty/ScaleformEnginePlugin/VScaleformInternal.hpp>
 
 VisCallback_cl VOnExternalInterfaceCall::OnExternalInterfaceCallback;
 VisCallback_cl VOnFSCommand::OnFSCallback;
@@ -43,7 +43,7 @@ extern int PROFILING_EXT_INTERFACE;
 //command queue related methods
 //=============================
 
-#if defined(WIN32)  || defined(_VISION_XENON) 
+#if defined(_VISION_WIN32)  || defined(_VISION_XENON) 
 DWORD __stdcall CommandQueueThreadFunc(LPVOID arg)
 #define RETURN_VAL return 0;
 #elif defined(_VISION_PS3)
@@ -71,8 +71,8 @@ SceInt32 CommandQueueThreadFunc(SceSize, void* arg);
 
 VScaleformCommandQueue::VScaleformCommandQueue() :
   m_bCancel(false),
-  m_iQueueLength(0),
   m_commandMutex(),
+  m_iQueueLength(0),
   m_commandQueue(8, NULL)
 {
   m_pThread = new VThread(CommandQueueThreadFunc, this, -1, THREADPRIORITY_LOW);
@@ -114,7 +114,7 @@ void VScaleformCommandQueue::Run()
     }
     m_iQueueLength = 0;
     m_commandMutex.Unlock();
-    Sleep(1);
+    VSleep(1);
   } while (!m_bCancel);
 }
 
@@ -261,7 +261,7 @@ bool VScaleformAmpAppController::HandleAmpRequest(const Scaleform::GFx::AMP::Mes
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

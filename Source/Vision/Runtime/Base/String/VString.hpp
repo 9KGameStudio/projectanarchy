@@ -1304,19 +1304,19 @@ private:
 /// \brief
 ///   Macro to convert a wide character string to UTF8 using an output buffer.
 ///
-/// Also sets the trailing zero character, so wcharBufferLen has to have enough space for it.
+/// Also sets the trailing zero character, so iUTF8BufferLen has to have enough space for it.
 #define V_WCHAR_TO_UTF8(pWCharStr, szUTF8Buffer, iUTF8BufferLen) \
   { \
-    const int _iUTF8Size_ = VString::ConvertWCharToUTF8String( \
+    const int _iUTF8Len_ = VString::ConvertWCharToUTF8String( \
       pWCharStr, static_cast<int>(wcslen(pWCharStr)), szUTF8Buffer, iUTF8BufferLen); \
-    VASSERT_MSG(_iUTF8Size_ < static_cast<int>(iUTF8BufferLen), "UTF8 character buffer too small"); \
-    (szUTF8Buffer)[_iUTF8Size_] = '\0'; \
+    VASSERT_MSG(_iUTF8Len_ < static_cast<int>(iUTF8BufferLen), "UTF8 character buffer too small"); \
+    (szUTF8Buffer)[_iUTF8Len_] = '\0'; \
   }
 
 /// \brief
 ///   Macro to convert a UTF8 string to wide char using an output buffer.
 ///
-/// Also sets the trailing zero character, so wcharBufferLen has to have enough space for it.
+/// Also sets the trailing zero character, so iWCharBufferLen has to have enough space for it.
 #define V_UTF8_TO_WCHAR(szUTF8, wcharBuffer, iWCharBufferLen) \
   { \
     const int _iWCharLen_ = VString::ConvertUTF8ToWCharString( \
@@ -1332,11 +1332,11 @@ private:
 /// Also sets the trailing zero character.
 #define V_WCHAR_TO_UTF8_TEMPBUFFER(pWCharStr, szUTF8PointerOut, tempBuffer) \
   { \
-  const int __iUTF8Len_ = VString::ConvertWCharToUTF8String(pWCharStr, static_cast<int>(wcslen(pWCharStr)), \
-    NULL, 0) + 1; \
-  tempBuffer.EnsureCapacity(__iUTF8Len_); \
-  szUTF8PointerOut = static_cast<char*>(tempBuffer.GetBuffer()); \
-  V_WCHAR_TO_UTF8(pWCharStr, szUTF8PointerOut, __iUTF8Len_); \
+    const int _iUTF8Len2_ = VString::ConvertWCharToUTF8String(pWCharStr, static_cast<int>(wcslen(pWCharStr)), \
+      NULL, 0) + 1; \
+    tempBuffer.EnsureCapacity(_iUTF8Len2_); \
+    szUTF8PointerOut = static_cast<char*>(tempBuffer.GetBuffer()); \
+    V_WCHAR_TO_UTF8(pWCharStr, szUTF8PointerOut, _iUTF8Len2_); \
   }
 
 /// \brief
@@ -1346,11 +1346,11 @@ private:
 /// Also sets the trailing zero character.
 #define V_UTF8_TO_WCHAR_TEMPBUFFER(szUTF8, wcharPointerOut, tempBuffer) \
   { \
-  const int __iWCharLen_ = VString::ConvertUTF8ToWCharString(szUTF8, static_cast<int>(strlen(szUTF8)), \
-    NULL, 0) + 1; \
-  tempBuffer.EnsureCapacity(__iWCharLen_*sizeof(wchar_t)); \
-  wcharPointerOut = static_cast<wchar_t*>(tempBuffer.GetBuffer()); \
-  V_UTF8_TO_WCHAR(szUTF8, wcharPointerOut, __iWCharLen_); \
+    const int _iWCharLen2_ = VString::ConvertUTF8ToWCharString(szUTF8, static_cast<int>(strlen(szUTF8)), \
+      NULL, 0) + 1; \
+    tempBuffer.EnsureCapacity(_iWCharLen2_*sizeof(wchar_t)); \
+    wcharPointerOut = static_cast<wchar_t*>(tempBuffer.GetBuffer()); \
+    V_UTF8_TO_WCHAR(szUTF8, wcharPointerOut, _iWCharLen2_); \
   }
 
 /// \brief
@@ -1741,7 +1741,7 @@ VArchive& operator << (VArchive& ar, VStaticString<iSize>& obj)
 #endif  //VISION_VSTRING_HPP
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

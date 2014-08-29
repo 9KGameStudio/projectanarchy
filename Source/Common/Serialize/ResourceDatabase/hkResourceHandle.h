@@ -14,24 +14,24 @@
 #include <Common/Base/Reflection/hkClassMemberAccessor.h>
 #include <Common/Base/Container/StringMap/hkStringMap.h>
 
-extern const class hkClass hkMemoryResourceHandleExternalLinkClass;
+extern HK_EXPORT_COMMON const class hkClass hkMemoryResourceHandleExternalLinkClass;
 
-extern const class hkClass hkResourceContainerClass;
+extern HK_EXPORT_COMMON const class hkClass hkResourceContainerClass;
 
-extern const class hkClass hkResourceHandleClass;
+extern HK_EXPORT_COMMON const class hkClass hkResourceHandleClass;
 
-extern const class hkClass hkResourceBaseClass;
+extern HK_EXPORT_COMMON const class hkClass hkResourceBaseClass;
 
 
-extern const hkClass hkMemoryResourceHandleClass;
-extern const hkClass hkMemoryResourceContainerClass;
+extern HK_EXPORT_COMMON const hkClass hkMemoryResourceHandleClass;
+extern HK_EXPORT_COMMON const hkClass hkMemoryResourceContainerClass;
 
 
 class hkResourceContainer;
 
 class hkResourceMap;
 
-class hkResourceBase: public hkReferencedObject
+class HK_EXPORT_COMMON hkResourceBase : public hkReferencedObject
 {
 	public:
 
@@ -124,7 +124,7 @@ class hkResourceHandle: public hkResourceBase
 };
 
 	/// The owner of a resource handle
-class hkResourceContainer: public hkResourceBase
+class HK_EXPORT_COMMON hkResourceContainer : public hkResourceBase
 {
 	public:
 
@@ -212,7 +212,7 @@ class hkResourceContainer: public hkResourceBase
 
 
 	/// Simple class which allows for fast searching of object/classes
-class hkResourceMap
+class HK_EXPORT_COMMON hkResourceMap
 {
 	public:
 		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE,hkResourceMap);
@@ -310,7 +310,7 @@ class hkMemoryResourceHandle: public hkResourceHandle
 
 
 	/// Simple Havok serializable version of a hkResourceContainer
-class hkMemoryResourceContainer : public hkResourceContainer
+class HK_EXPORT_COMMON hkMemoryResourceContainer : public hkResourceContainer
 {
 	//+version(1)
 	public:
@@ -376,7 +376,7 @@ class hkContainerResourceMap: public hkResourceMap
 #endif // INC_COMMON_RESOURCE_HANDLE_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -17,14 +17,15 @@ class hkbCharacter;
 class AttachedEntity_cl;
 class hkaiCharacter;
 class hkaiBehavior;
-
+class hkvVec3;
+class vHavokBehaviorModule;
 /// \brief
 ///   Havok Behavior Component
 ///
 class vHavokBehaviorComponent : public IVObjectComponent, public hkbWorldListener
 {
+  friend class vHavokBehaviorModule;
 	public:
-
 		V_DECLARE_SERIAL_DLLEXP(vHavokBehaviorComponent, VHAVOKBEHAVIOR_IMPEXP);
 		V_DECLARE_VARTABLE( vHavokBehaviorComponent, VHAVOKBEHAVIOR_IMPEXP )
 
@@ -55,7 +56,7 @@ class vHavokBehaviorComponent : public IVObjectComponent, public hkbWorldListene
 		virtual VVarChangeRes_e OnVariableValueChanging(VisVariable_cl *pVar, const char * value) HKV_OVERRIDE;
 		virtual bool SetVariable(const char * name, const char * value) HKV_OVERRIDE;
 		virtual void OnVariableValueChanged(VisVariable_cl *pVar, const char * value) HKV_OVERRIDE;
-#if defined(WIN32) || defined(_VISION_DOC)
+#if defined(_VISION_WIN32) || defined(_VISION_DOC)
 		VHAVOKBEHAVIOR_IMPEXP virtual void GetVariableAttributes(VisVariable_cl *pVariable, VVariableAttributeInfo &destInfo) HKV_OVERRIDE;
 #endif
 
@@ -79,6 +80,11 @@ class vHavokBehaviorComponent : public IVObjectComponent, public hkbWorldListene
     /// \brief
 		///   Update the Havok character's transform.
 		VHAVOKBEHAVIOR_IMPEXP void UpdateHavokTransformFromVision();
+
+		/// \brief
+		///   Override the position of the Havok character's transform.
+		//    Please note that this is an expensive call and assumes the underlying character controller is a Rigidbody character controller.
+		VHAVOKBEHAVIOR_IMPEXP void SetTransform( const hkvVec3& pos, const hkvMat3& rot );
 
     /// \brief
 		///   Updates the collision filters on any subsystems of the character that need it.
@@ -131,6 +137,12 @@ class vHavokBehaviorComponent : public IVObjectComponent, public hkbWorldListene
 		// Returns the value of the selected behavior float variable
 		VHAVOKBEHAVIOR_IMPEXP float GetFloatVar(const char* variableName);
 
+		// Sets the value of the selected behavior hkVec3 variable
+		VHAVOKBEHAVIOR_IMPEXP bool SetVectorVar(const char* variableName, hkvVec3 value);
+
+		// Returns the value of the selected behavior hkVec3 variable
+		VHAVOKBEHAVIOR_IMPEXP hkvVec3 GetVectorVar(const char* variableName);
+		
 		// Sets the value of the selected behavior word variable
 		VHAVOKBEHAVIOR_IMPEXP bool SetWordVar(const char* variableName, int value);
 
@@ -141,20 +153,13 @@ class vHavokBehaviorComponent : public IVObjectComponent, public hkbWorldListene
 		VHAVOKBEHAVIOR_IMPEXP bool SetBoolVar(const char* variableName, bool value);
 
 		// Returns the value of the selected behavior word variable
-		VHAVOKBEHAVIOR_IMPEXP bool GetBoolVar(const char* variableName);
+		VHAVOKBEHAVIOR_IMPEXP bool GetBoolVar(const char* variableName) const;
 
 		// Returns world space transform of the selected bone
-		VHAVOKBEHAVIOR_IMPEXP void GetBoneTransform(const char* boneName, hkvVec3& outPos, hkvMat3& outRot ) const;
+		VHAVOKBEHAVIOR_IMPEXP hkvResult GetBoneTransform(const char* boneName, hkvVec3& outPos, hkvMat3& outRot ) const;
 
 		/// Initialize this character
 		VHAVOKBEHAVIOR_IMPEXP void InitVisionCharacter( VisBaseEntity_cl* entityOwner );
-
-    ///
-    /// @}
-    ///
-
-		// Checks the value of the selected behavior bool variable
-		VHAVOKBEHAVIOR_IMPEXP bool GetBoolVar(const char* variableName) const;
 
 		// Triggers a behavior event
 		VHAVOKBEHAVIOR_IMPEXP bool TriggerEvent(const char* eventName) const;
@@ -164,6 +169,10 @@ class vHavokBehaviorComponent : public IVObjectComponent, public hkbWorldListene
 
 		// Checks if a given event was triggered
 		VHAVOKBEHAVIOR_IMPEXP bool WasEventTriggered(const char* eventName) const;
+
+	///
+	/// @}
+	///
 
     ///
     /// @name Serialization / Resource
@@ -201,10 +210,10 @@ class vHavokBehaviorComponent : public IVObjectComponent, public hkbWorldListene
 
 		hkbCharacter* m_character;        ///< The Havok character
 
-		VString m_projectPath;            ///< Path to behavior project
-		VString m_projectName;            ///< Name of the behavior project
-		VString m_characterName;          ///< Name of the character in the project
-		VString m_behaviorName;           ///< Name of the behavior graph
+		VString m_projectPath;            ///< Path to behavior project (relative to the a search directory, eg: "Exported/Project/")
+		VString m_projectName;            ///< Name of the behavior project (relative to a search directory, eg: "Exported/Project/Project01.hkt")
+		VString m_characterName;          ///< Name of the character in the project (eg: "Character01.hkt")
+		VString m_behaviorName;           ///< Name of the behavior graph (eg: "Character01.hkt")
 
 		BOOL m_enableRagdoll;             ///< Whether to enable the ragdoll of the character, if one exists.
 		BOOL m_useBehaviorWorldFromModel; ///< Whether to allow Behavior to modify the character's worldFromModel
@@ -227,7 +236,7 @@ class vHavokBehaviorComponent : public IVObjectComponent, public hkbWorldListene
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

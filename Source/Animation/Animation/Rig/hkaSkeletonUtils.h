@@ -19,7 +19,7 @@ typedef int (HK_CALL* hkStringCompareFunc)(const char*, const char*);
 class hkAabb;
 
 /// This utility class contains many static methods related to the manipulation of poses and skeletons
-class hkaSkeletonUtils
+class HK_EXPORT_ANIMATION hkaSkeletonUtils
 {
 	public:
 			/// Converts a local space pose to a pose in model space.
@@ -154,7 +154,7 @@ class hkaSkeletonUtils
 #endif // HK_SKELETON_UTILS_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

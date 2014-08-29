@@ -8,24 +8,16 @@
 
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/VisionEnginePluginPCH.h>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Components/VAnimationEventEffectTrigger.hpp>
-#include <Vision/Runtime/Base/System/Memory/VMemDbg.hpp>
 
-/// =========================================================================== ///
-/// IVAnimationEventTrigger Component Methods                                   ///
-/// =========================================================================== ///
 
 // Register the class in the engine module so it is available for RTTI
-V_IMPLEMENT_SERIAL(VAnimationEventEffectTrigger, IVAnimationEventTrigger, 0, &g_VisionEngineModule);
+V_IMPLEMENT_SERIAL(VAnimationEventEffectTrigger, IVTransitionEventTrigger, 0, &g_VisionEngineModule);
 
 VAnimationEventEffectTrigger::VAnimationEventEffectTrigger(int iComponentFlags) : IVTransitionEventTrigger(iComponentFlags)
 {
   PositionOffset.setZero();
   OrientationOffset.setZero();
 }
-
-/// =========================================================================== ///
-/// IVAnimationEventTrigger Overridable                                         ///
-/// =========================================================================== ///
 
 bool VAnimationEventEffectTrigger::CommonInit()
 {
@@ -124,7 +116,7 @@ void VAnimationEventEffectTrigger::MessageFunction( int iID, INT_PTR iParamA, IN
 {  
   IVTransitionEventTrigger::MessageFunction(iID, iParamA, iParamB);
 
-#ifdef WIN32
+#ifdef _VISION_WIN32
   if (iID == VIS_MSG_EDITOR_GETSTANDARDVALUES)
   {
     // Get bone names
@@ -196,7 +188,7 @@ START_VAR_TABLE(VAnimationEventEffectTrigger, IVTransitionEventTrigger, "Animati
 END_VAR_TABLE
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

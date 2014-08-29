@@ -487,7 +487,7 @@ private:
   //VString m_key; // path key, now in object3d
 
   DynArray_cl<VisPathNode_cl*> pathNodes; ///< pointer to the nodes of this path
-  SerialDynArray_cl<float> pathSegmentLength;   ///< length of path segments
+  DynArray_cl<float> pathSegmentLength;   ///< length of path segments
 };
 
 
@@ -523,7 +523,7 @@ inline VisPathNode_cl* VisPath_cl::FindPathNode(const char *szKey, BOOL bIgnoreC
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

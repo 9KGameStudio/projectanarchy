@@ -15,7 +15,22 @@
 #include <Vision/Runtime/Engine/System/Vision.hpp>
 #include <Vision/Runtime/Engine/System/Resource/VisApiResource.hpp>
 
-hkUint32 hkvTextureAsset::s_iAssetTypeIndex = HKV_INVALID_INDEX;
+
+const char* hkvTextureAssetSubtypeNames[] = 
+{
+  "2D",
+  "3D",
+  "Array",
+  "Cubemap"
+};
+
+HK_COMPILE_TIME_ASSERT(V_ARRAY_SIZE(hkvTextureAssetSubtypeNames) == HKV_TEXTURE_ASSET_SUBTYPE_COUNT);
+
+
+hkvAssetTypeInfo* hkvTextureAsset::s_typeInfo = NULL;
+const hkvAssetTypeInfoHandle* hkvTextureAsset::s_typeInfoHandle = NULL;
+
+hkvEnumDefinition hkvTextureAsset::s_subtypeDefinition(HKV_TEXTURE_ASSET_SUBTYPE_COUNT, hkvTextureAssetSubtypeNames);
 hkvEnumDefinition hkvTextureAsset::s_imageFormatsDefinition(HKV_IMAGE_FILE_FORMAT_COUNT, hkvImageFileFormatNames);
 hkvEnumDefinition hkvTextureAsset::s_usageDefinition(HKV_TEXTURE_USAGE_COUNT, hkvTextureUsageNames);
 
@@ -26,30 +41,36 @@ hkvEnumDefinition hkvTextureAsset::s_usageDefinition(HKV_TEXTURE_USAGE_COUNT, hk
 
 void hkvTextureAsset::StaticInit()
 {
-  hkvAssetTypeInfo ti;
-  ti.m_name = "Texture";
-  ti.m_createFunc = &CreateAsset;
-  ti.m_supportedFileExtensions.pushBack("bmp");
-  ti.m_supportedFileExtensions.pushBack("dds");
-  ti.m_supportedFileExtensions.pushBack("jpg");
-  ti.m_supportedFileExtensions.pushBack("png");
-  ti.m_supportedFileExtensions.pushBack("tga");
-  ti.m_szTypeIconQt = ":/Icons/Icons/TextureAsset.png";
+  s_typeInfo = new hkvAssetTypeInfo();
+  s_typeInfo->m_name = "Texture";
+  s_typeInfo->m_createFunc = &CreateAsset;
+  s_typeInfo->m_supportedFileExtensions.pushBack("bmp");
+  s_typeInfo->m_supportedFileExtensions.pushBack("dds");
+  s_typeInfo->m_supportedFileExtensions.pushBack("jpg");
+  s_typeInfo->m_supportedFileExtensions.pushBack("png");
+  s_typeInfo->m_supportedFileExtensions.pushBack("tga");
+  s_typeInfo->m_szTypeIconQt = ":/Icons/Icons/TextureAsset.png";
 
-  ti.m_resourceManagerName = VIS_RESOURCEMANAGER_TEXTURES;
-  ti.m_useEngineForDependencies = true;
-  ti.m_useEngineForThumbnails = true;
+  for (int i = 0; i < HKV_TEXTURE_ASSET_SUBTYPE_COUNT; ++i)
+    s_typeInfo->m_subtypes.pushBack(hkvTextureAssetSubtypeNames[i]);
 
-  // register at the hkvAssetTypeManager and store the asset type index in static variable.
-  s_iAssetTypeIndex = hkvAssetTypeManager::getGlobalInstance()->addAssetType(ti);
+  s_typeInfo->m_resourceManagerName = VIS_RESOURCEMANAGER_TEXTURES;
+  s_typeInfo->m_useEngineForDependencies = true;
+  s_typeInfo->m_useEngineForThumbnails = true;
+
+  // register at the hkvAssetTypeManager and store the asset type handle in static variable.
+  s_typeInfoHandle = hkvAssetTypeManager::getGlobalInstance()->addAssetType(*s_typeInfo);
 }
 
 
 void hkvTextureAsset::StaticDeInit()
 {
   // de-register at the hkvAssetTypeManager
-  hkvAssetTypeManager::getGlobalInstance()->removeAssetType(s_iAssetTypeIndex);
-  s_iAssetTypeIndex = HKV_INVALID_INDEX;
+  hkvAssetTypeManager::getGlobalInstance()->removeAssetType(*s_typeInfoHandle);
+  s_typeInfoHandle = NULL;
+
+  delete s_typeInfo;
+  s_typeInfo = NULL;
 }
 
 
@@ -67,8 +88,8 @@ hkvAsset* hkvTextureAsset::CreateAsset()
 // hkvTextureAssetType public functions
 /////////////////////////////////////////////////////////////////////////////
 
-hkvTextureAsset::hkvTextureAsset() 
-: m_usageInstance(s_usageDefinition), m_sRgb(false)
+hkvTextureAsset::hkvTextureAsset()
+  : hkvAsset(s_typeInfo), m_usageInstance(s_usageDefinition), m_subtype(-1), m_sRgb(false)
 {
 
 }
@@ -84,15 +105,55 @@ hkvTextureAsset::~hkvTextureAsset()
 // hkvTextureAssetType public override functions
 /////////////////////////////////////////////////////////////////////////////
 
-unsigned int hkvTextureAsset::getTypeIndex() const
+const hkvAssetTypeInfoHandle& hkvTextureAsset::getTypeInfoHandle() const
 {
-  return s_iAssetTypeIndex;
+  return *s_typeInfoHandle;
 }
 
 
-const char* hkvTextureAsset::getTypeName() const
+hkInt32 hkvTextureAsset::getSubtype() const
 {
-  return "Texture";
+  return m_subtype;
+}
+
+
+const char* hkvTextureAsset::getSubtypeName() const
+{
+  const char* res = NULL;
+  s_subtypeDefinition.idToString((hkUint32)m_subtype, res); // may fail for unknown/invalid types, in case of which NULL is returned.
+  return res;
+}
+
+
+void hkvTextureAsset::setSubtypeByName(const char* name)
+{
+  hkUint32 id;
+  if (s_subtypeDefinition.stringToId(name, id) == HK_SUCCESS)
+  {
+    m_subtype = (hkInt32)id;
+  }
+  else
+  {
+    m_subtype = -1;
+  }
+}
+
+
+hkUint32 hkvTextureAsset::getResourceSubtype() const
+{
+  if (m_imageProperties.getNumImages() > 1)
+  {
+    if (m_imageProperties.getNumFaces() > 1)
+      return VTextureLoader::CubemapArray;
+    else
+      return VTextureLoader::Texture2DArray;
+  }
+  else if (m_imageProperties.getNumFaces() > 1)
+    return VTextureLoader::Cubemap;
+  else if (m_imageProperties.getDepth() > 1)
+    return VTextureLoader::Texture3D;
+  else
+    return VTextureLoader::Texture2D;
 }
 
 
@@ -218,6 +279,7 @@ void hkvTextureAsset::handleProjectLoaded()
 
 void hkvTextureAsset::clearAssetSpecificData() const
 {
+  m_subtype = -1;
   m_imageProperties.clear();
 }
 
@@ -229,11 +291,23 @@ hkvAssetOperationResult hkvTextureAsset::updateAssetSpecificData(hkStreamReader&
   hkvImageFileFormat imageFormat = hkvImageFile::guessFormatFromFileName(getRelativeFilePath(pathBuf));
   hkResult examineResult = m_imageProperties.examineStream(fileData, imageFormat);
 
-  return (examineResult == HK_SUCCESS) ? HKV_AOR_SUCCESS : HKV_AOR_FAILURE;
+  if (examineResult != HK_SUCCESS)
+    return HKV_AOR_FAILURE;
+
+  if (m_imageProperties.getNumImages() > 1)
+    m_subtype = HKV_TEXTURE_ASSET_SUBTYPE_ARRAY;
+  else if (m_imageProperties.getNumFaces() > 1)
+    m_subtype = HKV_TEXTURE_ASSET_SUBTYPE_CUBEMAP;
+  else if (m_imageProperties.getDepth() > 1)
+    m_subtype = HKV_TEXTURE_ASSET_SUBTYPE_3D;
+  else
+    m_subtype = HKV_TEXTURE_ASSET_SUBTYPE_2D;
+
+  return HKV_AOR_SUCCESS;
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

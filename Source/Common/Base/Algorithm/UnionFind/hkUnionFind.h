@@ -16,16 +16,7 @@
 /// and generates subsets all at once via the setEdges method.
 /// We can then query for (a) connected nodes or (b) the sets
 /// of edges which connect the nodes.
-///
-/// Example use:
-/// \code
-/// hkUnionFind unionFind;
-/// hkUnionFind::EdgeVector edges;
-/// // pushBack objects created using hk_make_pair(edgeStart,edgeEnd)
-/// unionFind.setEdges(edges, numberOfVertices);
-/// // Now we can extract all groups one at a time using getNextGroup()
-/// \endcode
-class hkUnionFind
+class HK_EXPORT_COMMON hkUnionFind
 {
 	public:
 
@@ -94,25 +85,25 @@ class hkUnionFind
 		int m_numNodes;
 		hkBool32 m_isCollapsed;	// true if the tree is collapsed
 		int m_numRoots;			// The number of roots, only valid for collapsed trees.
-		hkBool32 m_isAddingEdgesDebug;	// Debug helper to assert on incorrect beginAddEdges/endAddEdges usage.
+		HK_DEBUG_ONLY_MEMBER(hkBool32, m_isAddingEdges);	// Debug helper to assert on incorrect beginAddEdges/endAddEdges usage.
 };
 
 
 HK_FORCE_INLINE void hkUnionFind::beginAddEdges()
 {
 	m_isCollapsed = 0;
-	HK_ON_DEBUG( m_isAddingEdgesDebug = true; )
+	HK_ON_DEBUG( m_isAddingEdges = true; )
 }
 
 HK_FORCE_INLINE void hkUnionFind::endAddEdges()
 {
-	HK_ON_DEBUG( m_isAddingEdgesDebug = false; )
+	HK_ON_DEBUG( m_isAddingEdges = false; )
 }
 
 #endif //HAVOK_UNIONFIND_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

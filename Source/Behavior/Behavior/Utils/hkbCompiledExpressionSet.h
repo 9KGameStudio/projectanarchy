@@ -114,7 +114,7 @@ class hkbCompiledExpressionSet : public hkReferencedObject
 				OP_MAX2,
 				OP_MIN2,
 				OP_RANDRANGE,
-				OP_ATAN2APPROX,
+				OP_ATAN2,
 
 				OP_CLAMP,
 
@@ -126,7 +126,7 @@ class hkbCompiledExpressionSet : public hkReferencedObject
 				OP_SIND,
 				OP_ACOSD,
 				OP_ASIND,
-				OP_ATAN2APPROXD,
+				OP_ATAN2D,
 
 				OP_SIGN,
 				OP_LERP,
@@ -224,7 +224,7 @@ class hkbCompiledExpressionSet : public hkReferencedObject
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

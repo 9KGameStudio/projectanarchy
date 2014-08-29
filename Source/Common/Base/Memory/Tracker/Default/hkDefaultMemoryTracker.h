@@ -23,7 +23,7 @@
 
 class hkOstream;
 
-struct hkDefaultMemoryTrackerAllocator
+struct HK_EXPORT_COMMON hkDefaultMemoryTrackerAllocator
 {
 	hkMemoryRouter::Allocator& get(void*) { return *s_allocator; }
 	static hkMemoryRouter::Allocator* s_allocator;
@@ -31,7 +31,7 @@ struct hkDefaultMemoryTrackerAllocator
 
 extern const hkClass hkDefaultMemoryTrackerClass;
 
-class hkDefaultMemoryTracker : public hkMemoryTracker //+reflected(false)
+class HK_EXPORT_COMMON hkDefaultMemoryTracker : public hkMemoryTracker //+reflected(false)
 {
 	public:
 		HK_DECLARE_PLACEMENT_ALLOCATOR();
@@ -129,7 +129,7 @@ class hkDefaultMemoryTracker : public hkMemoryTracker //+reflected(false)
 #endif // HKBASE_MEMORY_TRACKER_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

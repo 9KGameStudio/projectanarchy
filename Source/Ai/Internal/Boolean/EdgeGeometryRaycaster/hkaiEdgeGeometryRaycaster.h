@@ -10,18 +10,21 @@
 #define HKAI_EDGE_GEOMETRY_RAYCASTER_H
 
 #include <Ai/Internal/Boolean/hkaiFaceEdges.h>
+#include <Ai/Internal/Boolean/EdgeGeometryRaycaster/hkaiEdgeGeometryHitFilter.h>
+#include <Common/Base/Types/Geometry/hkGeometry.h>
+#include <Geometry/Internal/DataStructures/DynamicTree/hkcdDynamicAabbTree.h>
 
 // Uncomment the line below to enable debug display code
 //#define HKAI_DEBUG_DISPLAY_EDGE_GEOMETRY_RAYCASTER
 
 class hkaiEdgeGeometry;
 struct hkcdRay;
-class hkaiEdgeGeometryHitFilter;
 class hkaiVolume;
+class hkaiCarver;
 class hkBitField;
 
 	/// Raycasting against an edge geometry. Used during edge connection testing and triangle removal.
-class hkaiEdgeGeometryRaycaster : public hkReferencedObject
+class HK_EXPORT_AI hkaiEdgeGeometryRaycaster : public hkReferencedObject
 {
 	public:
 
@@ -31,8 +34,9 @@ class hkaiEdgeGeometryRaycaster : public hkReferencedObject
 
 		~hkaiEdgeGeometryRaycaster();
 
+		void reset();
 		hkResult init( const hkaiEdgeGeometry* geom );
-		hkResult init( const hkGeometry* geom, const hkArrayBase< hkRefPtr<const hkaiVolume> >& carvers, const hkBitField& cuttingTriangles );
+		hkResult init( const hkGeometry* geom, const hkArrayBase< hkRefPtr<const hkaiCarver> >& carvers, const hkBitField& cuttingTriangles );
 
 			/// Initialize the raycaster without building the tree. Only raycasting against specific faces is supported in this case.
 		hkResult initNoTree( const hkGeometry* geom );
@@ -116,7 +120,7 @@ class hkaiEdgeGeometryRaycaster : public hkReferencedObject
 
 		hkaiFaceEdges						m_faceEdges;
 		hkArray<hkVector4>					m_facePlanes;
-		void*								m_tree;
+		hkRefPtr< hkcdDynamicAabbTree >		m_aabbTree;
 
 		hkRefPtr<const hkaiEdgeGeometryHitFilter>	m_hitFilter;
 
@@ -130,7 +134,7 @@ class hkaiEdgeGeometryRaycaster : public hkReferencedObject
 #endif	// HKAI_EDGE_GEOMETRY_RAYCASTER_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -14,7 +14,7 @@
 	/// Debugging passthrough allocator which remembers requests and forwards them to another allocator.
 	/// WARNING: this class is extremely slow for large number of allocations.
 	/// It maintains a linked list of all active allocations.
-class hkRecallAllocator : public hkMemoryAllocator
+class HK_EXPORT_COMMON hkRecallAllocator : public hkMemoryAllocator
 {
 	//+hk.MemoryTracker(ignore=True)
 	public:
@@ -57,7 +57,7 @@ class hkRecallAllocator : public hkMemoryAllocator
 #endif // HK_RECALL_ALLOCATOR_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

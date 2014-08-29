@@ -25,16 +25,18 @@ namespace HavokEditorPlugin
       this.ToolTip = new System.Windows.Forms.ToolTip(this.components);
       this.label_CollisionLayer = new System.Windows.Forms.Label();
       this.ToolStrip = new System.Windows.Forms.ToolStrip();
-      this.toolStripButton_Play = new System.Windows.Forms.ToolStripButton();
       this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
+      this.toolStripSeparator2 = new System.Windows.Forms.ToolStripSeparator();
+      this.splitContainer1 = new System.Windows.Forms.SplitContainer();
+      this.PropertyGrid = new CSharpFramework.Controls.PropertyGridEx();
+      this.toolStripButton_Play = new System.Windows.Forms.ToolStripButton();
       this.toolStripButton_VisDynamics = new System.Windows.Forms.ToolStripButton();
+      this.toolStripButton_VisRagdolls = new System.Windows.Forms.ToolStripButton();
       this.toolStripButton_VisStatic = new System.Windows.Forms.ToolStripButton();
       this.toolStripButton_VisController = new System.Windows.Forms.ToolStripButton();
       this.toolStripButton_VisTrigger = new System.Windows.Forms.ToolStripButton();
-      this.splitContainer1 = new System.Windows.Forms.SplitContainer();
-      this.PropertyGrid = new CSharpFramework.Controls.PropertyGridNested();
+      this.toolStripButton_VisBlocker = new System.Windows.Forms.ToolStripButton();
       this.dialogCaptionBar = new CSharpFramework.Controls.DialogCaptionBar();
-      this.toolStripSeparator2 = new System.Windows.Forms.ToolStripSeparator();
       ((System.ComponentModel.ISupportInitialize)(this.collisionDataGridView)).BeginInit();
       this.ToolStrip.SuspendLayout();
       ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
@@ -82,74 +84,26 @@ namespace HavokEditorPlugin
             this.toolStripButton_Play,
             this.toolStripSeparator1,
             this.toolStripButton_VisDynamics,
+            this.toolStripButton_VisRagdolls,
             this.toolStripButton_VisStatic,
             this.toolStripButton_VisController,
             this.toolStripButton_VisTrigger,
+            this.toolStripButton_VisBlocker,
             this.toolStripSeparator2});
       this.ToolStrip.Location = new System.Drawing.Point(0, 50);
       this.ToolStrip.Name = "ToolStrip";
       this.ToolStrip.Size = new System.Drawing.Size(561, 25);
       this.ToolStrip.TabIndex = 13;
       // 
-      // toolStripButton_Play
-      // 
-      this.toolStripButton_Play.CheckOnClick = true;
-      this.toolStripButton_Play.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-      this.toolStripButton_Play.Image = global::HavokEditorPlugin.Properties.Resources.physics_pause;
-      this.toolStripButton_Play.ImageTransparentColor = System.Drawing.Color.Magenta;
-      this.toolStripButton_Play.Name = "toolStripButton_Play";
-      this.toolStripButton_Play.Size = new System.Drawing.Size(23, 22);
-      this.toolStripButton_Play.ToolTipText = "Pause Simulation";
-      this.toolStripButton_Play.Click += new System.EventHandler(this.toolStripButton_Play_Click);
-      // 
       // toolStripSeparator1
       // 
       this.toolStripSeparator1.Name = "toolStripSeparator1";
       this.toolStripSeparator1.Size = new System.Drawing.Size(6, 25);
       // 
-      // toolStripButton_VisDynamics
+      // toolStripSeparator2
       // 
-      this.toolStripButton_VisDynamics.CheckOnClick = true;
-      this.toolStripButton_VisDynamics.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-      this.toolStripButton_VisDynamics.Image = global::HavokEditorPlugin.Properties.Resources.physics_dynamics;
-      this.toolStripButton_VisDynamics.ImageTransparentColor = System.Drawing.Color.Magenta;
-      this.toolStripButton_VisDynamics.Name = "toolStripButton_VisDynamics";
-      this.toolStripButton_VisDynamics.Size = new System.Drawing.Size(23, 22);
-      this.toolStripButton_VisDynamics.ToolTipText = "Visualize Dynamic Objects";
-      this.toolStripButton_VisDynamics.Click += new System.EventHandler(this.toolStripButton_VisDynamics_Click);
-      // 
-      // toolStripButton_VisStatic
-      // 
-      this.toolStripButton_VisStatic.CheckOnClick = true;
-      this.toolStripButton_VisStatic.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-      this.toolStripButton_VisStatic.Image = global::HavokEditorPlugin.Properties.Resources.physics_static;
-      this.toolStripButton_VisStatic.ImageTransparentColor = System.Drawing.Color.Magenta;
-      this.toolStripButton_VisStatic.Name = "toolStripButton_VisStatic";
-      this.toolStripButton_VisStatic.Size = new System.Drawing.Size(23, 22);
-      this.toolStripButton_VisStatic.ToolTipText = "Visualize Static Objects";
-      this.toolStripButton_VisStatic.Click += new System.EventHandler(this.toolStripButton_VisStatic_Click);
-      // 
-      // toolStripButton_VisController
-      // 
-      this.toolStripButton_VisController.CheckOnClick = true;
-      this.toolStripButton_VisController.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-      this.toolStripButton_VisController.Image = global::HavokEditorPlugin.Properties.Resources.physics_character;
-      this.toolStripButton_VisController.ImageTransparentColor = System.Drawing.Color.Magenta;
-      this.toolStripButton_VisController.Name = "toolStripButton_VisController";
-      this.toolStripButton_VisController.Size = new System.Drawing.Size(23, 22);
-      this.toolStripButton_VisController.ToolTipText = "Visualize Character Controller";
-      this.toolStripButton_VisController.Click += new System.EventHandler(this.toolStripButton_VisController_Click);
-      // 
-      // toolStripButton_VisTrigger
-      // 
-      this.toolStripButton_VisTrigger.CheckOnClick = true;
-      this.toolStripButton_VisTrigger.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-      this.toolStripButton_VisTrigger.Image = global::HavokEditorPlugin.Properties.Resources.physics_trigger;
-      this.toolStripButton_VisTrigger.ImageTransparentColor = System.Drawing.Color.Magenta;
-      this.toolStripButton_VisTrigger.Name = "toolStripButton_VisTrigger";
-      this.toolStripButton_VisTrigger.Size = new System.Drawing.Size(23, 22);
-      this.toolStripButton_VisTrigger.ToolTipText = "Visualize Trigger Volumes";
-      this.toolStripButton_VisTrigger.Click += new System.EventHandler(this.toolStripButton_VisTrigger_Click);
+      this.toolStripSeparator2.Name = "toolStripSeparator2";
+      this.toolStripSeparator2.Size = new System.Drawing.Size(6, 25);
       // 
       // splitContainer1
       // 
@@ -201,28 +155,100 @@ namespace HavokEditorPlugin
       this.PropertyGrid.ToolStrip.Visible = false;
       this.PropertyGrid.PropertyValueChanged += new System.Windows.Forms.PropertyValueChangedEventHandler(this.PropertyGrid_PropertyValueChanged);
       // 
+      // toolStripButton_Play
+      // 
+      this.toolStripButton_Play.CheckOnClick = true;
+      this.toolStripButton_Play.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+      this.toolStripButton_Play.Image = global::HavokEditorPlugin.Properties.Resources.physics_pause;
+      this.toolStripButton_Play.ImageTransparentColor = System.Drawing.Color.Magenta;
+      this.toolStripButton_Play.Name = "toolStripButton_Play";
+      this.toolStripButton_Play.Size = new System.Drawing.Size(23, 22);
+      this.toolStripButton_Play.ToolTipText = "Pause Simulation";
+      this.toolStripButton_Play.Click += new System.EventHandler(this.toolStripButton_Play_Click);
+      // 
+      // toolStripButton_VisDynamics
+      // 
+      this.toolStripButton_VisDynamics.CheckOnClick = true;
+      this.toolStripButton_VisDynamics.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+      this.toolStripButton_VisDynamics.Image = global::HavokEditorPlugin.Properties.Resources.physics_dynamics;
+      this.toolStripButton_VisDynamics.ImageTransparentColor = System.Drawing.Color.Magenta;
+      this.toolStripButton_VisDynamics.Name = "toolStripButton_VisDynamics";
+      this.toolStripButton_VisDynamics.Size = new System.Drawing.Size(23, 22);
+      this.toolStripButton_VisDynamics.ToolTipText = "Visualize Dynamic Objects";
+      this.toolStripButton_VisDynamics.Click += new System.EventHandler(this.toolStripButton_VisDynamics_Click);
+      // 
+      // toolStripButton_VisRagdolls
+      // 
+      this.toolStripButton_VisRagdolls.CheckOnClick = true;
+      this.toolStripButton_VisRagdolls.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+      this.toolStripButton_VisRagdolls.Image = global::HavokEditorPlugin.Properties.Resources.physics_ragdoll;
+      this.toolStripButton_VisRagdolls.ImageTransparentColor = System.Drawing.Color.Magenta;
+      this.toolStripButton_VisRagdolls.Name = "toolStripButton_VisRagdolls";
+      this.toolStripButton_VisRagdolls.Size = new System.Drawing.Size(23, 22);
+      this.toolStripButton_VisRagdolls.ToolTipText = "Visualize Ragdolls";
+      this.toolStripButton_VisRagdolls.Click += new System.EventHandler(this.toolStripButton_VisRagdolls_Click);
+      // 
+      // toolStripButton_VisStatic
+      // 
+      this.toolStripButton_VisStatic.CheckOnClick = true;
+      this.toolStripButton_VisStatic.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+      this.toolStripButton_VisStatic.Image = global::HavokEditorPlugin.Properties.Resources.physics_static;
+      this.toolStripButton_VisStatic.ImageTransparentColor = System.Drawing.Color.Magenta;
+      this.toolStripButton_VisStatic.Name = "toolStripButton_VisStatic";
+      this.toolStripButton_VisStatic.Size = new System.Drawing.Size(23, 22);
+      this.toolStripButton_VisStatic.ToolTipText = "Visualize Static Objects";
+      this.toolStripButton_VisStatic.Click += new System.EventHandler(this.toolStripButton_VisStatic_Click);
+      // 
+      // toolStripButton_VisController
+      // 
+      this.toolStripButton_VisController.CheckOnClick = true;
+      this.toolStripButton_VisController.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+      this.toolStripButton_VisController.Image = global::HavokEditorPlugin.Properties.Resources.physics_character;
+      this.toolStripButton_VisController.ImageTransparentColor = System.Drawing.Color.Magenta;
+      this.toolStripButton_VisController.Name = "toolStripButton_VisController";
+      this.toolStripButton_VisController.Size = new System.Drawing.Size(23, 22);
+      this.toolStripButton_VisController.ToolTipText = "Visualize Character Controller";
+      this.toolStripButton_VisController.Click += new System.EventHandler(this.toolStripButton_VisController_Click);
+      // 
+      // toolStripButton_VisTrigger
+      // 
+      this.toolStripButton_VisTrigger.CheckOnClick = true;
+      this.toolStripButton_VisTrigger.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+      this.toolStripButton_VisTrigger.Image = global::HavokEditorPlugin.Properties.Resources.physics_trigger;
+      this.toolStripButton_VisTrigger.ImageTransparentColor = System.Drawing.Color.Magenta;
+      this.toolStripButton_VisTrigger.Name = "toolStripButton_VisTrigger";
+      this.toolStripButton_VisTrigger.Size = new System.Drawing.Size(23, 22);
+      this.toolStripButton_VisTrigger.ToolTipText = "Visualize Trigger Volumes";
+      this.toolStripButton_VisTrigger.Click += new System.EventHandler(this.toolStripButton_VisTrigger_Click);
+      // 
+      // toolStripButton_VisBlocker
+      // 
+      this.toolStripButton_VisBlocker.CheckOnClick = true;
+      this.toolStripButton_VisBlocker.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+      this.toolStripButton_VisBlocker.Image = global::HavokEditorPlugin.Properties.Resources.physics_blocker;
+      this.toolStripButton_VisBlocker.ImageTransparentColor = System.Drawing.Color.Magenta;
+      this.toolStripButton_VisBlocker.Name = "toolStripButton_VisBlocker";
+      this.toolStripButton_VisBlocker.Size = new System.Drawing.Size(23, 22);
+      this.toolStripButton_VisBlocker.ToolTipText = "Visualize Blocker Volumes";
+      this.toolStripButton_VisBlocker.Click += new System.EventHandler(this.toolStripButton_VisBlocker_Click);
+      // 
       // dialogCaptionBar
       // 
       this.dialogCaptionBar.BackColor = System.Drawing.SystemColors.Window;
       this.dialogCaptionBar.Caption = "Havok Physics";
-      this.dialogCaptionBar.CompactView = false;
       this.dialogCaptionBar.Description = "<version>";
       this.dialogCaptionBar.Dock = System.Windows.Forms.DockStyle.Top;
+      this.dialogCaptionBar.HelpContext = "dialogs";
+      this.dialogCaptionBar.HelpKey = null;
+      this.dialogCaptionBar.HelpManual = null;
       this.dialogCaptionBar.Image = global::HavokEditorPlugin.Properties.Resources.physics;
       this.dialogCaptionBar.Location = new System.Drawing.Point(0, 0);
       this.dialogCaptionBar.Name = "dialogCaptionBar";
       this.dialogCaptionBar.SetFontColor = System.Drawing.SystemColors.ControlText;
       this.dialogCaptionBar.ShowBorder = false;
       this.dialogCaptionBar.ShowBottomLine = true;
-      this.dialogCaptionBar.ShowCaptionText = true;
-      this.dialogCaptionBar.ShowImage = true;
       this.dialogCaptionBar.Size = new System.Drawing.Size(561, 50);
       this.dialogCaptionBar.TabIndex = 11;
-      // 
-      // toolStripSeparator2
-      // 
-      this.toolStripSeparator2.Name = "toolStripSeparator2";
-      this.toolStripSeparator2.Size = new System.Drawing.Size(6, 25);
       // 
       // HavokPhysicsPanel
       // 
@@ -257,7 +283,7 @@ namespace HavokEditorPlugin
         private System.Windows.Forms.ToolTip ToolTip;
         private System.Windows.Forms.ToolStrip ToolStrip;
         private System.Windows.Forms.SplitContainer splitContainer1;
-        private CSharpFramework.Controls.PropertyGridNested PropertyGrid;
+        private CSharpFramework.Controls.PropertyGridEx PropertyGrid;
         private System.Windows.Forms.Label label_CollisionLayer;
         private System.Windows.Forms.ToolStripButton toolStripButton_Play;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator1;
@@ -267,5 +293,7 @@ namespace HavokEditorPlugin
         private System.Windows.Forms.ToolStripButton toolStripButton_VisStatic;
         private CSharpFramework.Controls.DialogCaptionBar dialogCaptionBar;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator2;
+        private System.Windows.Forms.ToolStripButton toolStripButton_VisRagdolls;
+        private System.Windows.Forms.ToolStripButton toolStripButton_VisBlocker;
     }
 }

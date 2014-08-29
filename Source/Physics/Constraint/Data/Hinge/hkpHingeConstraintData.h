@@ -11,12 +11,12 @@
 
 #include <Physics/Constraint/Data/hkpConstraintData.h>
 
-extern const class hkClass hkpHingeConstraintDataAtomsClass;
-extern const hkClass hkpHingeConstraintDataClass;
+extern HK_EXPORT_PHYSICS const class hkClass hkpHingeConstraintDataAtomsClass;
+extern HK_EXPORT_PHYSICS const hkClass hkpHingeConstraintDataClass;
 
 
 /// Basic hinge constraint
-class hkpHingeConstraintData : public hkpConstraintData
+class HK_EXPORT_PHYSICS hkpHingeConstraintData : public hkpConstraintData
 {
 	public:
 
@@ -140,7 +140,7 @@ class hkpHingeConstraintData : public hkpConstraintData
 #endif // HKP_HINGE_CONSTRAINT_DATA_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

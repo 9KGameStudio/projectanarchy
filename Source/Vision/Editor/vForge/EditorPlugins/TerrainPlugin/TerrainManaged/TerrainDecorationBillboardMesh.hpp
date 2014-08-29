@@ -130,7 +130,7 @@ public:
 	/// \param iCount
 	///  Number of list entries
 	///
-	virtual void RenderBatch(VTerrainVisibilityCollectorComponent *pInfoComp, VTerrainDecorationInstance **pInstList, int iCount,
+	virtual void RenderBatch(VTerrainVisibilityCollectorComponent *pInfoComp, VTerrainDecorationInstance **pInstList, int iCount, const hkvVec3 &vTranslate,
                            RenderMode_e eRenderMode = RENDER_MODE_OTW) HKV_OVERRIDE;
 
     /// \brief
@@ -172,7 +172,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

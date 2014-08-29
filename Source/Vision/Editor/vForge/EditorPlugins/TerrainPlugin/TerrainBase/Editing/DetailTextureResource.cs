@@ -244,7 +244,7 @@ namespace TerrainBase.Editing
 
     [SortedCategory("Textures", 2), PropertyOrder(1)]
     [Description("The diffuse texture.")]
-    [EditorAttribute(typeof(AssetEditor), typeof(UITypeEditor)), AssetDialogFilter(new string[] { "Texture" })]
+    [EditorAttribute(typeof(AssetEditor), typeof(UITypeEditor)), AssetDialogFilter(new string[] { "Texture | 2D" })]
     [AlternativeTextureDisplay("%", ICON_PERSECTORTEXTURES)]
     public string DiffuseFilename
     {
@@ -266,7 +266,7 @@ namespace TerrainBase.Editing
 
     [SortedCategory("Textures", 2), PropertyOrder(2)]
     [Description("The normalmap texture (optional).")]
-    [EditorAttribute(typeof(AssetEditor), typeof(UITypeEditor)), AssetDialogFilter(new string[] { "Texture" })]
+    [EditorAttribute(typeof(AssetEditor), typeof(UITypeEditor)), AssetDialogFilter(new string[] { "Texture | 2D" })]
     [AlternativeTextureDisplay("%", @"TerrainPlugin\Icons\PerSectorTextures32.png")]
     public string NormalmapFilename
     {
@@ -284,7 +284,7 @@ namespace TerrainBase.Editing
 
     [SortedCategory("Textures", 2), PropertyOrder(3)]
     [Description("The specular map texture (optional).")]
-    [EditorAttribute(typeof(AssetEditor), typeof(UITypeEditor)), AssetDialogFilter(new string[] { "Texture" })]
+    [EditorAttribute(typeof(AssetEditor), typeof(UITypeEditor)), AssetDialogFilter(new string[] { "Texture | 2D" })]
     [AlternativeTextureDisplay("%", @"TerrainPlugin\Icons\PerSectorTextures32.png")]
     public string SpecularmapFilename
     {
@@ -658,7 +658,7 @@ namespace TerrainBase.Editing
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

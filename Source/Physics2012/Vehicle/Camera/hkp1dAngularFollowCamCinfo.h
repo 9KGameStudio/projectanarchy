@@ -22,7 +22,7 @@ class hkp1dAngularFollowCamCinfo
 		struct CameraSet
 		{
 			public:
-				HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_VEHICLE, hkp1dAngularFollowCamCinfo::CameraSet );
+				HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_CAMERA, hkp1dAngularFollowCamCinfo::CameraSet );
 
 			/// The resting position of the camera in unrotated space. Default: ( 0.0f, 12.0f, 5.5f)
 			hkVector4 m_positionUS;
@@ -31,7 +31,7 @@ class hkp1dAngularFollowCamCinfo
 			hkVector4 m_lookAtUS;
 
 			/// The field of view (f.o.v.) in radians. Default: 1.0
-			hkReal m_fov;
+			hkSimdReal m_fov;
 
 			/// m_velocity [m/sec] defines the velocity for which this parameter set gets a weight of 1.0f. Default: 0.0.
 			/// Normally the hkReal parameters are interpolated from two parameter sets.
@@ -43,7 +43,7 @@ class hkp1dAngularFollowCamCinfo
 			///   - velocities < 10 Set0 is used.
 			///   - velocities 10-20 Set0 and Set1 are interpolated
 			///   - velocities >20 Set1 is used
-			hkReal m_velocity;
+			hkSimdReal m_velocity;
 			
 
 			/// This parameter defines the magnitude of the influence of the velocity for the camera direction. Default 0.01.
@@ -52,12 +52,12 @@ class hkp1dAngularFollowCamCinfo
 			/// direction. So this parameter is a factor to the current velocity
 			/// to be added to the direction of the car to calculate the ideal
 			/// camera direction.
-			hkReal m_speedInfluenceOnCameraDirection;
+			hkSimdReal m_speedInfluenceOnCameraDirection;
 		
 			/// The angular speed the camera follows the car. Default 4.0
 			/// m_angularRelaxation is used to make the yaw angle of the camera follow
 			/// the direction of the car. Values from 1.0f to 10.0f are a good choice
-			hkReal m_angularRelaxation;
+			hkSimdReal m_angularRelaxation;
 
 			/// Construct with default values
 			CameraSet();
@@ -65,21 +65,21 @@ class hkp1dAngularFollowCamCinfo
 
 	public:
 
-		/// An extra angular add-on to the yaw angle (needed if the internal angle calculation has an offset)
-		hkReal m_yawCorrection;
+		/// An extra angular add-on to the yaw angle (needed if the internal angle calculation has an offset). Default 0
+		hkSimdReal m_yawCorrection;
 
-		/// This member can be set to -1.0f (instead of 1.0f) to reverse the camera yaw angle
-		hkReal m_yawSignCorrection;
+		/// This member can be set to -1.0f (instead of 1.0f) to reverse the camera yaw angle. Default 1
+		hkSimdReal m_yawSignCorrection;
 
-		/// A normalized vector pointing up in world space.
+		/// A normalized vector pointing up in world space. Default (0,0,1)
 		hkVector4 m_upDirWS;
 
-		/// A normalized vector pointing forward in the local space of the rigid body
+		/// A normalized vector pointing forward in the local space of the rigid body. Default (0,1,0)
 		hkVector4 m_rigidBodyForwardDir;
 
 		/// Two parameters sets for the car values.
 		/// Depending on the velocity of the car, the parameters actually
-		/// used are calculated by interpolating between these two sets
+		/// used are calculated by interpolating linearly between these two sets
 		/// \verbatim
 		/// using the following formula:
 		/// hkReal f1 = min (1.0f, current_velocity / set[1].m_velocity);
@@ -87,14 +87,13 @@ class hkp1dAngularFollowCamCinfo
 		/// set = f0 * m_set[0] + f1 * m_set[1]
 		/// \endverbatim
 		CameraSet m_set[2];
-		
 
 };
 
 #endif /* HK_1D_ANGULAR_FOLLOW_COM_CINFO */
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

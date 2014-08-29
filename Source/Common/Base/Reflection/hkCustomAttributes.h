@@ -9,11 +9,11 @@
 #define HK_BASE_CUSTOM_ATTRIBUTE_H
 
 
-extern const class hkClass hkCustomAttributesAttributeClass;
+extern HK_EXPORT_COMMON const class hkClass hkCustomAttributesAttributeClass;
 
-extern const class hkClass hkCustomAttributesClass;
+extern HK_EXPORT_COMMON const class hkClass hkCustomAttributesClass;
 
-class hkCustomAttributes
+class HK_EXPORT_COMMON hkCustomAttributes
 {
 	public:
 
@@ -49,7 +49,7 @@ class hkCustomAttributes
 #endif // HK_BASE_CUSTOM_ATTRIBUTE_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

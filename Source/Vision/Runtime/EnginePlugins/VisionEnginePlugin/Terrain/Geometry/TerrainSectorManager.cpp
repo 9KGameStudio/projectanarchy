@@ -751,13 +751,13 @@ void VTerrainSectorManager::RenderDecoration(VTerrainVisibilityCollectorComponen
     if (pThisModel!=pLastModel)
     {
       if (pLastModel && pLastModel->SupportsContextType(eContextType))
-        pLastModel->RenderBatch(&infoComp,&pInst[iStart],i-iStart, eRenderMode);
+        pLastModel->RenderBatch(&infoComp,&pInst[iStart],i-iStart, hkvVec3::ZeroVector(), eRenderMode);
       iStart = i;
       pLastModel = pThisModel;
     }
   }
   if (pLastModel && pLastModel->SupportsContextType(eContextType))
-    pLastModel->RenderBatch(&infoComp, &pInst[iStart],iDecoCount-iStart, eRenderMode);
+    pLastModel->RenderBatch(&infoComp, &pInst[iStart],iDecoCount-iStart, hkvVec3::ZeroVector(), eRenderMode);
 
   #if defined(_VR_DX11)
     VisRenderStates_cl::SetVSConstantBuffer(VTERRAIN_CB_GLOBALS,NULL);
@@ -776,6 +776,7 @@ void VTerrainSectorManager::BeginVisibilityUpdate(VTerrainVisibilityCollectorCom
     VISION_PROFILE_FUNCTION(PROFILING_VISIBILITY_STARTVISIBILITY);
 
     float fLODScale = infoComp.m_pCollector->GetLODReferenceRenderContext()->GetLODDistanceScaling();
+    VASSERT(fLODScale>=0.f);
     float fDetail = m_bForceFullLOD ? 0.f : m_fLODScaling;
     int hint = infoComp.m_pCollector->GetSourceContextUsageHint() & VIS_CONTEXTUSAGE_TYPEENUMMASK;
     infoComp.m_fLODBias = (hint==VIS_CONTEXTUSAGE_MIRROR) ? m_fMirrorLODBias : 0.f;
@@ -792,6 +793,7 @@ void VTerrainSectorManager::BeginVisibilityUpdate(VTerrainVisibilityCollectorCom
       float fSpacingAtDist = hkvMath::Max(m_Config.m_vSampleSpacing.x,m_Config.m_vSampleSpacing.y);
       infoComp.m_fSectorDistLODMult = (fDetail>0.f) ? fTweak/(fSpacingAtDist*fDetail) : 0.f;
     }
+    VASSERT(infoComp.m_fSectorDistLODMult>=0.f);
 
     VTerrainVisibilityInfo &info(infoComp.m_VisibilityInfo);
     info.Set(infoComp.m_pCollector,m_Config);
@@ -967,7 +969,7 @@ void VTerrainSectorManager::EndVisibilityUpdate(VTerrainVisibilityCollectorCompo
             continue;
 
           // in editor mode, there might be additional decoration to render, i.e. while painting:
-          #ifdef WIN32
+          #ifdef _VISION_WIN32
           if (pSector->m_bHasAdditionalDecoration)
           {
             int iAdditionalCount;
@@ -1344,7 +1346,7 @@ VCompiledEffect* VTerrainSectorManager::GetTerrainEffect()
     const bool bUseLightMapping = m_pTerrain->m_Config.m_bUseLightMapping &&
       Vision::RenderLoopHelper.HasLightmaps();
 
-#if ( defined(WIN32) && !defined( HK_ANARCHY ) ) || defined (_VISION_XENON) || defined (_VISION_PS3) || defined(_VISION_WIIU)
+#if ( defined(_VISION_WIN32) && !defined( HK_ANARCHY ) ) || defined (_VISION_XENON) || defined (_VISION_PS3) || defined(_VISION_WIIU)
     BOOL bUseDeferred = Vision::Renderer.IsRendererNodeOfType(V_RUNTIME_CLASS(VDeferredRenderingSystem));
     if (bUseDeferred)
     {
@@ -1373,7 +1375,7 @@ VCompiledEffect* VTerrainSectorManager::GetTerrainEffect()
     }
     else	
 
-#elif defined(_VISION_PSP2) || defined(_VISION_MOBILE) || ( defined( WIN32 ) && defined( HK_ANARCHY ) )
+#elif defined(_VISION_PSP2) || defined(_VISION_MOBILE) || defined(_VISION_NACL) || ( defined( _VISION_WIN32 ) && defined( HK_ANARCHY ) )
     // No deferred rendering
 #else
   #error Undefined platform!
@@ -1455,7 +1457,7 @@ VTerrainConstantBufferGlobals *VTerrainSectorManager::GetGlobalsConstantBuffer()
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

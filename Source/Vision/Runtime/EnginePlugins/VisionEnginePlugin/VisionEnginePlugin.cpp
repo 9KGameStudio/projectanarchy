@@ -27,7 +27,7 @@
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/Effects/MobileWater.hpp>
 
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/GUI/VMenuIncludes.hpp>
-#include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Input/VStringInputMap.hpp>
+#include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Input/VStringInputMapManager.hpp>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Entities/_AnimEntity.hpp>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Entities/_DanglingEntity.hpp>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Entities/PathCameraEntity.hpp>
@@ -67,13 +67,21 @@
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Components/VLightClippingVolumeComponent.hpp>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/RenderingHelpers/ScratchTexturePool.hpp>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/RenderingHelpers/TimeOfDay.hpp>
-#include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Scene/VSceneExporter.hpp>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Terrain/Geometry/TerrainDecorationGroup.hpp>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Terrain/Geometry/SectorVisibilityZone.hpp>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/PathRendering/VCablePathRenderer.hpp>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/PathRendering/VDebugPathRenderer.hpp>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/PathRendering/VPathRenderingData.hpp>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Input/VFreeCamera.hpp>
+#include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/Effects/VLightShafts.hpp>
+
+#if defined(_VISION_WIN32)
+  #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Scene/VSceneExporter.hpp>
+#endif
+
+#if !defined(_VISION_PSP2)
+  #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/Postprocessing/FXAA.hpp>
+#endif
 
 #if !defined( HK_ANARCHY )
   #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/ForwardRenderer/ForwardRenderer.hpp>
@@ -86,10 +94,9 @@
   #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/Effects/Water.hpp>
   #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/Effects/SkinShading/SkinTransmittance.hpp>
 
-  #if !defined(_VISION_MOBILE)
+  #if !defined(_VISION_MOBILE) && !defined(_VISION_NACL)
     #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/Effects/VProjectedDecal.hpp>
     #if !defined(_VISION_PSP2)
-      #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/Postprocessing/FXAA.hpp>
       #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/Postprocessing/ToneMappingAdaptive.hpp>
     #endif
     #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/Postprocessing/VGlobalFogPostprocess.hpp>
@@ -98,7 +105,7 @@
 
 #endif
 
-#if defined(WIN32) || defined(_VISION_MOBILE) || defined(_VISION_PSP2)
+#if defined(_VISION_WIN32) || defined(_VISION_MOBILE) || defined(_VISION_PSP2)
   #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/MobileForwardRenderer/VMobileForwardRenderer.hpp>
   #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/ShadowMapping/VMobileShadowMapComponentSpotDirectional.hpp>
 #endif
@@ -154,7 +161,7 @@ VEXPORT IVisPlugin_cl* GetEnginePlugin()
 
 /////////////////////////////////////////////////////////////////////////////
 
-#if !defined(_VISION_MOBILE) && !defined( HK_ANARCHY )
+#if !defined(_VISION_MOBILE) && !defined(_VISION_NACL) && !defined( HK_ANARCHY )
 // A serialization binder to convert old VDeferredShadingDepthFog instances to new VGlobalFogPostprocess instances
 class DepthFogBinder : public IVSerializationBinder
 {
@@ -185,7 +192,7 @@ DepthFogBinder g_DepthFogSerializationBinder;
 
 void VisionEnginePlugin_cl::OnInitEnginePlugin()
 {
-  #if !defined(_VISION_MOBILE) && !defined( HK_ANARCHY )
+  #if !defined(_VISION_MOBILE) && !defined(_VISION_NACL) && !defined( HK_ANARCHY )
   // Register the serialization binder
   g_DepthFogSerializationBinder.SetOldBinder(Vision::GetTypeManager()->GetSerializationBinder());
   Vision::GetTypeManager()->SetSerializationBinder(&g_DepthFogSerializationBinder);
@@ -210,7 +217,6 @@ void VisionEnginePlugin_cl::OnInitEnginePlugin()
   FORCE_LINKDYNCLASS(DanglingEntity_cl);
   FORCE_LINKDYNCLASS(PathCameraEntity);
   FORCE_LINKDYNCLASS(CameraPositionEntity);
-  FORCE_LINKDYNCLASS(StaticCollisionEntity_cl);
   FORCE_LINKDYNCLASS(TriggerBoxEntity_cl);
   FORCE_LINKDYNCLASS(TriggerDoorEntity_cl);
   FORCE_LINKDYNCLASS(VBillboardGroupInstance);
@@ -231,8 +237,9 @@ void VisionEnginePlugin_cl::OnInitEnginePlugin()
   FORCE_LINKDYNCLASS(VPostProcessGlow);
   FORCE_LINKDYNCLASS(VFreeCamera);
   FORCE_LINKDYNCLASS(VisMouseCamera_cl); // serialization fall back to VFreeCamera
+  FORCE_LINKDYNCLASS(VLightShafts);
 
-#if (defined (WIN32) && !defined(_VISION_MOBILE) ) || defined (_VISION_XENON) || defined (_VISION_PS3) || defined(_VISION_PSP2) || defined(_VISION_WIIU)
+#if (defined (_VISION_WIN32) && !defined(_VISION_MOBILE) ) || defined (_VISION_XENON) || defined (_VISION_PS3) || defined(_VISION_PSP2) || defined(_VISION_WIIU)
 
 #if !defined( HK_ANARCHY )
   // VolumetricShadowCone
@@ -274,8 +281,8 @@ void VisionEnginePlugin_cl::OnInitEnginePlugin()
   FORCE_LINKDYNCLASS(VLightClippingVolumeComponent);
   FORCE_LINKDYNCLASS(VTerrainDecorationGroup);
 
-  //init named trigger system
-  VStringInputMap::OneTimeInit();
+  // VStringInputMap
+  VStringInputMapManager::GlobalManager().OneTimeInit();
 
   // Scratch texture pool
   ScratchTexturePool_cl::GlobalManager().OneTimeInit();
@@ -295,7 +302,7 @@ void VisionEnginePlugin_cl::OnInitEnginePlugin()
 #endif
 
   // vForge scene exporter
-#ifdef WIN32
+#ifdef _VISION_WIN32
   if (Vision::Editor.IsInEditor())
     Vision::Editor.SetExporterFactory(VSceneExporterFactory::GetFactory());
 #endif
@@ -315,11 +322,11 @@ void VisionEnginePlugin_cl::OnInitEnginePlugin()
 #error Undefined platform!
 #endif
 
-#if !defined(_VISION_MOBILE) && !defined(_VISION_PSP2) && !defined( HK_ANARCHY )
+#if !defined(_VISION_PSP2)
   FORCE_LINKDYNCLASS(VPostProcessFXAA);
 #endif
 
-#if defined(WIN32) || defined(_VISION_MOBILE) || defined(_VISION_PSP2)
+#if defined(_VISION_WIN32) || defined(_VISION_MOBILE) || defined(_VISION_PSP2)
   FORCE_LINKDYNCLASS(VMobileForwardRenderingSystem);
   FORCE_LINKDYNCLASS(VMobileShadowMapComponentSpotDirectional);
 #endif
@@ -370,7 +377,7 @@ void VisionEnginePlugin_cl::OnInitEnginePlugin()
   FORCE_LINKDYNCLASS(VMobileWaterShader);
   VMobileWaterManager::GlobalManager().OneTimeInit();
 
-#if ( defined(WIN32) && !defined( HK_ANARCHY ) ) || defined(_VISION_XENON) || defined (_VISION_PS3) || defined (_VISION_WIIU)
+#if ( defined(_VISION_WIN32) && !defined( HK_ANARCHY ) && !defined( _VISION_WINRT ) ) || defined(_VISION_XENON) || defined (_VISION_PS3) || defined (_VISION_WIIU)
   // Projected decals
   VProjectedDecalManager::GlobalManager().OneTimeInit();
 #endif
@@ -386,7 +393,7 @@ void VisionEnginePlugin_cl::OnDeInitEnginePlugin()
   VisParticleGroupManager_cl::GlobalManager().OneTimeDeInit();
   VWallmarkManager::GlobalManager().OneTimeDeInit();
 
-#if ( defined (WIN32) && !defined(_VISION_MOBILE)) || defined (_VISION_XENON) || defined (_VISION_PS3) || defined(_VISION_PSP2) || defined(_VISION_WIIU)
+#if ( defined (_VISION_WIN32) && !defined(_VISION_MOBILE)) || defined (_VISION_XENON) || defined (_VISION_PS3) || defined(_VISION_PSP2) || defined(_VISION_WIIU)
 
 #if !defined( HK_ANARCHY )
   //Volumetric cone
@@ -411,7 +418,7 @@ void VisionEnginePlugin_cl::OnDeInitEnginePlugin()
 #endif
 
   // vForge scene exporter
-#ifdef WIN32
+#ifdef _VISION_WIN32
   if (Vision::Editor.IsInEditor() && Vision::Editor.GetExporterFactory()==VSceneExporterFactory::GetFactory())
     Vision::Editor.SetExporterFactory(NULL);
 #endif
@@ -477,20 +484,20 @@ void VisionEnginePlugin_cl::OnDeInitEnginePlugin()
   // Custom Volume Objects
   VCustomVolumeManager::GlobalManager().OneTimeDeInit();
 
-  //deregister named input maps
-  VStringInputMap::OneTimeDeInit();
+  // VStringInputMap
+  VStringInputMapManager::GlobalManager().OneTimeDeInit();
 
   // Mobile water
   VMobileWaterManager::GlobalManager().OneTimeDeInit();
 
-#if ( defined(WIN32) && !defined( HK_ANARCHY ) ) || defined(_VISION_XENON) || defined (_VISION_PS3) || defined (_VISION_WIIU)
+#if ( defined(_VISION_WIN32) && !defined( HK_ANARCHY ) && !defined( _VISION_WINRT ) ) || defined(_VISION_XENON) || defined (_VISION_PS3) || defined (_VISION_WIIU)
   // Projected decals
   VProjectedDecalManager::GlobalManager().OneTimeDeInit();
 #endif
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140710)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

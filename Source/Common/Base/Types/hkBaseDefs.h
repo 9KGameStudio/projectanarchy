@@ -51,12 +51,14 @@
 #	define HK_ARCH_SUPPORTS_INT64
 #elif defined(__i386__) || defined(_M_IX86)
 #	define HK_ARCH_IA32
+#	define HK_ARCH_INTEL
 #	define HK_ENDIAN_LITTLE 1
 #	define HK_ENDIAN_BIG	0
 #	define HK_POINTER_SIZE 4
 #	define HK_NUM_SIMD_REGISTERS 8
 #elif defined(_M_AMD64) || defined(_M_X64) || defined(__amd64) || defined(__x86_64)
 #	define HK_ARCH_X64
+#	define HK_ARCH_INTEL
 #	define HK_ENDIAN_LITTLE 1
 #	define HK_ENDIAN_BIG	0
 #	define HK_POINTER_SIZE 8
@@ -106,9 +108,10 @@
 #endif
 
 #if defined(HK_ARCH_PS3) || defined(HK_ARCH_PS3SPU)
-# include <sdk_version.h>
+# include <sdk_version.h> 
 # define HK_CELL_SDK_VERSION CELL_SDK_VERSION
 # define HK_COMPILER_HAS_INTRINSICS_ALTIVEC
+# define HK_STD_NAMESPACE std
 #endif
 
 #ifndef HK_NATIVE_ALIGN_CHECK 
@@ -128,10 +131,12 @@
 #elif defined(_XBOX)
 #   if defined(HK_ARCH_PPC)
 #		define HK_PLATFORM_XBOX360
+#		define HK_EXPENSIVE_LHS
+#		define HK_EXPENSIVE_FLOAT_IF
 #		define HK_COMPILER_HAS_INTRINSICS_ALTIVEC
 #		undef HK_NUM_SIMD_REGISTERS
 #		define HK_NUM_SIMD_REGISTERS 64
-//#		define HK_PASS_IN_REG __declspec( passinreg )
+#		define HK_PASS_IN_REG __declspec( passinreg )
 #	else
 #		define HK_PLATFORM_XBOX
 #   endif
@@ -204,6 +209,7 @@
 #elif defined(HK_PLATFORM_TIZEN) || defined(__tizen__) || defined(TIZEN)
 #	ifndef HK_PLATFORM_TIZEN
 #		define HK_PLATFORM_TIZEN
+#		define HK_STD_NAMESPACE std
 //		#	if defined(HK_ARCH_ARM_V7) && !defined(HK_DISABLE_NEON)
 //		#		define HK_COMPILER_HAS_INTRINSICS_NEON 1
 //		#	endif
@@ -222,17 +228,24 @@
 #	include <cafe.h>
 #	include <ppc_ghs.h> // allow use of intrinsics throughout Havok code
 #	define HK_PLATFORM_WIIU
+#	if !defined(HK_ENABLE_PAIRED_SINGLE_OPTS)
 #		define HK_ENABLE_PAIRED_SINGLE_OPTS
-#		define HK_VECTOR_PARTS_MUST_BE_VALID
+#	endif
+#	define HK_VECTOR_PARTS_MUST_BE_VALID
 #	define HK_PLATFORM_IS_CONSOLE 1
 #elif defined(GEKKO) || defined(__PPCGEKKO__) //Also have custom added HK_REVOLUTION compiler switch
 #	define HK_PLATFORM_GC
 #	if defined(RVL_OS)
-#		define HK_ENABLE_PAIRED_SINGLE_OPTS
+#		if !defined(HK_ENABLE_PAIRED_SINGLE_OPTS)
+#			define HK_ENABLE_PAIRED_SINGLE_OPTS
+#		endif
 #		define HK_PLATFORM_RVL
+#		define HK_STD_NAMESPACE	std
 #	endif
 #	define HK_PLATFORM_IS_CONSOLE 1
 #elif defined(__PPU__) && defined(__CELLOS_LV2__)
+#	define HK_EXPENSIVE_LHS
+#	define HK_EXPENSIVE_FLOAT_IF
 #	define HK_PLATFORM_PS3
 #	define HK_PLATFORM_PS3_PPU
 #	define HK_PLATFORM_IS_CONSOLE 1
@@ -250,6 +263,7 @@
 #	define HK_PLATFORM_PSVITA 1
 #	define HK_PLATFORM_IS_CONSOLE 1
 #	define HK_COMPILER_HAS_INTRINSICS_NEON 1
+#	define HK_STD_NAMESPACE std
 #else
 #	error Could not autodetect target platform.
 #endif
@@ -265,94 +279,8 @@
 #endif
 
 #if defined(HK_PLATFORM_PS4)
-# include <sdk_version.h>
+# include <sdk_version.h> 
 # define HK_PS4_SDK_VERSION ORBIS_SDK_VERSION
-#endif
-
-//
-// types
-//
-
-/// hkFloat is provided if floats are explicitly required.
-typedef float  hkFloat32;
-/// hkDouble is provided if doubles are explicit required.
-typedef double hkDouble64;
-
-/// Signed 8 bit integer
-typedef signed char		hkChar;
-/// Signed 8 bit integer
-typedef signed char		hkInt8;
-/// Signed 16 bit integer
-typedef signed short	hkInt16;
-/// Signed 32 bit integer
-typedef signed int		hkInt32;
-
-/// Unsigned 8 bit integer
-typedef unsigned char	hkUchar;
-/// Unsigned 8 bit integer
-typedef unsigned char	hkUint8;
-/// Unsigned 16 bit integer
-typedef unsigned short	hkUint16;
-/// Unsigned 32 bit integer
-typedef unsigned int	hkUint32;
-
-typedef hkFloat32 hkFloat32;
-typedef hkDouble64 hkDouble64;
-#define HK_ALIGN_FLOAT HK_ALIGN16
-#define HK_ALIGN_DOUBLE HK_ALIGN32
-#define HK_FLOAT_ALIGNMENT 16
-#define HK_DOUBLE_ALIGNMENT 32
-#define HK_FLOAT_SIZE 4
-#define HK_DOUBLE_SIZE 8
-
-/// hkReal is the default floating point type.
-#if defined(HK_REAL_IS_DOUBLE)
-typedef hkDouble64 hkReal;
-#define HK_ALIGN_REAL HK_ALIGN_DOUBLE
-#define HK_REAL_ALIGNMENT HK_DOUBLE_ALIGNMENT
-#define HK_REAL_SIZE HK_DOUBLE_SIZE
-#else
-typedef hkFloat32 hkReal;
-#define HK_ALIGN_REAL HK_ALIGN_FLOAT
-#define HK_REAL_ALIGNMENT HK_FLOAT_ALIGNMENT
-#define HK_REAL_SIZE HK_FLOAT_SIZE
-#endif
-
-#if defined(HK_ARCH_PSP)
-	typedef unsigned int hkUlong;
-	typedef signed int hkLong;
-#elif defined(HK_ARCH_X64)
-#	if defined(HK_PLATFORM_X64)
-		typedef unsigned __int64 hkUlong;  // MS- specific
-		typedef signed __int64 hkLong;  // MS- specific
-#	else
-		typedef unsigned long hkUlong; // LINUX64
-		typedef signed long hkLong; // LINUX64
-#	endif
-#elif defined(HK_COMPILER_MSVC) && (_MSC_VER >= 1300)
-	typedef unsigned long __w64 hkUlong; // VC7.0 or higher, 64bit warnings
-	typedef signed long __w64 hkLong; 
-#else
-	typedef unsigned long hkUlong;
-	typedef signed long hkLong;
-#endif
-
-
-#define HK_CPU_PTR( A ) A
-
-#if defined(__GNUC__) && (__GNUC__ >= 3)
-	typedef	__builtin_va_list hk_va_list;
-#elif defined(HK_COMPILER_ARMCC)
-	#include <stdarg.h>
-	typedef	va_list hk_va_list;
-#else
-	typedef void* hk_va_list;
-#endif
-
-
-
-#if defined( HK_PLATFORM_PS3_SPU) 
-#	include <spu_intrinsics.h>
 #endif
 
 //
@@ -440,6 +368,26 @@ typedef hkFloat32 hkReal;
 #	define HK_BREAKPOINT(ID) ((*((int*)0)) = ID);
 #endif
 
+// Utility structure, for use with the HK_DEBUG_ONLY_MEMBER macro. This class
+// should not be used directly.
+template<typename T>
+struct hkDebugOnlyMember
+{
+	hkDebugOnlyMember() : member() {}
+private:
+	T member;
+};
+
+// Debug-only members, for use with state assertions. All such members should
+// be declared with //+serialized(false), if declared in a reflected class.
+
+#if defined(HK_DEBUG) || defined(__HAVOK_PARSER__) // In debug mode, or for reflection, declare normally
+#    define HK_DEBUG_ONLY_MEMBER(TYPE, NAME) TYPE NAME
+#else // In release mode, declare as inaccessible padding, to prevent accidental use
+#    define HK_DEBUG_ONLY_MEMBER(TYPE, NAME) hkDebugOnlyMember<TYPE> NAME
+#endif
+
+
 #define HK_NULL 0
 
 #if __cplusplus >= 201103
@@ -513,7 +461,7 @@ typedef hkFloat32 hkReal;
 
 #	define HK_RESTRICT __restrict
 
-#	if defined( HK_COMPILER_SNC ) && !( defined( HK_PLATFORM_GC ) )
+#	if (defined( HK_COMPILER_GCC ) || defined( HK_COMPILER_SNC )) && !( defined( HK_PLATFORM_GC ) )
 #		define HK_VERY_UNLIKELY(EXPR) __builtin_expect(bool(EXPR),0)
 #		define HK_VERY_LIKELY(EXPR) __builtin_expect(bool(EXPR),1)
 #	endif
@@ -590,6 +538,8 @@ typedef hkFloat32 hkReal;
 		typedef unsigned long hk_size_t;
 #	elif ( defined(HK_PLATFORM_LINUX) && defined(HK_ARCH_X64) && !defined(HK_PLATFORM_NACL) ) || (defined(__GCCXML__) && defined(__x86_64)) // LINUX64 but not NACL64
 		typedef long unsigned int hk_size_t;
+# elif defined(HK_PLATFORM_WIN32) && defined(HK_PLATFORM_X64)
+		typedef unsigned long long hk_size_t;
 #	else
 		typedef unsigned hk_size_t;
 #	endif
@@ -614,7 +564,7 @@ typedef hkFloat32 hkReal;
 #	define HK_DEPRECATED /* nothing */
 #	define HK_DEPRECATED2(MSG) /* nothing */
 // Section attribute. Placing each function in a different section allows the linker to dead-strip them individually
-#if !defined(HK_PLATFORM_IOS) && !defined(HK_PLATFORM_MAC386) && !defined(HK_PLATFORM_PSVITA) && !defined(HK_PLATFORM_WIIU) && !defined (HK_PS3_PRX_BUILD)
+#if !defined(HK_PLATFORM_IOS) && !defined(HK_PLATFORM_MAC386) && !defined(HK_PLATFORM_PSVITA) && !defined(HK_PLATFORM_WIIU) && !defined(HK_PS3_PRX_BUILD) && !defined(HK_PLATFORM_ANDROID)
 #	define HK_INIT_FUNCTION2(FN, SECTION_SUFFIX)	__attribute__ ((section (".text_init." #SECTION_SUFFIX))) FN
 #	define HK_INIT_FUNCTION(FN)						HK_INIT_FUNCTION2(FN, FN)
 #endif
@@ -702,6 +652,15 @@ typedef hkFloat32 hkReal;
 #		error No defs for this architecture
 #	endif
 // calling convention
+	#	if defined(HK_DYNAMIC_DLL)
+	#		if defined(HK_COMMON_BUILD) // DLL export for base etc
+	#			define HK_EXPORT_COMMON __declspec(dllexport)
+	#			define HK_EXPORT_COMMON_TEMPLATE_SPECIALIZATION 
+	#		else // Being used in a non common build, but still a dll
+	#			define HK_EXPORT_COMMON __declspec(dllimport)
+	#			define HK_EXPORT_COMMON_TEMPLATE_SPECIALIZATION extern // see http://support.microsoft.com/kb/168958
+	#		endif
+	#	endif
 #	ifndef HK_COMPILER_INTEL
 #		define HK_CALL __cdecl
 #		define HK_FAST_CALL __fastcall
@@ -772,6 +731,24 @@ typedef hkFloat32 hkReal;
 
 #ifndef HK_NATIVE_ALIGNMENT
 #define HK_NATIVE_ALIGNMENT 16
+#endif
+
+// Product not in DLL mode (as yet)
+#define HK_EXPORT_BEHAVIOR
+#define HK_EXPORT_CLOTH		
+#define HK_EXPORT_PHYSICS_2012 
+#define HK_EXPORT_DESTRUCTION
+#define HK_EXPORT_DESTRUCTION_2012		
+#define HK_EXPORT_FX_PHYSICS
+
+#ifndef HK_EXPORT_COMMON 
+	#define HK_EXPORT_COMMON 
+	#define HK_EXPORT_COMMON_TEMPLATE_SPECIALIZATION
+	#ifndef HK_DYNAMIC_DLL // then not in a DLL build at all. Define all products to none so that no impact in code to existing setups
+		#define HK_EXPORT_ANIMATION
+		#define HK_EXPORT_PHYSICS
+		#define HK_EXPORT_AI
+	#endif
 #endif
 
 #if defined(HK_PLATFORM_SIM_PPU) || defined(HK_PLATFORM_SIM_SPU)
@@ -857,6 +834,13 @@ typedef hkFloat32 hkReal;
 #	define HK_INIT_FUNCTION2(FN, SECTION_SUFFIX) FN
 #endif
 
+//
+// HK_STD_NAMESPACE definition
+//
+#ifndef HK_STD_NAMESPACE 	// nothing
+#	define HK_STD_NAMESPACE 
+#endif
+
 // VS 2008 x64 compiler bug workaround
 #if defined ( HK_COMPILER_MSVC ) &&( _MSC_VER == 1500 ) && defined ( HK_ARCH_X64 ) && defined ( HK_COMPILER_OPTIMIZATIONS_ON )
 #		define HK_DISABLE_OPTIMIZATION_VS2008_X64 __pragma(optimize ("g", off))
@@ -866,10 +850,97 @@ typedef hkFloat32 hkReal;
 #		define HK_RESTORE_OPTIMIZATION_VS2008_X64  
 #endif
 
+//
+// types
+//
+
+/// hkFloat is provided if floats are explicitly required.
+typedef float  hkFloat32;
+/// hkDouble is provided if doubles are explicit required.
+typedef double hkDouble64;
+
+/// Signed 8 bit integer
+typedef signed char		hkChar;
+/// Signed 8 bit integer
+typedef signed char		hkInt8;
+/// Signed 16 bit integer
+typedef signed short	hkInt16;
+/// Signed 32 bit integer
+typedef signed int		hkInt32;
+
+/// Unsigned 8 bit integer
+typedef unsigned char	hkUchar;
+/// Unsigned 8 bit integer
+typedef unsigned char	hkUint8;
+/// Unsigned 16 bit integer
+typedef unsigned short	hkUint16;
+/// Unsigned 32 bit integer
+typedef unsigned int	hkUint32;
+
+#define HK_ALIGN_FLOAT HK_ALIGN16
+#define HK_ALIGN_DOUBLE HK_ALIGN32
+#define HK_FLOAT_ALIGNMENT 16
+#define HK_DOUBLE_ALIGNMENT 32
+#define HK_FLOAT_SIZE 4
+#define HK_DOUBLE_SIZE 8
+
+
+#if defined(HK_ARCH_PSP)
+typedef unsigned int hkUlong;
+typedef signed int hkLong;
+#elif defined(HK_ARCH_X64)
+#	if defined(HK_PLATFORM_X64)
+typedef unsigned __int64 hkUlong;  // MS- specific
+typedef signed __int64 hkLong;  // MS- specific
+#	else
+typedef unsigned long hkUlong; // LINUX64
+typedef signed long hkLong; // LINUX64
+#	endif
+#elif defined(HK_COMPILER_MSVC) && (_MSC_VER >= 1300)
+typedef unsigned long __w64 hkUlong; // VC7.0 or higher, 64bit warnings
+typedef signed long __w64 hkLong; 
+#else
+typedef unsigned long hkUlong;
+typedef signed long hkLong;
+#endif
+
+
+#define HK_CPU_PTR( A ) A
+
+#if defined(__GNUC__) && (__GNUC__ >= 3)
+typedef	__builtin_va_list hk_va_list;
+#elif defined(HK_COMPILER_ARMCC)
+#include <stdarg.h>
+typedef	va_list hk_va_list;
+#else
+typedef void* hk_va_list;
+#endif
+
+
+
+#if defined( HK_PLATFORM_PS3_SPU) 
+#	include <spu_intrinsics.h>
+#endif
+/// hkReal is the default floating point type.
+#if defined(HK_REAL_IS_DOUBLE)
+#	if defined (HK_COMPILER_GCC) && defined (HK_ARCH_IA32)
+typedef HK_ALIGN8(hkDouble64) hkReal;
+#	else
+typedef hkDouble64 hkReal;
+#	endif
+#define HK_ALIGN_REAL HK_ALIGN_DOUBLE
+#define HK_REAL_ALIGNMENT HK_DOUBLE_ALIGNMENT
+#define HK_REAL_SIZE HK_DOUBLE_SIZE
+#else
+typedef hkFloat32 hkReal;
+#define HK_ALIGN_REAL HK_ALIGN_FLOAT
+#define HK_REAL_ALIGNMENT HK_FLOAT_ALIGNMENT
+#define HK_REAL_SIZE HK_FLOAT_SIZE
+#endif
 #endif // HKBASE_HKBASEDEFS_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -16,7 +16,7 @@
 /// (with the hkFinishLoadedObjectFlag) to "finish" the object
 /// and make it ready to use. This class maintains a map of
 /// class names to finishing functions.
-class hkTypeInfoRegistry : public hkReferencedObject, public hkSingleton<hkTypeInfoRegistry>
+class HK_EXPORT_COMMON hkTypeInfoRegistry : public hkReferencedObject, public hkSingleton<hkTypeInfoRegistry>
 {
 	public:
 		HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE);
@@ -104,7 +104,7 @@ HK_SINGLETON_SPECIALIZATION_DECL(hkTypeInfoRegistry);
 #endif // HK_SERIALIZE_LOADED_OBJECT_REGISTRY_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

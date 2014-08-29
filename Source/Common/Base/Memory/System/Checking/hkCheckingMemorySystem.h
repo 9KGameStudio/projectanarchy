@@ -27,7 +27,7 @@
 	/// This class owns several proxy allocators which forward requests
 	/// back to central methods along with a context indicating where the
 	/// request came from.
-class hkCheckingMemorySystem : public hkDebugMemorySystem
+class HK_EXPORT_COMMON hkCheckingMemorySystem : public hkDebugMemorySystem
 {
 	//+hk.MemoryTracker(ignore=True)
 	public:
@@ -256,7 +256,7 @@ class hkCheckingMemorySystem : public hkDebugMemorySystem
 #endif // HKBASE_hkCheckingMemorySystem_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -21,8 +21,7 @@ inline int HK_CALL hkaiGetIndexFromPacked( hkaiPackedKey key )
 {
 	HK_ASSERT(0x583f16bc, key != HKAI_INVALID_PACKED_KEY );
 
-	const hkUint32 indexMask = (1<<HKAI_NUM_BITS_FOR_INDEX) - 1;
-	int idx = (int) (key & indexMask);
+	int idx = (int) (key & HKAI_INDEX_FROM_KEY_MASK);
 	return idx;
 }
 
@@ -30,16 +29,15 @@ inline hkaiPackedKey HK_CALL hkaiGetPackedKey( hkaiRuntimeIndex sectionId, int i
 {
 	HK_ASSERT(0x59640c0c, sectionId >= 0 && sectionId < (int) HKAI_MAX_NUM_SECTIONS);
 	HK_ASSERT(0x59640c0c, idx >= 0 && idx < (int) HKAI_MAX_NUM_EDGES);
-	hkaiPackedKey packed = ( (hkUint32) sectionId) << HKAI_NUM_BITS_FOR_INDEX | ((hkUint32) idx);
+	hkaiPackedKey packed = ( (hkaiPackedKeyStorage) sectionId) << HKAI_NUM_BITS_FOR_INDEX | ((hkaiPackedKeyStorage) idx);
 	return packed;
 }
 
 inline hkaiPackedKey HK_CALL hkaiGetOppositePackedKey( hkUint8 flags, hkaiRuntimeIndex thisRuntimeId, hkaiPackedKey storedKey)
 {
 	HK_ASSERT(0x59640c0c, thisRuntimeId >= 0 && thisRuntimeId < (int) HKAI_MAX_NUM_SECTIONS);
-	const hkUint32 indexMask = (1<<HKAI_NUM_BITS_FOR_INDEX) - 1;
-	const hkUint32 sectionBits = ( flags & HKAI_EDGE_EXTERNAL_OPPOSITE_FLAG ) ? (storedKey & ~indexMask) : (thisRuntimeId << HKAI_NUM_BITS_FOR_INDEX);
-	hkaiPackedKey packed = sectionBits | (storedKey & indexMask);
+	const hkaiPackedKeyStorage sectionBits = ( flags & HKAI_EDGE_EXTERNAL_OPPOSITE_FLAG ) ? (storedKey & ~HKAI_INDEX_FROM_KEY_MASK) : (hkInt64(thisRuntimeId) << HKAI_NUM_BITS_FOR_INDEX);
+	hkaiPackedKey packed = sectionBits | (storedKey & HKAI_INDEX_FROM_KEY_MASK);
 	return (storedKey == HKAI_INVALID_PACKED_KEY) ? HKAI_INVALID_PACKED_KEY : packed;
 }
 
@@ -51,7 +49,7 @@ inline hkaiRuntimeIndex HK_CALL hkaiGetOppositeRuntimeIndex( hkUint8 flags, hkai
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

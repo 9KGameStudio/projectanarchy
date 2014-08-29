@@ -18,7 +18,7 @@ class hkStreamWriter;
 class hkTypedUnion;
 template <typename K, typename V, typename Allocator> class hkPointerMap;
 
-extern const hkClass hkClassClass;
+extern HK_EXPORT_COMMON const hkClass hkClassClass;
 
 
 
@@ -28,7 +28,7 @@ extern const hkClass hkClassClass;
 /// class has exactly zero or one parents and may implement
 /// zero or more interfaces. An interface is a class which
 /// has virtual methods but no data members.
-class hkClass
+class HK_EXPORT_COMMON hkClass
 {
 	public:
 
@@ -127,6 +127,9 @@ class hkClass
 
 			/// Get the index of member named 'name' or -1 if not found.
 		int getMemberIndexByName(const char* name) const;
+
+			/// Case insensitive version for get member. Used by Max exporter, due to some weird max behavior regarding symbol names
+		int getMemberIndexByNameCaseInsensitive(const char* name) const;
 
 			/// Get the number of members in this class (including parent class members).
 		int getNumMembers() const;
@@ -253,7 +256,7 @@ class hkClass
 #endif // HK_BASE_CLASS_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

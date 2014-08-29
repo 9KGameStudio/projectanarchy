@@ -7,15 +7,31 @@
  */
 
 template<typename FilterType>
+void hkaiIntervalPartition::filterIntervals( FilterType & filter )
+{
+	int outputCursor = 0;
+	for(int i=0, n=m_intervals.getSize(); i<n; i++)
+	{
+		hkaiIntervalPartition::Interval interval = m_intervals[i];
+		if(filter(interval))
+		{
+			m_intervals[outputCursor++] = interval;
+		}
+	}
+
+	m_intervals.popBack(m_intervals.getSize()-outputCursor);
+}
+
+template<typename FilterType>
 void hkaiIntervalPartition::filterIntervals( FilterType const& filter )
 {
 	int outputCursor = 0;
 	for(int i=0, n=m_intervals.getSize(); i<n; i++)
 	{
-		hkaiIntervalPartition::Interval & interval = m_intervals[i];
+		hkaiIntervalPartition::Interval interval = m_intervals[i];
 		if(filter(interval))
 		{
-			m_intervals[outputCursor++] = m_intervals[i];
+			m_intervals[outputCursor++] = interval;
 		}
 	}
 
@@ -23,7 +39,7 @@ void hkaiIntervalPartition::filterIntervals( FilterType const& filter )
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

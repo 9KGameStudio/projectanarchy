@@ -35,7 +35,7 @@
     ///
     unsigned int Read(T* pTarget, unsigned int uiCount = 1)
     {
-      if (uiCount > 0)
+      if (uiCount > 0 && m_uiAvailable > 0)
       {
         // Don't read past the end of the array or past the amount of available bytes
         unsigned int uiElementsToRead = hkvMath::Min(hkvMath::Min(uiCount, Size - m_uiTail), m_uiAvailable);
@@ -146,14 +146,14 @@
     /// \brief See: VRingBuffer::Read
     bool Read(T* pTarget)
     {
-      VMutexLocker lock(m_LockMutex);
+      VScopedLock lock(m_LockMutex);
       return VRingBuffer<T, Size>::Read(pTarget);
     }
 
     /// \brief See: VRingBuffer::Write
     bool Write(T* pSource)
     {
-      VMutexLocker lock(m_LockMutex);
+      VScopedLock lock(m_LockMutex);
       return VRingBuffer<T, Size>::Write(pSource);
     }
 
@@ -256,7 +256,7 @@
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

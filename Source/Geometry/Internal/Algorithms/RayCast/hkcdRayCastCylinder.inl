@@ -45,7 +45,7 @@ HK_FORCE_INLINE hkBool32 HK_CALL hkcdRayCastCylinder(
 		hkSimdReal dotABu = vDots.getComponent<2>(); // AB * u
 
 		// If (AB * u == 0), the cylinder is perpendicular to the ray. We have an intersection only if the ray falls inside the two caps.
-		hkSimdReal invDotABu;	invDotABu.setReciprocal<HK_ACC_23_BIT,HK_DIV_SET_HIGH>(dotABu); // Prevent division by zero
+		hkSimdReal invDotABu;	invDotABu.setReciprocal<HK_ACC_RAYCAST,HK_DIV_SET_HIGH>(dotABu); // Prevent division by zero
 
 		// if (AB * u == 0) then t0 = sign(vPA * u) * Infinity, else t0 = vPA * u / dotABu
 		// tmp0 and tmp1 will be the intersection times in case the ray is perpendicular to the cylinder.
@@ -176,7 +176,7 @@ HK_FORCE_INLINE hkBool32 HK_CALL hkcdRayCastCylinder(
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

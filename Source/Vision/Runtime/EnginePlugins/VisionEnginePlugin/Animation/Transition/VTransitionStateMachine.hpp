@@ -14,11 +14,6 @@
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Animation/Transition/AnimationModule.hpp>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Animation/Transition/VTransitionBase.hpp>
 
-// File versions
-#define VTRANSITIONSTATE_MACHINE_VERSION_0  0   // Initial version
-#define VTRANSITIONSTATE_MACHINE_VERSION_1  1   // Enabled state added
-#define VTRANSITIONSTATE_MACHINE_VERSION_CURRENT  VTRANSITIONSTATE_MACHINE_VERSION_1
-
 // Transition events
 #define EVENT_TRANSITION_STARTED        1     ///< Event that is fired when a transition is started
 #define EVENT_TRANSITION_FINISHED       2     ///< Event that is fired when a transition is finished
@@ -85,7 +80,7 @@ public:
   int m_iMixerInputIndex;     ///< Mixer input index of this animation control
 
 private:
-  VISION_APIFUNC StateAnimControl_cl() {}
+  ANIMATION_IMPEXP StateAnimControl_cl() {}
   VisAnimSequence_cl *m_pCustomNextAnimSeq;
 };
 
@@ -137,11 +132,9 @@ public:
   ///
   ANIMATION_IMPEXP virtual void DisposeObject();
 
-
   ///
   /// @}
   ///
-
 
   ///
   /// @name Initialization / Deinitialization
@@ -150,34 +143,13 @@ public:
 
   ///
   /// \brief
-  ///   Default initialization of  the transition state machine.
+  ///   Manual initialization of  the transition state machine.
   ///
   ANIMATION_IMPEXP void Init();
 
   ///
   /// \brief
-  ///   Initialize the transition state machine via code
-  /// 
-  /// Use this function when creating and adding a transition state machine component via code.
-  /// 
-  /// When adding component through vForge, the artist will have specified a transition file which
-  /// will automatically be loaded by the component. A dedicated initialization of the component is
-  /// thus not necessary in that case.
-  /// 
-  /// \param pTable
-  ///   Transition table to be used by this state machine
-  /// 
-  /// \param bCreateAnimConfig
-  ///   Specifies whether the component will create an anim config for the  passed owner entity and
-  ///   set/replace this anim config on the entity. You can set this parameter to false if you want
-  ///   to manually hook the animation (accessible via GetTransitionMixer) into your entity's
-  ///   animation graph.
-  ///
-  ANIMATION_IMPEXP void Init(VTransitionTable *pTable, bool bCreateAnimConfig);
-
-  ///
-  /// \brief
-  ///   Deinitialize transition state machine by release all its references to reference counted objects
+  ///   Manual deinitialization of the transition state machine.
   ///
   ANIMATION_IMPEXP void DeInit();
 
@@ -190,14 +162,9 @@ public:
   ///
   ANIMATION_IMPEXP bool IsInitialized() const;
 
-#ifdef SUPPORTS_SNAPSHOT_CREATION
-  ANIMATION_IMPEXP virtual void GetDependencies(VResourceSnapshot &snapshot) HKV_OVERRIDE;
-#endif
-
   ///
   /// @}
   ///
-
 
   ///
   /// @name Setting and retrieving the State
@@ -230,7 +197,6 @@ public:
   ///   New animation state
   ///
   ANIMATION_IMPEXP virtual void SetState(VisAnimSequence_cl *pTargetSequence);
-  
 
   ///
   /// \brief
@@ -242,7 +208,6 @@ public:
   ///   Name of the animation that is set as new animation state
   ///
   ANIMATION_IMPEXP void SetState(const char *szName);
-  
 
   ///
   /// \brief
@@ -254,7 +219,6 @@ public:
   ///
   ANIMATION_IMPEXP bool IsBlending();
 
-
   ///
   /// \brief
   /// Checks whether an Intermediate Blending is currently being processed.
@@ -262,7 +226,6 @@ public:
   /// returns true if a intermediate blending is being processed, else false
   ///
   ANIMATION_IMPEXP bool IsIntermediateBlending(){return m_bIsIntermediateBlending;}
-
 
   ///
   /// \brief
@@ -277,7 +240,6 @@ public:
   ///
   ANIMATION_IMPEXP bool IsWaitingForSyncBlending();
 
-
   ///
   /// \brief
   ///   Gets the active state of the state machine (target animation state)
@@ -288,7 +250,6 @@ public:
   ///
   ANIMATION_IMPEXP VisAnimSequence_cl* GetActiveState();
 
-
   ///
   /// \brief
   ///   Gets inactive state of the state machine (source animation state)
@@ -298,7 +259,6 @@ public:
   ///   been initialized.
   ///
   ANIMATION_IMPEXP VisAnimSequence_cl* GetInactiveState();
-
 
   ///
   /// \brief
@@ -313,7 +273,6 @@ public:
   ///
   ANIMATION_IMPEXP VisSkeletalAnimControl_cl* GetActiveControl();
 
-
   ///
   /// \brief
   ///   Gets the animation control of the inactive animation
@@ -325,11 +284,9 @@ public:
   ///
   ANIMATION_IMPEXP VisSkeletalAnimControl_cl* GetInactiveControl();
 
-
   ///
   /// @}
   ///
-
 
   ///
   /// @name Access to Members
@@ -367,17 +324,14 @@ public:
   ///
   ANIMATION_IMPEXP VisAnimNormalizeMixerNode_cl *GetTransitionMixer() const;
 
-
   ///
   /// @}
   ///
-
 
   ///
   /// @name Event Listener
   /// @{
   ///
-
 
   ///
   /// \brief
@@ -404,7 +358,6 @@ public:
   ///
   ANIMATION_IMPEXP int AddEventListener(VisTypedEngineObject_cl* pObj);
 
-
   ///
   /// \brief
   ///   Removes a listener from the state machine
@@ -419,13 +372,11 @@ public:
   ///
   ANIMATION_IMPEXP bool RemoveEventListener(VisTypedEngineObject_cl* pObj);
 
-
   ///
   /// \brief
   ///   Removes all event listeners from the state machine
   ///
   ANIMATION_IMPEXP void RemoveAllEventListeners();
-
 
   ///
   /// \brief
@@ -443,7 +394,6 @@ public:
     return m_pEventListener.GetDataPtr()[iIndex];
   }
 
-
   ///
   /// \brief
   ///   Returns the total number of registered event listeners
@@ -455,7 +405,6 @@ public:
   {
     return m_iEventListenerCount;
   }
-
 
   ///
   /// \brief
@@ -469,7 +418,6 @@ public:
     m_bForwardAnimEvents = bEnable;
   }
 
-
   ///
   /// \brief
   ///   Determines whether the TSM is forwarding also animation events to the registered event listeners
@@ -482,91 +430,40 @@ public:
     return m_bForwardAnimEvents;
   }
 
-
   ///
   /// @}
   ///
-
 
   ///
   /// @name IVObjectComponent Virtual Overrides
   /// @{
   ///
 
-  ///
-  /// \brief
-  ///   Initializes the state machine once the deserialization is finished and the parent
-  ///   object is fully available.
-  ///
-  ANIMATION_IMPEXP virtual void OnDeserializationCallback(const VSerializationContext &context);
+  ANIMATION_IMPEXP virtual void OnDeserializationCallback(const VSerializationContext& context) HKV_OVERRIDE;
 
+  ANIMATION_IMPEXP virtual BOOL CanAttachToObject(VisTypedEngineObject_cl* pObject, VString& sErrorMsgOut) HKV_OVERRIDE;
 
-  ///
-  /// \brief
-  ///   Overridden function. Ensures that this component can only be attached to entities
-  ///   with a valid model loaded.
-  ///
-  ANIMATION_IMPEXP virtual BOOL CanAttachToObject(VisTypedEngineObject_cl *pObject, VString &sErrorMsgOut);
+  ANIMATION_IMPEXP virtual void SetOwner(VisTypedEngineObject_cl* pOwner) HKV_OVERRIDE;
 
-
-  ///
-  /// \brief
-  ///   Overridden function. Sets the new owner of the components.
-  ///
-  /// The owner of the component will typically only be set once (when the component
-  /// is added to the entity).
-  ///
-  /// SetOwner() takes care of loading the initialization/deinitialization involved
-  /// with owner changes.
-  ///
-  /// \param pOwner
-  ///   New owner of this component
-  ///
-  ANIMATION_IMPEXP virtual void SetOwner(VisTypedEngineObject_cl *pOwner);
-
-
-  ///
-  /// \brief
-  ///   Updates the the state machine for the current frame.
-  /// 
-  /// The OnThink() function takes care of all actions that are not automatically
-  /// handled by the transition mixer node. This includes special event and motion
-  /// delta handling.
-  ///
-  /// \note
-  ///   You do not have to call this function manually, since the VTransitionManager
-  ///   class will take care of this
-  ///
-  ANIMATION_IMPEXP void OnThink();
-
+#if defined(SUPPORTS_SNAPSHOT_CREATION)
+  ANIMATION_IMPEXP virtual void GetDependencies(VResourceSnapshot &snapshot) HKV_OVERRIDE;
+#endif
 
   ///
   /// @}
   ///
-
 
   ///
   /// @name Serialization
   /// @{
   ///
 
+  ANIMATION_IMPEXP virtual void Serialize(VArchive &ar) HKV_OVERRIDE;
 
-  ///
-  /// \brief
-  ///   Serializes the instance to the passed archive
-  ///
-  ANIMATION_IMPEXP virtual void Serialize(VArchive &ar);
-
-
-  ///
-  /// \brief
-  ///   Override this function to make sure that we get a serialization callback
-  ///
-  virtual VBool WantsDeserializationCallback(const VSerializationContext &context) 
+  virtual VBool WantsDeserializationCallback(const VSerializationContext &context) HKV_OVERRIDE
   { 
     return (context.m_eType != VSerializationContext::VSERIALIZATION_EDITOR); 
   }
-
 
   ///
   /// \brief
@@ -620,6 +517,20 @@ public:
   ///
   /// @}
   ///
+
+  ///
+  /// \brief
+  ///   Updates the the state machine for the current frame.
+  /// 
+  /// The OnThink() function takes care of all actions that are not automatically
+  /// handled by the transition mixer node. This includes special event and motion
+  /// delta handling.
+  ///
+  /// \note
+  ///   You do not have to call this function manually, since the VTransitionManager
+  ///   class will take care of this
+  ///
+  ANIMATION_IMPEXP void OnThink();
 
 protected:
 
@@ -760,6 +671,8 @@ protected:
   }
 
 private:
+  void InitInternal();
+
   // Exposed to vForge:
   VString TransitionTableFile;        ///< parameter
   VString InitialAnimation;           ///< parameter
@@ -783,7 +696,6 @@ private:
   float m_fTransitionTime;                                              ///< Passed transition time since last blending started  
 
   BOOL m_bEnabled;                                                      ///< Determines if animations are computed
-  bool m_bCreateAnimConfig;                                             ///< specifies whether it is the component's responsibility to create the anim config
   bool m_bIsBlending;                                                   ///< If TRUE the Transition State Machine is currently in the blending state
   bool m_bSyncBlending;                                                 ///< If TRUE the Transition State Machine is currently waiting for an event to initiate the blending
   bool m_bProcessOffsetDelta;                                           ///< If TRUE the Transition State Machine processes the motion delta manually 
@@ -824,7 +736,7 @@ public:
 #endif // VTRANSITIONSTATEMACHINE_HPP_INCLUDED
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

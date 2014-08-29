@@ -105,7 +105,7 @@ void VRendererNodeCommon::OnHandleCallback(IVisCallbackDataObject_cl *pData)
   {
     V_SAFE_DELETE(m_pDeinitDuringVideoResize);
   }
-#if defined(WIN32) && defined(_VR_DX9)
+#if defined(_VISION_WIN32) && defined(_VR_DX9)
   else if (pData->m_pSender == &Vision::Callbacks.OnEnterForeground)
   {
     if(IsInitialized())
@@ -168,20 +168,15 @@ namespace
     const VPostProcessingBaseComponent* pComponentA = *reinterpret_cast<VPostProcessingBaseComponent const* const*>(pPointerA);
     const VPostProcessingBaseComponent* pComponentB = *reinterpret_cast<VPostProcessingBaseComponent const* const*>(pPointerB);
 
+    #ifdef HK_DEBUG
+      if (pComponentA->GetPriority() == pComponentB->GetPriority())
+      {
+        hkvLog::Warning("VRendererNodeCommon: ComparePostProcessorsByPriority: Two post processors with equal priority present. ('%s' vs. '%s', priority=%f)",
+          pComponentA->GetTypeId()->m_lpszClassName, pComponentB->GetTypeId()->m_lpszClassName, pComponentA->GetPriority());
+      }
+    #endif
+
     return (pComponentA->GetPriority() > pComponentB->GetPriority()) - (pComponentA->GetPriority() < pComponentB->GetPriority());
-  }
-
-  VisRenderContext_cl* CloneContext(const VisRenderContext_cl* pSrc)
-  {
-    int iPosX, iPosY, iWidth, iHeight;
-    float zMin, zMax;
-    pSrc->GetViewport(iPosX, iPosY, iWidth, iHeight, zMin, zMax);
-
-    VisRenderContext_cl* pDest = new VisRenderContext_cl(pSrc->GetCamera(), 90.0f, 90.0f, iWidth, iHeight, 0.0f, 0.0f, pSrc->GetRenderFlags());
-    pDest->SetRenderFilterMask(pSrc->GetRenderFilterMask());
-    pDest->SetViewport(iPosX, iPosY, iWidth, iHeight, zMin, zMax);
-    pDest->SetViewProperties(pSrc->GetViewProperties());
-    return pDest;
   }
 }
 
@@ -211,13 +206,15 @@ void VRendererNodeCommon::InitializePostProcessors()
   // Increment the update counter to enable modifying the post processors without recursing
   m_iPostProcessorUpdateCounter++;
 
+  VType* pCopyPostProcessorType = GetDefaultCopyPostprocessorType();
+
   bool bInvalidPostProcessorActive = false;
   do
   {
     bInvalidPostProcessorActive = false;
     DeInitializePostProcessors();
 
-    VSimpleCopyPostprocess* pSimpleCopy = NULL;
+    VPostProcessingBaseComponent* pSimpleCopy = NULL;
 
     // Collect post processor components
     VMemoryTempBuffer<256> tempBuffer((Components().Count() + 1) * sizeof(VPostProcessingBaseComponent*));
@@ -228,9 +225,9 @@ void VRendererNodeCommon::InitializePostProcessors()
       if(VPostProcessingBaseComponent* pPostProcessor = vdynamic_cast<VPostProcessingBaseComponent*>(Components().GetAt(iComponentIndex)))
       {
         // Don't take the auto added copy PP into consideration, we'll handle that separately
-        if(VSimpleCopyPostprocess* pCopy = vdynamic_cast<VSimpleCopyPostprocess*>(pPostProcessor))
+        if(pCopyPostProcessorType != NULL && pPostProcessor->IsOfType(pCopyPostProcessorType))
         {
-          pSimpleCopy = pCopy;
+          pSimpleCopy = pPostProcessor;
           continue;
         }
 
@@ -303,14 +300,18 @@ void VRendererNodeCommon::InitializePostProcessors()
 
     if(bNeedsManualCopyToTarget)
     {
-      if(pSimpleCopy == NULL)
+      if (pCopyPostProcessorType != NULL)
       {
-        pSimpleCopy = new VSimpleCopyPostprocess;
-        AddComponent(pSimpleCopy);
-      }
+        if(pSimpleCopy == NULL)
+        {
+          pSimpleCopy = (VPostProcessingBaseComponent*)pCopyPostProcessorType->CreateInstance();
+          VASSERT(pSimpleCopy != NULL);
+          AddComponent(pSimpleCopy);
+        }
 
-      postProcessors[iNumPostProcessors] = pSimpleCopy;
-      iNumPostProcessors++;
+        postProcessors[iNumPostProcessors] = pSimpleCopy;
+        iNumPostProcessors++;
+      }
     }
     else if(pSimpleCopy != NULL)
     {
@@ -328,7 +329,24 @@ void VRendererNodeCommon::InitializePostProcessors()
       pPostProcessor->m_iTargetIndex = iPostProcessorIndex;
 
       const VisRenderContext_cl* pFinalTargetContext = GetFinalTargetContext();
-      VisRenderContext_cl* pContext = CloneContext(pFinalTargetContext);
+
+      bool bRenderIntoFinalTargetContext = (iPostProcessorIndex >= iCopyPPIndex);
+
+      int iPosX, iPosY, iWidth, iHeight;
+      float zMin, zMax;
+      if(bRenderIntoFinalTargetContext)
+      {
+        pFinalTargetContext->GetViewport(iPosX, iPosY, iWidth, iHeight, zMin, zMax);
+      }
+      else
+      {
+        GetReferenceContext()->GetViewport(iPosX, iPosY, iWidth, iHeight, zMin, zMax);
+      }
+
+      VisRenderContext_cl* pContext = new VisRenderContext_cl(pFinalTargetContext->GetCamera(), 90.0f, 90.0f, iWidth, iHeight, 0.0f, 0.0f, pFinalTargetContext->GetRenderFlags());
+      pContext->SetRenderFilterMask(pFinalTargetContext->GetRenderFilterMask());
+      pContext->SetViewport(iPosX, iPosY, iWidth, iHeight, zMin, zMax);
+      pContext->SetViewProperties(pFinalTargetContext->GetViewProperties());
 
       pContext->SetName(pPostProcessor->GetTypeId()->m_lpszClassName);
 
@@ -337,7 +355,6 @@ void VRendererNodeCommon::InitializePostProcessors()
       pContext->SetUserData(pPostProcessor);
       pContext->SetRenderLoop(new PostProcessRenderLoop_cl(pPostProcessor));
 
-      bool bRenderIntoFinalTargetContext = (iPostProcessorIndex >= iCopyPPIndex);
       if(bRenderIntoFinalTargetContext)
       {
         pContext->SetRenderAndDepthStencilTargets(pFinalTargetContext);
@@ -350,7 +367,7 @@ void VRendererNodeCommon::InitializePostProcessors()
 
           if(pFinalTargetContext->RendersIntoBackBuffer())
           {
-            #if !defined(_VISION_ANDROID) && !defined(_VISION_TIZEN)
+            #if !defined(_VISION_ANDROID) && !defined(_VISION_TIZEN) && !defined(_VISION_NACL)
               // On Android, the back buffer context uses a fixed FBO, so we can't replace the DST.
               bCanReplaceDST = Vision::Video.GetCurrentConfig()->m_eMultiSample == VVIDEO_MULTISAMPLE_OFF;
             #endif
@@ -358,6 +375,15 @@ void VRendererNodeCommon::InitializePostProcessors()
           else if(pFinalTargetContext->GetRenderTarget(0) != NULL)
           {
             bCanReplaceDST = static_cast<VisRenderableTexture_cl*>(pFinalTargetContext->GetRenderTarget(0))->GetConfig()->m_iMultiSampling <= 1;
+          }
+
+          int iRefWidth, iRefHeight, iFinalWidth, iFinalHeight;
+          pFinalTargetContext->GetSize(iFinalWidth, iFinalHeight);
+          GetReferenceContext()->GetSize(iRefWidth, iRefHeight);
+
+          if(iRefWidth != iFinalWidth || iRefHeight != iFinalHeight)
+          {
+            bCanReplaceDST = false;
           }
 
           if(bCanReplaceDST)
@@ -403,6 +429,11 @@ void VRendererNodeCommon::InitializePostProcessors()
 
   ANALYSIS_IGNORE_WARNING_BLOCK_END;
   ANALYSIS_IGNORE_WARNING_BLOCK_END;
+}
+
+VType* VRendererNodeCommon::GetDefaultCopyPostprocessorType()
+{
+  return V_RUNTIME_CLASS(VSimpleCopyPostprocess);
 }
 
 BOOL VRendererNodeCommon::AddComponent(IVObjectComponent *pComponent)
@@ -676,7 +707,7 @@ void VRendererNodeCommon::FreeCustomTextureRefs(VCompiledTechniquePtr &spTech)
 {
   if (spTech==NULL)
     return;
-  for (int i=0;i<spTech->GetShaderCount();i++)
+  for (unsigned int i=0;i<spTech->GetShaderCount();i++)
   {
     VCompiledShaderPass *pPass = spTech->GetShader(0);
     const unsigned int iActiveSamplerCount = pPass->GetActiveSamplerCount(VSS_PixelShader);
@@ -941,9 +972,7 @@ void VRendererNodeCommon::UpdateTimeOfDay()
     VTimeOfDay* pTimeOfDay = vstatic_cast<VTimeOfDay*>(pTimeOfDayInterface);
     pTimeOfDay->UpdateFogParameters();
 
-    VColorRef vAmbientColor(false);
-    float fDawnWeight, fDuskWeight, fNightWeight;
-    pTimeOfDay->EvaluateColorValue(0.1f, vAmbientColor, fDawnWeight, fDuskWeight, fNightWeight);
+    VColorRef vAmbientColor = pTimeOfDay->GetAmbientColor();
     Vision::Renderer.SetGlobalAmbientColor(vAmbientColor.ToFloat().getAsVec4(1.0f));
   }
   else
@@ -986,6 +1015,7 @@ void VRendererNodeCommon::OnViewPropertiesChanged()
 {
   IVRendererNode::OnViewPropertiesChanged();
 
+  // notify components
   for (int i=0; i<Components().Count(); i++)
   {
     if (VPostProcessingBaseComponent *pPostProcessor = vdynamic_cast<VPostProcessingBaseComponent *>(Components().GetAt(i)))
@@ -993,13 +1023,19 @@ void VRendererNodeCommon::OnViewPropertiesChanged()
       pPostProcessor->OnViewPropertiesChanged();
     }
   }
+
+  // also update all contexts (i.e. FOV changed)
+  const int iCount = GetContextCount();
+  for (int i=0;i<iCount;i++)
+    GetContext(i)->OnViewPropertiesChanged();
+
 }
 
 START_VAR_TABLE(VRendererNodeCommon, IVRendererNode, "VRendererNodeCommon", 0, "")  
   END_VAR_TABLE
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140716)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

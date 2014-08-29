@@ -102,8 +102,6 @@ public:
     {
       return ((vHavokPhysicsModule*)Vision::GetApplication()->GetPhysicsModule())->DropToFloor(self, fDistance);
     }
-
-    VSWIG_CREATE_CAST(vHavokCharacterController)
   }
   
   bool IsEnabled() const;
@@ -245,17 +243,13 @@ public:
   ///   information about what values to specify for these parameters.
   void SetCollisionInfo(number layer, number group, number subsystem, number subsystemDontCollideWith);
   
-  ///
   /// \brief
   ///   Set if the character should jump or not
-  ///
-  void SetWantJump(bool wantJump);
+  void SetWantJump(boolean wantJump);
 
-  ///
   /// \brief
   ///   Set to true if the character should start flying. Set to false if the character should stop flying
-  ///
-  void SetFlyState(bool bIsFlying);
+  void SetFlyState(boolean isFlying);
   
   /// @}
   /// @name Debug Rendering
@@ -313,7 +307,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

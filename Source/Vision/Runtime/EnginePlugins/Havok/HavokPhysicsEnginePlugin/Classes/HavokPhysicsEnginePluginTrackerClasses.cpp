@@ -9,9 +9,14 @@
 
 #include <Vision/Runtime/EnginePlugins/Havok/HavokPhysicsEnginePlugin/HavokPhysicsEnginePluginPCH.h>
 static const char s_libraryName[] = "HavokPhysicsEnginePlugin";
+
+// Make VAX ignore symbols from this file
+#if 1 == 0
+_asm {
+#endif
 #include <Common/Base/Memory/Tracker/hkTrackerClassDefinition.h>
 
-void HK_CALL HavokPhysicsEnginePluginRegister() {}
+ void HK_CALL HavokPhysicsEnginePluginRegister() {}
 
 #include <Vision/Runtime/EnginePlugins/Havok/HavokPhysicsEnginePlugin/CharacterControlStates/vCharacterInput.h>
 
@@ -125,6 +130,16 @@ HK_TRACKER_CLASS_MEMBERS_END()
 HK_TRACKER_IMPLEMENT_CLASS(hkvSampledHeightFieldShape, s_libraryName, hkpSampledHeightFieldShape)
 
 
+// hkvSampledOffsetHeightFieldShape ::
+
+HK_TRACKER_DECLARE_CLASS_BEGIN(hkvSampledOffsetHeightFieldShape)
+HK_TRACKER_DECLARE_CLASS_END
+
+HK_TRACKER_CLASS_MEMBERS_BEGIN(hkvSampledOffsetHeightFieldShape)
+HK_TRACKER_CLASS_MEMBERS_END()
+HK_TRACKER_IMPLEMENT_CLASS(hkvSampledOffsetHeightFieldShape, s_libraryName, hkvSampledHeightFieldShape)
+
+
 // hkvTriSampledHeightFieldCollection ::
 
 HK_TRACKER_DECLARE_CLASS_BEGIN(hkvTriSampledHeightFieldCollection)
@@ -146,7 +161,7 @@ HK_TRACKER_CLASS_MEMBERS_END()
 HK_TRACKER_IMPLEMENT_CLASS(hkvTriSampledHeightFieldBvTreeShape, s_libraryName, hkpTriSampledHeightFieldBvTreeShape)
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

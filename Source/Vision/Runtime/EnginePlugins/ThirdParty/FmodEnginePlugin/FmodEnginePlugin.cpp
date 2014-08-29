@@ -9,7 +9,7 @@
 #include <Vision/Runtime/EnginePlugins/ThirdParty/FmodEnginePlugin/FmodEnginePlugin.hpp>
 #include <Vision/Runtime/EnginePlugins/ThirdParty/FmodEnginePlugin/VFmodManager.hpp>
 
-#include <Vision/Runtime/Base/System/Memory/VMemDbg.hpp>
+
 
 class vFmodEnginePlugin : public IVisPlugin_cl
 {
@@ -74,7 +74,7 @@ void vFmodEnginePlugin::OnDeInitEnginePlugin()
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

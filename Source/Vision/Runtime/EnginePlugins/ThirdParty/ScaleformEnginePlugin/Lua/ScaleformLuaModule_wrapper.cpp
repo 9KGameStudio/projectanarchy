@@ -10,7 +10,6 @@
 
 #include <Vision/Runtime/EnginePlugins/ThirdParty/ScaleformEnginePlugin/ScaleformEnginePlugin.hpp>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Scripting/VScriptIncludes.hpp>
-#include <Vision/Runtime/Base/System/Memory/VMemDbg.hpp>
 
 #ifndef _VISION_DOC
 
@@ -356,6 +355,7 @@ typedef struct swig_type_info {
   struct swig_cast_info  *cast;			/* linked list of types that can cast into this type */
   void                   *clientdata;		/* language specific type data */
   int                    owndata;		/* flag if the structure owns the clientdata */
+  VType                  *visiontype; // Vision extension
 } swig_type_info;
 
 /* Structure to store a type and conversion function used for casting */
@@ -755,7 +755,7 @@ SWIG_UnpackDataName(const char *c, void *ptr, size_t sz, const char *name) {
  * and includes code for managing global variables and pointer
  * type checking.
  * ----------------------------------------------------------------------------- */
-
+ 
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -1043,54 +1043,31 @@ SWIGINTERN void  SWIG_Lua_module_add_function(lua_State* L,const char* name,lua_
 /* -----------------------------------------------------------------------------
  * global variable support code: classes
  * ----------------------------------------------------------------------------- */
-
-//Expecting the same stack format as SWIG:
-//stack: userdata, key, ..., TOP
-//afterwards: userdata, key, ..., value, TOP
+ 
+// Note: this is not called from SWIG_Lua_class_get since dynamic properties are accessed directly by lua,
+// but it's implemented to allow access from native
 SWIGINTERN void VisionLuaClassGet(lua_State *L)
 {
-  //solution 1: retrieve element when accessing an user data object from a global $node-POINTER_ADR-NAME_OF_ELEM$
-  //(+): allows user to associate elemets with an instance of an user data object
-  //(-): elements are not stored in a table, so you cannot iterate over all elements of an instance
-  
-  const char * pKey = lua_tostring(L, 2);
-  swig_lua_userdata * pUser = (swig_lua_userdata *) lua_topointer(L, 1);
-                                                                             //stack: userdata, key, ..., TOP
-  lua_pushliteral(L, "G");                                                   //stack: userdata, key, ..., 'G', TOP
-  lua_gettable(L, LUA_GLOBALSINDEX);                                         //stack: userdata, key, ..., globalTable, TOP
+  // Fetch the meta table and the __index field
+  lua_getmetatable(L, 1);                                                     // userdata, key, ..., perinstancetable or perclasstable, TOP
+  lua_getfield(L, -1, "__index");                                             // userdata, key, ..., perinstancetable or perclasstable, index, TOP
 
-  if( lua_isnil(L, -1)==1 ) //test if the global table is valid
-  {                                                                          //stack: userdata, key, ..., nil, TOP
-    lua_pop(L, 1);                                                           //stack: userdata, key, ..., TOP
-    lua_pushfstring(L, "$node-%p-%s$", ((pUser==0) ? 0 : pUser->ptr), pKey); //stack: userdata, key, ..., new key, TOP
-    lua_gettable(L, LUA_GLOBALSINDEX);                                       //stack: userdata, key, ..., requested val, TOP
-  }
-  else
-  {                                                                          //stack: userdata, key,  ..., globalTable, TOP
-    lua_pushfstring(L, "$node-%p-%s$", ((pUser==0) ? 0 : pUser->ptr), pKey); //stack: userdata, key,  ..., globalTable, new key, TOP
-    lua_gettable(L, -2);                                                     //stack: userdata, key,  ..., globalTable, requested val, TOP
-    lua_remove(L, -2);                                                       //stack: userdata, key,  ..., requested val, TOP
-  }
-
-/*
-  //solution 2: get element from a global table $node-POINTER_ADR$
-  //(+): user data object instance behaves like a table (you can iterate on this table)
-  //(-): slower than solution 1 when setting the variable
-  
-  int iPtr = (int) lua_topointer(L, 1);
-  lua_pushfstring(L, "$node-%p$", iPtr);          //stack: userdata, key, ..., instance string, TOP
-  lua_gettable(L, LUA_GLOBALSINDEX); 		      //stack: userdata, key, ..., table of instance or nil, TOP
-  
-  if(!lua_isnil(L, -1))
+  // If there is no perinstance table, push nil
+  if (!lua_equal(L, -1, -2))
   {
-    lua_pushvalue(L, 2);		  				  //stack: userdata, key, ..., table of instance, dup key, TOP
-    lua_gettable(L, -2); 	     				  //stack: userdata, key, ..., table of instance, requested val, TOP
-    lua_replace(L, -2);		  					  //stack: userdata, key, ..., requested val or nil, TOP
+    lua_pop(L, 2);                                                            // userdata, key, ..., TOP
+    lua_pushnil(L);                                                           // userdata, key, ..., nil, TOP
+    return;
   }
-  
-*/
-}
 
+  lua_pop(L, 1);                                                            // userdata, key, ..., perinstancetable, TOP
+  
+  // Now fetch the value from the per-instance table
+  lua_pushvalue(L, 2);                                                      // userdata, key, ..., perinstancetable, key, TOP
+  lua_rawget(L, -2);                                                        // userdata, key, ..., perinstancetable, value, TOP
+  lua_remove(L, -2);                                                        // userdata, key, ..., value, TOP
+}
+ 
 /* the class.get method, performs the lookup of class attributes */
 SWIGINTERN int  SWIG_Lua_class_get(lua_State* L)
 {
@@ -1099,8 +1076,24 @@ SWIGINTERN int  SWIG_Lua_class_get(lua_State* L)
   (2) string name of the attribute
 */
 
-  assert(lua_isuserdata(L,-2));  /* just in case */
-  lua_getmetatable(L,-2);    /* get the meta table */
+  // Vision extension: In case the first argument is a table and not the userdata,
+  // then the table is the per-instance metatable. Recover the userdata and its
+  // per-class metatable from the "__visionwrapper" field in the per-instance table.
+  if (lua_istable(L, 1))
+  {
+    lua_pushvalue(L, 1);                    // perinstancetable, key, perinstancetable, TOP
+    lua_getfield(L, 1, "__visionwrapper");  // perinstancetable, key, perinstancetable, userdata, TOP
+    assert(!lua_isnil(L, -1));
+    lua_replace(L, 1);                      // userdata, key, perinstancetable, TOP
+    lua_getmetatable(L, -1);                // userdata, key, perinstancetable, perclasstable, TOP
+    lua_remove(L, -2);                      // userdata, key, perclasstable, TOP
+  }
+  else
+  {
+    assert(lua_isuserdata(L, 1));  /* just in case */
+    lua_getmetatable(L, 1);    /* get the meta table */
+  }
+
   assert(lua_istable(L,-1));  /* just in case */
   SWIG_Lua_get_table(L,".get"); /* find the .get table */
   assert(lua_istable(L,-1));  /* just in case */
@@ -1140,16 +1133,6 @@ SWIGINTERN int  SWIG_Lua_class_get(lua_State* L)
     return 1;
   }
   
-  //////////////////////
-  // Vision Extension //
-  
-  VisionLuaClassGet(L);
-  if (!lua_isnil(L, -1))
-    return 1;
-
-  // End of Extension //
-  //////////////////////
-
   return 0;  /* sorry not known */
 }
 
@@ -1157,62 +1140,47 @@ SWIGINTERN int  SWIG_Lua_class_get(lua_State* L)
 //stack: userdata, key, value, ..., TOP
 SWIGINTERN void VisionLuaClassSet(lua_State *L)
 {
-  //solution 1: store all elements when accessing an user data objects as a global $node-POINTER_ADR-NAME_OF_ELEM$
-  //(+): allows user to associate elemets with an instance of an user data object
-  //(-): elements are not stored in a table, so you cannot iterate over all elements of an instance
-  
-  const char * pKey = lua_tostring(L, 2);
-  swig_lua_userdata * pUser = (swig_lua_userdata *) lua_topointer(L, 1);
-                                                                             //stack: userdata, key, value, ..., TOP
-  lua_pushliteral(L, "G");                                                   //stack: userdata, key, value, ..., 'G', TOP
-  lua_gettable(L, LUA_GLOBALSINDEX);                                         //stack: userdata, key, value, ..., globalTable, TOP
+  // Fetch the meta table and the __index field
+  lua_getmetatable(L, 1);                                                     // userdata, key, value, ..., perinstancetable or perclasstable, TOP
+  lua_getfield(L, -1, "__index");                                             // userdata, key, value, ..., perinstancetable or perclasstable, index, TOP
 
-  if( lua_isnil(L, -1)==1 ) //test if the global table is valid
-  {                                                                          //stack: userdata, key, value, ..., nil, TOP
-    lua_pop(L, 1);                                                           //stack: userdata, key, value, ..., TOP
-    lua_pushfstring(L, "$node-%p-%s$", ((pUser==0) ? 0 : pUser->ptr), pKey); //stack: userdata, key, value, ..., new key, TOP
-    lua_pushvalue(L, 3);                                                     //stack: userdata, key, value, ..., new key, value, TOP
-    lua_settable(L, LUA_GLOBALSINDEX);                                       //stack: userdata, key, value, ..., TOP
-  }
-  else
-  {                                                                          //stack: userdata, key, value, ..., globalTable, TOP
-    lua_pushfstring(L, "$node-%p-%s$", ((pUser==0) ? 0 : pUser->ptr), pKey); //stack: userdata, key, value, ..., globalTable, new key, TOP
-    lua_pushvalue(L, 3);                                                     //stack: userdata, key, value, ..., globalTable, new key, value, TOP
-    lua_settable(L, -3);                                                     //stack: userdata, key, value, ..., globalTable, TOP
-    lua_pop(L, 1);                                                           //stack: userdata, key, value, ..., TOP
-  }
-
-/*  
-  //solution 2: create a table $node-POINTER_ADR$ and save the element as element of this table
-  //(+): user data object instance behaves like a table (you can iterate on this table)
-  //(-): much slower than solution 1
-  
-  int iPtr = (int) lua_topointer(L, 1);
-  lua_pushfstring(L, "$node-%p$", iPtr);      //stack: userdata, key, value, ..., instance string, TOP
-  lua_gettable(L, LUA_GLOBALSINDEX); 		      //stack: userdata, key, value, ..., table of instance (maybe nil), TOP
-  
-  if(lua_isnil(L, -1))
+  // If the __index field points back to the table, it must be a per-instance table. If not, create one.
+  if (!lua_equal(L, -1, -2))
   {
-    //create a new empty table
-    lua_pop(L, 1);                            //stack: userdata, key, value, ..., TOP
-	  lua_pushfstring(L, "$node-%p$", iPtr);    //stack: userdata, key, value, ..., instance string, TOP
-  	lua_newtable(L);						              //stack: userdata, key, value, ..., instance string, new table, TOP
-	  lua_settable(L, LUA_GLOBALSINDEX);        //stack: userdata, key, value, ..., TOP
-	
-	  //query empty table
-	  lua_pushfstring(L, "$node-%p$", iPtr);    //stack: userdata, key, value, ..., instance string, TOP
-	  lua_gettable(L, LUA_GLOBALSINDEX); 		    //stack: userdata, key, value, ..., table of instance, TOP
-	
-	  //ensure that this time the table is present
-	  assert(!lua_isnil(L, -1));
+    lua_pop(L, 1);                                                            // userdata, key, value, ..., perclasstable, TOP
+
+    // Create new metatable
+    lua_newtable(L);                                                          // userdata, key, value, ..., perclasstable, perinstancetable, TOP
+
+    // __visionwrapper points to the userdata
+    lua_pushvalue(L, 1);                                                      // userdata, key, value, ..., perclasstable, perinstancetable, userdata, TOP
+    lua_setfield(L, -2, "__visionwrapper");                                   // userdata, key, value, ..., perclasstable, perinstancetable, TOP
+
+    // __index and __newindex point to the table itself
+    // That way, accessing keys can be performed using the per-instance table without having to call a native function.
+    lua_pushvalue(L, -1);                                                     // userdata, key, value, ..., perclasstable, perinstancetable, newmetatable, TOP
+    lua_setfield(L, -2, "__index");                                           // userdata, key, value, ..., perclasstable, perinstancetable, TOP
+
+    lua_pushvalue(L, -1);                                                     // userdata, key, value, ..., perclasstable, perinstancetable, newmetatable, TOP
+    lua_setfield(L, -2, "__newindex");                                        // userdata, key, value, ..., perclasstable, perinstancetable, TOP
+
+    // Set the original metatable as the metatable of the new one so that we can fallback to the per-class table
+    lua_pushvalue(L, -2);                                                     // userdata, key, value, ..., perclasstable, perinstancetable, metatable, TOP
+    lua_setmetatable(L, -2);                                                  // userdata, key, value, ..., perclasstable, perinstancetable, TOP
+    lua_pushvalue(L, -1);                                                     // userdata, key, value, ..., perclasstable, perinstancetable, newmetatable, TOP
+
+    // Set the per-instance table as the meta table of the userdata
+    lua_setmetatable(L, 1);                                                   // userdata, key, value, ..., perclasstable, perinstancetable, TOP
+
+    lua_remove(L, -2);                                                        // userdata, key, value, ..., perinstancetable, TOP
   }
-  
-  lua_pushvalue(L, 2);		  				          //stack: userdata, key, value, ..., table of instance, dup key, TOP
-  lua_pushvalue(L, 3);		  				          //stack: userdata, key, value, ..., table of instance, dup key, dup value, TOP
-  lua_settable(L, -3); 	     				          //stack: userdata, key, value, ..., table of instance, TOP
-  lua_pop(L, 1);                                    //stack: userdata, key, value, ..., TOP
-*/
-}
+
+  // Now set the value in the per-isntance table
+  lua_pushvalue(L, 2);                                                      // userdata, key, value, ..., perinstancetable, key, TOP
+  lua_pushvalue(L, 3);                                                      // userdata, key, value, ..., perinstancetable, key, value, TOP
+  lua_rawset(L, -3);                                                        // userdata, key, value, ..., perinstancetable, TOP
+  lua_pop(L, 1);                                                            // userdata, key, value, ..., TOP
+} 
 
 /* the class.set method, performs the lookup of class attributes */
 SWIGINTERN int  SWIG_Lua_class_set(lua_State* L)
@@ -1226,8 +1194,24 @@ printf("SWIG_Lua_class_set %p(%s) '%s' %p(%s)\n",
       lua_tostring(L,2),
       lua_topointer(L,3),lua_typename(L,lua_type(L,3))); */
 
-  assert(lua_isuserdata(L,1));  /* just in case */
-  lua_getmetatable(L,1);    /* get the meta table */
+  // Vision extension: In case the first argument is a table and not the userdata,
+  // then the table is the per-instance metatable. Recover the userdata and its
+  // per-class metatable from the "__visionwrapper" field in the per-instance table.
+  if (lua_istable(L, 1))
+  {
+    lua_pushvalue(L, 1);                    // perinstancetable, key, value, perinstancetable, TOP
+    lua_getfield(L, 1, "__visionwrapper");  // perinstancetable, key, value, perinstancetable, userdata, TOP
+    assert(!lua_isnil(L, -1));
+    lua_replace(L, 1);                      // userdata, key, value, perinstancetable, TOP
+    lua_getmetatable(L, -1);                // userdata, key, value, perinstancetable, perclasstable, TOP
+    lua_remove(L, -2);                      // userdata, key, value, perclasstable, TOP
+  }
+  else
+  {
+    assert(lua_isuserdata(L, 1));  /* just in case */
+    lua_getmetatable(L, 1);    /* get the meta table */
+  }
+
   assert(lua_istable(L,-1));  /* just in case */
 
   SWIG_Lua_get_table(L,".set"); /* find the .set table */
@@ -1286,7 +1270,7 @@ SWIGINTERN int  SWIG_Lua_class_destruct(lua_State* L)
     if (clss && clss->destructor)  /* there is a destroy fn */
     {
       clss->destructor(usr->ptr);  /* bye bye */
-    }
+  } 
   }
   return 0;
 }
@@ -1451,6 +1435,41 @@ SWIGINTERN void _SWIG_Lua_AddMetatable(lua_State* L,swig_type_info *type)
   }
 }
 
+#ifdef __cplusplus
+}
+#endif
+
+/* pushes a new object into the lua stack by copying the value into the userdata object */
+template<typename T>
+SWIGRUNTIME void SWIG_Lua_NewPodObj(lua_State* L, const T* ptr, swig_type_info *type)
+{
+  if (!ptr){
+    lua_pushnil(L);
+    return;
+  }
+  
+  struct value_user_data
+  {
+    swig_lua_userdata swigdata;
+    T object;
+  };
+  
+  value_user_data* usr = (value_user_data*) lua_newuserdata(L, sizeof(value_user_data));
+  
+  // Make sure that the swig_lua_userdata is at offset 0 of the extended user data
+  V_COMPILE_ASSERT(offsetof(value_user_data, swigdata) == 0);
+  
+  usr->object = *ptr;
+  usr->swigdata.ptr = &usr->object;
+  usr->swigdata.type = type;
+  usr->swigdata.own = 0;
+  _SWIG_Lua_AddMetatable(L, type); /* add metatable */
+}
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* pushes a new object into the lua stack */
 SWIGRUNTIME void SWIG_Lua_NewPointerObj(lua_State* L,void* ptr,swig_type_info *type, int own)
 {
@@ -1461,8 +1480,8 @@ SWIGRUNTIME void SWIG_Lua_NewPointerObj(lua_State* L,void* ptr,swig_type_info *t
   }
   usr=(swig_lua_userdata*)lua_newuserdata(L,sizeof(swig_lua_userdata));  /* get data */
   usr->ptr=ptr;  /* set the ptr */
-  usr->type=type;
-  usr->own=own;
+    usr->type=type;
+    usr->own=own;
   _SWIG_Lua_AddMetatable(L,type); /* add metatable */
 }
 
@@ -1485,13 +1504,37 @@ SWIGRUNTIME int  SWIG_Lua_ConvertPtr(lua_State* L,int index,void** ptr,swig_type
       *ptr=usr->ptr;
       return SWIG_OK; /* ok */
     }
-    cast=SWIG_TypeCheckStruct(usr->type,type); /* performs normal type checking */
-    if (cast)
+ 
+    if(usr->ptr == NULL)
     {
-      int newmemory = 0;
-      *ptr=SWIG_TypeCast(cast,usr->ptr,&newmemory);
-      assert(!newmemory); /* newmemory handling not yet implemented */
-      return SWIG_OK;  /* ok */
+      *ptr=0;
+      return SWIG_OK;
+    }
+    
+    // Vision extension: handle cast manually using our own RTTI - no need for virtual function calls
+    if(type->visiontype != NULL && usr->type->visiontype != NULL)
+    {
+      // SWIG only needs to cast to a less derived type, since the proxy object already has the most derived type
+      if(type->visiontype == usr->type->visiontype || usr->type->visiontype->IsDerivedFrom(type->visiontype))
+      {
+        *ptr = VType::CastFromTo(usr->ptr, usr->type->visiontype, type->visiontype);
+        return SWIG_OK;
+      }
+      else
+      {
+        return SWIG_ERROR;
+      }
+    }
+    else
+    {
+      cast=SWIG_TypeCheckStruct(usr->type,type); /* performs normal type checking */
+      if (cast)
+      {
+        int newmemory = 0;
+        *ptr=SWIG_TypeCast(cast,usr->ptr,&newmemory);
+        assert(!newmemory); /* newmemory handling not yet implemented */
+        return SWIG_OK;  /* ok */
+      }
     }
   }
   return SWIG_ERROR;  /* error */
@@ -1542,9 +1585,9 @@ SWIGRUNTIME const char *SWIG_Lua_typename(lua_State *L, int tp)
   {
     usr=(swig_lua_userdata*)lua_touserdata(L,tp);  /* get data */
     if (usr && usr->type && usr->type->str)
-      return usr->type->str;
-    return "userdata (unknown type)";
-  }
+        return usr->type->str;
+      return "userdata (unknown type)";
+    }
   return lua_typename(L,lua_type(L,tp));
 }
 
@@ -1561,14 +1604,38 @@ but to lua, they are different objects */
 SWIGRUNTIME int SWIG_Lua_equal(lua_State* L)
 {
   int result;
-  swig_lua_userdata *usr1,*usr2;
+  swig_lua_userdata * usr1, *usr2;
   if (!lua_isuserdata(L,1) || !lua_isuserdata(L,2))  /* just in case */
     return 0;  /* nil reply */
-  usr1=(swig_lua_userdata*)lua_touserdata(L,1);  /* get data */
-  usr2=(swig_lua_userdata*)lua_touserdata(L,2);  /* get data */
+  usr1 = (swig_lua_userdata*)lua_touserdata(L, 1); /* get data */
+  usr2 = (swig_lua_userdata*)lua_touserdata(L, 2); /* get data */
   /*result=(usr1->ptr==usr2->ptr && usr1->type==usr2->type); only works if type is the same*/
   result=(usr1->ptr==usr2->ptr);
-   lua_pushboolean(L,result);
+  lua_pushboolean(L,result);
+  return 1;
+}
+
+// Vision extension: check if weak pointer points to a live object
+SWIGRUNTIME int SWIG_Lua_isalive(lua_State* L)
+{
+  int result;
+  swig_lua_userdata * usr1;
+  
+  if(lua_isuserdata(L, 1))
+  {
+    usr1 = (swig_lua_userdata*)lua_touserdata(L, 1);
+    result = (usr1->ptr != NULL);
+  }
+  else if(lua_isnil(L, 1))
+  {
+    result = 0;
+  }
+  else
+  {
+    return 0;
+  }
+    
+  lua_pushboolean(L, result);
   return 1;
 }
 
@@ -1656,27 +1723,38 @@ SWIG_Lua_dostring(lua_State *L, const char* str) {
 
 /* -------- TYPES TABLE (BEGIN) -------- */
 
-#define SWIGTYPE_p_VScaleformManager swig_types[0]
-#define SWIGTYPE_p_VScaleformMovieInstance swig_types[1]
-#define SWIGTYPE_p_VScaleformValue swig_types[2]
-#define SWIGTYPE_p_VScaleformVariable swig_types[3]
-#define SWIGTYPE_p___int64 swig_types[4]
-#define SWIGTYPE_p_char swig_types[5]
-#define SWIGTYPE_p_float swig_types[6]
-#define SWIGTYPE_p_int swig_types[7]
-#define SWIGTYPE_p_long swig_types[8]
-#define SWIGTYPE_p_p_char swig_types[9]
-#define SWIGTYPE_p_p_unsigned_long swig_types[10]
-#define SWIGTYPE_p_short swig_types[11]
-#define SWIGTYPE_p_signed___int64 swig_types[12]
-#define SWIGTYPE_p_signed_char swig_types[13]
-#define SWIGTYPE_p_unsigned___int64 swig_types[14]
-#define SWIGTYPE_p_unsigned_char swig_types[15]
-#define SWIGTYPE_p_unsigned_int swig_types[16]
-#define SWIGTYPE_p_unsigned_long swig_types[17]
-#define SWIGTYPE_p_unsigned_short swig_types[18]
-static swig_type_info *swig_types[20];
-static swig_module_info swig_module = {swig_types, 19, 0, 0, 0, 0};
+#define SWIGTYPE_p_VBitmask swig_types[0]
+#define SWIGTYPE_p_VColorRef swig_types[1]
+#define SWIGTYPE_p_VScaleformManager swig_types[2]
+#define SWIGTYPE_p_VScaleformMovieInstance swig_types[3]
+#define SWIGTYPE_p_VScaleformValue swig_types[4]
+#define SWIGTYPE_p_VScaleformVariable swig_types[5]
+#define SWIGTYPE_p___int64 swig_types[6]
+#define SWIGTYPE_p_char swig_types[7]
+#define SWIGTYPE_p_float swig_types[8]
+#define SWIGTYPE_p_hkvAlignedBBox swig_types[9]
+#define SWIGTYPE_p_hkvBoundingSphere swig_types[10]
+#define SWIGTYPE_p_hkvMat3 swig_types[11]
+#define SWIGTYPE_p_hkvMat4 swig_types[12]
+#define SWIGTYPE_p_hkvPlane swig_types[13]
+#define SWIGTYPE_p_hkvQuat swig_types[14]
+#define SWIGTYPE_p_hkvVec2 swig_types[15]
+#define SWIGTYPE_p_hkvVec3 swig_types[16]
+#define SWIGTYPE_p_hkvVec4 swig_types[17]
+#define SWIGTYPE_p_int swig_types[18]
+#define SWIGTYPE_p_long swig_types[19]
+#define SWIGTYPE_p_p_char swig_types[20]
+#define SWIGTYPE_p_p_unsigned_long swig_types[21]
+#define SWIGTYPE_p_short swig_types[22]
+#define SWIGTYPE_p_signed___int64 swig_types[23]
+#define SWIGTYPE_p_signed_char swig_types[24]
+#define SWIGTYPE_p_unsigned___int64 swig_types[25]
+#define SWIGTYPE_p_unsigned_char swig_types[26]
+#define SWIGTYPE_p_unsigned_int swig_types[27]
+#define SWIGTYPE_p_unsigned_long swig_types[28]
+#define SWIGTYPE_p_unsigned_short swig_types[29]
+static swig_type_info *swig_types[31];
+static swig_module_info swig_module = {swig_types, 30, 0, 0, 0, 0};
 #define SWIG_TypeQuery(name) SWIG_TypeQueryModule(&swig_module, &swig_module, name)
 #define SWIG_MangledTypeQuery(name) SWIG_MangledTypeQueryModule(&swig_module, &swig_module, name)
 
@@ -1694,6 +1772,36 @@ typedef struct{} LANGUAGE_OBJ;
 }
 
 
+  // Redefine SWIG_fail_* macros to make them display file and line information
+  // See http://stackoverflow.com/questions/14664541/line-number-where-swig-runtimeerror-occurs
+  SWIGRUNTIME void SWIG_push_fail_arg_info(lua_State* L, const char* func_name, int argnum, const char* expected, const char* actual)
+  {
+    lua_Debug ar;
+    lua_getstack(L, 1, &ar);
+    lua_getinfo(L, "nSl", &ar);
+    lua_pushfstring(L,"Error (%s:%d) in %s (arg %d), expected '%s' got '%s'", ar.source,ar.currentline,func_name,argnum,expected,actual);
+  }
+  
+  SWIGRUNTIME void SWIG_push_fail_check_num_args_info(lua_State* L, const char* func_name, int a, int b, int c)
+  {
+    lua_Debug ar;
+    lua_getstack(L, 1, &ar);
+    lua_getinfo(L, "nSl", &ar);
+    lua_pushfstring(L,"Error (%s:%d) in %s expected %d..%d args, got %d",ar.source,ar.currentline,func_name,a,b,lua_gettop(L));
+  }
+  
+  #undef SWIG_fail_arg
+  #define SWIG_fail_arg(func_name,argnum,type) \
+    {SWIG_push_fail_arg_info(L,func_name,argnum,type,SWIG_Lua_typename(L,argnum));\
+    goto fail;}
+  
+  #undef SWIG_check_num_args
+  #define SWIG_check_num_args(func_name,a,b) \
+    if (lua_gettop(L)<a || lua_gettop(L)>b) \
+    { SWIG_push_fail_check_num_args_info(L,func_name,a,b,lua_gettop(L));\
+    goto fail;}
+
+
   // GFx includes
   #include <GFx/GFx_Player.h>
   #include <GFx/GFx_Loader.h>
@@ -1701,9 +1809,9 @@ typedef struct{} LANGUAGE_OBJ;
   #include <Render/Renderer2D.h>
   #include <Kernel/SF_Threads.h>
 
-  #if defined (WIN32) && defined(_VR_DX9)
+  #if defined (_VISION_WIN32) && defined(_VR_DX9)
     #include <GFx_Renderer_D3D9.h>
-  #elif defined(WIN32) && defined(_VR_DX11)
+  #elif defined(_VISION_WIN32) && defined(_VR_DX11)
     #include <GFx_Renderer_D3D1x.h>
   #elif defined (_VISION_XENON)
     #include <Render/X360/X360_HAL.h>
@@ -1736,7 +1844,7 @@ SWIGINTERN int SWIG_lua_isnilstring(lua_State *L, int idx) {
 }
 
 SWIGINTERN void VScaleformManager_SetAbsoluteCursorPositioning(VScaleformManager *self,bool bAbsolutePos){
-      #ifdef WIN32
+      #ifdef _VISION_WIN32
         self->SetAbsoluteCursorPositioning(bAbsolutePos);
       #else
         hkvLog::Info("Warning: Calling unsupported method 'SetAbsoluteCursorPositioning'");
@@ -1747,6 +1855,12 @@ SWIGINTERN int VScaleformManager_GetMovieRenderContextSize(VScaleformManager *se
     }
 SWIGINTERN VScaleformManager *VScaleformManager_Cast(unsigned long *lObject){
     return (VScaleformManager *) lObject;
+  }
+SWIGINTERN void VScaleformMovieInstance_SetVisibleBitmask(VScaleformMovieInstance *self,VBitmask *pBitmask){
+    if(pBitmask) self->SetVisibleBitmask(pBitmask->Get());
+  }
+SWIGINTERN VBitmask VScaleformMovieInstance_GetVisibleBitmask(VScaleformMovieInstance const *self){
+    return VBitmask(self->GetVisibleBitmask());
   }
 
   SWIGINTERN int VScaleformMovieInstance_Concat(lua_State *L)
@@ -2051,6 +2165,12 @@ static int _wrap_VScaleformManager_EnableMultithreadedAdvance(lua_State* L) {
   }
   
   arg2 = (lua_toboolean(L, 2)!=0);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformManager>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformManager_EnableMultithreadedAdvance", 1, "VScaleformManager *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->EnableMultithreadedAdvance(arg2);
   
   return SWIG_arg;
@@ -2074,6 +2194,12 @@ static int _wrap_VScaleformManager_IsMultithreadedAdvanceEnabled(lua_State* L) {
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScaleformManager,0))){
     SWIG_fail_ptr("VScaleformManager_IsMultithreadedAdvanceEnabled",1,SWIGTYPE_p_VScaleformManager);
+  }
+  
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformManager>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformManager_IsMultithreadedAdvanceEnabled", 1, "VScaleformManager *", "deleted native object");
+    SWIG_fail;
   }
   
   result = (bool)(arg1)->IsMultithreadedAdvanceEnabled();
@@ -2122,8 +2248,23 @@ static int _wrap_VScaleformManager_LoadMovie__SWIG_0(lua_State* L) {
   arg6 = (int)lua_tonumber(L, 6);
   arg7 = (int)lua_tonumber(L, 7);
   arg8 = (int)lua_tonumber(L, 8);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformManager>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformManager_LoadMovie", 1, "VScaleformManager *", "deleted native object");
+    SWIG_fail;
+  }
+  
   result = (VScaleformMovieInstance *)(arg1)->LoadMovie((char const *)arg2,(char const *)arg3,(char const *)arg4,arg5,arg6,arg7,arg8);
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_VScaleformMovieInstance,0); SWIG_arg++; 
+  
+  if(VTraits::IsBaseOf<VTypedObject, VScaleformMovieInstance>::value)
+  {
+    LUA_PushObjectProxy(L, (VTypedObject*)result); SWIG_arg++;
+  }
+  else
+  {
+    SWIG_NewPointerObj(L,result,SWIGTYPE_p_VScaleformMovieInstance,0); SWIG_arg++;
+  }
+  
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -2165,8 +2306,23 @@ static int _wrap_VScaleformManager_LoadMovie__SWIG_1(lua_State* L) {
   arg5 = (int)lua_tonumber(L, 5);
   arg6 = (int)lua_tonumber(L, 6);
   arg7 = (int)lua_tonumber(L, 7);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformManager>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformManager_LoadMovie", 1, "VScaleformManager *", "deleted native object");
+    SWIG_fail;
+  }
+  
   result = (VScaleformMovieInstance *)(arg1)->LoadMovie((char const *)arg2,(char const *)arg3,(char const *)arg4,arg5,arg6,arg7);
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_VScaleformMovieInstance,0); SWIG_arg++; 
+  
+  if(VTraits::IsBaseOf<VTypedObject, VScaleformMovieInstance>::value)
+  {
+    LUA_PushObjectProxy(L, (VTypedObject*)result); SWIG_arg++;
+  }
+  else
+  {
+    SWIG_NewPointerObj(L,result,SWIGTYPE_p_VScaleformMovieInstance,0); SWIG_arg++;
+  }
+  
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -2205,8 +2361,23 @@ static int _wrap_VScaleformManager_LoadMovie__SWIG_2(lua_State* L) {
   arg4 = (char *)lua_tostring(L, 4);
   arg5 = (int)lua_tonumber(L, 5);
   arg6 = (int)lua_tonumber(L, 6);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformManager>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformManager_LoadMovie", 1, "VScaleformManager *", "deleted native object");
+    SWIG_fail;
+  }
+  
   result = (VScaleformMovieInstance *)(arg1)->LoadMovie((char const *)arg2,(char const *)arg3,(char const *)arg4,arg5,arg6);
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_VScaleformMovieInstance,0); SWIG_arg++; 
+  
+  if(VTraits::IsBaseOf<VTypedObject, VScaleformMovieInstance>::value)
+  {
+    LUA_PushObjectProxy(L, (VTypedObject*)result); SWIG_arg++;
+  }
+  else
+  {
+    SWIG_NewPointerObj(L,result,SWIGTYPE_p_VScaleformMovieInstance,0); SWIG_arg++;
+  }
+  
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -2242,8 +2413,23 @@ static int _wrap_VScaleformManager_LoadMovie__SWIG_3(lua_State* L) {
   arg3 = (char *)lua_tostring(L, 3);
   arg4 = (char *)lua_tostring(L, 4);
   arg5 = (int)lua_tonumber(L, 5);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformManager>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformManager_LoadMovie", 1, "VScaleformManager *", "deleted native object");
+    SWIG_fail;
+  }
+  
   result = (VScaleformMovieInstance *)(arg1)->LoadMovie((char const *)arg2,(char const *)arg3,(char const *)arg4,arg5);
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_VScaleformMovieInstance,0); SWIG_arg++; 
+  
+  if(VTraits::IsBaseOf<VTypedObject, VScaleformMovieInstance>::value)
+  {
+    LUA_PushObjectProxy(L, (VTypedObject*)result); SWIG_arg++;
+  }
+  else
+  {
+    SWIG_NewPointerObj(L,result,SWIGTYPE_p_VScaleformMovieInstance,0); SWIG_arg++;
+  }
+  
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -2276,8 +2462,23 @@ static int _wrap_VScaleformManager_LoadMovie__SWIG_4(lua_State* L) {
   arg2 = (char *)lua_tostring(L, 2);
   arg3 = (char *)lua_tostring(L, 3);
   arg4 = (char *)lua_tostring(L, 4);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformManager>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformManager_LoadMovie", 1, "VScaleformManager *", "deleted native object");
+    SWIG_fail;
+  }
+  
   result = (VScaleformMovieInstance *)(arg1)->LoadMovie((char const *)arg2,(char const *)arg3,(char const *)arg4);
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_VScaleformMovieInstance,0); SWIG_arg++; 
+  
+  if(VTraits::IsBaseOf<VTypedObject, VScaleformMovieInstance>::value)
+  {
+    LUA_PushObjectProxy(L, (VTypedObject*)result); SWIG_arg++;
+  }
+  else
+  {
+    SWIG_NewPointerObj(L,result,SWIGTYPE_p_VScaleformMovieInstance,0); SWIG_arg++;
+  }
+  
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -2316,8 +2517,23 @@ static int _wrap_VScaleformManager_LoadMovie__SWIG_5(lua_State* L) {
   arg4 = (int)lua_tonumber(L, 4);
   arg5 = (int)lua_tonumber(L, 5);
   arg6 = (int)lua_tonumber(L, 6);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformManager>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformManager_LoadMovie", 1, "VScaleformManager *", "deleted native object");
+    SWIG_fail;
+  }
+  
   result = (VScaleformMovieInstance *)(arg1)->LoadMovie((char const *)arg2,arg3,arg4,arg5,arg6);
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_VScaleformMovieInstance,0); SWIG_arg++; 
+  
+  if(VTraits::IsBaseOf<VTypedObject, VScaleformMovieInstance>::value)
+  {
+    LUA_PushObjectProxy(L, (VTypedObject*)result); SWIG_arg++;
+  }
+  else
+  {
+    SWIG_NewPointerObj(L,result,SWIGTYPE_p_VScaleformMovieInstance,0); SWIG_arg++;
+  }
+  
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -2353,8 +2569,23 @@ static int _wrap_VScaleformManager_LoadMovie__SWIG_6(lua_State* L) {
   arg3 = (int)lua_tonumber(L, 3);
   arg4 = (int)lua_tonumber(L, 4);
   arg5 = (int)lua_tonumber(L, 5);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformManager>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformManager_LoadMovie", 1, "VScaleformManager *", "deleted native object");
+    SWIG_fail;
+  }
+  
   result = (VScaleformMovieInstance *)(arg1)->LoadMovie((char const *)arg2,arg3,arg4,arg5);
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_VScaleformMovieInstance,0); SWIG_arg++; 
+  
+  if(VTraits::IsBaseOf<VTypedObject, VScaleformMovieInstance>::value)
+  {
+    LUA_PushObjectProxy(L, (VTypedObject*)result); SWIG_arg++;
+  }
+  else
+  {
+    SWIG_NewPointerObj(L,result,SWIGTYPE_p_VScaleformMovieInstance,0); SWIG_arg++;
+  }
+  
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -2387,8 +2618,23 @@ static int _wrap_VScaleformManager_LoadMovie__SWIG_7(lua_State* L) {
   arg2 = (char *)lua_tostring(L, 2);
   arg3 = (int)lua_tonumber(L, 3);
   arg4 = (int)lua_tonumber(L, 4);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformManager>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformManager_LoadMovie", 1, "VScaleformManager *", "deleted native object");
+    SWIG_fail;
+  }
+  
   result = (VScaleformMovieInstance *)(arg1)->LoadMovie((char const *)arg2,arg3,arg4);
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_VScaleformMovieInstance,0); SWIG_arg++; 
+  
+  if(VTraits::IsBaseOf<VTypedObject, VScaleformMovieInstance>::value)
+  {
+    LUA_PushObjectProxy(L, (VTypedObject*)result); SWIG_arg++;
+  }
+  else
+  {
+    SWIG_NewPointerObj(L,result,SWIGTYPE_p_VScaleformMovieInstance,0); SWIG_arg++;
+  }
+  
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -2418,8 +2664,23 @@ static int _wrap_VScaleformManager_LoadMovie__SWIG_8(lua_State* L) {
   
   arg2 = (char *)lua_tostring(L, 2);
   arg3 = (int)lua_tonumber(L, 3);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformManager>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformManager_LoadMovie", 1, "VScaleformManager *", "deleted native object");
+    SWIG_fail;
+  }
+  
   result = (VScaleformMovieInstance *)(arg1)->LoadMovie((char const *)arg2,arg3);
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_VScaleformMovieInstance,0); SWIG_arg++; 
+  
+  if(VTraits::IsBaseOf<VTypedObject, VScaleformMovieInstance>::value)
+  {
+    LUA_PushObjectProxy(L, (VTypedObject*)result); SWIG_arg++;
+  }
+  else
+  {
+    SWIG_NewPointerObj(L,result,SWIGTYPE_p_VScaleformMovieInstance,0); SWIG_arg++;
+  }
+  
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -2446,8 +2707,23 @@ static int _wrap_VScaleformManager_LoadMovie__SWIG_9(lua_State* L) {
   }
   
   arg2 = (char *)lua_tostring(L, 2);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformManager>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformManager_LoadMovie", 1, "VScaleformManager *", "deleted native object");
+    SWIG_fail;
+  }
+  
   result = (VScaleformMovieInstance *)(arg1)->LoadMovie((char const *)arg2);
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_VScaleformMovieInstance,0); SWIG_arg++; 
+  
+  if(VTraits::IsBaseOf<VTypedObject, VScaleformMovieInstance>::value)
+  {
+    LUA_PushObjectProxy(L, (VTypedObject*)result); SWIG_arg++;
+  }
+  else
+  {
+    SWIG_NewPointerObj(L,result,SWIGTYPE_p_VScaleformMovieInstance,0); SWIG_arg++;
+  }
+  
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -2838,8 +3114,23 @@ static int _wrap_VScaleformManager_GetMovie(lua_State* L) {
   }
   
   arg2 = (char *)lua_tostring(L, 2);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformManager const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformManager_GetMovie", 1, "VScaleformManager const *", "deleted native object");
+    SWIG_fail;
+  }
+  
   result = (VScaleformMovieInstance *)((VScaleformManager const *)arg1)->GetMovie((char const *)arg2);
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_VScaleformMovieInstance,0); SWIG_arg++; 
+  
+  if(VTraits::IsBaseOf<VTypedObject, VScaleformMovieInstance>::value)
+  {
+    LUA_PushObjectProxy(L, (VTypedObject*)result); SWIG_arg++;
+  }
+  else
+  {
+    SWIG_NewPointerObj(L,result,SWIGTYPE_p_VScaleformMovieInstance,0); SWIG_arg++;
+  }
+  
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -2870,6 +3161,12 @@ static int _wrap_VScaleformManager_UnloadMovie(lua_State* L) {
     SWIG_fail_ptr("VScaleformManager_UnloadMovie",2,SWIGTYPE_p_VScaleformMovieInstance);
   }
   
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformManager>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformManager_UnloadMovie", 1, "VScaleformManager *", "deleted native object");
+    SWIG_fail;
+  }
+  
   result = (bool)(arg1)->UnloadMovie(arg2);
   lua_pushboolean(L,(int)(result!=0)); SWIG_arg++;
   return SWIG_arg;
@@ -2892,6 +3189,12 @@ static int _wrap_VScaleformManager_UnloadAllMovies(lua_State* L) {
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScaleformManager,0))){
     SWIG_fail_ptr("VScaleformManager_UnloadAllMovies",1,SWIGTYPE_p_VScaleformManager);
+  }
+  
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformManager>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformManager_UnloadAllMovies", 1, "VScaleformManager *", "deleted native object");
+    SWIG_fail;
   }
   
   (arg1)->UnloadAllMovies();
@@ -2921,6 +3224,12 @@ static int _wrap_VScaleformManager_SetHandleCursorInput(lua_State* L) {
   }
   
   arg2 = (lua_toboolean(L, 2)!=0);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformManager>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformManager_SetHandleCursorInput", 1, "VScaleformManager *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->SetHandleCursorInput(arg2);
   
   return SWIG_arg;
@@ -2948,6 +3257,12 @@ static int _wrap_VScaleformManager_SetAbsoluteCursorPositioning(lua_State* L) {
   }
   
   arg2 = (lua_toboolean(L, 2)!=0);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformManager>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformManager_SetAbsoluteCursorPositioning", 1, "VScaleformManager *", "deleted native object");
+    SWIG_fail;
+  }
+  
   VScaleformManager_SetAbsoluteCursorPositioning(arg1,arg2);
   
   return SWIG_arg;
@@ -2971,6 +3286,12 @@ static int _wrap_VScaleformManager_GetMovieRenderContextSize(lua_State* L) {
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScaleformManager,0))){
     SWIG_fail_ptr("VScaleformManager_GetMovieRenderContextSize",1,SWIGTYPE_p_VScaleformManager);
+  }
+  
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformManager>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformManager_GetMovieRenderContextSize", 1, "VScaleformManager *", "deleted native object");
+    SWIG_fail;
   }
   
   result = (int)VScaleformManager_GetMovieRenderContextSize(arg1);
@@ -3018,6 +3339,12 @@ static int _wrap_VScaleformManager_SetCursorPos__SWIG_0(lua_State* L) {
   arg6 = (lua_toboolean(L, 6)!=0);
   arg7 = (lua_toboolean(L, 7)!=0);
   arg8 = (int)lua_tonumber(L, 8);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformManager>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformManager_SetCursorPos", 1, "VScaleformManager *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->SetCursorPos(arg2,arg3,arg4,arg5,arg6,arg7,arg8);
   
   return SWIG_arg;
@@ -3060,6 +3387,12 @@ static int _wrap_VScaleformManager_SetCursorPos__SWIG_1(lua_State* L) {
   arg5 = (lua_toboolean(L, 5)!=0);
   arg6 = (lua_toboolean(L, 6)!=0);
   arg7 = (lua_toboolean(L, 7)!=0);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformManager>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformManager_SetCursorPos", 1, "VScaleformManager *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->SetCursorPos(arg2,arg3,arg4,arg5,arg6,arg7);
   
   return SWIG_arg;
@@ -3099,6 +3432,12 @@ static int _wrap_VScaleformManager_SetCursorPos__SWIG_2(lua_State* L) {
   arg4 = (float)lua_tonumber(L, 4);
   arg5 = (lua_toboolean(L, 5)!=0);
   arg6 = (lua_toboolean(L, 6)!=0);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformManager>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformManager_SetCursorPos", 1, "VScaleformManager *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->SetCursorPos(arg2,arg3,arg4,arg5,arg6);
   
   return SWIG_arg;
@@ -3135,6 +3474,12 @@ static int _wrap_VScaleformManager_SetCursorPos__SWIG_3(lua_State* L) {
   arg3 = (float)lua_tonumber(L, 3);
   arg4 = (float)lua_tonumber(L, 4);
   arg5 = (lua_toboolean(L, 5)!=0);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformManager>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformManager_SetCursorPos", 1, "VScaleformManager *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->SetCursorPos(arg2,arg3,arg4,arg5);
   
   return SWIG_arg;
@@ -3168,6 +3513,12 @@ static int _wrap_VScaleformManager_SetCursorPos__SWIG_4(lua_State* L) {
   arg2 = (float)lua_tonumber(L, 2);
   arg3 = (float)lua_tonumber(L, 3);
   arg4 = (float)lua_tonumber(L, 4);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformManager>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformManager_SetCursorPos", 1, "VScaleformManager *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->SetCursorPos(arg2,arg3,arg4);
   
   return SWIG_arg;
@@ -3198,6 +3549,12 @@ static int _wrap_VScaleformManager_SetCursorPos__SWIG_5(lua_State* L) {
   
   arg2 = (float)lua_tonumber(L, 2);
   arg3 = (float)lua_tonumber(L, 3);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformManager>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformManager_SetCursorPos", 1, "VScaleformManager *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->SetCursorPos(arg2,arg3);
   
   return SWIG_arg;
@@ -3482,6 +3839,12 @@ static int _wrap_VScaleformManager_IncCursorPos__SWIG_0(lua_State* L) {
   arg6 = (lua_toboolean(L, 6)!=0);
   arg7 = (lua_toboolean(L, 7)!=0);
   arg8 = (int)lua_tonumber(L, 8);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformManager>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformManager_IncCursorPos", 1, "VScaleformManager *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->IncCursorPos(arg2,arg3,arg4,arg5,arg6,arg7,arg8);
   
   return SWIG_arg;
@@ -3524,6 +3887,12 @@ static int _wrap_VScaleformManager_IncCursorPos__SWIG_1(lua_State* L) {
   arg5 = (lua_toboolean(L, 5)!=0);
   arg6 = (lua_toboolean(L, 6)!=0);
   arg7 = (lua_toboolean(L, 7)!=0);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformManager>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformManager_IncCursorPos", 1, "VScaleformManager *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->IncCursorPos(arg2,arg3,arg4,arg5,arg6,arg7);
   
   return SWIG_arg;
@@ -3563,6 +3932,12 @@ static int _wrap_VScaleformManager_IncCursorPos__SWIG_2(lua_State* L) {
   arg4 = (float)lua_tonumber(L, 4);
   arg5 = (lua_toboolean(L, 5)!=0);
   arg6 = (lua_toboolean(L, 6)!=0);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformManager>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformManager_IncCursorPos", 1, "VScaleformManager *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->IncCursorPos(arg2,arg3,arg4,arg5,arg6);
   
   return SWIG_arg;
@@ -3599,6 +3974,12 @@ static int _wrap_VScaleformManager_IncCursorPos__SWIG_3(lua_State* L) {
   arg3 = (float)lua_tonumber(L, 3);
   arg4 = (float)lua_tonumber(L, 4);
   arg5 = (lua_toboolean(L, 5)!=0);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformManager>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformManager_IncCursorPos", 1, "VScaleformManager *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->IncCursorPos(arg2,arg3,arg4,arg5);
   
   return SWIG_arg;
@@ -3632,6 +4013,12 @@ static int _wrap_VScaleformManager_IncCursorPos__SWIG_4(lua_State* L) {
   arg2 = (float)lua_tonumber(L, 2);
   arg3 = (float)lua_tonumber(L, 3);
   arg4 = (float)lua_tonumber(L, 4);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformManager>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformManager_IncCursorPos", 1, "VScaleformManager *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->IncCursorPos(arg2,arg3,arg4);
   
   return SWIG_arg;
@@ -3662,6 +4049,12 @@ static int _wrap_VScaleformManager_IncCursorPos__SWIG_5(lua_State* L) {
   
   arg2 = (float)lua_tonumber(L, 2);
   arg3 = (float)lua_tonumber(L, 3);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformManager>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformManager_IncCursorPos", 1, "VScaleformManager *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->IncCursorPos(arg2,arg3);
   
   return SWIG_arg;
@@ -3926,7 +4319,16 @@ static int _wrap_VScaleformManager_Cast(lua_State* L) {
   }
   
   result = (VScaleformManager *)VScaleformManager_Cast(arg1);
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_VScaleformManager,0); SWIG_arg++; 
+  
+  if(VTraits::IsBaseOf<VTypedObject, VScaleformManager>::value)
+  {
+    LUA_PushObjectProxy(L, (VTypedObject*)result); SWIG_arg++;
+  }
+  else
+  {
+    SWIG_NewPointerObj(L,result,SWIGTYPE_p_VScaleformManager,0); SWIG_arg++;
+  }
+  
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -3973,6 +4375,12 @@ static int _wrap_VScaleformMovieInstance_SetOpacity(lua_State* L) {
   }
   
   arg2 = (float)lua_tonumber(L, 2);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformMovieInstance>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformMovieInstance_SetOpacity", 1, "VScaleformMovieInstance *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->SetOpacity(arg2);
   
   return SWIG_arg;
@@ -4009,6 +4417,12 @@ static int _wrap_VScaleformMovieInstance_SetDimensions__SWIG_0(lua_State* L) {
   arg3 = (int)lua_tonumber(L, 3);
   arg4 = (int)lua_tonumber(L, 4);
   arg5 = (int)lua_tonumber(L, 5);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformMovieInstance>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformMovieInstance_SetDimensions", 1, "VScaleformMovieInstance *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->SetDimensions(arg2,arg3,arg4,arg5);
   
   return SWIG_arg;
@@ -4042,6 +4456,12 @@ static int _wrap_VScaleformMovieInstance_SetDimensions__SWIG_1(lua_State* L) {
   arg2 = (int)lua_tonumber(L, 2);
   arg3 = (int)lua_tonumber(L, 3);
   arg4 = (int)lua_tonumber(L, 4);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformMovieInstance>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformMovieInstance_SetDimensions", 1, "VScaleformMovieInstance *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->SetDimensions(arg2,arg3,arg4);
   
   return SWIG_arg;
@@ -4072,6 +4492,12 @@ static int _wrap_VScaleformMovieInstance_SetDimensions__SWIG_2(lua_State* L) {
   
   arg2 = (int)lua_tonumber(L, 2);
   arg3 = (int)lua_tonumber(L, 3);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformMovieInstance>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformMovieInstance_SetDimensions", 1, "VScaleformMovieInstance *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->SetDimensions(arg2,arg3);
   
   return SWIG_arg;
@@ -4099,6 +4525,12 @@ static int _wrap_VScaleformMovieInstance_SetDimensions__SWIG_3(lua_State* L) {
   }
   
   arg2 = (int)lua_tonumber(L, 2);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformMovieInstance>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformMovieInstance_SetDimensions", 1, "VScaleformMovieInstance *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->SetDimensions(arg2);
   
   return SWIG_arg;
@@ -4121,6 +4553,12 @@ static int _wrap_VScaleformMovieInstance_SetDimensions__SWIG_4(lua_State* L) {
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScaleformMovieInstance,0))){
     SWIG_fail_ptr("VScaleformMovieInstance_SetDimensions",1,SWIGTYPE_p_VScaleformMovieInstance);
+  }
+  
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformMovieInstance>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformMovieInstance_SetDimensions", 1, "VScaleformMovieInstance *", "deleted native object");
+    SWIG_fail;
   }
   
   (arg1)->SetDimensions();
@@ -4292,6 +4730,12 @@ static int _wrap_VScaleformMovieInstance_SetPosition(lua_State* L) {
   
   arg2 = (int)lua_tonumber(L, 2);
   arg3 = (int)lua_tonumber(L, 3);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformMovieInstance>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformMovieInstance_SetPosition", 1, "VScaleformMovieInstance *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->SetPosition(arg2,arg3);
   
   return SWIG_arg;
@@ -4322,6 +4766,12 @@ static int _wrap_VScaleformMovieInstance_SetSize(lua_State* L) {
   
   arg2 = (int)lua_tonumber(L, 2);
   arg3 = (int)lua_tonumber(L, 3);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformMovieInstance>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformMovieInstance_SetSize", 1, "VScaleformMovieInstance *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->SetSize(arg2,arg3);
   
   return SWIG_arg;
@@ -4346,61 +4796,14 @@ static int _wrap_VScaleformMovieInstance_SetAuthoredSize(lua_State* L) {
     SWIG_fail_ptr("VScaleformMovieInstance_SetAuthoredSize",1,SWIGTYPE_p_VScaleformMovieInstance);
   }
   
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformMovieInstance>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformMovieInstance_SetAuthoredSize", 1, "VScaleformMovieInstance *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->SetAuthoredSize();
   
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
-fail:
-  lua_error(L);
-  return SWIG_arg;
-}
-
-
-static int _wrap_VScaleformMovieInstance_SetVisibleBitmask(lua_State* L) {
-  int SWIG_arg = 0;
-  VScaleformMovieInstance *arg1 = (VScaleformMovieInstance *) 0 ;
-  unsigned int arg2 ;
-  
-  SWIG_check_num_args("SetVisibleBitmask",2,2)
-  if(lua_isnil(L, 1)) SWIG_fail_arg("SetVisibleBitmask",1,"VScaleformMovieInstance *");
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("SetVisibleBitmask",1,"VScaleformMovieInstance *");
-  if(!lua_isnumber(L,2)) SWIG_fail_arg("SetVisibleBitmask",2,"unsigned int");
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScaleformMovieInstance,0))){
-    SWIG_fail_ptr("VScaleformMovieInstance_SetVisibleBitmask",1,SWIGTYPE_p_VScaleformMovieInstance);
-  }
-  
-  SWIG_contract_assert((lua_tonumber(L,2)>=0),"number must not be negative")
-  arg2 = (unsigned int)lua_tonumber(L, 2);
-  (arg1)->SetVisibleBitmask(arg2);
-  
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
-fail:
-  lua_error(L);
-  return SWIG_arg;
-}
-
-
-static int _wrap_VScaleformMovieInstance_GetVisibleBitmask(lua_State* L) {
-  int SWIG_arg = 0;
-  VScaleformMovieInstance *arg1 = (VScaleformMovieInstance *) 0 ;
-  unsigned int result;
-  
-  SWIG_check_num_args("GetVisibleBitmask",1,1)
-  if(lua_isnil(L, 1)) SWIG_fail_arg("GetVisibleBitmask",1,"VScaleformMovieInstance const *");
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("GetVisibleBitmask",1,"VScaleformMovieInstance const *");
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScaleformMovieInstance,0))){
-    SWIG_fail_ptr("VScaleformMovieInstance_GetVisibleBitmask",1,SWIGTYPE_p_VScaleformMovieInstance);
-  }
-  
-  result = (unsigned int)((VScaleformMovieInstance const *)arg1)->GetVisibleBitmask();
-  lua_pushnumber(L, (lua_Number) result); SWIG_arg++;
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -4422,6 +4825,12 @@ static int _wrap_VScaleformMovieInstance_IsVisibleInAnyContext(lua_State* L) {
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScaleformMovieInstance,0))){
     SWIG_fail_ptr("VScaleformMovieInstance_IsVisibleInAnyContext",1,SWIGTYPE_p_VScaleformMovieInstance);
+  }
+  
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformMovieInstance const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformMovieInstance_IsVisibleInAnyContext", 1, "VScaleformMovieInstance const *", "deleted native object");
+    SWIG_fail;
   }
   
   result = (bool)((VScaleformMovieInstance const *)arg1)->IsVisibleInAnyContext();
@@ -4447,6 +4856,12 @@ static int _wrap_VScaleformMovieInstance_GetFileName(lua_State* L) {
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScaleformMovieInstance,0))){
     SWIG_fail_ptr("VScaleformMovieInstance_GetFileName",1,SWIGTYPE_p_VScaleformMovieInstance);
+  }
+  
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformMovieInstance const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformMovieInstance_GetFileName", 1, "VScaleformMovieInstance const *", "deleted native object");
+    SWIG_fail;
   }
   
   result = (char *)((VScaleformMovieInstance const *)arg1)->GetFileName();
@@ -4476,6 +4891,12 @@ static int _wrap_VScaleformMovieInstance_SetPaused(lua_State* L) {
   }
   
   arg2 = (lua_toboolean(L, 2)!=0);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformMovieInstance>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformMovieInstance_SetPaused", 1, "VScaleformMovieInstance *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->SetPaused(arg2);
   
   return SWIG_arg;
@@ -4499,6 +4920,12 @@ static int _wrap_VScaleformMovieInstance_IsPaused(lua_State* L) {
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScaleformMovieInstance,0))){
     SWIG_fail_ptr("VScaleformMovieInstance_IsPaused",1,SWIGTYPE_p_VScaleformMovieInstance);
+  }
+  
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformMovieInstance const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformMovieInstance_IsPaused", 1, "VScaleformMovieInstance const *", "deleted native object");
+    SWIG_fail;
   }
   
   result = (bool)((VScaleformMovieInstance const *)arg1)->IsPaused();
@@ -4525,6 +4952,12 @@ static int _wrap_VScaleformMovieInstance_Restart(lua_State* L) {
     SWIG_fail_ptr("VScaleformMovieInstance_Restart",1,SWIGTYPE_p_VScaleformMovieInstance);
   }
   
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformMovieInstance>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformMovieInstance_Restart", 1, "VScaleformMovieInstance *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->Restart();
   
   return SWIG_arg;
@@ -4534,6 +4967,201 @@ static int _wrap_VScaleformMovieInstance_Restart(lua_State* L) {
 fail:
   lua_error(L);
   return SWIG_arg;
+}
+
+
+static int _wrap_VScaleformMovieInstance_GetCurrentFrame(lua_State* L) {
+  int SWIG_arg = 0;
+  VScaleformMovieInstance *arg1 = (VScaleformMovieInstance *) 0 ;
+  unsigned int result;
+  
+  SWIG_check_num_args("GetCurrentFrame",1,1)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("GetCurrentFrame",1,"VScaleformMovieInstance const *");
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("GetCurrentFrame",1,"VScaleformMovieInstance const *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScaleformMovieInstance,0))){
+    SWIG_fail_ptr("VScaleformMovieInstance_GetCurrentFrame",1,SWIGTYPE_p_VScaleformMovieInstance);
+  }
+  
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformMovieInstance const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformMovieInstance_GetCurrentFrame", 1, "VScaleformMovieInstance const *", "deleted native object");
+    SWIG_fail;
+  }
+  
+  result = (unsigned int)((VScaleformMovieInstance const *)arg1)->GetCurrentFrame();
+  lua_pushnumber(L, (lua_Number) result); SWIG_arg++;
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_VScaleformMovieInstance_GotoFrame(lua_State* L) {
+  int SWIG_arg = 0;
+  VScaleformMovieInstance *arg1 = (VScaleformMovieInstance *) 0 ;
+  unsigned int arg2 ;
+  
+  SWIG_check_num_args("GotoFrame",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("GotoFrame",1,"VScaleformMovieInstance *");
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("GotoFrame",1,"VScaleformMovieInstance *");
+  if(!lua_isnumber(L,2)) SWIG_fail_arg("GotoFrame",2,"unsigned int");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScaleformMovieInstance,0))){
+    SWIG_fail_ptr("VScaleformMovieInstance_GotoFrame",1,SWIGTYPE_p_VScaleformMovieInstance);
+  }
+  
+  SWIG_contract_assert((lua_tonumber(L,2)>=0),"number must not be negative")
+  arg2 = (unsigned int)lua_tonumber(L, 2);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformMovieInstance>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformMovieInstance_GotoFrame", 1, "VScaleformMovieInstance *", "deleted native object");
+    SWIG_fail;
+  }
+  
+  (arg1)->GotoFrame(arg2);
+  
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_VScaleformMovieInstance_GotoLabeledFrame__SWIG_0(lua_State* L) {
+  int SWIG_arg = 0;
+  VScaleformMovieInstance *arg1 = (VScaleformMovieInstance *) 0 ;
+  char *arg2 = (char *) 0 ;
+  int arg3 ;
+  bool result;
+  
+  SWIG_check_num_args("GotoLabeledFrame",3,3)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("GotoLabeledFrame",1,"VScaleformMovieInstance *");
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("GotoLabeledFrame",1,"VScaleformMovieInstance *");
+  if(!SWIG_lua_isnilstring(L,2)) SWIG_fail_arg("GotoLabeledFrame",2,"char const *");
+  if(!lua_isnumber(L,3)) SWIG_fail_arg("GotoLabeledFrame",3,"int");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScaleformMovieInstance,0))){
+    SWIG_fail_ptr("VScaleformMovieInstance_GotoLabeledFrame",1,SWIGTYPE_p_VScaleformMovieInstance);
+  }
+  
+  arg2 = (char *)lua_tostring(L, 2);
+  arg3 = (int)lua_tonumber(L, 3);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformMovieInstance>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformMovieInstance_GotoLabeledFrame", 1, "VScaleformMovieInstance *", "deleted native object");
+    SWIG_fail;
+  }
+  
+  result = (bool)(arg1)->GotoLabeledFrame((char const *)arg2,arg3);
+  lua_pushboolean(L,(int)(result!=0)); SWIG_arg++;
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_VScaleformMovieInstance_GotoLabeledFrame__SWIG_1(lua_State* L) {
+  int SWIG_arg = 0;
+  VScaleformMovieInstance *arg1 = (VScaleformMovieInstance *) 0 ;
+  char *arg2 = (char *) 0 ;
+  bool result;
+  
+  SWIG_check_num_args("GotoLabeledFrame",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("GotoLabeledFrame",1,"VScaleformMovieInstance *");
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("GotoLabeledFrame",1,"VScaleformMovieInstance *");
+  if(!SWIG_lua_isnilstring(L,2)) SWIG_fail_arg("GotoLabeledFrame",2,"char const *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScaleformMovieInstance,0))){
+    SWIG_fail_ptr("VScaleformMovieInstance_GotoLabeledFrame",1,SWIGTYPE_p_VScaleformMovieInstance);
+  }
+  
+  arg2 = (char *)lua_tostring(L, 2);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformMovieInstance>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformMovieInstance_GotoLabeledFrame", 1, "VScaleformMovieInstance *", "deleted native object");
+    SWIG_fail;
+  }
+  
+  result = (bool)(arg1)->GotoLabeledFrame((char const *)arg2);
+  lua_pushboolean(L,(int)(result!=0)); SWIG_arg++;
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_VScaleformMovieInstance_GotoLabeledFrame(lua_State* L) {
+  int argc;
+  int argv[4]={
+    1,2,3,4
+  };
+  
+  argc = lua_gettop(L);
+  if (argc == 2) {
+    int _v;
+    {
+      void *ptr;
+      if (SWIG_isptrtype(L,argv[0])==0 || SWIG_ConvertPtr(L,argv[0], (void **) &ptr, SWIGTYPE_p_VScaleformMovieInstance, 0)) {
+        _v = 0;
+      } else {
+        _v = 1;
+      }
+    }
+    if (_v) {
+      {
+        _v = SWIG_lua_isnilstring(L,argv[1]);
+      }
+      if (_v) {
+        return _wrap_VScaleformMovieInstance_GotoLabeledFrame__SWIG_1(L);
+      }
+    }
+  }
+  if (argc == 3) {
+    int _v;
+    {
+      void *ptr;
+      if (SWIG_isptrtype(L,argv[0])==0 || SWIG_ConvertPtr(L,argv[0], (void **) &ptr, SWIGTYPE_p_VScaleformMovieInstance, 0)) {
+        _v = 0;
+      } else {
+        _v = 1;
+      }
+    }
+    if (_v) {
+      {
+        _v = SWIG_lua_isnilstring(L,argv[1]);
+      }
+      if (_v) {
+        {
+          _v = lua_isnumber(L,argv[2]);
+        }
+        if (_v) {
+          return _wrap_VScaleformMovieInstance_GotoLabeledFrame__SWIG_0(L);
+        }
+      }
+    }
+  }
+  
+  lua_pushstring(L,"Wrong arguments for overloaded function 'VScaleformMovieInstance_GotoLabeledFrame'\n"
+    "  Possible C/C++ prototypes are:\n"
+    "    GotoLabeledFrame(VScaleformMovieInstance *,char const *,int)\n"
+    "    GotoLabeledFrame(VScaleformMovieInstance *,char const *)\n");
+  lua_error(L);return 0;
 }
 
 
@@ -4548,6 +5176,12 @@ static int _wrap_VScaleformMovieInstance_IsFocused(lua_State* L) {
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScaleformMovieInstance,0))){
     SWIG_fail_ptr("VScaleformMovieInstance_IsFocused",1,SWIGTYPE_p_VScaleformMovieInstance);
+  }
+  
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformMovieInstance const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformMovieInstance_IsFocused", 1, "VScaleformMovieInstance const *", "deleted native object");
+    SWIG_fail;
   }
   
   result = (bool)((VScaleformMovieInstance const *)arg1)->IsFocused();
@@ -4577,6 +5211,12 @@ static int _wrap_VScaleformMovieInstance_SetHandleInput(lua_State* L) {
   }
   
   arg2 = (lua_toboolean(L, 2)!=0);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformMovieInstance>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformMovieInstance_SetHandleInput", 1, "VScaleformMovieInstance *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->SetHandleInput(arg2);
   
   return SWIG_arg;
@@ -4605,6 +5245,12 @@ static int _wrap_VScaleformMovieInstance_GetVariable(lua_State* L) {
   }
   
   arg2 = (char *)lua_tostring(L, 2);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformMovieInstance>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformMovieInstance_GetVariable", 1, "VScaleformMovieInstance *", "deleted native object");
+    SWIG_fail;
+  }
+  
   result = (arg1)->GetVariable((char const *)arg2);
   {
     VScaleformVariable * resultptr = new VScaleformVariable((const VScaleformVariable &) result);
@@ -4636,10 +5282,87 @@ static int _wrap_VScaleformMovieInstance_GetVariableValue(lua_State* L) {
   }
   
   arg2 = (char *)lua_tostring(L, 2);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformMovieInstance>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformMovieInstance_GetVariableValue", 1, "VScaleformMovieInstance *", "deleted native object");
+    SWIG_fail;
+  }
+  
   result = (arg1)->GetVariableValue((char const *)arg2);
   {
     VScaleformValue * resultptr = new VScaleformValue((const VScaleformValue &) result);
     SWIG_NewPointerObj(L,(void *) resultptr,SWIGTYPE_p_VScaleformValue,1); SWIG_arg++;
+  }
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_VScaleformMovieInstance_SetVisibleBitmask(lua_State* L) {
+  int SWIG_arg = 0;
+  VScaleformMovieInstance *arg1 = (VScaleformMovieInstance *) 0 ;
+  VBitmask *arg2 = (VBitmask *) 0 ;
+  
+  SWIG_check_num_args("SetVisibleBitmask",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("SetVisibleBitmask",1,"VScaleformMovieInstance *");
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("SetVisibleBitmask",1,"VScaleformMovieInstance *");
+  if(!SWIG_isptrtype(L,2)) SWIG_fail_arg("SetVisibleBitmask",2,"VBitmask *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScaleformMovieInstance,0))){
+    SWIG_fail_ptr("VScaleformMovieInstance_SetVisibleBitmask",1,SWIGTYPE_p_VScaleformMovieInstance);
+  }
+  
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,2,(void**)&arg2,SWIGTYPE_p_VBitmask,0))){
+    SWIG_fail_ptr("VScaleformMovieInstance_SetVisibleBitmask",2,SWIGTYPE_p_VBitmask);
+  }
+  
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformMovieInstance>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformMovieInstance_SetVisibleBitmask", 1, "VScaleformMovieInstance *", "deleted native object");
+    SWIG_fail;
+  }
+  
+  VScaleformMovieInstance_SetVisibleBitmask(arg1,arg2);
+  
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_VScaleformMovieInstance_GetVisibleBitmask(lua_State* L) {
+  int SWIG_arg = 0;
+  VScaleformMovieInstance *arg1 = (VScaleformMovieInstance *) 0 ;
+  VBitmask result;
+  
+  SWIG_check_num_args("GetVisibleBitmask",1,1)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("GetVisibleBitmask",1,"VScaleformMovieInstance const *");
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("GetVisibleBitmask",1,"VScaleformMovieInstance const *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScaleformMovieInstance,0))){
+    SWIG_fail_ptr("VScaleformMovieInstance_GetVisibleBitmask",1,SWIGTYPE_p_VScaleformMovieInstance);
+  }
+  
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformMovieInstance const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformMovieInstance_GetVisibleBitmask", 1, "VScaleformMovieInstance const *", "deleted native object");
+    SWIG_fail;
+  }
+  
+  result = VScaleformMovieInstance_GetVisibleBitmask((VScaleformMovieInstance const *)arg1);
+  {
+    VBitmask * resultptr = new VBitmask((const VBitmask &) result);
+    SWIG_NewPointerObj(L,(void *) resultptr,SWIGTYPE_p_VBitmask,1); SWIG_arg++;
   }
   return SWIG_arg;
   
@@ -4663,17 +5386,20 @@ static swig_lua_method swig_VScaleformMovieInstance_methods[] = {
     {"SetPosition", _wrap_VScaleformMovieInstance_SetPosition}, 
     {"SetSize", _wrap_VScaleformMovieInstance_SetSize}, 
     {"SetAuthoredSize", _wrap_VScaleformMovieInstance_SetAuthoredSize}, 
-    {"SetVisibleBitmask", _wrap_VScaleformMovieInstance_SetVisibleBitmask}, 
-    {"GetVisibleBitmask", _wrap_VScaleformMovieInstance_GetVisibleBitmask}, 
     {"IsVisibleInAnyContext", _wrap_VScaleformMovieInstance_IsVisibleInAnyContext}, 
     {"GetFileName", _wrap_VScaleformMovieInstance_GetFileName}, 
     {"SetPaused", _wrap_VScaleformMovieInstance_SetPaused}, 
     {"IsPaused", _wrap_VScaleformMovieInstance_IsPaused}, 
     {"Restart", _wrap_VScaleformMovieInstance_Restart}, 
+    {"GetCurrentFrame", _wrap_VScaleformMovieInstance_GetCurrentFrame}, 
+    {"GotoFrame", _wrap_VScaleformMovieInstance_GotoFrame}, 
+    {"GotoLabeledFrame", _wrap_VScaleformMovieInstance_GotoLabeledFrame}, 
     {"IsFocused", _wrap_VScaleformMovieInstance_IsFocused}, 
     {"SetHandleInput", _wrap_VScaleformMovieInstance_SetHandleInput}, 
     {"GetVariable", _wrap_VScaleformMovieInstance_GetVariable}, 
     {"GetVariableValue", _wrap_VScaleformMovieInstance_GetVariableValue}, 
+    {"SetVisibleBitmask", _wrap_VScaleformMovieInstance_SetVisibleBitmask}, 
+    {"GetVisibleBitmask", _wrap_VScaleformMovieInstance_GetVisibleBitmask}, 
     {0,0}
 };
 static swig_lua_attribute swig_VScaleformMovieInstance_attributes[] = {
@@ -4689,7 +5415,16 @@ static int _wrap_new_VScaleformValue__SWIG_0(lua_State* L) {
   
   SWIG_check_num_args("VScaleformValue",0,0)
   result = (VScaleformValue *)new VScaleformValue();
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_VScaleformValue,1); SWIG_arg++; 
+  
+  if(VTraits::IsBaseOf<VTypedObject, VScaleformValue>::value)
+  {
+    LUA_PushObjectProxy(L, (VTypedObject*)result); SWIG_arg++;
+  }
+  else
+  {
+    SWIG_NewPointerObj(L,result,SWIGTYPE_p_VScaleformValue,1); SWIG_arg++;
+  }
+  
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -4709,7 +5444,16 @@ static int _wrap_new_VScaleformValue__SWIG_1(lua_State* L) {
   if(!lua_isboolean(L,1)) SWIG_fail_arg("VScaleformValue",1,"bool");
   arg1 = (lua_toboolean(L, 1)!=0);
   result = (VScaleformValue *)new VScaleformValue(arg1);
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_VScaleformValue,1); SWIG_arg++; 
+  
+  if(VTraits::IsBaseOf<VTypedObject, VScaleformValue>::value)
+  {
+    LUA_PushObjectProxy(L, (VTypedObject*)result); SWIG_arg++;
+  }
+  else
+  {
+    SWIG_NewPointerObj(L,result,SWIGTYPE_p_VScaleformValue,1); SWIG_arg++;
+  }
+  
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -4729,7 +5473,16 @@ static int _wrap_new_VScaleformValue__SWIG_2(lua_State* L) {
   if(!lua_isnumber(L,1)) SWIG_fail_arg("VScaleformValue",1,"float");
   arg1 = (float)lua_tonumber(L, 1);
   result = (VScaleformValue *)new VScaleformValue(arg1);
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_VScaleformValue,1); SWIG_arg++; 
+  
+  if(VTraits::IsBaseOf<VTypedObject, VScaleformValue>::value)
+  {
+    LUA_PushObjectProxy(L, (VTypedObject*)result); SWIG_arg++;
+  }
+  else
+  {
+    SWIG_NewPointerObj(L,result,SWIGTYPE_p_VScaleformValue,1); SWIG_arg++;
+  }
+  
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -4749,7 +5502,16 @@ static int _wrap_new_VScaleformValue__SWIG_3(lua_State* L) {
   if(!SWIG_lua_isnilstring(L,1)) SWIG_fail_arg("VScaleformValue",1,"char const *");
   arg1 = (char *)lua_tostring(L, 1);
   result = (VScaleformValue *)new VScaleformValue((char const *)arg1);
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_VScaleformValue,1); SWIG_arg++; 
+  
+  if(VTraits::IsBaseOf<VTypedObject, VScaleformValue>::value)
+  {
+    LUA_PushObjectProxy(L, (VTypedObject*)result); SWIG_arg++;
+  }
+  else
+  {
+    SWIG_NewPointerObj(L,result,SWIGTYPE_p_VScaleformValue,1); SWIG_arg++;
+  }
+  
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -4829,6 +5591,12 @@ static int _wrap_VScaleformValue_Set(lua_State* L) {
     }
     arg2 = &temp2;
   }
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformValue>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformValue_Set", 1, "VScaleformValue *", "deleted native object");
+    SWIG_fail;
+  }
+  
   VScaleformValue_Set(arg1,(VScaleformValue const &)*arg2);
   
   return SWIG_arg;
@@ -4851,6 +5619,12 @@ static int _wrap_VScaleformValue_SetUndefined(lua_State* L) {
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScaleformValue,0))){
     SWIG_fail_ptr("VScaleformValue_SetUndefined",1,SWIGTYPE_p_VScaleformValue);
+  }
+  
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformValue>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformValue_SetUndefined", 1, "VScaleformValue *", "deleted native object");
+    SWIG_fail;
   }
   
   (arg1)->SetUndefined();
@@ -4877,6 +5651,12 @@ static int _wrap_VScaleformValue_SetNull(lua_State* L) {
     SWIG_fail_ptr("VScaleformValue_SetNull",1,SWIGTYPE_p_VScaleformValue);
   }
   
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformValue>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformValue_SetNull", 1, "VScaleformValue *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->SetNull();
   
   return SWIG_arg;
@@ -4900,6 +5680,12 @@ static int _wrap_VScaleformValue_GetBool(lua_State* L) {
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScaleformValue,0))){
     SWIG_fail_ptr("VScaleformValue_GetBool",1,SWIGTYPE_p_VScaleformValue);
+  }
+  
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformValue const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformValue_GetBool", 1, "VScaleformValue const *", "deleted native object");
+    SWIG_fail;
   }
   
   result = (bool)((VScaleformValue const *)arg1)->GetBool();
@@ -4929,6 +5715,12 @@ static int _wrap_VScaleformValue_SetBool(lua_State* L) {
   }
   
   arg2 = (lua_toboolean(L, 2)!=0);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformValue>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformValue_SetBool", 1, "VScaleformValue *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->SetBool(arg2);
   
   return SWIG_arg;
@@ -4952,6 +5744,12 @@ static int _wrap_VScaleformValue_GetString(lua_State* L) {
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScaleformValue,0))){
     SWIG_fail_ptr("VScaleformValue_GetString",1,SWIGTYPE_p_VScaleformValue);
+  }
+  
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformValue const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformValue_GetString", 1, "VScaleformValue const *", "deleted native object");
+    SWIG_fail;
   }
   
   result = (char *)((VScaleformValue const *)arg1)->GetString();
@@ -4981,6 +5779,12 @@ static int _wrap_VScaleformValue_SetString(lua_State* L) {
   }
   
   arg2 = (char *)lua_tostring(L, 2);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformValue>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformValue_SetString", 1, "VScaleformValue *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->SetString((char const *)arg2);
   
   return SWIG_arg;
@@ -5004,6 +5808,12 @@ static int _wrap_VScaleformValue_GetNumber(lua_State* L) {
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScaleformValue,0))){
     SWIG_fail_ptr("VScaleformValue_GetNumber",1,SWIGTYPE_p_VScaleformValue);
+  }
+  
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformValue const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformValue_GetNumber", 1, "VScaleformValue const *", "deleted native object");
+    SWIG_fail;
   }
   
   result = (float)((VScaleformValue const *)arg1)->GetNumber();
@@ -5033,6 +5843,12 @@ static int _wrap_VScaleformValue_SetNumber(lua_State* L) {
   }
   
   arg2 = (float)lua_tonumber(L, 2);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformValue>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformValue_SetNumber", 1, "VScaleformValue *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->SetNumber(arg2);
   
   return SWIG_arg;
@@ -5056,6 +5872,12 @@ static int _wrap_VScaleformValue_IsUndefined(lua_State* L) {
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScaleformValue,0))){
     SWIG_fail_ptr("VScaleformValue_IsUndefined",1,SWIGTYPE_p_VScaleformValue);
+  }
+  
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformValue const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformValue_IsUndefined", 1, "VScaleformValue const *", "deleted native object");
+    SWIG_fail;
   }
   
   result = (bool)((VScaleformValue const *)arg1)->IsUndefined();
@@ -5083,6 +5905,12 @@ static int _wrap_VScaleformValue_IsNull(lua_State* L) {
     SWIG_fail_ptr("VScaleformValue_IsNull",1,SWIGTYPE_p_VScaleformValue);
   }
   
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformValue const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformValue_IsNull", 1, "VScaleformValue const *", "deleted native object");
+    SWIG_fail;
+  }
+  
   result = (bool)((VScaleformValue const *)arg1)->IsNull();
   lua_pushboolean(L,(int)(result!=0)); SWIG_arg++;
   return SWIG_arg;
@@ -5106,6 +5934,12 @@ static int _wrap_VScaleformValue_IsBool(lua_State* L) {
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScaleformValue,0))){
     SWIG_fail_ptr("VScaleformValue_IsBool",1,SWIGTYPE_p_VScaleformValue);
+  }
+  
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformValue const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformValue_IsBool", 1, "VScaleformValue const *", "deleted native object");
+    SWIG_fail;
   }
   
   result = (bool)((VScaleformValue const *)arg1)->IsBool();
@@ -5133,6 +5967,12 @@ static int _wrap_VScaleformValue_IsNumeric(lua_State* L) {
     SWIG_fail_ptr("VScaleformValue_IsNumeric",1,SWIGTYPE_p_VScaleformValue);
   }
   
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformValue const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformValue_IsNumeric", 1, "VScaleformValue const *", "deleted native object");
+    SWIG_fail;
+  }
+  
   result = (bool)((VScaleformValue const *)arg1)->IsNumeric();
   lua_pushboolean(L,(int)(result!=0)); SWIG_arg++;
   return SWIG_arg;
@@ -5156,6 +5996,12 @@ static int _wrap_VScaleformValue_IsString(lua_State* L) {
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScaleformValue,0))){
     SWIG_fail_ptr("VScaleformValue_IsString",1,SWIGTYPE_p_VScaleformValue);
+  }
+  
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformValue const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformValue_IsString", 1, "VScaleformValue const *", "deleted native object");
+    SWIG_fail;
   }
   
   result = (bool)((VScaleformValue const *)arg1)->IsString();
@@ -5183,6 +6029,12 @@ static int _wrap_VScaleformValue_IsArray(lua_State* L) {
     SWIG_fail_ptr("VScaleformValue_IsArray",1,SWIGTYPE_p_VScaleformValue);
   }
   
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformValue const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformValue_IsArray", 1, "VScaleformValue const *", "deleted native object");
+    SWIG_fail;
+  }
+  
   result = (bool)((VScaleformValue const *)arg1)->IsArray();
   lua_pushboolean(L,(int)(result!=0)); SWIG_arg++;
   return SWIG_arg;
@@ -5206,6 +6058,12 @@ static int _wrap_VScaleformValue_IsObject(lua_State* L) {
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScaleformValue,0))){
     SWIG_fail_ptr("VScaleformValue_IsObject",1,SWIGTYPE_p_VScaleformValue);
+  }
+  
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformValue const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformValue_IsObject", 1, "VScaleformValue const *", "deleted native object");
+    SWIG_fail;
   }
   
   result = (bool)((VScaleformValue const *)arg1)->IsObject();
@@ -5233,6 +6091,12 @@ static int _wrap_VScaleformValue_IsDisplayObject(lua_State* L) {
     SWIG_fail_ptr("VScaleformValue_IsDisplayObject",1,SWIGTYPE_p_VScaleformValue);
   }
   
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformValue const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformValue_IsDisplayObject", 1, "VScaleformValue const *", "deleted native object");
+    SWIG_fail;
+  }
+  
   result = (bool)((VScaleformValue const *)arg1)->IsDisplayObject();
   lua_pushboolean(L,(int)(result!=0)); SWIG_arg++;
   return SWIG_arg;
@@ -5256,6 +6120,12 @@ static int _wrap_VScaleformValue_Display_GetX(lua_State* L) {
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScaleformValue,0))){
     SWIG_fail_ptr("VScaleformValue_Display_GetX",1,SWIGTYPE_p_VScaleformValue);
+  }
+  
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformValue const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformValue_Display_GetX", 1, "VScaleformValue const *", "deleted native object");
+    SWIG_fail;
   }
   
   result = (float)((VScaleformValue const *)arg1)->Display_GetX();
@@ -5283,6 +6153,12 @@ static int _wrap_VScaleformValue_Display_GetY(lua_State* L) {
     SWIG_fail_ptr("VScaleformValue_Display_GetY",1,SWIGTYPE_p_VScaleformValue);
   }
   
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformValue const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformValue_Display_GetY", 1, "VScaleformValue const *", "deleted native object");
+    SWIG_fail;
+  }
+  
   result = (float)((VScaleformValue const *)arg1)->Display_GetY();
   lua_pushnumber(L, (lua_Number) result); SWIG_arg++;
   return SWIG_arg;
@@ -5306,6 +6182,12 @@ static int _wrap_VScaleformValue_Display_GetRotation(lua_State* L) {
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScaleformValue,0))){
     SWIG_fail_ptr("VScaleformValue_Display_GetRotation",1,SWIGTYPE_p_VScaleformValue);
+  }
+  
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformValue const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformValue_Display_GetRotation", 1, "VScaleformValue const *", "deleted native object");
+    SWIG_fail;
   }
   
   result = (float)((VScaleformValue const *)arg1)->Display_GetRotation();
@@ -5333,6 +6215,12 @@ static int _wrap_VScaleformValue_Display_GetXScale(lua_State* L) {
     SWIG_fail_ptr("VScaleformValue_Display_GetXScale",1,SWIGTYPE_p_VScaleformValue);
   }
   
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformValue const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformValue_Display_GetXScale", 1, "VScaleformValue const *", "deleted native object");
+    SWIG_fail;
+  }
+  
   result = (float)((VScaleformValue const *)arg1)->Display_GetXScale();
   lua_pushnumber(L, (lua_Number) result); SWIG_arg++;
   return SWIG_arg;
@@ -5356,6 +6244,12 @@ static int _wrap_VScaleformValue_Display_GetYScale(lua_State* L) {
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScaleformValue,0))){
     SWIG_fail_ptr("VScaleformValue_Display_GetYScale",1,SWIGTYPE_p_VScaleformValue);
+  }
+  
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformValue const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformValue_Display_GetYScale", 1, "VScaleformValue const *", "deleted native object");
+    SWIG_fail;
   }
   
   result = (float)((VScaleformValue const *)arg1)->Display_GetYScale();
@@ -5383,6 +6277,12 @@ static int _wrap_VScaleformValue_Display_GetAlpha(lua_State* L) {
     SWIG_fail_ptr("VScaleformValue_Display_GetAlpha",1,SWIGTYPE_p_VScaleformValue);
   }
   
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformValue const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformValue_Display_GetAlpha", 1, "VScaleformValue const *", "deleted native object");
+    SWIG_fail;
+  }
+  
   result = (float)((VScaleformValue const *)arg1)->Display_GetAlpha();
   lua_pushnumber(L, (lua_Number) result); SWIG_arg++;
   return SWIG_arg;
@@ -5406,6 +6306,12 @@ static int _wrap_VScaleformValue_Display_GetVisible(lua_State* L) {
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScaleformValue,0))){
     SWIG_fail_ptr("VScaleformValue_Display_GetVisible",1,SWIGTYPE_p_VScaleformValue);
+  }
+  
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformValue const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformValue_Display_GetVisible", 1, "VScaleformValue const *", "deleted native object");
+    SWIG_fail;
   }
   
   result = (bool)((VScaleformValue const *)arg1)->Display_GetVisible();
@@ -5433,6 +6339,12 @@ static int _wrap_VScaleformValue_Display_GetZ(lua_State* L) {
     SWIG_fail_ptr("VScaleformValue_Display_GetZ",1,SWIGTYPE_p_VScaleformValue);
   }
   
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformValue const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformValue_Display_GetZ", 1, "VScaleformValue const *", "deleted native object");
+    SWIG_fail;
+  }
+  
   result = (float)((VScaleformValue const *)arg1)->Display_GetZ();
   lua_pushnumber(L, (lua_Number) result); SWIG_arg++;
   return SWIG_arg;
@@ -5456,6 +6368,12 @@ static int _wrap_VScaleformValue_Display_GetXRotation(lua_State* L) {
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScaleformValue,0))){
     SWIG_fail_ptr("VScaleformValue_Display_GetXRotation",1,SWIGTYPE_p_VScaleformValue);
+  }
+  
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformValue const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformValue_Display_GetXRotation", 1, "VScaleformValue const *", "deleted native object");
+    SWIG_fail;
   }
   
   result = (float)((VScaleformValue const *)arg1)->Display_GetXRotation();
@@ -5483,6 +6401,12 @@ static int _wrap_VScaleformValue_Display_GetYRotation(lua_State* L) {
     SWIG_fail_ptr("VScaleformValue_Display_GetYRotation",1,SWIGTYPE_p_VScaleformValue);
   }
   
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformValue const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformValue_Display_GetYRotation", 1, "VScaleformValue const *", "deleted native object");
+    SWIG_fail;
+  }
+  
   result = (float)((VScaleformValue const *)arg1)->Display_GetYRotation();
   lua_pushnumber(L, (lua_Number) result); SWIG_arg++;
   return SWIG_arg;
@@ -5508,6 +6432,12 @@ static int _wrap_VScaleformValue_Display_GetZScale(lua_State* L) {
     SWIG_fail_ptr("VScaleformValue_Display_GetZScale",1,SWIGTYPE_p_VScaleformValue);
   }
   
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformValue const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformValue_Display_GetZScale", 1, "VScaleformValue const *", "deleted native object");
+    SWIG_fail;
+  }
+  
   result = (float)((VScaleformValue const *)arg1)->Display_GetZScale();
   lua_pushnumber(L, (lua_Number) result); SWIG_arg++;
   return SWIG_arg;
@@ -5531,6 +6461,12 @@ static int _wrap_VScaleformValue_Display_GetFOV(lua_State* L) {
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScaleformValue,0))){
     SWIG_fail_ptr("VScaleformValue_Display_GetFOV",1,SWIGTYPE_p_VScaleformValue);
+  }
+  
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformValue const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformValue_Display_GetFOV", 1, "VScaleformValue const *", "deleted native object");
+    SWIG_fail;
   }
   
   result = (float)((VScaleformValue const *)arg1)->Display_GetFOV();
@@ -5560,6 +6496,12 @@ static int _wrap_VScaleformValue_Display_SetX(lua_State* L) {
   }
   
   arg2 = (float)lua_tonumber(L, 2);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformValue>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformValue_Display_SetX", 1, "VScaleformValue *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->Display_SetX(arg2);
   
   return SWIG_arg;
@@ -5587,6 +6529,12 @@ static int _wrap_VScaleformValue_Display_SetY(lua_State* L) {
   }
   
   arg2 = (float)lua_tonumber(L, 2);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformValue>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformValue_Display_SetY", 1, "VScaleformValue *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->Display_SetY(arg2);
   
   return SWIG_arg;
@@ -5617,6 +6565,12 @@ static int _wrap_VScaleformValue_Display_SetXY(lua_State* L) {
   
   arg2 = (float)lua_tonumber(L, 2);
   arg3 = (float)lua_tonumber(L, 3);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformValue>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformValue_Display_SetXY", 1, "VScaleformValue *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->Display_SetXY(arg2,arg3);
   
   return SWIG_arg;
@@ -5644,6 +6598,12 @@ static int _wrap_VScaleformValue_Display_SetRotation(lua_State* L) {
   }
   
   arg2 = (float)lua_tonumber(L, 2);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformValue>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformValue_Display_SetRotation", 1, "VScaleformValue *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->Display_SetRotation(arg2);
   
   return SWIG_arg;
@@ -5671,6 +6631,12 @@ static int _wrap_VScaleformValue_Display_SetXScale(lua_State* L) {
   }
   
   arg2 = (float)lua_tonumber(L, 2);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformValue>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformValue_Display_SetXScale", 1, "VScaleformValue *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->Display_SetXScale(arg2);
   
   return SWIG_arg;
@@ -5698,6 +6664,12 @@ static int _wrap_VScaleformValue_Display_SetYScale(lua_State* L) {
   }
   
   arg2 = (float)lua_tonumber(L, 2);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformValue>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformValue_Display_SetYScale", 1, "VScaleformValue *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->Display_SetYScale(arg2);
   
   return SWIG_arg;
@@ -5728,6 +6700,12 @@ static int _wrap_VScaleformValue_Display_SetXYScale(lua_State* L) {
   
   arg2 = (float)lua_tonumber(L, 2);
   arg3 = (float)lua_tonumber(L, 3);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformValue>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformValue_Display_SetXYScale", 1, "VScaleformValue *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->Display_SetXYScale(arg2,arg3);
   
   return SWIG_arg;
@@ -5755,6 +6733,12 @@ static int _wrap_VScaleformValue_Display_SetAlpha(lua_State* L) {
   }
   
   arg2 = (float)lua_tonumber(L, 2);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformValue>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformValue_Display_SetAlpha", 1, "VScaleformValue *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->Display_SetAlpha(arg2);
   
   return SWIG_arg;
@@ -5782,6 +6766,12 @@ static int _wrap_VScaleformValue_Display_SetVisible(lua_State* L) {
   }
   
   arg2 = (lua_toboolean(L, 2)!=0);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformValue>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformValue_Display_SetVisible", 1, "VScaleformValue *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->Display_SetVisible(arg2);
   
   return SWIG_arg;
@@ -5809,6 +6799,12 @@ static int _wrap_VScaleformValue_Display_SetZ(lua_State* L) {
   }
   
   arg2 = (float)lua_tonumber(L, 2);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformValue>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformValue_Display_SetZ", 1, "VScaleformValue *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->Display_SetZ(arg2);
   
   return SWIG_arg;
@@ -5836,6 +6832,12 @@ static int _wrap_VScaleformValue_Display_SetXRotation(lua_State* L) {
   }
   
   arg2 = (float)lua_tonumber(L, 2);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformValue>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformValue_Display_SetXRotation", 1, "VScaleformValue *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->Display_SetXRotation(arg2);
   
   return SWIG_arg;
@@ -5863,6 +6865,12 @@ static int _wrap_VScaleformValue_Display_SetYRotation(lua_State* L) {
   }
   
   arg2 = (float)lua_tonumber(L, 2);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformValue>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformValue_Display_SetYRotation", 1, "VScaleformValue *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->Display_SetYRotation(arg2);
   
   return SWIG_arg;
@@ -5893,6 +6901,12 @@ static int _wrap_VScaleformValue_Display_SetXYRotation(lua_State* L) {
   
   arg2 = (float)lua_tonumber(L, 2);
   arg3 = (float)lua_tonumber(L, 3);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformValue>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformValue_Display_SetXYRotation", 1, "VScaleformValue *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->Display_SetXYRotation(arg2,arg3);
   
   return SWIG_arg;
@@ -5920,6 +6934,12 @@ static int _wrap_VScaleformValue_Display_SetZScale(lua_State* L) {
   }
   
   arg2 = (float)lua_tonumber(L, 2);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformValue>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformValue_Display_SetZScale", 1, "VScaleformValue *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->Display_SetZScale(arg2);
   
   return SWIG_arg;
@@ -5947,6 +6967,12 @@ static int _wrap_VScaleformValue_Display_SetFOV(lua_State* L) {
   }
   
   arg2 = (float)lua_tonumber(L, 2);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformValue>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformValue_Display_SetFOV", 1, "VScaleformValue *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->Display_SetFOV(arg2);
   
   return SWIG_arg;
@@ -5956,6 +6982,268 @@ static int _wrap_VScaleformValue_Display_SetFOV(lua_State* L) {
 fail:
   lua_error(L);
   return SWIG_arg;
+}
+
+
+static int _wrap_VScaleformValue_Display_GotoFrame__SWIG_0(lua_State* L) {
+  int SWIG_arg = 0;
+  VScaleformValue *arg1 = (VScaleformValue *) 0 ;
+  unsigned int arg2 ;
+  bool arg3 ;
+  bool result;
+  
+  SWIG_check_num_args("Display_GotoFrame",3,3)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("Display_GotoFrame",1,"VScaleformValue *");
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("Display_GotoFrame",1,"VScaleformValue *");
+  if(!lua_isnumber(L,2)) SWIG_fail_arg("Display_GotoFrame",2,"unsigned int");
+  if(!lua_isboolean(L,3)) SWIG_fail_arg("Display_GotoFrame",3,"bool");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScaleformValue,0))){
+    SWIG_fail_ptr("VScaleformValue_Display_GotoFrame",1,SWIGTYPE_p_VScaleformValue);
+  }
+  
+  SWIG_contract_assert((lua_tonumber(L,2)>=0),"number must not be negative")
+  arg2 = (unsigned int)lua_tonumber(L, 2);
+  arg3 = (lua_toboolean(L, 3)!=0);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformValue>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformValue_Display_GotoFrame", 1, "VScaleformValue *", "deleted native object");
+    SWIG_fail;
+  }
+  
+  result = (bool)(arg1)->Display_GotoFrame(arg2,arg3);
+  lua_pushboolean(L,(int)(result!=0)); SWIG_arg++;
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_VScaleformValue_Display_GotoFrame__SWIG_1(lua_State* L) {
+  int SWIG_arg = 0;
+  VScaleformValue *arg1 = (VScaleformValue *) 0 ;
+  unsigned int arg2 ;
+  bool result;
+  
+  SWIG_check_num_args("Display_GotoFrame",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("Display_GotoFrame",1,"VScaleformValue *");
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("Display_GotoFrame",1,"VScaleformValue *");
+  if(!lua_isnumber(L,2)) SWIG_fail_arg("Display_GotoFrame",2,"unsigned int");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScaleformValue,0))){
+    SWIG_fail_ptr("VScaleformValue_Display_GotoFrame",1,SWIGTYPE_p_VScaleformValue);
+  }
+  
+  SWIG_contract_assert((lua_tonumber(L,2)>=0),"number must not be negative")
+  arg2 = (unsigned int)lua_tonumber(L, 2);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformValue>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformValue_Display_GotoFrame", 1, "VScaleformValue *", "deleted native object");
+    SWIG_fail;
+  }
+  
+  result = (bool)(arg1)->Display_GotoFrame(arg2);
+  lua_pushboolean(L,(int)(result!=0)); SWIG_arg++;
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_VScaleformValue_Display_GotoFrame(lua_State* L) {
+  int argc;
+  int argv[4]={
+    1,2,3,4
+  };
+  
+  argc = lua_gettop(L);
+  if (argc == 2) {
+    int _v;
+    {
+      void *ptr;
+      if (SWIG_isptrtype(L,argv[0])==0 || SWIG_ConvertPtr(L,argv[0], (void **) &ptr, SWIGTYPE_p_VScaleformValue, 0)) {
+        _v = 0;
+      } else {
+        _v = 1;
+      }
+    }
+    if (_v) {
+      {
+        _v = lua_isnumber(L,argv[1]);
+      }
+      if (_v) {
+        return _wrap_VScaleformValue_Display_GotoFrame__SWIG_1(L);
+      }
+    }
+  }
+  if (argc == 3) {
+    int _v;
+    {
+      void *ptr;
+      if (SWIG_isptrtype(L,argv[0])==0 || SWIG_ConvertPtr(L,argv[0], (void **) &ptr, SWIGTYPE_p_VScaleformValue, 0)) {
+        _v = 0;
+      } else {
+        _v = 1;
+      }
+    }
+    if (_v) {
+      {
+        _v = lua_isnumber(L,argv[1]);
+      }
+      if (_v) {
+        {
+          _v = lua_isboolean(L,argv[2]);
+        }
+        if (_v) {
+          return _wrap_VScaleformValue_Display_GotoFrame__SWIG_0(L);
+        }
+      }
+    }
+  }
+  
+  lua_pushstring(L,"Wrong arguments for overloaded function 'VScaleformValue_Display_GotoFrame'\n"
+    "  Possible C/C++ prototypes are:\n"
+    "    Display_GotoFrame(VScaleformValue *,unsigned int,bool)\n"
+    "    Display_GotoFrame(VScaleformValue *,unsigned int)\n");
+  lua_error(L);return 0;
+}
+
+
+static int _wrap_VScaleformValue_Display_GotoLabeledFrame__SWIG_0(lua_State* L) {
+  int SWIG_arg = 0;
+  VScaleformValue *arg1 = (VScaleformValue *) 0 ;
+  char *arg2 = (char *) 0 ;
+  bool arg3 ;
+  bool result;
+  
+  SWIG_check_num_args("Display_GotoLabeledFrame",3,3)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("Display_GotoLabeledFrame",1,"VScaleformValue *");
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("Display_GotoLabeledFrame",1,"VScaleformValue *");
+  if(!SWIG_lua_isnilstring(L,2)) SWIG_fail_arg("Display_GotoLabeledFrame",2,"char const *");
+  if(!lua_isboolean(L,3)) SWIG_fail_arg("Display_GotoLabeledFrame",3,"bool");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScaleformValue,0))){
+    SWIG_fail_ptr("VScaleformValue_Display_GotoLabeledFrame",1,SWIGTYPE_p_VScaleformValue);
+  }
+  
+  arg2 = (char *)lua_tostring(L, 2);
+  arg3 = (lua_toboolean(L, 3)!=0);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformValue>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformValue_Display_GotoLabeledFrame", 1, "VScaleformValue *", "deleted native object");
+    SWIG_fail;
+  }
+  
+  result = (bool)(arg1)->Display_GotoLabeledFrame((char const *)arg2,arg3);
+  lua_pushboolean(L,(int)(result!=0)); SWIG_arg++;
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_VScaleformValue_Display_GotoLabeledFrame__SWIG_1(lua_State* L) {
+  int SWIG_arg = 0;
+  VScaleformValue *arg1 = (VScaleformValue *) 0 ;
+  char *arg2 = (char *) 0 ;
+  bool result;
+  
+  SWIG_check_num_args("Display_GotoLabeledFrame",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("Display_GotoLabeledFrame",1,"VScaleformValue *");
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("Display_GotoLabeledFrame",1,"VScaleformValue *");
+  if(!SWIG_lua_isnilstring(L,2)) SWIG_fail_arg("Display_GotoLabeledFrame",2,"char const *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScaleformValue,0))){
+    SWIG_fail_ptr("VScaleformValue_Display_GotoLabeledFrame",1,SWIGTYPE_p_VScaleformValue);
+  }
+  
+  arg2 = (char *)lua_tostring(L, 2);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformValue>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformValue_Display_GotoLabeledFrame", 1, "VScaleformValue *", "deleted native object");
+    SWIG_fail;
+  }
+  
+  result = (bool)(arg1)->Display_GotoLabeledFrame((char const *)arg2);
+  lua_pushboolean(L,(int)(result!=0)); SWIG_arg++;
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_VScaleformValue_Display_GotoLabeledFrame(lua_State* L) {
+  int argc;
+  int argv[4]={
+    1,2,3,4
+  };
+  
+  argc = lua_gettop(L);
+  if (argc == 2) {
+    int _v;
+    {
+      void *ptr;
+      if (SWIG_isptrtype(L,argv[0])==0 || SWIG_ConvertPtr(L,argv[0], (void **) &ptr, SWIGTYPE_p_VScaleformValue, 0)) {
+        _v = 0;
+      } else {
+        _v = 1;
+      }
+    }
+    if (_v) {
+      {
+        _v = SWIG_lua_isnilstring(L,argv[1]);
+      }
+      if (_v) {
+        return _wrap_VScaleformValue_Display_GotoLabeledFrame__SWIG_1(L);
+      }
+    }
+  }
+  if (argc == 3) {
+    int _v;
+    {
+      void *ptr;
+      if (SWIG_isptrtype(L,argv[0])==0 || SWIG_ConvertPtr(L,argv[0], (void **) &ptr, SWIGTYPE_p_VScaleformValue, 0)) {
+        _v = 0;
+      } else {
+        _v = 1;
+      }
+    }
+    if (_v) {
+      {
+        _v = SWIG_lua_isnilstring(L,argv[1]);
+      }
+      if (_v) {
+        {
+          _v = lua_isboolean(L,argv[2]);
+        }
+        if (_v) {
+          return _wrap_VScaleformValue_Display_GotoLabeledFrame__SWIG_0(L);
+        }
+      }
+    }
+  }
+  
+  lua_pushstring(L,"Wrong arguments for overloaded function 'VScaleformValue_Display_GotoLabeledFrame'\n"
+    "  Possible C/C++ prototypes are:\n"
+    "    Display_GotoLabeledFrame(VScaleformValue *,char const *,bool)\n"
+    "    Display_GotoLabeledFrame(VScaleformValue *,char const *)\n");
+  lua_error(L);return 0;
 }
 
 
@@ -5970,6 +7258,12 @@ static int _wrap_VScaleformValue_GetArraySize(lua_State* L) {
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScaleformValue,0))){
     SWIG_fail_ptr("VScaleformValue_GetArraySize",1,SWIGTYPE_p_VScaleformValue);
+  }
+  
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformValue const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformValue_GetArraySize", 1, "VScaleformValue const *", "deleted native object");
+    SWIG_fail;
   }
   
   result = (unsigned int)((VScaleformValue const *)arg1)->GetArraySize();
@@ -6000,6 +7294,12 @@ static int _wrap_VScaleformValue_SetArraySize(lua_State* L) {
   
   SWIG_contract_assert((lua_tonumber(L,2)>=0),"number must not be negative")
   arg2 = (unsigned int)lua_tonumber(L, 2);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformValue>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformValue_SetArraySize", 1, "VScaleformValue *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->SetArraySize(arg2);
   
   return SWIG_arg;
@@ -6029,6 +7329,12 @@ static int _wrap_VScaleformValue_GetArrayElement(lua_State* L) {
   
   SWIG_contract_assert((lua_tonumber(L,2)>=0),"number must not be negative")
   arg2 = (unsigned int)lua_tonumber(L, 2);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformValue const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformValue_GetArrayElement", 1, "VScaleformValue const *", "deleted native object");
+    SWIG_fail;
+  }
+  
   result = ((VScaleformValue const *)arg1)->GetArrayElement(arg2);
   {
     VScaleformValue * resultptr = new VScaleformValue((const VScaleformValue &) result);
@@ -6069,6 +7375,12 @@ static int _wrap_VScaleformValue_SetArrayElement(lua_State* L) {
     }
     arg3 = &temp3;
   }
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformValue>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformValue_SetArrayElement", 1, "VScaleformValue *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->SetArrayElement(arg2,(VScaleformValue const &)*arg3);
   
   return SWIG_arg;
@@ -6097,6 +7409,12 @@ static int _wrap_VScaleformValue_IsInstanceOf(lua_State* L) {
   }
   
   arg2 = (char *)lua_tostring(L, 2);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformValue const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformValue_IsInstanceOf", 1, "VScaleformValue const *", "deleted native object");
+    SWIG_fail;
+  }
+  
   result = (bool)((VScaleformValue const *)arg1)->IsInstanceOf((char const *)arg2);
   lua_pushboolean(L,(int)(result!=0)); SWIG_arg++;
   return SWIG_arg;
@@ -6125,6 +7443,12 @@ static int _wrap_VScaleformValue_HasMember(lua_State* L) {
   }
   
   arg2 = (char *)lua_tostring(L, 2);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformValue const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformValue_HasMember", 1, "VScaleformValue const *", "deleted native object");
+    SWIG_fail;
+  }
+  
   result = (bool)((VScaleformValue const *)arg1)->HasMember((char const *)arg2);
   lua_pushboolean(L,(int)(result!=0)); SWIG_arg++;
   return SWIG_arg;
@@ -6153,6 +7477,12 @@ static int _wrap_VScaleformValue_GetMemberVariable(lua_State* L) {
   }
   
   arg2 = (char *)lua_tostring(L, 2);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformValue>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformValue_GetMemberVariable", 1, "VScaleformValue *", "deleted native object");
+    SWIG_fail;
+  }
+  
   result = (arg1)->GetMemberVariable((char const *)arg2);
   {
     VScaleformVariable * resultptr = new VScaleformVariable((const VScaleformVariable &) result);
@@ -6184,6 +7514,12 @@ static int _wrap_VScaleformValue_GetMemberValue(lua_State* L) {
   }
   
   arg2 = (char *)lua_tostring(L, 2);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformValue>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformValue_GetMemberValue", 1, "VScaleformValue *", "deleted native object");
+    SWIG_fail;
+  }
+  
   result = (arg1)->GetMemberValue((char const *)arg2);
   {
     VScaleformValue * resultptr = new VScaleformValue((const VScaleformValue &) result);
@@ -6224,6 +7560,12 @@ static int _wrap_VScaleformValue_SetMember(lua_State* L) {
     }
     arg3 = &temp3;
   }
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformValue>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformValue_SetMember", 1, "VScaleformValue *", "deleted native object");
+    SWIG_fail;
+  }
+  
   result = (bool)(arg1)->SetMember((char const *)arg2,(VScaleformValue const &)*arg3);
   lua_pushboolean(L,(int)(result!=0)); SWIG_arg++;
   return SWIG_arg;
@@ -6252,6 +7594,12 @@ static int _wrap_VScaleformValue_DeleteMember(lua_State* L) {
   }
   
   arg2 = (char *)lua_tostring(L, 2);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformValue>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformValue_DeleteMember", 1, "VScaleformValue *", "deleted native object");
+    SWIG_fail;
+  }
+  
   result = (bool)(arg1)->DeleteMember((char const *)arg2);
   lua_pushboolean(L,(int)(result!=0)); SWIG_arg++;
   return SWIG_arg;
@@ -6316,6 +7664,8 @@ static swig_lua_method swig_VScaleformValue_methods[] = {
     {"Display_SetXYRotation", _wrap_VScaleformValue_Display_SetXYRotation}, 
     {"Display_SetZScale", _wrap_VScaleformValue_Display_SetZScale}, 
     {"Display_SetFOV", _wrap_VScaleformValue_Display_SetFOV}, 
+    {"Display_GotoFrame", _wrap_VScaleformValue_Display_GotoFrame}, 
+    {"Display_GotoLabeledFrame", _wrap_VScaleformValue_Display_GotoLabeledFrame}, 
     {"GetArraySize", _wrap_VScaleformValue_GetArraySize}, 
     {"SetArraySize", _wrap_VScaleformValue_SetArraySize}, 
     {"GetArrayElement", _wrap_VScaleformValue_GetArrayElement}, 
@@ -6348,6 +7698,12 @@ static int _wrap_VScaleformVariable_GetName(lua_State* L) {
     SWIG_fail_ptr("VScaleformVariable_GetName",1,SWIGTYPE_p_VScaleformVariable);
   }
   
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformVariable const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformVariable_GetName", 1, "VScaleformVariable const *", "deleted native object");
+    SWIG_fail;
+  }
+  
   result = (char *)VScaleformVariable_GetName((VScaleformVariable const *)arg1);
   lua_pushstring(L,(const char *)result); SWIG_arg++;
   return SWIG_arg;
@@ -6371,6 +7727,12 @@ static int _wrap_VScaleformVariable_GetValue(lua_State* L) {
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScaleformVariable,0))){
     SWIG_fail_ptr("VScaleformVariable_GetValue",1,SWIGTYPE_p_VScaleformVariable);
+  }
+  
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformVariable const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformVariable_GetValue", 1, "VScaleformVariable const *", "deleted native object");
+    SWIG_fail;
   }
   
   result = ((VScaleformVariable const *)arg1)->GetValue();
@@ -6409,6 +7771,12 @@ static int _wrap_VScaleformVariable_SetValue(lua_State* L) {
     }
     arg2 = &temp2;
   }
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformVariable>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformVariable_SetValue", 1, "VScaleformVariable *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->SetValue((VScaleformValue const &)*arg2);
   
   return SWIG_arg;
@@ -6431,6 +7799,12 @@ static int _wrap_VScaleformVariable_SetUndefined(lua_State* L) {
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScaleformVariable,0))){
     SWIG_fail_ptr("VScaleformVariable_SetUndefined",1,SWIGTYPE_p_VScaleformVariable);
+  }
+  
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformVariable>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformVariable_SetUndefined", 1, "VScaleformVariable *", "deleted native object");
+    SWIG_fail;
   }
   
   (arg1)->SetUndefined();
@@ -6457,6 +7831,12 @@ static int _wrap_VScaleformVariable_SetNull(lua_State* L) {
     SWIG_fail_ptr("VScaleformVariable_SetNull",1,SWIGTYPE_p_VScaleformVariable);
   }
   
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformVariable>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformVariable_SetNull", 1, "VScaleformVariable *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->SetNull();
   
   return SWIG_arg;
@@ -6480,6 +7860,12 @@ static int _wrap_VScaleformVariable_GetBool(lua_State* L) {
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScaleformVariable,0))){
     SWIG_fail_ptr("VScaleformVariable_GetBool",1,SWIGTYPE_p_VScaleformVariable);
+  }
+  
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformVariable const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformVariable_GetBool", 1, "VScaleformVariable const *", "deleted native object");
+    SWIG_fail;
   }
   
   result = (bool)((VScaleformVariable const *)arg1)->GetBool();
@@ -6509,6 +7895,12 @@ static int _wrap_VScaleformVariable_SetBool(lua_State* L) {
   }
   
   arg2 = (lua_toboolean(L, 2)!=0);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformVariable>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformVariable_SetBool", 1, "VScaleformVariable *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->SetBool(arg2);
   
   return SWIG_arg;
@@ -6532,6 +7924,12 @@ static int _wrap_VScaleformVariable_GetString(lua_State* L) {
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScaleformVariable,0))){
     SWIG_fail_ptr("VScaleformVariable_GetString",1,SWIGTYPE_p_VScaleformVariable);
+  }
+  
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformVariable const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformVariable_GetString", 1, "VScaleformVariable const *", "deleted native object");
+    SWIG_fail;
   }
   
   result = (char *)((VScaleformVariable const *)arg1)->GetString();
@@ -6561,6 +7959,12 @@ static int _wrap_VScaleformVariable_SetString(lua_State* L) {
   }
   
   arg2 = (char *)lua_tostring(L, 2);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformVariable>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformVariable_SetString", 1, "VScaleformVariable *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->SetString((char const *)arg2);
   
   return SWIG_arg;
@@ -6584,6 +7988,12 @@ static int _wrap_VScaleformVariable_GetNumber(lua_State* L) {
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScaleformVariable,0))){
     SWIG_fail_ptr("VScaleformVariable_GetNumber",1,SWIGTYPE_p_VScaleformVariable);
+  }
+  
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformVariable const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformVariable_GetNumber", 1, "VScaleformVariable const *", "deleted native object");
+    SWIG_fail;
   }
   
   result = (float)((VScaleformVariable const *)arg1)->GetNumber();
@@ -6613,6 +8023,12 @@ static int _wrap_VScaleformVariable_SetNumber(lua_State* L) {
   }
   
   arg2 = (float)lua_tonumber(L, 2);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformVariable>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformVariable_SetNumber", 1, "VScaleformVariable *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->SetNumber(arg2);
   
   return SWIG_arg;
@@ -6636,6 +8052,12 @@ static int _wrap_VScaleformVariable_IsUndefined(lua_State* L) {
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScaleformVariable,0))){
     SWIG_fail_ptr("VScaleformVariable_IsUndefined",1,SWIGTYPE_p_VScaleformVariable);
+  }
+  
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformVariable const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformVariable_IsUndefined", 1, "VScaleformVariable const *", "deleted native object");
+    SWIG_fail;
   }
   
   result = (bool)((VScaleformVariable const *)arg1)->IsUndefined();
@@ -6663,6 +8085,12 @@ static int _wrap_VScaleformVariable_IsNull(lua_State* L) {
     SWIG_fail_ptr("VScaleformVariable_IsNull",1,SWIGTYPE_p_VScaleformVariable);
   }
   
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformVariable const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformVariable_IsNull", 1, "VScaleformVariable const *", "deleted native object");
+    SWIG_fail;
+  }
+  
   result = (bool)((VScaleformVariable const *)arg1)->IsNull();
   lua_pushboolean(L,(int)(result!=0)); SWIG_arg++;
   return SWIG_arg;
@@ -6686,6 +8114,12 @@ static int _wrap_VScaleformVariable_IsBool(lua_State* L) {
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScaleformVariable,0))){
     SWIG_fail_ptr("VScaleformVariable_IsBool",1,SWIGTYPE_p_VScaleformVariable);
+  }
+  
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformVariable const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformVariable_IsBool", 1, "VScaleformVariable const *", "deleted native object");
+    SWIG_fail;
   }
   
   result = (bool)((VScaleformVariable const *)arg1)->IsBool();
@@ -6713,6 +8147,12 @@ static int _wrap_VScaleformVariable_IsNumeric(lua_State* L) {
     SWIG_fail_ptr("VScaleformVariable_IsNumeric",1,SWIGTYPE_p_VScaleformVariable);
   }
   
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformVariable const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformVariable_IsNumeric", 1, "VScaleformVariable const *", "deleted native object");
+    SWIG_fail;
+  }
+  
   result = (bool)((VScaleformVariable const *)arg1)->IsNumeric();
   lua_pushboolean(L,(int)(result!=0)); SWIG_arg++;
   return SWIG_arg;
@@ -6736,6 +8176,12 @@ static int _wrap_VScaleformVariable_IsString(lua_State* L) {
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScaleformVariable,0))){
     SWIG_fail_ptr("VScaleformVariable_IsString",1,SWIGTYPE_p_VScaleformVariable);
+  }
+  
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformVariable const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformVariable_IsString", 1, "VScaleformVariable const *", "deleted native object");
+    SWIG_fail;
   }
   
   result = (bool)((VScaleformVariable const *)arg1)->IsString();
@@ -6763,6 +8209,12 @@ static int _wrap_VScaleformVariable_IsArray(lua_State* L) {
     SWIG_fail_ptr("VScaleformVariable_IsArray",1,SWIGTYPE_p_VScaleformVariable);
   }
   
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformVariable const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformVariable_IsArray", 1, "VScaleformVariable const *", "deleted native object");
+    SWIG_fail;
+  }
+  
   result = (bool)((VScaleformVariable const *)arg1)->IsArray();
   lua_pushboolean(L,(int)(result!=0)); SWIG_arg++;
   return SWIG_arg;
@@ -6786,6 +8238,12 @@ static int _wrap_VScaleformVariable_IsObject(lua_State* L) {
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScaleformVariable,0))){
     SWIG_fail_ptr("VScaleformVariable_IsObject",1,SWIGTYPE_p_VScaleformVariable);
+  }
+  
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformVariable const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformVariable_IsObject", 1, "VScaleformVariable const *", "deleted native object");
+    SWIG_fail;
   }
   
   result = (bool)((VScaleformVariable const *)arg1)->IsObject();
@@ -6813,6 +8271,12 @@ static int _wrap_VScaleformVariable_IsDisplayObject(lua_State* L) {
     SWIG_fail_ptr("VScaleformVariable_IsDisplayObject",1,SWIGTYPE_p_VScaleformVariable);
   }
   
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformVariable const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformVariable_IsDisplayObject", 1, "VScaleformVariable const *", "deleted native object");
+    SWIG_fail;
+  }
+  
   result = (bool)((VScaleformVariable const *)arg1)->IsDisplayObject();
   lua_pushboolean(L,(int)(result!=0)); SWIG_arg++;
   return SWIG_arg;
@@ -6836,6 +8300,12 @@ static int _wrap_VScaleformVariable_Display_GetX(lua_State* L) {
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScaleformVariable,0))){
     SWIG_fail_ptr("VScaleformVariable_Display_GetX",1,SWIGTYPE_p_VScaleformVariable);
+  }
+  
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformVariable const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformVariable_Display_GetX", 1, "VScaleformVariable const *", "deleted native object");
+    SWIG_fail;
   }
   
   result = (float)((VScaleformVariable const *)arg1)->Display_GetX();
@@ -6863,6 +8333,12 @@ static int _wrap_VScaleformVariable_Display_GetY(lua_State* L) {
     SWIG_fail_ptr("VScaleformVariable_Display_GetY",1,SWIGTYPE_p_VScaleformVariable);
   }
   
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformVariable const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformVariable_Display_GetY", 1, "VScaleformVariable const *", "deleted native object");
+    SWIG_fail;
+  }
+  
   result = (float)((VScaleformVariable const *)arg1)->Display_GetY();
   lua_pushnumber(L, (lua_Number) result); SWIG_arg++;
   return SWIG_arg;
@@ -6886,6 +8362,12 @@ static int _wrap_VScaleformVariable_Display_GetRotation(lua_State* L) {
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScaleformVariable,0))){
     SWIG_fail_ptr("VScaleformVariable_Display_GetRotation",1,SWIGTYPE_p_VScaleformVariable);
+  }
+  
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformVariable const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformVariable_Display_GetRotation", 1, "VScaleformVariable const *", "deleted native object");
+    SWIG_fail;
   }
   
   result = (float)((VScaleformVariable const *)arg1)->Display_GetRotation();
@@ -6913,6 +8395,12 @@ static int _wrap_VScaleformVariable_Display_GetXScale(lua_State* L) {
     SWIG_fail_ptr("VScaleformVariable_Display_GetXScale",1,SWIGTYPE_p_VScaleformVariable);
   }
   
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformVariable const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformVariable_Display_GetXScale", 1, "VScaleformVariable const *", "deleted native object");
+    SWIG_fail;
+  }
+  
   result = (float)((VScaleformVariable const *)arg1)->Display_GetXScale();
   lua_pushnumber(L, (lua_Number) result); SWIG_arg++;
   return SWIG_arg;
@@ -6936,6 +8424,12 @@ static int _wrap_VScaleformVariable_Display_GetYScale(lua_State* L) {
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScaleformVariable,0))){
     SWIG_fail_ptr("VScaleformVariable_Display_GetYScale",1,SWIGTYPE_p_VScaleformVariable);
+  }
+  
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformVariable const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformVariable_Display_GetYScale", 1, "VScaleformVariable const *", "deleted native object");
+    SWIG_fail;
   }
   
   result = (float)((VScaleformVariable const *)arg1)->Display_GetYScale();
@@ -6963,6 +8457,12 @@ static int _wrap_VScaleformVariable_Display_GetAlpha(lua_State* L) {
     SWIG_fail_ptr("VScaleformVariable_Display_GetAlpha",1,SWIGTYPE_p_VScaleformVariable);
   }
   
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformVariable const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformVariable_Display_GetAlpha", 1, "VScaleformVariable const *", "deleted native object");
+    SWIG_fail;
+  }
+  
   result = (float)((VScaleformVariable const *)arg1)->Display_GetAlpha();
   lua_pushnumber(L, (lua_Number) result); SWIG_arg++;
   return SWIG_arg;
@@ -6986,6 +8486,12 @@ static int _wrap_VScaleformVariable_Display_GetVisible(lua_State* L) {
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScaleformVariable,0))){
     SWIG_fail_ptr("VScaleformVariable_Display_GetVisible",1,SWIGTYPE_p_VScaleformVariable);
+  }
+  
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformVariable const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformVariable_Display_GetVisible", 1, "VScaleformVariable const *", "deleted native object");
+    SWIG_fail;
   }
   
   result = (bool)((VScaleformVariable const *)arg1)->Display_GetVisible();
@@ -7013,6 +8519,12 @@ static int _wrap_VScaleformVariable_Display_GetZ(lua_State* L) {
     SWIG_fail_ptr("VScaleformVariable_Display_GetZ",1,SWIGTYPE_p_VScaleformVariable);
   }
   
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformVariable const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformVariable_Display_GetZ", 1, "VScaleformVariable const *", "deleted native object");
+    SWIG_fail;
+  }
+  
   result = (float)((VScaleformVariable const *)arg1)->Display_GetZ();
   lua_pushnumber(L, (lua_Number) result); SWIG_arg++;
   return SWIG_arg;
@@ -7036,6 +8548,12 @@ static int _wrap_VScaleformVariable_Display_GetXRotation(lua_State* L) {
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScaleformVariable,0))){
     SWIG_fail_ptr("VScaleformVariable_Display_GetXRotation",1,SWIGTYPE_p_VScaleformVariable);
+  }
+  
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformVariable const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformVariable_Display_GetXRotation", 1, "VScaleformVariable const *", "deleted native object");
+    SWIG_fail;
   }
   
   result = (float)((VScaleformVariable const *)arg1)->Display_GetXRotation();
@@ -7063,6 +8581,12 @@ static int _wrap_VScaleformVariable_Display_GetYRotation(lua_State* L) {
     SWIG_fail_ptr("VScaleformVariable_Display_GetYRotation",1,SWIGTYPE_p_VScaleformVariable);
   }
   
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformVariable const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformVariable_Display_GetYRotation", 1, "VScaleformVariable const *", "deleted native object");
+    SWIG_fail;
+  }
+  
   result = (float)((VScaleformVariable const *)arg1)->Display_GetYRotation();
   lua_pushnumber(L, (lua_Number) result); SWIG_arg++;
   return SWIG_arg;
@@ -7088,6 +8612,12 @@ static int _wrap_VScaleformVariable_Display_GetZScale(lua_State* L) {
     SWIG_fail_ptr("VScaleformVariable_Display_GetZScale",1,SWIGTYPE_p_VScaleformVariable);
   }
   
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformVariable const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformVariable_Display_GetZScale", 1, "VScaleformVariable const *", "deleted native object");
+    SWIG_fail;
+  }
+  
   result = (float)((VScaleformVariable const *)arg1)->Display_GetZScale();
   lua_pushnumber(L, (lua_Number) result); SWIG_arg++;
   return SWIG_arg;
@@ -7111,6 +8641,12 @@ static int _wrap_VScaleformVariable_Display_GetFOV(lua_State* L) {
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScaleformVariable,0))){
     SWIG_fail_ptr("VScaleformVariable_Display_GetFOV",1,SWIGTYPE_p_VScaleformVariable);
+  }
+  
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformVariable const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformVariable_Display_GetFOV", 1, "VScaleformVariable const *", "deleted native object");
+    SWIG_fail;
   }
   
   result = (float)((VScaleformVariable const *)arg1)->Display_GetFOV();
@@ -7140,6 +8676,12 @@ static int _wrap_VScaleformVariable_Display_SetX(lua_State* L) {
   }
   
   arg2 = (float)lua_tonumber(L, 2);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformVariable>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformVariable_Display_SetX", 1, "VScaleformVariable *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->Display_SetX(arg2);
   
   return SWIG_arg;
@@ -7167,6 +8709,12 @@ static int _wrap_VScaleformVariable_Display_SetY(lua_State* L) {
   }
   
   arg2 = (float)lua_tonumber(L, 2);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformVariable>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformVariable_Display_SetY", 1, "VScaleformVariable *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->Display_SetY(arg2);
   
   return SWIG_arg;
@@ -7197,6 +8745,12 @@ static int _wrap_VScaleformVariable_Display_SetXY(lua_State* L) {
   
   arg2 = (float)lua_tonumber(L, 2);
   arg3 = (float)lua_tonumber(L, 3);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformVariable>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformVariable_Display_SetXY", 1, "VScaleformVariable *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->Display_SetXY(arg2,arg3);
   
   return SWIG_arg;
@@ -7224,6 +8778,12 @@ static int _wrap_VScaleformVariable_Display_SetRotation(lua_State* L) {
   }
   
   arg2 = (float)lua_tonumber(L, 2);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformVariable>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformVariable_Display_SetRotation", 1, "VScaleformVariable *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->Display_SetRotation(arg2);
   
   return SWIG_arg;
@@ -7251,6 +8811,12 @@ static int _wrap_VScaleformVariable_Display_SetXScale(lua_State* L) {
   }
   
   arg2 = (float)lua_tonumber(L, 2);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformVariable>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformVariable_Display_SetXScale", 1, "VScaleformVariable *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->Display_SetXScale(arg2);
   
   return SWIG_arg;
@@ -7278,6 +8844,12 @@ static int _wrap_VScaleformVariable_Display_SetYScale(lua_State* L) {
   }
   
   arg2 = (float)lua_tonumber(L, 2);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformVariable>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformVariable_Display_SetYScale", 1, "VScaleformVariable *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->Display_SetYScale(arg2);
   
   return SWIG_arg;
@@ -7308,6 +8880,12 @@ static int _wrap_VScaleformVariable_Display_SetXYScale(lua_State* L) {
   
   arg2 = (float)lua_tonumber(L, 2);
   arg3 = (float)lua_tonumber(L, 3);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformVariable>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformVariable_Display_SetXYScale", 1, "VScaleformVariable *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->Display_SetXYScale(arg2,arg3);
   
   return SWIG_arg;
@@ -7335,6 +8913,12 @@ static int _wrap_VScaleformVariable_Display_SetAlpha(lua_State* L) {
   }
   
   arg2 = (float)lua_tonumber(L, 2);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformVariable>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformVariable_Display_SetAlpha", 1, "VScaleformVariable *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->Display_SetAlpha(arg2);
   
   return SWIG_arg;
@@ -7362,6 +8946,12 @@ static int _wrap_VScaleformVariable_Display_SetVisible(lua_State* L) {
   }
   
   arg2 = (lua_toboolean(L, 2)!=0);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformVariable>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformVariable_Display_SetVisible", 1, "VScaleformVariable *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->Display_SetVisible(arg2);
   
   return SWIG_arg;
@@ -7389,6 +8979,12 @@ static int _wrap_VScaleformVariable_Display_SetZ(lua_State* L) {
   }
   
   arg2 = (float)lua_tonumber(L, 2);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformVariable>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformVariable_Display_SetZ", 1, "VScaleformVariable *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->Display_SetZ(arg2);
   
   return SWIG_arg;
@@ -7416,6 +9012,12 @@ static int _wrap_VScaleformVariable_Display_SetXRotation(lua_State* L) {
   }
   
   arg2 = (float)lua_tonumber(L, 2);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformVariable>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformVariable_Display_SetXRotation", 1, "VScaleformVariable *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->Display_SetXRotation(arg2);
   
   return SWIG_arg;
@@ -7443,6 +9045,12 @@ static int _wrap_VScaleformVariable_Display_SetYRotation(lua_State* L) {
   }
   
   arg2 = (float)lua_tonumber(L, 2);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformVariable>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformVariable_Display_SetYRotation", 1, "VScaleformVariable *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->Display_SetYRotation(arg2);
   
   return SWIG_arg;
@@ -7473,6 +9081,12 @@ static int _wrap_VScaleformVariable_Display_SetXYRotation(lua_State* L) {
   
   arg2 = (float)lua_tonumber(L, 2);
   arg3 = (float)lua_tonumber(L, 3);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformVariable>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformVariable_Display_SetXYRotation", 1, "VScaleformVariable *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->Display_SetXYRotation(arg2,arg3);
   
   return SWIG_arg;
@@ -7500,6 +9114,12 @@ static int _wrap_VScaleformVariable_Display_SetZScale(lua_State* L) {
   }
   
   arg2 = (float)lua_tonumber(L, 2);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformVariable>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformVariable_Display_SetZScale", 1, "VScaleformVariable *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->Display_SetZScale(arg2);
   
   return SWIG_arg;
@@ -7527,6 +9147,12 @@ static int _wrap_VScaleformVariable_Display_SetFOV(lua_State* L) {
   }
   
   arg2 = (float)lua_tonumber(L, 2);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformVariable>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformVariable_Display_SetFOV", 1, "VScaleformVariable *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->Display_SetFOV(arg2);
   
   return SWIG_arg;
@@ -7536,6 +9162,268 @@ static int _wrap_VScaleformVariable_Display_SetFOV(lua_State* L) {
 fail:
   lua_error(L);
   return SWIG_arg;
+}
+
+
+static int _wrap_VScaleformVariable_Display_GotoFrame__SWIG_0(lua_State* L) {
+  int SWIG_arg = 0;
+  VScaleformVariable *arg1 = (VScaleformVariable *) 0 ;
+  unsigned int arg2 ;
+  bool arg3 ;
+  bool result;
+  
+  SWIG_check_num_args("Display_GotoFrame",3,3)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("Display_GotoFrame",1,"VScaleformVariable *");
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("Display_GotoFrame",1,"VScaleformVariable *");
+  if(!lua_isnumber(L,2)) SWIG_fail_arg("Display_GotoFrame",2,"unsigned int");
+  if(!lua_isboolean(L,3)) SWIG_fail_arg("Display_GotoFrame",3,"bool");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScaleformVariable,0))){
+    SWIG_fail_ptr("VScaleformVariable_Display_GotoFrame",1,SWIGTYPE_p_VScaleformVariable);
+  }
+  
+  SWIG_contract_assert((lua_tonumber(L,2)>=0),"number must not be negative")
+  arg2 = (unsigned int)lua_tonumber(L, 2);
+  arg3 = (lua_toboolean(L, 3)!=0);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformVariable>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformVariable_Display_GotoFrame", 1, "VScaleformVariable *", "deleted native object");
+    SWIG_fail;
+  }
+  
+  result = (bool)(arg1)->Display_GotoFrame(arg2,arg3);
+  lua_pushboolean(L,(int)(result!=0)); SWIG_arg++;
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_VScaleformVariable_Display_GotoFrame__SWIG_1(lua_State* L) {
+  int SWIG_arg = 0;
+  VScaleformVariable *arg1 = (VScaleformVariable *) 0 ;
+  unsigned int arg2 ;
+  bool result;
+  
+  SWIG_check_num_args("Display_GotoFrame",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("Display_GotoFrame",1,"VScaleformVariable *");
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("Display_GotoFrame",1,"VScaleformVariable *");
+  if(!lua_isnumber(L,2)) SWIG_fail_arg("Display_GotoFrame",2,"unsigned int");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScaleformVariable,0))){
+    SWIG_fail_ptr("VScaleformVariable_Display_GotoFrame",1,SWIGTYPE_p_VScaleformVariable);
+  }
+  
+  SWIG_contract_assert((lua_tonumber(L,2)>=0),"number must not be negative")
+  arg2 = (unsigned int)lua_tonumber(L, 2);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformVariable>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformVariable_Display_GotoFrame", 1, "VScaleformVariable *", "deleted native object");
+    SWIG_fail;
+  }
+  
+  result = (bool)(arg1)->Display_GotoFrame(arg2);
+  lua_pushboolean(L,(int)(result!=0)); SWIG_arg++;
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_VScaleformVariable_Display_GotoFrame(lua_State* L) {
+  int argc;
+  int argv[4]={
+    1,2,3,4
+  };
+  
+  argc = lua_gettop(L);
+  if (argc == 2) {
+    int _v;
+    {
+      void *ptr;
+      if (SWIG_isptrtype(L,argv[0])==0 || SWIG_ConvertPtr(L,argv[0], (void **) &ptr, SWIGTYPE_p_VScaleformVariable, 0)) {
+        _v = 0;
+      } else {
+        _v = 1;
+      }
+    }
+    if (_v) {
+      {
+        _v = lua_isnumber(L,argv[1]);
+      }
+      if (_v) {
+        return _wrap_VScaleformVariable_Display_GotoFrame__SWIG_1(L);
+      }
+    }
+  }
+  if (argc == 3) {
+    int _v;
+    {
+      void *ptr;
+      if (SWIG_isptrtype(L,argv[0])==0 || SWIG_ConvertPtr(L,argv[0], (void **) &ptr, SWIGTYPE_p_VScaleformVariable, 0)) {
+        _v = 0;
+      } else {
+        _v = 1;
+      }
+    }
+    if (_v) {
+      {
+        _v = lua_isnumber(L,argv[1]);
+      }
+      if (_v) {
+        {
+          _v = lua_isboolean(L,argv[2]);
+        }
+        if (_v) {
+          return _wrap_VScaleformVariable_Display_GotoFrame__SWIG_0(L);
+        }
+      }
+    }
+  }
+  
+  lua_pushstring(L,"Wrong arguments for overloaded function 'VScaleformVariable_Display_GotoFrame'\n"
+    "  Possible C/C++ prototypes are:\n"
+    "    Display_GotoFrame(VScaleformVariable *,unsigned int,bool)\n"
+    "    Display_GotoFrame(VScaleformVariable *,unsigned int)\n");
+  lua_error(L);return 0;
+}
+
+
+static int _wrap_VScaleformVariable_Display_GotoLabeledFrame__SWIG_0(lua_State* L) {
+  int SWIG_arg = 0;
+  VScaleformVariable *arg1 = (VScaleformVariable *) 0 ;
+  char *arg2 = (char *) 0 ;
+  bool arg3 ;
+  bool result;
+  
+  SWIG_check_num_args("Display_GotoLabeledFrame",3,3)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("Display_GotoLabeledFrame",1,"VScaleformVariable *");
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("Display_GotoLabeledFrame",1,"VScaleformVariable *");
+  if(!SWIG_lua_isnilstring(L,2)) SWIG_fail_arg("Display_GotoLabeledFrame",2,"char const *");
+  if(!lua_isboolean(L,3)) SWIG_fail_arg("Display_GotoLabeledFrame",3,"bool");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScaleformVariable,0))){
+    SWIG_fail_ptr("VScaleformVariable_Display_GotoLabeledFrame",1,SWIGTYPE_p_VScaleformVariable);
+  }
+  
+  arg2 = (char *)lua_tostring(L, 2);
+  arg3 = (lua_toboolean(L, 3)!=0);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformVariable>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformVariable_Display_GotoLabeledFrame", 1, "VScaleformVariable *", "deleted native object");
+    SWIG_fail;
+  }
+  
+  result = (bool)(arg1)->Display_GotoLabeledFrame((char const *)arg2,arg3);
+  lua_pushboolean(L,(int)(result!=0)); SWIG_arg++;
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_VScaleformVariable_Display_GotoLabeledFrame__SWIG_1(lua_State* L) {
+  int SWIG_arg = 0;
+  VScaleformVariable *arg1 = (VScaleformVariable *) 0 ;
+  char *arg2 = (char *) 0 ;
+  bool result;
+  
+  SWIG_check_num_args("Display_GotoLabeledFrame",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("Display_GotoLabeledFrame",1,"VScaleformVariable *");
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("Display_GotoLabeledFrame",1,"VScaleformVariable *");
+  if(!SWIG_lua_isnilstring(L,2)) SWIG_fail_arg("Display_GotoLabeledFrame",2,"char const *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScaleformVariable,0))){
+    SWIG_fail_ptr("VScaleformVariable_Display_GotoLabeledFrame",1,SWIGTYPE_p_VScaleformVariable);
+  }
+  
+  arg2 = (char *)lua_tostring(L, 2);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformVariable>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformVariable_Display_GotoLabeledFrame", 1, "VScaleformVariable *", "deleted native object");
+    SWIG_fail;
+  }
+  
+  result = (bool)(arg1)->Display_GotoLabeledFrame((char const *)arg2);
+  lua_pushboolean(L,(int)(result!=0)); SWIG_arg++;
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_VScaleformVariable_Display_GotoLabeledFrame(lua_State* L) {
+  int argc;
+  int argv[4]={
+    1,2,3,4
+  };
+  
+  argc = lua_gettop(L);
+  if (argc == 2) {
+    int _v;
+    {
+      void *ptr;
+      if (SWIG_isptrtype(L,argv[0])==0 || SWIG_ConvertPtr(L,argv[0], (void **) &ptr, SWIGTYPE_p_VScaleformVariable, 0)) {
+        _v = 0;
+      } else {
+        _v = 1;
+      }
+    }
+    if (_v) {
+      {
+        _v = SWIG_lua_isnilstring(L,argv[1]);
+      }
+      if (_v) {
+        return _wrap_VScaleformVariable_Display_GotoLabeledFrame__SWIG_1(L);
+      }
+    }
+  }
+  if (argc == 3) {
+    int _v;
+    {
+      void *ptr;
+      if (SWIG_isptrtype(L,argv[0])==0 || SWIG_ConvertPtr(L,argv[0], (void **) &ptr, SWIGTYPE_p_VScaleformVariable, 0)) {
+        _v = 0;
+      } else {
+        _v = 1;
+      }
+    }
+    if (_v) {
+      {
+        _v = SWIG_lua_isnilstring(L,argv[1]);
+      }
+      if (_v) {
+        {
+          _v = lua_isboolean(L,argv[2]);
+        }
+        if (_v) {
+          return _wrap_VScaleformVariable_Display_GotoLabeledFrame__SWIG_0(L);
+        }
+      }
+    }
+  }
+  
+  lua_pushstring(L,"Wrong arguments for overloaded function 'VScaleformVariable_Display_GotoLabeledFrame'\n"
+    "  Possible C/C++ prototypes are:\n"
+    "    Display_GotoLabeledFrame(VScaleformVariable *,char const *,bool)\n"
+    "    Display_GotoLabeledFrame(VScaleformVariable *,char const *)\n");
+  lua_error(L);return 0;
 }
 
 
@@ -7550,6 +9438,12 @@ static int _wrap_VScaleformVariable_GetArraySize(lua_State* L) {
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VScaleformVariable,0))){
     SWIG_fail_ptr("VScaleformVariable_GetArraySize",1,SWIGTYPE_p_VScaleformVariable);
+  }
+  
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformVariable const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformVariable_GetArraySize", 1, "VScaleformVariable const *", "deleted native object");
+    SWIG_fail;
   }
   
   result = (unsigned int)((VScaleformVariable const *)arg1)->GetArraySize();
@@ -7580,6 +9474,12 @@ static int _wrap_VScaleformVariable_SetArraySize(lua_State* L) {
   
   SWIG_contract_assert((lua_tonumber(L,2)>=0),"number must not be negative")
   arg2 = (unsigned int)lua_tonumber(L, 2);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformVariable>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformVariable_SetArraySize", 1, "VScaleformVariable *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->SetArraySize(arg2);
   
   return SWIG_arg;
@@ -7609,6 +9509,12 @@ static int _wrap_VScaleformVariable_GetArrayElement(lua_State* L) {
   
   SWIG_contract_assert((lua_tonumber(L,2)>=0),"number must not be negative")
   arg2 = (unsigned int)lua_tonumber(L, 2);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformVariable const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformVariable_GetArrayElement", 1, "VScaleformVariable const *", "deleted native object");
+    SWIG_fail;
+  }
+  
   result = ((VScaleformVariable const *)arg1)->GetArrayElement(arg2);
   {
     VScaleformValue * resultptr = new VScaleformValue((const VScaleformValue &) result);
@@ -7649,6 +9555,12 @@ static int _wrap_VScaleformVariable_SetArrayElement(lua_State* L) {
     }
     arg3 = &temp3;
   }
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformVariable>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformVariable_SetArrayElement", 1, "VScaleformVariable *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->SetArrayElement(arg2,(VScaleformValue const &)*arg3);
   
   return SWIG_arg;
@@ -7677,6 +9589,12 @@ static int _wrap_VScaleformVariable_IsInstanceOf(lua_State* L) {
   }
   
   arg2 = (char *)lua_tostring(L, 2);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformVariable const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformVariable_IsInstanceOf", 1, "VScaleformVariable const *", "deleted native object");
+    SWIG_fail;
+  }
+  
   result = (bool)((VScaleformVariable const *)arg1)->IsInstanceOf((char const *)arg2);
   lua_pushboolean(L,(int)(result!=0)); SWIG_arg++;
   return SWIG_arg;
@@ -7705,6 +9623,12 @@ static int _wrap_VScaleformVariable_HasMember(lua_State* L) {
   }
   
   arg2 = (char *)lua_tostring(L, 2);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformVariable const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformVariable_HasMember", 1, "VScaleformVariable const *", "deleted native object");
+    SWIG_fail;
+  }
+  
   result = (bool)((VScaleformVariable const *)arg1)->HasMember((char const *)arg2);
   lua_pushboolean(L,(int)(result!=0)); SWIG_arg++;
   return SWIG_arg;
@@ -7733,6 +9657,12 @@ static int _wrap_VScaleformVariable_GetMemberVariable(lua_State* L) {
   }
   
   arg2 = (char *)lua_tostring(L, 2);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformVariable>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformVariable_GetMemberVariable", 1, "VScaleformVariable *", "deleted native object");
+    SWIG_fail;
+  }
+  
   result = (arg1)->GetMemberVariable((char const *)arg2);
   {
     VScaleformVariable * resultptr = new VScaleformVariable((const VScaleformVariable &) result);
@@ -7764,6 +9694,12 @@ static int _wrap_VScaleformVariable_GetMemberValue(lua_State* L) {
   }
   
   arg2 = (char *)lua_tostring(L, 2);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformVariable>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformVariable_GetMemberValue", 1, "VScaleformVariable *", "deleted native object");
+    SWIG_fail;
+  }
+  
   result = (arg1)->GetMemberValue((char const *)arg2);
   {
     VScaleformValue * resultptr = new VScaleformValue((const VScaleformValue &) result);
@@ -7804,6 +9740,12 @@ static int _wrap_VScaleformVariable_SetMember(lua_State* L) {
     }
     arg3 = &temp3;
   }
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformVariable>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformVariable_SetMember", 1, "VScaleformVariable *", "deleted native object");
+    SWIG_fail;
+  }
+  
   result = (bool)(arg1)->SetMember((char const *)arg2,(VScaleformValue const &)*arg3);
   lua_pushboolean(L,(int)(result!=0)); SWIG_arg++;
   return SWIG_arg;
@@ -7832,6 +9774,12 @@ static int _wrap_VScaleformVariable_DeleteMember(lua_State* L) {
   }
   
   arg2 = (char *)lua_tostring(L, 2);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VScaleformVariable>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VScaleformVariable_DeleteMember", 1, "VScaleformVariable *", "deleted native object");
+    SWIG_fail;
+  }
+  
   result = (bool)(arg1)->DeleteMember((char const *)arg2);
   lua_pushboolean(L,(int)(result!=0)); SWIG_arg++;
   return SWIG_arg;
@@ -7898,6 +9846,8 @@ static swig_lua_method swig_VScaleformVariable_methods[] = {
     {"Display_SetXYRotation", _wrap_VScaleformVariable_Display_SetXYRotation}, 
     {"Display_SetZScale", _wrap_VScaleformVariable_Display_SetZScale}, 
     {"Display_SetFOV", _wrap_VScaleformVariable_Display_SetFOV}, 
+    {"Display_GotoFrame", _wrap_VScaleformVariable_Display_GotoFrame}, 
+    {"Display_GotoLabeledFrame", _wrap_VScaleformVariable_Display_GotoLabeledFrame}, 
     {"GetArraySize", _wrap_VScaleformVariable_GetArraySize}, 
     {"SetArraySize", _wrap_VScaleformVariable_SetArraySize}, 
     {"GetArrayElement", _wrap_VScaleformVariable_GetArrayElement}, 
@@ -7936,27 +9886,40 @@ static swig_lua_const_info swig_constants[] = {
 
 /* -------- TYPE CONVERSION AND EQUIVALENCE RULES (BEGIN) -------- */
 
-static swig_type_info _swigt__p_VScaleformManager = {"_p_VScaleformManager", "VScaleformManager *", 0, 0, (void*)&_wrap_class_VScaleformManager, 0};
-static swig_type_info _swigt__p_VScaleformMovieInstance = {"_p_VScaleformMovieInstance", "VScaleformMovieInstance *", 0, 0, (void*)&_wrap_class_VScaleformMovieInstance, 0};
-static swig_type_info _swigt__p_VScaleformValue = {"_p_VScaleformValue", "VScaleformValue *", 0, 0, (void*)&_wrap_class_VScaleformValue, 0};
-static swig_type_info _swigt__p_VScaleformVariable = {"_p_VScaleformVariable", "VScaleformVariable *", 0, 0, (void*)&_wrap_class_VScaleformVariable, 0};
-static swig_type_info _swigt__p___int64 = {"_p___int64", "__int64 *|LONGLONG *|LONG64 *", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_char = {"_p_char", "CHAR *|TCHAR *|char *|CCHAR *|SBYTE *", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_float = {"_p_float", "FLOAT *|float *", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_int = {"_p_int", "BOOL *|INT32 *|VBool *|int *|INT *|INT_PTR *|LONG32 *|SINT *", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_long = {"_p_long", "SHANDLE_PTR *|LONG_PTR *|LONG *|HRESULT *|RETVAL *|long *|SLONG *|SSIZE_T *", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_p_char = {"_p_p_char", "PTCH *|PCTSTR *|LPCTSTR *|LPTCH *|PUTSTR *|LPUTSTR *|PCUTSTR *|LPCUTSTR *|char **|PTSTR *|LPTSTR *", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_p_unsigned_long = {"_p_p_unsigned_long", "unsigned long **|PLCID *", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_short = {"_p_short", "HALF_PTR *|short *|SHORT *|SSHORT *|INT16 *", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_signed___int64 = {"_p_signed___int64", "INT64 *|signed __int64 *", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_signed_char = {"_p_signed_char", "signed char *|INT8 *", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_unsigned___int64 = {"_p_unsigned___int64", "UINT64 *|DWORD64 *|unsigned __int64 *|DWORDLONG *|ULONGLONG *|ULONG64 *", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_unsigned_char = {"_p_unsigned_char", "FCHAR *|unsigned char *|UCHAR *|BYTE *|TBYTE *|UINT8 *|UBYTE *|BOOLEAN *", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_unsigned_int = {"_p_unsigned_int", "UINT32 *|DWORD32 *|UINT *|unsigned int *|UINT_PTR *|ULONG32 *", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_unsigned_long = {"_p_unsigned_long", "HANDLE_PTR *|DWORD *|ULONG_PTR *|DWORD_PTR *|FLONG *|unsigned long *|ULONG *|SIZE_T *|LCID *", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_unsigned_short = {"_p_unsigned_short", "WORD *|UHALF_PTR *|unsigned short *|USHORT *|FSHORT *|LANGID *|UINT16 *", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__p_VBitmask = {"_p_VBitmask", "VBitmask *", 0, 0, (void*)0, 0, NULL};
+static swig_type_info _swigt__p_VColorRef = {"_p_VColorRef", "VColorRef *", 0, 0, (void*)0, 0, NULL};
+static swig_type_info _swigt__p_VScaleformManager = {"_p_VScaleformManager", "VScaleformManager *", 0, 0, (void*)&_wrap_class_VScaleformManager, 0, NULL};
+static swig_type_info _swigt__p_VScaleformMovieInstance = {"_p_VScaleformMovieInstance", "VScaleformMovieInstance *", 0, 0, (void*)&_wrap_class_VScaleformMovieInstance, 0, NULL};
+static swig_type_info _swigt__p_VScaleformValue = {"_p_VScaleformValue", "VScaleformValue *", 0, 0, (void*)&_wrap_class_VScaleformValue, 0, NULL};
+static swig_type_info _swigt__p_VScaleformVariable = {"_p_VScaleformVariable", "VScaleformVariable *", 0, 0, (void*)&_wrap_class_VScaleformVariable, 0, NULL};
+static swig_type_info _swigt__p___int64 = {"_p___int64", "__int64 *|LONGLONG *|LONG64 *", 0, 0, (void*)0, 0, NULL};
+static swig_type_info _swigt__p_char = {"_p_char", "CHAR *|TCHAR *|char *|CCHAR *|SBYTE *", 0, 0, (void*)0, 0, NULL};
+static swig_type_info _swigt__p_float = {"_p_float", "FLOAT *|float *", 0, 0, (void*)0, 0, NULL};
+static swig_type_info _swigt__p_hkvAlignedBBox = {"_p_hkvAlignedBBox", "hkvAlignedBBox *", 0, 0, (void*)0, 0, NULL};
+static swig_type_info _swigt__p_hkvBoundingSphere = {"_p_hkvBoundingSphere", "hkvBoundingSphere *", 0, 0, (void*)0, 0, NULL};
+static swig_type_info _swigt__p_hkvMat3 = {"_p_hkvMat3", "hkvMat3 *", 0, 0, (void*)0, 0, NULL};
+static swig_type_info _swigt__p_hkvMat4 = {"_p_hkvMat4", "hkvMat4 *", 0, 0, (void*)0, 0, NULL};
+static swig_type_info _swigt__p_hkvPlane = {"_p_hkvPlane", "hkvPlane *", 0, 0, (void*)0, 0, NULL};
+static swig_type_info _swigt__p_hkvQuat = {"_p_hkvQuat", "hkvQuat *", 0, 0, (void*)0, 0, NULL};
+static swig_type_info _swigt__p_hkvVec2 = {"_p_hkvVec2", "hkvVec2 *", 0, 0, (void*)0, 0, NULL};
+static swig_type_info _swigt__p_hkvVec3 = {"_p_hkvVec3", "hkvVec3 *", 0, 0, (void*)0, 0, NULL};
+static swig_type_info _swigt__p_hkvVec4 = {"_p_hkvVec4", "hkvVec4 *", 0, 0, (void*)0, 0, NULL};
+static swig_type_info _swigt__p_int = {"_p_int", "BOOL *|INT32 *|VBool *|int *|INT *|INT_PTR *|LONG32 *|SINT *", 0, 0, (void*)0, 0, NULL};
+static swig_type_info _swigt__p_long = {"_p_long", "SHANDLE_PTR *|LONG_PTR *|LONG *|HRESULT *|RETVAL *|long *|SLONG *|SSIZE_T *", 0, 0, (void*)0, 0, NULL};
+static swig_type_info _swigt__p_p_char = {"_p_p_char", "PTCH *|PCTSTR *|LPCTSTR *|LPTCH *|PUTSTR *|LPUTSTR *|PCUTSTR *|LPCUTSTR *|char **|PTSTR *|LPTSTR *", 0, 0, (void*)0, 0, NULL};
+static swig_type_info _swigt__p_p_unsigned_long = {"_p_p_unsigned_long", "unsigned long **|PLCID *", 0, 0, (void*)0, 0, NULL};
+static swig_type_info _swigt__p_short = {"_p_short", "HALF_PTR *|short *|SHORT *|SSHORT *|INT16 *", 0, 0, (void*)0, 0, NULL};
+static swig_type_info _swigt__p_signed___int64 = {"_p_signed___int64", "INT64 *|signed __int64 *", 0, 0, (void*)0, 0, NULL};
+static swig_type_info _swigt__p_signed_char = {"_p_signed_char", "signed char *|INT8 *", 0, 0, (void*)0, 0, NULL};
+static swig_type_info _swigt__p_unsigned___int64 = {"_p_unsigned___int64", "UINT64 *|DWORD64 *|unsigned __int64 *|DWORDLONG *|ULONGLONG *|ULONG64 *", 0, 0, (void*)0, 0, NULL};
+static swig_type_info _swigt__p_unsigned_char = {"_p_unsigned_char", "FCHAR *|unsigned char *|UCHAR *|BYTE *|TBYTE *|UINT8 *|UBYTE *|BOOLEAN *", 0, 0, (void*)0, 0, NULL};
+static swig_type_info _swigt__p_unsigned_int = {"_p_unsigned_int", "UINT32 *|DWORD32 *|UINT *|unsigned int *|UINT_PTR *|ULONG32 *", 0, 0, (void*)0, 0, NULL};
+static swig_type_info _swigt__p_unsigned_long = {"_p_unsigned_long", "HANDLE_PTR *|DWORD *|ULONG_PTR *|DWORD_PTR *|FLONG *|unsigned long *|ULONG *|SIZE_T *|LCID *", 0, 0, (void*)0, 0, NULL};
+static swig_type_info _swigt__p_unsigned_short = {"_p_unsigned_short", "WORD *|UHALF_PTR *|unsigned short *|USHORT *|FSHORT *|LANGID *|UINT16 *", 0, 0, (void*)0, 0, NULL};
 
 static swig_type_info *swig_type_initial[] = {
+  &_swigt__p_VBitmask,
+  &_swigt__p_VColorRef,
   &_swigt__p_VScaleformManager,
   &_swigt__p_VScaleformMovieInstance,
   &_swigt__p_VScaleformValue,
@@ -7964,6 +9927,15 @@ static swig_type_info *swig_type_initial[] = {
   &_swigt__p___int64,
   &_swigt__p_char,
   &_swigt__p_float,
+  &_swigt__p_hkvAlignedBBox,
+  &_swigt__p_hkvBoundingSphere,
+  &_swigt__p_hkvMat3,
+  &_swigt__p_hkvMat4,
+  &_swigt__p_hkvPlane,
+  &_swigt__p_hkvQuat,
+  &_swigt__p_hkvVec2,
+  &_swigt__p_hkvVec3,
+  &_swigt__p_hkvVec4,
   &_swigt__p_int,
   &_swigt__p_long,
   &_swigt__p_p_char,
@@ -7978,6 +9950,8 @@ static swig_type_info *swig_type_initial[] = {
   &_swigt__p_unsigned_short,
 };
 
+static swig_cast_info _swigc__p_VBitmask[] = {  {&_swigt__p_VBitmask, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_VColorRef[] = {  {&_swigt__p_VColorRef, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_VScaleformManager[] = {  {&_swigt__p_VScaleformManager, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_VScaleformMovieInstance[] = {  {&_swigt__p_VScaleformMovieInstance, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_VScaleformValue[] = {  {&_swigt__p_VScaleformValue, 0, 0, 0},{0, 0, 0, 0}};
@@ -7985,6 +9959,15 @@ static swig_cast_info _swigc__p_VScaleformVariable[] = {  {&_swigt__p_VScaleform
 static swig_cast_info _swigc__p___int64[] = {  {&_swigt__p___int64, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_char[] = {  {&_swigt__p_char, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_float[] = {  {&_swigt__p_float, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_hkvAlignedBBox[] = {  {&_swigt__p_hkvAlignedBBox, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_hkvBoundingSphere[] = {  {&_swigt__p_hkvBoundingSphere, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_hkvMat3[] = {  {&_swigt__p_hkvMat3, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_hkvMat4[] = {  {&_swigt__p_hkvMat4, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_hkvPlane[] = {  {&_swigt__p_hkvPlane, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_hkvQuat[] = {  {&_swigt__p_hkvQuat, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_hkvVec2[] = {  {&_swigt__p_hkvVec2, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_hkvVec3[] = {  {&_swigt__p_hkvVec3, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_hkvVec4[] = {  {&_swigt__p_hkvVec4, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_int[] = {  {&_swigt__p_int, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_long[] = {  {&_swigt__p_long, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_p_char[] = {  {&_swigt__p_p_char, 0, 0, 0},{0, 0, 0, 0}};
@@ -7999,6 +9982,8 @@ static swig_cast_info _swigc__p_unsigned_long[] = {  {&_swigt__p_unsigned_long, 
 static swig_cast_info _swigc__p_unsigned_short[] = {  {&_swigt__p_unsigned_short, 0, 0, 0},{0, 0, 0, 0}};
 
 static swig_cast_info *swig_cast_initial[] = {
+  _swigc__p_VBitmask,
+  _swigc__p_VColorRef,
   _swigc__p_VScaleformManager,
   _swigc__p_VScaleformMovieInstance,
   _swigc__p_VScaleformValue,
@@ -8006,6 +9991,15 @@ static swig_cast_info *swig_cast_initial[] = {
   _swigc__p___int64,
   _swigc__p_char,
   _swigc__p_float,
+  _swigc__p_hkvAlignedBBox,
+  _swigc__p_hkvBoundingSphere,
+  _swigc__p_hkvMat3,
+  _swigc__p_hkvMat4,
+  _swigc__p_hkvPlane,
+  _swigc__p_hkvQuat,
+  _swigc__p_hkvVec2,
+  _swigc__p_hkvVec3,
+  _swigc__p_hkvVec4,
   _swigc__p_int,
   _swigc__p_long,
   _swigc__p_p_char,
@@ -8022,6 +10016,31 @@ static swig_cast_info *swig_cast_initial[] = {
 
 
 /* -------- TYPE CONVERSION AND EQUIVALENCE RULES (END) -------- */
+
+template<typename T, bool IsTypedObject = VTraits::IsBaseOf<VTypedObject, typename VTraits::RemovePointer<T>::type>::value> struct SWIG_InitVisionType { static void Do(swig_type_info*) {} };
+template<typename T> struct SWIG_InitVisionType<T*, true> { static void Do(swig_type_info* info) {
+            VType* pType = VTraits::RemovePointer<T>::type::GetClassTypeId();
+            if(pType->m_pSwigTypeInfo == NULL)
+              pType->m_pSwigTypeInfo = info;
+            info->visiontype = pType;
+  } };
+SWIGRUNTIME void SWIG_InitVisionTypes() {
+  SWIG_InitVisionType<VBitmask *>::Do(&_swigt__p_VBitmask);
+  SWIG_InitVisionType<VColorRef *>::Do(&_swigt__p_VColorRef);
+  SWIG_InitVisionType<VScaleformManager *>::Do(&_swigt__p_VScaleformManager);
+  SWIG_InitVisionType<VScaleformMovieInstance *>::Do(&_swigt__p_VScaleformMovieInstance);
+  SWIG_InitVisionType<VScaleformValue *>::Do(&_swigt__p_VScaleformValue);
+  SWIG_InitVisionType<VScaleformVariable *>::Do(&_swigt__p_VScaleformVariable);
+  SWIG_InitVisionType<hkvAlignedBBox *>::Do(&_swigt__p_hkvAlignedBBox);
+  SWIG_InitVisionType<hkvBoundingSphere *>::Do(&_swigt__p_hkvBoundingSphere);
+  SWIG_InitVisionType<hkvMat3 *>::Do(&_swigt__p_hkvMat3);
+  SWIG_InitVisionType<hkvMat4 *>::Do(&_swigt__p_hkvMat4);
+  SWIG_InitVisionType<hkvPlane *>::Do(&_swigt__p_hkvPlane);
+  SWIG_InitVisionType<hkvQuat *>::Do(&_swigt__p_hkvQuat);
+  SWIG_InitVisionType<hkvVec2 *>::Do(&_swigt__p_hkvVec2);
+  SWIG_InitVisionType<hkvVec3 *>::Do(&_swigt__p_hkvVec3);
+  SWIG_InitVisionType<hkvVec4 *>::Do(&_swigt__p_hkvVec4);
+}
 
 /* -----------------------------------------------------------------------------
  * Type initialization:
@@ -8223,6 +10242,9 @@ SWIG_InitializeModule(void *clientdata) {
   }
   printf("**** SWIG_InitializeModule: Cast List ******\n");
 #endif
+  
+  // Vision extension
+  SWIG_InitVisionTypes();
 }
 
 /* This function will propagate the clientdata field of type to
@@ -8353,6 +10375,7 @@ SWIGEXPORT int SWIG_init(lua_State* L)
   /* add a global fn */
   SWIG_Lua_add_function(L,"swig_type",SWIG_Lua_type);
   SWIG_Lua_add_function(L,"swig_equals",SWIG_Lua_equal);
+  SWIG_Lua_add_function(L,"swig_isalive", SWIG_Lua_isalive);  // Vision extension
   /* begin the module (its a table with the same name as the module) */
   SWIG_Lua_module_begin(L,SWIG_name);
   /* add commands/functions */

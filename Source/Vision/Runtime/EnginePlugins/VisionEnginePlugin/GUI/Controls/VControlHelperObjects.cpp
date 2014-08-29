@@ -8,7 +8,7 @@
 
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/VisionEnginePluginPCH.h>         // precompiled header
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/GUI/VMenuIncludes.hpp>
-#include <Vision/Runtime/Base/System/Memory/VMemDbg.hpp>
+
 
 
 
@@ -74,7 +74,7 @@ void VImageState::CreateTransformation(hkvMat3 &dest, const hkvVec2 &vOfs, float
     ApplyTransformation(_count,v,m_pUVTransform,m_pPosTransform);\
     if (m_spTechnique!=NULL)\
     {\
-      for (int i=0;i<m_spTechnique->GetShaderCount();i++)\
+      for (unsigned int i=0;i<m_spTechnique->GetShaderCount();i++)\
         Graphics.Renderer.Draw2DBufferWithShader(_count, v, pTex, *m_spTechnique->GetShader(i));\
     }\
     else\
@@ -297,7 +297,7 @@ void VTextState::Paint(VGraphicsInfo *pGraphics, VWindowBase *pParentWnd, VColor
             iByteOffsetAtWrapPosition = static_cast<int>(pNextNewLine - szCurrentLine);
             iByteOffsetAfterWrapPosition = iByteOffsetAtWrapPosition + 1;
           }
-          else if(strlen(szCurrentLine) <= iWrapOffset)
+          else if(strlen(szCurrentLine) <= static_cast<size_t>(iWrapOffset))
           {
             // End of text occurs before automatic text wrap
             iByteOffsetAtWrapPosition = static_cast<int>(strlen(szCurrentLine));
@@ -464,7 +464,7 @@ hkvVec2 VTextState::GetSize(VRectanglef *pRect) const
   if (!pRect)
     pRect = &rc;
   if (!m_spFont->GetTextDimension(m_pStringPtr->GetSafeStr(), *pRect))
-    return hkvVec2();
+    return hkvVec2::ZeroVector();
   return pRect->m_vMax * m_fFontScaling; // otherwise we have a wrong offset
 //  return pRect->GetSize();
 }
@@ -675,7 +675,7 @@ void VTextStates::SerializeX( VArchive &ar )
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

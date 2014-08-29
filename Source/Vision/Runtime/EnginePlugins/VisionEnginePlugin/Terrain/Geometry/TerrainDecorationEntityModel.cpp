@@ -30,16 +30,32 @@ IVTerrainDecorationModel* VTerrainDecorationEntityModelFactory::CreateModelWithF
   return pRes;
 }
 
+int VTerrainDecorationEntityModel::GetCollisionSubObjectCount()
+{
+  if (!IsValid() || m_Properties.m_eCollisionType==VDecorationCollisionPrimitive::VDecorationCollision_None)
+    return 0;
+  if (m_Properties.m_eCollisionType==VDecorationCollisionPrimitive::VDecorationCollision_Capsule && m_Properties.m_fCollisionCapsuleRadius<=0.f)
+    return 0;
+  return 1;
+}
 
 VDecorationCollisionPrimitive* VTerrainDecorationEntityModel::GetCollisionSubObject(int iIndex)
 {
-  VASSERT(iIndex==0 && m_Properties.m_fCollisionCapsuleRadius>0.f);
-  // The lower end should stick into the ground, the upper half-sphere should be inside the bounding box - if possible
-  float fUpper = m_LocalBBox.m_vMax.z - m_Properties.m_fCollisionCapsuleRadius;
-  float fLower = m_LocalBBox.m_vMin.z;
-  if (fUpper<fLower) fUpper=fLower;
-  m_CollisionCapsule.Set(hkvVec3(0,0,fLower), hkvVec3(0,0,fUpper), m_Properties.m_fCollisionCapsuleRadius);
-  return &m_CollisionCapsule;
+  VASSERT(iIndex==0 && iIndex<GetCollisionSubObjectCount());
+
+  m_CollisionObject.m_eCollisionType = m_Properties.m_eCollisionType;
+  if (m_CollisionObject.m_eCollisionType==VDecorationCollisionPrimitive::VDecorationCollision_Capsule)
+  {
+    // The lower end should stick into the ground, the upper half-sphere should be inside the bounding box - if possible
+    float fUpper = m_LocalBBox.m_vMax.z - m_Properties.m_fCollisionCapsuleRadius;
+    float fLower = m_LocalBBox.m_vMin.z;
+    if (fUpper<fLower) fUpper=fLower;
+    m_CollisionObject.Set(hkvVec3(0,0,fLower), hkvVec3(0,0,fUpper), m_Properties.m_fCollisionCapsuleRadius);
+  } else
+  {
+    m_CollisionObject.m_pRenderMesh = m_spMesh;
+  }
+  return &m_CollisionObject;
 }
 
 
@@ -122,15 +138,22 @@ void VTerrainDecorationEntityModel::ReapplyShaders()
 
 
   // supports instancing at all?
-#if defined (WIN32)
+#if defined (_VISION_WIN32)
   m_spInstancingTech = NULL;
   m_spInstancingTechShadow = NULL;
   m_spInstancingTechIRPrePass = NULL;
   m_spInstancingTechIRMainPass = NULL;
-  if (Vision::Renderer.SupportsInstancing() && m_bValidState && m_spVegetationShaders->Count()==1)
+  m_pShaderSetIRPrePass = NULL;
+  m_pShaderSetIRMainPass = NULL;
+
+  if (Vision::Renderer.SupportsInstancing() && m_bValidState && m_spVegetationShaders->Count()>=1)
   {
     const VisDrawCallInfo_t &drawCall(m_spVegetationShaders->GetDrawCallList()[0]);
     VisSurface_cl *pMat = drawCall.GetSurface();
+
+	// The auto shaders do not have the ALPHATEST tag, but they use alpha test by default
+	const bool alphaTest = (pMat->GetTransparencyType () == VIS_TRANSP_ALPHATEST || pMat->GetTransparencyType () == VIS_TRANSP_ALPHA) && (pMat->GetShaderMode() != VisSurface_cl::VSM_Auto);
+
     bool bAnyInstancingShader = false;
     VCompiledEffect *pFX = pMat->m_spCurrentEffect;
     if (pFX) // checks whether the assigned shader effect holds an instancing version
@@ -143,12 +166,21 @@ void VTerrainDecorationEntityModel::ReapplyShaders()
       else
 #endif
       cfg.SetInclusionTags("Instancing");
+      if (alphaTest)
+      {
+        cfg.AddInclusionTag ("ALPHATEST");
+      }
+
       m_spInstancingTech = pFX->FindCompatibleTechnique(&cfg, Vision::Shaders.GetGlobalTechniqueConfig());
       if (m_spInstancingTech!=NULL && m_spInstancingTech->GetShaderCount()==1)
         bAnyInstancingShader = true;
 
       // shadowmap instancing?
       VTechniqueConfig cfg_shadow("Instancing;SpecificShadowmapFill",NULL);
+      if (alphaTest)
+      {
+        cfg_shadow.AddInclusionTag ("ALPHATEST");
+      }
       m_spInstancingTechShadow = pFX->FindCompatibleTechnique(&cfg_shadow, Vision::Shaders.GetGlobalTechniqueConfig());
       if (m_spInstancingTechShadow!=NULL && m_spInstancingTechShadow->GetShaderCount()==1)
         bAnyInstancingShader = true;
@@ -172,7 +204,8 @@ void VTerrainDecorationEntityModel::ReapplyShaders()
       #ifdef HK_DEBUG
       m_spModelMesh->SetFilename("<TerrainDecorationEntity>");
       #endif
-      m_iModelStreams = m_spModelMesh->GetStreamMask() & (m_spInstancingTech->GetShader(0)->GetStreamMask () | VERTEX_STREAM_INDEXBUFFER);
+
+      m_iModelStreams = m_spModelMesh->GetStreamMask();
     }
   }
 #endif
@@ -216,7 +249,10 @@ BOOL VTerrainDecorationEntityModel::Unload()
   m_spInstancingTechIRPrePass = NULL;
   m_spInstancingTechIRMainPass = NULL;
   m_spVegetationShaders = NULL;
+  m_pShaderSetIRPrePass = NULL;
+  m_pShaderSetIRMainPass = NULL;
   m_bValidState = false;
+
   return TRUE;
 }
 
@@ -246,7 +282,7 @@ void VTerrainDecorationEntityModel::UpdateParameter()
       
       if (!pSrfTech)
         continue;
-      for (int j=0;j<pSrfTech->GetShaderCount();j++)
+      for (unsigned int j=0;j<pSrfTech->GetShaderCount();j++)
       {
         const VCompiledShaderPass *pShader = pSrfTech->GetShader(j);
         const int iActiveSamplerCount = (int)pShader->GetActiveSamplerCount(VSS_PixelShader);
@@ -279,7 +315,7 @@ void VTerrainDecorationEntityModel::UpdateParameter()
 
 void VTerrainDecorationEntityModel::GatherLightmapInfo(VLightmapSceneInfo &info, VTerrainDecorationInstance **pInst, int iCount)
 {
-#ifdef WIN32
+#ifdef _VISION_WIN32
   if (m_spCustomLightmapMesh!=NULL)
     IVTerrainDecorationModel::GatherLightmapInfo(m_spCustomLightmapMesh, info,pInst,iCount);
   else
@@ -291,7 +327,7 @@ void VTerrainDecorationEntityModel::GatherLightmapInfo(VLightmapSceneInfo &info,
 void VTerrainDecorationEntityModel::OnEditorEvent(EditorEvent_e action, VTerrain *pTerrain, void *pDataA, void *pDataB) 
 {
   IVTerrainDecorationModel::OnEditorEvent(action, pTerrain, pDataA, pDataB);
-#ifdef WIN32
+#ifdef _VISION_WIN32
   if (action==GatherLightmapFinished)
   {
   }
@@ -321,14 +357,93 @@ void VTerrainDecorationEntityModel::OnEditorEvent(EditorEvent_e action, VTerrain
 #endif
 }
 
-#define RENDER_INSTANCES(_iCount, _iStreamMask) \
+#define RENDER_INSTANCES(_iCount) \
   Vision::RenderLoopHelper.ResetMeshStreams(); \
-  Vision::RenderLoopHelper.AddMeshStreams(m_spModelMesh,_iStreamMask);\
+  Vision::RenderLoopHelper.AddMeshStreams(m_spModelMesh, m_iModelStreams & (pShader->GetStreamMask() | VERTEX_STREAM_INDEXBUFFER));\
   Vision::RenderLoopHelper.AddMeshStreamsEx(pInstanceMesh, iInstanceStreamMask, 0, 1);\
   Vision::RenderLoopHelper.SetMeshInstanceCount(_iCount,iVertexCount);\
-  Vision::RenderLoopHelper.RenderMeshes(pShader, ePrimType, 0, iPrimitiveCount, iVertexCount);
+  Vision::RenderLoopHelper.RenderMeshes(pShader, ePrimType, iFirstPrimitive, iPrimitiveCount, iVertexCount);
 
-void VTerrainDecorationEntityModel::RenderBatch(VTerrainVisibilityCollectorComponent *pInfoComp, VTerrainDecorationInstance **pInstList, int iCount, RenderMode_e eRenderMode)
+
+void VTerrainDecorationEntityModel::RenderBatch(VisMeshBuffer_cl *pInstanceMesh, int iInstanceCount, int iInstanceStreamMask, const hkvVec3 &vTranslate, RenderMode_e eRenderMode)
+{
+  VASSERT(pInstanceMesh!=NULL);
+  pInstanceMesh->EnsureLoaded();
+  #if defined(_VR_DX11)
+    VisRenderStates_cl::SetVSConstantBuffer(VTERRAIN_CB_DECOMODEL,&m_PerModelConstantBuffer);
+  #else
+    VisRenderStates_cl::SetVertexShaderConstant(48,m_vDecorationParams.data,1);
+  #endif
+  
+  VCompiledTechnique *pTech = NULL;
+
+  // render into specific contexts ?
+  const VisContextUsageHint_e eContextType = Vision::Contexts.GetCurrentContext()->GetUsageHint();
+  if ((eContextType & VIS_CONTEXTUSAGE_TYPEENUMMASK) == VIS_CONTEXTUSAGE_DEPTHFILL)
+    return;
+  else if ((eContextType & VIS_CONTEXTUSAGE_TYPEENUMMASK) == VIS_CONTEXTUSAGE_DEPTHSHADOW)
+    pTech = m_spInstancingTechShadow;    
+  else if (eRenderMode == IVTerrainDecorationModel::RENDER_MODE_OTW)
+    pTech = m_spInstancingTech;
+  else if (eRenderMode == IVTerrainDecorationModel::RENDER_MODE_IR_PREPASS)
+  {
+    if (m_spInstancingTechIRPrePass == NULL)
+    {
+      // lazy IR shader init
+      VisSurface_cl* pSurface = m_spMesh->GetSurface(0);
+      VTerrainDecorationModelManager* pManager = (VTerrainDecorationModelManager *)GetParentManager();
+      VShaderEffectLib* pEffectLib = pManager->GetInfraredShaderLib();
+      RecreateIRShaders(pSurface, pEffectLib);
+    } 
+    pTech = m_spInstancingTechIRPrePass;
+  }
+  else if (eRenderMode == IVTerrainDecorationModel::RENDER_MODE_IR_MAINPASS)
+  {
+    if (m_spInstancingTechIRMainPass == NULL)
+    {
+      // lazy IR shader init
+      VisSurface_cl* pSurface = m_spMesh->GetSurface(0);
+      VTerrainDecorationModelManager* pManager = (VTerrainDecorationModelManager *)GetParentManager();
+      VShaderEffectLib* pEffectLib = pManager->GetInfraredShaderLib();
+      RecreateIRShaders(pSurface, pEffectLib);
+    } 
+    pTech = m_spInstancingTechIRMainPass;
+  }
+  if (pTech==NULL)
+    return;
+  VCompiledShaderPass *pShader = pTech->GetShader(0);
+
+  VisMeshBuffer_cl::MB_PrimitiveType_e ePrimType = m_spModelMesh->GetPrimitiveType();
+  int iVertexCount = m_spModelMesh->GetVertexCount();
+
+  Vision::RenderLoopHelper.BeginMeshRendering();
+  hkvMat4 transform(hkvMat3::IdentityMatrix(), vTranslate);
+  Vision::RenderLoopHelper.SetMeshTransformationMatrix(transform);
+  const int iSubmeshCount = m_spMesh->GetSubmeshCount();
+  int iFirstIndex, iIndexCount;
+
+  for (int i=0;i<iSubmeshCount;i++)
+  {
+    VBaseSubmesh *pSubmesh = m_spMesh->GetBaseSubmesh(i);
+    pSubmesh->GetRenderRange(iFirstIndex, iIndexCount);
+    int iFirstPrimitive = iFirstIndex/3;
+    int iPrimitiveCount = iIndexCount/3;
+
+    VisSurface_cl *pSurface = pSubmesh->GetSurface();
+    Vision::RenderLoopHelper.BindSurfaceTextures(pSurface,pShader,NULL);
+    Vision::RenderLoopHelper.BindDefaultStateGroups(pSurface,pShader);
+
+    RENDER_INSTANCES(iInstanceCount);
+  }
+
+  Vision::RenderLoopHelper.EndMeshRendering();
+#if defined(_VR_DX11)
+  VisRenderStates_cl::SetVSConstantBuffer(VTERRAIN_CB_DECOMODEL, NULL);
+#endif
+}
+
+
+void VTerrainDecorationEntityModel::RenderBatch(VTerrainVisibilityCollectorComponent *pInfoComp, VTerrainDecorationInstance **pInstList, int iCount, const hkvVec3 &vTranslate, RenderMode_e eRenderMode)
 {
   /*
   // DEBUGGING:
@@ -350,16 +465,16 @@ void VTerrainDecorationEntityModel::RenderBatch(VTerrainVisibilityCollectorCompo
   // render into specific contexts ?
   const VisContextUsageHint_e eContextType = Vision::Contexts.GetCurrentContext()->GetUsageHint();
   if ((eContextType & VIS_CONTEXTUSAGE_TYPEENUMMASK) == VIS_CONTEXTUSAGE_DEPTHFILL) 
-    RenderBatchDepthFill(pInfoComp, pInstList, iCount);
+    RenderBatchDepthFill(pInfoComp, pInstList, iCount,vTranslate);
   else if ((eContextType & VIS_CONTEXTUSAGE_TYPEENUMMASK) == VIS_CONTEXTUSAGE_DEPTHSHADOW) 
-    RenderBatchDepthShadow(pInfoComp, pInstList, iCount);
+    RenderBatchDepthShadow(pInfoComp, pInstList, iCount,vTranslate);
   else if (eRenderMode == IVTerrainDecorationModel::RENDER_MODE_OTW)
-    RenderBatchOTW(pInfoComp, pInstList, iCount);
+    RenderBatchOTW(pInfoComp, pInstList, iCount,vTranslate);
   else
-    RenderBatchIR(pInfoComp, pInstList, iCount, eRenderMode);
+    RenderBatchIR(pInfoComp, pInstList, iCount,vTranslate, eRenderMode);
 }
 
-void VTerrainDecorationEntityModel::RenderBatchDepthFill(VTerrainVisibilityCollectorComponent *pInfoComp, VTerrainDecorationInstance **pInstList, int iCount)
+void VTerrainDecorationEntityModel::RenderBatchDepthFill(VTerrainVisibilityCollectorComponent *pInfoComp, VTerrainDecorationInstance **pInstList, int iCount, const hkvVec3 &vTranslate)
 {
   // depth fill rendering
   INSERT_PERF_MARKER_SCOPE("VTerrainDecorationEntityModel::RenderBatchDepthFill");
@@ -380,13 +495,13 @@ void VTerrainDecorationEntityModel::RenderBatchDepthFill(VTerrainVisibilityColle
   Vision::RenderLoopHelper.BeginEntityRendering();
   for (int i=0;i<iCount;i++)
   {
-    hkvMat4 transform(pInstList[i]->m_Orientation,pInstList[i]->m_vPosition);
+    hkvMat4 transform(pInstList[i]->m_Orientation,pInstList[i]->m_vPosition + vTranslate);
     Vision::RenderLoopHelper.RenderModelWithSurfaceShaderList(m_spMesh, transform.getPointer (),iAsmCount,surfaceShaderList);
   }
   Vision::RenderLoopHelper.EndEntityRendering();
 }
 
-void VTerrainDecorationEntityModel::RenderBatchDepthShadow(VTerrainVisibilityCollectorComponent *pInfoComp, VTerrainDecorationInstance **pInstList, int iCount)
+void VTerrainDecorationEntityModel::RenderBatchDepthShadow(VTerrainVisibilityCollectorComponent *pInfoComp, VTerrainDecorationInstance **pInstList, int iCount, const hkvVec3 &vTranslate)
 {
   // depth shader rendering
   INSERT_PERF_MARKER_SCOPE("VTerrainDecorationEntityModel::RenderBatchDepthShadow");
@@ -397,10 +512,13 @@ void VTerrainDecorationEntityModel::RenderBatchDepthShadow(VTerrainVisibilityCol
     VCompiledShaderPass *pShader = m_spInstancingTechShadow->GetShader(0);
 
     Vision::RenderLoopHelper.BeginMeshRendering();
+    hkvMat4 transform(hkvMat3::IdentityMatrix(), vTranslate);
+    Vision::RenderLoopHelper.SetMeshTransformationMatrix(transform);
     VisSurface_cl *pSurface = m_spMesh->GetSurface(0);
     Vision::RenderLoopHelper.BindSurfaceTextures(pSurface,pShader,NULL);
     Vision::RenderLoopHelper.BindDefaultStateGroups(pSurface,pShader);
     VisMeshBuffer_cl::MB_PrimitiveType_e ePrimType = m_spModelMesh->GetPrimitiveType();
+    int iFirstPrimitive = 0;
     int iPrimitiveCount = m_spModelMesh->GetCurrentPrimitiveCount();
     int iVertexCount = m_spModelMesh->GetVertexCount();
     int iMaxInstanceCount, iInstanceStreamMask;
@@ -420,7 +538,7 @@ void VTerrainDecorationEntityModel::RenderBatchDepthShadow(VTerrainVisibilityCol
       }
 
       iCount-=iRenderCount;
-      RENDER_INSTANCES(iRenderCount, m_iModelStreams);
+      RENDER_INSTANCES(iRenderCount);
     }
     Vision::RenderLoopHelper.EndMeshRendering();
   } 
@@ -442,14 +560,14 @@ void VTerrainDecorationEntityModel::RenderBatchDepthShadow(VTerrainVisibilityCol
     Vision::RenderLoopHelper.BeginEntityRendering();
     for (int i=0;i<iCount;i++)
     {
-      hkvMat4 transform(pInstList[i]->m_Orientation,pInstList[i]->m_vPosition);
+      hkvMat4 transform(pInstList[i]->m_Orientation,pInstList[i]->m_vPosition + vTranslate);
       Vision::RenderLoopHelper.RenderModelWithSurfaceShaderList(m_spMesh, transform.getPointer (),iAsmCount,surfaceShaderList);
     }
     Vision::RenderLoopHelper.EndEntityRendering();
   }
 }
 
-void VTerrainDecorationEntityModel::RenderBatchOTW(VTerrainVisibilityCollectorComponent *pInfoComp, VTerrainDecorationInstance **pInstList, int iCount)
+void VTerrainDecorationEntityModel::RenderBatchOTW(VTerrainVisibilityCollectorComponent *pInfoComp, VTerrainDecorationInstance **pInstList, int iCount, const hkvVec3 &vTranslate)
 {
   // OTW rendering
   VTerrainDecorationModelManager *pManager = (VTerrainDecorationModelManager *)GetParentManager();
@@ -458,11 +576,9 @@ void VTerrainDecorationEntityModel::RenderBatchOTW(VTerrainVisibilityCollectorCo
     VCompiledShaderPass *pShader = m_spInstancingTech->GetShader(0);
 
     Vision::RenderLoopHelper.BeginMeshRendering();
-    VisSurface_cl *pSurface = m_spMesh->GetSurface(0);
-    Vision::RenderLoopHelper.BindSurfaceTextures(pSurface,pShader,NULL);
-    Vision::RenderLoopHelper.BindDefaultStateGroups(pSurface,pShader);
+    hkvMat4 transform(hkvMat3::IdentityMatrix(), vTranslate);
+    Vision::RenderLoopHelper.SetMeshTransformationMatrix(transform);
     VisMeshBuffer_cl::MB_PrimitiveType_e ePrimType = m_spModelMesh->GetPrimitiveType();
-    int iPrimitiveCount = m_spModelMesh->GetCurrentPrimitiveCount();
     int iVertexCount = m_spModelMesh->GetVertexCount();
     int iMaxInstanceCount, iInstanceStreamMask;
     VisMeshBuffer_cl *pInstanceMesh = ((VTerrainDecorationModelManager *)GetParentManager())->GetInstanceBuffer(iMaxInstanceCount,iInstanceStreamMask);
@@ -522,7 +638,14 @@ void VTerrainDecorationEntityModel::RenderBatchOTW(VTerrainVisibilityCollectorCo
         // advance by actual render counts
         pInstList += iRenderCount;
         iCount-=iRenderCount;
-        RENDER_INSTANCES(iRenderCount, m_iModelStreams);
+
+        VisSurface_cl *pSurface = m_spMesh->GetSurface(0);
+        Vision::RenderLoopHelper.BindSurfaceTextures(pSurface,pShader,NULL);
+        Vision::RenderLoopHelper.BindDefaultStateGroups(pSurface,pShader);
+        int iFirstPrimitive = 0;
+        int iPrimitiveCount = m_spModelMesh->GetCurrentPrimitiveCount();
+
+        RENDER_INSTANCES(iRenderCount);
       }
 
     }
@@ -542,7 +665,21 @@ void VTerrainDecorationEntityModel::RenderBatchOTW(VTerrainVisibilityCollectorCo
         }
 
         iCount-=iRenderCount;
-        RENDER_INSTANCES(iRenderCount, m_iModelStreams);
+        const int iSubmeshCount = m_spMesh->GetSubmeshCount();
+        int iFirstIndex, iIndexCount;
+
+        for (int i=0;i<iSubmeshCount;i++)
+        {
+          VBaseSubmesh *pSubmesh = m_spMesh->GetBaseSubmesh(i);
+          pSubmesh->GetRenderRange(iFirstIndex, iIndexCount);
+          int iFirstPrimitive = iFirstIndex/3;
+          int iPrimitiveCount = iIndexCount/3;
+          VisSurface_cl *pSurface = pSubmesh->GetSurface();
+          Vision::RenderLoopHelper.BindSurfaceTextures(pSurface,pShader,NULL);
+          Vision::RenderLoopHelper.BindDefaultStateGroups(pSurface,pShader);
+
+          RENDER_INSTANCES(iRenderCount);
+        }
       }
     }
 
@@ -614,7 +751,7 @@ void VTerrainDecorationEntityModel::RenderBatchOTW(VTerrainVisibilityCollectorCo
       }
 
       // finally render object
-      hkvMat4 transform((*pInstList)->m_Orientation,(*pInstList)->m_vPosition);
+      hkvMat4 transform((*pInstList)->m_Orientation,(*pInstList)->m_vPosition + vTranslate);
       Vision::RenderLoopHelper.RenderModelWithSurfaceShaderList(m_spMesh,transform.getPointer (),iAsmCount,pSurfaceShaderList);
     }
     VisRenderStates_cl::SetVSConstantBuffer(7,NULL);
@@ -638,7 +775,7 @@ void VTerrainDecorationEntityModel::RenderBatchOTW(VTerrainVisibilityCollectorCo
         VisRenderStates_cl::SetVSConstantBuffer(7,&m_PerInstanceData);
       #endif
       }
-      hkvMat4 transform((*pInstList)->m_Orientation,(*pInstList)->m_vPosition);
+      hkvMat4 transform((*pInstList)->m_Orientation,(*pInstList)->m_vPosition + vTranslate);
       Vision::RenderLoopHelper.RenderModelWithSurfaceShaderList(m_spMesh,transform.getPointer(),iAsmCount,pSurfaceShaderList);
     }
 
@@ -648,13 +785,17 @@ void VTerrainDecorationEntityModel::RenderBatchOTW(VTerrainVisibilityCollectorCo
   }
 }
 
-void VTerrainDecorationEntityModel::RenderBatchIR(VTerrainVisibilityCollectorComponent *pInfoComp, VTerrainDecorationInstance **pInstList, int iCount, RenderMode_e eRenderMode)
+void VTerrainDecorationEntityModel::RenderBatchIR(VTerrainVisibilityCollectorComponent *pInfoComp, VTerrainDecorationInstance **pInstList, int iCount, const hkvVec3 &vTranslate, RenderMode_e eRenderMode)
 {
   // IR Rendering
   VTerrainDecorationModelManager* pManager = (VTerrainDecorationModelManager *)GetParentManager();
   VShaderEffectLib* pEffectLib = pManager->GetInfraredShaderLib();
-  if (iCount > 0 && pManager->m_iInstancingBatchCount > 0 && pEffectLib != NULL)
+  bool bPrePass = (eRenderMode == RENDER_MODE_IR_PREPASS);
+
+  if (m_spInstancingTech!=NULL && iCount > 4 && pManager->m_iInstancingBatchCount > 0 && pEffectLib != NULL)
   {
+    //////////////////////////////////////////////////////////
+    // Instancing  version
     int iMaxInstanceCount, iInstanceStreamMask;
     VisSurface_cl* pSurface = m_spMesh->GetSurface(0);
 
@@ -666,24 +807,27 @@ void VTerrainDecorationEntityModel::RenderBatchIR(VTerrainVisibilityCollectorCom
     if (m_spInstancingTechIRPrePass == NULL || m_spInstancingTechIRMainPass == NULL)
       return;
 
+    const int iFirstPrimitive = 0;
     const int iPrimitiveCount = m_spModelMesh->GetCurrentPrimitiveCount();
     const int iVertexCount = m_spModelMesh->GetVertexCount();
     const VisMeshBuffer_cl::MB_PrimitiveType_e ePrimType = m_spModelMesh->GetPrimitiveType();
 
-    bool bPrePass = (eRenderMode == RENDER_MODE_IR_PREPASS);
     VCompiledShaderPass* pShader = bPrePass? m_spInstancingTechIRPrePass->GetShader(0) : m_spInstancingTechIRMainPass->GetShader(0);
     
-    const int iStreamMask = m_spModelMesh->GetStreamMask() & (pShader->GetStreamMask() | VERTEX_STREAM_INDEXBUFFER);
     VisMeshBuffer_cl* pInstanceMesh = pManager->GetInstanceBuffer(iMaxInstanceCount, iInstanceStreamMask);
     iInstanceStreamMask &= pShader->GetStreamMask();
 
     // perform the rendering
     Vision::RenderLoopHelper.BeginMeshRendering();
-
+    hkvMat4 transform(hkvMat3::IdentityMatrix(), vTranslate);
+    Vision::RenderLoopHelper.SetMeshTransformationMatrix(transform);
     Vision::RenderLoopHelper.BindDefaultStateGroups(pSurface, pShader);
 
     if (!bPrePass || pSurface->GetTransparencyType() != VIS_TRANSP_NONE)
       Vision::RenderLoopHelper.BindMeshTexture(pSurface->GetBaseTextureObject(), 0, NULL);
+
+    if (!bPrePass)
+      Vision::RenderLoopHelper.BindSurfaceTextures(pSurface, pShader);
 
     while (iCount > 0)
     {
@@ -701,11 +845,73 @@ void VTerrainDecorationEntityModel::RenderBatchIR(VTerrainVisibilityCollectorCom
 
       iCount -= iRenderCount;
 
-      RENDER_INSTANCES(iRenderCount, iStreamMask);
+      RENDER_INSTANCES(iRenderCount);
     }
 
     Vision::RenderLoopHelper.EndMeshRendering();
+
+    return;
   }
+
+  //////////////////////////////////////////////////////////
+  // Non-instancing  version
+
+  VDynamicMesh* pMesh = m_spMesh;
+  VisSurface_cl** ppSurfaces = pMesh->GetSurfaceArray();
+
+  if (m_pShaderSetIRPrePass == NULL)
+  {
+    // create shader set for pre IR rendering
+    VisShaderSet_cl* pShaderSet = new VisShaderSet_cl();
+    pShaderSet->BeginUpdate();
+
+    for (int i = 0; i < pMesh->GetSubmeshCount(); i++)
+    {
+      VDynamicSubmesh* pSubmesh = pMesh->GetSubmesh(i);
+      VisSurface_cl* pSurface = ppSurfaces[pSubmesh->m_iMaterialIndex];
+
+      VCompiledTechnique* pTech = RecreateIRShaderPre(pSurface, pEffectLib);
+      VASSERT(pTech != NULL);
+
+      pShaderSet->Add(pSubmesh, pSurface, pTech);
+    }
+
+    pShaderSet->EndUpdate();
+    m_pShaderSetIRPrePass = pShaderSet;
+
+    // create shader set for main IR rendering
+    pShaderSet = new VisShaderSet_cl();
+    pShaderSet->BeginUpdate();
+
+    for (int i = 0; i < pMesh->GetSubmeshCount(); i++)
+    {
+      VDynamicSubmesh* pSubmesh = pMesh->GetSubmesh(i);
+      VisSurface_cl* pSurface = ppSurfaces[pSubmesh->m_iMaterialIndex];
+
+      VCompiledTechnique* pTech = RecreateIRShaderMain(pSurface, pEffectLib);
+      VASSERT(pTech != NULL);
+
+      pShaderSet->Add(pSubmesh, pSurface, pTech);
+    }
+
+    pShaderSet->EndUpdate();
+    m_pShaderSetIRMainPass = pShaderSet;
+  }
+
+  VisShaderSet_cl* pSet = bPrePass? m_pShaderSetIRPrePass : m_pShaderSetIRMainPass;
+  const VisDrawCallInfo_t* pSurfaceShaderList;
+  int iAsmCount = pSet->GetShaderAssignmentList(&pSurfaceShaderList);
+
+  Vision::RenderLoopHelper.BeginEntityRendering();
+
+  for (int i = 0; i < iCount; i++, pInstList++)
+  {
+    // render object
+    hkvMat4 transform((*pInstList)->m_Orientation,(*pInstList)->m_vPosition + vTranslate);
+    Vision::RenderLoopHelper.RenderModelWithSurfaceShaderList(m_spMesh ,transform.getPointer(), iAsmCount, pSurfaceShaderList);
+  }
+
+  Vision::RenderLoopHelper.EndEntityRendering();
 }
 
 void VTerrainDecorationEntityModel::RecreateIRShaders(VisSurface_cl* pSurface, VShaderEffectLib* pEffectLib)
@@ -829,6 +1035,147 @@ void VTerrainDecorationEntityModel::RecreateIRShaders(VisSurface_cl* pSurface, V
   }
 }
 
+VCompiledTechnique* VTerrainDecorationEntityModel::RecreateIRShaderMain(VisSurface_cl* pSurface, VShaderEffectLib* pEffectLib)
+{
+  if (pSurface == NULL)
+    return NULL;
+
+  // check for supported transparency types
+  if (pSurface->GetTransparencyType() != VIS_TRANSP_NONE &&
+      pSurface->GetTransparencyType() != VIS_TRANSP_ALPHATEST &&
+      pSurface->GetTransparencyType() != VIS_TRANSP_ALPHA)
+    return NULL;
+
+  char szParam[1024];
+  VTechniqueConfig baseCfg("WIND", NULL);
+
+  switch (pSurface->GetGeometryTopology())
+  {
+    case VisSurface_cl::VGT_3DMesh:
+      baseCfg.AddInclusionTag("GEO_3D");
+      break;
+
+    default:
+      hkvLog::Warning("VTerrainDecorationEntityModel::RecreateIRShaderMain: Only 3DMesh geometry topology is supported");
+      return NULL;
+  }
+
+  hkvVec4 vWindPhaseParams(0.0071f, 0.0092f, 0.0f, 0.0f);
+  const hkvAlignedBBox& bbox = m_spMesh->GetBoundingBox();
+  if (bbox.isValid())
+    vWindPhaseParams.w = -bbox.m_vMin.z;
+
+  szParam[0] = '\0';
+
+  // Get params needed for IR shader creation from IR renderer
+  char* pszParamPos = GetParamStringForIRSurface(pSurface, szParam);
+  pszParamPos += sprintf(pszParamPos, "WindPhaseParams=%g,%g,%g,%g;", vWindPhaseParams.x, vWindPhaseParams.y, vWindPhaseParams.z, vWindPhaseParams.w);
+
+  VTechniqueConfig cfg(baseCfg);
+
+  bool bHasMaterialTex = pSurface->GetAuxiliaryTextureCount() >= 1 && pSurface->GetAuxiliaryTexture(0) != NULL;
+  bool bHasHotSpotTex = pSurface->GetAuxiliaryTextureCount() >= 2 && pSurface->GetAuxiliaryTexture(1) != NULL;
+
+  if (bHasMaterialTex)
+  {
+    // --- Thermal params are taken from auxiliary texture
+    cfg.AddInclusionTag("AUX_TEX");
+  }
+  else
+  {
+    int iMaterialID = 0;
+    if (pSurface->GetMesh() != NULL)
+      iMaterialID = (int)pSurface->GetMesh()->GetBaseSubmesh(0)->GetGeometryInfo().m_sUserFlags;
+      
+    // --- Thermal params are taken from submesh user flags
+    pszParamPos += sprintf(pszParamPos, "ThermalMaterialID=%i;", iMaterialID);
+  }
+
+  if (bHasHotSpotTex)
+    cfg.AddInclusionTag("HEATING_POWER");
+
+  VCompiledEffect* pFX = Vision::Shaders.CreateEffect("InitialPass", szParam, EFFECTCREATEFLAG_NONE, pEffectLib);
+  if (pFX == NULL)
+  {
+    hkvLog::Warning("VTerrainDecorationEntityModel::RecreateIRShaderMain: Failed to create InitialPass effect");
+    return NULL;
+  }
+  
+  VCompiledTechnique* pTechnique = pFX->FindCompatibleTechnique(&cfg);
+  if (pTechnique == NULL)
+  {
+    hkvLog::Warning("VTerrainDecorationEntityModel::RecreateIRShaderMain: No compatible technique found; using default technique");
+    pTechnique = pFX->GetDefaultTechnique(); // find default technique
+  }
+
+  VASSERT(pTechnique != NULL && pTechnique->GetShaderCount() == 1);
+  pTechnique->GetShader(0)->m_bModified = true;
+
+  return pTechnique;
+}
+
+VCompiledTechnique* VTerrainDecorationEntityModel::RecreateIRShaderPre(VisSurface_cl* pSurface, VShaderEffectLib* pEffectLib)
+{
+  if (pSurface == NULL)
+    return NULL;
+
+  // check for supported transparency types
+  if (pSurface->GetTransparencyType() != VIS_TRANSP_NONE &&
+      pSurface->GetTransparencyType() != VIS_TRANSP_ALPHATEST &&
+      pSurface->GetTransparencyType() != VIS_TRANSP_ALPHA)
+    return NULL;
+
+  char szParam[1024];
+  VTechniqueConfig baseCfg("WIND", NULL);
+
+  switch (pSurface->GetGeometryTopology())
+  {
+    case VisSurface_cl::VGT_3DMesh:
+      baseCfg.AddInclusionTag("GEO_3D");
+      break;
+
+    default:
+      hkvLog::Warning("VTerrainDecorationEntityModel::RecreateIRShaderPre: Only 3DMesh geometry topology is supported");
+      return NULL;
+  }
+
+  hkvVec4 vWindPhaseParams(0.0071f, 0.0092f, 0.0f, 0.0f);
+  const hkvAlignedBBox& bbox = m_spMesh->GetBoundingBox();
+  if (bbox.isValid())
+    vWindPhaseParams.w = -bbox.m_vMin.z;
+
+  szParam[0] = '\0';
+  char* pszParamPos = szParam;
+  pszParamPos += sprintf(pszParamPos, "WindPhaseParams=%g,%g,%g,%g;", vWindPhaseParams.x, vWindPhaseParams.y, vWindPhaseParams.z, vWindPhaseParams.w);
+
+  VTechniqueConfig cfg(baseCfg);
+
+  if (pSurface->GetTransparencyType() == VIS_TRANSP_ALPHATEST || pSurface->GetTransparencyType() == VIS_TRANSP_ALPHA)
+  {
+    cfg.AddInclusionTag("ALPHATEST");
+    pszParamPos += sprintf(pszParamPos, "AlphaTestThreshold=%g;", pSurface->GetAlphaTestThreshold());
+  }
+
+  VCompiledEffect* pFX = Vision::Shaders.CreateEffect("PrePass", szParam, EFFECTCREATEFLAG_NONE, pEffectLib);
+  if (pFX == NULL)
+  {
+    hkvLog::Warning("VTerrainDecorationEntityModel::RecreateIRShaderPre: Failed to create PrePass effect");
+    return NULL;
+  }
+
+  VCompiledTechnique* pTechnique = pFX->FindCompatibleTechnique(&cfg);
+  if (pTechnique == NULL)
+  {
+    hkvLog::Warning("VTerrainDecorationEntityModel::RecreateIRShaderPre: No compatible technique found; using default technique");
+    pTechnique = pFX->GetDefaultTechnique(); // find default technique
+  }
+
+  VASSERT(pTechnique != NULL && pTechnique->GetShaderCount() == 1);
+  pTechnique->GetShader(0)->m_bModified = true;
+
+  return pTechnique;
+}
+
 char* VTerrainDecorationEntityModel::GetParamStringForIRSurface(VisSurface_cl* pSurface, char* pszParam)
 {
   char szTexName[FS_MAX_PATH];
@@ -860,7 +1207,7 @@ char* VTerrainDecorationEntityModel::GetParamStringForIRSurface(VisSurface_cl* p
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140711)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -9,7 +9,6 @@
 #ifndef HKB_STATE_MACHINE_H
 #define HKB_STATE_MACHINE_H
 
-
 extern const class hkClass hkbStateMachineDelayedTransitionInfoClass;
 extern const class hkClass hkbStateMachineNestedStateMachineDataClass;
 extern const class hkClass hkbStateMachineStateInfoClass;
@@ -31,7 +30,7 @@ class hkbCondition;
 class hkbGeneratorSyncInfo;
 class hkbNodeInternalStateInfo;
 class hkbSymbolIdMap;
-class hkbStateChooser;
+class hkbCustomIdSelector;
 class hkbStateListener;
 template <typename T> class hkLocalArray;
 
@@ -45,8 +44,8 @@ template <typename T> class hkLocalArray;
 class hkbStateMachine : public hkbGenerator
 {
 	public:
-		// +version(4)
 
+		// +version(5)
 		HK_DECLARE_CLASS_ALLOCATOR( HK_MEMORY_CLASS_BEHAVIOR );
 		HK_DECLARE_REFLECTION();
 
@@ -364,7 +363,7 @@ class hkbStateMachine : public hkbGenerator
 				/// Get InternalFlags from a TransitionInfoReference.
 		const TransitionInfo::InternalFlags* getInternalFlags( const TransitionInfoReference& transitionInfoReference ) const;
 
-			/// Information regarding an active transition (for internal use).
+			/// Information regarding an active transition.
 		struct ActiveTransitionInfo
 		{
 			//+version(1)
@@ -730,8 +729,8 @@ class hkbStateMachine : public hkbGenerator
 			/// If non-null, this event is sent at the beginning and end of a transition, or once for an instantaneous transition.
 		class hkbEvent m_eventToSendWhenStateOrTransitionChanges;	//+hkb.RoleAttribute("ROLE_DEFAULT","FLAG_HIDDEN")
 
-			// an object that chooses the start state
-		hkRefPtr<hkbStateChooser> m_startStateChooser;
+			/// an object that chooses the start state
+		hkRefPtr<hkbCustomIdSelector> m_startStateIdSelector;
 
 			/// The start state.
 		hkInt32 m_startStateId;
@@ -794,6 +793,8 @@ class hkbStateMachine : public hkbGenerator
 			/// Ways of setting the start state.
 		enum StartStateMode
 		{
+			
+			
 				/// Set the start state to m_startStateId.
 			START_STATE_MODE_DEFAULT,
 
@@ -803,8 +804,9 @@ class hkbStateMachine : public hkbGenerator
 				/// Set the start state to a random state.
 			START_STATE_MODE_RANDOM,
 
-				/// Set the start state using m_startStateChooser.
+				/// Set the start state using m_startStateIdSelector (fka. a chooser).
 			START_STATE_MODE_CHOOSER,
+			
 		};
 
 			/// How to set the start state.
@@ -1121,7 +1123,7 @@ class hkbStateMachine : public hkbGenerator
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

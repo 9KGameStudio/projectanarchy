@@ -112,6 +112,12 @@ HK_FORCE_INLINE void hkVector2d::add( const hkVector2d& a )
 	y += a.y;
 }
 
+HK_FORCE_INLINE void hkVector2d::sub( const hkVector2d& a )
+{
+	x -= a.x;
+	y -= a.y;
+}
+
 HK_FORCE_INLINE void hkVector2d::setMul( const hkVector2d& v, hkDouble64 r )
 {
 	x = v.x * r;
@@ -181,12 +187,12 @@ HK_FORCE_INLINE void hkVector2d::setProject( hkVector4dParameter p, hkVector4dPa
 
 inline void hkVector2d::normalize()
 {
-	normalize<HK_ACC_23_BIT, HK_SQRT_SET_ZERO>();
+	normalize<HK_ACC_MID, HK_SQRT_SET_ZERO>();
 }
 
 inline hkDouble64 hkVector2d::normalizeWithLength()
 {
-	return normalizeWithLength<HK_ACC_23_BIT, HK_SQRT_SET_ZERO>();
+	return normalizeWithLength<HK_ACC_MID, HK_SQRT_SET_ZERO>();
 }
 
 template <hkMathAccuracyMode A, hkMathNegSqrtMode S>
@@ -248,7 +254,7 @@ HK_FORCE_INLINE void HK_CALL hkVector2d::cross(const hkVector2d& vA, const hkVec
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

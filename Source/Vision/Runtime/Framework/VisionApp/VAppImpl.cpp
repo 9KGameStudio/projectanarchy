@@ -30,7 +30,7 @@ VAppImpl::VAppImpl() : m_pSceneLoader(NULL)
   VASSERT_MSG(s_pInputMap == NULL, "Input map already initialized!");
   s_pInputMap = new VInputMap(VAPP_INPUT_CONTROL_LAST_ELEMENT + 1 + VAPP_INPUT_CONTROL_USER_SPACE, VAPP_INPUT_CONTROL_ALTERNATIVES);
   
-  m_spContext = new VAppMenuContext;
+  m_spContext = new VAppMenuContext();
 }
 
 VAppImpl::~VAppImpl()
@@ -67,6 +67,11 @@ void VAppImpl::AfterEngineInit()
 bool VAppImpl::Run()
 {
 	return true;
+}
+
+VInputMap* VAppImpl::GetInputMap()
+{
+  return s_pInputMap;
 }
 
 void VAppImpl::SetupScene(const VisAppLoadSettings& sceneSettings)
@@ -127,6 +132,13 @@ bool VAppImpl::LoadScene(const VisAppLoadSettings& sceneSettings)
   // visibility collector of the new scene
   Vision::Camera.GetMainCamera()->GetVisData()->OnChanged();
 
+#if defined(_DLL) && !defined(VISIONDLL_LIB)
+
+  // Peek into the vscene to load the referenced plugins that are not yet loaded
+  m_pSceneLoader->LoadEnginePlugins(szFullName.AsChar());
+
+#endif
+
   // Finally load the scene with the given name
   if (!m_pSceneLoader->LoadScene(szFullName.AsChar(), sceneSettings.m_uiSceneLoaderFlags))
   {
@@ -164,7 +176,7 @@ void VAppImpl::DeRegisterAppModule(VAppModule* pModule)
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

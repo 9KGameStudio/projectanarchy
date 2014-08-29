@@ -10,7 +10,7 @@
 
 class hkDataObject;
 
-class hkTagfileWriter : public hkReferencedObject
+class HK_EXPORT_COMMON hkTagfileWriter : public hkReferencedObject
 {
 	public:
 	HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE);
@@ -28,12 +28,21 @@ class hkTagfileWriter : public hkReferencedObject
 
 		struct Options
 		{
+			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_SERIALIZE, Options);
+
 			Options():
 				m_verbose(false),
 				m_exact(true),
 				m_writeSerializeIgnored(false)
 			{
 			}
+
+			Options(const Options& rhs)
+				: m_verbose(rhs.m_verbose), m_exact(rhs.m_exact), m_writeSerializeIgnored(rhs.m_writeSerializeIgnored)
+			{
+				m_truePredicates.append(rhs.m_truePredicates);
+			}
+
 				/// Set verbose
 			Options& useVerbose(hkBool verbose) { m_verbose = verbose; return *this; }	
 				/// Set exact
@@ -44,6 +53,7 @@ class hkTagfileWriter : public hkReferencedObject
 			hkBool m_verbose;					///< Add extra information to make more human readable (if a text file type)
 			hkBool m_exact;						///< If set will write in a format such that the data when written and read should be identical
 			hkBool m_writeSerializeIgnored;
+			hkArray<hkUint16> m_truePredicates;
 		};
 
 			/// Save the contents to the given stream.
@@ -53,7 +63,7 @@ class hkTagfileWriter : public hkReferencedObject
 #endif // HK_TAGFILE_WRITER_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

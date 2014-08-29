@@ -11,13 +11,13 @@
 
 #include <Common/SceneData/Attributes/hkxSparselyAnimatedInt.h>
 
-extern const class hkClass hkxEnumItemClass;
+extern HK_EXPORT_COMMON const class hkClass hkxEnumItemClass;
 
-extern const class hkClass hkxEnumClass;
+extern HK_EXPORT_COMMON const class hkClass hkxEnumClass;
 
-extern const hkClass hkxSparselyAnimatedEnumClass;
+extern HK_EXPORT_COMMON const hkClass hkxSparselyAnimatedEnumClass;
 
-class hkxEnum : public hkReferencedObject
+class HK_EXPORT_COMMON hkxEnum : public hkReferencedObject
 {
 	//+vtable(true)
 	//+version(0)
@@ -59,7 +59,7 @@ public:
 	/// An hkxSparselyAnimatedEnum stores the values associated with an hkxAttribute of type enum.
 	/// This is the same as an hkxSparselyAnimatedInt with extra information about the conversion from int->string (enum), using
 	/// an hkClassEnum object for that.
-class hkxSparselyAnimatedEnum : public hkxSparselyAnimatedInt
+class HK_EXPORT_COMMON hkxSparselyAnimatedEnum : public hkxSparselyAnimatedInt
 {
 	//+vtable(true)
 	//+version(1)
@@ -78,7 +78,7 @@ public:
 #endif //HK_SCENEDATA_HKX_ANIMATED_ENUM_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

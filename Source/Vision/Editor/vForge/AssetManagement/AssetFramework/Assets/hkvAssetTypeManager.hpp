@@ -23,8 +23,13 @@
 class hkvTypeDataChangedData : public hkvCallbackData
 {
 public:
-  ASSETFRAMEWORK_IMPEXP hkvTypeDataChangedData(hkvCallback* sender) : hkvCallbackData(sender), m_types() {}
-  hkArray<hkvAssetTypeInfo> m_types;
+  ASSETFRAMEWORK_IMPEXP hkvTypeDataChangedData(hkvCallback* sender, const hkArray<hkvAssetTypeEntry>& typeEntries)
+    : hkvCallbackData(sender)
+    , m_typeEntries(typeEntries)
+  {
+  }
+
+  const hkArray<hkvAssetTypeEntry>& m_typeEntries;
 };
 
 
@@ -46,13 +51,16 @@ public:
 
   // Asset Type Handling
   ASSETFRAMEWORK_IMPEXP hkUint32 getTypeCount() const;
-  ASSETFRAMEWORK_IMPEXP hkUint32 addAssetType(const hkvAssetTypeInfo& assetTypeInfo);
-  ASSETFRAMEWORK_IMPEXP void removeAssetType(hkUint32 typeIndex);
+  ASSETFRAMEWORK_IMPEXP hkUint32 getTypeEntryCount() const;
+  ASSETFRAMEWORK_IMPEXP const hkvAssetTypeInfoHandle* addAssetType(const hkvAssetTypeInfo& assetTypeInfo);
+  ASSETFRAMEWORK_IMPEXP void removeAssetType(const hkvAssetTypeInfoHandle& typeHandle);
   ASSETFRAMEWORK_IMPEXP const hkvAssetTypeInfo* getAssetTypeInfo(hkUint32 typeIndex) const;
   ASSETFRAMEWORK_IMPEXP const hkvAssetTypeInfo* getAssetTypeInfo(const char* name) const;
   ASSETFRAMEWORK_IMPEXP hkUint32 getAssetTypeInfoIndexByName(const char* name) const;
-  ASSETFRAMEWORK_IMPEXP void getAssetTypeInfos(hkArray<hkvAssetTypeInfo>& assetTypes) const;
-  
+  ASSETFRAMEWORK_IMPEXP const hkArray<hkvAssetTypeEntry>& getAssetTypeEntries() const;
+
+  ASSETFRAMEWORK_IMPEXP hkvResult resolveAssetTypeString(const char* typeString, const hkvAssetTypeInfoHandle*& out_typeHandle, hkInt32& out_subtypeIndex) const;
+
   ASSETFRAMEWORK_IMPEXP const hkArray<hkUint32>* getExtensionTypeList(const char* extension) const;
   ASSETFRAMEWORK_IMPEXP hkvCreateAssetFunc findCreateAssetFunction(const char* fileName) const;
 
@@ -69,6 +77,7 @@ private:
   void addToExtensionLookup (const hkvAssetTypeInfo& ti, hkUint32 assetTypeIndex);
   void callOnBeforeTypeDataChanged();
   void callOnTypeDataChanged();
+  void rebuildTypeEntryList();
 
 private: // Data
   struct TypeList
@@ -76,8 +85,8 @@ private: // Data
     hkArray<hkUint32> m_assetTypeIndices;
   };
 
-  hkArray<hkvAssetTypeInfo> m_assetTypes;
-  hkQueue<hkUint32> m_freelist;
+  hkArray<hkvAssetTypeInfoHandle*> m_assetTypes;
+  hkArray<hkvAssetTypeEntry> m_assetTypeEntries;
 
   hkStorageStringMap<TypeList*> m_extensionLookup;
 };
@@ -85,7 +94,7 @@ private: // Data
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

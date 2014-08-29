@@ -168,7 +168,7 @@ BOOL RPG_MeshTrailEffectComponent::CanAttachToObject(VisTypedEngineObject_cl *ob
     return FALSE;
   }
 
-  bool const hasWeaponTrailEffect = (object->Components().GetComponentOfBaseType(V_RUNTIME_CLASS(RPG_MeshTrailEffectComponent)) != NULL);
+  bool const hasWeaponTrailEffect = (object->Components().GetComponentOfBaseType<RPG_MeshTrailEffectComponent>() != NULL);
   if(hasWeaponTrailEffect)
   {
     errorOut = "RPG_MeshTrailEffectComponent (or derived) already attached";
@@ -311,7 +311,7 @@ START_VAR_TABLE(RPG_MeshTrailEffectComponent, IVObjectComponent, "(RPG) Mesh Tra
 END_VAR_TABLE
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

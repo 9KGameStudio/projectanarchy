@@ -10,7 +10,8 @@
 #include <Vision/Editor/vForge/AssetManagement/AssetFramework/Collection/hkvCollection.hpp>
 #include <Vision/Editor/vForge/AssetManagement/AssetFramework/Assets/hkvAssetTypeManager.hpp>
 
-unsigned int hkvCollectionAsset::s_iAssetTypeIndex = HKV_INVALID_INDEX;
+hkvAssetTypeInfo* hkvCollectionAsset::s_typeInfo = NULL;
+const hkvAssetTypeInfoHandle* hkvCollectionAsset::s_typeInfoHandle = NULL;
 
 /////////////////////////////////////////////////////////////////////////////
 // hkvCollectionAsset static functions
@@ -18,23 +19,26 @@ unsigned int hkvCollectionAsset::s_iAssetTypeIndex = HKV_INVALID_INDEX;
 
 void hkvCollectionAsset::StaticInit()
 {
-  hkvAssetTypeInfo ti;
-  ti.m_name = "Collection";
-  ti.m_createFunc = &CreateAsset;
-  ti.m_determineDependenciesFunc = &DetermineDependencies;
-  ti.m_supportedFileExtensions.pushBack("vcollection");
-  ti.m_szTypeIconQt = ":/Icons/Icons/CollectionAsset.png";
+  s_typeInfo = new hkvAssetTypeInfo();
+  s_typeInfo->m_name = "Collection";
+  s_typeInfo->m_createFunc = &CreateAsset;
+  s_typeInfo->m_determineDependenciesFunc = &DetermineDependencies;
+  s_typeInfo->m_supportedFileExtensions.pushBack("vcollection");
+  s_typeInfo->m_szTypeIconQt = ":/Icons/Icons/CollectionAsset.png";
 
-  // register at the hkvAssetTypeManager and store the asset type index in static variable.
-  s_iAssetTypeIndex = hkvAssetTypeManager::getGlobalInstance()->addAssetType(ti);
+  // register at the hkvAssetTypeManager and store the asset type handle in static variable.
+  s_typeInfoHandle = hkvAssetTypeManager::getGlobalInstance()->addAssetType(*s_typeInfo);
 }
 
 
 void hkvCollectionAsset::StaticDeInit()
 {
   // de-register at the hkvAssetTypeManager
-  hkvAssetTypeManager::getGlobalInstance()->removeAssetType(s_iAssetTypeIndex);
-  s_iAssetTypeIndex = HKV_INVALID_INDEX;
+  hkvAssetTypeManager::getGlobalInstance()->removeAssetType(*s_typeInfoHandle);
+  s_typeInfoHandle = NULL;
+
+  delete s_typeInfo;
+  s_typeInfo = NULL;
 }
 
 
@@ -73,7 +77,7 @@ bool hkvCollectionAsset::DetermineDependencies(const char* libraryPath, const ch
 // hkvCollectionAsset public functions
 /////////////////////////////////////////////////////////////////////////////
 
-hkvCollectionAsset::hkvCollectionAsset()
+hkvCollectionAsset::hkvCollectionAsset() : hkvAsset(s_typeInfo)
 {
 
 }
@@ -89,30 +93,13 @@ hkvCollectionAsset::~hkvCollectionAsset()
 // hkvCollectionAsset public override functions
 /////////////////////////////////////////////////////////////////////////////
 
-unsigned int hkvCollectionAsset::getTypeIndex() const
+const hkvAssetTypeInfoHandle& hkvCollectionAsset::getTypeInfoHandle() const
 {
-  return s_iAssetTypeIndex;
-}
-
-
-const char* hkvCollectionAsset::getTypeName() const
-{
-  return "Collection";
-}
-
-
-void hkvCollectionAsset::getSpecificProperties(hkvPropertyList& properties, hkvProperty::Purpose purpose) const
-{
-  // TODO
-}
-
-void hkvCollectionAsset::setSpecificProperty(const hkvProperty& prop, const hkArray<hkStringPtr>& path, unsigned int iStackIndex, hkvProperty::Purpose purpose)
-{
-  // TODO
+  return *s_typeInfoHandle;
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

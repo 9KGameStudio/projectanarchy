@@ -13,7 +13,9 @@
 #include <Common/Visualize/hkDebugDisplayHandler.h>
 #include <Common/Visualize/Process/hkDebugDisplayProcess.h>
 
-struct debugRenderNowCallbacks
+struct debugRenderNow;
+
+struct HK_EXPORT_COMMON debugRenderNowCallbacks
 {
 	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE,debugRenderNowCallbacks);
 	debugRenderNowCallbacks()
@@ -35,7 +37,7 @@ struct debugRenderNowCallbacks
 
 	virtual void handleKey(unsigned char key) {}
 
-	virtual void render() {}
+	virtual void render(debugRenderNow* r) {}
 
 	typedef hkBool (HK_CALL *HideMemberFunc)(const class hkClassMember& m);
 
@@ -46,20 +48,19 @@ struct debugRenderNowCallbacks
 };
 
 	/// Call the rendering system right now!
-struct debugRenderNow
+struct HK_EXPORT_COMMON debugRenderNow : public hkBaseObject
 {
 	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE,debugRenderNow);
 	debugRenderNow()
 		: m_title(HK_NULL)
 		, m_clearDebug(true)
 		, m_wait(true)
-		, m_callbacks(HK_NULL)
 		, m_cameraSet(false)
 	{
 	}
 
 		// The real work is done in the destructor after the options have been set.
-	~debugRenderNow();
+	virtual ~debugRenderNow() { if (s_callbacks) s_callbacks->render(this); };
 
 	debugRenderNow& setTitle(const char* title) { m_title = title; return *this; }
 
@@ -73,11 +74,11 @@ struct debugRenderNow
 		// clear the debug display after rendering
 	debugRenderNow& clearDebug(hkBool c) { m_clearDebug = c; return *this; }
 	debugRenderNow& wait(hkBool w) { m_wait = w; return *this; }
-	debugRenderNow& setCallbacks(struct debugRenderNowCallbacks* c) { m_callbacks = c; return *this; }
+	debugRenderNow& setCallbacks(struct debugRenderNowCallbacks* c) { s_callbacks = c; return *this; }
 	const char* m_title;
 	hkBool m_clearDebug;
 	hkBool m_wait;
-	struct debugRenderNowCallbacks* m_callbacks;
+	static struct HK_EXPORT_COMMON debugRenderNowCallbacks* s_callbacks;
 	hkBool m_cameraSet;
 	hkVector4 m_cameraTo;
 };
@@ -92,7 +93,7 @@ class hkDisplayGeometry;
 /// macro is also defined for convenience, where id is the address of the rigid
 /// body.
 /// This is a thread safe singleton
-class hkDebugDisplay : public hkReferencedObject, public hkSingleton<hkDebugDisplay>
+class HK_EXPORT_COMMON hkDebugDisplay : public hkReferencedObject, public hkSingleton<hkDebugDisplay>
 {
 	//+vtable(true)
 	friend class hkSingleton<hkDebugDisplay>;
@@ -265,73 +266,50 @@ class hkDebugDisplay : public hkReferencedObject, public hkSingleton<hkDebugDisp
 HK_SINGLETON_SPECIALIZATION_DECL(hkDebugDisplay);
 #endif
 
+#if defined(HK_DISABLE_DEBUG_DISPLAY)
+#	define HK_ON_DEBUG_DISPLAY(code)
+#else
+#	define HK_ON_DEBUG_DISPLAY(code) code
+#endif
+
 // Macros for displaying debug points and lines.
 // These can be compiled out if HK_DISABLE_DEBUG_DISPLAY is defined.
-
-#if defined(HK_DISABLE_DEBUG_DISPLAY)
-// No display of points and lines
-#	define HK_ADD_GEOMETRY(geometries, transform, id)	/* nothing */
-#	define HK_SET_OBJECT_COLOR(id, color)
-#	define HK_UPDATE_GEOMETRY(transform, id)
-#	define HK_REMOVE_GEOMETRY(id)
-#	define HK_UPDATE_CAMERA(from, to, up, nearPlane, farPlane, fov, name)
-#	define HK_DISPLAY_POINT(position, color)
-#	define HK_DISPLAY_LINE(start, end, color)
-#	define HK_DISPLAY_TRIANGLE(a, b, c, color)
-#	define HK_DISPLAY_RAY(start, dir, color)
-#	define HK_DISPLAY_ARROW(start, end, color)
-#	define HK_DISPLAY_STAR(pos, scale, color)
-#	define HK_DISPLAY_PLANE(plane, offset, scale, color)
-#	define HK_DISPLAY_MODEL_SPACE_POSE(numTransforms, parentIndices, modelSpacePose, worldFromModel, color)
-#	define HK_DISPLAY_LOCAL_SPACE_POSE(numTransforms, parentIndices, localSpacePose, worldFromModel, color)
-#	define HK_DISPLAY_TEXT(text, color)
-#	define HK_DISPLAY_3D_TEXT(text, pos, color)
-#   define HK_DISPLAY_FRAME(worldFromLocal, size)
-#	define HK_DISPLAY_GEOMETRY(geometries, color)
-#	define HK_DISPLAY_GEOMETRY_WITH_TRANSFORM(geometries, transform, color)
-#	define HK_DISPLAY_BOUNDING_BOX(aabb, color)
-#	define HK_DISPLAY_LIT_TRIANGLE(a, b, c, color)
-
-#else // HK_DISABLE_DEBUG_DISPLAY
-// The debug display (display points and lines)
 // NOTE: Please refer to the hkDebugDisplay class definition above for
 // information on these macros parameters.  These calls are essentially
 // user versions of the calls in the hkDisplayHandler class interface,
 // please read its class description.
-#	define DEBUG_DISPLAY_PROCESS_TAG hkDebugDisplayProcess::getProcessTagStatic()
-#	define HK_ADD_GEOMETRY(geometries, transform, id) hkDebugDisplay::getInstance().addGeometry(geometries, transform, id, 0, DEBUG_DISPLAY_PROCESS_TAG)
-#	define HK_SET_OBJECT_COLOR(id, color) hkDebugDisplay::getInstance().setGeometryColor(color, id, DEBUG_DISPLAY_PROCESS_TAG)
-#	define HK_UPDATE_GEOMETRY(transform, id) hkDebugDisplay::getInstance().updateGeometry(transform, id, DEBUG_DISPLAY_PROCESS_TAG)
-#	define HK_REMOVE_GEOMETRY(id) hkDebugDisplay::getInstance().removeGeometry(id, 0, DEBUG_DISPLAY_PROCESS_TAG)
-#	define HK_ADD_MESH(mesh, id) hkDebugDisplay::getInstance().addMesh(mesh, id, DEBUG_DISPLAY_PROCESS_TAG)
-#	define HK_UPDATE_CAMERA(from, to, up, nearPlane, farPlane, fov, name) hkDebugDisplay::getInstance().updateCamera(from, to, up, nearPlane, farPlane, fov, name)
-#	define HK_DISPLAY_POINT(position, color) hkDebugDisplay::getInstance().displayPoint(position, color, 0, DEBUG_DISPLAY_PROCESS_TAG)
-#	define HK_DISPLAY_LINE(start, end, color) hkDebugDisplay::getInstance().displayLine(start, end, color, 0, DEBUG_DISPLAY_PROCESS_TAG)
-#	define HK_DISPLAY_TRIANGLE(a, b, c, color) hkDebugDisplay::getInstance().displayTriangle(a,b,c, color, 0, DEBUG_DISPLAY_PROCESS_TAG)
-#	define HK_DISPLAY_LINE_MODEL(worldFromModel, start, end, color ) hkDebugDisplay::getInstance().displayLineModelSpace(worldFromModel, start, end, color, 0, DEBUG_DISPLAY_PROCESS_TAG)
-#	define HK_DISPLAY_RAY(start, dir, color) hkDebugDisplay::getInstance().displayRay(start, dir, color, 0, DEBUG_DISPLAY_PROCESS_TAG)
-#	define HK_DISPLAY_RAY_MODEL(worldFromModel, start, dir, color) hkDebugDisplay::getInstance().displayRayModelSpace(worldFromModel, start, dir, color, 0, DEBUG_DISPLAY_PROCESS_TAG)
-#	define HK_DISPLAY_ARROW(start, direction, color) hkDebugDisplay::getInstance().displayArrow(start, direction, color, 0, DEBUG_DISPLAY_PROCESS_TAG)
-#	define HK_DISPLAY_STAR(pos, scale, color) hkDebugDisplay::getInstance().displayStar(pos, scale, color, 0, DEBUG_DISPLAY_PROCESS_TAG)
-#	define HK_DISPLAY_STAR_MODEL(worldFromModel, pos, scale, color) hkDebugDisplay::getInstance().displayStarModelSpace(worldFromModel, pos, scale, color, 0, DEBUG_DISPLAY_PROCESS_TAG)
-#	define HK_DISPLAY_PLANE(plane, offset, scale, color) hkDebugDisplay::getInstance().displayPlane(plane, offset, scale, color, 0, DEBUG_DISPLAY_PROCESS_TAG)
-#	define HK_DISPLAY_MODEL_SPACE_POSE(numTransforms, parentIndices, modelSpacePose, worldFromModel, color) hkDebugDisplay::getInstance().displayModelSpacePose(numTransforms, parentIndices, modelSpacePose, worldFromModel, 0, DEBUG_DISPLAY_PROCESS_TAG, color)
-#	define HK_DISPLAY_LOCAL_SPACE_POSE(numTransforms, parentIndices, localSpacePose, worldFromModel, color) hkDebugDisplay::getInstance().displayLocalSpacePose(numTransforms, parentIndices, localSpacePose, worldFromModel, 0, DEBUG_DISPLAY_PROCESS_TAG, color)
-#	define HK_DISPLAY_TEXT(text, color) hkDebugDisplay::getInstance().displayText(text, color, 0, DEBUG_DISPLAY_PROCESS_TAG)
-#	define HK_DISPLAY_3D_TEXT(text, pos, color) hkDebugDisplay::getInstance().display3dText(text, pos, color, 0, DEBUG_DISPLAY_PROCESS_TAG)
-#   define HK_DISPLAY_FRAME(worldFromLocal, size) hkDebugDisplay::getInstance().displayFrame( worldFromLocal, size, 0, DEBUG_DISPLAY_PROCESS_TAG)
-#	define HK_DISPLAY_GEOMETRY(geometries, color) hkDebugDisplay::getInstance().displayGeometry(geometries, color, 0, DEBUG_DISPLAY_PROCESS_TAG)
-#	define HK_DISPLAY_GEOMETRY_WITH_TRANSFORM(geometries, transform, color) hkDebugDisplay::getInstance().displayGeometry(geometries, transform, color, 0, DEBUG_DISPLAY_PROCESS_TAG)
-#	define HK_DISPLAY_BOUNDING_BOX(aabb, color) hkDebugDisplay::getInstance().displayAabb(aabb, color, 0, DEBUG_DISPLAY_PROCESS_TAG)
-#	define HK_DISPLAY_TRANSFORMED_BOUNDING_BOX(transform, aabb, color) hkDebugDisplay::getInstance().displayAabb(transform, aabb, color, 0, DEBUG_DISPLAY_PROCESS_TAG)
-#	define HK_DISPLAY_LIT_TRIANGLE(_a_, _b_, _c_, _color_) hkDebugDisplay::getInstance().displayLitTriangle(_a_, _b_, _c_, _color_)
-
-#endif // HK_DISABLE_DEBUG_DISPLAY
+#	define DEBUG_DISPLAY_PROCESS_TAG HK_ON_DEBUG_DISPLAY(hkDebugDisplayProcess::getProcessTagStatic())
+#	define HK_ADD_GEOMETRY(geometries, transform, id) HK_ON_DEBUG_DISPLAY(hkDebugDisplay::getInstance().addGeometry(geometries, transform, id, 0, DEBUG_DISPLAY_PROCESS_TAG))
+#	define HK_SET_OBJECT_COLOR(id, color) HK_ON_DEBUG_DISPLAY(hkDebugDisplay::getInstance().setGeometryColor(color, id, DEBUG_DISPLAY_PROCESS_TAG))
+#	define HK_UPDATE_GEOMETRY(transform, id) HK_ON_DEBUG_DISPLAY(hkDebugDisplay::getInstance().updateGeometry(transform, id, DEBUG_DISPLAY_PROCESS_TAG))
+#	define HK_REMOVE_GEOMETRY(id) HK_ON_DEBUG_DISPLAY(hkDebugDisplay::getInstance().removeGeometry(id, 0, DEBUG_DISPLAY_PROCESS_TAG))
+#	define HK_ADD_MESH(mesh, id) HK_ON_DEBUG_DISPLAY(hkDebugDisplay::getInstance().addMesh(mesh, id, DEBUG_DISPLAY_PROCESS_TAG))
+#	define HK_UPDATE_CAMERA(from, to, up, nearPlane, farPlane, fov, name) HK_ON_DEBUG_DISPLAY(hkDebugDisplay::getInstance().updateCamera(from, to, up, nearPlane, farPlane, fov, name))
+#	define HK_DISPLAY_POINT(position, color) HK_ON_DEBUG_DISPLAY(hkDebugDisplay::getInstance().displayPoint(position, color, 0, DEBUG_DISPLAY_PROCESS_TAG))
+#	define HK_DISPLAY_LINE(start, end, color) HK_ON_DEBUG_DISPLAY(hkDebugDisplay::getInstance().displayLine(start, end, color, 0, DEBUG_DISPLAY_PROCESS_TAG))
+#	define HK_DISPLAY_TRIANGLE(a, b, c, color) HK_ON_DEBUG_DISPLAY(hkDebugDisplay::getInstance().displayTriangle(a,b,c, color, 0, DEBUG_DISPLAY_PROCESS_TAG))
+#	define HK_DISPLAY_LINE_MODEL(worldFromModel, start, end, color ) HK_ON_DEBUG_DISPLAY(hkDebugDisplay::getInstance().displayLineModelSpace(worldFromModel, start, end, color, 0, DEBUG_DISPLAY_PROCESS_TAG))
+#	define HK_DISPLAY_RAY(start, dir, color) HK_ON_DEBUG_DISPLAY(hkDebugDisplay::getInstance().displayRay(start, dir, color, 0, DEBUG_DISPLAY_PROCESS_TAG))
+#	define HK_DISPLAY_RAY_MODEL(worldFromModel, start, dir, color) HK_ON_DEBUG_DISPLAY(hkDebugDisplay::getInstance().displayRayModelSpace(worldFromModel, start, dir, color, 0, DEBUG_DISPLAY_PROCESS_TAG))
+#	define HK_DISPLAY_ARROW(start, direction, color) HK_ON_DEBUG_DISPLAY(hkDebugDisplay::getInstance().displayArrow(start, direction, color, 0, DEBUG_DISPLAY_PROCESS_TAG)) 
+#	define HK_DISPLAY_STAR(pos, scale, color) HK_ON_DEBUG_DISPLAY(hkDebugDisplay::getInstance().displayStar(pos, scale, color, 0, DEBUG_DISPLAY_PROCESS_TAG))
+#	define HK_DISPLAY_STAR_MODEL(worldFromModel, pos, scale, color) HK_ON_DEBUG_DISPLAY(hkDebugDisplay::getInstance().displayStarModelSpace(worldFromModel, pos, scale, color, 0, DEBUG_DISPLAY_PROCESS_TAG))
+#	define HK_DISPLAY_PLANE(plane, offset, scale, color) HK_ON_DEBUG_DISPLAY(hkDebugDisplay::getInstance().displayPlane(plane, offset, scale, color, 0, DEBUG_DISPLAY_PROCESS_TAG))
+#	define HK_DISPLAY_MODEL_SPACE_POSE(numTransforms, parentIndices, modelSpacePose, worldFromModel, color) HK_ON_DEBUG_DISPLAY(hkDebugDisplay::getInstance().displayModelSpacePose(numTransforms, parentIndices, modelSpacePose, worldFromModel, 0, DEBUG_DISPLAY_PROCESS_TAG, color))
+#	define HK_DISPLAY_LOCAL_SPACE_POSE(numTransforms, parentIndices, localSpacePose, worldFromModel, color) HK_ON_DEBUG_DISPLAY(hkDebugDisplay::getInstance().displayLocalSpacePose(numTransforms, parentIndices, localSpacePose, worldFromModel, 0, DEBUG_DISPLAY_PROCESS_TAG, color))
+#	define HK_DISPLAY_TEXT(text, color) HK_ON_DEBUG_DISPLAY(hkDebugDisplay::getInstance().displayText(text, color, 0, DEBUG_DISPLAY_PROCESS_TAG))
+#	define HK_DISPLAY_3D_TEXT(text, pos, color) HK_ON_DEBUG_DISPLAY(hkDebugDisplay::getInstance().display3dText(text, pos, color, 0, DEBUG_DISPLAY_PROCESS_TAG))
+#   define HK_DISPLAY_FRAME(worldFromLocal, size) HK_ON_DEBUG_DISPLAY(hkDebugDisplay::getInstance().displayFrame( worldFromLocal, size, 0, DEBUG_DISPLAY_PROCESS_TAG))
+#	define HK_DISPLAY_GEOMETRY(geometries, color) HK_ON_DEBUG_DISPLAY(hkDebugDisplay::getInstance().displayGeometry(geometries, color, 0, DEBUG_DISPLAY_PROCESS_TAG))
+#	define HK_DISPLAY_GEOMETRY_WITH_TRANSFORM(geometries, transform, color) HK_ON_DEBUG_DISPLAY(hkDebugDisplay::getInstance().displayGeometry(geometries, transform, color, 0, DEBUG_DISPLAY_PROCESS_TAG))
+#	define HK_DISPLAY_BOUNDING_BOX(aabb, color) HK_ON_DEBUG_DISPLAY(hkDebugDisplay::getInstance().displayAabb(aabb, color, 0, DEBUG_DISPLAY_PROCESS_TAG))
+#	define HK_DISPLAY_TRANSFORMED_BOUNDING_BOX(transform, aabb, color) HK_ON_DEBUG_DISPLAY(hkDebugDisplay::getInstance().displayAabb(transform, aabb, color, 0, DEBUG_DISPLAY_PROCESS_TAG))
+#	define HK_DISPLAY_LIT_TRIANGLE(_a_, _b_, _c_, _color_) HK_ON_DEBUG_DISPLAY(hkDebugDisplay::getInstance().displayLitTriangle(_a_, _b_, _c_, _color_))
 
 #endif // HK_VISUALIZE_DEBUG_DISPLAY_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

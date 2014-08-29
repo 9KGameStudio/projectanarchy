@@ -6,8 +6,16 @@
  *
  */
 
+#if defined(_VISION_NACL) && defined(WIN32)
+  extern "C" int ptw32_processInitialize();
+#endif
+
 VMutex::VMutex()
 {
+#if defined(_VISION_NACL) && defined(WIN32)
+  ptw32_processInitialize();
+#endif
+
   pthread_mutexattr_t mutexAttributes;
   pthread_mutexattr_init(&mutexAttributes);
   pthread_mutexattr_settype(&mutexAttributes, PTHREAD_MUTEX_RECURSIVE);
@@ -33,7 +41,7 @@ void VMutex::Unlock()
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140625)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

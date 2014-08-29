@@ -603,7 +603,7 @@ void VEditableTerrain::RenderCursor()
     pDisplayTexture = GetDefaultCursorTexture();
 
   // render again using Render function with specific shader
-  for (int j=0;j<pFX->GetShaderCount();j++)
+  for (unsigned int j=0;j<pFX->GetShaderCount();j++)
   {
     VCompiledShaderPass *pShader = pFX->GetShader(j);
     UpdateCursorShader(pShader,m_vCursorCenter.ToRenderSpace(m_Config),m_fCursorWSRadius, m_fCursorRotationAngle, pDisplayTexture, VColorRef(255,0,0,180));
@@ -2111,6 +2111,9 @@ void VEditableTerrain::GetLightmapInfo(VLightmapSceneInfo &info)
         for (int iPageX=0;iPageX<m_Config.m_iSectorMeshesPerSector[0];iPageX++,pPage++)
         {
           int iSampler = pPage->GetSamplerIndex(szSampler);
+          if (iSampler<0)
+            iSampler = pPage->m_iLightmapSamplerIndex[i];
+
           if (iSampler>=0)
           {
             pPage->SetLightmapTexture(iSampler,pTex,i);
@@ -2252,7 +2255,7 @@ void VEditableTerrain::UpdateDefaultEffectSettingsInConfig()
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

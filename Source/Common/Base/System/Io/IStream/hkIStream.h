@@ -10,14 +10,14 @@
 
 extern const class hkClass hkIstreamClass;
 
-class hkStreamReader;
+#include <Common/Base/System/Io/Reader/hkStreamReader.h>
 class hkMemoryTrack;
 
 /// Text formatted data reader. Provides functionality similar to std::istream.
 /// All the usual operators are provided plus operators
 /// for 64 bit integers. printf style output is also
 /// supported.
-class hkIstream : public hkReferencedObject
+class HK_EXPORT_COMMON hkIstream : public hkReferencedObject
 {
 	public:
 
@@ -117,7 +117,7 @@ typedef hkIstream hkIfstream;
 #endif // HKBASE_HKISTREAM_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

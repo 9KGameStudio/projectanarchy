@@ -77,12 +77,14 @@ public:
   VISION_APIFUNC virtual void Debug_ShowHierarchy(IVRenderInterface *pRI, int iGeneration, float &x, float &y);
 
   VisVertexDeformerStack_cl* m_pVertexDeformerStack;  ///< pointer to stack this deformer has been add to
+
+  V_DECLARE_DYNAMIC_DLLEXP(IVisVertexDeformer_cl, VISION_APIDATA);
 };
 
 #endif //VIS_VERTEX_DEFORMER_HPP_INCLUDED
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

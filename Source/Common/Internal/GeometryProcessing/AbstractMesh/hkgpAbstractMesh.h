@@ -17,7 +17,7 @@
 #endif
 
 /// Abstract mesh definitions
-struct hkgpAbstractMeshDefinitions
+struct  hkgpAbstractMeshDefinitions
 {
 	//+hk.MemoryTracker(ignore=True)
 	/// UID
@@ -141,7 +141,7 @@ struct hkgpAbstractMeshDefinitions
 
 /// Abstract mesh implementation
 template <typename EDGE, typename VERTEX, typename TRIANGLE, typename ALLOCATOR=hkContainerHeapAllocator>
-class hkgpAbstractMesh : public hkReferencedObject
+class  hkgpAbstractMesh : public hkReferencedObject
 {
 public:
 	HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_GEOMETRY);
@@ -290,7 +290,7 @@ public:
 
 /// Abstract tetrahedral mesh implementation
 template <typename EDGE,typename VERTEX,typename TRIANGLE,typename TETRAHEDRON,typename ALLOCATOR=hkContainerHeapAllocator>
-class hkgpAbstractTetraMesh : public hkgpAbstractMesh<EDGE,VERTEX,TRIANGLE,ALLOCATOR>
+class  hkgpAbstractTetraMesh : public hkgpAbstractMesh<EDGE,VERTEX,TRIANGLE,ALLOCATOR>
 {
 public:
 	HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_GEOMETRY);
@@ -349,7 +349,7 @@ public:
 #endif // HKGP_ABSTRACT_MESH_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

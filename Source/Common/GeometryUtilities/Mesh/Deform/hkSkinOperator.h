@@ -10,7 +10,7 @@
 #define HK_SKIN_OPERATOR_H
 
 /// A skin operator - it updates an output buffer based on an input reference buffer, a transform set, and the weight information stored in the operator.
-class hkSkinOperator
+class HK_EXPORT_COMMON hkSkinOperator
 {
 	public:
 
@@ -136,7 +136,7 @@ class hkSkinOperator
 #endif	//	HK_SKIN_OPERATOR_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

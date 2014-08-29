@@ -36,7 +36,7 @@ inline hkaiHeapOpenSet::~hkaiHeapOpenSet()
 void hkaiHeapOpenSet::heapSwapEntries(int i, int j)
 {
 	HK_ASSERT(0x14c5b95a, i != j);
-	hkAlgorithm::swap( m_heap[i], m_heap[j] );
+	hkMath::swap( m_heap[i], m_heap[j] );
 }
 
 // Moves the i'th heap entry up the heap (if needed) by swapping with it's parent, until heap property is satisfied
@@ -183,7 +183,7 @@ inline hkBool32 hkaiHeapOpenSet::isOk()
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

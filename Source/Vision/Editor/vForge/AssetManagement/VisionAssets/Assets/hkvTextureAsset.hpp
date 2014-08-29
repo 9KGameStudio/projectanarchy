@@ -18,6 +18,16 @@
 
 class hkvAssetTypeManager;
 
+enum hkvTextureAssetSubtype
+{
+  HKV_TEXTURE_ASSET_SUBTYPE_2D = 0,
+  HKV_TEXTURE_ASSET_SUBTYPE_3D,
+  HKV_TEXTURE_ASSET_SUBTYPE_ARRAY,
+  HKV_TEXTURE_ASSET_SUBTYPE_CUBEMAP,
+
+  HKV_TEXTURE_ASSET_SUBTYPE_COUNT
+};
+
 class hkvTextureAsset : public hkvAsset
 {
 public:
@@ -33,8 +43,12 @@ public: // public functions
   ~hkvTextureAsset();
 
 public: // overrides
-  virtual unsigned int getTypeIndex() const HKV_OVERRIDE;
-  virtual const char* getTypeName() const HKV_OVERRIDE;
+  virtual const hkvAssetTypeInfoHandle& getTypeInfoHandle() const HKV_OVERRIDE;
+
+  virtual hkInt32 getSubtype() const HKV_OVERRIDE;
+  virtual const char* getSubtypeName() const HKV_OVERRIDE;
+  virtual void setSubtypeByName(const char* name) HKV_OVERRIDE;
+  virtual hkUint32 getResourceSubtype() const HKV_OVERRIDE;
 
   virtual void getSpecificProperties(hkvPropertyList& properties, hkvProperty::Purpose purpose) const HKV_OVERRIDE;
   virtual void setSpecificProperty(const hkvProperty& prop, const hkArray<hkStringPtr>& path, unsigned int stackIndex, hkvProperty::Purpose purpose) HKV_OVERRIDE;
@@ -45,10 +59,14 @@ protected:
   virtual hkvAssetOperationResult updateAssetSpecificData(hkStreamReader& fileData) const HKV_OVERRIDE;
 
 private:
-  static hkUint32 s_iAssetTypeIndex;
+  static hkvAssetTypeInfo* s_typeInfo;
+  static const hkvAssetTypeInfoHandle* s_typeInfoHandle;
+
+  static hkvEnumDefinition s_subtypeDefinition;
   static hkvEnumDefinition s_imageFormatsDefinition;
   static hkvEnumDefinition s_usageDefinition;
 
+  mutable hkInt32 m_subtype;
   mutable hkvImageFileProperties m_imageProperties;
   hkvEnumInstance m_usageInstance;
   hkBool m_sRgb;
@@ -57,7 +75,7 @@ private:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

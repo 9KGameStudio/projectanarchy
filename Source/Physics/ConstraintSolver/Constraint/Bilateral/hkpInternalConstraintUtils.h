@@ -60,7 +60,7 @@ HK_FORCE_INLINE void HK_CALL hkInternalConstraintUtils_inlineCalcRelativeAngle(
 
 	hkSimdReal d1 = m_ws_us.getColumn<1>().dot<3>( planeAxisAinWorld );
 	hkSimdReal d2 = m_ws_us.getColumn<2>().dot<3>( planeAxisAinWorld );
-	hkSimdReal a = hkVector4Util::atan2Approximation(d1,d2);
+	hkSimdReal a = hkVector4Util::atan2(d1,d2);
 	a.store<1>((hkReal*)&angleOut);
 	axisOut = twist_axis_ws;
 }
@@ -101,7 +101,7 @@ HK_FORCE_INLINE void HK_CALL hkInternalConstraintUtils_computeInertiaScaleFactor
 #endif // HKP_INTERNAL_CONSTRAINT_UTILS_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

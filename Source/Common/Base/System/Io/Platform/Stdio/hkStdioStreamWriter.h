@@ -10,12 +10,15 @@
 #define HK_BASE_STDIOSTREAMWRITER_H
 
 #include <Common/Base/System/Io/Writer/hkStreamWriter.h>
+#include <Common/Base/System/Io/FileSystem/hkFileSystem.h>
 
-class hkStdioStreamWriter : public hkStreamWriter
+class HK_EXPORT_COMMON hkStdioStreamWriter : public hkStreamWriter
 {
 	public:
 
-		static hkStdioStreamWriter* open(const char* name, const char* mode);
+			/// Open the file for write. If the OPEN_TRUNCATE flag is specified, fopen will be called in "wb" mode.
+			/// If the flag is not specified, fopen will be called in "r+b" mode if the file exists, or "w+b" if not.
+		static hkStdioStreamWriter* open(const char* name, hkFileSystem::OpenFlags flags);
 
 		hkStdioStreamWriter(void* /*FILE**/ handle, hkBool shouldClose);
 		virtual ~hkStdioStreamWriter();
@@ -38,7 +41,7 @@ class hkStdioStreamWriter : public hkStreamWriter
 #endif //HK_BASE_STDIOSTREAMWRITER_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

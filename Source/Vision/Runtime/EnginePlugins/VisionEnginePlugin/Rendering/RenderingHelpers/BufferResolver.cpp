@@ -11,9 +11,9 @@
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/RenderingHelpers/BufferResolver.hpp>
 
 VBufferResolver::VBufferResolver(IVRendererNode* pRenderNode, VisRenderContext_cl* pRenderContextToResolve, unsigned int uiRenderHook) :
-  m_spRenderContextToResolve(pRenderContextToResolve), 
-  m_uiRenderHook(uiRenderHook), 
+  m_spRenderContextToResolve(pRenderContextToResolve),
   m_pRenderNode(pRenderNode),
+  m_uiRenderHook(uiRenderHook), 
   m_eInitMode(VIM_Invalid), 
   m_iBufferWidth(0),
   m_iBufferHeight(0),
@@ -116,7 +116,7 @@ void VBufferResolver::CreateResolveBuffer(VisRenderableTextureConfig_t* pOverrid
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

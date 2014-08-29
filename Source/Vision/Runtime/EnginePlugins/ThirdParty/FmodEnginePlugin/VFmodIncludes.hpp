@@ -106,10 +106,11 @@ typedef VSmartPtr<VFmodReverb> VFmodReverbPtr;
 #define VFMOD_PLATFORM_STR_IOS      "ios"
 #define VFMOD_PLATFORM_STR_WIIU     "wiiu"
 #define VFMOD_PLATFORM_STR_TIZEN    "tizen"
+#define VFMOD_PLATFORM_STR_NACL     "nacl"
 
 // VFMOD_SUPPORTS_NETWORK : support for Fmod Designer Network API 
 
-#if defined (WIN32) 
+#if defined (_VISION_WIN32)
 #define VFMOD_PLATFORM_STR VFMOD_PLATFORM_STR_PC
 #  if !defined(_VISION_WINRT)
 #    define VFMOD_SUPPORTS_NETWORK
@@ -132,6 +133,9 @@ typedef VSmartPtr<VFmodReverb> VFmodReverbPtr;
 #undef VFMOD_SUPPORTS_NETWORK
 #elif defined (_VISION_TIZEN)
 #define VFMOD_PLATFORM_STR VFMOD_PLATFORM_STR_TIZEN
+#undef VFMOD_SUPPORTS_NETWORK
+#elif defined (_VISION_NACL)
+#define VFMOD_PLATFORM_STR VFMOD_PLATFORM_STR_NACL
 #undef VFMOD_SUPPORTS_NETWORK
 #else
 #error Undefined platform!
@@ -221,7 +225,7 @@ typedef VSmartPtr<VFmodReverb> VFmodReverbPtr;
 #endif // VISION_FMOD_INCLUDED_HPP
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -39,6 +39,20 @@ extern "C" int luaopen_HavokAi(lua_State *);
 // Static global manager
 vHavokAiModule vHavokAiModule::g_GlobalManager;
 
+// Custom world listener which will prevent any rigid body tagged with VHAVOK_PROPERTY_DO_NO_CUT_NAV_MESH from cutting the nav mesh
+class vHavokAiPhysicsWorldListener : public hkaiPhysics2012WorldListener
+{
+public:
+	vHavokAiPhysicsWorldListener(hkpWorld* physicsWorld, hkaiWorld* aiWorld)
+		: hkaiPhysics2012WorldListener(physicsWorld, aiWorld) {}
+
+	virtual hkaiPointCloudSilhouetteGenerator::DetailLevel getDetailLevelForEntity(hkpEntity* entity)
+	{
+		if (entity->hasProperty(VHAVOK_PROPERTY_DO_NO_CUT_NAV_MESH))
+			return hkaiPointCloudSilhouetteGenerator::DETAIL_INVALID;
+		return hkaiPhysics2012WorldListener::getDetailLevelForEntity(entity);
+	}
+};
 
 vHavokAiModule::vHavokAiModule()
 {
@@ -60,7 +74,6 @@ void vHavokAiModule::OneTimeInit()
 	Vision::Callbacks.OnRenderHook += this;
 	Vision::Callbacks.OnUpdateSceneFinished += this;
 	IVScriptManager::OnRegisterScriptFunctions += this;
-	IVScriptManager::OnScriptProxyCreation += this;
 }
 
 void vHavokAiModule::OneTimeDeInit()
@@ -74,7 +87,6 @@ void vHavokAiModule::OneTimeDeInit()
 	Vision::Callbacks.OnRenderHook -= this;
 	Vision::Callbacks.OnUpdateSceneFinished -= this;
 	IVScriptManager::OnRegisterScriptFunctions -= this;
-	IVScriptManager::OnScriptProxyCreation -= this;
 }
 
 void vHavokAiModule::Init()
@@ -84,6 +96,8 @@ void vHavokAiModule::Init()
 	m_connectToPhysicsWorld = false;
 	m_physicsWorldListener = HK_NULL;
 	m_aiViewerContext = HK_NULL;
+
+	m_steppedExternally = false;
 
 	// create ai world, don't delay so that vForge etc always has one (even if will be recreated soon enough anyway..
 	CreateAiWorld(); 
@@ -98,18 +112,19 @@ void vHavokAiModule::DeInit()
 	m_connectToPhysicsWorld = false;
 	m_physicsWorldListener = HK_NULL;
 	m_aiViewerContext = HK_NULL;
+
+	m_steppedExternally = false;
 }
 
 void vHavokAiModule::Step( float dt )
 {
-	if (m_aiWorld)
+	if (m_aiWorld && !m_steppedExternally)
 	{
 		// todo: what should time step be?
 		vHavokPhysicsModule* physicsModule = vHavokPhysicsModule::GetInstance();
-
-		if (physicsModule && physicsModule->GetJobQueue())
+		if (physicsModule && physicsModule->GetTaskQueue())
 		{
-			m_aiWorld->stepMultithreaded( dt, m_behaviors, physicsModule->GetJobQueue(), physicsModule->GetThreadPool() );
+			m_aiWorld->stepMultithreaded( dt, m_behaviors, physicsModule->GetTaskQueue(), physicsModule->GetThreadPool() );
 		}
 		else
 		{
@@ -127,7 +142,11 @@ void vHavokAiModule::OnDeInitPhysicsModule()
 
 void vHavokAiModule::OnHandleCallback(IVisCallbackDataObject_cl *pData)
 {
-	if (pData->m_pSender == &vHavokPhysicsModule::OnBeforeWorldCreated)
+  if (pData->m_pSender == &vHavokPhysicsModule::OnHandleResourceFile)
+	{
+		HandleResourceFile(*((vHavokResourceCallbackData *)pData));
+	}
+	else if (pData->m_pSender == &vHavokPhysicsModule::OnBeforeWorldCreated)
 	{
 		SetPhysicsWorld(HK_NULL);
 	}
@@ -171,7 +190,7 @@ void vHavokAiModule::OnHandleCallback(IVisCallbackDataObject_cl *pData)
 	}
 }
 
-int vHavokAiModule::GetCallbackSortingKey(VCallback *pCallback)
+int64 vHavokAiModule::GetCallbackSortingKey(VCallback *pCallback)
 {
 	return 1; // should be greater than vHavokAiModuleCallbackHandler_cl::GetCallbackSortingKey
 }
@@ -274,12 +293,12 @@ bool vHavokAiModule::ComputeAndDrawPath(IVRenderInterface *pRenderer, hkvVec3* s
 
 	hkvVec3 vStartPos; vHavokConversionUtils::PhysVecToVisVecWorld(input.m_startPoint,vStartPos); 
 	hkvVec3 vEndPos; vHavokConversionUtils::PhysVecToVisVecWorld(input.m_goalPoints[0],vEndPos); 
-	hkvVec3 vScaledDir ( 0.f, 0.f, height );
+	hkvVec3 vDir ( 0.f, 0.f, height );
 	VSimpleRenderState_t state(VIS_TRANSP_NONE, RENDERSTATEFLAG_FRONTFACE|RENDERSTATEFLAG_WRITETOZBUFFER);	
 	int sd = (input.m_startFaceKey != HKAI_INVALID_PACKED_KEY) ? 1 : 2;
 	int ed = (input.m_goalFaceKeys[0] != HKAI_INVALID_PACKED_KEY) ? 1 : 2;
-	pRenderer->RenderCylinder(vStartPos, vScaledDir, radius, VColorRef(255/sd, 165/sd, 0/sd), state, RENDERSHAPEFLAGS_SOLID|RENDERSHAPEFLAGS_CAP1);
-	pRenderer->RenderCylinder(vEndPos, vScaledDir, radius, VColorRef(0/ed, 128/ed, 0/ed), state, RENDERSHAPEFLAGS_SOLID|RENDERSHAPEFLAGS_CAP1);
+	pRenderer->RenderCylinder(vStartPos, vDir, radius, VColorRef(255/sd, 165/sd, 0/sd), state, RENDERSHAPEFLAGS_SOLID|RENDERSHAPEFLAGS_CAP1);
+	pRenderer->RenderCylinder(vEndPos, vDir, radius, VColorRef(0/ed, 128/ed, 0/ed), state, RENDERSHAPEFLAGS_SOLID|RENDERSHAPEFLAGS_CAP1);
 
 	return foundPath;
 }
@@ -370,7 +389,7 @@ void vHavokAiModule::ConnectToPhysicsWorld()
 
 	if (m_physicsWorld != HK_NULL && m_aiWorld != HK_NULL)
 	{
-		m_physicsWorldListener = new hkaiPhysics2012WorldListener(m_physicsWorld, m_aiWorld);
+		m_physicsWorldListener = new vHavokAiPhysicsWorldListener(m_physicsWorld, m_aiWorld);
 		m_physicsWorldListener->connectToPhysicsWorld();
 
 		m_physicsWorld->addReference();
@@ -524,6 +543,17 @@ bool vHavokAiModule::LoadNavMeshDeprecated(const char* filename, VArray<vHavokAi
 	return true;
 }
 
+
+void vHavokAiModule::HandleResourceFile(vHavokResourceCallbackData &data)
+{
+  // handle the physics side in this function:
+  hkRootLevelContainer* root = data.m_pResource->getContents<hkRootLevelContainer>();
+  if (root==NULL || data.m_Action==vHavokResourceCallbackData::HRA_NONE)
+    return;
+	hkaiWorld* aiWorld = GetAiWorld();
+  // TODO
+}
+
 void vHavokAiModule::RegisterLua() 
 {
 	IVScriptManager* pSM = Vision::GetScriptManager();
@@ -577,7 +607,7 @@ hkvVec3 *vHavokAiModule::GetClosestPoint(const hkvVec3 *position, float radius)
 
 	if (key != HKAI_INVALID_PACKED_KEY)
 	{
-		result = new hkvVec3();
+		result = new hkvVec3(0);
 		vHavokConversionUtils::PhysVecToVisVecWorld(hitPoint, *result);
 	}
 
@@ -608,7 +638,7 @@ hkvVec3 *vHavokAiModule::CastRay(const hkvVec3 *start, const hkvVec3 *end)
 
 	if (didHit)
 	{
-		result = new hkvVec3();
+		result = new hkvVec3(0);
 		vHavokConversionUtils::PhysVecToVisVecWorld(hitPoint, *result);
 	}
 
@@ -643,7 +673,7 @@ hkvVec3 *vHavokAiModule::PickPoint(float x, float y, float fMaxDist)
 		hkVector4 hitPoint;
 		hitPoint.setInterpolate4( s, e, hitInfo.m_hitFraction);
 
-		result = new hkvVec3();
+		result = new hkvVec3(0);
 		vHavokConversionUtils::PhysVecToVisVecWorld(hitPoint, *result);
 	}
 
@@ -651,7 +681,7 @@ hkvVec3 *vHavokAiModule::PickPoint(float x, float y, float fMaxDist)
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140704)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

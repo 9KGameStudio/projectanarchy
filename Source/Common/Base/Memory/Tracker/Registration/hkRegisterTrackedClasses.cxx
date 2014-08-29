@@ -6,11 +6,9 @@
  *
  */
 
-#include <Common/Base/hkBase.h>
-
-extern void HK_CALL hkcdCollideRegister();
-extern void HK_CALL hkcdInternalRegister();
-extern void HK_CALL hkcdInternalInternalRegister();
+extern HK_EXPORT_COMMON void HK_CALL hkcdCollideRegister();
+extern HK_EXPORT_COMMON void HK_CALL hkcdInternalRegister();
+extern HK_EXPORT_COMMON void HK_CALL hkcdInternalInternalRegister();
 
 extern void HK_CALL hkaiInternalClientRegister();
 extern void HK_CALL hkaiInternalInternalRegister();
@@ -44,6 +42,12 @@ extern void HK_CALL hkdDestructionRegister();
 extern void HK_CALL hkdInternalInternalRegister();
 extern void HK_CALL hkdInternalRegister();
 
+#if !defined(HK_DYNAMIC_DLL) 
+
+extern void HK_CALL hkndDestructionRegister();
+extern void HK_CALL hkndInternalInternalRegister();
+extern void HK_CALL hkndInternalRegister();
+
 extern void HK_CALL hkpCollideClientRegister();
 extern void HK_CALL hkpCollidehkpHeightFieldRegister();
 extern void HK_CALL hkpCollidehkpCompressedMeshShapeRegister();
@@ -65,24 +69,25 @@ extern void HK_CALL hkpInternalTreeBroadPhaseRegister();
 extern void HK_CALL hkpUtilitiesRegister();
 extern void HK_CALL hkpVehicleRegister();
 extern void HK_CALL hkpInternalTreeBroadPhaseRegister();
-
+	   
 extern void HK_CALL hknpPhysicsRegister();
 extern void HK_CALL hknpInternalRegister();
 extern void HK_CALL hknpInternalInternalRegister();
+#endif
 
-extern void HK_CALL hkBaseRegister();
-extern void HK_CALL hkBaseBaseObjectRegister();
-extern void HK_CALL hkBasehkMonitorStreamRegister();
-extern void HK_CALL hkCompatRegister();
-extern void HK_CALL hkgpConvexDecompositionInternalRegister();
-extern void HK_CALL hkgpConvexDecompositionRegister();
-extern void HK_CALL hkGeometryUtilitiesRegister();
-extern void HK_CALL hkInternalClientRegister();
-extern void HK_CALL hkInternalInternalRegister();
-extern void HK_CALL hkInternalRegister();
-extern void HK_CALL hkSceneDataRegister();
-extern void HK_CALL hkSerializeRegister();
-extern void HK_CALL hkVisualizeRegister();
+extern HK_EXPORT_COMMON void HK_CALL hkBaseRegister();
+extern HK_EXPORT_COMMON void HK_CALL hkBaseBaseObjectRegister();
+extern HK_EXPORT_COMMON void HK_CALL hkBasehkMonitorStreamRegister();
+extern HK_EXPORT_COMMON void HK_CALL hkCompatRegister();
+extern HK_EXPORT_COMMON void HK_CALL hkgpConvexDecompositionInternalRegister();
+extern HK_EXPORT_COMMON void HK_CALL hkgpConvexDecompositionRegister();
+extern HK_EXPORT_COMMON void HK_CALL hkGeometryUtilitiesRegister();
+extern HK_EXPORT_COMMON void HK_CALL hkInternalClientRegister();
+extern HK_EXPORT_COMMON void HK_CALL hkInternalInternalRegister();
+extern HK_EXPORT_COMMON void HK_CALL hkInternalRegister();
+extern HK_EXPORT_COMMON void HK_CALL hkSceneDataRegister();
+extern HK_EXPORT_COMMON void HK_CALL hkSerializeRegister();
+extern HK_EXPORT_COMMON void HK_CALL hkVisualizeRegister();
 
 static void hkRegisterMemoryTracker()
 {
@@ -143,6 +148,7 @@ static void hkRegisterMemoryTracker()
 		#if defined(HK_FEATURE_PRODUCT_PHYSICS_2012) && !defined(HK_EXCLUDE_LIBRARY_hkbPhysics2012Bridge)
 			hkbPhysics2012BridgeRegister();
 		#endif
+
 	#endif
 
 
@@ -224,7 +230,7 @@ static void hkRegisterMemoryTracker()
 	#endif
 
 
-	#if defined(HK_FEATURE_PRODUCT_PHYSICS_2012)
+	#if defined(HK_FEATURE_PRODUCT_PHYSICS_2012) && !defined(HK_DYNAMIC_DLL)  //xx
 		hkpConstraintSolverClientRegister();
 		hkpConstraintSolverInternalRegister();
 		hkpConstraintSolverRegister();
@@ -269,16 +275,22 @@ static void hkRegisterMemoryTracker()
 		#endif
 	#endif
 
-	#if defined(HK_FEATURE_PRODUCT_PHYSICS)
+	#if defined(HK_FEATURE_PRODUCT_PHYSICS) && !defined(HK_DYNAMIC_DLL) //xx
 		hknpPhysicsRegister();
 		hknpInternalRegister();
 		hknpInternalInternalRegister();
+	#endif
+
+	#if defined(HK_FEATURE_PRODUCT_DESTRUCTION) && !defined(HK_DYNAMIC_DLL) //xx
+		hkndDestructionRegister();
+		hkndInternalRegister();
+		hkndInternalInternalRegister();
 	#endif
 #endif
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

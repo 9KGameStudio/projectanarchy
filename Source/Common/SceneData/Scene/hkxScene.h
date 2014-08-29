@@ -20,10 +20,10 @@
 
 
 /// hkxScene meta information
-extern const class hkClass hkxSceneClass;
+extern HK_EXPORT_COMMON const class hkClass hkxSceneClass;
 
 /// Contains a modeller-agnostic representation of a scene, as exported by the Havok exporters from Max, Maya, or XSI.
-class hkxScene : public hkReferencedObject
+class HK_EXPORT_COMMON hkxScene : public hkReferencedObject
 {
 	//+vtable(true)
 	//+version(2)
@@ -104,7 +104,7 @@ public:
 #endif // HKSCENEDATA_SCENE_HKXSCENE_HKCLASS_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

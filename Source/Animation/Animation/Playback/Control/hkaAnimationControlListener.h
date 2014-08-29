@@ -8,11 +8,11 @@
 
 #ifndef HK_ANIMATION_CONTROL_LISTENER_H
 #define HK_ANIMATION_CONTROL_LISTENER_H
-
+#include <Animation/Internal/hkaExport.h>
 /// Override this class to get callbacks for animation control events.
 /// The only event reported by the base hkaAnimationControl class is deletion.
 /// You need to call hkaAnimationControl::addAnimationControlListener() to add a new listener to a control
-class hkaAnimationControlListener
+class HK_EXPORT_ANIMATION hkaAnimationControlListener
 {
 	//+hk.MemoryTracker(ignore=True)
 	public:
@@ -28,7 +28,7 @@ class hkaAnimationControlListener
 #endif // HK_ANIMATION_CONTROL_LISTENER_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -80,7 +80,22 @@ public: // Interface
   ASSETFRAMEWORK_IMPEXP bool getAbsoluteStaticTargetPath(const hkvAsset& asset, hkStringBuf& out_path) const;
 
   ASSETFRAMEWORK_IMPEXP virtual bool executeTransformation(const hkvTransformationInput& input, hkvTransformationOutput& output) const = 0;
-  ASSETFRAMEWORK_IMPEXP virtual bool queryOutputFileSpecs(const hkvTransformationInput& input, hkvTransformationOutput& output) const = 0;
+
+  /// \brief 
+  ///   Fills output with a list of files that are generated for the given input.
+  ///
+  /// \param input
+  ///   The input.
+  /// \param output
+  ///   The output.
+  /// \param forLookUpTable
+  ///   Whether this list is used for generating the lookup table used by the engine or for other purposes like stale asset cleanup.
+  ///   If an output is not used by the engine it should be be written to the lookup table (e.g. cache files, intermediate output etc).
+  /// \return
+  ///   Whether any files were added to the output.
+  ASSETFRAMEWORK_IMPEXP virtual bool queryOutputFileSpecs(const hkvTransformationInput& input, hkvTransformationOutput& output, bool forLookUpTable) const = 0;
+
+  ASSETFRAMEWORK_IMPEXP virtual bool assetNeedsTransformation(const hkvAsset& asset) const;
 
 public:
   inline hkvTargetPlatform getPlatform() const { return m_platform; }
@@ -109,32 +124,43 @@ protected:
 class hkvTransformationRule::Context
 {
 public:
-  Context(const hkvTransformationInput& input, hkvTransformationOutput& output)
-  : m_input(input), m_output(output), m_tempFileCounter(0)
-  {
-  }
+  ASSETFRAMEWORK_IMPEXP Context(const hkvTransformationInput& input, hkvTransformationOutput& output);
 
+public:
+  ASSETFRAMEWORK_IMPEXP void clearExtraMetadata();
+  ASSETFRAMEWORK_IMPEXP void setExtraMetadataValue(const char* name, bool value);
+  ASSETFRAMEWORK_IMPEXP void setExtraMetadataValue(const char* name, const char* value);
+  ASSETFRAMEWORK_IMPEXP void setExtraMetadataValue(const char* name, double value);
+  ASSETFRAMEWORK_IMPEXP void setExtraMetadataValue(const char* name, int value);
+  ASSETFRAMEWORK_IMPEXP const char* makeExtraMetadataString(hkStringBuf& buffer) const;
+
+private:
+  void setExtraMetadataProperty(const hkvProperty& prop);
+
+public:
   const hkvTransformationInput& m_input;
   hkvTransformationOutput& m_output;
 
   hkStringPtr m_tempPath;
-
   hkStringPtr m_tempFileNameBase;
   hkUint32 m_tempFileCounter;
   hkArray<hkStringPtr> m_tempFileNames;
 
   hkStringPtr m_tempOriginalFile;
-  
+
   hkStringPtr m_stepSourceFile;
   hkStringPtr m_stepTargetFile;
 
   hkStringPtr m_targetFile;
+
+private:
+  hkvPropertyList m_extraMetadata;
 };
 
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

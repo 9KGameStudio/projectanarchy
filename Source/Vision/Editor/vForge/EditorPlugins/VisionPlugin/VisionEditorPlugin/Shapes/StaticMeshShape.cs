@@ -8,39 +8,34 @@
 
 //#define MESHGROUP_USE_LINKING // also define in StaticMeshGroupShape.cs
 
-using System;
-using System.IO;
-using System.Diagnostics;
-using System.Collections;
-using System.Drawing.Design;
-using System.ComponentModel;
-using System.Globalization;
-using System.Runtime.Serialization;
 using CSharpFramework;
-using CSharpFramework.Math;
-using CSharpFramework.Shapes;
-using CSharpFramework.PropertyEditors;
-using CSharpFramework.DynamicProperties;
-using CSharpFramework.UndoRedo;
 using CSharpFramework.Actions;
-using CSharpFramework.Scene;
-using CSharpFramework.View;
-using CSharpFramework.Serialization;
-using System.Drawing;
-using VisionManaged;
-using System.Collections.Specialized;
-using System.Windows.Forms;
-using ManagedFramework;
-using System.Collections.Generic;
-using System.Xml;
-using CSharpFramework.Helper;
-using CSharpFramework.Visitors;
 using CSharpFramework.Dialogs;
-using System.Reflection;
-using System.Windows.Forms.Design;
-using CSharpFramework.BaseTypes;
+using CSharpFramework.DynamicProperties;
+using CSharpFramework.Helper;
+using CSharpFramework.Math;
+using CSharpFramework.PickHandlers;
+using CSharpFramework.PropertyEditors;
+using CSharpFramework.Scene;
+using CSharpFramework.Serialization;
+using CSharpFramework.Shapes;
+using CSharpFramework.View;
+using CSharpFramework.Visitors;
 using ManagedBase;
-
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Collections.Specialized;
+using System.ComponentModel;
+using System.Diagnostics;
+using System.Drawing;
+using System.Drawing.Design;
+using System.IO;
+using System.Runtime.Serialization;
+using System.Windows.Forms;
+using System.Windows.Forms.Design;
+using System.Xml;
+using VisionManaged;
 
 /*
  LOD TODO:
@@ -104,7 +99,7 @@ namespace VisionEditorPlugin.Shapes
     public static string[] CollisionLayerNames = new string[] {
       "0", "Dynamic", "Static", "Terrain", "Controller", "5", 
       "6","Ragdoll",
-      "Attachments","Foot_IK","10","Debris","12","13","14","15",
+      "Attachments","Foot_IK","10","Debris","Decoration","13","14","15",
       "16","17","18","19","20","21","22","23",
       "24","25","26","Custom0","Custom1","Custom2","Custom3","Custom4"
     };
@@ -220,6 +215,8 @@ namespace VisionEditorPlugin.Shapes
 
       // Call the base function, e.g. for adding components to the engine instance
       base.CreateEngineInstance(bCreateChildren);
+
+      _vertexSnapLogic = new VertexSnapLogic(this, typeof(EntityShape));
     }
 
 
@@ -543,9 +540,8 @@ namespace VisionEditorPlugin.Shapes
       base.OnUniqueIDChanged();
       _cachedLODIds = null;
 
-      RemoveNativeComponents();
-      SetNativeMeshes(); // this is the only place that assigns unique IDs properly
-      ReAttachComponents();
+      // set everything again to ensure the correct unique ID etc. is set
+      SetEngineInstanceBaseProperties();
     }
 
     #endregion
@@ -579,6 +575,7 @@ namespace VisionEditorPlugin.Shapes
     string _lightmapOverride = null;
 
     static bool _bUsesCollisionGroups = false;
+    VertexSnapLogic _vertexSnapLogic;
 
     #endregion
 
@@ -792,7 +789,6 @@ namespace VisionEditorPlugin.Shapes
     /// <summary>
     /// deprecated feature
     /// </summary>
-    [PrefabRelevant(false)]
     [PrefabResolveFilename]
     [SortedCategory(CAT_LOD, CATORDER_LOD),
     PropertyOrder(3),
@@ -808,6 +804,8 @@ namespace VisionEditorPlugin.Shapes
         if (_meshFileLOD1 == value)
           return;
         _meshFileLOD1 = value;
+        if (!HasEngineInstance())
+          return;
         OnMeshFileChanged();
         SetEngineInstanceBaseProperties(); // update everything
         InvalidateZoneBoundingBox();
@@ -833,7 +831,6 @@ namespace VisionEditorPlugin.Shapes
     /// <summary>
     /// Deprecated feature
     /// </summary>
-    [PrefabRelevant(false)]
     [SortedCategory(CAT_LOD, CATORDER_LOD), PropertyOrder(5)]
     [Description("Deprecated feature to maintain backwards compaibility. Use a LOD definition file instead."), DefaultValue(10000.0f)]
     public float LODSwitchDistance
@@ -1153,7 +1150,7 @@ namespace VisionEditorPlugin.Shapes
     /// <summary>
     /// If specified, the selected lightmap texture will be set on this geometry and override the lightmap calculated through vLux or Beast. This allows for importing pre-generated lightmaps.
     /// </summary>
-    [EditorAttribute(typeof(AssetEditor), typeof(UITypeEditor)), AssetDialogFilter(new string[] { "Texture" })]
+    [EditorAttribute(typeof(AssetEditor), typeof(UITypeEditor)), AssetDialogFilter(new string[] { "Texture | 2D" })]
     [SortedCategory(CAT_STATICLIGHTING, CATORDER_STATICLIGHTING), PropertyOrder(30)]
     [Description("If specified, the selected lightmap texture will be set on this geometry and override the lightmap calculated through vLux or Beast. This allows for importing pre-generated lightmaps.")]
     public string CustomLightmap
@@ -1342,6 +1339,8 @@ namespace VisionEditorPlugin.Shapes
       _hotSpotLightGridOfs.StartPosition = LightGridSampleOfs;
       EditorManager.ActiveView.HotSpots.Add(_hotSpotLightGridOfs);
       this.WantsNativeRenderHookCallback = true;
+      if (_vertexSnapLogic != null)
+        _vertexSnapLogic.OnSelected();
     }
 
     /// <summary>
@@ -1354,6 +1353,8 @@ namespace VisionEditorPlugin.Shapes
       EditorManager.ActiveView.HotSpots.Remove(_hotSpotLightGridOfs);
       _hotSpotLightGridOfs = null;
       this.WantsNativeRenderHookCallback = false;
+      if (_vertexSnapLogic != null)
+        _vertexSnapLogic.OnUnSelected();
     }
 
 
@@ -1690,6 +1691,8 @@ namespace VisionEditorPlugin.Shapes
       }
       // also invalidate visibility if meshes without local visibility is moved
       EditorManager.VisibilityBuilder.Dirty = true;
+      if (_vertexSnapLogic != null)
+        _vertexSnapLogic.OnTransformationChanged();
     }
 
     public override void OnDragBegin(ShapeDragMode mode)
@@ -2514,6 +2517,15 @@ namespace VisionEditorPlugin.Shapes
     public static LODSetup CreateNewSetupForMesh(string meshfile, LODSetup basedOn)
     {
       string meshPath = EditorManager.Project.MakeAbsolute(meshfile + "_data");
+      try
+      {
+        Directory.CreateDirectory(meshPath);
+      }
+      catch (Exception ex)
+      {
+        MessageBox.Show("Failed to find or create the data path for the mesh. Error: " + ex.Message, "Mesh LOD Setup", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        return null;
+      }
 
       // pick a new file in the vmesh_data subfolder
       CreateFileDlg dlg = new CreateFileDlg();
@@ -2684,7 +2696,10 @@ namespace VisionEditorPlugin.Shapes
           ITEM_FIRST_MRUENTRY = iIndex;
       }
 
-      editorService.DropDownControl(_listBox);
+      using (EditorManager.ActiveView.AcquireModal())
+      {
+        editorService.DropDownControl(_listBox);
+      }
       return _fileName;
     }
 
@@ -2836,7 +2851,7 @@ namespace VisionEditorPlugin.Shapes
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140701)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

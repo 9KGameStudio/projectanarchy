@@ -12,6 +12,7 @@
 #include <Behavior/Utilities/VisualDebugger/Viewer/hkbWorldViewerBase.h>
 
 	/// Displays the skeleton of a character.
+	/// This currently only works if you are remote debugging with HAT.
 class hkbSkeletonViewer: public hkbWorldViewerBase
 {	
 	public:
@@ -47,7 +48,7 @@ class hkbSkeletonViewer: public hkbWorldViewerBase
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

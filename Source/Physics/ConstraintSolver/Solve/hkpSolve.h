@@ -21,7 +21,7 @@ class hkpSolverResults;
 
 
 //
-struct hkpImpulseLimitBreachedElem
+struct HK_EXPORT_PHYSICS hkpImpulseLimitBreachedElem
 {
 	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_CONSTRAINT_SOLVER, hkpImpulseLimitBreachedElem );
 
@@ -33,7 +33,7 @@ struct hkpImpulseLimitBreachedElem
 
 
 // This class is followed by an array of hkpImpulseLimitBreachedElem
-struct hkpImpulseLimitBreachedHeader
+struct HK_EXPORT_PHYSICS hkpImpulseLimitBreachedHeader
 {
 	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_CONSTRAINT_SOLVER, hkpImpulseLimitBreachedHeader );
 
@@ -100,7 +100,7 @@ extern "C"
 #endif // HKP_CONSTRAINT_SOLVE_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

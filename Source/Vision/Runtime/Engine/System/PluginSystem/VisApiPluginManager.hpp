@@ -53,7 +53,7 @@
 // Macros for importing and exporting functions from a DLL
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-#if (defined WIN32) 
+#if (defined _VISION_WIN32) 
 	#if !defined(VISIONDLL_LIB)
 		#define VEXPORT extern "C" __declspec(dllexport)
 		#define VIMPORT extern "C" __declspec(dllimport)
@@ -74,7 +74,7 @@
 
 
 
-#elif defined(_VISION_IOS) || defined(_VISION_ANDROID) || defined(_VISION_PSP2) || defined(_VISION_WIIU) || defined(_VISION_TIZEN)
+#elif defined(_VISION_IOS) || defined(_VISION_ANDROID) || defined(_VISION_PSP2) || defined(_VISION_WIIU) || defined(_VISION_TIZEN) || defined(_VISION_NACL)
 #define VEXPORT extern "C" 
 #define VIMPORT extern "C" 
 
@@ -211,20 +211,20 @@ class VisPluginDLL_cl
 {
 public:
 
+#ifdef _VISION_WIN32 
   VisPluginDLL_cl(const char* pszFileName, HMODULE hMod)
   {
     m_sFileName = pszFileName;
-    m_pPlugin = NULL;
-    
-#ifdef WIN32  
+    m_pPlugin = NULL;    
+ 
     m_hMod = hMod;
-#endif    
   }
+#endif
 
   VStaticString<FS_MAX_PATH> m_sFileName; ///< the filename of the plugin
   IVisPlugin_cl * m_pPlugin;  ///< plugin init/deinit functions
   
-#ifdef WIN32  
+#ifdef _VISION_WIN32  
   HMODULE m_hMod;
 #endif  
 
@@ -431,7 +431,7 @@ protected:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

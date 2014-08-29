@@ -54,13 +54,14 @@
 //		using an extensive sampling of all variations of input parameters.
 //
 
-HK_FORCE_INLINE	hkInt32 hkcdRayCastSphere( const hkcdRay& ray, 
-										   hkVector4Parameter spherePosAndRadius, 
-										   hkSimdReal* HK_RESTRICT hitFractionInOut,
-										   hkVector4* HK_RESTRICT normalOut,
-										   hkcdRayQueryFlags::Enum flags )
-{	
-	hkVector4Comparison insideHits; hkcdRayQueryFlags::extractFlag(flags, hkcdRayQueryFlags::ENABLE_INSIDE_HITS, insideHits);
+HK_FORCE_INLINE	hkcdRayCastResult hkcdRayCastSphere(
+	const hkcdRay& ray, 
+	hkVector4Parameter spherePosAndRadius, 
+	hkSimdReal* HK_RESTRICT hitFractionInOut,
+	hkVector4* HK_RESTRICT normalOut,
+	hkFlags<hkcdRayQueryFlags::Enum,hkUint32> flags )
+{
+	hkVector4Comparison insideHits; hkcdRayQueryFlags::isFlagSet(flags, hkcdRayQueryFlags::ENABLE_INSIDE_HITS, insideHits);
 
 	const hkVector4 dir = ray.getDirection();
 	hkVector4 rayToSphere; rayToSphere.setSub(ray.m_origin, spherePosAndRadius);
@@ -73,7 +74,7 @@ HK_FORCE_INLINE	hkInt32 hkcdRayCastSphere( const hkcdRay& ray,
 	hkSimdReal r2; r2.setMul(r, r);
 
 	// projectedVector is the vector from ray.m_origin, to the closest point on the ray to the sphere.
-	hkSimdReal projFrac; projFrac.setDiv<HK_ACC_23_BIT, HK_DIV_SET_MAX>(offset, a);
+	hkSimdReal projFrac; projFrac.setDiv<HK_ACC_RAYCAST, HK_DIV_SET_MAX>(offset, a);
 	hkVector4 projectedVector; projectedVector.setMul(dir, projFrac);		
 
 	// cr can now be calculated from the projectedVector and rayToSphere.
@@ -85,7 +86,7 @@ HK_FORCE_INLINE	hkInt32 hkcdRayCastSphere( const hkcdRay& ray,
 	hkSimdReal d; d.setMul(-a, c); 
 	if (d.isLessZero())
 	{
-		return hkcdRayCastResult::createMiss();
+		return hkcdRayCastResult::NO_HIT;
 	}
 
 	// Use the offset to recover the correct hit fraction.
@@ -94,18 +95,18 @@ HK_FORCE_INLINE	hkInt32 hkcdRayCastSphere( const hkcdRay& ray,
 	hkSimdReal t1 = dsqrt + offset;
 
 	hkVector4Comparison isInside = t0.lessZero();
-	hkVector4Comparison pathSelect; pathSelect.setAnd( isInside, insideHits );
+	hkVector4Comparison isInsideHit; isInsideHit.setAnd( isInside, insideHits );
 
-	hkSimdReal t; t.setSelect( pathSelect, t1, t0 );
+	hkSimdReal t; t.setSelect( isInsideHit, t1, t0 );
 
 	hkSimdReal hitFraction = *hitFractionInOut;
 	if (t.isLessZero() | t.isGreaterEqual(a * hitFraction))
 	{
-		return hkcdRayCastResult::createMiss();
+		return hkcdRayCastResult::NO_HIT;
 	}	
 
 	// Normalize hit fraction and calculate normal at intersection point.
-	t.setDiv<HK_ACC_23_BIT, HK_DIV_IGNORE>(t,a);
+	t.setDiv<HK_ACC_RAYCAST, HK_DIV_IGNORE>(t,a);
 	hkVector4 hitPoint; hitPoint.setAddMul(ray.m_origin, ray.getDirection(), t);
 	hkVector4 n; n.setSub(hitPoint, spherePosAndRadius);
 	n.normalize<3>();
@@ -113,8 +114,11 @@ HK_FORCE_INLINE	hkInt32 hkcdRayCastSphere( const hkcdRay& ray,
 	// Save output results.
 	*hitFractionInOut = t;
 	*normalOut = n;
+	int isInsideHitMask = isInsideHit.getMask();
 
-	return hkcdRayCastResult::createHit(pathSelect);
+	HK_COMPILE_TIME_ASSERT( hkcdRayCastResult::INSIDE_HIT <= hkcdRayCastResult::Enum(hkVector4ComparisonMask::MASK_XYZW) );
+
+	return hkcdRayCastResult( hkcdRayCastResult::BACK_FACE_HIT | (isInsideHitMask & hkcdRayCastResult::INSIDE_HIT) );
 }
 
 	
@@ -236,7 +240,7 @@ HK_FORCE_INLINE hkVector4Comparison hkcdRayBundleSphereIntersect(const hkcdRayBu
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

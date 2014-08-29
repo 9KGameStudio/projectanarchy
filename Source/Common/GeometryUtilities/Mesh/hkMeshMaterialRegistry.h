@@ -21,7 +21,7 @@ extern const hkClass hkMeshMaterialRegistryClass;
 /// out of scope they are removed automatically from the registry - this is an implementation specific feature though.
 ///
 /// \sa hkMeshMaterial
-class hkMeshMaterialRegistry: public hkReferencedObject
+class HK_EXPORT_COMMON hkMeshMaterialRegistry : public hkReferencedObject
 {
 	public:
 		HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_SCENE_DATA);
@@ -59,7 +59,7 @@ class hkMeshMaterialRegistry: public hkReferencedObject
 #endif // HK_MESH_MATERIAL_REGISTRY_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

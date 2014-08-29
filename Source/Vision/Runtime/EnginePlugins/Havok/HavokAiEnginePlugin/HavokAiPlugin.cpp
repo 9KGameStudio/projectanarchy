@@ -11,12 +11,10 @@
 #include <Vision/Runtime/EnginePlugins/Havok/HavokPhysicsEnginePlugin/vHavokPhysicsModule.hpp>
 #include <Vision/Runtime/EnginePlugins/Havok/HavokAiEnginePlugin/vHavokAiNavMeshInstance.hpp>
 #include <Vision/Runtime/EnginePlugins/Havok/HavokAiEnginePlugin/vHavokAiNavMeshResourceManager.hpp>
-#include <Vision/Runtime/EnginePlugins/Havok/HavokPhysicsEnginePlugin/vHavokSync.hpp>
+#include <Vision/Runtime/EnginePlugins/Havok/HavokPhysicsEnginePlugin/vHavokSync.inl>
+#include <Vision/Runtime/EnginePlugins/Havok/HavokAiEnginePlugin/vHavokAiObstacle.hpp>
 
-#include <Ai/Pathfinding/Multithreaded/Utils/hkaiDynamicNavMeshJobQueueUtils.h>
-#include <Ai/Pathfinding/Multithreaded/Utils/hkaiPathfindingJobQueueUtils.h>
-#include <Ai/Pathfinding/Multithreaded/Utils/hkaiLocalSteeringJobQueueUtils.h>
-#include <Ai/Pathfinding/Multithreaded/Utils/hkaiNavGenerationJobQueueUtils.h>
+#include <Common/Serialize/Util/hkBuiltinTypeRegistry.h>
 #include <Common/Base/Reflection/Registry/hkDefaultClassNameRegistry.h>
 #include <Common/Base/Reflection/Registry/hkTypeInfoRegistry.h>
 #include <Common/Base/Reflection/Registry/hkVtableClassRegistry.h>
@@ -36,9 +34,10 @@ void HK_CALL registerAiPatches()
 	#undef HK_FEATURE_PRODUCT_DESTRUCTION_2012
 	#undef HK_FEATURE_PRODUCT_BEHAVIOR
 	#undef HK_FEATURE_PRODUCT_PHYSICS_2012
-	#undef HK_FEATURE_PRODUCT_MILSIM
+	#undef HK_FEATURE_PRODUCT_SIMULATION
 	#undef HK_FEATURE_PRODUCT_PHYSICS
 	#undef HK_FEATURE_PRODUCT_DESTRUCTION
+	#undef HK_FEATURE_PRODUCT_SIMULATION
 	#include <Common/Compat/Patches/hkRegisterPatches.cxx>
 }
 #else
@@ -86,38 +85,34 @@ public:
 
 	virtual void OnHandleCallback(IVisCallbackDataObject_cl *pData) HKV_OVERRIDE
 	{
-		if ( pData->m_pSender == &vHavokPhysicsModule::OnBeforeInitializePhysics )
+		if (pData->m_pSender == &vHavokPhysicsModule::OnBeforeInitializePhysics)
 		{
-			vHavokPhysicsModuleCallbackData *pHavokData = (vHavokPhysicsModuleCallbackData*)pData;
-			VISION_HAVOK_SYNC_STATICS();
-			VISION_HAVOK_SYNC_PER_THREAD_STATICS( pHavokData->GetHavokModule() );
-
 			hkDefaultClassNameRegistry& dcnReg	= hkDefaultClassNameRegistry::getInstance();
 			hkTypeInfoRegistry&			tyReg	= hkTypeInfoRegistry::getInstance();
 			hkVtableClassRegistry&		vtcReg	= hkVtableClassRegistry::getInstance();
 
 			// Register AI classes
-			
 #ifndef VBASE_LIB  // DLL, so have a full set 
-      		dcnReg.registerList(hkBuiltinTypeRegistry::StaticLinkedClasses);
-			tyReg.registerList(hkBuiltinTypeRegistry::StaticLinkedTypeInfos);
-			vtcReg.registerList(hkBuiltinTypeRegistry::StaticLinkedTypeInfos, hkBuiltinTypeRegistry::StaticLinkedClasses);
-			
-#else // Static lib, just need to add Ai ones and reg the ai patches which would not have been done yet
+      dcnReg.registerList(hkBuiltinTypeRegistry::StaticLinkedClasses);
+      tyReg.registerList(hkBuiltinTypeRegistry::StaticLinkedTypeInfos);
+      vtcReg.registerList(hkBuiltinTypeRegistry::StaticLinkedTypeInfos, hkBuiltinTypeRegistry::StaticLinkedClasses);
 
-			dcnReg.registerList(hkBuiltinAiTypeRegistry::StaticLinkedClasses);
-			tyReg.registerList(hkBuiltinAiTypeRegistry::StaticLinkedTypeInfos);
-			vtcReg.registerList(hkBuiltinAiTypeRegistry::StaticLinkedTypeInfos, hkBuiltinAiTypeRegistry::StaticLinkedClasses);
+#else // Static lib, just need to add Ai ones and reg the ai patches which would not have been done yet
+      dcnReg.registerList(hkBuiltinAiTypeRegistry::StaticLinkedClasses);
+      tyReg.registerList(hkBuiltinAiTypeRegistry::StaticLinkedTypeInfos);
+      vtcReg.registerList(hkBuiltinAiTypeRegistry::StaticLinkedTypeInfos, hkBuiltinAiTypeRegistry::StaticLinkedClasses);
+
 #endif
 			registerAiPatches();
 			hkVersionPatchManager::getInstance().recomputePatchDependencies();
 
-			vHavokAiModule::GetInstance()->Init();
-			pHavokData->GetHavokModule()->AddStepper(vHavokAiModule::GetInstance());
-		}
-		else if ( pData->m_pSender == &vHavokPhysicsModule::OnAfterDeInitializePhysics )
+      vHavokPhysicsModuleCallbackData* pHavokData = static_cast<vHavokPhysicsModuleCallbackData*>(pData);
+      vHavokAiModule::GetInstance()->Init();
+      pHavokData->GetHavokModule()->AddStepper(vHavokAiModule::GetInstance());
+    }
+		else if (pData->m_pSender == &vHavokPhysicsModule::OnAfterDeInitializePhysics)
 		{
-			vHavokPhysicsModuleCallbackData *pHavokData = (vHavokPhysicsModuleCallbackData*)pData;
+			vHavokPhysicsModuleCallbackData* pHavokData = static_cast<vHavokPhysicsModuleCallbackData*>(pData);
 			pHavokData->GetHavokModule()->RemoveStepper(vHavokAiModule::GetInstance());
 
 			// destroy all navmesh instances
@@ -129,9 +124,6 @@ public:
 			VASSERT(vHavokAiNavMeshResourceManager::GetInstance()->GetResourceCount() == 0);
 
 			vHavokAiModule::GetInstance()->DeInit();
-
-			VISION_HAVOK_UNSYNC_STATICS();
-			VISION_HAVOK_UNSYNC_PER_THREAD_STATICS( pHavokData->GetHavokModule() );
 		}
 		else if (pData->m_pSender == &Vision::Callbacks.OnAfterSceneUnloaded)
 		{
@@ -143,22 +135,9 @@ public:
 			// unload all unused resources
 			vHavokAiNavMeshResourceManager::GetInstance()->PurgeUnusedResources();
 		}
-		else if ( pData->m_pSender == &vHavokPhysicsModule::OnBeforeWorldCreated )
-		{
-			vHavokBeforeWorldCreateDataObject_cl *pHavokData = (vHavokBeforeWorldCreateDataObject_cl*)pData;
-			vHavokPhysicsModule* module = pHavokData->GetHavokModule();
-			hkJobQueue* jobQueue = module->GetJobQueue();
-			if (jobQueue)
-			{
-				hkaiNavGenerationJobQueueUtils::registerWithJobQueue( jobQueue );
-				hkaiPathfindingJobQueueUtils::registerWithJobQueue( jobQueue );
-				hkaiDynamicNavMeshJobQueueUtils::registerWithJobQueue( jobQueue );
-				hkaiLocalSteeringJobQueueUtils::registerWithJobQueue( jobQueue );
-			}
-		}
 	}
 
-	VOVERRIDE int GetCallbackSortingKey(VCallback *pCallback)
+	virtual int64 GetCallbackSortingKey(VCallback *pCallback) HKV_OVERRIDE
 	{
 		return 0;
 	}
@@ -172,15 +151,16 @@ static vHavokAiModuleCallbackHandler_cl g_HavokAiModuleCallbackHandler;
 // Initialize the plugin
 void vHavokAiPlugin_cl::OnInitEnginePlugin()
 {
+  VISION_HAVOK_SYNC_STATICS();
+
 	// This plugin depends on the main Havok Physics plugin being loaded
 	VISION_PLUGIN_ENSURE_LOADED(vHavok);
 
 	// Register to sync statics (hopefully) after the main Havok plugin
 	vHavokPhysicsModule::OnBeforeInitializePhysics += &g_HavokAiModuleCallbackHandler;
-	vHavokPhysicsModule::OnBeforeWorldCreated += &g_HavokAiModuleCallbackHandler;
 	vHavokPhysicsModule::OnAfterDeInitializePhysics += &g_HavokAiModuleCallbackHandler;
+  vHavokPhysicsModule::OnBeforeWorldCreated += &g_HavokAiModuleCallbackHandler;
 	Vision::Callbacks.OnAfterSceneUnloaded += &g_HavokAiModuleCallbackHandler;
-
 
 	//Register to sync after main Havok plugin
 
@@ -191,7 +171,8 @@ void vHavokAiPlugin_cl::OnInitEnginePlugin()
 	vHavokAiNavMeshResourceManager::GetInstance()->OneTimeInit();
 	
 	//vHavokAiUtil::GetInstance()->OneTimeInit();
-
+  FORCE_LINKDYNCLASS(vHavokAiNavMeshInstance);
+  FORCE_LINKDYNCLASS(vHavokAiObstacle);
 }
 
 // De-initialize the plugin
@@ -206,12 +187,14 @@ void vHavokAiPlugin_cl::OnDeInitEnginePlugin()
 	Vision::UnregisterModule( &g_vHavokAiModule );
 
 	vHavokPhysicsModule::OnBeforeInitializePhysics -= &g_HavokAiModuleCallbackHandler;
-	vHavokPhysicsModule::OnBeforeWorldCreated -= &g_HavokAiModuleCallbackHandler;
 	vHavokPhysicsModule::OnAfterDeInitializePhysics -= &g_HavokAiModuleCallbackHandler;
+	vHavokPhysicsModule::OnBeforeWorldCreated -= &g_HavokAiModuleCallbackHandler;
 	Vision::Callbacks.OnAfterSceneUnloaded -= &g_HavokAiModuleCallbackHandler;
 
 	// To match the VISION_PLUGIN_ENSURE_LOADED
 	GetEnginePlugin_vHavok()->DeInitEnginePlugin();
+
+  VISION_HAVOK_UNSYNC_STATICS();
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -231,7 +214,7 @@ VEXPORT IVisPlugin_cl* GetEnginePlugin()
 #endif // _DLL or _WINDLL
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140621)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

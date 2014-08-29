@@ -16,12 +16,12 @@ class hkaiCharacter;
 class hkaiReferenceFrame;
 class hkaiPath;
 
-extern const class hkClass hkaiPathFollowingPropertiesClass;
+extern HK_EXPORT_AI const class hkClass hkaiPathFollowingPropertiesClass;
 
 
 	/// Properties that control how characters follow a path
 	/// \note These properties are kept in an \a hkReferencedObject to facilitate easy sharing among many behaviors
-struct hkaiPathFollowingProperties : public hkReferencedObject
+struct HK_EXPORT_AI hkaiPathFollowingProperties : public hkReferencedObject
 {
 	// +vtable(true)
 	// +version(6)
@@ -67,7 +67,7 @@ struct hkaiPathFollowingProperties : public hkReferencedObject
 
 /// Defines the character state needed to update path following.
 /// This state data is stored in the frame of reference of the character
-struct hkaiPathFollowingCharacterState
+struct HK_EXPORT_AI hkaiPathFollowingCharacterState
 {
 	hkVector4 m_position;
 	hkVector4 m_forward;
@@ -78,7 +78,7 @@ struct hkaiPathFollowingCharacterState
 };
 
 	/// Utilities for handling path following (on both nav mesh and nav volumes)
-class hkaiPathFollowingUtil
+class HK_EXPORT_AI hkaiPathFollowingUtil
 {
 public:
 	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_AI_STEERING, hkaiPathFollowingUtil);
@@ -86,7 +86,7 @@ public:
 	typedef hkaiPathFollowingCharacterState CharacterState;
 
 		/// Character's relative position along a path.
-	struct PathPosition
+	struct HK_EXPORT_AI PathPosition
 	{
 			/// Shortest distance from the character to the path
 		hkReal m_distFromPath;
@@ -123,13 +123,9 @@ public:
 		const hkaiPathFollowingProperties& pathFollowingProperties, const hkaiPath& path, const PathPosition& input, 
 		hkVector4& velocityOut, hkReal& changeSegmentDistanceInOut );
 
-		/// Look ahead to predict the next direction a path will take
-	static void HK_CALL getDesiredFutureDirOnPathByDistance( const CharacterState& characterState, const hkaiPath& path, int currentSegmentId,
-		hkReal distance, hkVector4& desiredFutureDir );
-
 		/// Look ahead and smooth the path normal 
 	static void HK_CALL getSmoothedNormalOnPathByDistance( const hkaiCharacter& character, const hkaiPath& path, int currentSegmentId,
-		hkReal distance, hkVector4& smoothedNormal);
+		hkSimdRealParameter distance, hkVector4& smoothedNormal);
 
 	static void HK_CALL getDistsFromLineSegment( hkVector4Parameter position, hkVector4Parameter segStart, hkVector4Parameter segEnd, hkVector4Parameter normal, 
 		hkReal& distFromProjectionToSegStart, hkReal& distFromProjectionToSegEnd, hkReal& perpDistFromLine, hkReal& projectedDistToEnd );
@@ -139,7 +135,7 @@ public:
 #endif // HK_AI_PATH_FOLLOWING_UTIL_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

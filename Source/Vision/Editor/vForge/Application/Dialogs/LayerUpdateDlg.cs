@@ -21,19 +21,19 @@ namespace Editor.Dialogs
 	/// </summary>
 	public class LayerUpdateDlg : System.Windows.Forms.Form
 	{
-    private System.Windows.Forms.Button button_OK;
-    private System.Windows.Forms.Button button_Abort;
-    private System.Windows.Forms.Panel panel1;
-    private CSharpFramework.Controls.DialogCaptionBar captionBar;
-    private System.Windows.Forms.ListView listView_Layers;
-    private System.Windows.Forms.ColumnHeader columnHeader_Name;
-    private System.Windows.Forms.ColumnHeader columnHeader_Status;
-    private System.Windows.Forms.ImageList imageList_LayerIcons;
-    private System.ComponentModel.IContainer components;
+		private System.Windows.Forms.Button button_OK;
+		private System.Windows.Forms.Button button_Abort;
+		private System.Windows.Forms.Panel panel1;
+		private CSharpFramework.Controls.DialogCaptionBar captionBar;
+		private System.Windows.Forms.ListView listView_Layers;
+		private System.Windows.Forms.ColumnHeader columnHeader_Name;
+		private System.Windows.Forms.ColumnHeader columnHeader_Status;
+		private System.Windows.Forms.ImageList imageList_LayerIcons;
+		private System.ComponentModel.IContainer components;
 
-    /// <summary>
-    /// Constructor
-    /// </summary>
+		/// <summary>
+		/// Constructor
+		/// </summary>
 		public LayerUpdateDlg()
 		{
 			//
@@ -41,14 +41,13 @@ namespace Editor.Dialogs
 			//
 			InitializeComponent();
 
-			//
-			// TODO: Add any constructor code after InitializeComponent call
-			//
+			// Add any constructor code after InitializeComponent call
+			
 		}
 
-    static int IMAGE_NEW      = 0;
-    static int IMAGE_DELETED  = 1;
-    static int IMAGE_MODIFIED = 2;
+		static int IMAGE_NEW      = 0;
+		static int IMAGE_DELETED  = 1;
+		static int IMAGE_MODIFIED = 2;
 
 		/// <summary>
 		/// Clean up any resources being used.
@@ -242,7 +241,7 @@ namespace Editor.Dialogs
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

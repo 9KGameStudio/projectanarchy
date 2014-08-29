@@ -18,7 +18,7 @@
 
 
 
-V_IMPLEMENT_DYNAMIC(MirrorRenderLoop_cl,VisTypedEngineObject_cl, &g_VisionEngineModule);
+V_IMPLEMENT_DYNAMIC(MirrorRenderLoop_cl,VisionRenderLoop_cl, &g_VisionEngineModule);
 
 
 MirrorRenderLoop_cl::MirrorRenderLoop_cl(VisMirror_cl *pMirror) : 
@@ -361,7 +361,7 @@ void MirrorRenderLoop_cl::OnDoRenderLoop(void *pUserData)
 {
   INSERT_PERF_MARKER_SCOPE("MirrorRenderLoop_cl::OnDoRenderLoop");
 
-#if defined (WIN32) || defined (_VISION_XENON) || defined (_VISION_PS3) || defined(_VISION_PSP2) || defined(_VISION_WIIU)
+#if defined (_VISION_WIN32)
   if (Vision::Editor.GetIgnoreAdvancedEffects())
   {
     // force a black reflection because it won't work with orthographic views
@@ -396,7 +396,6 @@ void MirrorRenderLoop_cl::OnDoRenderLoop(void *pUserData)
     return;
   const VisVisibilityObjectCollection_cl *pVisObjectCollection = pVisColl->GetVisibleVisObjects();
 
-  hkvAlignedBBox box;
   int iVoCount = m_pMirror->GetVisibilityObjectCount();
   int iFrustumCount = 0;
   bool bUseCommonFrustum = false;
@@ -427,6 +426,9 @@ void MirrorRenderLoop_cl::OnDoRenderLoop(void *pUserData)
 
   if (bUseScissorRect)
     Vision::RenderLoopHelper.SetScissorRect(&scissorRect);
+
+  hkvAlignedBBox box;
+  box.setInvalid();
 
   for (int iVo = 0; iVo < iVoCount; iVo++)
   {
@@ -613,7 +615,7 @@ void MirrorRenderLoop_cl::OnHandleCallback(IVisCallbackDataObject_cl *pData)
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

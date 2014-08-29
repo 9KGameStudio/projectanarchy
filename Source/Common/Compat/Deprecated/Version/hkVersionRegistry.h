@@ -21,7 +21,7 @@ template <typename T, typename A> class hkStringMap;
 /// Note that the registry has no concept of version numbers being greater
 /// or less than one another. It just knows that it may call a function
 /// to convert between two string identifiers.
-class hkVersionRegistry : public hkReferencedObject, public hkSingleton<hkVersionRegistry>
+class hkVersionRegistry : public hkReferencedObject, public hkLocalSingleton<hkVersionRegistry>
 {
 	public:
 	HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE);
@@ -194,7 +194,7 @@ private:
 #endif // HK_SERIALIZE2_VERSION_REGISTRY_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

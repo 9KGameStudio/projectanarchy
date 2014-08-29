@@ -5,25 +5,26 @@
  * Product and Trade Secret source code contains trade secrets of Havok. Havok Software (C) Copyright 1999-2014 Telekinesys Research Limited t/a Havok. All Rights Reserved. Use of this software is subject to the terms of an end user license agreement.
  *
  */
+//HK_HAVOK_ASSEMBLY_EXCLUDE_FILE
 
 #ifndef HKCD_PLANAR_GEOMETRY_PREDICATES_H
 #define HKCD_PLANAR_GEOMETRY_PREDICATES_H
 
 #include <Common/Base/Math/Vector/hkVector4Util.h>
 #include <Geometry/Collide/DataStructures/Planar/Primitives/hkcdPlanarGeometryPrimitives.h>
+#include <Geometry/Collide/DataStructures/Planar/Utils/hkcdMathErrorBoundsCalculator.h>
 
 /// Exact geometric predicates
-class hkcdPlanarGeometryPredicates
+class HK_EXPORT_COMMON hkcdPlanarGeometryPredicates
 {
 	public:
 
 		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_GEOMETRY, hkcdPlanarGeometryPredicates);
 
 		// Types
-		typedef hkcdPlanarGeometryPrimitives::Plane				Plane;
-		typedef hkcdPlanarGeometryPrimitives::ApproxPlaneEqn	ApproxPlaneEqn;
-		typedef const ApproxPlaneEqn&							ApproxPlaneEqnParam;
-		typedef const Plane&									PlaneParam;
+		typedef hkcdPlanarGeometryPrimitives::Plane		Plane;
+		typedef const Plane&							PlaneParam;
+		typedef hkcdMathErrorBoundsCalculator::Vector	ApproxVertex;
 
 	public:
 
@@ -82,31 +83,31 @@ class hkcdPlanarGeometryPredicates
 				hkArray<hkIntVector> m_data;
 				hkIntVector m_mul;
 
-#ifdef HK_DEBUG
-				int m_numCacheHits;
-				int m_numCacheAccesses;
-#endif
+				HK_DEBUG_ONLY_MEMBER(int, m_numCacheHits);
+				HK_DEBUG_ONLY_MEMBER(int, m_numCacheAccesses);
 		};
 
 	public:
 
 		/// Returns true if the given planes are coplanar (i.e. coincident)
-		static HK_FORCE_INLINE Coplanarity HK_CALL coplanar(PlaneParam planeA, PlaneParam planeB);
+		static inline Coplanarity HK_CALL coplanar(PlaneParam planeA, PlaneParam planeB);
 
 		/// Returns true if the vertex defined by three planes (ptPlaneA, ptPlaneB, ptPlaneC) is coplanar to all the given test planes
 		static hkBool32 HK_CALL coplanar(PlaneParam ptPlaneA, PlaneParam ptPlaneB, PlaneParam ptPlaneC, const Plane* HK_RESTRICT testPlanes, int numTestPlanes);
+		static hkBool32 HK_CALL coplanar(hkVector4dParameter p, PlaneParam ptPlaneA, PlaneParam ptPlaneB, PlaneParam ptPlaneC, const Plane* HK_RESTRICT testPlanes, int numTestPlanes);
 
 		/// Tests for same orientation. Should be preceded by a coplanarity test
 		static HK_FORCE_INLINE int HK_CALL sameOrientation(PlaneParam planeA, PlaneParam planeB);
 
 		/// Computes the orientation of the point (ptPlaneA, ptPlaneB, ptPlaneC) with respect to the planeD
 		static HK_FORCE_INLINE Orientation HK_CALL approximateOrientation(PlaneParam ptPlaneA, PlaneParam ptPlaneB, PlaneParam ptPlaneC, PlaneParam planeD);
+		static HK_FORCE_INLINE Orientation HK_CALL approximateOrientation(hkVector4dParameter p, PlaneParam plane);
 
 		/// Computes the orientation of the point (ptPlaneA, ptPlaneB, ptPlaneC) with respect to the planeD
 		static Orientation HK_CALL orientation(PlaneParam ptPlaneA, PlaneParam ptPlaneB, PlaneParam ptPlaneC, PlaneParam planeD);
 
 		/// Computes the orientation of the point v with respect to the plane p
-		static HK_FORCE_INLINE Orientation HK_CALL orientation(hkIntVectorParameter v, PlaneParam p);
+		static inline Orientation HK_CALL orientation(hkIntVectorParameter v, PlaneParam p);
 
 		/// Returns true if the edge determined by the intersection of planes A and B is contained on plane C
 		static hkBool32 HK_CALL edgeOnPlane(PlaneParam edgePlaneA, PlaneParam edgePlaneB, PlaneParam planeC);
@@ -115,17 +116,18 @@ class hkcdPlanarGeometryPredicates
 		///				| ax ay az |		    | aw ay az |			| ax aw az |			| ax ay aw |
 		///		PW =	| bx by bz |,	PX = -  | bw by bz |,	PY = -  | bx bw bz |,	PZ = -  | bx by bw |
 		///				| cx cy cz |			| cw cy cz |		    | cx cw cz |			| cx cy cw |
-		static HK_FORCE_INLINE void HK_CALL computeIntersectionDeterminants(ApproxPlaneEqnParam planeEqnA, ApproxPlaneEqnParam planeEqnB, ApproxPlaneEqnParam planeEqnC, ApproxPlaneEqn& determinantsOut);
+		static inline void HK_CALL computeIntersectionDeterminants(hkVector4dParameter planeEqnA, hkVector4dParameter planeEqnB, hkVector4dParameter planeEqnC, ApproxVertex& determinantsOut);
 		static void HK_CALL computeIntersectionDeterminants(const Plane (&planes)[3], hkSimdInt<256>* detX, hkSimdInt<256>* detY, hkSimdInt<256>* detZ, hkSimdInt<256>* detW);
 
 		// Approximates the intersection (i.e. in fixed coordinates) of the 3 given planes
-		static HK_FORCE_INLINE void HK_CALL approximateIntersection(const Plane (&planes)[3], hkIntVector& intersectionOut);
+		static inline void HK_CALL approximateIntersection(const Plane (&planes)[3], hkIntVector& intersectionOut);
 
 		// Approximates the intersection (in floating point precision) of the 3 given planes. Faster but less accurate then the floating point version
-		static HK_FORCE_INLINE void HK_CALL approximateIntersectionFast(const Plane (&planes)[3], hkVector4d& intersectionOut);
+		static inline void HK_CALL approximateIntersectionFast(const Plane (&planes)[3], hkVector4d& intersectionOut);
 
 		/// Computes an approximate direction for the edge resulting from the intersection of the two given planes
 		static void HK_CALL approximateEdgeDirection(PlaneParam planeA, PlaneParam planeB, hkIntVector& edgeDirectionOut);
+		static void HK_CALL approximateEdgeDirectionFast(PlaneParam planeA, PlaneParam planeB, hkIntVector& edgeDirectionOut);
 
 		/// Computes the winding of the 3 given vertices w.r.t. the given triangle normal.
 		static HK_FORCE_INLINE Winding HK_CALL triangleWinding(const Plane (&planesA)[3], const Plane (&planesB)[3], const Plane (&planesC)[3], PlaneParam supportPlane);
@@ -150,14 +152,21 @@ class hkcdPlanarGeometryPredicates
 
 	public:
 
+		/// Computes the orientation of the point p defined by (ptPlaneA, ptPlaneB, ptPlaneC) with respect to the planeD, using an orientation cache
+		template <int N>
+		static inline Orientation HK_CALL orientation(hkVector4dParameter p, PlaneParam ptPlaneA, PlaneParam ptPlaneB, PlaneParam ptPlaneC, PlaneParam planeD, hkIntVectorParameter planeIds, OrientationCacheBase<N>* orientationCache);
+
 		/// Computes the orientation of the point (ptPlaneA, ptPlaneB, ptPlaneC) with respect to the planeD, using an orientation cache
 		template <int N>
-		static HK_FORCE_INLINE Orientation HK_CALL orientation(PlaneParam ptPlaneA, PlaneParam ptPlaneB, PlaneParam ptPlaneC, PlaneParam planeD, hkIntVectorParameter planeIds, OrientationCacheBase<N>* orientationCache);
+		static inline Orientation HK_CALL orientation(PlaneParam ptPlaneA, PlaneParam ptPlaneB, PlaneParam ptPlaneC, PlaneParam planeD, hkIntVectorParameter planeIds, OrientationCacheBase<N>* orientationCache);
 
 	public:
 
 		// Statistics
 #ifdef HK_DEBUG
+		static hkUint32 m_numFastCalls;
+		static hkUint32 m_numFastCallsFailed;
+
 		static hkUint32 m_numApproxCalls;	///< Number of times when a call was resolved using floating point arithmetic
 		static hkUint32 m_numExactCalls;	///< Number of times when a call was resolved using exact arithmetic
 
@@ -174,7 +183,7 @@ class hkcdPlanarGeometryPredicates
 #endif	//	HKCD_PLANAR_GEOMETRY_PREDICATES_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

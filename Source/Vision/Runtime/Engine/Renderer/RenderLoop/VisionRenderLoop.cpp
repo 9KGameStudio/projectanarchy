@@ -345,12 +345,8 @@ VCompiledTechnique *VisionShaderProvider_cl::GetDynamicLightShader(const VisLigh
 
     if (pProjTexture)
     {
-      VDynamicLightShader *pDynamicLightShader = vdynamic_cast<VDynamicLightShader*>(pPass);
-      if (pDynamicLightShader)
-      {
-        pDynamicLightShader->SetProjectedTexture(pProjTexture);
-        pDynamicLightShader->SetProjectionPlanes(plane_x,plane_y,plane_z);
-      }
+      pPass->SetProjectedTexture(pProjTexture);
+      pPass->SetProjectionPlanes(plane_x,plane_y,plane_z);
     }
 
     pPass->m_bModified = true;
@@ -536,7 +532,7 @@ void VisionRenderLoop_cl::ReleaseMemexportSkinningShaders()
 {
   Vision::RenderLoopHelper.SetMemexportQuaternionSkinningShader(NULL);
   Vision::RenderLoopHelper.SetMemexportMatrixSkinningShader(NULL);
-    Vision::RenderLoopHelper.SetComputeMatrixSkinningShader(NULL);
+  Vision::RenderLoopHelper.SetComputeMatrixSkinningShader(NULL);
 }
 
 #endif  // defined(_VR_DX11)
@@ -672,10 +668,8 @@ VISION_APIFUNC void VisionRenderLoop_cl::OnDoRenderLoop(void *pUserData)
 
   const VisStaticGeometryInstanceCollection_cl *pVisibleGeoInstancesPrimaryOpaquePass = pVisCollector->GetVisibleStaticGeometryInstancesForPass(VPT_PrimaryOpaquePass);
   const VisStaticGeometryInstanceCollection_cl *pVisibleGeoInstancesSecondaryOpaquePass = pVisCollector->GetVisibleStaticGeometryInstancesForPass(VPT_SecondaryOpaquePass);
-  const VisStaticGeometryInstanceCollection_cl *pVisibleGeoInstancesTransparentPass = pVisCollector->GetVisibleStaticGeometryInstancesForPass(VPT_TransparentPass);
   const VisEntityCollection_cl *pVisibleEntitiesPrimaryOpaquePass = pVisCollector->GetVisibleEntitiesForPass(VPT_PrimaryOpaquePass);
   const VisEntityCollection_cl *pVisibleEntitiesSecondaryOpaquePass = pVisCollector->GetVisibleEntitiesForPass(VPT_SecondaryOpaquePass);
-  const VisEntityCollection_cl *pVisibleEntitiesTransparentPass = pVisCollector->GetVisibleEntitiesForPass(VPT_TransparentPass);
   const VisEntityCollection_cl *pVisibleForeGroundEntities = pVisCollector->GetVisibleForeGroundEntities();
   HandleVisibleVisibilityObjects();
 
@@ -768,7 +762,7 @@ VISION_APIFUNC void VisionRenderLoop_cl::OnDoRenderLoop(void *pUserData)
   /**  Last the transparent geometry pass is rendered which will contain transparent geometry         **/
   /*****************************************************************************************************/
 
-  if(m_bRenderTransparentPass)
+  if (m_bRenderTransparentPass)
   {
     INSERT_PERF_MARKER_SCOPE("TransparentPass");
     bool bDrawMasksAndDebugGeometry = (Vision::Renderer.GetCurrentRendererNode() == NULL || Vision::Renderer.GetCurrentRendererNode()->IsOfType(VSimpleRendererNode::GetClassTypeId()));
@@ -776,30 +770,42 @@ VISION_APIFUNC void VisionRenderLoop_cl::OnDoRenderLoop(void *pUserData)
     // Mask out entities which are "always in foreground"
     MaskOutForegroundEntities(*pVisibleForeGroundEntities);
 
-    // Render all mesh buffer objects with the render order flag "VRH_PRE_TRANSPARENT_PASS_GEOMETRY".
-    RenderHook(*pVisibleMeshBuffer, pVisibleParticleGroups, VRH_PRE_TRANSPARENT_PASS_GEOMETRY, m_bTriggerCallbacks);
+    if (pVisCollector->GetInterleavedTranslucencySorter() == NULL)
+    {
+      // --- Traditional transparency sorting (default)
+      const VisStaticGeometryInstanceCollection_cl *pVisibleGeoInstancesTransparentPass = pVisCollector->GetVisibleStaticGeometryInstancesForPass(VPT_TransparentPass);
+      const VisEntityCollection_cl *pVisibleEntitiesTransparentPass = pVisCollector->GetVisibleEntitiesForPass(VPT_TransparentPass);
 
-    // Render transparent pass surface shaders on opaque world primitives 
-    Vision::RenderLoopHelper.RenderStaticGeometrySurfaceShaders(*pVisibleGeoInstancesTransparentPass, VPT_TransparentPass);
+      // Render all mesh buffer objects with the render order flag "VRH_PRE_TRANSPARENT_PASS_GEOMETRY".
+      RenderHook(*pVisibleMeshBuffer, pVisibleParticleGroups, VRH_PRE_TRANSPARENT_PASS_GEOMETRY, m_bTriggerCallbacks);
 
-    RenderHook(*pVisibleMeshBuffer, pVisibleParticleGroups, VRH_PRE_TRANSPARENT_PASS_ENTITIES, m_bTriggerCallbacks);
+      // Render transparent pass surface shaders on opaque world primitives 
+      Vision::RenderLoopHelper.RenderStaticGeometrySurfaceShaders(*pVisibleGeoInstancesTransparentPass, VPT_TransparentPass);
 
-    // Render transparent pass shaders on entities
-    DrawEntitiesShaders(*pVisibleEntitiesTransparentPass, VPT_TransparentPass);
+      RenderHook(*pVisibleMeshBuffer, pVisibleParticleGroups, VRH_PRE_TRANSPARENT_PASS_ENTITIES, m_bTriggerCallbacks);
 
-    // Render all mesh buffer objects with the render order flag "VRH_POST_TRANSPARENT_PASS_GEOMETRY"
-    RenderHook(*pVisibleMeshBuffer, pVisibleParticleGroups, VRH_POST_TRANSPARENT_PASS_GEOMETRY, m_bTriggerCallbacks);
+      // Render transparent pass shaders on entities
+      DrawEntitiesShaders(*pVisibleEntitiesTransparentPass, VPT_TransparentPass);
 
-    // Render all mesh buffer objects and particle systems with the render order flag "VRH_DECALS".
-    RenderHook(*pVisibleMeshBuffer, pVisibleParticleGroups, VRH_DECALS, m_bTriggerCallbacks);
+      // Render all mesh buffer objects with the render order flag "VRH_POST_TRANSPARENT_PASS_GEOMETRY"
+      RenderHook(*pVisibleMeshBuffer, pVisibleParticleGroups, VRH_POST_TRANSPARENT_PASS_GEOMETRY, m_bTriggerCallbacks);
 
-    // Render all mesh buffer objects and particle systems with the render order flag "VRH_PARTICLES".
-    RenderHook(*pVisibleMeshBuffer, pVisibleParticleGroups, VRH_PARTICLES, m_bTriggerCallbacks);
+      // Render all mesh buffer objects and particle systems with the render order flag "VRH_DECALS".
+      RenderHook(*pVisibleMeshBuffer, pVisibleParticleGroups, VRH_DECALS, m_bTriggerCallbacks);
 
-    // Render all mesh buffer objects with the render order flag "VRH_ADDITIVE_PARTICLES"
-    RenderHook(*pVisibleMeshBuffer, pVisibleParticleGroups, VRH_ADDITIVE_PARTICLES, m_bTriggerCallbacks);
+      // Render all mesh buffer objects and particle systems with the render order flag "VRH_PARTICLES".
+      RenderHook(*pVisibleMeshBuffer, pVisibleParticleGroups, VRH_PARTICLES, m_bTriggerCallbacks);
 
-    RenderHook(*pVisibleMeshBuffer, pVisibleParticleGroups, VRH_TRANSLUCENT_VOLUMES, m_bTriggerCallbacks);
+      // Render all mesh buffer objects with the render order flag "VRH_ADDITIVE_PARTICLES"
+      RenderHook(*pVisibleMeshBuffer, pVisibleParticleGroups, VRH_ADDITIVE_PARTICLES, m_bTriggerCallbacks);
+
+      RenderHook(*pVisibleMeshBuffer, pVisibleParticleGroups, VRH_TRANSLUCENT_VOLUMES, m_bTriggerCallbacks);
+    }
+    else
+    {
+      // --- Interleaved transparency sorting
+      pVisCollector->GetInterleavedTranslucencySorter()->OnRender(pVisCollector, m_bTriggerCallbacks);
+    }
 
     // Render all mesh buffer objects with the render order flag "VRH_CORONAS_AND_FLARES"
     RenderHook(*pVisibleMeshBuffer, pVisibleParticleGroups, VRH_CORONAS_AND_FLARES, m_bTriggerCallbacks);
@@ -844,7 +850,6 @@ VISION_APIFUNC void VisionRenderLoop_cl::OnDoRenderLoop(void *pUserData)
 
       if (Vision::GetConsoleManager()->IsVisible())
         Vision::GetConsoleManager()->Render();
-
       // No particle rendering here, because you shouldn't be rendering particles in VRH_AFTER_RENDERING
       {
         Vision::RenderLoopHelper.RenderMeshBufferObjects(*pVisibleMeshBuffer, VRH_AFTER_RENDERING);
@@ -969,39 +974,42 @@ void VisionRenderLoop_cl::DrawForegroundEntities(const VisEntityCollection_cl &E
       // Render only Entities that are flagged as "always in foreground"
       VASSERT_MSG(pEntity->IsObjectAlwaysInForegroundEnabled(), "Only entities with this flag should be passed to this function");
 
-      VDynamicMesh *pMesh = pEntity->GetMesh();
-      VisShaderSet_cl *pShaderSet = pEntity->GetActiveShaderSet();
-
-      VASSERT(pMesh && pShaderSet);
-
-      const hkvMat4* pThisProj = pEntity->GetCustomProjectionMatrixForForegroundObject();
-
-      if (pThisProj != pLastProj)
+      if (!pEntity->HasShadersForPass(VPT_TransparentPass))
       {
-        VisRenderStates_cl::SetCurrentProjectionMatrix(pThisProj);
-        pLastProj = pThisProj;
-      }
+        VDynamicMesh *pMesh = pEntity->GetMesh();
+        VisShaderSet_cl *pShaderSet = pEntity->GetActiveShaderSet();
 
-      if (iPass<iPassCount) // depth fill pass
-      {
-        VCompiledShaderPass *pPass = m_spForegroundFillPassTechnique->GetShader(iPass);
-        Vision::RenderLoopHelper.RenderEntityWithShaders(pEntity, 1, &pPass);
-      }
-      else // material pass
-      {
-        const VisDrawCallInfo_t *pAssignment;
+        VASSERT(pMesh && pShaderSet);
 
-        int iNumSurfaceShaders = pShaderSet->GetShaderAssignmentList(&pAssignment);
+        const hkvMat4* pThisProj = pEntity->GetCustomProjectionMatrixForForegroundObject();
 
-        // If the shaders make use of the lighting information, we need to track the light grid
-        if (pMesh != NULL && pMesh->HasLitSurfaces() && 
-          (pShaderSet->GetCombinedTrackingMask() & (VSHADER_TRACKING_LIGHTGRID_PS|VSHADER_TRACKING_LIGHTGRID_GS|VSHADER_TRACKING_LIGHTGRID_VS)) )
+        if (pThisProj != pLastProj)
         {
-          Vision::RenderLoopHelper.TrackLightGridInfo(pEntity);
+          VisRenderStates_cl::SetCurrentProjectionMatrix(pThisProj);
+          pLastProj = pThisProj;
         }
 
-        // Render the entity with the surface shader list
-        Vision::RenderLoopHelper.RenderEntityWithSurfaceShaderList(pEntity, iNumSurfaceShaders, pAssignment);
+        if (iPass<iPassCount) // depth fill pass
+        {
+          VCompiledShaderPass *pPass = m_spForegroundFillPassTechnique->GetShader(iPass);
+          Vision::RenderLoopHelper.RenderEntityWithShaders(pEntity, 1, &pPass);
+        }
+        else // material pass
+        {
+          const VisDrawCallInfo_t *pAssignment;
+
+          int iNumSurfaceShaders = pShaderSet->GetShaderAssignmentList(&pAssignment);
+
+          // If the shaders make use of the lighting information, we need to track the light grid
+          if (pMesh != NULL && pMesh->HasLitSurfaces() && 
+            (pShaderSet->GetCombinedTrackingMask() & (VSHADER_TRACKING_LIGHTGRID_PS|VSHADER_TRACKING_LIGHTGRID_GS|VSHADER_TRACKING_LIGHTGRID_VS)) )
+          {
+            Vision::RenderLoopHelper.TrackLightGridInfo(pEntity);
+          }
+
+          // Render the entity with the surface shader list
+          Vision::RenderLoopHelper.RenderEntityWithSurfaceShaderList(pEntity, iNumSurfaceShaders, pAssignment);
+        }
       }
     }
   }
@@ -1154,9 +1162,6 @@ void VisionRenderLoop_cl::DrawDynamicLight()
         VisStaticGeometryInstance_cl *pGI = s_LitGeoInstanceCollection.GetEntry(j);
         // we're not interested in full-bright primitives
         pSurface = pGI->GetSurface();
-       // FIXME: HS#7461. Sometimes VEditableTerrainSectors return NULL here.
-       // Disabled assert for now to fix the vForgeTests.
-       // VASSERT(pSurface);
         
         if (pLastSurface!=pSurface)
         {
@@ -1215,7 +1220,7 @@ VCompiledEffect* VisionShaderProvider_cl::CreateMaterialEffect(VisSurface_cl *pS
     if ( ( pSurface->IsLightMapped() && !Vision::RenderLoopHelper.HasLightmaps() )
       || ( pSurface->GetLightingMode() == VIS_LIGHTING_LIGHTGRID && !Vision::RenderLoopHelper.HasLightGrid() ) )
     {
-      bool bUseAlphaTest = pSurface->GetTransparencyType()==VIS_TRANSP_COLORKEY || pSurface->GetTransparencyType()==VIS_TRANSP_ALPHA;
+      bool bUseAlphaTest = pSurface->GetTransparencyType()==VIS_TRANSP_ALPHATEST || pSurface->GetTransparencyType()==VIS_TRANSP_ALPHA;
       return GetDefaultLightingColorEffect(bUseAlphaTest, pSurface->GetAlphaTestThreshold(), pSurface->IsDoubleSided(), pSurface->IsDepthWriteEnabled());
     }
   }
@@ -1402,7 +1407,7 @@ void VVisibilityObjectCollector::HandleVisibleVisibilityObjects()
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

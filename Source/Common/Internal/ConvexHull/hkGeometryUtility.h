@@ -58,7 +58,7 @@ enum hkGeomObbMode
 ///  - Generation of visualisation code for display of convex vertices shapes (in the visual debugger)
 ///  - Generation of a hull for calculating an inertia tensor for convex vertices shapes.
 ///
-class hkGeometryUtility
+class HK_EXPORT_COMMON hkGeometryUtility
 {
 public:
 		//
@@ -93,17 +93,13 @@ public:
 		/// representing the scale of the box.
 	static void HK_CALL calcObb( const hkStridedVertices& stridedVertsIn, hkVector4& halfExtents, hkTransform& transform, hkGeomObbMode mode = HK_GEOM_OBB_MODE_DEFAULT);
 
-		/// This method duplicates the functionality of the deprecated hkGeometryUtil::minSphere() method.
-		/// To avoid numerical roundoff error, a radiusEpsilon parameter must be passed. The default should
-		/// be sufficient to prevent error.
-		/// In certain (very rare) extreme cases this code may fail.
-		///
-		/// \param vertexArray A block of memory containing a number of hkVector4s, this is the cloud of points to bound
-		/// \param vertexCount The number of hkVector4s in the block of memory pointed to by the parameter vertices
-		/// \param radiusEpsilon To avoid numerical rounding error, the sphere calculated is increased in size by this value.
-		///                      which should not need to be changed.
-		///
-	static hkSphere HK_CALL createMinBoundingSphere( const hkStridedVertices& stridedVertsIn, const hkReal radiusEpsilon = 1e-5f);
+		/// This method duplicates the functionality of the deprecated hkGeometryUtils::minSphere() method.
+		/// This computes a minimal bounding sphere for the specified point cloud.  The resulting sphere includes a
+		/// small additional margin proportional to the AABB extents of the point cloud.
+	static hkSphere HK_CALL createMinBoundingSphere( const hkStridedVertices& stridedVertsIn);
+
+		/// deprecated - use createMinBoundingSphere( const hkStridedVertices& stridedVertsIn) instead
+	static hkSphere HK_CALL createMinBoundingSphere( const hkStridedVertices& stridedVertsIn, const hkReal unused);
 
 		/// Simple function to push out given planes by the desired distance. It just alters
 		/// the w component (D) of each of the plane equations by the given amount (can be negative to shrink)
@@ -114,7 +110,7 @@ public:
 #endif // HK_GEOMETRYUTILITY_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

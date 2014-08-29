@@ -15,7 +15,7 @@
 class hkaiBehavior;
 
 	/// A simple listener that load-balances the repathing of a list of characters
-class hkaiCharacterRepathListener : public hkReferencedObject, public hkaiWorld::Listener
+class HK_EXPORT_AI hkaiCharacterRepathListener : public hkReferencedObject, public hkaiWorld::Listener
 {
 public:
 	HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE);
@@ -58,7 +58,7 @@ protected:
 #endif // HK_AI_CHARACTER_REPATH_LISTENER_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

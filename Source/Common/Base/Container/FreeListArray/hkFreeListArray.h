@@ -9,10 +9,6 @@
 #ifndef HKBASE_FREE_LIST_ARRAY_H
 #define HKBASE_FREE_LIST_ARRAY_H
 
-#if !defined(__HAVOK_PARSER__) && !defined(HK_PLATFORM_ANDROID)
-#include <new>
-#endif
-
 #if defined(HK_PLATFORM_SPU)
 #	include <Common/Base/Spu/Config/hkSpuConfig.h>
 #	include <Common/Base/Memory/PlatformUtils/Spu/SpuDmaCache/hkSpu4WayCache.h>
@@ -77,7 +73,7 @@ struct hkFreeListArray
 	public:
 
 		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE,hkFreeListArray);
-		HK_DECLARE_REFLECTION();		
+		HK_DECLARE_REFLECTION();
 
 		hkFreeListArray(hkFinishLoadedObjectFlag f) : m_elements(f) {}
 
@@ -106,10 +102,10 @@ struct hkFreeListArray
 
 		/// Grows the array by the specified quantity. New elements are not constructed, instead OPERATIONS::setEmpty()
 		/// is called on them.
-		HK_FORCE_INLINE void grow(int growth = GROWTH);
+		HK_NEVER_INLINE void grow(int growth = GROWTH);
 
 		/// Compact the storage.
-		HK_FORCE_INLINE void compact();
+		HK_NEVER_INLINE void compact();
 
 		/// Swaps the storage with the given array
 		HK_FORCE_INLINE void swapStorage(hkArray<VALUE_TYPE>& newStorage);
@@ -222,7 +218,7 @@ struct hkFreeListArray
 #endif // HKBASE_FREE_LIST_ARRAY_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

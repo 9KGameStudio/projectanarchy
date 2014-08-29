@@ -19,41 +19,91 @@ class VTestUnit;
 class VFileAccessManager;
 class VStrList;
 
-#define MAX_SUBTESTS 4096 ///< maximun number of subtests
+#define MAX_SUBTESTS 4096 ///< maximum number of subtests
 
-/// \brief
-///   Tests a condition
-/// 
-/// Tests the condition, if it evaluates to FALSE then the test has failed. An error message is
-/// added to the log output
-/// 
-/// \param condition
-///   your expression which you want to test.
-/// 
-/// \example
-///   \code
-///   VisEntity_cl *cam = Vision::Game.CreateEntity("VisEntity_cl", VisVector_cl(0,0,0)); 
-///   VTEST(cam!=NULL);
-///   \endcode
-#define VTEST(condition)              { if(AssertTest((condition)!=0,__FILE__,__LINE__)) VDBGBREAK; ANALYSIS_ASSUME(condition) }
+/// \brief Triggers a debug break if the test is configured to break on test failures
+#define VTEST_DEBUG_BREAK \
+{ \
+VASSERT_MSG(VTestUnit::GetCurrentTestUnit() != NULL, "There is no test unit set active at the moment."); \
+if (VTestUnit::GetCurrentTestUnit()->m_bBreakOnAssert) \
+  VDBGBREAK; \
+}
 
-/// \brief
-///   Tests a float within a certain epsilon
-/// 
-/// \param value
-///   the float that you want to test
-/// 
-/// \param expected
-///   the float that value should be
-/// 
-/// \param epsilon
-///   the allowed epsilon for 'value' to deviate from 'expected'
-/// 
-/// \example
-///   \code
-///   VTEST(1.0f, 10.0f / 10.0f, 0.0001f);
-///   \endcode
-#define VTEST_FLOAT(value, expected, epsilon)              { const float VTEST_FLOAT_f = value; if(AssertTest(((VTEST_FLOAT_f <= (expected) + (epsilon)) && (VTEST_FLOAT_f >= (expected) - (epsilon)))!=0,__FILE__,__LINE__)) VDBGBREAK; ANALYSIS_ASSUME(((VTEST_FLOAT_f <= (expected) + (epsilon)) && (VTEST_FLOAT_f >= (expected) - (epsilon)))!=0) }
+/// \brief Reports a test failure and triggers a debug break if the test is configured to break on test failures
+#define VTEST_FAILURE(ConditionMsg, OptionalMsg,...) \
+{\
+  /* Any error message will actually trigger the test failure. */ \
+  char VTEST_FAILURE_szTemp[1024] = "(none)"; \
+  \
+if (strcmp(OptionalMsg, "") != 0) \
+  sprintf(VTEST_FAILURE_szTemp, OptionalMsg, ##__VA_ARGS__); \
+  \
+  hkvLog::Error("Test failed: '%s', File: '%s', Line: %i, Details: %s", ConditionMsg, __FILE__, __LINE__, VTEST_FAILURE_szTemp); \
+  VTEST_DEBUG_BREAK \
+}
+
+/// \brief Tests a boolean condition, prints no message
+#define VTEST(condition) VTESTM(condition, "")
+
+/// \brief Tests a boolean condition and prints a message
+#define VTESTM(condition, msg,...) \
+{ \
+  ANALYSIS_ASSUME(condition) \
+if (!(condition)) \
+{ \
+  VTEST_FAILURE(V_STRINGIZE(condition), msg, ##__VA_ARGS__) \
+} \
+}
+
+
+#define VTESTEQUAL(value, expected) VTEST((value) == (expected))
+
+
+#define VTEST_INT(i1, i2) VTEST_INT_MSG(i1, i2, "")
+
+#define VTEST_INT_MSG(i1, i2, msg,...) \
+{ \
+  const int vtest_r1 = (int)(i1); \
+  const int vtest_r2 = (int)(i2); \
+  \
+if (vtest_r1 != vtest_r2) \
+{ \
+  char VTEST_INT_szTemp[1024]; \
+  sprintf(VTEST_INT_szTemp, "'%s' (%i) does not equal '%s' (%i)", V_STRINGIZE(i1), vtest_r1, V_STRINGIZE(i2), vtest_r2); \
+  VTEST_FAILURE(VTEST_INT_szTemp, msg, ##__VA_ARGS__); \
+} \
+}
+
+
+#define VTEST_FLOAT(f1, f2, epsilon) VTEST_FLOAT_MSG(f1, f2, epsilon, "")
+
+#define VTEST_FLOAT_MSG(f1, f2, epsilon, msg,...) \
+{ \
+  const float vtest_r1 = (float)(f1); \
+  const float vtest_r2 = (float)(f2); \
+  const float vtest_fEps = (float)(epsilon); \
+  const bool VTEST_FLOAT_bEqual = (vtest_r1 >= vtest_r2 - vtest_fEps) && (vtest_r1 <= vtest_r2 + vtest_fEps); \
+  /* If any NaNs are involved, the line above should fail. */ \
+  if (!VTEST_FLOAT_bEqual) \
+  { \
+    char VTEST_FLOAT_szTemp[1024]; \
+    sprintf(VTEST_FLOAT_szTemp, "'%s' (%.8f) does not equal '%s' (%.8f) within an epsilon of %.8f", V_STRINGIZE(f1), vtest_r1, V_STRINGIZE(f2), vtest_r2, vtest_fEps); \
+    VTEST_FAILURE(VTEST_FLOAT_szTemp, msg, ##__VA_ARGS__); \
+  } \
+}
+
+
+#define VTEST_VEC3(v1, v2, epsilon) VTEST_VEC3_MSG(v1, v2, epsilon, "")
+
+#define VTEST_VEC3_MSG(v1, v2, epsilon, msg,...) \
+{ \
+  const hkvVec3 vtest_v1 = (hkvVec3)(v1); \
+  const hkvVec3 vtest_v2 = (hkvVec3)(v2); \
+  const float vtest_fEps = (float)(epsilon); \
+  VTEST_FLOAT_MSG(vtest_v1.x, vtest_v2.x, epsilon, msg, ##__VA_ARGS__); \
+  VTEST_FLOAT_MSG(vtest_v1.y, vtest_v2.y, epsilon, msg, ##__VA_ARGS__); \
+  VTEST_FLOAT_MSG(vtest_v1.z, vtest_v2.z, epsilon, msg, ##__VA_ARGS__); \
+}
 
 /// \brief
 ///   Tests a condition and returns on failure
@@ -69,67 +119,37 @@ class VStrList;
 /// 
 /// \example
 ///   \code
-///   VisEntity_cl *cam = Vision::Game.CreateEntity("VisEntity_cl", VisVector_cl(0,0,0)); 
+///   VisEntity_cl *cam = Vision::Game.CreateEntity<VisEntity_cl>(VisVector_cl(0,0,0)); 
 ///   VTEST_RETURN(cam!=NULL, FALSE);
 ///   \endcode
-#define VTEST_RETURN(condition, retval) { VBool condEval = ((condition)!= 0); if(AssertTest(condEval,__FILE__,__LINE__)) VDBGBREAK; if (!condEval) return (retval);}
-
-/// \brief
-///   Tests the condition and prints out the message if it fails
-/// 
-/// Tests also the condition, like the VTEST macro, but if it evaluates to FALSE,  the error
-/// message AND your message are written into the log.
-/// 
-/// \param condition
-///   your expression
-/// 
-/// \param message
-///   your message for the log 
-/// 
-/// \example
-///   \code
-///   VisEntity_cl *scientist = Vision::Game.SearchEntity("Scientist");
-///   VTESTM(scientist!=NULL, "Couldn't find Scientist entity!");
-///   \endcode
-#define VTESTM(condition,message,...) { \
-  const bool cond = !!(condition); \
-  if(!cond) \
+#define VTEST_RETURN(condition, retval) \
+{ \
+  ANALYSIS_ASSUME(condition) \
+  if (!(condition)) \
   { \
-    /* Ensure that inside the macro a unique name is used, which does not */ \
-    /* collide with a variable name used in the scope the macro is used */   \
-    VString vTestMessage_##__LINE__; \
-    vTestMessage_##__LINE__.Format(message, ##__VA_ARGS__); \
-    if(AssertTest((VBool)(cond), __FILE__, __LINE__, vTestMessage_##__LINE__.AsChar())) VDBGBREAK; \
-  } }
+    VTEST_FAILURE(V_STRINGIZE(condition), NULL) \
+    return retval; \
+  } \
+}
 
-// general equality test. This macro can be used to compare any two "reasonable" 
-// expressions of the same standard types (floats, integers, pointers etc.) or of any
-// objects which have the operators == and >> defined. Use this macro only inside the
-// VTestClass derived classes.
 
-//You have place the next line in your source if you use the VTESTEQUAL macro below
-//#include <sstream>
-//This is because of linking conflicts in vMaya
+#define VTEST_STRING(i1, i2) VTEST_STRING_MSG(i1, i2, "")
 
-#define VTESTEQUAL( value, expected) \
+#define VTEST_STRING_MSG(s1, s2, msg,...) \
+{ \
+  const char* vtest_sz1 = s1; \
+  const char* vtest_sz2 = s2; \
+  \
+  if (strcmp(vtest_sz1, vtest_sz2) != 0) \
   { \
-  if( !(value == expected) ) \
-    { \
-    std::ostringstream oss; \
-    oss << "Test failed: " << value << " is not equal to " << expected << std::ends; \
-    VTESTM( FALSE, oss.str().c_str() ); \
-    } \
-  }
+    char VTEST_STRING_szTemp[1024]; \
+    sprintf (VTEST_STRING_szTemp, "'%s' (%s) does not equal '%s' (%s)", V_STRINGIZE(s1), vtest_sz1, V_STRINGIZE(s2), vtest_sz2); \
+    VTEST_FAILURE(VTEST_STRING_szTemp, msg, ##__VA_ARGS__); \
+  } \
+}
 
-#define VTESTEQUALSTR( value, expected) \
-  { \
-    if( !(value == expected) ) \
-    { \
-      std::ostringstream oss; \
-      oss << "Test failed: " << value.AsChar() << " is not equal to " << expected << std::ends; \
-      VTESTM( FALSE, oss.str().c_str() ); \
-    } \
-  }
+
+
 
 /// \brief
 ///   Abstract Test class for single tests containing many subtests
@@ -152,7 +172,7 @@ class VTestClass : public VTypedObject
 public:   
   
   ///
-  /// @name Consturctor/destructor
+  /// @name Constructor/destructor
   /// @{
   ///
 
@@ -187,7 +207,7 @@ public:
   ///   {
   ///     SetTestFlags(1000, TRUE, TRUE); 
   ///     SetTestName ( "Bone test");
-  ///     AddSubTest ( "Forward cinematics local rotations");  
+  ///     AddSubTest ( "Forward cinematic local rotations");  
   ///     AddSubTest ( "Hide the left upper arm");
   ///     AddSubTest ( "Hide the left upper arm an all its children");
   ///     AddSubTest ( "Rotate the head bone in all Directions -> IncJointRotation");
@@ -222,19 +242,19 @@ public:
   ///     simpleApp = new VisSimpleApp_cl ( m_pConfig->m_iXRes, m_pConfig->m_iYRes, m_pConfig->m_bFullscreen, FALSE, &(m_pConfig->m_tConfig));            
   ///     Vision::SetDataDirectory("Data\\Bones","Data\\globalData");
   ///     Vision::LoadWorld ( "viewermap" );
-  ///     Vision::Game.CreateEntity("VisEntity_cl", ...
+  ///     Vision::Game.CreateEntity<VisEntity_cl>(...
   ///     ...
   ///     return TRUE;
   ///   }
   ///   \endcode
-  VBASE_IMPEXP virtual VBool Init() = 0; 
+  VBASE_IMPEXP virtual VBool Init() { return TRUE; }
 
   /// \brief
   ///   Abstract init function for subtests
   /// 
   /// This functions is called once for each subtest to init subtest data.
   /// 
-  /// You can use the VTEST macros to check your initialisation.
+  /// You can use the VTEST macros to check your initialization.
   /// 
   /// \param iTest
   ///   Index of the subtest
@@ -272,7 +292,7 @@ public:
   ///         break;
   ///   ...
   ///   \endcode
-  VBASE_IMPEXP virtual void InitSubTest ( int iTest ) = 0;
+  VBASE_IMPEXP virtual void InitSubTest ( int iTest ) {}
   
   /// \brief
   ///   Abstract function which executes each sub test.
@@ -283,7 +303,7 @@ public:
   /// Use the VTEST macros to check your test code.
   /// 
   /// Your test has to return FALSE if it is finished. For the return value TRUE the test framework
-  /// calls the RunSubTest function again with the same index (this behaviour is used in the engine
+  /// calls the RunSubTest function again with the same index (this behavior is used in the engine
   /// test to render more than one frame  for each test).
   /// 
   /// \param iTest
@@ -291,7 +311,7 @@ public:
   /// 
   /// \return
   ///   virtual VBool: True if the RunSubTest should be called with the SAME index False if the
-  ///   RunSubTest function is finshed with the current subtest
+  ///   RunSubTest function is finished with the current subtest
   /// 
   /// \note
   ///   This function is called for each subtest after the function
@@ -329,7 +349,7 @@ public:
   /// 
   /// This functions is called once for each subtest to deinit subtest data.
   /// 
-  /// You can use the VTEST macros to check your deinitialisation.
+  /// You can use the VTEST macros to check your deinitialization.
   /// 
   /// \param iTest
   ///   Index of the subtest
@@ -357,10 +377,10 @@ public:
   ///       entity->Remove();
   ///   }
   ///   \endcode
-  VBASE_IMPEXP virtual void DeInitSubTest( int iTest ) = 0;
+  VBASE_IMPEXP virtual void DeInitSubTest( int iTest ) {}
 
   /// \brief
-  ///   Abstract function for the deinitialisation of the whole test
+  ///   Abstract function for the deinitialization of the whole test
   /// 
   /// Override the function to clean up all your test data.
   /// 
@@ -387,7 +407,7 @@ public:
   ///     return TRUE;
   ///   }
   ///   \endcode
-  VBASE_IMPEXP virtual VBool DeInit() = 0;
+  VBASE_IMPEXP virtual VBool DeInit() { return TRUE; }
 
   /// \brief
   ///   Virtual function for checking whether a test is to be skipped if the
@@ -463,7 +483,7 @@ public:
   ///   void BoneTest::DescribeTest()
   ///   {
   ///     SetTestName ( "Bone test");
-  ///     AddSubTest ( "Forward cinematics local rotations");  
+  ///     AddSubTest ( "Forward cinematic local rotations");  
   ///   \endcode
   VBASE_IMPEXP void SetTestName( const char *szName );
   
@@ -480,7 +500,7 @@ public:
   ///   void BoneTest::DescribeTest()
   ///   {
   ///     SetTestName ( "Bone test");
-  ///     AddSubTest ( "Forward cinematics local rotations");  
+  ///     AddSubTest ( "Forward cinematic local rotations");  
   ///     AddSubTest ( "Hide the left upper arm");
   ///     ...
   ///   \endcode
@@ -519,44 +539,6 @@ public:
   ///   the passed filename string and returns the TestDirectory + \\ + filename
   VBASE_IMPEXP const char* BuildTestFilePath( bool useReadDir, const char* szFilename ) const;
 
-  /// \brief
-  ///   Asserts the condition.
-  /// 
-  /// If the condition evaluates to FALSE the file, line  and the message string are printed with
-  /// the Printf function.
-  /// 
-  /// \param condition
-  ///   evaluated Condition 
-  /// 
-  /// \param szFile
-  ///   filename (normally __FILE__ is passed)
-  /// 
-  /// \param iLine
-  ///   line number (normally __LINE__ is passed)
-  /// 
-  /// \param pszMessage
-  ///   optional message string
-  /// 
-  /// \return
-  ///   VBool: is TRUE if the test failed AND if assert_on_break is enabled!
-  /// 
-  /// \note
-  ///   Normally you will nopt uses this function directry. This function is used inside of the
-  ///   VTEST macros.
-  VBASE_IMPEXP VBool AssertTest( VBool condition, const char *szFile, const int iLine, const char *pszMessage=NULL );
-
-  /// \brief
-  ///   Like the normal printf, but prints out the string to the choosen output devices.
-  /// 
-  /// You can choose in the UI between stdout, console and HTML file
-  /// 
-  /// \param s
-  ///   you string with format specifies in it
-  /// 
-  /// \param ...
-  ///   other arguments used in the text
-  VBASE_IMPEXP void Printf ( const char *s, ... );
-  
   ///
   /// @}
   ///
@@ -574,27 +556,12 @@ public:
   VBASE_IMPEXP void ReverseSubtestState();
   // set randomly subtests status
   VBASE_IMPEXP void RandomSubtestState(int iPercent = 50); 
-
-  // reset the data memvers used for statistics
-  VBASE_IMPEXP void ResetStatistics();
-
+  
   // binary comparison of two files
   VBASE_IMPEXP VBool CompareFiles(const char *szName1, const char *szName2, VFileAccessManager *pManager);
 
   // compare files, ignoring whitespace characters
   VBASE_IMPEXP VBool CompareFilesSkipWhitespace(const char *szName1, const char *szName2, VFileAccessManager *pManager);
-
-  // increases errors counter by one
-  inline void IncErrors() { m_iErrors++; }
-
-  // increases excpetion counter by one
-  inline void IncExceptions() { m_iExceptions++; }
-
-  // increases warning counter by one
-  inline void IncWarnings() { m_iWarnings++; }
-
-  // increases assert counter by one
-  inline void IncAsserts() { m_iAsserts++; }
 
   // return test name
   inline const char* GetTestName() const { return m_szTestName; }
@@ -623,19 +590,18 @@ public:
   // returns whether the sub test for the given index is enabled or not
   inline VBool IsSubTestEnabled( unsigned int uiIndex ) const { return m_bSubTestStatus[uiIndex]; }
 
-protected:
-  int m_iErrors;                         ///< counts total number of errors
-  int m_iExceptions;                     ///< counts total number of exceptions that happend
-  int m_iWarnings;                       ///< counts total number of warnings that happend
-  int m_iAsserts;                        ///< counts total number of assertions that were _tested_ (number of VTEST.. calls)
+  ///
+  /// @}
+  ///
+
+  int m_iNumImageComparisons;            ///< number of image comparisons done
+  int m_iNumFailedImageComparisons;      ///< number of failed image comparisons
 
 private:
-  // * common members - DescribeTest should fill them in. It is best to use auxiliary functions to do so
   char m_szTestName[256];                ///< name of this test
   char* m_pszSubTestNames[MAX_SUBTESTS]; ///< names of the subtests
   int m_iNumberOfTest;                   ///< number of subtests in test
-  VBool m_bRandomOrder;                  ///< sub-tests executed in-order or in random order 
-  VBool m_bEnabled;                      ///< this test is completly disabled
+  VBool m_bEnabled;                      ///< this test is completely disabled
   VBool m_bAllowSubTestToggle;           ///< (Deprecated) test allows subtests to be on/off - should be set true. This is just left for compatibility reasons
 
   // * values that are set for the test by the AutomatedTest function, and taken care of by auxiliary functions. maybe useful for reading
@@ -648,11 +614,6 @@ private:
   VTestUnit* m_pTestUnit;                ///< pointer to the test unit which contains this test
 
   friend class VTestUnit;
-
-  ///
-  /// @}
-  ///
-
 };
 
 
@@ -660,7 +621,7 @@ private:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

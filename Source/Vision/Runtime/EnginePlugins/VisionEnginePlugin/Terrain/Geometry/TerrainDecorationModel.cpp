@@ -9,7 +9,7 @@
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/VisionEnginePluginPCH.h>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Terrain/Geometry/TerrainDecorationModel.hpp>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Terrain/Geometry/TerrainSectorManager.hpp>
-#include <Vision/Runtime/Base/System/Memory/VMemDbg.hpp>
+
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Manager functions
@@ -28,7 +28,7 @@ VTerrainDecorationModelManager &VTerrainDecorationModelManager::GlobalManager()
 void VTerrainDecorationModelManager::OneTimeInit()
 {
   Vision::ResourceSystem.RegisterResourceManager(this, VColorRef(30,70,0));
-#ifdef WIN32
+#ifdef _VISION_WIN32
   if (Vision::Editor.IsInEditor())
   {
     VisSurface_cl::OnSurfaceShaderChanged += this;
@@ -41,7 +41,7 @@ void VTerrainDecorationModelManager::OneTimeInit()
 void VTerrainDecorationModelManager::OneTimeDeInit()
 {
   Vision::ResourceSystem.UnregisterResourceManager(this);
-#ifdef WIN32
+#ifdef _VISION_WIN32
   if (Vision::Editor.IsInEditor())
   {
     VisSurface_cl::OnSurfaceShaderChanged -= this;
@@ -54,7 +54,7 @@ void VTerrainDecorationModelManager::OneTimeDeInit()
 
 void VTerrainDecorationModelManager::OnHandleCallback(IVisCallbackDataObject_cl *pData)
 {
-#ifdef WIN32
+#ifdef _VISION_WIN32
   if (pData->m_pSender==&VisSurface_cl::OnSurfaceShaderChanged)
   {
     VisSurface_cl::VisSurfaceDataObject_cl &data(*((VisSurface_cl::VisSurfaceDataObject_cl *)pData));
@@ -224,7 +224,7 @@ V_IMPLEMENT_SERIAL( VTerrainDecorationModelProxy, VTypedObject, 0, &g_VisionEngi
 
 void VTerrainDecorationModelProxy::Serialize(VArchive &ar)
 {
-  char iCurrentVersion = 8;
+  char iCurrentVersion = TERRAINDECORATION_SERIALIZE_CURRENTVERSION;
   if (ar.IsLoading())
   {
 #if defined(__SNC__)
@@ -291,6 +291,7 @@ IVTerrainDecorationModel::ModelProperties_t::ModelProperties_t()
   m_fApplyWind = m_fApplyConstraint = 0.f;
   m_iVisibleBitmask = 0xffffffff;
   m_fCollisionCapsuleRadius = 0.f;
+  m_eCollisionType = VDecorationCollisionPrimitive::VDecorationCollision_None;
 //  m_fPivotHeight = 0.95f;
 }
 
@@ -316,9 +317,13 @@ void IVTerrainDecorationModel::ModelProperties_t::SerializeX(VArchive &ar, int i
       ar >> m_iVisibleBitmask;
     if (iVersion>=8)
       ar >> m_fCollisionCapsuleRadius;
+    if (iVersion>=TERRAINDECORATION_SERIALIZE_VERSION_9)
+      ar >> (int &)m_eCollisionType;
+    else if (m_fCollisionCapsuleRadius>0.f)
+      m_eCollisionType = VDecorationCollisionPrimitive::VDecorationCollision_Capsule;
   } else
   {
-    VASSERT(iVersion==8); // latest version!
+    VASSERT(iVersion==TERRAINDECORATION_SERIALIZE_CURRENTVERSION); // always latest version!
     ar << m_iModelID;
     ar << m_fNearClip; // version 3
     ar << m_fFarClip;
@@ -328,6 +333,7 @@ void IVTerrainDecorationModel::ModelProperties_t::SerializeX(VArchive &ar, int i
     ar << m_fApplyConstraint;
     ar << m_iVisibleBitmask;
     ar << m_fCollisionCapsuleRadius;
+    ar << (int)m_eCollisionType;
   }
 }
 
@@ -352,9 +358,13 @@ void IVTerrainDecorationModel::ModelProperties_t::ChunkFileExchange(VChunkFile &
       file.ReadInt((int &)m_iVisibleBitmask);
     if (iVersion>=8)
       file.ReadFloat(m_fCollisionCapsuleRadius);
+    if (iVersion>=TERRAINDECORATION_SERIALIZE_VERSION_9)
+      file.ReadInt((int &)m_eCollisionType);
+    else if (m_fCollisionCapsuleRadius>0.f)
+      m_eCollisionType = VDecorationCollisionPrimitive::VDecorationCollision_Capsule;
   } else
   {
-    VASSERT(iVersion==8); // latest version!
+    VASSERT(iVersion==TERRAINDECORATION_SERIALIZE_CURRENTVERSION); // always latest version!
     file.WriteInt(m_iModelID);
     file.WriteFloat(m_fNearClip);
     file.WriteFloat(m_fFarClip);
@@ -364,6 +374,7 @@ void IVTerrainDecorationModel::ModelProperties_t::ChunkFileExchange(VChunkFile &
     file.WriteFloat(m_fApplyConstraint);
     file.WriteInt(m_iVisibleBitmask);
     file.WriteFloat(m_fCollisionCapsuleRadius);
+    file.WriteInt((int)m_eCollisionType); // version 9
   }
 }
 
@@ -389,6 +400,7 @@ IVTerrainDecorationModel::IVTerrainDecorationModel(const char *szFilename, const
 {
   SetResourceFlag(VRESOURCEFLAG_ALLOWUNLOAD);
 
+  m_LocalBBox.setInvalid();
   m_bIgnore = false;
   m_pNextLOD = NULL;
   m_bTempFlag = false;
@@ -437,7 +449,7 @@ void IVTerrainDecorationModel::UpdateParameter()
 
 void IVTerrainDecorationModel::GatherLightmapInfo(VBaseMesh *pMesh, VLightmapSceneInfo &info, VTerrainDecorationInstance **pInst, int iCount)
 {
-#ifdef WIN32
+#ifdef _VISION_WIN32
   if (pMesh==NULL)
     return;
   if (pMesh->GetSurfaceCount()!=1)
@@ -537,6 +549,9 @@ bool CheckRaySphereIntersection(const hkvVec3& vStart, const hkvVec3& vDir, cons
 
 bool VDecorationCollisionPrimitive::TraceDistance(const hkvVec3& startOfLine, const hkvVec3& vRayDir, float &fDist) const
 {
+  if (m_eCollisionType!=VDecorationCollision_Capsule)
+    return false;
+
   const float r = GetRadius();
   hkvVec3 AB = m_vDirection;
   hkvVec3 AO = (startOfLine - m_vStartPosition);
@@ -580,6 +595,9 @@ bool VDecorationCollisionPrimitive::TraceDistance(const hkvVec3& startOfLine, co
 
 void VDecorationCollisionPrimitive::DebugRender(IVRenderInterface* pRI, const hkvMat4 &transform, float fScaling)
 {
+  if (m_eCollisionType!=VDecorationCollision_Capsule)
+    return;
+
   hkvVec3 vStart = transform.transform(GetStart().getAsPosition()).getAsVec3();
   hkvVec3 vEnd = transform.transform(GetEnd().getAsPosition()).getAsVec3();
 
@@ -647,7 +665,7 @@ void VBillboardDecorationSectorInstance::DisposeObject()
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

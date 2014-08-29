@@ -11,97 +11,265 @@
 %nodefaultctor VTypedObject;
 %nodefaultdtor VTypedObject;
 
+%{
+
+// A helper class that binds to an arbitrary Lua value as a function argument. Currently only used by VTypedObject::SetProperty
+class VLuaStackRef
+{
+public:
+  /// \brief Constructor. Internal, do not use.
+  VLuaStackRef(hkvInit_None) {}
+
+  /// \brief Constructor. Internal, do not use.
+  VLuaStackRef(lua_State* L, int iStackIndex) : L(L)
+  {
+    // Make stack index absolute so it's not invalidated by pushing something else onto the stack
+    m_iStackIndex = (iStackIndex > 0 || iStackIndex <= LUA_REGISTRYINDEX) ? iStackIndex : lua_gettop(L) + iStackIndex + 1;
+  }
+
+  /// \brief Converts the Lua value to a boolean.
+  bool ToBoolean() const
+  {
+    return lua_toboolean(L, m_iStackIndex) == 1;
+  }
+
+  /// \brief Converts the Lua value to an integer.
+  lua_Integer ToInteger() const
+  {
+    return lua_tointeger(L, m_iStackIndex);
+  }
+
+  /// \brief Converts the Lua value to a number.
+  lua_Number ToNumber() const
+  {
+    return lua_tonumber(L, m_iStackIndex);
+  }
+
+  /// \brief Converts the Lua value to a string.
+  const char* ToString() const
+  {
+    return lua_tostring(L, m_iStackIndex);
+  }
+
+  /// \brief Converts the Lua value to an object pointer. Caution, no type check is currently performed.
+  template<typename T> const T* ToObject() const
+  {
+    if(swig_lua_userdata* usr = (swig_lua_userdata*) lua_touserdata(L, m_iStackIndex))
+    {
+      return static_cast<T*>(usr->ptr);
+    }
+
+    return NULL;
+  }
+
+private:
+  lua_State* L;
+  int m_iStackIndex;
+};
+
+%}
+
+%typemap(in) const VLuaStackRef& (VLuaStackRef temp(hkvNoInitialization))
+{
+  temp = VLuaStackRef(L, $argnum);
+  $1 = &temp;
+}
+
+%typemap(typecheck,precedence=SWIG_TYPECHECK_POINTER) const VLuaStackRef& {
+   $1 = 1;
+}
+
 class VTypedObject
 {
 public:
   %extend {
 
-    const char * GetType() const
+    const char* GetType() const
     {
       return self->GetTypeId()->m_lpszClassName;
     }
     
-    bool IsOfType(const char *szType)
+    bool IsOfType(const char* szType)
     {
-      return self->IsOfType(szType)==TRUE;
+      return self->IsOfType(szType) == TRUE;
     }
     
-    const char * GetPropertyType(const char * propName)
+    const char* GetPropertyType(const char* propName)
     {
-      if(propName==NULL)
+      if(propName == NULL)
         return NULL; // avoid problems with nil values
-      VisVariable_cl *pVar = self->GetVariable(propName);
+      VisVariable_cl* pVar = self->GetVariable(propName);
       int type = pVar ? pVar->type : -1;
       switch (type) {
-          case VULPTYPE_STRING:
-          case VULPTYPE_VSTRING:
-          case VULPTYPE_MODEL:
-          case VULPTYPE_PSTRING:
-          case VULPTYPE_ENTITY_KEY:
-          case VULPTYPE_PRIMITIVE_KEY:
-          case VULPTYPE_VERTEX_KEY:
-          case VULPTYPE_LIGHTSOURCE_KEY:
-          case VULPTYPE_WORLDANIMATION_KEY:
-          case VULPTYPE_PATH_KEY:
-            return "string";
-          case VULPTYPE_ENUM:
-          case VULPTYPE_INT:
-          case VULPTYPE_FLOAT:
-          case VULPTYPE_DOUBLE:
-            return "number";
-          case VULPTYPE_BOOL:	
-            return "boolean";
-          case VULPTYPE_VECTOR_INT:
-          case VULPTYPE_VECTOR_FLOAT:
-          case VULPTYPE_VECTOR_DOUBLE:
-            return "hkvVec3";
-          case VULPTYPE_BYTE_COLOR4:
-            return "VColorRef";
-          default:
-            hkvLog::Warning("Type of property '%s' is unknown in Lua.", propName);
-            return NULL;
+      case VULPTYPE_STRING:
+      case VULPTYPE_VSTRING:
+      case VULPTYPE_MODEL:
+      case VULPTYPE_PSTRING:
+      case VULPTYPE_ENTITY_KEY:
+      case VULPTYPE_PRIMITIVE_KEY:
+      case VULPTYPE_VERTEX_KEY:
+      case VULPTYPE_LIGHTSOURCE_KEY:
+      case VULPTYPE_WORLDANIMATION_KEY:
+      case VULPTYPE_PATH_KEY:
+        return "string";
+      case VULPTYPE_ENUM:
+      case VULPTYPE_INT:
+      case VULPTYPE_FLOAT:
+      case VULPTYPE_DOUBLE:
+        return "number";
+      case VULPTYPE_BOOL:
+        return "boolean";
+      case VULPTYPE_VECTOR_INT:
+      case VULPTYPE_VECTOR_FLOAT:
+      case VULPTYPE_VECTOR_DOUBLE:
+        return "hkvVec3";
+      case VULPTYPE_BYTE_COLOR4:
+        return "VColorRef";
+      default:
+        hkvLog::Warning("Type of property '%s' is unknown in Lua.", propName);
+        return NULL;
       }
     }
-        
-    bool operator == (const VTypedObject& other)
+    
+    bool operator == (const VTypedObject & other)
     {
-      return self==&other;
+      return self == &other;
     }
-  }
-  
-  %rename(GetNumProperties) GetNumVariables() const;
-  int GetNumVariables() const;
-  
-  %rename(UpdateProperty) SetVariable(const char * name, const char * value);
-  bool SetVariable(const char * name, const char * value);
-};
-
-//Implement GetProperties native because it returns an array of strings
-%native(VTypedObject_GetProperties) int VTypedObject_GetProperties(lua_State *L);
-%{
-  SWIGINTERN int VTypedObject_GetProperties(lua_State *L)
-  {
-    IS_MEMBER_OF(VTypedObject) //this will move this function to the method table of the specified class
     
-    SWIG_CONVERT_POINTER(L, 1, VTypedObject, pTypedObject)
-
-    lua_newtable(L); //create an empty table (or an array if you would like to see it this way)
     
-    int iCount = pTypedObject->GetNumVariables();
-
-    for(int i=0;i<iCount;++i)
+    void GetProperty(const char* pszName, VCaptureSwigEnvironment * env)
     {
-      const char * szName = pTypedObject->GetVariableName(i);
-      
-      lua_newtable(L);             // create a new sub table             stack: table, table, TOP      
-      lua_pushstring(L, "Name");   // push the key                       stack: table, table, key, TOP
-      lua_pushstring(L, szName);   // push the value                     stack: table, table, key, value, TOP
-      lua_settable(L, -3);         // set key and value as entry         stack: table, table, TOP
-      
-      lua_pushstring(L, "Type");   // push the key                       stack: table, table, key, TOP
-      
-      switch(pTypedObject->GetVariable(szName)->type)
+      VisVariable_cl* pVar = self->GetVariable(pszName);
+
+      // if variable can't be found by name try with display name
+      if(!pVar)
+        pVar = self->GetVariableByDisplayName(pszName);
+
+      if(!pVar)
       {
+        hkvLog::Warning("Called getter of unknown property '%s'", pszName);
+        env->AddReturnValueNil();
+        return;
+      }
+      
+      switch(pVar->type)
+      {
+      case VULPTYPE_STRING:
+      case VULPTYPE_MODEL:
+      case VULPTYPE_PSTRING:
+      case VULPTYPE_ENTITY_KEY:
+      case VULPTYPE_PRIMITIVE_KEY:
+      case VULPTYPE_VERTEX_KEY:
+      case VULPTYPE_LIGHTSOURCE_KEY:
+      case VULPTYPE_WORLDANIMATION_KEY:
+      case VULPTYPE_PATH_KEY:
+      {
+        const char* pStr = NULL;
+        pVar->GetValueDirect(self, (void*) &pStr, true);
+        env->AddReturnValueString(pStr);
+      }
+      break;
+      case VULPTYPE_VSTRING:
+      {
+        VString vstr;
+        pVar->GetValueDirect(self, (void*) &vstr, true);
+        env->AddReturnValueString(vstr.AsChar());
+      }
+      break;
+      case VULPTYPE_ENUM:
+      case VULPTYPE_INT:
+      {
+        int n;
+        pVar->GetValueDirect(self, (void*) &n, true);
+        env->AddReturnValueNumber((lua_Number)n);
+      }
+      break;
+      case VULPTYPE_FLOAT:
+      {
+        float n;
+        pVar->GetValueDirect(self, (void*) &n, true);
+        env->AddReturnValueNumber((lua_Number)n);
+      }
+      break;
+      case VULPTYPE_DOUBLE:
+      {
+        double n;
+        pVar->GetValueDirect(self, (void*) &n, true);
+        env->AddReturnValueNumber((lua_Number)n);
+      }
+      break;
+      case VULPTYPE_BOOL:
+      {
+        BOOL b;
+        pVar->GetValueDirect(self, (void*) &b, true);
+        env->AddReturnValueBool(b != 0);
+      }
+      break;
+      case VULPTYPE_VECTOR_INT:
+      {
+        int pN[3];
+        pVar->GetValueDirect(self, (void*) pN, true);
+        hkvVec3 vector((float)pN[0], (float)pN[1], (float)pN[2]);
+        SWIG_Lua_NewPodObj(env->GetLuaState(), &vector, SWIGTYPE_p_hkvVec3);
+        env->SetNumReturnValues(1);
+      }
+      break;
+      case VULPTYPE_VECTOR_FLOAT:
+      {
+        float pN[3];
+        pVar->GetValueDirect(self, (void*) pN, true);
+        hkvVec3 vector(pN[0], pN[1], pN[2]);
+        SWIG_Lua_NewPodObj(env->GetLuaState(), &vector, SWIGTYPE_p_hkvVec3);
+        env->SetNumReturnValues(1);
+      }
+      break;
+      case VULPTYPE_VECTOR_DOUBLE:
+      {
+        double pN[3];
+        pVar->GetValueDirect(self, (void*) pN, true);
+        hkvVec3 vector((float)pN[0], (float)pN[1], (float)pN[2]);
+        SWIG_Lua_NewPodObj(env->GetLuaState(), &vector, SWIGTYPE_p_hkvVec3);
+        env->SetNumReturnValues(1);
+      }
+      break;
+      case VULPTYPE_BYTE_COLOR4:
+      {
+        VColorRef color;
+        pVar->GetValueDirect(self, (void*) &color, true);
+        SWIG_Lua_NewPodObj(env->GetLuaState(), &color, SWIGTYPE_p_VColorRef);
+        env->SetNumReturnValues(1);
+      }
+      break;
+      default:
+        hkvLog::Warning("Called getter of unknown type %d (%s)", pVar->type, pszName);
+        env->AddReturnValueNil();
+        break;
+      }
+    }
+    
+    void GetProperties(VCaptureSwigEnvironment* env)
+    {
+      lua_State* L = env->GetLuaState();
+      
+      int iCount = self->GetNumVariables();
+      
+      lua_createtable(L, iCount, 0); //create an empty table (or an array if you would like to see it this way)
+      
+      env->SetNumReturnValues(1);
+      
+      for(int i = 0; i < iCount; ++i)
+      {
+        const char* szName = self->GetVariableName(i);
+        
+        lua_createtable(L, 0, 2);    // create a new sub table             stack: table, table, TOP
+        lua_pushstring(L, "Name");   // push the key                       stack: table, table, key, TOP
+        lua_pushstring(L, szName);   // push the value                     stack: table, table, key, value, TOP
+        lua_settable(L, -3);         // set key and value as entry         stack: table, table, TOP
+        
+        lua_pushstring(L, "Type");   // push the key                       stack: table, table, key, TOP
+        
+        switch(self->GetVariable(szName)->type)
+        {
         case VULPTYPE_STRING:
         case VULPTYPE_VSTRING:
         case VULPTYPE_MODEL:
@@ -114,8 +282,8 @@ public:
         case VULPTYPE_PATH_KEY:
           lua_pushstring(L, "string");
           break;
-        case VULPTYPE_ENUM:	
-        case VULPTYPE_INT:	
+        case VULPTYPE_ENUM:
+        case VULPTYPE_INT:
         case VULPTYPE_FLOAT:
         case VULPTYPE_DOUBLE:
           lua_pushstring(L, "number");
@@ -134,156 +302,35 @@ public:
         default:
           lua_pushstring(L, "unknown");
           break;
+        }
+        //after switch:                                                 stack: table, table, key, value, TOP
+        
+        lua_settable(L, -3);      //set key and value as entry          stack: table, table, TOP
+        lua_rawseti(L, -2, i + 1); //add to overall table                stack: table, TOP
       }
-      //after switch:                                                 stack: table, table, key, value, TOP
-      
-      lua_settable(L, -3);      //set key and value as entry          stack: table, table, TOP
-      lua_rawseti(L, -2, i+1);  //add to overall table                stack: table, TOP
     }
     
-    return 1; //the table is always on the stack (even if empty)
-  }
-%}
-
-//Implement GetProperty native because it has a mixed return value
-%native(VTypedObject_GetProperty) int VTypedObject_GetProperty(lua_State *L);
-%{
-  SWIGINTERN int VTypedObject_GetProperty(lua_State *L)
-  {
-    IS_MEMBER_OF(VTypedObject) //this will move this function to the method table of the specified class
-    
-    DECLARE_ARGS_OK;
-  
-    SWIG_CONVERT_POINTER(L, 1, VTypedObject, pTypedObject)
-
-    GET_ARG(2, const char *, pszName);
-    lua_pop(L,2);
-
-    if (ARGS_OK) {
-      VisVariable_cl *pVar = pTypedObject->GetVariable(pszName);
-      if (!pVar) {
-        hkvLog::Warning("Called getter of unknown property '%s'", pszName);
-        lua_pushnil(L);
-        return 1;
-      }
-      
-      switch (pVar->type) {
-        case VULPTYPE_STRING:
-        case VULPTYPE_MODEL:
-        case VULPTYPE_PSTRING:
-        case VULPTYPE_ENTITY_KEY:
-        case VULPTYPE_PRIMITIVE_KEY:
-        case VULPTYPE_VERTEX_KEY:
-        case VULPTYPE_LIGHTSOURCE_KEY:
-        case VULPTYPE_WORLDANIMATION_KEY:
-        case VULPTYPE_PATH_KEY:
-          {
-            const char *pStr = NULL;
-            pVar->GetValueDirect(pTypedObject, (void*) &pStr, true);
-            lua_pushstring(L, pStr);
-          }
-          break;
-        case VULPTYPE_VSTRING:
-          {
-            VString vstr;
-            pVar->GetValueDirect(pTypedObject, (void*) &vstr, true);
-            lua_pushstring(L, vstr.AsChar());
-          }
-          break;
-        case VULPTYPE_ENUM:	
-        case VULPTYPE_INT:	
-          {
-            int n;
-            pVar->GetValueDirect(pTypedObject, (void*) &n, true);
-            lua_pushnumber(L, (lua_Number) n);
-          }
-          break;
-        case VULPTYPE_FLOAT:
-          {
-            float n;
-            pVar->GetValueDirect(pTypedObject, (void*) &n, true);
-            lua_pushnumber(L, (lua_Number) n);
-          }
-          break;
-        case VULPTYPE_DOUBLE:
-          {
-            double n;
-            pVar->GetValueDirect(pTypedObject, (void*) &n, true);
-            lua_pushnumber(L, (lua_Number) n);
-          }
-          break;
-        case VULPTYPE_BOOL:	
-          {
-            BOOL b;
-            pVar->GetValueDirect(pTypedObject, (void*) &b, true);
-            lua_pushboolean(L, (int) b);
-          }
-          break;
-        case VULPTYPE_VECTOR_INT:
-          {
-            int pN[3];
-            pVar->GetValueDirect(pTypedObject, (void*) pN, true);
-            hkvVec3 *vector = new hkvVec3((float)pN[0], (float)pN[1], (float)pN[2]);
-            SWIG_Lua_NewPointerObj(L,vector,SWIGTYPE_p_hkvVec3, VLUA_MANAGE_MEM_BY_LUA);
-          }
-          break;
-        case VULPTYPE_VECTOR_FLOAT:
-          {
-            float pN[3];
-            pVar->GetValueDirect(pTypedObject, (void*) pN, true);
-            hkvVec3 *vector = new hkvVec3(pN[0], pN[1], pN[2]);
-            SWIG_Lua_NewPointerObj(L,vector,SWIGTYPE_p_hkvVec3, VLUA_MANAGE_MEM_BY_LUA);
-          }
-          break;
-        case VULPTYPE_VECTOR_DOUBLE:
-          {
-            double pN[3];
-            pVar->GetValueDirect(pTypedObject, (void*) pN, true);
-            hkvVec3 *vector = new hkvVec3((float)pN[0], (float)pN[1], (float)pN[2]);
-            SWIG_Lua_NewPointerObj(L,vector,SWIGTYPE_p_hkvVec3, VLUA_MANAGE_MEM_BY_LUA);
-          }
-          break;
-        case VULPTYPE_BYTE_COLOR4:
-          {
-            VColorRef *color = new VColorRef();
-            pVar->GetValueDirect(pTypedObject, (void*) color, true);
-            SWIG_Lua_NewPointerObj(L,color,SWIGTYPE_p_VColorRef, VLUA_MANAGE_MEM_BY_LUA);
-          }
-          break;
-        default:
-          hkvLog::Warning("Called getter of unknown type %d (%s)", pVar->type, pszName);
-          lua_pushnil(L);
-          break;
-      }
-      return 1;
-    }
-    return 0;
-  }
-%}
-
-%native(VTypedObject_SetProperty) int VTypedObject_SetProperty(lua_State *L);
-%{
-  SWIGINTERN int VTypedObject_SetProperty(lua_State *L)
-  {
-    IS_MEMBER_OF(VTypedObject) //this will move this function to the method table of the specified class
-    
-    DECLARE_ARGS_OK;
-
-    SWIG_CONVERT_POINTER(L, 1, VTypedObject, pTypedObject)
-
-    GET_ARG(2, const char *, pszName);
-
-    if (ARGS_OK)
+    void SetProperty(const char* pszName, const VLuaStackRef& value, VCaptureSwigEnvironment* env)
     {
-      VisVariable_cl *pVar = pTypedObject->GetVariable(pszName);
-
-      if (!pVar)
+      VisVariable_cl* pVar = self->GetVariable(pszName);
+      
+      // if variable can't be found by name try with display name
+      if(!pVar)
+        pVar = self->GetVariableByDisplayName(pszName);
+        
+      if(!pVar)
       {
         hkvLog::Warning("Called setter of unknown property '%s'", pszName);
-        return 0;
+        return;
       }
+
+      lua_State* L = env->GetLuaState();
       
-      switch (pVar->type) {
+      VVarChangeRes_e result = self->OnVariableValueChanging(pVar, pszName);
+      if(result == VCHANGE_IS_ALLOWED)
+      {
+        switch(pVar->type)
+        {
         case VULPTYPE_STRING:
         case VULPTYPE_VSTRING:
         case VULPTYPE_MODEL:
@@ -294,79 +341,105 @@ public:
         case VULPTYPE_LIGHTSOURCE_KEY:
         case VULPTYPE_WORLDANIMATION_KEY:
         case VULPTYPE_PATH_KEY:
-          {
-            GET_ARG(3, const char *, pszVal);
-            pVar->SetValue(pTypedObject, pszVal, true);
-          }
-          break;
-        case VULPTYPE_ENUM:	
-        case VULPTYPE_INT:	
-          {
-            GET_ARG(3, lua_Number, n);
-            int i = (int) n;
-            pVar->SetValueDirect(pTypedObject, (void*) &i, true);
-          }
-          break;
+        {
+          const char* pszVal = value.ToString();
+          pVar->SetValue(self, pszVal, true);
+        }
+        break;
+        case VULPTYPE_ENUM:
+        case VULPTYPE_INT:
+        {
+          int i = (int) value.ToNumber();
+          pVar->SetValueDirect(self, (void*) &i, true);
+        }
+        break;
         case VULPTYPE_FLOAT:
-          {
-            GET_ARG(3, lua_Number, n);
-            float f = (float) n;
-            pVar->SetValueDirect(pTypedObject, (void*) &f, true);
-          }
-          break;
+        {
+          float f = (float) value.ToNumber();
+          pVar->SetValueDirect(self, (void*) &f, true);
+        }
+        break;
         case VULPTYPE_DOUBLE:
-          {
-            GET_ARG(3, lua_Number, n);
-            double d = (double) n;
-            pVar->SetValueDirect(pTypedObject, (void*) &d, true);
-          }
-          break;
-        case VULPTYPE_BOOL:	
-          {
-            GET_ARG(3, bool, n);
-            BOOL b = (BOOL) n;
-            pVar->SetValueDirect(pTypedObject, (void*) &b, true);
-          }
-          break;
+        {
+          double d = (double) value.ToNumber();
+          pVar->SetValueDirect(self, (void*) &d, true);
+        }
+        break;
+        case VULPTYPE_BOOL:
+        {
+          BOOL b = (BOOL) value.ToBoolean();
+          pVar->SetValueDirect(self, (void*) &b, true);
+        }
+        break;
         case VULPTYPE_VECTOR_INT:
+        {
+          const hkvVec3* pVec = value.ToObject<hkvVec3>();
+
+          if(!pVec)
           {
-            GET_ARG(3, hkvVec3, vec);
-            int pI[3] = {(int) vec.x, (int) vec.y, (int) vec.z};
-            pVar->SetValueDirect(pTypedObject, (void*) pI, true);
+            env->Fail("Expected argument of type hkvVec3");
+            return;
           }
-          break;
+
+          int pI[3] = {(int) pVec->x, (int) pVec->y, (int) pVec->z};
+          pVar->SetValueDirect(self, (void*) pI, true);
+        }
+        break;
         case VULPTYPE_VECTOR_FLOAT:
+        {
+          const hkvVec3* pVec = value.ToObject<hkvVec3>();
+
+          if(!pVec)
           {
-            GET_ARG(3, hkvVec3, vec);
-            float pF[3] = {vec.x, vec.y, vec.z};
-            pVar->SetValueDirect(pTypedObject, (void*) pF, true);
+            env->Fail("Expected argument of type hkvVec3");
+            return;
           }
-          break;
+
+          float pF[3] = {pVec->x, pVec->y, pVec->z};
+          pVar->SetValueDirect(self, (void*) pF, true);
+        }
+        break;
         case VULPTYPE_VECTOR_DOUBLE:
+        {
+          const hkvVec3* pVec = value.ToObject<hkvVec3>();
+
+          if(!pVec)
           {
-            GET_ARG(3, hkvVec3, vec);
-            double pD[3] = {(double) vec.x, (double) vec.y, (double) vec.z};
-            pVar->SetValueDirect(pTypedObject, (void*) pD, true);
+            env->Fail("Expected argument of type hkvVec3");
+            return;
           }
-          break;
+
+          double pD[3] = {(double) pVec->x, (double) pVec->y, (double) pVec->z};
+          pVar->SetValueDirect(self, (void*) pD, true);
+        }
+        break;
         case VULPTYPE_BYTE_COLOR4:
+        {
+          const VColorRef* pColor = value.ToObject<VColorRef>();
+
+          if(!pColor)
           {
-            GET_ARG(3, VColorRef, col);
-            pVar->SetValueDirect(pTypedObject, (void*) &col, true);
+            env->Fail("Expected argument of type VColorRef");
+            return;
           }
-          break;
+
+          pVar->SetValueDirect(self, (void*) pColor, true);
+        }
         default:
           hkvLog::Warning("Called setter of unknown type %d (%s)", pVar->type, pszName);
           break;
+        }
+        self->OnVariableValueChanging(pVar, pszName);
       }
     }
-
-    //remove all stack items
-    lua_settop(L, 0);
-    //LUA_STACK_DUMP(L);
-    return 0;
   }
-%}
+  
+  %rename(GetNumProperties) GetNumVariables() const;
+  int GetNumVariables() const;
+  
+  %rename(UpdateProperty) SetVariable(const char* name, const char* value);
+  bool SetVariable(const char* name, const char* value);
+};
 
 //add lua tostring and concat operators
 VSWIG_CREATE_CONCAT(VTypedObject, 128, "%s", self->GetClassTypeId()->m_lpszClassName)
@@ -375,12 +448,13 @@ VSWIG_CREATE_TOSTRING(VTypedObject, "%s: 0x%p", self->GetClassTypeId()->m_lpszCl
 #else
 
 /// \brief Base class for any typed object.
-class VTypedObject {
+class VTypedObject
+{
 public:
 
   /// @name Base Functions
   /// @{
-  
+
   /// \brief Returns the type name of this instance.
   /// \note Consider using IsOfType to check if the instance is derived from the type.
   /// \return The type name of this instance.
@@ -406,16 +480,16 @@ public:
   ///   \endcode
   boolean IsOfType(string className);
 
-  /// @}  
+  /// @}
   /// @name Properties
   /// @{
-  
+
   /// \brief Directly assigns a new value to an exposed object property (public member variables, defined inside the START_VAR_TABLE - END_VAR_TABLE block).
   /// \details
   ///   Assigns a new value to an exposed property. These are the same as the properties in the EntityProperties category in vForge.
-  ///   Please note that this function will not trigger any callbacks, it directly changes the value. Consider using UpdateProperty to invoke notifications.
+  ///   The function will trigger callbacks.
   ///   If you are not sure about the correct property value, you should prefere UpdateProperty because it will check if the value is valid.
-  /// \param propName The name of the property.
+  /// \param propName The name or display name of the property.
   /// \param val The new value for the property. Note that this value MUST be of the same type as the property otherwise an error will occur.
   /// \par Example
   ///   \code
@@ -425,14 +499,16 @@ public:
   ///   \endcode
   /// \see UpdateProperty
   void SetProperty(string propName, mixed val);
-  
-  /// \brief Assigns a new value to an exposed object property (public member variable), checks if this new value is valid and notifies all sub systems.
+
+  /// \brief (Deprecated) Assigns a new value to an exposed object property (public member variable), checks if this new value is valid and notifies all sub systems.
+  /// \details
+  ///   This function is deprecated and will be removed in the future release. SetProperty should be used instead.
   /// \param propName The name of the property.
   /// \param propValue The property values as string representation.
   /// \par Example
   ///   \code
-  ///     entity:SetProperty("MyStringProperty", "Hello, Lua.")
-  ///     typedObj:SetProperty("MyBooleanProperty", "AnotherValue")
+  ///     entity:UpdateProperty("MyStringProperty", "Hello, Lua.")
+  ///     typedObj:UpdateProperty("MyBooleanProperty", "AnotherValue")
   ///   \endcode
   boolean UpdateProperty(string propName, string propValue);
 
@@ -485,7 +561,7 @@ public:
   ///     end
   ///   \endcode
   table GetProperties();
-  
+
   /// \brief Returns the number of properties associated with the object's type.
   /// \return The number of properties.
   /// \par Example
@@ -494,21 +570,21 @@ public:
   ///    Debug:PrintLine("The entity has " .. numProps .. " prop(s)")
   ///   \endcode
   number GetNumProperties();
-  
-  /// @}  
+
+  /// @}
   /// @name Operators
   /// @{
-  
+
   /// \brief Compare with another VTypedObject, e.g. obj1 == obj2
   /// \param other The other typed object.
   /// \return true if the internal pointers are equal, otherwise false.
-  boolean operator == (VTypedObject other);  
+  boolean operator == (VTypedObject other);
 };
 
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140717)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

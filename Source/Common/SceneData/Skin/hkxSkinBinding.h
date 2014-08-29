@@ -12,12 +12,12 @@
 #include <Common/SceneData/Graph/hkxNode.h>
 
 /// hkxSkinBinding meta information
-extern const class hkClass hkxSkinBindingClass;
+extern HK_EXPORT_COMMON const class hkClass hkxSkinBindingClass;
 
 /// A relationship between a given mesh and a set of 'bones' (nodes in the scene
 /// graph). Can be used to create more runtime specific structures after initial
 /// export.
-class hkxSkinBinding : public hkReferencedObject
+class HK_EXPORT_COMMON hkxSkinBinding : public hkReferencedObject
 {
 	//+vtable(true)
 	//+version(2)
@@ -50,7 +50,7 @@ class hkxSkinBinding : public hkReferencedObject
 #endif // HKSCENEDATA_SKIN_HKXSKINBINDING_HKCLASS_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

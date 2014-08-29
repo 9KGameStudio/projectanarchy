@@ -37,6 +37,7 @@ enum hkvTargetPlatform
   HKV_TARGET_PLATFORM_ANDROID,
   HKV_TARGET_PLATFORM_WIIU,
   HKV_TARGET_PLATFORM_TIZEN,
+  HKV_TARGET_PLATFORM_WINPHONE,
 
   HKV_TARGET_PLATFORM_COUNT,
 
@@ -44,7 +45,7 @@ enum hkvTargetPlatform
 };
 
 extern const char* hkvTargetPlatformNames[];
-extern const char* hkvTargetPlatformShaderBinExtensions[]; // This is a hack for the PackageTool. We need to clean this up and probably remove hkvTargetPlatform altogether, and instead use the vBase defines.
+extern const char* hkvTargetPlatformShaderBinExtensions[]; // This is for the PackageTool. We need to clean this up and probably remove hkvTargetPlatform altogether, and instead use the vBase defines.
 
 ASSETFRAMEWORK_IMPEXP const hkvEnumDefinition& hkvGetTargetPlatformDefinition();
 ASSETFRAMEWORK_IMPEXP const char* hkvGetTargetPlatformShaderBinExtension(hkvTargetPlatform Platform);
@@ -84,34 +85,17 @@ struct hkvAssetTypeInfo
   hkvAssetTypeInfo() 
   : m_createFunc(NULL), 
     m_determineDependenciesFunc(NULL), m_generateThumbnailFunc(NULL), m_getPropertyHintFunc(NULL),
-    m_resourceManagerName(NULL), 
-    m_useEngineForDependencies(false), m_useEngineForThumbnails(false), m_useEngineForPropertyHint(false)
+    m_szTypeIconQt(""), m_resourceManagerName(NULL),
+    m_useEngineForDependencies(false), m_useEngineForThumbnails(false), m_useEngineForPropertyHint(false),
+    m_profileIndependentTransform(false)
   {
-    m_szTypeIconQt = "";
   }
 
-  hkvAssetTypeInfo(const hkvAssetTypeInfo& rhs)
-  {
-    *this = rhs;
-  }
+private:
+  hkvAssetTypeInfo(const hkvAssetTypeInfo& rhs);
+  hkvAssetTypeInfo& operator=(const hkvAssetTypeInfo&);
 
-  ~hkvAssetTypeInfo() {}
-  void operator= (const hkvAssetTypeInfo& rhs)
-  {
-    m_name = rhs.m_name;
-    m_createFunc = rhs.m_createFunc;
-    m_determineDependenciesFunc = rhs.m_determineDependenciesFunc;
-    m_generateThumbnailFunc = rhs.m_generateThumbnailFunc;
-    m_getPropertyHintFunc = rhs.m_getPropertyHintFunc;
-    m_supportedFileExtensions = rhs.m_supportedFileExtensions;
-    m_defaultThumbnailPath = rhs.m_defaultThumbnailPath;
-    m_resourceManagerName = rhs.m_resourceManagerName;
-    m_useEngineForDependencies = rhs.m_useEngineForDependencies;
-    m_useEngineForThumbnails = rhs.m_useEngineForThumbnails;
-    m_useEngineForPropertyHint = rhs.m_useEngineForPropertyHint;
-    m_szTypeIconQt = rhs.m_szTypeIconQt;
-  }
-
+public:
   bool supportsFile(const char* fileName) const
   {
     const char* extension = hkvStringHelper::getExtension(fileName);
@@ -139,6 +123,8 @@ struct hkvAssetTypeInfo
   hkvGetPropertyHintFunc m_getPropertyHintFunc;
   hkArray<hkStringPtr> m_supportedFileExtensions;
 
+  hkArray<const char*> m_subtypes;
+
   hkStringPtr m_defaultThumbnailPath;
   const char* m_szTypeIconQt;
 
@@ -146,42 +132,125 @@ struct hkvAssetTypeInfo
   bool m_useEngineForDependencies;
   bool m_useEngineForThumbnails;
   bool m_useEngineForPropertyHint;
+  bool m_profileIndependentTransform; // If set, each asset has only one trasform rule for all profiles.
+};
+
+
+struct hkvAssetTypeInfoHandle
+{
+  hkvAssetTypeInfoHandle(const hkvAssetTypeInfo& typeInfo)
+    : m_typeInfo(typeInfo), m_typeIndex(0), m_typeEntryOffset(0)
+  {
+  }
+
+  const hkvAssetTypeInfo& getTypeInfo() const
+  {
+    return m_typeInfo;
+  }
+
+  hkUint32 getTypeIndex() const
+  {
+    return m_typeIndex;
+  }
+
+  void setTypeIndex(hkUint32 index)
+  {
+    m_typeIndex = index;
+  }
+
+  hkUint32 getTypeEntryOffset() const
+  {
+    return m_typeEntryOffset;
+  }
+
+  void setTypeEntryOffset(hkUint32 offset)
+  {
+    m_typeEntryOffset = offset;
+  }
+
+  hkUint32 getNumSubtypes() const
+  {
+    return (hkvMath::Max(1, m_typeInfo.m_subtypes.getSize()));
+  }
+
+private:
+  const hkvAssetTypeInfo& m_typeInfo;
+  hkUint32 m_typeIndex;
+  hkUint32 m_typeEntryOffset;
+};
+
+
+/// \brief
+///   Underlying info for entries in asset type lists
+struct hkvAssetTypeEntry
+{
+  hkvAssetTypeEntry()
+    : m_typeInfoHandle(NULL), m_subtypeIndex(-1)
+  {
+  }
+
+  hkvAssetTypeEntry(const hkvAssetTypeInfoHandle* typeInfoHandle, hkInt32 subtypeIndex)
+    : m_typeInfoHandle(typeInfoHandle), m_subtypeIndex(subtypeIndex)
+  {
+  }
+
+  const hkvAssetTypeInfoHandle* getTypeInfoHandle() const
+  {
+    return m_typeInfoHandle;
+  }
+
+  hkInt32 getSubtypeIndex() const
+  {
+    return m_subtypeIndex;
+  }
+
+  const char* makeFullTypeName(hkStringBuf& buffer) const
+  {
+    buffer = m_typeInfoHandle->getTypeInfo().m_name;
+    if (m_subtypeIndex >= 0)
+    {
+      buffer.append(" | ");
+      buffer.append(m_typeInfoHandle->getTypeInfo().m_subtypes[m_subtypeIndex]);
+    }
+    return buffer;
+  }
+
+private:
+  const hkvAssetTypeInfoHandle* m_typeInfoHandle; ///< Pointer to a handle for this entry's asset type info
+  hkInt32 m_subtypeIndex; ///< The asset subtype of this entry (-1 for default type)
 };
 
 
 struct hkvTransformationInput
 {
   hkvTransformationInput()
-  : m_includeEditorPreview(false), m_sourceProperties(NULL), m_controlHost(NULL)
+  : m_pAsset(NULL), m_includeEditorPreview(false), m_controlHost(NULL)
   {
   }
 
-  hkvTransformationInput(const hkvTransformationInput& rhs) :
-    m_sourceFile(rhs.m_sourceFile), m_targetPath(rhs.m_targetPath),
-    m_targetBaseName(rhs.m_targetBaseName), m_targetHashString(rhs.m_targetHashString),
-    m_includeEditorPreview(rhs.m_includeEditorPreview), m_sourceProperties(rhs.m_sourceProperties),
-    m_controlHost(rhs.m_controlHost)
+  hkvTransformationInput(const hkvTransformationInput& rhs)  
   {
+    *this = rhs;
   }
 
   hkvTransformationInput& operator=(const hkvTransformationInput& rhs)
   {
+    m_pAsset = rhs.m_pAsset;
     m_sourceFile = rhs.m_sourceFile;
     m_targetPath = rhs.m_targetPath;
     m_targetBaseName = rhs.m_targetBaseName;
     m_targetHashString = rhs.m_targetHashString;
     m_includeEditorPreview = rhs.m_includeEditorPreview;
-    m_sourceProperties = rhs.m_sourceProperties;
     m_controlHost = rhs.m_controlHost;
     return *this;
   }
   
+  const hkvAsset* m_pAsset; // Reference is held by the transform process
   hkStringPtr m_sourceFile;
   hkStringPtr m_targetPath;
   hkStringPtr m_targetBaseName;
   hkStringPtr m_targetHashString;
   bool m_includeEditorPreview;
-  const hkvIProperties* m_sourceProperties;
   hkvITransformationControlHost* m_controlHost;
 };
 
@@ -222,7 +291,9 @@ struct hkvTransformationOutputFileSpec
   }
 
   hkvTransformationOutputFileSpec(const hkvTransformationOutputFileSpec& rhs)
-    : m_variantKey(rhs.m_variantKey), m_fileName(rhs.m_fileName)
+    : m_variantKey(rhs.m_variantKey)
+    , m_fileName(rhs.m_fileName)
+    , m_extraMetadata(rhs.m_extraMetadata)
   {
   }
 
@@ -230,11 +301,13 @@ struct hkvTransformationOutputFileSpec
   {
     m_variantKey = rhs.m_variantKey;
     m_fileName = rhs.m_fileName;
+    m_extraMetadata = rhs.m_extraMetadata;
     return *this;
   }
 
   hkStringPtr m_variantKey;
   hkStringPtr m_fileName;
+  hkStringPtr m_extraMetadata;
 };
 
 
@@ -298,7 +371,7 @@ struct hkvTransformationRuleTypeInfo
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

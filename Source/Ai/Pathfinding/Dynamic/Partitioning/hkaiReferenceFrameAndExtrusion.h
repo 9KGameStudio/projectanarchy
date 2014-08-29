@@ -33,21 +33,22 @@ class hkaiReferenceFrameAndExtrusion
 			USE_FACE_NORMAL,
 		};
 
-		/// Constructor
+			/// Constructor
 		inline hkaiReferenceFrameAndExtrusion();
 		inline hkaiReferenceFrameAndExtrusion( hkFinishLoadedObjectFlag f );
 
-		/// Check members have been set
+			/// Check members have been set
 		inline bool isValid() const;
 
-		/// Axis of projection
+			/// Axis of projection
 		hkVector4 m_up;
 
-		/// Height for cell extrusion along m_up direction
+			/// Height for cell extrusion along m_up direction
 		hkReal m_cellExtrusion;
-		/// Radius expansion for silhouette generators in the non-up directions
+			/// Radius expansion for silhouette generators in the non-up directions
+			/// The nav mesh's erosion radius is added to this value for silhouette calculations.
 		hkReal m_silhouetteRadiusExpasion;
-		/// How the world up vector is used to project silhouettes for nav meshes transformed out of the horizontal plane.
+			/// How the world up vector is used to project silhouettes for nav meshes transformed out of the horizontal plane.
 		hkEnum<UpVectorTransformMethod, hkUint8> m_upTransformMethod; //+default(hkaiReferenceFrameAndExtrusion::USE_GLOBAL_UP);
 };
 
@@ -56,7 +57,7 @@ class hkaiReferenceFrameAndExtrusion
 #endif // HK_AI_REFERENCE_FRAME_AND_EXTRUSION
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

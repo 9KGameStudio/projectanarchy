@@ -9,7 +9,7 @@
 #ifndef __hkRadixSort_H__
 #define __hkRadixSort_H__
 
-class hkRadixSort
+class HK_EXPORT_COMMON hkRadixSort
 {
 	//+hk.MemoryTracker(ignore=True)
 	public:
@@ -17,10 +17,10 @@ class hkRadixSort
 		HK_CLASSALIGN(struct,4) SortData16
 		{
 			HK_DECLARE_POD_TYPE();
-			union 
+			union
 			{
-				hkUint16 m_key;	
-				hkUint8 m_keys[2];	
+				hkUint16 m_key;
+				hkUint8 m_keys[2];
 			};
 			hkUint16 m_userData;
 			friend hkBool32 operator < (const SortData16& a, const SortData16& b) { return a.m_key < b.m_key; }
@@ -30,14 +30,26 @@ class hkRadixSort
 		HK_CLASSALIGN(struct,4) SortData32
 		{
 			HK_DECLARE_POD_TYPE();
-			union 
+			union
 			{
-				hkUint32 m_key;	
-				hkUint8 m_keys[4];	
+				hkUint32 m_key;
+				hkUint8 m_keys[4];
 			};
 			hkUint32 m_userData;
 			friend hkBool32 operator < (const SortData32& a, const SortData32& b) { return a.m_key < b.m_key; }
 		};
+
+        HK_CLASSALIGN(struct,8) SortData64
+        {
+            HK_DECLARE_POD_TYPE();
+            union
+            {
+                hkUint64 m_key;
+                hkUint8 m_keys[8];
+            };
+            hkUint32 m_userData;
+            friend hkBool32 operator < (const SortData64& a, const SortData64& b) { return a.m_key < b.m_key; }
+        };
 
 
 			/// sort data according to m_key
@@ -48,13 +60,15 @@ class hkRadixSort
 			/// buffer needs to be of same size as data
 		static void HK_CALL sort32( SortData32* data, int numData, SortData32* buffer );
 
-
+            /// sort data according to m_key
+            /// buffer needs to be of same size as data
+        static void HK_CALL sort64( SortData64* data, int numData, SortData64* buffer );
 };
 
 #endif // __hkRadixSort_H__
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

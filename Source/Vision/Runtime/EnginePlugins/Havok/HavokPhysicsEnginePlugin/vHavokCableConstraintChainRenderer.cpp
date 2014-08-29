@@ -311,8 +311,7 @@ bool vHavokCableConstraintChainRenderer::RebuildModel()
   // Create the entity and the animation state
   if (!m_spChainEntity)
   {
-    m_spChainEntity = static_cast<vHavokCableConstraintChainEntity*>(
-      Vision::Game.CreateEntity("vHavokCableConstraintChainEntity", hkvVec3::ZeroVector ()));
+    m_spChainEntity = Vision::Game.CreateEntity<vHavokCableConstraintChainEntity>(hkvVec3::ZeroVector ());
   }
   m_spChainEntity->SetConstraintChain(m_pConstraintChain);
   m_spChainEntity->SetMesh(m_spChainMesh);
@@ -481,7 +480,7 @@ void vHavokCableConstraintChainEntity::ThinkFunction()
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

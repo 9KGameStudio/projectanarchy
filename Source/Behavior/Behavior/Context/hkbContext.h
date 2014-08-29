@@ -20,6 +20,7 @@ class hkbNode;
 class hkbProjectData;
 class hkbBehaviorGraph;
 class hkbSharedEventQueue;
+class hkbNodeInternalStateInfo;
 
 template <typename K, typename V, typename Allocator> class hkPointerMap;
 
@@ -195,6 +196,9 @@ class hkbContext
 			/// Whether an event while being processed triggered a transition.
 		mutable hkBool m_eventTriggeredTransition; //+nosave
 
+			/// Internal state map. For internal use only.
+		mutable hkPointerMap<hkInt16, const hkbNodeInternalStateInfo*>* m_nodeIdToInternalState; //+nosave
+
 	private:
 
 			/// The hkbPhysicsInterface (HK_NULL if you are not using physics)
@@ -209,7 +213,7 @@ class hkbContext
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

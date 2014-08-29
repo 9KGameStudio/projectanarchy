@@ -141,7 +141,7 @@ bool vHavokChainConstraintChainRenderer::ReloadModel()
   if (!m_spChainMesh)
     return false;
 
-  m_spChainEntity = Vision::Game.CreateEntity("VisBaseEntity_cl", hkvVec3::ZeroVector ());
+  m_spChainEntity = Vision::Game.CreateEntity<VisBaseEntity_cl>(hkvVec3::ZeroVector ());
   m_spChainEntity->SetMesh(m_spChainMesh);
   m_spChainEntity->SetScaling(Scaling);
   m_spChainEntity->SetVisibleBitmask(VIS_ENTITY_INVISIBLE);
@@ -179,7 +179,7 @@ START_VAR_TABLE(vHavokChainConstraintChainRenderer, vHavokConstraintChainRendere
 END_VAR_TABLE
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

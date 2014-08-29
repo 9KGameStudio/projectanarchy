@@ -76,9 +76,9 @@ namespace VisionManaged
     m_pMobileWater->SetSize(hkvVec2(x,y));
   }
 
-  void EngineInstanceMobileWater::SetNumGridSubdivisions(int x, int y)
+  void EngineInstanceMobileWater::SetGridCellSize(float x, float y)
   {
-    m_pMobileWater->SetNumGridSubdivisions(x, y);
+    m_pMobileWater->SetGridCellSize(x, y);
   }
 
   void EngineInstanceMobileWater::SetUseRadialGrid(bool bValue)
@@ -110,7 +110,7 @@ namespace VisionManaged
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

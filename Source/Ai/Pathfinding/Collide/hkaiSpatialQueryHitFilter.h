@@ -12,13 +12,15 @@
 class hkaiNavMeshInstance;
 class hkaiNavVolume;
 
-#include <Ai/Pathfinding/NavMesh/hkaiNavMesh.h>
-#include <Ai/Pathfinding/NavVolume/hkaiNavVolume.h>
+#include <Ai/Pathfinding/hkaiBaseTypes.h>
+
+class hkaiNavMeshInstance;
+class hkaiNavVolumeInstance;
 
 
 	/// Filter class used to determine whether a spatial query "hits" a nav mesh face or nav volume cell (depending on the query type).
 	/// Can also be used to exclude entire hkaiNavMeshInstance or hkaiNavVolume
-class hkaiSpatialQueryHitFilter : public hkReferencedObject
+class HK_EXPORT_AI hkaiSpatialQueryHitFilter : public hkReferencedObject
 {
 public:
 	HK_DECLARE_CLASS_ALLOCATOR( HK_MEMORY_CLASS_AI );
@@ -33,25 +35,25 @@ public:
 
 		/// Called before "narrowphase" checks (e.g. raycast) are done against a particular face. If the method returns false,
 		/// the face is ignored.
-	hkBool32 virtual isFaceEnabled( const hkaiNavMeshInstance* instance, hkaiNavMesh::FaceIndex faceIndex, hkUint32 filterInfo, hkUlong userData ) const = 0;
+	hkBool32 virtual isFaceEnabled( const hkaiNavMeshInstance* instance, hkaiNavMeshFaceIndex faceIndex, hkUint32 filterInfo, hkUlong userData ) const = 0;
 
 	//
 	// Nav volume query interface
 	//
 
 		/// Called before the mediator for a volume is examined. If the method returns false, the volume is not queried.
-	hkBool32 virtual isVolumeEnabled( const hkaiNavVolume* volume, hkUint32 filterInfo, hkUlong userData ) const = 0;
+	hkBool32 virtual isVolumeEnabled( const hkaiNavVolumeInstance* volume, hkUint32 filterInfo, hkUlong userData ) const = 0;
 
 		/// Called before "narrowphase" checks (e.g. closest point) are done against a particular cell. If the method returns false,
 		/// the cell is ignored.
-	hkBool32 virtual isCellEnabled( const hkaiNavVolume* volume, hkaiNavVolume::CellIndex cellIndex, hkUint32 filterInfo, hkUlong userData ) const = 0;
+	hkBool32 virtual isCellEnabled( const hkaiNavVolumeInstance* volume, hkaiNavVolumeCellIndex cellIndex, hkUint32 filterInfo, hkUlong userData ) const = 0;
 
 };
 
 #endif // HKAI_SPATIAL_QUERY_HIT_FILTER_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

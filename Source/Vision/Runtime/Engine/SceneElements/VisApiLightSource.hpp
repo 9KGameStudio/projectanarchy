@@ -133,7 +133,7 @@ public:
  
   /// \brief
   ///   Overridden VisTypedEngineObject_cl function to remove this instance from the scene.
-  VISION_APIFUNC VOVERRIDE void DisposeObject();
+  VISION_APIFUNC virtual void DisposeObject() HKV_OVERRIDE;
 
   ///
   /// @}
@@ -360,6 +360,10 @@ public:
   ///   BOOL bResult: FALSE if the light source is a dynamic light.
   VISION_APIFUNC BOOL ResetModifiableLight();
 
+  /// \brief Calculates approximated light influence area in screen space pixel.
+  ///
+  /// Uses the current context's screen size and projection settings.
+  VISION_APIFUNC unsigned int GetApproximateScreenInfluenceArea() const;
 
   ///
   /// @}
@@ -653,19 +657,8 @@ public:
   
   /// \brief
   ///   Uses the virtual function of the child system for visibility re-computations.
-  VISION_APIFUNC void ModSysNotifyFunctionCommand(int command);
+  VISION_APIFUNC virtual void ModSysNotifyFunctionCommand(int command, void *param) HKV_OVERRIDE;
   
-  /// \brief
-  ///   Gets the filename of the projection texture.
-  /// 
-  /// If this is a light source that uses a projection texture (spot light), this function returns
-  /// the file name of the texture being used.
-  /// 
-  /// \return
-  ///   const char *: The projected texture file name, or NULL if no projection texture is used.
-  VISION_APIFUNC const char *GetProjectedTextureFileName() const;
-
-   
   ///
   /// @}
   ///
@@ -812,6 +805,16 @@ public:
   VISION_APIFUNC VTextureObject *GetProjectionTexture() const;
 
   /// \brief
+  ///   Gets the filename of the projection texture.
+  /// 
+  /// If this is a light source that uses a projection texture (spot light), this function returns
+  /// the file name of the texture being used.
+  /// 
+  /// \return
+  ///   const char *: The projected texture file name, or NULL if no projection texture is used.
+  VISION_APIFUNC const char *GetProjectedTextureFileName() const;
+
+  /// \brief
   ///   Gets the projection planes of a spot light source.
   /// 
   /// Projection planes can be used e.g. in vertex/pixel shaders to compute texture coordinates for
@@ -936,156 +939,6 @@ public:
   VISION_APIFUNC bool HasShadowMapComponent() const;
 
   ///
-  /// @name Deprecated
-  /// @{
-  ///
-
-  /// \brief
-  ///   DEPRECATED: This function now maps to a VCoronaComponent which is created if none exists.
-  ///   Sets a custom corona texture for this light source.
-  /// 
-  /// \param textureFile
-  ///   Path to a corona texture file.
-  HKV_DEPRECATED_2012_1 VISION_APIFUNC void SetCoronaTexture(const char *textureFile);
-
-  /// \brief
-  ///   DEPRECATED: This function now maps to a VCoronaComponent which is created if none exists.
-  ///   Enables/Disables corona for this light source.
-  /// 
-  /// By default coronas are enabled.
-  /// 
-  /// \param status
-  ///   If TRUE, this light source will have a corona.
-  HKV_DEPRECATED_2012_1 VISION_APIFUNC void SetFlag_Corona(BOOL status);
-
-  /// \brief
-  ///   DEPRECATED: This function now maps to a VLensFlareComponent which is created if none exists.
-  ///   Sets the flag which defines whether the light source has lens flares.
-  /// 
-  /// By default, lens flares are disabled.
-  /// 
-  /// \param status
-  ///   If TRUE, this light source will produce a lens flare.
-  HKV_DEPRECATED_2012_1 VISION_APIFUNC void SetFlag_LensFlares(BOOL status);  
-
-  /// \brief
-  ///   DEPRECATED: This function now maps to a VCoronaComponent which is created if none exists.
-  ///   Indicates whether this light source has a corona.
-  HKV_DEPRECATED_2012_1 VISION_APIFUNC BOOL HasCorona();
-
-  /// \brief
-  ///   DEPRECATED: This function now maps to a VLensFlareComponent which is created if none exists.
-  ///   Indicates whether this light source uses lens flares.
-  HKV_DEPRECATED_2012_1 VISION_APIFUNC BOOL HasLensFlare();
-
-  /// \brief
-  ///   DEPRECATED: This function now maps to a VCoronaComponent which is created if none exists.
-  ///   Sets the size of the check block for coronas and lens flares for this light source.
-  /// 
-  /// The size is specified as the radius in pixels. A larger radius allows more fine-grained
-  /// fading of coronas and lens flares, but it also means that irrelevant geometry may affect the
-  /// corona/lens flare visibility more easily. 
-  /// 
-  /// Typically, larger coronas (see VisLightSource_cl::SetCoronaScale) should have larger check
-  /// blocks than small coronas.
-  /// 
-  /// As a special case, radius 0 can be passed to bypass the visibility test and always render the
-  /// corona.
-  /// 
-  /// \param iRadiusPixels
-  ///   Radius in Pixels.
-  HKV_DEPRECATED_2012_1 VISION_APIFUNC void SetCheckBlockSize(unsigned short iRadiusPixels);
-
-  /// \brief
-  ///   DEPRECATED: This function now maps to a VCoronaComponent which is created if none exists.
-  ///   Gets the size of the check block for coronas and lens flares for this light source.
-  /// 
-  /// The value can be set using the VisLightSource_cl::SetCheckBlockSize method.
-  /// 
-  /// \return
-  ///   unsigned short iRadiusPixels: Radius in Pixels.
-  HKV_DEPRECATED_2012_1 VISION_APIFUNC unsigned short GetCheckBlockSize();
-  
-  /// \brief
-  ///   DEPRECATED: This function now maps to a VCoronaComponent which is created if none exists.
-  ///   Sets the scale and rotation mode for this light source's corona.
-  /// 
-  /// The passed parameter is an enum providing the following flags:
-  ///
-  /// \li VIS_CORONASCALE_DISTANCE: Scale the corona's size according to distance, similar to regular 
-  ///   scene geometry.
-  ///
-  /// \li VIS_CORONASCALE_VISIBLEAREA : Scale the corona's size according to the percentage of its check
-  ///   block size that is currently visible. 
-  ///
-  /// \li VIS_CORONASCALE_USEFADEOUT : Fade out the corona according to the parameters globally set with 
-  ///   the VCoronaComponent::SetGlobalCoronaFadeOutDistance method. 
-  ///
-  /// \li VIS_CORONASCALE_ROTATING : If this flag is set, the corona will rotate as the camera moves 
-  ///   relative to the light source.
-  /// 
-  /// VIS_CORONASCALE_NONE is passed, all the aforementioned features will be disabled.
-  /// 
-  /// \param eScaleMode
-  ///   Corona Scale mode.
-  HKV_DEPRECATED_2012_1 VISION_APIFUNC void SetCoronaScaleMode(VisCoronaScaleMode_e eScaleMode);
-
-  /// \brief
-  ///   DEPRECATED: This function now maps to a VCoronaComponent which is created if none exists.
-  ///   Gets the scale and rotation mode for this light source's corona.
-  /// 
-  /// The value can be set using the VisLightSource_cl::SetCoronaScaleMode method.
-  /// 
-  /// \return
-  ///   VisCoronaScaleMode_e eScaleMode: Corona Scale mode.
-  HKV_DEPRECATED_2012_1 VISION_APIFUNC VisCoronaScaleMode_e GetCoronaScaleMode();
-
-  /// \brief
-  ///   DEPRECATED: This function now maps to a VCoronaComponent which is created if none exists.
-  ///   Sets the scaling factor for this light source's corona.
-  /// 
-  /// Greater values than 1.0f result in larger coronas. Smaller values than 1.0f result in smaller coronas.
-  /// 
-  /// The default value is 1.0f.
-  /// 
-  /// \param fScale
-  ///   Corona size scaling factor.
-  HKV_DEPRECATED_2012_1 VISION_APIFUNC void SetCoronaScale(float fScale);
-
-  /// \brief
-  ///   DEPRECATED: This function now maps to a VCoronaComponent which is created if none exists.
-  ///   Gets the scaling factor for this light source's corona.
-  /// 
-  /// The scaling factor can be set using the VisLightSource_cl::SetCoronaScale method.
-  /// 
-  /// \return
-  ///   float fScale: Corona size scaling factor.
-  HKV_DEPRECATED_2012_1 VISION_APIFUNC float GetCoronaScale();
-  
-  /// \brief
-  ///   DEPRECATED: This function now maps to a VCoronaComponent which is created if none exists.
-  ///   Gets corona texture file name.
-  /// 
-  /// If this light source uses a corona, this function returns the file name of the corona
-  /// texture.
-  /// 
-  /// \return
-  ///   const char *: The corona texture file name, otherwise NULL.
-  HKV_DEPRECATED_2012_1 VISION_APIFUNC const char *GetCoronaTextureFileName();
-
-  /// \brief
-  ///   Helper function for deprecated corona functions. Will create a corona component if none exists.
-  VISION_APIFUNC IVObjectComponent* GetCoronaComponent();
-
-  /// \brief
-  ///   Helper function for deprecated lensflare functions. Will create a lensflare component if none exists.
-  VISION_APIFUNC IVObjectComponent* GetLensFlareComponent();
-
-  ///
-  /// @}
-  ///
-
-  ///
   /// @name Network related
   /// @{
   ///
@@ -1174,18 +1027,6 @@ protected:
 
   
   /// \brief
-  ///   Loads a corona texture for a light source.
-  /// 
-  /// Use this function to load a corona texture for a light source.
-  /// 
-  /// \param szTexName
-  ///   The name of the texture file to load
-  /// 
-  /// \return
-  ///   int: The texture number under which it was loaded
-  int LoadCoronaTexture( const char *szTexName );
-
-  /// \brief
   ///   Serializes the object.
   /// 
   /// This function stores all important data into an archive or reads from it to create a new
@@ -1219,7 +1060,6 @@ protected:
   float oldI;                                       ///< old "stored" intensity, used for pausing animations (serialized)
   hkvVec3 m_vDirection;                             ///< direction the light source points to (serialized)
   float m_fProjectionFactor;                        ///< ~ tan of the current opening angle (cached when setting the angle)
-  //VString m_Key;                                  ///< light source key (serialized)
   int style;                                        ///< animation style for static light sources (serialized)
   
   VisLightSourceType_e type;                        ///< light source type (serialized)
@@ -1237,12 +1077,6 @@ protected:
   static VisLightSrcCollection_cl s_pDirectionalLights; ///< global list of all directional lights
   static VisLightSrcCollection_cl s_pAnimatedLights;    ///< global list of all animated lights
 
-  //VisElementVisData_cl visData;                     ///< visibility data for light source
-  //VisElementVisData_cl coronaVisData;               ///< visibility data for corona
-  
-  // This is used in VisLightSource_cl::GetCoronaTextureFileName to store the string. Will be removed once the deprecated function is gone.
-  VString m_sDeprecatedTempString;
-  
 public:
 
 
@@ -1250,9 +1084,6 @@ public:
   VISION_APIFUNC VOVERRIDE void GetDependencies(VResourceSnapshot &snapshot);
 #endif
 
-  //Internal use
-  //VISION_APIFUNC VisElementVisData_cl* GetVisData() { return &visData; }
-  //VISION_APIFUNC VisElementVisData_cl* GetCoronaVisData() { return &coronaVisData; }
 };
 
 
@@ -1356,7 +1187,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

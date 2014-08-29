@@ -85,16 +85,27 @@ public:
 
   /// \brief
   ///   Reads data from the stream and returns the number of bytes read.
-	///
+  ///
   /// \param pBuffer
   ///   The destination buffer
   ///
   /// \param iByteCount
-  ///   The number of bytes to write
+  ///   The number of bytes to read
   ///
   VHAVOK_IMPEXP virtual int read(void* pBuffer, int iByteCount) HKV_OVERRIDE;
 
-	/// \brief
+  /// \brief
+  ///   Reads at most iByteCount characters without changing the stream position and returns the number of characters read.
+  ///
+  /// \param pBuffer
+  ///   The destination buffer
+  ///
+  /// \param iByteCount
+  ///   The number of bytes to read
+  ///
+  VHAVOK_IMPEXP virtual int peek(void* pBuffer, int iByteCount) HKV_OVERRIDE;
+
+  /// \brief
   ///   Returns false if EOF has been reached or if an error occurred.
   ///
   VHAVOK_IMPEXP virtual hkBool isOk() const HKV_OVERRIDE;
@@ -106,7 +117,7 @@ protected:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

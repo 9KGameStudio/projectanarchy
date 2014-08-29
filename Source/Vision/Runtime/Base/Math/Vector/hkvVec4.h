@@ -11,6 +11,12 @@
 
 #include <Vision/Runtime/Base/Math/hkvMath.h>
 
+#ifdef HKVVEC4_CHECK_FOR_NAN
+  #define HKVVEC4_INITIALIZATION_CHECK(obj) (obj)->isInitializedCheck()
+#else
+  #define HKVVEC4_INITIALIZATION_CHECK(obj) 
+#endif
+
 /// \brief
 ///   This class represents a 4-component vector.
 ///
@@ -32,28 +38,38 @@ public:
   /// @{
   ///
 
-  #ifdef HKVMATH_DEFAULTCONSTRUCTORS_INITIALIZEDATA
-    /// \brief
-    ///   DEPRECATED: Initializes the vector to all zero.
-    ///
-    /// Prefer to initialize the vector with hkvVec4::Zero if you want a zero initialized vector.
-    /// Prefer to initialize the vector with hkvNoInitialization if it does not need to be initialized.
-    /// Note: At some point the Vision Engine will deactivate this old behavior and use the uninitialized version instead.
-    /// At that time you need to make sure that whenever you default construct a vector, you do not rely on it being zero.
-    ///
-    /// You can find all the places where you use the default constructor by defining 
-    /// HKVMATH_DEPRECATE_DEFAULT_CONSTRUCTOR in hkvMathConfig.h and compiling your code for Windows.
-    /// Then the compiler will generate a warning for every location where you use the default constructor.
-    /// Use the macros HKV_DISABLE_DEPRECATION and HKV_ENABLE_DEPRECATION to prevent that warning
-    /// for code that cannot be changed to use a non default constructor (such as for arrays).
-    HKVMATH_DEFAULT_CONSTRUCTOR HKV_FORCE_INLINE hkvVec4 () : x (0.0f), y (0.0f), z (0.0f), w (0.0f) {}
+  /// \brief
+  ///   ATTENTION: The object is NOT initialized by the constructor. You MUST initialize it yourself before using it.
+  ///
+  /// \note In Dev and Debug builds the object will be initialized with NaN values. Member functions that read the values will check that they are not NaN.
+  /// If an NaN value is encountered, those functions will trigger an assert. Thus when you run into such an assert, you have not initialized your object
+  /// after construction. Make sure you always initialize objects properly before using them.
+  HKV_FORCE_INLINE hkvVec4 ()
+  {
+#ifdef HKVVEC4_INITIALIZE_TO_NAN
 
-  #else
+    x = hkvMath::generateNaN();
+    y = hkvMath::generateNaN();
+    z = hkvMath::generateNaN();
+    w = hkvMath::generateNaN();
 
-    /// \brief
-    ///   FUTURE BEHAVIOR: Keeps the vector uninitialized.
-    HKVMATH_DEFAULT_CONSTRUCTOR HKV_FORCE_INLINE hkvVec4 () {}
-  #endif
+#elif defined(HKVVEC4_INITIALIZE_TO_IDENTITY)
+
+    x = 0;
+    y = 0;
+    z = 0;
+    w = 0;
+
+#endif
+  }
+
+#ifdef HKVVEC4_CHECK_FOR_NAN
+  HKV_FORCE_INLINE void isInitializedCheck() const
+  {
+    VASSERT_MSG(!hkvMath::isNaN (x) && !hkvMath::isNaN (y) && !hkvMath::isNaN (z) && !hkvMath::isNaN (w),
+      "This object has invalid (NaN) members: (%.2f | %.2f | %.2f | %.2f).\nThis happens when you use this object without properly initializing it first, as the default constructor will set all members to NaN in debug builds.", x, y, z, w);
+  }
+#endif
 
   /// \brief
   ///   Does not initialize this object. Prefer this constructor over the default constructor.
@@ -498,7 +514,7 @@ HKV_FORCE_INLINE const hkvVec4 operator/ (const hkvVec4& lhs, float f);
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

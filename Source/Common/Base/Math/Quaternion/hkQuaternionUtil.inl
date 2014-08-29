@@ -6,6 +6,8 @@
  *
  */
 
+#define ALL_SIMD_SSE_PLATFORMS ((defined(HK_PLATFORM_LINUX) || defined(HK_PLATFORM_WIN32) || defined(HK_PLATFORM_PS4)) && (HK_CONFIG_SIMD == HK_CONFIG_SIMD_ENABLED) && defined(HK_COMPILER_HAS_INTRINSICS_IA32))
+
 //
 //	Computes a 4x4 matrix that allows you to compute any product of the form (this * q) by multiplying (opOut * q)
 //	Let:
@@ -158,15 +160,7 @@ HK_FORCE_INLINE void HK_CALL hkQuaternionUtilImpl<FT>::_computeNlerp(typename hk
 	qOut.m_vec = v;
 }
 
-#if defined(HK_PLATFORM_WIN32) && (HK_CONFIG_SIMD == HK_CONFIG_SIMD_ENABLED) && !defined(HK_ARCH_ARM)
-static HK_FORCE_INLINE hkSingleFloat32 __acos(const hkSingleFloat32& r)
-{
-	return hkMath::quadAcos(r);
-}
-static HK_FORCE_INLINE hkSingleDouble64 __acos(const hkSingleDouble64& r)
-{
-	return hkMath::twoAcos(r);
-}
+#if ALL_SIMD_SSE_PLATFORMS
 static HK_FORCE_INLINE hkSingleFloat32 __sin(const hkSingleFloat32& r)
 {
 	return hkMath::quadSin(r);
@@ -193,14 +187,12 @@ HK_FORCE_INLINE void HK_CALL hkQuaternionUtilImpl<FT>::_computeLog(typename hkRe
 	if ( absCosA.isLess(hkRealTypes<FT>::Scalar::template getConstant<HK_QUADREAL_1>()) )
 	{
 		typename hkRealTypes<FT>::Scalar a,sA;
-#if defined(HK_PLATFORM_WIN32) && (HK_CONFIG_SIMD == HK_CONFIG_SIMD_ENABLED) && !defined(HK_ARCH_ARM)
-		const typename hkRealTypes<FT>::Scalar qReal = q.getRealPart();
-		a.m_real = __acos(qReal.m_real);
+		const typename hkRealTypes<FT>::Scalar qReal = q.getRealPart(); // use indep cosA
+		a = hkVector4UtilImpl<FT>::aCos(qReal);
+#if ALL_SIMD_SSE_PLATFORMS
 		sA.m_real = __sin(a.m_real);
 #else
-		const typename hkRealTypes<FT>::Pod angle = hkMath::acos(q.getReal()); // use indep cosA
-		a.setFromFloat(angle);
-		const typename hkRealTypes<FT>::Pod sinA = hkMath::sin(angle);
+		const typename hkRealTypes<FT>::Pod sinA = hkMath::sin(a.getReal());
 		sA.setFromFloat(sinA);
 #endif
 		typename hkRealTypes<FT>::Scalar absSinA; absSinA.setAbs(sA);
@@ -239,7 +231,7 @@ HK_FORCE_INLINE void HK_CALL hkQuaternionUtilImpl<FT>::_computeExp(typename hkRe
 template <typename FT>
 HK_FORCE_INLINE void HK_CALL hkQuaternionUtilImpl<FT>::_computeExp_Approximate(typename hkRealTypes<FT>::VectorParameter vIn, typename hkRealTypes<FT>::Quaternion& qOut)
 {
-#if defined(HK_PLATFORM_WIN32) && (HK_CONFIG_SIMD == HK_CONFIG_SIMD_ENABLED) && !defined(HK_ARCH_ARM)
+#if ALL_SIMD_SSE_PLATFORMS
 	const typename hkRealTypes<FT>::Scalar angle = vIn.template length<3>();
 
 	typename hkRealTypes<FT>::Vector sinCos;
@@ -389,7 +381,7 @@ HK_FORCE_INLINE void HK_CALL hkQuaternionUtilImpl<FT>::_computeShortestRotationD
 		}
 		else
 		{
-			const typename hkRealTypes<FT>::Scalar cosT2 = c.template sqrt<HK_ACC_23_BIT,HK_SQRT_IGNORE>();
+			const typename hkRealTypes<FT>::Scalar cosT2 = c.template sqrt<HK_ACC_MID,HK_SQRT_IGNORE>();
 
 			typename hkRealTypes<FT>::Vector cross; cross.setCross( from, to ); // sin(theta)* axis
 
@@ -429,7 +421,7 @@ HK_FORCE_INLINE hkBool32 HK_CALL hkQuaternionUtilImpl<FT>::_computeClampedRotati
 
 	// Compute cos(a) = cos(a/2) * cos(a/2) - sin(a/2) * (sin(a/2) = 1 - 2 * sin(a/2) * (sin(a/2)
 	// We want cos(a) >= cos(aMax), with 0 <= aMax  <= PI
-	const typename hkRealTypes<FT>::Scalar cosA			= hkRealTypes<FT>::Scalar::template getConstant<HK_QUADREAL_1>() - hkRealTypes<FT>::Scalar::template getConstant<HK_QUADREAL_2>() * sinHalfSq;
+	const typename hkRealTypes<FT>::Scalar cosA			= hkRealTypes<FT>::Scalar::template getConstant<HK_QUADREAL_1>() - (sinHalfSq + sinHalfSq);
 
 	// Compute the clamped quaternion
 	typename hkRealTypes<FT>::Vector v;
@@ -589,8 +581,10 @@ HK_FORCE_INLINE const typename hkRealTypes<FT>::Scalar HK_CALL hkQuaternionUtilI
 	return cosA;
 }
 
+#undef ALL_SIMD_SSE_PLATFORMS
+
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

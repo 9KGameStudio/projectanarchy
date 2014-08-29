@@ -40,7 +40,7 @@ class hkaiStreamingCollection;
 /// results are cached in the hkaiEdgePath, so constructing and using a new 
 /// hkaiCornerPredictor on subsequent frames will not incur a performance 
 /// penalty.
-class hkaiCornerPredictor
+class HK_EXPORT_AI hkaiCornerPredictor
 {
 public:
 	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_AI_STEERING, hkaiCornerPredictor);
@@ -95,7 +95,7 @@ public:
 
 	/// Information about a user edge which will be traversed while traveling 
 	/// between corners.
-	struct UserEdgeTraversal
+	struct HK_EXPORT_AI UserEdgeTraversal
 	{
 		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_AI_STEERING, UserEdgeTraversal);
 		/// The point, transformed to the character's local space, where the
@@ -113,7 +113,7 @@ public:
 	/// 
 	/// All points and vectors are "flattened" into the originally provided 
 	/// character-local space; see the class documentation for details.
-	struct Prediction
+	struct HK_EXPORT_AI Prediction
 	{
 		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_AI_STEERING, Prediction);
 		/// The vector from the previous leaveTurnPoint (or, initially, the 
@@ -248,7 +248,7 @@ private:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

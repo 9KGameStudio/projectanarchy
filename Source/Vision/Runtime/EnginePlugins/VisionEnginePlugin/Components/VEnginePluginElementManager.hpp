@@ -19,14 +19,15 @@
 template<class ELEMTYPE>
 class VEnginePluginElementManager
 {
+protected:
+  ~VEnginePluginElementManager()
+  {}
 public: 
   /// \brief
   ///   Constructor of the element manager.
   /// 
   /// Initializes the element table.
   VEnginePluginElementManager();
-
-  virtual ~VEnginePluginElementManager() { }
 
   /// \brief
   ///   Adds an element to the element table and returns the index at which it was added.
@@ -281,7 +282,7 @@ public:
 #endif //V_ENGINE_PLUGIN_ELEMENT_MANAGER_HPP_INCLUDED
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -12,7 +12,7 @@ class hkClassMember;
 template <typename K, typename V, typename Allocator> class hkPointerMap;
 
 /// Class which can duplicate the compiler structure layout procedure.
-class hkStructureLayout
+class HK_EXPORT_COMMON hkStructureLayout
 {
 	public:
 
@@ -150,7 +150,7 @@ class hkStructureLayout
 #endif // HK_SERIALIZE_STRUCTURELAYOUT_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

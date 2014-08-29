@@ -9,11 +9,11 @@
 #define HKANIMATION_MOTION_ANIMATED_REFERENCE_FRAME_H
 
 /// hkaAnimatedReferenceFrame meta information
-extern const class hkClass hkaAnimatedReferenceFrameClass;
+extern HK_EXPORT_ANIMATION const class hkClass hkaAnimatedReferenceFrameClass;
 
 
 /// This class represents the motion extracted from an animation. Check the Motion Extraction section in the Havok Animation User Guide for details.
-class hkaAnimatedReferenceFrame : public hkReferencedObject
+class HK_EXPORT_ANIMATION hkaAnimatedReferenceFrame : public hkReferencedObject
 {
 	public:
 		enum hkaReferenceFrameTypeEnum
@@ -54,7 +54,7 @@ class hkaAnimatedReferenceFrame : public hkReferencedObject
 #endif // HKANIMATION_MOTION_ANIMATED_REFERENCE_FRAME_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

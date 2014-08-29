@@ -11,7 +11,7 @@
 #ifndef RANDOM_HPP_INCLUDED
 #define RANDOM_HPP_INCLUDED
 
-#ifdef WIN32
+#ifdef _VISION_WIN32
 #define RANDOM_TABLE_SIZE   0x10000
 #else
 #define RANDOM_TABLE_SIZE   0x01000
@@ -48,7 +48,7 @@ public:
   ///  Returns the next integer value.
   inline unsigned int GetInt() const
   {
-    unsigned int iVal = g_fIntRand[m_iIntPos];
+    unsigned int iVal = g_iIntRand[m_iIntPos];
     m_iIntPos = (m_iIntPos+1)&(RANDOM_TABLE_SIZE-1);
     return iVal;
   }
@@ -75,18 +75,19 @@ public:
   inline void SkipFloats(int iCount) {m_iFloatPos = (m_iFloatPos+iCount)&(RANDOM_TABLE_SIZE-1);}
 
   mutable int m_iIntPos,m_iFloatPos;
+
 private:
   static void GenerateRandomTable();
   friend class _RandTableCreator;
   static float g_fFloatRand[RANDOM_TABLE_SIZE];
-  static unsigned int g_fIntRand[RANDOM_TABLE_SIZE];
+  static unsigned int g_iIntRand[RANDOM_TABLE_SIZE];
 };
 
 
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

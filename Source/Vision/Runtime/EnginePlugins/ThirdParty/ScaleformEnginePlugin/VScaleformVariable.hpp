@@ -148,6 +148,12 @@ public:
   inline void Display_SetAlpha(float fAlpha) { InternalGetValue().Display_SetAlpha(fAlpha); }
   inline void Display_SetFOV(float fFov) { InternalGetValue().Display_SetFOV(fFov); }
 
+  /// \copydoc VScaleformValue::Display_GotoFrame
+  inline bool Display_GotoFrame(unsigned int uiFrameIndex, bool bPlay = false) { return InternalGetValue().Display_GotoFrame(uiFrameIndex, bPlay); }
+  
+  /// \copydoc VScaleformValue::Display_GotoLabeledFrame
+  inline bool Display_GotoLabeledFrame(const char* szLabel, bool bPlay = false) { return InternalGetValue().Display_GotoLabeledFrame(szLabel, bPlay); }
+
   // Arrays
   inline unsigned int GetArraySize() const { return GetValue().GetArraySize(); }
   inline void SetArraySize(unsigned int uiSize) { InternalGetValue().SetArraySize(uiSize); }
@@ -215,7 +221,7 @@ private:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

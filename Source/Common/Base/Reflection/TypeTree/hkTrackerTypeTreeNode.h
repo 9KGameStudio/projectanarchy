@@ -11,7 +11,7 @@
 #include <Common/Base/Container/SubString/hkSubString.h>
 
 /// This type is not created with new - but created from a hkTrackerTypeTreeCache, with newNode
-class hkTrackerTypeTreeNode
+class HK_EXPORT_COMMON hkTrackerTypeTreeNode
 {
 	public:
 		HK_DECLARE_PLACEMENT_ALLOCATOR();
@@ -80,7 +80,7 @@ class hkTrackerTypeTreeNode
 #endif // HK_TYPE_TREE_NODE_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -8,11 +8,10 @@
 #ifndef HKAI_ASTAR_DIRECTEDGRAPHEXPLICITCOST_BUILDER_H
 #define HKAI_ASTAR_DIRECTEDGRAPHEXPLICITCOST_BUILDER_H
 
-#include <Ai/Pathfinding/Utilities/Hierarchy/hkaiHierarchyUtils.h>
 #include <Ai/Pathfinding/Graph/hkaiDirectedGraphExplicitCost.h>
 
 /// Interface for constructing graphs.
-class hkaiGraphBuilder
+class HK_EXPORT_AI hkaiGraphBuilder
 {
 public:
 	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_AI, hkaiGraphBuilder);
@@ -29,7 +28,7 @@ public:
 };
 
 	/// Utility class for constructing graphs
-class hkaiDirectedGraphExplicitCostBuilder : public hkaiGraphBuilder
+class HK_EXPORT_AI hkaiDirectedGraphExplicitCostBuilder : public hkaiGraphBuilder
 {
 public:
 	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE,hkaiDirectedGraphExplicitCostBuilder);
@@ -38,7 +37,7 @@ public:
 	typedef hkaiDirectedGraphExplicitCost::Edge Edge;
 
 		/// Graph building options.
-	struct BuildOptions
+	struct HK_EXPORT_AI BuildOptions
 	{
 		BuildOptions();
 
@@ -48,7 +47,7 @@ public:
 	};
 	
 		/// A potential edge to be constructed in the graph.
-	struct Link
+	struct HK_EXPORT_AI Link
 	{
 		int a; 
 		int b; 
@@ -69,7 +68,7 @@ protected:
 };
 
 	/// Works the same as hkaiDirectedGraphExplicitCostBuilder, but avoids duplicated positions
-class hkaiHashingDirectedGraphBuilder : public hkaiDirectedGraphExplicitCostBuilder
+class HK_EXPORT_AI hkaiHashingDirectedGraphBuilder : public hkaiDirectedGraphExplicitCostBuilder
 {
 public: 
 	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE,hkaiHashingDirectedGraphBuilder);
@@ -85,7 +84,7 @@ public:
 #endif // HKAI_ASTAR_DIRECTEDGRAPHEXPLICITCOST_BUILDER_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

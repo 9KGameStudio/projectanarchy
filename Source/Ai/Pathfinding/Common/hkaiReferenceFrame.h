@@ -9,13 +9,14 @@
 #ifndef HKAI_REFERENCEFRAME_H
 #define HKAI_REFERENCEFRAME_H
 
-extern const hkClass hkaiReferenceFrameClass;
+#include <Ai/Internal/hkaiExport.h>
+extern HK_EXPORT_AI const hkClass hkaiReferenceFrameClass;
 
 /// hkaiReferenceFrame maintains position and velocity data for a particular frame of reference, i.e. a moving
 /// navigation mesh.  The velocity information is necessary in order to do local steering and other velocity-based
 /// calculations in the proper reference frame.
 ///
-class hkaiReferenceFrame
+class HK_EXPORT_AI hkaiReferenceFrame
 {
 	//+version(0)
 public:
@@ -114,7 +115,7 @@ private:
 #endif // HKAI_VOLUME_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

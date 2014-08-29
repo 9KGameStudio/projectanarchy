@@ -25,6 +25,109 @@ class VisRCVisibilityZoneCollection_cl : public VRefCountedCollection<VisVisibil
 
 
 /// \brief
+///   Interface that can be provided to the scene manager to add additional areas that should be streamed. See IVisSceneManager_cl::AddStreamingArea
+class IVisStreamingArea_cl : public VRefCounter
+{
+public:
+  /// \brief
+  ///   Constructor
+  VISION_APIFUNC IVisStreamingArea_cl(bool bDeleteOnUnref=true)
+    : m_bDeleteOnUnref(bDeleteOnUnref) 
+  {
+  }
+
+  /// \brief
+  ///   Destructor
+  VISION_APIFUNC virtual ~IVisStreamingArea_cl() {}
+
+  /// \brief
+  ///   Key function of this interface. It is called by the scene manager to retrieve a reference position/priority to measure the zone distance
+  ///
+  /// \param vPosition
+  ///   Reference to position. Set the world space position here that represents the 
+  ///
+  /// \param fRelDistanceScaling
+  ///   Can be optionally set to a priority value. Technically, the distance of the reference to each zone box is multiplied by this scalar so a larger value
+  ///   will cause the zones to be loaded later. The default (incoming) value is 1.0
+  ///
+  VISION_APIFUNC virtual void GetStreamingReference(hkvVec3 &vPosition, float &fRelDistanceScaling) = 0;
+
+  /// \brief
+  ///   Overridden function
+  VISION_APIFUNC virtual void DeleteThis() HKV_OVERRIDE
+  {
+    if (m_bDeleteOnUnref)
+      VRefCounter::DeleteThis();
+  }
+
+  bool m_bDeleteOnUnref;
+};
+
+
+/// \brief
+///   Implements the IVisStreamingArea_cl interface and assigns the position from an arbitrary positionable object (e.g. camera)
+class VisStreamingCameraArea_cl : public IVisStreamingArea_cl
+{
+public:
+  /// \brief
+  ///   Constructor
+  VISION_APIFUNC VisStreamingCameraArea_cl(bool bDeleteOnUnref)
+    : IVisStreamingArea_cl(bDeleteOnUnref) 
+  {
+    m_pStreamingRef = NULL;
+    m_fRelDistanceScaling = 1.f;
+  }
+
+  /// \brief
+  ///   Set the streaming reference object
+  inline void SetStreamingReference(VisObject3D_cl *pCamera, float fPriority)
+  {
+    m_pStreamingRef = pCamera;
+    m_fRelDistanceScaling = fPriority;
+  }
+
+  /// \brief
+  ///   Overridden function - retrieve position from the ref object
+  VISION_APIFUNC virtual void GetStreamingReference(hkvVec3 &vPosition, float &fRelDistanceScaling) HKV_OVERRIDE
+  {
+    VASSERT(m_pStreamingRef!=NULL);
+    vPosition = m_pStreamingRef->GetPosition();
+    fRelDistanceScaling = m_fRelDistanceScaling;
+  }
+
+protected:
+  VisObject3D_cl *m_pStreamingRef;
+  float m_fRelDistanceScaling;
+};
+
+
+/// \brief
+///   Component that wraps around an instance of VisStreamingCameraArea_cl. If this component is attached to an object (e.g. camera), this object serves as an additional streaming area
+class VStreamingAreaComponent : public IVObjectComponent
+{
+public:
+  /// \brief
+  ///   Constructor
+  VISION_APIFUNC VStreamingAreaComponent()
+    : IVObjectComponent(), m_Area(false), m_bAreaAdded(false), DistanceScaling(1.f)
+  {
+  }
+
+  VISION_APIFUNC virtual void SetOwner(VisTypedEngineObject_cl *pOwner) HKV_OVERRIDE;
+  VISION_APIFUNC virtual BOOL CanAttachToObject(VisTypedEngineObject_cl *pObject, VString &sErrorMsgOut) HKV_OVERRIDE;
+  V_DECLARE_SERIAL_DLLEXP( VStreamingAreaComponent,  VISION_APIDATA )
+  VISION_APIFUNC virtual void Serialize( VArchive &ar ) HKV_OVERRIDE;
+  V_DECLARE_VARTABLE(VStreamingAreaComponent, VISION_APIFUNC)
+  VISION_APIFUNC virtual void OnVariableValueChanged(VisVariable_cl *pVar, const char * value) HKV_OVERRIDE;
+
+protected:
+  VisStreamingCameraArea_cl m_Area;
+  float DistanceScaling;    ///< relative distance scaling of the reference object towards each zone
+  bool m_bAreaAdded;
+};
+
+
+/// \brief
 ///   Interface providing the Vision engine with data about the scene. 
 /// 
 /// The scene manager knowns about all visibility zones in the scene and provides functionality for
@@ -149,6 +252,7 @@ public:
   ///   Returns the visibility zone with the specified unique ID.
   VISION_APIFUNC VisVisibilityZone_cl *VisibilityZoneForUID(__int64 uid) const;
 
+
   /// \brief
   ///   Returns the extents of the currently loaded scene.
   /// 
@@ -243,6 +347,32 @@ public:
   /// \brief
   ///   Same as GetStreamingReference, but the return value is always !=NULL (returns the main camera if no dedicated object is set via SetStreamingReference)
   VISION_APIFUNC VisObject3D_cl* GetStreamingReferenceSafe() const;
+
+  /// \brief
+  ///   Add an additional streaming area to the scene manager. Each area can stream in a different part of the map that is not in camera range.
+  ///
+  /// An arbitrary number of additional areas can be defined. 
+  /// This feature is particularly useful when handling scenes with multiple active camera views. Each additional camera is responsible to provide an instance of the area interface.
+  /// Component class VStreamingAreaComponent is very useful to handle this transparently.
+  /// All areas added here are handled on top of the object that is passed as SetStreamingReference (which defaults to the main camera). 
+  /// So areas only need to be added when there are 2 or more views.
+  /// The scene manager keeps a reference on each area instance, so they are properly cleaned up when the scene manager is destroyed.
+  ///
+  /// \param pArea
+  ///   The area interface that represents a area.
+  VISION_APIFUNC void AddStreamingArea(IVisStreamingArea_cl *pArea);
+
+  /// \brief
+  ///   Remove an area that has been added through AddStreamingArea
+  VISION_APIFUNC void RemoveStreamingArea(IVisStreamingArea_cl *pArea);
+
+  /// \brief
+  ///   Returns the collection of areas that are currently added to this scene manager
+  inline VRefCountedCollection<IVisStreamingArea_cl> &GetStreamingAreas()
+  {
+    return m_StreamingAreas;
+  }
+
 
   /// \brief
   ///   Adds a snapshot instance to the streaming queue. This function can be used to schedule custom snapshot classes.
@@ -385,7 +515,7 @@ protected:
 
   VisRCVisibilityZoneCollection_cl m_VisibilityZones;      ///< List of visibility zones.
   VisObject3D_cl *m_pStreamingReferenceObject;             ///< Reference object for streaming.
-
+  VRefCountedCollection<IVisStreamingArea_cl > m_StreamingAreas;
   mutable VisVisibilityZone_cl *m_pLastTestedZone;         ///< Cache for faster access in VisibilityZoneForUID.
   VResourceSnapshotQueue m_SnapshotQueue;
   
@@ -439,9 +569,57 @@ public:
   /// @{
   ///
 
-  VISION_APIFUNC virtual unsigned int FindVisibilityZones(const hkvAlignedBBox &bbox, VisVisibilityZone_cl **ppZones, unsigned int iMaxZones) HKV_OVERRIDE;
 
-  VISION_APIFUNC virtual VisVisibilityZone_cl *FindClosestVisibilityZone(const hkvAlignedBBox &bbox, const hkvVec3* pOrigin = NULL) HKV_OVERRIDE;
+  /// \brief
+  ///   Returns a list of all visibility zones overlapping a bounding box.
+  /// 
+  /// \param bbox
+  ///   Bounding box to test.
+  /// 
+  /// \param ppZones
+  ///   List of pointers to visibility zones (output).
+  /// 
+  /// \param iMaxZones
+  ///   Maximum number of visibility zones to return. Typically the allocated size of the array
+  ///   passed in ppZones.
+  /// 
+  /// \return
+  ///   the umber of visibility zones overlapping the bounding box, i.e. the number of
+  ///   entries in the ppZones list.
+  VISION_APIFUNC VOVERRIDE unsigned int FindVisibilityZones(const hkvAlignedBBox &bbox, VisVisibilityZone_cl **ppZones, unsigned int iMaxZones);
+
+
+  /// \brief
+  ///   Returns the closest visibility zone for a bounding box.
+  /// 
+  /// Returns the closest visibility zone for a bounding box, taking proximity to the static
+  /// geometry in visibility nodes and portal relations into account.
+  /// 
+  /// This method is used by the Vision engine in order to classify scene elements according to the
+  /// visibility zone they belong to.
+  /// 
+  /// In cases where the passed bounding box overlaps/spans multiple visibility zones, this
+  /// function returns the visibility zone the center of the bounding box (or, if set, the origin
+  /// passed to this function) is in.
+  /// 
+  /// Note that the this method relies on static geometry instances in the visibility zones for
+  /// classifying scene elements. In situations where the bounding boxes of visibility zones
+  /// overlap and there is no static geometry present which can be used to classify the visibility
+  /// zone assignment of scene elements, this implementation will fail. Such scenes have to use
+  /// custom scene manager implementations.
+  /// 
+  /// \param bbox
+  ///   Bounding box to test against.
+  /// 
+  /// \param pOrigin
+  ///   If not null, this parameter is used to specify a custom origin (in world space) for a scene
+  ///   element. The function should then use this position to identify the best-fitting visibility
+  ///   zone rather than the center of the bounding box.
+  /// 
+  /// \return
+  ///   the closest visibility zone for the passed bounding box and position.
+  VISION_APIFUNC VOVERRIDE VisVisibilityZone_cl *FindClosestVisibilityZone(const hkvAlignedBBox &bbox, const hkvVec3* pOrigin = NULL);
+
 
   /// \brief
   ///   Returns the closest visibility zone for a bounding box, based only on proximity.
@@ -462,7 +640,22 @@ public:
 
   VISION_APIFUNC virtual void GetDynamicSceneExtents(hkvAlignedBBox& bbox) const HKV_OVERRIDE;
 
-  VISION_APIFUNC virtual VisVisibilityZone_cl *TraceIntoZone(const hkvVec3& vPos, const hkvVec3& vDir) HKV_OVERRIDE;
+  /// \brief
+  ///   Traces a ray into the scene and returns the first visibility zone that was hit.
+  /// 
+  /// This function is useful if a camera is outside of the scene (e.g. in an editor) and a starting point for
+  /// visibility determination is required.
+  /// 
+  /// \param vPos
+  ///   Starting position of the ray.
+  ///
+  /// \param vDir
+  ///   Direction and length of the ray.
+  ///
+  /// \returns
+  ///   the first visibility zone that was hit by the ray, or NULL if none was hit.
+  ///
+  VISION_APIFUNC VOVERRIDE VisVisibilityZone_cl *TraceIntoZone(const hkvVec3& vPos, const hkvVec3& vDir);
 
   ///
   /// @}
@@ -474,9 +667,10 @@ public:
   /// @{
   ///
 
+
   /// \brief
   ///   Overridden implementation that returns instances of base class VisZoneResource_cl
-  VISION_APIFUNC virtual VisZoneResource_cl *CreateZoneResource(VisZoneResourceManager_cl *pManager) HKV_OVERRIDE;
+  VISION_APIFUNC VOVERRIDE VisZoneResource_cl *CreateZoneResource(VisZoneResourceManager_cl *pManager);
 
 
   /// \brief
@@ -559,7 +753,7 @@ typedef VSmartPtr<IVisSceneManager_cl> IVisSceneManagerPtr;
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140723)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -24,15 +24,87 @@ const char* hkvImageFileFormatNames[HKV_IMAGE_FILE_FORMAT_COUNT] =
   "(Invalid)",
   "BMP",
   "DDS",
+  "ETC",
+  "GTX",
   "JPG",
   "PNG",
+  "PVR",
+  "RGBA (DDS)",
   "TGA"
 };
-HK_COMPILE_TIME_ASSERT((sizeof(hkvImageFileFormatNames) / sizeof(char*)) == HKV_IMAGE_FILE_FORMAT_COUNT);
+HK_COMPILE_TIME_ASSERT(V_ARRAY_SIZE(hkvImageFileFormatNames) == HKV_IMAGE_FILE_FORMAT_COUNT);
+
+
+const char* hkvImageFileFormatExtensions[] =
+{
+  "",
+  "bmp",
+  "dds",
+  "etc",
+  "gtx",
+  "jpg",
+  "png",
+  "pvr",
+  "rgba",
+  "tga"
+};
+HK_COMPILE_TIME_ASSERT(V_ARRAY_SIZE(hkvImageFileFormatExtensions) == HKV_IMAGE_FILE_FORMAT_COUNT);
+
 
 const hkvEnumDefinition& getImageFileFormatDefinition()
 {
   static hkvEnumDefinition def(HKV_IMAGE_FILE_FORMAT_COUNT, hkvImageFileFormatNames);
+  return def;
+}
+
+
+const char* hkvImageDataFormatNames[HKV_IMAGE_DATA_FORMAT_COUNT] =
+{
+  "(Unknown)",
+
+  "A8",
+  "L8",
+  "A1R5G5B5",
+  "A4R4G4B4",
+  "R4G4B4A4_GL",
+  "R5G6B5",
+  "R8G8B8",
+  "A8B8G8R8",
+  "A8R8G8B8",
+  "X8B8G8R8",
+  "X8R8G8B8",
+  "DXT1",
+  "DXT3",
+  "DXT5",
+  "R16F",
+  "R32F",
+
+  "PVRTC2",
+  "PVRTC4",
+
+  "ETC1",
+
+  "BMP BGR",
+  "BMP ABGR",
+
+  "Jpeg RGB",
+
+  "PNG RGB",
+  "PNG ARGB",
+
+  "Targa Grayscale",
+  "Targa Grayscale RLE",
+  "Targa RGB",
+  "Targa RGB RLE",
+  "Targa ARGB",
+  "Targa ARGB RLE"
+};
+HK_COMPILE_TIME_ASSERT(V_ARRAY_SIZE(hkvImageDataFormatNames) == HKV_IMAGE_DATA_FORMAT_COUNT);
+
+
+const hkvEnumDefinition& getImageDataFormatDefinition()
+{
+  static hkvEnumDefinition def(HKV_IMAGE_DATA_FORMAT_COUNT, hkvImageDataFormatNames);
   return def;
 }
 
@@ -94,6 +166,7 @@ public:
 
 protected:
   virtual hkResult readHeader(hkStreamReader& reader) HKV_OVERRIDE;
+  virtual hkvImageDataFormat identifyDataFormat() HKV_OVERRIDE;
   virtual hkResult readImageData(hkStreamReader& reader) HKV_OVERRIDE;
 
 private:
@@ -149,6 +222,7 @@ public:
 
 protected:
   virtual hkResult readHeader(hkStreamReader& reader) HKV_OVERRIDE;
+  virtual hkvImageDataFormat identifyDataFormat() HKV_OVERRIDE;
   virtual hkResult readImageData(hkStreamReader& reader) HKV_OVERRIDE;
 
 private:
@@ -262,6 +336,8 @@ hkResult hkvImageFileDds::readHeader(hkStreamReader& reader)
 
     if (!archive.isOk())
       return HK_FAILURE;
+
+    m_isDx10Format = true;
   }
 
   // Check cubemap settings. Only considered valid if all 6 faces are defined.
@@ -271,6 +347,132 @@ hkResult hkvImageFileDds::readHeader(hkStreamReader& reader)
   }
 
   return HK_SUCCESS;
+}
+
+hkvImageDataFormat hkvImageFileDds::identifyDataFormat()
+{
+  // First handle FourCC formats.
+  if ((m_header.ddspf.dwFlags & DDPF_FOURCC) != 0)
+  {
+    switch (m_header.ddspf.dwFourCC)
+    {
+    case DDS_FOURCC_DXT1:
+      return HKV_IMAGE_DATA_FORMAT_DXT1;
+    case DDS_FOURCC_DXT3:
+      return HKV_IMAGE_DATA_FORMAT_DXT3;
+    case DDS_FOURCC_DXT5:
+      return HKV_IMAGE_DATA_FORMAT_DXT5;
+    case D3DFMT_R16F:
+      return HKV_IMAGE_DATA_FORMAT_R16F;
+    case D3DFMT_R32F:
+      return HKV_IMAGE_DATA_FORMAT_R32F;
+    case DDS_FOURCC_DX10:
+      {
+        switch (m_dx10Header.dxgiFormat)
+        {
+        case DXGI_FORMAT_B5G5R5A1_UNORM:
+          return HKV_IMAGE_DATA_FORMAT_A1R5G5B5;
+        case DXGI_FORMAT_B5G6R5_UNORM:
+          return HKV_IMAGE_DATA_FORMAT_R5G6B5;
+        case DXGI_FORMAT_R8G8B8A8_TYPELESS:
+        case DXGI_FORMAT_R8G8B8A8_UNORM:
+        case DXGI_FORMAT_R8G8B8A8_UNORM_SRGB:
+          return HKV_IMAGE_DATA_FORMAT_A8B8G8R8;
+        case DXGI_FORMAT_B8G8R8A8_UNORM:
+          return HKV_IMAGE_DATA_FORMAT_A8R8G8B8;
+        case DXGI_FORMAT_B8G8R8X8_TYPELESS:
+        case DXGI_FORMAT_B8G8R8X8_UNORM:
+        case DXGI_FORMAT_B8G8R8X8_UNORM_SRGB:
+          return HKV_IMAGE_DATA_FORMAT_X8R8G8B8;
+        case DXGI_FORMAT_BC1_TYPELESS:
+        case DXGI_FORMAT_BC1_UNORM:
+        case DXGI_FORMAT_BC1_UNORM_SRGB:
+          return HKV_IMAGE_DATA_FORMAT_DXT1;
+        case DXGI_FORMAT_BC2_TYPELESS:
+        case DXGI_FORMAT_BC2_UNORM:
+        case DXGI_FORMAT_BC2_UNORM_SRGB:
+          return HKV_IMAGE_DATA_FORMAT_DXT3;
+        case DXGI_FORMAT_BC3_TYPELESS:
+        case DXGI_FORMAT_BC3_UNORM:
+        case DXGI_FORMAT_BC3_UNORM_SRGB:
+          return HKV_IMAGE_DATA_FORMAT_DXT5;
+        case DXGI_FORMAT_R16_FLOAT:
+          return HKV_IMAGE_DATA_FORMAT_R16F;
+        case DXGI_FORMAT_R32_FLOAT:
+          return HKV_IMAGE_DATA_FORMAT_R32F;
+        }
+      }
+      break;
+    default:
+      // All other formats are currently unrecognized.
+      return HKV_IMAGE_DATA_FORMAT_UNKNOWN;
+    }
+  }
+
+  // 8-Bit formats: A8 and L8
+  if (m_header.ddspf.dwRGBBitCount == 8)
+  {
+    if ((m_header.ddspf.dwFlags & (DDPF_ALPHA | DDPF_ALPHAPIXELS)) != 0
+          && m_header.ddspf.dwABitMask == 0x000000ff && m_header.ddspf.dwRBitMask == 0
+          && m_header.ddspf.dwGBitMask == 0 && m_header.ddspf.dwBBitMask == 0)
+      return HKV_IMAGE_DATA_FORMAT_A8;
+
+    if ((m_header.ddspf.dwFlags & DDPF_LUMINANCE) != 0
+      && m_header.ddspf.dwABitMask == 0 && m_header.ddspf.dwRBitMask == 0x000000ff
+      && m_header.ddspf.dwGBitMask == 0 && m_header.ddspf.dwBBitMask == 0)
+      return HKV_IMAGE_DATA_FORMAT_L8;
+  }
+  else if (m_header.ddspf.dwRGBBitCount == 16)
+  {
+    if ((m_header.ddspf.dwFlags & (DDPF_RGB | DDPF_ALPHAPIXELS)) == (DDPF_RGB | DDPF_ALPHAPIXELS))
+    {
+      if (m_header.ddspf.dwABitMask == 0x00008000 && m_header.ddspf.dwRBitMask == 0x00007c00
+          && m_header.ddspf.dwGBitMask == 0x000003e0 && m_header.ddspf.dwBBitMask == 0x0000001f)
+        return HKV_IMAGE_DATA_FORMAT_A1R5G5B5;
+      if (m_header.ddspf.dwABitMask == 0x0000f000 && m_header.ddspf.dwRBitMask == 0x00000f00
+        && m_header.ddspf.dwGBitMask == 0x000000f0 && m_header.ddspf.dwBBitMask == 0x0000000f)
+        return HKV_IMAGE_DATA_FORMAT_A4R4G4B4;
+    }
+    else if ((m_header.ddspf.dwFlags & DDPF_RGB) != 0)
+    {
+      if (m_header.ddspf.dwABitMask == 0x00000000 && m_header.ddspf.dwRBitMask == 0x0000f800
+        && m_header.ddspf.dwGBitMask == 0x000007e0 && m_header.ddspf.dwBBitMask == 0x0000001f)
+        return HKV_IMAGE_DATA_FORMAT_R5G6B5;
+    }
+  }
+  else if (m_header.ddspf.dwRGBBitCount == 24)
+  {
+    if ((m_header.ddspf.dwFlags & DDPF_RGB) != 0)
+    {
+      if (m_header.ddspf.dwABitMask == 0x00000000 && m_header.ddspf.dwRBitMask == 0x00ff0000
+        && m_header.ddspf.dwGBitMask == 0x0000ff00 && m_header.ddspf.dwBBitMask == 0x000000ff)
+        return HKV_IMAGE_DATA_FORMAT_R8G8B8;
+    }
+  }
+  else if (m_header.ddspf.dwRGBBitCount == 32)
+  {
+    if ((m_header.ddspf.dwFlags & (DDPF_RGB | DDPF_ALPHAPIXELS)) == (DDPF_RGB | DDPF_ALPHAPIXELS))
+    {
+      if (m_header.ddspf.dwABitMask == 0xff000000 && m_header.ddspf.dwRBitMask == 0x000000ff
+        && m_header.ddspf.dwGBitMask == 0x0000ff00 && m_header.ddspf.dwBBitMask == 0x00ff0000)
+        return HKV_IMAGE_DATA_FORMAT_A8B8G8R8;
+      if (m_header.ddspf.dwABitMask == 0xff000000 && m_header.ddspf.dwRBitMask == 0x00ff0000
+        && m_header.ddspf.dwGBitMask == 0x0000ff00 && m_header.ddspf.dwBBitMask == 0x000000ff)
+        return HKV_IMAGE_DATA_FORMAT_A8R8G8B8;
+    }
+    else if ((m_header.ddspf.dwFlags & DDPF_RGB) != 0)
+    {
+      if (m_header.ddspf.dwABitMask == 0x00000000 && m_header.ddspf.dwRBitMask == 0x000000ff
+        && m_header.ddspf.dwGBitMask == 0x0000ff00 && m_header.ddspf.dwBBitMask == 0x00ff0000)
+        return HKV_IMAGE_DATA_FORMAT_X8B8G8R8;
+      if (m_header.ddspf.dwABitMask == 0x00000000 && m_header.ddspf.dwRBitMask == 0x00ff0000
+        && m_header.ddspf.dwGBitMask == 0x0000ff00 && m_header.ddspf.dwBBitMask == 0x000000ff)
+        return HKV_IMAGE_DATA_FORMAT_X8R8G8B8;
+    }
+  }
+
+  // All others, we don't recognize
+  return HKV_IMAGE_DATA_FORMAT_UNKNOWN;
 }
 
 hkResult hkvImageFileDds::readImageData(hkStreamReader& reader)
@@ -438,6 +640,24 @@ hkResult hkvImageFileTga::readHeader(hkStreamReader& reader)
 }
 
 
+hkvImageDataFormat hkvImageFileTga::identifyDataFormat()
+{
+  switch (m_header.imageType)
+  {
+  case 2:
+    return m_header.bits == 32 ? HKV_IMAGE_DATA_FORMAT_TGA_ARGB : HKV_IMAGE_DATA_FORMAT_TGA_RGB;
+  case 3:
+    return HKV_IMAGE_DATA_FORMAT_TGA_GRAY;
+  case 10:
+    return m_header.bits == 32 ? HKV_IMAGE_DATA_FORMAT_TGA_ARGB_RLE : HKV_IMAGE_DATA_FORMAT_TGA_RGB_RLE;
+  case 11:
+    return HKV_IMAGE_DATA_FORMAT_TGA_GRAY_RLE;
+  }
+
+  return HKV_IMAGE_DATA_FORMAT_UNKNOWN;
+}
+
+
 hkResult hkvImageFileTga::readImageData(hkStreamReader& reader)
 {
   if (!isHeaderValid())
@@ -594,7 +814,8 @@ void hkvImageFileTga::postprocessData()
 // hkvImageFile
 //-----------------------------------------------------------------------------
 hkvImageFile::hkvImageFile()
-: m_headerValid(false)
+  : m_headerValid(false)
+  , m_dataFormat(HKV_IMAGE_DATA_FORMAT_UNKNOWN)
 {
 }
 
@@ -688,6 +909,8 @@ hkvImageFile::RefPtr hkvImageFile::open(hkStreamReader& reader, hkvImageFileForm
   {
     return NULL;
   }
+
+  imageFile->m_dataFormat = imageFile->identifyDataFormat();
 
   if (readData)
   {
@@ -792,7 +1015,7 @@ void hkvImageFile::setImage(hkUint32 index, hkUint32 face, hkUint32 mipLevel, hk
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

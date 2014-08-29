@@ -9,13 +9,14 @@
 #ifndef INC_HKA_FOOTPLACEMENT_H
 #define INC_HKA_FOOTPLACEMENT_H
 
+#include <Animation/Internal/hkaExport.h>
 class hkaSkeleton;
 class hkaPose;
 
 /// This interface class defines a single method, castRay(), and it's used by the hkaFootPlacementIkSolver object to cast rays
 /// into the application's world. If you are using Havok Physics, you can use the optimized ray cast functionality provided there,
 /// including the ability to filter objects, etc., or otherwise you can wrap your custom ray casting functionality with this interface.
-class hkaRaycastInterface
+class HK_EXPORT_ANIMATION hkaRaycastInterface
 {
 	public:
 		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_ANIM_RUNTIME,hkaRaycastInterface);
@@ -46,7 +47,7 @@ class hkaRaycastInterface
 /// gains and current location of the model in world, as well as an interface to raycast functionality. An hkaFootPlacementIkSolver::Output struct is
 /// returned, containing information regarding the amount of fix-up done by the solver in the vertical direction, which can be used by the application
 /// to update the location of the model (i.e., update the pelvis).
-class hkaFootPlacementIkSolver : public hkReferencedObject
+class HK_EXPORT_ANIMATION hkaFootPlacementIkSolver : public hkReferencedObject
 {
 	public:
 
@@ -54,7 +55,7 @@ class hkaFootPlacementIkSolver : public hkReferencedObject
 
 		/// This struct is passed on construction of an hkaFootPlacementIkSolver, and contains information about
 		/// the structure of the character as well as axis and limits for the joints.
-		struct Setup
+		struct HK_EXPORT_ANIMATION Setup
 		{
 			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_ANIM_RUNTIME, hkaFootPlacementIkSolver::Setup );
 
@@ -144,7 +145,7 @@ class hkaFootPlacementIkSolver : public hkReferencedObject
 		/// This structure, passed to each call to doFootPlacement(), alongside the pose, contains information about the
 		/// location of the model in world, the original/desired position (height) and orientation of the foot, and
 		/// an interface to raycast functionality.
-		struct Input
+		struct HK_EXPORT_ANIMATION Input
 		{
 			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_ANIM_RUNTIME, hkaFootPlacementIkSolver::Input );
 
@@ -185,12 +186,12 @@ class hkaFootPlacementIkSolver : public hkReferencedObject
 				/// the final gain used. Default value is 1.0f.
 			hkReal m_footRaisedGain;
 
-				/// Gain used when the foot becomes unlocked. When the foot goes from being locked to unlocked,
-				/// there can be a gap between the previously locked foot position and the desired position.
-				/// This gain is used to smoothly transition to the new foot position. This gain only affects
-				/// the horizontal component of the position, since the other gains take care of vertical
-				/// smoothing. Default value is 1.0f.
-			hkReal m_footUnlockGain;
+				/// Gain used when the foot becomes unlocked or locked.  When the foot changes between
+				/// locked and unlocked states, there can be a gap between the previous foot position and
+				/// the desired position. This gain is used to smoothly transition to the new foot position.
+				/// This gain only affects the horizontal component of the position, since the other gains
+				/// take care of vertical smoothing.
+			hkReal m_footLockingGain;
 
 				/// If m_useCollisionFilterInfo is true, this member is passed into hkaRaycastInterface::castRay() when performing
 				/// raycasts. You can use this if you want to use the same raycast interface for handling cases with
@@ -200,6 +201,9 @@ class hkaFootPlacementIkSolver : public hkReferencedObject
 				/// Whether or not to pass m_collisionFilterInfo into hkaRaycastInterface::castRay().
 			bool m_useCollisionFilterInfo;
 
+				/// If true, foot target will be displaced upward so that foot end is at ground level
+			hkBool m_keepSourceFootEndAboveGround;
+
 				/// Constructor. It sets some defaults.
 			Input();
 
@@ -207,7 +211,7 @@ class hkaFootPlacementIkSolver : public hkReferencedObject
 
 		/// This structure is filled by the foot placement solver, and contains information that can be used by the
 		/// application logic
-		struct Output
+		struct HK_EXPORT_ANIMATION Output
 		{
 			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_ANIM_RUNTIME, hkaFootPlacementIkSolver::Output );
 
@@ -217,6 +221,11 @@ class hkaFootPlacementIkSolver : public hkReferencedObject
 				/// A measure of how much displacement was required for the leg to reach its final location. It can
 				/// be used to update the pelvis of the character
 			hkReal m_verticalError;
+
+				/// The target position of the foot, this may be different from the final pose resulting from foot
+				/// IK because of the different configuration of gains. This can be used to rotate the model and
+				/// perform other operations after IK.
+			hkVector4 m_targetProjectedPositionWS;
 
 				/// True if the foot placement detected ground under the foot
 			bool m_hitSomething;
@@ -259,8 +268,11 @@ class hkaFootPlacementIkSolver : public hkReferencedObject
 			// The locked foot/ankle position.
 		hkVector4 m_lockedFootPositionInWS;
 
-			// The locked position of the end/toes of the foot.
-		hkVector4 m_lockedFootEndPositionInWS;
+			// Factor used to apply gains to foot locking/unlocking.
+		hkReal m_footLockUnlockFactor;
+
+			// True when the foot placement function is called for the first time.
+		hkBool m_firstTime;
 
 			// When unlocking the foot the locked foot position and the new position could be different. The horizontal
 			// component of this difference is stored in m_footUnlokcingOffset when the foot becomes unlocked. This is used 
@@ -273,12 +285,27 @@ class hkaFootPlacementIkSolver : public hkReferencedObject
 			// Cast a ray using the information in the Input.
 		bool castRay( const Input& input, const hkVector4& fromWS, const hkVector4& toWS, hkReal& hitFractionOut, hkVector4& normalWSOut ) const;
 
+			// Calculates a blended ground height using gains and the desired foot height.
+		void calcBlendedGroundHeight( const hkSimdReal& actualGroundHeightWS, const hkSimdReal& desiredFootHeightMS, const Input& input, hkSimdReal& blendedGroundHeightWS );
+
+			// Resets the foot to a "not planted" state.
+		void setFootNotPlanted( const hkVector4& worldUpMS,
+								const hkSimdReal& desiredFootHeightMS,
+								const hkQsTransform& footCurrentMS,
+								const hkVector4& footCurrentPosWS,
+								Output& output,
+								bool& footPlacementOn,
+								hkSimdReal& blendedGroundHeightWS,
+								hkSimdReal& actualGroundHeightWS,
+								hkVector4& groundNormalWS,
+								hkVector4& footTargetPosMS );
+
 };
 
 #endif //INC_HKA_FOOTPLACEMENT_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

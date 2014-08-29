@@ -6,8 +6,8 @@
  *
  */
 
-// vHavokAiUtil Lua Modeul - SWIG Interface
-// This file generates vHavokAiUtil_wrapper.cpp
+// vHavokAiModule - SWIG Interface
+// This file generates vHavokAiModule_wrapper.cpp
 // It is represented in Lua as the "HavokAI" module.
 
 #ifndef VLUA_APIDOC
@@ -39,8 +39,72 @@ public:
 	hkvVec3 *CastRay(const hkvVec3 *start, const hkvVec3 *end);
 	hkvVec3 *PickPoint(float x, float y, float fMaxDist = 10000.f);
 	
-  %extend{
+  %extend
+  {
     VSWIG_CREATE_CAST_UNSAFE(vHavokAiModule)
+    
+    void FindPath(hkvVec3 startPoint, hkvVec3 endPoint, float radius, VCaptureSwigEnvironment* env)
+    {
+      lua_State* L = env->GetLuaState();
+      
+      lua_settop(L, 0);
+      
+      hkaiWorld* world = self->GetAiWorld();
+      hkaiPathfindingUtil::FindPathInput input;
+      
+      hkVector4 hkStartPoint;
+      vHavokConversionUtils::VisVecToPhysVecWorld(startPoint, hkStartPoint);
+      hkVector4 hkEndPoint;
+      vHavokConversionUtils::VisVecToPhysVecWorld(endPoint, hkEndPoint);
+      
+      hkVector4 startPosition;
+      hkaiPackedKey startFaceKey = world->getDynamicQueryMediator()->getClosestPoint(
+        hkStartPoint, 5.0f, startPosition);
+        
+      hkVector4 endPosition;
+      hkaiPackedKey endFaceKey = world->getDynamicQueryMediator()->getClosestPoint(
+        hkEndPoint, 5.0f, endPosition);
+        
+      if(startFaceKey != HKAI_INVALID_PACKED_KEY && endFaceKey != HKAI_INVALID_PACKED_KEY)
+      {
+        input.m_startPoint = startPosition;
+        input.m_startFaceKey = startFaceKey;
+        input.m_goalPoints.pushBack(endPosition);
+        input.m_goalFaceKeys.pushBack(endFaceKey);
+        input.m_agentInfo.m_diameter = VIS2HK_FLOAT_SCALED(radius * 2.f);
+        input.m_searchParameters.m_up.set(0, 0, 1);
+        
+        hkaiPathfindingUtil::FindPathOutput output;
+        hkaiPathfindingUtil::findPath(*world->getStreamingCollection(), input, output);
+        
+        // create an empty table (or an array if you would like to see it this way)
+        lua_newtable(L);
+        
+        for(int pointIndex = 0; pointIndex < output.m_pathOut.getSize(); pointIndex++)
+        {
+          const hkVector4& position = output.m_pathOut[pointIndex].m_position;
+          
+          hkvVec3* result = new hkvVec3(0);
+          vHavokConversionUtils::PhysVecToVisVecWorld(position, *result);
+          
+          SWIG_Lua_NewPointerObj(
+            L,
+            result,
+            SWIGTYPE_p_hkvVec3,
+            VLUA_MANAGE_MEM_BY_LUA);
+          lua_rawseti(L, -2, pointIndex + 1);
+        }
+      }
+      else
+      {
+        SWIG_Lua_NewPointerObj(
+          L,
+          NULL,
+          SWIGTYPE_p_hkvVec3,
+          VLUA_MANAGE_MEM_BY_LUA);
+      }
+      env->SetNumReturnValues(1);
+    }
   }
 };
 
@@ -77,7 +141,7 @@ public:
 				    if (progress >= pp && progress <= npp)
 				    {
 					    float d = (progress - pp) / length;
-					    vResult = new hkvVec3();
+					    vResult = new hkvVec3(0);
 					    *vResult = vPrevious + (vPoint - vPrevious) * d;
 					    break;
 				    }
@@ -152,102 +216,9 @@ public:
   }
 %}
 
-%native(vHavokAiModule_FindPath) int vHavokAiModule_FindPath(lua_State *L);
-%{
-  SWIGINTERN int vHavokAiModule_FindPath(lua_State *L)
-  {
-    IS_MEMBER_OF(vHavokAiModule)
-    
-    SWIG_CONVERT_POINTER(L, 1, vHavokAiModule, pSelf);
-	  DECLARE_ARGS_OK
-
-    hkvVec3 startPoint;
-    hkvVec3 endPoint;
-    float radius;
-
-    //check the call parameters
-    if( !LUA_GetValue(L, 2, startPoint) ) 
-	  {
-      luaL_argerror(L, 2, "Expected a Vision.hkvVec3");
-      lua_pushnil(L);
-      return 1;
-    }
-    if( !LUA_GetValue(L, 3, endPoint) ) 
-	  {
-      luaL_argerror(L, 3, "Expected a Vision.hkvVec3");
-      lua_pushnil(L);
-      return 1;
-    }
-    if( !LUA_GetValue(L, 4, radius) ) 
-	  {
-      luaL_argerror(L, 4, "Expected a number");
-      lua_pushnil(L);
-      return 1;
-    }
-
-	  lua_settop(L, 0);
-
-	  hkaiWorld *world = pSelf->GetAiWorld();
-	  hkaiPathfindingUtil::FindPathInput input;
-
-	  hkVector4 hkStartPoint;
-	  vHavokConversionUtils::VisVecToPhysVecWorld(startPoint, hkStartPoint);
-	  hkVector4 hkEndPoint;
-	  vHavokConversionUtils::VisVecToPhysVecWorld(endPoint, hkEndPoint);
-
-	  hkVector4 startPosition;
-	  hkaiPackedKey startFaceKey = world->getDynamicQueryMediator()->getClosestPoint(
-		hkStartPoint, 5.0f, startPosition );
-
-	  hkVector4 endPosition;
-	  hkaiPackedKey endFaceKey = world->getDynamicQueryMediator()->getClosestPoint(
-		hkEndPoint, 5.0f, endPosition );
-
-	  if (startFaceKey != HKAI_INVALID_PACKED_KEY && endFaceKey != HKAI_INVALID_PACKED_KEY)
-	  {
-		  input.m_startPoint = startPosition;
-		  input.m_startFaceKey = startFaceKey;
-		  input.m_goalPoints.pushBack(endPosition);
-		  input.m_goalFaceKeys.pushBack(endFaceKey);
-		  input.m_agentInfo.m_diameter = VIS2HK_FLOAT_SCALED(radius * 2.f);
-		  input.m_searchParameters.m_up.set(0, 0, 1);
-
-		  hkaiPathfindingUtil::FindPathOutput output;
-		  hkaiPathfindingUtil::findPath(*world->getStreamingCollection(), input, output);
-
-		  // create an empty table (or an array if you would like to see it this way)
-		  lua_newtable(L);
-    
-		  for (int pointIndex = 0; pointIndex < output.m_pathOut.getSize(); pointIndex++)
-		  {
-			  const hkVector4 &position = output.m_pathOut[pointIndex].m_position;
-
-			  hkvVec3 *result = new hkvVec3();
-			  vHavokConversionUtils::PhysVecToVisVecWorld(position, *result);
-
-			  SWIG_Lua_NewPointerObj(
-				  L,
-				  result,
-				  SWIGTYPE_p_hkvVec3,
-				  VLUA_MANAGE_MEM_BY_LUA);
-			  lua_rawseti(L, -2, pointIndex + 1);
-		  }
-	  }
-	  else
-	  {
-		  SWIG_Lua_NewPointerObj(
-			  L,
-			  NULL,
-			  SWIGTYPE_p_hkvVec3,
-			  VLUA_MANAGE_MEM_BY_LUA);
-	  }
-    return 1;
-  }
-%}
-
 #else
 
-/// \brief Lua Wrapper class for vHavokAiModule accessible via the global \b Ai.
+/// \brief Lua Wrapper class for vHavokAiModule accessible via the global \b AI.
 /// \par Example
 ///   \code
 ///     ...
@@ -369,7 +340,7 @@ public:
   ///     --setup some basic input
   ///     function OnAfterSceneLoaded(self)
   ///       local width, height = Screen:GetViewportSize()
-  ///       self.InputMap = Input:CreateMap("InputMap")
+  ///       self.InputMap = Input:CreateMap()
   ///
   ///       self.InputMap:MapTrigger("X", {0,0, width, height}, "CT_TOUCH_ABS_X" )
   ///       self.InputMap:MapTrigger("Y", {0,0, width, height}, "CT_TOUCH_ABS_Y" )
@@ -398,7 +369,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

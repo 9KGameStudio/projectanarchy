@@ -39,13 +39,13 @@ class VSequenceSerializationProxy : public IVSerializationProxy
 {
 public:
   inline VSequenceSerializationProxy(VisAnimSequence_cl *pSeq) {VASSERT(pSeq);m_pSeq=pSeq;}
-  virtual IVSerializationProxyCreator *GetInstance();
+  VISION_APIFUNC virtual IVSerializationProxyCreator *GetInstance();
 
 protected:
   // serialization
   inline VSequenceSerializationProxy() {m_pSeq=NULL;}
   V_DECLARE_SERIAL_DLLEXP( VSequenceSerializationProxy, VISION_APIDATA );
-  virtual void Serialize( VArchive &ar );
+  VISION_APIFUNC virtual void Serialize( VArchive &ar );
 private:
   VisAnimSequence_cl *m_pSeq;
 };
@@ -367,7 +367,7 @@ protected:
 #endif //VIS_ANIM_SEQUENCE_HPP_INCLUDED
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

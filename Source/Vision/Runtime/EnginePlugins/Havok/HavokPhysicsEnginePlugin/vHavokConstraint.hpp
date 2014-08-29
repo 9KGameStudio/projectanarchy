@@ -56,19 +56,19 @@ public:
   ///   Resets all fields to their default values.
   VHAVOK_IMPEXP virtual void Reset();
 
-  V_DECLARE_SERIAL_DLLEXP(vHavokConstraintDesc, VHAVOK_IMPEXP)
+  V_DECLARE_SERIAL_DLLEXP( vHavokConstraintDesc, VHAVOK_IMPEXP )
   VHAVOK_IMPEXP virtual void Serialize(VArchive &ar) HKV_OVERRIDE;
 
 public:
-  VSmartPtr<vHavokRigidBody> m_spBodies[2];   ///< The bodies used as anchors. The second one may be \c null to use static anchor.
-  hkvVec3 m_vPivots[2];                       ///< The pivot points of the anchors in body/world space depending on the constraint implementation. If a body is \c null, the pivot coordinates must be in world space.
+  VSmartPtr<vHavokRigidBody> m_spBodies[2]; ///< The bodies used as anchors. The second one may be \c null to use static anchor.
+  hkvVec3 m_vPivots[2];                ///< The pivot points of the anchors in body/world space depending on the constraint implementation. If a body is \c null, the pivot coordinates must be in world space.
 
-  bool m_bBreakable;                          ///< Whether this constraint is breakable
-  hkReal m_fBreakThreshold;                   ///< The force impulse threshold for breaking the constraint
-  bool m_bRevertVelocityOnBreak;              ///< Whether the velocity of the bodies is reset when the constraint breaks
+  bool m_bBreakable;                        ///< Whether this constraint is breakable
+  hkReal m_fBreakThreshold;                  ///< The force impulse threshold for breaking the constraint
+  bool m_bRevertVelocityOnBreak;            ///< Whether the velocity of the bodies is reset when the constraint breaks
 
-  bool m_bMalleable;                          ///< Whether this constraint is malleable
-  hkReal m_fConstraintStrength;               ///< How much of the constraint forces become effective (factor; range. 0.0 - 1.0)
+  bool m_bMalleable;                        ///< Whether this constraint is malleable
+  hkReal m_fConstraintStrength;              ///< How much of the constraint forces become effective (factor; range. 0.0 - 1.0)
 
 private:
   static const unsigned int s_iSerialVersion; ///< The current serialization version
@@ -166,7 +166,7 @@ public:
   { 
     return m_pConstraint != NULL; 
   }
-
+  
   ///
   /// @name Breakable Constraint Functionality
   /// @{
@@ -188,11 +188,11 @@ public:
   /// \param fThreshold
   ///   the new break threshold
   VHAVOK_IMPEXP void SetBreakThreshold(float fThreshold);
-
+  
   /// \brief
   ///   Cleanup function for removing broken constraints.
   static void RemoveBrokenConstraints();
-  
+
   ///
   /// @}
   ///
@@ -203,7 +203,9 @@ public:
   ///
 
   // serialization and type management
-  V_DECLARE_SERIAL_DLLEXP(vHavokConstraint, VHAVOK_IMPEXP)
+  V_DECLARE_SERIAL_DLLEXP( vHavokConstraint, VHAVOK_IMPEXP )
+
+  VHAVOK_IMPEXP VOVERRIDE bool GetZoneLocalSpacePosition(hkvVec3& vDest) {return false;}
 
   VHAVOK_IMPEXP virtual void Serialize(VArchive &ar) HKV_OVERRIDE;
 
@@ -309,17 +311,17 @@ protected:
   /// \brief
 	///   Returns the double precision pivot point in world space, taking into account the 
   ///   constraint's zone.
-	VHAVOK_IMPEXP virtual bool GetZonedPivot(hkvVec3 const& localPivot, hkvVec3d& worldPivot);
+	VHAVOK_IMPEXP virtual bool GetZonedPivot(hkvVec3 const& localPivot, hkvVec3d& worldPivot );
 
 	/// \brief
 	///   Returns the single precision pivot point from a double precision world pivot, relative 
   ///   to the constraint's zone.
-	VHAVOK_IMPEXP virtual void GetLocalPivot(hkvVec3d const& zonedPivot, hkvVec3& localPivot);
+	VHAVOK_IMPEXP virtual void GetLocalPivot(hkvVec3d const& zonedPivot, hkvVec3& localPivot );
 
 	/// \brief
 	///   Convert from a physics position to a single precision Vision position, this will also do unit conversion.
 	///   Note: this function avoids double precision math if it is no necessary (e.g. if there's no zones anyway).
-	VHAVOK_IMPEXP virtual void GetLocalPivot(hkVector4 const& zonedPivot, hkvVec3& localPivot);
+	VHAVOK_IMPEXP virtual void GetLocalPivot(hkVector4 const& zonedPivot, hkvVec3& localPivot );
 
 public:
   /// \brief
@@ -334,10 +336,10 @@ public:
   ///
 
 protected:
-  hkvVec3 m_vSavedPivots[2];              ///< Saved pivot values of the constraint anchors.
-  hkvVec3 m_vCustomArchivePositionOfs;    ///< Temporary custom shape transformation (position offset) read during deserialization
+  hkvVec3 m_vSavedPivots[2];                 ///< Saved pivot values of the constraint anchors.
+  hkvVec3 m_vCustomArchivePositionOfs;       ///< Temporary custom shape transformation (position offset) read during deserialization
   hkvMat3 m_vCustomArchiveRotationOfs;    ///< Temporary custom shape transformation (rotation offset) read during deserialization
-  bool m_bApplyCustomArchiveTransform;    ///< Flag, that indicates, whether m_vCustomArchivePositionOfs/ -RotationOfs should be applied
+  bool m_bApplyCustomArchiveTransform;            ///< Flag, that indicates, whether m_vCustomArchivePositionOfs/ -RotationOfs should be applied
 
 private:
   /// \brief
@@ -368,10 +370,10 @@ private:
   static const unsigned int s_iSerialVersion;     ///< The current serialization version for objects of this class.
 };
 
-#endif // V_HAVOK_CONSTRAINT_HPP_INCLUDED
+#endif //V_HAVOK_CONSTRAINT_HPP_INCLUDED
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

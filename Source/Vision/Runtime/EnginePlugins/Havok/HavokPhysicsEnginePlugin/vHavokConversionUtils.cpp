@@ -10,6 +10,8 @@
 #include <Vision/Runtime/EnginePlugins/Havok/HavokPhysicsEnginePlugin/vHavokConversionUtils.hpp>
 #include <Vision/Runtime/EnginePlugins/Havok/HavokPhysicsEnginePlugin/vHavokPhysicsModule.hpp>
 
+/*! Work around, see [SIM-41] */
+/*  all load/store must be byte aligned to be able to attach double precision Physics to single precision Vision */
 
 // --------------------------------------------------------------------------
 // Static Members
@@ -17,32 +19,13 @@
 
 hkReal vHavokConversionUtils::m_cachedVision2HavokScale = hkReal(0.01f);
 hkReal vHavokConversionUtils::m_cachedHavok2VisionScale = hkReal(100);
-hkVector4* vHavokConversionUtils::m_cachedWorldPivot = 0;
+hkVector4 vHavokConversionUtils::m_cachedWorldPivot = hkVector4::getZero();
+hkVector4d vHavokConversionUtils::m_cachedWorldPivotD = hkVector4d::getZero();
 
 hkSimdReal vHavokConversionUtils::m_cachedVis2PhysScale = hkSimdReal::fromFloat(hkReal(0.01f));
 hkSimdReal vHavokConversionUtils::m_cachedPhys2VisScale = hkSimdReal::fromFloat(hkReal(100));
-
-
-// --------------------------------------------------------------------------
-// Initialization
-// --------------------------------------------------------------------------
-
-void vHavokConversionUtils::InitializeVectorCache() 
-{ 
-	if( !m_cachedWorldPivot ) 
-	{ 
-		m_cachedWorldPivot = new hkVector4; 
-		*m_cachedWorldPivot = hkVector4::getConstant<HK_QUADREAL_0>(); 
-	} 
-}
-
-void vHavokConversionUtils::DeinitializeVectorCache() 
-{ 
-	if( m_cachedWorldPivot ) 
-		delete m_cachedWorldPivot;  
-	m_cachedWorldPivot = 0; 
-}
-
+hkSimdDouble64 vHavokConversionUtils::m_cachedVis2PhysScaleD = hkSimdDouble64::fromFloat(0.01);
+hkSimdDouble64 vHavokConversionUtils::m_cachedPhys2VisScaleD = hkSimdDouble64::fromFloat(100.0);
 
 // --------------------------------------------------------------------------
 // Static Conversion Methods
@@ -103,6 +86,8 @@ void vHavokConversionUtils::SetHavok2VisionScale(hkReal fHavok2VisionScale)
   m_cachedVision2HavokScale = hkReal(1) / fHavok2VisionScale;
   m_cachedPhys2VisScale.setFromFloat(m_cachedHavok2VisionScale);
   m_cachedVis2PhysScale.setFromFloat(m_cachedVision2HavokScale);
+  m_cachedPhys2VisScaleD.setFromFloat(hkDouble64(m_cachedHavok2VisionScale));
+  m_cachedVis2PhysScaleD.setFromFloat(hkDouble64(m_cachedVision2HavokScale));
 }
 
 VHAVOK_IMPEXP  void vHavokConversionUtils::HkMatrixToVisMatrix( const hkMatrix4 &hkMatrix, hkvMat4 &visMatrixOut, bool bScalePosition, bool bScaleRotation, bool bIsWorldTransform )
@@ -117,7 +102,7 @@ VHAVOK_IMPEXP  void vHavokConversionUtils::HkMatrixToVisMatrix( const hkMatrix4 
 
 	if( bIsWorldTransform )
 	{
-		hkMat.getColumn(3).sub(*m_cachedWorldPivot);
+		hkMat.getColumn(3).sub(m_cachedWorldPivot);
 	}
 
 	if (bScalePosition) 
@@ -159,12 +144,12 @@ VHAVOK_IMPEXP  void vHavokConversionUtils::VisMatrixToHkMatrix( const hkvMat4 &v
 			if (bScalePosition)
 			{
 				//world pivot is already in scaled position
-				hkMatOut.getColumn(3).add(*m_cachedWorldPivot);
+				hkMatOut.getColumn(3).add(m_cachedWorldPivot);
 			}
 			else 
 			{
 				//scale world pivot to vision scale
-				hkMatOut.getColumn(3).addMul(*m_cachedWorldPivot, m_cachedPhys2VisScale);
+				hkMatOut.getColumn(3).addMul(m_cachedWorldPivot, m_cachedPhys2VisScale);
 			}
 	}
 
@@ -173,18 +158,16 @@ VHAVOK_IMPEXP  void vHavokConversionUtils::VisMatrixToHkMatrix( const hkvMat4 &v
 
 void vHavokConversionUtils::SetVisionWorldPivot(const hkvVec3d& worldPivot )
 {
-
-  AlignedArray array(worldPivot);
-
-  m_cachedWorldPivot->load<3,HK_IO_NATIVE_ALIGNED>(array.m_array);
-  m_cachedWorldPivot->zeroComponent<3>();
-  m_cachedWorldPivot->mul(m_cachedVis2PhysScale);
-  HK_ASSERT(0xdee883, m_cachedWorldPivot->isOk<4>());
+  m_cachedWorldPivotD.load<3,HK_IO_BYTE_ALIGNED>(&worldPivot.data[0]);
+  m_cachedWorldPivotD.zeroComponent<3>();
+  m_cachedWorldPivotD.mul(m_cachedVis2PhysScaleD);
+  HK_ASSERT(0xdee883, m_cachedWorldPivotD.isOk<4>());
+  m_cachedWorldPivot.load<4>(m_cachedWorldPivotD.getComponentAddress<0>());
 }
 
-hkVector4Parameter vHavokConversionUtils::GetVisionWorldPivot() 
+const hkVector4& vHavokConversionUtils::GetVisionWorldPivot() 
 { 
-	return *m_cachedWorldPivot; 
+	return m_cachedWorldPivot; 
 }
 
 hkpWeldingUtility::WeldingType vHavokConversionUtils::VisToHkWeldingType(VisWeldingType_e eWeldingType)
@@ -211,7 +194,7 @@ hkpWeldingUtility::WeldingType vHavokConversionUtils::VisToHkWeldingType(VisWeld
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140725)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

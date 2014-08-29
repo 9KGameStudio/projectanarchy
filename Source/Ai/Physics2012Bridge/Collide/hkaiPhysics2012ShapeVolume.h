@@ -6,13 +6,13 @@
  *
  */
 
-#ifndef HKAI_PHYSICS_SHAPE_VOLUME_H
-#define HKAI_PHYSICS_SHAPE_VOLUME_H
+#ifndef HKAI_PHYSICS_2012_SHAPE_VOLUME_H
+#define HKAI_PHYSICS_2012_SHAPE_VOLUME_H
 
 #include <Ai/Pathfinding/Common/hkaiVolume.h>
 #include <Common/Base/Types/Geometry/hkGeometry.h>
 
-extern const class hkClass hkaiPhysicsShapeVolumeClass;
+extern const class hkClass hkaiPhysics2012ShapeVolumeClass;
 
 /// This is an implementation of the hkaiVolume interface, which uses a Havok Physics 2012 shape to represent the volume.
 ///
@@ -38,7 +38,6 @@ class hkaiPhysics2012ShapeVolume : public hkaiVolume
 		virtual void calcPointsInside(const hkVector4* points, int numPoints, hkBitField& pointsInside) const HK_OVERRIDE;
 		virtual hkResult calcGeometry(hkGeometry& geom) const HK_OVERRIDE;
 		virtual hkBool32 containsTriangle(const hkVector4& a, const hkVector4& b, const hkVector4& c) const HK_OVERRIDE;
-		virtual hkBool32 containsAabb( const hkAabb& aabbIn ) const HK_OVERRIDE;
 		virtual void getAabb( hkAabb& aabbOut ) const HK_OVERRIDE;
 
 		void setCollisionDispatcher( hkpCollisionDispatcher* dispatcher );
@@ -56,10 +55,10 @@ class hkaiPhysics2012ShapeVolume : public hkaiVolume
 
 };
 
-#endif // HKAI_PHYSICS_SHAPE_VOLUME_H
+#endif // HKAI_PHYSICS_2012_SHAPE_VOLUME_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

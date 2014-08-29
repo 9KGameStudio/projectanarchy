@@ -8,7 +8,7 @@
 
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/VisionEnginePluginPCH.h>         // precompiled header
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/GUI/VMenuIncludes.hpp>
-#include <Vision/Runtime/Base/System/Memory/VMemDbg.hpp>
+
 
 
 VItemValueChangedEvent::VItemValueChangedEvent(VDlgControlBase *pItem, ValueType_e eType, void *pNewVal, bool bChanging)
@@ -27,6 +27,16 @@ VDlgControlBase::VDlgControlBase()
 }
 
 
+void VDlgControlBase::DisposeObject()
+{
+  VSmartPtr<VDlgControlBase> keepRef = this;
+  VDialog *pDlg = this->GetParentDialog();
+  if (pDlg!=NULL)
+  {
+    pDlg->OnControlDisposed(this);
+  }
+  VWindowBase::DisposeObject();
+}
 
 
 V_IMPLEMENT_SERIAL( VDlgControlBase, VWindowBase, 0, &g_VisionEngineModule );
@@ -244,7 +254,7 @@ bool VMenuItemCollection::Build(VWindowBase *pOwner, TiXmlElement *pNode, const 
     VASSERT(szClassName != NULL && szClassName[0]); // must be defined!
 
     VType *pType = Vision::GetTypeManager()->GetType(szClassName);
-    VASSERT(pType && "Control class not available");
+    VASSERT_MSG(pType, "Control class '%s' not available", szClassName);
     if (!pType)
       continue;
     
@@ -262,7 +272,7 @@ bool VMenuItemCollection::Build(VWindowBase *pOwner, TiXmlElement *pNode, const 
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

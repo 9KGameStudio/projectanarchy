@@ -11,10 +11,10 @@
 #include <Ai/Internal/NavVolume/hkaiNavVolumeGenerationSettings.h>
 #include <Common/Base/Types/Geometry/hkGeometry.h>
 
-extern const hkClass hkaiNavVolumeGenerationSnapshotClass;
+extern HK_EXPORT_AI const hkClass hkaiNavVolumeGenerationSnapshotClass;
 
 /// A simple container class for saving the input settings and geometry for nav volume generation
-class hkaiNavVolumeGenerationSnapshot
+class HK_EXPORT_AI hkaiNavVolumeGenerationSnapshot
 {
 	//+version(1)
 public:
@@ -38,7 +38,7 @@ protected:
 #endif // HK_AI_NAV_VOLUME_GEN_SNAPSHOT_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -14,13 +14,12 @@
 // - The corresponding reflection database (reflection.db) is deleted
 // - The --force-output or --force-rebuild option is added to the pre-build generateReflection.py execution
 
-HK_CLASS(hkaiMoppNavMeshQueryMediator)
-HK_CLASS(hkaiPhysics2012BodyObstacleGenerator)
-HK_CLASS(hkaiPhysics2012BodySilhouetteGenerator)
-HK_CLASS(hkaiPhysics2012ShapeVolume)
+HK_CLASS(HK_EXPORT_AI,hkaiPhysics2012BodyObstacleGenerator)
+HK_CLASS(HK_EXPORT_AI,hkaiPhysics2012BodySilhouetteGenerator)
+HK_CLASS(HK_EXPORT_AI,hkaiPhysics2012ShapeVolume)
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -21,11 +21,11 @@
 #include <Common/SceneData/Attributes/hkxAnimatedMatrix.h>
 
 /// hkxAttributeGroup meta information
-extern const class hkClass hkxAttributeGroupClass;
+extern HK_EXPORT_COMMON const class hkClass hkxAttributeGroupClass;
 
 	/// Attribute groups are associated to hkxNodes and contain an array of hkxAttribute under a common heading.
 	/// They usually represent a set of data associated with a node as a unit. For example, rigid body data.
-struct hkxAttributeGroup
+struct HK_EXPORT_COMMON hkxAttributeGroup
 {
 	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_SCENE_DATA, hkxAttributeGroup );
 	HK_DECLARE_REFLECTION();
@@ -119,7 +119,7 @@ struct hkxAttributeGroup
 #endif //HK_SCENEDATA_HKX_ATTRIBUTE_GROUP_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

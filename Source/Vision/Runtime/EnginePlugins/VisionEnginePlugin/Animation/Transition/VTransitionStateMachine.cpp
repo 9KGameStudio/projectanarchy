@@ -11,7 +11,7 @@
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Animation/Transition/VTransitionStateMachine.hpp>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Animation/Transition/VTransitionManager.hpp>
 #include <Vision/Runtime/Engine/Animation/VisApiAnimNormalizeMixerNode.hpp>
-#include <Vision/Runtime/Base/System/Memory/VMemDbg.hpp>
+
 
 // -------------------------------------------------------------------------- //
 // State Anim Control                                                         //
@@ -68,7 +68,6 @@ VTransitionStateMachine::VTransitionStateMachine()
   , m_eIntermediateFollowUpTrigger(TRANSITION_TRIGGER_IMMEDIATE)
   , m_fTransitionTime(0.0f)
   , m_bEnabled(TRUE)
-  , m_bCreateAnimConfig(true)
   , m_bIsBlending(false)
   , m_bSyncBlending(false)
   , m_bProcessOffsetDelta(false)
@@ -111,7 +110,7 @@ void VTransitionStateMachine::Init()
   }
   else if (m_spTransTable != NULL)
   {
-    Init(m_spTransTable, true);
+    InitInternal();
   }
   else
   {
@@ -119,21 +118,20 @@ void VTransitionStateMachine::Init()
   }
 }
 
-void VTransitionStateMachine::Init(VTransitionTable *pTable, bool bCreateAnimConfig)
+void VTransitionStateMachine::InitInternal()
 {
-  // Store information about transition table first (in case no owner has been set yet).
-  m_spTransTable = pTable;
-  m_bCreateAnimConfig = bCreateAnimConfig;
+  VASSERT_MSG(!IsInitialized(), "VTransitionStateMachine is already initialized");
+  VASSERT_MSG(m_spTransTable != NULL, "VTransitionStateMachine: No transition table set.");
 
   // Set Transition Filename if Transition Table was loaded from file.
-  if (!VStringUtil::IsEmpty(pTable->GetFilename()))
+  if (!VStringUtil::IsEmpty(m_spTransTable->GetFilename()))
   {
-    TransitionTableFile = pTable->GetFilename();
+    TransitionTableFile = m_spTransTable->GetFilename();
   }
 
   // Check owner is valid.
   VisBaseEntity_cl* pOwnerEntity = GetOwnerEntity();
-  if (pOwnerEntity == NULL || pTable == NULL || pOwnerEntity->GetMesh() == NULL || 
+  if (pOwnerEntity == NULL || m_spTransTable == NULL || pOwnerEntity->GetMesh() == NULL || 
     pOwnerEntity->GetMesh()->GetSkeleton() == NULL)
   {
     return;
@@ -153,20 +151,16 @@ void VTransitionStateMachine::Init(VTransitionTable *pTable, bool bCreateAnimCon
   m_bSyncSerialize = false;
   m_bIsIntermediateBlending = false;
 
-  // Create an animation config for the entity and connect it, if specified
-  if (m_bCreateAnimConfig)
-  {
-    // Setup animation system
-    if (pOwnerEntity->GetAnimConfig() == NULL)
-    { 
-      VisAnimConfig_cl* pAnimConfig = VisAnimConfig_cl::CreateSkeletalConfig(pMesh);
-      pOwnerEntity->SetAnimConfig(pAnimConfig);
-    }
-
-    SetTransitionTable(m_spTransTable);
-
-    SetEnabled(IsEnabled());
+  // Setup animation system
+  if (pOwnerEntity->GetAnimConfig() == NULL)
+  { 
+    VisAnimConfig_cl* pAnimConfig = VisAnimConfig_cl::CreateSkeletalConfig(pMesh);
+    pOwnerEntity->SetAnimConfig(pAnimConfig);
   }
+
+  SetTransitionTable(m_spTransTable);
+
+  SetEnabled(IsEnabled());
 }
 
 void VTransitionStateMachine::SetTransitionTable(VTransitionTable* pTable)
@@ -1050,7 +1044,6 @@ void VTransitionStateMachine::RemoveInactiveStateAnimControls()
   }
 }
 
-
 // -------------------------------------------------------------------------- //
 // Event handling                                                             //
 // -------------------------------------------------------------------------- //
@@ -1193,12 +1186,11 @@ void VTransitionStateMachine::MessageFunction(int iID, INT_PTR iParamA, INT_PTR 
   }
 }
 
-
 // -------------------------------------------------------------------------- //
 // Reload Table                                                               //
 // -------------------------------------------------------------------------- //
 
-void VTransitionStateMachine::ReloadTable(const char *szFilename)
+void VTransitionStateMachine::ReloadTable(const char* szFilename)
 {
   // Do not reload the transition file when we are in interactive mode in AnimTool.
   // As the transition file gets reloaded when the TSM gets added to its owner 
@@ -1209,38 +1201,35 @@ void VTransitionStateMachine::ReloadTable(const char *szFilename)
 
   DeInit();
 
-  VisBaseEntity_cl* pOwnerEntity = GetOwnerEntity();
-  VDynamicMesh *pMesh = NULL;
-  VTransitionTable *pTable = NULL;
-
-  if (pOwnerEntity != NULL)
-    pMesh = pOwnerEntity->GetMesh();
-
   // Get transition file - if no transition file is specified create a default transition table
-  if (pMesh)
-    pTable = VTransitionManager::GlobalManager().LoadTransitionTable(pMesh, szFilename);
+  VisBaseEntity_cl* pOwnerEntity = GetOwnerEntity();
 
-  Init(pTable, m_bCreateAnimConfig);
+  if (pOwnerEntity != NULL && pOwnerEntity->GetMesh() != NULL)
+  {
+    VDynamicMesh *pMesh = pOwnerEntity->GetMesh();
+    m_spTransTable = VTransitionManager::GlobalManager().LoadTransitionTable(pMesh, szFilename);
+
+    if (m_spTransTable != NULL)
+      InitInternal();
+  }
 }
 
 void VTransitionStateMachine::ReloadDefaultTable()
 {
-  VisBaseEntity_cl *pEntity = (VisBaseEntity_cl *)GetOwner();
-
   DeInit();
-  VDynamicMesh *pMesh = NULL;
-  VTransitionTable *pTable = NULL;
-  if (pEntity)
-    pMesh = pEntity->GetMesh();
-
+  
   // Get transition file - if no transition file is specified create a default transition table
-  if (pMesh)
-    pTable = VTransitionManager::GlobalManager().CreateDefaultTransitionTable(pMesh);
+  VisBaseEntity_cl* pOwnerEntity = GetOwnerEntity();
+  
+  if (pOwnerEntity != NULL && pOwnerEntity->GetMesh() != NULL)
+  {
+    VDynamicMesh *pMesh = pOwnerEntity->GetMesh();
+    m_spTransTable = VTransitionManager::GlobalManager().CreateDefaultTransitionTable(pMesh);
 
-  if (pTable != NULL)
-    Init(pTable, m_bCreateAnimConfig);
+    if (m_spTransTable != NULL)
+      InitInternal();
+  }
 }
-
 
 // -------------------------------------------------------------------------- //
 // Access to Members                                                          //
@@ -1255,7 +1244,6 @@ VisAnimNormalizeMixerNode_cl *VTransitionStateMachine::GetTransitionMixer() cons
 {
   return m_spNormalizeMixer;
 }
-
 
 // -------------------------------------------------------------------------- //
 // IVObjectComponent Virtual Overrides                                        //
@@ -1340,7 +1328,13 @@ void VTransitionStateMachine::OnVariableValueChanged(VisVariable_cl *pVar, const
 
 V_IMPLEMENT_SERIAL(VTransitionStateMachine, IVObjectComponent, 0, &g_VisionEngineModule);
 
-void VTransitionStateMachine::Serialize( VArchive &ar )
+// File versions
+#define VTRANSITIONSTATE_MACHINE_VERSION_0  0   // Initial version
+#define VTRANSITIONSTATE_MACHINE_VERSION_1  1   // Enabled state added
+#define VTRANSITIONSTATE_MACHINE_VERSION_2  2   // CreateAnimConfig parameter removed
+#define VTRANSITIONSTATE_MACHINE_VERSION_CURRENT  VTRANSITIONSTATE_MACHINE_VERSION_2
+
+void VTransitionStateMachine::Serialize(VArchive& ar)
 {
   // No deep object serialize when performing a sync operation (SetSyncState / GetSyncState)
   if (!m_bSyncSerialize)
@@ -1350,14 +1344,28 @@ void VTransitionStateMachine::Serialize( VArchive &ar )
   {
     int iVersion;
     ar >> iVersion;
+    VASSERT_MSG(iVersion <= VTRANSITIONSTATE_MACHINE_VERSION_CURRENT && iVersion >= VTRANSITIONSTATE_MACHINE_VERSION_0, 
+      "Invalid VTransitionStateMachine version. Please re-export");
+
     ar >> TransitionTableFile;
-    ar >> m_bCreateAnimConfig;
+
+    if (iVersion <= VTRANSITIONSTATE_MACHINE_VERSION_1)
+    {
+      // Read unused bCreateAnimConfig parameter.
+      bool bDummy;
+      ar >> bDummy;
+    }
+
     ar >> InitialAnimation;
 
     if (iVersion >= VTRANSITIONSTATE_MACHINE_VERSION_1)
+    {
       ar >> m_bEnabled;
+    }
     else
+    {
       m_bEnabled = TRUE;
+    }
   }
   else
   {
@@ -1365,7 +1373,6 @@ void VTransitionStateMachine::Serialize( VArchive &ar )
     ar << iVersion;
 
     ar << TransitionTableFile;
-    ar << m_bCreateAnimConfig;
     ar << InitialAnimation;
 
     ar << m_bEnabled;
@@ -1566,7 +1573,7 @@ int VTransitionStateMachine::GetSynchronizationGroupList(const VNetworkViewConte
   return iCount;
 }
 
-START_VAR_TABLE(VTransitionStateMachine,IVObjectComponent,"Animation transition state machine. Can be attached to entities, as long as they have a model assigned.",VCOMPONENT_ALLOW_MULTIPLE, "TransitionStateMachine" )
+START_VAR_TABLE(VTransitionStateMachine,IVObjectComponent,"Can be attached to entities that have a model assigned to enable animation transitions.",VCOMPONENT_ALLOW_MULTIPLE, "Transition State Machine" )
   DEFINE_VAR_BOOL_AND_NAME(VTransitionStateMachine, m_bEnabled, "Enabled", "Enable or disable animations", "True", 0, 0);
   DEFINE_VAR_VSTRING(VTransitionStateMachine, TransitionTableFile, "Filename of the transition table (.vTransition)", "", 0,0, "filepicker(.vTransition)");
   DEFINE_VAR_VSTRING(VTransitionStateMachine, InitialAnimation, "Name of the initial animation set in the state machine", "", 0, 0, "dropdownlist(Animation)");
@@ -1632,7 +1639,7 @@ void VTransitionStateMachineNetworkSyncGroup::Synchronize(const VNetworkViewCont
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

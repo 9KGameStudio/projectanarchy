@@ -54,6 +54,11 @@ HK_FORCE_INLINE const void* hkBlockStreamBase::Reader::access()
 	return (const void*)m_currentByteLocation;
 }
 
+HK_FORCE_INLINE int hkBlockStreamBase::Reader::getBlockBytesLeft() const
+{
+	 return int(((const char*)m_currentBlock->end()) - ((const char*)m_currentByteLocation));
+}
+
 //
 // Writer
 //
@@ -99,6 +104,11 @@ HK_FORCE_INLINE void hkBlockStreamBase::Writer::setCurrentBlockFull()
 	HK_ON_DEBUG(checkConsistency());
 }
 
+HK_FORCE_INLINE int hkBlockStreamBase::Writer::getBlockBytesLeft(  ) const
+{
+	return Block::BLOCK_DATA_SIZE - m_currentByteLocation;
+}
+
 HK_FORCE_INLINE void* hkBlockStreamBase::Writer::reserveBytes( int numBytes )
 {
 	HK_ASSERT( 0xf03d3401, m_currentBlock != HK_NULL && numBytes <= Block::BLOCK_DATA_SIZE );
@@ -128,6 +138,11 @@ HK_FORCE_INLINE int hkBlockStreamBase::Writer::getTotalNumElems()
 {
 	HK_ASSERT( 0xaf13e21f, m_finalized == true );
 	return m_blockStream->m_numTotalElements + m_currentBlockNumElems;
+}
+
+HK_FORCE_INLINE hkBlockStreamBase::Block* hkBlockStreamBase::Writer::getCurrentBlock() const 
+{
+	return m_currentBlock;
 }
 
 
@@ -170,7 +185,12 @@ HK_FORCE_INLINE const hkBlockStreamBase::Block* hkBlockStreamBase::Writer::getBl
 	return block;
 }
 
-HK_FORCE_INLINE void hkBlockStreamBase::Writer::checkIsStillInSpuBuffer( void* ppuAddress )
+HK_FORCE_INLINE int hkBlockStreamBase::Writer::getDmaGroup() const
+{
+	return m_dmaGroup;
+}
+
+HK_FORCE_INLINE void hkBlockStreamBase::Writer::debugCheckIsStillInSpuBuffer( void* ppuAddress )
 {
 #	if defined(HK_DEBUG) && defined(HK_PLATFORM_SIM)
 	for (int i =0; i < m_blockBufferCapacity;i++)
@@ -192,6 +212,34 @@ HK_FORCE_INLINE void hkBlockStreamBase::Writer::checkIsStillInSpuBuffer( void* p
 	HK_ASSERT( 0xf03dfd45, !"Block already written to ppu");
 #	endif
 }
+
+bool hkBlockStreamBase::Writer::isPpuAddressStillInSpuBuffer( void* ppuAddress, bool waitForDmaToFinish )
+{
+	for (int i = 0; i < m_blockBufferCapacity; i++)
+	{
+		Block* block = m_blocksPpu[i];
+		if ( !block )
+		{
+			continue;
+		}
+		if ( ppuAddress >= block->begin() && ppuAddress < block->end() )
+		{
+			// m_nextBuffer is the buffer that is currently being written back to PPU.
+			if ( i != m_nextBuffer )
+			{
+				return true;
+			}
+			if ( waitForDmaToFinish )
+			{
+				hkSpuDmaManager::waitForDmaCompletion( m_dmaGroup );
+			}
+			return false;
+		}
+	}
+
+	return false;
+}
+
 #endif // HK_PLATFORM_SPU
 
 //
@@ -230,6 +278,29 @@ HK_FORCE_INLINE hkBlockStreamBase::Block* hkBlockStreamBase::Consumer::getCurren
 HK_FORCE_INLINE char* hkBlockStreamBase::Consumer::getCurrentByteLocation()
 {
 	return const_cast<char*> ((const char*) m_currentByteLocation); 
+}
+
+
+HK_FORCE_INLINE void hkBlockStreamBase::RandomAccessConsumer::consume( Block* block, int offset )
+{
+	if ( block == m_currentBlock )
+	{
+#if !defined(HK_PLATFORM_SPU)
+		HK_ASSERT(0x27e7e817, offset != m_debugOffset ); // avoid freeing the same block twice
+#endif
+		m_numElementsToFreeInCurrentBlock++;
+	}
+	else
+	{
+		if ( m_currentBlock )
+		{
+			consumeCurrentBlock();
+		}
+		m_currentBlock = block;
+		HK_ASSERT(0x8f40c3f , m_blockStream == HK_NULL || block->m_blockStream == m_blockStream );
+		m_numElementsToFreeInCurrentBlock = 1;
+	}
+	m_debugOffset = offset;
 }
 
 
@@ -273,6 +344,28 @@ HK_FORCE_INLINE void* hkBlockStreamBase::Modifier::advanceAndAccessNext(int this
 	}
 }
 
+HK_FORCE_INLINE	void* hkBlockStreamBase::Modifier::batchAdvanceAndAccessNext( unsigned int count, int thisElemSize )
+{
+	HK_ASSERT( 0xf034df43, m_currentBlock );
+	HK_ASSERT( 0xf0347687, m_numElementsToReadInThisBlock > 0 );
+
+	const char* nextLocation = hkAddByteOffsetConst( (const char*)m_currentByteLocation, count*thisElemSize );	// get this here as this is the most common code path and allows the compiler to optimize better
+	HK_ASSERT( 0xf06576df, nextLocation <= m_currentBlock->end() );
+	m_currentByteLocation = nextLocation;
+	m_numElementsToReadInThisBlock = m_numElementsToReadInThisBlock - count;
+
+	if ( m_numElementsToReadInThisBlock > 0 )
+	{
+		return const_cast<void*>((void*)nextLocation);
+	}
+	else
+	{
+		const void* data = advanceToNewBlock();
+		HK_ASSERT( 0xf06576df, (const char*)m_currentByteLocation + thisElemSize <= m_currentBlock->end() );
+		return const_cast<void*>(data);
+	}
+}
+
 HK_FORCE_INLINE void* hkBlockStreamBase::Modifier::access()
 {
 	 return const_cast<void*>( Reader::access() );
@@ -289,7 +382,7 @@ HK_FORCE_INLINE char* hkBlockStreamBase::Modifier::getCurrentByteLocation()
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

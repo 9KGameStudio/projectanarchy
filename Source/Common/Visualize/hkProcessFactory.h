@@ -16,7 +16,7 @@ class hkProcessContext;
 /// It is a singleton that store the registry of name to create
 /// function. It will only allow a scheduler to create any though.
 /// This is a thread safe singleton
-class hkProcessFactory : public hkReferencedObject, public hkSingleton<hkProcessFactory>
+class HK_EXPORT_COMMON hkProcessFactory : public hkReferencedObject, public hkSingleton<hkProcessFactory>
 {
 	//+vtable(true)
 		friend class hkSingleton<hkProcessFactory>;
@@ -75,7 +75,7 @@ HK_SINGLETON_SPECIALIZATION_DECL(hkProcessFactory);
 #endif // HK_VISUALIZE_PROCESS_FACTORY_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

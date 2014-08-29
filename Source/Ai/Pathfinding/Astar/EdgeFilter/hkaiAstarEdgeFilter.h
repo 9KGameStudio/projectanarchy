@@ -16,7 +16,7 @@
 #include <Ai/Pathfinding/Graph/hkaiDirectedGraphNodePairInfo.h>
 #include <Ai/Pathfinding/NavMesh/Streaming/hkaiStreamingCollection.h>
 
-extern const class hkClass hkaiAstarEdgeFilterClass;
+extern HK_EXPORT_AI const class hkClass hkaiAstarEdgeFilterClass;
 
 #ifdef HK_PLATFORM_SPU
 #	include <Ai/Pathfinding/NavMesh/Spu/hkaiSpuNavMeshAccessor.h>
@@ -30,7 +30,7 @@ struct hkaiAgentTraversalInfo;
 ///
 /// See hkaiDefaultAstarEdgeFitler for a sample implementation, and NavMeshEdgeFilterDemo
 /// for examples of how to use this
-class hkaiAstarEdgeFilter : public hkReferencedObject
+class HK_EXPORT_AI hkaiAstarEdgeFilter : public hkReferencedObject
 {
 	public:
 		HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_AI);
@@ -126,7 +126,7 @@ class hkaiAstarEdgeFilter : public hkReferencedObject
 #endif // HK_AI_NAV_MESH_EDGE_FILTER_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

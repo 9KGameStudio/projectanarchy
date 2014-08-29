@@ -149,7 +149,7 @@ HK_FORCE_INLINE void hkTransformd::_setInverse( const hkTransformd &t )
 
 HK_FORCE_INLINE void hkTransformd::_setMulInverseMul( const hkTransformd& bTa, const hkTransformd &bTc )
 {
-#if defined(HK_ARCH_PPC) || defined(HK_PLATFORM_SPU )
+#if defined(HK_EXPENSIVE_LHS) || defined(HK_PLATFORM_SPU )
 	const hkTransformd* HK_RESTRICT pbTa = &bTa;
 	const hkTransformd* HK_RESTRICT pbTc = &bTc;
 	hkVector4d h; h.setSub(pbTc->m_translation, pbTa->m_translation );
@@ -189,7 +189,7 @@ HK_FORCE_INLINE void hkTransformd::setRows4( hkVector4dParameter r0, hkVector4dP
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

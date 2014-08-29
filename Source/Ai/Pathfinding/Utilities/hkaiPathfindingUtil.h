@@ -21,17 +21,18 @@ class hkaiAstarEdgeFilter;
 class hkaiStreamingCollection;
 class hkaiNavMeshInstance;
 class hkaiNavMesh;
+struct hkaiSearchMemoryStorage;
 
 /// A simple utility for pathfinding on a nav mesh.
 /// Computes the edges that are traveled across, and (optionally) a smoothed path.
-class hkaiPathfindingUtil
+class HK_EXPORT_AI hkaiPathfindingUtil
 {
 	public:
 		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE,hkaiPathfindingUtil);
 		HK_DECLARE_REFLECTION();
 	
 			/// Pathfinding input
-		struct FindPathInput : public hkReferencedObject
+		struct HK_EXPORT_AI FindPathInput : public hkReferencedObject
 		{
 			// +version(10)
 			HK_DECLARE_REFLECTION();
@@ -81,6 +82,15 @@ class hkaiPathfindingUtil
 				/// Internal determinism checks
 			void checkDeterminism() const;
 
+				/// Expand the buffers for the search parameter's size, and set m_searchBuffers to point to the
+				/// provided buffers. The hkaiSearchMemoryStorage must exist for the duration of the search.
+				/// If buffer sizes are not set in the search parameters, the single-threaded default values will
+				/// be used (hkaiSearchParameters::BufferSizes::SINGLE_THREADED).
+			void setExternalSearchBuffers( hkaiSearchMemoryStorage& storage, hkaiSearchMemoryStorage& hierarchicalStorage );
+
+				/// As above, but no hierarchical storage is used
+			void setExternalSearchBuffer( hkaiSearchMemoryStorage& storage );
+
 		private:
 			// hidden because hkArray copy ctor is hidden
 			FindPathInput(const FindPathInput& input); 
@@ -88,7 +98,7 @@ class hkaiPathfindingUtil
 		};
 		
 			/// Pathfinding output
-		struct FindPathOutput : public hkReferencedObject
+		struct HK_EXPORT_AI FindPathOutput : public hkReferencedObject
 		{
 			HK_DECLARE_REFLECTION();
 			HK_DECLARE_CLASS_ALLOCATOR( HK_MEMORY_CLASS_AI_ASTAR );
@@ -109,7 +119,7 @@ class hkaiPathfindingUtil
 		};
 
 			/// Input information for hkaiPathfindingUtils::findNearestEdges() and hkaiPathfindingUtils::findNearestFaces()
-		struct NearestFeatureInput
+		struct HK_EXPORT_AI NearestFeatureInput
 		{
 			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_AI_ASTAR, NearestFeatureInput );
 			NearestFeatureInput();
@@ -160,7 +170,7 @@ class hkaiPathfindingUtil
 			/// These call edgeTraversed or faceTraversed respectively after each A* iteration.
 			/// It is up to the user to terminate the search by returning 'false' from the callback;
 			/// otherwise all faces/edges will be searched.
-		class NearestFeatureCallback
+		class HK_EXPORT_AI NearestFeatureCallback
 		{
 			public:
 			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE,hkaiPathfindingUtil::NearestFeatureCallback);
@@ -173,7 +183,7 @@ class hkaiPathfindingUtil
 			
 
 			/// Input structure for findGraphPath()
-		struct FindGraphPathInput
+		struct HK_EXPORT_AI FindGraphPathInput
 		{
 			// +version(2)
 			HK_DECLARE_REFLECTION();
@@ -197,6 +207,15 @@ class hkaiPathfindingUtil
 				/// goalEdgeKey. The final cost for the first node will be fraction * edgeCost, and the
 				/// initial cost for the second node will be (1-fraction) * oppositeEdgeCost.
 			void setGoalEdge( const hkaiStreamingCollection* collection, hkaiPackedKey goalNodeKey, hkaiPackedKey goalEdgeKey, hkReal fraction );
+
+				/// Expand the buffers for the search parameter's size, and set m_searchBuffers to point to the
+				/// provided buffers. The hkaiSearchMemoryStorage must exist for the duration of the search.
+				/// If buffer sizes are not set in the search parameters, the single-threaded default values will
+				/// be used (hkaiSearchParameters::BufferSizes::SINGLE_THREADED).
+			void setExternalSearchBuffers( hkaiSearchMemoryStorage& storage, hkaiSearchMemoryStorage& hierarchicalStorage );
+
+				/// As above, but no hierarchical storage is used
+			void setExternalSearchBuffer( hkaiSearchMemoryStorage& storage );
 
 				/// Keys of the starting nodes. Only the first is considered by the hierarchical heuristic, so make sure
 				/// they're nearby
@@ -235,7 +254,7 @@ class hkaiPathfindingUtil
 		};
 
 		/// Output structure for findGraphPath()
-		struct FindGraphPathOutput
+		struct HK_EXPORT_AI FindGraphPathOutput
 		{
 			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_AI_ASTAR, FindGraphPathOutput );
 
@@ -275,10 +294,6 @@ class hkaiPathfindingUtil
 			/// - The number of iterations in NearestFeatureInput::m_maxNumberOfIterations is reached
 		static void HK_CALL findNearestFaces( const hkaiStreamingCollection& collection, const NearestFeatureInput& input, NearestFeatureCallback* callback, hkaiAstarOutputParameters* output = HK_NULL);
 
-			/// Utility function used internally to determine whether a path on the initial face can be used
-		static hkBool32 HK_CALL _checkInitialFace(const hkaiStreamingCollection& collection, const FindPathInput& input, int& closestGoalIndex );
-
-
 
 			/// Find a path between two nodes in the mesh cluster graphs.
 		static void HK_CALL findGraphPath(const hkaiStreamingCollection& collection, const FindGraphPathInput& input, FindGraphPathOutput& output, const hkaiStreamingCollection* hierarchyCollection = HK_NULL);
@@ -302,7 +317,7 @@ class hkaiPathfindingUtil
 #endif // HK_AI_PATHFINDING_UTILITIES_PATHFINDING_UTIL_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

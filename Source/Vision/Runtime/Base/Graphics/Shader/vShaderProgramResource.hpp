@@ -136,6 +136,20 @@ public:
   ///   Internal copy helper function
   VBASE_IMPEXP static void CopyByteCode(const int *pSrc, int iSourceLen, int **pDest);
 
+  /// \brief
+  ///   Internal helper function to increase the byte code size. 
+  /// 
+  /// \param iNewSize
+  ///   The increased size of the byte code.
+  /// 
+  /// \param platform
+  ///   Platform for which byte code should be increased.
+  /// 
+  ///  \note
+  ///    This method is only valid for shaders that do not use shared byte code. This method only increases the  
+  ///    memory allocated for the byte code, the effective byte code length is not changed.
+  VBASE_IMPEXP void IncreaseByteCodeSize(unsigned int iNewSize, VTargetPlatform_e platform = TARGETPLATFORM_THIS);
+
   ///
   /// @}
   ///
@@ -426,7 +440,7 @@ public:
 #endif
 
 private:
-  #ifdef WIN32
+  #ifdef _VISION_WIN32
   friend bool ParseFXLib (char *text, int numChars, VShaderCompileFlags_e flags, VShaderEffectLib &fxlib);
   #endif
 
@@ -444,7 +458,7 @@ private:
   int m_iInputStreamMask[TARGETPLATFORM_COUNT];     ///< Bitflags of the used input streams
   int m_iOutputStreamMask[TARGETPLATFORM_COUNT];    ///< Bitflags of the used output streams
 
-  int m_iByteCodeLen[TARGETPLATFORM_COUNT];      ///< Length of the bytecode
+  int m_iByteCodeLen[TARGETPLATFORM_COUNT];      ///< Length of the bytecode (count in bytes, not int as used in some places).
   mutable VShaderConstantTablePtr m_spConstantTable[TARGETPLATFORM_COUNT];     ///< This table gets filled out by the shader compiling.
   VShaderModel_e m_eTargetModel[TARGETPLATFORM_COUNT]; ///< Shader model actually used in the engine
 
@@ -458,6 +472,7 @@ private:
   int* m_pByteCode[TARGETPLATFORM_COUNT];        ///< Compiled byte code (optional) for the shader model specified by m_eTargetModel. Supported for more than one target in parallel.
 
   friend class VShaderPassResource;
+  friend class VShaderSourcePatcher;
 
 private:
   void ConstructorInit (void);
@@ -475,7 +490,7 @@ private:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

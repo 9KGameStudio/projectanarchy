@@ -11,13 +11,13 @@
 
 #include <Physics/Constraint/Data/hkpConstraintData.h>
 
-extern const class hkClass hkpStiffSpringConstraintDataAtomsClass;
-extern const hkClass hkpStiffSpringConstraintDataClass;
+extern HK_EXPORT_PHYSICS const class hkClass hkpStiffSpringConstraintDataAtomsClass;
+extern HK_EXPORT_PHYSICS const hkClass hkpStiffSpringConstraintDataClass;
 
 
 /// A stiff spring constraint. It holds the constrained bodies apart at a specified distance,
 /// as if they were attached at each end of an invisible rod.
-class hkpStiffSpringConstraintData : public hkpConstraintData
+class HK_EXPORT_PHYSICS hkpStiffSpringConstraintData : public hkpConstraintData
 {
 	public:
 
@@ -118,7 +118,7 @@ class hkpStiffSpringConstraintData : public hkpConstraintData
 #endif // HKP_STIFF_SPRING_CONSTRAINT_DATA_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

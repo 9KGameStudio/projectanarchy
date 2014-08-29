@@ -1664,6 +1664,25 @@ public:
 	///true to keep the particles inside
 	inline bool GetInside() const {return m_bInside;}
 
+  ///\brief
+  ///Sets a new box size around the current box's center
+  ///
+  ///\param x
+  ///New x-extent of the box
+  ///
+  ///\param y
+  ///New y-extent of the box
+  ///
+  ///\param z
+  ///New z-extent of the box
+  ///
+  inline void SetBoxSize(float x, float y, float z)
+  {
+    hkvVec3 vCenter = m_Box.getCenter();
+    hkvVec3 vRadius(x*0.5f,y*0.5f,z*0.5f);
+    m_Box.m_vMin = vCenter-vRadius;
+    m_Box.m_vMax = vCenter+vRadius;
+  }
 
   ///
   /// @}
@@ -2763,7 +2782,7 @@ protected:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

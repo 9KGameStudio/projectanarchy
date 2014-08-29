@@ -9,7 +9,7 @@
 #define HKSCENEDATA_ALIGNSCENE_ALIGNSCENETONODE_H
 
 /// hkAlignSceneToNodeOptions meta information
-extern const class hkClass hkAlignSceneToNodeOptionsClass;
+extern HK_EXPORT_COMMON const class hkClass hkAlignSceneToNodeOptionsClass;
 
 /// For more explanation of why this class declaration is in the SDK, refer to EXP-1656 and EXP-1655.
 /// This class is used to communicate information between the "Align Scene To Node"
@@ -17,7 +17,7 @@ extern const class hkClass hkAlignSceneToNodeOptionsClass;
 ///
 /// Describes the align scene to node options.
 /// This class is an exact mirror of the hctAlignSceneToNodeOptions class. Please only update one with a similar change to the other
-class hkAlignSceneToNodeOptions : public hkReferencedObject
+class HK_EXPORT_COMMON hkAlignSceneToNodeOptions : public hkReferencedObject
 {
 	//+version(2)
 	//+vtable(true)
@@ -55,7 +55,7 @@ class hkAlignSceneToNodeOptions : public hkReferencedObject
 #endif // HKSCENEDATA_ALIGNSCENE_ALIGNSCENETONODE_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

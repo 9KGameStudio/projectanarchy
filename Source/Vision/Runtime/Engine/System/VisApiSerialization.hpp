@@ -20,8 +20,10 @@
 // currently using, call the function Vision::GetArchiveVersion. The DLL which
 // you are currently using might already have been compiled with a newer header than this one.
 
-
 // readable version numbers, also easier to find in the source code as numbers
+#define VISION_ARCHIVE_VERSION_034   34
+#define VISION_ARCHIVE_VERSION_033   33
+#define VISION_ARCHIVE_VERSION_032   32
 #define VISION_ARCHIVE_VERSION_031   31
 #define VISION_ARCHIVE_VERSION_030   30
 #define VISION_ARCHIVE_VERSION_029   29
@@ -47,8 +49,7 @@
 #define VISION_ARCHIVE_VERSION_003   3
 #define VISION_ARCHIVE_VERSION_002   2
 
-#define VISION_ARCHIVE_VERSION  VISION_ARCHIVE_VERSION_031
-
+#define VISION_ARCHIVE_VERSION  VISION_ARCHIVE_VERSION_034
 
 /*
 -> Add the changes of new vision archive version here
@@ -162,7 +163,7 @@ inline BOOL VisCheckForValidArchive( int iLoadedArchiveVersion, int iEngineArchi
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140726)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

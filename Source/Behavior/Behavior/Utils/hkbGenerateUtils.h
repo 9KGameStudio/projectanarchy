@@ -15,7 +15,7 @@ class hkbGeneratorOutput;
 class hkbContext;
 class hkbSceneModifier;
 class hkJobQueue;
-class hkJobThreadPool;
+class hkThreadPool;
 
 	/// A scene of characters with their associated outputs and contexts.
 struct hkbSceneCharacters
@@ -32,15 +32,15 @@ struct hkbSceneCharacters
 		hkbContext* m_context;
 	};
 
-		// Map from Character pointer to Scene Character Info pointer
-	hkPointerMap<hkbCharacter*, SceneCharacterInfo*> m_characters;
+		// Map from character to output
+	hkPointerMap<hkbCharacter*, hkbGeneratorOutput*> m_characterOutputs;
 
 		// Array of Scene Character Infos used to iterate through each Scene Characters deterministically
 	hkArray<SceneCharacterInfo*> m_characterInfos;
 
 	// Both the hkbRagdollSceneModifier and the hkbCharacterControllerSceneModifier may update the physics.
 	// Typically the hkbCharacterControllerSceneModifier runs first and steps the physics if requested by the hkbCharacterController.
-	// In that case this flag is set to true to indicate that the physics has already been stepped so that the 
+	// In that case this flag is set to true to indicate that the physics has already been stepped so that the
 	// hkbRagdollSceneModifier won't do it again.  This scheme allows us to optimize the pipeline
 	// to avoid ragdoll latency if possible.
 	bool m_isPhysicsUpdated;
@@ -51,40 +51,40 @@ class hkbGenerateUtils
 {
 	public:
 			/// Call generate when multi-threading.
-		static void HK_CALL generateMultiThreaded(	hkbSceneCharacters& sceneCharacters, 
+		static void HK_CALL generateMultiThreaded(	hkbSceneCharacters& sceneCharacters,
 													hkJobQueue& jobQueue,
-													hkJobThreadPool& jobThreadPool,
+													hkThreadPool& threadPool,
 													bool setCharacterPose = true );
 
 			/// Call generate with scene modifiers.
-			/// 
+			///
 			/// The passed sceneModifiers list can contain physics modifier which is responsible for updating the physics.
-			/// In that case if the passed in behaviors contain in its hkbSceneModifierList with an entry of physics scene 
-			/// modifier then this function would update the physics simulation else it is your responsibility to update 
+			/// In that case if the passed in behaviors contain in its hkbSceneModifierList with an entry of physics scene
+			/// modifier then this function would update the physics simulation else it is your responsibility to update
 			/// the physics.
-		static void HK_CALL generateWithSceneModifiers( hkbSceneCharacters& sceneCharacters, 
+		static void HK_CALL generateWithSceneModifiers( hkbSceneCharacters& sceneCharacters,
 														hkbSceneModifier** sceneModifiers,
 														int numSceneModifier,
 														hkReal timestep );
 
 			/// Call generate when multi-threading with scene modifiers.
-			/// 
+			///
 			/// The passed sceneModifiers list can contain physics modifier which is responsible for updating the physics.
-			/// In that case if the passed in behaviors contain in its hkbSceneModifierList with an entry of physics scene 
-			/// modifier then this function would update the physics simulation else it is your responsibility to update 
+			/// In that case if the passed in behaviors contain in its hkbSceneModifierList with an entry of physics scene
+			/// modifier then this function would update the physics simulation else it is your responsibility to update
 			/// the physics.
-		static void HK_CALL generateMultiThreadedWithSceneModifiers(	hkbSceneCharacters& sceneCharacters, 
+		static void HK_CALL generateMultiThreadedWithSceneModifiers(	hkbSceneCharacters& sceneCharacters,
 																		hkJobQueue& jobQueue,
-																		hkJobThreadPool& jobThreadPool,
+																		hkThreadPool& threadPool,
 																		hkbSceneModifier** sceneModifiers,
-																		int numSceneModifier, 
+																		int numSceneModifier,
 																		hkReal timestep );
 };
 
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -12,10 +12,10 @@
 #include <Common/SceneData/Graph/hkxNode.h>
 
 /// hkxNodeSelectionSet meta information
-extern const class hkClass hkxNodeSelectionSetClass;
+extern HK_EXPORT_COMMON const class hkClass hkxNodeSelectionSetClass;
 
 /// A selected set of nodes in the scene graph
-class hkxNodeSelectionSet : public hkxAttributeHolder
+class HK_EXPORT_COMMON hkxNodeSelectionSet : public hkxAttributeHolder
 {
 	//+vtable(true)
 	//+version(0)
@@ -35,7 +35,7 @@ public:
 #endif // HKSCENEDATA_SELECTION_HKXNODESELECTIONSET_HKCLASS_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -8,7 +8,15 @@
 
 HK_FORCE_INLINE hkcdPlanarGeometry::PolygonId hkcdPlanarGeometry::addPolygon(PlaneId supportPlane, hkUint32 material, int numBounds)
 {
-	return m_polys->alloc(supportPlane, material, numBounds);
+	const PolygonId newPolyId	= m_polys->alloc(supportPlane, material, numBounds);
+	Polygon& newPoly			= accessPolygon(newPolyId);
+
+	// init the vertices ids
+	for (int i = 0 ; i < numBounds ; i++)
+	{
+		newPoly.setVertexId(i, VertexId::invalid());
+	}
+	return newPolyId;
 }
 
 HK_FORCE_INLINE const hkcdPlanarGeometry::Polygon& hkcdPlanarGeometry::getPolygon(PolygonId polyId) const
@@ -34,6 +42,7 @@ HK_FORCE_INLINE int hkcdPlanarGeometry::getNumBoundaryPlanes(PolygonId polyId) c
 
 HK_FORCE_INLINE const hkcdPlanarGeometryPolygonCollection& hkcdPlanarGeometry::getPolygons() const	{	return *m_polys;	}
 HK_FORCE_INLINE hkcdPlanarGeometryPolygonCollection& hkcdPlanarGeometry::accessPolygons()			{	return *m_polys;	}
+HK_FORCE_INLINE void hkcdPlanarGeometry::setPolygons(hkcdPlanarGeometryPolygonCollection* polys)	{   m_polys = polys;	}
 
 //
 //	Gets the plane collection associated with this geometry
@@ -42,7 +51,7 @@ HK_FORCE_INLINE const hkcdPlanarGeometryPlanesCollection* hkcdPlanarGeometry::ge
 HK_FORCE_INLINE hkcdPlanarGeometryPlanesCollection* hkcdPlanarGeometry::accessPlanesCollection()			{	return m_planes;	}
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

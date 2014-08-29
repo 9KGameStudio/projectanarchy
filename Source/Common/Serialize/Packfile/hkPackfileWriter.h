@@ -26,7 +26,7 @@ class hkVtableClassRegistry;
 /// object traversal with the AddObjectListener.
 /// When all object dependencies are resolved, the list is traversed
 /// again and the objects written.
-class hkPackfileWriter : public hkReferencedObject
+class HK_EXPORT_COMMON hkPackfileWriter : public hkReferencedObject
 {
 	public:
 
@@ -60,6 +60,14 @@ class hkPackfileWriter : public hkReferencedObject
 				m_contentsVersion(HK_NULL)
 			{
 			}
+
+			Options(const Options& rhs)
+				: m_userTag(rhs.m_userTag), m_layout(rhs.m_layout), m_writeMetaInfo(rhs.m_writeMetaInfo),
+				  m_writeSerializedFalse(rhs.m_writeSerializedFalse), m_contentsVersion(rhs.m_contentsVersion)
+			{
+				m_truePredicates.append(rhs.m_truePredicates);
+			}
+
 			/// An optional tag for this file.
 			/// You can use this tag to identify different types of file,
 			/// examining only the file header.
@@ -72,6 +80,8 @@ class hkPackfileWriter : public hkReferencedObject
 			hkBool m_writeSerializedFalse;
 			/// Override the saved version string. Use with caution.
 			const char* m_contentsVersion;
+			///
+			hkArray<hkUint16> m_truePredicates;
 		};
 
 
@@ -198,7 +208,7 @@ class hkPackfileWriter : public hkReferencedObject
 #endif // HK_PACKFILE_WRITER_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -17,7 +17,7 @@
 	/// array of sectors. Sectors can optionally be unloaded after they have been read by
 	/// setting unloadSectorsAfterRead to true. If unloading sectors after read, all reading
 	/// must be sequential.
-class hkMemoryTrack
+class HK_EXPORT_COMMON hkMemoryTrack
 {
 	public:
 
@@ -82,7 +82,7 @@ class hkMemoryTrack
 
 
 /// Writer which uses an hkMemoryTrack as its storage.
-class hkMemoryTrackStreamWriter : public hkStreamWriter
+class HK_EXPORT_COMMON hkMemoryTrackStreamWriter : public hkStreamWriter
 {
 	public:
 		HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE);
@@ -135,7 +135,7 @@ class hkMemoryTrackStreamWriter : public hkStreamWriter
 #include <Common/Base/System/Io/Reader/hkStreamReader.h>
 
 /// Wraps a reader around a memory track.
-class hkMemoryTrackStreamReader : public hkStreamReader
+class HK_EXPORT_COMMON hkMemoryTrackStreamReader : public hkStreamReader
 {
 	public:
 	HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE);
@@ -177,7 +177,7 @@ extern const hkClass hkArrayStreamWriterClass;
 /// This class maintains a single null byte directly after
 /// the buffer area so the buffer may be interpreted
 /// as a c style string.
-class hkArrayStreamWriter : public hkStreamWriter
+class HK_EXPORT_COMMON hkArrayStreamWriter : public hkStreamWriter
 {
 	public:
 	HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE);
@@ -258,7 +258,7 @@ class hkArrayStreamWriter : public hkStreamWriter
 #endif // HKBASE_ARRAY_STREAMWRITER_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

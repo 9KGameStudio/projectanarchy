@@ -6,12 +6,6 @@
  *
  */
 
-#if defined(HK_PLATFORM_IOS) || defined(HK_PLATFORM_ANDROID)
-	#define HK_STD_NAMESPACE /* Nothing */
-#else
-	#define HK_STD_NAMESPACE std
-#endif
-
 namespace hkMath
 {
 	HK_FORCE_INLINE static hkFloat32 HK_CALL invSqrtF32Approx12Bit( const hkFloat32 x )
@@ -162,7 +156,7 @@ namespace hkMath
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140625)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -12,7 +12,7 @@
 #include <Vision/Runtime/EnginePlugins/ThirdParty/ScaleformEnginePlugin/vScaleformManager.hpp>
 #include <Vision/Runtime/EnginePlugins/ThirdParty/ScaleformEnginePlugin/VScaleformMovie.hpp>
 #include <Vision/Runtime/EnginePlugins/ThirdParty/ScaleformEnginePlugin/VScaleformValue.hpp>
-#include <Vision/Runtime/EnginePlugins/ThirdParty/ScaleformEnginePlugin/vScaleformInternal.hpp>
+#include <Vision/Runtime/EnginePlugins/ThirdParty/ScaleformEnginePlugin/VScaleformInternal.hpp>
 #include <Vision/Runtime/EnginePlugins/ThirdParty/ScaleformEnginePlugin/VScaleformVariableManager.hpp>
 #include <Vision/Runtime/EnginePlugins/ThirdParty/ScaleformEnginePlugin/VScaleformArgumentsHelper.hpp>
 
@@ -157,7 +157,6 @@ VScaleformMovieInstance::VScaleformMovieInstance(const char *szFilename, Scalefo
   const char *szCandidateMovie, const char *szImeXml, int iPosX, int iPosY, int iWidth, int iHeight)
   : m_pMovieInst(NULL)
   , m_phMovieDisplay(NULL)
-  , m_pVariableManager(new VScaleformVariableManager())
 #if defined(USE_SF_IME)
   , m_sCandidateMovie(szCandidateMovie)
   , m_sImeXml(szImeXml)
@@ -174,10 +173,13 @@ VScaleformMovieInstance::VScaleformMovieInstance(const char *szFilename, Scalefo
   , m_iMovieAuthoredWidth(SF_MOVIE_SIZE_AUTHORED)
   , m_iMovieAuthoredHeight(SF_MOVIE_SIZE_AUTHORED)
   , m_sFileName(szFilename)
-#if defined(WIN32)
+#if defined(_VISION_WIN32)
   , m_pKeyModifiers(new Scaleform::KeyModifiers())
 #endif
   , m_pAdvanceTask(NULL)
+  , m_pVariableManager(new VScaleformVariableManager())
+  , m_queuedFSCommands()
+  , m_queuedExternalCalls()
 {
   m_pAdvanceTask = new VScaleformAdvanceTask(this);
 
@@ -255,9 +257,9 @@ void VScaleformMovieInstance::Invalidate()
   m_pAdvanceTask->WaitUntilFinished();
   V_SAFE_DELETE(m_pAdvanceTask);
 
-#if defined(WIN32)
+#if defined(_VISION_WIN32)
   V_SAFE_DELETE(m_pKeyModifiers);
-#endif
+#endif  
 
   for (int i = 0; i < m_queuedFSCommands.GetSize(); i++)
   {
@@ -385,6 +387,30 @@ void VScaleformMovieInstance::Restart()
   m_pMovieInst->Restart();
 }
 
+unsigned int VScaleformMovieInstance::GetCurrentFrame() const
+{
+  m_pAdvanceTask->WaitUntilFinished();
+
+  return m_pMovieInst->GetCurrentFrame() + 1;
+}
+
+void VScaleformMovieInstance::GotoFrame(unsigned int uiFrameIndex)
+{
+  m_pAdvanceTask->WaitUntilFinished();
+
+  // Scaleform handles frame indices for movies as 0-based,
+  // while frames of display objects are 1-based.
+  // We account for this here: Frames indices are always 1-based.
+  m_pMovieInst->GotoFrame(hkvMath::Max(uiFrameIndex, 1u) - 1u);
+}
+
+bool VScaleformMovieInstance::GotoLabeledFrame(const char* szLabel, int iFrameOffset)
+{
+  m_pAdvanceTask->WaitUntilFinished();
+
+  return m_pMovieInst->GotoLabeledFrame(szLabel, iFrameOffset);
+}
+
 bool VScaleformMovieInstance::IsFocused() const
 {
   if(m_pMovieInst == NULL) 
@@ -468,6 +494,44 @@ void VScaleformMovieInstance::GetAuthoredSize(int& iWidth, int& iHeight) const
 void VScaleformMovieInstance::SetAuthoredSize()
 {
   SetDimensions(m_iPosX, m_iPosY, SF_MOVIE_SIZE_AUTHORED, SF_MOVIE_SIZE_AUTHORED);
+}
+
+void VScaleformMovieInstance::SetViewAlignment(MovieAlignType alignType)
+{
+  if (alignType == MAT_Center)
+    m_pMovieInst->SetViewAlignment(Scaleform::GFx::Movie::Align_Center);
+  else if (alignType == MAT_TopCenter)
+    m_pMovieInst->SetViewAlignment(Scaleform::GFx::Movie::Align_TopCenter);
+  else if (alignType == MAT_BottomCenter)
+    m_pMovieInst->SetViewAlignment(Scaleform::GFx::Movie::Align_BottomCenter);
+  else if (alignType == MAT_CenterLeft)
+    m_pMovieInst->SetViewAlignment(Scaleform::GFx::Movie::Align_CenterLeft);
+  else if (alignType == MAT_CenterRight)
+    m_pMovieInst->SetViewAlignment(Scaleform::GFx::Movie::Align_CenterRight);
+  else if (alignType == MAT_TopLeft)
+    m_pMovieInst->SetViewAlignment(Scaleform::GFx::Movie::Align_TopLeft);
+  else if (alignType == MAT_TopRight)
+    m_pMovieInst->SetViewAlignment(Scaleform::GFx::Movie::Align_TopRight);
+  else if (alignType == MAT_BottomLeft)
+    m_pMovieInst->SetViewAlignment(Scaleform::GFx::Movie::Align_BottomLeft);
+  else if (alignType == MAT_BottomRight)
+    m_pMovieInst->SetViewAlignment(Scaleform::GFx::Movie::Align_BottomRight);
+  else
+    VASSERT_ALWAYS_MSG(false, "Unknown view align type!");
+}
+
+void VScaleformMovieInstance::SetViewScaleMode(MovieScaleMode scaleMode)
+{
+  if (scaleMode == MSM_NoScale)
+    m_pMovieInst->SetViewScaleMode(Scaleform::GFx::Movie::SM_NoScale);
+  else if (scaleMode == MSM_ShowAll)
+    m_pMovieInst->SetViewScaleMode(Scaleform::GFx::Movie::SM_ShowAll);
+  else if (scaleMode == MSM_ExactFit)
+    m_pMovieInst->SetViewScaleMode(Scaleform::GFx::Movie::SM_ExactFit);
+  else if (scaleMode == MSM_NoBorder)
+    m_pMovieInst->SetViewScaleMode(Scaleform::GFx::Movie::SM_NoBorder);
+  else
+    VASSERT_ALWAYS_MSG(false, "Unknown view scale mode!");
 }
 
 void VScaleformMovieInstance::UpdateViewport()
@@ -652,7 +716,7 @@ VOnFSCommand::~VOnFSCommand()
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

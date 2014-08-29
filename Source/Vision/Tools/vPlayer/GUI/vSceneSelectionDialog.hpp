@@ -19,7 +19,7 @@ class VStyledButton;
 class VSceneSelectionPage : public VListControl, public IVisCallbackHandler_cl
 {
 public:
-  VSceneSelectionPage(const char* szTabTitle, ISceneListDataProvider* pDataProvider, int iIndex, VDialog* pParentDialog);
+  VSceneSelectionPage(const char* szTabTitle, const ISceneListDataProvider* pDataProvider, int iIndex, VDialog* pParentDialog);
   ~VSceneSelectionPage();
 
   void OnItemClicked(VMenuEventDataObject* pEvent);
@@ -37,13 +37,15 @@ public:
 private:
   TabButton* m_pTabButton;
 
-  ISceneListDataProvider* m_pDataProvider;
+  const ISceneListDataProvider* m_pDataProvider;
 
   int m_iIndex;
 };
 
 class VSceneSelectionDialog : public VDialog, public IVisCallbackHandler_cl
 {
+  V_DECLARE_DYNAMIC(VSceneSelectionDialog);
+
 public:
   VSceneSelectionDialog(ITextDataProvider* pStatusDataProvider);
   virtual ~VSceneSelectionDialog();
@@ -52,7 +54,7 @@ public:
 
   virtual void OnHandleCallback(IVisCallbackDataObject_cl* pData) HKV_OVERRIDE;
  
-  void AddPage(const char* szPageTitle, ISceneListDataProvider* pDataProvider);
+  void AddPage(const char* szPageTitle, const ISceneListDataProvider* pDataProvider);
   
   void SelectPageByIndex(int iIndex);
 
@@ -78,7 +80,7 @@ private:
 #endif // MainMenu_h__
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -10,12 +10,16 @@
 #include <Vision/Runtime/EnginePlugins/Havok/HavokPhysicsEnginePlugin/vHavokTerrain.hpp>
 #include <Vision/Runtime/EnginePlugins/Havok/HavokPhysicsEnginePlugin/vHavokUserData.hpp>
 #include <Vision/Runtime/EnginePlugins/Havok/HavokPhysicsEnginePlugin/vHavokShapeFactory.hpp>
+#include <Vision/Runtime/EnginePlugins/Havok/HavokPhysicsEnginePlugin/vHavokShapeCache.hpp>
 #include <Vision/Runtime/EnginePlugins/Havok/HavokPhysicsEnginePlugin/vHavokConversionUtils.hpp>
-#include <Vision/Runtime/EnginePlugins/Havok/HavokPhysicsEnginePlugin/vHavokCachedShape.hpp>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Terrain/Geometry/TerrainSector.hpp>
+#include <Physics2012/Internal/Collide/BvCompressedMesh/hkpBvCompressedMeshShape.h>
+#include <Physics2012/Internal/Collide/BvCompressedMesh/hkpBvCompressedMeshShapeCinfo.h>
 #include <Physics2012/Internal/Collide/StaticCompound/hkpStaticCompoundShape.h>
 #include <Physics2012/Collide/Shape/Convex/ConvexTranslate/hkpConvexTranslateShape.h> 
+#include <Physics2012/Collide/Shape/Convex/Triangle/hkpTriangleShape.h>
 #include <Common/Base/Container/PointerMultiMap/hkPointerMultiMap.h>
+#include <Geometry/Collide/Algorithms/Triangle/hkcdTriangleUtil.h>
 
 // -------------------------------------------------------------------------- //
 // Constructor / Destructor                                                   //
@@ -120,7 +124,6 @@ void vHavokTerrain::RemoveHkRigidBody()
   m_pRigidBody = NULL;
 }
 
-
 // -------------------------------------------------------------------------- //
 // Accessing Havok Instances                                                  //
 // -------------------------------------------------------------------------- //
@@ -130,9 +133,8 @@ const hkpShape *vHavokTerrain::GetHkShape() const
   if (m_pRigidBody == NULL) 
     return NULL;
 
-  return m_pRigidBody->getCollidable()->getShape();;
+  return m_pRigidBody->getCollidable()->getShape();
 }
-
 
 // -------------------------------------------------------------------------- //
 // Accessing Vision Instances                                                  //
@@ -142,7 +144,6 @@ const VTerrainSector* vHavokTerrain::GetWrappedTerrainSector()
 {
   return m_terrainSector;
 }
-
 
 // -------------------------------------------------------------------------- //
 // Helper methods                                                             //
@@ -154,13 +155,294 @@ void vHavokTerrain::SaveShapeToFile()
   m_module.MarkForRead(); 
   const hkpShape *pShape = m_pRigidBody->getCollidable()->getShape();
   m_module.UnmarkForRead();
-  vHavokCachedShape::SaveTerrainSectorShape(m_terrainSector, pShape);
+  vHavokShapeCache::SaveTerrainSectorShape(m_terrainSector, pShape);
 }
-
 
 // -------------------------------------------------------------------------- //
 // Decoration group
 // -------------------------------------------------------------------------- //
+
+class hkvDecorationMeshShape;
+
+// Custom raycast collector to filter out holes
+class vHavokDecorationHitCollector : public hkpRayHitCollector
+{
+public:
+	vHavokDecorationHitCollector(const hkvDecorationMeshShape *pDecoMesh, hkpRayHitCollector& collector, const hkpShapeRayCastInput& input) 
+		: m_decoMeshShape(pDecoMesh), m_collector(collector), m_input(input)
+	{
+	}
+
+  // see implementation below
+	virtual void addRayHit(const hkpCdBody& cdBody, const hkpShapeRayCastCollectorOutput& hitInfo) HKV_OVERRIDE;
+private:
+	hkpRayHitCollector& m_collector;
+	const hkpShapeRayCastInput& m_input;
+  const hkvDecorationMeshShape *m_decoMeshShape;
+};
+
+// Custom compound shape for decoration group. Overrides the raycast method to support alphatested maerials
+class hkvDecorationMeshShape : public hkpStaticCompoundShape
+{
+public:
+  // constructor: Prepare additional information for the model
+  hkvDecorationMeshShape(VBaseMesh *pRenderMesh, const hkArray<hkUint32>& triangleToKeyMap)
+  {
+    // build additional model information for the UV lookup
+    int iTriCount = pRenderMesh->GetNumOfTriangles();
+    VASSERT(iTriCount==triangleToKeyMap.getSize());
+
+    // first find the maximum key index
+    m_iKeyCount = 0;
+    for (int i=0;i<iTriCount;i++)
+      m_iKeyCount = hkvMath::Max(m_iKeyCount, triangleToKeyMap[i]+1);
+
+    // allocate a lookup array for each key
+    m_pKeyMapping = new KeyInfo[m_iKeyCount];
+
+    // fill lookup array with data from the render mesh
+    int iTriCounter=0;
+    VMemoryTempBuffer<1024*64> indexRawBuffer;
+    VMemoryTempBuffer<1024*256> vertexRawBuffer(pRenderMesh->GetNumOfVertices()*sizeof(hkvVec2));
+    hkvVec2 *pUV = (hkvVec2 *)vertexRawBuffer.GetBuffer();
+    VisMBVertexDescriptor_t desc_UV;
+    desc_UV.m_iStride = sizeof(hkvVec2);
+    desc_UV.m_iTexCoordOfs[0] = 0;
+    desc_UV.SetFormatDefaults();
+    pRenderMesh->CopyMeshVertices(pUV,desc_UV); // get UV array from all vertices
+
+    for (int iSubMesh=0;iSubMesh<pRenderMesh->GetSubmeshCount();iSubMesh++)
+    {
+      VBaseSubmesh *pSubMesh = pRenderMesh->GetBaseSubmesh(iSubMesh);
+      int iStartIndex, iNumIndices;
+      pSubMesh->GetRenderRange(iStartIndex, iNumIndices);
+      if (pSubMesh->GetSurface()==NULL || pSubMesh->GetSurface()->GetTransparencyType()==VIS_TRANSP_NONE)
+      {
+        iTriCounter += iNumIndices/3;
+        continue;
+      }
+      const char *szTextureFile = pSubMesh->GetSurface()->GetBaseTexture();
+      if (szTextureFile==NULL)
+      {
+        iTriCounter += iNumIndices/3;
+        continue;
+      }
+      // load opacity map that corresponds to the material texture
+      vHavokOpacityMap *pOpacityMap = (vHavokOpacityMap *)vHavokOpacityMapManager::GetManager().LoadResource(szTextureFile);
+
+      // copy index range (i.e. triangle data) from this submesh
+      indexRawBuffer.EnsureCapacity(iNumIndices*sizeof(int));
+      unsigned int *pIndices = (unsigned int *)indexRawBuffer.GetBuffer();
+      pRenderMesh->CopyMeshIndices32(pIndices,iStartIndex, iNumIndices);
+      iNumIndices/=3;
+      for (int iTri=0;iTri<iNumIndices;iTri++,iTriCounter++)
+      {
+        // set array entry at the position of the actual key, because we perform lookup with the key later
+        hkUint32 iKey = triangleToKeyMap[iTriCounter];
+        KeyInfo &info(m_pKeyMapping[iKey]);
+        VASSERT(info.m_spOpacityMap==NULL || info.m_spOpacityMap==pOpacityMap);
+        const hkvVec2 &uv0(pUV[pIndices[iTri*3+0]]); // dont add iStartIndex here because we copied array with an offset already
+        const hkvVec2 &uv1(pUV[pIndices[iTri*3+1]]);
+        const hkvVec2 &uv2(pUV[pIndices[iTri*3+2]]);
+        info.m_triangleUV[0].set(uv0.x,uv0.y);
+        info.m_triangleUV[1].set(uv1.x,uv1.y);
+        info.m_triangleUV[2].set(uv2.x,uv2.y);
+        info.m_spOpacityMap = pOpacityMap;
+      }
+    }
+    VASSERT(iTriCounter==iTriCount);
+  }
+
+  virtual ~hkvDecorationMeshShape()
+  {
+    delete[] m_pKeyMapping;
+  }
+
+  void castRayWithCollector(const hkpShapeRayCastInput& input, const hkpCdBody& cdBody, hkpRayHitCollector& collector) const
+  {
+    vHavokDecorationHitCollector collectorWithHoleSupport(this, collector, input);
+    hkpStaticCompoundShape::castRayWithCollector(input, cdBody, collectorWithHoleSupport);    
+  }
+
+  // a structure that keeps per-key information of the triangle. The parent shape holds an array of m_iKeyCount elements
+  struct KeyInfo
+  {
+    VSmartPtr<vHavokOpacityMap> m_spOpacityMap; ///< the opacity map to perform lookup. Can be NULL if no lookup should be performed (opaque materials)
+    hkVector2 m_triangleUV[3];  ///< 3 UV coordinates that correspond to the UV of the triangle
+  };
+
+  hkUint32 m_iKeyCount;     ///< number of keys generated
+  KeyInfo *m_pKeyMapping;   ///< array of m_iKeyCount elements to perform the lookup
+};
+
+
+void vHavokDecorationHitCollector::addRayHit(const hkpCdBody& cdBody, const hkpShapeRayCastCollectorOutput& hitInfo)
+{
+	hkpShapeKey key = cdBody.getShapeKey();
+	VASSERT(key != HK_INVALID_SHAPE_KEY);
+
+	// we know this shape belongs to the decoration model, because this collector is used for hkvDecorationMeshShape.
+  // so we can do the following casts
+  hkvDecorationMeshShape *pDecoShape = (hkvDecorationMeshShape *)cdBody.getParent()->getShape();
+  hkpTriangleShape *pTriangle = (hkpTriangleShape *)cdBody.getShape();
+
+  // split key into instance and triangle
+  int instanceId;
+  hkpShapeKey childKey;
+  pDecoShape->decomposeShapeKey(key, instanceId, childKey);
+
+  // lookup array and perform opacity testing
+  VASSERT((int)childKey<pDecoShape->m_iKeyCount);
+  hkvDecorationMeshShape::KeyInfo &triInfo(pDecoShape->m_pKeyMapping[childKey]);
+  if (triInfo.m_spOpacityMap!=NULL)
+  {
+    // calculate barycentric coordinates for UV lookup
+    hkVector4 bary;
+    hkVector4 hitPointWS; 
+    hitPointWS.setInterpolate( m_input.m_from, m_input.m_to, hitInfo.m_hitFraction );
+
+    // Transform triangle vertices to world space
+    const hkQsTransform& tr = pDecoShape->getInstances()[instanceId].getTransform();
+    hkVector4 tv[3];
+    tv[0]._setTransformedPos(tr, pTriangle->getVertex<0>());
+    tv[1]._setTransformedPos(tr, pTriangle->getVertex<1>());
+    tv[2]._setTransformedPos(tr, pTriangle->getVertex<2>());
+
+    hkcdTriangleUtil::calcBarycentricCoordinates(hitPointWS, tv[0], tv[1], tv[2], bary);
+
+    // convert barycentric to actual texture UV
+    hkVector2 hitPointUV;
+    hitPointUV.setMul(triInfo.m_triangleUV[2], bary.getComponent<0>()); // using order UV[2],UV[0],UV[1] found through trial and error
+    hitPointUV.addMul(bary.getComponent<1>(), triInfo.m_triangleUV[0]);
+    hitPointUV.addMul(bary.getComponent<2>(), triInfo.m_triangleUV[1]);
+/*
+    if (true) // very useful code path for debugging
+    {
+      hkvVec3 vWSPos;
+      vHavokConversionUtils::PhysVecToVisVecWorld(tv[0],vWSPos);
+      Vision::Game.DrawCube(vWSPos,1.f);
+      vHavokConversionUtils::PhysVecToVisVecWorld(tv[1],vWSPos);
+      Vision::Game.DrawCube(vWSPos,1.f);
+      vHavokConversionUtils::PhysVecToVisVecWorld(tv[2],vWSPos);
+      Vision::Game.DrawCube(vWSPos,1.f);
+      vHavokConversionUtils::PhysVecToVisVecWorld(hitPointWS,vWSPos);
+      Vision::Game.DrawCube(vWSPos,0.5f);
+      static VisScreenMask_cl *pMask = NULL;
+      if (pMask==NULL)
+      {
+        VSmartPtr<vHavokOpacityMapPreview> spPreview = (vHavokOpacityMapPreview *)triInfo.m_spOpacityMap->CreateResourcePreview();
+        spPreview->OnActivate();
+        pMask = new VisScreenMask_cl();
+        pMask->SetTextureObject(spPreview->m_spTexture);
+        pMask->SetVisible(TRUE);
+        pMask->SetTargetSize(256.f,256.f);
+        pMask->SetPos(0,0);
+        spPreview->OnDeActivate();
+      }
+#define SHOW_CROSS(_u,_v,col) \
+      {\
+        float cx = fmodf(_u,1.f) * 256.f;\
+        float cy = fmodf(_v,1.f) * 256.f;\
+        Vision::Game.DrawSingleLine2D(cx-3,cy,cx+3,cy,col);\
+        Vision::Game.DrawSingleLine2D(cx,cy-3,cx,cy+3,col);\
+      }
+      SHOW_CROSS(triInfo.m_triangleUV[0].x,triInfo.m_triangleUV[0].y,V_RGBA_YELLOW);
+      SHOW_CROSS(triInfo.m_triangleUV[1].x,triInfo.m_triangleUV[1].y,V_RGBA_YELLOW);
+      SHOW_CROSS(triInfo.m_triangleUV[2].x,triInfo.m_triangleUV[2].y,V_RGBA_YELLOW);
+      VColorRef hitColor = triInfo.m_spOpacityMap->IsOpaqueAtUV(hitPointUV.x, hitPointUV.y) ? V_RGBA_YELLOW : V_RGBA_GREEN;
+      SHOW_CROSS(hitPointUV.x,hitPointUV.y,hitColor);
+    }
+*/
+    // transparent pixel? The return without hit
+    if (!triInfo.m_spOpacityMap->IsOpaqueAtUV(hitPointUV.x, hitPointUV.y))
+      return;
+  }
+  // propagate to original collector
+	m_collector.addRayHit(cdBody, hitInfo);
+}
+
+
+void VHavokDecorationGroup::CreateFromRenderMesh(IVisDecorationGroup_cl &group, bool bUseAlphaTest)
+{
+  int iDecoCount = group.GetDecorationObjectCount();
+ 
+  // in this version, all instances must have the same model
+#if defined(HK_DEBUG_SLOW)
+  for ( int i=1; i<iDecoCount; i++ )
+  {
+    VTerrainDecorationInstance *pInst = group.GetDecorationObject(i);
+    VASSERT_MSG(pInst->GetModel() == group.GetDecorationObject(0)->GetModel(), "groups with different models are currently not supported");      
+  }
+#endif
+
+
+  VTerrainDecorationInstance *pInstance = group.GetDecorationObject(0);
+  IVTerrainDecorationModel *pModel = pInstance->GetModel();
+  VBaseMesh *pRenderMesh = pModel->GetCollisionSubObject(0)->GetRenderMesh(); 
+  const IVCollisionMesh* pColMesh = pRenderMesh->GetTraceMesh( true, true );
+
+  // Build the hkGeometry for this
+  hkGeometry collisionGeometry;
+  {
+    int iNumColMeshes = hkvMath::Max(pColMesh->GetSubmeshCount(), 1);
+    for (int i=0;i<iNumColMeshes;i++)
+    {
+      vHavokShapeFactory::BuildGeometryFromCollisionMesh(pColMesh, i, hkvMat4::IdentityMatrix(), false, collisionGeometry);
+    }
+  }
+
+  // Create the mesh shape and compound shape
+  hkpStaticCompoundShape *compoundShape;
+  hkpBvCompressedMeshShape* meshShape;
+  hkpDefaultBvCompressedMeshShapeCinfo cinfo(&collisionGeometry);
+  if (bUseAlphaTest)
+  {
+    hkArray<hkUint32> triangleToKeyMap;
+    cinfo.m_triangleIndexToShapeKeyMap = &triangleToKeyMap;
+    meshShape = new hkpBvCompressedMeshShape(cinfo);
+    compoundShape = new hkvDecorationMeshShape(pRenderMesh, triangleToKeyMap); // with alpha test support
+  } else
+  {
+    meshShape = new hkpBvCompressedMeshShape(cinfo);
+    compoundShape = new hkpStaticCompoundShape();
+  }
+
+  // For each decoration object
+  for (int i = 0; i < iDecoCount; i++)
+  {
+    VTerrainDecorationInstance *pInstance = group.GetDecorationObject(i);
+    IVTerrainDecorationModel *pModel = pInstance->GetModel();
+
+    const float instanceScale = pInstance->GetScaling();
+
+    // Compute base instance transformation
+    const hkSimdReal hkInstanceScale = hkSimdReal::fromFloat(instanceScale);
+
+    hkvMat3 normalizedOrientation = pInstance->m_Orientation;
+    normalizedOrientation.normalize();
+
+    // Get the model instance transformation.
+    hkQsTransform instanceTransform;
+    vHavokConversionUtils::VisMatrixToHkQuat(normalizedOrientation, instanceTransform.m_rotation);
+    vHavokConversionUtils::VisVecToPhysVecWorld(pInstance->m_vPosition, instanceTransform.m_translation);
+    instanceTransform.m_scale.setAll(hkInstanceScale);
+
+    compoundShape->addInstance(meshShape, instanceTransform);
+  }
+
+  // Bake the compound shape and create the Havok Rigid Body
+  compoundShape->bake();
+  hkpRigidBodyCinfo rigidBodyInfo;
+  rigidBodyInfo.m_motionType = hkpMotion::MOTION_FIXED;
+  rigidBodyInfo.m_collisionFilterInfo = hkpGroupFilter::calcFilterInfo(vHavokPhysicsModule::HK_LAYER_COLLIDABLE_DECORATION);
+  rigidBodyInfo.m_shape = compoundShape;
+  m_pCompoundRigidBody= new hkpRigidBody(rigidBodyInfo);
+
+  // Cleanup
+  meshShape->removeReference();
+  compoundShape->removeReference();
+}
+
 
 struct VHavokDecorationGroup_ModelAndScale 
 {
@@ -175,23 +457,10 @@ struct VHavokDecorationGroup_ShapeInfo
   hkVector4 vLocalOffset;
 };
 
-VHavokDecorationGroup::VHavokDecorationGroup(IVisDecorationGroup_cl &group)
+
+void VHavokDecorationGroup::CreateFromCapsules(IVisDecorationGroup_cl &group)
 {
   int iDecoCount = group.GetDecorationObjectCount();
-
-#if defined(HK_DEBUG_SLOW)
-  int iCollisionObjectsCount = 0;
-  for ( int i=0; i<iDecoCount; i++ )
-  {
-    VTerrainDecorationInstance *pInst = group.GetDecorationObject(i);
-    if ( pInst->GetModel() != NULL )
-      iCollisionObjectsCount += pInst->GetModel()->GetCollisionSubObjectCount();
-  }
-  VASSERT_MSG(iCollisionObjectsCount>0, "These objects should only be created if the group has collision information.");
-#endif
-
-  hkQuaternion qSpeedTree2Engine;
-  qSpeedTree2Engine.setAxisAngle(hkVector4::getConstant<HK_QUADREAL_0010>(), hkReal(-90)*HK_REAL_DEG_TO_RAD);
 
   hkpStaticCompoundShape *compoundShape = new hkpStaticCompoundShape();
   hkArray<VHavokDecorationGroup_ShapeInfo> shapeInfos;
@@ -267,9 +536,6 @@ VHavokDecorationGroup::VHavokDecorationGroup(IVisDecorationGroup_cl &group)
 		hkVector4 vs; vHavokConversionUtils::VisVecToPhysVec_noscale(vStart,vs);        
 		hkVector4 ve; vHavokConversionUtils::VisVecToPhysVec_noscale(vEnd,ve);
 
-		vs._setRotatedDir(qSpeedTree2Engine, vs);
-		ve._setRotatedDir(qSpeedTree2Engine, ve);
-
         vs.mul(hkInstanceScale);
         ve.mul(hkInstanceScale); 
 
@@ -341,7 +607,7 @@ VHavokDecorationGroup::VHavokDecorationGroup(IVisDecorationGroup_cl &group)
   compoundShape->bake();
   hkpRigidBodyCinfo rigidBodyInfo;
   rigidBodyInfo.m_motionType = hkpMotion::MOTION_FIXED;
-  rigidBodyInfo.m_collisionFilterInfo = hkpGroupFilter::calcFilterInfo(vHavokPhysicsModule::HK_LAYER_COLLIDABLE_TERRAIN);
+  rigidBodyInfo.m_collisionFilterInfo = hkpGroupFilter::calcFilterInfo(vHavokPhysicsModule::HK_LAYER_COLLIDABLE_DECORATION);
   rigidBodyInfo.m_shape = compoundShape;
   m_pCompoundRigidBody= new hkpRigidBody(rigidBodyInfo);
 
@@ -352,6 +618,43 @@ VHavokDecorationGroup::VHavokDecorationGroup(IVisDecorationGroup_cl &group)
     shapeInfos[s].pShape->removeReference();
   }	
 }
+
+
+VHavokDecorationGroup::VHavokDecorationGroup(IVisDecorationGroup_cl &group)
+{
+  int iDecoCount = group.GetDecorationObjectCount();
+
+#if defined(HK_DEBUG_SLOW)
+  int iCollisionObjectsCount = 0;
+  for ( int i=0; i<iDecoCount; i++ )
+  {
+    VTerrainDecorationInstance *pInst = group.GetDecorationObject(i);
+    if ( pInst->GetModel() != NULL )
+      iCollisionObjectsCount += pInst->GetModel()->GetCollisionSubObjectCount();
+  }
+  VASSERT_MSG(iCollisionObjectsCount>0, "These objects should only be created if the group has collision information.");
+#endif
+
+  IVTerrainDecorationModel *pFirstModel = group.GetDecorationObject(0)->GetModel();
+  if (pFirstModel->GetCollisionSubObjectCount()==1)
+  {
+    VDecorationCollisionPrimitive &prim(*pFirstModel->GetCollisionSubObject(0));
+    if (prim.GetCollisionType()==VDecorationCollisionPrimitive::VDecorationCollision_RenderMesh)
+    {
+      CreateFromRenderMesh(group, false);
+      return;
+    }
+    if (prim.GetCollisionType()==VDecorationCollisionPrimitive::VDecorationCollision_RenderMeshAlphaTest)
+    {
+      CreateFromRenderMesh(group, true);
+      return;
+    }
+  }
+
+  // in all other cases:
+  CreateFromCapsules(group);
+}
+
 
 VHavokDecorationGroup::~VHavokDecorationGroup()
 {
@@ -375,7 +678,7 @@ hkpRigidBody* VHavokDecorationGroup::GetHkRigidBody()
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

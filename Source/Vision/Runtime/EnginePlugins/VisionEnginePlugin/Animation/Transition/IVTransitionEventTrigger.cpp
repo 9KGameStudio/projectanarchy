@@ -9,7 +9,7 @@
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/VisionEnginePluginPCH.h>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Animation/Transition/IVTransitionEventTrigger.hpp>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Animation/Transition/VTransitionStateMachine.hpp>
-#include <Vision/Runtime/Base/System/Memory/VMemDbg.hpp>
+
 
 /// =========================================================================== ///
 /// IVTransitionEventTrigger Component Methods                                   ///
@@ -41,7 +41,7 @@ bool IVTransitionEventTrigger::CommonInit()
   // event listener. If no TSM is present do not return false as the base class might still 
   // have been initialized successfully listening to animation events triggered by the Vision
   // animation system.
-  VTransitionStateMachine* tsm = static_cast<VTransitionStateMachine*> (pEntity->Components().GetComponentOfType(V_RUNTIME_CLASS(VTransitionStateMachine)));
+  VTransitionStateMachine* tsm = pEntity->Components().GetComponentOfType<VTransitionStateMachine>();
   if (tsm != NULL)
   {
     tsm->AddEventListener(this);
@@ -59,7 +59,7 @@ void IVTransitionEventTrigger::MessageFunction( int iID, INT_PTR iParamA, INT_PT
 {  
   IVAnimationEventTrigger::MessageFunction(iID, iParamA, iParamB);
 
-#ifdef WIN32
+#if defined(_VISION_WIN32)
   if (iID == VIS_MSG_EDITOR_GETSTANDARDVALUES)
   {
     // Get bone names
@@ -72,7 +72,7 @@ void IVTransitionEventTrigger::MessageFunction( int iID, INT_PTR iParamA, INT_PT
         return;
 
       // Check if there is a transition state machine component
-      VTransitionStateMachine* tsm = static_cast<VTransitionStateMachine*> (pEntity->Components().GetComponentOfType(V_RUNTIME_CLASS(VTransitionStateMachine)));
+      VTransitionStateMachine* tsm = pEntity->Components().GetComponentOfType<VTransitionStateMachine>();
       if (tsm == NULL)
         return;
             
@@ -110,7 +110,7 @@ START_VAR_TABLE(IVTransitionEventTrigger, IVAnimationEventTrigger, "Transition E
 END_VAR_TABLE
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

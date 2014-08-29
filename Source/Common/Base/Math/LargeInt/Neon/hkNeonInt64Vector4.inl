@@ -293,7 +293,7 @@ namespace hkInt64Vector4Impl
 		const int64x2_t amb		= vsubq_s64(a, b);
 		const uint64x2_t cmp	= vreinterpretq_u64_s64(vshrq_n_s64(amb, 63));
 		const int64x2_t res1	= vbslq_s64(cmp, b, a);							// (a < b) ? b : a
-		
+
 		// Choose result
 		return  vbslq_s64(signs_cmp, res2, res1);	// (a * b < 0) ? res2 : res1;
 	}
@@ -368,7 +368,7 @@ template <> inline hkInt64 hkInt64Vector4::dot_64<3>(hkIntVectorParameter vB) co
 	ret.setFlipSign(ret, cmpFlip);
 
 	// Compute and return dot
-	return vget_lane_s64(	vadd_s64(	vget_high_s64(ret.m_quad.xy),							// y + 
+	return vget_lane_s64(	vadd_s64(	vget_high_s64(ret.m_quad.xy),							// y +
 										vget_low_s64(vaddq_s64(ret.m_quad.xy, ret.m_quad.zw))),	// [x + z]
 							0);
 }
@@ -451,7 +451,7 @@ inline void hkInt64Vector4::setUnsignedMul_128<2>(hkInt64Vector4Parameter origA,
 	// Finally, gather the results into the outputs
 				a0b0_c0d0	= vshrq_n_u64(vshlq_n_u64(a0b0_c0d0, 32), 32);
 	uint64x2_t	r0			= vorrq_u64(vshlq_n_u64(r1, 32), a0b0_c0d0);			// [lo(a b), lo(c d)]
-	
+
 
 	// Respect convention x = Hi, y = Lo!
 	m_quad.xy = vreinterpretq_s64_u64(vcombine_u64(vget_high_u64(r2), vget_high_u64(r0)));	// a * b
@@ -614,8 +614,44 @@ inline void hkInt64Vector4::convertS64ToF64(hkVector4d& vOut) const
 	vOut.set((double)vgetq_lane_s64(m_quad.xy, 0), (double)vgetq_lane_s64(m_quad.xy, 1), (double)vgetq_lane_s64(m_quad.zw, 0), (double)vgetq_lane_s64(m_quad.zw, 1));
 }
 
+
+//
+//	Load values for N components from linear addresses at \a p. Not loaded components are undefined.
+
+template <int N, hkMathIoMode A>
+HK_FORCE_INLINE void hkInt64Vector4::load(const hkUint64* p)
+{
+	HK_ERROR(0x733fb66c, "Not implemented");
+}
+
+template <> HK_FORCE_INLINE void hkInt64Vector4::load<4, HK_IO_SIMD_ALIGNED>(const hkUint64* p)
+{
+	uint64x2_t xy = vld1q_u64(p);
+	uint64x2_t zw = vld1q_u64(p + 2);
+	m_quad.xy = vreinterpretq_s64_u64(xy);
+	m_quad.zw = vreinterpretq_s64_u64(zw);
+}
+
+//
+//	Store values of N components to linear addresses at \a p.
+
+template <int N, hkMathIoMode A>
+HK_FORCE_INLINE void hkInt64Vector4::store(hkUint64* p) const
+{
+	HK_ERROR(0x733fb66d, "Not implemented");
+}
+
+template <>
+HK_FORCE_INLINE void hkInt64Vector4::store<4, HK_IO_SIMD_ALIGNED>(hkUint64* p) const
+{
+	uint64x2_t xy = vreinterpretq_u64_s64(m_quad.xy);
+	uint64x2_t zw = vreinterpretq_u64_s64(m_quad.zw);
+	vst1q_u64(p, xy);
+	vst1q_u64(p + 2, zw);
+}
+
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140625)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

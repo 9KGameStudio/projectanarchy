@@ -15,7 +15,7 @@ class hkMeshSystem;
 class hkBitField;
 
 /// A utility to help in the processing of vertices and vertex buffers
-class hkMeshVertexBufferUtil
+class HK_EXPORT_COMMON hkMeshVertexBufferUtil
 {
     public:
 		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE, hkMeshVertexBufferUtil);
@@ -138,12 +138,15 @@ class hkMeshVertexBufferUtil
 			/// Computes the most fitting vertex format, that will be able to store all data in the given source vertex formats
 		static void HK_CALL computeMostFittingVertexFormat(hkVertexFormat& dstFormat, const hkVertexFormat* srcFormats, int numSourceFormats);
 
+		/// Clones the given vertex buffer
+		static hkMeshVertexBuffer* HK_CALL cloneBuffer(hkMeshSystem* meshSystem, hkMeshVertexBuffer* srcVb);
+
 };
 
 #endif // HK_VERTEX_BUFFER_UTIL_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

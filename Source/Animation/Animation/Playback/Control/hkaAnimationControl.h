@@ -16,7 +16,7 @@ class hkaSkeletonMapper;
 
 /// This abstract class is the base class for all animation controllers.
 /// It contains the local time and weight for a playing animation.
-class hkaAnimationControl : public hkReferencedObject
+class HK_EXPORT_ANIMATION hkaAnimationControl : public hkReferencedObject
 {
 	public:
 
@@ -181,7 +181,7 @@ class hkaAnimationControl : public hkReferencedObject
 #endif // HK_ANIMATION_CONTROL_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

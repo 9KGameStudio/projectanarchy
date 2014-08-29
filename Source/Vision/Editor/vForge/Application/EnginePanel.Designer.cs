@@ -106,6 +106,7 @@ private ToolStripMenuItem transformGizmoToolStripMenuItem;
 private ToolStripMenuItem moveToolStripMenuItem;
 private ToolStripMenuItem rotateToolStripMenuItem;
 private ToolStripMenuItem scaleToolStripMenuItem;
+private ToolStripMenuItem toolStripButton_VertexSnapping;
 private ToolStripMenuItem toolStripButton_StickToGround;
 private ToolStripMenuItem toolStripButton_EnableMoveSnap;
 private ToolStripMenuItem toolStripButton_EnableAngleSnap;
@@ -175,11 +176,13 @@ ToolStripDropDown _play_Dropdown = null;
       this.ToolStripButton_Select = new System.Windows.Forms.ToolStripSplitButton();
       this.ToolStripButton_Move = new CSharpFramework.Controls.ToolStripSplitButtonCheckable();
       this.toolStripButton_EnableMoveSnap = new System.Windows.Forms.ToolStripMenuItem();
+      this.toolStripButton_VertexSnapping = new System.Windows.Forms.ToolStripMenuItem();
       this.toolStripButton_StickToGround = new System.Windows.Forms.ToolStripMenuItem();
       this.toolStripButton_localPos = new System.Windows.Forms.ToolStripMenuItem();
       this.ToolStripButton_Rotate = new CSharpFramework.Controls.ToolStripSplitButtonCheckable();
       this.toolStripButton_EnableAngleSnap = new System.Windows.Forms.ToolStripMenuItem();
       this.toolStripButton_localOri = new System.Windows.Forms.ToolStripMenuItem();
+      this.ToolStripButton_Scale = new System.Windows.Forms.ToolStripButton();
       this.ToolStripButton_Link = new CSharpFramework.Controls.ToolStripSplitButtonCheckable();
       this.toolStripButton_Link_ShowNone = new System.Windows.Forms.ToolStripMenuItem();
       this.toolStripButton_Link_ShowAll = new System.Windows.Forms.ToolStripMenuItem();
@@ -286,6 +289,7 @@ ToolStripDropDown _play_Dropdown = null;
       this.cutToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
       this.copyToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
       this.deleteToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+      this.propertiesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
       this.contextMenuStrip_View = new System.Windows.Forms.ContextMenuStrip(this.components);
       this.pasteAtCursorToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
       this.toolStripMenuItem4 = new System.Windows.Forms.ToolStripSeparator();
@@ -320,7 +324,6 @@ ToolStripDropDown _play_Dropdown = null;
       this.ToolStripButton_HighlightSelection = new System.Windows.Forms.ToolStripMenuItem();
       this.ToolStripButton_OneClickSelection = new System.Windows.Forms.ToolStripMenuItem();
       this.transformStrip_EnginePanel.SuspendLayout();
-      this.ToolStripButton_Scale = new System.Windows.Forms.ToolStripButton();
       this.toolStrip_EnginePanel.SuspendLayout();
       this.contextMenuStrip_SelShapes.SuspendLayout();
       this.contextMenuStrip_View.SuspendLayout();
@@ -352,7 +355,7 @@ ToolStripDropDown _play_Dropdown = null;
       this.panel_VisionView.Location = new System.Drawing.Point(0, 31);
       this.panel_VisionView.MinimumSize = new System.Drawing.Size(16, 16);
       this.panel_VisionView.Name = "panel_VisionView";
-      this.panel_VisionView.Size = new System.Drawing.Size(769, 413);
+      this.panel_VisionView.Size = new System.Drawing.Size(890, 432);
       this.panel_VisionView.TabIndex = 1;
       // 
       // transformStrip_EnginePanel
@@ -696,7 +699,7 @@ ToolStripDropDown _play_Dropdown = null;
             this.toolStripSeparator4});
       this.toolStrip_EnginePanel.Location = new System.Drawing.Point(0, 0);
       this.toolStrip_EnginePanel.Name = "toolStrip_EnginePanel";
-      this.toolStrip_EnginePanel.Size = new System.Drawing.Size(769, 31);
+      this.toolStrip_EnginePanel.Size = new System.Drawing.Size(890, 31);
       this.toolStrip_EnginePanel.TabIndex = 0;
       this.toolStrip_EnginePanel.Text = "Engine View Toolbar";
       // 
@@ -717,6 +720,7 @@ ToolStripDropDown _play_Dropdown = null;
       this.ToolStripButton_Move.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
       this.ToolStripButton_Move.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.toolStripButton_EnableMoveSnap,
+            this.toolStripButton_VertexSnapping,
             this.toolStripButton_StickToGround,
             this.toolStripButton_localPos});
       this.ToolStripButton_Move.Image = global::Editor.Properties.Resources.toolbar_move;
@@ -739,6 +743,17 @@ ToolStripDropDown _play_Dropdown = null;
       this.toolStripButton_EnableMoveSnap.Text = "Enable Move Snap";
       this.toolStripButton_EnableMoveSnap.Click += new System.EventHandler(this.toolStripButton_EnableMoveSnap_Click);
       // 
+      // toolStripButton_VertexSnapping
+      // 
+      this.toolStripButton_VertexSnapping.CheckOnClick = true;
+      this.toolStripButton_VertexSnapping.Image = global::Editor.Properties.Resources.align_normal;
+      this.toolStripButton_VertexSnapping.ImageScaling = System.Windows.Forms.ToolStripItemImageScaling.None;
+      this.toolStripButton_VertexSnapping.Name = "toolStripButton_VertexSnapping";
+      this.toolStripButton_VertexSnapping.Size = new System.Drawing.Size(171, 22);
+      this.toolStripButton_VertexSnapping.Text = "Vertex Snapping";
+      this.toolStripButton_VertexSnapping.ToolTipText = "If enabled, you can move objects from-and-to selected vertices";
+      this.toolStripButton_VertexSnapping.Click += new System.EventHandler(this.toolStripButton_TranslationMode_Click);
+      // 
       // toolStripButton_StickToGround
       // 
       this.toolStripButton_StickToGround.CheckOnClick = true;
@@ -748,7 +763,7 @@ ToolStripDropDown _play_Dropdown = null;
       this.toolStripButton_StickToGround.Size = new System.Drawing.Size(171, 22);
       this.toolStripButton_StickToGround.Text = "Stick To Ground";
       this.toolStripButton_StickToGround.ToolTipText = "If enabled, objects stick to the ground surface while moving the shapes";
-      this.toolStripButton_StickToGround.Click += new System.EventHandler(this.toolStripButton_StickToGround_Click);
+      this.toolStripButton_StickToGround.Click += new System.EventHandler(this.toolStripButton_TranslationMode_Click);
       // 
       // toolStripButton_localPos
       // 
@@ -796,6 +811,18 @@ ToolStripDropDown _play_Dropdown = null;
       this.toolStripButton_localOri.Size = new System.Drawing.Size(172, 22);
       this.toolStripButton_localOri.Text = "Local Transform";
       this.toolStripButton_localOri.Click += new System.EventHandler(this.toolStripButton_localOri_Click);
+      // 
+      // ToolStripButton_Scale
+      // 
+      this.ToolStripButton_Scale.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+      this.ToolStripButton_Scale.Image = global::Editor.Properties.Resources.toolbar_scale_uniform;
+      this.ToolStripButton_Scale.ImageScaling = System.Windows.Forms.ToolStripItemImageScaling.None;
+      this.ToolStripButton_Scale.ImageTransparentColor = System.Drawing.Color.Magenta;
+      this.ToolStripButton_Scale.Name = "ToolStripButton_Scale";
+      this.ToolStripButton_Scale.Size = new System.Drawing.Size(28, 28);
+      this.ToolStripButton_Scale.Text = "Scale";
+      this.ToolStripButton_Scale.ToolTipText = "Scale Selected Shapes";
+      this.ToolStripButton_Scale.Click += new System.EventHandler(this.ToolStripButton_Scale_Click_1);
       // 
       // ToolStripButton_Link
       // 
@@ -1518,9 +1545,10 @@ ToolStripDropDown _play_Dropdown = null;
             this.toolStripMenuItem3,
             this.cutToolStripMenuItem,
             this.copyToolStripMenuItem,
-            this.deleteToolStripMenuItem});
+            this.deleteToolStripMenuItem,
+            this.propertiesToolStripMenuItem});
       this.contextMenuStrip_SelShapes.Name = "contextMenuStrip1";
-      this.contextMenuStrip_SelShapes.Size = new System.Drawing.Size(173, 236);
+      this.contextMenuStrip_SelShapes.Size = new System.Drawing.Size(173, 258);
       this.contextMenuStrip_SelShapes.Opening += new System.ComponentModel.CancelEventHandler(this.contextMenuStrip_SelShapes_Opening);
       // 
       // transformGizmoToolStripMenuItem
@@ -1800,6 +1828,14 @@ ToolStripDropDown _play_Dropdown = null;
       this.deleteToolStripMenuItem.ToolTipText = "Delete the selected shape(s)";
       this.deleteToolStripMenuItem.Click += new System.EventHandler(this.deleteToolStripMenuItem_Click);
       // 
+      // propertiesToolStripMenuItem
+      // 
+      this.propertiesToolStripMenuItem.Image = global::Editor.Properties.Resources.wrench;
+      this.propertiesToolStripMenuItem.Name = "propertiesToolStripMenuItem";
+      this.propertiesToolStripMenuItem.Size = new System.Drawing.Size(172, 22);
+      this.propertiesToolStripMenuItem.Text = "Properties";
+      this.propertiesToolStripMenuItem.Click += new System.EventHandler(this.propertiesToolStripMenuItem_Click);
+      // 
       // contextMenuStrip_View
       // 
       this.contextMenuStrip_View.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
@@ -2042,7 +2078,6 @@ ToolStripDropDown _play_Dropdown = null;
       this.UnitScaleImageList.Images.SetKeyName(8, "uinit_scale_9.png");
       this.UnitScaleImageList.Images.SetKeyName(9, "uinit_scale_10.png");
       // 
-      // ToolStripButton_Scale
       // 
       this.ToolStripButton_Scale.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
       this.ToolStripButton_Scale.Image = global::Editor.Properties.Resources.toolbar_scale_uniform;
@@ -2107,7 +2142,7 @@ ToolStripDropDown _play_Dropdown = null;
       // EnginePanel
       // 
       this.AutoScaleBaseSize = new System.Drawing.Size(5, 13);
-      this.ClientSize = new System.Drawing.Size(769, 444);
+      this.ClientSize = new System.Drawing.Size(890, 494);
       this.CloseButton = false;
       this.Controls.Add(this.panel_VisionView);
       this.Controls.Add(this.transformStrip_EnginePanel);
@@ -2161,6 +2196,7 @@ ToolStripDropDown _play_Dropdown = null;
 
     private ToolStripMenuItem showGridToolStripMenuItem;
     private ToolStripButton ToolStripButton_Scale;
+    private ToolStripMenuItem propertiesToolStripMenuItem;
     private ToolStrip transformStrip_EnginePanel;
     private ToolStripButton transformStrip_toggleTransformMode;
     private ToolStripSeparator toolStripSeparator5;

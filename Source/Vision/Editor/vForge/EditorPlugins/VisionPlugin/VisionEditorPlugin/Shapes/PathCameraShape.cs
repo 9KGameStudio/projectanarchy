@@ -91,10 +91,8 @@ namespace VisionEditorPlugin.Shapes
     /// <param name="bCreateChildren"></param>
     public override void CreateEngineInstance(bool bCreateChildren)
     {
-      // create all children (important here, because the path node needs the children path nodes)
+      this._engineInstance = new EngineInstancePathCamera();
       base.CreateEngineInstance(bCreateChildren);
-
-      this._engineInstance = new EngineInstancePathCamera();      
       SetEngineInstanceBaseProperties(); // sets the position etc.
     }
 
@@ -109,7 +107,7 @@ namespace VisionEditorPlugin.Shapes
     /// </summary>
     public override void SetEngineInstanceBaseProperties()
     {
-      if (_engineInstance==null)
+      if (_engineInstance==null)  
         return;
 
       base.SetEngineInstanceBaseProperties ();
@@ -247,7 +245,7 @@ namespace VisionEditorPlugin.Shapes
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

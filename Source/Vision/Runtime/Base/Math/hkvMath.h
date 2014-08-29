@@ -515,7 +515,7 @@ public:
   ///
 
   ///
-  /// @name Special Float Functions
+  /// @name Special Float and Double Functions
   /// @{
   ///
 
@@ -533,6 +533,21 @@ public:
   /// \param d
   ///   The divisor by which f will be divided.
   HKV_FORCE_INLINE static float mod (float f, float d);
+
+  /// \brief
+  ///   Returns 'f modulo d' for double.
+  ///
+  /// If f is perfectly dividable by d the return value will be zero.
+  /// Otherwise it will be the remainder of the division of f and d.
+  /// E.g. 'mod (2.7, 0.3) == 0.0' // because 2.7 / 0.3 == 9.0 * 0.3 + 0.0
+  /// E.g. 'mod (2.7, 0.4) == 0.3' // because 2.7 / 0.4 == 6.0 * 0.4 + 0.3
+  ///
+  /// \param f
+  ///   The value of which the module should be taken.
+  ///
+  /// \param d
+  ///   The divisor by which f will be divided.
+  HKV_FORCE_INLINE static double mod (double f, double d);
 
   /// \brief
   ///   Checks whether f is equal to zero within a given epsilon range.
@@ -565,6 +580,10 @@ public:
   /// \brief
   ///   Returns a float NaN (Not-A-Number). Can be used to set values to an invalid state.
   HKV_FORCE_INLINE static float generateNaN (void);
+
+  /// \brief
+  ///   Returns a positive float infinity.
+  HKV_FORCE_INLINE static float generateInfinity (void);
 
   ///
   /// @}
@@ -630,14 +649,12 @@ struct hkvInit_None
 /// \brief Predefined variable of hkvInit_None which can be used to select a non-initializing constructor.
 static const hkvInit_None hkvNoInitialization = hkvInit_None ();
 
-//#define hkvNoInitialization hkvInit_None ()
-
 #include <Vision/Runtime/Base/Math/hkvMath.inl>
 
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -270,10 +270,10 @@ class hkArrayBase
 		// Public so that the serialization can access it.
 		enum
 		{
-			CAPACITY_MASK = int(0x3FFFFFFF),
-			FLAG_MASK = int(0xC0000000),
+			CAPACITY_MASK        = int(0x3FFFFFFF),
+			FLAG_MASK            = int(0xC0000000),
 			DONT_DEALLOCATE_FLAG = int(0x80000000), // Indicates that the storage is not the array's to delete
-			ALLOCATED_FROM_SPU = int(0x40000000),	// Ps3 specific. Indicates that the array storage has been allocated as a result of a SPU request.
+			ALLOCATED_FROM_SPU   = int(0x40000000),	// Ps3 specific. Indicates that the array storage has been allocated as a result of a SPU request.
 			FORCE_SIGNED = -1
 		};
 
@@ -418,8 +418,8 @@ class hkInplaceArray : public hkArray<T,Allocator>
 
 
 	/// An array that has a small internal storage capacity, aligned to 16 bytes within the class itself.
-template <typename T, unsigned N>
-class hkInplaceArrayAligned16 : public hkArray<T>
+template <typename T, unsigned N, typename Allocator=hkContainerHeapAllocator>
+class hkInplaceArrayAligned16 : public hkArray<T, Allocator>
 {
 	public:
 
@@ -465,7 +465,7 @@ class hkInplaceArrayAligned16 : public hkArray<T>
 #endif // HKBASE_HKARRAY_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

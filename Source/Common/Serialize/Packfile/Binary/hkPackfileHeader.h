@@ -10,15 +10,15 @@
 
 
 /// hkPackfileHeader meta information
-extern const class hkClass hkPackfileHeaderClass;
+extern HK_EXPORT_COMMON const class hkClass hkPackfileHeaderClass;
 
 class hkPackfileSectionHeader;
 class hkStreamReader;
 
 /// The header of a binary packfile.
-class hkPackfileHeader
+class HK_EXPORT_COMMON hkPackfileHeader
 {
-	//+version(1)
+	//+version(2)
 	public:
 
 		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_SERIALIZE, hkPackfileHeader);
@@ -32,8 +32,6 @@ class hkPackfileHeader
 			m_magic[1] = 0x10c0c010;
 			m_contentsVersion[0] = 0;
 			m_flags = 0; // Set to 1 when a packfile is loaded in-place to signify that the packfile is loaded
-			
-			m_pad[0] = 0; // Padding set to zero.
 		}
 		
 		/// Returns a pointer to the i-th packfile section header. 
@@ -43,6 +41,9 @@ class hkPackfileHeader
 		/// Non-const overload of the above function.
 		hkPackfileSectionHeader* getSectionHeader(void* packfileData, int i) const;
 
+		hkResult readPredicates(hkStreamReader* stream, hkArray<hkUint16>& predicates) const;
+		
+		/// Reads a packfile header from stream into out.
 		static hkResult readHeader(hkStreamReader* stream, hkPackfileHeader& out);
 
 	public:
@@ -75,13 +76,15 @@ class hkPackfileHeader
 
 			///
 		hkInt32 m_flags;
-		hkInt32 m_pad[1];
+
+		hkUint16 m_maxpredicate;
+		hkUint16 m_predicateArraySizePlusPadding;
 };
 
 #endif // HKSERIALIZE_SERIALIZE_BINARY_HKPACKFILEHEADER_XML_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

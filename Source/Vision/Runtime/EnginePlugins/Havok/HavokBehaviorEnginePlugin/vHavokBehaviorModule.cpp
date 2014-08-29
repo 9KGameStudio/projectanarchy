@@ -12,7 +12,6 @@
 #include <Vision/Runtime/EnginePlugins/Havok/HavokBehaviorEnginePlugin/vHavokBehaviorComponent.hpp>
 #include <Vision/Runtime/EnginePlugins/Havok/HavokBehaviorEnginePlugin/vHavokBehaviorResource.hpp>
 #include <Vision/Runtime/EnginePlugins/Havok/HavokBehaviorEnginePlugin/vHavokBehaviorResourceManager.hpp>
-#include <Vision/Runtime/EnginePlugins/Havok/HavokPhysicsEnginePlugin/vHavokSync.hpp>
 #include <Vision/Runtime/EnginePlugins/Havok/HavokPhysicsEnginePlugin/vHavokVisualDebugger.hpp>
 #include <Vision/Runtime/EnginePlugins/Havok/HavokPhysicsEnginePlugin/vHavokConversionUtils.hpp>
 #include <Vision/Runtime/EnginePlugins/Havok/HavokPhysicsEnginePlugin/vHavokPhysicsModule.hpp>
@@ -56,7 +55,7 @@ void HK_CALL registerAnimationBehaviorPatches()
 	#undef HK_FEATURE_PRODUCT_DESTRUCTION_2012
 	#define HK_FEATURE_PRODUCT_ANIMATION
 	#define HK_FEATURE_PRODUCT_BEHAVIOR
-#undef HK_FEATURE_PRODUCT_MILSIM
+#undef HK_FEATURE_PRODUCT_SIMULATION
 #undef HK_FEATURE_PRODUCT_PHYSICS
 #undef HK_FEATURE_PRODUCT_DESTRUCTION
 
@@ -98,7 +97,7 @@ class vHavokBehaviorOnUpdateSceneFinishedHandler_cl : public IVisCallbackHandler
 
 		vHavokBehaviorOnUpdateSceneFinishedHandler_cl() {}
 
-		VOVERRIDE void OnHandleCallback(IVisCallbackDataObject_cl *pData)
+    virtual void OnHandleCallback(IVisCallbackDataObject_cl *pData) HKV_OVERRIDE
 		{
 			if( pData->m_pSender == &Vision::Callbacks.OnUpdateSceneFinished )
 			{
@@ -106,7 +105,7 @@ class vHavokBehaviorOnUpdateSceneFinishedHandler_cl : public IVisCallbackHandler
 			}
 		}
 
-		VOVERRIDE int GetCallbackSortingKey(VCallback *pCallback)
+    virtual int64 GetCallbackSortingKey(VCallback *pCallback) HKV_OVERRIDE
 		{
 			return 1000000;	// should be bigger than value returned by VEntityLODComponentManager::GlobalManager().GetCallbackSortingKey(pCallback)
 		}
@@ -141,13 +140,18 @@ void vHavokBehaviorModule::OneTimeInit()
 		Vision::Callbacks.OnUpdateSceneBegin += this;
 		Vision::Callbacks.OnUpdateSceneFinished += &g_HavokBehaviorOnUpdateSceneFinishedHandler;
 		Vision::Callbacks.OnAfterSceneLoaded += this;
+		Vision::Callbacks.OnResourceChanged += this;
+
 		vHavokPhysicsModule::OnAfterInitializePhysics += this;
 		vHavokPhysicsModule::OnBeforeDeInitializePhysics += this;
 	}
 
 	// Create a VDB context
 	HK_ASSERT(0x25427eb1, m_behaviorContext == HK_NULL );
-	m_behaviorContext = new hkbBehaviorContext( getAssetLoader() );
+	vHavokBehaviorResourceManager* resourceManager = vHavokBehaviorResourceManager::GetInstance();
+	m_assetLoader = new vHavokBehaviorAssetLoader( resourceManager );
+
+	m_behaviorContext = new hkbBehaviorContext( m_assetLoader );
 }
 
 // should be called at plugin de-initialization time
@@ -159,8 +163,16 @@ void vHavokBehaviorModule::OneTimeDeInit()
 	Vision::Callbacks.OnUpdateSceneBegin -= this;
 	Vision::Callbacks.OnUpdateSceneFinished -= &g_HavokBehaviorOnUpdateSceneFinishedHandler;
 	Vision::Callbacks.OnAfterSceneLoaded -= this;
+	Vision::Callbacks.OnResourceChanged -= this;
+
 	vHavokPhysicsModule::OnAfterInitializePhysics -= this;
 	vHavokPhysicsModule::OnBeforeDeInitializePhysics -= this;
+
+	if( m_assetLoader != HK_NULL )
+	{
+		m_assetLoader->removeReference();
+		m_assetLoader = HK_NULL;
+	}
 
 	// Context is deleted after VDB shutdown
 	if (m_behaviorContext != HK_NULL)
@@ -177,17 +189,15 @@ void vHavokBehaviorModule::InitWorld( vHavokPhysicsModule* physicsModule )
 	cinfo.m_up = hkVector4::getConstant< HK_QUADREAL_0010 >();
 
 	m_behaviorWorld = new hkbWorld( cinfo );
-
 	if(m_behaviorContext)
 	{
 		m_behaviorContext->addWorld( m_behaviorWorld );
 	}
 
 	vHavokBehaviorResourceManager* resourceManager = vHavokBehaviorResourceManager::GetInstance();
-	m_assetLoader = new vHavokBehaviorAssetLoader( resourceManager );
-	m_projectAssetManager = new hkbProjectAssetManager( m_assetLoader );
-
 	m_scriptAssetLoader = new vHavokBehaviorScriptAssetLoader(resourceManager);
+
+	m_projectAssetManager = new hkbProjectAssetManager( m_assetLoader );
 	m_projectAssetManager->setScriptAssetLoader(m_scriptAssetLoader);
 
 	m_projectAssetManager->linkAll( m_behaviorWorld );
@@ -253,12 +263,6 @@ void vHavokBehaviorModule::DeInitWorld()
 		m_scriptAssetLoader = HK_NULL;
 	}
 
-	if( m_assetLoader != HK_NULL )
-	{
-		m_assetLoader->removeReference();
-		m_assetLoader = HK_NULL;
-	}
-
 	if( m_physicsStepper != HK_NULL )
 	{
 		m_physicsStepper->removeReference();
@@ -319,19 +323,15 @@ void vHavokBehaviorModule::OnHandleCallback(IVisCallbackDataObject_cl *pData)
 		HK_ASSERT(0xc5b3c4e, vHavokBehaviorResourceManager::GetInstance()->GetResourceCount() == 0 );
 #endif*/
 	}
-	else if( pData->m_pSender == &vHavokPhysicsModule::OnBeforeInitializePhysics )
+	else if (pData->m_pSender == &vHavokPhysicsModule::OnBeforeInitializePhysics)
 	{
-		vHavokPhysicsModuleCallbackData *pHavokData = (vHavokPhysicsModuleCallbackData*)pData;
-		VISION_HAVOK_SYNC_STATICS();
-		VISION_HAVOK_SYNC_PER_THREAD_STATICS( pHavokData->GetHavokModule() );
-
 		// Register Behavior classes
 		{
 			hkDefaultClassNameRegistry& dcnReg	= hkDefaultClassNameRegistry::getInstance();
 			hkTypeInfoRegistry&			tyReg	= hkTypeInfoRegistry::getInstance();
 			hkVtableClassRegistry&		vtcReg	= hkVtableClassRegistry::getInstance();
 
-#ifndef VBASE_LIB  // DLL, so have a full set 
+#ifndef VBASE_LIB  // DLL, so have a full set
 			dcnReg.registerList(hkBuiltinTypeRegistry::StaticLinkedClasses);
 			tyReg.registerList(hkBuiltinTypeRegistry::StaticLinkedTypeInfos);
 			vtcReg.registerList(hkBuiltinTypeRegistry::StaticLinkedTypeInfos, hkBuiltinTypeRegistry::StaticLinkedClasses);
@@ -347,28 +347,22 @@ void vHavokBehaviorModule::OnHandleCallback(IVisCallbackDataObject_cl *pData)
 
 		OneTimeInit();
 	}
-	else if( pData->m_pSender == &vHavokPhysicsModule::OnAfterInitializePhysics )
+	else if (pData->m_pSender == &vHavokPhysicsModule::OnAfterInitializePhysics)
 	{
 		vHavokPhysicsModuleCallbackData *pHavokData = (vHavokPhysicsModuleCallbackData*)pData;
 		vHavokPhysicsModule* physicsModule = pHavokData->GetHavokModule();
 		InitWorld( physicsModule );
 	}
-	else if( pData->m_pSender == &vHavokPhysicsModule::OnBeforeDeInitializePhysics )
+	else if (pData->m_pSender == &vHavokPhysicsModule::OnBeforeDeInitializePhysics)
 	{
 		DeInitWorld();
 	}
-	else if( pData->m_pSender == &vHavokPhysicsModule::OnAfterDeInitializePhysics )
+	else if (pData->m_pSender == &vHavokPhysicsModule::OnAfterDeInitializePhysics)
 	{
 		// Unload everything, the scene gets deleted!
 		OneTimeDeInit();
 	}
-	else if( pData->m_pSender == &vHavokPhysicsModule::OnUnsyncHavokStatics )
-	{
-		vHavokPhysicsModuleCallbackData *pHavokData = (vHavokPhysicsModuleCallbackData*)pData;
-		VISION_HAVOK_UNSYNC_STATICS();
-		VISION_HAVOK_UNSYNC_PER_THREAD_STATICS( pHavokData->GetHavokModule() );
-	}
-	else if( pData->m_pSender == &vHavokPhysicsModule::OnBeforeWorldCreated )
+	else if (pData->m_pSender == &vHavokPhysicsModule::OnBeforeWorldCreated)
 	{
 		vHavokBeforeWorldCreateDataObject_cl *pEventData = (vHavokBeforeWorldCreateDataObject_cl *)pData;
 		hkJobQueue* jobQueue = pEventData->GetHavokModule()->GetJobQueue();
@@ -392,39 +386,41 @@ void vHavokBehaviorModule::OnHandleCallback(IVisCallbackDataObject_cl *pData)
 			hkbBehaviorContext::addDefaultViewers( pEventData->m_pVisualDebugger );
 		}
 	}
-#ifdef VLUA_USE_SWIG_BINDING
 	else if( pData->m_pSender == &IVScriptManager::OnRegisterScriptFunctions )
 	{
 		EnsureHavokBehaviorScriptRegistration();
 	}
-	else if (pData->m_pSender==&IVScriptManager::OnScriptProxyCreation)
-	{
-		VScriptCreateStackProxyObject * pScriptData = (VScriptCreateStackProxyObject *)pData;
+  else if (pData->m_pSender == &Vision::Callbacks.OnResourceChanged)
+  {
+    VisResourceInfoDataObject_cl* pResData = static_cast<VisResourceInfoDataObject_cl*>(pData);
+    if (pResData->m_pManager != VMeshManager::GetMeshManager() || pResData->m_iAction != VRESOURCECHANGEDFLAG_LOADEDRESOURCE)
+      return;
 
-		// process data only if no other callback did that
-		if(!pScriptData->m_bProcessed)
-		{
-			int iRetParams = 0;
+    VBaseMesh* pMesh = static_cast<VBaseMesh*>(pResData->m_pResource);
 
-			// call appropriate LUA cast function
-			if(pScriptData->m_pInstance->IsOfType(V_RUNTIME_CLASS(vHavokBehaviorComponent)))
-			{
-				iRetParams = LUA_CallStaticFunction( pScriptData->m_pLuaState, "Behavior", "vHavokBehaviorComponent", "Cast", "E>E",  pScriptData->m_pInstance );
-			}
+    // For each component that currently uses this mesh we have to re-init it to prevent
+    // crashes due to changed data that is referenced inside the component.
+    for( int i = 0; i < m_visionCharacters.getSize(); i++ )
+    {
+      vHavokBehaviorComponent* pComponent = m_visionCharacters[i];
 
-			// could we handle the object?
-			if(iRetParams>0)
-			{
-				// the cast failed if the result is a nil value
-				if(lua_isnil(pScriptData->m_pLuaState, -1))
-					lua_pop(pScriptData->m_pLuaState, iRetParams); //in case of a nil value we drop the params from the lua stack
-				else
-					pScriptData->m_bProcessed = true; //avoid further processing
-			}
-		}
-	}
-#endif
+      if (!pComponent->m_entityOwner || !pComponent->m_entityOwner->GetMesh())
+        continue;
 
+      VBaseMesh* pEntityMesh = pComponent->m_entityOwner->GetMesh();
+
+      if (pMesh == pEntityMesh)
+      {
+        VisBaseEntity_cl* pEntity = pComponent->m_entityOwner;
+        if (pEntity != NULL)
+        {
+          pComponent->DeInit();
+          pComponent->InitVisionCharacter(pEntity);
+          pComponent->SingleStepCharacter();
+        }
+      }
+    }
+  }
 }
 
 vHavokBehaviorModule* vHavokBehaviorModule::GetInstance()
@@ -437,7 +433,7 @@ void vHavokBehaviorModule::checkEditorModeChanged()
 {
 	// Get the editor mode
 	VisEditorManager_cl::EditorMode_e editorMode = Vision::Editor.GetMode();
-	
+
 
 	// Step only if the editor is playing, or when not in the editor
 	bool shouldStep = (editorMode == VisEditorManager_cl::EDITORMODE_PLAYING_IN_EDITOR) ||
@@ -455,6 +451,9 @@ void vHavokBehaviorModule::checkEditorModeChanged()
 
 void vHavokBehaviorModule::stepModule()
 {
+	const bool isPrimaryWorkerThread = true;
+	hkCheckDeterminismUtil::workerThreadStartFrame(isPrimaryWorkerThread);
+
 	if( m_stepWorld || !m_reinitializedPoses )
 	{
 		if( m_behaviorWorld != HK_NULL )
@@ -480,14 +479,7 @@ void vHavokBehaviorModule::stepModule()
 				if( physicsModule != HK_NULL )
 				{
 					physicsModule->ClearVisualDebuggerTimerData();
-					if (m_visionCharacters.getSize() == 0) // skip behavior then
-					{
-						m_physicsStepper->step( timestep );
-					}
-					else
-					{
-						m_behaviorWorld->step( timestep, physicsModule->GetJobQueue(), physicsModule->GetThreadPool() );
-					}
+					m_behaviorWorld->step( timestep, physicsModule->GetJobQueue(), physicsModule->GetThreadPool() );
 					physicsModule->StepVisualDebugger();
 				}
 				else
@@ -506,6 +498,8 @@ void vHavokBehaviorModule::stepModule()
 			m_visionCharacters[i]->UpdateHavokTransformFromVision();
 		}
 	}
+
+	hkCheckDeterminismUtil::workerThreadFinishFrame();
 }
 
 void vHavokBehaviorModule::OnFrameStart()
@@ -558,7 +552,7 @@ hkbCharacter* vHavokBehaviorModule::addCharacter( vHavokBehaviorComponent* chara
 			{
 #if defined(HAVOK_SDK_VERSION_MAJOR) && (HAVOK_SDK_VERSION_MAJOR >= 2012)
 				char const *projectName = VFileHelper::GetFilename(character->m_projectName);
-				behaviorCharacter = m_projectAssetManager->createCharacter(projectName, character->m_characterName, character->m_behaviorName, m_behaviorWorld );
+				behaviorCharacter = m_projectAssetManager->createCharacter(projectName, character->m_characterName, character->m_behaviorName, m_behaviorWorld, hkbCharacter::STANDARD_CAPABILITIES | hkbCharacter::AI_CONTROL );
 #else
 				// Link the behavior.  This is done automatically in createCharacter in Havok 2012.1+
 				if( behaviorCharacter != HK_NULL && m_behaviorWorld != HK_NULL )
@@ -570,13 +564,13 @@ hkbCharacter* vHavokBehaviorModule::addCharacter( vHavokBehaviorComponent* chara
 						{
 							hkbBehaviorLinkingUtils::unlinkBehavior( *behaviorTemplate );
 						}
-						
+
 						m_behaviorWorld->link(behaviorCharacter, behaviorTemplate);
 					}
 				}
 				behaviorCharacter = m_projectAssetManager->createCharacter( character->m_projectName, character->m_characterName, character->m_behaviorName );
 #endif
-					
+
 				// Only add the character if it's valid
 				if( behaviorCharacter != HK_NULL )
 				{
@@ -646,7 +640,7 @@ void vHavokBehaviorModule::removeCharacter( vHavokBehaviorComponent* character )
 	if( indexToRemove >= 0 )
 	{
 		m_visionCharacters.removeAt( indexToRemove );
-		if( character->m_character != HK_NULL ) 
+		if( character->m_character != HK_NULL )
 		{
 			character->m_character->m_nearbyCharacters.clear();
 		}
@@ -660,8 +654,8 @@ hkbProjectAssetManager* vHavokBehaviorModule::GetProjectAssetManager() const
 
 // ----------------------------------------------------------------------------
 
-vHavokPhysicsStepper::vHavokPhysicsStepper( hkpWorld* world, hkJobQueue* jobQueue, hkJobThreadPool* jobThreadPool ) 
-	:hkbpPhysicsInterface( world, jobQueue, jobThreadPool )
+vHavokPhysicsStepper::vHavokPhysicsStepper( hkpWorld* world, hkJobQueue* jobQueue, hkThreadPool* threadPool )
+	:hkbpPhysicsInterface( world, jobQueue, threadPool )
 {
 }
 
@@ -700,7 +694,7 @@ void EnsureHavokBehaviorScriptRegistration()
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140704)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

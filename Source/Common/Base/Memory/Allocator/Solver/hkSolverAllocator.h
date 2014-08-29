@@ -10,7 +10,7 @@
 
 #include <Common/Base/Thread/CriticalSection/hkCriticalSection.h>
 
-	/// Allocator to handle large allocations required by the Havok Physics Solver.
+	/// Allocator to handle large allocations required by the Havok Physics 2012 Solver.
 	/// It manages a single input block of memory, and as required by the
 	/// Havok simulation brakes this block into smaller blocks as required.
 	/// Havok physics can calculate the required block size before
@@ -30,7 +30,7 @@
 	///       allocates a big buffer so that the other world cannot continue simulating.
 	///       In this the stalled world will spin on the job queue until the big buffer becomes
 	///       available. In this case you could experience a pretty decent CPU spike (several 100%)
-class hkSolverAllocator : public hkMemoryAllocator
+class HK_EXPORT_COMMON hkSolverAllocator : public hkMemoryAllocator
 {
 	public:
 
@@ -87,7 +87,7 @@ class hkSolverAllocator : public hkMemoryAllocator
 #endif // HK_SOLVER_ALLOCATOR_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

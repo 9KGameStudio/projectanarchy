@@ -11,7 +11,7 @@
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Terrain/Geometry/TerrainDecorationInstance.hpp>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Terrain/Application/Terrain.hpp>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Terrain/Geometry/TerrainSector.hpp>
-#include <Vision/Runtime/Base/System/Memory/VMemDbg.hpp>
+
 
 VTerrainDecorationBillboardMeshFactory VTerrainDecorationBillboardMesh::g_BillboardMeshFactory;
 
@@ -160,6 +160,7 @@ void VTerrainDecorationBillboardMesh::OnEditorEvent(EditorEvent_e action, VTerra
       BILLBOARD_TARGET_VERTEX *pV = pGroup->LockVertices();
 
       hkvAlignedBBox groupBox;
+      groupBox.setInvalid();
       int iAdded = 0;
       for (int i=iStartIndex; i<iDecoCount ;i++,iStartIndex++)
       {
@@ -188,6 +189,17 @@ void VTerrainDecorationBillboardMesh::OnEditorEvent(EditorEvent_e action, VTerra
           pV[2].SetPivot(pivot, sx * relCenterX, sy * cy,         pEntry->U1, pEntry->V2);
           pV[3].SetPivot(pivot, sx * cx,         sy * cy,         pEntry->U2, pEntry->V2);
 
+          /*  We use the alpha value as a boolean to animate or not the vertices in the VS 
+              depending on Wind conditions.
+
+            0 ----- 1  (wind animated vertices)
+            |       |
+            |       |
+            2 ----- 3  (fixed vertices)
+          */
+          pV[2].iColor.a = 0;
+          pV[3].iColor.a = 0;
+
           hkvAlignedBBox bbox;
           pivot.GetPivotBoundingBox(bbox, mx * sx, my * sy);
           groupBox.expandToInclude(bbox);
@@ -203,6 +215,7 @@ void VTerrainDecorationBillboardMesh::OnEditorEvent(EditorEvent_e action, VTerra
       pGroup->SetTexture(m_spTexture);
       pGroup->SetTransparency((VIS_TransparencyType)m_pAtlas->Transparency,true);
       pGroup->SetClipDistances(m_Properties.m_fNearClip, m_Properties.m_fFarClip);
+      pGroup->SetWindParameters(1.0f, 0.0f, m_Properties.m_fApplyWind);
       VCompiledEffect *pFX = ConversionUtils::GetShaderEffect(m_pAtlas->ShaderEffect, EFFECTFLAGS_NONE, NULL);
       pGroup->SetCustomEffect(pFX);
       pSector->AddPerSectorObject(pGroup);
@@ -211,12 +224,12 @@ void VTerrainDecorationBillboardMesh::OnEditorEvent(EditorEvent_e action, VTerra
 #endif
 }
 
-void VTerrainDecorationBillboardMesh::RenderBatch(VTerrainVisibilityCollectorComponent *pInfoComp, VTerrainDecorationInstance **pInstList, int iCount, IVTerrainDecorationModel::RenderMode_e eRenderMode)
+void VTerrainDecorationBillboardMesh::RenderBatch(VTerrainVisibilityCollectorComponent *pInfoComp, VTerrainDecorationInstance **pInstList, int iCount, const hkvVec3 &vTranslate, IVTerrainDecorationModel::RenderMode_e eRenderMode)
 {
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

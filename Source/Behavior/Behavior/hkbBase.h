@@ -30,39 +30,47 @@
 
 #define HKB_END_INTERNAL_STATE()
 
-#define HKB_TOOL_ERROR( id, str ) HK_WARN_ALWAYS( (id | 0xabe00000), str )
+#define HKB_TOOL_ASSERT( id, condition, str ) if(!(condition)) { HK_WARN_ALWAYS( (id | 0xabe00000), str ); HK_ASSERT( (id | 0xabe00000), false ); }
 
 /// It can sometimes be helpful to represent a boolean as an hkReal for blending.
 /// This struct encapsulates such bools to unify our use/access of such bools across the SDK.
 
 struct hkBinaryReal
 {
-	enum RoundMode
-	{
-		ROUND,
-		CEILING,
-		FLOOR,
-	};
+	public:
 
-	// Constructors
+		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_BEHAVIOR, hkBinaryReal );
 
-	HK_FORCE_INLINE hkBinaryReal() : m_storage() {}
-	HK_FORCE_INLINE hkBinaryReal(bool b) : m_storage((b) ? 1.f : 0.f) {}
+		enum RoundMode
+		{
+			ROUND,
+			CEILING,
+			FLOOR,
+		};
 
-	// Operators
+		// Constructors
 
-	HK_FORCE_INLINE hkBinaryReal& operator=(bool b) { m_storage = (b) ? 1.f : 0.f; return *this; }
-	HK_FORCE_INLINE hkBinaryReal& operator=(hkReal r) { m_storage = r; return *this; }
-	HK_FORCE_INLINE operator hkReal&() { return m_storage; }
-	HK_FORCE_INLINE operator hkReal() const { return m_storage; }
-	HK_FORCE_INLINE operator hkSimdFloat32() const { return hkSimdFloat32::fromFloat( m_storage ); }
+		HK_FORCE_INLINE hkBinaryReal() : m_storage() {}
+		HK_FORCE_INLINE hkBinaryReal(bool b) : m_storage((b) ? 1.f : 0.f) {}
+		HK_FORCE_INLINE hkBinaryReal(hkReal r) : m_storage(r) {}
 
-	// Accessors
+		// Operators
 
-	template <RoundMode R> HK_FORCE_INLINE hkBool32 getAsBool() const;
+		HK_FORCE_INLINE hkBinaryReal& operator=(bool b) { m_storage = (b) ? 1.f : 0.f; return *this; }
+		HK_FORCE_INLINE hkBinaryReal& operator=(hkReal r) { m_storage = r; return *this; }
+		HK_FORCE_INLINE operator hkReal&() { return m_storage; }
+		HK_FORCE_INLINE operator hkReal() const { return m_storage; }
+		HK_FORCE_INLINE operator hkSimdFloat32() const { hkSimdFloat32 r; r.setFromFloat(m_storage); return r; }
 
-private:
-	hkReal m_storage;
+		template <RoundMode R> HK_FORCE_INLINE hkBool32 getAsBool() const;
+
+	private:
+
+		hkReal m_storage;
+
+	public:
+
+		hkBinaryReal( hkFinishLoadedObjectFlag flag ) {}
 };
 
 template <> HK_FORCE_INLINE hkBool32 hkBinaryReal::getAsBool<hkBinaryReal::ROUND>() const { return (m_storage >= 0.5f); }
@@ -81,7 +89,7 @@ template <> HK_FORCE_INLINE hkBool32 hkBinaryReal::getAsBool<hkBinaryReal::FLOOR
 #endif // hkbBase_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

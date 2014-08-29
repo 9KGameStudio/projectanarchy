@@ -9,7 +9,7 @@
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/VisionEnginePluginPCH.h>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/Effects/VWallmarkManager.hpp>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/Effects/Projector.hpp>
-#include <Vision/Runtime/Base/System/Memory/VMemDbg.hpp>
+
 
 #define PROJECTOR_VERSION_1                1 //VisibleBitmask
 #define PROJECTOR_VERSION_2                2 //Lightmapped
@@ -19,7 +19,8 @@
 #define PROJECTOR_VERSION_6                6 //InfluenceBitmask
 #define PROJECTOR_VERSION_7                7 //Custom shader effect
 #define PROJECTOR_VERSION_8                8 //Unique ID through base class
-#define PROJECTOR_CURRENT_VERSION          PROJECTOR_VERSION_8
+#define PROJECTOR_VERSION_9                9 //Fix that previous versions didn't call base serialization
+#define PROJECTOR_CURRENT_VERSION          PROJECTOR_VERSION_9
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -132,31 +133,53 @@ void VProjectorShaderPass::SetProperties(const VProjectedWallmark *pProjector)
 
 V_IMPLEMENT_SERIAL( VProjectedWallmark, VisTypedEngineObject_cl, 0, &g_VisionEngineModule );
 
-
-VProjectedWallmark::VProjectedWallmark() :
-  m_vDirection(1,0,0), m_vUpDir(0,0,1), m_vRight(0,1,0)
+void VProjectedWallmark::CommonInit()
 {
-  VWallmarkManager &manager(VWallmarkManager::GlobalManager());
+  V_COMPILE_ASSERT(PROJECTOR_AFFECTS_ENTITIES != PROJECTOR_AFFECTS_TERRAIN);
+  V_COMPILE_ASSERT(PROJECTOR_AFFECTS_ENTITIES != PROJECTOR_AFFECTS_STATICMESHES);
+
+  VWallmarkManager& manager(VWallmarkManager::GlobalManager());
   manager.m_AllProjectedWallmarks.Add(this); // wallmarks from file are not in the fading collection  
+
   manager.EnsureRenderCallbackRegistered();
-  m_fLifeTime = m_fFadeOutTime = 0.f;
-  m_iColor = V_RGBA_WHITE;
-  m_fInitialAlpha = (float)m_iColor.a;
-  m_eTransp = VIS_TRANSP_ADDITIVE;
-  m_fConeFactorX = m_fConeFactorY = 1.f;
+
+  m_vDirection.set(1,0,0);
+  m_vUpDir.set(0,0,1);
+  m_vRight.set(0,1,0);
+
+  m_vOrigin.setZero();
+  m_vDestPos.setZero();
+  m_BoundingBox.setInvalid();
+
+  m_fLifeTime = 0.0f;
+  m_fFadeOutTime = 0.0f;
+
   m_bPrimDirty = true;
   m_bFromFile = false;
-  m_fDepth = 50.f;
   m_bLightmapped = false;
+
+  m_iColor = V_RGBA_WHITE;
+  m_fInitialAlpha = (float) m_iColor.a;
+
+  m_iGeometryTypeFilter = PROJECTOR_AFFECTS_DEFAULT;
+  m_ePassType = VPT_Undefined;
+ 
+  m_eTransp = VIS_TRANSP_ADDITIVE;
+
+  m_fConeFactorX = m_fConeFactorY = 1.f;
+
+  m_fDepth = 50.f;
+  m_fFarClipDistance = -1.f;
+
   SetVisibleBitmask(0xffffffff);
   SetInfluenceBitmask(0xffffffff);
-  m_iGeometryTypeFilter = PROJECTOR_AFFECTS_DEFAULT;
-  m_fFarClipDistance = -1.f;
-  m_ePassType = VPT_Undefined;
   SetCustomShaderEffect(NULL);
+}
 
-  V_COMPILE_ASSERT(PROJECTOR_AFFECTS_ENTITIES!=PROJECTOR_AFFECTS_TERRAIN);
-  V_COMPILE_ASSERT(PROJECTOR_AFFECTS_ENTITIES!=PROJECTOR_AFFECTS_STATICMESHES);
+VProjectedWallmark::VProjectedWallmark()
+{
+  CommonInit();
+  
 }
 
 
@@ -170,44 +193,38 @@ VProjectedWallmark::VProjectedWallmark(
     VIS_TransparencyType eTransp, 
     VColorRef iColor, float fLifeTime, float fFadeOutTime)
 {
-  VWallmarkManager &manager(VWallmarkManager::GlobalManager());
-  manager.m_AllProjectedWallmarks.Add(this);
-  if (fLifeTime>0.f)
+  CommonInit();
+
+  if (fLifeTime > 0)
   {
+    VWallmarkManager& manager(VWallmarkManager::GlobalManager());
     manager.m_FadingProjectedWallmarks.Add(this);
     manager.EnsureSimulationCallbackRegistered();
   }
-
-  manager.EnsureRenderCallbackRegistered();
+  
   m_fLifeTime = fLifeTime + fFadeOutTime;
   m_fFadeOutTime = fFadeOutTime;
-
-  m_bPrimDirty = true;
-  m_bFromFile = false;
+  
   m_vOrigin = origin;
+  m_vZoneLocalSpacePos = m_vOrigin;
   m_vDestPos = destpos;
-  m_vDirection = destpos-origin;
+
+  m_vDirection = destpos - origin;
   m_vDirection.normalizeIfNotZero();
+
   m_vUpDir = up;
   m_vRight = right;
 
   m_fDepth = fDepth;
   SetTexture(pTexture);
-  m_bLightmapped = false;
 
   m_iColor = iColor;
   m_fInitialAlpha = (float)m_iColor.a;
+
   m_eTransp   = eTransp;
 
   m_fConeFactorX = fConeFactorX;
   m_fConeFactorY = fConeFactorY;
-  SetVisibleBitmask(0xffffffff);
-  SetInfluenceBitmask(0xffffffff);
-  m_iGeometryTypeFilter = PROJECTOR_AFFECTS_DEFAULT;
-  m_fFarClipDistance = -1.f;
-  m_ePassType = VPT_Undefined;
-
-  SetCustomShaderEffect(NULL);
 }
 
 
@@ -251,9 +268,6 @@ void VProjectedWallmark::PrepareForRendering()
   {
     m_bPrimDirty = false;
     float fDist = GetLength();
-//    float rx = fDist / m_fConeFactorX;
-//    float ry = fDist / m_fConeFactorY;
-//    float fRadius = hkvMath::Max(rx,ry);
 
     // Update boundingbox: build 8 corners of frustum
     m_BoundingBox.setInvalid();
@@ -333,7 +347,7 @@ bool VProjectedWallmark::SetCustomShaderEffect(VCompiledEffect *pFX)
     if (m_spCustomTechnique[i]==NULL) // this is valid
       continue;
     bool bTechniqueValid = m_spCustomTechnique[i]->GetShaderCount()==1;
-    for (int j=0;j<m_spCustomTechnique[i]->GetShaderCount();j++)
+    for (unsigned int j=0;j<m_spCustomTechnique[i]->GetShaderCount();j++)
       if (!m_spCustomTechnique[i]->GetShader(j)->IsOfType(VProjectorShaderPass::GetClassTypeId()))
         bTechniqueValid = false;
 
@@ -417,18 +431,62 @@ void VProjectedWallmark::SetFadeOutRange(float fDist)
   m_bPrimDirty=true;
 }
 
-void VProjectedWallmark::Serialize( VArchive &ar )
+
+bool VProjectedWallmark::GetZoneLocalSpacePosition(hkvVec3& vDest)
 {
+  vDest = m_vZoneLocalSpacePos;
+  return true;
+}
+
+void VProjectedWallmark::OnReposition(const VisZoneRepositionInfo_t &info, const hkvVec3 &vLocalPos)
+{
+  hkvVec3 dir = m_vDestPos - m_vOrigin;
+  info.Helper_MakeAbsolute(m_vOrigin, vLocalPos, GetParentZone());
+  m_vDestPos = m_vOrigin + dir;
+  m_BoundingBox.translate(info.m_vMoveDelta);
+}
+
+
+void VProjectedWallmark::OnSerialized(VArchive& ar)
+{
+  if (ar.IsLoading())
+  {
+    // for zone repositioning, backup the local space position (which corresponds to the render position during de-serialization)
+    m_vZoneLocalSpacePos = m_vOrigin;
+    // perform the actual render space transform here so the object has both positions set properly
+    const VisZoneRepositionInfo_t &reposition(Vision::GetSceneManager()->GetZoneRepositionInfo());
+    if (reposition.SupportsRepositioning())
+    {
+      hkvVec3 dir = m_vDestPos - m_vOrigin;
+      reposition.Helper_MakeAbsolute(m_vOrigin,m_vZoneLocalSpacePos,m_pParentZone);
+      if (m_vOrigin!=m_vZoneLocalSpacePos)
+        m_vDestPos = m_vOrigin + dir;
+    }
+  }
+  // attach components after repositioning so that physics get latest transform
+  VisTypedEngineObject_cl::OnSerialized(ar);
+}
+
+void VProjectedWallmark::Serialize( VArchive &ar )
+{  
   VisEffectConfig_cl fxConfig;
   if (ar.IsLoading())
   {
     int iVersion;
     ar >> iVersion; VASSERT(iVersion>=0 && iVersion<=PROJECTOR_CURRENT_VERSION);
+
+    // Fix up missing base serialization
+    if(iVersion >= PROJECTOR_VERSION_9)
+    {
+      VisTypedEngineObject_cl::Serialize( ar );
+    }
+
     m_vOrigin.SerializeAsVisVector (ar);
     m_vDestPos.SerializeAsVisVector (ar);
     m_vDirection.SerializeAsVisVector (ar);
     m_vUpDir.SerializeAsVisVector (ar);
     m_vRight.SerializeAsVisVector (ar);
+
     ar >> m_fDepth;
     char szTexName[FS_MAX_PATH+1];
     ar.ReadStringBinary(szTexName,FS_MAX_PATH);
@@ -461,6 +519,9 @@ void VProjectedWallmark::Serialize( VArchive &ar )
   } else
   {
     ar << (int)PROJECTOR_CURRENT_VERSION; // version
+
+    VisTypedEngineObject_cl::Serialize( ar ); // version 9, fix up missing base serialization. Only called here for backwards compatibility after reading version
+
     m_vOrigin.SerializeAsVisVector (ar);
     m_vDestPos.SerializeAsVisVector (ar);
     m_vDirection.SerializeAsVisVector (ar);
@@ -480,7 +541,6 @@ void VProjectedWallmark::Serialize( VArchive &ar )
     ar << m_InfluenceBitmask; // version 6
     fxConfig.SetEffect(m_spCustomEffect);
     ar << fxConfig; // version 8
-
   }
 }
 
@@ -521,7 +581,7 @@ void VProjectedWallmark::GetProjectionPlanes(hkvPlane& s, hkvPlane& t, hkvPlane&
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140726)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -19,7 +19,7 @@ class hkaiCharacter;
 	/// A behavior is responsible for computing the desired velocity of an
 	/// hkaiCharacter at each frame, as well as other state data required 
 	/// for local steering.
-class hkaiBehavior : public hkReferencedObject, public hkaiPathRequestInfoOwner
+class HK_EXPORT_AI hkaiBehavior : public hkReferencedObject, public hkaiPathRequestInfoOwner
 {
 public:
 
@@ -65,12 +65,44 @@ public:
 		/// Note that this is NOT a list of waypoints for the character to follow.
 	virtual void requestPathWithMultipleGoals(const hkVector4* goals, int numGoals, int priority = 0) = 0;
 
+		/// Input information for getNavMeshPathImmediately. 
+	struct ImmediatePathInfo
+	{
+		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_AI_STEERING, ImmediatePathInfo  );
+		ImmediatePathInfo();
+		void setGoal( hkVector4Parameter goal );
+		void setGoals( const hkVector4* goals, int numGoals );
+
+			/// Goal points for the immediate search
+		const hkVector4* m_goals;
+
+			/// Number of goal points
+		int m_numGoals;
+
+			/// Timestep to be passed to calcVelocities() and update() after the path request
+		hkReal m_timestep; //+default(0.0f)
+			/// Whether or not update should be called after calcVelocities().
+		hkBool m_updateAfterRequest; //+default(true);
+
+			/// If specified, the output from calcVelocities will be stored here.
+		hkaiLocalSteeringInput* m_steeringInfoOut;
+		int m_numSteeringInfoOut;		
+	};
+
+		/// Perform a nav mesh path request immediately, and calls calcVelocities() (and optionally update())to start
+		/// following the path this frame. Returns whether the request succeeded.
+	virtual bool getNavMeshPathImmediately( const ImmediatePathInfo& immediatePathInfo ) = 0;
+
 		/// Request a new path to the given goal. The default implementation simply
 		/// calls requestPathWithMultipleGoals with a single goal.
 	virtual void requestVolumePath(hkVector4Parameter goal, int priority = 0);
 
 		/// Request a new path to multiple goals.
 	virtual void requestVolumePathWithMultipleGoals(const hkVector4* goals, int numGoals, int priority = 0) = 0;
+
+		/// Perform a nav volume path request immediately, and calls calcVelocities() (and optionally update())to start
+		/// following the path this frame. Returns whether the request succeeded.
+	virtual bool getNavVolumePathImmediately( const ImmediatePathInfo& immediatePathInfo ) = 0;
 
 		/// Number of managed characters.
 	virtual int getNumCharacters() const = 0;
@@ -86,9 +118,12 @@ public:
 		/// at this point would not be necessary.
 	virtual bool isNearGoal() const = 0;
 
-		/// Gets all potential goals (in world space). The current goal is not tracked, and any of the points
-		/// are valid goals if repath() is called.
+		/// Gets all potential goals (in world space). Any of the points are valid goals if repath() is called.
 	virtual void getGoalPoints( hkArray<hkVector4>::Temp& goalsOut ) const = 0;
+
+		/// Gets the index into the array returned by getGoalPoints() for the current goal. If the path request has not
+		/// been processed yet, or a complete path was not found, this may return -1.
+	virtual int getCurrentGoalIndex() const = 0;
 
 		/// Request a new path. This should be equivalent to calling
 		/// requestPathWithMultipleGoals with the previous goals.
@@ -124,7 +159,7 @@ protected:
 #endif // HK_AI_CHARACTER_UTIL_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

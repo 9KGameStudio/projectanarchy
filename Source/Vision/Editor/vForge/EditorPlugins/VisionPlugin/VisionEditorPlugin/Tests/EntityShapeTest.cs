@@ -12,13 +12,13 @@ using NUnit.Framework;
 using System.Reflection;
 using VisionEditorPlugin.Shapes;
 using CSharpFramework.Actions;
-using CSharpFramework.Tests;
+using CSharpFrameworkTests;
 using CSharpFramework.Helper;
 using System.IO;
 using CSharpFramework.Shapes;
 using CSharpFramework.Math;
 
-namespace VisionEditorPlugin.Tests
+namespace VisionEditorPluginTests
 {
 	/// <summary>
 	/// Test for entity shape
@@ -185,7 +185,7 @@ namespace VisionEditorPlugin.Tests
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

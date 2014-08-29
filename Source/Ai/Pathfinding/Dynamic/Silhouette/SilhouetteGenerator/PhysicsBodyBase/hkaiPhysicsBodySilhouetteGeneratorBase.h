@@ -11,12 +11,12 @@
 
 #include <Ai/Pathfinding/Dynamic/Silhouette/SilhouetteGenerator/PointCloud/hkaiPointCloudSilhouetteGenerator.h>
 
-extern const hkClass hkaiPhysicsBodySilhouetteGeneratorBaseClass;
+extern HK_EXPORT_AI const hkClass hkaiPhysicsBodySilhouetteGeneratorBaseClass;
 
 	/// An abstract base class for handling silhouette generation from rigid bodies.
 	/// This can be used for Havok Physics (see Ai/PhysicsBridge/Silhouette/hkaiPhysicsBodySilhouetteGenerator.h),
 	/// Or adapted to another physics engine.
-class hkaiPhysicsBodySilhouetteGeneratorBase : public hkaiPointCloudSilhouetteGenerator
+class HK_EXPORT_AI hkaiPhysicsBodySilhouetteGeneratorBase : public hkaiPointCloudSilhouetteGenerator
 {
 	public:
 			//+version(1)
@@ -24,7 +24,7 @@ class hkaiPhysicsBodySilhouetteGeneratorBase : public hkaiPointCloudSilhouetteGe
 		HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_AI);
 
 			/// Constructor
-		hkaiPhysicsBodySilhouetteGeneratorBase();
+		hkaiPhysicsBodySilhouetteGeneratorBase( GeneratorType type = GENERATOR_PHYSICS_BODY_BASE );
 
 			/// Constructor
 		hkaiPhysicsBodySilhouetteGeneratorBase( hkFinishLoadedObjectFlag f);
@@ -98,7 +98,7 @@ class hkaiPhysicsBodySilhouetteGeneratorBase : public hkaiPointCloudSilhouetteGe
 #endif // HK_PHYSICS_BODY_SILHOUETTE_GENERATOR_BASE_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

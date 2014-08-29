@@ -15,7 +15,7 @@
 //#define HKAI_DEBUG_VISIBLE_SET
 
 	/// Utility for computing the set of visible points to/from a start point
-class hkaiVisibilityUtil
+class HK_EXPORT_AI hkaiVisibilityUtil
 {
 public:
 	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_AI, hkaiVisibilityUtil );
@@ -34,7 +34,7 @@ public:
 	};
 
 		/// Input settings for hkaiVisibilityUtil::findVisibleSet().
-	struct FindVisibleSetInput : public hkaiPathfindingUtil::NearestFeatureInput
+	struct HK_EXPORT_AI FindVisibleSetInput : public hkaiPathfindingUtil::NearestFeatureInput
 	{
 		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_AI, FindVisibleSetInput );
 
@@ -45,14 +45,14 @@ public:
 	};
 	
 		/// A list of arcs that have visibility to the start point
-	class VisibleSet
+	class HK_EXPORT_AI VisibleSet
 	{
 	public:
 
 		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_AI, VisibleSet );
 
 			/// An arc with angles from [-pi, pi]
-		struct Arc
+		struct HK_EXPORT_AI Arc
 		{
 			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_AI, Arc );
 
@@ -100,7 +100,7 @@ public:
 protected:
 
 		/// Internal callback used to process edges on the faces encountered during the callback.
-	class VisibleSetCallback : public hkaiPathfindingUtil::NearestFeatureCallback
+	class HK_EXPORT_AI VisibleSetCallback : public hkaiPathfindingUtil::NearestFeatureCallback
 	{
 	public:
 		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_AI, VisibleSetCallback );
@@ -166,7 +166,7 @@ protected:
 #endif // HKAI_VISIBILITY_UTIL_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

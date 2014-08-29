@@ -32,15 +32,16 @@ class VFileServeStartupModule : public VStartupModule
   {
     switch(VFileServeDaemon::GetInstance()->RunSetup())
     {
-    case VFileServeDaemon::SR_NOT_DONE_YET:
-      return true;
-
     case VFileServeDaemon::SR_FINISHED:
       return false;
 
     case VFileServeDaemon::SR_FAILED:
       VAppBase::Get()->Quit();
       return false;
+
+    case VFileServeDaemon::SR_NOT_DONE_YET:
+    default:
+      return true;
     }
   }
 };
@@ -48,7 +49,7 @@ class VFileServeStartupModule : public VStartupModule
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

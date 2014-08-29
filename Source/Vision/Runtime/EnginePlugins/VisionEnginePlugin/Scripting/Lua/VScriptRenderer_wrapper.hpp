@@ -19,7 +19,9 @@
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/Postprocessing/Glow.hpp>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/Postprocessing/ToneMapping.hpp>
 
-#if !defined(_VISION_MOBILE) && !defined(HK_ANARCHY)
+#include <Vision/Runtime/Base/System/VNameValueListParser.hpp>
+
+#if !defined(_VISION_MOBILE) && !defined(_VISION_NACL) && !defined(HK_ANARCHY)
   #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/DeferredShading/DeferredShadingApp.hpp>
   #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/DeferredShading/DeferredShadingLights.hpp>
   #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/DeferredShading/DeferredShadingRimLight.hpp>
@@ -68,7 +70,7 @@ public:
       pPostProcessor = new VPostProcessToneMapping(TONEMAP_SCALE, 1, 1, 0); //fwd & def
     }
 
-    #if !defined(_VISION_MOBILE) && !defined(HK_ANARCHY)
+    #if !defined(_VISION_MOBILE) && !defined(_VISION_NACL) && !defined(HK_ANARCHY)
       else if(!strcmp(className, "VPostProcessSSAO"))
       {
         VPostProcessSSAO *pSSAO = new VPostProcessSSAO(24, SSAO_8_SAMPLES, 2, true, SSAO_FILTER_ADAPTIVE); //fwd & def
@@ -182,83 +184,116 @@ public:
     return false;
   } 
 
-  static bool SetTechniqueForSurface(VisBaseEntity_cl *pEntity, VDynamicMesh *pMesh, VisSurface_cl *pSurface, const char * szShaderLib, const char * szTechnique, const char * szParamString = "", bool bReplace = true)
-  { 
-    VASSERT(pEntity||pMesh);
+  static bool SetEffectForEntity(VisBaseEntity_cl *pEntity, int iSurfaceToChangeIndex, const char * szShaderLib, const char * szEffect, const VMap<VString, VString>& params)
+  {
+    return SetEffectForEntity(pEntity, iSurfaceToChangeIndex, szShaderLib, szEffect, ConvertParamTableToParamString(params));
+  }
 
-    if(!pMesh) pMesh = pEntity->GetMesh();
-    if(!pMesh) return false;
+  static int FindSurfaceIndex(VisBaseEntity_cl *pEntity, VisSurface_cl* pSurfaceToFind)
+  {
+    VASSERT(pEntity != NULL && pSurfaceToFind != NULL);
+    int iSurfaceCount = pEntity->GetMesh()->GetSurfaceCount();
+    VisSurface_cl** pSurfaces = pEntity->GetMesh()->GetSurfaceArray();
+    for(int i=0; i < iSurfaceCount; i++)
+    {
+      if(pSurfaces[i] == pSurfaceToFind)
+      {
+        return i;
+      }
+    }
 
-    if(!pSurface || (szShaderLib && !Vision::Shaders.LoadShaderLibrary(szShaderLib))) return false;
+    pSurfaces = pEntity->GetSurfaceArray();
+    for(int i=0; i < iSurfaceCount; i++)
+    {
+      if(pSurfaces[i] == pSurfaceToFind)
+      {
+        return i;
+      }
+    }
+
+    return -1;
+  }
+
+  static bool SetEffectForEntity(VisBaseEntity_cl *pEntity, int iSurfaceToReplaceIndex, const char * szShaderLib, const char * szEffect, const char * szParamString = "")
+  {
+    VASSERT(pEntity);
+
+    if((szShaderLib && !Vision::Shaders.LoadShaderLibrary(szShaderLib))) 
+      return false;
 
     //create a copy of the shader set
-    VCompiledTechnique *  pTechnique = Vision::Shaders.CreateTechnique(szTechnique, szParamString);
-    if(!pTechnique) return false;
+    VCompiledEffect *pEffect = Vision::Shaders.CreateEffect(szEffect, szParamString);
+    if(!pEffect) 
+      return false;
 
-    VisShaderSet_cl *pShaderSet = NULL;
-    if(pEntity)
+    int iSurfaceCount = pEntity->GetMesh()->GetSurfaceCount();
+    if(pEntity->GetCustomTextureSet() == NULL)
     {
-      pShaderSet = pEntity->GetActiveShaderSet()->Clone();
-      pEntity->SetShaderSet(pShaderSet);
+      VisSurface_cl** ppOldSurfaces = pEntity->GetSurfaceArray();
+      VisSurfaceTextureSet_cl* pSurfaceSet = pEntity->CreateCustomTextureSet(true);
+      VASSERT(pSurfaceSet->GetSurfaceCount() == iSurfaceCount);
+      VisSurface_cl** ppNewSurfaces = pSurfaceSet->AsSurfaceArray();
+      for(int i=0; i < iSurfaceCount; i++)
+      {
+        ppNewSurfaces[i]->CopyFrom(*ppOldSurfaces[i]);
+      }
     }
-    else 
+
+    VisSurface_cl** pSurfaces = pEntity->GetSurfaceArray();
+    if(iSurfaceToReplaceIndex < 0)
     {
-      pShaderSet = pMesh->GetShaderSet();
+      for(int i=0; i < iSurfaceCount; i++)
+      {
+        pSurfaces[i]->SetEffect(pEffect);
+      }
     }
-      
-    if(pShaderSet==NULL) return false;
+    else
+    {
+      if(iSurfaceToReplaceIndex >= iSurfaceCount)
+        return false;
+      pSurfaces[iSurfaceToReplaceIndex]->SetEffect(pEffect);
+    }
 
-    //remove all previous made assignments if desired
-    if(bReplace) pShaderSet->RemoveSurfaceAssignments(pSurface);
-
-    for(int i=0; i<pMesh->GetSubmeshCount();++i)
-      pShaderSet->Add(pMesh->GetSubmesh(i), pSurface, pTechnique);
+    // We need to reset the custom texture set so that the shader set gets rebuild
+    pEntity->SetCustomTextureSet( pEntity->GetCustomTextureSet() );
 
     return true;
   }
 
-  static bool SetEffectForSurface(VisBaseEntity_cl *pEntity, VDynamicMesh *pMesh, VisSurface_cl *pSurface, const char * szShaderLib, const char * szEffect, const char * szParamString = "", bool bReplace = true)
+  static void GetParamsFromSurface(VisSurface_cl *pSurface, VMap<VString, VString>& out)
   {
-    VASSERT(pEntity||pMesh);
-
-    if(!pMesh) pMesh = pEntity->GetMesh();
-    if(!pMesh) return false;
-
-    if(!pSurface || (szShaderLib && !Vision::Shaders.LoadShaderLibrary(szShaderLib))) return false;
-
-    //create a copy of the shader set
-    VCompiledEffect *pEffect = Vision::Shaders.CreateEffect(szEffect, szParamString);
-    if(!pEffect) return false;
-    VCompiledTechnique *  pTechnique = pEffect->GetDefaultTechnique();
-    if(!pTechnique) return false;
-
-    VisShaderSet_cl *pShaderSet = NULL;
-    if(pEntity)
+    if (pSurface && pSurface->GetEffect())
     {
-      pShaderSet = pEntity->GetActiveShaderSet()->Clone();
-      pEntity->SetShaderSet(pShaderSet);
+      VString paramString = pSurface->GetEffect()->GetParameterString();
+      VNameValueListParser<';', '='> paramListParser(paramString.GetChar(), false);
+      while (paramListParser.next())
+      {
+        out.SetAt(paramListParser.name(), paramListParser.value());
+      }
     }
-    else 
+  }
+
+private:
+
+  static VString ConvertParamTableToParamString(const VMap<VString, VString>& params)
+  {
+    VString paramString, key, value;
+    VPOSITION pMapPos = params.GetStartPosition();
+    while (pMapPos != NULL)
     {
-      pShaderSet = pMesh->GetShaderSet();
+      params.GetNextPair(pMapPos, key, value);
+      paramString += key + "=" + value;
+      if (pMapPos != NULL)
+        paramString += ";";
     }
-      
-    if(pShaderSet==NULL) return false;
-
-    //remove all previous made assignments if desired
-    if(bReplace) pShaderSet->RemoveSurfaceAssignments(pSurface);
-
-    for(int i=0; i<pMesh->GetSubmeshCount();++i)
-      pShaderSet->Add(pMesh->GetSubmesh(i), pSurface, pTechnique);
-
-    return true;
+    return paramString;
   }
 };
 
 #endif // __VSCRIPTRENDERER_WRAPPER_HPP
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

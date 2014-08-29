@@ -72,9 +72,9 @@ namespace hkTrait
 
 	/// Returns true if Source can be converted to Destination (ie. if you can create a Destination from a Source)
 	/// This means typically that either:
-	///    * Source inherits publicly from Destination
-	///    * Source has a public non-explicit constructor such as: Source(const Destination&)
-	///    * Source can be coerced into Destination (int to double, ...)
+	/// * Source inherits publicly from Destination
+	/// * Source has a public non-explicit constructor such as: Source(const Destination&)
+	/// * Source can be coerced into Destination (int to double, ...)
 	template< typename Source, typename Destination >
 	struct IsConvertibleTo
 	{
@@ -99,7 +99,7 @@ namespace hkTrait
 #endif // HKBASE_TRAITS_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

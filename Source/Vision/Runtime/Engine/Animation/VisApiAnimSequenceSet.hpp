@@ -48,15 +48,15 @@ class VSequenceSetSerializationProxy : public IVSerializationProxy
 {
 public:
   inline VSequenceSetSerializationProxy(VisAnimSequenceSet_cl *pSet) {VASSERT(pSet);m_pSet=pSet;}
-  virtual IVSerializationProxyCreator *GetInstance();
+  VISION_APIFUNC virtual IVSerializationProxyCreator *GetInstance();
 #ifdef SUPPORTS_SNAPSHOT_CREATION
-  virtual void GetDependencies(VResourceSnapshot &snapshot);
+  VISION_APIFUNC virtual void GetDependencies(VResourceSnapshot &snapshot);
 #endif
 protected:
   // serialization
   inline VSequenceSetSerializationProxy() {m_pSet=NULL;}
   V_DECLARE_SERIAL_DLLEXP( VSequenceSetSerializationProxy, VISION_APIDATA );
-  virtual void Serialize( VArchive &ar );
+  VISION_APIFUNC virtual void Serialize( VArchive &ar );
 
 private:
   VisAnimSequenceSet_cl *m_pSet;
@@ -154,7 +154,7 @@ public:
   
   /// \brief
   ///   Destructor
-  ~VisAnimSequenceSet_cl();
+  VISION_APIFUNC ~VisAnimSequenceSet_cl();
 
 
   /// \brief
@@ -263,7 +263,7 @@ protected:
   ///   VisAnimSequenceSet_cl: Loaded animation sequence set or NULL
   static VISION_APIFUNC VisAnimSequenceSet_cl* LoadDirect(const char *pszFilename);
 
-private:
+protected:
 
   /// \brief
   ///   LoadAnimFile loads animation file with specified filename.
@@ -402,7 +402,7 @@ public:
 #endif //VIS_ANIM_SEQUENCE_SET_HPP_INCLUDED
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

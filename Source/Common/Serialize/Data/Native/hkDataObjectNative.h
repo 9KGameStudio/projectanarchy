@@ -25,7 +25,7 @@ class hkTypeInfoRegistry;
 	/// 
 	/// You also may use this class to save object contents to a tagfile
 	/// with a pointer and hkClass.
-class hkDataWorldNative : public hkDataWorld
+class HK_EXPORT_COMMON hkDataWorldNative : public hkDataWorld
 {
 	public:
 	HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE);
@@ -89,7 +89,7 @@ class hkDataWorldNative : public hkDataWorld
 #endif // HK_DATA_NATIVE_OBJECT
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

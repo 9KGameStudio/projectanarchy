@@ -122,14 +122,15 @@ void VLightClippingVolumeRenderer::PatchReadDepthStencilState(const VStateGroupD
     pOutputStates[i] = inputState;
     if (bEnableStencil)
       pOutputStates[i].m_bStencilTestEnabled = true;
-    pOutputStates[i].m_iStencilRef = V_BIT(V_LIGHT_CLIPPING_STENCIL_BIT);
+    if (i == 0)
+      pOutputStates[i].m_iStencilRef |= V_BIT(V_LIGHT_CLIPPING_STENCIL_BIT);
     pOutputStates[i].m_iStencilReadMask |= V_BIT(V_LIGHT_CLIPPING_STENCIL_BIT);
-    pOutputStates[i].m_cStencilComparisonFunc[0] = (i==0) ? COMPARISON_EQUAL : COMPARISON_NOT_EQUAL;
+    pOutputStates[i].m_cStencilComparisonFunc[0] = COMPARISON_EQUAL;
   }
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

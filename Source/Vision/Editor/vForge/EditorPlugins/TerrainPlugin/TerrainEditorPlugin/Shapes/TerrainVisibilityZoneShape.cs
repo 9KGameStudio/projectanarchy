@@ -80,11 +80,13 @@ namespace TerrainEditorPlugin.Shapes
       _createHotSpots = false;
     }
 
-    int _iSectorX, _iSectorY;
-    TerrainShape _ownerTerrain;
-    // uint _SectorVisibleMask = 0xffffffff;
+    private int _iSectorX, _iSectorY;
+    private TerrainShape _ownerTerrain;
 
+    [Browsable(false)]
     public int SectorX { get { return _iSectorX; } }
+
+    [Browsable(false)]
     public int SectorY { get { return _iSectorY; } }
 
     /// <summary>
@@ -107,6 +109,7 @@ namespace TerrainEditorPlugin.Shapes
     /// </summary>
     protected const int CATORDER_PHYSICS = VisibilityZoneShape.LAST_CATEGORY_ORDER_ID + 2;
 
+    [Browsable(true)]
     [SortedCategory(CAT_VISIBILTY, CATORDER_VISIBILITY),
     PropertyOrder(1)]
     [Description("Visibility bit-mask")]
@@ -126,6 +129,7 @@ namespace TerrainEditorPlugin.Shapes
       }
     }
 
+    [Browsable(true)]
     [SortedCategory(CAT_PHYSICS, CATORDER_PHYSICS),
     PropertyOrder(1)]
     [Description("Collision bit-mask")]
@@ -145,6 +149,7 @@ namespace TerrainEditorPlugin.Shapes
       }
     }
 
+    [Browsable(true)]
     [SortedCategory(CAT_PHYSICS, CATORDER_PHYSICS),
     PropertyOrder(2)]
     [Description("Physics representation type. (Please note: Approximate can not be used for terrain sector with holes.)")]
@@ -161,6 +166,26 @@ namespace TerrainEditorPlugin.Shapes
         if (_ownerTerrain.EngineTerrain == null)
           return;
         _ownerTerrain.EngineTerrain.SetSectorPhysicsType(_iSectorX, _iSectorY, value);
+      }
+    }
+
+    [Browsable(true)]
+    [SortedCategory(CAT_PHYSICS, CATORDER_PHYSICS),
+    PropertyOrder(3)]
+    [Description("If SectorPhysicsType is precise, this will shrink the collision geometry such that the surface, including the 'convex radius', is as close as possible to the displayed sector geometry.")]
+    public bool SectorTightFitShape
+    {
+      get
+      {
+        if (_ownerTerrain.EngineTerrain == null)
+          return false;
+        return _ownerTerrain.EngineTerrain.GetSectorPhysicsTightFit(_iSectorX, _iSectorY);
+      }
+      set
+      {
+        if (_ownerTerrain.EngineTerrain == null)
+          return;
+        _ownerTerrain.EngineTerrain.SetSectorPhysicsTightFit(_iSectorX, _iSectorY, value);
       }
     }
 
@@ -186,6 +211,7 @@ namespace TerrainEditorPlugin.Shapes
     /// <summary>
     /// Returns a bounding box that defines the bounding box of this sector, not including potential margins 
     /// </summary>
+    [Browsable(false)]
     BoundingBox SectorExtent
     {
       get
@@ -226,11 +252,11 @@ namespace TerrainEditorPlugin.Shapes
       this.FinalBoundingBox.AddPoint(pt);
     }
 
-
     #region Native sector status
 
     SectorAction _currentStatus = SectorAction.Unloaded;
 
+    [Browsable(false)]
     public SectorAction CurrentStatus
     {
       get { return _currentStatus; }
@@ -247,6 +273,7 @@ namespace TerrainEditorPlugin.Shapes
 
     #region Shape Overrides
 
+    [Browsable(false)]
     public override bool Traceable
     {
       get
@@ -259,9 +286,12 @@ namespace TerrainEditorPlugin.Shapes
 
     public override PropertyFlags_e GetPropertyFlags(PropertyFlagsProviderInfo pd)
     {
-      if (pd.Name == "SectorVisibleMask" || pd.Name == "SectorCollisionMask" || pd.Name == "SectorPhysicsType")
-        return base.GetPropertyFlags(pd);
-      return PropertyFlags_e.Hidden;
+      // Hide all base-class properties.
+      Type baseTypeInfo = typeof(VisibilityZoneShape);
+      if (baseTypeInfo.GetProperty(pd.Name) != null)
+        return PropertyFlags_e.Hidden;
+
+      return base.GetPropertyFlags(pd);
     }
 
     public override void OnAddedToScene()
@@ -289,6 +319,7 @@ namespace TerrainEditorPlugin.Shapes
     /// <summary>
     /// Set this to true if the 2D view image should be updated
     /// </summary>
+    [Browsable(false)]
     public bool ViewBitmapDirty
     {
       set
@@ -458,9 +489,9 @@ namespace TerrainEditorPlugin.Shapes
 
     #endregion
 
-
     #region ITerrainObject Members
 
+    [Browsable(false)]
     public TerrainShape OwnerTerrain
     {
       get { return _ownerTerrain; }
@@ -473,7 +504,7 @@ namespace TerrainEditorPlugin.Shapes
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

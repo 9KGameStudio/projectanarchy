@@ -13,40 +13,58 @@
 #define MOVE_SD(a, b) _mm_move_sd(a, b)
 #endif
 
-#define HK_VECTOR4dUTIL_atan2Approximation
+#define HK_VECTOR4dUTIL_atan2
 template <>
-HK_FORCE_INLINE hkSimdDouble64 HK_CALL hkVector4UtilImpl<hkDouble64>::atan2Approximation(hkSimdDouble64Parameter y, hkSimdDouble64Parameter x)
+HK_FORCE_INLINE hkSimdDouble64 HK_CALL hkVector4UtilImpl<hkDouble64>::atan2(hkSimdDouble64Parameter y, hkSimdDouble64Parameter x)
 {
 	hkSimdDouble64 result;
 	result.m_real = hkMath::twoAtan2(y.m_real,x.m_real);
 	return result;
 }
 template <>
-HK_FORCE_INLINE void HK_CALL hkVector4UtilImpl<hkDouble64>::atan2Approximation(hkVector4dParameter y, hkVector4dParameter x, hkVector4d& result)
+HK_FORCE_INLINE void HK_CALL hkVector4UtilImpl<hkDouble64>::atan2(hkVector4dParameter y, hkVector4dParameter x, hkVector4d& result)
 {
 	result.m_quad.xy = hkMath::twoAtan2(y.m_quad.xy, x.m_quad.xy);
 	result.m_quad.zw = hkMath::twoAtan2(y.m_quad.zw, x.m_quad.zw);
 }
+template <>
+HK_FORCE_INLINE hkSimdDouble64 HK_CALL hkVector4UtilImpl<hkDouble64>::atan2(hkVector4dParameter v)
+{
+	hkSimdDouble64 result;
+	__m128d x = _mm_unpacklo_pd(v.m_quad.xy, v.m_quad.xy);
+	__m128d y = _mm_unpackhi_pd(v.m_quad.xy, v.m_quad.xy);
+	result.m_real = hkMath::twoAtan2(y,x);
+	return result;
+}
 
 #define HK_VECTOR4dUTIL_sinCos
 template <>
+HK_FORCE_INLINE void HK_CALL hkVector4UtilImpl<hkDouble64>::sinCos(hkVector4dParameter r, hkVector4d& sines, hkVector4d& cosines)
+{
+	hkMath::twoSinCos(r.m_quad.xy, sines.m_quad.xy, cosines.m_quad.xy);
+	hkMath::twoSinCos(r.m_quad.zw, sines.m_quad.zw, cosines.m_quad.zw);
+}
+template <>
 HK_FORCE_INLINE void HK_CALL hkVector4UtilImpl<hkDouble64>::sinCos(hkVector4dParameter r, hkVector4d& sc)
 {
-	sc.m_quad.xy = hkMath::twoSinCos(r.m_quad.xy);
-	sc.m_quad.zw = hkMath::twoSinCos(r.m_quad.zw);
+	__m128d s,c;
+	hkMath::twoSinCos(r.m_quad.xy,s,c);
+	sc.m_quad.xy = MOVE_SD(c,s);
+	hkMath::twoSinCos(r.m_quad.zw,s,c);
+	sc.m_quad.zw = MOVE_SD(c,s);
 }
 template <>
 HK_FORCE_INLINE void HK_CALL hkVector4UtilImpl<hkDouble64>::sinCos(hkSimdDouble64Parameter r, hkVector4d& sc)
 {
-	sc.m_quad.xy = hkMath::twoSinCos(r.m_real);
+	__m128d s,c;
+	hkMath::twoSinCos(r.m_real,s,c);
+	sc.m_quad.xy = MOVE_SD(c,s);
 	sc.m_quad.zw = sc.m_quad.xy;
 }
 template <>
 HK_FORCE_INLINE void HK_CALL hkVector4UtilImpl<hkDouble64>::sinCos(hkSimdDouble64Parameter r, hkSimdDouble64& s, hkSimdDouble64& c)
 {
-	const __m128d sc = hkMath::twoSinCos(r.m_real);
-	s.m_real = _mm_shuffle_pd(sc,sc,_MM_SHUFFLE2(0,0));
-	c.m_real = _mm_shuffle_pd(sc,sc,_MM_SHUFFLE2(1,1));
+	hkMath::twoSinCos(r.m_real, s.m_real, c.m_real);
 }
 
 #define HK_VECTOR4dUTIL_sinCosApproximation
@@ -82,6 +100,20 @@ HK_FORCE_INLINE void HK_CALL hkVector4UtilImpl<hkDouble64>::aCos(hkVector4dParam
 {
 	sc.m_quad.xy = hkMath::twoAcos(r.m_quad.xy);
 	sc.m_quad.zw = hkMath::twoAcos(r.m_quad.zw);
+}
+template <>
+HK_FORCE_INLINE hkSimdDouble64 HK_CALL hkVector4UtilImpl<hkDouble64>::aSin(hkSimdDouble64Parameter r)
+{
+	hkSimdDouble64 result;
+	result.m_real = hkMath::twoAsin(r.m_real);
+	return result;
+}
+template <>
+HK_FORCE_INLINE hkSimdDouble64 HK_CALL hkVector4UtilImpl<hkDouble64>::aCos(hkSimdDouble64Parameter r)
+{
+	hkSimdDouble64 result;
+	result.m_real = hkMath::twoAcos(r.m_real);
+	return result;
 }
 template <>
 HK_FORCE_INLINE void HK_CALL hkVector4UtilImpl<hkDouble64>::aSinAcos(hkVector4dParameter r, hkVector4d& sc)
@@ -206,6 +238,25 @@ HK_FORCE_INLINE void HK_CALL hkVector4UtilImpl<hkDouble64>::dot4_4vs4( hkVector4
 	dotsOut.m_quad.zw = _mm_or_pd(dp2,dp3);
 }
 
+#define HK_VECTOR4dUTIL_dot3_1vs3
+template <>
+HK_FORCE_INLINE void HK_CALL hkVector4UtilImpl<hkDouble64>::dot3_1vs3( hkVector4dParameter v, hkVector4dParameter a0, hkVector4dParameter a1, hkVector4dParameter a2, hkVector4d& dotsOut)
+{
+	const hkSingleDouble64 dp0xy = _mm_dp_pd(v.m_quad.xy, a0.m_quad.xy, 0x31);
+	const hkSingleDouble64 dp0zw = _mm_dp_pd(v.m_quad.zw, a0.m_quad.zw, 0x11);
+	const hkSingleDouble64 dp0   = _mm_add_pd(dp0xy, dp0zw);
+
+	const hkSingleDouble64 dp1xy = _mm_dp_pd(v.m_quad.xy, a1.m_quad.xy, 0x32);
+	const hkSingleDouble64 dp1zw = _mm_dp_pd(v.m_quad.zw, a1.m_quad.zw, 0x12);
+	const hkSingleDouble64 dp1   = _mm_add_pd(dp1xy, dp1zw);
+
+	dotsOut.m_quad.xy = _mm_or_pd(dp0,dp1);
+
+	const hkSingleDouble64 dp2xy = _mm_dp_pd(v.m_quad.xy, a2.m_quad.xy, 0x31);
+	const hkSingleDouble64 dp2zw = _mm_dp_pd(v.m_quad.zw, a2.m_quad.zw, 0x11);
+	dotsOut.m_quad.zw = _mm_add_pd(dp2xy, dp2zw);
+}
+
 #define HK_VECTOR4dUTIL_dot3_1vs4
 template <>
 HK_FORCE_INLINE void HK_CALL hkVector4UtilImpl<hkDouble64>::dot3_1vs4( hkVector4dParameter v, hkVector4dParameter a0, hkVector4dParameter a1, hkVector4dParameter a2, hkVector4dParameter a3, hkVector4d& dotsOut)
@@ -328,13 +379,8 @@ HK_FORCE_INLINE void HK_CALL hkVector4UtilImpl<hkDouble64>::dot4_4vs4( hkVector4
 	const hkSingleDouble64 hsum2 = _mm_hadd_pd(m2xy, m2zw);
 	const hkSingleDouble64 hsum3 = _mm_hadd_pd(m3xy, m3zw);
 
-	const hkSingleDouble64 dp0 = _mm_hadd_pd(hsum0, hsum0);
-	const hkSingleDouble64 dp1 = _mm_hadd_pd(hsum1, hsum1);
-	const hkSingleDouble64 dp2 = _mm_hadd_pd(hsum2, hsum2);
-	const hkSingleDouble64 dp3 = _mm_hadd_pd(hsum3, hsum3);
-
-	dotsOut.m_quad.xy = MOVE_SD(dp1,dp0);
-	dotsOut.m_quad.zw = MOVE_SD(dp3,dp2);
+	dotsOut.m_quad.xy =_mm_hadd_pd(hsum0, hsum1);
+	dotsOut.m_quad.zw =_mm_hadd_pd(hsum2, hsum3);
 }
 
 #define HK_VECTOR4dUTIL_dot4_1vs4
@@ -355,13 +401,8 @@ HK_FORCE_INLINE void HK_CALL hkVector4UtilImpl<hkDouble64>::dot4_1vs4( hkVector4
 	const hkSingleDouble64 hsum2 = _mm_hadd_pd(m2xy, m2zw);
 	const hkSingleDouble64 hsum3 = _mm_hadd_pd(m3xy, m3zw);
 
-	const hkSingleDouble64 dp0 = _mm_hadd_pd(hsum0, hsum0);
-	const hkSingleDouble64 dp1 = _mm_hadd_pd(hsum1, hsum1);
-	const hkSingleDouble64 dp2 = _mm_hadd_pd(hsum2, hsum2);
-	const hkSingleDouble64 dp3 = _mm_hadd_pd(hsum3, hsum3);
-
-	dotsOut.m_quad.xy = MOVE_SD(dp1,dp0);
-	dotsOut.m_quad.zw = MOVE_SD(dp3,dp2);
+	dotsOut.m_quad.xy = _mm_hadd_pd(hsum0, hsum1);
+	dotsOut.m_quad.zw = _mm_hadd_pd(hsum2, hsum3);
 }
 
 #define HK_VECTOR4dUTIL_dot4_1vs3
@@ -380,12 +421,8 @@ HK_FORCE_INLINE void HK_CALL hkVector4UtilImpl<hkDouble64>::dot4_1vs3( hkVector4
 	const hkSingleDouble64 hsum1 = _mm_hadd_pd(m1xy, m1zw);
 	const hkSingleDouble64 hsum2 = _mm_hadd_pd(m2xy, m2zw);
 
-	const hkSingleDouble64 dp0 = _mm_hadd_pd(hsum0, hsum0);
-	const hkSingleDouble64 dp1 = _mm_hadd_pd(hsum1, hsum1);
-	const hkSingleDouble64 dp2 = _mm_hadd_pd(hsum2, hsum2);
-
-	dotsOut.m_quad.xy = MOVE_SD(dp1,dp0);
-	dotsOut.m_quad.zw = dp2;
+	dotsOut.m_quad.xy = _mm_hadd_pd(hsum0, hsum1);
+	dotsOut.m_quad.zw = _mm_hadd_pd(hsum2, hsum2);
 }
 
 #endif // sse specials
@@ -396,9 +433,11 @@ HK_FORCE_INLINE void HK_CALL hkVector4UtilImpl<hkDouble64>::convertQuaternionToR
 {
 	HK_MATH_ASSERT(0x1ff88f0e, qi.isOk(), "hkQuaterniond not normalized/invalid!");
 
+#if HK_SSE_VERSION < 0x30
 	static HK_ALIGN16( const hkUint64 negateMaskY[2]  ) = { 0x0000000000000000ull, 0x8000000000000000ull };
 	static HK_ALIGN16( const hkUint64 negateMaskX[2]  ) = { 0x8000000000000000ull, 0x0000000000000000ull };
 	static HK_ALIGN16( const hkUint64 negateMaskXY[2] ) = { 0x8000000000000000ull, 0x8000000000000000ull };
+#endif
 
 	const hkQuadDouble64 xyzw = qi.m_vec.m_quad;
 	hkQuadDouble64 xyzw2;
@@ -433,6 +472,21 @@ HK_FORCE_INLINE void HK_CALL hkVector4UtilImpl<hkDouble64>::convertQuaternionToR
 	tmp6 = _mm_sub_sd( tmp6, tmp2.xy );										// tmp6 = -xx2-yy2+1, 0
 
 	// calculate first row
+#if HK_SSE_VERSION >= 0x30
+	tmp4.xy = _mm_addsub_pd (g_vectordConstants[HK_QUADREAL_1000].xy,tmp4.xy ); // tmp4 = -zz2+1, wz2, wy2, wx2
+	hkVector4d tmp3;
+	{
+		tmp3.m_quad.xy = _mm_addsub_pd(tmp4.xy,tmp2.xy);
+		tmp3.m_quad.zw = _mm_sub_pd(tmp2.zw,tmp4.zw);						// tmp3 = -yy2-zz2+1, xy2+wz2, xz2-wy2, yz2-wx2
+	}
+	rotationOut.setColumn<0>(tmp3);											// row0 = tmp3
+
+	// calculate second row
+	tmp2.xy = MOVE_SD( tmp2.xy, tmp1 );									// tmp2 = xx2, xy2, xz2, yz2
+	tmp4.xy = MOVE_SD(_mm_sub_pd(_mm_setzero_pd(),tmp4.xy), tmp4.xy);	// tmp4 = -zz2+1, -wz2, wy2, wx2
+	tmp4.xy = _mm_addsub_pd(tmp4.xy,tmp2.xy);
+	tmp4.zw = _mm_add_pd(tmp4.zw,tmp2.zw);								// tmp4 = -xx2-zz2+1, xy2-wz2, xz2+wy2, yz2+wx2
+#else
 	tmp2.xy = _mm_xor_pd( tmp2.xy, *(const __m128d*)&negateMaskY );
 	tmp2.zw = _mm_xor_pd( tmp2.zw, *(const __m128d*)&negateMaskXY );			// tmp2 = yy2, -xy2, -xz2, -yz2
 	tmp4.xy = _mm_xor_pd( tmp4.xy, *(const __m128d*)&negateMaskX );
@@ -451,19 +505,20 @@ HK_FORCE_INLINE void HK_CALL hkVector4UtilImpl<hkDouble64>::convertQuaternionToR
 	tmp4.zw = _mm_xor_pd( tmp4.zw, *(const __m128d*)&negateMaskXY );			// tmp4 = -zz2+1, -wz2, wy2, wx2
 	tmp4.xy = _mm_sub_pd(tmp4.xy,tmp2.xy);
 	tmp4.zw = _mm_sub_pd(tmp4.zw,tmp2.zw);									// tmp4 = -xx2-zz2+1, xy2-wz2, xz2+wy2, yz2+wx2
+#endif
 	hkVector4d tmp5;
 	{
 		tmp5.m_quad.xy = _mm_shuffle_pd(tmp4.xy,tmp4.xy,_MM_SHUFFLE2(0,1));
 		tmp5.m_quad.zw = _mm_shuffle_pd(tmp4.zw,tmp4.zw,_MM_SHUFFLE2(0,1));	// tmp5 = xy2-wz2, -xx2-zz2+1, yz2+wx2, xz2+wy2
 	}
-	rotationOut.setColumn<1>(tmp5);											// row1 = xy2-wz2, -xx2-zz2+1, yz2+wx2, xz2+wy2
+	rotationOut.setColumn<1>(tmp5);											// row1 = tmp5
 
 	// calculate third row
 	{
 		tmp3.m_quad.xy = _mm_unpackhi_pd(tmp5.m_quad.zw,tmp3.m_quad.zw);
 		tmp3.m_quad.zw = tmp6;												// tmp3 = xz2+wy2, yz2-wx2, -xx2-yy2+1, 0
 	}
-	rotationOut.setColumn<2>(tmp3);											// row2 = xz2+wy2, yz2-wx2, -xx2-yy2+1, 0
+	rotationOut.setColumn<2>(tmp3);											// row2 = tmp3
 }
 
 #define HK_VECTOR4dUTIL_convertComparison
@@ -481,8 +536,22 @@ HK_FORCE_INLINE void HK_CALL hkVector4UtilImpl<hkDouble64>::convertComparison(hk
 	cout.m_mask.zw = cin.m_mask.zw;
 }
 
+#define HK_VECTOR4dUTIL_convertVector
+template <>
+HK_FORCE_INLINE void HK_CALL hkVector4UtilImpl<hkDouble64>::convertVector(hkVector4dParameter vin, hkVector4f& vout)
+{
+	__m128 xy = _mm_cvtpd_ps(vin.m_quad.xy);
+	__m128 zw = _mm_cvtpd_ps(vin.m_quad.zw);
+	vout.m_quad = _mm_movelh_ps(xy,zw);
+}
+template <>
+HK_FORCE_INLINE void HK_CALL hkVector4UtilImpl<hkDouble64>::convertVector(hkVector4dParameter vin, hkVector4d& vout)
+{
+	vout = vin;
+}
+
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

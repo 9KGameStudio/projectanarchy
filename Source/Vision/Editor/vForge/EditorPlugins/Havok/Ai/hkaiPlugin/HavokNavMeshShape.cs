@@ -32,8 +32,6 @@ using CSharpFramework.DynamicProperties;
 using HavokAiPanelDialogs;
 
 #if USE_SPEEDTREE
-using Speedtree5EditorPlugin;
-using Speedtree5Managed;
 using Speedtree6EditorPlugin;
 using Speedtree6Managed;
 #endif
@@ -146,6 +144,19 @@ namespace HavokAiEditorPlugin.Shapes
         SetEngineInstanceBaseProperties(); // sets the navmesh generation settings
 
         // try to load navmesh
+        if (m_sectionID == EngineInstanceHavokNavMesh.GetInvalidId())
+        {
+            // get top 32 bits
+            uint topBits = (uint)(this.UniqueID >> 32);
+            
+            // get bottom 32 bits
+            uint bottomBits = (uint)(this.UniqueID & 0xffffffff);
+
+            // xor them
+            m_sectionID = topBits ^ bottomBits;
+        }
+
+        EngineNavMesh.SetSectionID(m_sectionID);
         EngineNavMesh.SetFilenameAndLoadNavMesh(m_navMeshFilename);
         EngineNavMesh.AddNavMeshToWorld();
       }
@@ -217,6 +228,9 @@ namespace HavokAiEditorPlugin.Shapes
       EngineNavMesh.m_maxNumEdgesPerFace = globalSettings.MaxNumEdgesPerFace;
       EngineNavMesh.m_weldInputVertices = globalSettings.WeldInputVertices;
       EngineNavMesh.m_weldThreshold = globalSettings.WeldThreshold;
+      EngineNavMesh.m_vertexSelectionMethod = (int)globalSettings.VertexSelectionMethod;
+      EngineNavMesh.m_areaFraction = globalSettings.AreaFraction;
+      EngineNavMesh.m_vertexFraction = globalSettings.VertexFraction;
 
       // Nav Mesh Edge Matching Settings
       EngineNavMesh.m_edgeConnectionIterations = globalSettings.EdgeConnectionIterations;
@@ -274,6 +288,8 @@ namespace HavokAiEditorPlugin.Shapes
         m_navMeshFilename = info.GetString("NavmeshFilename");
       if (SerializationHelper.HasElement(info, "DebugRenderOffset"))
         m_debugRenderOffset = info.GetSingle("DebugRenderOffset");
+      if (SerializationHelper.HasElement(info, "NavMeshSectionID"))
+          m_sectionID = info.GetUInt32("NavMeshSectionID");
 
       // check if it has a reference to a global settings shape already
       if (SerializationHelper.HasElement(info, "NavMeshGlobalSettingsName"))
@@ -395,6 +411,7 @@ namespace HavokAiEditorPlugin.Shapes
       // Nav Mesh Generation Settings
       info.AddValue("NavmeshFilename", m_navMeshFilename);
       info.AddValue("NavMeshGlobalSettingsName", m_navMeshGlobalSettingsName);
+      info.AddValue("NavMeshSectionID", m_sectionID);
 
       // debug snapshot
       info.AddValue("SaveInputSnapshot", m_saveInputSnapshot);
@@ -420,9 +437,15 @@ namespace HavokAiEditorPlugin.Shapes
     string m_snapshotFilename = @"snapshot.hkt";
     float m_debugRenderOffset = 1.75f * 0.05f;
 
+    //Section ID for the NavMesh.  This is not exposed in the user panel because there's likely no reason
+    //For the user to explicitly set the value.  Yet, exporters may need to set it to generate streaming information
+    //In an offline process
+    uint m_sectionID = EngineInstanceHavokNavMesh.GetInvalidId();
+
     [PropertyOrder(1)]
     [Description("Base filename of the output navmesh(es).")]
     [SortedCategory(CAT_NAVMESHGEN, CATORDER_NAVMESHGEN)]
+    [EditorAttribute(typeof(FilenameCreator), typeof(UITypeEditor)), FileDialogFilter(new string[] { ".hkt" }), FileCreateDialogAllowOverwrite(true)]
     public string NavmeshFilename
     {
       get { return m_navMeshFilename; }
@@ -445,9 +468,33 @@ namespace HavokAiEditorPlugin.Shapes
     Description("Specify the nav mesh global settings configuration you want to use")]
     public string NavMeshGlobalSettingsKey
     {
-      get { return m_navMeshGlobalSettingsName; }
-      set { m_navMeshGlobalSettingsName = value; }
+        get { return m_navMeshGlobalSettingsName; }
+        set { m_navMeshGlobalSettingsName = value; }
     }
+
+    [PrefabRelevant(true)]
+    [Browsable(false)]
+    [SortedCategory(CAT_NAVMESHGEN, CATORDER_NAVMESHGEN), PropertyOrder(3)]
+    [Description("Set the Section ID on the NavMesh instance")]
+    public uint NavMeshSectionID
+    {
+        get 
+        {
+            return m_sectionID;
+        }
+        set 
+        { 
+            m_sectionID = value;
+
+            if (HasEngineInstance())
+            {
+                EngineNavMesh.SetSectionID(m_sectionID);
+                EngineNavMesh.RemoveNavMeshFromWorld();
+                EngineNavMesh.AddNavMeshToWorld();
+            }
+        }
+    }
+
 
     [PropertyOrder(3)]
     [Description("If this flag is set, the input data (hkGeometry and settings) will be serialized out.")]
@@ -626,14 +673,6 @@ namespace HavokAiEditorPlugin.Shapes
         }
 #endif
 #if USE_SPEEDTREE
-        else if (shape is SpeedTree5GroupShape)
-        {
-          SpeedTree5GroupShape trees = shape as SpeedTree5GroupShape;
-          if (trees.EnableCollisions)
-          {
-            EngineNavMesh.AddSpeedTree5Capsules(trees.EngineGroup.GetGroupsObject());
-          }
-        }
         else if (shape is Speedtree6GroupShape)
         {
           Speedtree6GroupShape trees = shape as Speedtree6GroupShape;
@@ -724,7 +763,7 @@ namespace HavokAiEditorPlugin.Shapes
         EngineNavMesh.AddLocalSettings(bbox.vMin, bbox.vMax, ls.Position, ls.RotationMatrix);
       }
 
-      // todo: this is a hack until I figure out how to pass class instances between here and EngineNavMesh.
+      // todo: figure out how to pass class instances between here and EngineNavMesh.
       // basically the settings members of EngineNavMesh are reused for transferring the local settings to
       // EngineNavMesh. this should be harmless due to the following call which will revert any changes.
       SetEngineInstanceBaseProperties();
@@ -860,7 +899,7 @@ namespace HavokAiEditorPlugin.Shapes
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140728)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

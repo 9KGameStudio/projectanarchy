@@ -109,14 +109,27 @@ public:
   ///
 
   /// \brief
-  ///   You can implement this function in a class that inherits from VisModuleSystemChild_cl to determine which type the child is of.
+  ///   This function can be re-implemented in a class that inherits from VisModuleSystemChild_cl and VTypedObject to get the typed object.
+  ///
+  /// \return
+  ///   Returns the typed child object. Returns NULL if this function is not re-implemented in the class that inherits.
+  VISION_APIFUNC virtual VTypedObject* GetOwnerTypedObject()
+  {
+    return NULL;
+  }
+
+  /// \brief
+  ///   Returns the type of this instance if GetOwnerTypedObject is implemented for a typed object such as VisObject3D_cl.
   /// 
   /// \return
-  ///   Returns the RTTI type of the child. Returns NULL if this function is not reimplemented in the class that inherits.
-
-  /// 
-  VISION_APIFUNC virtual VType* GetOwnerTypeId()
+  ///   Returns the RTTI type of the child. Returns NULL if the GetOwnerTypedObject function is not re-implemented in the class that inherits.
+  inline VType* GetOwnerTypeId()
   {
+    VTypedObject* pObj = this->GetOwnerTypedObject();
+    if (pObj)
+    {
+      return pObj->GetTypeId();
+    }
     return NULL;
   }
 
@@ -207,8 +220,11 @@ public:
   ///   Available flags are:
   ///   \li VIS_MODSYSCMD_RECOMPUTEVISIBILITY: Child has to recompute the visibility
   ///     (ReComputeVisibility function)
-
-  VISION_APIFUNC virtual void ModSysNotifyFunctionCommand(int command)
+  ///   \li VIS_MODSYSCMD_FINISHPLAYBACKONDISPOSE: Child sets its VObjectFlag_FinishPlaybackOnDispose flag
+  ///     to true or false depending on the value stored in param. Each class has to handle it in its own
+  ///     implementation of ModSysNotifyFunctionCommand if it is relevant for the (ie. VisParticleEffect_cl).
+  /// \param param Any parameter or parameters used by the specific command. NULL by default.
+  VISION_APIFUNC virtual void ModSysNotifyFunctionCommand(int command, void *param=NULL)
   {
   }
 
@@ -224,7 +240,7 @@ private:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -18,7 +18,7 @@ class hkaMirroredSkeleton;
 	/// This class allows the user to wrap a child animation and 'mirror' it at runtime, so that
 	/// for example the data for a single 'turn left' animation can be (re)used for both 'turn left' and turn right'
 	/// runtime playback. Please see the userguide section "Mirroring Animations" for more details.
-class hkaMirroredAnimation : public hkaAnimation
+class HK_EXPORT_ANIMATION hkaMirroredAnimation : public hkaAnimation
 {
 	public:
 
@@ -157,7 +157,7 @@ class hkaMirroredAnimation : public hkaAnimation
 #endif // HKANIMATION_ANIMATION_HKMIRROREDSKELETALANIMATION_XML_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

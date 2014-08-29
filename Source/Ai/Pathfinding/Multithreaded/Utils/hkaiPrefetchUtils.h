@@ -30,7 +30,7 @@ class hkSimplePrefetcher
 	protected:
 
 		HK_ALIGN16( T m_prefetchedData );
-		HK_ON_DEBUG( hkBool m_waitDone );
+		HK_DEBUG_ONLY_MEMBER(hkBool, m_waitDone);
 };
 
 /// Simple utility for prefetching (on SPU) an array of objects at a time
@@ -53,7 +53,7 @@ class hkArrayPrefetcher
 	protected:
 
 		HK_ALIGN16( T m_prefetchedData[maxNumElems] );
-		HK_ON_DEBUG( hkBool m_waitDone );
+		HK_DEBUG_ONLY_MEMBER(hkBool, m_waitDone);
 };
 
 #include <Ai/Pathfinding/Multithreaded/Utils/hkaiPrefetchUtils.inl>
@@ -61,7 +61,7 @@ class hkArrayPrefetcher
 #endif // HKAI_PREFETCH_UTILS_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

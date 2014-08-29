@@ -450,7 +450,7 @@ HK_ON_SPU( HK_FORCE_INLINE void HK_CALL hkAabbUtil_sweepOffsetAabb(const OffsetA
 
 HK_FORCE_INLINE void HK_CALL convertAabbToUint32( const hkAabb& aabb, hkVector4Parameter offsetLow, hkVector4Parameter offsetHigh, hkVector4Parameter scale, hkAabbUint32& aabbOut )
 {
-	HK_MATH_ASSERT(0x4868f301,  aabb.isValid(), "AABB at " << &aabb << " was invalid. (Contains a NaN or min > max)");
+	HK_MATH_ASSERT(0x4868f301,  aabb.isValid(), "AABB was invalid. (Contains a NaN or min > max)");
 
 	hkVector4 maxVal; maxVal.m_quad = hkAabbUint32MaxVal;
 	hkVector4 zero; zero.setZero();
@@ -595,7 +595,7 @@ HK_FORCE_INLINE void HK_CALL uncompressExpandedAabbUint32(const hkAabbUint32& un
 } // namespace hkAabbUtil
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

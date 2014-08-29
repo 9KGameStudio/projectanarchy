@@ -16,7 +16,7 @@
 #define HK_INT_VECTOR_NATIVE_VARIABLESHIFT
 #define HK_INT_VECTOR_NATIVE_MERGEPACK
 #define HK_INT_VECTOR_NATIVE_SHUFFLE
-#define HK_INT_VECTOR_NATIVE_VPERM
+#define HK_INT_VECTOR_NATIVE_PERMUTE8
 #define HK_INT_VECTOR_NATIVE_SPLAT
 #define HK_INT_VECTOR_NATIVE_FLOATCONV
 
@@ -38,6 +38,21 @@ HK_FORCE_INLINE void hkIntVector::storeAsFloat32BitRepresentation( hkVector4f& o
 HK_FORCE_INLINE void hkIntVector::setZero()
 {
 	m_quad = vmovq_n_u32(0);
+}
+
+template <int I> 
+HK_FORCE_INLINE void hkIntVector::zeroComponent32()
+{
+	HK_INT_VECTOR_SUBINDEX_CHECK;
+	// Add Switch to fix Clang issue were last parameter of vsetq_lane_32 must be in constrange(0,3)
+	// See RSYS-1377 for more information
+	switch(I)
+	{
+	case 1:  m_quad = vreinterpretq_u32_s32( vsetq_lane_s32(0, vreinterpretq_s32_u32(m_quad), 1) ); break;
+	case 2:  m_quad = vreinterpretq_u32_s32( vsetq_lane_s32(0, vreinterpretq_s32_u32(m_quad), 2) ); break;
+	case 3:  m_quad = vreinterpretq_u32_s32( vsetq_lane_s32(0, vreinterpretq_s32_u32(m_quad), 3) ); break;
+	default:  m_quad = vreinterpretq_u32_s32( vsetq_lane_s32(0, vreinterpretq_s32_u32(m_quad), 0) ); break;
+	}
 }
 
 HK_FORCE_INLINE void hkIntVector::setAll(const int& i)
@@ -251,6 +266,11 @@ HK_FORCE_INLINE const hkVector4fComparison hkIntVector::equalS32(hkIntVectorPara
 	hkVector4fComparison c;
 	c.m_mask = vceqq_u32(m_quad, b.m_quad);
 	return c;
+}
+
+HK_FORCE_INLINE void hkIntVector::setCompareGreaterS16(hkIntVectorParameter a, hkIntVectorParameter b)
+{
+	m_quad = vreinterpretq_u32_u16(vcgtq_s16(vreinterpretq_s16_u32(a.m_quad), vreinterpretq_s16_u32(b.m_quad)));
 }
 
 HK_FORCE_INLINE void hkIntVector::setNot(hkIntVectorParameter a)
@@ -1046,6 +1066,32 @@ HK_FORCE_INLINE void hkIntVector::setPermutation(hkIntVectorParameter v)
     }
 }
 
+#define HK_INTVECTOR_PERM_MASK \
+	hkVectorPermutation::Permutation( \
+	((i & 0x3) << 12) \
+	| ((j & 0x3) << 8) \
+	| ((k & 0x3) << 4) \
+	| ((l & 0x3) << 0))
+
+#define HK_INTVECTOR_SELECT_MASK \
+	hkVector4ComparisonMask::Mask( \
+	((i & 0x4) ? 0 : hkVector4ComparisonMask::MASK_X) \
+	| ((j & 0x4) ? 0 : hkVector4ComparisonMask::MASK_Y) \
+	| ((k & 0x4) ? 0 : hkVector4ComparisonMask::MASK_Z) \
+	| ((l & 0x4) ? 0 : hkVector4ComparisonMask::MASK_W))
+
+
+template<unsigned int i, unsigned int j, unsigned int k, unsigned int l>
+HK_FORCE_INLINE void hkIntVector::setPermutation2(hkIntVectorParameter a, hkIntVectorParameter b)
+{
+	HK_COMPILE_TIME_ASSERT(i<8 && j<8 && k<8 && l<8);
+	HK_COMPILE_TIME_ASSERT(i>=0 && j>=0 && k>=0 && l>=0);
+
+	hkIntVector aPerm; aPerm.setPermutation<HK_INTVECTOR_PERM_MASK>(a);
+	hkIntVector bPerm; bPerm.setPermutation<HK_INTVECTOR_PERM_MASK>(b);
+	setSelect<HK_INTVECTOR_SELECT_MASK>(aPerm, bPerm);
+}
+
 HK_FORCE_INLINE void hkIntVector::setPermuteU8(hkIntVectorParameter a, hkIntVectorParameter mask)
 {
 	HK_ON_DEBUG( const hkUint8* m = (const hkUint8*)&mask.m_quad; for (int i = 0; i < 16; i++) { HK_MATH_ASSERT(0xf820d0c2, (m[i] & 0xF0)==0, "upper 4 bits not zero"); } )
@@ -1386,23 +1432,18 @@ namespace hkIntVector_AdvancedInterface
 		{
 		case 1:
 			{
-				uint32x4_t tmp = vreinterpretq_u32_u8(vld1q_u8((const unsigned char*)p));
-				tmp = vsetq_lane_u32( vgetq_lane_u32(self, 0), tmp, 0);
-				vst1q_u8( (unsigned char*)p, vreinterpretq_u8_u32(tmp) );
+				vst1q_lane_u32( p, self, 0 );
 			}
 			break;
 		case 2: 
 			{
-				uint32x4_t tmp = vreinterpretq_u32_u8(vld1q_u8((const unsigned char*)p));
-				tmp = vcombine_u32(vget_low_u32(self), vget_high_u32(tmp));
-				vst1q_u8( (unsigned char*)p, vreinterpretq_u8_u32(tmp) );
+				vst1_u32( p, vget_low_u32(self) );
 			}
 			break;
 		case 3:
 			{
-				uint32x4_t tmp = vreinterpretq_u32_u8(vld1q_u8((const unsigned char*)p));
-				tmp = vsetq_lane_u32( vgetq_lane_u32(tmp, 3), self, 3);
-				vst1q_u8( (unsigned char*)p, vreinterpretq_u8_u32(tmp) );
+				vst1_u32( p, vget_low_u32(self) );
+				vst1q_lane_u32( p+2, self, 2 );
 			}
 			break;
 		default:
@@ -1515,7 +1556,7 @@ HK_FORCE_INLINE void hkIntVector::setSelect(hkVector4dComparisonParameter select
 	qu[3] = selectMask.anyIsSet<hkVector4ComparisonMask::MASK_W>() ? qt[3] : qf[3];
 }
 
-template<hkVector4Comparison::Mask M> 
+template<hkVector4ComparisonMask::Mask M> 
 HK_FORCE_INLINE void hkIntVector::setSelect( hkIntVectorParameter trueValue, hkIntVectorParameter falseValue )
 {
 	hkVector4Comparison select; select.set<M>();
@@ -1525,12 +1566,14 @@ HK_FORCE_INLINE void hkIntVector::setSelect( hkIntVectorParameter trueValue, hkI
 template <hkIntVectorConstant vectorConstant>
 HK_FORCE_INLINE /*static*/ const hkIntVector& HK_CALL hkIntVector::getConstant()
 {
+	HK_INT_VECTOR_CONSTANT_CHECK;
 	return *(const hkIntVector*) (g_intVectorConstants + vectorConstant);
 }
 
-HK_FORCE_INLINE /*static*/ const hkIntVector& HK_CALL hkIntVector::getConstant(hkIntVectorConstant constant)
+HK_FORCE_INLINE /*static*/ const hkIntVector& HK_CALL hkIntVector::getConstant(hkIntVectorConstant vectorConstant)
 {
-	return *(const hkIntVector*) (g_intVectorConstants + constant);
+	HK_MATH_ASSERT(0x2771faa1,((vectorConstant>HK_QUADINT_BEGIN)&&(vectorConstant<HK_QUADINT_END)),"unknown vector constant");
+	return *(const hkIntVector*) (g_intVectorConstants + vectorConstant);
 }
 
 /// result.u32[i] = highshorts.u16[i]<<16 + lowShorts.u16[i]. highShorts.u16/lowShorts.u16[4..7] are ignored
@@ -1565,7 +1608,7 @@ HK_FORCE_INLINE void hkIntVector::setSplit8To32( hkIntVectorParameter bytes )
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140625)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

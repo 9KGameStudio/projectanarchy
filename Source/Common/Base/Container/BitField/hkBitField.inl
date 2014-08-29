@@ -94,6 +94,9 @@ HK_FORCE_INLINE void hkBitFieldBase<Storage>::assignAll()
 template <class Storage>
 HK_FORCE_INLINE void hkBitFieldBase<Storage>::assignRange(int startBit, int numBits, int bitVal)
 {
+	HK_ASSERT(0x59d3c48a, m_storage.isBitInRange(startBit) );
+	HK_ASSERT(0x59d3c48b, (numBits == 0) || m_storage.isBitInRange(startBit + numBits - 1) );
+
 	const int endBit	= startBit + numBits;
 	const int sWord		= (startBit >> 5) - m_storage.getOffset();
 	const int eWord		= (endBit >> 5) - m_storage.getOffset();
@@ -146,8 +149,8 @@ HK_FORCE_INLINE int hkBitFieldBase<Storage>::getStartBit() const
 template <class Storage>
 HK_FORCE_INLINE int hkBitFieldBase<Storage>::get(int index) const
 {
+	HK_ASSERT(0x5c19b563, m_storage.isBitInRange(index) );
 	const int wordIdx = (index >> 5) - m_storage.getOffset();
-	HK_ASSERT(0x5c19b563, (wordIdx >= 0) && (wordIdx < m_storage.m_words.getSize()));
 	return ((m_storage.m_words[wordIdx] >> (index & 31)) & 1);
 }
 
@@ -157,12 +160,12 @@ HK_FORCE_INLINE int hkBitFieldBase<Storage>::get(int index) const
 template <class Storage>
 HK_FORCE_INLINE void hkBitFieldBase<Storage>::assign(int index, int bitVal)
 {
+	HK_ASSERT(0x59d3c48a, m_storage.isBitInRange(index) );
 	const int wordIdx	= (index >> 5) - m_storage.getOffset();
 	const hkUint32 mask = 1 << (index & 31);
 	const int v			= -bitVal;
 
 	HK_ASSERT(0x33723f73, (bitVal >= 0) && (bitVal <= 1));
-	HK_ASSERT(0x1c9f359e, (wordIdx >= 0) && (wordIdx < m_storage.m_words.getSize()));
 	m_storage.m_words[wordIdx] = (m_storage.m_words[wordIdx] & (~mask)) | (mask & v);
 }
 
@@ -172,8 +175,8 @@ HK_FORCE_INLINE void hkBitFieldBase<Storage>::assign(int index, int bitVal)
 template <class Storage>
 HK_FORCE_INLINE void hkBitFieldBase<Storage>::set(int index)
 {
+	HK_ASSERT(0x149f6efb, m_storage.isBitInRange(index) );
 	const int wordIdx = (index >> 5) - m_storage.getOffset();
-	HK_ASSERT(0x149f6efb, (wordIdx >= 0) && (wordIdx < m_storage.m_words.getSize()));
 	m_storage.m_words[wordIdx] |= (1 << (index & 31));
 }
 
@@ -183,8 +186,8 @@ HK_FORCE_INLINE void hkBitFieldBase<Storage>::set(int index)
 template <class Storage>
 HK_FORCE_INLINE void hkBitFieldBase<Storage>::clear(int index)
 {
+	HK_ASSERT(0x59d3c48a, m_storage.isBitInRange(index) );
 	const int wordIdx = (index >> 5) - m_storage.getOffset();
-	HK_ASSERT(0x3e66ce03, (wordIdx >= 0) && (wordIdx < m_storage.m_words.getSize()) );
 	m_storage.m_words[wordIdx] &= ~(1 << (index & 31));	
 }
 
@@ -389,6 +392,48 @@ HK_FORCE_INLINE int hkBitFieldBase<Storage>::bitCount() const
 }
 
 //
+//	Counts the bits that are 1.
+
+template <class Storage>
+HK_FORCE_INLINE int hkBitFieldBase<Storage>::bitCount(int bitStart, int numBits) const
+{
+	// Clamp to interval
+	const int maxLen	= getSize();
+	numBits				= hkMath::clamp(numBits, 0, maxLen);
+	const int bitEnd	= hkMath::min2(bitStart + numBits, maxLen) - 1;
+	bitStart			= hkMath::max2(getStartBit(), bitStart);
+
+	int count = 0;
+	if ( bitEnd >= bitStart )
+	{
+		const int offset = (bitStart >> 5);
+		HK_ASSERT(0x79383bbf, offset >= m_storage.getOffset());
+		const hkUint32* HK_RESTRICT words = &m_storage.m_words.begin()[offset - m_storage.getOffset()];
+		
+		// Compute masks
+		const hkUint32 startMask	= (-1 << (bitStart & 31));
+		const hkUint32 endMask		= (~(-1 << (bitEnd & 31)) << 1) | 1;
+
+		const int last = (bitEnd >> 5) - offset;
+		int k = 0, it = (~(last >> 31)) & 1;	// it = (last >= 0) ? 1 : 0
+		hkUint32 mask = startMask;
+		do
+		{
+			for (; k < last; k++, mask = (hkUint32)(-1))
+			{
+				count += hkMath::countBitsSet(words[k] & mask);
+			}
+
+			// Force another go for the last word
+			mask &= endMask;	k = last - 1;
+			words++;
+		} while ( it-- );
+	}
+
+	return count;
+}
+
+//
 //	Counts the number of bits set
 
 template <class Storage>
@@ -495,6 +540,12 @@ template <class Storage>
 HK_FORCE_INLINE void hkBitFieldBase<Storage>::deallocate()
 {
 	m_storage.deallocate();
+}
+
+template <class Storage>
+HK_FORCE_INLINE void hkBitFieldBase<Storage>::clearStorage()
+{
+	m_storage.clearStorage();
 }
 
 //
@@ -835,7 +886,7 @@ HK_FORCE_INLINE void hkBitFieldBase<Storage>::forEach(int bitStart, int numBits,
 	{
 		const int offset	= (bitStart >> 5);
 		HK_ASSERT(0x79383bbf, offset >= m_storage.getOffset());
-		const hkUint32* HK_RESTRICT words = &m_storage.m_words.begin()[offset - m_storage.m_offset];
+		const hkUint32* HK_RESTRICT words = &m_storage.m_words.begin()[offset - m_storage.getOffset()];
 		const bool canAbort	= hkBitFieldOps::ReturnsInt<FUN, hkBitFieldOps::IsClass<FUN>::Value>::Value;
 		hkBitFieldOps::ForEach<d, canAbort, t, FUN>::execute(words, bitStart, bitEnd, f);
 	}	
@@ -919,7 +970,7 @@ HK_FORCE_INLINE void hkBitFieldBase<Storage>::Iterator::setPosition( const hkBit
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

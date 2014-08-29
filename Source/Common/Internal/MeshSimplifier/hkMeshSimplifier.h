@@ -14,7 +14,7 @@ struct hkQemPairContraction;
 struct hkQemVertexPair;
 
 /// A mesh representation that allows vertices to be remapped to each other
-class hkQemMutableMesh
+class HK_EXPORT_COMMON hkQemMutableMesh
 {
 public:
 	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE,hkQemMutableMesh);
@@ -24,7 +24,7 @@ public:
 	typedef hkArray<FaceIndex> FaceList;
 	friend class hkQemMeshSimplifier;
 
-	struct Face
+	struct HK_EXPORT_COMMON Face
 	{
 		VertexIndex m_vertexIndices[3];
 		
@@ -39,7 +39,7 @@ public:
 		int remapVertices(VertexIndex from, VertexIndex to);
 	};
 
-	struct Vertex
+	struct HK_EXPORT_COMMON Vertex
 	{
 		hkVector4 m_position;
 		hkBool m_isConstrained;
@@ -121,7 +121,7 @@ protected:
 	hkArray<int> m_vertexMap; // old index = m_vertexMap[new index]
 };
 
-struct hkQemPairContraction
+struct HK_EXPORT_COMMON hkQemPairContraction
 {
 	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE,hkQemPairContraction);
 	typedef int FaceIndex;
@@ -144,7 +144,7 @@ struct hkQemPairContraction
 
 
 // Candidates for merging. Not strictly edges in the mesh, can be "close" vertices too
-struct hkQemVertexPair
+struct HK_EXPORT_COMMON hkQemVertexPair
 {
 	enum PairType
 	{
@@ -198,7 +198,7 @@ struct hkQemVertexPair
 	}
 };
 
-struct hkQemQuadric
+struct HK_EXPORT_COMMON hkQemQuadric
 {
 public:
 	hkMatrix4 m_matrix;
@@ -224,7 +224,7 @@ public:
 ///        different materials. Support for this will be improved in the future.
 ///
 /// See MeshSimplificationDemo.cpp for more examples on the usage.
-class hkQemMeshSimplifier
+class HK_EXPORT_COMMON hkQemMeshSimplifier
 {
 public:
 	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE,hkQemMeshSimplifier);
@@ -266,7 +266,7 @@ public:
 
 	void debugDisplay() const;
 
-	struct Parameters
+	struct HK_EXPORT_COMMON Parameters
 	{
 			/// Vertices closer than distance will be considered as candidates for merging. Set negative to disable.
 		hkReal m_vertexMergeDistance;
@@ -307,7 +307,7 @@ public:
 
 	};
 
-	struct Contraction
+	struct HK_EXPORT_COMMON Contraction
 	{
 		VertexIndex m_v1;				///< Vertex index 1
 		VertexIndex m_v2;				///< Vertex index 2
@@ -340,7 +340,7 @@ protected:
 	void mapVertices();
 	void unmapVertices();
 
-	struct HeapEntry
+	struct HK_EXPORT_COMMON HeapEntry
 	{
 		int m_index; // index into pair array
 		hkSimdReal m_cost;
@@ -379,7 +379,7 @@ protected:
 #endif // HK_MESH_SIMPLIFIER_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

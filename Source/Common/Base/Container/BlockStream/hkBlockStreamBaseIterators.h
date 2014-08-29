@@ -15,10 +15,10 @@
 
 namespace hkBlockStreamBase
 {
-	/// A reader is a read-only iterator that goes through blocks from a stream and can return the elements it stores.	
+	/// A reader is a read-only iterator that goes through blocks from a stream and can return the elements it stores.
 	/// This serves as the base class for the templated version hkBlockStream<TYPE>::Reader and is intended
 	/// for internal use only. On SPU it fetches several blocks at a time in a cache to avoid to many DMA calls.
-	class Reader
+	class HK_EXPORT_COMMON Reader
 	{
 		public:
 
@@ -34,15 +34,18 @@ namespace hkBlockStreamBase
 			/// Returns the number of elements left to read in the current block
 			HK_FORCE_INLINE int getNumUnreadElementsInThisBlock() const;
 
-			/// Set the reader to 
-			HK_FORCE_INLINE void setEmpty(); 
+			/// Set the reader to
+			HK_FORCE_INLINE void setEmpty();
 
 			/// Sets the reader to the start of a stream (on SPU, assumes stream is an SPU pointer)
 			void setToStartOfStream( const Stream* stream );
 
 			/// Sets the reader to the start of a range. (on SPU,  assume range is a PPU pointer)
 			void setToRange( const Range* range );
-			
+
+			/// Returns the number of bytes left in the current block
+			HK_FORCE_INLINE	int	getBlockBytesLeft() const;
+
 			//
 			// SPU memory management functions
 			//
@@ -88,12 +91,12 @@ namespace hkBlockStreamBase
 
 			friend class Range;
 
-			/// Pointer to the current block 
+			/// Pointer to the current block
 			HK_PAD_ON_SPU(const Block*)	m_currentBlock;
 
-			/// Pointer to the current element in the block. 
+			/// Pointer to the current element in the block.
 			HK_PAD_ON_SPU(const char*)  m_currentByteLocation;
-			
+
 			/// Number of elements left to read in other blocks, to know whether to prefetch next block
 			HK_PAD_ON_SPU(int) m_numElementsToReadInOtherBlocks;
 
@@ -121,7 +124,7 @@ namespace hkBlockStreamBase
 	/// A Writer is an iterator that adds data in a stream, allocating new blocks into the stream on the fly.
 	/// This serves as the base class for the templated version hkBlockStream<TYPE>::Writer and is intended
 	/// for internal use only. On SPU it fetches several blocks at a time in a cache to avoid to many DMA calls.
-	class Writer
+	class HK_EXPORT_COMMON Writer
 	{
 		public:
 
@@ -150,7 +153,7 @@ namespace hkBlockStreamBase
 
 			/// Set to the end to an existing stream to append data
 			void setToEndOfStream( Stream::Allocator* allocator, Stream* blockStreamPpu);
-			
+
 			//
 			// Advance functions.
 			//
@@ -158,8 +161,11 @@ namespace hkBlockStreamBase
 			/// Advance by numBytes. This will move the write location in the current block.
 			HK_FORCE_INLINE void advance( int numBytes );
 
+			/// Returns the number of bytes left in the current block
+			HK_FORCE_INLINE int getBlockBytesLeft( ) const;
+
 			/// Reserve and advance a number of reservations in one go.
-			/// This is faster than calling reserve and advance for large numbers of reservations, however, 
+			/// This is faster than calling reserve and advance for large numbers of reservations, however,
 			/// no addresses are returned for writing.
 			void batchReserveAndAdvance( int numReservations, int numBytesPerReservation );
 
@@ -171,6 +177,9 @@ namespace hkBlockStreamBase
 			/// after a call to finalize().
 			HK_FORCE_INLINE int getTotalNumElems();
 
+			/// returns the address of the current block, handle with care as you really need to
+			/// understand how the block streams work if you want to use this feature
+			HK_FORCE_INLINE Block* getCurrentBlock() const;
 		#if defined(HK_DEBUG)
 			HK_FORCE_INLINE void checkConsistency()
 			{
@@ -180,7 +189,7 @@ namespace hkBlockStreamBase
 
 			//
 			// SPU memory management.
-			// 
+			//
 		#if defined(HK_PLATFORM_SPU)
 
 			#if	defined(HK_PLATFORM_SIM)
@@ -218,12 +227,22 @@ namespace hkBlockStreamBase
 				return hkAddByteOffset( t, m_spuToPpuOffset );
 			}
 
-			/// checks if our PPU address has not written to memory yet
-			HK_FORCE_INLINE void checkIsStillInSpuBuffer( void* ppuAddress );
+			/// Debug check if a given PPU address has been written back to PPU already or not. This method does nothing
+			/// except for when being called in the SPU simulator!
+			HK_FORCE_INLINE void debugCheckIsStillInSpuBuffer( void* ppuAddress );
+
+			/// Utility function to check whether a given PPU address' SPU equivalent is currently available in SPU-local
+			/// memory. This method returns true if it is (and the address is free to be accessed) and false if the address
+			/// has already been (or is currently being) written back to PPU.
+			/// Optionally you can instruct the writer to wait until that (potential) write-back operation has finished.
+			HK_FORCE_INLINE bool isPpuAddressStillInSpuBuffer( void* ppuAddress, bool waitForDmaToFinish );
 
 			/// returns the block header on SPU of a given PPU block. Note that the header can
 			/// either be in local buffer or on the PPU
 			HK_FORCE_INLINE const Block* getBlockHeaderOnSpu( const Block* ppu, char buffer[Block::BLOCK_HEADER_SIZE] ) const;
+
+			/// Returns the DMA group that is being used to put data back to PPU.
+			HK_FORCE_INLINE int getDmaGroup() const;
 
 		#endif // HK_PLATFORM_SPU
 
@@ -234,7 +253,8 @@ namespace hkBlockStreamBase
 
 			/// Return the address where we are allowed to write \a numBytes number of bytes to. This method will move
 			/// to the next block in the stream if the free storage space in the current block is not enough.
-			HK_FORCE_INLINE	void* reserveBytes( int numBytes );
+			public: HK_FORCE_INLINE	void* reserveBytes( int numBytes );
+			protected:
 
 			/// Allocates a new block, appends it to the end of the stream and returns the pointer to the new
 			/// block's storage space.
@@ -258,21 +278,21 @@ namespace hkBlockStreamBase
 			/// The current block data is written to.
 			HK_PAD_ON_SPU(Block*)				m_currentBlock;
 
-			/// The current byte location where data is written to in the current block (m_currentBlock). 
+			/// The current byte location where data is written to in the current block (m_currentBlock).
 			/// This value is an offset into the current block and NOT an absolute address.
-			HK_PAD_ON_SPU(int)					m_currentByteLocation;	
+			HK_PAD_ON_SPU(int)					m_currentByteLocation;
 
 			/// The number of elements stored in the current block.
-			HK_PAD_ON_SPU(int)					m_currentBlockNumElems;	
-			
+			HK_PAD_ON_SPU(int)					m_currentBlockNumElems;
+
 			/// The underlying thread allocator that will allocate blocks when writing.
 			HK_PAD_ON_SPU(Stream::Allocator*)	m_tlAllocator;
 
 			/// Debugging flag
-			hkBool								m_finalized;		
+			hkBool								m_finalized;
 
 			/// Debugging value : the numBytes used in the last call to reserveBytes()
-			int									m_accessSize;		
+			int									m_accessSize;
 
 		#if defined(HK_PLATFORM_SPU)
 
@@ -281,7 +301,7 @@ namespace hkBlockStreamBase
 			HK_PAD_ON_SPU(Block*)				m_blockBuffer;
 
 			/// The PPU addresses of all local SPU blocks (which are held in m_blockBuffer).
-			Block*								m_blocksPpu[MAX_NUM_ACTIVE_BLOCKS];	
+			Block*								m_blocksPpu[MAX_NUM_ACTIVE_BLOCKS];
 
 			/// Maximum number of blocks that can be stored in the block buffer.
 			HK_PAD_ON_SPU(int)					m_blockBufferCapacity;
@@ -299,7 +319,7 @@ namespace hkBlockStreamBase
 
 	/// A Consumer inherits from the Reader iterator and adds the additional effect of freeing the block after having read
 	/// its last element.
-	class Consumer : public Reader
+	class HK_EXPORT_COMMON Consumer : public Reader
 	{
 		public:
 
@@ -309,7 +329,7 @@ namespace hkBlockStreamBase
 
 			/// Sets the consumer to the first block of a stream.
 			void setToStartOfStream( Stream::Allocator* allocator, Stream* stream, Stream* m_blockStreamPpu );
-			
+
 			/// Set to a whole range.
 			void setToRange( Stream::Allocator* allocator, Stream* stream, Stream* m_blockStreamPpu, const Range* range );
 
@@ -334,9 +354,38 @@ namespace hkBlockStreamBase
 			HK_PAD_ON_SPU(Stream::Allocator*) m_allocator;
 	};
 
+	/// Helper class which helps to consume random blocks in the engine
+	class HK_EXPORT_COMMON RandomAccessConsumer
+	{
+		public:
+			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_BASE, RandomAccessConsumer );
+
+			HK_FORCE_INLINE	RandomAccessConsumer(hkThreadLocalBlockStreamAllocator* allocator,  Stream* blockStream)
+				: m_blockStream(blockStream), m_allocator(allocator), m_currentBlock(HK_NULL) {}
+			HK_FORCE_INLINE	~RandomAccessConsumer()
+			{
+				if (m_currentBlock) consumeCurrentBlock();
+				m_currentBlock = HK_NULL;
+			}
+
+			HK_FORCE_INLINE void consume( Block* block, int offset );
+
+		protected:
+
+			void consumeCurrentBlock();
+
+		protected:
+
+			Stream*			m_blockStream;	// used for debugging
+			int				m_debugOffset;	// used for debugging
+			HK_PAD_ON_SPU(hkThreadLocalBlockStreamAllocator*) m_allocator;
+			HK_PAD_ON_SPU(Block*) m_currentBlock;
+			HK_ON_SPU( HK_PAD_ON_SPU(Block*) m_currentBlockPpu );
+			HK_PAD_ON_SPU(int)    m_numElementsToFreeInCurrentBlock;
+	};
 
 	/// Modifier inherits from reader but allows to get read-write access to modify its current element.
-	class Modifier : public Reader
+	class HK_EXPORT_COMMON Modifier : public Reader
 	{
 		public:
 
@@ -347,13 +396,23 @@ namespace hkBlockStreamBase
 			/// Sets the modifier to the first block of a stream.
 			HK_FORCE_INLINE void setToStartOfStream( Stream::Allocator* allocator, Stream* stream, Stream* m_blockStreamPpu );
 
-			/// Set to a whole range. 
+			/// Set to a whole range.
 			HK_FORCE_INLINE void setToRange( const Range* range );
+
+		#if defined(HK_PLATFORM_SPU)
+
+			/// Must be the last function called before the destructor
+			void exitSpu();
+
+		#endif
 
 		protected:
 
 			/// Advance and gives read-write access the next element, assumes the current entry is valid
 			HK_FORCE_INLINE	void* advanceAndAccessNext( int thisElemSize );
+
+			/// Batch advance and gives read-write access the next element, assumes the current entry is valid
+			HK_FORCE_INLINE	void* batchAdvanceAndAccessNext( unsigned int count, int elemSize );
 
 			/// Read-write access to the current element.
 			HK_FORCE_INLINE	void* access();
@@ -362,8 +421,16 @@ namespace hkBlockStreamBase
 			void* advanceToNewBlock();
 
 			/// Non-const accessors (casts the const away).
-			Block* getCurrentBlock();
-			char*  getCurrentByteLocation();
+			HK_FORCE_INLINE	Block* getCurrentBlock();
+			HK_FORCE_INLINE	char* getCurrentByteLocation();
+
+		#if defined(HK_PLATFORM_SPU)
+
+			/// Writes back everything from m_writeBackBlockStartOffset to m_currentByteLocation.
+			/// Does not wait for DMA to complete.
+			void writeBackCurrentBlock();
+
+		#endif
 
 		protected:
 
@@ -379,7 +446,7 @@ namespace hkBlockStreamBase
 #endif// HK_BLOCKSTREAM_ITERATORS_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

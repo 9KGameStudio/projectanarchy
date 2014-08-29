@@ -8,10 +8,10 @@
 
 #ifndef HK_VERTEX_DEFORMER_INPUT_H
 #define HK_VERTEX_DEFORMER_INPUT_H
-
+#include <Animation/Internal/hkaExport.h>
 /// An input structure to specify which element of a vertex are deformed.
 /// Note: undeformed elements are copied if they exist in the output buffer.
-class hkaVertexDeformerInput
+class HK_EXPORT_ANIMATION hkaVertexDeformerInput
 {
 	public:
 		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_ANIM_RUNTIME, hkaVertexDeformerInput );
@@ -34,7 +34,7 @@ class hkaVertexDeformerInput
 #endif // HK_VERTEX_DEFORMER_INPUT_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

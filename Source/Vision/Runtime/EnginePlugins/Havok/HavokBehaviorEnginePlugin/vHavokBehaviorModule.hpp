@@ -29,14 +29,14 @@ class vHavokPhysicsModule;
 class vHavokPhysicsStepper : public hkbpPhysicsInterface
 {
 public:
-	vHavokPhysicsStepper( hkpWorld* world, hkJobQueue* jobQueue, hkJobThreadPool* jobThreadPool );
+	vHavokPhysicsStepper( hkpWorld* world, hkJobQueue* jobQueue, hkThreadPool* threadPool );
 	virtual ~vHavokPhysicsStepper() {}
 
 	/// Advance the physics of the given world by the given timestep.
 	virtual void step( hkReal timestep ) HK_OVERRIDE;
 };
 
-/// 
+///
 /// \brief
 ///   Module responsible for the behavior simulation.
 ///
@@ -73,7 +73,7 @@ class vHavokBehaviorModule : public IVisCallbackHandler_cl
 		VHAVOKBEHAVIOR_IMPEXP virtual void OnHandleCallback(IVisCallbackDataObject_cl* pData) HKV_OVERRIDE;
 
 		VHAVOKBEHAVIOR_IMPEXP static vHavokBehaviorModule* GetInstance();
-		
+
     /// \brief
 		///   Add a character to the world.
 		VHAVOKBEHAVIOR_IMPEXP hkbCharacter* addCharacter( vHavokBehaviorComponent* character );
@@ -121,7 +121,7 @@ class vHavokBehaviorModule : public IVisCallbackHandler_cl
 		void DeInitWorld();
 
 	protected:
-		
+
 		/// Havok Physics module
 		vHavokPhysicsModule* m_physicsModule;
 
@@ -162,7 +162,7 @@ void EnsureHavokBehaviorScriptRegistration();
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

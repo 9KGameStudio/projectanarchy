@@ -139,10 +139,15 @@ public:
   /// 
   /// \param bStatus
   ///   true to enable automatic updating, false to disable it.
-  inline void SetAutomaticUpdate(bool bStatus) 
-  { 
-    m_bAutomaticUpdate = bStatus; 
-  }
+  VISION_APIFUNC void SetAutomaticUpdate(bool bStatus);
+
+  /// \brief
+  ///   Internal function to add or remove this instance from the global list of moved instances
+  VISION_APIFUNC void MarkAsChanged(bool bStatus);
+
+  /// \brief
+  ///   Indicates whether this instance is currently in the list of objects to update
+  inline bool IsMarkedForUpdate() const {return m_iChangeListIndex>=0;}
 
   /// \brief
   ///   Returns the status of automatic updating (previously set with SetAutomaticUpdate).
@@ -205,12 +210,11 @@ private:
 
   VisObject3D_cl *m_pObject3D;
   bool m_bAutomaticUpdate;    ///< if automatic update is disabled, portal tracing etc. won't be handled automatically any more!
-  bool m_bIsInChangedList;
 
   hkvVec3 m_vLastPos;
   unsigned int m_iLastUpdate;
   unsigned int m_iLastVisibilityZoneRecomputation;
-
+  int m_iChangeListIndex; // index in global g_ChangedElements; -1== not in list
   float m_fRadius;
 
   DynArray_cl<VisVisibilityZone_cl *> m_VisibilityZones;
@@ -224,7 +228,7 @@ private:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

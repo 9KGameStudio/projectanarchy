@@ -25,7 +25,7 @@ class VSkeletalBoneProxyObject : public VisObject3D_cl
 public:
   EFFECTS_IMPEXP VSkeletalBoneProxyObject();
   EFFECTS_IMPEXP virtual ~VSkeletalBoneProxyObject();
-  EFFECTS_IMPEXP virtual void DisposeObject();
+  EFFECTS_IMPEXP virtual void DisposeObject() HKV_OVERRIDE;
 
   /// \brief
   ///   Attaches this object to an entity's bone.
@@ -48,9 +48,9 @@ public:
   ///   Internal Function.
   EFFECTS_IMPEXP void UpdateBoneBinding();
 
-  EFFECTS_IMPEXP virtual void Serialize( VArchive &ar );
+  EFFECTS_IMPEXP virtual void Serialize(VArchive& ar) HKV_OVERRIDE;
 
-  V_DECLARE_SERIAL_DLLEXP( VSkeletalBoneProxyObject,  EFFECTS_IMPEXP );
+  V_DECLARE_SERIAL_DLLEXP(VSkeletalBoneProxyObject, EFFECTS_IMPEXP);
 
 public:
   int m_iBoneIndex; ///< bone index in the parent's entity
@@ -115,7 +115,7 @@ public:
 #endif // VSKELETALBONEPROXY_HPP_INCLUDED
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

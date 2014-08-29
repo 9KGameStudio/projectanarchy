@@ -12,7 +12,7 @@
 /// This utility can be used to expand the positions of the end
 /// effectors of all bones into world space. It is useful for
 /// analyzing a motion in detail
-class hkaExpandAnimationUtility
+class HK_EXPORT_ANIMATION hkaExpandAnimationUtility
 {
 public:
 	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_ANIM_RUNTIME,hkaExpandAnimationUtility);
@@ -38,7 +38,7 @@ private:
 #endif // HK_EXPAND_ANIMATION_UTILITY_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

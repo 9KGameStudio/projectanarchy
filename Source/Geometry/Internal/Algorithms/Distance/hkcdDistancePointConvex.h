@@ -12,7 +12,8 @@
 
 #include <Common/Base/Types/Geometry/hkGeometry.h>
 
-class hkcdDistancePointConvex
+/// Note this is an internal research file, don't use
+class HK_EXPORT_COMMON hkcdDistancePointConvex
 {
 public:
 	static HK_FORCE_INLINE bool HK_CALL hkcdPointConvex(	hkVector4Parameter point,
@@ -31,12 +32,14 @@ private:
 	static bool HK_CALL _hkcdPointConvex(hkVector4Parameter point, const hkVector4* HK_RESTRICT planes, int numPlanes, hkSimdRealParameter maxDistanceSquared, int maxNumIterations, hkVector4& pointOnSurface, hkVector4& surfaceNormal, hkSimdReal& signedDistanceOut, int& numIterationsOut);
 };
 
+
+
 #include <Geometry/Internal/Algorithms/Distance/hkcdDistancePointConvex.inl>
 
 #endif	//	HKCD_DISTANCE_POINT_CONVEX
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

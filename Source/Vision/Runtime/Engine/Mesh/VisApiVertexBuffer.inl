@@ -80,7 +80,7 @@ inline VTextureObject* VisMeshBuffer_cl::GetChannelTexture(int iChannel) const
 inline void VisMeshBuffer_cl::SetDefaultTransparency(VIS_TransparencyType eTransp)
 {
   m_iRenderState.SetTransparency(eTransp);
-  if (eTransp==VIS_TRANSP_COLORKEY)
+  if (eTransp == VIS_TRANSP_ALPHATEST)
     m_iRenderState.SetFlag(RENDERSTATEFLAG_ALPHATEST);
   else
     m_iRenderState.RemoveFlag(RENDERSTATEFLAG_ALPHATEST);
@@ -229,7 +229,7 @@ inline VCompiledTechnique *VisMeshBufferObject_cl::GetActiveTechnique() const
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

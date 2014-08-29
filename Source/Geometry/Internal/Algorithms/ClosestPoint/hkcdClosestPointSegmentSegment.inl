@@ -69,7 +69,7 @@ HK_FORCE_INLINE hkVector4Comparison hkcdClosestPointSegmentSegment(hkVector4Para
 
 
 	hkVector4 ttuu; ttuu.set(t,t,u,u);
-	hkVector4 c1010 = hkVector4::getConstant<HK_QUADREAL_1010>();
+	const hkVector4 c1010 = hkVector4::getConstant<HK_QUADREAL_1010>();
 
 	closestPointAout = closestPointA;
 	closestAminusClosestBout = AminusB;
@@ -79,7 +79,7 @@ HK_FORCE_INLINE hkVector4Comparison hkcdClosestPointSegmentSegment(hkVector4Para
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

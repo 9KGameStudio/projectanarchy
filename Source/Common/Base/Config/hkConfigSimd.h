@@ -55,6 +55,13 @@
 #	elif defined(HK_PLATFORM_LRB)
 #		define HK_CONFIG_SIMD HK_CONFIG_SIMD_DISABLED
 
+# elif defined(HK_PLATFORM_NACL)
+#		define HK_CONFIG_SIMD HK_CONFIG_SIMD_DISABLED
+
+	// Linux x64
+#	elif defined(HK_ARCH_X64) && defined(HK_PLATFORM_LINUX) && !defined(HK_PLATFORM_TIZEN) && !defined(HK_CONFIG_SIMD)
+#             error "HK_CONFIG_SIMD not defined"
+
 	// AMD x64
 #	elif defined(HK_ARCH_X64)
 #		define HK_CONFIG_SIMD HK_CONFIG_SIMD_ENABLED
@@ -84,8 +91,8 @@
 #		define HK_CONFIG_SIMD HK_CONFIG_SIMD_DISABLED
 
 	// Linux
-#	elif defined(HK_PLATFORM_LINUX) && !defined(HK_PLATFORM_TIZEN)
-#		define HK_CONFIG_SIMD HK_CONFIG_SIMD_ENABLED
+#     elif defined(HK_PLATFORM_LINUX) && !defined(HK_PLATFORM_TIZEN) && !defined(HK_CONFIG_SIMD)
+#             error "HK_CONFIG_SIMD not defined"
 
 	// Mac
 #	elif defined(HK_PLATFORM_MACPPC)
@@ -136,27 +143,28 @@
 #endif // ifndef HK_CONFIG_SIMD
 
 // HK_SSE_VERSION
+// 0x20 = SSE2
+// 0x30 = SSE3
+// 0x31 = SSSE3
+// 0x40 = SSE4 (AES)
+// 0x41 = SSE4.1
+// 0x42 = SSE4.2
+// 0x50 = AVX
+// 0x51 = FMA
 #if defined(HK_PLATFORM_PS4)
 #	define HK_SSE_VERSION 0x42
 #elif defined(HK_PLATFORM_DURANGO)
 #	define HK_SSE_VERSION 0x42 //0x50
+// #elif defined( HK_COMPILER_MSVC ) && ( _MSC_VER >= 1600 )
+// #	define HK_SSE_VERSION 0x42	
 #else
-#	define HK_SSE_VERSION 0x20
-// todo howto detect ? or specify SSE > 2
-// 0x20 SSE2
-// 0x30 SSE3
-// 0x31 SSSE3
-// 0x40 SSE4 (AES)
-// 0x41 SSE4.1
-// 0x42 SSE4.2
-// 0x50 AVX
-// 0x51 FMA
+#	define HK_SSE_VERSION 0x20	
 #endif
 
 #endif // HK_BASE_CONFIGSIMD_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

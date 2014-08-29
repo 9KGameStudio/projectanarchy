@@ -17,7 +17,7 @@ class hkTrackerSnapshot;
 	/// If using hkFreeListMemorySystem, before taking a snapshot it's recommended to release thread local memory caches.
 	/// Otherwise you may see allocations with no type corresponding to freed memory in thread local freelists.
 	/// hkThreadPool::gcThreadMemoryOnNextCompletion() provides an easy way to do this.
-class hkTrackerSnapshotUtil
+class HK_EXPORT_COMMON hkTrackerSnapshotUtil
 {
 	//+reflected(false)
     public:
@@ -40,7 +40,7 @@ class hkTrackerSnapshotUtil
 #endif // HKBASE_TRACKER_SNAPSHOT_UTIL_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

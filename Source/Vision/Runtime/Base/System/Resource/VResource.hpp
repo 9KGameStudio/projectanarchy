@@ -145,7 +145,7 @@ public:
 
     if (m_szFilename && ( m_szFilename[0]=='\\' || m_szFilename[0]=='/'))
     {
-#ifdef WIN32
+#ifdef _VISION_WIN32
       // Decide if filename is UNC-path style filename
       if(m_szFilename[1] != '\\')
 #endif
@@ -774,7 +774,7 @@ public:
 	///    Returns a resource preview object for vForge.
 	///
 	///  \returns
-	///    This function returns NULL on all platforms except for WIN32 since it is only relevant for vForge.
+	///    This function returns NULL on all platforms except for Windows since it is only relevant for vForge.
 	///
 	///  \see
 	///    IVResourcePreview
@@ -1127,7 +1127,7 @@ class VResourceCollection : public VRefCountedCollection<VManagedResource>
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

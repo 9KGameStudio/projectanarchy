@@ -9,16 +9,16 @@
 #define HKX_ENVIRONMENT_H
 
 
-extern const class hkClass hkxEnvironmentVariableClass;
+extern HK_EXPORT_COMMON const class hkClass hkxEnvironmentVariableClass;
 
 /// hkxEnvironment meta information
-extern const class hkClass hkxEnvironmentClass;
+extern HK_EXPORT_COMMON const class hkClass hkxEnvironmentClass;
 
 /// An hkxEnvironment represent a set of variables+values (string+string) used during processing of assets.
 /// It is similar to the concept of the OS shell environment variables. Examples of them
 /// would be: the name of the asset, the current configuration being used, etc.
 /// NOTE: Variables are considered case-insensitive. Values are returned with the case they were stored
-class hkxEnvironment : public hkReferencedObject
+class HK_EXPORT_COMMON hkxEnvironment : public hkReferencedObject
 {
 	public:
 		//+version(1)
@@ -84,7 +84,7 @@ class hkxEnvironment : public hkReferencedObject
 #endif //HKX_ENVIRONMENT_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

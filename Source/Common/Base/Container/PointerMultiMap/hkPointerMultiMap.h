@@ -10,12 +10,12 @@
 #define HKBASE_POINTER_MULTI_MAP_H
 
 #include <Common/Base/Container/PointerMap/hkMap.h>
-
 #include <Common/Base/Container/PointerMultiMap/hkMultiMap.h>
+#include <Common/Base/Container/PointerMap/hkPointerMap.h>
 
 // Helpers to get the hkMultiMap implementation for a given key size.
 template <int N>
-struct hkPointerMultiMapStorage
+struct HK_EXPORT_COMMON hkPointerMultiMapStorage
 {
 	typedef hkUlong Type;
 };
@@ -29,7 +29,7 @@ struct hkPointerMultiMapStorage<8>
 // Chooses opertations used
 
 template <typename T>
-struct hkPointerMultiMapSelectOperations
+struct HK_EXPORT_COMMON hkPointerMultiMapSelectOperations
 {
 	typedef hkMultiMapOperations<T> Operations;
 };
@@ -54,7 +54,20 @@ class hkPointerMultiMap //+reflected(false)
 		typedef hkPointerMultiMap<K, V> ThisType;
         HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_MAP, ThisType );
 
-        typedef typename hkPointerMultiMapStorage<sizeof(K)>::Type Storage;
+		// Note: pick the larger type for storage, so we don't truncate one
+		typedef typename hkPointerMultiMapStorage<sizeof(K) >= sizeof(V) ? sizeof(K) : sizeof(V)>::Type Storage;
+
+		template< typename T >
+		static Storage StoreCast(T t)
+		{
+			return hkPointerMapCast<T, Storage>::StoreCast(t);
+		};
+
+		template< typename T >
+		static T LoadCast( Storage s)
+		{
+			return hkPointerMapCast<T, Storage>::LoadCast(s);
+		};
 
 			/// Iterator class.
 			/// All iterators are invalidated after a mutating operation, i.e., insertion, removal.
@@ -78,7 +91,7 @@ class hkPointerMultiMap //+reflected(false)
 			/// and false if an existing key was overwritten.
 		HK_FORCE_INLINE void insert( K key, V val )
 		{
-			m_map.insert( Storage(key), Storage(val) );
+			m_map.insert( StoreCast(key), StoreCast(val) );
 		}
 
 			///	Try to insert key with associated value val. Keys are unique and cannot be -1.
@@ -88,45 +101,46 @@ class hkPointerMultiMap //+reflected(false)
 			/// is HK_FAILURE. Otherwise it is HK_SUCCESS.
 		HK_FORCE_INLINE hkResult tryInsert( K key, V val )
 		{
-			return m_map.tryInsert( Storage(key), Storage(val) );
+			return m_map.tryInsert( StoreCast(key), StoreCast(val) );
 		}
 
 			/// Return the iterator associated with key or the end iterator if not present.
 		HK_FORCE_INLINE Iterator findKey( K key ) const
 		{
-			return m_map.findKey( Storage(key) );
+			return m_map.findKey( StoreCast(key) );
 		}
 			/// Return the iterator associated with key and value or the end iterator if not present.
 		HK_FORCE_INLINE Iterator findKeyWithValue( K key, V val) const
 		{
-			return m_map.findKeyWithValue( Storage(key), Storage(val) );
+			return m_map.findKeyWithValue( StoreCast(key), StoreCast(val) );
 		}
 			/// If key is present return its iterator, else insert (key,val) and return the new iterator.
 			/// Thus the returned iterator is always valid.
 		HK_FORCE_INLINE Iterator findOrInsertKey( K key, V val )
 		{
-			return m_map.findOrInsertKey( Storage(key), Storage(val) );
+			return m_map.findOrInsertKey( StoreCast(key), StoreCast(val) );
 		}
 
 			/// Return if this map contains the given key.
 		HK_FORCE_INLINE hkBool hasKey( K key ) const
 		{
-			return m_map.hasKey( Storage(key) );
+			return m_map.hasKey( StoreCast(key) );
 		}
 
 			/// Return the value associated with key or def if not present.
 		HK_FORCE_INLINE V getWithDefault( K key, V def ) const
 		{
-			return (V)m_map.getWithDefault( Storage(key), Storage(def) );
+
+			return LoadCast<V>( m_map.getWithDefault( StoreCast(key), StoreCast(def) ) );
 		}
 
 			/// If key present, write value into out and return HK_SUCCESS. Else return HK_FAILURE.
 		hkResult get( K key, V* out ) const
 		{
 			Storage tmp;
-			if( m_map.get( Storage(key), &tmp ) == HK_SUCCESS )
+			if( m_map.get( StoreCast(key), &tmp ) == HK_SUCCESS )
 			{
-				*out = V(tmp);
+				*out = LoadCast<V>(tmp);
 				return HK_SUCCESS;
 			}
 			return HK_FAILURE;
@@ -141,18 +155,18 @@ class hkPointerMultiMap //+reflected(false)
             /// Remove all with the key. Returns the amount returned.
         int removeAll(K key)
         {
-            return m_map.removeAll(Storage(key) );
+            return m_map.removeAll(StoreCast(key) );
         }
 
 			/// If key present, remove it and return HK_SUCCESS. Otherwise return HK_FAILURE.
 		hkResult remove( K key )
 		{
-			return m_map.remove( Storage(key) );
+			return m_map.remove( StoreCast(key) );
 		}
 			/// Remove entry with both key and value - return HK_SUCCESS if found
 		hkResult remove( K key, V val)
 		{
-			return m_map.remove(Storage(key), Storage(val));
+			return m_map.remove(StoreCast(key), StoreCast(val));
 		}
 			/// Return the number of elements in this map.
 		int getSize() const
@@ -193,19 +207,19 @@ class hkPointerMultiMap //+reflected(false)
 			/// Get the key at iterator i.
 		K getKey( Iterator i ) const
 		{
-			return (K)m_map.getKey(i);
+			return LoadCast<K>( m_map.getKey(i) );
 		}
 
 			/// Get the value at iterator i.
 		V getValue( Iterator i ) const
 		{
-			return (V)m_map.getValue(i);
+			return LoadCast<V>( m_map.getValue(i) );
 		}
 
 			/// Overwrite the value at iterator i.
 		void setValue( Iterator i, V val )
 		{
-			m_map.setValue(i, Storage(val) );
+			m_map.setValue(i, StoreCast(val) );
 		}
 
 			/// Get the next iterator after i.
@@ -218,19 +232,19 @@ class hkPointerMultiMap //+reflected(false)
             /// Only meaningful when the iterator was created with findKey
         Iterator getNext( Iterator i, K key) const
         {
-            return m_map.getNext(i, Storage(key));
+            return m_map.getNext(i, StoreCast(key));
         }
 
             /// Determine the number of entries with the key
         int findNumEntries(K key) const
         {
-            return m_map.findNumEntries(Storage(key));
+            return m_map.findNumEntries(StoreCast(key));
         }
 
             /// Find the number of entries with the same key and value
         int findNumEntries(K key, V val) const
         {
-            return m_map.findNumEntries(Storage(key), Storage(val));
+            return m_map.findNumEntries(StoreCast(key), StoreCast(val));
         }
 
 			/// Return if the iterator has reached the end.
@@ -280,7 +294,7 @@ class hkPointerMultiMap //+reflected(false)
 #endif // HKBASE_POINTER_MULTI_MAP_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

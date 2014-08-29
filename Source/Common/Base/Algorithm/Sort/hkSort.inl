@@ -118,7 +118,7 @@ begin:
 				#endif
 				T& pi = pArr[i];
 				T& pj = pArr[j];
-				zal = pi; pi = pj, pj = zal;
+				zal = pi; pi = pj; pj = zal;
 			}
 
 			i--;
@@ -151,7 +151,7 @@ void HK_CALL quickSort(T *pArr, int iSize, L cmpLess)
 
 
 template<typename T, typename L>
-void HK_CALL explicitStackQuickSort(T* base, int numMem, L cmpLess)
+HK_FORCE_INLINE void HK_CALL _explicitStackQuickSort(T* base, int numMem, L cmpLess)
 {
 #ifndef HK_ARCH_ARM
 	HK_ALIGN16( T swap );
@@ -201,8 +201,8 @@ void HK_CALL explicitStackQuickSort(T* base, int numMem, L cmpLess)
             {
                 if (j < ub)
                 {
-                        // Both are sortable
-                        // Stack the smaller of the two sub-parts
+                    // Both are sortable
+                    // Stack the larger of the two sub-parts, this is needed to ensure no stack overflow
                     if (ub - j > i-lb)
                     {
                         lbStack[stackPos] = j;
@@ -239,6 +239,12 @@ void HK_CALL explicitStackQuickSort(T* base, int numMem, L cmpLess)
     }
 }
 
+template<typename T, typename L>
+void HK_CALL explicitStackQuickSort(T* base, int numMem, L cmpLess)
+{
+	_explicitStackQuickSort(base,numMem, cmpLess );
+}
+
 template< typename T, typename L >
 void HK_CALL bubbleSort( T *pArr, int iSize, L cmpLess )
 {
@@ -265,7 +271,7 @@ void HK_CALL bubbleSort( T *pArr, int iSize, L cmpLess )
 #endif // HK_SORT_INL
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

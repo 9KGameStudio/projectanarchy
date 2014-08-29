@@ -24,10 +24,6 @@ public:
 
   void SetAuthoredSize();
 
-  void SetVisibleBitmask(unsigned int iMask);
-
-  unsigned int GetVisibleBitmask() const;
-
   bool IsVisibleInAnyContext() const;
   
   const char* GetFileName() const;
@@ -38,12 +34,23 @@ public:
 
   void Restart();
 
+  unsigned int GetCurrentFrame() const;
+
+  void GotoFrame(unsigned int uiFrameIndex);
+
+  bool GotoLabeledFrame(const char* szLabel, int iFrameOffset = 0);
+
   bool IsFocused() const;
 
   void SetHandleInput(bool bEnable);
   
   const VScaleformVariable GetVariable(const char* szVarName);
   const VScaleformValue GetVariableValue(const char* szVarName);
+
+  %extend{
+    VSWIG_BITMASK_SETTER(SetVisibleBitmask);
+    VSWIG_BITMASK_GETTER_CONST(GetVisibleBitmask);
+  }
 };
 
 //add lua tostring and concat operators
@@ -141,8 +148,8 @@ public:
   /// @{
 
   /// \brief  Sets the background opacity for this instance.
-  /// \param  fAlpha  The alpha value - 0.0 means the scene background shines through.
-  void SetOpacity(float fAlpha);
+  /// \param  alpha  The alpha value - 0.0 means the scene background shines through.
+  void SetOpacity(number alpha);
 
   /// \brief Sets new dimensions for the movie.
   /// \note Call parameterless to reset to it's defaults.
@@ -216,15 +223,15 @@ public:
   /// To hide an object completely in all contexts, use SetVisibleBitmask(0).
   /// By default, only the first bit is set.
   ///
-  /// \param iMask
+  /// \param mask
   ///   the visibility bitmask to use
-  void SetVisibleBitmask(unsigned int iMask);
+  void SetVisibleBitmask(VBitmask mask);
 
   /// \brief  Returns the previously set visibility bitmask for this movie instance.
-  unsigned int GetVisibleBitmask() const;
+  VBitmask GetVisibleBitmask();
 
   /// \brief  Query if this movie is visible in any render context.
-  bool IsVisibleInAnyContext() const;
+  boolean IsVisibleInAnyContext();
 
   /// \brief  Pauses the playback of the movie.
   /// \param paused set to true for pause, false for play.
@@ -236,6 +243,35 @@ public:
 
   /// \brief  Restarts the movie playback.
   void Restart();
+
+  ///
+  /// \brief
+  ///   Returns the current frame index (1-based) of the movie instance.
+  ///
+  number GetCurrentFrame();
+
+  ///
+  /// \brief
+  ///   Moves the movie to the specified frame.
+  ///
+  /// \param frameIndex
+  ///   The 1-based frame index.
+  ///
+  void GotoFrame(number frameIndex);
+
+  ///
+  /// \brief
+  ///   Moves the movie to the frame with the specified label.
+  ///
+  /// \param label
+  ///   The label of the frame.
+  /// \param frameOffset
+  ///   Offset from the frame with the specified label.
+  ///
+  /// \return
+  ///   true if the label was found.
+  ///
+  boolean GotoLabeledFrame(string label, number frameOffset = 0);
 
   /// \brief  Query if this object is focused.
   /// \return true if focused, false if not.
@@ -302,7 +338,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -10,11 +10,11 @@
 #define HKAI_AABB_TREE_NAV_VOLUME_MEDIATOR_H
 
 #include <Ai/Pathfinding/Collide/NavVolume/hkaiNavVolumeMediator.h>
+#include <Geometry/Internal/DataStructures/StaticTree/hkcdStaticAabbTree.h>
 
-class hkcdStaticAabbTree;
 
 	/// hkaiNavVolumeMediator based on an hkcdStaticAabbTree.
-class hkaiAabbTreeNavVolumeMediator : public hkaiNavVolumeMediator
+class HK_EXPORT_AI hkaiAabbTreeNavVolumeMediator : public hkaiNavVolumeMediator
 {
 public:
 	HK_DECLARE_REFLECTION();
@@ -32,6 +32,8 @@ public:
 
 	virtual hkaiPackedKey getClosestPoint(const GetClosestPointInput& gcpInput, hkVector4& closestPointOut ) const HK_OVERRIDE;
 
+	virtual void queryAabb( const AabbQueryInput& input, hkArray<hkaiPackedKey>::Temp& hits ) const HK_OVERRIDE;
+
 	const hkcdStaticAabbTree* getStaticTree() const { return m_tree; }
 
 private:
@@ -44,7 +46,7 @@ private:
 #endif // HKAI_AABB_TREE_NAV_VOLUME_MEDIATOR_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

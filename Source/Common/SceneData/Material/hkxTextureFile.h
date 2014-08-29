@@ -9,10 +9,10 @@
 #define HKSCENEDATA_MATERIAL_HKXTEXTUREFILE_HKCLASS_H
 
 /// hkxTextureFile meta information
-extern const class hkClass hkxTextureFileClass;
+extern HK_EXPORT_COMMON const class hkClass hkxTextureFileClass;
 
 /// A file based texture.
-class hkxTextureFile : public hkReferencedObject
+class HK_EXPORT_COMMON hkxTextureFile : public hkReferencedObject
 {
 	//+vtable(true)
 	//+version(1)
@@ -23,6 +23,12 @@ class hkxTextureFile : public hkReferencedObject
 	
 		hkxTextureFile() { }
 		hkxTextureFile(hkFinishLoadedObjectFlag f) : hkReferencedObject(f), m_filename(f), m_name(f), m_originalFilename(f) { }
+
+		/// Returns the type of the object
+		virtual const hkClass* getClassType() const HK_OVERRIDE { return &hkxTextureFileClass; }
+
+		/// Compares this texture with another. Returns true if they are equal
+		bool equals(const hkxTextureFile* other) const;
 		
 		//
 		// Members
@@ -41,7 +47,7 @@ class hkxTextureFile : public hkReferencedObject
 #endif // HKSCENEDATA_MATERIAL_HKXTEXTUREFILE_HKCLASS_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

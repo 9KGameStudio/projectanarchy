@@ -40,6 +40,30 @@ public:
 class VDecorationCollisionPrimitive
 {
 public:
+  /// \brief
+  ///   Enum that defines the collision type of this primitive
+  enum VDecorationCollisionType_e
+  {
+    VDecorationCollision_None = 0,                ///< No collision
+    VDecorationCollision_Capsule = 1,             ///< This primitive is a capsule - use GetStart/GetEnd...
+    VDecorationCollision_RenderMesh = 2,          ///< A render mesh is provided through GetRenderMesh
+    VDecorationCollision_RenderMeshAlphaTest = 3, ///< Render mesh with accurate raycasts through alphatested materials
+  };
+
+
+  VDecorationCollisionPrimitive()
+  {
+    m_eCollisionType = VDecorationCollision_Capsule;
+    m_pRenderMesh = NULL;
+  }
+
+  ///\brief
+	/// Defines how this primitive is interpreted
+  inline VDecorationCollisionType_e GetCollisionType() const
+  {
+    return m_eCollisionType;
+  }
+
   ///\brief
 	///Create a capsule from 2 positions and a radius
 	///
@@ -54,6 +78,7 @@ public:
 	///
 	inline void Set(const hkvVec3& vStart, const hkvVec3& vEnd, float fRadius)
   {
+    m_eCollisionType = VDecorationCollision_Capsule;
     m_vStartPosition = vStart;
     m_vDirection = vEnd-vStart;
     m_fCapsuleRadius = fRadius;
@@ -64,28 +89,49 @@ public:
 
   ///\brief
   ///Returns the radius
-  inline float GetRadius() const {return m_fCapsuleRadius;}
+  inline float GetRadius() const 
+  {
+    VASSERT(m_eCollisionType==VDecorationCollision_Capsule);
+    return m_fCapsuleRadius;
+  }
 
   /// \brief
   ///   Gets the start position of the capsule
-  inline hkvVec3 GetStart() const { return m_vStartPosition; }
+  inline hkvVec3 GetStart() const 
+  { 
+    VASSERT(m_eCollisionType==VDecorationCollision_Capsule);
+    return m_vStartPosition; 
+  }
 
   /// \brief
   ///   Gets the direction vector of the capsule
-  inline hkvVec3 GetDir() const { return m_vDirection; }
+  inline hkvVec3 GetDir() const 
+  { 
+    VASSERT(m_eCollisionType==VDecorationCollision_Capsule);
+    return m_vDirection; 
+  }
 
   /// \brief
   ///   Gets the end position of the vector of the capsule
-  inline hkvVec3 GetEnd() const { return m_vStartPosition + m_vDirection * m_fDirectionLength; }
+  inline hkvVec3 GetEnd() const
+  { 
+    VASSERT(m_eCollisionType==VDecorationCollision_Capsule);
+    return m_vStartPosition + m_vDirection * m_fDirectionLength; 
+  }
 
   ///\brief
   ///Returns the length of the capsule (distance between start and end position)
-  inline float GetLength() const {return m_fDirectionLength;}
+  inline float GetLength() const
+  {
+    VASSERT(m_eCollisionType==VDecorationCollision_Capsule);
+    return m_fDirectionLength;
+  }
 
   ///\brief
   ///Evaluates the bounding box of the capsule
   inline void GetBoundingBox(hkvAlignedBBox &dest)
   {
+    VASSERT(m_eCollisionType==VDecorationCollision_Capsule);
     dest.m_vMin = m_vStartPosition;
     dest.m_vMax = m_vStartPosition;
     dest.expandToInclude(m_vStartPosition+m_vDirection*GetLength());
@@ -99,11 +145,22 @@ public:
   ///\brief
   ///Render the capsule at specified position, orientation and scaling
   TERRAIN_IMPEXP void DebugRender(IVRenderInterface* pRI, const hkvMat4 &transform, float fScaling);
-protected:
+
+  ///\brief
+  ///Returns the render mesh in case collision type is VDecorationCollision_RenderMesh or VDecorationCollision_RenderMeshAlphaTest
+  inline VBaseMesh *GetRenderMesh()
+  {
+    VASSERT(m_eCollisionType==VDecorationCollision_RenderMesh || m_eCollisionType==VDecorationCollision_RenderMeshAlphaTest);
+    return m_pRenderMesh;
+  }
+
+public:
+  VDecorationCollisionType_e m_eCollisionType;
   hkvVec3 m_vStartPosition;
   float m_fCapsuleRadius;
   hkvVec3 m_vDirection;
   float m_fDirectionLength;
+  VBaseMesh *m_pRenderMesh;
 
 };
 
@@ -119,6 +176,9 @@ typedef VTypedConstantBuffer<VTerrainConstantBuffer_PerModel> VTerrainConstantBu
 
 #endif
 
+
+#define TERRAINDECORATION_SERIALIZE_VERSION_9       9
+#define TERRAINDECORATION_SERIALIZE_CURRENTVERSION  TERRAINDECORATION_SERIALIZE_VERSION_9
 
 /// \brief
 ///   Decoration resource class, typically has a VDynamicMesh reference
@@ -201,6 +261,7 @@ public:
     float m_fAverageScale, m_fScaleVariation;
     float m_fRelativeDensity, m_fRandomness;
     float m_fApplyWind, m_fApplyConstraint; // runtime relevant
+    VDecorationCollisionPrimitive::VDecorationCollisionType_e m_eCollisionType;
     float m_fCollisionCapsuleRadius; ///> if >0 it defines a capsule radius for decoration collisions
     unsigned int m_iVisibleBitmask;
   };
@@ -212,7 +273,7 @@ public:
   inline bool IsValid() const {return m_bValidState;}
   TERRAIN_IMPEXP void GetDensitySampleIndicesAtPos(const VTerrainConfig &cfg, const VLargePosition &vPos, int &x, int &y) const;
 
-#ifdef WIN32
+#ifdef _VISION_WIN32
   TERRAIN_IMPEXP virtual int GetAdditionalOutputString(char *szDestBuffer, int iMaxChars) 
   {
     return sprintf(szDestBuffer,"ID:%i%s",m_Properties.m_iModelID, m_bIgnore ? " (ignored)":"");
@@ -245,12 +306,23 @@ public:
 	///\param iCount
 	///The number of instances in the pInstList array
   ///
+	///\param vTranslate
+	///A custom offset used for rendering
+  ///
   ///\param eRenderMode
   ///The render mode to use
 	///
 	///This is the key function of this class as it is responsible for actually rendering a batch of instances
-  TERRAIN_IMPEXP virtual void RenderBatch(VTerrainVisibilityCollectorComponent *pInfoComp, VTerrainDecorationInstance **pInstList, int iCount,
+  TERRAIN_IMPEXP virtual void RenderBatch(VTerrainVisibilityCollectorComponent *pInfoComp, VTerrainDecorationInstance **pInstList, int iCount, const hkvVec3 &vTranslate = hkvVec3::ZeroVector(),
                                           RenderMode_e eRenderMode = RENDER_MODE_OTW) = 0;
+
+
+  ///\brief
+	///A variant that takes the instancing buffer directly
+  TERRAIN_IMPEXP virtual void RenderBatch(VisMeshBuffer_cl *pInstanceStreams, int iInstanceCount, int iStreamMask, const hkvVec3 &vTranslate = hkvVec3::ZeroVector(), RenderMode_e eRenderMode = RENDER_MODE_OTW)
+  {
+    VASSERT_MSG(false,"Not supported for this class");
+  }
 
   ///\brief
 	///This function is used internally to determine whether this decoration type should be rendered into a specific context
@@ -535,7 +607,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

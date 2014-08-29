@@ -84,8 +84,12 @@ public:
     m_pSliderCtrl = pOwner;
     SetParent(pOwner);
 
+    m_vUnscaledSize = hkvVec2::ZeroVector();
+    m_vDragStart = hkvVec2::ZeroVector();
+    m_vDragPos = hkvVec2::ZeroVector();
+
     m_fScrollFactor = 0.9f;
-    m_vScrollSpeed = hkvVec2(0.0f, 0.0f);
+    m_vScrollSpeed = hkvVec2::ZeroVector();
   }
 
 // renderable
@@ -114,7 +118,7 @@ public:
   inline void SetDragPosition(const hkvVec2& vDragPos) { m_vDragPos = vDragPos; }
 
 protected:
-// serialization
+  // serialization
   V_DECLARE_SERIAL_DLLEXP( VSlider, GUI_IMPEXP_DATA );
   GUI_IMPEXP virtual void Serialize( VArchive &ar );
 
@@ -132,7 +136,7 @@ protected:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

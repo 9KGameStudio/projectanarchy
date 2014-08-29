@@ -444,6 +444,10 @@ public:
     return m_spLODReferenceContext;
   }
 
+  /// \brief
+  ///   Sets or removes the VIS_RENDERCONTEXT_FLAG_NO_LOD_SCALING flag and updates the shader registers if this function is called from inside a render loop
+  VISION_APIFUNC void SetEnableLODScaling(bool bStatus);
+
   ///
   /// @}
   ///
@@ -561,7 +565,12 @@ public:
   VISION_APIFUNC void SetViewProperties(VisContextViewProperties* pViewProperties)
   {
     m_spViewProperties = pViewProperties;
+    OnViewPropertiesChanged();
   }
+
+  /// \brief
+  ///  This function should be called after view properties have been modified 
+  VISION_APIFUNC void OnViewPropertiesChanged();
 
   /// \brief
   ///   Sets the desired horizontal or vertical field of view of this render context in degrees.
@@ -1146,6 +1155,10 @@ public:
   /// \brief
   ///   Returns the number of active render targets in this render context.
   VISION_APIFUNC unsigned int GetNumRenderTargets() const;
+
+  /// \brief
+  ///   Returns whether the render context's first target has MSAA enabled.
+  VISION_APIFUNC bool HasMSAATarget() const;
 
   ///
   /// @}
@@ -1760,10 +1773,11 @@ public:
 
 #elif defined(_VR_OPENGL) || defined(_VR_GLES2)
 
-  VISION_APIFUNC void SetRenderSurface(int iTargetIndex, unsigned int iColorTargetHandle, unsigned int iColorTextureHandle = 0);
+  VISION_APIFUNC void SetRenderSurface(int iTargetIndex, unsigned int iColorTargetHandle, unsigned int iColorTextureHandle = 0, int iFaceIndex=-1);
   VISION_APIFUNC void GetRenderSurface(int iTargetIndex, unsigned int &iColorHandle);
-  VISION_APIFUNC void SetDepthStencilSurface(unsigned int iDepthStencilHandle, bool bUseStencil=false, unsigned int iDepthStencilTextureHandle = 0);
+  VISION_APIFUNC void SetDepthStencilSurface(unsigned int iDepthStencilHandle, bool bUseStencil=false, unsigned int iDepthStencilTextureHandle = 0, int iFaceIndex=-1);
   VISION_APIFUNC void GetDepthStencilSurface(unsigned int &iDepthStencilHandle);
+  VISION_APIFUNC void GetFrameBufferObject(unsigned int &iFrameBufferHandle);
 
   void CreateFrameBufferObject();
   void DeleteFrameBufferObject();
@@ -2255,15 +2269,13 @@ public:
   VISION_APIFUNC static void UnbindRenderTarget(const VTextureObject *pTarget);
 
   void TrackContextPlanes();
+  void UpdatePerspectiveScale();
 
 protected:
 
-  virtual void TickFunction(float dtime);
+   VISION_APIFUNC virtual void TickFunction(float dtime);
 
 private:
-
-  void UpdatePerspectiveScale();
-
   friend class VisGame_cl;
   friend class VisionRenderInterface_cl;
   friend class IVRenderContextContainer;
@@ -2289,7 +2301,10 @@ private:
   static unsigned char s_iMaxPercentVisibilityTests;
   static bool m_bContextSwitched;
 
-  VStaticString<48> m_szName;
+  bool m_bUseClearScreen;
+  bool m_bRenderTargetChanged;
+  bool m_bIsReferenceContext;
+  bool m_bRendersIntoBackBuffer;
 
   VisContextCameraPtr m_spCamera;
   VisContextViewPropertiesPtr m_spViewProperties;
@@ -2297,35 +2312,35 @@ private:
   VTextureObjectPtr m_spTexObject[MAX_NUM_RENDERTARGETS];
   VTextureObjectPtr m_spDepthStencilObject;
 
-  bool m_bRendersIntoBackBuffer;
-
-  int m_iCubeMapFaceOrArrayIndex[MAX_NUM_RENDERTARGETS];
-  int m_iCubeMapFaceOrArrayIndexDepthStencil;
-
 #ifdef _VISION_XENON
   bool m_bDepthFillPass;
   DWORD m_iSyncFence;
   bool m_bAutoTiling;
 #endif
 
-  // Occlusion query members
-  unsigned int m_iNumScheduledOcclusionTests;
-  unsigned int m_iNumScheduledUnforcedOcclusionTests;
-  unsigned int m_iNumExecutedOcclusionTests;
-  unsigned int m_iMaxNumOcclusionTests;
-  DynArray_cl<int> m_ScheduledOcclusionTests;
-  DynArray_cl<unsigned char> m_PassedOcclusionTest;
-  VOcclusionQueryBuffer<128, 512> m_QueryBuffer;
+  VisDebugRenderQueue_cl m_DebugQueue; // queued line rendering
 
-  unsigned int m_iNumScheduledPixelCounters;
-  unsigned int m_iNumScheduledUnforcedPixelCounters;
-  unsigned int m_iNumExecutedPixelCounters;
+  // Occlusion query members
   DynArray_cl<int> m_ScheduledPixelCounters;
   DynArray_cl<unsigned char> m_PixelCounterInProgress;
   DynArray_cl<unsigned int> m_PixelCounterResults;
   VOcclusionQueryBuffer<64, 64> m_PixelCounterQueryBuffer;
+  DynArray_cl<int> m_ScheduledOcclusionTests;
+  DynArray_cl<unsigned char> m_PassedOcclusionTest;
+  VOcclusionQueryBuffer<128, 512> m_QueryBuffer;
 
-  VisDebugRenderQueue_cl m_DebugQueue; // queued line rendering
+  VStaticString<47> m_szName;
+
+  unsigned int m_iNumScheduledOcclusionTests;
+  unsigned int m_iNumScheduledUnforcedOcclusionTests;
+  unsigned int m_iNumExecutedOcclusionTests;
+  unsigned int m_iMaxNumOcclusionTests;
+  unsigned int m_iNumScheduledPixelCounters;
+  unsigned int m_iNumScheduledUnforcedPixelCounters;
+  unsigned int m_iNumExecutedPixelCounters;
+
+  int m_iCubeMapFaceOrArrayIndex[MAX_NUM_RENDERTARGETS];
+  int m_iCubeMapFaceOrArrayIndexDepthStencil;
 
   float m_fPriority;
   bool m_bInverseZViewport;
@@ -2347,11 +2362,8 @@ private:
   VisRenderContextPtr m_spLODReferenceContext;
   int m_iShaderFlags;
   unsigned int m_iRenderFilter;
-  bool m_bUseClearScreen;
-  bool m_bRenderTargetChanged;
   IVisRenderLoopPtr m_spRenderLoop;
   IVisVisibilityCollectorPtr m_spVisibilityCollector;
-  bool m_bIsReferenceContext;
 
 #if defined(_VR_OPENGL) || defined(_VR_GLES2)
 
@@ -2425,7 +2437,7 @@ VISION_ELEMENTMANAGER_TEMPLATE_DECL(VisRenderContext_cl)
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

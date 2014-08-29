@@ -9,18 +9,17 @@
 #define HK_AI_LOCAL_STEERING_INPUT_H
 
 #include <Ai/Pathfinding/Common/hkaiReferenceFrame.h>
-#include <Common/Base/DebugUtil/DeterminismUtil/hkCheckDeterminismUtil.h>
 
 class hkaiCharacter;
 struct hkaiAvoidanceProperties;
 struct hkaiPathFollowingCharacterState;
 
-extern const hkClass hkaiLocalSteeringInputClass;
+extern HK_EXPORT_AI const hkClass hkaiLocalSteeringInputClass;
 
 	/// Input values for the local steering calculation
-struct hkaiLocalSteeringInput
+struct HK_EXPORT_AI hkaiLocalSteeringInput
 {
-	//+version(6)
+	//+version(7)
 	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_AI_STEERING,hkaiLocalSteeringInput);
 	HK_DECLARE_REFLECTION();
 	HK_DECLARE_POD_TYPE();
@@ -40,18 +39,17 @@ struct hkaiLocalSteeringInput
 		hkaiPathFollowingCharacterState const& characterState);
 
 		/// Validate this input data
-	inline void validate( bool callCheckDeterminism = true ) const;
+	void validate( bool callCheckDeterminism = true ) const;
 	
 		/// Validate determinism of data. Does nothing unless determinism checks enabled.
-	inline void checkDeterminism() const;
+	void checkDeterminism() const;
 
 
 		/// Current position of the character (in the frame of reference of the character).
 	hkVector4 m_currentPosition;
 
 		/// Current forward direction of the character (in the frame of reference of the character).
-		/// This is used to constrain angular velocity, and (in the case of the penalty forces-based
-		/// solver) to determine which neighbors are visible to the character. This should be
+		/// This is used to constrain angular velocity. This should be
 		/// perpendicular to m_currentUp, even if the agent is on a slope.
 	hkVector4 m_currentForward;
 
@@ -66,11 +64,6 @@ struct hkaiLocalSteeringInput
 		/// Local steering will try to achieve this velocity while avoiding obstacles.
 	hkVector4 m_desiredVelocity;
 
-		/// The direction of the character's desired velocity after it's next path segment
-		/// (in the frame of reference of the character). When using the penalty forces-based solver,
-		/// this influences the direction that a character will turn if it needs to avoid an obstacle.
-	hkVector4 m_desiredFutureDir;
-
 		/// An optional plane equation, expressed relative to the character's current position.
 		/// If nonzero, the character's position should be on the positive half-plane (that is, W should
 		/// be nonnegative). Characters will ignore any collisions which would take place after they crossed
@@ -81,10 +74,6 @@ struct hkaiLocalSteeringInput
 		/// characters from avoiding obstacles which would take place after their next turn.
 	hkReal m_distToLocalGoal;
 
-		/// The expected time to reach the next steering target. This is used to keep
-		/// characters from avoiding obstacles which would take place after their next turn.
-	hkReal m_timeToLocalGoal;
-
 		/// The character for which this local steering input has been generated.
 		/// This pointer provides access to some of the fixed character properties, like movement properties.
 	hkaiCharacter* m_character; //+nosave
@@ -94,10 +83,6 @@ struct hkaiLocalSteeringInput
 	const hkaiReferenceFrame* m_referenceFrame;	//+nosave
 
 	hkaiAvoidanceProperties const* m_avoidanceProperties; //+nosave
-
-		/// Whether or not the next steering target is the final one, e.g. the end of the path. The penalty
-		/// forces-based avoidance solver uses this to disregard collisions "behind" the goal.
-	hkBool m_isLocalGoalLast;
 
 		/// When set, kinematic constraints (min/max velocity etc.) will be applied to generate this 
 		/// character's output velocity
@@ -118,7 +103,7 @@ struct hkaiLocalSteeringInput
 #endif	//HK_AI_LOCAL_STEERING_INPUT_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

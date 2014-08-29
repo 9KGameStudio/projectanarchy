@@ -13,13 +13,13 @@
 #include <Common/GeometryUtilities/Mesh/hkMeshShape.h>
 #include <Common/GeometryUtilities/Mesh/IndexedTransformSet/hkIndexedTransformSet.h>
 
-extern const hkClass hkSkinnedMeshShapeClass;
-extern const hkClass hkStorageSkinnedMeshShapeClass;
+extern HK_EXPORT_COMMON const hkClass hkSkinnedMeshShapeClass;
+extern HK_EXPORT_COMMON const hkClass hkStorageSkinnedMeshShapeClass;
 
 	/// Abstract skinned mesh shape. It is a collection of bone sections, where a bone section is driven by a contiguous range of bones.
 	/// Each bone section has a collection of parts, where a part represents a contiguous portion of the vertex and index buffers, rendered
 	/// with the same material. 
-class hkSkinnedMeshShape : public hkReferencedObject
+class HK_EXPORT_COMMON hkSkinnedMeshShape : public hkReferencedObject
 {
 	public:
 
@@ -32,7 +32,7 @@ class hkSkinnedMeshShape : public hkReferencedObject
 		HK_DECLARE_HANDLE(BoneSetId, hkUint16, 0xFFFF);
 
 		/// Set of bones deforming a part
-		struct BoneSet
+		struct HK_EXPORT_COMMON BoneSet
 		{
 			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_SCENE_DATA, hkSkinnedMeshShape::BoneSet);
 			HK_DECLARE_REFLECTION();
@@ -42,7 +42,7 @@ class hkSkinnedMeshShape : public hkReferencedObject
 		};
 
 			/// Bone section deforming a hkMeshShape
-		struct BoneSection
+		struct HK_EXPORT_COMMON BoneSection
 		{
 			//+version(1)
 			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_SCENE_DATA, hkSkinnedMeshShape::BoneSection);
@@ -62,7 +62,7 @@ class hkSkinnedMeshShape : public hkReferencedObject
 		};
 
 			/// Vertex / index buffer part. Driven by a set of bones, with a single material, has a contiguous section of the vertex and index buffer.
-		struct Part
+		struct HK_EXPORT_COMMON Part
 		{
 			//+version(1)
 			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_SCENE_DATA, hkSkinnedMeshShape::Part);
@@ -150,7 +150,7 @@ class hkSkinnedMeshShape : public hkReferencedObject
 };
 
 	/// Skinned mesh shape which stores the sections and parts in internal arrays
-class hkStorageSkinnedMeshShape : public hkSkinnedMeshShape
+class HK_EXPORT_COMMON hkStorageSkinnedMeshShape : public hkSkinnedMeshShape
 {
 	//+version(1)
 	public:
@@ -230,7 +230,7 @@ class hkStorageSkinnedMeshShape : public hkSkinnedMeshShape
 #endif	//	HK_SKINNED_MESH_SHAPE_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

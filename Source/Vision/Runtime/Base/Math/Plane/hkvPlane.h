@@ -11,6 +11,13 @@
 
 #include <Vision/Runtime/Base/Math/hkvMath.h>
 
+
+#ifdef HKVPLANE_CHECK_FOR_NAN
+  #define HKVPLANE_INITIALIZATION_CHECK(obj) (obj)->isInitializedCheck()
+#else
+  #define HKVPLANE_INITIALIZATION_CHECK(obj) 
+#endif
+
 /// \brief Serializes the plane to/from a VArchive.
 VBASE_IMPEXP void SerializeX (VArchive& ar, hkvPlane& obj);
 
@@ -58,28 +65,33 @@ public:
   /// @{
   ///
 
-  #ifdef HKVMATH_DEFAULTCONSTRUCTORS_INITIALIZEDATA
-    /// \brief
-    ///   DEPRECATED: Initializes the plane to all zero (which is not a valid plane).
-    ///
-    /// For compatibility reasons the plane is currently default constructed to all zero.
-    /// At some point the Vision Engine will switch behavior such that all math classes
-    /// are default constructed to uninitialized values. Therefore wherever possible
-    /// please prefer the constructor that explicitly does not initialize the plane 
-    /// using hkvNoInitialization.
-    ///
-    /// You can find all the places where you use the default constructor by defining 
-    /// HKVMATH_DEPRECATE_DEFAULT_CONSTRUCTOR in hkvMathConfig.h and compiling your code for Windows.
-    /// Then the compiler will generate a warning for every location where you use the default constructor.
-    /// Use the macros HKV_DISABLE_DEPRECATION and HKV_ENABLE_DEPRECATION to prevent that warning
-    /// for code that cannot be changed to use a non default constructor (such as for arrays).
-    HKVMATH_DEFAULT_CONSTRUCTOR HKV_FORCE_INLINE hkvPlane () : m_vNormal (0, 0, 0), m_fNegDist (0.0f) {}
+  /// \brief
+  ///   ATTENTION: The object is NOT initialized by the constructor. You MUST initialize it yourself before using it.
+  ///
+  /// \note In Dev and Debug builds the object will be initialized with NaN values. Member functions that read the values will check that they are not NaN.
+  /// If an NaN value is encountered, those functions will trigger an assert. Thus when you run into such an assert, you have not initialized your object
+  /// after construction. Make sure you always initialize objects properly before using them.
+  HKV_FORCE_INLINE hkvPlane ()
+  {
+    #ifdef HKVPLANE_INITIALIZE_TO_NAN
 
-  #else
+      m_vNormal.set(hkvMath::generateNaN());
+      m_fNegDist = hkvMath::generateNaN();
 
-    /// \brief 
-    ///   FUTURE BEHAVIOR: The data is not initialized.
-    HKVMATH_DEFAULT_CONSTRUCTOR HKV_FORCE_INLINE hkvPlane () {}
+    #elif defined(HKVPLANE_INITIALIZE_TO_IDENTITY)
+
+      m_vNormal.setZero();
+      m_fNegDist = 0.0f;
+
+    #endif
+  }
+
+  #ifdef HKVPLANE_CHECK_FOR_NAN
+    HKV_FORCE_INLINE void isInitializedCheck() const
+    {
+      VASSERT_MSG(!hkvMath::isNaN (m_vNormal.x) && !hkvMath::isNaN (m_vNormal.y) && !hkvMath::isNaN (m_vNormal.z) && !hkvMath::isNaN (m_fNegDist), 
+        "This object has invalid (NaN) members: (%.2f | %.2f | %.2f | %.2f).\nThis happens when you use this object without properly initializing it first, as the default constructor will set all members to NaN in debug builds.", m_vNormal.x, m_vNormal.y, m_vNormal.z, m_fNegDist);
+    }
   #endif
 
   /// \brief
@@ -723,159 +735,11 @@ public:
   /// vPtOnPlane.dot (m_vNormal) + m_fNegDist == 0
   float m_fNegDist;
 
-
-public:
-
-  ///
-  /// @name Compatibility Interface (DEPRECATED)
-  /// @{
-  ///
-
-  // this constructor is evil, because we do not see where the distance is passed through but would need to be negated
-  //HKV_FORCE_INLINE hkvPlane (float fNormalX, float fNormalY, float fNormalZ, float fNegDistance) { m_vNormal.set (fNormalX, fNormalY, fNormalZ); m_fNegDist = fNegDistance; }
-
-  /// \brief DEPRECATED: Use hkvPlane::setFromPoints instead (using hkvTriangleOrientation::CounterClockWise).
-  HKVMATH_DEPRECATED_STAGE2 HKV_FORCE_INLINE void SetVertex3 (const hkvVec3& v1, const hkvVec3& v2, const hkvVec3& v3) { setFromPoints (v1, v2, v3, hkvTriangleOrientation::CounterClockWise); }
-
-  /// \brief DEPRECATED: Use hkvPlane::isEqual instead.
-  //HKVMATH_DEPRECATED_STAGE1 HKV_FORCE_INLINE bool IsEqual (const hkvPlane& rhs, float eps) const { return isEqual (rhs, eps); }
-
-  /// \brief DEPRECATED: Access m_vNormal directly instead.
-  /// \param out_vNormal
-  HKVMATH_DEPRECATED_STAGE3 HKV_FORCE_INLINE void GetNormal (hkvVec3& out_vNormal) const { out_vNormal = m_vNormal; }
-
-  /// \brief DEPRECATED: Use hkvPlane::getDistanceTo instead.
-  HKVMATH_DEPRECATED_STAGE3 HKV_FORCE_INLINE float GetDistance (const hkvVec3& point) const { return getDistanceTo (point); }
-
-  /// \brief DEPRECATED: Use hkvPlane::getPointPosition instead.
-  HKVMATH_DEPRECATED_STAGE2 HKV_FORCE_INLINE int Classify (const hkvVec3& vert) const { const hkvPlanePosition::Enum p = getPointPosition (vert, HKVMATH_LARGE_EPSILON); if (p == hkvPlanePosition::Back) return CLASS_BACK; if (p == hkvPlanePosition::Front) return CLASS_FRONT; return CLASS_COPLANAR; }
-
-  /// \brief DEPRECATED: Use hkvPlane::set instead.
-  HKVMATH_DEPRECATED_STAGE3 HKV_FORCE_INLINE void SetVertexNormal (const hkvVec3& vVertex, const hkvVec3& vNormal) { setFromPointAndNormal (vVertex, vNormal); }
-
-  /// \brief DEPRECATED: Use hkvPlane::getRayIntersectionBiDirectional instead.
-  HKVMATH_DEPRECATED_STAGE3 HKV_FORCE_INLINE VBool Intersect (const hkvVec3& rayStart, const hkvVec3& rayDir, float* pTime, hkvVec3* pTouchPoint) { return (getRayIntersectionBiDirectional (rayStart, rayDir, pTime, pTouchPoint) ? TRUE : FALSE); }
-
-  /// \brief DEPRECATED: Use hkvPlane::isValid instead.
-  HKVMATH_DEPRECATED_STAGE3 HKV_FORCE_INLINE BOOL IsValid () const { return (m_vNormal.getLengthSquared () > 0.0f); }
-
-
-  /// \brief DEPRECATED: Use hkvPlane::getLineSegmentIntersection instead.
-  HKVMATH_DEPRECATED_STAGE2 HKV_FORCE_INLINE float Intersect (const hkvVec3& vStart, const hkvVec3& vEnd, hkvVec3& out_vIntersection) const
-  {
-    float f = -1.0f;
-    getLineSegmentIntersection (vStart, vEnd, &f, &out_vIntersection);
-    return f;
-  }
-
-  /// \brief DEPRECATED: Use hkvPlane::projectOntoPlane instead.
-  HKVMATH_DEPRECATED_STAGE3 HKV_FORCE_INLINE const hkvVec3 ProjectOnPlane (const hkvVec3& vertex) const { hkvVec3 v = vertex; projectOntoPlane (v); return v; }
-
-
-  /// \brief DEPRECATED: Use hkvPlane::getDistanceTo or hkvPlane::getPointPosition instead.
-  HKVMATH_DEPRECATED_STAGE3 HKV_FORCE_INLINE BOOL GetSide (const hkvVec3& vertex) const { return (getDistanceTo (vertex) >= 0.0f ? TRUE : FALSE); }
-
-  /// \brief DEPRECATED: Use hkvPlane::get3PlaneIntersectionPoint instead.
-  HKVMATH_DEPRECATED_STAGE3 HKV_FORCE_INLINE bool Intersect (const hkvPlane& firstPlane, const hkvPlane& secondPlane, hkvVec3& out_vIntersectionPoint) const
-  {
-    return (get3PlaneIntersectionPoint (*this, firstPlane, secondPlane, out_vIntersectionPoint) == HKV_SUCCESS);
-  }
-
-  /// \brief DEPRECATED: Use hkvPlane::getObjectPosition instead.
-  HKVMATH_DEPRECATED_STAGE2 HKV_FORCE_INLINE int TouchesHalfspace (const hkvAlignedBBox& aabb) const
-  {
-    switch (getObjectPosition (aabb))
-    {
-    case hkvPlanePosition::Coplanar:
-    case hkvPlanePosition::Spanning:  return  0;
-    case hkvPlanePosition::Front:     return  1;
-    case hkvPlanePosition::Back:      return -1;
-    }
-    return  0;
-  }
-
-  /// \brief DEPRECATED: Do 'm_vNormal.dot (v)' directly instead.
-  HKVMATH_DEPRECATED_STAGE2 HKV_FORCE_INLINE float MultiplyWith (const hkvVec3& v) { return m_vNormal.dot (v); }
-
-  // \brief DEPRECATED: Use hkvPlane::transform instead.
-  //HKVMATH_DEPRECATED_STAGE1 HKV_FORCE_INLINE void Transform (const hkvMat3& m) { transform (m); }
-
-  // \brief DEPRECATED: Use hkvPlane::transform instead.
-  //HKVMATH_DEPRECATED_STAGE1 HKV_FORCE_INLINE void Transform (const hkvMat4& m) { transform (m); }
-
-  /// \brief DEPRECATED: Use hkvPlane::set instead.
-  HKVMATH_DEPRECATED_STAGE3 HKV_FORCE_INLINE void Set (const hkvVec3& vPoint, const hkvVec3& vNormal) { setFromPointAndNormal (vPoint, vNormal); }
-
-  /// \brief DEPRECATED: Use hkvPlane::setFromPoints instead.
-  HKVMATH_DEPRECATED_STAGE2 HKV_FORCE_INLINE BOOL Set (const hkvVec3& v0, const hkvVec3& v1, const hkvVec3& v2) { return (setFromPoints (v0, v1, v2, hkvTriangleOrientation::ClockWise) == HKV_SUCCESS ? TRUE: FALSE); }
-
-  /// \brief DEPRECATED: Access hkvPlane::m_vNormal directly instead.
-  HKVMATH_DEPRECATED_STAGE3 HKV_FORCE_INLINE const hkvVec3 GetNormal () const { return m_vNormal; }
-
-  /// \brief DEPRECATED: Use hkvPlane::setFromDirections instead.
-  HKVMATH_DEPRECATED_STAGE3 HKV_FORCE_INLINE void SetEdge2Vertex (const hkvVec3& planeDirA, const hkvVec3& planeDirB, const hkvVec3& vertexOnPlane) { setFromDirections (planeDirA, planeDirB, vertexOnPlane); }
-
-  /// \brief DEPRECATED: Use hkvPlane::getPoints instead.
-  HKVMATH_DEPRECATED_STAGE3 HKV_FORCE_INLINE void GetPoints (hkvVec3& p1, hkvVec3& p2, hkvVec3& p3) { getPoints (p1, p2, p3); }
-
-  /// \brief DEPRECATED: Use hkvPlane::flipIfNecessary instead.
-  HKVMATH_DEPRECATED_STAGE2 HKV_FORCE_INLINE bool SetOrientation (hkvVec3& point) { return flipIfNecessary (point, true); }
-
-  /// \brief DEPRECATED: Compute the dot product with m_vNormal directly instead.
-  //HKVMATH_DEPRECATED_STAGE1 HKV_FORCE_INLINE float Dot (const hkvVec3& v) const { return m_vNormal.dot (v); }
-
-  /// \brief DEPRECATED: Use hkvPlane::getLineSegmentIntersection instead.
-  //HKVMATH_DEPRECATED_STAGE1 bool GetIntersection (hkvVec3& ptStart, hkvVec3& ptEnd, hkvVec3& pt, float& u) { return getLineSegmentIntersection (ptStart, ptEnd, &u, &pt); }
-
-  /// \brief DEPRECATED: Use hkvPlane::flip instead.
-  HKVMATH_DEPRECATED_STAGE3 HKV_FORCE_INLINE void Flip () { flip (); }
-
-  /// \brief DEPRECATED: Use hkvPlane::projectOntoPlane instead.
-  HKVMATH_DEPRECATED_STAGE3 HKV_FORCE_INLINE void ProjectVertex (hkvVec3& v) const { projectOntoPlane (v); }
-
-  /// \brief DEPRECATED: Use hkvPlane::makeDirectionCoplanar instead.
-  HKVMATH_DEPRECATED_STAGE2 HKV_FORCE_INLINE void MakeCoplanar (hkvVec3& v) const { makeDirectionCoplanar (v); }
-
-  /// \brief DEPRECATED: Use hkvPlane::set instead.
-  /// \param triangle
-  /// \param bFlipNormal
-  HKVMATH_DEPRECATED_STAGE2 VBASE_IMPEXP BOOL Set (const VTriangle& triangle, BOOL bFlipNormal=FALSE);
-
-  // DEPRECATED: Use hkvPlane::getMinMaxDistanceTo instead.
-  //HKVMATH_DEPRECATED_STAGE2 HKV_FORCE_INLINE float GetDistance (const hkvAlignedBBox &bbox, float &fMin, float &fMax) const { hkvVec3 vCorners[8]; bbox.getCorners (vCorners); getMinMaxDistanceTo (fMin, fMax, vCorners, 8); if (fMax > 0.0) return hkvMath::Max (0.0f, fMin); return fMax; }
-  // DEPRECATED: Use hkvPlane::getMinimumDistanceTo instead.
-  //HKVMATH_DEPRECATED_STAGE2 HKV_FORCE_INLINE float GetDistance (const hkvAlignedBBox& bbox) const { float fMin, fMax; return GetDistance (bbox, fMin, fMax); }
-
-  /// \brief DEPRECATED: Use hkvPlane::getPointPosition instead.
-  HKVMATH_DEPRECATED_STAGE2 HKV_FORCE_INLINE bool IsInHalfSpace (const hkvVec3& point) const { return (getPointPosition (point, 1.0e-4f) != hkvPlanePosition::Back); }
-
-  /// \brief DEPRECATED: Use hkvPlane::getPointPosition instead.
-  HKVMATH_DEPRECATED_STAGE2 HKV_FORCE_INLINE bool IsOutsideHalfSpace (const hkvVec3& point) const { return (getPointPosition (point, 1.0e-4f) != hkvPlanePosition::Front); }
-
-  /// \brief DEPRECATED: Use hkvPlane::getObjectPosition instead.
-  HKVMATH_DEPRECATED_STAGE2 HKV_FORCE_INLINE int TouchesHalfspace (const hkvBoundingSphere& sphere) const { hkvPlanePosition::Enum pos = getObjectPosition (sphere); if (pos == hkvPlanePosition::Front) return 1; if (pos == hkvPlanePosition::Back) return -1; return 0;}
-
-  /// \brief DEPRECATED: Use hkvPlane::getTransformed instead.
-  //HKVMATH_DEPRECATED_STAGE1 HKV_FORCE_INLINE void Transform (const hkvMat4& mTransform, hkvPlane& plane) const { plane = getTransformed (mTransform); }
-
-  /// \brief DEPRECATED: Use hkvPlane::getTransformed instead.
-  //HKVMATH_DEPRECATED_STAGE1 HKV_FORCE_INLINE void Transform (const hkvMat3& mTransform, hkvPlane& plane) const { plane = getTransformed (mTransform); }
-
-  /// \brief DEPRECATED: Use hkvPlane::setFromPointAndNormal instead.
-  /// \param vPoint
-  /// \param vNormal
-  HKVMATH_DEPRECATED_STAGE2 HKV_FORCE_INLINE hkvPlane (const hkvVec3& vPoint, const hkvVec3& vNormal) { setFromPointAndNormal (vPoint, vNormal); }
-
-  ///
-  /// @}
-  ///
 };
 
-#ifdef HKVMATH_ENABLE_NEW_SERIALIZATION_OPERATORS
-  // Currently deactivated to force people to use SerializeAs_VBBoxf or SerializeAs_VisBoundingBox instead.
-  // Will be activated in some later release.
-  V_DECLARE_SERIALX_NONINTRUSIVE (hkvPlane, VBASE_IMPEXP);
-#endif
+// Currently deactivated to force people to use SerializeAs_VBBoxf or SerializeAs_VisBoundingBox instead.
+// Will be activated in some later release.
+V_DECLARE_SERIALX_NONINTRUSIVE (hkvPlane, VBASE_IMPEXP);
 
 /// \brief
 ///   Compares to planes for exact equality (no epsilon).
@@ -890,7 +754,7 @@ bool operator!= (const hkvPlane& p0, const hkvPlane& p1);
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

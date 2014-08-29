@@ -11,10 +11,10 @@
 #include <Common/Base/Types/Color/hkColor.h>
 
 /// hkxLight meta information
-extern const class hkClass hkxLightClass;
+extern HK_EXPORT_COMMON const class hkClass hkxLightClass;
 
 /// The information needed to construct a simple light.
-class hkxLight : public hkReferencedObject
+class HK_EXPORT_COMMON hkxLight : public hkReferencedObject
 {
 	//+vtable(true)
 	//+version(3)
@@ -79,7 +79,7 @@ class hkxLight : public hkReferencedObject
 #endif // HKSCENEDATA_LIGHT_HKXLIGHT_HKCLASS_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

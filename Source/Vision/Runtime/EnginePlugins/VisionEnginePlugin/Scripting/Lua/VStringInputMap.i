@@ -15,10 +15,12 @@ class VStringInputMap
 {
 public: 
   inline float GetTrigger(const char *szTriggerName);
+
+  inline unsigned int GetIndex() const;
 };
 
-VSWIG_CREATE_CONCAT(VStringInputMap, 128, "%s", self->GetObjectKey())
-VSWIG_CREATE_TOSTRING(VStringInputMap, "%s: [%d triggers %d alternatives]", self->GetObjectKey(), self->GetNumOfTriggers(), self->GetNumOfAlternatives())
+VSWIG_CREATE_CONCAT(VStringInputMap, 128, "VStringInputMap[%d]", self->GetIndex())
+VSWIG_CREATE_TOSTRING(VStringInputMap, "VStringInputMap[%d]: [%d triggers %d alternatives]", self->GetIndex(), self->GetNumOfTriggers(), self->GetNumOfAlternatives())
 
 
 //implement MapTrigger native becuase we have to parse tables as input parameters,
@@ -535,7 +537,7 @@ public:
   ///      int numTriggers = 10 --the max number of triggers we can use with this map
   ///      int numAlternatives = 5 --we are going to map 5 controls to the trigger "Jump"
   ///
-  ///      self.inputMap = Input:CreateMap("Player", numTriggers, numAlternatives)
+  ///      self.inputMap = Input:CreateMap(numTriggers, numAlternatives)
   ///      
   ///      -- map a trigger for the space bar
   ///      self.inputMap:MapTrigger("Jump", "KEYBOARD", "CT_KB_SPACE")
@@ -587,7 +589,7 @@ public:
   ///   \code
   ///    function OnAfterSceneLoaded(self)
   ///      -- create an input map with default dimensions
-  ///      self.map = Input:CreateMap("InputSample")
+  ///      self.map = Input:CreateMap()
   ///
   ///      self.map:MapTriggerAxis("CursorX", "PAD1", "CT_PAD_RIGHT_THUMB_STICK_LEFT", "CT_PAD_RIGHT_THUMB_STICK_RIGHT", { timescaled = true} )
   ///      self.map:MapTriggerAxis("CursorY", "PAD1", "CT_PAD_RIGHT_THUMB_STICK_UP", "CT_PAD_RIGHT_THUMB_STICK_DOWN", { timescaled = true} )    
@@ -614,7 +616,7 @@ public:
   ///   \code
   ///    function OnAfterSceneLoaded(self)
   ///      -- create an input map with default dimensions
-  ///      self.map = Input:CreateMap("InputSample")
+  ///      self.map = Input:CreateMap()
   ///
   ///      local width, height = Screen:GetViewportSize()
   ///
@@ -635,12 +637,16 @@ public:
   /// \see VScriptInput_wrapper::CreateMap
   number GetTrigger(string triggerName);
 
+  /// \brief 
+  ///   Returns the index of this VStringInputMap into its manager.  
+  number GetIndex();
+
 };
 
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

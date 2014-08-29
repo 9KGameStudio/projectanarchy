@@ -14,7 +14,7 @@ class hkStringPtr;
 	/// This class is useful for short-term manipulation of a string. It's most commonly used as a local variable.
 	/// If you want an object to point to a string that is seldom or never changed it's better to use hkStringPtr.
 	/// Note that since this object contains an inplace array, it is not memcpy-able and cannot be placed in an hkArray.
-class hkStringBuf
+class HK_EXPORT_COMMON hkStringBuf
 {
 	public:	
 
@@ -202,7 +202,7 @@ template<> class hkArray<hkStringBuf>;
 #endif // HKBASE_HKSTRING_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -15,6 +15,9 @@
 #include <Vision/Tools/vPlayer/GUI/vInfoDialog.hpp>
 #include <Vision/Tools/vPlayer/GUI/vSceneSelectionDialog.hpp>
 
+// Include key-codes last so they are not disabled by some other product includes
+#include <Common/Base/KeyCode.h>
+
 struct VPlayerAppConfig;
 class VAppImpl;
 class SceneListDataProvider;
@@ -50,7 +53,7 @@ public:
   virtual void DeInit() HKV_OVERRIDE;
 
   virtual void OnHandleCallback(IVisCallbackDataObject_cl* pData) HKV_OVERRIDE;
-  virtual int GetCallbackSortingKey(VCallback *pCallback) HKV_OVERRIDE;
+  virtual int64 GetCallbackSortingKey(VCallback *pCallback) HKV_OVERRIDE;
 
   void ShowSelectionDialog();
   void HideSelectionDialog();
@@ -63,6 +66,8 @@ public:
   void ProcessPendingLoadingRequest();
   void ProcessMessages();
 
+  void ProcessAssetReloadMessage(VMessage* pMessage);
+
   void FinalizeLoading(bool bLoadingSuccessful);
 
 private:
@@ -72,6 +77,8 @@ private:
   void LeaveModalState();
 
   void ClearCache(const VSceneListEntry& entry);
+  void UpdateCacheStatus(const VArray<VString>& sSearchPaths);
+
   void RemoveFromList(int iListIndex, int iEntryIndex);
 
   void AddToRecentList(const VSceneListEntry& entry);
@@ -93,7 +100,6 @@ private:
     DP_RECENT,
     DP_EXPORTED,
     DP_SAMPLES,
-    
     DP_COUNT
   };
 
@@ -112,7 +118,7 @@ private:
 #endif // vPlayerAppModule_h__
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140730)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

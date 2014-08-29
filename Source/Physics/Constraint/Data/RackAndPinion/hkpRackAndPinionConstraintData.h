@@ -27,7 +27,7 @@
 /// If you experience stability problems in bigger setups, the external prismatic and hinge constraints should
 /// have higher priority or the rack-and-pinion constraint should be added first.
 ///
-class hkpRackAndPinionConstraintData : public hkpConstraintData
+class HK_EXPORT_PHYSICS hkpRackAndPinionConstraintData : public hkpConstraintData
 {
 	public:
 
@@ -128,13 +128,11 @@ class hkpRackAndPinionConstraintData : public hkpConstraintData
 		HK_ALIGN_REAL( Atoms m_atoms );
 };
 
-#include <Physics/Constraint/Data/RackAndPinion/hkpRackAndPinionConstraintData.inl>
-
 
 #endif // HKP_RACK_AND_PINION_CONSTRAINT_DATA_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

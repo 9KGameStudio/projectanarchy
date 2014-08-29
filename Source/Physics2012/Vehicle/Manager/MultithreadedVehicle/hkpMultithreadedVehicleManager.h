@@ -48,10 +48,10 @@ class hkpMultithreadedVehicleManager : public hkpVehicleManager
 			/// Stack allocations are used for temporary buffer.
 			/// This is a simple implementation which users may wish to re implement with optimizations.
 			/// N.B. The stepInfo must be updated for the current step to allow accumulators to be built correctly.
-		virtual void stepVehiclesSynchronously( hkpWorld* world, const hkStepInfo& updatedStepInfo, hkJobThreadPool* threadPool, hkJobQueue* jobQueue, int numJobs );
+		virtual void stepVehiclesSynchronously( hkpWorld* world, const hkStepInfo& updatedStepInfo, hkThreadPool* threadPool, hkJobQueue* jobQueue, int numJobs );
 
 			/// Simulate the given array of vehicles
-		static void stepVehicleArraySynchronously( hkArray<hkpVehicleInstance*>& vehicles, hkpWorld* world, const hkStepInfo& updatedStepInfo, hkJobThreadPool* threadPool, hkJobQueue* jobQueue, int numJobs );
+		static void stepVehicleArraySynchronously( hkArray<hkpVehicleInstance*>& vehicles, hkpWorld* world, const hkStepInfo& updatedStepInfo, hkThreadPool* threadPool, hkJobQueue* jobQueue, int numJobs );
 
 		//
 		// Interface for asynchronous multithreading.
@@ -80,7 +80,7 @@ class hkpMultithreadedVehicleManager : public hkpVehicleManager
 #endif // HK_VEHICLE_MULTITHREAD_MANAGER_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

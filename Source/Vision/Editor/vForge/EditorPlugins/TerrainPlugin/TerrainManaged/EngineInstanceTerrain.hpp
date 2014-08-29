@@ -173,6 +173,8 @@ namespace TerrainManaged
     unsigned short GetSectorCollisionBitmask(int x, int y);
     void SetSectorPhysicsType(int x, int y, SectorPhysicsType_e ePhysicsType);
     SectorPhysicsType_e GetSectorPhysicsType(int x, int y);
+    void SetSectorPhysicsTightFit(int x, int y, bool bTightFit);
+    bool GetSectorPhysicsTightFit(int x, int y);
     void SetZoneUniqueID(int x, int y, unsigned __int64 iID);
     void SetVisibleInVisZones(bool bStatus) {m_pTerrain->SetVisibleInVisZones(bStatus);}
     void SetFastUpdate(bool bStatus) {m_pTerrain->SetFastUpdate(bStatus);}
@@ -341,7 +343,7 @@ namespace TerrainManaged
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

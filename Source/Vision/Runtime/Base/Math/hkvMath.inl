@@ -319,6 +319,11 @@ HKV_FORCE_INLINE float hkvMath::mod (float f, float d)
   return f - (d * float2int (f / d));
 }
 
+HKV_FORCE_INLINE double hkvMath::mod (double f, double d)
+{
+    return f - (d * ::floor(f / d));
+}
+
 HKV_FORCE_INLINE bool hkvMath::isPowerOf (hkUint32 x, hkUint32 base)
 {
   VASSERT (base > 1);
@@ -439,6 +444,23 @@ HKV_FORCE_INLINE float hkvMath::generateNaN (void)
   return val.f;
 }
 
+HKV_FORCE_INLINE float hkvMath::generateInfinity (void)
+{
+  union 
+  {
+    float f;
+    hkUint32 i;
+  } val;
+
+  // Usually NAN == (exponent = all 1, mantissa = non-zero)
+  //         INF == (exponent = all 1, mantissa = zero)
+
+  // = 0111 1111 1000 0000 0000 0000 0000 0000
+  val.i = 0x7f800000;
+
+  return val.f;
+}
+
 HKV_FORCE_INLINE bool hkvMath::isNaN (float r)
 {
   // Havoks way to check for NaN:
@@ -509,7 +531,7 @@ HKV_FORCE_INLINE bool hkvMath::isInRange (T val, T minVal, T maxVal)
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

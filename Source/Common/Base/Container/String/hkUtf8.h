@@ -20,29 +20,29 @@ namespace hkUtf8
 		/// Return the number of codepoints in this utf8 string.
 		/// This function uses a fast and simple method (checking if the upper two bits are not 10) to determine
 		/// the start of utf8 sequences. Thus the input string must be valid utf8 to give a meaningful result.
-	int strLen(const char* utf8);
+	HK_EXPORT_COMMON int strLen(const char* utf8);
 
 		/// Convert a single codepoint to utf8. Returns the number of bytes needed to encode this codepoint.
-	int utf8FromWide( char dst[4], wchar_t src );
+	HK_EXPORT_COMMON int HK_CALL utf8FromWide( char dst[4], wchar_t src );
 
 		/// Convert from wide to utf8. src may be null terminated and/or a limit on the number of source characters may be supplied.
 		/// At most dstCap bytes are written into dst and if dstCap is nonzero, dst is always null terminated.
 		/// The number of chars required to hold the null terminated result is returned in any case.
 		/// Thus utf8FromWide(HK_NULL, 0, src) can be used to determine the required number of characters.
-	int utf8FromWide( char* dst, int dstCap, const wchar_t* src, int srcCount=-1);
+	HK_EXPORT_COMMON int utf8FromWide( char* dst, int dstCap, const wchar_t* src, int srcCount=-1);
 
 		/// Convert from utf8 to wide. src may be null terminated and/or a limit on the number of source characters may be supplied.
 		/// At most dstCap wchar_t are written into dst and if dstCap is nonzero, dst is always null terminated.
 		/// The number of wchar_t required to hold the null terminated result is returned in any case.
 		/// Thus wideFromUtf8(HK_NULL, 0, src) can be used to determine the required number of wchar_t.
-	int wideFromUtf8( wchar_t* dst, int dstCap, const char* src, int srcCount=-1);
+	HK_EXPORT_COMMON int wideFromUtf8( wchar_t* dst, int dstCap, const char* src, int srcCount=-1);
 
 		/// Helper to hold a temporary utf8 encoded version of a wide string.
 		/// The temporary string is deleted in the destructor so normally you will use this object
 		/// as an unnamed temporary. e.g. fopen( Utf8FromWide(L"A wide string") );
 		/// If you need keep the string, copy it. e.g. by assigning to a hkStringPtr
 		/// hkStringPtr utf8 = Utf8FromWide(L"A wide string");
-	class Utf8FromWide
+	class HK_EXPORT_COMMON Utf8FromWide
 	{
 		public:
 
@@ -72,7 +72,7 @@ namespace hkUtf8
 		/// as an unnamed temporary. e.g. wfopen( WideFromUtf8("A utf8 string") );
 		/// If you need keep the string, copy it. e.g.
 		/// std::wstring wstr = WideFromUtf8("A utf8 string");
-	class WideFromUtf8
+	class HK_EXPORT_COMMON WideFromUtf8
 	{
 		public:
 
@@ -103,7 +103,7 @@ namespace hkUtf8
 		/// Walk over the codepoints of a utf8 encoded string.
 		/// Note that there is no isValid() method : the iterator starts in an invalid state
 		/// and advance() must be called before current().
-	class Iterator
+	class HK_EXPORT_COMMON Iterator
 	{
 		public:
 			HK_DECLARE_PLACEMENT_ALLOCATOR();
@@ -129,7 +129,7 @@ namespace hkUtf8
 #endif // HKBASE_HKUTF8_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

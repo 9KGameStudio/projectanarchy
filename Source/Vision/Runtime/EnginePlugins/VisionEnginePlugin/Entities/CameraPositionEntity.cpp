@@ -9,14 +9,15 @@
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/VisionEnginePluginPCH.h>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Entities/CameraPositionEntity.hpp>
 #include <Vision/Runtime/Base/ThirdParty/tinyXML/TinyXMLHelper.hpp>
-#include <Vision/Runtime/Base/System/Memory/VMemDbg.hpp>
+
 
 V_IMPLEMENT_SERIAL(CameraPositionEntity, VisBaseEntity_cl, 0, &g_VisionEngineModule);
 
 #define CAMERAPOSITIONENTITY_VERSION_0       0 // Initial version
 #define CAMERAPOSITIONENTITY_VERSION_1       1 // Start Camera Parameter
 #define CAMERAPOSITIONENTITY_VERSION_2       2 // Removed Start Camera Parameter
-#define CAMERAPOSITIONENTITY_VERSION_CURRENT CAMERAPOSITIONENTITY_VERSION_2
+#define CAMERAPOSITIONENTITY_VERSION_3       3 // Added time of day
+#define CAMERAPOSITIONENTITY_VERSION_CURRENT CAMERAPOSITIONENTITY_VERSION_3
 
 void CameraPositionEntity::Serialize( VArchive &ar )
 {
@@ -36,11 +37,13 @@ void CameraPositionEntity::Serialize( VArchive &ar )
       BOOL unusedIsStartCamera;
       ar >> unusedIsStartCamera;
     }
+    if (iLocalVersion>=CAMERAPOSITIONENTITY_VERSION_3)
+      ar >> m_fTimeOfDay;
   } 
   else
   {
     ar << iLocalVersion;
-    ar << m_fNearClipDistance << m_fFarClipDistance << m_fFovX;
+    ar << m_fNearClipDistance << m_fFarClipDistance << m_fFovX << m_fTimeOfDay;
   }
 }
 
@@ -76,6 +79,11 @@ void CameraPositionEntity::ApplyToContext(VisRenderContext_cl* pContext)
 
     pContext->SetFOV(m_fFovX, fFovY);
   }
+
+  if (m_fTimeOfDay>=0.f && Vision::Renderer.GetTimeOfDayHandler()!=NULL)
+  {
+    Vision::Renderer.GetTimeOfDayHandler()->SetDayTime(m_fTimeOfDay);
+  }
 }
 
 /*static*/ CameraPositionEntity* CameraPositionEntity::ApplyToContext(VisRenderContext_cl* pContext, const char* szKey)
@@ -95,10 +103,11 @@ START_VAR_TABLE(CameraPositionEntity, VisBaseEntity_cl, "CameraPositionEntity", 
   DEFINE_VAR_FLOAT_AND_NAME(CameraPositionEntity, m_fNearClipDistance, "NearClipDistance", "Custom near clip distance (or 0)", "0.0", 0, 0);
   DEFINE_VAR_FLOAT_AND_NAME(CameraPositionEntity, m_fFarClipDistance, "FarClipDistance", "Custom far clip distance (or 0)", "0.0", 0, 0);
   DEFINE_VAR_FLOAT_AND_NAME(CameraPositionEntity, m_fFovX, "FovX", "Custom FOV (or 0)", "0.0", 0, 0);
+  DEFINE_VAR_FLOAT_AND_NAME(CameraPositionEntity, m_fTimeOfDay, "TimeOfDay", "Custom daytime in 0..1 range (or nagative to ignore it)", "-1.0", 0, 0);
 END_VAR_TABLE
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

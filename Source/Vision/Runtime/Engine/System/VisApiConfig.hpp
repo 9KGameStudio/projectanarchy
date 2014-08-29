@@ -26,34 +26,38 @@ struct VisResourceConfig_t
 {
   VisResourceConfig_t()
   {
-#if defined(WIN32) && defined(_VR_DX9) // on lost device
+#if defined(_VISION_WIN32) && defined(_VR_DX9) // on lost device
     // restore textures and buffers (unmanaged only)
     restoreTexturesOnBackgrounding = true;
     restoreBuffersOnBackgrounding = true;
     restoreShadersOnBackgrounding = false;
+    restartVTargetThread = false;
 
 #elif defined(_VISION_ANDROID)
     // restore all
     restoreTexturesOnBackgrounding = true;
     restoreBuffersOnBackgrounding = true;
     restoreShadersOnBackgrounding = true;
+    restartVTargetThread = true;
 
 #elif defined(_VISION_IOS) || defined(_VISION_TIZEN)
     // restore textures
     restoreTexturesOnBackgrounding = true;
     restoreBuffersOnBackgrounding = false;
     restoreShadersOnBackgrounding = false;
+    restartVTargetThread = true;
 
-#elif (defined(WIN32) && defined(_VR_DX11)) || defined(_VISION_PS3) || defined(_VISION_XENON) || defined(_VISION_WIIU) || defined(_VISION_PSP2)
+#elif (defined(_VISION_WIN32) && defined(_VR_DX11)) || defined(_VISION_PS3) || defined(_VISION_XENON) || defined(_VISION_WIIU) || defined(_VISION_PSP2) || defined(_VISION_NACL)
   // TODO: Metro, Apollo
 
     restoreTexturesOnBackgrounding = false;
     restoreBuffersOnBackgrounding = false;
     restoreShadersOnBackgrounding = false;
+    restartVTargetThread = false;
 
 #else
 
-#warning undefined platform!
+#error undefined platform!
 
 #endif
   }
@@ -62,6 +66,7 @@ struct VisResourceConfig_t
   bool restoreTexturesOnBackgrounding;
   bool restoreBuffersOnBackgrounding;           ///< Implicates reload of static/dynamic meshes if necessary
   bool restoreShadersOnBackgrounding;
+  bool restartVTargetThread;                    ///< Stop the network thread when in background
 };
 
 /// \brief
@@ -98,7 +103,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

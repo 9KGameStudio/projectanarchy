@@ -17,7 +17,7 @@ class hkSeekableStreamReader;
 /// Derived classes need only override isOk() and read(). Usually
 /// readers which do not support buffering are wrapped in an
 /// hkBufferedStreamReader.
-class hkStreamReader : public hkReferencedObject
+class HK_EXPORT_COMMON hkStreamReader : public hkReferencedObject
 {
 	public:
 
@@ -46,7 +46,7 @@ class hkStreamReader : public hkReferencedObject
 };
 
 
-class hkSeekableStreamReader : public hkStreamReader
+class HK_EXPORT_COMMON hkSeekableStreamReader : public hkStreamReader
 {
 	public:
 	
@@ -67,7 +67,7 @@ class hkSeekableStreamReader : public hkStreamReader
 #endif //HKBASE_HKSTREAMREADER_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

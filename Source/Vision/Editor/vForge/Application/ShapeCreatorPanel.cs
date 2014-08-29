@@ -388,6 +388,7 @@ namespace Editor
         AddCreator(catPlugin, plugin, plugin.GetPluginName(), plugin.IconIndex, sShapeTypeName);
       }
 
+      // Add project prefabs first to give them priority
       string prefabDir = project.MakeAbsolute(EditorManager.Settings.PrefabDirectory);
       if (Directory.Exists(prefabDir))
       {
@@ -396,6 +397,19 @@ namespace Editor
         try
         {
           AddPrefabCreators(prefabDir, null);
+        }
+        catch (Exception ex)
+        {
+          EditorManager.DumpException(ex);
+        }
+      }
+      string prefabBaseDir = Path.Combine(EditorManager.BaseDataDir, @"..\Simulation\Prefabs");
+      if (Directory.Exists(prefabBaseDir))
+      {
+        // Add any prefabs from base directory:
+        try
+        {
+          AddPrefabCreators(prefabBaseDir, null);
         }
         catch (Exception ex)
         {
@@ -744,7 +758,7 @@ namespace Editor
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -15,8 +15,13 @@
 // Uncomment the following line to enable 64-bit timers on Windows. Useful for profiling "slow" functions on the order of seconds.
 // #define HK_ENABLE_64BIT_TIMERS
 
+// Each elf stores a unique ID in the monitor stream at startup to allow for string fix-up later on PPU. This maximum
+// value is used to distinguish these IDs from normal commmandAndMonitor pointers.
+// The maximum value is reserved to indicate that no string fix-up should be performed in any of the following commands
+// until a new elf ID is encountered. This is useful if you want to append monitor commands to a SPU stream on PPU.
+#define HK_MAX_ELF_ID		255
 
-struct hkTimerData
+struct HK_EXPORT_COMMON hkTimerData
 {
 	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_DEMO, hkTimerData);
 	const char* m_streamBegin;
@@ -45,10 +50,10 @@ struct hkTimerData
 ///  - You must initialize this class on a per thread basis after calling hkBaseSystem::init or hkBaseSystem::initThread
 ///  - The hkMonitorStreamAnalyzer is singled threaded
 ///  - The hkMonitorStreamAnalyzer has utilities for analysing multiple monitor streams for use in a multithreaded environment
-class hkMonitorStream 
+class HK_EXPORT_COMMON hkMonitorStream
 {
 	public:
-		
+
 		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_MONITOR, hkMonitorStream);
 
 		static hkMonitorStream* getInstancePtr()
@@ -72,27 +77,27 @@ class hkMonitorStream
 
 
 	public:
-		
+
 		//
 		//	These methods are for internal use only, and are called by the macros listed above.
 		//
 
-		// get the pointer to the beginning of the memory used for timers
-		HK_FORCE_INLINE char* HK_CALL getStart() { return m_start.val(); } 
+		// Get the pointer to the beginning of the memory used for timers
+		HK_FORCE_INLINE char* HK_CALL getStart() { return m_start.val(); }
 
-		// get the pointer to the current write pointer
-		HK_FORCE_INLINE char* HK_CALL getEnd() { return m_end.val(); } 
+		// Get the pointer to the current write pointer
+		HK_FORCE_INLINE char* HK_CALL getEnd() { return m_end.val(); }
 
-		// get the pointer to the end of the timer memory minus 16
-		HK_FORCE_INLINE char* HK_CALL getCapacityMinus16() { return m_capacityMinus16.val(); } 
+		// Get the pointer to the end of the timer memory minus 16
+		HK_FORCE_INLINE char* HK_CALL getCapacityMinus16() { return m_capacityMinus16.val(); }
 
-		// get the pointer to the capacity of timer memory
-		HK_FORCE_INLINE char* HK_CALL getCapacity() { return m_capacity.val(); } 
+		// Get the pointer to the capacity of timer memory
+		HK_FORCE_INLINE char* HK_CALL getCapacity() { return m_capacity.val(); }
 
-			// Check whether at least 16 bytes are free
-		HK_FORCE_INLINE hkBool HK_CALL memoryAvailable( ) 
-		{ 
-			return getEnd() < getCapacityMinus16(); 
+		// Check whether at least 16 bytes are free
+		HK_FORCE_INLINE hkBool HK_CALL memoryAvailable( )
+		{
+			return getEnd() < getCapacityMinus16();
 		}
 
 		HK_FORCE_INLINE int HK_CALL getCurrentMonitorDataSize()
@@ -100,28 +105,31 @@ class hkMonitorStream
 			return (int)(m_end.val() - m_start.val());
 		}
 
-			// get a piece of memory from the timer memory 
+		// Get a piece of memory from the timer memory
 		HK_FORCE_INLINE void* HK_CALL expandby( int size ) { char* h = m_end.val(); char* newEnd = h + size; m_end = newEnd; return h; }
 
-				// set the pointer to the current write pointer
-		HK_FORCE_INLINE void HK_CALL setEnd(char* ptr) {  m_end = ptr; } 
+		// Set the pointer to the current write pointer
+		HK_FORCE_INLINE void HK_CALL setEnd(char* ptr) {  m_end = ptr; }
 
-			// is the buffer allocated on the heap or not 
+		// Is the buffer allocated on the heap or not
 		HK_FORCE_INLINE hkBool HK_CALL isBufferAllocatedOnTheHeap() { return m_isBufferAllocatedOnTheHeap; }
 
-			// set the buffer to be a static, preallocated, buffer
-		void HK_CALL setStaticBuffer( char* buffer, int bufferSize );
+		// Set the buffer to be a static, preallocated, buffer.
+		void HK_CALL setStaticBuffer( char* buffer, int bufferSize, bool clearBuffer = true );
 
 	public:
 
-			// Called by hkBaseSystem
+		// Free internal buffers
+		void clear();
+
+		// Called by hkBaseSystem
 		static void HK_CALL HK_INIT_FUNCTION( init )();
 
-			// Called by hkBaseSystem
+		// Called by hkBaseSystem
 		void HK_CALL quit();
 
 	public:
-		
+
 		hkPadSpu<char*> m_start;
 		hkPadSpu<char*> m_end;
 		hkPadSpu<char*> m_capacity;
@@ -154,6 +162,58 @@ class hkMonitorStream
 			TimerValue	m_time0;
 			TimerValue	m_time1;
 			HK_FORCE_INLINE void setTime();
+
+			static HK_FORCE_INLINE TimerValue subtract( TimerValue a, TimerValue b )
+			{
+				// TODO: take the carry flag into account (SBB instruction on x86)
+				if(b > a) // wrap around
+				{
+					return a + ( TimerValue(-1) - b);
+				}
+				else
+				{
+					return a-b;
+				}
+			}
+
+			HK_FORCE_INLINE TimerCommand& operator += ( const TimerCommand& rhs )
+			{
+				m_time0 += rhs.m_time0;
+				m_time1 += rhs.m_time1; // TODO: this may need to take the carry flag into account (ADC instruction on x86)
+				return *this;
+			}
+
+			HK_FORCE_INLINE TimerCommand& operator -= ( const TimerCommand& rhs )
+			{
+				m_time0 = subtract( m_time0, rhs.m_time0 );
+				m_time1 = subtract( m_time1, rhs.m_time1 );
+				return *this;
+			}
+		};
+
+		struct MultiTimerCommand
+		{
+			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_MONITOR, hkMonitorStream::MultiTimerCommand );
+			hkMonitorStream::TimerCommand	m_timerCommand;
+			hkUint32						m_callCount;
+
+			HK_FORCE_INLINE void clear()
+			{
+				m_callCount = 0;
+				m_timerCommand.m_time0 = 0;
+				m_timerCommand.m_time1 = 0;
+			}
+
+		#if defined(HK_PLATFORM_SPU)
+			// Custom copy operator on SPU to produce smaller code (80B smaller than compiler generated)
+			HK_FORCE_INLINE MultiTimerCommand& operator = (const MultiTimerCommand& rhs)
+			{
+				HK_COMPILE_TIME_ASSERT((sizeof(MultiTimerCommand) & 3) == 0);
+				HK_ASSERT(0x17d5b0f7, ((hkUlong(this) & 3) == 0) && ((hkUlong(&rhs) & 3) == 0));
+				hkString::memCpy4(this, &rhs, sizeof(MultiTimerCommand) >> 2);
+				return *this;
+			}
+		#endif
 		};
 
 		struct TimerBeginListCommand : public hkMonitorStream::TimerCommand
@@ -181,7 +241,7 @@ class hkMonitorStream
 #endif // HKBASE_HKMONITOR_STREAM_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -15,7 +15,7 @@
 class hkVisualDebugger;
 
 	/// This is a Havok Physics2012 implementation of the hkbPhysicsInterface.
-	/// It uses provided jobQueue and jobThreadPool for multithreaded stepping, or falls back to single threaded stepping.
+	/// It uses provided jobQueue and threadPool for multithreaded stepping, or falls back to single threaded stepping.
 class hkbpPhysicsInterface : public hkbPhysicsInterface
 {
 
@@ -28,21 +28,21 @@ class hkbpPhysicsInterface : public hkbPhysicsInterface
 		HK_DECLARE_CLASS_ALLOCATOR( HK_MEMORY_CLASS_BEHAVIOR );
 
 			/// Create a Havok Physics2012 interface which wraps the provided hkpWorld.
-			/// A jobQueue and jobThreadPool must be provided for multithreaded physics stepping.
+			/// A jobQueue and threadPool must be provided for multithreaded physics stepping.
 			/// A physics interface without a world is useful for certain serialization functions
 			/// (Eg. createRagdollInstance) but cannot be stepped.
 		hkbpPhysicsInterface(
 			hkpWorld* world = HK_NULL,
 			hkJobQueue* jobQueue = HK_NULL,
-			hkJobThreadPool* jobThreadPool = HK_NULL );
+			hkThreadPool* threadPool = HK_NULL );
 
 			/// Create a Havok Physics2012 interface.
 			/// An hkpWorld will be created from the provided cinfo.
-			/// A jobQueue and jobThreadPool must be provided for multithreaded physics stepping.
+			/// A jobQueue and threadPool must be provided for multithreaded physics stepping.
 		hkbpPhysicsInterface(
 			hkpWorldCinfo& cinfo,
 			hkJobQueue* jobQueue = HK_NULL,
-			hkJobThreadPool* jobThreadPool = HK_NULL );
+			hkThreadPool* threadPool = HK_NULL );
 
 			// Dtor.
 		virtual ~hkbpPhysicsInterface();
@@ -62,7 +62,7 @@ class hkbpPhysicsInterface : public hkbPhysicsInterface
 		virtual hkbRagdollInterface* createRagdollInterface(
 			const hkbCharacterSetup* characterSetup,
 			const hkRootLevelContainer& rootContainer ) const HK_OVERRIDE;
-	
+
 			/// Create an hkbpCharacterController (either proxy or rigid body) based on the provided setup information.
 			/// This character controller is ready to be integrated.
 		virtual hkbCharacterController* createCharacterController(
@@ -190,7 +190,7 @@ class hkbpPhysicsInterface : public hkbPhysicsInterface
 		virtual void unmarkForWrite() HK_OVERRIDE;
 
 	#endif
-	
+
 			/// Lock the hkpWorld.
 		virtual void lock() HK_OVERRIDE;
 
@@ -211,7 +211,7 @@ class hkbpPhysicsInterface : public hkbPhysicsInterface
 		void init(
 			hkpWorld* world,
 			hkJobQueue* jobQueue,
-			hkJobThreadPool* jobThreadPool );
+			hkThreadPool* threadPool );
 
 			/// The hkpWorld instance for this physics interface.
 		hkRefPtr<hkpWorld> m_world; //+nosave
@@ -219,8 +219,8 @@ class hkbpPhysicsInterface : public hkbPhysicsInterface
 			/// The jobQueue for multithreading.
 		hkJobQueue* m_jobQueue; //+nosave
 
-			/// The jobThreadPool for multithreading.
-		hkJobThreadPool* m_jobThreadPool; //+nosave
+			/// The threadPool for multithreading.
+		hkThreadPool* m_threadPool; //+nosave
 
 	public:
 
@@ -231,7 +231,7 @@ class hkbpPhysicsInterface : public hkbPhysicsInterface
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

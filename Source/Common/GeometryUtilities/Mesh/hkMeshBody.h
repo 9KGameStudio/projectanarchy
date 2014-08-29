@@ -13,7 +13,7 @@ class hkMeshShape;
 class hkMeshVertexBuffer;
 struct hkMeshBoneIndexMapping;
 
-extern const hkClass hkMeshBodyClass;
+extern HK_EXPORT_COMMON const hkClass hkMeshBodyClass;
 
 /// The mesh body is a transformed instance of a mesh shape
 ///
@@ -53,7 +53,7 @@ extern const hkClass hkMeshBodyClass;
 /// memory.
 ///
 /// \sa hkMeshShape
-class hkMeshBody: public hkReferencedObject
+class HK_EXPORT_COMMON hkMeshBody : public hkReferencedObject
 {
 	public:
 		HK_DECLARE_REFLECTION();
@@ -131,7 +131,7 @@ class hkMeshBody: public hkReferencedObject
 #endif // HK_MESH_BODY_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -25,7 +25,7 @@ namespace hkaPredictiveCompressedAnimationUtil
 /// Use Manhattan-norm normalised quaternions. Faster restoration during decompression, somewhat less accurate inter-frame interpolation
 #define HK_PREDICTIVE_QUATERNION_MANHATTAN
 
-class hkaPredictiveCompressedAnimation : public hkaAnimation
+class HK_EXPORT_ANIMATION hkaPredictiveCompressedAnimation : public hkaAnimation
 {
 	//+version(1)
 
@@ -45,7 +45,7 @@ class hkaPredictiveCompressedAnimation : public hkaAnimation
 		// is achieved by setting all the tolerances to 0.
 
 			/// A single set of compression parameters.
-		struct TrackCompressionParams
+		struct HK_EXPORT_ANIMATION TrackCompressionParams
 		{
 			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_ANIM_COMPRESSED, hkaPredictiveCompressedAnimation::TrackCompressionParams );
 			HK_DECLARE_REFLECTION();
@@ -64,7 +64,7 @@ class hkaPredictiveCompressedAnimation : public hkaAnimation
 		};
 		
 			/// Compression parameters for all tracks using a palette.  By default there is one palette entry with default tolerances for all bones and float tracks.
-		struct CompressionParams
+		struct HK_EXPORT_ANIMATION CompressionParams
 		{
 			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_ANIM_COMPRESSED,hkaPredictiveCompressedAnimation::CompressionParams);
 
@@ -278,7 +278,7 @@ class hkaPredictiveCompressedAnimation : public hkaAnimation
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

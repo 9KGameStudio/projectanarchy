@@ -31,21 +31,28 @@ HK_FORCE_INLINE void hkMxMaskf<2>::horizontalAnd4( hkVector4fComparison& andOut 
 #if (HK_CONFIG_SIMD == HK_CONFIG_SIMD_ENABLED)
 
 #if defined(HK_PLATFORM_PS3_SPU) || defined(HK_PLATFORM_PS3_PPU)
-	hkVector4f v0; v0.m_quad = (vector float)m_comp.c[0].m_mask;
-	hkVector4f v1; v1.m_quad = (vector float)m_comp.c[1].m_mask;
+	hkVector4f v0; v0.m_quad = (hkQuadFloat32)m_comp.c[0].m_mask;
+	hkVector4f v1; v1.m_quad = (hkQuadFloat32)m_comp.c[1].m_mask;
 	hkVector4f v2; v2.setZero();
 	hkVector4f v3; v3.setZero();
 	HK_TRANSPOSE4f( v0, v1, v2, v3 );
+	hkVector4fComparison c0; c0.m_mask = (hkVector4fMask)v0.m_quad;
+	hkVector4fComparison c1; c1.m_mask = (hkVector4fMask)v1.m_quad;
+	hkVector4fComparison c2; c2.m_mask = (hkVector4fMask)v2.m_quad;
+	hkVector4fComparison c3; c3.m_mask = (hkVector4fMask)v3.m_quad;
+	hkVector4fComparison t0; t0.setAnd( c0, c1 );
+	hkVector4fComparison t1; t1.setAnd( c2, c3 );
+	andOut.setAnd( t0, t1 );
 #else
 	hkVector4f v0; v0.m_quad = HK_MASK_TO_VECTORf(m_comp.c[0].m_mask);
 	hkVector4f v1; v1.m_quad = HK_MASK_TO_VECTORf(m_comp.c[1].m_mask);
 	hkVector4f v2; v2.setZero();
 	hkVector4f v3; v3.setZero();
 	HK_TRANSPOSE4f( v0, v1, v2, v3 );
-#endif
 	hkVector4fComparison t0; t0.setAnd( (const hkVector4fComparison&)v0, (const hkVector4fComparison&)v1 );
 	hkVector4fComparison t1; t1.setAnd( (const hkVector4fComparison&)v2, (const hkVector4fComparison&)v3 );
 	andOut.setAnd( t0, t1 );
+#endif
 
 #else
 
@@ -61,21 +68,28 @@ HK_FORCE_INLINE void hkMxMaskf<3>::horizontalAnd4( hkVector4fComparison& andOut 
 #if (HK_CONFIG_SIMD == HK_CONFIG_SIMD_ENABLED)
 
 #if defined(HK_PLATFORM_PS3_SPU) || defined(HK_PLATFORM_PS3_PPU)
-	hkVector4f v0; v0.m_quad = (vector float)m_comp.c[0].m_mask;
-	hkVector4f v1; v1.m_quad = (vector float)m_comp.c[1].m_mask;
-	hkVector4f v2; v2.m_quad = (vector float)m_comp.c[2].m_mask;
+	hkVector4f v0; v0.m_quad = (hkQuadFloat32)m_comp.c[0].m_mask;
+	hkVector4f v1; v1.m_quad = (hkQuadFloat32)m_comp.c[1].m_mask;
+	hkVector4f v2; v2.m_quad = (hkQuadFloat32)m_comp.c[2].m_mask;
 	hkVector4f v3; v3.setZero();
 	HK_TRANSPOSE4f( v0, v1, v2, v3 );
+	hkVector4fComparison c0; c0.m_mask = (hkVector4fMask)v0.m_quad;
+	hkVector4fComparison c1; c1.m_mask = (hkVector4fMask)v1.m_quad;
+	hkVector4fComparison c2; c2.m_mask = (hkVector4fMask)v2.m_quad;
+	hkVector4fComparison c3; c3.m_mask = (hkVector4fMask)v3.m_quad;
+	hkVector4fComparison t0; t0.setAnd( c0, c1 );
+	hkVector4fComparison t1; t1.setAnd( c2, c3 );
+	andOut.setAnd( t0, t1 );
 #else
 	hkVector4f v0; v0.m_quad = HK_MASK_TO_VECTORf(m_comp.c[0].m_mask);
 	hkVector4f v1; v1.m_quad = HK_MASK_TO_VECTORf(m_comp.c[1].m_mask);
 	hkVector4f v2; v2.m_quad = HK_MASK_TO_VECTORf(m_comp.c[2].m_mask);
 	hkVector4f v3; v3.setZero();
 	HK_TRANSPOSE4f( v0, v1, v2, v3 );
-#endif
 	hkVector4fComparison t0; t0.setAnd( (const hkVector4fComparison&)v0, (const hkVector4fComparison&)v1 );
 	hkVector4fComparison t1; t1.setAnd( (const hkVector4fComparison&)v2, (const hkVector4fComparison&)v3 );
 	andOut.setAnd( t0, t1 );
+#endif
 
 #else
 
@@ -92,21 +106,28 @@ HK_FORCE_INLINE void hkMxMaskf<4>::horizontalAnd4( hkVector4fComparison& andOut 
 #if (HK_CONFIG_SIMD == HK_CONFIG_SIMD_ENABLED)
 
 #if defined(HK_PLATFORM_PS3_SPU) || defined(HK_PLATFORM_PS3_PPU)
-	hkVector4f v0; v0.m_quad = (vector float)m_comp.c[0].m_mask;
-	hkVector4f v1; v1.m_quad = (vector float)m_comp.c[1].m_mask;
-	hkVector4f v2; v2.m_quad = (vector float)m_comp.c[2].m_mask;
-	hkVector4f v3; v3.m_quad = (vector float)m_comp.c[3].m_mask;
+	hkVector4f v0; v0.m_quad = (hkQuadFloat32)m_comp.c[0].m_mask;
+	hkVector4f v1; v1.m_quad = (hkQuadFloat32)m_comp.c[1].m_mask;
+	hkVector4f v2; v2.m_quad = (hkQuadFloat32)m_comp.c[2].m_mask;
+	hkVector4f v3; v3.m_quad = (hkQuadFloat32)m_comp.c[3].m_mask;
 	HK_TRANSPOSE4f( v0, v1, v2, v3 );
+	hkVector4fComparison c0; c0.m_mask = (hkVector4fMask)v0.m_quad;
+	hkVector4fComparison c1; c1.m_mask = (hkVector4fMask)v1.m_quad;
+	hkVector4fComparison c2; c2.m_mask = (hkVector4fMask)v2.m_quad;
+	hkVector4fComparison c3; c3.m_mask = (hkVector4fMask)v3.m_quad;
+	hkVector4fComparison t0; t0.setAnd( c0, c1 );
+	hkVector4fComparison t1; t1.setAnd( c2, c3 );
+	andOut.setAnd( t0, t1 );
 #else
 	hkVector4f v0; v0.m_quad = HK_MASK_TO_VECTORf(m_comp.c[0].m_mask);
 	hkVector4f v1; v1.m_quad = HK_MASK_TO_VECTORf(m_comp.c[1].m_mask);
 	hkVector4f v2; v2.m_quad = HK_MASK_TO_VECTORf(m_comp.c[2].m_mask);
 	hkVector4f v3; v3.m_quad = HK_MASK_TO_VECTORf(m_comp.c[3].m_mask);
 	HK_TRANSPOSE4f( v0, v1, v2, v3 );
-#endif
 	hkVector4fComparison t0; t0.setAnd( (const hkVector4fComparison&)v0, (const hkVector4fComparison&)v1 );
 	hkVector4fComparison t1; t1.setAnd( (const hkVector4fComparison&)v2, (const hkVector4fComparison&)v3 );
 	andOut.setAnd( t0, t1 );
+#endif
 
 #else
 
@@ -194,7 +215,7 @@ HK_FORCE_INLINE hkBool32 hkMxMaskf<M>::anyIsSet() const
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

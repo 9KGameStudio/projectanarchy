@@ -79,7 +79,7 @@ public:
   /// @{
   ///
 
-  V_DECLARE_SERIAL_DLLEXP(vHavokConstraintChainDesc, VHAVOK_IMPEXP)
+  V_DECLARE_SERIAL_DLLEXP( vHavokConstraintChainDesc, VHAVOK_IMPEXP )
 
   VHAVOK_IMPEXP virtual void Serialize(VArchive &ar) HKV_OVERRIDE;
 
@@ -92,11 +92,11 @@ public:
                                                   ///< this constraint chain to.
   hkvVec3 m_vAnchorPivots[2];                     ///< The pivot points of the anchor bodies, in body space.
 
-  float m_fLinkLength;                            ///< The length of each chain link
-  float m_fLinkGap;                               ///< The gap between two chain links
-  float m_fDiameter;                              ///< The diameter of the chain
-  float m_fMaterialDensity;                       ///< The density of the link material (in kg/m^3)
-  float m_fMaterialStretchingConstant;            ///< The stretching constant (in N)
+  float m_fLinkLength;  ///< The length of each chain link
+  float m_fLinkGap;     ///< The gap between two chain links
+  float m_fDiameter;    ///< The diameter of the chain
+  float m_fMaterialDensity; ///< The density of the link material (in kg/m^3)
+  float m_fMaterialStretchingConstant; ///< The stretching constant (in N)
 
   float m_fChainDamping;                          ///< The damping for the solver when simulating this constraint chain. 
                                                   ///< Ranges from 0.0 (no damping) to 1.0 (maximum damping).
@@ -105,8 +105,8 @@ public:
 
   bool m_bCalculateLinkInertia;                   ///< Determines whether to let Havok calculate an inertia 
                                                   ///< tensor for the chain links.
-  hkvVec3 m_vInertiaTensorAxisScaling;            ///< Scaling of the chain link inertia tensor axes
-  float m_fInertiaTensorUniformScaling;           ///< Uniform scaling of the chain link inertia tensor
+  hkvVec3 m_vInertiaTensorAxisScaling; ///< Scaling of the chain link inertia tensor axes
+  float m_fInertiaTensorUniformScaling; ///< Uniform scaling of the chain link inertia tensor
 
   int m_iLinkCollisionLayer;
   int m_iLinkCollisionGroup;
@@ -120,14 +120,14 @@ public:
   float m_fFixedCfm;                              ///< The fixed CFM used when the CFM is not computed.
 
   bool m_bUseAngularFriction;                     ///< Determines whether to use angular friction
-  float m_fFrictionFactorMin;                     ///< The minimum internal friction factor (in the middle of the chain)
-  float m_fFrictionFactorMax;                     ///< The maximum internal friction factor (at the ends of the chain)
+  float m_fFrictionFactorMin; ///< The minimum internal friction factor (in the middle of the chain)
+  float m_fFrictionFactorMax; ///< The maximum internal friction factor (at the ends of the chain)
   float m_fBaseTension;                           ///< The minimum tension the rope is assumed to always have 
                                                   ///< (used for internal friction calculations)
 
 private:
   static const unsigned int s_iSerialVersion;     ///< The current serialization version for instances of this class.
-  char *m_pszPathKey;                             ///< The path key
+  VString m_sPathKey;                             ///< The path key
 };
 
 /// \brief
@@ -135,7 +135,7 @@ private:
 class vHavokConstraintChainListenerProxy : public hkpConstraintListener
 {
 public:
-	vHavokConstraintChainListenerProxy() {}
+	vHavokConstraintChainListenerProxy() { }
 
 	inline void setOwner(vHavokConstraintChain* o ) { m_owner = o; }
 	virtual void constraintDeletedCallback(hkpConstraintInstance* constraint);
@@ -179,7 +179,7 @@ private:
 
 public:
   ///
-  /// @name Creation / Initialization / Destruction
+  /// @name Creation/Initialization/Destruction
   /// @{
   ///
 
@@ -254,8 +254,8 @@ public:
   /// @name Serialization and Type Management
   /// @{
 
-  V_DECLARE_SERIAL_DLLEXP(vHavokConstraintChain, VHAVOK_IMPEXP)
-
+  V_DECLARE_SERIAL_DLLEXP( vHavokConstraintChain, VHAVOK_IMPEXP )
+  
   VHAVOK_IMPEXP virtual void Serialize(VArchive &ar) HKV_OVERRIDE;
 
   VHAVOK_IMPEXP virtual void OnDeserializationCallback(const VSerializationContext &context) HKV_OVERRIDE;
@@ -264,6 +264,7 @@ public:
   { 
     return (context.m_eType != VSerializationContext::VSERIALIZATION_EDITOR); 
   }
+  VHAVOK_IMPEXP VOVERRIDE bool GetZoneLocalSpacePosition(hkvVec3& vDest) {return false;}
 
   ///
   /// @}
@@ -412,7 +413,7 @@ public:
   ///   Returns the force currently in effect on this constraint chain.
   ///
   /// \return
-  ///   The force on the constraint chain, or \c (0, 0, 0, 0), if the constraint chain
+  ///   The force on the constraint chain, or \c (0,0,0,0), if the constraint chain
   ///   is not initialized.
   inline hkvVec3 GetChainForceVec() const
   { 
@@ -474,7 +475,7 @@ protected:
 
 public:
   ///
-  /// @name Chain Length
+  ///@name Chain Length
   /// @{
   ///
 
@@ -517,7 +518,7 @@ public:
 
 protected:
   ///
-  /// @name Pivot Calculations
+  ///@name Pivot Calculations
   /// @{
   ///
 
@@ -589,7 +590,7 @@ protected:
   ///
 
   ///
-  /// @name ConstraintInfo Handling
+  ///@name ConstraintInfo Handling
   /// @{
   ///
 
@@ -709,7 +710,7 @@ private:
 
 protected:
   ///
-  /// @name Adding/Removing Chain Links
+  ///@name Adding/Removing Chain Links
   /// @{
   ///
 
@@ -858,7 +859,7 @@ protected:
                                                     ///< constraint chain.
   hkArray<vHavokRagdollConstraintInfo> m_ragdollConstraintInfos;  ///< The ragdoll constraint info created by the 
                                                                   ///< ragdoll extension.
-  unsigned int m_iNumLinks;                         ///< The number of links in this constraint chain
+  unsigned int m_iNumLinks;                       ///< The number of links in this constraint chain
   hkpConstraintChainData *m_pConstraintChainData;   ///< The data object that contains the Havok state of 
                                                     ///< this constraint chain.
 
@@ -877,7 +878,7 @@ protected:
   hkvVec3 m_vInertiaTensorAxisScaling;              ///< Scaling of the chain link inertia tensor axes.
   float m_fInertiaTensorUniformScaling;             ///< Uniform scaling of the chain link inertia tensor.
   int m_iCollisionFilterInfo;                       ///< The collision filter info for the chain links.
-  bool m_bComputeCfm;                               ///< Whether to compute the CFM (or to use a fixed CFM otherwise)
+  bool m_bComputeCfm;                             ///< Whether to compute the CFM (or to use a fixed CFM otherwise)
   float m_fCfmFactor;                               ///< Factor to scale computed CFM (constraint force mixing) with. 
                                                     ///< 0.0: don't compute CFM and use Havok Physics default.
   float m_fFixedCfm;                                ///< The fixed CFM to use when the CFM is not computed.
@@ -888,8 +889,8 @@ protected:
                                                     ///< (used for internal friction calculations).
 
 private:
-  vHavokConstraintChainDesc *m_pSerializationDesc;  ///< Temporary description used for serialization.
-  hkpConstraintChainInstance *m_pConstraintChain;   ///< The Havok runtime interface to this constraint chain
+  vHavokConstraintChainDesc *m_pSerializationDesc; ///< Temporary description used for serialization.
+  hkpConstraintChainInstance *m_pConstraintChain; ///< The Havok runtime interface to this constraint chain
 
   VString m_sChainPathKey;                          ///< The key of the path which the links of the constraint chain 
                                                     ///< must follow.
@@ -946,7 +947,7 @@ private:
 #endif //V_HAVOK_CONSTRAINT_CHAIN_HPP_INCLUDED
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

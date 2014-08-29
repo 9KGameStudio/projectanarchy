@@ -19,7 +19,6 @@
 #ifndef HK_REGISTER_CLASSES
 #	define HK_REGISTER_CLASSES 1
 #endif
-#include <Common/Serialize/hkSerialize.h>
 
 #include <Common/Serialize/Util/hkBuiltinTypeRegistry.h>
 #include <Common/Base/Reflection/hkTypeInfo.h>
@@ -27,11 +26,15 @@
 class hkClass;
 class hkTypeInfo;
 
+#ifndef HK_TYPE_REG_NAMESPACE
+#define HK_TYPE_REG_NAMESPACE hkBuiltinTypeRegistry
+#endif
+
 // Forward declarations of all used classes and typeinfos
 #if HK_REGISTER_TYPEINFOS || HK_REGISTER_CLASSES
-#	define HK_CLASS(A) extern const hkClass A##Class; extern const hkTypeInfo A##TypeInfo;
-#	define HK_STRUCT(A) extern const hkClass A##Class; extern const hkTypeInfo A##TypeInfo;
-#	define HK_ABSTRACT_CLASS(A) extern const hkClass A##Class;
+#	define HK_CLASS(E, A) extern E const hkClass A##Class; extern E const hkTypeInfo A##TypeInfo;
+#	define HK_STRUCT(E, A) extern E const hkClass A##Class; extern E const hkTypeInfo A##TypeInfo;
+#	define HK_ABSTRACT_CLASS(E, A) extern E const hkClass A##Class;
 #		include HK_CLASSES_FILE
 #	undef HK_STRUCT
 #	undef HK_CLASS
@@ -40,26 +43,26 @@ class hkTypeInfo;
 
 #if HK_REGISTER_TYPEINFOS
 	// nonvirtual type infos
-#	define HK_CLASS(A) // nothing
-#	define HK_STRUCT(A) // nothing
-#	define HK_ABSTRACT_CLASS(A) // nothing
+#	define HK_CLASS(E, A) // nothing
+#	define HK_STRUCT(E, A) // nothing
+#	define HK_ABSTRACT_CLASS(E, A) // nothing
 #	include HK_CLASSES_FILE
 #	undef HK_STRUCT
 #	undef HK_CLASS
 #	undef HK_ABSTRACT_CLASS
 
 	// List of all typeinfos
-	const hkTypeInfo* const hkBuiltinTypeRegistry::StaticLinkedTypeInfos[] =
+	const hkTypeInfo* const HK_TYPE_REG_NAMESPACE::StaticLinkedTypeInfos[] =
 	{
-#		define HK_CLASS(A) &A##TypeInfo,
-#		define HK_STRUCT(A) // nothing
-#		define HK_ABSTRACT_CLASS(A) // nothing
+#		define HK_CLASS(E, A) &A##TypeInfo,
+#		define HK_STRUCT(E, A) // nothing
+#		define HK_ABSTRACT_CLASS(E, A) // nothing
 #		include HK_CLASSES_FILE
 
 #		undef HK_CLASS
-#		define HK_CLASS(A) // nothing
+#		define HK_CLASS(E, A) // nothing
 #		undef HK_STRUCT
-#		define HK_STRUCT(A) &A##TypeInfo,
+#		define HK_STRUCT(E, A) &A##TypeInfo,
 #		include HK_CLASSES_FILE
 
 #		undef HK_STRUCT
@@ -70,7 +73,7 @@ class hkTypeInfo;
 #else
 
 	// empty typeinfo list
-	const hkTypeInfo* const hkBuiltinTypeRegistry::StaticLinkedTypeInfos[] =
+	const hkTypeInfo* const HK_TYPE_REG_NAMESPACE::StaticLinkedTypeInfos[] =
 	{
 		HK_NULL
 	};
@@ -84,27 +87,27 @@ class hkTypeInfo;
 	// are in the same order of the typeinfo list.
 
 
-	const hkClass* const hkBuiltinTypeRegistry::StaticLinkedClasses[] =
+	const hkClass* const HK_TYPE_REG_NAMESPACE::StaticLinkedClasses[] =
 	{
-#		define HK_CLASS(A) &A##Class,
-#		define HK_STRUCT(A)			// nothing
-#		define HK_ABSTRACT_CLASS(A) // nothing
+#		define HK_CLASS(E, A) &A##Class,
+#		define HK_STRUCT(E, A)			// nothing
+#		define HK_ABSTRACT_CLASS(E, A) // nothing
 #		include HK_CLASSES_FILE
 #		undef HK_STRUCT
 #		undef HK_CLASS
 #		undef HK_ABSTRACT_CLASS
 
-#		define HK_CLASS(A)			// nothing
-#		define HK_ABSTRACT_CLASS(A) // nothing
-#		define HK_STRUCT(A) &A##Class,
+#		define HK_CLASS(E, A)			// nothing
+#		define HK_ABSTRACT_CLASS(E, A) // nothing
+#		define HK_STRUCT(E, A) &A##Class,
 #		include HK_CLASSES_FILE
 #		undef HK_STRUCT
 #		undef HK_CLASS
 #		undef HK_ABSTRACT_CLASS
 
-#		define HK_CLASS(A)			// nothing
-#		define HK_STRUCT(A)			// nothing
-#		define HK_ABSTRACT_CLASS(A) &A##Class,
+#		define HK_CLASS(E, A)			// nothing
+#		define HK_STRUCT(E, A)			// nothing
+#		define HK_ABSTRACT_CLASS(E, A) &A##Class,
 #		include HK_CLASSES_FILE
 #		undef HK_STRUCT
 #		undef HK_CLASS
@@ -116,7 +119,7 @@ class hkTypeInfo;
 #else
 
 	// empty classes list
-	const hkClass* const hkBuiltinTypeRegistry::StaticLinkedClasses[] =
+	const hkClass* const HK_TYPE_REG_NAMESPACE::StaticLinkedClasses[] =
 	{
 		HK_NULL
 	};
@@ -124,7 +127,7 @@ class hkTypeInfo;
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

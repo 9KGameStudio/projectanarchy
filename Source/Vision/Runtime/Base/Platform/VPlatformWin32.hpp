@@ -36,6 +36,7 @@
 ////////////////////////////////////////////////////////////////
 
 #define _WINSOCKAPI_    // stops windows.h including winsock.h
+#define NOMINMAX
 #include <windows.h>
 
 #include <direct.h>
@@ -55,8 +56,8 @@
 #if defined(_VR_DX11) || ( (_MSC_VER >= 1700) && !defined(_VR_DX9) && !defined(_VISION_DIRECTX_2010) ) 
 
   #ifdef _VISION_DIRECTX_2010
-     #pragma warning(push)
-     #pragma warning(disable: 4005)
+  #pragma warning(push)
+  #pragma warning(disable: 4005)
   #endif
   #include <dxgi.h>
   #include <initguid.h>
@@ -70,10 +71,10 @@
     #define _VR_DX11_SUPPORTS_D3DX 0
   #endif
 
-  #include <d3d9.h>  //Needed for D3DPERF_xxx (http://discussms.hosting.lsoft.com/SCRIPTS/WA-MSD.EXE?A2=ind0708C&L=directxdev&P=2016)
+  #include <d3d9.h>  //Needed for D3DPERF_xxx (http://discussms.hosting.lsoft.com/SCRIPTS/WA-MSD.EXE?A2=ind0708C&L=directxdev&P=2016) 
 
   #ifdef _VISION_DIRECTX_2010
-    #pragma warning(pop)
+  #pragma warning(pop)
   #endif 
 
   #define DDPF_ALPHAPIXELS      0x00000001l
@@ -85,7 +86,7 @@
 
 #else
   #include <D3Dcommon.h>
-  #include <d3d9.h>
+  #include <d3d9.h>  
   #include <d3d9types.h>
   #if (_MSC_VER < 1700) || defined(_VISION_DIRECTX_2010)
     #include <dxerr.h>
@@ -118,7 +119,6 @@
   #include <wbemcli.h>  //latest platform SDK
 #endif
 
-#include <gl/gl.h>
 #include <winver.h>
   
 
@@ -128,7 +128,7 @@
 
 typedef __int64 int64;
 typedef unsigned __int64 uint64;
-
+typedef LARGE_INTEGER V_LARGE_INTEGER;
 
 const int FS_MAX_FILE  = 256;
 const int FS_MAX_PATH  = 4096;
@@ -151,12 +151,49 @@ const int FS_MAX_DRIVE = 256;
 #define VISION_LIKELY(COND) (COND)
 #define VISION_UNLIKELY(COND) (COND)
 
-inline void MicroSleep(unsigned int iMicroSeconds) { /* TODO */ }
+inline void VSleep(unsigned int iMilliSeconds) { ::Sleep(iMilliSeconds); }
+inline void VMicroSleep(unsigned int iMicroSeconds)
+{
+#if !defined(_MANAGED)
+  _mm_pause();
+#endif
+}
+
+// From VersionHelpers.h in the Windows 8.1 Kit
+static bool
+  IsWindowsVersionOrGreater(WORD wMajorVersion, WORD wMinorVersion, WORD wServicePackMajor)
+{
+  OSVERSIONINFOEXW osvi = { sizeof(osvi), 0, 0, 0, 0, {0}, 0, 0 };
+  DWORDLONG        const dwlConditionMask = VerSetConditionMask(
+    VerSetConditionMask(
+    VerSetConditionMask(
+    0, VER_MAJORVERSION, VER_GREATER_EQUAL),
+    VER_MINORVERSION, VER_GREATER_EQUAL),
+    VER_SERVICEPACKMAJOR, VER_GREATER_EQUAL);
+
+  osvi.dwMajorVersion = wMajorVersion;
+  osvi.dwMinorVersion = wMinorVersion;
+  osvi.wServicePackMajor = wServicePackMajor;
+
+  return VerifyVersionInfoW(&osvi, VER_MAJORVERSION | VER_MINORVERSION | VER_SERVICEPACKMAJOR, dwlConditionMask) != FALSE;
+}
+
+static bool
+  IsWindowsVistaOrGreater()
+{
+  return IsWindowsVersionOrGreater(HIBYTE(_WIN32_WINNT_VISTA), LOBYTE(_WIN32_WINNT_VISTA), 0);
+}
+
+static bool
+  IsWindows7SP1OrGreater()
+{
+  return IsWindowsVersionOrGreater(HIBYTE(_WIN32_WINNT_WIN7), LOBYTE(_WIN32_WINNT_WIN7), 1);
+}
 
 #endif //VPLATFORM_WIN32_INCLUDED
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140707)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

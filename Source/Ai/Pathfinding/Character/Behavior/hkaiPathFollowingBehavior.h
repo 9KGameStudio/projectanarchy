@@ -16,7 +16,7 @@
 class hkaiWorld;
 
 	/// The default behavior class. Manages a single character, driving it towards the next segment.
-class hkaiPathFollowingBehavior : public hkaiSingleCharacterBehavior
+class HK_EXPORT_AI hkaiPathFollowingBehavior : public hkaiSingleCharacterBehavior
 {
 public:
 
@@ -31,7 +31,7 @@ public:
 	};
 	
 		/// Construction info
-	struct Cinfo
+	struct HK_EXPORT_AI Cinfo
 	{
 		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_AI_STEERING, hkaiPathFollowingBehavior::Cinfo);
 
@@ -41,6 +41,7 @@ public:
 			m_characterRadiusMultiplier(1.5f),
 			m_characterToPathStartThreshold(HK_REAL_MAX),
 			m_useSectionLocalPaths(false),
+			m_passiveAvoidance(false),
 			m_pathType(PATH_TYPE_NAVMESH)
 		{
 		}
@@ -62,6 +63,10 @@ public:
 			/// in order to follow paths with points connected to moving mesh sections. If you are certain
 			/// that your paths will be static, then it is slightly more efficient to leave this feature disabled.
 		hkBool m_useSectionLocalPaths;
+
+		/// If this is enabled, the character will move out of the way of 
+		/// other characters even while at its goal. 
+		hkBool m_passiveAvoidance;
 
 			/// Type of path to compute and follow, e.g. nav mesh, wall climbing, or nav volume.
 		hkEnum<PathType, hkUint8> m_pathType;
@@ -143,6 +148,11 @@ public:
 		/// Sets the character-to-path-start threshold. See also m_characterToPathStartThreshold.
 	inline void setCharacterToPathStartThreshold( hkReal t );
 
+	/// Gets whether the character will avoid other characters while at its goal
+	inline bool getPassiveAvoidance() { return m_passiveAvoidance; }
+	/// Sets whether the character will avoid other characters while at its goal
+	inline void setPassiveAvoidance(bool passiveAvoidance) { m_passiveAvoidance = passiveAvoidance; }
+
 
 		/// Evaluate the current path in world-space coordinates.
 		/// Returns false if there is no current path
@@ -178,32 +188,18 @@ public:
 
 	virtual hkaiCharacter::State getSavedCharacterState() HK_OVERRIDE { return m_savedCharacterState; }
 
-	virtual void getGoalPoints( hkArray<hkVector4>::Temp& goalsOut ) const HK_OVERRIDE;
-
 protected:
 
 	void handlePossibleNewPath();
 
-
-		/// Saved goal information.
-	struct RequestedGoalPoint
-	{
-		hkVector4 m_position;	
-		/// Runtime index of the section this goal point is attached to
-		hkaiRuntimeIndex m_sectionId;
-	};
-
 	void setPath(const hkaiCharacterUtil::ProcessedPath& path);
 
-	/// Refresh the fixed-space path, in case any of the local reference frames have moved.
+		/// Refresh the fixed-space path, in case any of the local reference frames have moved.
 	void refreshFixedPath( hkReal timestep );
 
 protected:
 		/// The path-following parameters
 	hkRefPtr<const hkaiPathFollowingProperties> m_pathFollowingProperties;
-
-		/// The goal points that were last requested, stored for repath requests
-	hkArray< RequestedGoalPoint > m_requestedGoalPoints;
 
 		/// The path that was requested/forced. This may be in local space.
 	hkRefPtr< hkaiPath > m_currentPath;
@@ -252,6 +248,10 @@ protected:
 		/// Whether the agent should request a repath during the next update().
 	hkBool m_needsRepath;
 
+		/// If this is enabled, the character will move out of the way of 
+		/// other characters even while at its goal. 
+	hkBool m_passiveAvoidance;
+
 	hkaiCharacter::State m_savedCharacterState;
 };
 
@@ -260,7 +260,7 @@ protected:
 #endif // HK_AI_PATHFOLLOW_BEHAVIOR_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -28,7 +28,7 @@ class hkaPose;
 class hkbFootIkModifier : public hkbModifier
 {
 	public:
-		// +version(3)
+		// +version(4)
 
 		HK_DECLARE_CLASS_ALLOCATOR( HK_MEMORY_CLASS_BEHAVIOR );
 		HK_DECLARE_REFLECTION();
@@ -270,6 +270,10 @@ class hkbFootIkModifier : public hkbModifier
 		hkBool m_useCharacterUpVector;  //+default(false)
 										//+hk.Description("Whether to use the character up-vector as the up-vector instead of world up vector. If this is set to true the rays are cast in the direction opposite to model up vector instead of in the direction of gravity. This is useful if you want the character to be in any orientation. When this is set to true you would probably want the m_hipOrientationGain to be zero and  m_alignWorldFromModelGain to be greater than zero.")
 
+			/// If true, foot source will be displaced upward if foot end penetrates ground.
+		hkBool m_keepSourceFootEndAboveGround;	//+default(true)
+												//+hk.Description("If true, the desired foot height will be displaced upward if foot end of the source animation penetrates ground.  This can be useful if blending animations causes the blended foot position to go below ground.  Uses legs' Foot End LS parameter.")
+
 		enum AlignMode
 		{
 				/// Align in the both forward and right direction.
@@ -356,7 +360,7 @@ class hkbFootIkModifier : public hkbModifier
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

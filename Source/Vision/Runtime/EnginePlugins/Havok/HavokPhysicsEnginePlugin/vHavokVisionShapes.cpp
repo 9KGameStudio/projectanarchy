@@ -24,7 +24,6 @@ const hkClass* hkvConvexVerticesShape::getClassType() const
   return &hkvConvexVerticesShapeClass;
 }
 
-
 // -------------------------------------------------------------------------- //
 // hkvBvCompressedMeshShape                                                
 // -------------------------------------------------------------------------- //
@@ -33,7 +32,6 @@ const hkClass* hkvBvCompressedMeshShape::getClassType() const
 {
   return &hkvBvCompressedMeshShapeClass;
 }
-
 
 // -------------------------------------------------------------------------- //
 // hkvSampledHeightFieldShape                                                
@@ -82,6 +80,30 @@ const hkClass* hkvSampledHeightFieldShape::getClassType() const
   return &hkvSampledHeightFieldShapeClass; 
 }
 
+// -------------------------------------------------------------------------- //
+// hkvSampledOffsetHeightFieldShape                                                
+// -------------------------------------------------------------------------- //
+
+hkvSampledOffsetHeightFieldShape::hkvSampledOffsetHeightFieldShape(const hkpSampledHeightFieldBaseCinfo& ci, const VTerrainSector* pSector, hkReal fHeightOffset)
+  : hkvSampledHeightFieldShape(ci, pSector)
+  , m_fHeightOffset(fHeightOffset)
+{
+}
+
+hkvSampledOffsetHeightFieldShape::hkvSampledOffsetHeightFieldShape(hkFinishLoadedObjectFlag flag)
+  : hkvSampledHeightFieldShape(flag)
+{
+}
+
+hkReal hkvSampledOffsetHeightFieldShape::getHeightAtImpl(int x, int z) const
+{
+  return hkvSampledHeightFieldShape::getHeightAtImpl(x, z) + m_fHeightOffset;
+}
+
+const hkClass* hkvSampledOffsetHeightFieldShape::getClassType() const
+{
+  return &hkvSampledOffsetHeightFieldShapeClass;
+}
 
 // -------------------------------------------------------------------------- //
 // hkvTriSampledHeightFieldCollection                                                
@@ -190,7 +212,7 @@ const hkClass* hkvTriSampledHeightFieldBvTreeShape::getClassType() const
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -10,9 +10,9 @@
 
 #include <Common/SceneData/Material/hkxMaterialShader.h>
 
-extern const class hkClass hkxMaterialShaderSetClass;
+extern HK_EXPORT_COMMON const class hkClass hkxMaterialShaderSetClass;
 
-class hkxMaterialShaderSet : public hkReferencedObject
+class HK_EXPORT_COMMON hkxMaterialShaderSet : public hkReferencedObject
 {
 	//+vtable(true)
 	//+version(1)
@@ -35,7 +35,7 @@ class hkxMaterialShaderSet : public hkReferencedObject
 #endif // HKSCENEDATA_MATERIAL_HKXMATERIALSHADERSET_HKCLASS_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

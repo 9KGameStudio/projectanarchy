@@ -11,6 +11,7 @@
 #ifndef HK_ARM_THREAD_SYNC__H
 #define HK_ARM_THREAD_SYNC__H
 
+#ifdef HK_ARCH_ARM
 #define hkArmMemBarrier() __asm__ __volatile__("dmb": : :"memory")
 
 // Intrinic like ver of LDREX (handy for more readable code)
@@ -42,12 +43,6 @@ inline hkUint32 hk_strex(hkUint32 s, volatile hkUint32* v)
 	return ret;
 }	
 
-inline hkUint32 hk_threadid()
-{
-    pthread_t tid = pthread_self();
-    return (hkUint32) tid;
-}	
-
 inline hkUint32 hk_atomic_add(volatile hkUint32* ptr, hkInt32 value)
 {
 	hkUint32 o;
@@ -63,10 +58,20 @@ inline hkUint32 hk_atomic_add(volatile hkUint32* ptr, hkInt32 value)
 	return o;
 }
 
+#endif // :Arm only
+// x86/Arm agnostic:
+#include <pthread.h>
+inline hkUint32 hk_threadid()
+{
+    pthread_t tid = pthread_self();
+    return (hkUint32) tid;
+}	
+
+
 #endif /* HK_ARM_THREAD_SYNC__H */
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140625)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -169,7 +169,7 @@ public:
   /// \brief
   ///   Overridden VRefCounter function that only deletes this object if it does not have the
   ///   VIS_OBJECTCOMPONENTFLAG_STATICMEMBER flag
-  VISION_APIFUNC VOVERRIDE void DeleteThis();
+  VISION_APIFUNC virtual void DeleteThis() HKV_OVERRIDE;
 
   /// \brief
   ///   Overridden MessageFunction function that clears the functionality of
@@ -188,7 +188,7 @@ public:
   ///   message data value
   /// 
   /// \sa VisTypedEngineObject_cl::MessageFunction
-  VOVERRIDE void MessageFunction(int iID, INT_PTR iParamA, INT_PTR iParamB) {}
+  virtual void MessageFunction(int iID, INT_PTR iParamA, INT_PTR iParamB) HKV_OVERRIDE {}
 
   /// \brief
   ///   Overridable that is called to test whether this instance should be serialized with a
@@ -196,9 +196,9 @@ public:
   /// 
   /// The default implementation tests the component flags for the
   /// VIS_OBJECTCOMPONENTFLAG_NOSERIALIZE flag.
-  VISION_APIFUNC virtual bool IsRelevantForSerialization() const 
+  VISION_APIFUNC virtual bool IsRelevantForSerialization() const
   {
-    return (m_iComponentFlags&VIS_OBJECTCOMPONENTFLAG_NOSERIALIZE)==0;
+    return (m_iComponentFlags & VIS_OBJECTCOMPONENTFLAG_NOSERIALIZE) == 0;
   }
 
   /// \brief
@@ -324,7 +324,7 @@ public:
 #endif  // VISAPIOBJECTCOMPONENT_HPP_INCLUDED
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -29,7 +29,7 @@
 ///
 ///\see
 ///  VFmodEventGroup
-class VFmodEvent : public VisObject3D_cl
+class VFmodEvent : public VisObject3D_cl, protected IVisCallbackHandler_cl
 {
 public:
 
@@ -41,8 +41,6 @@ public:
   FMOD_IMPEXP VFmodEvent();
 
   FMOD_IMPEXP VFmodEvent(const char *szEventName, VFmodEventCollection *pOwner, VFmodEventGroup *pEventGroup, const hkvVec3 &vPos, int iFlags=VFMOD_FLAG_NONE);
-
-  FMOD_IMPEXP VFmodEvent(int iEventIndex, VFmodEventCollection *pOwner, VFmodEventGroup *pEventGroup, const hkvVec3 &vPos, int iFlags=VFMOD_FLAG_NONE);
 
   FMOD_IMPEXP virtual ~VFmodEvent();
 
@@ -250,9 +248,6 @@ public:
   /// @{
   ///
 
-  // overridden VisObject3D_cl notification. Used to update event's position/orientation
-  FMOD_IMPEXP VOVERRIDE void OnObject3DChanged(int iO3DFlags);
-
   // triggered when event is destroyed
   FMOD_IMPEXP VOVERRIDE void OnDisposeObject();
 
@@ -322,7 +317,7 @@ public:
   void Reset(); 
 
   // Updates the event, only for internal use (+vForge)
-  FMOD_IMPEXP void Update(bool bForceUpdate=false);
+  FMOD_IMPEXP void Update(float fTimeDelta, bool bForceUpdate=false);
 
   // Sets the play-status of the event
   void SetPlaying(bool bStatus); 
@@ -331,7 +326,12 @@ public:
   /// @}
   ///
 
-private: 
+protected:
+
+  FMOD_IMPEXP virtual void OnHandleCallback(IVisCallbackDataObject_cl *pData) HKV_OVERRIDE;
+
+private:
+
   friend class VFmodManager;
   friend class VFmodEventCollection;
 
@@ -346,6 +346,8 @@ private:
   bool m_bPlayedOnce;
   bool m_bInfoOnly;
   bool m_bStartPlayback;
+
+  hkvVec3 m_vLastPosition;
 };
 
 
@@ -356,7 +358,7 @@ class VFmodEventCollection : public VRefCountedCollection<VFmodEvent>
 public:
   /// \brief
   ///   Internal function for updating all events in this collection
-  FMOD_IMPEXP void Update();
+  FMOD_IMPEXP void Update(float fTimeDelta);
 
   /// \brief
   ///   Removes all events from this collection that can be disposed (i.e. not playing anymore and VFMOD_FLAG_NODISPOSE flag not set)
@@ -402,7 +404,7 @@ public:
 #endif // VFMODEVENT_HPP_INCLUDED
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -28,8 +28,9 @@
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Scripting/VScriptIncludes.hpp>
 #include <Vision/Runtime/EnginePlugins/Havok/HavokPhysicsEnginePlugin/VLineFollowerComponent.hpp>
 #include <Vision/Runtime/EnginePlugins/Havok/HavokPhysicsEnginePlugin/VFpsCameraEntity.hpp>
+#include <Vision/Runtime/EnginePlugins/Havok/HavokPhysicsEnginePlugin/IvHavokForcesQuerierComponent.hpp>
 
-#include <Vision/Runtime/Base/System/Memory/VMemDbg.hpp> // redefines new (have to include AFTER Havok headers as they define per class new which will not work if 'new' is #defined to something else
+ // redefines new (have to include AFTER Havok headers as they define per class new which will not work if 'new' is #defined to something else
 
 // ***********************************************************************************************
 // A Vision plugin that uses Havok for physics
@@ -112,42 +113,6 @@ class VInitHavokPhysicsEngineCallBack : public IVisCallbackHandler_cl
       EnsureHavokScriptRegistration();
       return;
     }
-    if (pData->m_pSender==&IVScriptManager::OnScriptProxyCreation)
-    {
-      VScriptCreateStackProxyObject * pScriptData = (VScriptCreateStackProxyObject *)pData;
-
-      //process data only as far as not handled until now
-      if(!pScriptData->m_bProcessed)
-      {
-        int iRetParams = 0;
-
-        if(pScriptData->m_pInstance->IsOfType(V_RUNTIME_CLASS(vHavokCharacterController)))
-        {
-          //call lua cast function for vHavokCharacterController which will push the result on the stack top
-          iRetParams = LUA_CallStaticFunction(pScriptData->m_pLuaState, "Physics",
-            "vHavokCharacterController", "Cast", "C>C", pScriptData->m_pInstance);
-        }
-        else if(pScriptData->m_pInstance->IsOfType(V_RUNTIME_CLASS(vHavokRigidBody)))
-        {
-          //call lua cast function for vHavokRigidBody which will push the result on the stack top
-          iRetParams = LUA_CallStaticFunction(pScriptData->m_pLuaState, "Physics", 
-            "vHavokRigidBody", "Cast", "C>C", pScriptData->m_pInstance);
-        }
-        else if (pScriptData->m_pInstance->IsOfType(V_RUNTIME_CLASS(vHavokRagdoll)))
-        {
-          //call lua cast function for vHavokRagdoll which will push the result on the stack top
-          iRetParams = LUA_CallStaticFunction(pScriptData->m_pLuaState, "Physics", 
-            "vHavokRagdoll", "Cast", "C>C", pScriptData->m_pInstance);
-        }
-
-        if(iRetParams>0)
-        {
-          if(lua_isnil(pScriptData->m_pLuaState, -1))   lua_pop(pScriptData->m_pLuaState, iRetParams);
-          else                                          pScriptData->m_bProcessed = true;
-        }
-      }
-      return;
-    }
     else 
     {
       if (pData->m_pSender == &Vision::Callbacks.OnEngineDeInit)
@@ -170,7 +135,6 @@ void vHavok_cl::OnInitEnginePlugin()
   Vision::Callbacks.OnEngineDeInit.RegisterCallback(&cbInit);
 
   IVScriptManager::OnRegisterScriptFunctions.RegisterCallback(&cbInit);
-  IVScriptManager::OnScriptProxyCreation.RegisterCallback(&cbInit);
 
   Vision::RegisterModule(&g_vHavokModule);
 
@@ -201,12 +165,14 @@ void vHavok_cl::OnInitEnginePlugin()
 
   EnsureHavokScriptRegistration();
 
-  return;
+  Vision::ResourceSystem.RegisterResourceManager(&vHavokOpacityMapManager::GetManager(), VColorRef(255, 0, 255));
 }
 
 // de-initialize the plugin
 void vHavok_cl::OnDeInitEnginePlugin()
 {
+  Vision::ResourceSystem.UnregisterResourceManager(&vHavokOpacityMapManager::GetManager());
+
   // Unregister the physics module before the plugin is unloaded.
   // Necessary since the engine will otherwise reference garbage memory.
   IVisAppPtr spApp =  Vision::GetApplication();
@@ -219,7 +185,6 @@ void vHavok_cl::OnDeInitEnginePlugin()
   Vision::Callbacks.OnEngineDeInit.DeregisterCallback(&cbInit);
 
   IVScriptManager::OnRegisterScriptFunctions.DeregisterCallback(&cbInit);
-  IVScriptManager::OnScriptProxyCreation.DeregisterCallback(&cbInit);
 
   // Unregister the Havok module with the vision engine action manager
   VActionManager *pManager = Vision::GetActionManager();
@@ -247,7 +212,7 @@ static void EnsureHavokScriptRegistration()
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

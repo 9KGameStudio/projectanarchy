@@ -18,12 +18,13 @@ extern VProgressStatus g_DiscardProgress;
 
 
 VSkyLayer::VSkyLayer() 
-  : m_vColor(1.f,1.f,1.f,1.f), m_vTextureTransform(1.f,1.f,0.f,0.f),
-  m_pOwnerSky(NULL)
+  : m_pOwnerSky(NULL)
+  , m_vColor(1.0f, 1.0f, 1.0f, 1.0f)
+  , m_vTextureTransform(1.0f, 1.0f, 0.0f, 0.0f)
 {
   SetMapping(VIS_SKYMAPPING_SPHERICAL);
   SetHeightScale(2.5f);
-  SetHeightPos(0.f);
+  SetHeightPos(0.0f);
 }
 
 
@@ -156,7 +157,7 @@ void VSkyLayer::SerializeX( VArchive &ar )
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

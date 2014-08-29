@@ -55,7 +55,7 @@ class hkbUtils
 			/// \param flags Can include FLAG_GENERATORS_ONLY and/or FLAG_IGNORE_REFERENCED_BEHAVIORS.
 			/// \param nodeInfo The returned list of nodes and some information about each one.
 		static void HK_CALL collectNodesLeafFirst(	hkbNode* rootNode, 
-													hkbBehaviorGraph* behavior,
+													const hkbBehaviorGraph* behavior,
 													hkbNode::GetChildrenFlags flags, 
 													hkArray<NodeBehaviorPair>::Temp& nodeInfoOut );
 
@@ -70,7 +70,7 @@ class hkbUtils
 			/// a shallow clone of a behavior graph then it will return template nodes, not the cloned nodes.
 		static void HK_CALL collectNodesByClass(	const hkClass& klass,
 													hkbNode* rootNode, 
-													hkbBehaviorGraph* rootBehavior,
+													const hkbBehaviorGraph* rootBehavior,
 													hkbNode::GetChildrenFlags flags, 
 													hkArray<hkbNode*>::Temp& nodesTemplates );
 
@@ -120,8 +120,16 @@ class hkbUtils
 			/// are not considered duplicates and both will be present in the output queue.
 		static void HK_CALL removeDuplicateEvents( hkbEventQueue& queue );
 
-			/// Gather info telling which events and variables are available in the graph right now.
-		static void HK_CALL getActiveEventsAndVariables( hkbWorld* world, hkbCharacter* character, hkArray<hkInt16>& activeEvents, hkArray<hkInt16>& activeVariables );
+			/// Apply an ID map to the symbols in symbolsIn and put the mapped symbols into symbolsOut.
+		static void HK_CALL applyIdMap( const class hkbSymbolIdMap* idMap, const hkPointerMap<int,bool>& symbolsIn, hkPointerMap<int,bool>& symbolsOut, bool externalToInternal );
+
+			/// Copy symbols from a map to an array.
+		static void HK_CALL copyMapToArray( const hkPointerMap<int,bool>& symbolsIn, hkArray<hkInt16>& symbolsOut );
+
+			// All our gains are usually used to smoothly correct positions and rotations with an
+			// exponential effect. When the timestep is scaled, the gains must be adjusted consistently so that if the timestep is one third
+			// of what it was before, the position on frame 9 is the same as it was on frame 3 before with a scaled gain B.
+		static hkReal HK_CALL calcTimeDeltaAdjustedGain( hkReal gain, hkReal currentTimestep, hkReal baseTimestep );
 
 	private:
 
@@ -133,16 +141,10 @@ class hkbUtils
 
 			/// A recursive helper class for collectNodesLeafFirst.
 		static void HK_CALL collectNodesLeafFirstInternal(	hkbNode* rootNode,
-															hkbBehaviorGraph* behavior,
+															const hkbBehaviorGraph* behavior,
 															hkbNode::GetChildrenFlags flags,
 															hkArray<NodeBehaviorPair>::Temp& nodeInfo,
 															hkPointerMap<const hkbNode*,int>& nodeToIndexMap );
-
-			/// Apply an ID map to the symbols in symbolsIn and put the mapped symbols into symbolsOut.
-		static void HK_CALL applyIdMap( const class hkbSymbolIdMap* idMap, const hkPointerMap<int,bool>& symbolsIn, hkPointerMap<int,bool>& symbolsOut, bool externalToInternal );
-
-			/// Copy symbols from a map to an array.
-		static void HK_CALL copyMapToArray( const hkPointerMap<int,bool>& symbolsIn, hkArray<hkInt16>& symbolsOut );
 
 			/// A recursive helper class for collectActiveNodes.
 		static void HK_CALL collectActiveNodesInternal( const hkbContext& context, hkbNode* rootNode, hkArray<hkbNodeInfo*>& nodeClones );
@@ -170,7 +172,7 @@ HK_FORCE_INLINE int hkbUtils::convertInternalIdToInternalId(	const hkbSymbolIdMa
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -20,6 +20,15 @@ HK_FORCE_INLINE hkBlockStream<T>::hkBlockStream()
 {}
 
 template<typename T>
+HK_FORCE_INLINE hkBlockStream<T>::hkBlockStream(const hkBlockStream&)
+:	hkBlockStreamBase::Stream()
+{
+	HK_ASSERT(0xaf142e10, !"not impl");
+}
+
+
+
+template<typename T>
 HK_FORCE_INLINE hkBlockStream<T>::~hkBlockStream()
 {}
 
@@ -104,6 +113,12 @@ HK_FORCE_INLINE	T2*  hkBlockStream<T>::Writer::reserve( int numBytes )
 }
 
 template <typename T>
+HK_FORCE_INLINE	int  hkBlockStream<T>::Writer::getBlockBytesLeft(  ) const
+{
+	return hkBlockStreamBase::Writer::getBlockBytesLeft();
+}
+
+template <typename T>
 HK_FORCE_INLINE bool hkBlockStream<T>::Writer::isValid()
 {
 	return m_blockStream != HK_NULL;
@@ -167,6 +182,13 @@ HK_FORCE_INLINE	T2*  hkBlockStream<T>::Modifier::advanceAndAccessNext( int thisE
 }
 
 template <typename T>
+template <typename T2>
+HK_FORCE_INLINE	T2*  hkBlockStream<T>::Modifier::batchAdvanceAndAccessNext( unsigned int count, int thisElemSize )
+{
+	return (T2*)hkBlockStreamBase::Modifier::batchAdvanceAndAccessNext(count, thisElemSize);
+}
+
+template <typename T>
 HK_FORCE_INLINE	T*  hkBlockStream<T>::Modifier::access()
 { 
 	return (T*)hkBlockStreamBase::Modifier::access(); 
@@ -204,7 +226,7 @@ HK_FORCE_INLINE const T* hkBlockStream<T>::Consumer::consumeAndAccessNext( const
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

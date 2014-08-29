@@ -181,6 +181,44 @@ namespace Editor.Shapes
 
           iSuccess++;
 
+          // special treatment for array
+          if (prop.PropertyType.IsArray && entry.HasSubProperties)
+          {
+            List<object> array = new List<object>();
+            Dictionary<string, PropertyEntry>.ValueCollection elements = entry.SubProperties.Values;
+            foreach (PropertyEntry arrayElemEntry in elements)
+            {
+              Type elemType = prop.PropertyType.GetElementType();
+              // Get TypeByName is not necessary here as we already have the type
+              // and resolving by name can lead to wrong types when the type name is not unique (as in Vector3F).
+              // this.GetTypeByName(arrayElemEntry.ValueString, typeof(object), ThrowExceptions);
+              object arrayElem = Activator.CreateInstance(elemType);
+              if (arrayElem != null)
+              {
+                RecursiveParseProperties(arrayElem, arrayElemEntry.SubProperties);
+              }
+              // fill up:
+              for (int i = array.Count; i < arrayElemEntry.ArrayElementIndex; i++)
+                array.Add(null);
+              array.Add(arrayElem);
+            }
+            
+            // set the array
+            object[] args = new object[] { array.Count };
+            object targetArrayObj = Activator.CreateInstance(prop.PropertyType, args);
+            {
+              Array targetArrayArr = (Array)targetArrayObj;
+              for (int i = 0; i < array.Count; ++i)
+              {
+                targetArrayArr.SetValue(array[i], i);
+              }
+            }
+            
+            prop.SetValue(target, targetArrayObj, null);
+
+            continue;
+          }
+
           // convert string value to object
           object newValue = SerializationHelper.GetObjectFromStringData(prop.PropertyType, entry.ValueString, ",");
 
@@ -191,7 +229,7 @@ namespace Editor.Shapes
               object[] isFilename = prop.GetCustomAttributes(typeof(PrefabResolveFilenameAttribute), false);
               if (isFilename != null && isFilename.Length > 0)
               {
-                //ensure that only backslashes are in the string. Otherwise could have mixed back and frontslashes in the string
+                //ensure that only backslashes are in the string. Otherwise could have mixed back and forward slashes in the string
                 newValue = ((string)newValue).Replace("/", @"\");
                 newValue = Path.Combine(FilenameResolvePath, (string)newValue);
                 newValue = FileHelper.ResolveFilename((string)newValue);
@@ -294,7 +332,7 @@ namespace Editor.Shapes
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -12,7 +12,7 @@
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Scripting/RSDClient/VRSDLuaImplementation.hpp>
 #include <Vision/Runtime/Base/RemoteComm/VTarget.hpp>
 #include <Vision/Runtime/Engine/SceneElements/VisApiObjectComponentCollection.hpp>
-#include <Vision/Runtime/Base/System/Memory/VMemDbg.hpp>
+
 
 int PROFILING_SCRIPTING       = 0;
 int PROFILING_SCRIPTOBJ_TICK  = 0;
@@ -34,10 +34,6 @@ VisCallback_cl VScriptResourceManager::OnUserDataSerialize;
 
 #if defined(__ghs__)
 #pragma ghs nowarning 550
-#endif
-
-#if defined(WIN32) && !defined(_VISION_WINRT)
-static bool bIgnoreErrors = false;
 #endif
 
 #if defined(__SNC__)
@@ -90,8 +86,6 @@ void VScriptResourceManager::SetScriptInstance( VisTypedEngineObject_cl *pObj, I
   }
   else
   {
-    //pInst->AddRef(); //so detaching doesn't free the object
-    
     //detach the instance if already attached to an component
     VScriptComponent* pOldParentComponent = (VScriptComponent*) spInst->GetParentComponent();
     if (pOldParentComponent)
@@ -104,11 +98,34 @@ void VScriptResourceManager::SetScriptInstance( VisTypedEngineObject_cl *pObj, I
   if (spInst)
   {
     VASSERT(spInst->GetParentComponent() == pComp);
-//    if (pInst)
-//      pInst->Release();
-   }
+  }
 }
 
+bool VScriptResourceManager::LuaErrorCheckGetError(lua_State *L, int iStatus, VMemoryTempBuffer<512>* pErrorBuffer)
+{
+  if (iStatus==0 || iStatus==LUA_YIELD )
+    return true;
+
+  const char *szErrorLatin1 = lua_tostring(L, -1);
+  bool bValidateOk = true;
+
+  if(szErrorLatin1 != NULL) 
+  {
+    // LUA does not natively support unicode (utf8). Assume LATIN-1 encoding.
+    const int iErrorStrSize = VString::ConvertLatin1ToUTF8(szErrorLatin1, static_cast<int>(strlen(szErrorLatin1)), NULL, 0);
+    pErrorBuffer->EnsureCapacity(iErrorStrSize+1);
+    char* szLocalErrorMsg = reinterpret_cast<char*>(pErrorBuffer->GetBuffer());
+
+    VString::ConvertLatin1ToUTF8(szErrorLatin1, static_cast<int>(strlen(szErrorLatin1)), szLocalErrorMsg, iErrorStrSize);
+    szLocalErrorMsg[iErrorStrSize] = '\0';
+
+    bValidateOk = false;
+  }
+
+  lua_pop(L, 1); // remove error message
+
+  return bValidateOk;
+}
 
 bool VScriptResourceManager::LuaErrorCheck(lua_State *L, int status, hkvLogInterface* pLog) 
 {
@@ -142,15 +159,15 @@ bool VScriptResourceManager::LuaErrorCheck(lua_State *L, int status, hkvLogInter
 
   lua_pop(L, 1); // remove error message
 
-#if defined(WIN32) && !defined(_VISION_WINRT)
+#if defined(_VISION_WIN32) && !defined(_VISION_WINRT)
 
-  // If a script error occurs and the user is currently in the editor we ask him if he wants to launch the script debugger
-  // We give him the option to ignore the error as well as all future errors in this session
+  // If a script error occurs and the user is currently in the editor we ask them if they want to launch the script debugger
+  // We give them the option to ignore the error as well as all future errors in this session
   //
   // Note: Skip syntax errors, since we won't get a callstack for them.
   if(!VRSDClient::GetGlobalClient().IsConnected() && Vision::Editor.IsInEditor() && status != LUA_ERRSYNTAX && Vision::Editor.IsAnimatingOrPlaying())
   {
-    // Ask the user if he wants to connect to the remote debugger
+    // Ask the user if they want to connect to the remote debugger
     VString Setting;
     bool bShouldAsk = true;
     if(Vision::Game.GetSettingsMap().Get("AskForDebuggerOnScriptError", Setting))
@@ -159,18 +176,22 @@ bool VScriptResourceManager::LuaErrorCheck(lua_State *L, int status, hkvLogInter
         bShouldAsk = false;
     }
 
-    if(!bIgnoreErrors && bShouldAsk)
+    if(!s_bIgnoreErrors && !s_bIgnoreEventsThisRun && bShouldAsk)
     {
       VString ErrorMsg("A Lua script error occurred!\n\n");
       ErrorMsg += szError;
-      ErrorMsg += "\n\nPress 'Retry' to start the script debugger.\nPress 'Abort' to ignore the error once.\nPress 'Ignore' to ignore the error for this run.";
+      ErrorMsg += "\n\nPress 'Abort' to stop the editor playing mode (in vForge only).\nPress 'Retry' to start the script debugger.\nPress 'Ignore' to ignore the error for this run.";
 
       int RetValue = MessageBox(Vision::Video.GetCurrentConfig()->m_hWnd, ErrorMsg, "Script Error", MB_ABORTRETRYIGNORE | MB_ICONEXCLAMATION | MB_DEFBUTTON2);
 
       if(RetValue == IDIGNORE)
-        bIgnoreErrors = true;
+        s_bIgnoreErrors = true;
       else if(RetValue == IDABORT)
+      {
+        Vision::Editor.ChangeMode(VisEditorManager_cl::EDITORMODE_NONE);
+        s_bIgnoreEventsThisRun = true;
         return false;
+      }
       else
       {
         // make sure the target system is initialized
@@ -250,7 +271,7 @@ bool VScriptResourceManager::LuaErrorCheck(lua_State *L, int status, hkvLogInter
 #endif
 
   // Send the error event to the remote debugger if connected
-  if(VRSDClient::GetGlobalClient().IsConnected())
+  if(!s_bIgnoreEventsThisRun && VRSDClient::GetGlobalClient().IsConnected())
   {
     // get information about activation from lua
     lua_Debug AR;
@@ -358,6 +379,9 @@ void VScriptResourceManager::DiscardThread(lua_State* pLuaState)
 
 VScriptResourceManager VScriptResourceManager::g_GlobalManager;
 
+bool VScriptResourceManager::s_bIgnoreErrors = false;
+bool VScriptResourceManager::s_bIgnoreEventsThisRun = false;
+
 VScriptResourceManager::VScriptResourceManager()
   : VisResourceManager_cl("Scripts", VRESOURCEMANAGERFLAG_SHOW_IN_VIEWER)
   , IVScriptManager()
@@ -367,10 +391,12 @@ VScriptResourceManager::VScriptResourceManager()
   , m_iGameScriptFunctions(0)
   , m_iSceneScriptFunctions(0)
 {
+  VTypedObject::OnObjectDeleted += &VScriptResourceManager::GlobalManager();
 }
 
 VScriptResourceManager::~VScriptResourceManager()
 {
+  VTypedObject::OnObjectDeleted -= &VScriptResourceManager::GlobalManager();
 }
 
 
@@ -453,7 +479,7 @@ void VScriptResourceManager::OneTimeInit()
   Vision::Callbacks.OnAfterSceneLoaded += this;
   Vision::Callbacks.OnAfterSceneUnloaded += this;
   Vision::Callbacks.OnBeforeSceneUnloaded += this;
-#if defined(WIN32)
+#if defined(_VISION_WIN32)
   Vision::Callbacks.OnEditorModeChanged += this;
 #endif
   Vision::Callbacks.OnUpdateSceneBegin += this;
@@ -496,6 +522,12 @@ void VScriptResourceManager::OneTimeInit()
   // Vision specific libs
   VLUA_OpenLibraries(m_pMasterState);
 
+  // Create new table to use for globals
+  lua_pushvalue(m_pMasterState, LUA_GLOBALSINDEX);         // GLOBAL_IDX
+  lua_pushliteral(m_pMasterState, "G");                    // GLOBAL_IDX, 'G'
+  lua_newtable(m_pMasterState);                            // GLOBAL_IDX, 'G', table
+  lua_rawset(m_pMasterState, -3);                          // GLOBAL_IDX
+  lua_pop(m_pMasterState, 1);
 
   VRSDClient::GetGlobalClient().RegisterCallbacks();
   VRSDClient::GetGlobalClient().SetClientLanguageImplementation(new VRSDClientLuaImplementation());
@@ -515,7 +547,7 @@ void VScriptResourceManager::OneTimeDeInit()
   
   Vision::ResourceSystem.UnregisterResourceManager(this);
   Vision::Callbacks.OnWorldDeInit -= this;
-  #if defined(WIN32)
+  #if defined(_VISION_WIN32)
   Vision::Callbacks.OnEditorModeChanged -= this;
   #endif
   Vision::Callbacks.OnUpdateSceneBegin -= this;
@@ -561,12 +593,29 @@ VScriptResource* VScriptResourceManager::LoadScriptFile(const char *szFilename)
   return pRes;
 }
 
+int64 VScriptResourceManager::GetCallbackSortingKey(VCallback *pCallback)
+{
+  if(pCallback == &Vision::Callbacks.OnBeforeSceneLoaded   ||
+     pCallback == &Vision::Callbacks.OnAfterSceneLoaded    ||
+     pCallback == &Vision::Callbacks.OnUpdateSceneBegin    ||
+     pCallback == &Vision::Callbacks.OnUpdateSceneFinished ||
+     pCallback == &Vision::Callbacks.OnVideoChanged          )
+  {
+    return 0x8000000000000000LL; // int64 min
+  }
+  if(pCallback == &Vision::Callbacks.OnBeforeSceneUnloaded ||
+     pCallback == &Vision::Callbacks.OnAfterSceneUnloaded    )
+  {
+    return 0x7FFFFFFFFFFFFFFFLL; // int64 max
+  }
+  return 0;
+}
 
 void VScriptResourceManager::OnHandleCallback(IVisCallbackDataObject_cl *pData)
 {
   VISION_PROFILE_FUNCTION(PROFILING_SCRIPTING);  //TODO: Different element for tracking callbacks?
 
-  if (pData->m_pSender==&Vision::Callbacks.OnUpdateSceneBegin)
+  if (pData->m_pSender == &Vision::Callbacks.OnUpdateSceneBegin)
   {
     if (!IsPaused()&&(!Vision::Editor.IsInEditor()||Vision::Editor.GetMode()>=(int)VisEditorManager_cl::EDITORMODE_PLAYING_IN_EDITOR))
     {
@@ -616,7 +665,7 @@ void VScriptResourceManager::OnHandleCallback(IVisCallbackDataObject_cl *pData)
     return;
   }
 
-  if (pData->m_pSender==&Vision::Callbacks.OnUpdateSceneFinished)
+  if (pData->m_pSender == &Vision::Callbacks.OnUpdateSceneFinished)
   {
     if (!IsPaused()&&(!Vision::Editor.IsInEditor()||Vision::Editor.GetMode()>=(int)VisEditorManager_cl::EDITORMODE_PLAYING_IN_EDITOR))
     {
@@ -628,17 +677,18 @@ void VScriptResourceManager::OnHandleCallback(IVisCallbackDataObject_cl *pData)
     return;
   }
 
-  if (pData->m_pSender==&Vision::Callbacks.OnWorldDeInit)
+  if (pData->m_pSender == &Vision::Callbacks.OnWorldDeInit)
   {
     int iRemaining = m_Instances.Count();
     
     if (m_Instances.m_bAnyFlaggedForDisposal)
       m_Instances.RemoveFlagged(); // almost all should be flagged
     iRemaining = m_Instances.Count();
+
     return;
   }
 
-  if (pData->m_pSender==&Vision::Callbacks.OnVideoChanged)
+  if (pData->m_pSender == &Vision::Callbacks.OnVideoChanged)
   {
     if (!IsPaused() && (!Vision::Editor.IsInEditor() || Vision::Editor.GetMode() >= (int) VisEditorManager_cl::EDITORMODE_PLAYING_IN_EDITOR))
     {
@@ -652,9 +702,11 @@ void VScriptResourceManager::OnHandleCallback(IVisCallbackDataObject_cl *pData)
   // The script manager should only react to editor mode changes on Windows (e.g. in vForge)
   // The console clients get the change message only once (to change from not playing to playing mode)
   // thus cleanup of things isn't necessary and changes variables created by OnSerialize calls
-#if defined(WIN32)
-  if (pData->m_pSender==&Vision::Callbacks.OnEditorModeChanged)
+#if defined(_VISION_WIN32)
+  if (pData->m_pSender == &Vision::Callbacks.OnEditorModeChanged)
   {
+    s_bIgnoreEventsThisRun = false;
+
     // any resources changed by the editor?
     VisEditorModeChangedDataObject_cl *pModeObj = (VisEditorModeChangedDataObject_cl *)pData;
    
@@ -665,49 +717,39 @@ void VScriptResourceManager::OnHandleCallback(IVisCallbackDataObject_cl *pData)
      || pModeObj->m_eOldMode==VisEditorManager_cl::EDITORMODE_PLAYING_IN_GAME
       )
     {
+      for (int i = 0; i<GetResourceCount(); i++)
+      {
+        VManagedResource *pRes = GetResourceByIndex(i);
+        if(pRes != NULL)
+          pRes->Unload();
+      }
+
+      // Clear the "G" table
+      lua_getfield(m_pMasterState, LUA_GLOBALSINDEX, "G");     // G
+      lua_pushnil(m_pMasterState);                             // G, nil
+
+      while (lua_next(m_pMasterState, -2))                     // G, key, value
+      {
+        lua_pop(m_pMasterState, 1);                            // G, key
+        lua_pushvalue(m_pMasterState, -1);                     // G, key, key
+        lua_pushnil(m_pMasterState);                           // G, key, key, nil
+        lua_rawset(m_pMasterState, -4);                        // G, key
+      }
+
+      lua_pop(m_pMasterState, 1);                              // <empty>
+
       for (int i=0; i<GetResourceCount(); i++)
       {
         VManagedResource *pRes = GetResourceByIndex(i);
         if(pRes != NULL)
-          pRes->UnloadAndReload(VURO_COLD_RELOAD);
+          pRes->Reload();
       }
-    }
-    
-    if (pModeObj->m_eNewMode==VisEditorManager_cl::EDITORMODE_PLAYING_IN_EDITOR
-     || pModeObj->m_eNewMode==VisEditorManager_cl::EDITORMODE_PLAYING_IN_GAME)
-    {
-      //dump globals of all resources
-      int iResourceCount = GetResourceCount();
-      int iActualResourceCount = 0;
-      int iNumGlobals = 0;
-      for(int i = 0; i < iResourceCount; i++)
-      {
-        VScriptResource* pResource = static_cast<VScriptResource*>(GetResourceByIndex(i));
-        if (pResource == NULL)
-          continue;
-
-        iNumGlobals += DumpVisionGlobals(pResource->m_pResourceState);
-        ++iActualResourceCount;
-      }
-      
-      //dump overall globals
-      iNumGlobals += DumpVisionGlobals(m_pMasterState);
-
-      if(iResourceCount > 0)
-        hkvLog::Dev("Scripting: Dumped unused globals in %d resources, %d globals are still in use.", iActualResourceCount, iNumGlobals);
-
-      //also reset the mapping of obj-pointer - to - wrapper
-      LUA_ResetWrapperLookupTable(m_pMasterState);
-
-#if defined(WIN32) && !defined(_VISION_WINRT)
-      bIgnoreErrors = false;
-#endif
     }
     return;
   }
 #endif
 
-  if (pData->m_pSender==&Vision::Callbacks.OnEngineDeInit)
+  if (pData->m_pSender == &Vision::Callbacks.OnEngineDeInit)
   {
     SetSceneScript(NULL);
     SetGameScript(NULL);
@@ -716,12 +758,12 @@ void VScriptResourceManager::OnHandleCallback(IVisCallbackDataObject_cl *pData)
     return;
   }
 
-  if (pData->m_pSender==&Vision::Callbacks.OnBeforeSceneLoaded)
+  if (pData->m_pSender == &Vision::Callbacks.OnBeforeSceneLoaded)
   {
     //perform a full garbage collection cycle before loading the scene
     //(getting rid of object generated in 'OnExpose')
     if(m_pMasterState)
-      lua_gc(m_pMasterState,LUA_GCCOLLECT, 0);
+      lua_gc(m_pMasterState, LUA_GCCOLLECT, 0);
 
     if (m_spGameScript)  m_spGameScript->ExecuteFunction("OnBeforeSceneLoaded");
     if (m_spSceneScript) m_spSceneScript->ExecuteFunction("OnBeforeSceneLoaded");
@@ -729,7 +771,7 @@ void VScriptResourceManager::OnHandleCallback(IVisCallbackDataObject_cl *pData)
     return;
   }
 
-  if (pData->m_pSender==&Vision::Callbacks.OnAfterSceneLoaded)
+  if (pData->m_pSender == &Vision::Callbacks.OnAfterSceneLoaded)
   {
     if (m_spGameScript)  m_spGameScript->ExecuteFunction("OnAfterSceneLoaded");
     if (m_spSceneScript) m_spSceneScript->ExecuteFunction("OnAfterSceneLoaded");
@@ -737,7 +779,7 @@ void VScriptResourceManager::OnHandleCallback(IVisCallbackDataObject_cl *pData)
     return;
   }
 
-  if (pData->m_pSender==&Vision::Callbacks.OnBeforeSceneUnloaded)
+  if (pData->m_pSender == &Vision::Callbacks.OnBeforeSceneUnloaded)
   {
     if (m_spGameScript)  m_spGameScript->ExecuteFunction("OnBeforeSceneUnloaded");
     if (m_spSceneScript) m_spSceneScript->ExecuteFunction("OnBeforeSceneUnloaded");
@@ -745,62 +787,29 @@ void VScriptResourceManager::OnHandleCallback(IVisCallbackDataObject_cl *pData)
     return;
   }
 
-  if (pData->m_pSender==&Vision::Callbacks.OnAfterSceneUnloaded)
+  if (pData->m_pSender == &Vision::Callbacks.OnAfterSceneUnloaded)
   {
     if (m_spGameScript)  m_spGameScript->ExecuteFunction("OnAfterSceneUnloaded");
     if (m_spSceneScript) m_spSceneScript->ExecuteFunction("OnAfterSceneUnloaded");
 
-    //perform a full garbage collection cycle after the scene is unloaded
+    // Perform a full garbage collection cycle after the scene is unloaded.
     if(m_pMasterState)
-      lua_gc(m_pMasterState,LUA_GCCOLLECT, 0);
+      lua_gc(m_pMasterState, LUA_GCCOLLECT, 0);
 
     return;
   }
-  if (pData->m_pSender==&Vision::Callbacks.OnEngineInit)
+
+  if (pData->m_pSender == &Vision::Callbacks.OnEngineInit)
   {
     // CALLBACK to register all other libs...
     OnRegisterScriptFunctions.TriggerCallbacks(NULL);
   }
-}
 
-int VScriptResourceManager::DumpVisionGlobals(lua_State *L) const
-{
-  if(L==NULL)
-    return 0;
-
-  lua_pushnil(L);                                   // stack : ..., nil, TOP
-
-  int iNumLeftGlobals = 0;
-
-  while (lua_next(L, LUA_GLOBALSINDEX) != 0)        // stack : ..., key, value, TOP
+  if (pData->m_pSender == &VTypedObject::OnObjectDeleted)
   {
-    //we don't need the value...
-    lua_pop(L, 1);                                  // stack : ..., key, TOP
-
-    int iType = lua_type(L, -1);
-    //vision globals always have string names
-    if (iType==LUA_TSTRING)
-    {  
-      const char* pSymbolName = lua_tostring(L, -1);
-
-      //filter "$node" prefix (that's what we are looking for)
-      if(pSymbolName==strstr(pSymbolName, LUA_HIDDEN_GLOBAL_PREFIX))
-      {
-        lua_pushnil(L);                             // stack : ..., key, nil, TOP
-        lua_setglobal(L,pSymbolName);               // stack : ..., key, TOP
-      }
-      else
-      {
-        iNumLeftGlobals++;
-      }
-    }
-    else
-    {
-      iNumLeftGlobals++;
-    }
-  }                                                 // stack : ..., TOP
-
-  return iNumLeftGlobals;
+    VTypedObjectCallbackData* pTypedObjectData = static_cast<VTypedObjectCallbackData*>(pData);
+    LUA_RemoveWrapperFromLookupTable(m_pMasterState, pTypedObjectData->m_pObject);
+  }
 }
 
 IVScriptInstance* VScriptResourceManager::CreateScriptInstanceFromFile(const char *szFilename)
@@ -850,12 +859,43 @@ BOOL VScriptResourceManager::ValidateScript(const char *szText, int iLen, hkvLog
   return TRUE;
 }
 
+bool VScriptResourceManager::ValidateScriptNoRun(const char* szText, VMemoryTempBuffer<512>* pErrorBuffer)
+{
+  if(szText == NULL)
+  {
+    return true;
+  }
+
+  int iLen = (int)strlen(szText);
+
+  if (iLen==0)
+  {
+    // Don't validate empty script
+    return true;
+  }
+
+  lua_State *pMasterState = GetMasterState();
+  VASSERT_MSG(pMasterState, "Script manager not initialized");
+
+  //Create a new thread
+  lua_State *pTempThread = lua_newthread(pMasterState);
+
+  //Make own locals table for pTempThread so it doesn't pollute the parent state
+  LUA_CreateLocalsTable(pTempThread);
+  lua_pop(pMasterState,1); // do not leave thread on the stack
+
+  // load the string
+  return VScriptResourceManager::LuaErrorCheckGetError(pTempThread,luaL_loadstring(pTempThread, szText), pErrorBuffer);
+}
 
 void VScriptResourceManager::ShowDebugInfo(IVRenderInterface *pRI)
 {
+  int x, y;
+  Vision::Profiling.GetRenderOffset(x, y);
+  float xk = (float)x;
+  float yk = (float)y;
+
   char szLine[1024];
-  float yk = 12.f;
-  float xk = 10.f;
   pRI->DrawText2D(10.f,yk, "Scripting overview", V_RGBA_WHITE);yk+=12.f;
   sprintf(szLine,"Number of script instances \t: %i", Instances().Count());
     pRI->DrawText2D(10.f,yk, szLine, V_RGBA_WHITE);yk+=12.f;
@@ -916,7 +956,7 @@ bool VScriptResourceManager::Require(const char* pFileName)
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

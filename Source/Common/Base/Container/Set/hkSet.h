@@ -88,7 +88,7 @@ public:
 	void clear();
 
 	/// Reserve space for at least numElements;
-	void reserve( int numElements );
+	hkResult reserve( int numElements );
 
 	HK_FORCE_INLINE int getHashMod() const { return m_elem.getSize() - 1; }
 
@@ -125,7 +125,16 @@ public:
 	HK_FORCE_INLINE hkSetUint32(hkFinishLoadedObjectFlag flag) : hkSet<hkUint32>(flag) {}
 };
 
-struct hkIntRealPair
+class hkSetUint64 : public hkSet<hkUint64>
+{
+public:
+	HK_DECLARE_REFLECTION();
+	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_MAP, hkSetUint64);
+	HK_FORCE_INLINE hkSetUint64() {}
+	HK_FORCE_INLINE hkSetUint64(hkFinishLoadedObjectFlag flag) : hkSet<hkUint64>(flag) {}
+};
+
+struct HK_EXPORT_COMMON hkIntRealPair
 {
 	HK_DECLARE_POD_TYPE();
 	HK_DECLARE_REFLECTION();
@@ -161,7 +170,7 @@ public:
 #endif // HKBASE_HKPOINTERMAP_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

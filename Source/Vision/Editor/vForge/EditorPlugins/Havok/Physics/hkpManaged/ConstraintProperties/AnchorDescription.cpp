@@ -68,14 +68,15 @@ namespace HavokManaged
       hkvVec3 vPos = GetEntity()->GetPosition();
 
       hkvVec3 localPos(vRelEntityPos.X, vRelEntityPos.Y, vRelEntityPos.Z);
-      hkvVec3 wsPos = vPos + GetEntity()->GetRotationMatrix() * localPos;
+      hkvVec3 scaledLocalPos = localPos.compMul( GetEntity()->GetScaling() );
+      hkvVec3 wsPos = vPos + GetEntity()->GetRotationMatrix() * scaledLocalPos;
 
       return hkvVec3(wsPos.x, wsPos.y, wsPos.z);
     }
 
     // Should never happen
     VASSERT(false);
-    return hkvVec3();
+    return hkvVec3::ZeroVector();
   }
 
   hkvVec3 AnchorDescription::GetAnchorPosition()
@@ -94,13 +95,13 @@ namespace HavokManaged
 
     // Should never happen
     VASSERT(false);
-    return hkvVec3();    
+    return hkvVec3::ZeroVector();    
   }
 
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

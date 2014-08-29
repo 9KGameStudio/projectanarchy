@@ -13,6 +13,11 @@
 #include <Common/Base/Fwd/hkcmath.h>
 #include <Common/Base/Fwd/hkcfloat.h>
 
+// Only allow FPU exception checking on certain configurations.
+// This is because we have to do a little extra work in some operations to avoid division by zero.
+#if defined(HK_DEBUG) && defined(HK_PLATFORM_WIN32) && !defined(HK_PLATFORM_X64) && !defined(HK_REAL_IS_DOUBLE) && (HK_CONFIG_SIMD == HK_CONFIG_SIMD_ENABLED)
+#	define HK_ALLOW_FPU_EXCEPTION_CHECKING
+#endif
 
 // Temporarily disable the alignment warning for AMD64
 #if defined(HK_PLATFORM_X64)
@@ -23,7 +28,7 @@
 // All Havok math code expects this mode to be set, and may not function correctly if it isn't.
 // Typically operations on denormals are very slow, up to 100 times slower than normal numbers.
 
-void HK_CALL hkCheckFlushDenormals();
+HK_EXPORT_COMMON void HK_CALL hkCheckFlushDenormals();
 #if defined(HK_DEBUG)
 #	define HK_CHECK_FLUSH_DENORMALS() hkCheckFlushDenormals()
 #else
@@ -52,7 +57,7 @@ void HK_CALL hkCheckFlushDenormals();
 #endif // HK_MATH_MATH_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

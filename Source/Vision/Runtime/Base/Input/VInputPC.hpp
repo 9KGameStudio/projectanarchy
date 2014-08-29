@@ -173,16 +173,12 @@ public:
   /// \brief
   ///   Initializes the mouse.
   /// 
-  /// \param eMethod
-  ///   Method of data retreivement - VGL_DIRECTINPUT or VGL_WINDOWSINPUT (default value is
-  ///   VGL_DIRECTINPUT)
-  //
   /// \param bHideCursor
   ///   Hide or show the mouse cursor (optional, default: true).
   /// 
   /// \param bExclusive
   ///   Exclusive mode (optional, default: true).
-  VBASE_IMPEXP void Init(int eMethod = VGL_DIRECTINPUT, bool bHideCursor = true, bool bExclusive = true);
+  VBASE_IMPEXP void Init(bool bHideCursor = true, bool bExclusive = true);
 
 
   /// \brief
@@ -191,7 +187,7 @@ public:
 
   /// \brief
   ///   Fills the given parameters with the flags used to initialize the cursor
-  VBASE_IMPEXP void GetInitializationFlags(int& eMethod, bool& bHideCursor, bool& bExclusive);
+  VBASE_IMPEXP void GetInitializationFlags(bool& bHideCursor, bool& bExclusive);
 
   /// \brief
   ///   See IVInputDevice::Reset().
@@ -231,10 +227,6 @@ public:
   inline const VGLMouse_t& GetStatus() const { return m_CurrentStatus; }
 
   /// \brief
-  ///   Gets the input method the mouse is initialized with. Can be VGL_DIRECTINPUT or VGL_WINDOWSINPUT.
-  inline SLONG GetInputMethod() const { return m_Method; }
-
-  /// \brief
   ///   Returns the underlying DirectInput device (if input is initialized in DirectInput mode) 
   VBASE_IMPEXP LPDIRECTINPUTDEVICE8 GetDInputDevice();
  
@@ -245,8 +237,6 @@ private:
   bool m_bHideCursor;
   bool m_bExclusive;
   bool m_bActive;
-
-  SLONG m_Method;                 ///<VGL_DIRECTINPUT used as default
 
   VGLMouse_t m_OldStatus;         ///< old position and button status
   VGLMouse_t m_CurrentStatus;     ///< current position and button status
@@ -1154,10 +1144,6 @@ public:
   ///   Method of data retrieval for the keyboard - VGL_DIRECTINPUT or VGL_WINDOWSINPUT (optional, default value is
   ///   VGL_DIRECTINPUT)
   ///
-  /// \param initMethodMouse
-  ///   Method of data retrieval for the mouse - VGL_DIRECTINPUT or VGL_WINDOWSINPUT (optional, default value is
-  ///   VGL_DIRECTINPUT)
-  /// 
   /// \param bHideCursor
   ///   Set to true in order to hide the mouse cursor.
   ///
@@ -1166,7 +1152,7 @@ public:
   ///
   /// \param bKeyboardExclusive
   ///   Set to true for exclusive keyboard mode
-  VBASE_IMPEXP static void Init(int initMethodKeyboard = VGL_DIRECTINPUT, int initMethodMouse = VGL_DIRECTINPUT, bool bHideCursor=true, 
+  VBASE_IMPEXP static void Init(int initMethodKeyboard = VGL_DIRECTINPUT, bool bHideCursor=true, 
     bool bMouseExclusive = true, bool bKeyboardExclusive = true);
 
 
@@ -1264,12 +1250,7 @@ public:
   VBASE_IMPEXP static SLONG GetInputMethodKeyboard();
 
   /// \brief
-  ///   Get the input method of the input system of the mouse (VGL_DIRECTINPUT or VGL_WINDOWSINPUT).
-  VBASE_IMPEXP static SLONG GetInputMethodMouse();
-
-
-  /// \brief
-  ///   Return true if the mouse cursor has been hidden.
+  ///   Return true if the input manager was initialized with bHideCursor = true (ie. the app was initialized with VAPP_MOUSE_HIDECURSOR).
   VBASE_IMPEXP static bool IsMouseCursorHidden();
 
 
@@ -1302,12 +1283,6 @@ public:
   VBASE_IMPEXP static IVJoypad& GetPad(int index);
 
 #endif
-
-  /// \brief
-  /// NoInputDevice for comparison checks
-  VBASE_IMPEXP static IVInputDevice s_NoInputDevice;
-
-  static int s_iFrameCounter;
 
 private:
 
@@ -1345,7 +1320,7 @@ private:
 #endif //VINPUTPC_HPP_INCLUDED
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

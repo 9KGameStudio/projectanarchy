@@ -14,7 +14,7 @@
 
 
 /// Displays information about the ball socket constraint.
-class hkpBallSocketDrawer : public hkpConstraintDrawer
+class HK_EXPORT_PHYSICS hkpBallSocketDrawer : public hkpConstraintDrawer
 {
 	public:
 
@@ -30,7 +30,7 @@ class hkpBallSocketDrawer : public hkpConstraintDrawer
 #endif	// HKP_BALLSOCKETDRAWER_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

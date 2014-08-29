@@ -12,7 +12,7 @@
 #include <Common/Base/Thread/CriticalSection/hkCriticalSection.h>
 
 	/// Detects cases when the temp allocator should be used instead of the heap.
-class hkTempDetectAllocator : public hkMemoryAllocator
+class HK_EXPORT_COMMON hkTempDetectAllocator : public hkMemoryAllocator
 {
 	public:
 		HK_DECLARE_PLACEMENT_ALLOCATOR();
@@ -79,7 +79,7 @@ class hkTempDetectAllocator : public hkMemoryAllocator
 #endif // HKBASE_hkTempDetectAllocator_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

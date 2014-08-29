@@ -40,13 +40,13 @@
 ///
 ///     void AfterSceneLoaded(bool bLoadingSuccessful) HKV_OVERRIDE
 ///     {
-///       Vision::Game.CreateEntity("VFreeCamera", hkvVec3(0.0f, 0.0f, 0.0f));
+///       Vision::Game.CreateEntity<VFreeCamera>(hkvVec3(0.0f, 0.0f, 0.0f));
 ///     }
 ///
-///     void GetVideoConfigSettings(VVideoConfig& settings) HKV_OVERRIDE
+///     void SetupAppConfig(VisAppConfig_cl& config) HKV_OVERRIDE
 ///     {
 ///       // Enable vsync
-///       settings.m_bWaitVRetrace = true;
+///       config.m_videoConfig.m_bWaitVRetrace = true;
 ///     }
 ///   };
 ///
@@ -69,9 +69,8 @@ class VAppImpl
 {
 public:
   
-
-	VAppImpl();
-	virtual ~VAppImpl();
+  VAPP_IMPEXP VAppImpl();
+	VAPP_IMPEXP virtual ~VAppImpl();
 
   /// \brief
   ///   Configures video config.
@@ -83,14 +82,14 @@ public:
   /// VVideoConfig instance to your needs.
   ///
   /// \sa VisAppConfig_cl
-  virtual void SetupAppConfig(VisAppConfig_cl& config) { config.m_videoConfig.m_bWaitVRetrace = true; }
+  VAPP_IMPEXP virtual void SetupAppConfig(VisAppConfig_cl& config) { config.m_videoConfig.m_bWaitVRetrace = true; }
 
   /// \brief
   ///   Returns engine initialization flags.
   ///
   /// \return
   ///   Engine init flags (default VAPP_INIT_DEFAULTS)
-  virtual unsigned int SetupEngineInitFlags();
+  VAPP_IMPEXP virtual unsigned int SetupEngineInitFlags();
 
   /// \brief
   ///   Load plugins.
@@ -98,11 +97,11 @@ public:
   /// Used to load plugins at the beginning of the application's lifetime cycle.
   /// In contrast to VAppImpl::LoadPlugins, this version is only triggered once
   /// before the engine gets initialized.
-  virtual void PreloadPlugins() {}
+  VAPP_IMPEXP virtual void PreloadPlugins() {}
 
   /// \brief
   ///   Gets called when engine initialization fails.
-  virtual void InitFailed() {};
+  VAPP_IMPEXP virtual void InitFailed() {};
 
   /// \brief
   ///   Gets called when the engine has successfully initialized.
@@ -113,7 +112,7 @@ public:
   /// modules will be in place expect the VExitHandler which is always added.
   /// Another option is to NOT call the base implementation and setup all the VAppModules by
   /// yourself and/or registering your own modules derived from VAppModule.
-  virtual void AfterEngineInit();
+  VAPP_IMPEXP virtual void AfterEngineInit();
 
   /// \brief
   ///   Application initialization.
@@ -121,7 +120,15 @@ public:
   /// This is the best spot to load the initial scene and to also setup/init all
   /// the application stuff that should be persistent over the entire lifetime of
   /// your application.
-  virtual void Init() {}
+  VAPP_IMPEXP virtual void Init() {}
+
+  /// \brief
+  ///   Creation of the renderer node
+  ///
+  /// This function is called during the initialization of the engine.
+  /// Use this function to create and return a custom renderer node. 
+  /// Do not initialize the renderer node. The renderer node will be initialized automatically.
+  VAPP_IMPEXP virtual IVRendererNode* CreateRendererNode() { return NULL; }
 
   /// \brief
   ///   Called after loading of a scene has completed.
@@ -131,14 +138,14 @@ public:
   ///
   /// \param bLoadingSuccessful
   ///   Flags whether loading was successful or not.
-  virtual void AfterSceneLoaded(bool bLoadingSuccessful) {}
+  VAPP_IMPEXP virtual void AfterSceneLoaded(bool bLoadingSuccessful) {}
 
   /// \brief
   ///   Main Application Run method which is called after the scene has been rendered.
   ///
   /// \return
   ///   False when the application should exit, True otherwise.
-  virtual bool Run();
+  VAPP_IMPEXP virtual bool Run();
 
   /// \brief
   ///   Counterpart to Init().
@@ -146,18 +153,18 @@ public:
   /// Everything that has been initialized/created in Init() should be cleaned/destroyed in here.
   ///
   /// \sa VAppImpl::Init
-  virtual void DeInit() {}
+  VAPP_IMPEXP virtual void DeInit() {}
 
   /// \brief
   ///   Gets called when the engine has been de-initialized.
-  virtual void EngineDeInit() {}
+  VAPP_IMPEXP virtual void EngineDeInit() {}
 
   /// \brief
   ///   Returns the application wide input map.
   ///
   /// \return
   ///   Input map.
-  static VInputMap* GetInputMap() { return s_pInputMap; }
+  VAPP_IMPEXP static VInputMap* GetInputMap();
 
   /// \brief
   ///   Return a reference to the scene loader which is responsible for vscene loading.
@@ -167,7 +174,7 @@ public:
   ///
   /// \return
   ///   Reference to the scene loader.
-  VSceneLoader& GetSceneLoader() { return *m_pSceneLoader; }
+  inline VSceneLoader& GetSceneLoader() { return *m_pSceneLoader; }
 
   /// \brief
   ///   Setup scene environment depending on given settings.
@@ -177,7 +184,7 @@ public:
   ///
   /// \param sceneSettings
   ///   Settings describing the required setup.
-  void SetupScene(const VisAppLoadSettings& sceneSettings);
+  VAPP_IMPEXP void SetupScene(const VisAppLoadSettings& sceneSettings);
 
   /// \brief
   ///   Loads a scene with the given settings.
@@ -187,7 +194,7 @@ public:
   ///
   /// \return
   ///   True when loading was successful, false otherwise.
-  bool LoadScene(const VisAppLoadSettings& sceneSettings);
+  VAPP_IMPEXP bool LoadScene(const VisAppLoadSettings& sceneSettings);
 
   /// \brief
   ///   Register an application module which implements the VAppModule interface.
@@ -196,14 +203,14 @@ public:
   ///   Instance of the application module which should be registered.
   ///
   /// \sa VAppModule
-  void RegisterAppModule(VAppModule* pModule);
+  VAPP_IMPEXP void RegisterAppModule(VAppModule* pModule);
 
   /// \brief
   ///   De-register application module.
   ///
   /// \param pModule
   ///   Instance of the application module which should be de-registered.
-  void DeRegisterAppModule(VAppModule* pModule);
+  VAPP_IMPEXP void DeRegisterAppModule(VAppModule* pModule);
 
   /// \brief
   ///   Returns the first registered module of the given type.
@@ -252,15 +259,16 @@ public:
     const int iCount = m_appModules.Count();
     for (int i=0; i<iCount; ++i)
     {
-      T* pAppModule = vdynamic_cast<T*>(m_appModules.GetAt(i));
-      if (pAppModule != NULL)
-        modules.Append(pAppModule);
+      if (m_appModules.GetAt(i)->IsOfType(T::GetClassTypeId()))
+      {
+        modules.Append(static_cast<T*>(m_appModules.GetAt(i)));
+      } 
     }
   }
 
   /// \brief
   ///   Returns the application wide GUI context.
-  const VAppMenuContextPtr GetContext() const { return m_spContext; }
+  inline const VAppMenuContextPtr GetContext() const { return m_spContext; }
 
 protected:
 
@@ -275,7 +283,7 @@ private:
 #endif //__V_APP_IMPL_HPP
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -6,29 +6,21 @@
  *
  */
 
-using System;
-using System.IO;
-using System.Diagnostics;
-using System.Drawing;
-using System.Collections;
-using System.Collections.Specialized;
-using System.ComponentModel;
-using System.Windows.Forms;
-using Microsoft.Win32;
 using CSharpFramework;
 using CSharpFramework.BaseTypes;
-using CSharpFramework.Shapes;
-using CSharpFramework.Docking;
 using CSharpFramework.Controls;
-using CSharpFramework.View;
-using WeifenLuo.WinFormsUI;
-using CSharpFramework.PropertyEditors;
 using CSharpFramework.Dialogs;
-using ManagedFramework;
-using ScintillaNet;
+using CSharpFramework.Docking;
 using CSharpFramework.Helper;
 using CSharpFramework.Scene;
+using CSharpFramework.Shapes;
 using ManagedBase.LogManaged;
+using ManagedFramework;
+using ScintillaNet;
+using System;
+using System.Drawing;
+using System.IO;
+using System.Windows.Forms;
 
 
 namespace Editor.VisionSpecific
@@ -103,7 +95,7 @@ namespace Editor.VisionSpecific
     /// </summary>
     /// <param name="container"></param>
     public VisionScriptPanel(DockingContainer container) : base(container)
-	{
+    {
       EditorManager.ShapeSelectionChanged += new ShapeSelectionChangedEventHandler(EditorManager_ShapeSelectionChanged);
     }
 
@@ -158,9 +150,13 @@ namespace Editor.VisionSpecific
       ConsoleOutDlg dlg = new ConsoleOutDlg();
       bool bResult = ScriptManager.ValidateScript(doc, dlg.Console);
       if (bResult)
+      {
         Log.Info(dlg.Console, "Summary: Script has been successfully validated");
+      }
       else
+      {
         Log.Warning(dlg.Console, "Summary: One or more errors occurred during validation. See entries above.");
+      }
       dlg.ShowDialog();
       return bResult;
     }
@@ -194,12 +190,36 @@ namespace Editor.VisionSpecific
     }
 
     /// <summary>
+    /// Execute a script validation for a passed document in a code panel.
+    /// This method has to be here in VisionScriptPanel because we need access to ScriptManager.
+    /// </summary>
+    public override void ValidateScriptDocumentAutomatic(SourceCodeEditorPanelScript doc)
+    {
+      if (doc != null)
+      {
+        // Call to the actual script validation
+        String errorResult = string.Empty;
+        bool hasError = !ScriptManager.ValidateScriptNoRun(doc.ScriptText, out errorResult);
+
+        // Forward error information to the document -> updates UI and error status for this doc
+        doc.HandleAutomaticScriptValidation(hasError, errorResult);
+
+        // Update doc panel and status bar since both might have to react with changed icons / text
+        dockPanel_All.Refresh();        
+        UpdateStatusBar();
+      }
+    }
+
+    /// <summary>
     /// Overridden function
     /// </summary>
     protected override void OnSaved()
     {
       if (ConfigureShapeComponentsPanel.PanelInstance == null || !EditorManager.Settings.SyncOnExposeVarsAfterSaving)
         return;
+
+      // Saving a script should also validate it
+      ValidateScriptDocumentAutomatic(_currentDoc);
 
       bool containsOnExposeNow = _currentDoc != null && _currentDoc.ScintillaControl.Text.Contains("OnExpose");
 
@@ -211,24 +231,27 @@ namespace Editor.VisionSpecific
 
       ShapeComponentType scriptComponentType = (ShapeComponentType)EditorManager.EngineManager.ComponentClassManager.GetCollectionType("VScriptComponent");
 
-      // de-active script caching so the script will be reloaded in all cases
-      bool bOldScriptCaching = EditorManager.Settings.UseScriptCachingInEditor;
-      if (bOldScriptCaching)
-        EditorManager.Settings.UseScriptCachingInEditor = false; 
-
-      foreach(ShapeComponent scriptComponent in ShapeComponent.UsedComponents[scriptComponentType])
+      if (ShapeComponent.UsedComponents.ContainsKey(scriptComponentType))
       {
-        string scriptFile = scriptComponent.GetPropertyByName("ScriptFile").Value.ToString();
-        scriptFile = EditorManager.Project.MakeAbsolute(scriptFile);
-        if (scriptFile == _currentDoc.AbsSourceFilename)
-        {
-          ((ShapeBase)scriptComponent.Owner).PerformPostEngineInstanceCreationSetup(false);
-        } 
-      }
+        // de-active script caching so the script will be reloaded in all cases
+        bool bOldScriptCaching = EditorManager.Settings.UseScriptCachingInEditor;
+        if (bOldScriptCaching)
+          EditorManager.Settings.UseScriptCachingInEditor = false;
 
-      // Restore script caching setting
-      if (bOldScriptCaching)
-        EditorManager.Settings.UseScriptCachingInEditor = true;
+        foreach (ShapeComponent scriptComponent in ShapeComponent.UsedComponents[scriptComponentType])
+        {
+          string scriptFile = scriptComponent.GetPropertyByName("ScriptFile").Value.ToString();
+          scriptFile = EditorManager.Project.MakeAbsolute(scriptFile);
+          if (scriptFile == _currentDoc.AbsSourceFilename)
+          {
+            ((ShapeBase)scriptComponent.Owner).PerformPostEngineInstanceCreationSetup(false);
+          }
+        }
+
+        // Restore script caching setting
+        if (bOldScriptCaching)
+          EditorManager.Settings.UseScriptCachingInEditor = true;
+      }
 
       // Refresh the property grid of the components panel
       ConfigureShapeComponentsPanel.PanelInstance.InvalidatePropertyGrid();
@@ -541,7 +564,7 @@ namespace Editor.VisionSpecific
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

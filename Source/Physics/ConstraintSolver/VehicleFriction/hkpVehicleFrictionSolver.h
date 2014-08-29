@@ -16,7 +16,7 @@
 
 /// The class hkVehicleFrictionSolver is used is an input and output to the vehicle dynamics.
 /// It holds all values which change every frame.
-struct hkpVehicleFrictionSolverAxleParams
+struct HK_EXPORT_PHYSICS hkpVehicleFrictionSolverAxleParams
 {
 	public:
 
@@ -89,9 +89,8 @@ inline void hkpVehicleFrictionSolverAxleParams::initialize()
 }
 
 
-/// The class hkpVehicleFrictionSolverParams is used by vehicle dynamics.
-/// See hkRaycastVehicle for more details.
-struct hkpVehicleFrictionSolverParams
+/// The class hkpVehicleFrictionSolverParams contains input parameters for the vehicle friction solver.
+struct HK_EXPORT_PHYSICS hkpVehicleFrictionSolverParams
 {
 	public:
 
@@ -124,7 +123,7 @@ extern "C"
 #endif // HKP_VEHICLE_FRICTION_SOLVER_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

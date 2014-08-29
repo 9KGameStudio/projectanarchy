@@ -233,7 +233,7 @@ class hkpSampledHeightFieldShape : public hkpHeightFieldShape
 		HK_FORCE_INLINE void findStartCell(AABBStackElement& startOut, const hkVector4& from, const hkVector4& to) const;
 
 		HK_FORCE_INLINE void rayTriangleQuadCheck(const struct hkcdRay& ray, hkAabb& aabb, int x, int z, const hkVector4Comparison& flipSelect,
-												  const hkpCdBody& cdBody, hkpRayHitCollector& collector, hkSimdReal* earlyOutHitFraction) const;
+												  const hkpCdBody& cdBody, hkpRayHitCollector& collector) const;
 
 	public:
 
@@ -298,7 +298,7 @@ HK_FORCE_INLINE void HK_CALL hkSampledHeightFieldShape_collideSpheres(
 #endif // HK_COLLIDE2_SAMPLED_HEIGHT_FIELD_SHAPE_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

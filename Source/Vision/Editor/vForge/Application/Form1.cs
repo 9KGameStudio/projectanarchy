@@ -45,6 +45,8 @@ using VisionManaged;
 // NUnit includes
 using NUnit.Core;
 using Editor.Help;
+using System.Runtime.Serialization;
+using System.Runtime;
 
 namespace Editor
 {
@@ -297,6 +299,7 @@ namespace Editor
     /// We use a message filter instead of registering hotkeys to avoid keys getting blocked in other applications.
     /// </summary>
     private ShortCutMessageFilter _scMsgFilter;
+    private ToolStripMenuItem Menu_File_Scene_ReexportPrefabs;
     private ToolStripMenuItem Menu_vGameSolutionCreatorToolStripMenuItem;
 
     
@@ -354,6 +357,17 @@ namespace Editor
 
       // Initialize managed framework
       ManagedFramework.ManagedFramework.OneTimeInit();
+
+      // Load test config now since it can contain commands to ignore plugins.
+      string[] args = Environment.GetCommandLineArgs();
+      for(int i=0; i < args.Length-1; ++i)
+      {
+        if(args[i].ToLower() == "-testconfig")
+        {
+          TestManager.LoadTestConfig(args[i + 1]);
+          break;
+        }
+      }
 
       // Initialize editor plugins
       EditorManager.InitPlugins(Application.StartupPath);
@@ -631,7 +645,6 @@ namespace Editor
           return;
         }
 
-        // load scene file...
         ParseArgs(CommandLineArgs);
 
         // show warning dialog if mixed debug/release assemblies are loaded
@@ -699,6 +712,7 @@ namespace Editor
       this.Menu_File_Scene_Thumbnail = new System.Windows.Forms.ToolStripMenuItem();
       this.Menu_File_Scene_ShapeLinkDebugFile = new System.Windows.Forms.ToolStripMenuItem();
       this.Menu_File_Scene_MergeExternalLayers = new System.Windows.Forms.ToolStripMenuItem();
+      this.Menu_File_Scene_ReexportPrefabs = new System.Windows.Forms.ToolStripMenuItem();
       this.toolStripMenuItem2 = new System.Windows.Forms.ToolStripSeparator();
       this.RecentProjects = new System.Windows.Forms.ToolStripMenuItem();
       this.RecentScenes = new System.Windows.Forms.ToolStripMenuItem();
@@ -784,9 +798,9 @@ namespace Editor
       this.Menu_Remote_Restart = new System.Windows.Forms.ToolStripMenuItem();
       this.Menu_Remote_ReloadResources = new System.Windows.Forms.ToolStripMenuItem();
       this.Menu_Help = new System.Windows.Forms.ToolStripMenuItem();
-      this.Menu_Help_About = new System.Windows.Forms.ToolStripMenuItem();
       this.toolStripMenuItem21 = new System.Windows.Forms.ToolStripSeparator();
       this.Menu_Help_VisionDoc = new System.Windows.Forms.ToolStripMenuItem();
+      this.Menu_Help_About = new System.Windows.Forms.ToolStripMenuItem();
       this.reloadHelpContextFilesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
       this.Menu_Tests = new System.Windows.Forms.ToolStripMenuItem();
       this.Menu_Tests_RunTests = new System.Windows.Forms.ToolStripMenuItem();
@@ -1103,7 +1117,8 @@ namespace Editor
             this.Menu_File_Scene_UniqueIDs,
             this.Menu_File_Scene_Thumbnail,
             this.Menu_File_Scene_ShapeLinkDebugFile,
-            this.Menu_File_Scene_MergeExternalLayers});
+            this.Menu_File_Scene_MergeExternalLayers,
+            this.Menu_File_Scene_ReexportPrefabs});
       this.Menu_File_SceneHelpers.Image = global::Editor.Properties.Resources.toolbar_document;
       this.Menu_File_SceneHelpers.Name = "Menu_File_SceneHelpers";
       this.Menu_File_SceneHelpers.Size = new System.Drawing.Size(155, 22);
@@ -1156,6 +1171,14 @@ namespace Editor
       this.Menu_File_Scene_MergeExternalLayers.Size = new System.Drawing.Size(247, 22);
       this.Menu_File_Scene_MergeExternalLayers.Text = "Merge External Layers into Zones";
       this.Menu_File_Scene_MergeExternalLayers.Click += new System.EventHandler(this.menuItem_MergeLayersIntoZones_Click);
+      // 
+      // Menu_File_Scene_ReexportPrefabs
+      // 
+      this.Menu_File_Scene_ReexportPrefabs.Image = global::Editor.Properties.Resources.toolbar_export_quick;
+      this.Menu_File_Scene_ReexportPrefabs.Name = "Menu_File_Scene_ReexportPrefabs";
+      this.Menu_File_Scene_ReexportPrefabs.Size = new System.Drawing.Size(247, 22);
+      this.Menu_File_Scene_ReexportPrefabs.Text = "Re-export all Binary Prefabs";
+      this.Menu_File_Scene_ReexportPrefabs.Click += new System.EventHandler(this.reexportAllBinaryPrefabsToolStripMenuItem_Click);
       // 
       // toolStripMenuItem2
       // 
@@ -1851,20 +1874,13 @@ namespace Editor
       // Menu_Help
       // 
       this.Menu_Help.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.Menu_Help_About,
             this.toolStripMenuItem21,
             this.Menu_Help_VisionDoc,
+            this.Menu_Help_About,
             this.reloadHelpContextFilesToolStripMenuItem});
       this.Menu_Help.Name = "Menu_Help";
       this.Menu_Help.Size = new System.Drawing.Size(44, 20);
       this.Menu_Help.Text = "&Help";
-      // 
-      // Menu_Help_About
-      // 
-      this.Menu_Help_About.Name = "Menu_Help_About";
-      this.Menu_Help_About.Size = new System.Drawing.Size(208, 22);
-      this.Menu_Help_About.Text = "About";
-      this.Menu_Help_About.Click += new System.EventHandler(this.Menu_Help_About_Click);
       // 
       // toolStripMenuItem21
       // 
@@ -1878,6 +1894,13 @@ namespace Editor
       this.Menu_Help_VisionDoc.Size = new System.Drawing.Size(208, 22);
       this.Menu_Help_VisionDoc.Text = "Vision Documentation";
       this.Menu_Help_VisionDoc.Click += new System.EventHandler(this.Menu_Help_VisionDoc_Click);
+      // 
+      // Menu_Help_About
+      // 
+      this.Menu_Help_About.Name = "Menu_Help_About";
+      this.Menu_Help_About.Size = new System.Drawing.Size(208, 22);
+      this.Menu_Help_About.Text = "About";
+      this.Menu_Help_About.Click += new System.EventHandler(this.Menu_Help_About_Click);
       // 
       // reloadHelpContextFilesToolStripMenuItem
       // 
@@ -2946,6 +2969,28 @@ namespace Editor
     /// Globally stores the command line arguments passed to the Main function
     /// </summary>
     public string[] CommandLineArgs;
+
+    /// <summary>
+    /// Processes the part of the parameter string that needs to be parsed before loading any plugins.
+    /// </summary>
+    /// <param name="args"></param>
+    static protected void PreParseArgs(string[] args)
+    {
+      foreach (string arg in args)
+      {
+        // Automated tests
+        if (string.Compare(arg, "-test", true) == 0)
+        {
+          g_triggerTests = true;
+          EditorManager.SilentMode = true;
+        }
+        else if (string.Compare(arg, "-silent", true) == 0)
+        {
+          EditorManager.SilentMode = true;
+          continue;
+        }
+      }
+    }
     
     /// <summary>
     /// Parses the parameter strings passed to the application
@@ -2959,36 +3004,24 @@ namespace Editor
       // the following parameters must be set before export etc. are triggered
       foreach (string arg in args)
       {
-        if (string.Compare(arg, "-shutdown", true) == 0)
+        switch(arg.ToLower())
         {
-          bShutDown = true;
-          continue;
-        }
+          case "-shutdown":
+            bShutDown = true;
+            break;
 
-        if (string.Compare(arg, "-silent", true) == 0)
-        {
-          EditorManager.SilentMode = true;
-          continue;
-        }
+          case "-swrenderer":
+            EditorManager.EngineManager.UseSoftwareRenderer = true;
+            break;
 
-        if (string.Compare(arg, "-swrenderer", true) == 0)
-        {
-          EditorManager.EngineManager.UseSoftwareRenderer = true;
-          continue;
-        }
+          case "-headless":
+            EditorManager.EngineManager.UseHeadlessMode = true;
+            break;
 
-        if (string.Compare(arg, "-headless", true) == 0)
-        {
-          EditorManager.EngineManager.UseHeadlessMode = true;
-          continue;
+          case "-forcealllayers":
+            bForceAllLayers = true;
+            break;
         }
-
-        if (string.Compare(arg, "-forceAllLayers", true) == 0)
-        {
-          bForceAllLayers = true;
-          continue;
-        }
-        
       }
 
       foreach (string arg in args)
@@ -3111,6 +3144,10 @@ namespace Editor
           projectFileName = projectFileName.Replace("/", Path.DirectorySeparatorChar.ToString());
           LoadProject(projectFileName, false);
         }
+        else if (ext==".yaml")
+        {
+          // Used for test config file. Handled earlier.
+        }
         else if (ext!=null) // unknown file extension -> try to load via tools
         {
           EditorCustomFileLoadingArgs e = new EditorCustomFileLoadingArgs(this,arg);
@@ -3142,6 +3179,16 @@ namespace Editor
     [STAThread]
     static int Main( string[] args ) 
     {
+      System.Reflection.Assembly thisExe = System.Reflection.Assembly.GetExecutingAssembly();
+      string[] resources = thisExe.GetManifestResourceNames();
+
+#if HK_ANARCHY
+      System.Windows.SplashScreen splashScreen = new System.Windows.SplashScreen(thisExe, "SplashScreenAnarchy.png");
+#else
+      System.Windows.SplashScreen splashScreen = new System.Windows.SplashScreen(thisExe, "SplashScreen.png");
+#endif
+      splashScreen.Show(true);
+
       // should be the first thing to call.
       // This feature activates Group display in list views for instance.
       // Observe in the future: Is this the cause for any SEHException or strange UI behavior?
@@ -3168,9 +3215,7 @@ namespace Editor
       TestSuite testSuite = testBuilder.Build( typeof(EditorApp).Assembly.FullName );
       TestManager.AddTestSuite(testSuite);
 
-      // parse command line for automated tests
-      if (args.Length == 1 && args[0] == "-test")
-        g_triggerTests = true;
+      Form1.PreParseArgs(args);
 
       // this is our workaround:
       EditorManager.DesignMode = false;
@@ -3181,6 +3226,38 @@ namespace Editor
 
       Form1 form = new Form1();
       form.CommandLineArgs = args; // store them and parse them a bit later (first time in OnVisibleChanged)
+
+      // Show warning about GC problems on first scene load (otherwise, warnings may not appear in the log view)
+      bool shownGCWarning = false;
+      EditorManager.SceneEvent += (o, e) =>
+        {
+          if (e.action != SceneEventArgs.Action.AfterLoading)
+          {
+            return;
+          }
+
+          if (shownGCWarning)
+          {
+            return;
+          }
+
+          shownGCWarning = true;
+          // 64bit concurrent Workstation GC occasionally crashes (http://support.microsoft.com/kb/2679415). Server GC is not affected.
+          // If the user overrides the settings in the app config xml, warn about the unsupported combination and force non-concurrent mode.
+          if (IntPtr.Size == 8 && GCSettings.LatencyMode != GCLatencyMode.Batch && !System.Runtime.GCSettings.IsServerGC)
+          {
+            Log.Warning("The current C# GC mode has a known bug that can crash vForge (see http://support.microsoft.com/kb/2679415).");
+            Log.Warning("vForge will now switch to a safer non-concurrent GC mode, which can affect application responsiveness.");
+            Log.Warning("This can be avoided by using a 32bit version of vForge, or upgrading to .NET Framework 4.5 or later if your OS supports this.");
+            GCSettings.LatencyMode = GCLatencyMode.Batch;
+          }
+          // The CLR may fallback to Workstation non-concurrent if Server concurrent is not supported (ie. single core machines or .NET <= 4.0).
+          else if (GCSettings.LatencyMode == GCLatencyMode.Batch)
+          {
+            Log.Warning("vForge is currently running under a non-concurrent C# GC mode that can affect application responsiveness.");
+            Log.Warning("For best performance, it's recommended to run vForge on a multi-core machine with .NET Framework 4.5 or later.");
+          }
+        };
 
 #if (!DEBUG)
       AppDomain.CurrentDomain.UnhandledException += new UnhandledExceptionEventHandler(Domain_UnhandledException);
@@ -3402,11 +3479,11 @@ namespace Editor
       UpdateSelectionSetButton();
 
       // Show properties panel if option is enabled
-      if (EditorManager.Settings.ShowPropertiesPanelOnSelection)
-      {
-        propertyPanel1.ShowDockable();
-        propertyPanel1.Show();
-      }
+      //if (EditorManager.Settings.ShowPropertiesPanelOnSelection)
+      //{
+      //  propertyPanel1.ShowDockable();
+      //  propertyPanel1.Show();
+      //}
     }
 
     private void EditorManager_BeforeEditorAppShutdown(object sender, EventArgs e)
@@ -3747,6 +3824,8 @@ namespace Editor
       Menu_File_Scene_UniqueIDs.Enabled = bHasScene;
       Menu_File_Scene_ShapeLinkDebugFile.Enabled = bHasScene;
       Menu_File_Scene_Description.Enabled = bHasScene && EditorApp.Scene.V3DLayer != null;
+      Menu_File_Scene_ReexportPrefabs.Enabled = bHasScene && EditorApp.Scene.V3DLayer != null;
+
       Menu_File_Project_OpenDirectory.Enabled = bHasProject;
       Menu_File_Project_Move.Enabled = bHasScene;
       Menu_File_Project_Move.Visible = false; // for now, disable this item  
@@ -3937,7 +4016,7 @@ namespace Editor
     {
 
       //show progress bar
-      EditorManager.Progress.ShowProgressDialog("Loading Scene file");
+      EditorManager.Progress.ShowProgressDialog("Loading Scene File");
       EditorManager.Progress.Percentage = 0.0f;
       EditorManager.Progress.StatusString = "Initialize project";
 
@@ -4319,6 +4398,32 @@ namespace Editor
     }
 
 
+    private void reexportAllBinaryPrefabsToolStripMenuItem_Click(object sender, EventArgs e)
+    {
+      if (EditorManager.Scene == null) // we need a scene, not just a project
+      {
+        EditorManager.ShowMessageBox(this, "A scene must be open to run this export", "Batch Export Prefabs", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        return;
+      }
+
+      Layer layer = EditorApp.Scene.V3DLayer;
+      if (layer==null)
+      {
+        EditorManager.ShowMessageBox(this, "The scene does not have a valid main layer.\n\nExport aborted.", "Batch Export Prefabs", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        return;
+      }
+      if (!layer.Modifiable)
+      {
+        EditorManager.ShowMessageBox(this, "The main layer must be modifiable to run the export.\n\nExport aborted.", "Batch Export Prefabs", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        return;
+      }
+
+      PrefabBatchExportDialog dlg = new PrefabBatchExportDialog();
+      dlg.Folder = EditorManager.Project.ProjectDir;
+      dlg.ShowDialog(this);
+    }
+
+
     private void menuItem_MoveSceneProject_Click(object sender, EventArgs e)
     {
       if (EditorApp.Scene == null)
@@ -4405,7 +4510,7 @@ namespace Editor
         EditorManager.Progress.StatusString = "Loading Layer" + Path.GetFileName(name);
         Application.DoEvents();
         Layer layer = null;
-        BinaryFormatter fmt = SerializationHelper.BINARY_FORMATTER;
+        IFormatter fmt = SerializationHelper.AUTO_FORMATTER;
         try
         {
           // open the layer in read-only mode
@@ -4579,6 +4684,7 @@ namespace Editor
 
       Process.Start(EditorManager.Project.ProjectDir);
     }
+
 
     private void Menu_vGameSolutionCreatorToolStripMenuItem_Click(object sender, EventArgs e)
     {
@@ -4935,7 +5041,12 @@ namespace Editor
     // Help->About this Scene
     private void Menu_File_Scene_Description_Click(object sender, System.EventArgs e)
     {
-      EditorApp.Scene.ShowDescription();
+      // Use correct property editor to change description.
+      V3DLayer mainLayer = (V3DLayer)EditorManager.Scene.MainLayer;
+      var pd = System.ComponentModel.TypeDescriptor.GetProperties(mainLayer)["Description"];
+      var descriptionEditor = (DescriptionTextEditor)pd.GetEditor(typeof(System.Drawing.Design.UITypeEditor));
+      var serviceProvider = new CSharpFramework.PropertyEditors.DefaultServiceProvider(mainLayer, pd);
+      mainLayer.Description = (string)descriptionEditor.EditValue(serviceProvider, mainLayer.Description);
     }
 
     // Help->About
@@ -5030,21 +5141,26 @@ namespace Editor
       if (layer==null || !layer.Modifiable)
         return;
 
-      SkyConfigDlg dlg = new SkyConfigDlg();
-      dlg.SkyConfig = layer.SkyConfig; // this assignment will clone the config
+      using (SkyConfigDlg dlg = new SkyConfigDlg())
+      {
+        dlg.SkyConfig = layer.SkyConfig; // this assignment will clone the config
+        layer.SkyConfig.Active = false;  // set the layer's SkyConfig to inactive, since only one instance should be active at the same time
 
-      if (dlg.ShowDialog()==DialogResult.OK)
-      {
-        EditorManager.Actions.Add(new SkyConfigChangedAction(layer,dlg.SkyConfig));
-      } 
-      else
-      {
-        layer.SkyConfig.Update(); // restore old sky
+        dlg.SkyConfig.HidePropertiesInEditor = false;
+        
+        if (dlg.ShowDialog() == DialogResult.OK)
+        {
+          dlg.SkyConfig.HidePropertiesInEditor = true;
+          EditorManager.Actions.Add(new SkyConfigChangedAction(layer, dlg.SkyConfig));
+        }
+        else
+        {
+          // restore old sky
+          layer.SkyConfig.Active = true;
+          layer.SkyConfig.Update();
+        }
       }
-
-      dlg.Dispose();
     }
-
 
     private void Menu_Engine_EditTimeOfDay_Click(object sender, EventArgs e)
     {
@@ -5056,13 +5172,19 @@ namespace Editor
 
       TimeOfDayDlg dlg = new TimeOfDayDlg();
       dlg.TimeOfDay = layer.TimeOfDay; // this assignment will clone the config
+      float oldCurrentTime = EditorManager.RendererNodeManager.GetCurrentTime();
+      dlg.CurrentTime = oldCurrentTime;
+      dlg.SkyConfig = layer.SkyConfig;
+
       if (dlg.ShowDialog() == DialogResult.OK)
       {
+        EditorManager.RendererNodeManager.SetCurrentTime(oldCurrentTime);
         // Get changed time of day config and apply it to the layer via the appropriate action.
         EditorManager.Actions.Add(new TimeOfDayChangedAction(layer, (TimeOfDay)dlg.TimeOfDay.Clone()));
       }
       else
       {
+        EditorManager.RendererNodeManager.SetCurrentTime(oldCurrentTime);
         // Reapply original config to the engine.
         EditorManager.RendererNodeManager.UpdateTimeOfDay(layer.TimeOfDay);
       }
@@ -6253,11 +6375,12 @@ namespace Editor
     }
 
     #endregion
+
   }
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140728)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

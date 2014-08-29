@@ -18,28 +18,38 @@ HK_FORCE_INLINE void HK_CALL hkVector4UtilImpl<FT>::setNormalOfTriangle(typename
 }
 
 
-#ifndef HK_VECTOR4fUTIL_atan2Approximation
+#ifndef HK_VECTOR4fUTIL_atan2
 template <>
-HK_FORCE_INLINE hkSimdFloat32 HK_CALL hkVector4UtilImpl<hkFloat32>::atan2Approximation(hkSimdFloat32Parameter y, hkSimdFloat32Parameter x)
+HK_FORCE_INLINE hkSimdFloat32 HK_CALL hkVector4UtilImpl<hkFloat32>::atan2(hkSimdFloat32Parameter y, hkSimdFloat32Parameter x)
 {
-	return hkSimdFloat32::fromFloat(hkMath::atan2Approximation(y.getReal(),x.getReal()));
+	return hkSimdFloat32::fromFloat(hkMath::atan2(y.getReal(),x.getReal()));
 }
 template <>
-HK_FORCE_INLINE void HK_CALL hkVector4UtilImpl<hkFloat32>::atan2Approximation(hkVector4fParameter y, hkVector4fParameter x, hkVector4f& result)
+HK_FORCE_INLINE void HK_CALL hkVector4UtilImpl<hkFloat32>::atan2(hkVector4fParameter y, hkVector4fParameter x, hkVector4f& result)
 {
-	result.set(hkMath::atan2Approximation(y(0),x(0)), hkMath::atan2Approximation(y(1),x(1)), hkMath::atan2Approximation(y(2),x(2)), hkMath::atan2Approximation(y(3),x(3)));
+	result.set(hkMath::atan2(y(0),x(0)), hkMath::atan2(y(1),x(1)), hkMath::atan2(y(2),x(2)), hkMath::atan2(y(3),x(3)));
+}
+template <>
+HK_FORCE_INLINE hkSimdFloat32 HK_CALL hkVector4UtilImpl<hkFloat32>::atan2(hkVector4fParameter v)
+{
+	return hkSimdFloat32::fromFloat(hkMath::atan2(v(1),v(0)));
 }
 #endif
-#ifndef HK_VECTOR4dUTIL_atan2Approximation
+#ifndef HK_VECTOR4dUTIL_atan2
 template <>
-HK_FORCE_INLINE hkSimdDouble64 HK_CALL hkVector4UtilImpl<hkDouble64>::atan2Approximation(hkSimdDouble64Parameter y, hkSimdDouble64Parameter x)
+HK_FORCE_INLINE hkSimdDouble64 HK_CALL hkVector4UtilImpl<hkDouble64>::atan2(hkSimdDouble64Parameter y, hkSimdDouble64Parameter x)
 {
-	return hkSimdDouble64::fromFloat(hkMath::atan2Approximation(y.getReal(),x.getReal()));
+	return hkSimdDouble64::fromFloat(hkMath::atan2(y.getReal(),x.getReal()));
 }
 template <>
-HK_FORCE_INLINE void HK_CALL hkVector4UtilImpl<hkDouble64>::atan2Approximation(hkVector4dParameter y, hkVector4dParameter x, hkVector4d& result)
+HK_FORCE_INLINE void HK_CALL hkVector4UtilImpl<hkDouble64>::atan2(hkVector4dParameter y, hkVector4dParameter x, hkVector4d& result)
 {
-	result.set(hkMath::atan2Approximation(y(0),x(0)), hkMath::atan2Approximation(y(1),x(1)), hkMath::atan2Approximation(y(2),x(2)), hkMath::atan2Approximation(y(3),x(3)));
+	result.set(hkMath::atan2(y(0),x(0)), hkMath::atan2(y(1),x(1)), hkMath::atan2(y(2),x(2)), hkMath::atan2(y(3),x(3)));
+}
+template <>
+HK_FORCE_INLINE hkSimdDouble64 HK_CALL hkVector4UtilImpl<hkDouble64>::atan2(hkVector4dParameter v)
+{
+	return hkSimdDouble64::fromFloat(hkMath::atan2(v(1),v(0)));
 }
 #endif
 
@@ -206,6 +216,12 @@ HK_FORCE_INLINE void HK_CALL hkVector4UtilImpl<hkDouble64>::logApproximation(hkV
 
 #ifndef HK_VECTOR4fUTIL_sinCos
 template <>
+HK_FORCE_INLINE void HK_CALL hkVector4UtilImpl<hkFloat32>::sinCos(hkVector4fParameter r, hkVector4f& sines, hkVector4f& cosines)
+{
+	  sines.set(hkMath::sin(r(0)),hkMath::sin(r(1)),hkMath::sin(r(2)),hkMath::sin(r(3)));
+	cosines.set(hkMath::cos(r(0)),hkMath::cos(r(1)),hkMath::cos(r(2)),hkMath::cos(r(3)));
+}
+template <>
 HK_FORCE_INLINE void HK_CALL hkVector4UtilImpl<hkFloat32>::sinCos(hkVector4fParameter r, hkVector4f& sc)
 {
 	sc.set(hkMath::sin(r(0)),hkMath::cos(r(1)),hkMath::sin(r(2)),hkMath::cos(r(3)));
@@ -227,6 +243,12 @@ HK_FORCE_INLINE void HK_CALL hkVector4UtilImpl<hkFloat32>::sinCos(hkSimdFloat32P
 }
 #endif
 #ifndef HK_VECTOR4dUTIL_sinCos
+template <>
+HK_FORCE_INLINE void HK_CALL hkVector4UtilImpl<hkDouble64>::sinCos(hkVector4dParameter r, hkVector4d& sines, hkVector4d& cosines)
+{
+	  sines.set(hkMath::sin(r(0)),hkMath::sin(r(1)),hkMath::sin(r(2)),hkMath::sin(r(3)));
+	cosines.set(hkMath::cos(r(0)),hkMath::cos(r(1)),hkMath::cos(r(2)),hkMath::cos(r(3)));
+}
 template <>
 HK_FORCE_INLINE void HK_CALL hkVector4UtilImpl<hkDouble64>::sinCos(hkVector4dParameter r, hkVector4d& sc)
 {
@@ -296,6 +318,16 @@ HK_FORCE_INLINE void HK_CALL hkVector4UtilImpl<hkFloat32>::aCos(hkVector4fParame
 	sc.set(hkMath::acos(r(0)),hkMath::acos(r(1)),hkMath::acos(r(2)),hkMath::acos(r(3)));
 }
 template <>
+HK_FORCE_INLINE hkSimdFloat32 HK_CALL hkVector4UtilImpl<hkFloat32>::aSin(hkSimdFloat32Parameter r)
+{
+	return hkSimdFloat32::fromFloat( hkMath::asin(r.getReal()) );
+}
+template <>
+HK_FORCE_INLINE hkSimdFloat32 HK_CALL hkVector4UtilImpl<hkFloat32>::aCos(hkSimdFloat32Parameter r)
+{
+	return hkSimdFloat32::fromFloat( hkMath::acos(r.getReal()) );
+}
+template <>
 HK_FORCE_INLINE void HK_CALL hkVector4UtilImpl<hkFloat32>::aSinAcos(hkVector4fParameter r, hkVector4f& sc)
 {
 	sc.set(hkMath::asin(r(0)),hkMath::acos(r(1)),hkMath::asin(r(2)),hkMath::acos(r(3)));
@@ -326,6 +358,16 @@ template <>
 HK_FORCE_INLINE void HK_CALL hkVector4UtilImpl<hkDouble64>::aCos(hkVector4dParameter r, hkVector4d& sc)
 {
 	sc.set(hkMath::acos(r(0)),hkMath::acos(r(1)),hkMath::acos(r(2)),hkMath::acos(r(3)));
+}
+template <>
+HK_FORCE_INLINE hkSimdDouble64 HK_CALL hkVector4UtilImpl<hkDouble64>::aSin(hkSimdDouble64Parameter r)
+{
+	return hkSimdDouble64::fromFloat( hkMath::asin(r.getReal()) );
+}
+template <>
+HK_FORCE_INLINE hkSimdDouble64 HK_CALL hkVector4UtilImpl<hkDouble64>::aCos(hkSimdDouble64Parameter r)
+{
+	return hkSimdDouble64::fromFloat( hkMath::acos(r.getReal()) );
 }
 template <>
 HK_FORCE_INLINE void HK_CALL hkVector4UtilImpl<hkDouble64>::aSinAcos(hkVector4dParameter r, hkVector4d& sc)
@@ -362,48 +404,6 @@ HK_FORCE_INLINE void HK_CALL hkVector4UtilImpl<FT>::convertFromHalf( const hkHal
 }
 
 
-template <typename FT>
-HK_FORCE_INLINE void HK_CALL hkVector4UtilImpl<FT>::convertToInt16( typename hkRealTypes<FT>::VectorParameter in, typename hkRealTypes<FT>::VectorParameter offset, typename hkRealTypes<FT>::VectorParameter scale, hkIntUnion64& out)
-{
-	typename hkRealTypes<FT>::Vector x;
-	x.setAdd(in,offset);
-	x.mul(scale);
-
-	hkIntVector i;
-	i.setConvertF32toS32(x);
-	i.setConvertSaturateS32ToS16(i,i);
-	i.store<2>(&out.u32[0]); // 2xu32 = 4xu16
-}
-
-
-#ifndef HK_VECTOR4fUTIL_convertToUint16
-template <>
-HK_FORCE_INLINE void HK_CALL hkVector4UtilImpl<hkFloat32>::convertToUint16( hkVector4fParameter in, hkVector4fParameter offset, hkVector4fParameter scale, hkIntUnion64& out)
-{
-	hkVector4f x;
-	x.setAdd(in,offset);
-	x.mul(scale);
-
-	hkIntVector i;
-	i.setConvertF32toS32(x);
-	i.setConvertSaturateS32ToU16(i,i);
-	i.store<2>(&out.u32[0]); // 2xu32 = 4xu16
-}
-#endif
-#ifndef HK_VECTOR4dUTIL_convertToUint16
-template <>
-HK_FORCE_INLINE void HK_CALL hkVector4UtilImpl<hkDouble64>::convertToUint16( hkVector4dParameter in, hkVector4dParameter offset, hkVector4dParameter scale, hkIntUnion64& out)
-{
-	hkVector4d x;
-	x.setAdd(in,offset);
-	x.mul(scale);
-
-	hkIntVector i;
-	i.setConvertF32toS32(x);
-	i.setConvertSaturateS32ToU16(i,i);
-	i.store<2>(&out.u32[0]); // 2xu32 = 4xu16
-}
-#endif
 
 #ifndef HK_VECTOR4fUTIL_convertToUint16WithClip
 template <>
@@ -415,7 +415,7 @@ HK_FORCE_INLINE void HK_CALL hkVector4UtilImpl<hkFloat32>::convertToUint16WithCl
 	x.setMin(x,max);
 	x.setMax(x,min);
 
-#if !defined(HK_PLATFORM_WIN32) && !defined(HK_PLATFORM_X64)
+#if defined(HK_USING_GENERIC_INT_VECTOR_IMPLEMENTATION)
 	hkVector4f convertToUint16WithClipMagic; convertToUint16WithClipMagic.setAll(65536.0f);
 	x.add( convertToUint16WithClipMagic );
 
@@ -434,7 +434,7 @@ HK_FORCE_INLINE void HK_CALL hkVector4UtilImpl<hkFloat32>::convertToUint16WithCl
 #else
 	hkIntVector i;
 	i.setConvertF32toS32(x);
-	i.setConvertSaturateS32ToU16(i,i);
+	i.setConvertU32ToU16(i,i);
 	i.store<2>(&out.u32[0]); // 2xu32 = 4xu16
 #endif
 }
@@ -451,7 +451,7 @@ HK_FORCE_INLINE void HK_CALL hkVector4UtilImpl<hkDouble64>::convertToUint16WithC
 
 	hkIntVector i;
 	i.setConvertF32toS32(x);
-	i.setConvertSaturateS32ToU16(i,i);
+	i.setConvertU32ToU16(i,i);
 	i.store<2>(&out.u32[0]); // 2xu32 = 4xu16
 }
 #endif
@@ -518,11 +518,12 @@ HK_FORCE_INLINE void HK_CALL hkVector4UtilImpl<FT>::calculatePerpendicularVector
 	typename hkRealTypes<FT>::Vector h; h.setXYZ_0( vectorIn );
 	typename hkRealTypes<FT>::Vector d0; d0.template setPermutation<hkVectorPermutation::YXWW>(h);
 	typename hkRealTypes<FT>::Vector d1; d1.template setPermutation<hkVectorPermutation::ZWXW>(h);
-	const typename hkRealTypes<FT>::Scalar l0 = d0.template lengthSquared<3>();
-	const typename hkRealTypes<FT>::Scalar l1 = d1.template lengthSquared<3>();
+	const typename hkRealTypes<FT>::Scalar l0 = vectorIn.template lengthSquared<2>();	// same as d0.lengthSquared<3>
+	const typename hkRealTypes<FT>::Scalar l1 = d1.template lengthSquared<4>();			// actually 3 but .w is zero and lengthSquared<4> is faster
+	d0.template setNeg<1>(d0);
+	d1.template setNeg<1>(d1);
 	const typename hkRealTypes<FT>::Comparison c = l0.less( l1 );
-	typename hkRealTypes<FT>::Vector out; out.setSelect(c,d1,d0);
-	biVectorOut.template setNeg<1>(out);
+	biVectorOut.setSelect(c,d1,d0);
 #else
 	// find the indices of (one of) the smallest component(s) and the indices of
 	// the remaining two components in the vector
@@ -565,12 +566,13 @@ HK_FORCE_INLINE void HK_CALL hkVector4UtilImpl<FT>::calculatePerpendicularNormal
 	typename hkRealTypes<FT>::Vector h; h.setXYZ_0( vectorIn );
 	typename hkRealTypes<FT>::Vector d0; d0.template setPermutation<hkVectorPermutation::YXWW>(h);
 	typename hkRealTypes<FT>::Vector d1; d1.template setPermutation<hkVectorPermutation::ZWXW>(h);
-	const typename hkRealTypes<FT>::Scalar l0 = d0.template lengthSquared<3>();
-	const typename hkRealTypes<FT>::Scalar l1 = d1.template lengthSquared<3>();
+	const typename hkRealTypes<FT>::Scalar l0 = vectorIn.template lengthSquared<2>();	// same as d0.lengthSquared<3>
+	const typename hkRealTypes<FT>::Scalar l1 = d1.template lengthSquared<4>();			// actually 3 but .w is zero and lengthSquared<4> is faster
 	typename hkRealTypes<FT>::Scalar len; len.setMax( l0, l1 );
 	const typename hkRealTypes<FT>::Comparison c = l0.less( l1 );
+	d0.template setNeg<1>(d0);
+	d1.template setNeg<1>(d1);
 	typename hkRealTypes<FT>::Vector o0; o0.setSelect(c,d1,d0);
-	o0.template setNeg<1>(o0);
 	typename hkRealTypes<FT>::Vector o1;
 	if ( INVERSE2	)
 	{
@@ -580,8 +582,8 @@ HK_FORCE_INLINE void HK_CALL hkVector4UtilImpl<FT>::calculatePerpendicularNormal
 	{
 		o1.setCross( vectorIn, o0 );
 	}
-	typename hkRealTypes<FT>::Scalar invLen = len.template sqrtInverse<HK_ACC_23_BIT, HK_SQRT_IGNORE>(  );
-	biVectorOut.setMul( invLen, o0 );
+	typename hkRealTypes<FT>::Scalar invLen = len.template sqrtInverse<HK_ACC_MID, HK_SQRT_IGNORE>(  );
+	biVectorOut. setMul( invLen, o0 );
 	bi2VectorOut.setMul( invLen, o1 );
 #else
 	// find the indices of (one of) the smallest component(s) and the indices of
@@ -611,7 +613,7 @@ HK_FORCE_INLINE void HK_CALL hkVector4UtilImpl<FT>::calculatePerpendicularNormal
 	biVectorOut.setZero();
 	biVectorOut(ok1) =  vectorIn(ok2);
 	biVectorOut(ok2) = -vectorIn(ok1);
-	biVectorOut.template normalize<3,HK_ACC_23_BIT, HK_SQRT_IGNORE>();
+	biVectorOut.template normalize<3,HK_ACC_MID, HK_SQRT_IGNORE>();
 	if(INVERSE2)
 	{
 		bi2VectorOut.setCross( biVectorOut, vectorIn );
@@ -715,16 +717,10 @@ HK_FORCE_INLINE void HK_CALL hkVector4UtilImpl<FT>::transformPlaneEquations( con
 
 
 template <typename FT>
-HK_FORCE_INLINE void HK_CALL hkVector4UtilImpl<FT>::transformPlaneEquation( const typename hkRealTypes<FT>::Transform& t, typename hkRealTypes<FT>::VectorParameter plane, typename hkRealTypes<FT>::Vector& planeOut )
+HK_FORCE_INLINE void HK_CALL hkVector4UtilImpl<FT>::transformPlaneEquation( const typename hkRealTypes<FT>::Transform& transform, typename hkRealTypes<FT>::VectorParameter plane, typename hkRealTypes<FT>::Vector& planeOut )
 {
-	const typename hkRealTypes<FT>::Rotation rotation = t.getRotation();	// we are making a copy here to allow for better compiler support
-
-	typename hkRealTypes<FT>::Vector tr;	tr.template setNeg<4>(t.getTranslation()); 
-	typename hkRealTypes<FT>::Vector pivotShift; pivotShift._setRotatedInverseDir( rotation, tr );
-
-	const typename hkRealTypes<FT>::Scalar newDist = plane.dot4xyz1(pivotShift);
-	typename hkRealTypes<FT>::Vector h; h._setRotatedDir(rotation, plane );
-	planeOut.setXYZ_W(h, newDist);
+	typename hkRealTypes<FT>::Vector    worldPlane;	worldPlane._setRotatedDir(transform.getRotation(), plane);
+	planeOut.setXYZ_W( worldPlane, plane.template getComponent<3>() - worldPlane.template dot<3>(transform.getTranslation()) );
 }
 
 
@@ -753,12 +749,14 @@ HK_FORCE_INLINE void HK_CALL hkVector4UtilImpl<FT>::transformAndScalePlane( cons
 	//  and n'^T t. Finally we must scale the equation so that
 	//  the new normal (xyz) is unit length
 
+	HK_MATH_ASSERT( 0xf0237ab1, planeInOut.notEqualZero().template anyIsSet<hkVector4ComparisonMask::MASK_XYZ>(), "invalid plane definition"); // note we do not require normal length
 	const typename hkRealTypes<FT>::Scalar w = planeInOut.getW();
 	const typename hkRealTypes<FT>::Vector translation = transform.getTranslation();
-	typename hkRealTypes<FT>::Vector invScale; invScale.setReciprocal(scale); 
+	HK_MATH_ASSERT( 0xf0237ab0, scale.greater(hkRealTypes<FT>::Vector::template getConstant<HK_QUADREAL_EPS>()).allAreSet(), "scale must not be smaller than numeric epsilon value to not destroy the plane definition");
+	typename hkRealTypes<FT>::Vector invScale; invScale.template setReciprocal<HK_ACC_MID,HK_DIV_IGNORE>(scale); 
 	typename hkRealTypes<FT>::Vector planeLocal; planeLocal.setMul(planeInOut, invScale); 
 	planeLocal._setRotatedDir(transform.getRotation(), planeLocal);
-	const typename hkRealTypes<FT>::Scalar invNorm = planeLocal.template lengthInverse<3,HK_ACC_23_BIT,HK_SQRT_SET_ZERO>();
+	const typename hkRealTypes<FT>::Scalar invNorm = planeLocal.template lengthInverse<3,HK_ACC_MID,HK_SQRT_IGNORE>();
 	const typename hkRealTypes<FT>::Scalar dot = planeLocal.template dot<3>(translation);
 	planeLocal.setW( w-dot );
 	planeLocal.mul(invNorm); // notice w must be scaled as well
@@ -768,16 +766,15 @@ HK_FORCE_INLINE void HK_CALL hkVector4UtilImpl<FT>::transformAndScalePlane( cons
 template <typename FT>
 HK_FORCE_INLINE void HK_CALL hkVector4UtilImpl<FT>::scalePlane( const typename hkRealTypes<FT>::Vector& scale, typename hkRealTypes<FT>::Vector& planeInOut )
 {
+	HK_MATH_ASSERT( 0xf0237ab2, planeInOut.notEqualZero().template anyIsSet<hkVector4ComparisonMask::MASK_XYZ>(), "invalid plane definition"); // note we do not require normal length
 	// By setting R = identity in the derivation in transformAndScalePlane(),
 	// we get a slightly simplified method for scaling plane equations
 	const typename hkRealTypes<FT>::Scalar w = planeInOut.getW();
-	//const typename hkRealTypes<FT>::Vector translation = transform.getTranslation();
-	typename hkRealTypes<FT>::Vector invScale; invScale.setReciprocal(scale); 
+	HK_MATH_ASSERT( 0xf0237ab3, scale.greater(hkRealTypes<FT>::Vector::template getConstant<HK_QUADREAL_EPS>()).allAreSet(), "scale must not be smaller than numeric epsilon value to not destroy the plane definition");
+	typename hkRealTypes<FT>::Vector invScale; invScale.template setReciprocal<HK_ACC_MID,HK_DIV_IGNORE>(scale); 
 	typename hkRealTypes<FT>::Vector planeLocal; planeLocal.setMul(planeInOut, invScale); 
-	//planeLocal._setRotatedDir(transform.getRotation(), planeLocal);
-	const typename hkRealTypes<FT>::Scalar invNorm = planeLocal.template lengthInverse<3,HK_ACC_23_BIT,HK_SQRT_SET_ZERO>();
-	//const typename hkRealTypes<FT>::Scalar dot = planeLocal.template dot<3>(translation);
-	planeLocal.setW( w /*-dot*/ );
+	const typename hkRealTypes<FT>::Scalar invNorm = planeLocal.template lengthInverse<3,HK_ACC_MID,HK_SQRT_IGNORE>();
+	planeLocal.setW( w  );
 	planeLocal.mul(invNorm); // notice w must be scaled as well
 	planeInOut = planeLocal;
 }
@@ -785,6 +782,7 @@ HK_FORCE_INLINE void HK_CALL hkVector4UtilImpl<FT>::scalePlane( const typename h
 template <typename FT>
 HK_FORCE_INLINE void HK_CALL hkVector4UtilImpl<FT>::translatePlane( const typename hkRealTypes<FT>::Vector& translation, typename hkRealTypes<FT>::Vector& planeInOut )
 {
+	HK_MATH_ASSERT( 0xf0237ab4, planeInOut.notEqualZero().template anyIsSet<hkVector4ComparisonMask::MASK_XYZ>(), "invalid plane definition"); // note we do not require normal length
 	// By setting S = R = identity in the derivation in transformAndScalePlane(),
 	typename hkRealTypes<FT>::Vector planeLocal = planeInOut; 
 	const typename hkRealTypes<FT>::Scalar w = planeLocal.getW();
@@ -1403,16 +1401,9 @@ template <typename FT>
 HK_FORCE_INLINE void HK_CALL hkVector4UtilImpl<FT>::dot4xyz1_1vs4( typename hkRealTypes<FT>::VectorParameter vectorIn, typename hkRealTypes<FT>::VectorParameter a0, typename hkRealTypes<FT>::VectorParameter a1, typename hkRealTypes<FT>::VectorParameter a2, typename hkRealTypes<FT>::VectorParameter a3, typename hkRealTypes<FT>::Vector& dotsOut)
 {
 #if (HK_CONFIG_SIMD == HK_CONFIG_SIMD_ENABLED)
-	typename hkRealTypes<FT>::Vector c0; c0.setMul(a0, vectorIn);
-	typename hkRealTypes<FT>::Vector c1; c1.setMul(a1, vectorIn);
-	typename hkRealTypes<FT>::Vector c2; c2.setMul(a2, vectorIn);
-	typename hkRealTypes<FT>::Vector c3; c3.setMul(a3, vectorIn);
-
-	transpose(c0, c1, c2, c3);
-	typename hkRealTypes<FT>::Scalar w = vectorIn.getW();
-	typename hkRealTypes<FT>::Vector s; s.setAdd(c2, w);
-	dotsOut.setAdd(c0, c1);
-	dotsOut.add(s);
+	typename hkRealTypes<FT>::Vector dots3;
+	hkVector4UtilImpl<FT>::dot3_1vs4(vectorIn, a0, a1, a2, a3, dots3);
+	dotsOut.setAdd(dots3, vectorIn.getW());
 #else
 	dotsOut.set( vectorIn.dot4xyz1( a0 ),
 		vectorIn.dot4xyz1( a1 ),
@@ -1420,7 +1411,6 @@ HK_FORCE_INLINE void HK_CALL hkVector4UtilImpl<FT>::dot4xyz1_1vs4( typename hkRe
 		vectorIn.dot4xyz1( a3 ) );
 #endif
 }
-
 
 #ifndef HK_VECTOR4fUTIL_dot3_2vs2
 template <>
@@ -1466,6 +1456,16 @@ HK_FORCE_INLINE void HK_CALL hkVector4UtilImpl<hkDouble64>::dot3_2vs2( hkVector4
 #endif
 }
 #endif
+
+template <typename FT>
+HK_FORCE_INLINE void HK_CALL hkVector4UtilImpl<FT>::dot4xyz1_2vs2( typename hkRealTypes<FT>::VectorParameter a0, typename hkRealTypes<FT>::VectorParameter a2, typename hkRealTypes<FT>::VectorParameter b0, typename hkRealTypes<FT>::VectorParameter b1, typename hkRealTypes<FT>::Vector& dotsOut)
+{
+	typename hkRealTypes<FT>::Vector dot3s;
+	hkVector4UtilImpl<FT>::dot3_2vs2(a0, a2, b0, b1, dot3s);
+	typename hkRealTypes<FT>::Vector w;
+	hkVector4UtilImpl<FT>::template setPermutation2<3,3,7,7>(a0, a2, w);
+	dotsOut.setAdd(dot3s, w);
+}
 
 
 //
@@ -1540,6 +1540,28 @@ HK_FORCE_INLINE void HK_CALL hkVector4UtilImpl<FT>::cross_4vs1(	typename hkRealT
 #endif
 }
 
+template <typename FT>
+template <int X>
+HK_FORCE_INLINE typename hkRealTypes<FT>::Scalar HK_CALL hkVector4UtilImpl<FT>::dot3X( VectorParameter a0, VectorParameter a1, VectorParameter b0, VectorParameter b1, VectorParameter c0, VectorParameter c1)
+{
+	typename hkRealTypes<FT>::Vector a; a.setMul( a0, a1 );
+	typename hkRealTypes<FT>::Vector b; b.setMul( b0, b1 );
+	a.addMul( c0, c1 );
+	a.add( b );
+	typename hkRealTypes<FT>::Scalar result = a.template horizontalAdd<X>();
+	return result;
+}
+
+template <typename FT>
+template <int X>
+HK_FORCE_INLINE typename hkRealTypes<FT>::Scalar HK_CALL hkVector4UtilImpl<FT>::dot2X( VectorParameter a0, VectorParameter a1, VectorParameter b0, VectorParameter b1)
+{
+	typename hkRealTypes<FT>::Vector a; a.setMul( a0, a1 );
+	a.addMul( b0, b1 );
+	typename hkRealTypes<FT>::Scalar result = a.template horizontalAdd<X>();
+	return result;
+}
+
 
 //
 //	Computes the cross products: (vA, vB), (vB, vC), (vC, vA)
@@ -1573,22 +1595,23 @@ HK_FORCE_INLINE void hkVector4UtilImpl<FT>::computeCyclicCrossProducts(	typename
 
 
 template <typename FT>
-HK_FORCE_INLINE void hkVector4UtilImpl<FT>::computeQuadEdgePlanes( typename hkRealTypes<FT>::VectorParameter vA, typename hkRealTypes<FT>::VectorParameter vB, typename hkRealTypes<FT>::VectorParameter vC, typename hkRealTypes<FT>::VectorParameter vD, typename hkRealTypes<FT>::Vector* normalOut, typename hkRealTypes<FT>::Transform* edgesOut )
+HK_FORCE_INLINE void hkVector4UtilImpl<FT>::computeQuadEdgePlanes( typename hkRealTypes<FT>::VectorParameter vA, typename hkRealTypes<FT>::VectorParameter vB, typename hkRealTypes<FT>::VectorParameter vC, typename hkRealTypes<FT>::VectorParameter vD, typename hkRealTypes<FT>::Vector* HK_RESTRICT normalOut, typename hkRealTypes<FT>::Transform* HK_RESTRICT edgesOut )
 {
 	typename hkRealTypes<FT>::Vector vAB;	vAB.setSub(vB, vA);
 	typename hkRealTypes<FT>::Vector vBC;	vBC.setSub(vC, vB);
 	typename hkRealTypes<FT>::Vector normal;	normal.setCross(vAB, vBC );
-	normal.template normalize<3>();
 
-	// Find closest point in A
-	normal.setW(-normal.template dot<3>(vA));
-	*normalOut = normal;
 
 	// edges
 	typename hkRealTypes<FT>::Vector vCD;	vCD.setSub(vD, vC);
 	typename hkRealTypes<FT>::Vector vDA;	vDA.setSub(vA, vD);
 	typename hkRealTypes<FT>::Vector epA, epB, epC, epD; 
 	cross_4vs1( vAB, vBC, vCD, vDA, normal, epA, epB, epC, epD );
+
+	// Find closest point in A
+	normal.template normalize<3>();
+	normal.setW(-normal.template dot<3>(vA));
+	*normalOut = normal;
 
 	typename hkRealTypes<FT>::Vector o; dot3_4vs4( vA, epA, vB, epB, vC, epC, vD, epD, o );
 
@@ -1610,15 +1633,6 @@ HK_FORCE_INLINE void hkVector4UtilImpl<FT>::computeQuadEdgePlanes( typename hkRe
 	invLen.template setNeg<4>(invLen);
 	edgesOut->getColumn(3).setMul( o, invLen);
 }
-
-
-
-#ifndef HK_VECTOR4UTIL_exitMmx
-template <typename FT>
-HK_FORCE_INLINE void HK_CALL hkVector4UtilImpl<FT>::exitMmx()
-{
-}
-#endif
 
 
 template <typename FT>
@@ -1658,15 +1672,7 @@ HK_FORCE_INLINE void HK_CALL hkVector4UtilImpl<FT>::setMin44(typename hkRealType
 template <typename FT>
 HK_FORCE_INLINE void HK_CALL hkVector4UtilImpl<FT>::unPackInt32IntoQuaternion( hkUint32 ivalue, typename hkRealTypes<FT>::Vector& qout )
 {
-	HK_ALIGN_FLOAT(hkUint32 abcd[4]);
-	abcd[0] = ivalue;
-	abcd[1] = ivalue >> 8;
-	abcd[2] = ivalue >> 16;
-	abcd[3] = ivalue >> 24;
-
-	hkIntVector p; p.load<4>(&abcd[0]);
-	hkIntVector f; f.setAll(0xff);
-	hkIntVector c; c.setAnd(p,f);
+	hkIntVector c; c.setFirstComponent(ivalue); c.setSplit8To32(c);
 	hkIntVector h; h.setAll(0x80);
 	hkIntVector i; i.setSubU32(c,h); i.convertS32ToF32(qout);
 
@@ -1812,27 +1818,27 @@ HK_FORCE_INLINE void HK_CALL hkVector4UtilImpl<FT>::sortVectorIncreasing(typenam
 	// Implemented as a 5-comparator, 3-round sorting network
 	// Round 1: X/Z, Y/W
 	{
-		hkVector4 zwxy; zwxy.setPermutation<hkVectorPermutation::ZWXY>(xyzw);
-		hkVector4Comparison comp = xyzw.less(zwxy);
-		hkVector4Comparison czw; czw.set<hkVector4Comparison::MASK_ZW>();
+		typename hkRealTypes<FT>::Vector zwxy; zwxy.template setPermutation<hkVectorPermutation::ZWXY>(xyzw);
+		typename hkRealTypes<FT>::Comparison comp = xyzw.less(zwxy);
+		typename hkRealTypes<FT>::Comparison czw; czw.template set<hkVector4ComparisonMask::MASK_ZW>();
 		comp.setXor(comp, czw);
 		xyzw.setSelect(comp, xyzw, zwxy);
 	}
 
 	// Round 2: X/Y, Z/W
 	{
-		hkVector4 yxwz; yxwz.setPermutation<hkVectorPermutation::YXWZ>(xyzw);
-		hkVector4Comparison comp = xyzw.less(yxwz);
-		hkVector4Comparison cyw; cyw.set<hkVector4Comparison::MASK_YW>();
+		typename hkRealTypes<FT>::Vector yxwz; yxwz.template setPermutation<hkVectorPermutation::YXWZ>(xyzw);
+		typename hkRealTypes<FT>::Comparison comp = xyzw.less(yxwz);
+		typename hkRealTypes<FT>::Comparison cyw; cyw.template set<hkVector4ComparisonMask::MASK_YW>();
 		comp.setXor(comp, cyw);
 		xyzw.setSelect(comp, xyzw, yxwz);
 	}
 
 	// Round 3: Y/Z
 	{
-		hkVector4 xzyw; xzyw.setPermutation<hkVectorPermutation::XZYW>(xyzw);
-		hkVector4Comparison comp = xyzw.less(xzyw);
-		hkVector4Comparison cz; cz.set<hkVector4Comparison::MASK_Z>();
+		typename hkRealTypes<FT>::Vector xzyw; xzyw.template setPermutation<hkVectorPermutation::XZYW>(xyzw);
+		typename hkRealTypes<FT>::Comparison comp = xyzw.less(xzyw);
+		typename hkRealTypes<FT>::Comparison cz; cz.template set<hkVector4ComparisonMask::MASK_Z>();
 		comp.setXor(comp, cz);
 		xyzw.setSelect(comp, xyzw, xzyw);
 	}
@@ -1846,27 +1852,27 @@ HK_FORCE_INLINE void HK_CALL hkVector4UtilImpl<FT>::sortVectorDecreasing(typenam
 	// Implemented as a 5-comparator, 3-round sorting network
 	// Round 1: X/Z, Y/W
 	{
-		hkVector4 zwxy; zwxy.setPermutation<hkVectorPermutation::ZWXY>(xyzw);
-		hkVector4Comparison comp = xyzw.greater(zwxy);
-		hkVector4Comparison czw; czw.set<hkVector4Comparison::MASK_ZW>();
+		typename hkRealTypes<FT>::Vector zwxy; zwxy.template setPermutation<hkVectorPermutation::ZWXY>(xyzw);
+		typename hkRealTypes<FT>::Comparison comp = xyzw.greater(zwxy);
+		typename hkRealTypes<FT>::Comparison czw; czw.template set<hkVector4ComparisonMask::MASK_ZW>();
 		comp.setXor(comp, czw);
 		xyzw.setSelect(comp, xyzw, zwxy);
 	}
 
 	// Round 2: X/Y, Z/W
 	{
-		hkVector4 yxwz; yxwz.setPermutation<hkVectorPermutation::YXWZ>(xyzw);
-		hkVector4Comparison comp = xyzw.greater(yxwz);
-		hkVector4Comparison cyw; cyw.set<hkVector4Comparison::MASK_YW>();
+		typename hkRealTypes<FT>::Vector yxwz; yxwz.template setPermutation<hkVectorPermutation::YXWZ>(xyzw);
+		typename hkRealTypes<FT>::Comparison comp = xyzw.greater(yxwz);
+		typename hkRealTypes<FT>::Comparison cyw; cyw.template set<hkVector4ComparisonMask::MASK_YW>();
 		comp.setXor(comp, cyw);
 		xyzw.setSelect(comp, xyzw, yxwz);
 	}
 
 	// Round 3: Y/Z
 	{
-		hkVector4 xzyw; xzyw.setPermutation<hkVectorPermutation::XZYW>(xyzw);
-		hkVector4Comparison comp = xyzw.greater(xzyw);
-		hkVector4Comparison cz; cz.set<hkVector4Comparison::MASK_Z>();
+		typename hkRealTypes<FT>::Vector xzyw; xzyw.template setPermutation<hkVectorPermutation::XZYW>(xyzw);
+		typename hkRealTypes<FT>::Comparison comp = xyzw.greater(xzyw);
+		typename hkRealTypes<FT>::Comparison cz; cz.template set<hkVector4ComparisonMask::MASK_Z>();
 		comp.setXor(comp, cz);
 		xyzw.setSelect(comp, xyzw, xzyw);
 	}
@@ -1877,7 +1883,7 @@ template <typename FT>
 HK_FORCE_INLINE void HK_CALL hkVector4UtilImpl<FT>::setLength( typename hkRealTypes<FT>::ScalarParameter desiredLength, typename hkRealTypes<FT>::Vector& vectorInOut )
 {
 	typename hkRealTypes<FT>::Vector v = vectorInOut;
-	typename hkRealTypes<FT>::Scalar newLenInv = v.template lengthInverse<3, HK_ACC_23_BIT, HK_SQRT_SET_ZERO>();
+	typename hkRealTypes<FT>::Scalar newLenInv = v.template lengthInverse<3, HK_ACC_MID, HK_SQRT_SET_ZERO>();
 	typename hkRealTypes<FT>::Scalar factor = newLenInv * desiredLength;
 	vectorInOut.setMul( v, factor );
 }
@@ -1889,7 +1895,7 @@ HK_FORCE_INLINE void HK_CALL hkVector4UtilImpl<FT>::setProjectedLength( typename
 	typename hkRealTypes<FT>::Scalar dot2 = v.template dot<3>(scaleMeasurePlane);
 	typename hkRealTypes<FT>::Vector v2; v2.setSubMul( v, scaleMeasurePlane, dot2 );
 
-	typename hkRealTypes<FT>::Scalar newLenInv = v2.template lengthInverse<3, HK_ACC_23_BIT, HK_SQRT_SET_ZERO>();
+	typename hkRealTypes<FT>::Scalar newLenInv = v2.template lengthInverse<3, HK_ACC_MID, HK_SQRT_SET_ZERO>();
 	typename hkRealTypes<FT>::Scalar factor = newLenInv * desiredLength;
 	factor.setMin( factor, maxScale );
 	factor.setMax( factor, -maxScale );
@@ -1922,6 +1928,36 @@ HK_FORCE_INLINE void HK_CALL hkVector4UtilImpl<hkDouble64>::convertComparison(hk
 }
 #endif
 
+#ifndef HK_VECTOR4fUTIL_convertVector
+template <>
+HK_FORCE_INLINE void HK_CALL hkVector4UtilImpl<hkFloat32>::convertVector(hkVector4fParameter vin, hkVector4d& vout)
+{
+	typedef union { hkQuadFloat32 q; hkFloat32 f32[4]; } q2f;
+	const q2f* in = (const q2f*)&vin.m_quad;
+	vout.load<4>(in->f32);
+}
+template <>
+HK_FORCE_INLINE void HK_CALL hkVector4UtilImpl<hkFloat32>::convertVector(hkVector4fParameter vin, hkVector4f& vout)
+{
+	vout = vin;
+}
+#endif
+#ifndef HK_VECTOR4dUTIL_convertVector
+template <>
+HK_FORCE_INLINE void HK_CALL hkVector4UtilImpl<hkDouble64>::convertVector(hkVector4dParameter vin, hkVector4f& vout)
+{
+	typedef union { hkQuadDouble64 q; hkDouble64 d64[4]; } q2d;
+	const q2d* in = (const q2d*)&vin.m_quad;
+	vout.load<4>(in->d64);
+}
+template <>
+HK_FORCE_INLINE void HK_CALL hkVector4UtilImpl<hkDouble64>::convertVector(hkVector4dParameter vin, hkVector4d& vout)
+{
+	vout = vin;
+}
+#endif
+
+
 #if !defined(HK_PLATFORM_SPU)
 template <typename FT>
 void hkVector4UtilImpl<FT>::getFloatToInt16FloorCorrection(typename hkRealTypes<FT>::Pod& out)
@@ -1936,7 +1972,7 @@ void hkVector4UtilImpl<FT>::getFloatToInt16FloorCorrection(typename hkRealTypes<
 		typename hkRealTypes<FT>::Vector p; p.setAll( m );
 
 		hkIntUnion64 iout;
-		convertToUint16( p, hkRealTypes<FT>::Vector::getZero(), one, iout );
+		convertToUint16WithClip( p, hkRealTypes<FT>::Vector::getZero(), one, hkRealTypes<FT>::Vector::getZero(), hkRealTypes<FT>::Vector::template getConstant<HK_QUADREAL_HIGH>(), iout );
 
 		if ( iout.u16[0] < 11 )
 		{
@@ -1996,10 +2032,9 @@ hkUint32 hkVector4UtilImpl<FT>::packQuaternionIntoInt32( typename hkRealTypes<FT
 	hkIntVector f; f.setAll(0xff);
 	hkIntVector p; p.setAnd(r,f);
 
-	HK_ALIGN_FLOAT(hkUint32 abcd[4]);
-	p.store<4>(&abcd[0]);
-
-	return abcd[0] | (abcd[1] << 8) | (abcd[2] << 16) | (abcd[3] << 24);
+	p.setConvertSaturateS32ToS16(p,p); // saturation won't happen because of masking above
+	p.setConvertSaturateS16ToU8(p,p);
+	return p.getU32<0>();
 }
 #undef HK_VECTOR4UTIL_PACK_RANGE
 
@@ -2114,13 +2149,13 @@ template <typename FT>
 		cv.subMul(kf, diameter);
 		k.add(kf);
 		cvc.setClamped(cv, mradius, radius);
-	} while ( !cvc.isEqual(cv) );
+	} while ( cvc.isNotEqual(cv) );
 
 	return cv;
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

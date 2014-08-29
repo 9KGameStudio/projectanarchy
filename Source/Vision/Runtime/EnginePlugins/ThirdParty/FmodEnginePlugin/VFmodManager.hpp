@@ -189,7 +189,7 @@ public:
 
   /// \brief
   ///   Optionally: Attaches a listener (If NULL, the main camera is used)
-  inline void SetListenerObject(VisObject3D_cl *pListener) { m_pListenerObject = pListener; }
+  FMOD_IMPEXP void SetListenerObject(VisObject3D_cl *pListener);
 
   /// \brief
   ///   Returns the current listener (If NULL, the main camera is used)
@@ -319,6 +319,9 @@ public:
   /// @{
   ///
 
+  /// \brief Returns true if an output device (headphones, speakers, etc.) is available
+  inline bool IsOutputDevicePresent() const { return m_bOutputDevicePresent; } 
+
   /// \brief
   ///   Returns information on the memory usage of Fmod. This is useful for determining the required memory size, 
   ///   when using a fixed memory pool.
@@ -361,7 +364,10 @@ public:
   // Internally used function that is used to notify the manager about any channel or sound playback that is stopped.
   inline void SetAnyStopped(bool bAnyStopped=true)  { m_bAnyStopped = bAnyStopped; }
 
-#if defined (WIN32)
+  //  Internal helper to reset the driver after reconnecting headphones
+  bool ResetDriver();
+
+#if defined (_VISION_WIN32)
 
   // Get path to Fmod Designer tool
   FMOD_IMPEXP bool GetDesignerPath(VString &sDesignerPath) const;
@@ -427,12 +433,25 @@ protected:
 
   FMOD_IMPEXP void DeInitFmodSystem();
 
+  //internally used for device initialization
+  typedef enum VFmodSoundInit_e
+  {
+    VFMODSOUNDINIT_NO_SPEAKERS,
+    VFMODSOUNDINIT_NO_HARDWARE,
+    VFMODSOUNDINIT_OK
+  } VFmodSoundInit_e;
+
+  // initialization helper (will init the fmod system if a device is connected)
+  VFmodSoundInit_e InitDevice();
+
 private:
   friend class VFmodSoundResource;
   friend class VFmodSoundObject;
   friend class VFmodEventGroup;
   friend class VFmodEvent;
   friend class VFmodCollisionMeshInstance;
+
+  static VFmodManager g_GlobalManager;
 
   VFmodSoundResourceManager *m_pSoundResourceManager;
   VFmodEventGroupManager *m_pEventGroupManager;
@@ -443,9 +462,8 @@ private:
   VFmodCollisionMeshInstanceCollection m_collisionMeshes;
   VFmodReverbCollection m_reverbs;
   VisObject3D_cl *m_pListenerObject;
+  bool m_bOutputDevicePresent;
   bool m_bAnyStopped;
-
-  static VFmodManager g_GlobalManager;
 
   FMOD::EventSystem *m_pEventSystem;
   FMOD::System *m_pSystem;
@@ -459,13 +477,17 @@ private:
   bool m_bMasterEventCategoryPausedInForeground;
 #endif
 
+  hkvVec3 m_vLastListenerPosition;
+  bool m_bLastListenerPositionValid;
+  unsigned int m_iFrameOfLastUpdate;
+
   float m_fTimeLeftOver; ///< simulation time left over from last simulation frame
 };
 
 #endif // VFMODMANAGER_HPP_INCLUDED
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

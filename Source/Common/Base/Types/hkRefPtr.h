@@ -118,6 +118,9 @@ class hkRefPtr
 			/// Reference count for previously stored object is decreased.
 		HK_FORCE_INLINE void setAndDontIncrementRefCount( TYPE* e );
 
+			/// Unset stored pointer without decreasing the reference count.
+		HK_FORCE_INLINE void unsetAndDontDecrementRefCount();
+
 			/// Return pointer to stored object.
 		HK_FORCE_INLINE operator TYPE*() const;
 
@@ -131,7 +134,7 @@ class hkRefPtr
 #endif // HKBASE_HKREFPTR_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

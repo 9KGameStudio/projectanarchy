@@ -268,6 +268,18 @@ public:
   ///   Updates the profiling. Called by the engine once a frame.
   VBASE_IMPEXP static void UpdateProfiling();
 
+  /// \brief starts collecting a given number of samples and calls the callback when sampling is done.
+  /// \param uiNumSamples
+  ///   the number of samples to collect
+  /// \param doneCallback
+  ///   a function to call when sampling is done
+  /// \param pUserData
+  ///   user data which is passed to the callback
+  VBASE_IMPEXP static void StartSampling(unsigned int uiNumSamples, void(*doneCallback)(void*), void* pUserData );
+
+  /// \brief Writes the sampling results to a file. Should be called from the sampling done callback passed to StartSampling.
+  VBASE_IMPEXP static void WriteSamplingResults(IVFileOutStream* pOutStream);
+
 protected:
   VBASE_IMPEXP unsigned int EvaluateTimeInCycles() const;
   VBASE_IMPEXP unsigned int EvaluateCallCount() const;
@@ -276,6 +288,7 @@ protected:
   int m_iFlags;
   float m_fTimeInMS, m_fMaxTimeMS, m_fPercentage;
   unsigned int m_iCycles, m_iCallCount;
+  float *m_pSamples;
 
   VProfilingNode *m_pParentNode;
   VProfilingNodeCollection m_Children;
@@ -284,13 +297,22 @@ protected:
   /// @}
   ///
 
+  void AllocSamples(unsigned int uiNumSamples);
+  void Sample(unsigned int uiSample);
+  void DoWriteSamplingResults(IVFileOutStream* pOutStream, unsigned int uiDepth, float fGlobalTotal);
+
 private:
   static VTBitfield<MAX_PROFILING_ID_COUNT> &GetUsedProfilingIDs();
 
   static bool g_bStructureChanged;
+  static int g_iCurSample;
+  static unsigned int g_uiNumSamples;
+  static unsigned int g_uiNextNotifiy;
   static int g_iCyclesPerMs, g_iCycleScale;
   static long *g_pCycleArray;
   static long *g_pCallArray;
+  static void(*g_profilingDoneCallback)(void*);
+  static void* g_pUserData;
   static VTBitfield<MAX_PROFILING_ID_COUNT> *g_pUsedProfilingIDs;
 
 };
@@ -299,7 +321,7 @@ private:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

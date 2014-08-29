@@ -308,7 +308,7 @@ bool VCablePathRenderer::RebuildModel()
   // Create the entity and the animation state
   if (!m_spChainEntity)
   {
-    m_spChainEntity = static_cast<VCableChainEntity*>(Vision::Game.CreateEntity("VCableChainEntity", hkvVec3::ZeroVector()));
+    m_spChainEntity = Vision::Game.CreateEntity<VCableChainEntity>(hkvVec3::ZeroVector());
   }
   m_spChainEntity->SetRenderingData(pData);
   m_spChainEntity->SetMesh(m_spChainMesh);
@@ -320,6 +320,15 @@ bool VCablePathRenderer::RebuildModel()
 
   return true;
 }
+
+  
+void VCablePathRenderer::OnReposition(const VisZoneRepositionInfo_t &info, const hkvVec3 &vLocalPos)
+{
+  VPathRendererBase::OnReposition(info, vLocalPos);
+  if (m_spChainEntity!=NULL)
+    m_spChainEntity->ThinkFunction(); // update chain positions
+}
+
 
 void VCablePathRenderer::Serialize(VArchive &ar)
 {
@@ -362,8 +371,11 @@ V_IMPLEMENT_SERIAL(VCableChainEntity, VisBaseEntity_cl, 0, &g_VisionEngineModule
 
 VCableChainEntity::VCableChainEntity()
 {
-  m_LinkPositions.Init(hkvVec3());
-  m_LinkRotations.Init(hkvMat3());
+  m_LinkPositions.SetDefaultValue(hkvVec3::ZeroVector());
+  m_LinkRotations.SetDefaultValue(hkvMat3::IdentityMatrix());
+
+  m_LinkPositions.Init(hkvVec3::ZeroVector());
+  m_LinkRotations.Init(hkvMat3::IdentityMatrix());
   m_iLastKnownNumLinks = 0;
 }
 
@@ -475,7 +487,7 @@ void VCableChainEntity::ThinkFunction()
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

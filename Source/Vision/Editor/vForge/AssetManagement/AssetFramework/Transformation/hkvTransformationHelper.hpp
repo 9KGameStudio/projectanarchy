@@ -38,18 +38,17 @@ public:
   ASSETFRAMEWORK_IMPEXP static void filterRelevantProperties(const hkvPropertyList& properties, hkvPropertyList& out_properties);
 
 private:
-  static bool assetNeedsTransformation(const hkvAsset& asset, const hkvTransformationRule& rule);
   static bool fillTargetFileInformation(const hkvAsset& asset, const hkvTransformationRule& rule, hkvTransformationInput& transformationInput);
   static bool performTransformation(const hkvAsset& asset, const hkvTransformationRule& rule, 
     hkArray<hkvAssetLogMessage>& messages, hkvITransformationControlHost* controlHost, bool addTransformedToRCS);
-  static bool queryOutputFileSpecs(const hkvAsset& asset, const hkvTransformationRule& rule, bool includeEditorPreview, hkArray<hkvTransformationOutputFileSpec>& out_specs);
+  static bool queryOutputFileSpecs(const hkvAsset& asset, const hkvTransformationRule& rule, bool includeEditorPreview, bool forLookUpTable, hkArray<hkvTransformationOutputFileSpec>& out_specs);
   static bool staticTargetExists(const hkvAsset& asset, const hkvTransformationRule& rule);
 };
 
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

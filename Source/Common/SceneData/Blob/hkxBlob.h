@@ -8,9 +8,9 @@
 #ifndef HKSCENEDATA_BLOB_HKXBLOB_HKCLASS_H
 #define HKSCENEDATA_BLOB_HKXBLOB_HKCLASS_H
 
-extern const hkClass hkxBlobClass;
+extern HK_EXPORT_COMMON const hkClass hkxBlobClass;
 
-class hkxBlob : public hkReferencedObject
+class HK_EXPORT_COMMON hkxBlob : public hkReferencedObject
 {
 	//+vtable(true)
 	//+version(1)
@@ -27,7 +27,7 @@ public:
 #endif	// HKSCENEDATA_BLOB_HKXBLOB_HKCLASS_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

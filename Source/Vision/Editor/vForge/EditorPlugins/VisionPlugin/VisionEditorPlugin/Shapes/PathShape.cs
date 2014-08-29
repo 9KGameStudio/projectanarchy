@@ -637,7 +637,8 @@ namespace VisionEditorPlugin.Shapes
     public override void OnZoneRepositioned()
     {
       base.OnZoneRepositioned();
-      EnginePath.InvalidateBoundingBox();
+      if (HasEngineInstance())
+        EnginePath.InvalidateBoundingBox();
       OnSingleNodeChangedPosition(null);
     }
 
@@ -2105,7 +2106,7 @@ namespace VisionEditorPlugin.Shapes
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140619)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

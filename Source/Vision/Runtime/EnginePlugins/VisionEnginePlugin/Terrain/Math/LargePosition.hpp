@@ -183,7 +183,7 @@ inline void VLargePosition::FromRenderSpace(const VTerrainConfig &config,const h
 {
   m_iSectorX = 0;//g_iCurrentSectorOfs[0];
   m_iSectorY = 0;//g_iCurrentSectorOfs[1];
-  m_vSectorOfs = vRenderPos-config.m_vTerrainPos;
+  m_vSectorOfs = vRenderPos - config.m_vTerrainPos;
   Validate(config);
 }
 
@@ -366,7 +366,7 @@ inline void VLargeBoundingBox::SerializeX(VArchive &ar)
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

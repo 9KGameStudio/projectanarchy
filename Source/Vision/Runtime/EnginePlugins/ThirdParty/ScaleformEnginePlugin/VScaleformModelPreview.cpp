@@ -18,20 +18,20 @@
 #include "GFx/GFx_Resource.h"
 #include "GFx/GFx_ImageResource.h"
 
-#if defined(WIN32) || defined(_VISION_XENON) || defined(_VISION_PS3)
+#if defined(_VISION_WIN32) || defined(_VISION_XENON) || defined(_VISION_PS3) || defined(_VR_GLES2)
 
-VScalefromModelPreview::VScalefromModelPreview(VScaleformMovieInstance * pMainMovieInstance,
+VScaleformModelPreview::VScaleformModelPreview(VScaleformMovieInstance * pMainMovieInstance,
                                                VisBaseEntity_cl *pPreviewEntity,
                                                const char * szTextureName,
                                                const char * szMoviePathAndName,
                                                int iSizeX, int iSizeY, float fFovH, float fFovV) :
-    m_pMainMovieInstance(pMainMovieInstance),
-    m_sTextureName(szTextureName),
-    m_sMoviePathAndName(szMoviePathAndName)
+  m_pMainMovieInstance(pMainMovieInstance),
+  m_sMoviePathAndName(szMoviePathAndName),
+  m_sTextureName(szTextureName)
 {
-  VASSERT_MSG(pMainMovieInstance!=NULL, "The main movie is required for VScalefromModelPreview!");
-  VASSERT_MSG(pPreviewEntity!=NULL, "Specify an entity for the VScalefromModelPreview!");
-  VASSERT_MSG(szTextureName!=NULL, "Specify a texture for the VScalefromModelPreview!");
+  VASSERT_MSG(pMainMovieInstance!=NULL, "The main movie is required for VScaleformModelPreview!");
+  VASSERT_MSG(pPreviewEntity!=NULL, "Specify an entity for the VScaleformModelPreview!");
+  VASSERT_MSG(szTextureName!=NULL, "Specify a texture for the VScaleformModelPreview!");
 
   //Scaleform::StringBuffer buffer2;
   //Scaleform::Memory::pGlobalHeap->MemReport(buffer2, Scaleform::MemoryHeap::MemReportFull);
@@ -74,14 +74,14 @@ VScalefromModelPreview::VScalefromModelPreview(VScaleformMovieInstance * pMainMo
   Vision::Callbacks.OnEnterForeground += this;
 }
 
-VScalefromModelPreview::~VScalefromModelPreview()
+VScaleformModelPreview::~VScaleformModelPreview()
 {
   Vision::Callbacks.OnEnterForeground -= this;
 }
 
 //-----------------------------------------------------------------------------------
 
-void VScalefromModelPreview::Reassign()
+void VScaleformModelPreview::Reassign()
 {
   VASSERT_MSG(m_pMainMovieInstance != NULL, "Main movie instance invalid!")
 
@@ -134,12 +134,12 @@ void VScalefromModelPreview::Reassign()
   m_pMainMovieInstance->GetGFxMovieInstance()->ForceUpdateImages();
 }
 
-void VScalefromModelPreview::Update(float fTimeDiff)
+void VScaleformModelPreview::Update(float fTimeDiff)
 {
   m_spModelPreview->Update(fTimeDiff);
 }
 
-void VScalefromModelPreview::OnHandleCallback(IVisCallbackDataObject_cl *pData)
+void VScaleformModelPreview::OnHandleCallback(IVisCallbackDataObject_cl *pData)
 {
   // Reassign texture after device loss / backgrounding
   // (Scaleform sets the texture to NULL internally)
@@ -152,7 +152,7 @@ void VScalefromModelPreview::OnHandleCallback(IVisCallbackDataObject_cl *pData)
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

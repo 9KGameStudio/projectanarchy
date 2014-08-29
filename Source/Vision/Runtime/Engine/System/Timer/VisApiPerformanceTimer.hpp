@@ -6,6 +6,9 @@
  *
  */
 
+#ifndef VISAPIPERFORMANCETIMER_H__
+#define VISAPIPERFORMANCETIMER_H__
+
 /// \brief
 ///   Simple performance timer to measure timings.
 class VisPerformanceTimer_cl
@@ -45,8 +48,10 @@ private:
   uint64 m_uiLastTime;
 };
 
+#endif // VISAPIPERFORMANCETIMER_H__
+
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

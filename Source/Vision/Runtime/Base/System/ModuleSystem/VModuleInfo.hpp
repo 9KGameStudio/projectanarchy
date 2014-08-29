@@ -11,7 +11,7 @@
 #ifndef _VISION_VMODULEINFO_HPP
 #define _VISION_VMODULEINFO_HPP
 
-#ifdef WIN32
+#ifdef _VISION_WIN32
 
 /// \brief
 ///   Holds information about a module.
@@ -27,12 +27,12 @@ public:
 };
 
 
-#endif // WIN32
+#endif // _VISION_WIN32
 
 #endif // _VISION_VMODULELINFOIST_HPP
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

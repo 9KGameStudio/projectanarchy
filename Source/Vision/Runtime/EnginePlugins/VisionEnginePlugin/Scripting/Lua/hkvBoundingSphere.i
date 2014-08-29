@@ -86,77 +86,25 @@ public:
 
 	hkvVec3 m_vCenter;
   float m_fRadius;
+
+  %exception
+  {
+    bool bIntersect = $action;
+    if(!bIntersect)
+    {
+      lua_pushboolean(L, 0);
+      return 1;
+    }
+    else
+    {
+      lua_pushboolean(L, 1);
+      SWIG_arg++;
+    }
+  }
+  void getRayIntersection(hkvVec3 vRayStartPos, hkvVec3 vRayDir, float* OUTPUT, hkvVec3* OUTPUT);
+  void getLineSegmentIntersection(hkvVec3 vLineStartPos, hkvVec3 vLineEndPos, float* OUTPUT, hkvVec3* OUTPUT);
 };
 
-%native(hkvBoundingSphere_getRayIntersection) int hkvBoundingSphere_getRayIntersection(lua_State *L);
-%{
-   SWIGINTERN int hkvBoundingSphere_getRayIntersection(lua_State *L)
-   {
-     IS_MEMBER_OF(hkvBoundingSphere) //this will move this function to the method table of the specified class
-    
-		 SWIG_CONVERT_POINTER(L, 1, hkvBoundingSphere, pSelf)
-
-		 DECLARE_ARGS_OK
-
-		 // Get arguments
-	   GET_ARG(2, hkvVec3, vRayStartPos);
-	   GET_ARG(3, hkvVec3, vRayDir);	    
-
-		 float fIntersectionTime;
-		 hkvVec3 vIntersectionPoint;
-		 bool bIntersect = pSelf->getRayIntersection(vRayStartPos, vRayDir.getNormalized(), &fIntersectionTime, &vIntersectionPoint);
-
-		 // Clean stack (remove all call params including self)
-     lua_settop(L, 0);   
-
-		 if (!bIntersect)
-		 {
-		   lua_pushboolean(L, false);
-			 return 1;
-     }
-
-		 lua_pushboolean(L, true);
-		 lua_pushnumber(L, (lua_Number)fIntersectionTime); 
-		 LUA_PushObjectProxy(L, new hkvVec3(vIntersectionPoint));
-	                                    
-     return 3;
-   }
-%} 
-
-%native(hkvBoundingSphere_getLineSegmentIntersection) int hkvBoundingSphere_getLineSegmentIntersection(lua_State *L);
-%{
-   SWIGINTERN int hkvBoundingSphere_getLineSegmentIntersection(lua_State *L)
-   {
-     IS_MEMBER_OF(hkvBoundingSphere) //this will move this function to the method table of the specified class
-    
-		 SWIG_CONVERT_POINTER(L, 1, hkvBoundingSphere, pSelf)
-
-		 DECLARE_ARGS_OK
-
-		 // Get arguments
-	   GET_ARG(2, hkvVec3, vLineStartPos);
-	   GET_ARG(3, hkvVec3, vLineEndPos);	    
-		  
-		 float fHitFraction;
-		 hkvVec3 vIntersectionPoint;
-		 bool bIntersect = pSelf->getLineSegmentIntersection(vLineStartPos, vLineEndPos, &fHitFraction, &vIntersectionPoint);
-
-		 // Clean stack (remove all call params including self)
-     lua_settop(L, 0);   
-
-		 if (!bIntersect)
-		 {
-		   lua_pushboolean(L, false);
-			 return 1;
-     }
-
-		 lua_pushboolean(L, true);
-		 lua_pushnumber(L, (lua_Number)fHitFraction); 
-		 LUA_PushObjectProxy(L, new hkvVec3(vIntersectionPoint));
-	                                    
-     return 3;
-   }
-%}
 
 //add lua tostring and concat operators
 VSWIG_CREATE_CONCAT(hkvBoundingSphere, 64, "[%1.2f,%1.2f,%1.2f][%1.2f]", self->m_vCenter.x, self->m_vCenter.y, self->m_vCenter.z, self->m_fRadius)
@@ -622,7 +570,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

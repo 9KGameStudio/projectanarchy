@@ -218,7 +218,7 @@ public:
   /// resource of the "MissingModel.model" file
   /// 
   /// \param pInStream
-  ///   The input stream to load the file from
+  ///   The input stream to load the file from. Closing the stream is the caller's responsibility.
   /// 
   /// \param szName
   ///   The name of the mesh
@@ -687,7 +687,7 @@ public:
     VShaderConstantBuffer *GetSkinningConstantBuffer(); 
     void ReleaseSkinnngConstantBuffer();
     VShaderConstantBuffer *m_pSkinningConstantBuffer;
-    VOVERRIDE void UpdateStreamMasks();
+    VISION_APIFUNC virtual void UpdateStreamMasks() HKV_OVERRIDE;
   #endif
 
   #ifdef _VR_DX11
@@ -1002,7 +1002,7 @@ private:
 #endif // DEFINE_VISAPIDYNAMICMESH
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

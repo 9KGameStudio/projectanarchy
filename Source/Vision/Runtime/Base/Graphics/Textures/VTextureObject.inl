@@ -109,18 +109,6 @@ inline bool VTextureObject::IsCubemap() const
 }
 
 
-// ---------------------------------------------------------------------------------
-// Method: IsHeightMap
-// Author: Florian Born
-// Notes: Indicates if texture is a heightmap
-// ---------------------------------------------------------------------------------
-inline bool VTextureObject::IsHeightMap()  const 
-{
-  return m_eTextureType == VTextureLoader::Heightmap16bpp;
-}
-
-
-
 inline int VTextureObject::GetMipMapLevelCount() const
 {
   return m_iMipLevels;
@@ -156,7 +144,6 @@ inline int VTextureObject::GetNumAnimPhases() const
 // ---------------------------------------------------------------------------------
 inline bool VTextureObject::IsCompressed() const
 {
-  if (IsHeightMap()) return false; ///< internal format is just 8/16/32bpp
   return IsFormatCompressed(GetTextureFormat());
 }
 
@@ -275,7 +262,7 @@ SceGxmTexture* VTextureObject::GetGXMTexture()
 //@@@L opengl?
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

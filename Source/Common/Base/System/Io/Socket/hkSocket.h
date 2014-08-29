@@ -14,11 +14,12 @@
 class hkSocketImpl;
 
 /// A simple platform independent socket.
-class hkSocket : public hkReferencedObject
+class HK_EXPORT_COMMON hkSocket : public hkReferencedObject
 {
 	public:
-		HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE);
-		enum SOCKET_EVENTS {
+
+		enum SOCKET_EVENTS
+		{
 			SOCKET_NOEVENTS = 0, // register for this only to get back to a blocking socket (default)
 			SOCKET_CAN_READ = 1, // Data has arrived to read
 			SOCKET_CAN_WRITE = 2, // Space is now available to write
@@ -27,8 +28,12 @@ class hkSocket : public hkReferencedObject
 			SOCKET_ALLEVENTS = 0xff // register for all of the above
 		};
 
+	public:
+
+		HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE);
+
 		static hkSocket* (HK_CALL *create)();
-		
+
 			/// Return true if the connection is still live.
 		virtual hkBool isOk() const = 0;
 
@@ -47,15 +52,18 @@ class hkSocket : public hkReferencedObject
 			/// Start listening for connections on the specified port.
 		virtual hkResult listen(int port) = 0;
 
-			/// Get notification of network events instead of having to poll for them
+			/// Get notification of network events instead of having to poll for them.
 		virtual hkResult asyncSelect(void* notificationHandle, hkUint32 message, SOCKET_EVENTS events) { return HK_FAILURE; }
 
-			/// Is there data to read? Normally implemented as a select() with 0 time out for read flags
+			/// Is there data to read? Normally implemented as a select() with 0 time out for read flags.
 		virtual bool canRead() { return false; /*safer to assume can't than spin forever on blocking reads*/ }
 
 			/// Check for new connections on a socket which we are listen()ing on.
 			/// Returns NULL if there are no new connections.
 		virtual hkSocket* pollForNewClient() = 0;
+
+			/// Get the socket address and port.
+		virtual void getAddress( hkStringBuf& hostOut, int& portOut ) const;
 
 			/// Get a stream reader for this connection.
 		hkStreamReader& getReader() { return m_reader; }
@@ -76,6 +84,9 @@ class hkSocket : public hkReferencedObject
 			/// This is called during hkBaseSystem::quit().
 			/// Setting this to HK_NULL before hkBaseSystem::quit() is called will bypass shutdown.
 		static void (HK_CALL *s_platformNetQuit)(void);
+
+			/// Get the host's IP address or name
+		static void (HK_CALL *s_platformGetAddressString)(hkStringBuf& addr);
 
 	protected:
 
@@ -112,7 +123,7 @@ class hkSocket : public hkReferencedObject
 #endif // HK_BASE_SOCKET_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

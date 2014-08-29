@@ -14,12 +14,12 @@
 class hkaSkeleton;
 
 /// hkaAnimation meta information
-extern const class hkClass hkaAnimationClass;
+extern HK_EXPORT_ANIMATION const class hkClass hkaAnimationClass;
 
 /// The base class for animation storage.
 /// All skeletal animation have a finite period specified in seconds.
 /// The interface implies that each implementation can be sampled continuously over the period.
-class hkaAnimation : public hkReferencedObject
+class HK_EXPORT_ANIMATION hkaAnimation : public hkReferencedObject
 {
 	public:
 	
@@ -252,7 +252,7 @@ class hkaAnimation : public hkReferencedObject
 #endif // HKANIMATION_ANIMATION_HKSKELETALANIMATION_XML_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

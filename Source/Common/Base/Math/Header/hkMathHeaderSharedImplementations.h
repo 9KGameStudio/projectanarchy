@@ -12,6 +12,7 @@
 #include <Common/Base/Math/Vector/hkVector4Comparison.inl>
 #include <Common/Base/Math/Vector/hkSimdReal.inl>
 #include <Common/Base/Math/Matrix/hkMatrix3.inl>
+#include <Common/Base/Math/Matrix/hkRotation.inl>
 #include <Common/Base/Math/Matrix/hkMatrix4.inl>
 #include <Common/Base/Math/Quaternion/hkQuaternion.inl>
 #include <Common/Base/Math/Matrix/hkTransform.inl>
@@ -19,7 +20,7 @@
 #include <Common/Base/Math/QTransform/hkQTransform.inl>
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

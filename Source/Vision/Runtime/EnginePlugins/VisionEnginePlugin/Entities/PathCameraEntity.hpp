@@ -32,6 +32,7 @@ public:
   inline void Clear()
   {
     m_bFinished = false;
+    m_bConstantSpeed = true;
     m_pPath = NULL;
     m_fMinParam = 0.f;
     m_fMaxParam = 1.f;
@@ -64,12 +65,12 @@ public:
   EFFECTS_IMPEXP void EvaluatePosition(hkvVec3& vPos, hkvMat3 *pCamRot=NULL);
 
   /// \brief Reads the parameter state from an XML node.
-  EFFECTS_IMPEXP void FromXMLNode(TiXmlElement *pNode);
+  EFFECTS_IMPEXP void FromXMLNode(TiXmlElement *pNode, bool bDefaultConstantSpeed);
 
   VisPath_cl *m_pPath;
   float m_fCurrentParam, m_fStartParam;
   float m_fMinParam,m_fMaxParam,m_fTimeScale,m_fTime,m_fCurrentTime,m_fRolliness;
-  bool m_bFinished;
+  bool m_bFinished, m_bConstantSpeed;
 };
 
 /// \brief
@@ -136,7 +137,7 @@ public:
   EFFECTS_IMPEXP void EvaluatePosition(hkvVec3& vPos, hkvMat3 &camRot);
 
   /// \brief Reads the data for the camera action from XML.
-  EFFECTS_IMPEXP void FromXMLNode(TiXmlElement *pNode);
+  EFFECTS_IMPEXP void FromXMLNode(TiXmlElement *pNode, bool bDefaultConstantSpeed);
 
 
   ///\brief
@@ -278,7 +279,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140627)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

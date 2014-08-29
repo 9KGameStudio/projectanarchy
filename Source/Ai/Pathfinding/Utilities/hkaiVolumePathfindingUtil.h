@@ -16,17 +16,18 @@
 
 class hkaiStreamingCollection;
 class hkaiNavVolume;
+struct hkaiSearchMemoryStorage;
 
 /// A simple utility for pathfinding on a nav volume.
 /// Computes the edges that are traveled across, and (optionally) a smoothed path.
-class hkaiVolumePathfindingUtil
+class HK_EXPORT_AI hkaiVolumePathfindingUtil
 {
 	public:
 		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE,hkaiVolumePathfindingUtil);
 		HK_DECLARE_REFLECTION();
 	
 			/// Pathfinding input
-		struct FindPathInput : public hkReferencedObject
+		struct HK_EXPORT_AI FindPathInput : public hkReferencedObject
 		{
 			// +version(6)
 			HK_DECLARE_REFLECTION();
@@ -69,13 +70,19 @@ class hkaiVolumePathfindingUtil
 
 			void checkDeterminism() const;
 
+				/// Expand the buffers for the search parameter's size, and set m_searchBuffers to point to the
+				/// provided buffers. The hkaiSearchMemoryStorage must exist for the duration of the search.
+				/// If buffer sizes are not set in the search parameters, the single-threaded default values will
+				/// be used (hkaiSearchParameters::BufferSizes::SINGLE_THREADED).
+			void setExternalSearchBuffer( hkaiSearchMemoryStorage& storage );
+
 		private:
 			FindPathInput(const FindPathInput& input);
 
 		};
 
 			/// Pathfinding output
-		struct FindPathOutput : public hkReferencedObject
+		struct HK_EXPORT_AI FindPathOutput : public hkReferencedObject
 		{
 			HK_DECLARE_REFLECTION();
 			HK_DECLARE_CLASS_ALLOCATOR( HK_MEMORY_CLASS_AI_ASTAR );
@@ -113,7 +120,7 @@ class hkaiVolumePathfindingUtil
 #endif // HK_AI_PATHFINDING_UTILITIES_VOLUMEPATHFINDING_UTIL_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

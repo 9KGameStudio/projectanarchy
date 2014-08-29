@@ -8,10 +8,64 @@
 
 #include <Common/Base/Fwd/hkcmath.h>
 
-#define HK_STD_NAMESPACE /*nothing*/
-
 namespace hkMath
 {
+	// import the constants
+	extern HK_EXPORT_COMMON HK_ALIGN16(const hkInt32 hkSse_sinCoeff0[4])  ;
+	extern HK_EXPORT_COMMON HK_ALIGN16(const hkInt32 hkSse_sinCoeff1[4])  ;
+	extern HK_EXPORT_COMMON HK_ALIGN16(const hkInt32 hkSse_sinCoeff2[4])  ;
+	extern HK_EXPORT_COMMON HK_ALIGN16(const hkInt32 hkSse_cosCoeff0[4])  ;
+	extern HK_EXPORT_COMMON HK_ALIGN16(const hkInt32 hkSse_cosCoeff1[4])  ;
+	extern HK_EXPORT_COMMON HK_ALIGN16(const hkInt32 hkSse_cosCoeff2[4])  ;
+	extern HK_EXPORT_COMMON HK_ALIGN16(const hkInt32 hkSse_signMask[4])   ;
+	extern HK_EXPORT_COMMON HK_ALIGN16(const hkInt32 hkSse_pi[4])         ;
+	extern HK_EXPORT_COMMON HK_ALIGN16(const hkInt32 hkSse_twoPi[4])      ;
+	extern HK_EXPORT_COMMON HK_ALIGN16(const hkInt32 hkSse_piOver2[4])    ;
+	extern HK_EXPORT_COMMON HK_ALIGN16(const hkInt32 hkSse_fourOverPi[4]) ;
+	extern HK_EXPORT_COMMON HK_ALIGN16(const hkInt32 hkSse_DP1[4])        ;
+	extern HK_EXPORT_COMMON HK_ALIGN16(const hkInt32 hkSse_DP2[4])        ;
+	extern HK_EXPORT_COMMON HK_ALIGN16(const hkInt32 hkSse_DP3[4])        ;
+	extern HK_EXPORT_COMMON HK_ALIGN16(const hkInt32 hkSse_floatOne[4])   ;
+	extern HK_EXPORT_COMMON HK_ALIGN16(const hkInt32 hkSse_floatTwo[4])   ;
+	extern HK_EXPORT_COMMON HK_ALIGN16(const hkInt32 hkSse_floatThree[4]) ;
+	extern HK_EXPORT_COMMON HK_ALIGN16(const hkInt32 hkSse_floatHalf[4])  ;
+	extern HK_EXPORT_COMMON HK_ALIGN16(const hkInt32 hkSse_intOne[4])     ;
+
+	extern HK_EXPORT_COMMON HK_ALIGN16(const hkInt64 hkSse_D_sinCoeff0[2]);
+	extern HK_EXPORT_COMMON HK_ALIGN16(const hkInt64 hkSse_D_sinCoeff1[2]);
+	extern HK_EXPORT_COMMON HK_ALIGN16(const hkInt64 hkSse_D_sinCoeff2[2]);
+	extern HK_EXPORT_COMMON HK_ALIGN16(const hkInt64 hkSse_D_sinCoeff3[2]);
+	extern HK_EXPORT_COMMON HK_ALIGN16(const hkInt64 hkSse_D_sinCoeff4[2]);
+	extern HK_EXPORT_COMMON HK_ALIGN16(const hkInt64 hkSse_D_sinCoeff5[2]);
+	extern HK_EXPORT_COMMON HK_ALIGN16(const hkInt64 hkSse_D_cosCoeff0[2]);
+	extern HK_EXPORT_COMMON HK_ALIGN16(const hkInt64 hkSse_D_cosCoeff1[2]);
+	extern HK_EXPORT_COMMON HK_ALIGN16(const hkInt64 hkSse_D_cosCoeff2[2]);
+	extern HK_EXPORT_COMMON HK_ALIGN16(const hkInt64 hkSse_D_cosCoeff3[2]);
+	extern HK_EXPORT_COMMON HK_ALIGN16(const hkInt64 hkSse_D_cosCoeff4[2]);
+	extern HK_EXPORT_COMMON HK_ALIGN16(const hkInt64 hkSse_D_cosCoeff5[2]);
+	extern HK_EXPORT_COMMON HK_ALIGN16(const hkInt64 hkSse_D_atanP0[2])   ;
+	extern HK_EXPORT_COMMON HK_ALIGN16(const hkInt64 hkSse_D_atanP1[2])   ;
+	extern HK_EXPORT_COMMON HK_ALIGN16(const hkInt64 hkSse_D_atanP2[2])   ;
+	extern HK_EXPORT_COMMON HK_ALIGN16(const hkInt64 hkSse_D_atanP3[2])   ;
+	extern HK_EXPORT_COMMON HK_ALIGN16(const hkInt64 hkSse_D_atanP4[2])   ;
+	extern HK_EXPORT_COMMON HK_ALIGN16(const hkInt64 hkSse_D_atanQ1[2])   ;
+	extern HK_EXPORT_COMMON HK_ALIGN16(const hkInt64 hkSse_D_atanQ2[2])   ;
+	extern HK_EXPORT_COMMON HK_ALIGN16(const hkInt64 hkSse_D_atanQ3[2])   ;
+	extern HK_EXPORT_COMMON HK_ALIGN16(const hkInt64 hkSse_D_atanQ4[2])   ;
+	extern HK_EXPORT_COMMON HK_ALIGN16(const hkInt64 hkSse_D_atanQ5[2])   ;
+	extern HK_EXPORT_COMMON HK_ALIGN16(const hkInt64 hkSse_D_twoPi[2] )   ;
+	extern HK_EXPORT_COMMON HK_ALIGN16(const hkInt64 hkSse_D_pi[2] )      ;
+	extern HK_EXPORT_COMMON HK_ALIGN16(const hkInt64 hkSse_D_piOver2[2])  ;
+	extern HK_EXPORT_COMMON HK_ALIGN16(const hkInt64 hkSse_D_piOver4[2])  ;
+	extern HK_EXPORT_COMMON HK_ALIGN16(const hkInt64 hkSse_D_fourOverPi[2]);
+	extern HK_EXPORT_COMMON HK_ALIGN16(const hkInt64 hkSse_D_DP1[2])      ;
+	extern HK_EXPORT_COMMON HK_ALIGN16(const hkInt64 hkSse_D_DP2[2])      ;
+	extern HK_EXPORT_COMMON HK_ALIGN16(const hkInt64 hkSse_D_DP3[2])      ;
+	extern HK_EXPORT_COMMON HK_ALIGN16(const hkInt64 hkSse_doubleHalf[2]) ;
+	extern HK_EXPORT_COMMON HK_ALIGN16(const hkInt64 hkSse_doubleOne[2])  ;
+	extern HK_EXPORT_COMMON HK_ALIGN16(const hkInt64 hkSse_D_signMask[2]) ;
+
+
 	//
 	// need to implement
 	//
@@ -21,7 +75,7 @@ namespace hkMath
 		const hkQuadFloat32 rb = _mm_rcp_ps(r);
 		// One Newton-Raphson refinement iteration
 		const hkQuadFloat32 rbr = _mm_mul_ps(r, rb);
-		const hkQuadFloat32 d = _mm_sub_ps(_mm_set1_ps(2.0f), rbr);
+		const hkQuadFloat32 d = _mm_sub_ps(*(__m128*)hkSse_floatTwo, rbr);
 		return _mm_mul_ps(rb, d);
 	}
 
@@ -36,7 +90,7 @@ namespace hkMath
 		const __m128 rb = _mm_rcp_ps(xyzw);
 		// One Newton-Raphson refinement iteration
 		const __m128 rbr = _mm_mul_ps(xyzw, rb);
-		const __m128 d = _mm_sub_ps(_mm_set1_ps(2.0f), rbr);
+		const __m128 d = _mm_sub_ps(*(__m128*)hkSse_floatTwo, rbr);
 		const __m128 re = _mm_mul_ps(rb, d);
 		hkQuadDouble64 result;
 		result.xy = _mm_cvtps_pd(re);
@@ -50,9 +104,9 @@ namespace hkMath
 	{
 		const hkQuadFloat32 e = _mm_rsqrt_ps(r);
 		// One Newton-Raphson refinement iteration
-		const hkQuadFloat32 he = _mm_mul_ps(_mm_set1_ps(0.5f),e);
+		const hkQuadFloat32 he = _mm_mul_ps(*(__m128*)hkSse_floatHalf,e);
 		const hkQuadFloat32 ree = _mm_mul_ps(_mm_mul_ps(r,e),e);
-		return _mm_mul_ps(he, _mm_sub_ps(_mm_set1_ps(3.0f), ree) );
+		return _mm_mul_ps(he, _mm_sub_ps(*(__m128*)hkSse_floatThree, ree) );
 	}
 
 	HK_FORCE_INLINE static hkQuadDouble64 HK_CALL quadReciprocalSquareRoot( const hkQuadDouble64& r )
@@ -65,9 +119,9 @@ namespace hkMath
 		const __m128 xyzw = _mm_shuffle_ps(xy,zw,_MM_SHUFFLE(1,0,1,0));
 		const __m128 e = _mm_rsqrt_ps(xyzw);
 		// One Newton-Raphson refinement iteration
-		const __m128 he = _mm_mul_ps(_mm_set1_ps(0.5f),e);
+		const __m128 he = _mm_mul_ps(*(__m128*)hkSse_floatHalf,e);
 		const __m128 ree = _mm_mul_ps(_mm_mul_ps(xyzw,e),e);
-		const __m128 re = _mm_mul_ps(he, _mm_sub_ps(_mm_set1_ps(3.0f), ree) );
+		const __m128 re = _mm_mul_ps(he, _mm_sub_ps(*(__m128*)hkSse_floatThree, ree) );
 		hkQuadDouble64 result;
 		result.xy = _mm_cvtps_pd(re);
 		result.zw = _mm_cvtps_pd(_mm_shuffle_ps(re,re,_MM_SHUFFLE(1,0,3,2)));
@@ -78,7 +132,7 @@ namespace hkMath
 #	define HK_MATH_quadReciprocalTwoIter
 	HK_FORCE_INLINE static hkQuadFloat32 HK_CALL quadReciprocalTwoIter( const hkQuadFloat32& r )
 	{
-		const __m128 two = _mm_set1_ps(2.0f);
+		const __m128 two = *(__m128*)hkSse_floatTwo;
 		const hkQuadFloat32 rb = _mm_rcp_ps(r);
 		//One round of Newton-Raphson refinement
 		const hkQuadFloat32 rbr = _mm_mul_ps(r, rb);
@@ -95,7 +149,7 @@ namespace hkMath
 #if HK_SSE_VERSION >= 0x50
 		return _mm256_div_pd(_mm256_set1_pd(1.0), r);
 #else
-		const __m128 two = _mm_set1_ps(2.0f);
+		const __m128 two = *(__m128*)hkSse_floatTwo;
 		const __m128 xy = _mm_cvtpd_ps(r.xy);
 		const __m128 zw = _mm_cvtpd_ps(r.zw);
 		const __m128 xyzw = _mm_shuffle_ps(xy,zw,_MM_SHUFFLE(1,0,1,0));
@@ -118,8 +172,8 @@ namespace hkMath
 #	define HK_MATH_quadReciprocalSquareRootTwoIter
 	HK_FORCE_INLINE static hkQuadFloat32 HK_CALL quadReciprocalSquareRootTwoIter( const hkQuadFloat32& r )
 	{
-		const __m128 half = _mm_set1_ps(0.5f);
-		const __m128 three = _mm_set1_ps(3.0f);
+		const __m128 half = *(__m128*)hkSse_floatHalf;
+		const __m128 three = *(__m128*)hkSse_floatThree;
 		const hkQuadFloat32 e = _mm_rsqrt_ps(r);
 		// One Newton-Raphson refinement iteration
 		const hkQuadFloat32 he = _mm_mul_ps(half,e);
@@ -136,8 +190,8 @@ namespace hkMath
 #if HK_SSE_VERSION >= 0x50
 		return _mm256_div_pd(_mm256_set1_pd(1.0), _mm256_sqrt_pd(r));
 #else
-		const __m128 half = _mm_set1_ps(0.5f);
-		const __m128 three = _mm_set1_ps(3.0f);
+		const __m128 half = *(__m128*)hkSse_floatHalf;
+		const __m128 three = *(__m128*)hkSse_floatThree;
 		const __m128 xy = _mm_cvtpd_ps(r.xy);
 		const __m128 zw = _mm_cvtpd_ps(r.zw);
 		const __m128 xyzw = _mm_shuffle_ps(xy,zw,_MM_SHUFFLE(1,0,1,0));
@@ -157,43 +211,40 @@ namespace hkMath
 #endif
 	}
 
-	// 
+	//
 	// SSE optimized implementations
 	//
 
 #	define HK_MATH_sqrt
-	HK_FORCE_INLINE static hkFloat32 HK_CALL sqrt(const hkFloat32 r) 
-	{ 
+	HK_FORCE_INLINE static hkFloat32 HK_CALL sqrt(const hkFloat32 r)
+	{
 		const __m128 s = _mm_sqrt_ss(_mm_load_ss(&r));
 		return _mm_cvtss_f32(s);
 	}
-	HK_FORCE_INLINE static hkDouble64 HK_CALL sqrt(const hkDouble64 r) 
-	{ 
+	HK_FORCE_INLINE static hkDouble64 HK_CALL sqrt(const hkDouble64 r)
+	{
 		const __m128d s = _mm_sqrt_sd(_mm_setzero_pd(),_mm_load_sd(&r));
-		return HK_M128(s).m128d_f64[0];
+		return _mm_cvtsd_f64(s);
 	}
 
 #	define HK_MATH_sqrtInverse
-	HK_FORCE_INLINE static hkFloat32 HK_CALL sqrtInverse(const hkFloat32 r) 
-	{ 
-		static HK_ALIGN16(const int one[4])	= {  0x3F800000,  0x3F800000,  0x3F800000,  0x3F800000 }; // 1.0
+	HK_FORCE_INLINE static hkFloat32 HK_CALL sqrtInverse(const hkFloat32 r)
+	{
 		const __m128 s = _mm_sqrt_ss(_mm_load_ss(&r));
-		return _mm_cvtss_f32(_mm_div_ss(*(__m128*)one,s));
+		return _mm_cvtss_f32(_mm_div_ss(*(__m128*)hkSse_floatOne,s));
 	}
-	HK_FORCE_INLINE static hkDouble64 HK_CALL sqrtInverse(const hkDouble64 r) 
-	{ 
-		static HK_ALIGN16( const hkUint64 one[2] )  = { 0x3ff0000000000000ull, 0x3ff0000000000000ull }; // 1.0
+	HK_FORCE_INLINE static hkDouble64 HK_CALL sqrtInverse(const hkDouble64 r)
+	{
 		const __m128d s = _mm_sqrt_sd(_mm_setzero_pd(),_mm_load_sd(&r));
-		const __m128d q = _mm_div_sd(*(__m128d*)one,s);
-		return HK_M128(q).m128d_f64[0];
+		const __m128d q = _mm_div_sd(*(__m128d*)hkSse_doubleOne,s);
+		return _mm_cvtsd_f64(q);
 	}
 
-	namespace 
+	namespace
 	{
 		HK_FORCE_INLINE static void HK_CALL quadLogHelper(__m128& x)
 		{
 			static HK_ALIGN16(const unsigned int minNormalizedPosNumber[4])	= {  0x00800000,  0x00800000,  0x00800000,  0x00800000 }; // 1.1754943508222875E-38 (smallest normalized positive number)
-			static HK_ALIGN16(const unsigned int one[4])					= {  0x3F800000,  0x3F800000,  0x3F800000,  0x3F800000 }; // 1.0
 			static HK_ALIGN16(const			 int invMantissaMask[4])		= { ~0x7f800000, ~0x7f800000, ~0x7f800000, ~0x7f800000 };
 			static HK_ALIGN16(const unsigned int int0x7f[4])				= {  0x0000007f,  0x0000007f,  0x0000007f,  0x0000007f };
 			static HK_ALIGN16(const unsigned int logP0[4])					= {  0xBF4A21EF,  0xBF4A21EF,  0xBF4A21EF,  0xBF4A21EF }; // -7.89580278884799154124e-1
@@ -210,9 +261,9 @@ namespace hkMath
 			__m128i emm0 = _mm_srli_epi32(_mm_castps_si128(x), 23);
 
 			// keep only the fractional part
-			x = _mm_or_ps(_mm_and_ps(x, *(__m128*)invMantissaMask), *(__m128*)one);
+			x = _mm_or_ps(_mm_and_ps(x, *(__m128*)invMantissaMask), *(__m128*)hkSse_floatOne);
 
-			x = _mm_mul_ps(_mm_sub_ps(x, *(__m128*)one), _mm_rcp_ps(_mm_add_ps(x, *(__m128*)one)));
+			x = _mm_mul_ps(_mm_sub_ps(x, *(__m128*)hkSse_floatOne), _mm_rcp_ps(_mm_add_ps(x, *(__m128*)hkSse_floatOne)));
 			x = _mm_add_ps(x, x);
 			__m128 bs = x;
 
@@ -250,7 +301,6 @@ namespace hkMath
 	/// About 3x faster than ::logf for 4 simultaneous values
 	HK_FORCE_INLINE static hkQuadFloat32 HK_CALL quadLog(const hkQuadFloat32 &r)
 	{
-		
 		__m128 x = r;
 		quadLogHelper(x);
 		return x;
@@ -277,154 +327,311 @@ namespace hkMath
 #endif
 	}
 
-	/// Average absolute error 0.000069
-	/// Max absolute error 0.000763
-	/// About 6x faster than ::atan2f for 4 simultaneous values
-	HK_FORCE_INLINE static __m128 HK_CALL quadAtan2(const __m128& y, const __m128& x)
+	/// Adapted from the book "Methods and Programs for Mathematical Functions",
+	/// Stephen Lloyd Baluk Moshier, Prentice-Hall, 1989
+	///
+	/// Returns radian angle between -pi/2 and +pi/2 whose tangent is x.
+	/// Range reduction is from three intervals into the interval
+	/// from zero to 0.66.  The approximation uses a rational
+	/// function of degree 4/5 of the form x + x**3 P(x)/Q(x).
+	///
+	/// ACCURACY: matches cmath on MSVC
+	///
+	///                      Relative error:
+	/// arithmetic   domain        peak       rms
+	///    IEEE      -10,10       1.8e-16     5.0e-17
+	///
+	/// PERFORMANCE: About 1.2x faster than ::atan for 2 simultaneous values
+
+	HK_FORCE_INLINE static __m128d HK_CALL twoAtan(const __m128d& inX)
 	{
-		static HK_ALIGN16(const hkUint32 signMask[4])		= { 0x80000000, 0x80000000, 0x80000000, 0x80000000 };
-		static HK_ALIGN16(const hkUint32 one[4])			= { 0x3F800000, 0x3F800000, 0x3F800000, 0x3F800000 }; //  1.0
-		static HK_ALIGN16(const hkUint32 pi[4])				= { 0x40490FDB, 0x40490FDB, 0x40490FDB, 0x40490FDB }; //  PI
-		static HK_ALIGN16(const hkUint32 piOver2[4])		= { 0x3FC90FDB, 0x3FC90FDB, 0x3FC90FDB, 0x3FC90FDB }; //  PI / 2
-		static HK_ALIGN16(const hkUint32 t0[4])				= { 0xBDBBB0F6, 0xBDBBB0F6, 0xBDBBB0F6, 0xBDBBB0F6 }; // -0.91646118527267623468e-1
-		static HK_ALIGN16(const hkUint32 t1[4])				= { 0xBFB2A61F, 0xBFB2A61F, 0xBFB2A61F, 0xBFB2A61F }; // -0.13956945682312098640e1
-		static HK_ALIGN16(const hkUint32 t2[4])				= { 0xC2BCC9B1, 0xC2BCC9B1, 0xC2BCC9B1, 0xC2BCC9B1 }; // -0.94393926122725531747e2
-		static HK_ALIGN16(const hkUint32 t3[4])				= { 0x414E36D1, 0x414E36D1, 0x414E36D1, 0x414E36D1 }; //  0.12888383034157279340e2
-		static HK_ALIGN16(const hkUint32 s0[4])				= { 0x3FA3CF0F, 0x3FA3CF0F, 0x3FA3CF0F, 0x3FA3CF0F }; //  0.12797564625607904396e1
-		static HK_ALIGN16(const hkUint32 s1[4])				= { 0x400C9F34, 0x400C9F34, 0x400C9F34, 0x400C9F34 }; //  0.21972168858277355914e1
-		static HK_ALIGN16(const hkUint32 s2[4])				= { 0x40DA37C2, 0x40DA37C2, 0x40DA37C2, 0x40DA37C2 }; //  0.68193064729268275701e1
-		static HK_ALIGN16(const hkUint32 s3[4])				= { 0x41E1A443, 0x41E1A443, 0x41E1A443, 0x41E1A443 }; //  0.28205206687035841409e2
+		static HK_ALIGN16(const hkInt64 tan3pi8[2])	= { 0x4003504F333F9DE6ull, 0x4003504F333F9DE6ull }; // tan(3*pi/8) = 1+sqrt(2)
+		static HK_ALIGN16(const hkInt64 point66[2])	= { 0x3FE51EB851EB851Full, 0x3FE51EB851EB851Full }; // 0.66
+		static HK_ALIGN16(const hkInt64 morebits[2])= { 0x3C91A62633145C07ull, 0x3C91A62633145C07ull }; // 6.123233995736765886130E-17 + hkSse_D_piOver2 = pi/2
 
-		__m128 oneF = *(const __m128*)one;
+		// make argument positive and save the sign
+		__m128d sign = _mm_and_pd( *(__m128d*)hkSse_D_signMask, inX );
+		__m128d x = _mm_andnot_pd( *(__m128d*)hkSse_D_signMask, inX );
 
-		__m128 rx = _mm_rcp_ps(x);
-		__m128 signMaskF = *(const __m128*)signMask;
-		__m128 y_div_x = _mm_mul_ps(y, rx);
-		__m128 esp4 = _mm_or_ps(_mm_and_ps(signMaskF, y), *(const __m128*)pi);
-		__m128 x_ge_0 = _mm_cmple_ps(_mm_setzero_ps(), rx);
+		// range reduction
+		__m128d a1 = _mm_cmpgt_pd(x , *(__m128d*)tan3pi8 );
+		__m128d a2 = _mm_cmple_pd(x , *(__m128d*)point66 );
 
-		__m128 minus1F = _mm_or_ps(oneF, signMaskF);
-		__m128 x5 = _mm_or_ps(_mm_cmplt_ps(oneF, y_div_x), _mm_cmpnle_ps(minus1F, y_div_x));
-
-		__m128 x4 = _mm_rcp_ps(y_div_x);
-#if HK_SSE_VERSION >= 0x41
-		x4 = _mm_blendv_ps(y_div_x,x4,x5);
-#else
-		x4 = _mm_or_ps(_mm_andnot_ps(x5, y_div_x), _mm_and_ps(x5, x4));
-#endif
-		__m128 x0 = x4;
-
-		x4 = _mm_mul_ps(x4, x4);
-
-		__m128 x1 = _mm_add_ps(*(const __m128*)s0, x4);
-		x1 = _mm_mul_ps(_mm_rcp_ps(x1), *(const __m128*)t0);
-		__m128 x3 = _mm_add_ps(*(const __m128*)s1, x4);
-		x1 = _mm_add_ps(x1, x3);
-
-		x1 = _mm_mul_ps(_mm_rcp_ps(x1), *(const __m128*)t1);
-		__m128 x7 = _mm_add_ps(*(const __m128*)s2, x4);
-		x1 = _mm_add_ps(x1, x7);
-
-		x1 = _mm_mul_ps(_mm_rcp_ps(x1), *(const __m128*)t2);
-		x3 = _mm_add_ps(*(const __m128*)s3, x4);
-		__m128 x6 = _mm_mul_ps(*(const __m128*)t3, x0);
-		x1 = _mm_add_ps(x1, x3);
-
-		x0 = _mm_and_ps(x0, signMaskF);
-		x1 = _mm_mul_ps(_mm_rcp_ps(x1), x6);
-
-		x0 = _mm_sub_ps(_mm_or_ps(x0, *(const __m128*)piOver2), x1);
+		__m128d y = _mm_andnot_pd(a2, *(__m128d*)hkSse_D_piOver4);
+		__m128d z1 = _mm_div_pd(_mm_sub_pd(x,*(__m128d*)hkSse_doubleOne), _mm_add_pd(x,*(__m128d*)hkSse_doubleOne));
 
 #if HK_SSE_VERSION >= 0x41
-		x0 = _mm_blendv_ps(x1,x0,x5);
+		z1 = _mm_blendv_pd(z1,x,a2);
+		y = _mm_blendv_pd(y, *(__m128d*)hkSse_D_piOver2, a1);
+		x = _mm_blendv_pd(z1, _mm_sub_pd(_mm_setzero_pd(), _mm_div_pd(*(__m128d*)hkSse_doubleOne, x)), a1);
 #else
-		x0 = _mm_or_ps(_mm_andnot_ps(x5, x1), _mm_and_ps(x5, x0));
+		z1 = _mm_or_pd(_mm_andnot_pd(a2, z1), _mm_and_pd(a2, x));
+		y = _mm_or_pd(_mm_andnot_pd(a1, y), _mm_and_pd(a1, *(__m128d*)hkSse_D_piOver2));
+		x = _mm_or_pd(_mm_andnot_pd(a1, z1), _mm_and_pd(a1, _mm_sub_pd(_mm_setzero_pd(), _mm_div_pd(*(__m128d*)hkSse_doubleOne, x))));
 #endif
 
-		// select case
-		x1 = _mm_add_ps(x0, esp4);
+		// eval polynoms (Horner)
+		__m128d z = _mm_mul_pd(x, x);
+
+		__m128d polyP = *(__m128d*)hkSse_D_atanP0;
+		polyP = _mm_add_pd(_mm_mul_pd(polyP, z),*(__m128d*)hkSse_D_atanP1);
+		polyP = _mm_add_pd(_mm_mul_pd(polyP, z),*(__m128d*)hkSse_D_atanP2);
+		polyP = _mm_add_pd(_mm_mul_pd(polyP, z),*(__m128d*)hkSse_D_atanP3);
+		polyP = _mm_add_pd(_mm_mul_pd(polyP, z),*(__m128d*)hkSse_D_atanP4);
+
+		// Q0 = 1
+		__m128d polyQ = _mm_add_pd(z,*(__m128d*)hkSse_D_atanQ1);
+		polyQ = _mm_add_pd(_mm_mul_pd(polyQ, z),*(__m128d*)hkSse_D_atanQ2);
+		polyQ = _mm_add_pd(_mm_mul_pd(polyQ, z),*(__m128d*)hkSse_D_atanQ3);
+		polyQ = _mm_add_pd(_mm_mul_pd(polyQ, z),*(__m128d*)hkSse_D_atanQ4);
+		polyQ = _mm_add_pd(_mm_mul_pd(polyQ, z),*(__m128d*)hkSse_D_atanQ5);
+
+		// calc differential
+		z = _mm_div_pd(_mm_mul_pd(z, polyP), polyQ);
+		z = _mm_add_pd(_mm_mul_pd(x,z),x);
+
+		// apply correction term for truncated constant
+		__m128d m = _mm_andnot_pd(a2, _mm_mul_pd(*(__m128d*)morebits,*(__m128d*)hkSse_doubleHalf));
 #if HK_SSE_VERSION >= 0x41
-		x0 = _mm_blendv_ps(x1,x0,x_ge_0);
+		m = _mm_blendv_pd(m, *(__m128d*)morebits, a1);
 #else
-		x0 = _mm_or_ps(_mm_andnot_ps(x_ge_0, x1),_mm_and_ps(x_ge_0, x0));
+		m = _mm_or_pd(_mm_andnot_pd(a1, m), _mm_and_pd(a1, *(__m128d*)morebits));
 #endif
+		z = _mm_add_pd(z, m);
 
-		return x0;
+		// add in
+		y = _mm_add_pd(y,z);
+
+		// update sign
+		y = _mm_xor_pd(y, sign);
+
+		return y;
 	}
 
-	/// Average absolute error 0.000069
-	/// Max absolute error 0.000712
-	/// About 1.5x faster than ::atan2 for 2 simultaneous values
+	/// Approximate version of above using reduced accuracy for reciprocals
+	/// and polynoms of degree only 3/4.
+	///
+	/// Average absolute error 0.000004
+	/// Max absolute error 0.000221
+	/// About 1.8x faster than ::atan for 2 simultaneous values
+
+	HK_FORCE_INLINE static __m128d HK_CALL twoAtanApproximation(const __m128d& inX)
+	{
+		static HK_ALIGN16(const hkInt64 tan3pi8[2])	= { 0x4003504F333F9DE6ull, 0x4003504F333F9DE6ull }; // tan(3*pi/8) = 1+sqrt(2)
+		static HK_ALIGN16(const hkInt64 point66[2])	= { 0x3FE51EB851EB851Full, 0x3FE51EB851EB851Full }; // 0.66
+
+		// make argument positive and save the sign
+		__m128d sign = _mm_and_pd( *(__m128d*)hkSse_D_signMask, inX );
+		__m128d x = _mm_andnot_pd( *(__m128d*)hkSse_D_signMask, inX );
+
+		// range reduction
+		__m128d a1 = _mm_cmpgt_pd(x , *(__m128d*)tan3pi8 );
+		__m128d a2 = _mm_cmple_pd(x , *(__m128d*)point66 );
+
+		__m128d y = _mm_andnot_pd(a2, *(__m128d*)hkSse_D_piOver4);
+		__m128d invZ = _mm_cvtps_pd(_mm_rcp_ps(_mm_add_ps(_mm_cvtpd_ps(x),*(__m128*)hkSse_floatOne)));
+		__m128d z1 = _mm_mul_pd(_mm_sub_pd(x,*(__m128d*)hkSse_doubleOne), invZ);
+
+#if HK_SSE_VERSION >= 0x41
+		z1 = _mm_blendv_pd(z1,x,a2);
+		y = _mm_blendv_pd(y, *(__m128d*)hkSse_D_piOver2, a1);
+		x = _mm_blendv_pd(z1, _mm_sub_pd(_mm_setzero_pd(), _mm_cvtps_pd(_mm_rcp_ps(_mm_cvtpd_ps(x)))), a1);
+#else
+		z1 = _mm_or_pd(_mm_andnot_pd(a2, z1), _mm_and_pd(a2, x));
+		y = _mm_or_pd(_mm_andnot_pd(a1, y), _mm_and_pd(a1, *(__m128d*)hkSse_D_piOver2));
+		x = _mm_or_pd(_mm_andnot_pd(a1, z1), _mm_and_pd(a1, _mm_sub_pd(_mm_setzero_pd(), _mm_cvtps_pd(_mm_rcp_ps(_mm_cvtpd_ps(x))))));
+#endif
+
+		// eval polynoms (Horner)
+		__m128d z = _mm_mul_pd(x, x);
+
+		__m128d polyP = *(__m128d*)hkSse_D_atanP1;
+		polyP = _mm_add_pd(_mm_mul_pd(polyP, z),*(__m128d*)hkSse_D_atanP2);
+		polyP = _mm_add_pd(_mm_mul_pd(polyP, z),*(__m128d*)hkSse_D_atanP3);
+		polyP = _mm_add_pd(_mm_mul_pd(polyP, z),*(__m128d*)hkSse_D_atanP4);
+
+		// Q1 = 1
+		__m128d polyQ = _mm_add_pd(z,*(__m128d*)hkSse_D_atanQ2);
+		polyQ = _mm_add_pd(_mm_mul_pd(polyQ, z),*(__m128d*)hkSse_D_atanQ3);
+		polyQ = _mm_add_pd(_mm_mul_pd(polyQ, z),*(__m128d*)hkSse_D_atanQ4);
+		polyQ = _mm_add_pd(_mm_mul_pd(polyQ, z),*(__m128d*)hkSse_D_atanQ5);
+
+		// calc differential
+		__m128d invPolyQ = _mm_cvtps_pd(_mm_rcp_ps(_mm_cvtpd_ps(polyQ)));
+		z = _mm_mul_pd(_mm_mul_pd(z, polyP), invPolyQ);
+		z = _mm_add_pd(_mm_mul_pd(x,z),x);
+
+		// add in
+		y = _mm_add_pd(y,z);
+
+		// update sign
+		y = _mm_xor_pd(y, sign);
+
+		return y;
+	}
+
+	/// Adapted from the book "Methods and Programs for Mathematical Functions",
+	/// Stephen Lloyd Baluk Moshier, Prentice-Hall, 1989
+	///
+	/// Returns radian angle between -pi/2 and +pi/2 whose tangent is x.
+	/// Range reduction is to two intervals which are approximated by
+	/// a polynomial. Unlike the method in the book, the polynomials are
+	/// factored into quadratic evaluation which is faster than a Horner scheme.
+	///
+	/// ACCURACY: matches cmath on MSVC
+	///
+	///                      Relative error:
+	/// arithmetic   domain        peak       rms
+	///    IEEE      -10,10       1.9e-7     4.1e-8
+	///
+	/// PERFORMANCE: About 5.5x faster than ::atanf for 4 simultaneous values
+
+	HK_FORCE_INLINE static __m128 HK_CALL quadAtan(const __m128& inX)
+	{
+		static HK_ALIGN16(const hkInt32 a1[4])	= { 0x3B3BD74A, 0x3B3BD74A, 0x3B3BD74A, 0x3B3BD74A }; // 0.0028662257
+		static HK_ALIGN16(const hkInt32 a0[4])	= { 0xBBEB7F9E, 0xBBEB7F9E, 0xBBEB7F9E, 0xBBEB7F9E }; // -0.00718684420434729
+		static HK_ALIGN16(const hkInt32 b1[4])	= { 0xC0753EB3, 0xC0753EB3, 0xC0753EB3, 0xC0753EB3 }; // -3.83195178589435
+		static HK_ALIGN16(const hkInt32 b0[4])	= { 0x40B019CA, 0x40B019CA, 0x40B019CA, 0x40B019CA }; // 5.50314831143450
+		static HK_ALIGN16(const hkInt32 d1[4])	= { 0xBF809FF7, 0xBF809FF7, 0xBF809FF7, 0xBF809FF7 }; // -1.00488174720983
+		static HK_ALIGN16(const hkInt32 d0[4])	= { 0x40712D99, 0x40712D99, 0x40712D99, 0x40712D99 }; // 3.76840794390466
+		static HK_ALIGN16(const hkInt32 e1[4])	= { 0x3FDA2291, 0x3FDA2291, 0x3FDA2291, 0x3FDA2291 }; // 1.70417985002100
+		static HK_ALIGN16(const hkInt32 e0[4])	= { 0x400F22D2, 0x400F22D2, 0x400F22D2, 0x400F22D2 }; // 2.23650017675129
+
+		__m128 x = inX;
+
+		// get sign and abs
+		__m128 sign = _mm_and_ps(*(__m128*)hkSse_signMask, x);
+		__m128 xabs = _mm_andnot_ps(*(__m128*)hkSse_signMask, x);
+
+		// get abs reciprocal
+		__m128 inv_x = hkMath::quadReciprocal(x);
+		inv_x = _mm_xor_ps(inv_x, *(__m128*)hkSse_signMask);
+
+		// calc which half
+		__m128 select = _mm_cmpgt_ps(xabs, *(__m128*)hkSse_floatOne);
+
+		// get signed bias
+		sign = _mm_or_ps(sign, *(__m128*)hkSse_piOver2);
+		__m128 bias = _mm_and_ps(sign, select);
+
+		// choose solution
+#if HK_SSE_VERSION >= 0x41
+		x = _mm_blendv_ps(x, inv_x, select);
+#else
+		x = _mm_or_ps(_mm_andnot_ps(select, x), _mm_and_ps(select, inv_x));
+#endif
+
+		// approximate
+		__m128  z  = _mm_mul_ps(x,x);
+		__m128  zm = _mm_mul_ps(z,x);
+		bias = _mm_add_ps(bias,x);
+
+		// eval polynom (Estrin)
+		__m128 y  = _mm_add_ps(_mm_mul_ps(z, *(__m128*)a1), *(__m128*)a0);
+		__m128 z0 = _mm_add_ps(z, *(__m128*)b1);
+		__m128 z1 = _mm_add_ps(z, *(__m128*)d1);
+		__m128 z2 = _mm_add_ps(z, *(__m128*)e1);
+		__m128 y0 = _mm_add_ps(_mm_mul_ps(z0, z),*(__m128*)b0);
+		__m128 y1 = _mm_add_ps(_mm_mul_ps(z1, z),*(__m128*)d0);
+		__m128 y2 = _mm_add_ps(_mm_mul_ps(z2, z),*(__m128*)e0);
+		y   = _mm_mul_ps(zm,y);
+		y0  = _mm_mul_ps(y1,y0);
+		y2  = _mm_mul_ps(y,y2);
+		y0  = _mm_add_ps(_mm_mul_ps(y0,y2),bias);
+
+		return y0;
+	}
+
+	/// Returns radian angle whose tangent is y/x.
+	/// This function adheres to the ANSI standard, ie. range -PI < z=atan2(y,x) <= +PI
+	/// with argument sequence (y,x) to match the cmath interface.
+	/// The implementation forwards to the quadAtan(z) function.
+	///
+	/// ACCURACY: matches cmath on MSVC
+	///
+	///                      Relative error:
+	/// arithmetic   domain        peak       rms
+	///    IEEE      -10,10       1.9e-7     4.1e-8
+	///
+	/// PERFORMANCE: About 6.4x faster than ::atanf for 4 simultaneous values
+
+	HK_FORCE_INLINE static __m128 HK_CALL quadAtan2(const __m128& y, const __m128& x)
+	{
+		__m128 xIsZero  = _mm_cmpeq_ps(x, _mm_setzero_ps());				// by value
+		__m128 yIsZero  = _mm_cmpeq_ps(y, _mm_setzero_ps());				// by value
+		__m128 xIsNeg   = _mm_cmplt_ps(x, _mm_setzero_ps());				// by value
+		__m128 ySign    = _mm_and_ps(*(__m128*)hkSse_signMask, y);	// by sign
+
+		// compute common case and zero if not applicable
+#if defined(HK_ALLOW_FPU_EXCEPTION_CHECKING)
+		// this is slightly less accurate and slower than the full precision call below
+		__m128 ratio = _mm_mul_ps(y, quadReciprocal(x));
+#else
+		__m128 ratio = _mm_div_ps(y, x);
+#endif
+		__m128 z = quadAtan( ratio );
+		z = _mm_andnot_ps(_mm_or_ps(xIsZero,yIsZero), z);
+
+		// special case x<0: depends on y
+		__m128 wx = _mm_and_ps(xIsNeg, *(__m128*)hkSse_pi);
+		wx = _mm_xor_ps(wx, ySign);
+
+		// special case x=0: depends on y<0 only
+		__m128 wy = _mm_xor_ps(*(__m128*)hkSse_piOver2, ySign);
+		wy = _mm_andnot_ps(yIsZero, wy);
+
+		// select special case
+#if HK_SSE_VERSION >= 0x41
+		__m128 w = _mm_blendv_ps(wx,wy,xIsZero);
+#else
+		__m128 w = _mm_or_ps(_mm_and_ps(xIsZero,wy), _mm_andnot_ps(xIsZero, wx));
+#endif
+
+		// assemble common + special cases
+		__m128 result = _mm_add_ps(w, z);
+
+		return result;
+	}
+
+	/// Double precision version of above
+	///
+	///                      Relative error:
+	/// arithmetic   domain        peak       rms
+	///    IEEE     -10,10        2.5e-16    6.9e-17
+	///
+	/// PERFORMANCE: About 2.1x faster than ::atan2 for 2 simultaneous values
+
 	HK_FORCE_INLINE static __m128d HK_CALL twoAtan2(const __m128d& y, const __m128d& x)
 	{
-		static HK_ALIGN16(const hkUint64 signMask[2])		= { 0x8000000000000000ull, 0x8000000000000000ull };
-		static HK_ALIGN16(const hkUint64 one[2])			= { 0x3FF0000000000000ull, 0x3FF0000000000000ull }; //  1.0
-		static HK_ALIGN16(const hkUint64 pi[2] )            = { 0x400921FB54442D18ull, 0x400921FB54442D18ull }; // pi
-		static HK_ALIGN16(const hkUint64 piOver2[2] )       = { 0x3FF921FB54442D18ull, 0x3FF921FB54442D18ull }; // pi / 2
-		static HK_ALIGN16(const hkUint64 t0[2])				= { 0xBFB7761EB9E144ACull, 0xBFB7761EB9E144ACull }; // -0.91646118527267623468e-1
-		static HK_ALIGN16(const hkUint64 t1[2])				= { 0xBFF654C3D3DC204Eull, 0xBFF654C3D3DC204Eull }; // -0.13956945682312098640e1
-		static HK_ALIGN16(const hkUint64 t2[2])				= { 0xC057993615E9895Cull, 0xC057993615E9895Cull }; // -0.94393926122725531747e2
-		static HK_ALIGN16(const hkUint64 t3[2])				= { 0x4029C6DA241C0DB4ull, 0x4029C6DA241C0DB4ull }; //  0.12888383034157279340e2
-		static HK_ALIGN16(const hkUint64 s0[2])				= { 0x3FF479E1E998B120ull, 0x3FF479E1E998B120ull }; //  0.12797564625607904396e1
-		static HK_ALIGN16(const hkUint64 s1[2])				= { 0x400193E67256CAF0ull, 0x400193E67256CAF0ull }; //  0.21972168858277355914e1
-		static HK_ALIGN16(const hkUint64 s2[2])				= { 0x401B46F846AA7CC2ull, 0x401B46F846AA7CC2ull }; //  0.68193064729268275701e1
-		static HK_ALIGN16(const hkUint64 s3[2])				= { 0x403C34886CE9BD4Cull, 0x403C34886CE9BD4Cull }; //  0.28205206687035841409e2
+		__m128d xIsZero  = _mm_cmpeq_pd(x, _mm_setzero_pd());				// by value
+		__m128d yIsZero  = _mm_cmpeq_pd(y, _mm_setzero_pd());				// by value
+		__m128d xIsNeg   = _mm_cmplt_pd(x, _mm_setzero_pd());				// by value
+		__m128d ySign    = _mm_and_pd(*(__m128d*)hkSse_D_signMask, y);	// by sign
 
-		__m128d oneF = *(const __m128d*)one;
+		// compute common case and zero if not applicable
+		__m128d ratio = _mm_div_pd(y, x);
+		__m128d z = twoAtan( ratio );
+		z = _mm_andnot_pd(_mm_or_pd(xIsZero,yIsZero), z);
 
-		__m128d rx = _mm_cvtps_pd(_mm_rcp_ps(_mm_cvtpd_ps(x)));
-		__m128d signMaskF = *(const __m128d*)signMask;
-		__m128d y_div_x = _mm_mul_pd(y, rx);
-		__m128d esp4 = _mm_or_pd(_mm_and_pd(signMaskF, y), *(const __m128d*)pi);
-		__m128d x_ge_0 = _mm_cmple_pd(_mm_setzero_pd(), rx);
+		// special case x<0: depends on y
+		__m128d wx = _mm_and_pd(xIsNeg, *(__m128d*)hkSse_D_pi);
+		wx = _mm_xor_pd(wx, ySign);
 
-		__m128d minus1F = _mm_or_pd(oneF, signMaskF);
-		__m128d x5 = _mm_or_pd(_mm_cmplt_pd(oneF, y_div_x), _mm_cmpnle_pd(minus1F, y_div_x));
+		// special case x=0: depends on y<0 only
+		__m128d wy = _mm_xor_pd(*(__m128d*)hkSse_D_piOver2, ySign);
+		wy = _mm_andnot_pd(yIsZero, wy);
 
-		__m128d x4 = _mm_cvtps_pd(_mm_rcp_ps(_mm_cvtpd_ps(y_div_x)));
+		// select special case
 #if HK_SSE_VERSION >= 0x41
-		x4 = _mm_blendv_pd(y_div_x,x4,x5);
+		__m128d w = _mm_blendv_pd(wx,wy,xIsZero);
 #else
-		x4 = _mm_or_pd(_mm_andnot_pd(x5, y_div_x), _mm_and_pd(x5, x4));
-#endif
-		__m128d x0 = x4;
-
-		x4 = _mm_mul_pd(x4, x4);
-
-		__m128d x1 = _mm_add_pd(*(const __m128d*)s0, x4);
-		x1 = _mm_mul_pd(_mm_cvtps_pd(_mm_rcp_ps(_mm_cvtpd_ps(x1))), *(const __m128d*)t0);
-		__m128d x3 = _mm_add_pd(*(const __m128d*)s1, x4);
-		x1 = _mm_add_pd(x1, x3);
-
-		x1 = _mm_mul_pd(_mm_cvtps_pd(_mm_rcp_ps(_mm_cvtpd_ps(x1))), *(const __m128d*)t1);
-		__m128d x7 = _mm_add_pd(*(const __m128d*)s2, x4);
-		x1 = _mm_add_pd(x1, x7);
-
-		x1 = _mm_mul_pd(_mm_cvtps_pd(_mm_rcp_ps(_mm_cvtpd_ps(x1))), *(const __m128d*)t2);
-		x3 = _mm_add_pd(*(const __m128d*)s3, x4);
-		__m128d x6 = _mm_mul_pd(*(const __m128d*)t3, x0);
-		x1 = _mm_add_pd(x1, x3);
-
-		x0 = _mm_and_pd(x0, signMaskF);
-		x1 = _mm_mul_pd(_mm_cvtps_pd(_mm_rcp_ps(_mm_cvtpd_ps(x1))), x6);
-
-		x0 = _mm_sub_pd(_mm_or_pd(x0, *(const __m128d*)piOver2), x1);
-
-#if HK_SSE_VERSION >= 0x41
-		x0 = _mm_blendv_pd(x1,x0,x5);
-#else
-		x0 = _mm_or_pd(_mm_andnot_pd(x5, x1), _mm_and_pd(x5, x0));
+		__m128d w = _mm_or_pd(_mm_and_pd(xIsZero,wy), _mm_andnot_pd(xIsZero, wx));
 #endif
 
-		// select case
-		x1 = _mm_add_pd(x0, esp4);
-#if HK_SSE_VERSION >= 0x41
-		x0 = _mm_blendv_pd(x1,x0,x_ge_0);
-#else
-		x0 = _mm_or_pd(_mm_andnot_pd(x_ge_0, x1),_mm_and_pd(x_ge_0, x0));
-#endif
+		// assemble common + special cases
+		__m128d result = _mm_add_pd(w, z);
 
-		return x0;
+		return result;
 	}
 
 #	define HK_MATH_prefetch128
@@ -482,26 +689,26 @@ namespace hkMath
 
 	HK_FORCE_INLINE static __m128 HK_CALL quadFabs(const __m128 &v)
 	{
-		return _mm_castsi128_ps( _mm_srli_epi32( _mm_slli_epi32( _mm_castps_si128(v), 1 ), 1 ) ); 
+		return _mm_castsi128_ps( _mm_srli_epi32( _mm_slli_epi32( _mm_castps_si128(v), 1 ), 1 ) );
 	}
 
 	HK_FORCE_INLINE static __m128d HK_CALL twoFabs(const __m128d &v)
 	{
-		return _mm_castsi128_pd( _mm_srli_epi64( _mm_slli_epi64( _mm_castpd_si128(v), 1 ), 1 ) ); 
+		return _mm_castsi128_pd( _mm_srli_epi64( _mm_slli_epi64( _mm_castpd_si128(v), 1 ), 1 ) );
 	}
 
 #	define HK_MATH_fabs
-	HK_FORCE_INLINE static hkFloat32 HK_CALL fabs(const hkFloat32 r) 
-	{ 
+	HK_FORCE_INLINE static hkFloat32 HK_CALL fabs(const hkFloat32 r)
+	{
 		const __m128 v = _mm_load_ss(&r);
-		const __m128 abs = quadFabs(v); 
+		const __m128 abs = quadFabs(v);
 		return _mm_cvtss_f32(abs);
 	}
-	HK_FORCE_INLINE static hkDouble64 HK_CALL fabs(const hkDouble64 r) 
-	{ 
+	HK_FORCE_INLINE static hkDouble64 HK_CALL fabs(const hkDouble64 r)
+	{
 		const __m128d v = _mm_load_sd(&r);
-		const __m128d abs = twoFabs(v); 
-		return HK_M128(abs).m128d_f64[0];
+		const __m128d abs = twoFabs(v);
+		return _mm_cvtsd_f64(abs);
 	}
 
 #if HK_SSE_VERSION >= 0x31
@@ -516,11 +723,11 @@ namespace hkMath
 	HK_FORCE_INLINE hkDouble64 HK_CALL abs(hkDouble64 r) { return fabs(r); }
 
 	template<>
-	HK_FORCE_INLINE hkInt32 HK_CALL abs(hkInt32 r) 
-	{ 
+	HK_FORCE_INLINE hkInt32 HK_CALL abs(hkInt32 r)
+	{
 		__m128i rr = _mm_cvtsi32_si128(r);
 		__m128i rabs = _mm_abs_epi32(rr);
-		return _mm_cvtsi128_si32(rabs); 
+		return _mm_cvtsi128_si32(rabs);
 	}
 
 #endif
@@ -530,7 +737,7 @@ namespace hkMath
 	{
 		const __m128 xx = _mm_load_ss(&x);
 		const __m128 yy = _mm_load_ss(&y);
-		const __m128 abs = quadFabs(_mm_sub_ss(xx,yy)); 
+		const __m128 abs = quadFabs(_mm_sub_ss(xx,yy));
 		const __m128 tol = _mm_set1_ps(1e-5f);
 		const int mask = _mm_ucomile_ss(abs, tol);
 		return bool(mask);
@@ -539,7 +746,7 @@ namespace hkMath
 	{
 		const __m128 xx = _mm_load_ss(&x);
 		const __m128 yy = _mm_load_ss(&y);
-		const __m128 abs = quadFabs(_mm_sub_ss(xx,yy)); 
+		const __m128 abs = quadFabs(_mm_sub_ss(xx,yy));
 		const int mask = _mm_ucomile_ss(abs, _mm_load_ss(&tolerance2));
 		return bool(mask);
 	}
@@ -548,7 +755,7 @@ namespace hkMath
 		const __m128d xxd = _mm_load_sd(&x);
 		const __m128 xx = _mm_cvtsd_ss(_mm_setzero_ps(), xxd);
 		const __m128 yy = _mm_load_ss(&y);
-		const __m128 abs = quadFabs(_mm_sub_ss(xx,yy)); 
+		const __m128 abs = quadFabs(_mm_sub_ss(xx,yy));
 		const __m128 tol = _mm_set1_ps(1e-5f);
 		const int mask = _mm_ucomile_ss(abs, tol);
 		return bool(mask);
@@ -558,7 +765,7 @@ namespace hkMath
 		const __m128d xxd = _mm_load_sd(&x);
 		const __m128 xx = _mm_cvtsd_ss(_mm_setzero_ps(), xxd);
 		const __m128 yy = _mm_load_ss(&y);
-		const __m128 abs = quadFabs(_mm_sub_ss(xx,yy)); 
+		const __m128 abs = quadFabs(_mm_sub_ss(xx,yy));
 		const int mask = _mm_ucomile_ss(abs, _mm_load_ss(&tolerance2));
 		return bool(mask);
 	}
@@ -567,7 +774,7 @@ namespace hkMath
 		const __m128d yyd = _mm_load_sd(&y);
 		const __m128 yy = _mm_cvtsd_ss(_mm_setzero_ps(), yyd);
 		const __m128 xx = _mm_load_ss(&x);
-		const __m128 abs = quadFabs(_mm_sub_ss(xx,yy)); 
+		const __m128 abs = quadFabs(_mm_sub_ss(xx,yy));
 		const __m128 tol = _mm_set1_ps(1e-5f);
 		const int mask = _mm_ucomile_ss(abs, tol);
 		return bool(mask);
@@ -577,7 +784,7 @@ namespace hkMath
 		const __m128d yyd = _mm_load_sd(&y);
 		const __m128 yy = _mm_cvtsd_ss(_mm_setzero_ps(), yyd);
 		const __m128 xx = _mm_load_ss(&x);
-		const __m128 abs = quadFabs(_mm_sub_ss(xx,yy)); 
+		const __m128 abs = quadFabs(_mm_sub_ss(xx,yy));
 		const int mask = _mm_ucomile_ss(abs, _mm_load_ss(&tolerance2));
 		return bool(mask);
 	}
@@ -594,7 +801,7 @@ namespace hkMath
 	{
 		const __m128d xx = _mm_load_sd(&x);
 		const __m128d yy = _mm_load_sd(&y);
-		const __m128d abs = twoFabs(_mm_sub_sd(xx,yy)); 
+		const __m128d abs = twoFabs(_mm_sub_sd(xx,yy));
 		const int mask = _mm_ucomile_sd(abs, _mm_load_sd(&tolerance2));
 		return bool(mask);
 	}
@@ -602,7 +809,7 @@ namespace hkMath
 	{
 		const __m128d xx = _mm_load_sd(&x);
 		const __m128d yy = _mm_load_sd(&y);
-		const __m128d abs = twoFabs(_mm_sub_sd(xx,yy)); 
+		const __m128d abs = twoFabs(_mm_sub_sd(xx,yy));
 		const __m128 tolf = _mm_load_ss(&tolerance2);
 		const __m128d told = _mm_cvtss_sd(_mm_setzero_pd(), tolf);
 		const int mask = _mm_ucomile_sd(abs, told);
@@ -626,7 +833,7 @@ namespace hkMath
 	HK_FORCE_INLINE hkDouble64 HK_CALL max2<hkDouble64, hkDouble64>( hkDouble64 x, hkDouble64 y)
 	{
 		const __m128d v = _mm_max_sd(_mm_load_sd(&x),_mm_load_sd(&y));
-		return HK_M128(v).m128d_f64[0];
+		return _mm_cvtsd_f64(v);
 	}
 #if HK_SSE_VERSION >= 0x41
 	template <>
@@ -659,7 +866,7 @@ namespace hkMath
 	HK_FORCE_INLINE hkDouble64 HK_CALL min2<hkDouble64, hkDouble64>( hkDouble64 x, hkDouble64 y)
 	{
 		const __m128d v = _mm_min_sd(_mm_load_sd(&x),_mm_load_sd(&y));
-		return HK_M128(v).m128d_f64[0];
+		return _mm_cvtsd_f64(v);
 	}
 #if HK_SSE_VERSION >= 0x41
 	template <>
@@ -696,7 +903,7 @@ namespace hkMath
 	{
 		const __m128d lo = _mm_max_sd(_mm_load_sd(&x),_mm_load_sd(&mi));
 		const __m128d hi = _mm_min_sd(             lo,_mm_load_sd(&ma));
-		return HK_M128(hi).m128d_f64[0];
+		return _mm_cvtsd_f64(hi);
 	}
 #if HK_SSE_VERSION >= 0x41
 	template <>
@@ -778,17 +985,17 @@ namespace hkMath
 	}
 
 #	define HK_MATH_floor
-	HK_FORCE_INLINE static hkFloat32 HK_CALL floor(const hkFloat32 r) 
-	{ 
+	HK_FORCE_INLINE static hkFloat32 HK_CALL floor(const hkFloat32 r)
+	{
 		const __m128 v = _mm_load_ss(&r);
 		const __m128 result = quadFloor(v);
 		return _mm_cvtss_f32(result);
 	}
-	HK_FORCE_INLINE static hkDouble64 HK_CALL floor(const hkDouble64 r) 
-	{ 
+	HK_FORCE_INLINE static hkDouble64 HK_CALL floor(const hkDouble64 r)
+	{
 		const __m128d v = _mm_load_sd(&r);
 		const __m128d result = twoFloor(v);
-		return HK_M128(result).m128d_f64[0];
+		return _mm_cvtsd_f64(result);
 	}
 
 #	define HK_MATH_hkFloor
@@ -816,27 +1023,25 @@ namespace hkMath
 	}
 
 #	define HK_MATH_ceil
-	HK_FORCE_INLINE static hkFloat32 HK_CALL ceil( const hkFloat32 r ) 
-	{ 
+	HK_FORCE_INLINE static hkFloat32 HK_CALL ceil( const hkFloat32 r )
+	{
 		const __m128 v = _mm_load_ss(&r);
 #if HK_SSE_VERSION >= 0x41
 		const __m128 result = _mm_ceil_ss(v, v);
 #else
-		static HK_ALIGN16(const hkUint32 one[4])			= { 0x3F800000, 0x3F800000, 0x3F800000, 0x3F800000 }; //  1.0
-		const __m128 result = _mm_add_ps(*(__m128*)one, quadFloor(v));
+		const __m128 result = _mm_add_ps(*(__m128*)hkSse_floatOne, quadFloor(v));
 #endif
 		return _mm_cvtss_f32(result);
 	}
-	HK_FORCE_INLINE static hkDouble64 HK_CALL ceil( const hkDouble64 r ) 
-	{ 
+	HK_FORCE_INLINE static hkDouble64 HK_CALL ceil( const hkDouble64 r )
+	{
 		const __m128d v = _mm_load_sd(&r);
 #if HK_SSE_VERSION >= 0x41
 		const __m128d result = _mm_ceil_sd(v, v);
 #else
-		static HK_ALIGN16(const hkUint64 one[2])			= { 0x3FF0000000000000ull, 0x3FF0000000000000ull }; //  1.0
-		const __m128d result = _mm_add_pd(*(__m128d*)one, twoFloor(v));
+		const __m128d result = _mm_add_pd(*(__m128d*)hkSse_doubleOne, twoFloor(v));
 #endif
-		return HK_M128(result).m128d_f64[0];
+		return _mm_cvtsd_f64(result);
 	}
 
 	HK_FORCE_INLINE static __m128 HK_CALL quadMod(const __m128 &a, const __m128 &b)
@@ -856,19 +1061,19 @@ namespace hkMath
 	}
 
 #	define HK_MATH_fmod
-	HK_FORCE_INLINE static hkFloat32 HK_CALL fmod(const hkFloat32 n, const hkFloat32 d) 
-	{ 
+	HK_FORCE_INLINE static hkFloat32 HK_CALL fmod(const hkFloat32 n, const hkFloat32 d)
+	{
 		const __m128 numer = _mm_load_ss(&n);
 		const __m128 denom = _mm_load_ss(&d);
 		__m128 result = quadMod(numer, denom);
 		return _mm_cvtss_f32(result);
 	}
-	HK_FORCE_INLINE static hkDouble64 HK_CALL fmod(const hkDouble64 n, const hkDouble64 d) 
-	{ 
+	HK_FORCE_INLINE static hkDouble64 HK_CALL fmod(const hkDouble64 n, const hkDouble64 d)
+	{
 		const __m128d numer = _mm_load_sd(&n);
 		const __m128d denom = _mm_load_sd(&d);
 		__m128d result = twoMod(numer, denom);
-		return HK_M128(result).m128d_f64[0];
+		return _mm_cvtsd_f64(result);
 	}
 
 #	define HK_MATH_signBitSet
@@ -900,24 +1105,8 @@ namespace hkMath
 		q.xy = _mm_load1_pd(&r);
 		q.zw = _mm_load1_pd(&r);
 		hkQuadDouble64 l = quadLog(q); // change this!
-		return HK_M128(l.xy).m128d_f64[0];
+		return _mm_cvtsd_f64(l.xy);
 #endif
-	}
-
-#	define HK_MATH_atan2Approximation
-	HK_FORCE_INLINE static hkFloat32 HK_CALL atan2Approximation( const hkFloat32& y, const hkFloat32& x )
-	{
-		__m128 qy = _mm_load_ss(&y);
-		__m128 qx = _mm_load_ss(&x);
-		__m128 a = quadAtan2(qy,qx);
-		return _mm_cvtss_f32(a);
-	}
-	HK_FORCE_INLINE static hkDouble64 HK_CALL atan2Approximation( const hkDouble64& y, const hkDouble64& x )
-	{
-		__m128d qy = _mm_load_sd(&y);
-		__m128d qx = _mm_load_sd(&x);
-		__m128d a = twoAtan2(qy,qx);
-		return HK_M128(a).m128d_f64[0];
 	}
 
 	/// Average absolute error 0.001961
@@ -925,28 +1114,25 @@ namespace hkMath
 	/// About 10x faster than ::sinf for 4 simultaneous values
 	HK_FORCE_INLINE static __m128 HK_CALL quadSinApproximation(const __m128& inX)
 	{
-		static HK_ALIGN16( const hkUint32 twopi[4] )  = { 0x40C90FDB, 0x40C90FDB, 0x40C90FDB, 0x40C90FDB }; // 2*pi
-		static HK_ALIGN16( const hkUint32 pi[4] )     = { 0x40490FDB, 0x40490FDB, 0x40490FDB, 0x40490FDB }; // pi
-		static HK_ALIGN16( const hkUint32 B[4] )      = { 0x3FA2F983, 0x3FA2F983, 0x3FA2F983, 0x3FA2F983 }; // 4/pi
 		static HK_ALIGN16( const hkUint32 C[4] )      = { 0xBECF817B, 0xBECF817B, 0xBECF817B, 0xBECF817B }; // -4/(pi*pi)
 		static HK_ALIGN16( const hkUint32 P[4] )      = { 0x3E666666, 0x3E666666, 0x3E666666, 0x3E666666 }; // 0.225
 
 		__m128 x = inX;
 
 		// xx = remap to [0,pi]
-		__m128 gePi = _mm_cmpnlt_ps(x, *(__m128*)&pi);
-		__m128 limit = _mm_and_ps(gePi, *(__m128*)&twopi);
+		__m128 gePi = _mm_cmpnlt_ps(x, *(__m128*)hkSse_pi);
+		__m128 limit = _mm_and_ps(gePi, *(__m128*)hkSse_twoPi);
 		__m128 xx = _mm_sub_ps(x, limit);
 
 		// y = B * x + C * x * abs(xx)
-		__m128 abs = quadFabs(xx); 
+		__m128 abs = quadFabs(xx);
 		__m128 y = _mm_mul_ps(abs, xx);
-		__m128 Bx = _mm_mul_ps(xx, *(__m128*)&B);
+		__m128 Bx = _mm_mul_ps(xx, *(__m128*)hkSse_fourOverPi);
 		__m128 Cx_abs = _mm_mul_ps(y, *(__m128*)&C);
 		__m128 parabola = _mm_add_ps(Bx, Cx_abs);
 
 		// y = P * (y * abs(y) - y) + y
-		abs = quadFabs(parabola); 
+		abs = quadFabs(parabola);
 		y = _mm_sub_ps(_mm_mul_ps(parabola, abs),parabola);
 		__m128 blend = _mm_mul_ps(y, *(__m128*)&P);
 		__m128 result = _mm_add_ps(blend, parabola);
@@ -960,28 +1146,25 @@ namespace hkMath
 	/// About 10x faster than ::sin for 4 simultaneous values
 	HK_FORCE_INLINE static __m128d HK_CALL twoSinApproximation(const __m128d& inX)
 	{
-		static HK_ALIGN16( const hkUint64 twopi[2] )  = { 0x401921FB54442D18ull, 0x401921FB54442D18ull }; // 2*pi
-		static HK_ALIGN16( const hkUint64 pi[2] )     = { 0x400921FB54442D18ull, 0x400921FB54442D18ull }; // pi
-		static HK_ALIGN16( const hkUint64 B[2] )      = { 0x3FF45F306DC9C883ull, 0x3FF45F306DC9C883ull }; // 4/pi
 		static HK_ALIGN16( const hkUint64 C[2] )      = { 0xBFD9F02F6222C720ull, 0xBFD9F02F6222C720ull }; // -4/(pi*pi)
 		static HK_ALIGN16( const hkUint64 P[2] )      = { 0x3FCCCCCCCCCCCCCDull, 0x3FCCCCCCCCCCCCCDull }; // 0.225
 
 		__m128d x = inX;
 
 		// xx = remap to [0,pi]
-		__m128d gePi = _mm_cmpnlt_pd(x, *(__m128d*)&pi);
-		__m128d limit = _mm_and_pd(gePi, *(__m128d*)&twopi);
+		__m128d gePi = _mm_cmpnlt_pd(x, *(__m128d*)&hkSse_D_pi);
+		__m128d limit = _mm_and_pd(gePi, *(__m128d*)&hkSse_D_twoPi);
 		__m128d xx = _mm_sub_pd(x, limit);
 
 		// y = B * x + C * x * abs(xx)
-		__m128d abs = twoFabs(xx); 
+		__m128d abs = twoFabs(xx);
 		__m128d y = _mm_mul_pd(abs, xx);
-		__m128d Bx = _mm_mul_pd(xx, *(__m128d*)&B);
+		__m128d Bx = _mm_mul_pd(xx, *(__m128d*)&hkSse_D_fourOverPi);
 		__m128d Cx_abs = _mm_mul_pd(y, *(__m128d*)&C);
 		__m128d parabola = _mm_add_pd(Bx, Cx_abs);
 
 		// y = P * (y * abs(y) - y) + y
-		abs = twoFabs(parabola); 
+		abs = twoFabs(parabola);
 		y = _mm_sub_pd(_mm_mul_pd(parabola, abs),parabola);
 		__m128d blend = _mm_mul_pd(y, *(__m128d*)&P);
 		__m128d result = _mm_add_pd(blend, parabola);
@@ -992,17 +1175,17 @@ namespace hkMath
 	/// Adapted from the book "Methods and Programs for Mathematical Functions",
 	/// Stephen Lloyd Baluk Moshier, Prentice-Hall, 1989
 	///
-	/// Range reduction is into intervals of pi/4.  The reduction error is nearly eliminated 
+	/// Range reduction is into intervals of pi/4.  The reduction error is nearly eliminated
 	/// by extended precision modular arithmetic.
-	/// 
+	///
 	/// Two polynomial approximating functions are employed.
 	/// Between 0 and pi/4 the sine is approximated by
 	///      x  +  x**3 P(x**2).
 	/// Between pi/4 and pi/2 the cosine is represented as
 	///      1  -  x**2 Q(x**2).
-	/// 
+	///
 	/// ACCURACY: matches cmath on MSVC
-	/// 
+	///
 	///                      Relative error:
 	/// arithmetic   domain        peak       rms
 	///    IEEE    -4096,+4096    1.2e-7     3.0e-8
@@ -1014,34 +1197,14 @@ namespace hkMath
 
 	HK_FORCE_INLINE static __m128 HK_CALL quadSin(const __m128& inX)
 	{
-		HK_ALIGN16(static const hkInt32 sinCoeff0[4]) = { 0xB94CA1F9, 0xB94CA1F9, 0xB94CA1F9, 0xB94CA1F9 }; // -1.9515295891e-4
-		HK_ALIGN16(static const hkInt32 sinCoeff1[4]) = { 0x3C08839E, 0x3C08839E, 0x3C08839E, 0x3C08839E }; //  8.3321608736e-3
-		HK_ALIGN16(static const hkInt32 sinCoeff2[4]) = { 0xBE2AAAA3, 0xBE2AAAA3, 0xBE2AAAA3, 0xBE2AAAA3 }; // -1.6666654611e-1
-
-		HK_ALIGN16(static const hkInt32 cosCoeff0[4]) = { 0x37CCF5CE, 0x37CCF5CE, 0x37CCF5CE, 0x37CCF5CE }; //  2.443315711809948e-005
-		HK_ALIGN16(static const hkInt32 cosCoeff1[4]) = { 0xBAB6061A, 0xBAB6061A, 0xBAB6061A, 0xBAB6061A }; // -1.388731625493765e-003
-		HK_ALIGN16(static const hkInt32 cosCoeff2[4]) = { 0x3D2AAAA5, 0x3D2AAAA5, 0x3D2AAAA5, 0x3D2AAAA5 }; //  4.166664568298827e-002
-
-		HK_ALIGN16(static const hkInt32 signMask[4])  = { 0x80000000, 0x80000000, 0x80000000, 0x80000000 };
-		HK_ALIGN16(static const hkInt32 fourDivPi[4]) = { 0x3FA2F983, 0x3FA2F983, 0x3FA2F983, 0x3FA2F983 }; // 4 / Pi
-		HK_ALIGN16(static const hkInt32 DP1[4])       = { 0xBF490000, 0xBF490000, 0xBF490000, 0xBF490000 }; // -0.78515625
-		HK_ALIGN16(static const hkInt32 DP2[4])       = { 0xB97DA000, 0xB97DA000, 0xB97DA000, 0xB97DA000 }; // -2.4187564849853515625e-4
-		HK_ALIGN16(static const hkInt32 DP3[4])       = { 0xB3222169, 0xB3222169, 0xB3222169, 0xB3222169 }; // -3.77489497744594108e-8
-		HK_ALIGN16(static const hkInt32 floatOne[4])  = { 0x3F800000, 0x3F800000, 0x3F800000, 0x3F800000 }; // 1.0
-		HK_ALIGN16(static const hkInt32 floatHalf[4]) = { 0x3F000000, 0x3F000000, 0x3F000000, 0x3F000000 }; // 0.5
-		HK_ALIGN16(static const hkInt32 intOne[4])    = { 0x00000001, 0x00000001, 0x00000001, 0x00000001 };
-
-		__m128 x = inX;
-
 		// get abs and sign
-		__m128 sign_bit = x;
-		x = _mm_andnot_ps( *(__m128*)signMask, x);
-		sign_bit = _mm_and_ps(sign_bit, *(__m128*)signMask);
+		__m128 x = _mm_andnot_ps( *(__m128*)hkSse_signMask, inX);
+		__m128 sign_bit = _mm_and_ps( *(__m128*)hkSse_signMask, inX);
 
 		// scale by 4/Pi
-		__m128 y = _mm_mul_ps(x, *(__m128*)fourDivPi);
+		__m128 y = _mm_mul_ps(x, *(__m128*)hkSse_fourOverPi);
 
-		__m128i one = *(__m128i*)intOne;
+		__m128i one = *(__m128i*)hkSse_intOne;
 		__m128i two = _mm_add_epi32(one,one);
 		__m128i four = _mm_add_epi32(two,two);
 		// store the integer part of y in emm2
@@ -1053,19 +1216,14 @@ namespace hkMath
 		// get the swap sign flag
 		__m128i emm0 = _mm_and_si128(emm2, four);
 		emm0 = _mm_slli_epi32(emm0, 29);
-		// get the polynom selection mask 
-		emm2 = _mm_and_si128(emm2, two);
-		emm2 = _mm_cmpeq_epi32(emm2, _mm_setzero_si128());
-
 		__m128 swap_sign_bit = _mm_castsi128_ps(emm0);
-		__m128 poly_mask = _mm_castsi128_ps(emm2);
 		sign_bit = _mm_xor_ps(sign_bit, swap_sign_bit);
 
 		// The magic pass: Extended precision modular arithmetic
 		//   x = ((x - y * DP1) - y * DP2) - y * DP3
-		__m128 xmm1 = *(__m128*)DP1;
-		__m128 xmm2 = *(__m128*)DP2;
-		__m128 xmm3 = *(__m128*)DP3;
+		__m128 xmm1 = *(__m128*)hkSse_DP1;
+		__m128 xmm2 = *(__m128*)hkSse_DP2;
+		__m128 xmm3 = *(__m128*)hkSse_DP3;
 		xmm1 = _mm_mul_ps(y, xmm1);
 		xmm2 = _mm_mul_ps(y, xmm2);
 		xmm3 = _mm_mul_ps(y, xmm3);
@@ -1074,37 +1232,46 @@ namespace hkMath
 		x = _mm_add_ps(x, xmm3);
 
 		// Evaluate the first polynom  (0 <= x <= Pi/4)
-		y = *(__m128*)cosCoeff0;
+		y = *(__m128*)hkSse_cosCoeff0;
 		__m128 z = _mm_mul_ps(x,x);
 
 		y = _mm_mul_ps(y, z);
-		y = _mm_add_ps(y, *(__m128*)cosCoeff1);
+		y = _mm_add_ps(y, *(__m128*)hkSse_cosCoeff1);
 		y = _mm_mul_ps(y, z);
-		y = _mm_add_ps(y, *(__m128*)cosCoeff2);
+		y = _mm_add_ps(y, *(__m128*)hkSse_cosCoeff2);
 		y = _mm_mul_ps(y, z);
 		y = _mm_mul_ps(y, z);
-		__m128 tmp = _mm_mul_ps(z, *(__m128*)floatHalf);
+		__m128 tmp = _mm_mul_ps(z, *(__m128*)hkSse_floatHalf);
 		y = _mm_sub_ps(y, tmp);
-		y = _mm_add_ps(y, *(__m128*)floatOne);
+		y = _mm_add_ps(y, *(__m128*)hkSse_floatOne);
 
 		// Evaluate the second polynom  (Pi/4 <= x <= 0)
-		__m128 y2 = *(__m128*)sinCoeff0;
+		__m128 y2 = *(__m128*)hkSse_sinCoeff0;
 		y2 = _mm_mul_ps(y2, z);
-		y2 = _mm_add_ps(y2, *(__m128*)sinCoeff1);
+		y2 = _mm_add_ps(y2, *(__m128*)hkSse_sinCoeff1);
 		y2 = _mm_mul_ps(y2, z);
-		y2 = _mm_add_ps(y2, *(__m128*)sinCoeff2);
+		y2 = _mm_add_ps(y2, *(__m128*)hkSse_sinCoeff2);
 		y2 = _mm_mul_ps(y2, z);
 		y2 = _mm_mul_ps(y2, x);
 		y2 = _mm_add_ps(y2, x);
 
+		// get the polynom selection mask and
 		// select the correct result from the two polynoms
 #if HK_SSE_VERSION >= 0x41
-		y = _mm_blendv_ps(y,y2,poly_mask);
+		emm2 = _mm_slli_epi32(emm2, 30);
+		__m128 poly_mask = _mm_castsi128_ps(emm2);
+		y = _mm_blendv_ps(y2,y,poly_mask);
 #else
+		emm2 = _mm_and_si128(emm2, two);
+		emm2 = _mm_cmpeq_epi32(emm2, _mm_setzero_si128());
+		__m128 poly_mask = _mm_castsi128_ps(emm2);
 		y2 = _mm_and_ps(poly_mask, y2);
 		y = _mm_andnot_ps(poly_mask, y);
 		y = _mm_or_ps(y,y2);
 #endif
+		// clamp
+		y = _mm_min_ps(y, *(__m128*)hkSse_floatOne);
+
 		// update the sign
 		y = _mm_xor_ps(y, sign_bit);
 
@@ -1125,40 +1292,14 @@ namespace hkMath
 
 	HK_FORCE_INLINE static __m128d HK_CALL twoSin(const __m128d& inX)
 	{
-		HK_ALIGN16(static const hkInt64 sinCoeff0[2]) = { 0x3de5d8fd1fd19ccdull, 0x3de5d8fd1fd19ccdull }; //  1.58962301576546568060E-10
-		HK_ALIGN16(static const hkInt64 sinCoeff1[2]) = { 0xbe5ae5e5a9291f5dull, 0xbe5ae5e5a9291f5dull }; // -2.50507477628578072866E-8
-		HK_ALIGN16(static const hkInt64 sinCoeff2[2]) = { 0x3ec71de3567d48a1ull, 0x3ec71de3567d48a1ull }; //  2.75573136213857245213E-6
-		HK_ALIGN16(static const hkInt64 sinCoeff3[2]) = { 0xbf2a01a019bfdf03ull, 0xbf2a01a019bfdf03ull }; // -1.98412698295895385996E-4
-		HK_ALIGN16(static const hkInt64 sinCoeff4[2]) = { 0x3f8111111110f7d0ull, 0x3f8111111110f7d0ull }; //  8.33333333332211858878E-3
-		HK_ALIGN16(static const hkInt64 sinCoeff5[2]) = { 0xbfc5555555555548ull, 0xbfc5555555555548ull }; // -1.66666666666666307295E-1
-
-		HK_ALIGN16(static const hkInt64 cosCoeff0[2]) = { 0xbda8fa49a0861a9bull, 0xbda8fa49a0861a9bull }; // -1.13585365213876817300E-11
-		HK_ALIGN16(static const hkInt64 cosCoeff1[2]) = { 0x3e21ee9d7b4e3f05ull, 0x3e21ee9d7b4e3f05ull }; //  2.08757008419747316778E-9
-		HK_ALIGN16(static const hkInt64 cosCoeff2[2]) = { 0xbe927e4f7eac4bc6ull, 0xbe927e4f7eac4bc6ull }; // -2.75573141792967388112E-7
-		HK_ALIGN16(static const hkInt64 cosCoeff3[2]) = { 0x3efa01a019c844f5ull, 0x3efa01a019c844f5ull }; //  2.48015872888517045348E-5
-		HK_ALIGN16(static const hkInt64 cosCoeff4[2]) = { 0xbf56c16c16c14f91ull, 0xbf56c16c16c14f91ull }; // -1.38888888888730564116E-3
-		HK_ALIGN16(static const hkInt64 cosCoeff5[2]) = { 0x3fa555555555554bull, 0x3fa555555555554bull }; //  4.16666666666665929218E-2
-
-		HK_ALIGN16(static const hkInt64 signMask[2])  = { 0x8000000000000000ull, 0x8000000000000000ull };
-		HK_ALIGN16(static const hkInt64 fourDivPi[2]) = { 0x3FF45F306DC9C883ull, 0x3FF45F306DC9C883ull }; // 4 / Pi
-		HK_ALIGN16(static const hkInt64 DP1[2])       = { 0xbfe921fb40000000ull, 0xbfe921fb40000000ull }; // -7.85398125648498535156E-1
-		HK_ALIGN16(static const hkInt64 DP2[2])       = { 0xbe64442d00000000ull, 0xbe64442d00000000ull }; // -3.77489470793079817668E-8
-		HK_ALIGN16(static const hkInt64 DP3[2])       = { 0xbce8469898cc5170ull, 0xbce8469898cc5170ull }; // -2.69515142907905952645E-15
-		HK_ALIGN16(static const hkInt64 floatOne[2])  = { 0x3FF0000000000000ull, 0x3FF0000000000000ull }; // 1.0
-		HK_ALIGN16(static const hkInt64 floatHalf[2]) = { 0x3FE0000000000000ull, 0x3FE0000000000000ull }; // 0.5
-		HK_ALIGN16(static const hkInt32 intOne[4])    = { 0x00000001, 0x00000001, 0x00000001, 0x00000001 };
-
-		__m128d x = inX;
-
 		// get abs and sign
-		__m128d sign_bit = x;
-		x = _mm_andnot_pd( *(__m128d*)signMask, x);
-		sign_bit = _mm_and_pd(sign_bit, *(__m128d*)signMask);
+		__m128d x = _mm_andnot_pd( *(__m128d*)hkSse_D_signMask, inX);
+		__m128d sign_bit = _mm_and_pd( *(__m128d*)hkSse_D_signMask, inX);
 
 		// scale by 4/Pi
-		__m128d y = _mm_mul_pd(x, *(__m128d*)fourDivPi);
+		__m128d y = _mm_mul_pd(x, *(__m128d*)hkSse_D_fourOverPi);
 
-		__m128i one = *(__m128i*)intOne;
+		__m128i one = *(__m128i*)hkSse_intOne;
 		__m128i two = _mm_add_epi32(one,one);
 		__m128i four = _mm_add_epi32(two,two);
 		// store the integer part of y in emm2
@@ -1170,21 +1311,16 @@ namespace hkMath
 		// get the swap sign flag
 		__m128i emm0 = _mm_and_si128(emm2, four);
 		emm0 = _mm_slli_epi32(emm0, 29);
-		emm0 = _mm_shuffle_epi32(emm0, _MM_SHUFFLE(1,1,0,0));
-		// get the polynom selection mask 
-		emm2 = _mm_and_si128(emm2, two);
-		emm2 = _mm_cmpeq_epi32(emm2, _mm_setzero_si128());
-		emm2 = _mm_shuffle_epi32(emm2, _MM_SHUFFLE(1,1,0,0));
-
+		emm0 = _mm_move_epi64(emm0);
+		emm0 = _mm_shuffle_epi32(emm0, _MM_SHUFFLE(1,3,0,2));
 		__m128d swap_sign_bit = _mm_castsi128_pd(emm0);
-		__m128d poly_mask = _mm_castsi128_pd(emm2);
 		sign_bit = _mm_xor_pd(sign_bit, swap_sign_bit);
 
 		// The magic pass: Extended precision modular arithmetic
 		//   x = ((x - y * DP1) - y * DP2) - y * DP3
-		__m128d xmm1 = *(__m128d*)DP1;
-		__m128d xmm2 = *(__m128d*)DP2;
-		__m128d xmm3 = *(__m128d*)DP3;
+		__m128d xmm1 = *(__m128d*)hkSse_D_DP1;
+		__m128d xmm2 = *(__m128d*)hkSse_D_DP2;
+		__m128d xmm3 = *(__m128d*)hkSse_D_DP3;
 		xmm1 = _mm_mul_pd(y, xmm1);
 		xmm2 = _mm_mul_pd(y, xmm2);
 		xmm3 = _mm_mul_pd(y, xmm3);
@@ -1195,52 +1331,482 @@ namespace hkMath
 		__m128d z = _mm_mul_pd(x,x);
 
 		// Evaluate the first polynom  (0 <= x <= Pi/4)
-		y = *(__m128d*)cosCoeff0;
+		y = *(__m128d*)hkSse_D_cosCoeff0;
 		y = _mm_mul_pd(y, z);
-		y = _mm_add_pd(y, *(__m128d*)cosCoeff1);
+		y = _mm_add_pd(y, *(__m128d*)hkSse_D_cosCoeff1);
 		y = _mm_mul_pd(y, z);
-		y = _mm_add_pd(y, *(__m128d*)cosCoeff2);
+		y = _mm_add_pd(y, *(__m128d*)hkSse_D_cosCoeff2);
 		y = _mm_mul_pd(y, z);
-		y = _mm_add_pd(y, *(__m128d*)cosCoeff3);
+		y = _mm_add_pd(y, *(__m128d*)hkSse_D_cosCoeff3);
 		y = _mm_mul_pd(y, z);
-		y = _mm_add_pd(y, *(__m128d*)cosCoeff4);
+		y = _mm_add_pd(y, *(__m128d*)hkSse_D_cosCoeff4);
 		y = _mm_mul_pd(y, z);
-		y = _mm_add_pd(y, *(__m128d*)cosCoeff5);
+		y = _mm_add_pd(y, *(__m128d*)hkSse_D_cosCoeff5);
 		y = _mm_mul_pd(y, z);
 		y = _mm_mul_pd(y, z);
-		__m128d tmp = _mm_mul_pd(z, *(__m128d*)floatHalf);
+		__m128d tmp = _mm_mul_pd(z, *(__m128d*)hkSse_doubleHalf);
 		y = _mm_sub_pd(y, tmp);
-		y = _mm_add_pd(y, *(__m128d*)floatOne);
+		y = _mm_add_pd(y, *(__m128d*)hkSse_doubleOne);
 
 		// Evaluate the second polynom  (Pi/4 <= x <= 0)
-		__m128d y2 = *(__m128d*)sinCoeff0;
+		__m128d y2 = *(__m128d*)hkSse_D_sinCoeff0;
 		y2 = _mm_mul_pd(y2, z);
-		y2 = _mm_add_pd(y2, *(__m128d*)sinCoeff1);
+		y2 = _mm_add_pd(y2, *(__m128d*)hkSse_D_sinCoeff1);
 		y2 = _mm_mul_pd(y2, z);
-		y2 = _mm_add_pd(y2, *(__m128d*)sinCoeff2);
+		y2 = _mm_add_pd(y2, *(__m128d*)hkSse_D_sinCoeff2);
 		y2 = _mm_mul_pd(y2, z);
-		y2 = _mm_add_pd(y2, *(__m128d*)sinCoeff3);
+		y2 = _mm_add_pd(y2, *(__m128d*)hkSse_D_sinCoeff3);
 		y2 = _mm_mul_pd(y2, z);
-		y2 = _mm_add_pd(y2, *(__m128d*)sinCoeff4);
+		y2 = _mm_add_pd(y2, *(__m128d*)hkSse_D_sinCoeff4);
 		y2 = _mm_mul_pd(y2, z);
-		y2 = _mm_add_pd(y2, *(__m128d*)sinCoeff5);
+		y2 = _mm_add_pd(y2, *(__m128d*)hkSse_D_sinCoeff5);
 		y2 = _mm_mul_pd(y2, z);
 		y2 = _mm_mul_pd(y2, x);
 		y2 = _mm_add_pd(y2, x);
 
+		// get the polynom selection mask and
 		// select the correct result from the two polynoms
 #if HK_SSE_VERSION >= 0x41
-		y = _mm_blendv_pd(y,y2,poly_mask);
+		emm2 = _mm_slli_epi32(emm2, 30);
+		emm2 = _mm_shuffle_epi32(emm2, _MM_SHUFFLE(1,1,0,0));
+		__m128d poly_mask = _mm_castsi128_pd(emm2);
+		y = _mm_blendv_pd(y2,y,poly_mask);
 #else
+		emm2 = _mm_and_si128(emm2, two);
+		emm2 = _mm_cmpeq_epi32(emm2, _mm_setzero_si128());
+		emm2 = _mm_shuffle_epi32(emm2, _MM_SHUFFLE(1,1,0,0));
+		__m128d poly_mask = _mm_castsi128_pd(emm2);
 		y2 = _mm_and_pd(poly_mask, y2);
 		y = _mm_andnot_pd(poly_mask, y);
 		y = _mm_or_pd(y,y2);
 #endif
+		// clamp
+		y = _mm_min_pd(y, *(__m128d*)hkSse_doubleOne);
+
 		// update the sign
 		y = _mm_xor_pd(y, sign_bit);
 
 		return y;
 	}
+
+	/// Adapted from the book "Methods and Programs for Mathematical Functions",
+	/// Stephen Lloyd Baluk Moshier, Prentice-Hall, 1989
+	///
+	/// Range reduction is into intervals of pi/4.  The reduction error is nearly eliminated
+	/// by extended precision modular arithmetic.
+	///
+	/// Two polynomial approximating functions are employed.
+	/// Between 0 and pi/4 the sine is approximated by
+	///      1  -  x**2 Q(x**2).
+	/// Between pi/4 and pi/2 the cosine is represented as
+	///      x  +  x**3 P(x**2).
+	///
+	/// ACCURACY: matches cmath on MSVC
+	///
+	///                      Relative error:
+	/// arithmetic   domain        peak       rms
+	///    IEEE    -8192,+8192    3.0e-7     3.0e-8
+	/// Partial loss of accuracy begins to occur at x = 2^13
+	/// = 8192. Results may be meaningless for x >= 2^24
+	///
+	/// PERFORMANCE: About 4.3x faster than ::cosf for 4 simultaneous values
+
+	HK_FORCE_INLINE static __m128 HK_CALL quadCos(const __m128& inX)
+	{
+		// get abs and sign
+		__m128 x = _mm_andnot_ps( *(__m128*)hkSse_signMask, inX);
+
+		// scale by 4/Pi
+		__m128 y = _mm_mul_ps(x, *(__m128*)hkSse_fourOverPi);
+
+		__m128i one = *(__m128i*)hkSse_intOne;
+		__m128i two = _mm_add_epi32(one,one);
+		__m128i four = _mm_add_epi32(two,two);
+		// store the integer part of y in emm2
+		__m128i emm2 = _mm_cvttps_epi32(y);
+		// j=(j+1) & (~1)
+		emm2 = _mm_add_epi32(emm2, one);
+		emm2 = _mm_andnot_si128(one, emm2);
+		y = _mm_cvtepi32_ps(emm2);
+		emm2 = _mm_sub_epi32(emm2, two);
+		// get the swap sign flag
+		__m128i emm0 = _mm_andnot_si128(emm2, four);
+		emm0 = _mm_slli_epi32(emm0, 29);
+		__m128 sign_bit = _mm_castsi128_ps(emm0);
+
+		// The magic pass: Extended precision modular arithmetic
+		//   x = ((x - y * DP1) - y * DP2) - y * DP3
+		__m128 xmm1 = *(__m128*)hkSse_DP1;
+		__m128 xmm2 = *(__m128*)hkSse_DP2;
+		__m128 xmm3 = *(__m128*)hkSse_DP3;
+		xmm1 = _mm_mul_ps(y, xmm1);
+		xmm2 = _mm_mul_ps(y, xmm2);
+		xmm3 = _mm_mul_ps(y, xmm3);
+		x = _mm_add_ps(x, xmm1);
+		x = _mm_add_ps(x, xmm2);
+		x = _mm_add_ps(x, xmm3);
+
+		// Evaluate the first polynom  (0 <= x <= Pi/4)
+		y = *(__m128*)hkSse_cosCoeff0;
+		__m128 z = _mm_mul_ps(x,x);
+
+		y = _mm_mul_ps(y, z);
+		y = _mm_add_ps(y, *(__m128*)hkSse_cosCoeff1);
+		y = _mm_mul_ps(y, z);
+		y = _mm_add_ps(y, *(__m128*)hkSse_cosCoeff2);
+		y = _mm_mul_ps(y, z);
+		y = _mm_mul_ps(y, z);
+		__m128 tmp = _mm_mul_ps(z, *(__m128*)hkSse_floatHalf);
+		y = _mm_sub_ps(y, tmp);
+		y = _mm_add_ps(y, *(__m128*)hkSse_floatOne);
+
+		// Evaluate the second polynom  (Pi/4 <= x <= 0)
+		__m128 y2 = *(__m128*)hkSse_sinCoeff0;
+		y2 = _mm_mul_ps(y2, z);
+		y2 = _mm_add_ps(y2, *(__m128*)hkSse_sinCoeff1);
+		y2 = _mm_mul_ps(y2, z);
+		y2 = _mm_add_ps(y2, *(__m128*)hkSse_sinCoeff2);
+		y2 = _mm_mul_ps(y2, z);
+		y2 = _mm_mul_ps(y2, x);
+		y2 = _mm_add_ps(y2, x);
+
+		// get the polynom selection mask and
+		// select the correct result from the two polynoms
+#if HK_SSE_VERSION >= 0x41
+		emm2 = _mm_slli_epi32(emm2, 30);
+		__m128 poly_mask = _mm_castsi128_ps(emm2);
+		y = _mm_blendv_ps(y2,y,poly_mask);
+#else
+		emm2 = _mm_and_si128(emm2, two);
+		emm2 = _mm_cmpeq_epi32(emm2, _mm_setzero_si128());
+		__m128 poly_mask = _mm_castsi128_ps(emm2);
+		y2 = _mm_and_ps(poly_mask, y2);
+		y = _mm_andnot_ps(poly_mask, y);
+		y = _mm_or_ps(y,y2);
+#endif
+		// clamp
+		y = _mm_min_ps(y, *(__m128*)hkSse_floatOne);
+
+		// update the sign
+		y = _mm_xor_ps(y, sign_bit);
+
+		return y;
+	}
+
+	/// Double precision version of above
+	///
+	///                      Relative error:
+	/// arithmetic   domain        peak       rms
+	///    IEEE -1.07e9,+1.07e9  2.1e-16     5.4e-17
+	/// Partial loss of accuracy begins to occur at x = 2**30
+	/// = 1.074e9.  The loss is not gradual, but jumps suddenly to
+	/// about 1 part in 10e7.  Results may be meaningless for
+	/// x > 2**49 = 5.6e14.
+	///
+	/// PERFORMANCE: About 1.3x faster than ::cos for 2 simultaneous values
+
+	HK_FORCE_INLINE static __m128d HK_CALL twoCos(const __m128d& inX)
+	{
+		// get abs and sign
+		__m128d x = _mm_andnot_pd( *(__m128d*)hkSse_D_signMask, inX);
+
+		// scale by 4/Pi
+		__m128d y = _mm_mul_pd(x, *(__m128d*)hkSse_D_fourOverPi);
+
+		__m128i one = *(__m128i*)hkSse_intOne;
+		__m128i two = _mm_add_epi32(one,one);
+		__m128i four = _mm_add_epi32(two,two);
+		// store the integer part of y in emm2
+		__m128i emm2 = _mm_cvttpd_epi32(y);
+		// j=(j+1) & (~1)
+		emm2 = _mm_add_epi32(emm2, one);
+		emm2 = _mm_andnot_si128(one, emm2);
+		y = _mm_cvtepi32_pd(emm2);
+		emm2 = _mm_sub_epi32(emm2, two);
+		// get the swap sign flag
+		__m128i emm0 = _mm_andnot_si128(emm2, four);
+		emm0 = _mm_slli_epi32(emm0, 29);
+		emm0 = _mm_move_epi64(emm0);
+		emm0 = _mm_shuffle_epi32(emm0, _MM_SHUFFLE(1,3,0,2));
+		__m128d sign_bit = _mm_castsi128_pd(emm0);
+
+		// The magic pass: Extended precision modular arithmetic
+		//   x = ((x - y * DP1) - y * DP2) - y * DP3
+		__m128d xmm1 = *(__m128d*)hkSse_D_DP1;
+		__m128d xmm2 = *(__m128d*)hkSse_D_DP2;
+		__m128d xmm3 = *(__m128d*)hkSse_D_DP3;
+		xmm1 = _mm_mul_pd(y, xmm1);
+		xmm2 = _mm_mul_pd(y, xmm2);
+		xmm3 = _mm_mul_pd(y, xmm3);
+		x = _mm_add_pd(x, xmm1);
+		x = _mm_add_pd(x, xmm2);
+		x = _mm_add_pd(x, xmm3);
+
+		__m128d z = _mm_mul_pd(x,x);
+
+		// Evaluate the first polynom  (0 <= x <= Pi/4)
+		y = *(__m128d*)hkSse_D_cosCoeff0;
+		y = _mm_mul_pd(y, z);
+		y = _mm_add_pd(y, *(__m128d*)hkSse_D_cosCoeff1);
+		y = _mm_mul_pd(y, z);
+		y = _mm_add_pd(y, *(__m128d*)hkSse_D_cosCoeff2);
+		y = _mm_mul_pd(y, z);
+		y = _mm_add_pd(y, *(__m128d*)hkSse_D_cosCoeff3);
+		y = _mm_mul_pd(y, z);
+		y = _mm_add_pd(y, *(__m128d*)hkSse_D_cosCoeff4);
+		y = _mm_mul_pd(y, z);
+		y = _mm_add_pd(y, *(__m128d*)hkSse_D_cosCoeff5);
+		y = _mm_mul_pd(y, z);
+		y = _mm_mul_pd(y, z);
+		__m128d tmp = _mm_mul_pd(z, *(__m128d*)hkSse_doubleHalf);
+		y = _mm_sub_pd(y, tmp);
+		y = _mm_add_pd(y, *(__m128d*)hkSse_doubleOne);
+
+		// Evaluate the second polynom  (Pi/4 <= x <= 0)
+		__m128d y2 = *(__m128d*)hkSse_D_sinCoeff0;
+		y2 = _mm_mul_pd(y2, z);
+		y2 = _mm_add_pd(y2, *(__m128d*)hkSse_D_sinCoeff1);
+		y2 = _mm_mul_pd(y2, z);
+		y2 = _mm_add_pd(y2, *(__m128d*)hkSse_D_sinCoeff2);
+		y2 = _mm_mul_pd(y2, z);
+		y2 = _mm_add_pd(y2, *(__m128d*)hkSse_D_sinCoeff3);
+		y2 = _mm_mul_pd(y2, z);
+		y2 = _mm_add_pd(y2, *(__m128d*)hkSse_D_sinCoeff4);
+		y2 = _mm_mul_pd(y2, z);
+		y2 = _mm_add_pd(y2, *(__m128d*)hkSse_D_sinCoeff5);
+		y2 = _mm_mul_pd(y2, z);
+		y2 = _mm_mul_pd(y2, x);
+		y2 = _mm_add_pd(y2, x);
+
+		// get the polynom selection mask and
+		// select the correct result from the two polynoms
+#if HK_SSE_VERSION >= 0x41
+		emm2 = _mm_slli_epi32(emm2, 30);
+		emm2 = _mm_shuffle_epi32(emm2, _MM_SHUFFLE(1,1,0,0));
+		__m128d poly_mask = _mm_castsi128_pd(emm2);
+		y = _mm_blendv_pd(y2,y,poly_mask);
+#else
+		emm2 = _mm_and_si128(emm2, two);
+		emm2 = _mm_cmpeq_epi32(emm2, _mm_setzero_si128());
+		emm2 = _mm_shuffle_epi32(emm2, _MM_SHUFFLE(1,1,0,0));
+		__m128d poly_mask = _mm_castsi128_pd(emm2);
+		y2 = _mm_and_pd(poly_mask, y2);
+		y = _mm_andnot_pd(poly_mask, y);
+		y = _mm_or_pd(y,y2);
+#endif
+		// clamp
+		y = _mm_min_pd(y, *(__m128d*)hkSse_doubleOne);
+
+		// update the sign
+		y = _mm_xor_pd(y, sign_bit);
+
+		return y;
+	}
+
+	/// Combined sin and cos calculation derived from the algorithms above.
+	///
+	/// PERFORMANCE: About 5.9x faster than ::sin and ::cos for 2 simultaneous values
+
+	HK_FORCE_INLINE static void HK_CALL twoSinCos(const __m128d& inX, __m128d& s, __m128d& c)
+	{
+		// get abs and sign
+		__m128d x = _mm_andnot_pd( *(__m128d*)hkSse_D_signMask, inX);
+		__m128d sign_bit_sin = _mm_and_pd( *(__m128d*)hkSse_D_signMask, inX);
+
+		// scale by 4/Pi
+		__m128d y = _mm_mul_pd(x, *(__m128d*)hkSse_D_fourOverPi);
+
+		__m128i one = *(__m128i*)hkSse_intOne;
+		__m128i two = _mm_add_epi32(one,one);
+		__m128i four = _mm_add_epi32(two,two);
+		// store the integer part of y in emm2
+		__m128i emm2 = _mm_cvttpd_epi32(y);
+		// j=(j+1) & (~1)
+		emm2 = _mm_add_epi32(emm2, one);
+		emm2 = _mm_andnot_si128(one, emm2);
+		y = _mm_cvtepi32_pd(emm2);
+
+		__m128i emm4 = emm2;
+		emm4 = _mm_sub_epi32(emm4, two);
+		emm4 = _mm_andnot_si128(emm4, four);
+		emm4 = _mm_slli_epi32(emm4, 29);
+		emm4 = _mm_move_epi64(emm4);
+		emm4 = _mm_shuffle_epi32(emm4, _MM_SHUFFLE(1,3,0,2));
+		__m128d sign_bit_cos = _mm_castsi128_pd(emm4);
+
+		// get the swap sign flag for the sine
+		__m128i emm0 = _mm_and_si128(emm2, four);
+		emm0 = _mm_slli_epi32(emm0, 29);
+		emm0 = _mm_move_epi64(emm0);
+		emm0 = _mm_shuffle_epi32(emm0, _MM_SHUFFLE(1,3,0,2));
+		sign_bit_sin = _mm_xor_pd(sign_bit_sin, _mm_castsi128_pd(emm0));
+
+		// The magic pass: Extended precision modular arithmetic
+		//   x = ((x - y * DP1) - y * DP2) - y * DP3
+		__m128d xmm1 = *(__m128d*)hkSse_D_DP1;
+		__m128d xmm2 = *(__m128d*)hkSse_D_DP2;
+		__m128d xmm3 = *(__m128d*)hkSse_D_DP3;
+		xmm1 = _mm_mul_pd(y, xmm1);
+		xmm2 = _mm_mul_pd(y, xmm2);
+		xmm3 = _mm_mul_pd(y, xmm3);
+		x = _mm_add_pd(x, xmm1);
+		x = _mm_add_pd(x, xmm2);
+		x = _mm_add_pd(x, xmm3);
+
+		__m128d z = _mm_mul_pd(x,x);
+
+		// Evaluate the first polynom  (0 <= x <= Pi/4)
+		y = *(__m128d*)hkSse_D_cosCoeff0;
+		y = _mm_mul_pd(y, z);
+		y = _mm_add_pd(y, *(__m128d*)hkSse_D_cosCoeff1);
+		y = _mm_mul_pd(y, z);
+		y = _mm_add_pd(y, *(__m128d*)hkSse_D_cosCoeff2);
+		y = _mm_mul_pd(y, z);
+		y = _mm_add_pd(y, *(__m128d*)hkSse_D_cosCoeff3);
+		y = _mm_mul_pd(y, z);
+		y = _mm_add_pd(y, *(__m128d*)hkSse_D_cosCoeff4);
+		y = _mm_mul_pd(y, z);
+		y = _mm_add_pd(y, *(__m128d*)hkSse_D_cosCoeff5);
+		y = _mm_mul_pd(y, z);
+		y = _mm_mul_pd(y, z);
+		__m128d tmp = _mm_mul_pd(z, *(__m128d*)hkSse_doubleHalf);
+		y = _mm_sub_pd(y, tmp);
+		y = _mm_add_pd(y, *(__m128d*)hkSse_doubleOne);
+
+		// Evaluate the second polynom  (Pi/4 <= x <= 0)
+		__m128d y2 = *(__m128d*)hkSse_D_sinCoeff0;
+		y2 = _mm_mul_pd(y2, z);
+		y2 = _mm_add_pd(y2, *(__m128d*)hkSse_D_sinCoeff1);
+		y2 = _mm_mul_pd(y2, z);
+		y2 = _mm_add_pd(y2, *(__m128d*)hkSse_D_sinCoeff2);
+		y2 = _mm_mul_pd(y2, z);
+		y2 = _mm_add_pd(y2, *(__m128d*)hkSse_D_sinCoeff3);
+		y2 = _mm_mul_pd(y2, z);
+		y2 = _mm_add_pd(y2, *(__m128d*)hkSse_D_sinCoeff4);
+		y2 = _mm_mul_pd(y2, z);
+		y2 = _mm_add_pd(y2, *(__m128d*)hkSse_D_sinCoeff5);
+		y2 = _mm_mul_pd(y2, z);
+		y2 = _mm_mul_pd(y2, x);
+		y2 = _mm_add_pd(y2, x);
+
+		// get the polynom selection mask for the sine
+		emm2 = _mm_and_si128(emm2, two);
+		emm2 = _mm_cmpeq_epi32(emm2, _mm_setzero_si128());
+		emm2 = _mm_shuffle_epi32(emm2, _MM_SHUFFLE(1,1,0,0));
+		__m128d poly_mask = _mm_castsi128_pd(emm2);
+
+		// select the correct result from the two polynoms
+		__m128d ysin2 = _mm_and_pd(poly_mask, y2);
+		__m128d ysin1 = _mm_andnot_pd(poly_mask, y);
+		y2 = _mm_sub_pd(y2,ysin2);
+		y = _mm_sub_pd(y, ysin1);
+
+		xmm1 = _mm_add_pd(ysin1,ysin2);
+		xmm2 = _mm_add_pd(y,y2);
+
+		// clamp
+		xmm1 = _mm_min_pd(xmm1, *(__m128d*)hkSse_doubleOne);
+		xmm2 = _mm_min_pd(xmm2, *(__m128d*)hkSse_doubleOne);
+
+		// update the signs
+		s = _mm_xor_pd(xmm1, sign_bit_sin);
+		c = _mm_xor_pd(xmm2, sign_bit_cos);
+	}
+
+	/// Combined sin and cos calculation derived from the algorithms above.
+	///
+	/// PERFORMANCE: About 6.1x faster than ::sinf and ::cosf for 4 simultaneous values
+
+	HK_FORCE_INLINE static void HK_CALL quadSinCos(const __m128& inX, __m128& s, __m128& c)
+	{
+		// get abs and sign
+		__m128 x = _mm_andnot_ps( *(__m128*)hkSse_signMask, inX);
+		// extract the sign bit (upper one)
+		__m128 sign_bit_sin = _mm_and_ps( *(__m128*)hkSse_signMask, inX);
+
+		// scale by 4/Pi
+		__m128 y = _mm_mul_ps(x, *(__m128*)hkSse_fourOverPi);
+
+		__m128i one = *(__m128i*)hkSse_intOne;
+		__m128i two = _mm_add_epi32(one,one);
+		__m128i four = _mm_add_epi32(two,two);
+		// store the integer part of y in emm2
+		__m128i emm2 = _mm_cvttps_epi32(y);
+		// j=(j+1) & (~1)
+		emm2 = _mm_add_epi32(emm2, one);
+		emm2 = _mm_andnot_si128(one, emm2);
+		y = _mm_cvtepi32_ps(emm2);
+
+		__m128i emm4 = emm2;
+		emm4 = _mm_sub_epi32(emm4, two);
+		emm4 = _mm_andnot_si128(emm4, four);
+		emm4 = _mm_slli_epi32(emm4, 29);
+		__m128 sign_bit_cos = _mm_castsi128_ps(emm4);
+
+		// get the swap sign flag for the sine
+		__m128i emm0 = _mm_and_si128(emm2, four);
+		emm0 = _mm_slli_epi32(emm0, 29);
+		sign_bit_sin = _mm_xor_ps(sign_bit_sin, _mm_castsi128_ps(emm0));
+
+		// The magic pass: Extended precision modular arithmetic
+		//   x = ((x - y * DP1) - y * DP2) - y * DP3
+		__m128 xmm1 = *(__m128*)hkSse_DP1;
+		__m128 xmm2 = *(__m128*)hkSse_DP2;
+		__m128 xmm3 = *(__m128*)hkSse_DP3;
+		xmm1 = _mm_mul_ps(y, xmm1);
+		xmm2 = _mm_mul_ps(y, xmm2);
+		xmm3 = _mm_mul_ps(y, xmm3);
+		x = _mm_add_ps(x, xmm1);
+		x = _mm_add_ps(x, xmm2);
+		x = _mm_add_ps(x, xmm3);
+
+		// Evaluate the first polynom  (0 <= x <= Pi/4)
+		y = *(__m128*)hkSse_cosCoeff0;
+		__m128 z = _mm_mul_ps(x,x);
+
+		y = _mm_mul_ps(y, z);
+		y = _mm_add_ps(y, *(__m128*)hkSse_cosCoeff1);
+		y = _mm_mul_ps(y, z);
+		y = _mm_add_ps(y, *(__m128*)hkSse_cosCoeff2);
+		y = _mm_mul_ps(y, z);
+		y = _mm_mul_ps(y, z);
+		__m128 tmp = _mm_mul_ps(z, *(__m128*)hkSse_floatHalf);
+		y = _mm_sub_ps(y, tmp);
+		y = _mm_add_ps(y, *(__m128*)hkSse_floatOne);
+
+		// Evaluate the second polynom  (Pi/4 <= x <= 0)
+		__m128 y2 = *(__m128*)hkSse_sinCoeff0;
+		y2 = _mm_mul_ps(y2, z);
+		y2 = _mm_add_ps(y2, *(__m128*)hkSse_sinCoeff1);
+		y2 = _mm_mul_ps(y2, z);
+		y2 = _mm_add_ps(y2, *(__m128*)hkSse_sinCoeff2);
+		y2 = _mm_mul_ps(y2, z);
+		y2 = _mm_mul_ps(y2, x);
+		y2 = _mm_add_ps(y2, x);
+
+		// get the polynom selection mask for the sine
+		emm2 = _mm_and_si128(emm2, two);
+		emm2 = _mm_cmpeq_epi32(emm2, _mm_setzero_si128());
+		__m128 poly_mask = _mm_castsi128_ps(emm2);
+
+		// select the correct result from the two polynoms
+		__m128 ysin2 = _mm_and_ps(poly_mask, y2);
+		__m128 ysin1 = _mm_andnot_ps(poly_mask, y);
+		y2 = _mm_sub_ps(y2,ysin2);
+		y = _mm_sub_ps(y, ysin1);
+
+		xmm1 = _mm_add_ps(ysin1,ysin2);
+		xmm2 = _mm_add_ps(y,y2);
+
+		// clamp
+		xmm1 = _mm_min_ps(xmm1, *(__m128*)hkSse_floatOne);
+		xmm2 = _mm_min_ps(xmm2, *(__m128*)hkSse_floatOne);
+
+		// update the signs
+		s = _mm_xor_ps(xmm1, sign_bit_sin);
+		c = _mm_xor_ps(xmm2, sign_bit_cos);
+	}
+
 
 	/// Adapted from the book "Methods and Programs for Mathematical Functions",
 	/// Stephen Lloyd Baluk Moshier, Prentice-Hall, 1989
@@ -1253,33 +1819,31 @@ namespace hkMath
 	///
 	/// ACCURACY: matches cmath on MSVC
 	///
+	/// Important: unlike the cmath function, this one clamps the input to [-1,1]
+	///
 	///                      Relative error:
 	/// arithmetic   domain      peak         rms
 	///    IEEE     -1, 1       2.5e-7       5.0e-8
 	///
 	/// PERFORMANCE: About 8x faster than ::asinf for 4 simultaneous values
 
-	HK_FORCE_INLINE static __m128 HK_CALL quadAsin(const __m128& xx) 
+	HK_FORCE_INLINE static __m128 HK_CALL quadAsin(const __m128& xx)
 	{
-		HK_ALIGN16(static const hkInt32 signMask[4])     = { 0x80000000, 0x80000000, 0x80000000, 0x80000000 };
 		HK_ALIGN16(static const hkInt32 linearLimit[4])  = { 0x38D1B717, 0x38D1B717, 0x38D1B717, 0x38D1B717 }; // 1e-4
-		HK_ALIGN16(static const hkInt32 floatOne[4])     = { 0x3F800000, 0x3F800000, 0x3F800000, 0x3F800000 }; // 1.0
-		HK_ALIGN16(static const hkInt32 floatHalf[4])    = { 0x3F000000, 0x3F000000, 0x3F000000, 0x3F000000 }; // 0.5
-		HK_ALIGN16(static const hkInt32 piover2[4])      = { 0x3FC90FDB, 0x3FC90FDB, 0x3FC90FDB, 0x3FC90FDB }; // pi/2
 		HK_ALIGN16(static const hkInt32 coeff4[4])       = { 0x3D2CB352, 0x3D2CB352, 0x3D2CB352, 0x3D2CB352 }; // 4.2163199048E-2
 		HK_ALIGN16(static const hkInt32 coeff3[4])       = { 0x3CC617E3, 0x3CC617E3, 0x3CC617E3, 0x3CC617E3 }; // 2.4181311049E-2
 		HK_ALIGN16(static const hkInt32 coeff2[4])       = { 0x3D3A3EC7, 0x3D3A3EC7, 0x3D3A3EC7, 0x3D3A3EC7 }; // 4.5470025998E-2
 		HK_ALIGN16(static const hkInt32 coeff1[4])       = { 0x3D9980F6, 0x3D9980F6, 0x3D9980F6, 0x3D9980F6 }; // 7.4953002686E-2
 		HK_ALIGN16(static const hkInt32 coeff0[4])       = { 0x3E2AAAE4, 0x3E2AAAE4, 0x3E2AAAE4, 0x3E2AAAE4 }; // 1.6666752422E-1
 
-		__m128 a = _mm_andnot_ps( *(__m128*)signMask, xx);
-		__m128 sign = _mm_and_ps(*(__m128*)signMask, xx);
+		__m128 a = _mm_andnot_ps( *(__m128*)hkSse_signMask, xx); a = _mm_min_ps(*(__m128*)hkSse_floatOne,a);
+		__m128 sign = _mm_and_ps(*(__m128*)hkSse_signMask, xx);
 
 		// linear approximation
 		__m128 lessLimit = _mm_cmplt_ps(a,*(__m128*)linearLimit);
 
 		// a > 0.5
-		__m128 zGT = _mm_mul_ps(*(__m128*)floatHalf, _mm_sub_ps(*(__m128*)floatOne, a));
+		__m128 zGT = _mm_mul_ps(*(__m128*)hkSse_floatHalf, _mm_sub_ps(*(__m128*)hkSse_floatOne, a));
 		__m128 xGT = _mm_sqrt_ps(zGT);
 
 		// a <= 0.5
@@ -1287,7 +1851,7 @@ namespace hkMath
 		__m128 zLE = _mm_mul_ps(xLE,xLE);
 
 		// select polynom
-		__m128 rangeMask = _mm_cmpgt_ps(a, *(__m128*)floatHalf);
+		__m128 rangeMask = _mm_cmpgt_ps(a, *(__m128*)hkSse_floatHalf);
 #if HK_SSE_VERSION >= 0x41
 		__m128 x = _mm_blendv_ps(xLE,xGT,rangeMask);
 		__m128 z = _mm_blendv_ps(zLE,zGT,rangeMask);
@@ -1311,7 +1875,7 @@ namespace hkMath
 
 		// transform
 		__m128 zzGT = _mm_add_ps(zz,zz);
-		zzGT = _mm_sub_ps(*(__m128*)piover2,zzGT);
+		zzGT = _mm_sub_ps(*(__m128*)hkSse_piOver2,zzGT);
 #if HK_SSE_VERSION >= 0x41
 		zz = _mm_blendv_ps(zz,zzGT,rangeMask);
 #else
@@ -1340,13 +1904,10 @@ namespace hkMath
 	///
 	/// PERFORMANCE: About 2x faster than ::asin for 2 simultaneous values
 
-	HK_FORCE_INLINE static __m128d HK_CALL twoAsin(const __m128d& xx) 
+	HK_FORCE_INLINE static __m128d HK_CALL twoAsin(const __m128d& xx)
 	{
-		HK_ALIGN16(static const hkInt64 signMask[2])     = { 0x8000000000000000ull, 0x8000000000000000ull };
 		HK_ALIGN16(static const hkInt64 linearLimit[2])  = { 0x3E45798EE2308C3Aull, 0x3E45798EE2308C3Aull }; // 1e-8
-		HK_ALIGN16(static const hkInt64 floatOne[2])     = { 0x3FF0000000000000ull, 0x3FF0000000000000ull }; // 1.0
 		HK_ALIGN16(static const hkInt64 limit[2])        = { 0x3FE4000000000000ull, 0x3FE4000000000000ull }; // 0.625
-		HK_ALIGN16(static const hkInt64 piover4[2])      = { 0x3FE921FB54442D18ull, 0x3FE921FB54442D18ull }; // pi/4
 		HK_ALIGN16(static const hkInt64 morebits[2])     = { 0x3C91A62633145C07ull, 0x3C91A62633145C07ull }; // 6.123233995736765886130E-17
 		HK_ALIGN16(static const hkInt64 R0[2])           = { 0x3f684fc3988e9f08ull, 0x3f684fc3988e9f08ull }; //  2.967721961301243206100E-3
 		HK_ALIGN16(static const hkInt64 R1[2])           = { 0xbfe2079259f9290full, 0xbfe2079259f9290full }; // -5.634242780008963776856E-1
@@ -1370,8 +1931,8 @@ namespace hkMath
 		HK_ALIGN16(static const hkInt64 Q5[2])           = { 0xc04898220a3607acull, 0xc04898220a3607acull }; // -4.918853881490881290097E1
 
 
-		__m128d a = _mm_andnot_pd( *(__m128d*)signMask, xx);
-		__m128d sign = _mm_and_pd(*(__m128d*)signMask, xx);
+		__m128d a = _mm_andnot_pd( *(__m128d*)hkSse_D_signMask, xx); a = _mm_min_pd(*(__m128d*)hkSse_doubleOne,a);
+		__m128d sign = _mm_and_pd(*(__m128d*)hkSse_D_signMask, xx);
 
 		// linear approximation
 		__m128d lessLimit = _mm_cmplt_pd(a,*(__m128d*)linearLimit);
@@ -1381,7 +1942,7 @@ namespace hkMath
 		// a > 0.625
 		__m128d zGT;
 		{
-			__m128d zz = _mm_sub_pd(*(__m128d*)floatOne, a);
+			__m128d zz = _mm_sub_pd(*(__m128d*)hkSse_doubleOne, a);
 
 			__m128d polR = _mm_mul_pd(*(__m128d*)R0, zz);
 			polR = _mm_add_pd(polR, *(__m128d*)R1);
@@ -1404,10 +1965,10 @@ namespace hkMath
 
 			__m128d p = _mm_div_pd(polR,polS);
 			zz = _mm_sqrt_pd(_mm_add_pd(zz,zz));
-			zGT = _mm_sub_pd(*(__m128d*)piover4, zz);
+			zGT = _mm_sub_pd(*(__m128d*)hkSse_D_piOver4, zz);
 			zz = _mm_sub_pd(_mm_mul_pd(zz,p),*(__m128d*)morebits);
 			zGT = _mm_sub_pd(zGT,zz);
-			zGT = _mm_add_pd(zGT, *(__m128d*)piover4);
+			zGT = _mm_add_pd(zGT, *(__m128d*)hkSse_D_piOver4);
 		}
 
 		// a <= 0.625
@@ -1466,8 +2027,7 @@ namespace hkMath
 	HK_FORCE_INLINE static __m128 HK_CALL quadCosApproximation(const __m128& x)
 	{
 		// cos(x) = sin(x + pi/2)
-		static HK_ALIGN16( const hkUint32 pihalf[4] ) = { 0x3FC90FDB, 0x3FC90FDB, 0x3FC90FDB, 0x3FC90FDB };
-		__m128 xx = _mm_add_ps(x, *(__m128*)&pihalf);
+		__m128 xx = _mm_add_ps(x, *(__m128*)&hkSse_piOver2);
 		return quadSinApproximation(xx);
 	}
 
@@ -1475,42 +2035,21 @@ namespace hkMath
 	HK_FORCE_INLINE static __m128d HK_CALL twoCosApproximation(const __m128d& x)
 	{
 		// cos(x) = sin(x + pi/2)
-		static HK_ALIGN16( const hkUint64 pihalf[2] ) = { 0x3FF921FB54442D18ull, 0x3FF921FB54442D18ull };
-		__m128d xx = _mm_add_pd(x, *(__m128d*)&pihalf);
+		__m128d xx = _mm_add_pd(x, *(__m128d*)hkSse_D_piOver2);
 		return twoSinApproximation(xx);
 	}
 
-	/// Properties see quadSin
-	HK_FORCE_INLINE static __m128 HK_CALL quadCos(const __m128& x)
-	{
-		// cos(x) = sin(x + pi/2)
-		static HK_ALIGN16( const hkUint32 pihalf[4] ) = { 0x3FC90FDB, 0x3FC90FDB, 0x3FC90FDB, 0x3FC90FDB };
-		__m128 xx = _mm_add_ps(x, *(__m128*)&pihalf);
-		return quadSin(xx);
-	}
-
-	/// Properties see twoSin
-	HK_FORCE_INLINE static __m128d HK_CALL twoCos(const __m128d& x)
-	{
-		// cos(x) = sin(x + pi/2)
-		static HK_ALIGN16( const hkUint64 pihalf[2] ) = { 0x3FF921FB54442D18ull, 0x3FF921FB54442D18ull };
-		__m128d xx = _mm_add_pd(x, *(__m128d*)&pihalf);
-		return twoSin(xx);
-	}
-
-	HK_FORCE_INLINE static __m128 HK_CALL quadAcos(const __m128& xx) 
+	HK_FORCE_INLINE static __m128 HK_CALL quadAcos(const __m128& xx)
 	{
 		// acos(x) = pi/2 - asin(x)
-		HK_ALIGN16(static const hkInt32 piover2[4])      = { 0x3FC90FDB, 0x3FC90FDB, 0x3FC90FDB, 0x3FC90FDB };
-		__m128 x = _mm_sub_ps(*(__m128*)piover2, quadAsin(xx));
+		__m128 x = _mm_sub_ps(*(__m128*)hkSse_piOver2, quadAsin(xx));
 		return x;
 	}
 
-	HK_FORCE_INLINE static __m128d HK_CALL twoAcos(const __m128d& xx) 
+	HK_FORCE_INLINE static __m128d HK_CALL twoAcos(const __m128d& xx)
 	{
 		// acos(x) = pi/2 - asin(x)
-		HK_ALIGN16(static const hkInt64 piover2[2])      = { 0x3FF921FB54442D18ull, 0x3FF921FB54442D18ull };
-		__m128d x = _mm_sub_pd(*(__m128d*)piover2, twoAsin(xx));
+		__m128d x = _mm_sub_pd(*(__m128d*)hkSse_D_piOver2, twoAsin(xx));
 		return x;
 	}
 
@@ -1534,39 +2073,20 @@ namespace hkMath
 		return twoSinApproximation(xx);
 	}
 
-	/// Calc cos/sin at the same time: xyzw -> sin(x)cos(y)sin(z)cos(w)
-	/// Properties see quadSin
-	HK_FORCE_INLINE static __m128 HK_CALL quadSinCos(const __m128& x)
-	{
-		// cos(x) = sin(x + pi/2)
-		static HK_ALIGN16( const hkUint32 offset[4] ) = { 0x00000000, 0x3FC90FDB, 0x00000000, 0x3FC90FDB };
-		__m128 xx = _mm_add_ps(x, *(__m128*)&offset);
-		return quadSin(xx);
-	}
-
-	/// Calc cos/sin at the same time: xy -> sin(x)cos(y)
-	/// Properties see twoSin
-	HK_FORCE_INLINE static __m128d HK_CALL twoSinCos(const __m128d& x)
-	{
-		// cos(x) = sin(x + pi/2)
-		static HK_ALIGN16( const hkUint64 offset[2] ) = { 0x0000000000000000ull, 0x3FF921FB54442D18ull };
-		__m128d xx = _mm_add_pd(x, *(__m128d*)&offset);
-		return twoSin(xx);
-	}
-
 	/// Calc acos/asin at the same time: xyzw -> asin(x)acos(y)asin(z)acos(w)
 	/// Properties see quadAsin
 	HK_FORCE_INLINE static __m128 HK_CALL quadAsinAcos(const __m128& x)
 	{
 		// acos(x) = pi/2 - asin(x)
-		HK_ALIGN16(static const hkInt32 piover2[4])      = { 0x3FC90FDB, 0x3FC90FDB, 0x3FC90FDB, 0x3FC90FDB };
 		__m128 asinx = quadAsin(x);
-		__m128 acosx = _mm_sub_ps(*(__m128*)piover2, asinx);
 #if HK_SSE_VERSION >= 0x41
+		__m128 acosx = _mm_sub_ps(*(__m128*)hkSse_piOver2, asinx);
 		return _mm_blend_ps(asinx,acosx,0xA);
 #else
-		HK_ALIGN16(static const hkInt32 selectGT[4])     = { 0x00000000, 0xFFFFFFFF, 0x00000000, 0xFFFFFFFF };
-		return _mm_or_ps(_mm_andnot_ps(*(__m128*)selectGT, asinx),_mm_and_ps(*(__m128*)selectGT, acosx));
+		HK_ALIGN16(static const hkInt32 selectSin[4])     = { 0x00000000, 0x3FC90FDB, 0x00000000, 0x3FC90FDB };
+		__m128 acosx = _mm_sub_ps(*(__m128*)selectSin, asinx);
+		__m128 sinselect = _mm_cmpeq_ps(*(__m128*)selectSin, _mm_setzero_ps());
+		return _mm_or_ps(_mm_andnot_ps(sinselect, acosx),_mm_and_ps(sinselect, asinx));
 #endif
 	}
 
@@ -1575,94 +2095,78 @@ namespace hkMath
 	HK_FORCE_INLINE static __m128d HK_CALL twoAsinAcos(const __m128d& x)
 	{
 		// acos(x) = pi/2 - asin(x)
-		HK_ALIGN16(static const hkInt64 piover2[2])      = { 0x3FF921FB54442D18ull, 0x3FF921FB54442D18ull };
 		__m128d asinx = twoAsin(x);
-		__m128d acosx = _mm_sub_pd(*(__m128d*)piover2, asinx);
+		__m128d acosx = _mm_sub_pd(*(__m128d*)hkSse_D_piOver2, asinx);
+		// Gcc 4.5.1 can mis-optimize _mm_move_sd
+#if defined(HK_COMPILER_GCC) && (HK_COMPILER_GCC_VERSION <= 40501)
+		return _mm_shuffle_pd(asinx, acosx, _MM_SHUFFLE2(1, 0));
+#else
 		return _mm_move_sd(acosx, asinx);
+#endif
 	}
 
 #	define HK_MATH_sin
-	HK_FORCE_INLINE static hkFloat32 HK_CALL sin (const hkFloat32 r) 
-	{ 
+	HK_FORCE_INLINE static hkFloat32 HK_CALL sin (const hkFloat32 r)
+	{
 		__m128 rr = _mm_load_ss(&r);
 		__m128 s = quadSin(rr);
 		return _mm_cvtss_f32(s);
 	}
-	HK_FORCE_INLINE static hkDouble64 HK_CALL sin (const hkDouble64 r) 
-	{ 
+	HK_FORCE_INLINE static hkDouble64 HK_CALL sin (const hkDouble64 r)
+	{
 		__m128d rr = _mm_load_sd(&r);
 		__m128d s = twoSin(rr);
-		return HK_M128(s).m128d_f64[0];
+		return _mm_cvtsd_f64(s);
 	}
 
 #	define HK_MATH_cos
-	HK_FORCE_INLINE static hkFloat32 HK_CALL cos (const hkFloat32 r) 
-	{ 
+	HK_FORCE_INLINE static hkFloat32 HK_CALL cos (const hkFloat32 r)
+	{
 		__m128 rr = _mm_load_ss(&r);
 		__m128 c = quadCos(rr);
 		return _mm_cvtss_f32(c);
 	}
-	HK_FORCE_INLINE static hkDouble64 HK_CALL cos (const hkDouble64 r) 
-	{ 
+	HK_FORCE_INLINE static hkDouble64 HK_CALL cos (const hkDouble64 r)
+	{
 		__m128d rr = _mm_load_sd(&r);
 		__m128d s = twoCos(rr);
-		return HK_M128(s).m128d_f64[0];
+		return _mm_cvtsd_f64(s);
 	}
 
 #	define HK_MATH_asin
 	HK_FORCE_INLINE static hkFloat32 HK_CALL asin(const hkFloat32 r)
 	{
-		HK_ALIGN16(static const hkInt32 floatOne[4])     = { 0x3F800000, 0x3F800000, 0x3F800000, 0x3F800000 }; //  1.0
-		HK_ALIGN16(static const hkInt32 floatMOne[4])    = { 0xBF800000, 0xBF800000, 0xBF800000, 0xBF800000 }; // -1.0
-
 		// be generous about numbers outside range
 		HK_ASSERT(0x286a6f5f,  hkMath::fabs(r) < 1.001f ); // assert imported from default impl
 		__m128 rr = _mm_load_ss(&r);
-		rr = _mm_max_ps(rr, *(__m128*)floatMOne);
-		rr = _mm_min_ps(rr, *(__m128*)floatOne);
-		__m128 s = quadAsin(rr);
+		__m128 s = quadAsin(rr); // quadAsin clamps [-1;1]
 		return _mm_cvtss_f32(s);
 	}
 	HK_FORCE_INLINE static hkDouble64 HK_CALL asin(const hkDouble64 r)
 	{
-		HK_ALIGN16(static const hkInt64 floatOne[2])     = { 0x3FF0000000000000ull, 0x3FF0000000000000ull }; //  1.0
-		HK_ALIGN16(static const hkInt64 floatMOne[2])    = { 0xBFF0000000000000ull, 0xBFF0000000000000ull }; // -1.0
-
 		// be generous about numbers outside range
 		HK_ASSERT(0x286a6f5f,  hkMath::fabs(r) < 1.001 ); // assert imported from default impl
 		__m128d rr = _mm_load_sd(&r);
-		rr = _mm_max_pd(rr, *(__m128d*)floatMOne);
-		rr = _mm_min_pd(rr, *(__m128d*)floatOne);
-		__m128d s = twoAsin(rr);
-		return HK_M128(s).m128d_f64[0];
+		__m128d s = twoAsin(rr);  // twoAsin clamps [-1;1]
+		return _mm_cvtsd_f64(s);
 	}
 
 #	define HK_MATH_acos
 	HK_FORCE_INLINE static hkFloat32 HK_CALL acos(const hkFloat32 r)
 	{
-		HK_ALIGN16(static const hkInt32 floatOne[4])     = { 0x3F800000, 0x3F800000, 0x3F800000, 0x3F800000 }; //  1.0
-		HK_ALIGN16(static const hkInt32 floatMOne[4])    = { 0xBF800000, 0xBF800000, 0xBF800000, 0xBF800000 }; // -1.0
-
 		// be generous about numbers outside range
 		HK_ASSERT(0x41278654,  hkMath::fabs(r) < 1.001f ); // assert imported from default impl
 		__m128 rr = _mm_load_ss(&r);
-		rr = _mm_max_ps(rr, *(__m128*)floatMOne);
-		rr = _mm_min_ps(rr, *(__m128*)floatOne);
-		__m128 s = quadAcos(rr);
+		__m128 s = quadAcos(rr); // quadAcos clamps [-1;1]
 		return _mm_cvtss_f32(s);
 	}
 	HK_FORCE_INLINE static hkDouble64 HK_CALL acos(const hkDouble64 r)
 	{
-		HK_ALIGN16(static const hkInt64 floatOne[2])     = { 0x3FF0000000000000ull, 0x3FF0000000000000ull }; //  1.0
-		HK_ALIGN16(static const hkInt64 floatMOne[2])    = { 0xBFF0000000000000ull, 0xBFF0000000000000ull }; // -1.0
-
 		// be generous about numbers outside range
 		HK_ASSERT(0x41278654,  hkMath::fabs(r) < 1.001 ); // assert imported from default impl
 		__m128d rr = _mm_load_sd(&r);
-		rr = _mm_max_pd(rr, *(__m128d*)floatMOne);
-		rr = _mm_min_pd(rr, *(__m128d*)floatOne);
-		__m128d s = twoAcos(rr);
-		return HK_M128(s).m128d_f64[0];
+		__m128d s = twoAcos(rr);  // twoAcos clamps [-1;1]
+		return _mm_cvtsd_f64(s);
 	}
 
 #if defined(HK_PLATFORM_PS4)
@@ -1674,6 +2178,33 @@ namespace hkMath
 	template <> HK_FORCE_INLINE int HK_CALL countLeadingZeros<hkUint32>(hkUint32 bitMask)	{	return __lzcnt32(bitMask);	}
 	template <> HK_FORCE_INLINE int HK_CALL countLeadingZeros<hkUint64>(hkUint64 bitMask)	{	return __lzcnt64(bitMask);	}
 	template<> HK_FORCE_INLINE int HK_CALL countLeadingZeros<int>(int bitMask)				{	return countLeadingZeros<hkUint32>((hkUint32)bitMask);	}
+
+#elif defined(HK_COMPILER_GCC)
+#	define HK_MATH_countLeadingZeros
+
+	template <typename T> HK_FORCE_INLINE int HK_CALL countLeadingZeros(T x);
+
+	template <> HK_FORCE_INLINE int HK_CALL countLeadingZeros<hkUint32>(hkUint32 bitMask)	{	return bitMask ? __builtin_clz(bitMask) : 32;	}
+	template <> HK_FORCE_INLINE int HK_CALL countLeadingZeros<hkUint64>(hkUint64 bitMask)	{	return bitMask ? __builtin_clzll(bitMask) : 64;	}
+	template <> HK_FORCE_INLINE int HK_CALL countLeadingZeros<int>(int bitMask)				{	return countLeadingZeros<hkUint32>((hkUint32)bitMask);	}
+
+#	define HK_MATH_countTrailingZeros
+
+	template <typename T> HK_FORCE_INLINE int HK_CALL countTrailingZeros(T x);
+
+	template <> HK_FORCE_INLINE int HK_CALL countTrailingZeros<hkUint32>(hkUint32 bitMask)	{	return bitMask ? __builtin_ctz(bitMask) : 32;	}
+	template <> HK_FORCE_INLINE int HK_CALL countTrailingZeros<hkUint64>(hkUint64 bitMask)	{	return bitMask ? __builtin_ctzll(bitMask) : 64;	}
+	template <> HK_FORCE_INLINE int HK_CALL countTrailingZeros<int>(int bitMask)			{	return countTrailingZeros<hkUint32>((hkUint32)bitMask);	}
+
+// 	HK_SSE_VERSION >= 0x50 needs CPUID flag LZCNT in addition
+// 	template <> HK_FORCE_INLINE int HK_CALL countLeadingZeros<hkUint32>(hkUint32 bitMask)	{	return (int)_lzcnt_u32(bitMask);	}
+// 	template <> HK_FORCE_INLINE int HK_CALL countLeadingZeros<hkUint64>(hkUint64 bitMask)	{	return (int)_lzcnt_u64(bitMask);	}
+// 	template <> HK_FORCE_INLINE int HK_CALL countLeadingZeros<int>(int bitMask)				{	return countLeadingZeros<hkUint32>((hkUint32)bitMask);	}
+
+// 	HK_SSE_VERSION >= 0x50 needs CPUID flag BMI1 in addition
+// 	template <> HK_FORCE_INLINE int HK_CALL countTrailingZeros<hkUint32>(hkUint32 bitMask)	{	return (int)_tzcnt_u32(bitMask);	}
+// 	template <> HK_FORCE_INLINE int HK_CALL countTrailingZeros<hkUint64>(hkUint64 bitMask)	{	return (int)_tzcnt_u64(bitMask);	}
+// 	template <> HK_FORCE_INLINE int HK_CALL countTrailingZeros<int>(int bitMask)			{	return countTrailingZeros<hkUint32>((hkUint32)bitMask);	}
 
 #elif 0	// no CPU instruction yet, and _BitScanReverse requires an if
 	// Returns the number of zeros at the start (MSB) of the given bitMask
@@ -1688,7 +2219,7 @@ namespace hkMath
 	HK_FORCE_INLINE static int HK_CALL countLeadingZeros<hkUint32>(hkUint32 bitMask)
 	{
 		unsigned long idx;
-		return (int)(_BitScanReverse(&idx, bitMask) ? 31 - idx : 32);	
+		return (int)(_BitScanReverse(&idx, bitMask) ? 31 - idx : 32);
 	}
 
 	template<>
@@ -1736,11 +2267,16 @@ namespace hkMath
 
 	// Returns the number of bits set to one in the given number
 #	define HK_MATH_countBitsSet
-#if HK_SSE_VERSION >= 0x42
+#if defined(HK_COMPILER_GCC)
 	HK_FORCE_INLINE static int HK_CALL countBitsSet(hkUint32 number)
 	{
-		return  _mm_popcnt_u32(number);
+		return __builtin_popcount(number);
 	}
+	//HK_SSE_VERSION >= 0x42 needs CPUID flag POPCNT in addition
+	//HK_FORCE_INLINE static int HK_CALL countBitsSet(hkUint32 number)
+	//{
+	//	return  _mm_popcnt_u32(number);
+	//}
 #elif HK_SSE_VERSION >= 0x31
 	HK_FORCE_INLINE static int HK_CALL countBitsSet(hkUint32 number)
 	{
@@ -1786,7 +2322,7 @@ namespace hkMath
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

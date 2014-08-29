@@ -19,7 +19,7 @@
 	/// The numberVertices must be a multiple of 4, dupicate the last one if necessary.
 HK_FORCE_INLINE void HK_CALL hkcdSupportingVertexPoints(const hkcdVertex* HK_RESTRICT vertices, int numVertices, hkVector4Parameter direction, hkcdVertex* HK_RESTRICT vertexOut);
 
-	/// Run two get supporting vertex calls in parallel.
+	/// Run two get supporting vertex calls in parallel. Generates lots of code but is unbeatable fast on XBOX (actually only on XBOX)
 HK_FORCE_INLINE void HK_CALL hkcdSupportingVertexPoints2(
 	const hkcdVertex* HK_RESTRICT verticesA, int numVerticesA,
 	const hkcdVertex* HK_RESTRICT verticesB, int numVerticesB,
@@ -30,14 +30,19 @@ HK_FORCE_INLINE void HK_CALL hkcdSupportingVertexPoints2(
 
 	/// Returns the furthest vertex in the given direction.
 	/// The vertexOut contains both the point and index in the w component.
-HK_FORCE_INLINE void HK_CALL hkcdSupportingVertexPoints(const hkFourTransposedPoints* HK_RESTRICT transposedVertices, int numTransposedVertices, hkVector4Parameter direction, hkcdVertex* HK_RESTRICT vertexOut);
+HK_FORCE_INLINE void HK_CALL hkcdSupportingVertexPointsTranposed(const hkFourTransposedPoints* HK_RESTRICT transposedVertices, int numTransposedVertices, hkVector4Parameter direction, hkcdVertex* HK_RESTRICT vertexOut);
+
+/// Returns the furthest vertex in the given direction.
+/// This version transposes the vertices in place, the number of vertices do not need to be padded, but must be at least 4
+/// returns the vertex used
+HK_FORCE_INLINE int HK_CALL hkcdSupportingVertexPointsTransposeInplace(const hkcdVertex* HK_RESTRICT vertices, int numVertices, hkVector4Parameter direction, hkcdVertex* HK_RESTRICT vertexOut);
 
 #include <Geometry/Internal/Algorithms/SupportingVertex/hkcdSupportingVertex.inl>
 
 #endif // HKCD_SUPPORTING_VERTEX_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

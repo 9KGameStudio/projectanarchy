@@ -17,19 +17,42 @@ V_IMPLEMENT_SERIAL(VFreeCamera, VisBaseEntity_cl, 0, &g_VisionEngineModule);
 
 VFreeCamera::VFreeCamera()
   : m_fSensitivity(200.0f)
-  , m_fMoveSpeed(350.0f)
   , m_bWASDEnabled(false)
+  , m_bActive(false)
   , m_pInputMap(NULL)
 #if defined(SUPPORTS_MULTITOUCH)
   , m_pVirtualThumbStick(NULL)
   , m_spLookTouchArea(NULL)
 #endif
 {
+  m_fMoveSpeed = 350.0f * Vision::World.GetGlobalUnitScaling();
   ClearWASDAlternativeIndices();
 }
 
 VFreeCamera::~VFreeCamera()
-{  
+{
+}
+
+VFreeCamera* VFreeCamera::Create(const char* szCameraRefObjectKey, float fMoveSpeed)
+{
+  VFreeCamera* pCamera = Vision::Game.CreateEntity<VFreeCamera>(hkvVec3::ZeroVector());
+  if (pCamera != NULL)
+  {
+    if (szCameraRefObjectKey != NULL)
+    {
+      VisBaseEntity_cl* pCameraRef = Vision::Game.SearchEntity(szCameraRefObjectKey);
+      if (pCameraRef != NULL)
+      {
+        pCamera->SetPosition(pCameraRef->GetPosition());
+        pCamera->SetOrientation(pCameraRef->GetOrientation());
+      }
+    }
+
+    if (fMoveSpeed >= 0.0f)
+      pCamera->SetMoveSpeed(fMoveSpeed);
+  }
+
+  return pCamera;
 }
 
 void VFreeCamera::InitFunction()
@@ -67,56 +90,56 @@ void VFreeCamera::BaseInit()
 
 #if defined(_VISION_XENON)
 
-  m_pInputMap->MapTrigger(CONTROL_MOVE_FORWARD,  VInputManagerXenon::GetPad(0), CT_PAD_LEFT_THUMB_STICK_UP,    VInputOptions::DeadZone(0.25f));
-  m_pInputMap->MapTrigger(CONTROL_MOVE_BACKWARD, VInputManagerXenon::GetPad(0), CT_PAD_LEFT_THUMB_STICK_DOWN,  VInputOptions::DeadZone(0.25f));
-  m_pInputMap->MapTrigger(CONTROL_MOVE_LEFT,     VInputManagerXenon::GetPad(0), CT_PAD_LEFT_THUMB_STICK_LEFT,  VInputOptions::DeadZone(0.25f));
-  m_pInputMap->MapTrigger(CONTROL_MOVE_RIGHT,    VInputManagerXenon::GetPad(0), CT_PAD_LEFT_THUMB_STICK_RIGHT, VInputOptions::DeadZone(0.25f));
+  m_pInputMap->MapTrigger(CONTROL_MOVE_FORWARD,  VInputManager::GetPad(0), CT_PAD_LEFT_THUMB_STICK_UP,    VInputOptions::DeadZone(0.25f));
+  m_pInputMap->MapTrigger(CONTROL_MOVE_BACKWARD, VInputManager::GetPad(0), CT_PAD_LEFT_THUMB_STICK_DOWN,  VInputOptions::DeadZone(0.25f));
+  m_pInputMap->MapTrigger(CONTROL_MOVE_LEFT,     VInputManager::GetPad(0), CT_PAD_LEFT_THUMB_STICK_LEFT,  VInputOptions::DeadZone(0.25f));
+  m_pInputMap->MapTrigger(CONTROL_MOVE_RIGHT,    VInputManager::GetPad(0), CT_PAD_LEFT_THUMB_STICK_RIGHT, VInputOptions::DeadZone(0.25f));
 
-  m_pInputMap->MapTrigger(CONTROL_ANY_ACTION,   VInputManagerXenon::GetPad(0), CT_PAD_ANY_KEY);
-  m_pInputMap->MapTrigger(CONTROL_ANY_ACTION,   VInputManagerXenon::GetPad(0), CT_PAD_LEFT_THUMB_STICK_CHANGED);
+  m_pInputMap->MapTrigger(CONTROL_ANY_ACTION,   VInputManager::GetPad(0), CT_PAD_ANY_KEY);
+  m_pInputMap->MapTrigger(CONTROL_ANY_ACTION,   VInputManager::GetPad(0), CT_PAD_LEFT_THUMB_STICK_CHANGED);
 
-  m_pInputMap->MapTriggerAxis(CONTROL_HORIZONTAL_LOOK, VInputManagerXenon::GetPad(0), CT_PAD_RIGHT_THUMB_STICK_LEFT, CT_PAD_RIGHT_THUMB_STICK_RIGHT, VInputOptions::DeadZone(0.15f, true));
-  m_pInputMap->MapTriggerAxis(CONTROL_VERTICAL_LOOK,   VInputManagerXenon::GetPad(0), CT_PAD_RIGHT_THUMB_STICK_UP,   CT_PAD_RIGHT_THUMB_STICK_DOWN,  VInputOptions::DeadZone(0.15f, true));
+  m_pInputMap->MapTriggerAxis(CONTROL_HORIZONTAL_LOOK, VInputManager::GetPad(0), CT_PAD_RIGHT_THUMB_STICK_LEFT, CT_PAD_RIGHT_THUMB_STICK_RIGHT, VInputOptions::DeadZone(0.15f, true));
+  m_pInputMap->MapTriggerAxis(CONTROL_VERTICAL_LOOK,   VInputManager::GetPad(0), CT_PAD_RIGHT_THUMB_STICK_UP,   CT_PAD_RIGHT_THUMB_STICK_DOWN,  VInputOptions::DeadZone(0.15f, true));
 
-  m_pInputMap->MapTrigger(CONTROL_SPEED_FAST, VInputManagerXenon::GetPad(0), CT_PAD_RIGHT_SHOULDER, VInputOptions::DeadZone(0.25f));
-  m_pInputMap->MapTrigger(CONTROL_SPEED_FASTER, VInputManagerXenon::GetPad(0), CT_PAD_RIGHT_THUMB);
+  m_pInputMap->MapTrigger(CONTROL_SPEED_FAST, VInputManager::GetPad(0), CT_PAD_RIGHT_SHOULDER, VInputOptions::DeadZone(0.25f));
+  m_pInputMap->MapTrigger(CONTROL_SPEED_FASTER, VInputManager::GetPad(0), CT_PAD_RIGHT_THUMB);
 
 #endif
 
 #if defined(_VISION_PS3)
   
-  m_pInputMap->MapTrigger(CONTROL_MOVE_FORWARD,  VInputManagerPS3::GetPad(0), CT_PAD_LEFT_THUMB_STICK_UP,    VInputOptions::DeadZone(0.25f));
-  m_pInputMap->MapTrigger(CONTROL_MOVE_BACKWARD, VInputManagerPS3::GetPad(0), CT_PAD_LEFT_THUMB_STICK_DOWN,  VInputOptions::DeadZone(0.25f));
-  m_pInputMap->MapTrigger(CONTROL_MOVE_LEFT,     VInputManagerPS3::GetPad(0), CT_PAD_LEFT_THUMB_STICK_LEFT,  VInputOptions::DeadZone(0.25f));
-  m_pInputMap->MapTrigger(CONTROL_MOVE_RIGHT,    VInputManagerPS3::GetPad(0), CT_PAD_LEFT_THUMB_STICK_RIGHT, VInputOptions::DeadZone(0.25f));
+  m_pInputMap->MapTrigger(CONTROL_MOVE_FORWARD,  VInputManager::GetPad(0), CT_PAD_LEFT_THUMB_STICK_UP,    VInputOptions::DeadZone(0.25f));
+  m_pInputMap->MapTrigger(CONTROL_MOVE_BACKWARD, VInputManager::GetPad(0), CT_PAD_LEFT_THUMB_STICK_DOWN,  VInputOptions::DeadZone(0.25f));
+  m_pInputMap->MapTrigger(CONTROL_MOVE_LEFT,     VInputManager::GetPad(0), CT_PAD_LEFT_THUMB_STICK_LEFT,  VInputOptions::DeadZone(0.25f));
+  m_pInputMap->MapTrigger(CONTROL_MOVE_RIGHT,    VInputManager::GetPad(0), CT_PAD_LEFT_THUMB_STICK_RIGHT, VInputOptions::DeadZone(0.25f));
 
-  m_pInputMap->MapTrigger(CONTROL_ANY_ACTION,    VInputManagerPS3::GetPad(0), CT_PAD_ANY_KEY);
-  m_pInputMap->MapTrigger(CONTROL_ANY_ACTION,    VInputManagerPS3::GetPad(0), CT_PAD_LEFT_THUMB_STICK_CHANGED);
-  m_pInputMap->MapTrigger(CONTROL_ANY_ACTION,    VInputManagerPS3::GetPad(0), CT_PAD_RIGHT_THUMB_STICK_CHANGED);
+  m_pInputMap->MapTrigger(CONTROL_ANY_ACTION,    VInputManager::GetPad(0), CT_PAD_ANY_KEY);
+  m_pInputMap->MapTrigger(CONTROL_ANY_ACTION,    VInputManager::GetPad(0), CT_PAD_LEFT_THUMB_STICK_CHANGED);
+  m_pInputMap->MapTrigger(CONTROL_ANY_ACTION,    VInputManager::GetPad(0), CT_PAD_RIGHT_THUMB_STICK_CHANGED);
 
-  m_pInputMap->MapTriggerAxis(CONTROL_HORIZONTAL_LOOK, VInputManagerPS3::GetPad(0), CT_PAD_RIGHT_THUMB_STICK_LEFT, CT_PAD_RIGHT_THUMB_STICK_RIGHT, VInputOptions::DeadZone(0.15f, true));
-  m_pInputMap->MapTriggerAxis(CONTROL_VERTICAL_LOOK,   VInputManagerPS3::GetPad(0), CT_PAD_RIGHT_THUMB_STICK_UP,   CT_PAD_RIGHT_THUMB_STICK_DOWN,  VInputOptions::DeadZone(0.15f, true));
+  m_pInputMap->MapTriggerAxis(CONTROL_HORIZONTAL_LOOK, VInputManager::GetPad(0), CT_PAD_RIGHT_THUMB_STICK_LEFT, CT_PAD_RIGHT_THUMB_STICK_RIGHT, VInputOptions::DeadZone(0.15f, true));
+  m_pInputMap->MapTriggerAxis(CONTROL_VERTICAL_LOOK,   VInputManager::GetPad(0), CT_PAD_RIGHT_THUMB_STICK_UP,   CT_PAD_RIGHT_THUMB_STICK_DOWN,  VInputOptions::DeadZone(0.15f, true));
 
-  m_pInputMap->MapTrigger(CONTROL_SPEED_FAST, VInputManagerPS3::GetPad(0), CT_PAD_RIGHT_SHOULDER, VInputOptions::DeadZone(0.25f));
-  m_pInputMap->MapTrigger(CONTROL_SPEED_FASTER, VInputManagerPS3::GetPad(0), CT_PAD_RIGHT_THUMB);
+  m_pInputMap->MapTrigger(CONTROL_SPEED_FAST, VInputManager::GetPad(0), CT_PAD_RIGHT_SHOULDER, VInputOptions::DeadZone(0.25f));
+  m_pInputMap->MapTrigger(CONTROL_SPEED_FASTER, VInputManager::GetPad(0), CT_PAD_RIGHT_THUMB);
 
 #endif
 
 #if defined(_VISION_PSP2)
 
-  m_pInputMap->MapTrigger(CONTROL_MOVE_FORWARD,  VInputManagerPSP2::GetPad(0), CT_PAD_LEFT_THUMB_STICK_UP, VInputOptions::DeadZone(0.25f));
-  m_pInputMap->MapTrigger(CONTROL_MOVE_BACKWARD, VInputManagerPSP2::GetPad(0), CT_PAD_LEFT_THUMB_STICK_DOWN, VInputOptions::DeadZone(0.25f));
-  m_pInputMap->MapTrigger(CONTROL_MOVE_LEFT,     VInputManagerPSP2::GetPad(0), CT_PAD_LEFT_THUMB_STICK_LEFT, VInputOptions::DeadZone(0.25f));
-  m_pInputMap->MapTrigger(CONTROL_MOVE_RIGHT,    VInputManagerPSP2::GetPad(0), CT_PAD_LEFT_THUMB_STICK_RIGHT, VInputOptions::DeadZone(0.25f));
+  m_pInputMap->MapTrigger(CONTROL_MOVE_FORWARD,  VInputManager::GetPad(0), CT_PAD_LEFT_THUMB_STICK_UP, VInputOptions::DeadZone(0.25f));
+  m_pInputMap->MapTrigger(CONTROL_MOVE_BACKWARD, VInputManager::GetPad(0), CT_PAD_LEFT_THUMB_STICK_DOWN, VInputOptions::DeadZone(0.25f));
+  m_pInputMap->MapTrigger(CONTROL_MOVE_LEFT,     VInputManager::GetPad(0), CT_PAD_LEFT_THUMB_STICK_LEFT, VInputOptions::DeadZone(0.25f));
+  m_pInputMap->MapTrigger(CONTROL_MOVE_RIGHT,    VInputManager::GetPad(0), CT_PAD_LEFT_THUMB_STICK_RIGHT, VInputOptions::DeadZone(0.25f));
 
-  m_pInputMap->MapTrigger(CONTROL_ANY_ACTION,    VInputManagerPSP2::GetPad(0), CT_PAD_ANY_KEY);
-  m_pInputMap->MapTrigger(CONTROL_ANY_ACTION,    VInputManagerPSP2::GetPad(0), CT_PAD_LEFT_THUMB_STICK_CHANGED);
-  m_pInputMap->MapTrigger(CONTROL_ANY_ACTION,    VInputManagerPSP2::GetPad(0), CT_PAD_RIGHT_THUMB_STICK_CHANGED);
+  m_pInputMap->MapTrigger(CONTROL_ANY_ACTION,    VInputManager::GetPad(0), CT_PAD_ANY_KEY);
+  m_pInputMap->MapTrigger(CONTROL_ANY_ACTION,    VInputManager::GetPad(0), CT_PAD_LEFT_THUMB_STICK_CHANGED);
+  m_pInputMap->MapTrigger(CONTROL_ANY_ACTION,    VInputManager::GetPad(0), CT_PAD_RIGHT_THUMB_STICK_CHANGED);
 
-  m_pInputMap->MapTriggerAxis(CONTROL_HORIZONTAL_LOOK, VInputManagerPSP2::GetPad(0), CT_PAD_RIGHT_THUMB_STICK_LEFT, CT_PAD_RIGHT_THUMB_STICK_RIGHT, VInputOptions::DeadZone(0.15f, true));
-  m_pInputMap->MapTriggerAxis(CONTROL_VERTICAL_LOOK,   VInputManagerPSP2::GetPad(0), CT_PAD_RIGHT_THUMB_STICK_UP,   CT_PAD_RIGHT_THUMB_STICK_DOWN,  VInputOptions::DeadZone(0.15f, true));
+  m_pInputMap->MapTriggerAxis(CONTROL_HORIZONTAL_LOOK, VInputManager::GetPad(0), CT_PAD_RIGHT_THUMB_STICK_LEFT, CT_PAD_RIGHT_THUMB_STICK_RIGHT, VInputOptions::DeadZone(0.15f, true));
+  m_pInputMap->MapTriggerAxis(CONTROL_VERTICAL_LOOK,   VInputManager::GetPad(0), CT_PAD_RIGHT_THUMB_STICK_UP,   CT_PAD_RIGHT_THUMB_STICK_DOWN,  VInputOptions::DeadZone(0.15f, true));
 
-  m_pInputMap->MapTrigger(CONTROL_SPEED_FASTER,   VInputManagerPSP2::GetPad(0), CT_PAD_RIGHT_SHOULDER, VInputOptions::DeadZone(0.25f));
+  m_pInputMap->MapTrigger(CONTROL_SPEED_FASTER,   VInputManager::GetPad(0), CT_PAD_RIGHT_SHOULDER, VInputOptions::DeadZone(0.25f));
 
 #endif
 
@@ -172,17 +195,29 @@ void VFreeCamera::BaseInit()
   m_pInputMap->MapTriggerAxis(CONTROL_VERTICAL_LOOK,   VInputManagerWiiU::GetRemote(0), CT_PAD_RIGHT_THUMB_STICK_UP,   CT_PAD_RIGHT_THUMB_STICK_DOWN,  VInputOptions::DeadZone(0.05f, true));
 
   m_pInputMap->MapTrigger(CONTROL_SPEED_FAST, VInputManagerWiiU::GetRemote(0), CT_PAD_RIGHT_SHOULDER, VInputOptions::DeadZone(0.1f));
-  m_pInputMap->MapTrigger(CONTROL_SPEED_FASTER, VInputManagerWiiU::GetRemote(0), CT_PAD_LEFT_SHOULDER,  VInputOptions::DeadZone(0.2f));
+  m_pInputMap->MapTrigger(CONTROL_SPEED_FASTER, VInputManagerWiiU::GetRemote(0), CT_PAD_LEFT_SHOULDER,  VInputOptions::DeadZone(0.1f));
 
 #endif
 
+  // Additional input possibilities for devices with gamepad controls.
 #if defined(_VISION_ANDROID) 
 
-  // Additional input possibilities for devices with play station buttons
-  m_pInputMap->MapTrigger(CONTROL_MOVE_FORWARD,  VInputManagerAndroid::GetKeyInput(), CT_PAD_UP,    VInputOptions::Alternative(1));
-  m_pInputMap->MapTrigger(CONTROL_MOVE_BACKWARD, VInputManagerAndroid::GetKeyInput(), CT_PAD_DOWN,  VInputOptions::Alternative(1));
-  m_pInputMap->MapTrigger(CONTROL_MOVE_LEFT,     VInputManagerAndroid::GetKeyInput(), CT_PAD_LEFT,  VInputOptions::Alternative(1));
-  m_pInputMap->MapTrigger(CONTROL_MOVE_RIGHT,    VInputManagerAndroid::GetKeyInput(), CT_PAD_RIGHT, VInputOptions::Alternative(1));
+  m_pInputMap->MapTrigger(CONTROL_MOVE_FORWARD,  VInputManager::GetPad(0), CT_PAD_LEFT_THUMB_STICK_UP,    VInputOptions::DeadZone(0.1f, false, 1));
+  m_pInputMap->MapTrigger(CONTROL_MOVE_BACKWARD, VInputManager::GetPad(0), CT_PAD_LEFT_THUMB_STICK_DOWN,  VInputOptions::DeadZone(0.1f, false, 1));
+  m_pInputMap->MapTrigger(CONTROL_MOVE_LEFT,     VInputManager::GetPad(0), CT_PAD_LEFT_THUMB_STICK_LEFT,  VInputOptions::DeadZone(0.1f, false, 1));
+  m_pInputMap->MapTrigger(CONTROL_MOVE_RIGHT,    VInputManager::GetPad(0), CT_PAD_LEFT_THUMB_STICK_RIGHT, VInputOptions::DeadZone(0.1f, false, 1));
+
+  m_pInputMap->MapTriggerAxis(CONTROL_HORIZONTAL_LOOK, VInputManager::GetPad(0), CT_PAD_RIGHT_THUMB_STICK_LEFT, CT_PAD_RIGHT_THUMB_STICK_RIGHT, VInputOptions::DeadZone(0.1f, true, 1));
+  m_pInputMap->MapTriggerAxis(CONTROL_VERTICAL_LOOK, VInputManager::GetPad(0), CT_PAD_RIGHT_THUMB_STICK_UP, CT_PAD_RIGHT_THUMB_STICK_DOWN, VInputOptions::DeadZone(0.1f, true, 1));
+
+  m_pInputMap->MapTrigger(CONTROL_SPEED_FAST, VInputManager::GetPad(0), CT_PAD_RIGHT_SHOULDER, VInputOptions::DeadZone(0.1f));
+  m_pInputMap->MapTrigger(CONTROL_SPEED_FASTER, VInputManager::GetPad(0), CT_PAD_LEFT_SHOULDER,  VInputOptions::DeadZone(0.1f));
+
+  // Also map D-pad on Android since analog sticks might not be present.
+  m_pInputMap->MapTrigger(CONTROL_MOVE_FORWARD,  VInputManager::GetPad(0), CT_PAD_UP,    VInputOptions::Alternative(2));
+  m_pInputMap->MapTrigger(CONTROL_MOVE_BACKWARD, VInputManager::GetPad(0), CT_PAD_DOWN,  VInputOptions::Alternative(2));
+  m_pInputMap->MapTrigger(CONTROL_MOVE_LEFT,     VInputManager::GetPad(0), CT_PAD_LEFT,  VInputOptions::Alternative(2));
+  m_pInputMap->MapTrigger(CONTROL_MOVE_RIGHT,    VInputManager::GetPad(0), CT_PAD_RIGHT, VInputOptions::Alternative(2));
 
 #endif
 
@@ -194,8 +229,17 @@ void VFreeCamera::BaseInit()
   // WASD is enabled by default.
   SetWASDControlsEnabled(true);
 
-  // Initialize think function status.
+  // Initialize active state and attach camera to entity.
   OnThinkFunctionStatusChanged();
+}
+
+void VFreeCamera::SetMoveSpeed(const float fMoveSpeed)
+{ 
+  m_fMoveSpeed = hkvMath::Max(0.0f, fMoveSpeed);
+
+#if defined (SUPPORTS_MULTITOUCH)
+  UpdateVirtualThumbstickVisibility();
+#endif
 }
 
 #if defined (SUPPORTS_MULTITOUCH)
@@ -209,6 +253,8 @@ void VFreeCamera::CreateVirtualThumbStick()
 
   // Virtual Thumb Stick
   m_pVirtualThumbStick = new VVirtualThumbStick();
+  UpdateVirtualThumbstickVisibility();
+
   Vision::Callbacks.OnVideoChanged += this; // update valid area when resolution changes
 
   m_pInputMap->MapTrigger(CONTROL_MOVE_LEFT, *m_pVirtualThumbStick, CT_PAD_LEFT_THUMB_STICK_LEFT, VInputOptions::DeadZone(0.2f));
@@ -235,7 +281,7 @@ void VFreeCamera::SetWASDControlsEnabled(bool bEnabled)
 
   m_bWASDEnabled = bEnabled;
 
-#if defined(WIN32) && !defined(_VISION_WINRT)
+#if defined(SUPPORTS_KEYBOARD)
 
   if (bEnabled)
   {
@@ -271,18 +317,52 @@ void VFreeCamera::ClearWASDAlternativeIndices()
 
 void VFreeCamera::OnThinkFunctionStatusChanged()
 {
-  const bool bEnabled = (GetThinkFunctionStatus() == TRUE);
-
   // Do nothing when in editor and not playing the game.
   if (!Vision::Editor.IsPlayingTheGame())
     return;
 
-  if (bEnabled)
+  if (GetThinkFunctionStatus() == TRUE)
   {
-    Vision::Callbacks.OnFrameUpdatePreRender += this;
-
     // Attach camera to entity.
     Vision::Camera.AttachToEntity(this, hkvVec3::ZeroVector());
+  }
+
+  UpdateActiveState();
+}
+
+void VFreeCamera::OnVariableValueChanged(VisVariable_cl* pVar, const char* value)
+{
+  if (strcmp(pVar->GetName(), "m_fMoveSpeed") == 0)
+  {
+    SetMoveSpeed(m_fMoveSpeed);
+  }
+}
+
+void VFreeCamera::ModSysAddChild(class VisModuleSystemChild_cl *child)
+{
+  VisBaseEntity_cl::ModSysAddChild(child);
+
+  UpdateActiveState();
+}
+
+void VFreeCamera::ModSysRemoveChild(class VisModuleSystemChild_cl *child, BOOL deleteChild)
+{
+  VisBaseEntity_cl::ModSysRemoveChild(child, deleteChild);
+
+  UpdateActiveState();
+}
+
+void VFreeCamera::UpdateActiveState()
+{
+  // Check if active state changed.
+  const bool bActive = (GetThinkFunctionStatus() == TRUE) && (Vision::Camera.GetMainCamera()->GetParent() == this);
+  if (bActive == m_bActive)
+    return;
+  m_bActive = bActive;
+
+  if (m_bActive)
+  {
+    Vision::Callbacks.OnFrameUpdatePreRender += this;
   }
   else
   {
@@ -290,13 +370,31 @@ void VFreeCamera::OnThinkFunctionStatusChanged()
   }
 
 #if defined(SUPPORTS_MULTITOUCH)
-  if (m_pVirtualThumbStick != NULL)
-    m_pVirtualThumbStick->Show(bEnabled);
+  UpdateVirtualThumbstickVisibility();
 #endif
+
+  // Notify derived class.
+  OnActiveStateChanged(m_bActive);
 }
+
+#if defined(SUPPORTS_MULTITOUCH)
+
+void VFreeCamera::UpdateVirtualThumbstickVisibility()
+{
+  if (m_pVirtualThumbStick == NULL)
+    return;
+
+  // Disable / Enable virtual thumb stick.
+  m_pVirtualThumbStick->Show(m_bActive && m_fMoveSpeed != 0.0f);
+}
+
+#endif
 
 void VFreeCamera::ProcessInput(float fTimeDiff)
 {
+  if (!m_bActive)
+    return;
+
   hkvVec3 vMoveDelta = hkvVec3::ZeroVector();
 
   // Handle movement.
@@ -358,8 +456,7 @@ void VFreeCamera::OnHandleCallback(IVisCallbackDataObject_cl *pData)
 {
   // Input is processed once per frame, not once per simulation tick.
   if (pData->m_pSender == &Vision::Callbacks.OnFrameUpdatePreRender)
-  {    
-    VASSERT(GetThinkFunctionStatus() == TRUE);
+  {
     const float fTimeDiff = Vision::GetUITimer()->GetTimeDifference();
     ProcessInput(fTimeDiff);
   }
@@ -407,14 +504,9 @@ void VFreeCamera::Serialize(VArchive& ar)
   }
 }
 
-VInputMap* VFreeCamera::GetInputMap()
-{
-  return m_pInputMap;
-}
-
 START_VAR_TABLE(VFreeCamera, VisBaseEntity_cl, "VFreeCamera", 0, "")  
-  DEFINE_VAR_FLOAT_AND_NAME(VFreeCamera, m_fSensitivity, "LookSensitivity", "Sensitivity when looking around.", "200.0", 0, "Clamp(0.0, 1e20)");
-  DEFINE_VAR_FLOAT_AND_NAME(VFreeCamera, m_fMoveSpeed, "MoveSpeed", "The speed at which the camera moves.", "350.0", 0, "Clamp(0.0, 1e20)");
+  DEFINE_VAR_FLOAT_AND_NAME(VFreeCamera, m_fSensitivity, "LookSensitivity", "Sensitivity when looking around. Set to 0 to use a fixed view direction.", "200.0", 0, "Clamp(0.0, 1e20)");
+  DEFINE_VAR_FLOAT_AND_NAME(VFreeCamera, m_fMoveSpeed, "MoveSpeed", "The speed at which the camera moves. Set to 0 to use a fixed camera position.", "350.0", DISPLAY_HINT_GLOBALUNITSCALED, "Clamp(0.0, 1e20)");
 END_VAR_TABLE
 
 // VisMouseCamera_cl serialization fall back
@@ -424,7 +516,7 @@ START_VAR_TABLE(VisMouseCamera_cl, VFreeCamera, "VFreeCamera", VFORGE_HIDECLASS,
 END_VAR_TABLE
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140726)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

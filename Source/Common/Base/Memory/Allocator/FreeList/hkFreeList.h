@@ -23,7 +23,7 @@
 ///
 /// NOTE! Freeing freelist blocks does not free memory back to the allocator. Memory is only given back to the
 /// hkFreeListAllocator when a garbageCollect or freeAllFreeBlocks is called.
-class hkFreeList
+class HK_EXPORT_COMMON hkFreeList
 {
 	public:
 
@@ -237,7 +237,7 @@ class hkFreeList
 #endif // HK_FREELIST
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

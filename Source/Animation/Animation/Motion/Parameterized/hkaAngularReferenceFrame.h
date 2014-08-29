@@ -14,7 +14,7 @@
 
 /// Reference frame that describes a motion which makes the character move and turn
 /// at the constant pace throughout the entire clip
-class hkaAngularReferenceFrame : public hkaParameterizedReferenceFrame
+class HK_EXPORT_ANIMATION hkaAngularReferenceFrame : public hkaParameterizedReferenceFrame
 {
 	public:
 
@@ -57,7 +57,7 @@ class hkaAngularReferenceFrame : public hkaParameterizedReferenceFrame
 #endif // HKA_MOVE_TURN_PARAMETERIZED_REFERENCE_FRAME_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

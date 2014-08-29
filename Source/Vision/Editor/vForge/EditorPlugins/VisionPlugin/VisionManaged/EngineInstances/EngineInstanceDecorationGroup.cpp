@@ -35,10 +35,14 @@ namespace VisionManaged
     _lgx = _lgy = _lgz = 0.f;
     m_bVisible = true;
     m_bUseLightgrid = true;
+    m_bCastDynamicShadows = true;
     m_iVisibleBitMask = 0xffffffff;
     m_iAmbientColor = 0;
     m_fFarClip = 0.f;
     m_fCollisionCapsuleRadius = 0.f;
+
+    m_eCollisionType = DecorationCollisionType_e::None;
+    m_bPerInstanceVisibility = true;
 
     m_fScaling = 1.f;
     m_pInstancesSortedByModel = nullptr;
@@ -94,31 +98,27 @@ namespace VisionManaged
   }
 
 
-  void EngineInstanceDecorationGroup::SetCollisionCapsule(float fRadius)
+  void EngineInstanceDecorationGroup::SetCollisionType(DecorationCollisionType_e eType, float fCapsuleRadius)
   {
-    if (m_fCollisionCapsuleRadius == fRadius)
+    if (m_fCollisionCapsuleRadius==fCapsuleRadius && m_eCollisionType==eType)
       return;
-    m_fCollisionCapsuleRadius = fRadius;
+    m_eCollisionType = eType;
+    m_fCollisionCapsuleRadius = fCapsuleRadius;
     UpdateInstances();
-/*
-    IVisPhysicsModule_cl *pPM = Vision::GetApplication()->GetPhysicsModule();
-    m_bUseCollisions = bStatus;
-    FOREACH_GROUP
-      pGroup->m_bUseCollisions = bStatus;
-      if (!pPM) continue;
-      if (bStatus)
-        pPM->OnDecorationCreated(pGroup->m_Instances);
-      else
-        pPM->OnDecorationRemoved(pGroup->m_Instances);
-    }
-*/
   }
+
 
   void EngineInstanceDecorationGroup::SetCastLightmapShadows(bool bStatus)
   {
     FOREACH_GROUP
       pGroup->m_bCastLightmapShadows = bStatus;
     }
+  }
+
+  void EngineInstanceDecorationGroup::SetCastDynamicShadows(bool bStatus)
+  {
+    m_bCastDynamicShadows = bStatus;
+    UpdateVisibleStatus();
   }
 
 
@@ -168,6 +168,7 @@ namespace VisionManaged
     unsigned int iMask = (m_bVisible) ? m_iVisibleBitMask : 0;
     FOREACH_GROUP
       pGroup->SetVisibleBitmask(pGroup->m_Instances.m_iCount>0 ? iMask : 0);
+      pGroup->m_bCastDynamicShadows = m_bCastDynamicShadows;
     }
     SetFarClipDistance(m_fFarClip);
   }
@@ -179,6 +180,29 @@ namespace VisionManaged
       pGroup->SetFarClipDistance(fDistance);
     }
   }
+
+  float EngineInstanceDecorationGroup::GetAverageModelRadius(array<ModelGroup::GroupEntry ^> ^models)
+  {
+    if (models==nullptr || models->Length==0)
+      return 0.f;
+
+    float fRadius = 0.f;
+
+    for (int i=0;i<models->Length;i++)
+    {
+      IVTerrainDecorationModel *pNativeModel = Helper_LoadNativeModel(models[i]);
+      // update average radius
+      if (pNativeModel!=NULL && pNativeModel->m_LocalBBox.isValid())
+      {
+        float x = hkvMath::Max(-pNativeModel->m_LocalBBox.m_vMin.x, pNativeModel->m_LocalBBox.m_vMax.x);
+        float y = hkvMath::Max(-pNativeModel->m_LocalBBox.m_vMin.y, pNativeModel->m_LocalBBox.m_vMax.y);
+        float xy = hkvMath::Max(x,y);
+        fRadius = hkvMath::Max(fRadius,xy);
+      }
+    }
+    return fRadius;
+  }
+
 
 
   IVTerrainDecorationModel* EngineInstanceDecorationGroup::Helper_LoadNativeModel(ModelGroup::GroupEntry ^pGroup)
@@ -193,6 +217,7 @@ namespace VisionManaged
     IVTerrainDecorationModel::ModelProperties_t props;
     props.m_iModelID = -1; // check for exact match of props, see VTerrainDecorationModelManager::CreateModel
     props.m_fCollisionCapsuleRadius = m_fCollisionCapsuleRadius;
+    props.m_eCollisionType = (VDecorationCollisionPrimitive::VDecorationCollisionType_e)m_eCollisionType;
     props.m_fFarClip = m_fFarClip;
     IVTerrainDecorationModel *pNativeModel = VTerrainDecorationModelManager::GlobalManager().CreateModel(sFilename, props,true, eForcedType);
     return pNativeModel;
@@ -229,7 +254,7 @@ namespace VisionManaged
 
       const hkvAlignedBBox &bbox(pNativeModel->m_LocalBBox);
       float fModelRadius = hkvMath::Max(bbox.getSizeX(),bbox.getSizeY()) * 0.5f;
-
+      pNativeGroup->SetUsePerInstanceVisibility(m_bPerInstanceVisibility);
       VTerrainDecorationInstanceCollection &coll = pNativeGroup->BeginUpdateInstances();
         coll.Allocate(NULL,pModelList->Count);
         VTerrainDecorationInstance *pDest = coll.m_pInstances;
@@ -268,7 +293,7 @@ namespace VisionManaged
 
   void EngineInstanceDecorationGroup::RenderCollisionCapsules()
   {
-    if (m_fCollisionCapsuleRadius<=0.f)
+    if (m_fCollisionCapsuleRadius<=0.f || m_eCollisionType!=DecorationCollisionType_e::Capsule)
       return;
     IVRenderInterface* pRI = Vision::Game.GetDebugRenderInterface();
     FOREACH_GROUP
@@ -349,6 +374,9 @@ namespace VisionManaged
     float fEps = 0.1f;
     float fInvDistScale = 1.f;
 
+    for (int i = 0; i < iCount; ++i)
+      pForces[i].setZero();
+
     // copy over initial positions
     for (int i=0;i<iCount;i++)
       pNewPos[i] = pData[i]->Position;
@@ -402,7 +430,7 @@ namespace VisionManaged
   }
 
 
-  String^ EngineInstanceDecorationGroup::BakeInstances(String ^filename)
+  String^ EngineInstanceDecorationGroup::BakeInstances(Shape3D ^owner, String ^filename)
   {
     VString sFilename;
     String ^absFile = EditorManager::Project->MakeAbsolute(filename);
@@ -416,7 +444,7 @@ namespace VisionManaged
 
     int iInstanceCount = m_pInstances->Length;
     VGroupInstanceFile file;
-    file.Create(pOut, iInstanceCount, VGroupInstance::INSTANCE_TYPE_DECORATION);
+    file.Create(pOut, iInstanceCount, VGroupInstance::INSTANCE_TYPE_DECORATION_LS);
 
     // loop through the sorted-by-model list to set the group index
     for (int iSplit=0;iSplit<m_pInstancesSortedByModel->Length;iSplit++)
@@ -429,8 +457,9 @@ namespace VisionManaged
         // fill out instance info
         DecorationInstanceShape ^src = static_cast<DecorationInstanceShape ^>(group[i]);
 
-        instance.m_vPosition.set(src->Position.X,src->Position.Y,src->Position.Z);
-        ConversionUtils::Matrix3FToVisMatrix3x3(instance.m_Rotation, src->RotationMatrix);
+        // transform to local space:
+        instance.m_vPosition.set(src->LocalSpacePosition.X,src->LocalSpacePosition.Y,src->LocalSpacePosition.Z);
+        ConversionUtils::Matrix3FToVisMatrix3x3(instance.m_Rotation, src->LocalSpaceRotation);
         instance.m_fScale = src->UniformScaling;
         instance.m_iColor.SetRGBA(src->_iTintColor);
         instance.m_fSeed = src->RandomSeed;
@@ -454,17 +483,20 @@ namespace VisionManaged
   }
 
 
-  void EngineInstanceDecorationGroup::Helper_Assign(VTerrainDecorationInstance &dest, const VGroupInstance &src, float fExternalScale, IVTerrainDecorationModel* pModel)
+  void EngineInstanceDecorationGroup::Helper_Assign(VTerrainDecorationInstance &dest, const VGroupInstance &src, float fExternalScale, IVTerrainDecorationModel* pModel, const hkvVec3& apply_ofs, const hkvMat3 &apply_rotation)
   {
     float fScale = src.m_fScale * fExternalScale;
     hkvMat3 rotation = src.m_Rotation * fScale;
-    dest.SetTransformation(src.m_vPosition, rotation, fScale);
+    dest.SetTransformation(
+      apply_rotation.transformDirection(src.m_vPosition) + apply_ofs, 
+      apply_rotation.multiply(rotation), fScale);
+
     dest.m_spModel = pModel;
     dest.m_pOwnerSector = NULL;
     dest.m_InstanceColor = src.m_iColor;
   }
 
-  String^ EngineInstanceDecorationGroup::CreateFromBinaryFile(String ^filename, IGroupHelper ^atlas)
+  String^ EngineInstanceDecorationGroup::CreateFromBinaryFile(Shape3D ^owner, String ^filename, IGroupHelper ^atlas, BoundingBox ^localBBox)
   {
     VString sFilename;
     ConversionUtils::StringToVString(EditorManager::Project->MakeAbsolute(filename),sFilename);
@@ -488,12 +520,23 @@ namespace VisionManaged
       return nullptr;
     }
 
+    hkvMat3 applyRotation = hkvMat3::IdentityMatrix();
+    hkvVec3 applyOffset(0,0,0);
+    bool bIsInLocalSpace = (eFlags & VGroupInstance::INSTANCES_IN_LOCALSPACE)!=0;
+    if (bIsInLocalSpace)
+    {
+      ConversionUtils::Matrix3FToVisMatrix3x3(applyRotation, owner->RotationMatrix);
+      applyOffset.set(owner->x,owner->y,owner->z);
+    }
+
     VGroupInstance *pSrcArray = new VGroupInstance[iInstanceCount];
     for (int i=0;i<iInstanceCount;i++)
       file.ReadInstance(pSrcArray[i]);
 
     // sort the block - at least by by model but also other split criteria
     qsort(pSrcArray,iInstanceCount,sizeof(VGroupInstance),CompareSplitKey);
+    hkvAlignedBBox combinedBBox;
+    combinedBBox.setInvalid();
 
     // create a group - for each distinct model
     int iStartIndex = 0;
@@ -526,11 +569,16 @@ namespace VisionManaged
       // fill the group with instances
       int iCount = i-iStartIndex;
       VGroupInstance *pSrcInst = &pSrcArray[iStartIndex];
+      pNewGroup->SetUsePerInstanceVisibility(m_bPerInstanceVisibility);
       VTerrainDecorationInstanceCollection &coll = pNewGroup->BeginUpdateInstances();
         coll.Allocate(NULL,iCount);
         for (int j=0;j<iCount;j++,pSrcInst++)
-          Helper_Assign(coll.m_pInstances[j], *pSrcInst, entry->GetRandomScale(pSrcInst->m_fSeed), pNativeModel);
+          Helper_Assign(coll.m_pInstances[j], *pSrcInst, entry->GetRandomScale(pSrcInst->m_fSeed), pNativeModel, applyOffset, applyRotation);
       pNewGroup->EndUpdateInstances();
+      hkvAlignedBBox bbox = pNewGroup->GetBoundingBox();
+      if (bbox.isValid())
+        combinedBBox.expandToInclude(bbox);
+
       iGroupCount++;
       iStartIndex = i;
     }
@@ -542,11 +590,12 @@ namespace VisionManaged
     // since we have fresh instances, re-assign other properties:
     UpdateLightgridColors();
     UpdateVisibleStatus();
-
+    if (combinedBBox.isValid())
+      localBBox->Set(combinedBBox.m_vMin.x, combinedBBox.m_vMin.y, combinedBBox.m_vMin.z, combinedBBox.m_vMax.x, combinedBBox.m_vMax.y, combinedBBox.m_vMax.z);
     return nullptr;
   }
 
-  String^ EngineInstanceDecorationGroup::UnbakeInstances(String ^filename, IGroupHelper ^creator, ShapeCollection ^instances)
+  String^ EngineInstanceDecorationGroup::UnbakeInstances(Shape3D ^owner, String ^filename, IGroupHelper ^creator, ShapeCollection ^instances)
   {
     VString sFilename;
     ConversionUtils::StringToVString(EditorManager::Project->MakeAbsolute(filename),sFilename);
@@ -561,6 +610,11 @@ namespace VisionManaged
     VGroupInstanceFile file;
     file.Open(pIn,iInstanceCount,eFlags);
     VGroupInstance instance;
+
+    Matrix3F applyRotation = owner->RotationMatrix;
+    Vector3F applyOffset = owner->Position;
+    bool bInLocalSpace = (eFlags & VGroupInstance::INSTANCES_IN_LOCALSPACE)!=0;
+
     for (int i=0;i<iInstanceCount;i++)
     {
       char szName[128];
@@ -572,9 +626,21 @@ namespace VisionManaged
       dest->_fRandomSeed = instance.m_fSeed;
       dest->UniformScaling = instance.m_fScale;
       dest->_iTintColor = instance.m_iColor.GetNative();
-      float fRoll,fPitch,fYaw;
-      instance.m_Rotation.getAsEulerAngles(fRoll,fPitch,fYaw);
-      dest->SetPositionOrientation(Vector3F(instance.m_vPosition.x, instance.m_vPosition.y, instance.m_vPosition.z), Vector3F(fYaw, fPitch, fRoll));
+      Vector3F pos(instance.m_vPosition.x, instance.m_vPosition.y, instance.m_vPosition.z);
+
+      if (bInLocalSpace)
+      {
+        Matrix3F instRot;
+        dest->Position = Matrix3F::Transform(owner->RotationMatrix, pos) + applyOffset;
+        instRot = ConversionUtils::VisMatrix3x3ToMatrix3F(instance.m_Rotation);
+        dest->RotationMatrix = instRot * applyRotation;
+      }
+      else
+      {
+        float fRoll,fPitch,fYaw;
+        instance.m_Rotation.getAsEulerAngles(fRoll,fPitch,fYaw);
+        dest->SetPositionOrientation(pos, Vector3F(fYaw, fPitch, fRoll));
+      }
     }
         
     file.Close();
@@ -585,7 +651,7 @@ namespace VisionManaged
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140619)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

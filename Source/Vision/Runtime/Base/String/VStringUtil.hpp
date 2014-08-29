@@ -13,7 +13,7 @@
 #include <stdio.h>
 
 // Safe sprintf version (deals with buffer overflow if log message exceeds buffer size)
-#if defined WIN32 || defined WIN64 || defined _VISION_XENON 
+#if defined _MSC_VER || defined _VISION_XENON 
 #define vis_snprintf(__str,__cnt,__fmt,...) { _snprintf(__str,__cnt,__fmt,__VA_ARGS__); if(__cnt > 0) __str[__cnt-1] = 0; }
 #else
 #define vis_snprintf(__str,__cnt,__fmt,...) {  snprintf(__str,__cnt,__fmt,__VA_ARGS__); if(__cnt > 0) __str[__cnt-1] = 0; }
@@ -296,7 +296,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

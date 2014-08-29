@@ -24,7 +24,7 @@
 /// back and forth between an hkRotationf and an hkQuaternionf.
 /// hkRotations are assumed to be orthonormal i.e., that any given hkRotationf r
 /// should satisfy the property transpose(r) = (r^-1)
-class HK_FORCE_ALIGN_ROTATION hkRotationf : public hkMatrix3f
+class HK_FORCE_ALIGN_ROTATION HK_EXPORT_COMMON hkRotationf : public hkMatrix3f
 {
 	public:
 
@@ -43,6 +43,9 @@ class HK_FORCE_ALIGN_ROTATION hkRotationf : public hkMatrix3f
 			/// a quaternion (normalized with normalize() )
 		bool isOrthonormal( hkFloat32 epsilon = hkFloat32(1e-5f) ) const;
 
+			/// Returns a global identity matrix3.
+		HK_FORCE_INLINE static const hkRotationf& HK_CALL getIdentity();
+
 			/// Checks for bad values (denormals or infinities) and orthogonality.
 		bool isOk() const;
 
@@ -55,7 +58,7 @@ class HK_FORCE_ALIGN_ROTATION hkRotationf : public hkMatrix3f
 #endif //HK_MATH_ROTATIONf_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

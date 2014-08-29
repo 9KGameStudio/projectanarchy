@@ -468,8 +468,106 @@
 	#endif
 #endif
 
+#if (HK_SERIALIZE_MIN_COMPATIBLE_VERSION_INTERNAL_VALUE <= HK_HAVOK_VERSION_201320r1)
+		// All patches necessary to update version 2013.2 classes to the next version
+		// are available in the Common/Compat/Patches/2013_2/ directory.
+	#if !defined( HK_EXCLUDE_COMMON_PATCHES )
+		extern void HK_CALL registerCommonPatches_2013_2(hkVersionPatchManager&);
+		registerCommonPatches_2013_2(man);
+		extern void HK_CALL registerCollidePatches_2013_2(hkVersionPatchManager&);
+		registerCollidePatches_2013_2(man);
+	#endif
+	#if defined(HK_FEATURE_PRODUCT_AI)
+		extern void HK_CALL registerAiPatches_2013_2(hkVersionPatchManager&);
+		registerAiPatches_2013_2(man);
+	#endif
+	#if defined(HK_FEATURE_PRODUCT_ANIMATION)
+		extern void HK_CALL registerAnimationPatches_2013_2(hkVersionPatchManager&);
+		registerAnimationPatches_2013_2(man);
+	#endif
+	#if defined(HK_FEATURE_PRODUCT_CLOTH)
+		extern void HK_CALL registerClothPatches_2013_2(hkVersionPatchManager&);
+		registerClothPatches_2013_2(man);
+	#endif
+	#if defined(HK_FEATURE_PRODUCT_DESTRUCTION_2012)
+		extern void HK_CALL registerDestructionPatches_2013_2(hkVersionPatchManager&);
+		registerDestructionPatches_2013_2(man);
+	#endif
+	#if defined(HK_FEATURE_PRODUCT_BEHAVIOR)
+		extern void HK_CALL registerBehaviorPatches_2013_2(hkVersionPatchManager&);
+		registerBehaviorPatches_2013_2(man);
+	#endif
+	#if defined(HK_FEATURE_PRODUCT_PHYSICS) || defined(HK_FEATURE_PRODUCT_PHYSICS_2012)
+		extern void HK_CALL registerPhysicsConstraintPatches_2013_2(hkVersionPatchManager&);
+		registerPhysicsConstraintPatches_2013_2(man);
+	#endif
+	#if defined(HK_FEATURE_PRODUCT_PHYSICS_2012)
+		extern void HK_CALL registerPhysicsPatches_2013_2(hkVersionPatchManager&);
+		registerPhysicsPatches_2013_2(man);
+	#endif
+	#if defined(HK_FEATURE_PRODUCT_PHYSICS)
+		extern void HK_CALL registerNewPhysicsPatches_2013_2(hkVersionPatchManager&);
+		registerNewPhysicsPatches_2013_2(man);
+	#endif
+	#if defined(HK_FEATURE_PRODUCT_DESTRUCTION)
+		extern void HK_CALL registerNewDestructionPatches_2013_2(hkVersionPatchManager&);
+		registerNewDestructionPatches_2013_2(man);
+	#endif
+	#if defined(HK_FEATURE_PRODUCT_SIMULATION)
+			extern void HK_CALL registerMilSimPatches_2013_2(hkVersionPatchManager&);
+			registerMilSimPatches_2013_2(man);
+	#endif
+#endif
+
+#if (HK_SERIALIZE_MIN_COMPATIBLE_VERSION_INTERNAL_VALUE <= HK_HAVOK_VERSION_201330r1)
+		// All patches necessary to update version 2013.3 classes to the next version
+		// are available in the Common/Compat/Patches/2013_3/ directory.
+	#if !defined( HK_EXCLUDE_COMMON_PATCHES )
+		extern void HK_CALL registerCommonPatches_2013_3(hkVersionPatchManager&);
+		registerCommonPatches_2013_3(man);
+		extern void HK_CALL registerCollidePatches_2013_3(hkVersionPatchManager&);
+		registerCollidePatches_2013_3(man);
+	#endif
+	#if defined(HK_FEATURE_PRODUCT_AI)
+		extern void HK_CALL registerAiPatches_2013_3(hkVersionPatchManager&);
+		registerAiPatches_2013_3(man);
+	#endif
+	#if defined(HK_FEATURE_PRODUCT_ANIMATION)
+		extern void HK_CALL registerAnimationPatches_2013_3(hkVersionPatchManager&);
+		registerAnimationPatches_2013_3(man);
+	#endif
+	#if defined(HK_FEATURE_PRODUCT_CLOTH)
+		extern void HK_CALL registerClothPatches_2013_3(hkVersionPatchManager&);
+		registerClothPatches_2013_3(man);
+	#endif
+	#if defined(HK_FEATURE_PRODUCT_DESTRUCTION_2012)
+		extern void HK_CALL registerDestructionPatches_2013_3(hkVersionPatchManager&);
+		registerDestructionPatches_2013_3(man);
+	#endif
+	#if defined(HK_FEATURE_PRODUCT_BEHAVIOR)
+		extern void HK_CALL registerBehaviorPatches_2013_3(hkVersionPatchManager&);
+		registerBehaviorPatches_2013_3(man);
+	#endif
+	#if defined(HK_FEATURE_PRODUCT_PHYSICS) || defined(HK_FEATURE_PRODUCT_PHYSICS_2012)
+		extern void HK_CALL registerPhysicsConstraintPatches_2013_3(hkVersionPatchManager&);
+		registerPhysicsConstraintPatches_2013_3(man);
+	#endif
+	#if defined(HK_FEATURE_PRODUCT_PHYSICS_2012)
+		extern void HK_CALL registerPhysicsPatches_2013_3(hkVersionPatchManager&);
+		registerPhysicsPatches_2013_3(man);
+	#endif
+	#if defined(HK_FEATURE_PRODUCT_PHYSICS)
+		extern void HK_CALL registerNewPhysicsPatches_2013_3(hkVersionPatchManager&);
+		registerNewPhysicsPatches_2013_3(man);
+	#endif
+	#if defined(HK_FEATURE_PRODUCT_DESTRUCTION)
+		extern void HK_CALL registerNewDestructionPatches_2013_3(hkVersionPatchManager&);
+		registerNewDestructionPatches_2013_3(man);
+	#endif
+#endif
+
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

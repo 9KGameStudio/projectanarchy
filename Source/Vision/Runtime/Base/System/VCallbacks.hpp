@@ -89,7 +89,7 @@ public:
   /// \return
   ///   an arbitrary sorting key value. The value can be positive or negative. The
   ///   default return value is 0.
-  virtual int GetCallbackSortingKey(VCallback *pCallback)
+  virtual int64 GetCallbackSortingKey(VCallback *pCallback)
   {
     return 0;
   }
@@ -284,12 +284,12 @@ public:
   /// \code
   ///    int iLastIndex = Vision::Callbacks.OnRenderHook.TriggerCallbacks(&data, -1000);
   ///    DoSomething();
-  ///    Vision::Callbacks.OnRenderHook.TriggerCallbacks(&data, INT_MAX, iLastIndex);
+  ///    Vision::Callbacks.OnRenderHook.TriggerCallbacks(&data, MAX_INT64, iLastIndex);
   /// \endcode
   ///
   /// \note
   ///   When all remaining callbacks above the start index shall be called, best performance can be
-  /// achieved by defining MAX_INT as max priority instead of any high "magic value" like 1000000.
+  /// achieved by defining MAX_INT64 as max priority instead of any high "magic value" like 1000000.
   ///
   /// \param pData
   ///   The data object to send to all handlers. If NULL, this function creates a base object with
@@ -309,7 +309,7 @@ public:
   /// \sa VCallback::DeregisterCallback
   /// \sa class IVisCallbackHandler_cl
   /// \sa IVisCallbackHandler_cl::OnHandleCallback
-  VBASE_IMPEXP int TriggerCallbacks(IVisCallbackDataObject_cl *pData, int iMaxPriority, int iStartIndex = 0);
+  VBASE_IMPEXP int TriggerCallbacks(IVisCallbackDataObject_cl *pData, int64 iMaxPriority, int iStartIndex = 0);
 
   /// \brief
   ///   This function can be called from inside a callback handler to abort subsequent calls of
@@ -525,7 +525,7 @@ protected:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

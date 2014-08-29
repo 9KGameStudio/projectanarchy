@@ -11,7 +11,7 @@
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Particles/ParticleGroupBase.hpp>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Particles/ParticleDescriptor.hpp>
 #include <Vision/Runtime/Base/ThirdParty/tinyXML/TinyXMLHelper.hpp>
-#include <Vision/Runtime/Base/System/Memory/VMemDbg.hpp>
+
 
 
 ///////////////////////////////////////////////////////////////////////////////////
@@ -35,6 +35,8 @@ VisParticleEmitter_cl::VisParticleEmitter_cl()
   m_bEmitFromSurface = false;
   m_fIntensity = 1.f;
   m_bInterpolateEmitterPos = true;
+  m_vParam.setZero();
+  m_vLastEmitterPos.setZero();
   //m_spCountCurve = new VCurve2D();
 }
 
@@ -187,9 +189,7 @@ void VisParticleEmitter_cl::SpawnSingleParticle(ParticleExt_t *pParticle, Partic
   switch (m_eType)
   {
     case EMITTER_TYPE_POINT:
-      pParticle->pos[0] = vGroupPos.x;
-      pParticle->pos[1] = vGroupPos.y;
-      pParticle->pos[2] = vGroupPos.z;
+      pParticle->m_vPosition = vGroupPos;
       break;
     case EMITTER_TYPE_SPHERE:
     {
@@ -201,9 +201,7 @@ void VisParticleEmitter_cl::SpawnSingleParticle(ParticleExt_t *pParticle, Partic
         emitCS.setLookInDirectionMatrix(vTempVec);
         vTempVec *= vScaledParam.x;
       }
-      pParticle->pos[0] = vGroupPos.x + vTempVec.x;
-      pParticle->pos[1] = vGroupPos.y + vTempVec.y;
-      pParticle->pos[2] = vGroupPos.z + vTempVec.z;
+      pParticle->m_vPosition = vGroupPos + vTempVec;
 
       break;
     }
@@ -232,9 +230,7 @@ void VisParticleEmitter_cl::SpawnSingleParticle(ParticleExt_t *pParticle, Partic
           vFaceNrml = pGroup->GetRotationMatrix() * vFaceNrml;
           pos = pGroup->GetRotationMatrix() * pos + vGroupPos;
         }
-        pParticle->pos[0] = pos.x;
-        pParticle->pos[1] = pos.y;
-        pParticle->pos[2] = pos.z;
+        pParticle->m_vPosition = pos;
         bEmitCSValid = true;
         emitCS.setLookInDirectionMatrix(vFaceNrml);
       } 
@@ -242,15 +238,12 @@ void VisParticleEmitter_cl::SpawnSingleParticle(ParticleExt_t *pParticle, Partic
       {
         if (bLocalSpace)
         {
-          pParticle->pos[0] = fx;
-          pParticle->pos[1] = fy;
-          pParticle->pos[2] = fz;
+          pParticle->m_vPosition[0] = fx;
+          pParticle->m_vPosition[1] = fy;
+          pParticle->m_vPosition[2] = fz;
         } else
         {
-          hkvVec3 pos = vGroupPos + pGroup->m_vDirection*fx + pGroup->m_vRightDir*fy + pGroup->m_vUpDir*fz;
-          pParticle->pos[0] = pos.x;
-          pParticle->pos[1] = pos.y;
-          pParticle->pos[2] = pos.z;
+          pParticle->m_vPosition = vGroupPos + pGroup->m_vDirection*fx + pGroup->m_vRightDir*fy + pGroup->m_vUpDir*fz;
         }
       }
       break;
@@ -261,16 +254,14 @@ void VisParticleEmitter_cl::SpawnSingleParticle(ParticleExt_t *pParticle, Partic
       const float fy = randGen.GetFloatNeg();
       if (bLocalSpace)
       {
-        pParticle->pos[0] = 0.f;
-        pParticle->pos[1] = fx*vScaledParam.x;
-        pParticle->pos[2] = fy*vScaledParam.y;
+        pParticle->m_vPosition[0] = 0.f;
+        pParticle->m_vPosition[1] = fx*vScaledParam.x;
+        pParticle->m_vPosition[2] = fy*vScaledParam.y;
       } else
       {
-        hkvVec3 pos = vGroupPos + pGroup->m_vRightDir*fx*vScaledParam.x + pGroup->m_vUpDir*fy*vScaledParam.y;
-        pParticle->pos[0] = pos.x;
-        pParticle->pos[1] = pos.y;
-        pParticle->pos[2] = pos.z;
+        pParticle->m_vPosition = vGroupPos + pGroup->m_vRightDir*fx*vScaledParam.x + pGroup->m_vUpDir*fy*vScaledParam.y;
       }
+
       // note: m_bEmitFromSurface is not necessary here as it matches the group's coordinate system anyway
       if (m_spEmitterMask!=NULL)
       {
@@ -285,16 +276,15 @@ void VisParticleEmitter_cl::SpawnSingleParticle(ParticleExt_t *pParticle, Partic
       float fT = randGen.GetFloat() * vScaledParam.x;
       if (bLocalSpace)
       {
-        pParticle->pos[0] = fT;
-        pParticle->pos[1] = 0.f;
-        pParticle->pos[2] = 0.f;
+        pParticle->m_vPosition[0] = fT;
+        pParticle->m_vPosition[1] = 0.f;
+        pParticle->m_vPosition[2] = 0.f;
       }
       else
       {
-        pParticle->pos[0] = vGroupPos.x + pGroup->m_vDirection.x*fT;
-        pParticle->pos[1] = vGroupPos.y + pGroup->m_vDirection.y*fT;
-        pParticle->pos[2] = vGroupPos.z + pGroup->m_vDirection.z*fT;
+        pParticle->m_vPosition = vGroupPos + pGroup->m_vDirection * fT;
       }
+
       if (m_bEmitFromSurface) // == span particles orthogonal to the ray axis
       {
         float fAngle = randGen.GetFloat() * hkvMath::pi()*2.f;
@@ -334,23 +324,36 @@ void VisParticleEmitter_cl::SpawnSingleParticle(ParticleExt_t *pParticle, Partic
           iRandomTri = randGen.GetInt()%iTriCount;
           m_spEmitterMesh->GetMeshData()->GetTriangle(tri, iRandomTri);
           vPos = (tri.GetVertex0() + tri.GetVertex1() + tri.GetVertex2()) * (1.f/3.f); // center of triangle
+
           bEmitCSValid = true;
           hkvVec3 vNrml = worldMatrix.transformDirection(-tri.GetNormal());
           
           emitCS.setLookInDirectionMatrix(vNrml);
           iRandomVertex = m_spEmitterMesh->GetMeshData()->GetVertexIndex(iRandomTri,0); // must be initialized as well for the emitter mask
-        } else
+        }
+        else
         {
           int iVertexCount = m_spEmitterMesh->GetVertexCount();
           iRandomVertex = randGen.GetInt()%iVertexCount;
           vPos = *m_spEmitterMesh->GetMeshData()->GetVertex(iRandomVertex);
+
+          // This piece of code skips all NaN vertices (which can be part of a model file)
+          int iTries = iVertexCount;
+          while (!vPos.isValid() && iTries > 0)
+          {
+            iRandomVertex = (iRandomVertex + 1) % iVertexCount;
+            vPos = *m_spEmitterMesh->GetMeshData()->GetVertex(iRandomVertex);
+
+            --iTries;
+          }
+
+          if (!vPos.isValid())
+            vPos.setZero();
         }
 
         vPos = worldMatrix.transformPosition(vPos);
 
-        pParticle->pos[0] = vPos.x;
-        pParticle->pos[1] = vPos.y;
-        pParticle->pos[2] = vPos.z;
+        pParticle->m_vPosition = vPos;
 
         if (m_spEmitterMask!=NULL)
         {
@@ -363,9 +366,7 @@ void VisParticleEmitter_cl::SpawnSingleParticle(ParticleExt_t *pParticle, Partic
       } 
       else
       {
-        pParticle->pos[0] = vGroupPos.x;
-        pParticle->pos[1] = vGroupPos.y;
-        pParticle->pos[2] = vGroupPos.z;
+        pParticle->m_vPosition = vGroupPos;
       }
       break;
     }
@@ -392,7 +393,7 @@ void VisParticleEmitter_cl::HandleEmitter(ParticleGroupBase_cl *pGroup, float fT
   {
     fCurrentGrowSpeed = m_ParticlesPerSec.m_fAverage;
   }
-  if (m_ParticlesPerSec.m_fVariation>0.f)
+  if (m_ParticlesPerSec.m_fVariation > 0.0f)
     fCurrentGrowSpeed = VisParticleGroupDescriptor_cl::GetRandomValue(pGroup->GetRandom(), fCurrentGrowSpeed, m_ParticlesPerSec.m_fVariation);
 
   // new particle count in this frame
@@ -409,7 +410,7 @@ void VisParticleEmitter_cl::HandleEmitter(ParticleGroupBase_cl *pGroup, float fT
   if (iNewCount) // spawn new particles
   {
     float fTimeStep = 0.999f/(float)iNewCount; // avoid rounding issues
-    float fFractionOfs = 1.f; // start with oldest (imnportant for trails)
+    float fFractionOfs = 1.f; // start with oldest (important for trails)
     pGroup->m_iValidCount += iNewCount; // keep system from destroying itself
     pGroup->m_vGroupMoveDelta.setZero();
     if (!m_bInterpolateEmitterPos)
@@ -528,14 +529,19 @@ void VisParticleEmitter_cl::OnXMLExchangeFinished(VisParticleGroupDescriptor_cl 
   }
 }
 
+#define VISPARTICLEEMITTER_VERSION1 1
+#define VISPARTICLEEMITTER_VERSION2 2
+#define VISPARTICLEEMITTER_VERSION3 3
+#define VISPARTICLEEMITTER_VERSION_CURRENT VISPARTICLEEMITTER_VERSION3
 
 V_IMPLEMENT_SERIALX( VisParticleEmitter_cl);
 void VisParticleEmitter_cl::SerializeX( VArchive &ar )
 {
-  char iVersion = 2;
+  char iVersion = VISPARTICLEEMITTER_VERSION3;
   if (ar.IsLoading())
   {
-    ar >> iVersion; VASSERT(iVersion<=2 && "Invalid version number");
+    ar >> iVersion;
+    VASSERT_MSG(iVersion <= VISPARTICLEEMITTER_VERSION3, "Invalid version number");
     ar >> (int &)m_eType;
     ar >> m_vParam;
     ar >> m_fConeAngle >> m_fMinConeAngle;
@@ -550,14 +556,17 @@ void VisParticleEmitter_cl::SerializeX( VArchive &ar )
     ar >> m_fSpawnCountLookupPos;
     ar >> m_fSpawnTimeCtr;
     m_spCountCurve = VCurve2D::DoArchiveLookupExchange(ar,m_spCountCurve);
-    if (iVersion>=1)
+    if (iVersion>=VISPARTICLEEMITTER_VERSION1)
     {
       m_spEmitterMask = VisBitmap_cl::DoArchiveExchange(ar, NULL);
       if (m_spEmitterMask !=NULL && !m_spEmitterMask->IsLoaded())
         m_spEmitterMask = NULL;
     }
-    if (iVersion>=2)
+    if (iVersion>=VISPARTICLEEMITTER_VERSION2)
       ar >> m_bEmitFromSurface;
+
+    if(Vision::Editor.IsInEditor())
+      m_sEmitterMaskFilename = m_spEmitterMask ? m_spEmitterMask->GetFilename() : NULL;
   } 
   else
   {
@@ -608,7 +617,7 @@ void VisParticleEmitterList_cl::SerializeX( VArchive &ar )
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

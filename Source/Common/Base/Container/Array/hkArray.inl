@@ -665,39 +665,39 @@ int hkInplaceArray<T,N,Allocator>::stillInplaceUsingMask() const
 // Inplace array 16
 //
 
-template <typename T, unsigned N>
-hkArray<T>& hkInplaceArrayAligned16<T,N>::operator= (const hkArrayBase<T>& a)
+template <typename T, unsigned N, typename Allocator>
+hkArray<T>& hkInplaceArrayAligned16<T,N, Allocator>::operator= (const hkArrayBase<T>& a)
 {
-	return hkArray<T>::operator=(a);
+	return hkArray<T, Allocator>::operator=(a);
 }
 
-template <typename T, unsigned N>
-hkBool hkInplaceArrayAligned16<T,N>::wasReallocated() const
+template <typename T, unsigned N, typename Allocator>
+hkBool hkInplaceArrayAligned16<T,N, Allocator>::wasReallocated() const
 {
 	return hkUlong(this->m_data) != hkUlong(m_storage);
 }
 
-template <typename T, unsigned N>
-hkArray<T>& hkInplaceArrayAligned16<T,N>::operator= (const hkInplaceArrayAligned16<T,N>& a)
+template <typename T, unsigned N, typename Allocator>
+hkArray<T>& hkInplaceArrayAligned16<T,N, Allocator>::operator= (const hkInplaceArrayAligned16<T,N>& a)
 {
-	return hkArray<T>::operator=(a);
+	return hkArray<T, Allocator>::operator=(a);
 }
 
-template <typename T, unsigned N>
-HK_FORCE_INLINE hkInplaceArrayAligned16<T,N>::hkInplaceArrayAligned16(int size)
-	: hkArray<T>( (T*)&m_storage[0], size, N)
+template <typename T, unsigned N, typename Allocator>
+HK_FORCE_INLINE hkInplaceArrayAligned16<T,N, Allocator>::hkInplaceArrayAligned16(int size)
+	: hkArray<T, Allocator>( (T*)&m_storage[0], size, N)
 {
 }
 
-template <typename T, unsigned N>
-int hkInplaceArrayAligned16<T,N>::stillInplaceUsingMask() const
+template <typename T, unsigned N, typename Allocator>
+int hkInplaceArrayAligned16<T,N, Allocator>::stillInplaceUsingMask() const
 {
 	return hkArray<T>::m_capacityAndFlags & hkArrayBase<T>::DONT_DEALLOCATE_FLAG;
 }
 #undef HK_COMPUTE_OPTIMIZED_CAPACITY
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -12,7 +12,7 @@ using System.Diagnostics;
 using System.Windows.Forms;
 using CSharpFramework;
 using CSharpFramework.Helper;
-using CSharpFramework.Tests;
+using CSharpFrameworkTests;
 using ManagedFramework;
 using CSharpFramework.Actions;
 using CSharpFramework.ActionRecording;
@@ -20,8 +20,9 @@ using System.Threading;
 using System.Drawing;
 using CSharpFramework.Math;
 using CSharpFramework.Contexts;
+using Editor;
 
-namespace Editor.Tests
+namespace EditorTests
 {
   /// <summary>
   /// Application specific implementation of the test helper utilities.
@@ -121,9 +122,15 @@ namespace Editor.Tests
     /// <param name="subDir"></param>
     public void CreateLocalCopy(string subDir)
     {
+      DirectoryInfo sourceDir = new DirectoryInfo(Path.Combine(TestManager.Helpers.TestDataSourceDir, subDir));
+      DirectoryInfo targetDir = new DirectoryInfo(Path.Combine(TestManager.Helpers.TestDataDir, subDir));
+
+      // Before copying over any files, ensure that there are no files/folders in the target directory that are NOT in the source folder
+      FileHelper.CleanFiles(sourceDir, targetDir);
+
       FileHelper.CopyFiles(
-        new DirectoryInfo(Path.Combine(TestManager.Helpers.TestDataSourceDir, subDir)), "*.*", 
-        new DirectoryInfo(Path.Combine(TestManager.Helpers.TestDataDir, subDir)), true, true, FileAttributes.Hidden, true);
+        sourceDir, "*.*", 
+        targetDir, true, true, FileAttributes.Hidden, true);
 
       // since the checked out files are write protected, remove the write protection in the copy
       Process attribExec = new Process();
@@ -148,6 +155,7 @@ namespace Editor.Tests
       }
 
     }
+
 
     /// <summary>
     /// see ITestHelpers.CloseTestProject
@@ -361,7 +369,7 @@ namespace Editor.Tests
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

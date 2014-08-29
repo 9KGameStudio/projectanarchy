@@ -151,7 +151,7 @@ namespace VisionManaged
       return false;
 
     VCompiledTechnique *pTech = pEffect->GetDefaultTechnique();
-    for (int i=0;i<pTech->GetShaderCount();i++)
+    for (unsigned int i=0;i<pTech->GetShaderCount();i++)
     {
       const VCompiledShaderPass *pShader = pTech->GetShader(i);
       // use this as criteria for displacements:
@@ -225,7 +225,7 @@ namespace VisionManaged
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

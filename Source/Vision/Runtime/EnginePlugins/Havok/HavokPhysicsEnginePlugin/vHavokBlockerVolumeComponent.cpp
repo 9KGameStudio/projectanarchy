@@ -9,6 +9,7 @@
 #include <Vision/Runtime/EnginePlugins/Havok/HavokPhysicsEnginePlugin/HavokPhysicsEnginePluginPCH.h>
 #include <Vision/Runtime/EnginePlugins/Havok/HavokPhysicsEnginePlugin/vHavokBlockerVolumeComponent.hpp>
 #include <Vision/Runtime/EnginePlugins/Havok/HavokPhysicsEnginePlugin/vHavokShapeFactory.hpp>
+#include <Vision/Runtime/EnginePlugins/Havok/HavokPhysicsEnginePlugin/vHavokShapeCache.hpp>
 #include <Vision/Runtime/EnginePlugins/Havok/HavokPhysicsEnginePlugin/vHavokPhysicsModule.hpp>
 #include <Vision/Runtime/EnginePlugins/Havok/HavokPhysicsEnginePlugin/vHavokConversionUtils.hpp>
 
@@ -207,21 +208,10 @@ void vHavokBlockerVolumeComponent::CreatePhysicsObject()
   }
   
   // Create the shape.
-  hkRefPtr<hkpShape> shape;
-  switch(m_iShapeType)
-  {
-  case VHavokBlockerVolumeShapeType_CONVEX:
-    shape = vHavokShapeFactory::CreateConvexHullShapeFromMesh(pMesh, pCustomVolume->GetScale(), NULL, 0);
-    break;
-  case VHavokBlockerVolumeShapeType_MESH:
-    shape = vHavokShapeFactory::CreateShapeFromMesh(pMesh, pCustomVolume->GetScale(), 
-      NULL, 0 /* Do not cache shape for the time being*/);
-    break;
-  default:
-    VASSERT_MSG(false, "Unknown shape type.");
-    break;
-  }
+  const unsigned int uiCreationFlags = vHavokShapeFactory::VShapeCreationFlags_CACHE_SHAPE | vHavokShapeFactory::VShapeCreationFlags_USE_VCOLMESH |
+    ((m_iShapeType == VHavokBlockerVolumeShapeType_CONVEX) ? vHavokShapeFactory::VShapeCreationFlags_CONVEX : vHavokShapeFactory::VShapeCreationFlags_MESH);
 
+  hkRefPtr<hkpShape> shape = vHavokShapeFactory::CreateShapeFromMesh(pMesh, pCustomVolume->GetScale(), uiCreationFlags);
   if (shape.val() == NULL)
     return;
 
@@ -256,8 +246,14 @@ void vHavokBlockerVolumeComponent::DestroyPhysicsObject()
   if (IsEnabled())
     RemoveFromPhysicsWorld();
 
+  m_pRigidBody->markForRead();
+  const hkpShape* pShape = m_pRigidBody->getCollidable()->getShape();
+  m_pRigidBody->unmarkForRead();
+
   m_pRigidBody->removeReference();
   m_pRigidBody = NULL;
+
+  vHavokShapeCache::RemoveShape(pShape);
 }
 
 //------------------------------------------------------------------------------
@@ -283,10 +279,14 @@ void vHavokBlockerVolumeComponent::RemoveFromPhysicsWorld()
   VASSERT(m_pRigidBody != NULL);
   VASSERT_MSG(m_pRigidBody->getWorld() != NULL, "Blocker Volume not added to physics world.");
 
-  hkpWorld* pPhysicsWorld = vHavokPhysicsModule::GetInstance()->GetPhysicsWorld();
+  vHavokPhysicsModule *pModule = vHavokPhysicsModule::GetInstance();
+  VASSERT(pModule != NULL);
+
+  hkpWorld* pPhysicsWorld = pModule->GetPhysicsWorld();
   if (pPhysicsWorld != NULL)
   {
     pPhysicsWorld->markForWrite();
+    pModule->ActivateLinkedCollidables(m_pRigidBody);
     pPhysicsWorld->removeEntity(m_pRigidBody);
     pPhysicsWorld->unmarkForWrite();
 
@@ -543,7 +543,7 @@ END_VAR_TABLE
 //------------------------------------------------------------------------------
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

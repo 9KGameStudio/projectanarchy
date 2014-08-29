@@ -11,7 +11,7 @@
 #include <Common/Base/System/Io/Writer/hkStreamWriter.h>
 
 	/// Wraps and compresses an existing stream
-class hkCompressedStreamWriter : public hkStreamWriter
+class HK_EXPORT_COMMON hkCompressedStreamWriter : public hkStreamWriter
 {
 	public:
 
@@ -46,7 +46,7 @@ class hkCompressedStreamWriter : public hkStreamWriter
 #endif // HKBASE_BUFFERED_STREAMWRITER_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

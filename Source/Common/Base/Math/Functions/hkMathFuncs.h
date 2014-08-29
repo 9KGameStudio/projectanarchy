@@ -149,7 +149,7 @@ namespace hkMath
 	template<typename T>
 	HK_FORCE_INLINE static T HK_CALL square( const T& r ) 
 	{ 
-		return hkMath::pow<2,T>(r);
+		return r*r;
 	}
 #endif
 
@@ -1002,116 +1002,6 @@ namespace hkMath
 	}
 #endif
 
-#if !defined(HK_MATH_atan2Approximation) && !defined(HK_MATH_atan2Approximation_f)
-	HK_FORCE_INLINE static hkFloat32 HK_CALL atan2Approximation( const hkFloat32& y, const hkFloat32& x )
-	{
-		return hkMath::atan2(y,x);
-	}
-#endif
-#if !defined(HK_MATH_atan2Approximation) && !defined(HK_MATH_atan2Approximation_d)
-	HK_FORCE_INLINE static hkDouble64 HK_CALL atan2Approximation( const hkDouble64& y, const hkDouble64& x )
-	{
-		return hkMath::atan2(y,x);
-	}
-#endif
-
-	/// Old deprecated function, do not use in new code.
-	/// - Average absolute error 0.003315
-	/// - Max absolute error 0.016747
-	/// - About 4x faster than ::atan2f
-	/// \warning x and y parameter names are wrong! You have to call this with the same
-	/// parameter sequence as ::atan2f
-	HK_FORCE_INLINE static hkFloat32 HK_CALL atan2fApproximation( hkFloat32 x, hkFloat32 y ) 
-	{
-		HK_WARN_ONCE(0x890c71ad, "hkMath::atan2fApproximation is deprecated. Consider using hkMath::atan2Approximation or the methods in hkVector4fUtil.");
-		hkFloat32 fx = hkMath::fabs(x);
-		hkFloat32 fy = hkMath::fabs(y);
-
-		hkFloat32 result;
-		const hkFloat32 c2 = hkFloat32(-0.121079f);
-		const hkFloat32 c3 = HK_FLOAT_PI * hkFloat32(0.25f) - hkFloat32(1) - c2;
-
-		{
-			if ( fx <= fy )
-			{
-				fy += HK_FLOAT_EPSILON;
-				hkFloat32 a = fx / fy;
-				result = a;
-				result += c2 * a*a;
-				result += c3 * a*a*a;
-			}
-			else
-			{
-				fx += HK_FLOAT_EPSILON;
-				hkFloat32 a = fy / fx;
-				result = a;
-				result += c2 * a*a;
-				result += c3 * a*a*a;
-				result = HK_FLOAT_PI * hkFloat32(0.5f) - result;
-			}
-		}
-
-		if ( y < hkFloat32(0))
-		{
-			result = HK_FLOAT_PI - result;
-		}
-
-		if ( x < hkFloat32(0) )
-		{
-			result = -result;
-		}
-		return result;
-	}
-
-	/// Old deprecated function, do not use in new code
-	/// - Average absolute error 0.003315
-	/// - Max absolute error 0.016747
-	/// - About 4x faster than ::atan2f
-	/// \warning x and y parameter names are wrong! You have to call this with the same
-	/// parameter sequence as ::atan2f
-	HK_FORCE_INLINE static hkDouble64 HK_CALL atan2fApproximation( hkDouble64 x, hkDouble64 y ) 
-	{
-		HK_WARN_ONCE(0x890c71ad, "hkMath::atan2fApproximation is deprecated. Consider using hkMath::atan2Approximation or the methods in hkVector4dUtil.");
-		hkDouble64 fx = hkMath::fabs(x);
-		hkDouble64 fy = hkMath::fabs(y);
-
-		hkDouble64 result;
-		const hkDouble64 c2 = hkDouble64(-0.121079f);
-		const hkDouble64 c3 = HK_DOUBLE_PI * hkDouble64(0.25f) - hkDouble64(1) - c2;
-
-		{
-			if ( fx <= fy )
-			{
-				fy += HK_DOUBLE_EPSILON;
-				hkDouble64 a = fx / fy;
-				result = a;
-				result += c2 * a*a;
-				result += c3 * a*a*a;
-			}
-			else
-			{
-				fx += HK_DOUBLE_EPSILON;
-				hkDouble64 a = fy / fx;
-				result = a;
-				result += c2 * a*a;
-				result += c3 * a*a*a;
-				result = HK_DOUBLE_PI * hkDouble64(0.5f) - result;
-			}
-		}
-
-		if ( y < hkDouble64(0))
-		{
-			result = HK_DOUBLE_PI - result;
-		}
-
-		if ( x < hkDouble64(0) )
-		{
-			result = -result;
-		}
-		return result;
-	}
-
-
 #if !defined(HK_MATH_logApproximation) && !defined(HK_MATH_logApproximation_f)
 	HK_FORCE_INLINE static hkFloat32 HK_CALL logApproximation(const hkFloat32& r)
 	{
@@ -1334,12 +1224,31 @@ namespace hkMath
 
 		return cv;
 	}
+
+	/// swap the elements, aligned 
+	template<typename T>
+	HK_FORCE_INLINE void HK_CALL swapAligned(T& x, T& y)
+	{
+		HK_ALIGN_REAL(T) t(x);
+		x = y;
+		y = t;
+	}
+
+	/// swap the elements, no alignment
+	template<typename T>
+	HK_FORCE_INLINE void HK_CALL swap(T& x, T& y)
+	{
+		T t(x);
+		x = y;
+		y = t;
+	}
+
 }
 
 #endif // HK_MATH_MATH_FUNCS_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

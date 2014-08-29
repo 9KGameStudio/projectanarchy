@@ -18,32 +18,39 @@
 class VAppWin : public VAppBase
 {
 public:
-  VAppWin(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow);
-  virtual ~VAppWin();
+  VAPP_IMPEXP VAppWin(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow);
+  VAPP_IMPEXP virtual ~VAppWin();
 
-  virtual void PlatformInit() HKV_OVERRIDE;
-  virtual void PlatformInitSettings() HKV_OVERRIDE;
-  virtual void PlatformMapInput() HKV_OVERRIDE;
+  VAPP_IMPEXP virtual void PlatformInit() HKV_OVERRIDE;
+  VAPP_IMPEXP virtual void PlatformInitSettings() HKV_OVERRIDE;
+  VAPP_IMPEXP virtual void PlatformMapInput() HKV_OVERRIDE;
 
-  virtual void UpdateApplicationState() HKV_OVERRIDE;
-  virtual void SetupPlatformRootFileSystem() HKV_OVERRIDE;
-  virtual VString GetApplicationDataDirectory() HKV_OVERRIDE;
-  virtual VString GetPlatformStorageDirectory() HKV_OVERRIDE;
-  virtual VString GetPlatformCacheDirectory() HKV_OVERRIDE;
+  VAPP_IMPEXP virtual void UpdateApplicationState() HKV_OVERRIDE;
+  VAPP_IMPEXP virtual void SetupPlatformRootFileSystem() HKV_OVERRIDE;
+  VAPP_IMPEXP virtual VString GetApplicationDataDirectory() HKV_OVERRIDE;
+  VAPP_IMPEXP virtual VString GetPlatformStorageDirectory() HKV_OVERRIDE;
+  VAPP_IMPEXP virtual VString GetPlatformCacheDirectory() HKV_OVERRIDE;
 
-  virtual VAppHelper::VPlatformThreadingModel GetThreadingModel() HKV_OVERRIDE;
+  VAPP_IMPEXP virtual unsigned int GetNumCommandLineArguments() const HKV_OVERRIDE;
+  VAPP_IMPEXP virtual const char* GetCommandLineArgument(unsigned int index) const HKV_OVERRIDE;
+
+  VAPP_IMPEXP virtual VAppHelper::VPlatformThreadingModel GetThreadingModel() HKV_OVERRIDE;
 
 protected:
-	bool CheckFullscreenResolution(int iAdapter, int desiredX, int desiredY, int* selectedX, int* selectedY);
+  VAPP_IMPEXP bool CheckFullscreenResolution(int iAdapter, int desiredX, int desiredY, int* selectedX, int* selectedY);
+
+private:
+  void RetrieveCommandLine();
 
 private:
   VString m_sInitialWorkingDirectory;
+  VStrList m_commandLineArguments;
 };
 
 #endif //__V_APP_BASE_WIN_HPP
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

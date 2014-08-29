@@ -9,7 +9,7 @@
 #include <Vision/Runtime/EnginePlugins/ThirdParty/FmodEnginePlugin/FmodEnginePlugin.hpp>
 #include <Vision/Runtime/EnginePlugins/ThirdParty/FmodEnginePlugin/VFmodManager.hpp>
 
-#include <Vision/Runtime/Base/System/Memory/VMemDbg.hpp>
+
 
 
 // -------------------------------------------------------------------------- //
@@ -144,7 +144,7 @@ VFmodCollisionMeshInstance* VFmodCollisionMeshInstanceCollection::SearchCollisio
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140625)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

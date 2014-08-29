@@ -8,9 +8,6 @@
 
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/VisionEnginePluginPCH.h>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Terrain/Bitmap/BlittingHelpers.hpp>
-#include <Vision/Runtime/Base/System/Memory/VMemDbg.hpp>
-
-
 
 bool BitmapInfo_t::ScissorRect(int *pRect, int &iOfsX, int &iOfsY) const
 {
@@ -31,38 +28,45 @@ bool BitmapInfo_t::ScissorRect(int *pRect, int &iOfsX, int &iOfsY) const
 
 hkvVec4 BitmapInfo_t::GetColorAt(int iX, int iY) const
 {
-  VASSERT(iX>=0 && iX<m_iSize[0]);
-  VASSERT(iY>=0 && iY<m_iSize[1]);
-  float *pAsFloats;
-  UBYTE *pAsBytes;
-  VColorRef *pAsCRef;
-  hkvVec4* pAsVector;
+  VASSERT(iX >= 0 && iX < m_iSize[0]);
+  VASSERT(iY >= 0 && iY < m_iSize[1]);
 
-  switch (m_eComponentType)
+  int iOffset = m_iStride * iY + iX;
+
+  switch(m_eComponentType)
   {
-    case ByteLuminance:
-      pAsBytes = (UBYTE *)m_pData;
-      pAsBytes += m_iStride*iY + iX;
-      return hkvVec4 (pAsBytes[0]*(1.f/255.f),pAsBytes[0]*(1.f/255.f),pAsBytes[0]*(1.f/255.f),1.f);
+  case ByteLuminance:
+    {
+      UBYTE* pAsBytes = reinterpret_cast<UBYTE*>(m_pData);
+      float fLuminance = pAsBytes[iOffset] * (1.0f / 255.0f);
+      return hkvVec4(fLuminance, fLuminance, fLuminance, 1.0f);
+    }
 
-    case FloatLuminance:
-      pAsFloats = (float *)m_pData;
-      pAsFloats += m_iStride*iY + iX;
-      return hkvVec4 (pAsFloats[0],pAsFloats[1],pAsFloats[2],1.f);
+  case FloatLuminance:
+    {
+      float* pAsFloats = reinterpret_cast<float*>(m_pData);
+      float fLuminance = pAsFloats[iOffset];
+      return hkvVec4(fLuminance, fLuminance, fLuminance, 1.0f);
+    }
 
-    case ByteRGBA:
-      pAsCRef = (VColorRef *)m_pData;
-      pAsCRef += m_iStride*iY + iX;
-      return hkvVec4 (pAsCRef->r*(1.f/255.f),pAsCRef->g*(1.f/255.f),pAsCRef->b*(1.f/255.f),pAsCRef->a*(1.f/255.f));
+  case ByteRGBA:
+    {
 
-    case FloatRGBA:
-      pAsVector = (hkvVec4*) m_pData;
-      return pAsVector[m_iStride*iY + iX];
-    default: 
-      VASSERT(!"Unsupported component type");
+      VColorRef* pAsColorRef = reinterpret_cast<VColorRef*>(m_pData);
+      return pAsColorRef[iOffset].getAsVec4();
+    }
+
+  case FloatRGBA:
+    {
+      hkvVec4* pAsVector = reinterpret_cast<hkvVec4*>(m_pData);
+      return pAsVector[iOffset];
+    }
+
+  default:
+    VASSERT_MSG(false, "Unsupported component type");
   }
 
-  return hkvVec4();
+  return hkvVec4::ZeroVector();
 }
 
 void BitmapInfo_t::SetColorAt(int iX, int iY, const hkvVec4& vColor)
@@ -316,7 +320,7 @@ void BlittingHelpers::StretchBlitBitmap(const VisBitmap_cl *pSrcBitmap, const hk
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

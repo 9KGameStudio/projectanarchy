@@ -12,12 +12,12 @@
 #include <Common/Base/Types/Color/hkColor.h>
 
 /// hkaAnimationBinding meta information
-extern const class hkClass hkaAnimationPreviewColorClass;
-extern const class hkClass hkaAnimationPreviewColorContainerClass;
+extern HK_EXPORT_ANIMATION const class hkClass hkaAnimationPreviewColorClass;
+extern HK_EXPORT_ANIMATION const class hkClass hkaAnimationPreviewColorContainerClass;
 
 
 // Utility class to store hkaAnimationPreviewColor objects
-class hkaAnimationPreviewColorContainer : public hkReferencedObject
+class HK_EXPORT_ANIMATION hkaAnimationPreviewColorContainer : public hkReferencedObject
 {
 
 public:
@@ -45,7 +45,7 @@ public:
 #endif // HK_ANIMATION_PREVIEW_COLOR_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -103,10 +103,11 @@ public:
   /// \brief
   ///   Finds an existing resource by its filename
   GUI_IMPEXP VManagedResource *FindResource(const char *szFilename, ResourceType type, const char *szPath=NULL) const;
-
+  
   /// \brief
   ///   Creates a resource by parsing an XML node
   GUI_IMPEXP VManagedResource *CreateResource(TiXmlElement *pNode, const char *szPath);
+  using VisResourceManager_cl::CreateResource; // Do not hide base class function
 
   /// \brief
   ///   Loads a cursor resource (texture filename or XML filename)
@@ -506,7 +507,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

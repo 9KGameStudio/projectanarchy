@@ -19,6 +19,7 @@ extern const hkClass hkbAiControlDriverInfoClass;
 class hkbAiControlDriverInfo : public hkReferencedObject
 {
 public:
+	//+version(1)
 	//+vtable(true)
 	HK_DECLARE_CLASS_ALLOCATOR( HK_MEMORY_CLASS_BEHAVIOR );
 	HK_DECLARE_REFLECTION();
@@ -97,12 +98,15 @@ public:
 	hkReal m_userEdgeTolerance; //+default(0.25f)
 								//hk.Description("A character that is within this distance of a user edge is considered to have entered the user edge")
 								//+hk.RangeReal(absmin=0.001,softmax=2)
+
+	hkBool m_pullThroughInternalVertices; //+default(true)
+										  //hk.Description("If true, attempt to dynamically improve paths by finding more efficient routes around internal nav mesh vertices. This is only performed by edge-based steering.")
 };
 
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -28,7 +28,7 @@ class hkpConstraintMotor;
 /// The proceeding atoms apply a kind of a constraint (linear, angular, limit, motor, etc.) in relation to one or more
 /// of the axes of the specified local bases. See individual descriptions of atoms for more info.
 ///
-struct hkpConstraintAtom
+struct HK_EXPORT_PHYSICS hkpConstraintAtom
 {
 	public:
 
@@ -145,9 +145,9 @@ struct hkpConstraintAtom
 /// Atom that computes common quantities for the stabilized versions of the atoms.
 /// Specifically, it computes the arms where the joint forces will be applied,
 /// and the maximum impulse that can be applied by the solver in a step to maintain the constraints.
-struct hkpSetupStabilizationAtom : public hkpConstraintAtom
+struct HK_EXPORT_PHYSICS hkpSetupStabilizationAtom : public hkpConstraintAtom
 {
-	// +version(2)
+	// +version(3)
 	public:
 
 		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_CONSTRAINT, hkpSetupStabilizationAtom);
@@ -170,8 +170,8 @@ struct hkpSetupStabilizationAtom : public hkpConstraintAtom
 
 		HK_FORCE_INLINE int numSolverResults() const { return 0; }
 
-		/// Sets the maximum angle that can be swept by an object in a solver time-step. Used when estimating the maximum impulse
-		/// the solver can apply during a step.
+		/// Sets the maximum angle that can be swept by an object in a solver time-step.
+		/// Used when estimating the maximum impulse the solver can apply during a step.
 		HK_FORCE_INLINE void setMaxAngle(const hkReal maxAngle) { m_maxAngle = maxAngle; }
 
 		/// Gets the maximum angle
@@ -191,19 +191,26 @@ struct hkpSetupStabilizationAtom : public hkpConstraintAtom
 
 	public:
 
-		/// True if the atom is enabled
+		/// True if this atom is enabled.
 		hkBool m_enabled;	//+default(false)
 
-		/// The maximum linear impulse the solver can apply to maintain the constraints. This clamps the maximum impulse estimated
-		/// using the maxAngle
+#if defined(HK_REAL_IS_DOUBLE)
+		// padding to 32 bytes
+		hkUint8 m_padding[5]; //+nosave
+#else
+		// Padding to 16 bytes
+		hkUint8	m_padding[1]; //+nosave
+#endif
+		/// The maximum linear impulse the solver can apply to maintain the constraints.
+		/// This clamps the maximum impulse estimated using the maxAngle.
 		hkReal m_maxLinImpulse;	//+default(HK_REAL_MAX)
 
-		/// The maximum angular impulse the solver can apply to maintain the constraints. This clamps the maximum impulse estimated
-		/// using the maxAngle
+		/// The maximum angular impulse the solver can apply to maintain the constraints.
+		/// This clamps the maximum impulse estimated using the maxAngle.
 		hkReal m_maxAngImpulse;	//+default(HK_REAL_MAX)
 
-		/// The maximum angle that can be swept by an object in a solver time-step. Used when estimating the maximum impulse
-		/// the solver can apply during a step.
+		/// The maximum angle that can be swept by an object in a solver time-step.
+		/// Used when estimating the maximum impulse the solver can apply during a step.
 		hkReal m_maxAngle;		//+default(HK_REAL_HIGH)
 };
 
@@ -212,7 +219,7 @@ struct hkpSetupStabilizationAtom : public hkpConstraintAtom
 /// The solver is not allowed to apply more than hkpSetupStabilizationAtom::m_maxAngImpulse to maintain the constraint.
 /// The constraint gets solved in block-form, on all 3 axes. The constraint Jacobian blocks are quaternion-based and therefore,
 /// near the point where the constraint is satisfied, they have full rank and a determinant of +/-1.
-struct hkp3dAngConstraintAtom : public hkpConstraintAtom
+struct HK_EXPORT_PHYSICS hkp3dAngConstraintAtom : public hkpConstraintAtom
 {
 	//+version(1)
 	public:
@@ -245,7 +252,7 @@ struct hkp3dAngConstraintAtom : public hkpConstraintAtom
 /// solver is allowed to apply no more than the yield strength force. However, if the violation grows beyond the maximum
 /// allowed distance, the solver is allowed to apply forces up to the ultimate strength force. The actual force limit is
 /// linearly interpolated between the yield and the ultimate values, based on the violation amount.
-struct hkpDeformableLinConstraintAtom : public hkpConstraintAtom
+struct HK_EXPORT_PHYSICS hkpDeformableLinConstraintAtom : public hkpConstraintAtom
 {
 	public:
 		//+version(1)
@@ -298,7 +305,7 @@ struct hkpDeformableLinConstraintAtom : public hkpConstraintAtom
 /// angle, the solver is allowed to apply no more than the yield strength torque. However, if the violation grows beyond
 /// the maximum allowed angle, the solver is allowed to apply torques up to the ultimate strength torque. The actual
 /// torque limit is linearly interpolated between the yield and the ultimate values, based on the violation amount.
-struct hkpDeformableAngConstraintAtom : public hkpConstraintAtom
+struct HK_EXPORT_PHYSICS hkpDeformableAngConstraintAtom : public hkpConstraintAtom
 {
 	public:
 		//+version(1)
@@ -348,7 +355,7 @@ struct hkpDeformableAngConstraintAtom : public hkpConstraintAtom
 /// Atom that fully eliminates relative linear movement of bodies' pivots. This is the most common atom.
 /// It is advised to place it at the end of the list of atoms to minimize results error.
 /// This atom eliminates 3 degrees of freedom and returns 3 solver results. It has no parameters.
-struct hkpBallSocketConstraintAtom : public hkpConstraintAtom
+struct HK_EXPORT_PHYSICS hkpBallSocketConstraintAtom : public hkpConstraintAtom
 {
 	//+version(5)
 	public:
@@ -468,7 +475,7 @@ struct hkpBallSocketConstraintAtom : public hkpConstraintAtom
 
 
 /// Atom that enforces a minimum and maximum distance between the pivot points of each body.
-struct hkpStiffSpringConstraintAtom : public hkpConstraintAtom
+struct HK_EXPORT_PHYSICS hkpStiffSpringConstraintAtom : public hkpConstraintAtom
 {
 	//+version(1)
 	public:
@@ -497,7 +504,7 @@ struct hkpStiffSpringConstraintAtom : public hkpConstraintAtom
 
 /// Atom which specifies constraint spaces and pivot points in the local spaces of each body.
 /// Pivot points are stored in the translation part of the transforms.
-struct hkpSetLocalTransformsConstraintAtom : public hkpConstraintAtom
+struct HK_EXPORT_PHYSICS hkpSetLocalTransformsConstraintAtom : public hkpConstraintAtom
 {
 	public:
 
@@ -521,7 +528,7 @@ struct hkpSetLocalTransformsConstraintAtom : public hkpConstraintAtom
 /// Atom which specifies pivot points in the local spaces of each body.
 /// Note that this does not overwrite the constraint space's orientation.
 /// This is used when constraint orientation is irrelevant, e.g., in hkpBallAndSocketConstraintData.
-struct hkpSetLocalTranslationsConstraintAtom : public hkpConstraintAtom
+struct HK_EXPORT_PHYSICS hkpSetLocalTranslationsConstraintAtom : public hkpConstraintAtom
 {
 	public:
 
@@ -545,7 +552,7 @@ struct hkpSetLocalTranslationsConstraintAtom : public hkpConstraintAtom
 /// Atom which specifies constraint spaces in the local spaces of each body.
 /// Note that this does not overwrite the pivot points.
 /// This is used when the constraint space must be reoriented for some atoms in more complex hkConstraintDatas, e.g., in the hkpWheelConstraintData.
-struct hkpSetLocalRotationsConstraintAtom : public hkpConstraintAtom
+struct HK_EXPORT_PHYSICS hkpSetLocalRotationsConstraintAtom : public hkpConstraintAtom
 {
 	public:
 
@@ -567,7 +574,7 @@ struct hkpSetLocalRotationsConstraintAtom : public hkpConstraintAtom
 
 
 
-struct hkpOverwritePivotConstraintAtom : public hkpConstraintAtom
+struct HK_EXPORT_PHYSICS hkpOverwritePivotConstraintAtom : public hkpConstraintAtom
 {
 	public:
 
@@ -595,7 +602,7 @@ struct hkpOverwritePivotConstraintAtom : public hkpConstraintAtom
 
 /// Atom which eliminates relative linear velocity of bodies' pivot points along one specified axis.
 /// This is used when relative linear movement is only partly constrained as it is in e.g., prismatic or point-to-plane constraints.
-struct hkpLinConstraintAtom : public hkpConstraintAtom
+struct HK_EXPORT_PHYSICS hkpLinConstraintAtom : public hkpConstraintAtom
 {
 	public:
 
@@ -624,7 +631,7 @@ struct hkpLinConstraintAtom : public hkpConstraintAtom
 
 /// Atom which softens/controls relative linear velocity of bodies' pivot points along one specified axis.
 /// This results in a spring-like reaction. It is used in the hkpWheelConstraintData.
-struct hkpLinSoftConstraintAtom : public hkpConstraintAtom
+struct HK_EXPORT_PHYSICS hkpLinSoftConstraintAtom : public hkpConstraintAtom
 {
 	public:
 
@@ -655,7 +662,7 @@ struct hkpLinSoftConstraintAtom : public hkpConstraintAtom
 
 /// Atom which limits allowed relative distance between bodies' pivot points along one specified axis.
 /// This allows unconstrained movement within the specified range, and applies hard limits at its ends.
-struct hkpLinLimitConstraintAtom : public hkpConstraintAtom
+struct HK_EXPORT_PHYSICS hkpLinLimitConstraintAtom : public hkpConstraintAtom
 {
 	public:
 
@@ -687,7 +694,7 @@ struct hkpLinLimitConstraintAtom : public hkpConstraintAtom
 /// Atom which eliminates two degrees of freedom of angular movement and allows relative rotation along a specified axis only.
 /// Angular-constraint atoms are often combined with linear-constraint atoms, e.g., this atoms combined with the ball-and-socket
 /// atom forms a hkpHingeConstraintData.
-struct hkp2dAngConstraintAtom : public hkpConstraintAtom
+struct HK_EXPORT_PHYSICS hkp2dAngConstraintAtom : public hkpConstraintAtom
 {
 	public:
 
@@ -715,7 +722,7 @@ struct hkp2dAngConstraintAtom : public hkpConstraintAtom
 
 /// Atom which eliminates one, two, or three degrees of freedom of angular movement.
 /// Note: this is only tested for eliminating three degrees of freedom.
-struct hkpAngConstraintAtom : public hkpConstraintAtom
+struct HK_EXPORT_PHYSICS hkpAngConstraintAtom : public hkpConstraintAtom
 {
 	public:
 
@@ -752,7 +759,7 @@ struct hkpAngConstraintAtom : public hkpConstraintAtom
 /// (which controls the stiffness of the constraint). The best solution is to use a ragdoll
 /// constraint, which has in-built dynamic stability-enforcing algorithms. More information
 /// is available in the Constraints documentation section.
-struct hkpAngLimitConstraintAtom : public hkpConstraintAtom
+struct HK_EXPORT_PHYSICS hkpAngLimitConstraintAtom : public hkpConstraintAtom
 {
 	public:
 
@@ -783,7 +790,7 @@ struct hkpAngLimitConstraintAtom : public hkpConstraintAtom
 
 /// Atom which limits allowed relative angle between bodies' rotations along one specified rotation axis.
 /// This constraint allows unconstrained movement within the specified range, and applies hard limits at its ends.
-struct hkpTwistLimitConstraintAtom : public hkpConstraintAtom
+struct HK_EXPORT_PHYSICS hkpTwistLimitConstraintAtom : public hkpConstraintAtom
 {
 	public:
 
@@ -818,7 +825,7 @@ struct hkpTwistLimitConstraintAtom : public hkpConstraintAtom
 
 /// Atom which limits allowed relative angle between bodies' rotations as measured between two chosen axes.
 /// This allows unconstrained movement within the specified range, and applies hard limits at its ends.
-struct hkpConeLimitConstraintAtom : public hkpConstraintAtom
+struct HK_EXPORT_PHYSICS hkpConeLimitConstraintAtom : public hkpConstraintAtom
 {
 	public:
 
@@ -877,7 +884,7 @@ struct hkpConeLimitConstraintAtom : public hkpConstraintAtom
 
 
 /// Atom which applies friction torque along one, two, or three specified rotation axes.
-struct hkpAngFrictionConstraintAtom : public hkpConstraintAtom
+struct HK_EXPORT_PHYSICS hkpAngFrictionConstraintAtom : public hkpConstraintAtom
 {
 	public:
 
@@ -917,7 +924,7 @@ struct hkpAngFrictionConstraintAtom : public hkpConstraintAtom
 /// The atom accesses those variables using memory offsets (stored in the atom's members).
 /// Also when the motor is to operate in a range exceeding the [-Pi, Pi] range it must have a reference
 /// onto solver results of a corresponding hkpAngLimitConstraintAtom to retrieve the proper angle value.
-struct hkpAngMotorConstraintAtom : public hkpConstraintAtom
+struct HK_EXPORT_PHYSICS hkpAngMotorConstraintAtom : public hkpConstraintAtom
 {
 	//+version(1)
 	public:
@@ -971,7 +978,7 @@ struct hkpAngMotorConstraintAtom : public hkpConstraintAtom
 /// Atom which controls relative rotation angle between bodies in three dimensions; used by the hkpRagdollConstraintData.
 /// Note that motor atoms require access to external variables stored in hkpConstraintInstance's runtime.
 /// The atom accesses those variables using memory offsets (stored in the atom's members).
-struct hkpRagdollMotorConstraintAtom : public hkpConstraintAtom
+struct HK_EXPORT_PHYSICS hkpRagdollMotorConstraintAtom : public hkpConstraintAtom
 {
 	//+version(1)
 	public:
@@ -1010,7 +1017,7 @@ struct hkpRagdollMotorConstraintAtom : public hkpConstraintAtom
 
 
 /// Atom which applies friction force along a specified axes.
-struct hkpLinFrictionConstraintAtom : public hkpConstraintAtom
+struct HK_EXPORT_PHYSICS  hkpLinFrictionConstraintAtom : public hkpConstraintAtom
 {
 	public:
 
@@ -1176,7 +1183,7 @@ public:
 ///
 /// Note that motor atoms require access to external variables stored in hkpConstraintInstance's runtime.
 /// The atom accesses those variables using memory offsets (stored in the atom's members).
-struct hkpLinMotorConstraintAtom : public hkpConstraintAtom
+struct HK_EXPORT_PHYSICS hkpLinMotorConstraintAtom : public hkpConstraintAtom
 {
 	//+version(1)
 	public:
@@ -1217,7 +1224,7 @@ struct hkpLinMotorConstraintAtom : public hkpConstraintAtom
 
 /// Atom which implements a functionality of a pulley, where bodies are attached to a rope, and the rope is lead
 /// through two pulley wheels at fixed world positions.
-struct hkpPulleyConstraintAtom : public hkpConstraintAtom
+struct HK_EXPORT_PHYSICS hkpPulleyConstraintAtom : public hkpConstraintAtom
 {
 	public:
 
@@ -1244,7 +1251,7 @@ struct hkpPulleyConstraintAtom : public hkpConstraintAtom
 
 
 /// Atom which implements functionality of a rack-and-pinion or also a screw.
-struct hkpRackAndPinionConstraintAtom : public hkpConstraintAtom
+struct HK_EXPORT_PHYSICS hkpRackAndPinionConstraintAtom : public hkpConstraintAtom
 {
 	public:
 
@@ -1291,7 +1298,7 @@ struct hkpRackAndPinionConstraintAtom : public hkpConstraintAtom
 
 
 /// Atom which implements functionality of cog wheels.
-struct hkpCogWheelConstraintAtom : public hkpConstraintAtom
+struct HK_EXPORT_PHYSICS hkpCogWheelConstraintAtom : public hkpConstraintAtom
 {
 	public:
 
@@ -1326,7 +1333,7 @@ struct hkpCogWheelConstraintAtom : public hkpConstraintAtom
 #endif // HKP_CONSTRAINT_ATOM_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

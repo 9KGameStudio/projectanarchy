@@ -36,15 +36,15 @@ VRSDClient::~VRSDClient()
 {
   SetClientLanguageImplementation(NULL);
   m_pConnection = NULL;
-
+  
   // clear user data accessors
   for(int i = 0; i < m_UserDataAccessors.GetLength(); i++)
   {
     V_SAFE_DELETE(m_UserDataAccessors[i]);
   }
-
+  
   V_SAFE_DELETE(m_pProfilingStack);
-
+  
   unsigned int uiArraySize = m_pProfilingInformations.GetValidSize();
   for(unsigned int i = 0; i < uiArraySize; i++)
     V_SAFE_DELETE(m_pProfilingInformations[i]);
@@ -54,7 +54,7 @@ void VRSDClient::RegisterCallbacks()
 {
   VTarget::OnConnection += this;
   VTarget::OnDisconnection += this;
-
+  
   // make sure it is initialized even in release builds if the current executable is the editor
   // The editor starts the target system on port 4224 instead of port 4223 so the debugging of game scripts works parallel
   // to vForge
@@ -66,11 +66,11 @@ void VRSDClient::UnregisterCallbacks()
 {
   // If no scene is loaded in the editor VTargetThread::Deinit will never be called.
   if(Vision::Editor.IsInEditor())
-    VTargetThread::DeInit(); 
-
+    VTargetThread::DeInit();
+    
   VTarget::OnConnection -= this;
   VTarget::OnDisconnection -= this;
-
+  
   
 }
 
@@ -78,11 +78,11 @@ void VRSDClient::UnregisterCallbacks()
 void VRSDClient::RegisterUserDataAccessor(IVRSDUserDataAccessor* pUserDataAccessor)
 {
   VASSERT(pUserDataAccessor);
-
+  
   if(!pUserDataAccessor)
     return;
-
-  m_UserDataAccessors.AddUnique(pUserDataAccessor); 
+    
+  m_UserDataAccessors.AddUnique(pUserDataAccessor);
 }
 
 IVRSDUserDataAccessor* VRSDClient::GetUserDataAccessor(const char* pUserDataType)
@@ -90,11 +90,11 @@ IVRSDUserDataAccessor* VRSDClient::GetUserDataAccessor(const char* pUserDataType
   for(int i = 0; i < m_UserDataAccessors.GetLength(); i++)
   {
     IVRSDUserDataAccessor* pAccessor = m_UserDataAccessors[i];
-
+    
     if(pAccessor->IsForUserDataType(pUserDataType))
       return pAccessor;
   }
-
+  
   return NULL;
 }
 
@@ -105,21 +105,21 @@ bool VRSDClient::StartProfiling()
     StopProfiling();
     return false;
   }
-
+  
   Vision::Callbacks.OnEditorModeChanged += this;
-
+  
   // tell the client language implementation that we are now profiling (just in case it has something special to do)
   if(GetClientLanguageImplementation()->StartProfiling())
   {
     V_SAFE_DELETE(m_pProfilingStack);
     m_pProfilingStack = new VPListStack<VRSDProfilingSample*>();
     m_bProfilingEnabled = true;
-
+    
     hkvLog::Info("Starting script profiling..");
-
+    
     return true;
   }
-
+  
   /// \todo Editor Play Mode starten
 //  if(!Vision::Editor.IsPlaying())
 //    Vision::Editor.SetMode(VisEditorManager_cl::EDITORMODE_PLAYING_IN_EDITOR);
@@ -131,51 +131,51 @@ bool VRSDClient::StopProfiling(unsigned int* puiProfilingResultCount /*= NULL*/)
 {
   if(!m_bProfilingEnabled)
     return false;
-
+    
   Vision::Callbacks.OnEditorModeChanged -= this;
-
+  
   // tell the client language implementation that we are stopping to profile (just in case it has something special to do)
   if(GetClientLanguageImplementation()->StopProfiling())
   {
     m_bProfilingEnabled = false;
-
+    
     if(puiProfilingResultCount)
       *puiProfilingResultCount = m_pProfilingInformations.GetValidSize();
-
+      
     hkvLog::Info("Stopped script profiling.");
     if(!SendProfilingResults())
     {
-      if (m_pConnection) // if there is no connection, there is no reason to complain that nothing could be sent!
+      if(m_pConnection)  // if there is no connection, there is no reason to complain that nothing could be sent!
         hkvLog::Warning("Couldn't transmit profiling results!");
     }
     else
       hkvLog::Info("Sent profiling results.");
-
+      
     V_SAFE_DELETE(m_pProfilingStack);
-
+    
     unsigned int uiArraySize = m_pProfilingInformations.GetValidSize();
     for(unsigned int i = 0; i < uiArraySize; i++)
       V_SAFE_DELETE(m_pProfilingInformations[i]);
-
+      
     m_pProfilingInformations.Reset();
-
+    
     return true;
   }
-
+  
   return false;
 }
 
 
-void VRSDClient::OnHandleCallback(IVisCallbackDataObject_cl *pData)
+void VRSDClient::OnHandleCallback(IVisCallbackDataObject_cl* pData)
 {
   // check event source
   if(pData->m_pSender == &m_pClientLanguageImplementation->ScriptEvent)
   {
     VRSDScriptEvent* pEvent = static_cast<VRSDScriptEventCallbackItem*>(pData)->pScriptEvent;
-
+    
     if(!pEvent)
       return;
-
+      
     // If profiling is enabled the profiler will handle the script event,
     // Afterwards the return ensures that the standard debugging procedure is not followed
     if(m_bProfilingEnabled)
@@ -183,35 +183,35 @@ void VRSDClient::OnHandleCallback(IVisCallbackDataObject_cl *pData)
       HandleScriptEventForProfiling(pEvent);
       return;
     }
-
+    
     // Check if there is a connection from the remote debugger available
     if(!m_pConnection)
       return;
-
+      
     // send event to debugger
     if(!SendScriptEvent(pEvent))
       return;
-
+      
     // wait for debugger on what to do
     for(;;)
     {
       VScopedPtr<VMessage> Msg;
-
+      
       {
         VMutexLocker lock(m_ConnectionMutex);
         if(!m_pConnection)
         {
           break;
         }
-
+        
         Msg = m_pConnection->Recv();
-
+        
         if(!Msg)
         {
           break;
         }
       }
-
+      
       if(Msg->GetMessageType() == 'CONT')
       {
         break;
@@ -226,12 +226,18 @@ void VRSDClient::OnHandleCallback(IVisCallbackDataObject_cl *pData)
         StopProfiling();
         break;
       }
-
-      // process message (get callstack, get local variables, get global variables etc.)
-      HandleDebuggingMessage(Msg);
+      else if(Msg->GetMessageType() == 'STOP')
+      {
+        StopTheGame();
+      }
+      else
+      {
+        // process message (get callstack, get local variables, get global variables etc.)
+        HandleDebuggingMessage(Msg);
+      }
     }
   }
-
+  
   else if(pData->m_pSender == &VTarget::OnConnection)
   {
     VTargetConnectionCallbackItem* pTCCI = (VTargetConnectionCallbackItem*)pData;
@@ -240,18 +246,18 @@ void VRSDClient::OnHandleCallback(IVisCallbackDataObject_cl *pData)
       if(pTCCI->pConnection->IsFor("VRSD"))
       {
         m_pConnection = pTCCI->pConnection;
-
+        
         // register message callback
         hkvGlobalLog::GetInstance()->AddLogWriter(LogMessageHandler, this);
-
+        
         Vision::Callbacks.OnUpdateSceneBegin += this;
-
+        
         // Send connected callback
         OnConnected.TriggerCallbacks();
       }
     }
   }
-
+  
   else if(pData->m_pSender == &VTarget::OnDisconnection)
   {
     VTargetConnectionCallbackItem* pTCCI = (VTargetConnectionCallbackItem*)pData;
@@ -263,60 +269,66 @@ void VRSDClient::OnHandleCallback(IVisCallbackDataObject_cl *pData)
           VMutexLocker lock(m_ConnectionMutex);
           m_pConnection = NULL;
         }
-
+        
         // de-register message callback
         // in some error cases it can happen that we get a disconnect without a proper connect
         // removing a logwriter that has not been added, is an error (assert)
         // therefore, check whether the logwriter was really added, and only remove it if possible
-        if (hkvGlobalLog::GetInstance()->WasLogWriterAdded(LogMessageHandler, this)) 
+        if(hkvGlobalLog::GetInstance()->WasLogWriterAdded(LogMessageHandler, this))
           hkvGlobalLog::GetInstance()->RemoveLogWriter(LogMessageHandler, this);
-
+          
         Vision::Callbacks.OnUpdateSceneBegin -= this;
-
+        
         // Send disconnected callback
         OnDisconnected.TriggerCallbacks();
       }
     }
   }
-
+  
   else if(pData->m_pSender == &Vision::Callbacks.OnUpdateSceneBegin)
   {
     VMessage* pMsg = NULL;
-
+    
     {
       VMutexLocker lock(m_ConnectionMutex);
-
+      
       if(!m_pConnection)
         return;
-
+        
       pMsg = m_pConnection->GetNextASyncReceivedMessage();
     }
-
+    
     if(!pMsg)
       return;
-
+      
     // command messages
     switch(pMsg->GetMessageType())
     {
-      // begin remote script profiling
-      case 'BRSP':
-        StartProfiling();
-        break;
-
-      // end remote script profiling
-      case 'ERSP':
-        StopProfiling();
-        break;
-
-      // script reload
-      case 'RSRN':
-        HandleScriptReloadMessage(pMsg);
-        break;
+    // begin remote script profiling
+    case 'BRSP':
+      StartProfiling();
+      break;
+      
+    // end remote script profiling
+    case 'ERSP':
+      StopProfiling();
+      break;
+      
+    // script reload
+    case 'RSRN':
+      HandleScriptReloadMessage(pMsg);
+      break;
+      
+    case 'STOP':
+      StopTheGame();
+      break;
     }
-
+    
+    
+    
     V_SAFE_DELETE(pMsg);
   }
-
+  
   else if(pData->m_pSender == &Vision::Callbacks.OnEditorModeChanged)
   {
     if(Vision::Editor.IsInEditor() && !Vision::Editor.IsPlaying() && m_bProfilingEnabled)
@@ -326,18 +338,18 @@ void VRSDClient::OnHandleCallback(IVisCallbackDataObject_cl *pData)
 
 void VRSDClient::LogMessageHandler(hkvLogMsgType::Enum MsgType, const char* szText, int iIndentation, const char* szTag, void* pPassThrough)
 {
-  if (!pPassThrough)
+  if(!pPassThrough)
     return;
-
+    
   VRSDClient* pClient = (VRSDClient*) pPassThrough;
-
-  if (!pClient->m_pConnection)
+  
+  if(!pClient->m_pConnection)
     return;
-
+    
   VMessage* pMsg = new VMessage('LOGE', 5 + (int)strlen(szText));
   pMsg->WriteInt(MsgType);
   pMsg->WriteString(szText);
-
+  
   pClient->m_pConnection->SendAsync(pMsg);
 }
 
@@ -345,15 +357,15 @@ void VRSDClient::HandleScriptReloadMessage(VMessage* pMessage)
 {
   if(!pMessage)
     return;
-
+    
   char* pFileName = NULL;
   char* pNewContent = NULL;
   if(pMessage->ReadString(&pFileName) && pMessage->ReadString(&pNewContent))
   {
     VScriptResourceManager* pSM = (VScriptResourceManager*)Vision::GetScriptManager();
-
+    
     VScriptResource* pRes = (VScriptResource*)pSM->GetResourceByName(pFileName);
-
+    
     if(pRes)
       pRes->ReloadAndReplace(pNewContent);
   }
@@ -363,12 +375,12 @@ void VRSDClient::HandleScriptEventForProfiling(VRSDScriptEvent* pScriptEvent)
 {
   if(!pScriptEvent)
     return;
-
+    
   const char* pFileName = pScriptEvent->pFileName ? pScriptEvent->pFileName : "";
   const char* pFunctionName = pScriptEvent->pFunctionName ? pScriptEvent->pFunctionName : "";
   int iLineDefined = pScriptEvent->iLineDefined;
-
-
+  
+  
   // Note: This code is not very memory friendly..
   if(pScriptEvent->eEventType == VRSDScriptEvent::EVENT_ENTER_FUNCTION)
   {
@@ -381,12 +393,12 @@ void VRSDClient::HandleScriptEventForProfiling(VRSDScriptEvent* pScriptEvent)
     {
       uint64 uiStopTime = VGLGetTimer();
       VRSDProfilingSample* pSample = m_pProfilingStack->Pop();
-
+      
       uint64 uiTimeTaken = uiStopTime - pSample->m_uiStartTime;
-
+      
       // Store the profiling information
       UpdateProfilingInformation(pFileName, iLineDefined == -1 ? "(native)" : pFunctionName, iLineDefined, uiTimeTaken);
-
+      
       V_SAFE_DELETE(pSample);
     }
   }
@@ -396,19 +408,19 @@ bool VRSDClient::SendProfilingResults()
 {
   if(!m_pConnection)
     return false;
-
+    
   unsigned int uiArraySize = m_pProfilingInformations.GetValidSize();
   
   VMessage* pMsg = new VMessage('RRSP', uiArraySize * 128 + 4);
   
   // Count of elements
   pMsg->WriteInt(uiArraySize);
-
+  
   // Write elements
   for(unsigned int i = 0; i < uiArraySize; i++)
   {
     VRSDProfilingInformation* pCurrent = m_pProfilingInformations[i];
-
+    
     pMsg->WriteString(pCurrent->m_pFunctionName);
     pMsg->WriteString(pCurrent->m_pFileName);
     pMsg->WriteInt(pCurrent->m_iLineDefined);
@@ -417,7 +429,7 @@ bool VRSDClient::SendProfilingResults()
     pMsg->WriteInt((unsigned int)pCurrent->m_uiMaxTime);
     pMsg->WriteInt((unsigned int)pCurrent->m_uiMinTime);
   }
-
+  
   VMutexLocker lock(m_ConnectionMutex);
   bool bRet = m_pConnection && m_pConnection->SendAsync(pMsg);
   
@@ -432,17 +444,17 @@ void VRSDClient::UpdateProfilingInformation(const char* pFileName, const char* p
   for(unsigned int i = 0; i < uiArraySize; i++)
   {
     VRSDProfilingInformation* pCurrent = m_pProfilingInformations[i];
-
+    
     if(pCurrent->Matches(pFunctionName, pFileName, iLineDefined))
     {
       pInfo = pCurrent;
       break;
     }
   }
-
+  
   if(pInfo)
     pInfo->AddSample(uiTimeTaken);
-
+    
   else
   {
     pInfo = new VRSDProfilingInformation(pFunctionName, pFileName, iLineDefined, uiTimeTaken);
@@ -456,152 +468,152 @@ void VRSDClient::HandleDebuggingMessage(VMessage* pMessage)
 {
   if(!pMessage || !m_pClientLanguageImplementation)
     return;
-
+    
   // Handle debugging messages here
-
+  
   switch(pMessage->GetMessageType())
   {
-    case 'RSRN':
-      HandleScriptReloadMessage(pMessage);
-      break;
-
-    case 'GCST':
+  case 'RSRN':
+    HandleScriptReloadMessage(pMessage);
+    break;
+    
+  case 'GCST':
+  {
+    // get the callstack from the scripting language implementation
+    DynArray_cl<VRSDClientCallstackEntry> Callstack(16);
+    unsigned int CallstackEntryCount = 0;
+    
+    m_pClientLanguageImplementation->GetCallstack(Callstack, CallstackEntryCount);
+    
+    // send it
+    SendCallstack(Callstack, CallstackEntryCount);
+  }
+  
+  break;
+  
+  case 'GGSY':
+  {
+    // get the global symbol collection from the scripting language implementation
+    DynArray_cl<VRSDScriptSymbol> globalSymbols(32, VRSDScriptSymbol());
+    unsigned int iGlobalSymbolCount = 0;
+    
+    m_pClientLanguageImplementation->GetGlobalSymbols(globalSymbols, iGlobalSymbolCount);
+    
+    // send it
+    SendSymbols('GSYC', globalSymbols, iGlobalSymbolCount);
+  }
+  
+  
+  break;
+  
+  case 'GLSY':
+  {
+    // get the local symbol collection from the scripting language implementation
+    DynArray_cl<VRSDScriptSymbol> localSymbols(16, VRSDScriptSymbol());
+    unsigned int iLocalSymbolCount = 0;
+    
+    m_pClientLanguageImplementation->GetLocalSymbols(localSymbols, iLocalSymbolCount);
+    
+    // send it
+    SendSymbols('LSYC', localSymbols, iLocalSymbolCount);
+  }
+  
+  break;
+  
+  case 'GSFG':
+  {
+    // read the symbol name for which the subsymbols are requested
+    char* pSymbolName = NULL;
+    if(pMessage->ReadString(&pSymbolName))
+    {
+      // get the global symbol collection from the scripting language implementation
+      DynArray_cl<VRSDScriptSymbol> globalSymbols(16, VRSDScriptSymbol());
+      unsigned int iGlobalSymbolCount = 0;
+      
+      if(m_pClientLanguageImplementation->GetSubSymbolsForGlobal(pSymbolName, globalSymbols, iGlobalSymbolCount))
       {
-        // get the callstack from the scripting language implementation
-        DynArray_cl<VRSDClientCallstackEntry> Callstack(16);
-        unsigned int CallstackEntryCount = 0;
-        
-        m_pClientLanguageImplementation->GetCallstack(Callstack, CallstackEntryCount);
-        
         // send it
-        SendCallstack(Callstack, CallstackEntryCount);
+        SendSymbols('GSSC', globalSymbols, iGlobalSymbolCount, pSymbolName);
       }
-
-      break;
-
-    case 'GGSY':
+    }
+  }
+  break;
+  
+  case 'GSFL':
+  {
+    // read the symbol name for which the subsymbols are requested
+    char* pSymbolName = NULL;
+    if(pMessage->ReadString(&pSymbolName))
+    {
+      // get the global symbol collection from the scripting language implementation
+      DynArray_cl<VRSDScriptSymbol> localSymbols(16, VRSDScriptSymbol());
+      unsigned int iLocalSymbolCount = 0;
+      
+      if(m_pClientLanguageImplementation->GetSubSymbolsForLocal(pSymbolName, localSymbols, iLocalSymbolCount))
       {
-        // get the global symbol collection from the scripting language implementation
-        DynArray_cl<VRSDScriptSymbol> globalSymbols(32, VRSDScriptSymbol());
-        unsigned int iGlobalSymbolCount = 0;
-
-        m_pClientLanguageImplementation->GetGlobalSymbols(globalSymbols, iGlobalSymbolCount);
-
         // send it
-        SendSymbols('GSYC', globalSymbols, iGlobalSymbolCount);
+        SendSymbols('LSSC', localSymbols, iLocalSymbolCount, pSymbolName);
       }
-
-
+    }
+  }
+  break;
+  
+  // get userdata type (local / global)
+  case 'GUDT':
+  case 'LUDT':
+  {
+    // read first the variable name we should check
+    char* pVariableName = NULL;
+    if(!pMessage->ReadString(&pVariableName))
       break;
-
-    case 'GLSY':
-      {
-        // get the local symbol collection from the scripting language implementation
-        DynArray_cl<VRSDScriptSymbol> localSymbols(16, VRSDScriptSymbol());
-        unsigned int iLocalSymbolCount = 0;
-
-        m_pClientLanguageImplementation->GetLocalSymbols(localSymbols, iLocalSymbolCount);
-
-        // send it
-        SendSymbols('LSYC', localSymbols, iLocalSymbolCount);
-      }
-
-      break;
-
-    case 'GSFG':
-      {
-        // read the symbol name for which the subsymbols are requested
-        char* pSymbolName = NULL;
-        if(pMessage->ReadString(&pSymbolName))
-        {
-          // get the global symbol collection from the scripting language implementation
-          DynArray_cl<VRSDScriptSymbol> globalSymbols(16, VRSDScriptSymbol());
-          unsigned int iGlobalSymbolCount = 0;
-
-          if(m_pClientLanguageImplementation->GetSubSymbolsForGlobal(pSymbolName, globalSymbols, iGlobalSymbolCount))
-          {
-            // send it
-            SendSymbols('GSSC', globalSymbols, iGlobalSymbolCount, pSymbolName);
-          }
-        }
-      }
-      break;
-
-    case 'GSFL':
-      {
-        // read the symbol name for which the subsymbols are requested
-        char* pSymbolName = NULL;
-        if(pMessage->ReadString(&pSymbolName))
-        {
-          // get the global symbol collection from the scripting language implementation
-          DynArray_cl<VRSDScriptSymbol> localSymbols(16, VRSDScriptSymbol());
-          unsigned int iLocalSymbolCount = 0;
-
-          if(m_pClientLanguageImplementation->GetSubSymbolsForLocal(pSymbolName, localSymbols, iLocalSymbolCount))
-          {
-            // send it
-            SendSymbols('LSSC', localSymbols, iLocalSymbolCount, pSymbolName);
-          }
-        }
-      }
-      break;
-
-      // get userdata type (local / global)
-    case 'GUDT':
-    case 'LUDT':
-      {
-        // read first the variable name we should check
-        char* pVariableName = NULL;
-        if(!pMessage->ReadString(&pVariableName))
-          break;
-
-        char pUserDataTypeName[512];
-        bool success;
-
-        if(pMessage->GetMessageType() == 'GUDT')
-          success = m_pClientLanguageImplementation->GetGlobalType(pVariableName, pUserDataTypeName);
-        else
-          success = m_pClientLanguageImplementation->GetLocalType(pVariableName, pUserDataTypeName);
-
-        if(success)
-        {
-          VMessage msg('VUDT', (int)strlen(pUserDataTypeName) + 5);
-          msg.WriteString(pUserDataTypeName);
-
-          VMutexLocker lock(m_ConnectionMutex);
-          if(m_pConnection)
-            m_pConnection->Send(&msg);
-        }
-        else
-        {
-          // if no type is found submit that
-          VMessage msg('VUDT', 5);
-          msg.WriteString("");
-
-          VMutexLocker lock(m_ConnectionMutex);
-          if(m_pConnection)
-            m_pConnection->Send(&msg);
-        }
-      }
-      break;
-
-    // update the value of a variable (non userdata = strings, bools, numbers)
-    case 'LVCU':
-    case 'GVCU':
-      UpdateVariable(pMessage);
-      break;
-
-    // request for user data update
-    case 'LUDU':
-    case 'GUDU':
-      UpdateUserDataVariable(pMessage);
-      break;
-
-    // request for local user data members
-    case 'LUDM':
-    case 'GUDM':
-      HandleUserDataMemberRequest(pMessage);
-      break;
+      
+    char pUserDataTypeName[512];
+    bool success;
+    
+    if(pMessage->GetMessageType() == 'GUDT')
+      success = m_pClientLanguageImplementation->GetGlobalType(pVariableName, pUserDataTypeName);
+    else
+      success = m_pClientLanguageImplementation->GetLocalType(pVariableName, pUserDataTypeName);
+      
+    if(success)
+    {
+      VMessage msg('VUDT', (int)strlen(pUserDataTypeName) + 5);
+      msg.WriteString(pUserDataTypeName);
+      
+      VMutexLocker lock(m_ConnectionMutex);
+      if(m_pConnection)
+        m_pConnection->Send(&msg);
+    }
+    else
+    {
+      // if no type is found submit that
+      VMessage msg('VUDT', 5);
+      msg.WriteString("");
+      
+      VMutexLocker lock(m_ConnectionMutex);
+      if(m_pConnection)
+        m_pConnection->Send(&msg);
+    }
+  }
+  break;
+  
+  // update the value of a variable (non userdata = strings, bools, numbers)
+  case 'LVCU':
+  case 'GVCU':
+    UpdateVariable(pMessage);
+    break;
+    
+  // request for user data update
+  case 'LUDU':
+  case 'GUDU':
+    UpdateUserDataVariable(pMessage);
+    break;
+    
+  // request for local user data members
+  case 'LUDM':
+  case 'GUDM':
+    HandleUserDataMemberRequest(pMessage);
+    break;
   }
 }
 
@@ -612,12 +624,12 @@ void VRSDClient::UpdateVariable(VMessage* pMessage)
   char* pVariableName = NULL;
   if(!pMessage->ReadString(&pVariableName))
     return;
-
+    
   // read the new value for the variable
   char* pNewValue = NULL;
   if(!pMessage->ReadString(&pNewValue))
     return;
-
+    
   if(pMessage->GetMessageType() == 'LVCU')
     m_pClientLanguageImplementation->UpdateLocalVariable(pVariableName, pNewValue);
   else
@@ -630,32 +642,32 @@ void VRSDClient::UpdateUserDataVariable(VMessage* pMessage)
   char* pVariableName = NULL;
   if(!pMessage->ReadString(&pVariableName))
     return;
-
+    
   // get the userdata type of the variable
   char* pUserDataType = NULL;
   if(!pMessage->ReadString(&pUserDataType))
     return;
-
+    
   // read the member which should be updated
   char* pMember = NULL;
   if(!pMessage->ReadString(&pMember))
     return;
-
+    
   // read the new value for the member
   char* pNewValue = NULL;
   if(!pMessage->ReadString(&pNewValue))
     return;
-
+    
   // get the corresponding user data accessor by the user data type
   IVRSDUserDataAccessor* pUserDataAccessor = GetUserDataAccessor(pUserDataType);
   SwigTypeDataAccessor universalDataAccessor("universal");
-
+  
   if(pUserDataAccessor == NULL)
     pUserDataAccessor = &universalDataAccessor;
-
+    
   void* pUserDataPointer = NULL;
   void* pEnvironment = NULL;
-
+  
   if(pMessage->GetMessageType() == 'LUDU')
   {
     if(!m_pClientLanguageImplementation->GetUserDataPointerFromLocal(pVariableName, &pUserDataPointer, &pEnvironment))
@@ -667,12 +679,12 @@ void VRSDClient::UpdateUserDataVariable(VMessage* pMessage)
     if(!m_pClientLanguageImplementation->GetUserDataPointerFromGlobal(pVariableName, &pUserDataPointer, &pEnvironment))
       return;
   }
-
+  
   // Update member
-  if (!pUserDataAccessor->UpdateMemberFromString(pUserDataPointer, pEnvironment, pMember, pNewValue))
+  if(!pUserDataAccessor->UpdateMemberFromString(pUserDataPointer, pEnvironment, pMember, pNewValue))
   {
     // Check if the member is a hidden global (created at runtime, but member of the user object logically)
-    m_pClientLanguageImplementation->UpdateHiddenGlobalVariable(pUserDataPointer, pMember, pNewValue);
+    m_pClientLanguageImplementation->UpdateDynamicProperty(pUserDataPointer, pMember, pNewValue);
   }
 }
 
@@ -682,26 +694,26 @@ void VRSDClient::HandleUserDataMemberRequest(VMessage* pMessage)
   char* pVariableName = NULL;
   if(!pMessage->ReadString(&pVariableName))
     return;
-
+    
   // get the userdata type of the variable
   char* pUserDataType = NULL;
   if(!pMessage->ReadString(&pUserDataType))
     return;
-
+    
   // get the corresponding user data accessor by the user data type
   IVRSDUserDataAccessor* pUserDataAccessor = GetUserDataAccessor(pUserDataType);
   SwigTypeDataAccessor universalDataAccessor("universal");
-
-  if(pUserDataAccessor==NULL)
+  
+  if(pUserDataAccessor == NULL)
     pUserDataAccessor = &universalDataAccessor;
-
+    
   DynArray_cl<VRSDScriptSymbol> members(16, VRSDScriptSymbol());
   unsigned int iMemberCount = 0;
-
+  
   // Only get the user data member if there is an accessor
   void* pUserDataPointer = NULL;
   void* pEnvironment = NULL;
-
+  
   if(pMessage->GetMessageType() == 'LUDM')
   {
     if(m_pClientLanguageImplementation->GetUserDataPointerFromLocal(pVariableName, &pUserDataPointer, &pEnvironment))
@@ -712,8 +724,8 @@ void VRSDClient::HandleUserDataMemberRequest(VMessage* pMessage)
     if(m_pClientLanguageImplementation->GetUserDataPointerFromGlobal(pVariableName, &pUserDataPointer, &pEnvironment))
       pUserDataAccessor->GetUserDataMembers(pUserDataPointer, pEnvironment, members, iMemberCount);
   }
-
-
+  
+  
   SendSymbols('SMUD', members, iMemberCount, pVariableName);
 }
 
@@ -730,19 +742,19 @@ bool VRSDClient::SendScriptEvent(VRSDScriptEvent* pScriptEvent)
   Msg.WriteString(pScriptEvent->pFunctionName);
   Msg.WriteInt(pScriptEvent->iLineDefined);
   Msg.WriteString(pScriptEvent->pErrorMessage);
-
+  
   VMutexLocker lock(m_ConnectionMutex);
   bool bSuccess = m_pConnection && m_pConnection->Send(&Msg);
-
+  
   return bSuccess;
 }
 
-bool VRSDClient::SendCallstack(DynArray_cl<VRSDClientCallstackEntry> &Callstack, unsigned int &CallstackEntryCount)
+bool VRSDClient::SendCallstack(DynArray_cl<VRSDClientCallstackEntry>& Callstack, unsigned int& CallstackEntryCount)
 {
   // create a callstack message and preallocate some memory for the callstack entries
   VMessage Msg('CAST', CallstackEntryCount * 64);
   Msg.WriteInt(CallstackEntryCount);
-
+  
   for(unsigned int i = 0; i < CallstackEntryCount; i++)
   {
     Msg.WriteString(Callstack[i].pFunctionName);
@@ -750,10 +762,10 @@ bool VRSDClient::SendCallstack(DynArray_cl<VRSDClientCallstackEntry> &Callstack,
     Msg.WriteInt(Callstack[i].iLineNumber);
     Msg.WriteInt(Callstack[i].iLineDefined);
   }
-
+  
   VMutexLocker lock(m_ConnectionMutex);
   bool bSuccess = m_pConnection && m_pConnection->Send(&Msg);
-
+  
   return bSuccess;
 }
 
@@ -761,16 +773,16 @@ bool VRSDClient::SendSymbols(int Type, DynArray_cl<VRSDScriptSymbol>& Symbols, u
 {
   if(Type != 'LSYC' && Type != 'GSYC' && Type != 'GSSC' && Type != 'LSSC' && Type != 'SMUD')
     return false;
-
+    
   // create a symbol collection message
   VMessage Msg(Type, SymbolCount * 64);
   Msg.WriteInt(SymbolCount);
-
+  
   for(unsigned int i = 0; i < SymbolCount; i++)
   {
     // symbol name
     Msg.WriteString(Symbols[i].GetSymbolName());
-
+    
     // full symbolname
     if(pParentSymbol)
     {
@@ -782,15 +794,15 @@ bool VRSDClient::SendSymbols(int Type, DynArray_cl<VRSDScriptSymbol>& Symbols, u
     {
       Msg.WriteString(Symbols[i].GetSymbolName());
     }
-
+    
     Msg.WriteString(Symbols[i].GetSymbolContent());
     Msg.WriteInt(Symbols[i].m_eSymbolType);
     Msg.WriteInt(Symbols[i].IsUpdateableByDebugger() ? 1 : 0);
   }
-
+  
   VMutexLocker lock(m_ConnectionMutex);
   bool bSuccess = m_pConnection && m_pConnection->Send(&Msg);
-
+  
   return bSuccess;
 }
 
@@ -799,7 +811,7 @@ bool VRSDClient::IsConnected()
   return m_pConnection != NULL;
 }
 
-void VRSDClient::SetClientLanguageImplementation(IVRSDClientLanguageImplementation *pClientLanguageImplementation)
+void VRSDClient::SetClientLanguageImplementation(IVRSDClientLanguageImplementation* pClientLanguageImplementation)
 {
 
   // if there is already a script implementation set
@@ -810,10 +822,10 @@ void VRSDClient::SetClientLanguageImplementation(IVRSDClientLanguageImplementati
     delete m_pClientLanguageImplementation;
     m_pClientLanguageImplementation = NULL;
   }
-
+  
   // copy the new value
   m_pClientLanguageImplementation = pClientLanguageImplementation;
-
+  
   // subscribe to events if this is a valid implementation
   if(m_pClientLanguageImplementation)
     m_pClientLanguageImplementation->ScriptEvent += this;
@@ -829,8 +841,18 @@ VRSDClient& VRSDClient::GetGlobalClient()
   return g_GlobalClient;
 }
 
+hkvResult VRSDClient::StopTheGame()
+{
+#if defined(_VISION_WIN32)
+  VScriptResourceManager::SetIgnoreEventsThisRun(true);
+  return Vision::Editor.ChangeMode(VisEditorManager_cl::EDITORMODE_NONE);
+#else
+  return HKV_FAILURE;
+#endif
+}
+
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

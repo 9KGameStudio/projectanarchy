@@ -19,7 +19,7 @@ inline hkUint32 HK_CALL hkpGroupFilter::calcFilterInfo( int layer, int systemGro
 	HK_ASSERT(0x1902b598,  subSystemDontCollideWith  >=0 && subSystemDontCollideWith  < 32 );
 	HK_ASSERT(0x5ae6770c,  systemGroup>=0 && systemGroup < 0x10000);
 
-	return hkUint32( (subSystemId<<5) | ( subSystemDontCollideWith<<10) | (systemGroup<<16) | layer);
+	return hkUint32( (systemGroup<<16) | (subSystemDontCollideWith<<10) | (subSystemId<<5) | layer );
 }
 
 int hkpGroupFilter::getLayerFromFilterInfo( hkUint32 filterInfo )
@@ -49,7 +49,7 @@ int hkpGroupFilter::getSubSystemDontCollideWithFromFilterInfo( hkUint32 filterIn
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

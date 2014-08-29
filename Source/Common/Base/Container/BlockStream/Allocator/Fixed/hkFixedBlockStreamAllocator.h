@@ -13,8 +13,8 @@
 #endif
 
 /// A simple implementation of block stream allocator using a fixed size buffer asserting when out of memory.
-/// This is the only implementation working on PS3.
-class hkFixedBlockStreamAllocator : public hkBlockStreamAllocator
+/// This is the only implementation working on PlayStation(R)3.
+class HK_EXPORT_COMMON hkFixedBlockStreamAllocator : public hkBlockStreamAllocator
 {
 	public:
 
@@ -53,8 +53,6 @@ class hkFixedBlockStreamAllocator : public hkBlockStreamAllocator
 
 		~hkFixedBlockStreamAllocator();
 
-		void addMemory( void* buffer, int byteSize );
-
 		void getMemoryStatistics( hkMemoryAllocator::MemoryStatistics& statsOut ) const;
 
 	#endif
@@ -82,7 +80,7 @@ class hkFixedBlockStreamAllocator : public hkBlockStreamAllocator
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

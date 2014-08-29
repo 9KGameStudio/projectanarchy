@@ -75,7 +75,7 @@ V_IMPLEMENT_DYNAMIC(ListButton, VPushButton, Vision::GetEngineModule());
 class ListItem : public VListControlItem
 {
 public:
-  ListItem(const char* szText, VTextureObject* pThumbnail, hkUint32 uiFlags, VDialog* pParentDialog)
+  ListItem(const char* szText, VTextureObject* pThumbnail, bool bAnyCached, hkUint32 uiFlags, VDialog* pParentDialog)
   {
     m_iCustomHeight = (int)(VUISharedData::GetIconSize() + 2 * VUISharedData::GetPadding());
 
@@ -83,7 +83,7 @@ public:
     m_Text.SetFont(VUISharedData::GetFont());
     m_Text.m_States[VWindowBase::NORMAL].SetColor(VAppMenuColors::GetColor(VAppMenuColors::COLOR_LIST_ITEM_TEXT_NORMAL));
     m_Text.m_States[VWindowBase::MOUSEOVER].SetColor(VAppMenuColors::GetColor(VAppMenuColors::COLOR_LIST_ITEM_TEXT_OVER));
-    m_Text.m_States[VWindowBase::SELECTED].SetColor(VAppMenuColors::GetColor(VAppMenuColors::COLOR_LIST_ITEM_TEXT_SELECTED));
+    m_Text.m_States[VWindowBase::SELECTED].SetColor(VAppMenuColors::GetColor(VAppMenuColors::COLOR_LIST_ITEM_TEXT_SELECTED));    
     m_Text.SetVerticalAlignment(VisFont_cl::ALIGN_CENTER);
     m_Text.SetTextOfs(hkvVec2(VUISharedData::GetPadding(), 0.0f));
     m_Text.SetScaling(VUISharedData::GetFontScale());
@@ -97,7 +97,8 @@ public:
     if ((uiFlags & ISceneListDataProvider::SpecificFlags::CACHE_ENABLED) != 0)
     {
       m_pClearCacheButton = new ListButton("Clear Cache", VSceneListEvent::CLEAR_CACHE, this);
-      m_pClearCacheButton->SetOrder(1);      
+      m_pClearCacheButton->SetOrder(1);
+      m_pClearCacheButton->SetEnabled(bAnyCached);
       pParentDialog->AddControl(m_pClearCacheButton);
     }
 
@@ -132,7 +133,7 @@ public:
 
     VItemRenderInfo thisState(parentState, this, 1.0f);
 
-    const int iItemCount = static_cast<VListControl*>(GetParent())->Items().Count();
+    const int iItemCount = vstatic_cast<VListControl*>(GetParent())->Items().Count();
 
     VRectanglef rect = thisState.m_pWindow->GetBoundingBox();
     const float fBorderWidth = VUISharedData::GetBorderWidth();
@@ -185,7 +186,11 @@ public:
 
   ListButton* m_pClearCacheButton;
   ListButton* m_pRemoveFromListButton;
+
+  V_DECLARE_DYNAMIC(ListItem);
 };
+
+V_IMPLEMENT_DYNAMIC(ListItem, VListControlItem, Vision::GetEngineModule());
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -206,7 +211,7 @@ void ListButton::OnPaint(VGraphicsInfo& Graphics, const VItemRenderInfo& parentS
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-VSceneSelectionPage::VSceneSelectionPage(const char* szTabTitle, ISceneListDataProvider* pDataProvider, int iIndex, VDialog* pParentDialog)
+VSceneSelectionPage::VSceneSelectionPage(const char* szTabTitle, const ISceneListDataProvider* pDataProvider, int iIndex, VDialog* pParentDialog)
 {
   const float fBorderWidth = 5.0f * VUISharedData::GetScale();
 
@@ -244,7 +249,7 @@ void VSceneSelectionPage::OnItemClicked(VMenuEventDataObject* pEvent)
   ListButton* pButton = vdynamic_cast<ListButton*>(pEvent->m_pItem);
   if (pButton != NULL && pButton->m_pParentItem->GetParent() == this)
   {
-    VSceneSelectionDialog* pDialog = static_cast<VSceneSelectionDialog*>(GetParent());
+    VSceneSelectionDialog* pDialog = vstatic_cast<VSceneSelectionDialog*>(GetParent());
     VisCallback_cl* pCallback = pButton->GetID() == VSceneListEvent::CLEAR_CACHE ? &pDialog->m_OnClearCache : &pDialog->m_OnRemoveFromList;
 
     VSceneListEvent eventData(pCallback, m_iIndex, pButton->m_pParentItem->GetIndex(), static_cast<VSceneListEvent::Action>(pButton->GetID()));
@@ -256,7 +261,7 @@ void VSceneSelectionPage::OnItemClicked(VMenuEventDataObject* pEvent)
     VListControlItem* pItem = GetItemAt(*pUser, pEvent->m_vMousePos);
     if (pItem != NULL && pItem->IsSelected())
     {
-      VSceneSelectionDialog* pDialog = static_cast<VSceneSelectionDialog*>(GetParent());
+      VSceneSelectionDialog* pDialog = vstatic_cast<VSceneSelectionDialog*>(GetParent());
 
       VSceneListEvent eventData(&pDialog->m_OnLoadScene, m_iIndex, pItem->GetIndex(), VSceneListEvent::LOAD_SCENE);
       pDialog->m_OnLoadScene.TriggerCallbacks(&eventData);
@@ -272,11 +277,12 @@ void VSceneSelectionPage::OnTick(float dtime)
     if (pUser == NULL) 
       continue;
 
-    ListItem* pItem = static_cast<ListItem*>(GetItemAt(*pUser, pUser->m_vMousePos));
+    const hkvVec2& vMousePos = pUser->m_vMousePos;
+    ListItem* pItem = vstatic_cast<ListItem*>(GetItemAt(*pUser, vMousePos));
     if (pItem != NULL)
     {
-      if ((pItem->m_pClearCacheButton != NULL && pItem->m_pClearCacheButton->IsMouseOver()) || 
-        (pItem->m_pRemoveFromListButton != NULL && pItem->m_pRemoveFromListButton->IsMouseOver()))
+      if ((pItem->m_pClearCacheButton != NULL && pItem->m_pClearCacheButton->GetBoundingBox().IsInside(vMousePos)) || 
+        (pItem->m_pRemoveFromListButton != NULL && pItem->m_pRemoveFromListButton->GetBoundingBox().IsInside(vMousePos)))
       {
         pItem = NULL;
       }
@@ -303,7 +309,7 @@ void VSceneSelectionPage::SetSelectionState(bool bSelect)
 
   for (int i = 0; i < m_Items.Count(); ++i)
   {
-    ListItem* pItem = static_cast<ListItem*>(m_Items.GetAt(i));
+    ListItem* pItem = vstatic_cast<ListItem*>(m_Items.GetAt(i));
     pItem->SetButtonsVisibility(bSelect);
   }  
 }
@@ -343,26 +349,31 @@ void VSceneSelectionPage::UpdateSceneList(VSceneListEvent* pData)
   const int iEntryIndex = pData != NULL ? pData->GetEntryIndex() : -1;
   if (iEntryIndex >= 0)
   {
-    const VSceneListEntry& entry = m_pDataProvider->GetData()[iEntryIndex];
+    const VSceneListEntry& entry = m_pDataProvider->GetAt(iEntryIndex);
     
-    VListControlItem* pItem = m_Items.GetAt(iEntryIndex);
+    ListItem* pItem = vstatic_cast<ListItem*>(m_Items.GetAt(iEntryIndex));
     pItem->SetText(entry.sDisplayName);
 
     for (unsigned int i=0; i<STATE_COUNT; ++i)
     {
       pItem->m_Icon.m_States[i].SetTexture(entry.spThumbnail);
     }
+    
+    if (pItem->m_pClearCacheButton != NULL)
+    {
+      pItem->m_pClearCacheButton->SetEnabled(entry.bAnyCached);
+    }
   }
   else
   {
     Reset();
 
-    const VArray<VSceneListEntry>& list = m_pDataProvider->GetData();
-    for (int i = 0; i < list.GetSize(); ++i)
+    const int iSize = m_pDataProvider->GetSize();
+    for (int i = 0; i < iSize; ++i)
     {
-      const VSceneListEntry& entry = list[i];
+      const VSceneListEntry& entry = m_pDataProvider->GetAt(i);
 
-      ListItem* pItem = new ListItem(entry.sDisplayName, entry.spThumbnail, m_pDataProvider->GetFlags(), static_cast<VDialog*>(GetParent()));
+      ListItem* pItem = new ListItem(entry.sDisplayName, entry.spThumbnail, entry.bAnyCached, m_pDataProvider->GetFlags(), vstatic_cast<VDialog*>(GetParent()));
       pItem->SetButtonsVisibility(IsVisible());
       AddItem(pItem, -1, false);
     }
@@ -370,6 +381,8 @@ void VSceneSelectionPage::UpdateSceneList(VSceneListEvent* pData)
 }
 
 //////////////////////////////////////////////////////////////////////////
+
+V_IMPLEMENT_DYNAMIC(VSceneSelectionDialog, VDialog, Vision::GetEngineModule());
 
 VSceneSelectionDialog::VSceneSelectionDialog(ITextDataProvider* pStatusDataProvider)
 {
@@ -441,7 +454,7 @@ void VSceneSelectionDialog::OnHandleCallback(IVisCallbackDataObject_cl* pData)
   }
 }
 
-void VSceneSelectionDialog::AddPage(const char* szPageTitle, ISceneListDataProvider* pDataProvider)
+void VSceneSelectionDialog::AddPage(const char* szPageTitle, const ISceneListDataProvider* pDataProvider)
 {
   m_Pages.Add(new VSceneSelectionPage(szPageTitle, pDataProvider, m_Pages.GetSize(), this));
   
@@ -489,7 +502,7 @@ void VSceneSelectionDialog::UpdateStatusText()
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -42,14 +42,16 @@ struct hkvPngHeader
 
 
 hkvImageFileProperties::hkvImageFileProperties()
-: m_imageFormatInstance(getImageFileFormatDefinition())
+  : m_imageFileFormatInstance(getImageFileFormatDefinition())
+  , m_imageDataFormatInstance(getImageDataFormatDefinition())
 {
   clear();
 }
 
 
 hkvImageFileProperties::hkvImageFileProperties(const hkvImageFileProperties& rhs)
-: m_imageFormatInstance(getImageFileFormatDefinition())
+  : m_imageFileFormatInstance(getImageFileFormatDefinition())
+  , m_imageDataFormatInstance(getImageDataFormatDefinition())
 {
   *this = rhs;
 }
@@ -57,10 +59,14 @@ hkvImageFileProperties::hkvImageFileProperties(const hkvImageFileProperties& rhs
 
 hkvImageFileProperties& hkvImageFileProperties::operator=(const hkvImageFileProperties& rhs)
 {
-  m_imageFormatInstance.setByAvailableElementsId(rhs.m_imageFormatInstance.getAvailableElementsId());
+  m_imageFileFormatInstance.setByAvailableElementsId(rhs.m_imageFileFormatInstance.getAvailableElementsId());
+  m_imageDataFormatInstance.setByAvailableElementsId(rhs.m_imageDataFormatInstance.getAvailableElementsId());
   m_hasAlpha = rhs.m_hasAlpha;
   m_width = rhs.m_width;
   m_height = rhs.m_height;
+  m_depth = rhs.m_depth;
+  m_images = rhs.m_images;
+  m_faces = rhs.m_faces;
 
   return *this;
 }
@@ -78,7 +84,7 @@ void hkvImageFileProperties::getProperties(hkvPropertyList& properties, hkvPrope
 
   properties.reserve(properties.size() + 5);
 
-  bool valid = m_imageFormatInstance.getDefinitionId() != HKV_IMAGE_FILE_FORMAT_INVALID;
+  bool valid = m_imageFileFormatInstance.getDefinitionId() != HKV_IMAGE_FILE_FORMAT_INVALID;
 
   if (purpose != hkvProperty::PURPOSE_SERIALIZATION)
   {
@@ -87,10 +93,23 @@ void hkvImageFileProperties::getProperties(hkvPropertyList& properties, hkvPrope
 
   if (valid)
   {
-    properties.push_back(hkvProperty("FileFormat", m_imageFormatInstance.getString(), hkvProperty::TYPE_STRING, flags | hkvProperty::FLAG_READ_ONLY, "Which file format the source texture uses."));
+    properties.push_back(hkvProperty("FileFormat", m_imageFileFormatInstance.getString(), hkvProperty::TYPE_STRING, flags | hkvProperty::FLAG_READ_ONLY, "The file format of the texture file."));
+    properties.push_back(hkvProperty("DataFormat", m_imageDataFormatInstance.getString(), hkvProperty::TYPE_STRING, flags | hkvProperty::FLAG_READ_ONLY, "The format of the image data within the texture file."));
+    properties.push_back(hkvProperty("HasAlpha", m_hasAlpha, flags | hkvProperty::FLAG_READ_ONLY, "Whether the texture contains an Alpha-channel."));
     properties.push_back(hkvProperty("Width", m_width, flags | hkvProperty::FLAG_READ_ONLY, "The width of the texture in pixels."));
     properties.push_back(hkvProperty("Height", m_height, flags | hkvProperty::FLAG_READ_ONLY, "The height of the texture in pixels."));
-    properties.push_back(hkvProperty("HasAlpha", m_hasAlpha, flags | hkvProperty::FLAG_READ_ONLY, "Whether the texture contains an Alpha-channel."));
+    if (m_depth > 1 || purpose == hkvProperty::PURPOSE_SERIALIZATION)
+    {
+      properties.push_back(hkvProperty("Depth", m_depth, flags | hkvProperty::FLAG_READ_ONLY, "The number of depth slices in this texture."));
+    }
+    if (m_faces > 1 || purpose == hkvProperty::PURPOSE_SERIALIZATION)
+    {
+      properties.push_back(hkvProperty("CubeFaces", m_faces, flags | hkvProperty::FLAG_READ_ONLY, "The number of cubemap faces in this texture."));
+    }
+    if (m_images > 1 || purpose == hkvProperty::PURPOSE_SERIALIZATION)
+    {
+      properties.push_back(hkvProperty("Images", m_images, flags | hkvProperty::FLAG_READ_ONLY, "The number of distinct images in this texture."));
+    }
   }
 }
 
@@ -104,10 +123,21 @@ void hkvImageFileProperties::setProperty(const hkvProperty& prop, const hkArray<
 
   if (hkvStringHelper::safeCompare(prop.getName(), "FileFormat") == 0)
   {
-    if (m_imageFormatInstance.setByString(prop.getString()) != HK_SUCCESS)
+    if (m_imageFileFormatInstance.setByString(prop.getString()) != HK_SUCCESS)
     {
-      m_imageFormatInstance.setByDefinitionId(HKV_IMAGE_FILE_FORMAT_INVALID);
+      m_imageFileFormatInstance.setByDefinitionId(HKV_IMAGE_FILE_FORMAT_INVALID);
     }
+  }
+  else if (hkvStringHelper::safeCompare(prop.getName(), "DataFormat") == 0)
+  {
+    if (m_imageDataFormatInstance.setByString(prop.getString()) != HK_SUCCESS)
+    {
+      m_imageDataFormatInstance.setByDefinitionId(HKV_IMAGE_DATA_FORMAT_UNKNOWN);
+    }
+  }
+  else if (hkvStringHelper::safeCompare(prop.getName(), "HasAlpha") == 0)
+  {
+    m_hasAlpha = prop.getBool();
   }
   else if (hkvStringHelper::safeCompare(prop.getName(), "Width") == 0)
   {
@@ -117,19 +147,31 @@ void hkvImageFileProperties::setProperty(const hkvProperty& prop, const hkArray<
   {
     m_height = prop.getUint();
   }
-  else if (hkvStringHelper::safeCompare(prop.getName(), "HasAlpha") == 0)
+  else if (hkvStringHelper::safeCompare(prop.getName(), "Depth") == 0)
   {
-    m_hasAlpha = prop.getBool();
+    m_depth = prop.getUint();
+  }
+  else if (hkvStringHelper::safeCompare(prop.getName(), "CubeFaces") == 0)
+  {
+    m_faces = prop.getUint();
+  }
+  else if (hkvStringHelper::safeCompare(prop.getName(), "Images") == 0)
+  {
+    m_images = prop.getUint();
   }
 }
 
 
 void hkvImageFileProperties::clear()
 {
-  m_imageFormatInstance.setByDefinitionId(HKV_IMAGE_FILE_FORMAT_INVALID);
+  m_imageFileFormatInstance.setByDefinitionId(HKV_IMAGE_FILE_FORMAT_INVALID);
+  m_imageDataFormatInstance.setByDefinitionId(HKV_IMAGE_DATA_FORMAT_UNKNOWN);
+  m_hasAlpha = false;
   m_width = 0;
   m_height = 0;
-  m_hasAlpha = false;
+  m_depth = 0;
+  m_images = 0;
+  m_faces = 0;
 }
 
 
@@ -193,7 +235,7 @@ hkResult hkvImageFileProperties::examineStream(hkStreamReader& reader, hkvImageF
 
   if (examineRes == HK_SUCCESS)
   {
-    m_imageFormatInstance.setByDefinitionId(format);
+    m_imageFileFormatInstance.setByDefinitionId(format);
   }
   else
   {
@@ -206,7 +248,19 @@ hkResult hkvImageFileProperties::examineStream(hkStreamReader& reader, hkvImageF
 
 hkvImageFileFormat hkvImageFileProperties::getImageFileFormat() const
 {
-  return (hkvImageFileFormat)m_imageFormatInstance.getDefinitionId();
+  return (hkvImageFileFormat)m_imageFileFormatInstance.getDefinitionId();
+}
+
+
+hkvImageDataFormat hkvImageFileProperties::getImageDataFormat() const
+{
+  return (hkvImageDataFormat)m_imageDataFormatInstance.getDefinitionId();
+}
+
+
+bool hkvImageFileProperties::hasAlpha() const
+{
+  return m_hasAlpha;
 }
 
 
@@ -222,9 +276,21 @@ hkUint32 hkvImageFileProperties::getHeight() const
 }
 
 
-hkBool hkvImageFileProperties::hasAlpha() const
+hkUint32 hkvImageFileProperties::getDepth() const
 {
-  return m_hasAlpha;
+  return m_depth;
+}
+
+
+hkUint32 hkvImageFileProperties::getNumImages() const
+{
+  return m_images;
+}
+
+
+hkUint32 hkvImageFileProperties::getNumFaces() const
+{
+  return m_faces;
 }
 
 
@@ -263,11 +329,16 @@ hkResult hkvImageFileProperties::examineBmp(hkStreamReader& reader)
 
   m_width = bitmapHeader.biWidth;
   m_height = bitmapHeader.biHeight;
+  m_depth = 1;
+  m_images = 1;
+  m_faces = 1;
 
   // The following is only a heuristic, and does not cover some special cases. However,
   // we assume that every format below 32bit has no alpha channel, and 32bit always
   // has one.
   m_hasAlpha = (bitmapHeader.biBitCount == 32);
+
+  m_imageDataFormatInstance.setByDefinitionId(m_hasAlpha ? HKV_IMAGE_DATA_FORMAT_BMP_ABGR : HKV_IMAGE_DATA_FORMAT_BMP_BGR);
 
   return HK_SUCCESS;
 }
@@ -281,9 +352,14 @@ hkResult hkvImageFileProperties::examineDds(hkStreamReader& reader)
     return HK_FAILURE;
   }
 
+  m_imageDataFormatInstance.setByDefinitionId(imageFile->getDataFormat());
+  m_hasAlpha = imageFile->hasAlpha();
+
   m_width = imageFile->getWidth();
   m_height = imageFile->getHeight();
-  m_hasAlpha = imageFile->hasAlpha();
+  m_depth = imageFile->getDepth();
+  m_images = imageFile->getNumImages();
+  m_faces = imageFile->getNumFaces();
 
   return HK_SUCCESS;
 }
@@ -335,6 +411,11 @@ hkResult hkvImageFileProperties::examineJpg(hkStreamReader& reader)
 
   m_height = height;
   m_width = width;
+  m_depth = 1;
+  m_images = 1;
+  m_faces = 1;
+
+  m_imageDataFormatInstance.setByDefinitionId(HKV_IMAGE_DATA_FORMAT_JPG_RGB);
 
   return HK_SUCCESS;
 }
@@ -368,8 +449,13 @@ hkResult hkvImageFileProperties::examinePng(hkStreamReader& reader)
 
   m_width = pngHeader.ihdrWidth;
   m_height = pngHeader.ihdrHeight;
+  m_depth = 1;
+  m_images = 1;
+  m_faces = 1;
 
   m_hasAlpha = (pngHeader.ihdrColorType == 4 || pngHeader.ihdrColorType == 6);
+
+  m_imageDataFormatInstance.setByDefinitionId(m_hasAlpha ? HKV_IMAGE_DATA_FORMAT_PNG_ARGB : HKV_IMAGE_DATA_FORMAT_PNG_RGB);
 
   return HK_SUCCESS;
 }
@@ -383,15 +469,20 @@ hkResult hkvImageFileProperties::examineTga(hkStreamReader& reader)
     return HK_FAILURE;
   }
 
+  m_imageDataFormatInstance.setByDefinitionId(imageFile->getDataFormat());
+  m_hasAlpha = imageFile->hasAlpha();
+
   m_width = imageFile->getWidth();
   m_height = imageFile->getHeight();
-  m_hasAlpha = imageFile->hasAlpha();
+  m_depth = imageFile->getDepth();
+  m_images = imageFile->getNumImages();
+  m_faces = imageFile->getNumFaces();
 
   return HK_SUCCESS;
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

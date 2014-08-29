@@ -125,6 +125,12 @@ public:
   /// \return
   ///   bool bResult : true if normalization was succesful
   VISION_APIFUNC bool NormalizeResult();
+  
+#if defined(_VISION_IOS)
+// Hide base class function AddAnimResult: ignore warning.
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Woverloaded-virtual"
+#endif
 
   /// \brief
   ///   Adds two result sets.
@@ -151,7 +157,7 @@ public:
   /// \return
   ///   bool bResult: true if function worked correctly
   virtual VISION_APIFUNC bool AddAnimResult(const VisSkeletalAnimResult_cl* pResult, float fAnimWeight=1.f, const float* pPerBoneWeightingMask=NULL);
-
+  
   /// \brief
   ///   Adds two result sets. As opposed to the "AddAnimResult" method, which is used by the normalize mixer, this method is used for additive animations and behaves differently
   /// 
@@ -204,7 +210,11 @@ public:
   /// \return
   ///   bool bResult: true if function worked correctly
   virtual VISION_APIFUNC bool AddSubLayerAnimResult(const VisSkeletalAnimResult_cl* pResult, float fAnimWeight=1.f, const float* pPerBoneWeightingMask=NULL);       ///< adds two results together
-
+  
+#if defined(_VISION_IOS)
+#pragma clang diagnostic pop
+#endif
+  
   /// \brief
   ///   Indicates whether there is a translation calculated for the specified bone.
   /// 
@@ -509,7 +519,7 @@ private:
 #endif //VIS_ANIM_RESULT_HPP_INCLUDED
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

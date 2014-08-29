@@ -14,24 +14,24 @@
 // - The corresponding reflection database (reflection.db) is deleted
 // - The --force-output or --force-rebuild option is added to the pre-build generateReflection.py execution
 
-HK_CLASS(hkaiEdgeGeometry)
-HK_STRUCT(hkaiEdgeGeometryEdge)
-HK_STRUCT(hkaiEdgeGeometryFace)
-HK_STRUCT(hkaiNavMeshEdgeMatchingParameters)
-HK_STRUCT(hkaiNavMeshGenerationSettings)
-HK_STRUCT(hkaiNavMeshGenerationSettingsMaterialConstructionPair)
-HK_STRUCT(hkaiNavMeshGenerationSettingsOverrideSettings)
-HK_STRUCT(hkaiNavMeshGenerationSettingsRegionPruningSettings)
-HK_STRUCT(hkaiNavMeshGenerationSettingsWallClimbingSettings)
-HK_STRUCT(hkaiNavMeshSimplificationUtilsExtraVertexSettings)
-HK_STRUCT(hkaiNavMeshSimplificationUtilsSettings)
-HK_STRUCT(hkaiNavVolumeGenerationSettings)
-HK_STRUCT(hkaiNavVolumeGenerationSettingsChunkSettings)
-HK_STRUCT(hkaiNavVolumeGenerationSettingsMaterialConstructionInfo)
-HK_STRUCT(hkaiNavVolumeGenerationSettingsMergingSettings)
+HK_CLASS(HK_EXPORT_AI,hkaiEdgeGeometry)
+HK_CLASS(HK_EXPORT_AI,hkaiNavMeshGenerationSettings)
+HK_CLASS(HK_EXPORT_AI,hkaiNavVolumeGenerationSettings)
+HK_STRUCT(HK_EXPORT_AI,hkaiEdgeGeometryEdge)
+HK_STRUCT(HK_EXPORT_AI,hkaiEdgeGeometryFace)
+HK_STRUCT(HK_EXPORT_AI,hkaiNavMeshEdgeMatchingParameters)
+HK_STRUCT(HK_EXPORT_AI,hkaiNavMeshGenerationSettingsMaterialConstructionPair)
+HK_STRUCT(HK_EXPORT_AI,hkaiNavMeshGenerationSettingsOverrideSettings)
+HK_STRUCT(HK_EXPORT_AI,hkaiNavMeshGenerationSettingsRegionPruningSettings)
+HK_STRUCT(HK_EXPORT_AI,hkaiNavMeshGenerationSettingsWallClimbingSettings)
+HK_STRUCT(HK_EXPORT_AI,hkaiNavMeshSimplificationUtilsExtraVertexSettings)
+HK_STRUCT(HK_EXPORT_AI,hkaiNavMeshSimplificationUtilsSettings)
+HK_STRUCT(HK_EXPORT_AI,hkaiNavVolumeGenerationSettingsChunkSettings)
+HK_STRUCT(HK_EXPORT_AI,hkaiNavVolumeGenerationSettingsMaterialConstructionInfo)
+HK_STRUCT(HK_EXPORT_AI,hkaiNavVolumeGenerationSettingsMergingSettings)
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

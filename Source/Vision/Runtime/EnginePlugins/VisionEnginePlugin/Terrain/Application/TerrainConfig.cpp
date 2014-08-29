@@ -9,7 +9,7 @@
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/VisionEnginePluginPCH.h>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Terrain/Application/TerrainConfig.hpp>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Terrain/Math/LargePosition.hpp>
-#include <Vision/Runtime/Base/System/Memory/VMemDbg.hpp>
+
 
 
 void VTerrainConfig::Finalize()
@@ -608,11 +608,8 @@ int VTerrainConfig::RCSPerformAction(const char *szFilename, int eAction) const
 {
   if (!m_bUseTempFolder && !m_sNativeProjectDir.IsEmpty())   // saving to real directory and in editor? 
   {
-    static bool bCheck = true;
-    if (bCheck)
-    {
-      VASSERT(ContainsI(szFilename, "_temp") == NULL); // should not be called for temp files
-    }
+    VASSERT_MSG(!ContainsI(szFilename, "_temp\\") && !ContainsI(szFilename, "_temp/"), "Folders ending with '_temp' are reserved for temp files and RCS commands should not be called for them.");
+
     // use RCS
     if (VPathHelper::IsAbsolutePath(szFilename))
       return VRCSHelper::RCSPerformAction(szFilename, eAction); //use absolute path
@@ -623,7 +620,7 @@ int VTerrainConfig::RCSPerformAction(const char *szFilename, int eAction) const
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

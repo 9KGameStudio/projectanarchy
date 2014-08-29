@@ -20,7 +20,7 @@ extern const hkClass hkDefaultMeshMaterialRegistryClass;
 /// of the hkMeshMaterialRegistry
 ///
 /// \sa hkMeshMaterialRegistry
-class hkDefaultMeshMaterialRegistry: public hkMeshMaterialRegistry
+class HK_EXPORT_COMMON hkDefaultMeshMaterialRegistry : public hkMeshMaterialRegistry
 {
     public:
         HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_SCENE_DATA);
@@ -51,7 +51,7 @@ class hkDefaultMeshMaterialRegistry: public hkMeshMaterialRegistry
         virtual const hkClass* getClassType() const HK_OVERRIDE { return &hkDefaultMeshMaterialRegistryClass; }
 
 			/// A material entry
-        struct Entry
+        struct HK_EXPORT_COMMON Entry
         {
 			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_SCENE_DATA, hkDefaultMeshMaterialRegistry::Entry );
 			
@@ -76,7 +76,7 @@ class hkDefaultMeshMaterialRegistry: public hkMeshMaterialRegistry
 #endif // HK_DEFAULT_MESH_MATERIAL_REGISTRY_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -33,6 +33,16 @@ public:
     VString     sOriginal;
     VString     sSubstitute;
     ShaderType  eShaderType;
+    int         iSizeDiff;
+  };
+
+  /// \brief Helper struct for defining a single insert rule
+  struct InsertInfo
+  {
+    VString     sToInsert;
+    ShaderType  eShaderType;
+    int         iDependsOn;
+    int         iNumDependencies;
   };
 
   /// \brief Initialize the shader patcher with the rules defined in Shaders/ShaderSourcePatcher.json.
@@ -44,16 +54,26 @@ public:
   /// \brief Check, whether the shader source patcher has been initialized successfully.
   static VBASE_IMPEXP bool IsInitialized();
 
-  /// \brief Patch the given shader source code by applying replacement rules.
-  static VBASE_IMPEXP bool PatchShader( char* pShaderSource, unsigned int uiShaderSourceLength, ShaderType eShaderType );
+  /// \brief
+  ///   Patch the shader source code for the given shader program resource by applying replacement rules.
+  /// 
+  /// \param pShaderProgramResource
+  ///   Pointer to shader program resource.
+  /// 
+  /// \param eShaderType
+  ///   The type of the shader for which the shader source code should be patched.
+  /// 
+  /// \return
+  ///   Pointer to patched shader source code, NULL, if patching failed.
+  static VBASE_IMPEXP const char* PatchShader(const VShaderProgramResource *pShaderProgramResource, ShaderType eShaderType);
 
   /// \brief Check, whether we can patch shaders in place or whether we have to allocate memory for every single shader instance.
-  /// Note: For now, only in-place patching is supported.
   static VBASE_IMPEXP bool CanPatchInPlace();
 
 
 private:
   static VArray< ReplacementInfo > m_aReplacements;
+  static VArray< InsertInfo > m_aInsertsAtBeginning;
 
   static bool m_bInitialized;   
   static bool m_bPatchInPlace;  
@@ -64,7 +84,7 @@ private:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140625)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

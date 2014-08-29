@@ -39,14 +39,44 @@ enum VDebugRenderFlags
   DEBUGRENDERFLAG_ZONES                    = V_BIT(15),   ///< Displays streaming zone specific output.
   DEBUGRENDERFLAG_RESOURCE_STATISTICS      = V_BIT(16),   ///< Displays information about all active resources.
   DEBUGRENDERFLAG_MEMORY_STATISTICS        = V_BIT(17),   ///< Displays memory statistics (only available in debug).
-  DEBUGRENDERFLAG_HW_COUNTERS              = V_BIT(19),   ///< Displays hardware performance counters. Not available on all hardware.
-
-  DEBUGRENDERFLAG_ALL                      = V_BIT(20) - 1
+  DEBUGRENDERFLAG_HW_COUNTERS              = V_BIT(18),   ///< Displays hardware performance counters. Not available on all hardware.
+  DEBUGRENDERFLAG_FIRST_CUSTOM_BIT         = V_BIT(19),   ///< First custom profiling item, see VisProfiling_cl::RegisterCustomDebugFlag
 };
 
 
+/// \brief
+///   This interface allows for registering custom debug render modes that can be triggered through function Vision::Profiling.SetDebugRenderFlags. See function VisProfiling_cl::RegisterCustomDebugFlag
+class IVisCustomDebugRenderMode_cl
+{
+public:
+  IVisCustomDebugRenderMode_cl() {m_iBitIndex=-1;}
+
+  /// \brief
+  ///   Called by the engine (specifically VisProfiling_cl::GetDebugRenderFlagDescription) to retrieve a short description of this mode. This text is displayed by the app when cycling through the modes with F4
+  VISION_APIFUNC virtual const char* GetDescription() = 0;
+
+  /// \brief
+  ///   This function is called by the engine when the flag is raised, e.g. through Vision::Profiling.SetDebugRenderFlags
+  VISION_APIFUNC virtual void OnActivate() = 0;
+
+  /// \brief
+  ///   This function is called by the engine when the flag is removed, e.g. through Vision::Profiling.SetDebugRenderFlags. It is not guaranteed that this is called before engine shutdown
+  VISION_APIFUNC virtual void OnDeactivate() = 0;
+
+  /// \brief
+  ///   When this mode is registered, it returns the bit index that can be used to activate this mode. It is not the bitmask, so Vision::Profiling.SetDebugRenderFlags(V_BIT(iBitIndex)) must be passed to activate it.
+  inline int GetFlagIndex() const
+  {
+    return m_iBitIndex;
+  }
+public:
+  int m_iBitIndex;
+};
+
+
+
 #ifdef PROFILING
-  #if defined(WIN32) && !defined(_VISION_WINRT)
+  #if defined(_VISION_WIN32) && !defined(_VISION_WINRT)
     #define VISION_USE_GPA_ITT
   #endif
 
@@ -94,8 +124,8 @@ public:
   /// \brief Resets the values of all performance counters to zero.
   void InitFrame();
 
-  /// \brief Draws the values of all performance counters on screen.
-  void Render();
+  /// \brief Draws the values of all performance counters on screen with the given position in pixel.
+  void Render(int x, int y);
 
   DynArray_cl<VisPerfCountElement_cl> m_Counters;
 
@@ -477,7 +507,13 @@ public:
   ///   Sets the text color for profiling output on screen. Note that iColor.a should be 255.
   VISION_APIFUNC void SetTextColor(VColorRef iColor=VColorRef(255,255,255,255));
 
- 
+  /// \brief
+  ///   Sets the render offset in pixels for profiling information
+  VISION_APIFUNC void SetRenderOffset(int x, int y);
+
+  /// \brief
+  ///   Gets the render offset in pixels for profiling information
+  VISION_APIFUNC void GetRenderOffset(int& x, int& y);
 
   ///
   /// @}
@@ -569,7 +605,7 @@ public:
   /// operation of this bitmask and the context's bitmask (see VisRenderContext_cl::SetRenderFilterMask) 
   /// is not zero.
   ///
-  /// @param iMask
+  /// \param iMask
   ///   the visibility bitmask to set
   inline void SetVisibleBitmask(unsigned int iMask)
   {
@@ -582,6 +618,32 @@ public:
   {
     return m_iVisibleBitmask;
   }
+
+  /// \brief
+  ///   Globally register a custom debug render mode flag which can be activated through Vision::Profiling.SetDebugRenderFlags
+  ///
+  /// This way custom debug render flags can be added which are cycled through with F4 key in the standard app. Once registered, functions on the interface are
+  /// called by the engine when the respective debug flag is set/unset.
+  /// Custom flags can be registered/unregistered at any time, but usually plugin (de-)initialization is a good place to do this.
+  ///
+  /// \param pCustom
+  ///   Pointer to an instance of IVisCustomDebugRenderMode_cl
+  ///
+  /// \return
+  ///   Bit index of the flag or -1 if unsuccessful. Same as IVisCustomDebugRenderMode_cl::GetFlagIndex
+  VISION_APIFUNC int RegisterCustomDebugFlag(IVisCustomDebugRenderMode_cl *pCustom);
+
+  /// \brief
+  ///   Globally unregister a custom debug render mode flag which has previously been registered through RegisterCustomDebugFlag
+  VISION_APIFUNC void UnRegisterCustomDebugFlag(IVisCustomDebugRenderMode_cl *pCustom);
+
+  /// \brief
+  ///   Returns the bit index of the last available debug flag, including custom ones. So passing V_BIT(GetHighestDebugRenderFlagIndex()) to SetDebugRenderFlags() enables the last item.
+  VISION_APIFUNC int GetHighestDebugRenderFlagIndex() const;
+
+  /// \brief
+  ///   Returns a short description text for the passed flag bit index. Note that a bit index has to be passed here (in valid [0..GetHighestDebugRenderFlagIndex()] range), not the VDebugRenderFlags enum values
+  VISION_APIFUNC const char *GetDebugRenderFlagDescription(int iIndex);
 
   /// \brief
   ///   This callback is triggered when the debug render flags changed. External code can listen to this to set up debug output
@@ -602,7 +664,7 @@ public:
   /// VIS_PROFILINGMETHOD_DISABLED will disable all element profiling and eliminate the profiling overhead
   /// Set this just before shipping
   /// 
-  /// On WIN32, VIS_PROFILINGMETHOD_RDTSC is the default profiling method. This will use the CPU's
+  /// On Windows, VIS_PROFILINGMETHOD_RDTSC is the default profiling method. This will use the CPU's
   /// time stamp counter to perform profiling. This is typically the fastest and most accurate
   /// profiling method. Note, however, that it can produce inconsistent results in case of varying
   /// processor speeds (SpeedStep, Cool&Quiet) or on multi-CPU systems.
@@ -661,7 +723,7 @@ public:
   ///
 
   /// \brief
-  ///   Used by vForge to set the current instance of the resource preview object. Only supported on WIN32 platforms.
+  ///   Used by vForge to set the current instance of the resource preview object. Only supported on Windows platforms.
   VISION_APIFUNC void SetCurrentResourcePreview(IVResourcePreview *pNewRes);
 
   /// \brief
@@ -693,7 +755,7 @@ private:
 
   /// \brief
   ///   Draws the resource statistics chart
-  void DrawResourceStatistics();
+  void DrawResourceStatistics(int x, int y);
 
   VisProfilingMethod_e m_eUseQPCProfiling;
 
@@ -701,13 +763,15 @@ private:
   float oldMsgDuration;                         ///< backup variable for display functions
   VSmartPtr<IVResourcePreview> m_spCurrentResourcePreview;
 
-  unsigned int m_iVisibleBitmask;
+  unsigned int m_iVisibleBitmask, m_iDebugFlagsUsedMask;
+  int m_iDebugFlagsFirstCustomBit, m_iDebugFlagsHighestBit;
+  IVisCustomDebugRenderMode_cl *m_pCustomDebugModes[16];
 };
 
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -52,23 +52,6 @@ public:
       return true;
     }
     
-    int ShowModalDialog(const char * szXmlFile, float x = 0, float y = 0)
-    {
-      if(szXmlFile==NULL)
-        return false;
-        
-      VSWIG_ENSURE_GUI_CONTEXT(self, pContext);
-      return pContext->ShowDialogModal(NULL, szXmlFile, hkvVec2(x,y));
-    }
-    
-    int ShowModalDialog(VDialog *pDialog)
-    {
-      if(pDialog==NULL)
-        return false;
-      VASSERT_MSG(pDialog->GetContext()!=NULL, "No dialog context present!")
-      return pDialog->GetContext()->ShowDialogModal(pDialog);
-    }
-    
     void SetCursorVisible(bool bVisible)
     {
       VSWIG_ENSURE_GUI_CONTEXT(self, pContext);
@@ -184,7 +167,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

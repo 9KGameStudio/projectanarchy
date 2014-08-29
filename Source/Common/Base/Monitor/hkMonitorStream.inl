@@ -91,7 +91,7 @@ void hkMonitorStream::TimerCommand::setTime()
 	//SceRtcTick tick;
 	//sceRtcGetCurrentTick(&tick);
 	//m_time0 = static_cast<hkUint32>( tick.tick );
-	
+
 	//__builtin_mcr(15,0,0,12,15);
 	//m_time0 = __builtin_mrc(15,0,9,13,2);
 
@@ -140,7 +140,7 @@ void hkMonitorStream::TimerCommand::setTime()
 #elif defined(HK_PLATFORM_NACL)
 	m_time0 = 0; //CK: to come in future
 #elif defined(HK_PLATFORM_WINRT) && defined(HK_ARCH_ARM)
-	// 
+	//
 	LARGE_INTEGER i;
 	QueryPerformanceCounter(&i);
 	#ifdef HK_ENABLE_64BIT_TIMERS
@@ -162,7 +162,11 @@ void hkMonitorStream::TimerCommand::setTime()
 #define HK_MONITOR_COMMAND_PUSH_DIR "Pd"
 #define HK_MONITOR_COMMAND_POP_DIR "pd"
 #define HK_MONITOR_COMMAND_BEGIN_TIMER "T"
+#define HK_MONITOR_COMMAND_BEGIN_TIMER_AND_SELF "R"
 #define HK_MONITOR_COMMAND_BEGIN_OBJECT_NAME "O"
+
+#define HK_MONITOR_COMMAND_BEGIN_MULTI_TIMER "Y"
+#define HK_MONITOR_COMMAND_END_MULTI_TIMER "W"
 
 #define HK_MONITOR_COMMAND_END_TIMER "E"
 #define HK_MONITOR_COMMAND_BEGIN_LIST "L"
@@ -182,49 +186,66 @@ void hkMonitorStream::TimerCommand::setTime()
 #	define HK_MONITOR_ADD_VALUE_INTERN( STREAM, NAME, VALUE, MONITOR_TYPE ){   \
 		if ( STREAM.memoryAvailable() )							\
 		{																	\
-			 hkMonitorStream::AddValueCommand* h = reinterpret_cast<hkMonitorStream::AddValueCommand*>(STREAM.getEnd());	\
+			 hkMonitorStream::AddValueCommand* HK_RESTRICT h = reinterpret_cast<hkMonitorStream::AddValueCommand*>((STREAM).getEnd());	\
 			 h->m_commandAndMonitor = HK_MONITOR_COMMAND_ADD_VALUE MONITOR_TYPE NAME;				\
 			 h->m_value = VALUE;											\
-			 STREAM.setEnd( (char*)(h+1) );						\
+			 (STREAM).setEnd( (char*)(h+1) );						\
 		}	}
 
 #	define HK_TIMER_INTERN( STREAM, NAME, COMMAND, OBJECT )	{						\
-		if ( STREAM.memoryAvailable() )										\
+		if ( (STREAM).memoryAvailable() )										\
 		{																	\
-			hkMonitorStream::TimerCommand* h = reinterpret_cast<hkMonitorStream::TimerCommand*>(STREAM.getEnd());	\
+			hkMonitorStream::TimerCommand* HK_RESTRICT h = reinterpret_cast<hkMonitorStream::TimerCommand*>((STREAM).getEnd());	\
 			 h->m_commandAndMonitor = COMMAND HK_MONITOR_TYPE_TIMER NAME;	\
 			 h->setTime();													\
-			 STREAM.setEnd( (char*)(h+1) );						\
+			 (STREAM).setEnd( (char*)(h+1) );						\
+		} }
+
+#	define HK_MULTI_TIMER_BEGIN( STREAM, NAME )	{							\
+		if ( (STREAM).memoryAvailable() )									\
+		{																	\
+			hkMonitorStream::Command* HK_RESTRICT h = reinterpret_cast<hkMonitorStream::Command*>((STREAM).getEnd());	\
+			h->m_commandAndMonitor = HK_MONITOR_COMMAND_BEGIN_MULTI_TIMER HK_MONITOR_TYPE_TIMER NAME;	\
+			(STREAM).setEnd( (char*)(h+1) );								\
+		} }
+
+#	define HK_MULTI_TIMER_END( STREAM, NAME, DATA )	{						\
+		if ( (STREAM).memoryAvailable() )									\
+		{																	\
+			hkMonitorStream::MultiTimerCommand* HK_RESTRICT h = reinterpret_cast<hkMonitorStream::MultiTimerCommand*>((STREAM).getEnd());	\
+			*h = (DATA);													\
+			h->m_timerCommand.m_commandAndMonitor = HK_MONITOR_COMMAND_END_MULTI_TIMER HK_MONITOR_TYPE_TIMER NAME;	\
+			(STREAM).setEnd( (char*)(h+1) );								\
 		} }
 
 #	define HK_TIMER_INTERN_LIST( STREAM, NAME1, NAME2, COMMAND, OBJECT ) {			\
-		if ( STREAM.memoryAvailable() )										\
+		if ( (STREAM).memoryAvailable() )										\
 		{																	\
-			hkMonitorStream::TimerBeginListCommand* h = reinterpret_cast<hkMonitorStream::TimerBeginListCommand*>(STREAM.getEnd());	\
+			hkMonitorStream::TimerBeginListCommand* HK_RESTRICT h = reinterpret_cast<hkMonitorStream::TimerBeginListCommand*>((STREAM).getEnd());	\
 			 h->m_commandAndMonitor = COMMAND HK_MONITOR_TYPE_TIMER NAME1;	\
 			 h->m_nameOfFirstSplit = HK_MONITOR_COMMAND_SPLIT_LIST HK_MONITOR_TYPE_TIMER NAME2; \
 			 h->setTime();													\
-			 STREAM.setEnd( (char*)(h+1) );						\
+			 (STREAM).setEnd( (char*)(h+1) );						\
 		} }
 
 #	define HK_TIMER_BEGIN_OBJECT_NAME(STREAM, OBJECT_NAME) {				\
-	if ( STREAM.memoryAvailable() )										\
+	if ( (STREAM).memoryAvailable() )										\
 	{																	\
-		hkMonitorStream::TimerBeginObjectNameCommand* h = reinterpret_cast<hkMonitorStream::TimerBeginObjectNameCommand*>(STREAM.getEnd());	\
+		hkMonitorStream::TimerBeginObjectNameCommand* HK_RESTRICT h = reinterpret_cast<hkMonitorStream::TimerBeginObjectNameCommand*>((STREAM).getEnd());	\
 		h->m_commandAndMonitor = HK_MONITOR_COMMAND_BEGIN_OBJECT_NAME HK_MONITOR_TYPE_TIMER;	\
 		h->m_objectName = OBJECT_NAME; \
 		h->setTime();													\
-		STREAM.setEnd( (char*)(h+1) );						\
+		(STREAM).setEnd( (char*)(h+1) );						\
 	} }
 
 #	define HK_MONITOR_MEMORY_INTERNAL(STREAM, TAG, PTR, NBYTES) { \
-	if ( STREAM.memoryAvailable() ) \
+	if ( (STREAM).memoryAvailable() ) \
 		{ \
-		hkMonitorStream::MemoryCommand* h = reinterpret_cast<hkMonitorStream::MemoryCommand*>(STREAM.getEnd()); \
+		hkMonitorStream::MemoryCommand* HK_RESTRICT h = reinterpret_cast<hkMonitorStream::MemoryCommand*>((STREAM).getEnd()); \
 		h->m_commandAndMonitor = TAG; \
 		h->m_ptr = PTR; \
 		h->m_sizeAndFlags = NBYTES; \
-		STREAM.setEnd( (char*)(h+1) );	\
+		(STREAM).setEnd( (char*)(h+1) );	\
 } }
 
 
@@ -232,6 +253,7 @@ void hkMonitorStream::TimerCommand::setTime()
 #	define HK_MONITOR_MEMORY_FREE(TAG, PTR, NBYTES)  { 	hkMonitorStream& mStream = hkMonitorStream::getInstance(); HK_MONITOR_MEMORY_INTERNAL(mStream, TAG,PTR,(NBYTES)|(1<<31)); }
 
 #	define HK_TIMER_BEGIN( NAME, OBJECT )	{ 	hkMonitorStream& mStream = hkMonitorStream::getInstance(); HK_TIMER_INTERN( mStream, NAME, HK_MONITOR_COMMAND_BEGIN_TIMER, OBJECT	); }
+#	define HK_TIMER_BEGIN_AND_SELF( NAME )	{ 	hkMonitorStream& mStream = hkMonitorStream::getInstance(); HK_TIMER_INTERN( mStream, NAME, HK_MONITOR_COMMAND_BEGIN_TIMER_AND_SELF, HK_NULL	); }
 #	define HK_TIMER_END(  )					{ 	hkMonitorStream& mStream = hkMonitorStream::getInstance(); HK_TIMER_INTERN( mStream, "", HK_MONITOR_COMMAND_END_TIMER, HK_NULL	); }
 
 	/// Timer end call which also checks for matching timer begin call
@@ -247,6 +269,7 @@ void hkMonitorStream::TimerCommand::setTime()
 	//	Timer calls where you pass on a stream to avoid tls lookups
 	//
 #	define HK_TIMER_BEGIN2( STREAM, NAME, OBJECT )			HK_TIMER_INTERN( STREAM, NAME, HK_MONITOR_COMMAND_BEGIN_TIMER, OBJECT	)
+#	define HK_TIMER_BEGIN_AND_SELF2( STREAM, NAME )			HK_TIMER_INTERN( STREAM, NAME, HK_MONITOR_COMMAND_BEGIN_TIMER_AND_SELF, HK_NULL	)
 #	define HK_TIMER_END2( STREAM )							HK_TIMER_INTERN( STREAM, "", HK_MONITOR_COMMAND_END_TIMER, HK_NULL	)
 
 	/// Timer end call which also checks for matching timer begin call
@@ -256,7 +279,7 @@ void hkMonitorStream::TimerCommand::setTime()
 #	define HK_TIMER_SPLIT_LIST2( STREAM, NEXTITEM )			HK_TIMER_INTERN( STREAM, NEXTITEM, HK_MONITOR_COMMAND_SPLIT_LIST, HK_NULL	)
 #	define HK_TIMER_END_LIST2( STREAM )						HK_TIMER_INTERN( STREAM, "", HK_MONITOR_COMMAND_END_LIST, HK_NULL	)
 
-#	define HK_MONITOR_ADD_VALUE2( STREAM, NAME, VALUE, MONITOR_TYPE )	HK_MONITOR_ADD_VALUE_INTERN( STREAM, NAME, VALUE, MONITOR_TYPE )
+#	define HK_MONITOR_ADD_VALUE2( STREAM, NAME, VALUE, MONITOR_TYPE )	HK_MONITOR_ADD_VALUE_INTERN( (STREAM), NAME, VALUE, MONITOR_TYPE )
 
 #if !defined(__HAVOK_PARSER__) && (defined(HK_COMPILER_GCC) || defined(HK_COMPILER_SNC))
 #	define HK_POSSIBLY_UNUSED __attribute__((unused))
@@ -267,22 +290,85 @@ void hkMonitorStream::TimerCommand::setTime()
 class HK_POSSIBLY_UNUSED hkTimeFunctionHelper
 {
 	public:
-		HK_FORCE_INLINE ~hkTimeFunctionHelper() { HK_TIMER_END(); }
+		HK_FORCE_INLINE hkTimeFunctionHelper(hkMonitorStream* ptr): m_streamPtr(ptr)	{		}
+
+		HK_FORCE_INLINE hkTimeFunctionHelper()
+		{
+			m_streamPtr = hkMonitorStream::getInstancePtr();
+		}
+		HK_FORCE_INLINE ~hkTimeFunctionHelper() { HK_TIMER_END2((*m_streamPtr)); }
+		hkMonitorStream* m_streamPtr;
 };
 
 class HK_POSSIBLY_UNUSED hkTimeListFunctionHelper
 {
 	public:
-		HK_FORCE_INLINE ~hkTimeListFunctionHelper() { HK_TIMER_END_LIST(); }
+		HK_FORCE_INLINE hkTimeListFunctionHelper(hkMonitorStream* ptr): m_streamPtr(ptr){}
+
+		HK_FORCE_INLINE hkTimeListFunctionHelper()
+		{
+			m_streamPtr = hkMonitorStream::getInstancePtr();
+		}
+
+		HK_FORCE_INLINE ~hkTimeListFunctionHelper() { HK_TIMER_END_LIST2((*m_streamPtr)); }
+		hkMonitorStream* m_streamPtr;
 };
 
-#define HK_TIME_CODE_BLOCK( NAME, OBJECT ) HK_TIMER_BEGIN(NAME, OBJECT); hkTimeFunctionHelper HK_PREPROCESSOR_JOIN_TOKEN(timeblock, __LINE__)
-#define HK_TIME_CODE_BLOCK2( STREAM, NAME, OBJECT ) HK_TIMER_BEGIN2(STREAM, NAME, OBJECT); hkTimeFunctionHelper HK_PREPROCESSOR_JOIN_TOKEN(timeblock, __LINE__)
-#define HK_TIME_CODE_BLOCK_LIST( NAME, OBJECT ) HK_TIMER_BEGIN_LIST(NAME, OBJECT); hkTimeListFunctionHelper HK_PREPROCESSOR_JOIN_TOKEN(timeblock, __LINE__)
+
+HK_FORCE_INLINE void hkAppendScopeToMultiTimer( hkMonitorStream::MultiTimerCommand* HK_RESTRICT multiTimer,
+											    const hkMonitorStream::TimerCommand* scopeTime )
+{
+	multiTimer->m_timerCommand += *scopeTime;
+	++multiTimer->m_callCount;
+}
+
+
+class HK_POSSIBLY_UNUSED hkMultiTimerScopeHelper
+{
+	public:
+		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_MONITOR, hkMultiTimerScopeHelper );
+
+		HK_FORCE_INLINE hkMultiTimerScopeHelper( hkMonitorStream::MultiTimerCommand* HK_RESTRICT timer )
+		: m_timer(timer)
+		{
+			if (m_timer->m_timerCommand.m_time1 == 0)
+			{				
+				m_scopeTime.setTime();
+			}
+		}
+
+		HK_FORCE_INLINE ~hkMultiTimerScopeHelper()
+		{
+			if (m_timer->m_timerCommand.m_time1 == 0)
+			{
+				hkMonitorStream::TimerCommand curTime;				
+				curTime.setTime();				
+				curTime.m_time0 = hkMonitorStream::TimerCommand::subtract(curTime.m_time0, m_scopeTime.m_time0);
+				curTime.m_time1 = 0;
+				hkAppendScopeToMultiTimer(m_timer, &curTime);
+			}
+		}
+
+		hkMonitorStream::MultiTimerCommand*	HK_RESTRICT	m_timer;
+		hkMonitorStream::TimerCommand					m_scopeTime;
+};
+
+
+#define HK_TIME_LOOP_SCOPE( TIMER ) hkMultiTimerScopeHelper HK_PREPROCESSOR_JOIN_TOKEN(_multiTimerHelper, __LINE__)( &TIMER )
+
+
+#define HK_TIME_CODE_BLOCK( NAME, OBJECT ) hkMonitorStream* HK_PREPROCESSOR_JOIN_TOKEN(_timerStreamPtr, __LINE__) = hkMonitorStream::getInstancePtr(); \
+	HK_TIMER_BEGIN2( (*HK_PREPROCESSOR_JOIN_TOKEN(_timerStreamPtr, __LINE__)), NAME, OBJECT);\
+	hkTimeFunctionHelper HK_PREPROCESSOR_JOIN_TOKEN(_timerHelper, __LINE__)(HK_PREPROCESSOR_JOIN_TOKEN(_timerStreamPtr, __LINE__))
+#define HK_TIME_CODE_BLOCK2( STREAM, NAME, OBJECT ) HK_TIMER_BEGIN2(STREAM, NAME, OBJECT);\
+	hkTimeFunctionHelper HK_PREPROCESSOR_JOIN_TOKEN(_timerHelper, __LINE__)
+#define HK_TIME_CODE_BLOCK_LIST( NAME, OBJECT ) hkMonitorStream* HK_PREPROCESSOR_JOIN_TOKEN(_timerStreamPtr, __LINE__) = hkMonitorStream::getInstancePtr();\
+	HK_TIMER_BEGIN_LIST2( (*HK_PREPROCESSOR_JOIN_TOKEN(_timerStreamPtr, __LINE__)), NAME, OBJECT);\
+	hkTimeListFunctionHelper HK_PREPROCESSOR_JOIN_TOKEN(_timerHelper, __LINE__)(HK_PREPROCESSOR_JOIN_TOKEN(_timerStreamPtr, __LINE__))
 
 #	define HK_MONITOR_PUSH_DIR( PATH )	{							\
 	hkMonitorStream& mStream = hkMonitorStream::getInstance();		\
-	if ( mStream.memoryAvailable() )									\
+	if ( mStream.memoryAvailable() )								\
 	{																\
 		 hkMonitorStream::Command* h = (hkMonitorStream::Command*)( mStream.expandby( sizeof(hkMonitorStream::Command) ) );	\
 		 h->m_commandAndMonitor = HK_MONITOR_COMMAND_PUSH_DIR PATH;	\
@@ -290,7 +376,7 @@ class HK_POSSIBLY_UNUSED hkTimeListFunctionHelper
 
 #	define HK_MONITOR_POP_DIR(  )	{								\
 	hkMonitorStream& mStream = hkMonitorStream::getInstance();		\
-	if ( mStream.memoryAvailable() )									\
+	if ( mStream.memoryAvailable() )								\
 	{																\
 		 hkMonitorStream::Command* h = (hkMonitorStream::Command*)( mStream.expandby( sizeof(hkMonitorStream::Command) ) );	\
 		 h->m_commandAndMonitor = HK_MONITOR_COMMAND_POP_DIR;		\
@@ -301,7 +387,7 @@ class HK_POSSIBLY_UNUSED hkTimeListFunctionHelper
 	if ( mStream.getEnd() <= (mStream.getCapacity() - sizeof(hkMonitorStream::Command)) )									\
 	{																\
 		hkMonitorStream::Command* h = (hkMonitorStream::Command*)( mStream.expandby( sizeof(hkMonitorStream::Command) ) );	\
-		h->m_commandAndMonitor = HK_MONITOR_COMMAND_NOP;	\
+		h->m_commandAndMonitor = HK_MONITOR_COMMAND_NOP;			\
 	}	}
 
 #else // HK_CONFIG_MONITORS == HK_CONFIG_MONITORS_DISABLED
@@ -317,6 +403,7 @@ class HK_POSSIBLY_UNUSED hkTimeListFunctionHelper
 #	define HK_MONITOR_MEMORY_FREE(TAG, PTR, NBYTES)
 
 #	define HK_TIMER_BEGIN( NAME, OBJECT )
+#	define HK_TIMER_BEGIN_AND_SELF( NAME )
 #	define HK_TIMER_BEGIN_OBJECT_NAME( STREAM, OBJECT_NAME )
 #	define HK_TIMER_END()
 #	define HK_TIMER_NAMED_END(NAME)
@@ -325,6 +412,7 @@ class HK_POSSIBLY_UNUSED hkTimeListFunctionHelper
 #	define HK_TIMER_END_LIST(  )
 
 #	define HK_TIMER_BEGIN2( STREAM, NAME, OBJECT )
+#	define HK_TIMER_BEGIN_AND_SELF2( STREAM, NAME )
 #	define HK_TIMER_END2( STREAM )
 #	define HK_TIMER_NAMED_END2( STREAM, NAME )
 #	define HK_TIMER_BEGIN_LIST2( STREAM, NAME, FIRSTITEM )
@@ -347,7 +435,7 @@ class HK_POSSIBLY_UNUSED hkTimeListFunctionHelper
 #	define HK_INTERNAL_TIMER_SPLIT_LIST(a)		HK_TIMER_SPLIT_LIST(a)
 #	define HK_INTERNAL_TIMER_END_LIST			HK_TIMER_END_LIST
 #	define HK_INTERNAL_MONITOR_ADD_VALUE(NAME, VALUE, MONITOR_TYPE)		HK_MONITOR_ADD_VALUE(NAME, VALUE, MONITOR_TYPE)
-#	define HK_INTERNAL_TIME_CODE_BLOCK( NAME, OBJECT) HK_TIME_CODE_BLOCK( NAME, OBJECT) 
+#	define HK_INTERNAL_TIME_CODE_BLOCK( NAME, OBJECT) HK_TIME_CODE_BLOCK( NAME, OBJECT)
 
 #	define HK_USER_TIMER_BEGIN(NAME,OBJECT)		{}
 #	define HK_USER_TIMER_END()				{}
@@ -374,7 +462,7 @@ class HK_POSSIBLY_UNUSED hkTimeListFunctionHelper
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

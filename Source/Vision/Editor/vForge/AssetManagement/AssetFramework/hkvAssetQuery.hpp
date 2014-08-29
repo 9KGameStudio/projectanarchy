@@ -51,6 +51,9 @@ public:
   ASSETFRAMEWORK_IMPEXP void operator=(const hkvAssetQuery& rhs);
   ASSETFRAMEWORK_IMPEXP void clearAll();
 
+  /// Sets a bitfield that acts as a filter when 'all types' are selected (to make only a subset of all types part of such a query)
+  ASSETFRAMEWORK_IMPEXP void setAllTypesFilter(const hkBitField& AllowedTypes);
+
   // Asset Library Query
   ASSETFRAMEWORK_IMPEXP void clearLibrary();
   ASSETFRAMEWORK_IMPEXP void setIncludeLibrarySubfolders(bool includeSubfolder);
@@ -62,9 +65,10 @@ public:
 
   // Asset Type Query
   ASSETFRAMEWORK_IMPEXP void clearAssetTypes();
-  ASSETFRAMEWORK_IMPEXP hkBool setAssetType(hkUint32 typeIndex, bool isQueried);
-  ASSETFRAMEWORK_IMPEXP hkBool isAssetTypeSet(hkUint32 typeIndex) const;
-  ASSETFRAMEWORK_IMPEXP hkBool isAnyTypeSet() const;
+  ASSETFRAMEWORK_IMPEXP bool setAssetType(hkUint32 typeIndex, bool isQueried);
+  ASSETFRAMEWORK_IMPEXP bool isAssetTypeSet(hkUint32 typeEntryIndex) const;
+  ASSETFRAMEWORK_IMPEXP bool isAnyTypeSet() const;
+  ASSETFRAMEWORK_IMPEXP bool isAssetTypeInQuery(const hkvAssetTypeInfoHandle& typeInfo, hkInt32 subtype) const;
 
   // Tag Query
   ASSETFRAMEWORK_IMPEXP void clearTags();
@@ -152,6 +156,7 @@ private:
   bool m_includeSubdirectories;
   // Asset Types
   hkBitField m_types;
+  hkBitField m_AllTypesFilter;
   // Tags
   hkvAssetTags m_tags;
   // Name
@@ -176,7 +181,7 @@ private:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

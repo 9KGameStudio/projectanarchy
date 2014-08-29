@@ -8,7 +8,7 @@
 
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/VisionEnginePluginPCH.h>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Terrain/Editing/TerrainSectorRenderer.hpp>
-#include <Vision/Runtime/Base/System/Memory/VMemDbg.hpp>
+
 
 
 VTerrainSectorRenderLoop::VTerrainSectorRenderLoop(int iResX, int iResY, bool bBakedLightmaps)
@@ -18,7 +18,7 @@ VTerrainSectorRenderLoop::VTerrainSectorRenderLoop(int iResX, int iResY, bool bB
   m_iResY = iResY;
   m_bBakedLightmaps = bBakedLightmaps;
   m_pTargetData = NULL;
-#if ( defined(_VR_DX9) && defined(WIN32) )
+#if ( defined(_VR_DX9) && defined(_VISION_WIN32) )
   pRenderTarget = NULL;
   pTexture = NULL;
   pSurface = NULL;
@@ -29,7 +29,7 @@ VTerrainSectorRenderLoop::VTerrainSectorRenderLoop(int iResX, int iResY, bool bB
 
 VTerrainSectorRenderLoop::~VTerrainSectorRenderLoop()
 {
-#if ( defined(_VR_DX9) && defined(WIN32) )
+#if ( defined(_VR_DX9) && defined(_VISION_WIN32) )
   V_SAFE_RELEASE(pLockableSurface);
   V_SAFE_RELEASE(pLockableTexture);
   V_SAFE_RELEASE(pRenderTarget);
@@ -379,7 +379,7 @@ bool VTerrainSectorRenderer::SaveToFile(VTerrainSector *pSector)
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

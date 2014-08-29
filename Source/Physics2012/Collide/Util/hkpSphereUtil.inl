@@ -17,7 +17,7 @@ HK_FORCE_INLINE hkBool hkpRayCastSphere(hkVector4Parameter rayFrom, hkVector4Par
 	hkVector4 spherePosRadius; spherePosRadius.setXYZ_W(hkVector4::getZero(), hkSimdReal::fromFloat(radius));
 	hkSimdReal hitFraction; hitFraction.load<1>( (const hkReal*)&(results.m_hitFraction) );
 
-	if(hkcdRayCastSphere(ray, spherePosRadius, &hitFraction, &results.m_normal, hkcdRayQueryFlags::NO_FLAGS))
+	if( hkcdRayCastSphere(ray, spherePosRadius, &hitFraction, &results.m_normal, hkcdRayQueryFlags::NO_FLAGS).isHit() )
 	{
 		hitFraction.store<1>( (hkReal*)&(results.m_hitFraction) );
 		results.setKey(HK_INVALID_SHAPE_KEY);
@@ -28,7 +28,7 @@ HK_FORCE_INLINE hkBool hkpRayCastSphere(hkVector4Parameter rayFrom, hkVector4Par
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

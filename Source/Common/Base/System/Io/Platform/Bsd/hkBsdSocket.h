@@ -43,17 +43,17 @@ class hkBsdSocket : public hkSocket
 		virtual hkResult asyncSelect(void* notificationHandle, hkUint32 message, SOCKET_EVENTS events);
 
 		virtual bool canRead();
-		
 
 		// server
 
-		hkResult listen(int port);
-		hkSocket* pollForNewClient();
+		virtual hkResult listen(int port);
 
+		virtual hkSocket* pollForNewClient();
+
+		virtual void getAddress( hkStringBuf& hostOut, int& portOut ) const;
 
 		// Switch between blocking/non-blocking modes if desired
 		hkResult setBlocking(hkBool blocking);
-		
 
 	protected:
 
@@ -68,10 +68,12 @@ void HK_CALL hkBsdNetworkInit();
 /// Shuts down the network
 void HK_CALL hkBsdNetworkQuit();
 
+void HK_CALL hkBsdGetAddressString( hkStringBuf& );
+
 #endif // HK_BASE_BSD_SOCKET_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

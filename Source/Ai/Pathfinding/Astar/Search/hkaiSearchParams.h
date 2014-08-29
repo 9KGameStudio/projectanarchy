@@ -10,6 +10,9 @@
 
 #include <Common/Base/Container/LocalArray/hkLocalArray.h>
 
+#include <Ai/Pathfinding/Astar/SearchState/hkaiSearchState.h>
+#include <Ai/Pathfinding/Astar/OpenSet/hkaiHeapOpenSet.h>
+
 	/// Memory control defaults
 struct hkaiSearchParameters
 {
@@ -19,20 +22,15 @@ struct hkaiSearchParameters
 	//	Default values for controlling search memory usage are given in two variants:
 	//	* Default values for single-threaded, synchronous requests (via hkaiPathfindingUtil::findPath)
 	//	  These default values are generously large, and can be reduced to conserve memory.
-	//	* default values for multi-threaded, asynchronous requests (via hkaiNavMeshAStarJob)
+	//	* default values for multi-threaded, asynchronous requests (via hkaiNavMeshAStarTask)
 	//	  These default values are sized for executing searches on the SPUs, and cannot be increased
-	//	  for jobs processed on the SPU.
+	//	  for tasks processed on the SPU.
 	//
 
 	enum ElementSizes
 	{
-#ifndef HK_REAL_IS_DOUBLE
-		OPENSET_ELEMENT_SIZE = 8, // hkaiHeapOpenSet::IndexCostPair
-		SEARCH_STATE_ELEMENT_SIZE = 16 + 2, // sizeof(hkaiSearchStateNode) + sizeof(hkInt16)
-#else
-		OPENSET_ELEMENT_SIZE = 16, // hkaiHeapOpenSet::IndexCostPair
-		SEARCH_STATE_ELEMENT_SIZE = 32 + 2, // sizeof(hkaiSearchStateNode) + sizeof(hkInt16)
-#endif
+		OPENSET_ELEMENT_SIZE = sizeof(hkaiHeapOpenSet::IndexCostPair),
+		SEARCH_STATE_ELEMENT_SIZE = sizeof(hkaiSearchStateNode) + sizeof(hkInt16),
 		SEARCH_STATE_OVERHEAD = 512 // sizeof(hkInt16)*256
 	};
 
@@ -174,7 +172,7 @@ struct hkaiSearchMemoryLocalStorage : public hkaiSearchMemoryInfo
 #endif // HKAI_SEARCH_PARAMS_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

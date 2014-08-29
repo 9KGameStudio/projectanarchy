@@ -40,17 +40,17 @@ inline void hkaiDirectedGraphExplicitCost::clearAndDeallocate()
 	m_edges.clearAndDeallocate();
 }
 
-inline void hkaiDirectedGraphExplicitCost::getPosition( SearchIndex a, hkVector4& v ) const
+inline void hkaiDirectedGraphExplicitCost::getPosition( NodeIndex a, hkVector4& v ) const
 {
 	v = m_positions[a];
 }
 
-inline const hkaiDirectedGraphExplicitCost::Node& hkaiDirectedGraphExplicitCost::getNode( SearchIndex a ) const
+inline const hkaiDirectedGraphExplicitCost::Node& hkaiDirectedGraphExplicitCost::getNode( NodeIndex a ) const
 {
 	return m_nodes[a];
 }
 
-inline hkaiDirectedGraphExplicitCost::Node& hkaiDirectedGraphExplicitCost::getNode( SearchIndex a )
+inline hkaiDirectedGraphExplicitCost::Node& hkaiDirectedGraphExplicitCost::getNode( NodeIndex a )
 {
 	return m_nodes[a];
 }
@@ -135,7 +135,7 @@ HK_FORCE_INLINE       hkaiDirectedGraphExplicitCost::NodeData* hkaiDirectedGraph
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

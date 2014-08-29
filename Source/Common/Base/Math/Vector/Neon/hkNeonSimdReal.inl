@@ -14,27 +14,31 @@ HK_FORCE_INLINE /*static*/ const hkSimdFloat32 HK_CALL hkSimdFloat32::convert(co
 {
 	hkSimdFloat32 sr;
 	sr.m_real = x;
+	//HK_MATH_ASSERT(0x7c3a4d98, reinterpret_cast<hkUint32*>(&m_real)[0] == reinterpret_cast<hkUint32*>(&m_real)[1], "invalid simd scalar");
 	return sr;
-	//HK_ASSERT(0x7c3a4d98, reinterpret_cast<hkUint32*>(&m_real)[0] == reinterpret_cast<hkUint32*>(&m_real)[1]);
 }
 
 template<int vectorConstant>
 HK_FORCE_INLINE /*static*/ const hkSimdFloat32 HK_CALL hkSimdFloat32::getConstant()
 {
 	HK_COMPILE_TIME_ASSERT2( 
+		(vectorConstant>HK_QUADREAL_BEGIN) && (vectorConstant<HK_QUADREAL_END) && 
 		(vectorConstant!=HK_QUADREAL_1000) && (vectorConstant!=HK_QUADREAL_0100) && (vectorConstant!=HK_QUADREAL_0010) && (vectorConstant!=HK_QUADREAL_0001) &&
-		(vectorConstant!=HK_QUADREAL_m11m11) && (vectorConstant!=HK_QUADREAL_1248) && (vectorConstant!=HK_QUADREAL_8421) && (vectorConstant!=HK_QUADREAL_1010)  && (vectorConstant!=HK_QUADREAL_1100)
+		(vectorConstant!=HK_QUADREAL_m11m11) && (vectorConstant!=HK_QUADREAL_1m11m1) && (vectorConstant!=HK_QUADREAL_1248) && (vectorConstant!=HK_QUADREAL_8421) && 
+		(vectorConstant!=HK_QUADREAL_0011) && (vectorConstant!=HK_QUADREAL_1010)  && (vectorConstant!=HK_QUADREAL_1100)
 		, HK_SIMDFLOAT_ILLEGAL_CONSTANT_REQUEST);
 	return convert(vget_low_f32(*(g_vectorfConstants + vectorConstant)));
 }
 
-HK_FORCE_INLINE /*static*/ const hkSimdFloat32 HK_CALL hkSimdFloat32::getConstant(hkVectorConstant constant)
+HK_FORCE_INLINE /*static*/ const hkSimdFloat32 HK_CALL hkSimdFloat32::getConstant(hkVectorConstant vectorConstant)
 {
 	HK_MATH_ASSERT( 0x909ff234,
-		(constant!=HK_QUADREAL_1000) && (constant!=HK_QUADREAL_0100) && (constant!=HK_QUADREAL_0010) && (constant!=HK_QUADREAL_0001) &&
-		(constant!=HK_QUADREAL_m11m11) && (constant!=HK_QUADREAL_1248) && (constant!=HK_QUADREAL_8421) && (constant!=HK_QUADREAL_1010)  && (constant!=HK_QUADREAL_1100)
+		(vectorConstant>HK_QUADREAL_BEGIN) && (vectorConstant<HK_QUADREAL_END) && 
+		(vectorConstant!=HK_QUADREAL_1000) && (vectorConstant!=HK_QUADREAL_0100) && (vectorConstant!=HK_QUADREAL_0010) && (vectorConstant!=HK_QUADREAL_0001) &&
+		(vectorConstant!=HK_QUADREAL_m11m11) && (vectorConstant!=HK_QUADREAL_1m11m1) && (vectorConstant!=HK_QUADREAL_1248) && (vectorConstant!=HK_QUADREAL_8421) && 
+		(vectorConstant!=HK_QUADREAL_0011) && (vectorConstant!=HK_QUADREAL_1010)  && (vectorConstant!=HK_QUADREAL_1100)
 		, "not a simdreal constant");
-	return convert(vget_low_f32(*(g_vectorfConstants + constant)));
+	return convert(vget_low_f32(*(g_vectorfConstants + vectorConstant)));
 }
 
 #ifndef HK_DISABLE_IMPLICIT_SIMDREAL_FLOAT_CONVERSION
@@ -56,7 +60,12 @@ HK_FORCE_INLINE hkFloat32 hkSimdFloat32::getReal() const
 
 HK_FORCE_INLINE void hkSimdFloat32::setFromFloat(const hkFloat32& x)
 {
+#if defined(HK_COMPILER_GCC_VERSION) && (HK_COMPILER_GCC_VERSION == 40800)	
+	float f = x;
+	m_real = vld1_dup_f32( (const float32_t*)&f );
+#else
 	m_real = vld1_dup_f32( (const float32_t*)&x );
+#endif
 }
 
 HK_FORCE_INLINE void hkSimdFloat32::setFromFloat(const hkDouble64& x)
@@ -741,7 +750,12 @@ template <int N>
 HK_FORCE_INLINE void hkSimdFloat32::load(const hkFloat32 *p )
 {
 	HK_SIMDFLOAT_DIMENSION_CHECK;
+#if defined(HK_COMPILER_GCC_VERSION) && (HK_COMPILER_GCC_VERSION == 40800)	
+	float f = *p;
+	hkSimdFloat32_AdvancedInterface::unroll_load<HK_IO_SIMD_ALIGNED>::apply(m_real, (const float32_t*)&f);
+#else
 	hkSimdFloat32_AdvancedInterface::unroll_load<HK_IO_SIMD_ALIGNED>::apply(m_real, p);
+#endif
 }
 
 template <int N>
@@ -1007,7 +1021,7 @@ HK_FORCE_INLINE void hkSimdFloat32::store(  hkFloat16 *p ) const
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140625)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

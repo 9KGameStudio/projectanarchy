@@ -23,7 +23,6 @@ public:
         case VTextureLoader::Texture2D: return "Texture2D";
         case VTextureLoader::Texture3D: return "Texture3D";
         case VTextureLoader::Cubemap: return "Cubemap";
-        case VTextureLoader::Heightmap16bpp: return "Heightmap16bpp";
         case VTextureLoader::Texture2DArray: return "Texture2DArray";
         case VTextureLoader::CubemapArray: return "CubemapArray";
         default: return "Unknown";
@@ -82,7 +81,6 @@ public:
   ///  - "Texture2D"
   ///  - "Texture3D"
   ///  - "Cubemap"
-  ///  - "Heightmap16bpp"
   ///  - "Texture2DArray"
   ///  - "CubemapArray"
   ///  - "Unknown"
@@ -189,7 +187,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

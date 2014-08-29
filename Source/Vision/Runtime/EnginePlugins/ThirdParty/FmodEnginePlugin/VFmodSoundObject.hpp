@@ -16,7 +16,8 @@
 /// Serialization versions
 #define VFMOD_SOUNDOBJECT_VERSION_0         0x00000000                  // Initial version
 #define VFMOD_SOUNDOBJECT_VERSION_1         0x00000001
-#define VFMOD_SOUNDOBJECT_VERSION_CURRENT   VFMOD_SOUNDOBJECT_VERSION_1
+#define VFMOD_SOUNDOBJECT_VERSION_2         0x00000002
+#define VFMOD_SOUNDOBJECT_VERSION_CURRENT   VFMOD_SOUNDOBJECT_VERSION_2
 
 ///\brief
 ///  This class represents a single positionable sound instance in the world.
@@ -29,7 +30,7 @@
 ///
 ///\see
 ///  VFmodSoundResource
-class VFmodSoundObject : public VisObject3D_cl
+class VFmodSoundObject : public VisObject3D_cl, protected IVisCallbackHandler_cl
 {
 public:
 
@@ -126,6 +127,14 @@ public:
   /// \brief
   ///   Sets the stereo panning for 2D sounds
   FMOD_IMPEXP void SetPan(float fPan);
+
+  /// \brief
+  ///   Returns the strength of the doppler effect (0=none, 1=default, 5=max)
+  inline float Get3DDopplerLevel() const { return m_fDopplerLevel; }
+
+  /// \brief
+  ///   Sets the strength of the doppler effect (0=none, 1=default, 5=max)
+  FMOD_IMPEXP void Set3DDopplerLevel(float fDopplerLevel);
 
   /// \brief
   ///   Returns the fade distance at which the 3D sound has full volume
@@ -278,9 +287,6 @@ public:
   /// @{
   ///
 
-  // overridden VisObject3D_cl notification. Used to update sound's position/orientation
-  FMOD_IMPEXP VOVERRIDE void OnObject3DChanged(int iO3DFlags);
-
   // triggered when sound object is destroyed
   FMOD_IMPEXP VOVERRIDE void OnDisposeObject();
 
@@ -326,12 +332,14 @@ public:
   /// \brief  
   ///   Helper function to update the fading process - this is used internally by the Fmod plugin.
   ///
+  /// \param fTimeDelta
+  ///   Time (in seconds) that has passed since the last update.
   /// \param bApplyVol
   ///   Set to true if calculated volume should be applied otherwise it is only returned by function.
   ///
   /// \return
   ///   The new volume
-  FMOD_IMPEXP float UpdateFading(bool bApplyVol=true);
+  FMOD_IMPEXP float UpdateFading(float fTimeDelta, bool bApplyVol=true);
 
   ///\brief
   /// Helper function to render the object in the scene. Used by vForge
@@ -358,13 +366,18 @@ public:
   ///
 
   // Update the sound object
-  void Update();
+  void Update(float fTimeDelta);
 
   ///
   /// @}
   ///
 
-private:  
+protected:
+
+  FMOD_IMPEXP virtual void OnHandleCallback(IVisCallbackDataObject_cl *pData) HKV_OVERRIDE;
+
+private:
+
   friend class VFmodManager;
   friend class VFmodSoundObjectCollection;
 
@@ -375,6 +388,7 @@ private:
   int m_iPriority;
   float m_fVolume;
   float m_fPan;
+  float m_fDopplerLevel;
   float m_fConeOutside,m_fConeInside;
   float m_fFadeMin,m_fFadeMax;
   float m_fStartTime;
@@ -388,6 +402,8 @@ private:
   bool m_bIsPlaying;
   bool m_bPlayedOnce;
   bool m_bUnpause;
+
+  hkvVec3 m_vLastPosition;
 };
 
 
@@ -398,7 +414,7 @@ class VFmodSoundObjectCollection : public VRefCountedCollection<VFmodSoundObject
 public:
   /// \brief
   ///   Internal function for updating all sound objects in this collection
-  FMOD_IMPEXP void Update();
+  FMOD_IMPEXP void Update(float fTimeDelta);
 
   /// \brief
   ///   Removes all sound objects from this collection that can be disposed (i.e. not playing anymore and VFMOD_FLAG_NODISPOSE flag not set)
@@ -440,7 +456,7 @@ public:
 #endif // VFMODSOUNDOBJECT_HPP_INCLUDED
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

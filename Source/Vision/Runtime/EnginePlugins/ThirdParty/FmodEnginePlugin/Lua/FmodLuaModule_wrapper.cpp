@@ -10,7 +10,6 @@
 
 #include <Vision/Runtime/EnginePlugins/ThirdParty/FmodEnginePlugin/FmodEnginePlugin.hpp>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Scripting/VScriptIncludes.hpp>
-#include <Vision/Runtime/Base/System/Memory/VMemDbg.hpp>
 
 #ifndef _VISION_DOC
 
@@ -356,6 +355,7 @@ typedef struct swig_type_info {
   struct swig_cast_info  *cast;			/* linked list of types that can cast into this type */
   void                   *clientdata;		/* language specific type data */
   int                    owndata;		/* flag if the structure owns the clientdata */
+  VType                  *visiontype; // Vision extension
 } swig_type_info;
 
 /* Structure to store a type and conversion function used for casting */
@@ -755,7 +755,7 @@ SWIG_UnpackDataName(const char *c, void *ptr, size_t sz, const char *name) {
  * and includes code for managing global variables and pointer
  * type checking.
  * ----------------------------------------------------------------------------- */
-
+ 
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -1043,54 +1043,31 @@ SWIGINTERN void  SWIG_Lua_module_add_function(lua_State* L,const char* name,lua_
 /* -----------------------------------------------------------------------------
  * global variable support code: classes
  * ----------------------------------------------------------------------------- */
-
-//Expecting the same stack format as SWIG:
-//stack: userdata, key, ..., TOP
-//afterwards: userdata, key, ..., value, TOP
+ 
+// Note: this is not called from SWIG_Lua_class_get since dynamic properties are accessed directly by lua,
+// but it's implemented to allow access from native
 SWIGINTERN void VisionLuaClassGet(lua_State *L)
 {
-  //solution 1: retrieve element when accessing an user data object from a global $node-POINTER_ADR-NAME_OF_ELEM$
-  //(+): allows user to associate elemets with an instance of an user data object
-  //(-): elements are not stored in a table, so you cannot iterate over all elements of an instance
-  
-  const char * pKey = lua_tostring(L, 2);
-  swig_lua_userdata * pUser = (swig_lua_userdata *) lua_topointer(L, 1);
-                                                                             //stack: userdata, key, ..., TOP
-  lua_pushliteral(L, "G");                                                   //stack: userdata, key, ..., 'G', TOP
-  lua_gettable(L, LUA_GLOBALSINDEX);                                         //stack: userdata, key, ..., globalTable, TOP
+  // Fetch the meta table and the __index field
+  lua_getmetatable(L, 1);                                                     // userdata, key, ..., perinstancetable or perclasstable, TOP
+  lua_getfield(L, -1, "__index");                                             // userdata, key, ..., perinstancetable or perclasstable, index, TOP
 
-  if( lua_isnil(L, -1)==1 ) //test if the global table is valid
-  {                                                                          //stack: userdata, key, ..., nil, TOP
-    lua_pop(L, 1);                                                           //stack: userdata, key, ..., TOP
-    lua_pushfstring(L, "$node-%p-%s$", ((pUser==0) ? 0 : pUser->ptr), pKey); //stack: userdata, key, ..., new key, TOP
-    lua_gettable(L, LUA_GLOBALSINDEX);                                       //stack: userdata, key, ..., requested val, TOP
-  }
-  else
-  {                                                                          //stack: userdata, key,  ..., globalTable, TOP
-    lua_pushfstring(L, "$node-%p-%s$", ((pUser==0) ? 0 : pUser->ptr), pKey); //stack: userdata, key,  ..., globalTable, new key, TOP
-    lua_gettable(L, -2);                                                     //stack: userdata, key,  ..., globalTable, requested val, TOP
-    lua_remove(L, -2);                                                       //stack: userdata, key,  ..., requested val, TOP
-  }
-
-/*
-  //solution 2: get element from a global table $node-POINTER_ADR$
-  //(+): user data object instance behaves like a table (you can iterate on this table)
-  //(-): slower than solution 1 when setting the variable
-  
-  int iPtr = (int) lua_topointer(L, 1);
-  lua_pushfstring(L, "$node-%p$", iPtr);          //stack: userdata, key, ..., instance string, TOP
-  lua_gettable(L, LUA_GLOBALSINDEX); 		      //stack: userdata, key, ..., table of instance or nil, TOP
-  
-  if(!lua_isnil(L, -1))
+  // If there is no perinstance table, push nil
+  if (!lua_equal(L, -1, -2))
   {
-    lua_pushvalue(L, 2);		  				  //stack: userdata, key, ..., table of instance, dup key, TOP
-    lua_gettable(L, -2); 	     				  //stack: userdata, key, ..., table of instance, requested val, TOP
-    lua_replace(L, -2);		  					  //stack: userdata, key, ..., requested val or nil, TOP
+    lua_pop(L, 2);                                                            // userdata, key, ..., TOP
+    lua_pushnil(L);                                                           // userdata, key, ..., nil, TOP
+    return;
   }
-  
-*/
-}
 
+  lua_pop(L, 1);                                                            // userdata, key, ..., perinstancetable, TOP
+  
+  // Now fetch the value from the per-instance table
+  lua_pushvalue(L, 2);                                                      // userdata, key, ..., perinstancetable, key, TOP
+  lua_rawget(L, -2);                                                        // userdata, key, ..., perinstancetable, value, TOP
+  lua_remove(L, -2);                                                        // userdata, key, ..., value, TOP
+}
+ 
 /* the class.get method, performs the lookup of class attributes */
 SWIGINTERN int  SWIG_Lua_class_get(lua_State* L)
 {
@@ -1099,8 +1076,24 @@ SWIGINTERN int  SWIG_Lua_class_get(lua_State* L)
   (2) string name of the attribute
 */
 
-  assert(lua_isuserdata(L,-2));  /* just in case */
-  lua_getmetatable(L,-2);    /* get the meta table */
+  // Vision extension: In case the first argument is a table and not the userdata,
+  // then the table is the per-instance metatable. Recover the userdata and its
+  // per-class metatable from the "__visionwrapper" field in the per-instance table.
+  if (lua_istable(L, 1))
+  {
+    lua_pushvalue(L, 1);                    // perinstancetable, key, perinstancetable, TOP
+    lua_getfield(L, 1, "__visionwrapper");  // perinstancetable, key, perinstancetable, userdata, TOP
+    assert(!lua_isnil(L, -1));
+    lua_replace(L, 1);                      // userdata, key, perinstancetable, TOP
+    lua_getmetatable(L, -1);                // userdata, key, perinstancetable, perclasstable, TOP
+    lua_remove(L, -2);                      // userdata, key, perclasstable, TOP
+  }
+  else
+  {
+    assert(lua_isuserdata(L, 1));  /* just in case */
+    lua_getmetatable(L, 1);    /* get the meta table */
+  }
+
   assert(lua_istable(L,-1));  /* just in case */
   SWIG_Lua_get_table(L,".get"); /* find the .get table */
   assert(lua_istable(L,-1));  /* just in case */
@@ -1140,16 +1133,6 @@ SWIGINTERN int  SWIG_Lua_class_get(lua_State* L)
     return 1;
   }
   
-  //////////////////////
-  // Vision Extension //
-  
-  VisionLuaClassGet(L);
-  if (!lua_isnil(L, -1))
-    return 1;
-
-  // End of Extension //
-  //////////////////////
-
   return 0;  /* sorry not known */
 }
 
@@ -1157,62 +1140,47 @@ SWIGINTERN int  SWIG_Lua_class_get(lua_State* L)
 //stack: userdata, key, value, ..., TOP
 SWIGINTERN void VisionLuaClassSet(lua_State *L)
 {
-  //solution 1: store all elements when accessing an user data objects as a global $node-POINTER_ADR-NAME_OF_ELEM$
-  //(+): allows user to associate elemets with an instance of an user data object
-  //(-): elements are not stored in a table, so you cannot iterate over all elements of an instance
-  
-  const char * pKey = lua_tostring(L, 2);
-  swig_lua_userdata * pUser = (swig_lua_userdata *) lua_topointer(L, 1);
-                                                                             //stack: userdata, key, value, ..., TOP
-  lua_pushliteral(L, "G");                                                   //stack: userdata, key, value, ..., 'G', TOP
-  lua_gettable(L, LUA_GLOBALSINDEX);                                         //stack: userdata, key, value, ..., globalTable, TOP
+  // Fetch the meta table and the __index field
+  lua_getmetatable(L, 1);                                                     // userdata, key, value, ..., perinstancetable or perclasstable, TOP
+  lua_getfield(L, -1, "__index");                                             // userdata, key, value, ..., perinstancetable or perclasstable, index, TOP
 
-  if( lua_isnil(L, -1)==1 ) //test if the global table is valid
-  {                                                                          //stack: userdata, key, value, ..., nil, TOP
-    lua_pop(L, 1);                                                           //stack: userdata, key, value, ..., TOP
-    lua_pushfstring(L, "$node-%p-%s$", ((pUser==0) ? 0 : pUser->ptr), pKey); //stack: userdata, key, value, ..., new key, TOP
-    lua_pushvalue(L, 3);                                                     //stack: userdata, key, value, ..., new key, value, TOP
-    lua_settable(L, LUA_GLOBALSINDEX);                                       //stack: userdata, key, value, ..., TOP
-  }
-  else
-  {                                                                          //stack: userdata, key, value, ..., globalTable, TOP
-    lua_pushfstring(L, "$node-%p-%s$", ((pUser==0) ? 0 : pUser->ptr), pKey); //stack: userdata, key, value, ..., globalTable, new key, TOP
-    lua_pushvalue(L, 3);                                                     //stack: userdata, key, value, ..., globalTable, new key, value, TOP
-    lua_settable(L, -3);                                                     //stack: userdata, key, value, ..., globalTable, TOP
-    lua_pop(L, 1);                                                           //stack: userdata, key, value, ..., TOP
-  }
-
-/*  
-  //solution 2: create a table $node-POINTER_ADR$ and save the element as element of this table
-  //(+): user data object instance behaves like a table (you can iterate on this table)
-  //(-): much slower than solution 1
-  
-  int iPtr = (int) lua_topointer(L, 1);
-  lua_pushfstring(L, "$node-%p$", iPtr);      //stack: userdata, key, value, ..., instance string, TOP
-  lua_gettable(L, LUA_GLOBALSINDEX); 		      //stack: userdata, key, value, ..., table of instance (maybe nil), TOP
-  
-  if(lua_isnil(L, -1))
+  // If the __index field points back to the table, it must be a per-instance table. If not, create one.
+  if (!lua_equal(L, -1, -2))
   {
-    //create a new empty table
-    lua_pop(L, 1);                            //stack: userdata, key, value, ..., TOP
-	  lua_pushfstring(L, "$node-%p$", iPtr);    //stack: userdata, key, value, ..., instance string, TOP
-  	lua_newtable(L);						              //stack: userdata, key, value, ..., instance string, new table, TOP
-	  lua_settable(L, LUA_GLOBALSINDEX);        //stack: userdata, key, value, ..., TOP
-	
-	  //query empty table
-	  lua_pushfstring(L, "$node-%p$", iPtr);    //stack: userdata, key, value, ..., instance string, TOP
-	  lua_gettable(L, LUA_GLOBALSINDEX); 		    //stack: userdata, key, value, ..., table of instance, TOP
-	
-	  //ensure that this time the table is present
-	  assert(!lua_isnil(L, -1));
+    lua_pop(L, 1);                                                            // userdata, key, value, ..., perclasstable, TOP
+
+    // Create new metatable
+    lua_newtable(L);                                                          // userdata, key, value, ..., perclasstable, perinstancetable, TOP
+
+    // __visionwrapper points to the userdata
+    lua_pushvalue(L, 1);                                                      // userdata, key, value, ..., perclasstable, perinstancetable, userdata, TOP
+    lua_setfield(L, -2, "__visionwrapper");                                   // userdata, key, value, ..., perclasstable, perinstancetable, TOP
+
+    // __index and __newindex point to the table itself
+    // That way, accessing keys can be performed using the per-instance table without having to call a native function.
+    lua_pushvalue(L, -1);                                                     // userdata, key, value, ..., perclasstable, perinstancetable, newmetatable, TOP
+    lua_setfield(L, -2, "__index");                                           // userdata, key, value, ..., perclasstable, perinstancetable, TOP
+
+    lua_pushvalue(L, -1);                                                     // userdata, key, value, ..., perclasstable, perinstancetable, newmetatable, TOP
+    lua_setfield(L, -2, "__newindex");                                        // userdata, key, value, ..., perclasstable, perinstancetable, TOP
+
+    // Set the original metatable as the metatable of the new one so that we can fallback to the per-class table
+    lua_pushvalue(L, -2);                                                     // userdata, key, value, ..., perclasstable, perinstancetable, metatable, TOP
+    lua_setmetatable(L, -2);                                                  // userdata, key, value, ..., perclasstable, perinstancetable, TOP
+    lua_pushvalue(L, -1);                                                     // userdata, key, value, ..., perclasstable, perinstancetable, newmetatable, TOP
+
+    // Set the per-instance table as the meta table of the userdata
+    lua_setmetatable(L, 1);                                                   // userdata, key, value, ..., perclasstable, perinstancetable, TOP
+
+    lua_remove(L, -2);                                                        // userdata, key, value, ..., perinstancetable, TOP
   }
-  
-  lua_pushvalue(L, 2);		  				          //stack: userdata, key, value, ..., table of instance, dup key, TOP
-  lua_pushvalue(L, 3);		  				          //stack: userdata, key, value, ..., table of instance, dup key, dup value, TOP
-  lua_settable(L, -3); 	     				          //stack: userdata, key, value, ..., table of instance, TOP
-  lua_pop(L, 1);                                    //stack: userdata, key, value, ..., TOP
-*/
-}
+
+  // Now set the value in the per-isntance table
+  lua_pushvalue(L, 2);                                                      // userdata, key, value, ..., perinstancetable, key, TOP
+  lua_pushvalue(L, 3);                                                      // userdata, key, value, ..., perinstancetable, key, value, TOP
+  lua_rawset(L, -3);                                                        // userdata, key, value, ..., perinstancetable, TOP
+  lua_pop(L, 1);                                                            // userdata, key, value, ..., TOP
+} 
 
 /* the class.set method, performs the lookup of class attributes */
 SWIGINTERN int  SWIG_Lua_class_set(lua_State* L)
@@ -1226,8 +1194,24 @@ printf("SWIG_Lua_class_set %p(%s) '%s' %p(%s)\n",
       lua_tostring(L,2),
       lua_topointer(L,3),lua_typename(L,lua_type(L,3))); */
 
-  assert(lua_isuserdata(L,1));  /* just in case */
-  lua_getmetatable(L,1);    /* get the meta table */
+  // Vision extension: In case the first argument is a table and not the userdata,
+  // then the table is the per-instance metatable. Recover the userdata and its
+  // per-class metatable from the "__visionwrapper" field in the per-instance table.
+  if (lua_istable(L, 1))
+  {
+    lua_pushvalue(L, 1);                    // perinstancetable, key, value, perinstancetable, TOP
+    lua_getfield(L, 1, "__visionwrapper");  // perinstancetable, key, value, perinstancetable, userdata, TOP
+    assert(!lua_isnil(L, -1));
+    lua_replace(L, 1);                      // userdata, key, value, perinstancetable, TOP
+    lua_getmetatable(L, -1);                // userdata, key, value, perinstancetable, perclasstable, TOP
+    lua_remove(L, -2);                      // userdata, key, value, perclasstable, TOP
+  }
+  else
+  {
+    assert(lua_isuserdata(L, 1));  /* just in case */
+    lua_getmetatable(L, 1);    /* get the meta table */
+  }
+
   assert(lua_istable(L,-1));  /* just in case */
 
   SWIG_Lua_get_table(L,".set"); /* find the .set table */
@@ -1286,7 +1270,7 @@ SWIGINTERN int  SWIG_Lua_class_destruct(lua_State* L)
     if (clss && clss->destructor)  /* there is a destroy fn */
     {
       clss->destructor(usr->ptr);  /* bye bye */
-    }
+  } 
   }
   return 0;
 }
@@ -1451,6 +1435,41 @@ SWIGINTERN void _SWIG_Lua_AddMetatable(lua_State* L,swig_type_info *type)
   }
 }
 
+#ifdef __cplusplus
+}
+#endif
+
+/* pushes a new object into the lua stack by copying the value into the userdata object */
+template<typename T>
+SWIGRUNTIME void SWIG_Lua_NewPodObj(lua_State* L, const T* ptr, swig_type_info *type)
+{
+  if (!ptr){
+    lua_pushnil(L);
+    return;
+  }
+  
+  struct value_user_data
+  {
+    swig_lua_userdata swigdata;
+    T object;
+  };
+  
+  value_user_data* usr = (value_user_data*) lua_newuserdata(L, sizeof(value_user_data));
+  
+  // Make sure that the swig_lua_userdata is at offset 0 of the extended user data
+  V_COMPILE_ASSERT(offsetof(value_user_data, swigdata) == 0);
+  
+  usr->object = *ptr;
+  usr->swigdata.ptr = &usr->object;
+  usr->swigdata.type = type;
+  usr->swigdata.own = 0;
+  _SWIG_Lua_AddMetatable(L, type); /* add metatable */
+}
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* pushes a new object into the lua stack */
 SWIGRUNTIME void SWIG_Lua_NewPointerObj(lua_State* L,void* ptr,swig_type_info *type, int own)
 {
@@ -1461,8 +1480,8 @@ SWIGRUNTIME void SWIG_Lua_NewPointerObj(lua_State* L,void* ptr,swig_type_info *t
   }
   usr=(swig_lua_userdata*)lua_newuserdata(L,sizeof(swig_lua_userdata));  /* get data */
   usr->ptr=ptr;  /* set the ptr */
-  usr->type=type;
-  usr->own=own;
+    usr->type=type;
+    usr->own=own;
   _SWIG_Lua_AddMetatable(L,type); /* add metatable */
 }
 
@@ -1485,13 +1504,37 @@ SWIGRUNTIME int  SWIG_Lua_ConvertPtr(lua_State* L,int index,void** ptr,swig_type
       *ptr=usr->ptr;
       return SWIG_OK; /* ok */
     }
-    cast=SWIG_TypeCheckStruct(usr->type,type); /* performs normal type checking */
-    if (cast)
+ 
+    if(usr->ptr == NULL)
     {
-      int newmemory = 0;
-      *ptr=SWIG_TypeCast(cast,usr->ptr,&newmemory);
-      assert(!newmemory); /* newmemory handling not yet implemented */
-      return SWIG_OK;  /* ok */
+      *ptr=0;
+      return SWIG_OK;
+    }
+    
+    // Vision extension: handle cast manually using our own RTTI - no need for virtual function calls
+    if(type->visiontype != NULL && usr->type->visiontype != NULL)
+    {
+      // SWIG only needs to cast to a less derived type, since the proxy object already has the most derived type
+      if(type->visiontype == usr->type->visiontype || usr->type->visiontype->IsDerivedFrom(type->visiontype))
+      {
+        *ptr = VType::CastFromTo(usr->ptr, usr->type->visiontype, type->visiontype);
+        return SWIG_OK;
+      }
+      else
+      {
+        return SWIG_ERROR;
+      }
+    }
+    else
+    {
+      cast=SWIG_TypeCheckStruct(usr->type,type); /* performs normal type checking */
+      if (cast)
+      {
+        int newmemory = 0;
+        *ptr=SWIG_TypeCast(cast,usr->ptr,&newmemory);
+        assert(!newmemory); /* newmemory handling not yet implemented */
+        return SWIG_OK;  /* ok */
+      }
     }
   }
   return SWIG_ERROR;  /* error */
@@ -1542,9 +1585,9 @@ SWIGRUNTIME const char *SWIG_Lua_typename(lua_State *L, int tp)
   {
     usr=(swig_lua_userdata*)lua_touserdata(L,tp);  /* get data */
     if (usr && usr->type && usr->type->str)
-      return usr->type->str;
-    return "userdata (unknown type)";
-  }
+        return usr->type->str;
+      return "userdata (unknown type)";
+    }
   return lua_typename(L,lua_type(L,tp));
 }
 
@@ -1561,14 +1604,38 @@ but to lua, they are different objects */
 SWIGRUNTIME int SWIG_Lua_equal(lua_State* L)
 {
   int result;
-  swig_lua_userdata *usr1,*usr2;
+  swig_lua_userdata * usr1, *usr2;
   if (!lua_isuserdata(L,1) || !lua_isuserdata(L,2))  /* just in case */
     return 0;  /* nil reply */
-  usr1=(swig_lua_userdata*)lua_touserdata(L,1);  /* get data */
-  usr2=(swig_lua_userdata*)lua_touserdata(L,2);  /* get data */
+  usr1 = (swig_lua_userdata*)lua_touserdata(L, 1); /* get data */
+  usr2 = (swig_lua_userdata*)lua_touserdata(L, 2); /* get data */
   /*result=(usr1->ptr==usr2->ptr && usr1->type==usr2->type); only works if type is the same*/
   result=(usr1->ptr==usr2->ptr);
-   lua_pushboolean(L,result);
+  lua_pushboolean(L,result);
+  return 1;
+}
+
+// Vision extension: check if weak pointer points to a live object
+SWIGRUNTIME int SWIG_Lua_isalive(lua_State* L)
+{
+  int result;
+  swig_lua_userdata * usr1;
+  
+  if(lua_isuserdata(L, 1))
+  {
+    usr1 = (swig_lua_userdata*)lua_touserdata(L, 1);
+    result = (usr1->ptr != NULL);
+  }
+  else if(lua_isnil(L, 1))
+  {
+    result = 0;
+  }
+  else
+  {
+    return 0;
+  }
+    
+  lua_pushboolean(L, result);
   return 1;
 }
 
@@ -1657,33 +1724,41 @@ SWIG_Lua_dostring(lua_State *L, const char* str) {
 /* -------- TYPES TABLE (BEGIN) -------- */
 
 #define SWIGTYPE_p_IVObjectComponent swig_types[0]
-#define SWIGTYPE_p_VColorRef swig_types[1]
-#define SWIGTYPE_p_VFmodEvent swig_types[2]
-#define SWIGTYPE_p_VFmodManager swig_types[3]
-#define SWIGTYPE_p_VFmodSoundObject swig_types[4]
-#define SWIGTYPE_p_VTypedObject swig_types[5]
-#define SWIGTYPE_p_VisObject3D_cl swig_types[6]
-#define SWIGTYPE_p_VisObjectKey_cl swig_types[7]
-#define SWIGTYPE_p_VisTypedEngineObject_cl swig_types[8]
-#define SWIGTYPE_p___int64 swig_types[9]
-#define SWIGTYPE_p_char swig_types[10]
-#define SWIGTYPE_p_float swig_types[11]
-#define SWIGTYPE_p_hkvMat3 swig_types[12]
-#define SWIGTYPE_p_hkvVec3 swig_types[13]
-#define SWIGTYPE_p_int swig_types[14]
-#define SWIGTYPE_p_long swig_types[15]
-#define SWIGTYPE_p_p_char swig_types[16]
-#define SWIGTYPE_p_p_unsigned_long swig_types[17]
-#define SWIGTYPE_p_short swig_types[18]
-#define SWIGTYPE_p_signed___int64 swig_types[19]
-#define SWIGTYPE_p_signed_char swig_types[20]
-#define SWIGTYPE_p_unsigned___int64 swig_types[21]
-#define SWIGTYPE_p_unsigned_char swig_types[22]
-#define SWIGTYPE_p_unsigned_int swig_types[23]
-#define SWIGTYPE_p_unsigned_long swig_types[24]
-#define SWIGTYPE_p_unsigned_short swig_types[25]
-static swig_type_info *swig_types[27];
-static swig_module_info swig_module = {swig_types, 26, 0, 0, 0, 0};
+#define SWIGTYPE_p_VCaptureSwigEnvironment swig_types[1]
+#define SWIGTYPE_p_VColorRef swig_types[2]
+#define SWIGTYPE_p_VFmodEvent swig_types[3]
+#define SWIGTYPE_p_VFmodManager swig_types[4]
+#define SWIGTYPE_p_VFmodSoundObject swig_types[5]
+#define SWIGTYPE_p_VTypedObject swig_types[6]
+#define SWIGTYPE_p_VisObject3D_cl swig_types[7]
+#define SWIGTYPE_p_VisObjectKey_cl swig_types[8]
+#define SWIGTYPE_p_VisTypedEngineObject_cl swig_types[9]
+#define SWIGTYPE_p___int64 swig_types[10]
+#define SWIGTYPE_p_char swig_types[11]
+#define SWIGTYPE_p_float swig_types[12]
+#define SWIGTYPE_p_hkvAlignedBBox swig_types[13]
+#define SWIGTYPE_p_hkvBoundingSphere swig_types[14]
+#define SWIGTYPE_p_hkvMat3 swig_types[15]
+#define SWIGTYPE_p_hkvMat4 swig_types[16]
+#define SWIGTYPE_p_hkvPlane swig_types[17]
+#define SWIGTYPE_p_hkvQuat swig_types[18]
+#define SWIGTYPE_p_hkvVec2 swig_types[19]
+#define SWIGTYPE_p_hkvVec3 swig_types[20]
+#define SWIGTYPE_p_hkvVec4 swig_types[21]
+#define SWIGTYPE_p_int swig_types[22]
+#define SWIGTYPE_p_long swig_types[23]
+#define SWIGTYPE_p_p_char swig_types[24]
+#define SWIGTYPE_p_p_unsigned_long swig_types[25]
+#define SWIGTYPE_p_short swig_types[26]
+#define SWIGTYPE_p_signed___int64 swig_types[27]
+#define SWIGTYPE_p_signed_char swig_types[28]
+#define SWIGTYPE_p_unsigned___int64 swig_types[29]
+#define SWIGTYPE_p_unsigned_char swig_types[30]
+#define SWIGTYPE_p_unsigned_int swig_types[31]
+#define SWIGTYPE_p_unsigned_long swig_types[32]
+#define SWIGTYPE_p_unsigned_short swig_types[33]
+static swig_type_info *swig_types[35];
+static swig_module_info swig_module = {swig_types, 34, 0, 0, 0, 0};
 #define SWIG_TypeQuery(name) SWIG_TypeQueryModule(&swig_module, &swig_module, name)
 #define SWIG_MangledTypeQuery(name) SWIG_MangledTypeQueryModule(&swig_module, &swig_module, name)
 
@@ -1699,6 +1774,36 @@ static swig_module_info swig_module = {swig_types, 26, 0, 0, 0, 0};
 namespace swig {
 typedef struct{} LANGUAGE_OBJ;
 }
+
+
+  // Redefine SWIG_fail_* macros to make them display file and line information
+  // See http://stackoverflow.com/questions/14664541/line-number-where-swig-runtimeerror-occurs
+  SWIGRUNTIME void SWIG_push_fail_arg_info(lua_State* L, const char* func_name, int argnum, const char* expected, const char* actual)
+  {
+    lua_Debug ar;
+    lua_getstack(L, 1, &ar);
+    lua_getinfo(L, "nSl", &ar);
+    lua_pushfstring(L,"Error (%s:%d) in %s (arg %d), expected '%s' got '%s'", ar.source,ar.currentline,func_name,argnum,expected,actual);
+  }
+  
+  SWIGRUNTIME void SWIG_push_fail_check_num_args_info(lua_State* L, const char* func_name, int a, int b, int c)
+  {
+    lua_Debug ar;
+    lua_getstack(L, 1, &ar);
+    lua_getinfo(L, "nSl", &ar);
+    lua_pushfstring(L,"Error (%s:%d) in %s expected %d..%d args, got %d",ar.source,ar.currentline,func_name,a,b,lua_gettop(L));
+  }
+  
+  #undef SWIG_fail_arg
+  #define SWIG_fail_arg(func_name,argnum,type) \
+    {SWIG_push_fail_arg_info(L,func_name,argnum,type,SWIG_Lua_typename(L,argnum));\
+    goto fail;}
+  
+  #undef SWIG_check_num_args
+  #define SWIG_check_num_args(func_name,a,b) \
+    if (lua_gettop(L)<a || lua_gettop(L)>b) \
+    { SWIG_push_fail_check_num_args_info(L,func_name,a,b,lua_gettop(L));\
+    goto fail;}
 
 SWIGINTERN VColorRef *new_VColorRef__SWIG_3(VColorRef const &other){
       return new VColorRef(other.r, other.g, other.b, other.a);
@@ -1780,6 +1885,63 @@ SWIGINTERN VColorRef VColorRef_clone(VColorRef *self){
     return 1;
   }
 
+
+
+// A helper class that binds to an arbitrary Lua value as a function argument. Currently only used by VTypedObject::SetProperty
+class VLuaStackRef
+{
+public:
+  /// \brief Constructor. Internal, do not use.
+  VLuaStackRef(hkvInit_None) {}
+
+  /// \brief Constructor. Internal, do not use.
+  VLuaStackRef(lua_State* L, int iStackIndex) : L(L)
+  {
+    // Make stack index absolute so it's not invalidated by pushing something else onto the stack
+    m_iStackIndex = (iStackIndex > 0 || iStackIndex <= LUA_REGISTRYINDEX) ? iStackIndex : lua_gettop(L) + iStackIndex + 1;
+  }
+
+  /// \brief Converts the Lua value to a boolean.
+  bool ToBoolean() const
+  {
+    return lua_toboolean(L, m_iStackIndex) == 1;
+  }
+
+  /// \brief Converts the Lua value to an integer.
+  lua_Integer ToInteger() const
+  {
+    return lua_tointeger(L, m_iStackIndex);
+  }
+
+  /// \brief Converts the Lua value to a number.
+  lua_Number ToNumber() const
+  {
+    return lua_tonumber(L, m_iStackIndex);
+  }
+
+  /// \brief Converts the Lua value to a string.
+  const char* ToString() const
+  {
+    return lua_tostring(L, m_iStackIndex);
+  }
+
+  /// \brief Converts the Lua value to an object pointer. Caution, no type check is currently performed.
+  template<typename T> const T* ToObject() const
+  {
+    if(swig_lua_userdata* usr = (swig_lua_userdata*) lua_touserdata(L, m_iStackIndex))
+    {
+      return static_cast<T*>(usr->ptr);
+    }
+
+    return NULL;
+  }
+
+private:
+  lua_State* L;
+  int m_iStackIndex;
+};
+
+
 SWIGINTERN char const *VTypedObject_GetType(VTypedObject const *self){
       return self->GetTypeId()->m_lpszClassName;
     }
@@ -1792,69 +1954,176 @@ SWIGINTERN int SWIG_lua_isnilstring(lua_State *L, int idx) {
 }
 
 SWIGINTERN bool VTypedObject_IsOfType(VTypedObject *self,char const *szType){
-      return self->IsOfType(szType)==TRUE;
+      return self->IsOfType(szType) == TRUE;
     }
 SWIGINTERN char const *VTypedObject_GetPropertyType(VTypedObject *self,char const *propName){
-      if(propName==NULL)
+      if(propName == NULL)
         return NULL; // avoid problems with nil values
-      VisVariable_cl *pVar = self->GetVariable(propName);
+      VisVariable_cl* pVar = self->GetVariable(propName);
       int type = pVar ? pVar->type : -1;
       switch (type) {
-          case VULPTYPE_STRING:
-          case VULPTYPE_VSTRING:
-          case VULPTYPE_MODEL:
-          case VULPTYPE_PSTRING:
-          case VULPTYPE_ENTITY_KEY:
-          case VULPTYPE_PRIMITIVE_KEY:
-          case VULPTYPE_VERTEX_KEY:
-          case VULPTYPE_LIGHTSOURCE_KEY:
-          case VULPTYPE_WORLDANIMATION_KEY:
-          case VULPTYPE_PATH_KEY:
-            return "string";
-          case VULPTYPE_ENUM:
-          case VULPTYPE_INT:
-          case VULPTYPE_FLOAT:
-          case VULPTYPE_DOUBLE:
-            return "number";
-          case VULPTYPE_BOOL:	
-            return "boolean";
-          case VULPTYPE_VECTOR_INT:
-          case VULPTYPE_VECTOR_FLOAT:
-          case VULPTYPE_VECTOR_DOUBLE:
-            return "hkvVec3";
-          case VULPTYPE_BYTE_COLOR4:
-            return "VColorRef";
-          default:
-            hkvLog::Warning("Type of property '%s' is unknown in Lua.", propName);
-            return NULL;
+      case VULPTYPE_STRING:
+      case VULPTYPE_VSTRING:
+      case VULPTYPE_MODEL:
+      case VULPTYPE_PSTRING:
+      case VULPTYPE_ENTITY_KEY:
+      case VULPTYPE_PRIMITIVE_KEY:
+      case VULPTYPE_VERTEX_KEY:
+      case VULPTYPE_LIGHTSOURCE_KEY:
+      case VULPTYPE_WORLDANIMATION_KEY:
+      case VULPTYPE_PATH_KEY:
+        return "string";
+      case VULPTYPE_ENUM:
+      case VULPTYPE_INT:
+      case VULPTYPE_FLOAT:
+      case VULPTYPE_DOUBLE:
+        return "number";
+      case VULPTYPE_BOOL:
+        return "boolean";
+      case VULPTYPE_VECTOR_INT:
+      case VULPTYPE_VECTOR_FLOAT:
+      case VULPTYPE_VECTOR_DOUBLE:
+        return "hkvVec3";
+      case VULPTYPE_BYTE_COLOR4:
+        return "VColorRef";
+      default:
+        hkvLog::Warning("Type of property '%s' is unknown in Lua.", propName);
+        return NULL;
       }
     }
 SWIGINTERN bool VTypedObject_operator_Se__Se_(VTypedObject *self,VTypedObject const &other){
-      return self==&other;
+      return self == &other;
     }
+SWIGINTERN void VTypedObject_GetProperty(VTypedObject *self,char const *pszName,VCaptureSwigEnvironment *env){
+      VisVariable_cl* pVar = self->GetVariable(pszName);
 
-  SWIGINTERN int VTypedObject_GetProperties(lua_State *L)
-  {
-    
-    SWIG_CONVERT_POINTER(L, 1, VTypedObject, pTypedObject)
+      // if variable can't be found by name try with display name
+      if(!pVar)
+        pVar = self->GetVariableByDisplayName(pszName);
 
-    lua_newtable(L); //create an empty table (or an array if you would like to see it this way)
-    
-    int iCount = pTypedObject->GetNumVariables();
-
-    for(int i=0;i<iCount;++i)
-    {
-      const char * szName = pTypedObject->GetVariableName(i);
-      
-      lua_newtable(L);             // create a new sub table             stack: table, table, TOP      
-      lua_pushstring(L, "Name");   // push the key                       stack: table, table, key, TOP
-      lua_pushstring(L, szName);   // push the value                     stack: table, table, key, value, TOP
-      lua_settable(L, -3);         // set key and value as entry         stack: table, table, TOP
-      
-      lua_pushstring(L, "Type");   // push the key                       stack: table, table, key, TOP
-      
-      switch(pTypedObject->GetVariable(szName)->type)
+      if(!pVar)
       {
+        hkvLog::Warning("Called getter of unknown property '%s'", pszName);
+        env->AddReturnValueNil();
+        return;
+      }
+      
+      switch(pVar->type)
+      {
+      case VULPTYPE_STRING:
+      case VULPTYPE_MODEL:
+      case VULPTYPE_PSTRING:
+      case VULPTYPE_ENTITY_KEY:
+      case VULPTYPE_PRIMITIVE_KEY:
+      case VULPTYPE_VERTEX_KEY:
+      case VULPTYPE_LIGHTSOURCE_KEY:
+      case VULPTYPE_WORLDANIMATION_KEY:
+      case VULPTYPE_PATH_KEY:
+      {
+        const char* pStr = NULL;
+        pVar->GetValueDirect(self, (void*) &pStr, true);
+        env->AddReturnValueString(pStr);
+      }
+      break;
+      case VULPTYPE_VSTRING:
+      {
+        VString vstr;
+        pVar->GetValueDirect(self, (void*) &vstr, true);
+        env->AddReturnValueString(vstr.AsChar());
+      }
+      break;
+      case VULPTYPE_ENUM:
+      case VULPTYPE_INT:
+      {
+        int n;
+        pVar->GetValueDirect(self, (void*) &n, true);
+        env->AddReturnValueNumber((lua_Number)n);
+      }
+      break;
+      case VULPTYPE_FLOAT:
+      {
+        float n;
+        pVar->GetValueDirect(self, (void*) &n, true);
+        env->AddReturnValueNumber((lua_Number)n);
+      }
+      break;
+      case VULPTYPE_DOUBLE:
+      {
+        double n;
+        pVar->GetValueDirect(self, (void*) &n, true);
+        env->AddReturnValueNumber((lua_Number)n);
+      }
+      break;
+      case VULPTYPE_BOOL:
+      {
+        BOOL b;
+        pVar->GetValueDirect(self, (void*) &b, true);
+        env->AddReturnValueBool(b != 0);
+      }
+      break;
+      case VULPTYPE_VECTOR_INT:
+      {
+        int pN[3];
+        pVar->GetValueDirect(self, (void*) pN, true);
+        hkvVec3 vector((float)pN[0], (float)pN[1], (float)pN[2]);
+        SWIG_Lua_NewPodObj(env->GetLuaState(), &vector, SWIGTYPE_p_hkvVec3);
+        env->SetNumReturnValues(1);
+      }
+      break;
+      case VULPTYPE_VECTOR_FLOAT:
+      {
+        float pN[3];
+        pVar->GetValueDirect(self, (void*) pN, true);
+        hkvVec3 vector(pN[0], pN[1], pN[2]);
+        SWIG_Lua_NewPodObj(env->GetLuaState(), &vector, SWIGTYPE_p_hkvVec3);
+        env->SetNumReturnValues(1);
+      }
+      break;
+      case VULPTYPE_VECTOR_DOUBLE:
+      {
+        double pN[3];
+        pVar->GetValueDirect(self, (void*) pN, true);
+        hkvVec3 vector((float)pN[0], (float)pN[1], (float)pN[2]);
+        SWIG_Lua_NewPodObj(env->GetLuaState(), &vector, SWIGTYPE_p_hkvVec3);
+        env->SetNumReturnValues(1);
+      }
+      break;
+      case VULPTYPE_BYTE_COLOR4:
+      {
+        VColorRef color;
+        pVar->GetValueDirect(self, (void*) &color, true);
+        SWIG_Lua_NewPodObj(env->GetLuaState(), &color, SWIGTYPE_p_VColorRef);
+        env->SetNumReturnValues(1);
+      }
+      break;
+      default:
+        hkvLog::Warning("Called getter of unknown type %d (%s)", pVar->type, pszName);
+        env->AddReturnValueNil();
+        break;
+      }
+    }
+SWIGINTERN void VTypedObject_GetProperties(VTypedObject *self,VCaptureSwigEnvironment *env){
+      lua_State* L = env->GetLuaState();
+      
+      int iCount = self->GetNumVariables();
+      
+      lua_createtable(L, iCount, 0); //create an empty table (or an array if you would like to see it this way)
+      
+      env->SetNumReturnValues(1);
+      
+      for(int i = 0; i < iCount; ++i)
+      {
+        const char* szName = self->GetVariableName(i);
+        
+        lua_createtable(L, 0, 2);    // create a new sub table             stack: table, table, TOP
+        lua_pushstring(L, "Name");   // push the key                       stack: table, table, key, TOP
+        lua_pushstring(L, szName);   // push the value                     stack: table, table, key, value, TOP
+        lua_settable(L, -3);         // set key and value as entry         stack: table, table, TOP
+        
+        lua_pushstring(L, "Type");   // push the key                       stack: table, table, key, TOP
+        
+        switch(self->GetVariable(szName)->type)
+        {
         case VULPTYPE_STRING:
         case VULPTYPE_VSTRING:
         case VULPTYPE_MODEL:
@@ -1867,8 +2136,8 @@ SWIGINTERN bool VTypedObject_operator_Se__Se_(VTypedObject *self,VTypedObject co
         case VULPTYPE_PATH_KEY:
           lua_pushstring(L, "string");
           break;
-        case VULPTYPE_ENUM:	
-        case VULPTYPE_INT:	
+        case VULPTYPE_ENUM:
+        case VULPTYPE_INT:
         case VULPTYPE_FLOAT:
         case VULPTYPE_DOUBLE:
           lua_pushstring(L, "number");
@@ -1887,149 +2156,33 @@ SWIGINTERN bool VTypedObject_operator_Se__Se_(VTypedObject *self,VTypedObject co
         default:
           lua_pushstring(L, "unknown");
           break;
+        }
+        //after switch:                                                 stack: table, table, key, value, TOP
+        
+        lua_settable(L, -3);      //set key and value as entry          stack: table, table, TOP
+        lua_rawseti(L, -2, i + 1); //add to overall table                stack: table, TOP
       }
-      //after switch:                                                 stack: table, table, key, value, TOP
-      
-      lua_settable(L, -3);      //set key and value as entry          stack: table, table, TOP
-      lua_rawseti(L, -2, i+1);  //add to overall table                stack: table, TOP
     }
-    
-    return 1; //the table is always on the stack (even if empty)
-  }
-
-
-  SWIGINTERN int VTypedObject_GetProperty(lua_State *L)
-  {
-    
-    DECLARE_ARGS_OK;
-  
-    SWIG_CONVERT_POINTER(L, 1, VTypedObject, pTypedObject)
-
-    GET_ARG(2, const char *, pszName);
-    lua_pop(L,2);
-
-    if (ARGS_OK) {
-      VisVariable_cl *pVar = pTypedObject->GetVariable(pszName);
-      if (!pVar) {
-        hkvLog::Warning("Called getter of unknown property '%s'", pszName);
-        lua_pushnil(L);
-        return 1;
-      }
+SWIGINTERN void VTypedObject_SetProperty(VTypedObject *self,char const *pszName,VLuaStackRef const &value,VCaptureSwigEnvironment *env){
+      VisVariable_cl* pVar = self->GetVariable(pszName);
       
-      switch (pVar->type) {
-        case VULPTYPE_STRING:
-        case VULPTYPE_MODEL:
-        case VULPTYPE_PSTRING:
-        case VULPTYPE_ENTITY_KEY:
-        case VULPTYPE_PRIMITIVE_KEY:
-        case VULPTYPE_VERTEX_KEY:
-        case VULPTYPE_LIGHTSOURCE_KEY:
-        case VULPTYPE_WORLDANIMATION_KEY:
-        case VULPTYPE_PATH_KEY:
-          {
-            const char *pStr = NULL;
-            pVar->GetValueDirect(pTypedObject, (void*) &pStr, true);
-            lua_pushstring(L, pStr);
-          }
-          break;
-        case VULPTYPE_VSTRING:
-          {
-            VString vstr;
-            pVar->GetValueDirect(pTypedObject, (void*) &vstr, true);
-            lua_pushstring(L, vstr.AsChar());
-          }
-          break;
-        case VULPTYPE_ENUM:	
-        case VULPTYPE_INT:	
-          {
-            int n;
-            pVar->GetValueDirect(pTypedObject, (void*) &n, true);
-            lua_pushnumber(L, (lua_Number) n);
-          }
-          break;
-        case VULPTYPE_FLOAT:
-          {
-            float n;
-            pVar->GetValueDirect(pTypedObject, (void*) &n, true);
-            lua_pushnumber(L, (lua_Number) n);
-          }
-          break;
-        case VULPTYPE_DOUBLE:
-          {
-            double n;
-            pVar->GetValueDirect(pTypedObject, (void*) &n, true);
-            lua_pushnumber(L, (lua_Number) n);
-          }
-          break;
-        case VULPTYPE_BOOL:	
-          {
-            BOOL b;
-            pVar->GetValueDirect(pTypedObject, (void*) &b, true);
-            lua_pushboolean(L, (int) b);
-          }
-          break;
-        case VULPTYPE_VECTOR_INT:
-          {
-            int pN[3];
-            pVar->GetValueDirect(pTypedObject, (void*) pN, true);
-            hkvVec3 *vector = new hkvVec3((float)pN[0], (float)pN[1], (float)pN[2]);
-            SWIG_Lua_NewPointerObj(L,vector,SWIGTYPE_p_hkvVec3, VLUA_MANAGE_MEM_BY_LUA);
-          }
-          break;
-        case VULPTYPE_VECTOR_FLOAT:
-          {
-            float pN[3];
-            pVar->GetValueDirect(pTypedObject, (void*) pN, true);
-            hkvVec3 *vector = new hkvVec3(pN[0], pN[1], pN[2]);
-            SWIG_Lua_NewPointerObj(L,vector,SWIGTYPE_p_hkvVec3, VLUA_MANAGE_MEM_BY_LUA);
-          }
-          break;
-        case VULPTYPE_VECTOR_DOUBLE:
-          {
-            double pN[3];
-            pVar->GetValueDirect(pTypedObject, (void*) pN, true);
-            hkvVec3 *vector = new hkvVec3((float)pN[0], (float)pN[1], (float)pN[2]);
-            SWIG_Lua_NewPointerObj(L,vector,SWIGTYPE_p_hkvVec3, VLUA_MANAGE_MEM_BY_LUA);
-          }
-          break;
-        case VULPTYPE_BYTE_COLOR4:
-          {
-            VColorRef *color = new VColorRef();
-            pVar->GetValueDirect(pTypedObject, (void*) color, true);
-            SWIG_Lua_NewPointerObj(L,color,SWIGTYPE_p_VColorRef, VLUA_MANAGE_MEM_BY_LUA);
-          }
-          break;
-        default:
-          hkvLog::Warning("Called getter of unknown type %d (%s)", pVar->type, pszName);
-          lua_pushnil(L);
-          break;
-      }
-      return 1;
-    }
-    return 0;
-  }
-
-
-  SWIGINTERN int VTypedObject_SetProperty(lua_State *L)
-  {
-    
-    DECLARE_ARGS_OK;
-
-    SWIG_CONVERT_POINTER(L, 1, VTypedObject, pTypedObject)
-
-    GET_ARG(2, const char *, pszName);
-
-    if (ARGS_OK)
-    {
-      VisVariable_cl *pVar = pTypedObject->GetVariable(pszName);
-
-      if (!pVar)
+      // if variable can't be found by name try with display name
+      if(!pVar)
+        pVar = self->GetVariableByDisplayName(pszName);
+        
+      if(!pVar)
       {
         hkvLog::Warning("Called setter of unknown property '%s'", pszName);
-        return 0;
+        return;
       }
+
+      lua_State* L = env->GetLuaState();
       
-      switch (pVar->type) {
+      VVarChangeRes_e result = self->OnVariableValueChanging(pVar, pszName);
+      if(result == VCHANGE_IS_ALLOWED)
+      {
+        switch(pVar->type)
+        {
         case VULPTYPE_STRING:
         case VULPTYPE_VSTRING:
         case VULPTYPE_MODEL:
@@ -2040,79 +2193,97 @@ SWIGINTERN bool VTypedObject_operator_Se__Se_(VTypedObject *self,VTypedObject co
         case VULPTYPE_LIGHTSOURCE_KEY:
         case VULPTYPE_WORLDANIMATION_KEY:
         case VULPTYPE_PATH_KEY:
-          {
-            GET_ARG(3, const char *, pszVal);
-            pVar->SetValue(pTypedObject, pszVal, true);
-          }
-          break;
-        case VULPTYPE_ENUM:	
-        case VULPTYPE_INT:	
-          {
-            GET_ARG(3, lua_Number, n);
-            int i = (int) n;
-            pVar->SetValueDirect(pTypedObject, (void*) &i, true);
-          }
-          break;
+        {
+          const char* pszVal = value.ToString();
+          pVar->SetValue(self, pszVal, true);
+        }
+        break;
+        case VULPTYPE_ENUM:
+        case VULPTYPE_INT:
+        {
+          int i = (int) value.ToNumber();
+          pVar->SetValueDirect(self, (void*) &i, true);
+        }
+        break;
         case VULPTYPE_FLOAT:
-          {
-            GET_ARG(3, lua_Number, n);
-            float f = (float) n;
-            pVar->SetValueDirect(pTypedObject, (void*) &f, true);
-          }
-          break;
+        {
+          float f = (float) value.ToNumber();
+          pVar->SetValueDirect(self, (void*) &f, true);
+        }
+        break;
         case VULPTYPE_DOUBLE:
-          {
-            GET_ARG(3, lua_Number, n);
-            double d = (double) n;
-            pVar->SetValueDirect(pTypedObject, (void*) &d, true);
-          }
-          break;
-        case VULPTYPE_BOOL:	
-          {
-            GET_ARG(3, bool, n);
-            BOOL b = (BOOL) n;
-            pVar->SetValueDirect(pTypedObject, (void*) &b, true);
-          }
-          break;
+        {
+          double d = (double) value.ToNumber();
+          pVar->SetValueDirect(self, (void*) &d, true);
+        }
+        break;
+        case VULPTYPE_BOOL:
+        {
+          BOOL b = (BOOL) value.ToBoolean();
+          pVar->SetValueDirect(self, (void*) &b, true);
+        }
+        break;
         case VULPTYPE_VECTOR_INT:
+        {
+          const hkvVec3* pVec = value.ToObject<hkvVec3>();
+
+          if(!pVec)
           {
-            GET_ARG(3, hkvVec3, vec);
-            int pI[3] = {(int) vec.x, (int) vec.y, (int) vec.z};
-            pVar->SetValueDirect(pTypedObject, (void*) pI, true);
+            env->Fail("Expected argument of type hkvVec3");
+            return;
           }
-          break;
+
+          int pI[3] = {(int) pVec->x, (int) pVec->y, (int) pVec->z};
+          pVar->SetValueDirect(self, (void*) pI, true);
+        }
+        break;
         case VULPTYPE_VECTOR_FLOAT:
+        {
+          const hkvVec3* pVec = value.ToObject<hkvVec3>();
+
+          if(!pVec)
           {
-            GET_ARG(3, hkvVec3, vec);
-            float pF[3] = {vec.x, vec.y, vec.z};
-            pVar->SetValueDirect(pTypedObject, (void*) pF, true);
+            env->Fail("Expected argument of type hkvVec3");
+            return;
           }
-          break;
+
+          float pF[3] = {pVec->x, pVec->y, pVec->z};
+          pVar->SetValueDirect(self, (void*) pF, true);
+        }
+        break;
         case VULPTYPE_VECTOR_DOUBLE:
+        {
+          const hkvVec3* pVec = value.ToObject<hkvVec3>();
+
+          if(!pVec)
           {
-            GET_ARG(3, hkvVec3, vec);
-            double pD[3] = {(double) vec.x, (double) vec.y, (double) vec.z};
-            pVar->SetValueDirect(pTypedObject, (void*) pD, true);
+            env->Fail("Expected argument of type hkvVec3");
+            return;
           }
-          break;
+
+          double pD[3] = {(double) pVec->x, (double) pVec->y, (double) pVec->z};
+          pVar->SetValueDirect(self, (void*) pD, true);
+        }
+        break;
         case VULPTYPE_BYTE_COLOR4:
+        {
+          const VColorRef* pColor = value.ToObject<VColorRef>();
+
+          if(!pColor)
           {
-            GET_ARG(3, VColorRef, col);
-            pVar->SetValueDirect(pTypedObject, (void*) &col, true);
+            env->Fail("Expected argument of type VColorRef");
+            return;
           }
-          break;
+
+          pVar->SetValueDirect(self, (void*) pColor, true);
+        }
         default:
           hkvLog::Warning("Called setter of unknown type %d (%s)", pVar->type, pszName);
           break;
+        }
+        self->OnVariableValueChanging(pVar, pszName);
       }
     }
-
-    //remove all stack items
-    lua_settop(L, 0);
-    //LUA_STACK_DUMP(L);
-    return 0;
-  }
-
 
   SWIGINTERN int VTypedObject_Concat(lua_State *L)
   {
@@ -2534,18 +2705,6 @@ SWIGINTERN hkvVec3 VisObject3D_cl_GetRotationDelta(VisObject3D_cl const *self){
     return hkvVec3(self->GetRotationDelta());
   }
 
-  SWIGINTERN int VisObject3D_cl_GetParent(lua_State *L)
-  {
-
-    SWIG_CONVERT_POINTER(L, 1, VisObject3D_cl, pSelf)
-
-    lua_settop(L, 0);
-    LUA_PushObjectProxy(L, pSelf->GetParent()); //will handle NULL as well
-
-    return 1;
-  }
-
-
   SWIGINTERN int VisObject3D_cl_GetChild(lua_State *L)
   {
     SWIG_CONVERT_POINTER(L, 1, VisObject3D_cl, pSelf)
@@ -2715,23 +2874,11 @@ SWIGINTERN char const *VFmodSoundObject_GetName(VFmodSoundObject *self){
         
       return NULL;
     }
-SWIGINTERN VFmodSoundObject *VFmodSoundObject_Cast(VTypedObject *pObject){
-    if(pObject && pObject->IsOfType(VFmodSoundObject::GetClassTypeId()))
-      return (VFmodSoundObject *) pObject;
-    hkvLog::Warning("[Lua] Cannot cast to %s!","VFmodSoundObject");
-    return NULL;
-  }
 SWIGINTERN char const *VFmodEvent_GetName(VFmodEvent *self){
       char *szEventName = NULL;
       self->GetInfo(NULL,&szEventName,NULL);
       return szEventName;
     }
-SWIGINTERN VFmodEvent *VFmodEvent_Cast(VTypedObject *pObject){
-    if(pObject && pObject->IsOfType(VFmodEvent::GetClassTypeId()))
-      return (VFmodEvent *) pObject;
-    hkvLog::Warning("[Lua] Cannot cast to %s!","VFmodEvent");
-    return NULL;
-  }
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -2741,7 +2888,16 @@ static int _wrap_V_RGBA_WHITE_get(lua_State* L) {
   
   SWIG_check_num_args("V_RGBA_WHITE",0,0)
   result = (VColorRef *)&V_RGBA_WHITE;
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_VColorRef,0); SWIG_arg++; 
+  
+  if(0) // Owned by Lua, wrap the pointer
+  {
+    SWIG_NewPointerObj(L,result,SWIGTYPE_p_VColorRef,0); SWIG_arg++;
+  }
+  else // Not owned by Lua, copy the contents
+  {
+    SWIG_Lua_NewPodObj(L,result,SWIGTYPE_p_VColorRef); SWIG_arg++;
+  }
+  
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -2758,7 +2914,16 @@ static int _wrap_V_RGBA_GREY_get(lua_State* L) {
   
   SWIG_check_num_args("V_RGBA_GREY",0,0)
   result = (VColorRef *)&V_RGBA_GREY;
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_VColorRef,0); SWIG_arg++; 
+  
+  if(0) // Owned by Lua, wrap the pointer
+  {
+    SWIG_NewPointerObj(L,result,SWIGTYPE_p_VColorRef,0); SWIG_arg++;
+  }
+  else // Not owned by Lua, copy the contents
+  {
+    SWIG_Lua_NewPodObj(L,result,SWIGTYPE_p_VColorRef); SWIG_arg++;
+  }
+  
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -2775,7 +2940,16 @@ static int _wrap_V_RGBA_BLACK_get(lua_State* L) {
   
   SWIG_check_num_args("V_RGBA_BLACK",0,0)
   result = (VColorRef *)&V_RGBA_BLACK;
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_VColorRef,0); SWIG_arg++; 
+  
+  if(0) // Owned by Lua, wrap the pointer
+  {
+    SWIG_NewPointerObj(L,result,SWIGTYPE_p_VColorRef,0); SWIG_arg++;
+  }
+  else // Not owned by Lua, copy the contents
+  {
+    SWIG_Lua_NewPodObj(L,result,SWIGTYPE_p_VColorRef); SWIG_arg++;
+  }
+  
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -2792,7 +2966,16 @@ static int _wrap_V_RGBA_RED_get(lua_State* L) {
   
   SWIG_check_num_args("V_RGBA_RED",0,0)
   result = (VColorRef *)&V_RGBA_RED;
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_VColorRef,0); SWIG_arg++; 
+  
+  if(0) // Owned by Lua, wrap the pointer
+  {
+    SWIG_NewPointerObj(L,result,SWIGTYPE_p_VColorRef,0); SWIG_arg++;
+  }
+  else // Not owned by Lua, copy the contents
+  {
+    SWIG_Lua_NewPodObj(L,result,SWIGTYPE_p_VColorRef); SWIG_arg++;
+  }
+  
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -2809,7 +2992,16 @@ static int _wrap_V_RGBA_YELLOW_get(lua_State* L) {
   
   SWIG_check_num_args("V_RGBA_YELLOW",0,0)
   result = (VColorRef *)&V_RGBA_YELLOW;
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_VColorRef,0); SWIG_arg++; 
+  
+  if(0) // Owned by Lua, wrap the pointer
+  {
+    SWIG_NewPointerObj(L,result,SWIGTYPE_p_VColorRef,0); SWIG_arg++;
+  }
+  else // Not owned by Lua, copy the contents
+  {
+    SWIG_Lua_NewPodObj(L,result,SWIGTYPE_p_VColorRef); SWIG_arg++;
+  }
+  
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -2826,7 +3018,16 @@ static int _wrap_V_RGBA_GREEN_get(lua_State* L) {
   
   SWIG_check_num_args("V_RGBA_GREEN",0,0)
   result = (VColorRef *)&V_RGBA_GREEN;
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_VColorRef,0); SWIG_arg++; 
+  
+  if(0) // Owned by Lua, wrap the pointer
+  {
+    SWIG_NewPointerObj(L,result,SWIGTYPE_p_VColorRef,0); SWIG_arg++;
+  }
+  else // Not owned by Lua, copy the contents
+  {
+    SWIG_Lua_NewPodObj(L,result,SWIGTYPE_p_VColorRef); SWIG_arg++;
+  }
+  
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -2843,7 +3044,16 @@ static int _wrap_V_RGBA_CYAN_get(lua_State* L) {
   
   SWIG_check_num_args("V_RGBA_CYAN",0,0)
   result = (VColorRef *)&V_RGBA_CYAN;
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_VColorRef,0); SWIG_arg++; 
+  
+  if(0) // Owned by Lua, wrap the pointer
+  {
+    SWIG_NewPointerObj(L,result,SWIGTYPE_p_VColorRef,0); SWIG_arg++;
+  }
+  else // Not owned by Lua, copy the contents
+  {
+    SWIG_Lua_NewPodObj(L,result,SWIGTYPE_p_VColorRef); SWIG_arg++;
+  }
+  
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -2860,7 +3070,16 @@ static int _wrap_V_RGBA_BLUE_get(lua_State* L) {
   
   SWIG_check_num_args("V_RGBA_BLUE",0,0)
   result = (VColorRef *)&V_RGBA_BLUE;
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_VColorRef,0); SWIG_arg++; 
+  
+  if(0) // Owned by Lua, wrap the pointer
+  {
+    SWIG_NewPointerObj(L,result,SWIGTYPE_p_VColorRef,0); SWIG_arg++;
+  }
+  else // Not owned by Lua, copy the contents
+  {
+    SWIG_Lua_NewPodObj(L,result,SWIGTYPE_p_VColorRef); SWIG_arg++;
+  }
+  
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -2877,7 +3096,16 @@ static int _wrap_V_RGBA_PURPLE_get(lua_State* L) {
   
   SWIG_check_num_args("V_RGBA_PURPLE",0,0)
   result = (VColorRef *)&V_RGBA_PURPLE;
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_VColorRef,0); SWIG_arg++; 
+  
+  if(0) // Owned by Lua, wrap the pointer
+  {
+    SWIG_NewPointerObj(L,result,SWIGTYPE_p_VColorRef,0); SWIG_arg++;
+  }
+  else // Not owned by Lua, copy the contents
+  {
+    SWIG_Lua_NewPodObj(L,result,SWIGTYPE_p_VColorRef); SWIG_arg++;
+  }
+  
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -2894,7 +3122,16 @@ static int _wrap_new_VColorRef__SWIG_0(lua_State* L) {
   
   SWIG_check_num_args("VColorRef",0,0)
   result = (VColorRef *)new VColorRef();
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_VColorRef,1); SWIG_arg++; 
+  
+  if(1) // Owned by Lua, wrap the pointer
+  {
+    SWIG_NewPointerObj(L,result,SWIGTYPE_p_VColorRef,1); SWIG_arg++;
+  }
+  else // Not owned by Lua, copy the contents
+  {
+    SWIG_Lua_NewPodObj(L,result,SWIGTYPE_p_VColorRef); SWIG_arg++;
+  }
+  
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -2927,7 +3164,16 @@ static int _wrap_new_VColorRef__SWIG_1(lua_State* L) {
   SWIG_contract_assert((lua_tonumber(L,4)>=0),"number must not be negative")
   arg4 = (UBYTE)lua_tonumber(L, 4);
   result = (VColorRef *)new VColorRef(arg1,arg2,arg3,arg4);
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_VColorRef,1); SWIG_arg++; 
+  
+  if(1) // Owned by Lua, wrap the pointer
+  {
+    SWIG_NewPointerObj(L,result,SWIGTYPE_p_VColorRef,1); SWIG_arg++;
+  }
+  else // Not owned by Lua, copy the contents
+  {
+    SWIG_Lua_NewPodObj(L,result,SWIGTYPE_p_VColorRef); SWIG_arg++;
+  }
+  
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -2956,7 +3202,16 @@ static int _wrap_new_VColorRef__SWIG_2(lua_State* L) {
   SWIG_contract_assert((lua_tonumber(L,3)>=0),"number must not be negative")
   arg3 = (UBYTE)lua_tonumber(L, 3);
   result = (VColorRef *)new VColorRef(arg1,arg2,arg3);
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_VColorRef,1); SWIG_arg++; 
+  
+  if(1) // Owned by Lua, wrap the pointer
+  {
+    SWIG_NewPointerObj(L,result,SWIGTYPE_p_VColorRef,1); SWIG_arg++;
+  }
+  else // Not owned by Lua, copy the contents
+  {
+    SWIG_Lua_NewPodObj(L,result,SWIGTYPE_p_VColorRef); SWIG_arg++;
+  }
+  
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -2977,6 +3232,12 @@ static int _wrap_VColorRef_Clear(lua_State* L) {
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VColorRef,0))){
     SWIG_fail_ptr("VColorRef_Clear",1,SWIGTYPE_p_VColorRef);
+  }
+  
+  
+  if (VTraits::IsBaseOf<VTypedObject, VColorRef>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VColorRef_Clear", 1, "VColorRef *", "deleted native object");
+    SWIG_fail;
   }
   
   (arg1)->Clear();
@@ -3019,6 +3280,12 @@ static int _wrap_VColorRef_SetRGBA(lua_State* L) {
   arg4 = (UINT)lua_tonumber(L, 4);
   SWIG_contract_assert((lua_tonumber(L,5)>=0),"number must not be negative")
   arg5 = (UINT)lua_tonumber(L, 5);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VColorRef>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VColorRef_SetRGBA", 1, "VColorRef *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->SetRGBA(arg2,arg3,arg4,arg5);
   
   return SWIG_arg;
@@ -3055,6 +3322,12 @@ static int _wrap_VColorRef_SetRGB(lua_State* L) {
   arg3 = (UINT)lua_tonumber(L, 3);
   SWIG_contract_assert((lua_tonumber(L,4)>=0),"number must not be negative")
   arg4 = (UINT)lua_tonumber(L, 4);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VColorRef>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VColorRef_SetRGB", 1, "VColorRef *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->SetRGB(arg2,arg3,arg4);
   
   return SWIG_arg;
@@ -3085,6 +3358,12 @@ static int _wrap_VColorRef___eq(lua_State* L) {
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,2,(void**)&arg2,SWIGTYPE_p_VColorRef,0))){
     SWIG_fail_ptr("VColorRef___eq",2,SWIGTYPE_p_VColorRef);
+  }
+  
+  
+  if (VTraits::IsBaseOf<VTypedObject, VColorRef>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VColorRef___eq", 1, "VColorRef *", "deleted native object");
+    SWIG_fail;
   }
   
   result = (bool)(arg1)->operator ==((VColorRef const &)*arg2);
@@ -3119,11 +3398,16 @@ static int _wrap_VColorRef___add(lua_State* L) {
     SWIG_fail_ptr("VColorRef___add",2,SWIGTYPE_p_VColorRef);
   }
   
-  result = ((VColorRef const *)arg1)->operator +((VColorRef const &)*arg2);
-  {
-    VColorRef * resultptr = new VColorRef((const VColorRef &) result);
-    SWIG_NewPointerObj(L,(void *) resultptr,SWIGTYPE_p_VColorRef,1); SWIG_arg++;
+  
+  if (VTraits::IsBaseOf<VTypedObject, VColorRef const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VColorRef___add", 1, "VColorRef const *", "deleted native object");
+    SWIG_fail;
   }
+  
+  result = ((VColorRef const *)arg1)->operator +((VColorRef const &)*arg2);
+  
+  SWIG_Lua_NewPodObj(L,&result,SWIGTYPE_p_VColorRef); SWIG_arg++;
+  
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -3154,11 +3438,16 @@ static int _wrap_VColorRef___sub(lua_State* L) {
     SWIG_fail_ptr("VColorRef___sub",2,SWIGTYPE_p_VColorRef);
   }
   
-  result = ((VColorRef const *)arg1)->operator -((VColorRef const &)*arg2);
-  {
-    VColorRef * resultptr = new VColorRef((const VColorRef &) result);
-    SWIG_NewPointerObj(L,(void *) resultptr,SWIGTYPE_p_VColorRef,1); SWIG_arg++;
+  
+  if (VTraits::IsBaseOf<VTypedObject, VColorRef const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VColorRef___sub", 1, "VColorRef const *", "deleted native object");
+    SWIG_fail;
   }
+  
+  result = ((VColorRef const *)arg1)->operator -((VColorRef const &)*arg2);
+  
+  SWIG_Lua_NewPodObj(L,&result,SWIGTYPE_p_VColorRef); SWIG_arg++;
+  
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -3189,11 +3478,16 @@ static int _wrap_VColorRef___mul__SWIG_0(lua_State* L) {
     SWIG_fail_ptr("VColorRef___mul",2,SWIGTYPE_p_VColorRef);
   }
   
-  result = ((VColorRef const *)arg1)->operator *((VColorRef const &)*arg2);
-  {
-    VColorRef * resultptr = new VColorRef((const VColorRef &) result);
-    SWIG_NewPointerObj(L,(void *) resultptr,SWIGTYPE_p_VColorRef,1); SWIG_arg++;
+  
+  if (VTraits::IsBaseOf<VTypedObject, VColorRef const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VColorRef___mul", 1, "VColorRef const *", "deleted native object");
+    SWIG_fail;
   }
+  
+  result = ((VColorRef const *)arg1)->operator *((VColorRef const &)*arg2);
+  
+  SWIG_Lua_NewPodObj(L,&result,SWIGTYPE_p_VColorRef); SWIG_arg++;
+  
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -3220,11 +3514,16 @@ static int _wrap_VColorRef___mul__SWIG_1(lua_State* L) {
   }
   
   arg2 = (float)lua_tonumber(L, 2);
-  result = ((VColorRef const *)arg1)->operator *(arg2);
-  {
-    VColorRef * resultptr = new VColorRef((const VColorRef &) result);
-    SWIG_NewPointerObj(L,(void *) resultptr,SWIGTYPE_p_VColorRef,1); SWIG_arg++;
+  
+  if (VTraits::IsBaseOf<VTypedObject, VColorRef const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VColorRef___mul", 1, "VColorRef const *", "deleted native object");
+    SWIG_fail;
   }
+  
+  result = ((VColorRef const *)arg1)->operator *(arg2);
+  
+  SWIG_Lua_NewPodObj(L,&result,SWIGTYPE_p_VColorRef); SWIG_arg++;
+  
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -3307,6 +3606,12 @@ static int _wrap_VColorRef_IsZero(lua_State* L) {
     SWIG_fail_ptr("VColorRef_IsZero",1,SWIGTYPE_p_VColorRef);
   }
   
+  
+  if (VTraits::IsBaseOf<VTypedObject, VColorRef const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VColorRef_IsZero", 1, "VColorRef const *", "deleted native object");
+    SWIG_fail;
+  }
+  
   result = (bool)((VColorRef const *)arg1)->IsZero();
   lua_pushboolean(L,(int)(result!=0)); SWIG_arg++;
   return SWIG_arg;
@@ -3332,6 +3637,12 @@ static int _wrap_VColorRef_IsBlack(lua_State* L) {
     SWIG_fail_ptr("VColorRef_IsBlack",1,SWIGTYPE_p_VColorRef);
   }
   
+  
+  if (VTraits::IsBaseOf<VTypedObject, VColorRef const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VColorRef_IsBlack", 1, "VColorRef const *", "deleted native object");
+    SWIG_fail;
+  }
+  
   result = (bool)((VColorRef const *)arg1)->IsBlack();
   lua_pushboolean(L,(int)(result!=0)); SWIG_arg++;
   return SWIG_arg;
@@ -3355,6 +3666,12 @@ static int _wrap_VColorRef_GetIntensity(lua_State* L) {
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VColorRef,0))){
     SWIG_fail_ptr("VColorRef_GetIntensity",1,SWIGTYPE_p_VColorRef);
+  }
+  
+  
+  if (VTraits::IsBaseOf<VTypedObject, VColorRef const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VColorRef_GetIntensity", 1, "VColorRef const *", "deleted native object");
+    SWIG_fail;
   }
   
   result = (float)((VColorRef const *)arg1)->GetIntensity();
@@ -3398,6 +3715,12 @@ static int _wrap_VColorRef_Lerp(lua_State* L) {
   }
   
   arg4 = (float)lua_tonumber(L, 4);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VColorRef>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VColorRef_Lerp", 1, "VColorRef *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->Lerp((VColorRef const &)*arg2,(VColorRef const &)*arg3,arg4);
   
   return SWIG_arg;
@@ -3426,6 +3749,12 @@ static int _wrap_VColorRef_r_set(lua_State* L) {
   
   SWIG_contract_assert((lua_tonumber(L,2)>=0),"number must not be negative")
   arg2 = (UBYTE)lua_tonumber(L, 2);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VColorRef>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VColorRef_r_set", 1, "VColorRef *", "deleted native object");
+    SWIG_fail;
+  }
+  
   if (arg1) (arg1)->r = arg2;
   
   return SWIG_arg;
@@ -3449,6 +3778,12 @@ static int _wrap_VColorRef_r_get(lua_State* L) {
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VColorRef,0))){
     SWIG_fail_ptr("VColorRef_r_get",1,SWIGTYPE_p_VColorRef);
+  }
+  
+  
+  if (VTraits::IsBaseOf<VTypedObject, VColorRef>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VColorRef_r_get", 1, "VColorRef *", "deleted native object");
+    SWIG_fail;
   }
   
   result = (UBYTE) ((arg1)->r);
@@ -3479,6 +3814,12 @@ static int _wrap_VColorRef_g_set(lua_State* L) {
   
   SWIG_contract_assert((lua_tonumber(L,2)>=0),"number must not be negative")
   arg2 = (UBYTE)lua_tonumber(L, 2);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VColorRef>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VColorRef_g_set", 1, "VColorRef *", "deleted native object");
+    SWIG_fail;
+  }
+  
   if (arg1) (arg1)->g = arg2;
   
   return SWIG_arg;
@@ -3502,6 +3843,12 @@ static int _wrap_VColorRef_g_get(lua_State* L) {
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VColorRef,0))){
     SWIG_fail_ptr("VColorRef_g_get",1,SWIGTYPE_p_VColorRef);
+  }
+  
+  
+  if (VTraits::IsBaseOf<VTypedObject, VColorRef>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VColorRef_g_get", 1, "VColorRef *", "deleted native object");
+    SWIG_fail;
   }
   
   result = (UBYTE) ((arg1)->g);
@@ -3532,6 +3879,12 @@ static int _wrap_VColorRef_b_set(lua_State* L) {
   
   SWIG_contract_assert((lua_tonumber(L,2)>=0),"number must not be negative")
   arg2 = (UBYTE)lua_tonumber(L, 2);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VColorRef>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VColorRef_b_set", 1, "VColorRef *", "deleted native object");
+    SWIG_fail;
+  }
+  
   if (arg1) (arg1)->b = arg2;
   
   return SWIG_arg;
@@ -3555,6 +3908,12 @@ static int _wrap_VColorRef_b_get(lua_State* L) {
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VColorRef,0))){
     SWIG_fail_ptr("VColorRef_b_get",1,SWIGTYPE_p_VColorRef);
+  }
+  
+  
+  if (VTraits::IsBaseOf<VTypedObject, VColorRef>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VColorRef_b_get", 1, "VColorRef *", "deleted native object");
+    SWIG_fail;
   }
   
   result = (UBYTE) ((arg1)->b);
@@ -3585,6 +3944,12 @@ static int _wrap_VColorRef_a_set(lua_State* L) {
   
   SWIG_contract_assert((lua_tonumber(L,2)>=0),"number must not be negative")
   arg2 = (UBYTE)lua_tonumber(L, 2);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VColorRef>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VColorRef_a_set", 1, "VColorRef *", "deleted native object");
+    SWIG_fail;
+  }
+  
   if (arg1) (arg1)->a = arg2;
   
   return SWIG_arg;
@@ -3608,6 +3973,12 @@ static int _wrap_VColorRef_a_get(lua_State* L) {
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VColorRef,0))){
     SWIG_fail_ptr("VColorRef_a_get",1,SWIGTYPE_p_VColorRef);
+  }
+  
+  
+  if (VTraits::IsBaseOf<VTypedObject, VColorRef>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VColorRef_a_get", 1, "VColorRef *", "deleted native object");
+    SWIG_fail;
   }
   
   result = (UBYTE) ((arg1)->a);
@@ -3635,7 +4006,16 @@ static int _wrap_new_VColorRef__SWIG_3(lua_State* L) {
   }
   
   result = (VColorRef *)new_VColorRef__SWIG_3((VColorRef const &)*arg1);
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_VColorRef,1); SWIG_arg++; 
+  
+  if(1) // Owned by Lua, wrap the pointer
+  {
+    SWIG_NewPointerObj(L,result,SWIGTYPE_p_VColorRef,1); SWIG_arg++;
+  }
+  else // Not owned by Lua, copy the contents
+  {
+    SWIG_Lua_NewPodObj(L,result,SWIGTYPE_p_VColorRef); SWIG_arg++;
+  }
+  
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -3737,11 +4117,16 @@ static int _wrap_VColorRef_Clone(lua_State* L) {
     SWIG_fail_ptr("VColorRef_Clone",1,SWIGTYPE_p_VColorRef);
   }
   
-  result = VColorRef_Clone(arg1);
-  {
-    VColorRef * resultptr = new VColorRef((const VColorRef &) result);
-    SWIG_NewPointerObj(L,(void *) resultptr,SWIGTYPE_p_VColorRef,1); SWIG_arg++;
+  
+  if (VTraits::IsBaseOf<VTypedObject, VColorRef>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VColorRef_Clone", 1, "VColorRef *", "deleted native object");
+    SWIG_fail;
   }
+  
+  result = VColorRef_Clone(arg1);
+  
+  SWIG_Lua_NewPodObj(L,&result,SWIGTYPE_p_VColorRef); SWIG_arg++;
+  
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -3765,11 +4150,16 @@ static int _wrap_VColorRef_clone(lua_State* L) {
     SWIG_fail_ptr("VColorRef_clone",1,SWIGTYPE_p_VColorRef);
   }
   
-  result = VColorRef_clone(arg1);
-  {
-    VColorRef * resultptr = new VColorRef((const VColorRef &) result);
-    SWIG_NewPointerObj(L,(void *) resultptr,SWIGTYPE_p_VColorRef,1); SWIG_arg++;
+  
+  if (VTraits::IsBaseOf<VTypedObject, VColorRef>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VColorRef_clone", 1, "VColorRef *", "deleted native object");
+    SWIG_fail;
   }
+  
+  result = VColorRef_clone(arg1);
+  
+  SWIG_Lua_NewPodObj(L,&result,SWIGTYPE_p_VColorRef); SWIG_arg++;
+  
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -3826,6 +4216,12 @@ static int _wrap_VTypedObject_GetType(lua_State* L) {
     SWIG_fail_ptr("VTypedObject_GetType",1,SWIGTYPE_p_VTypedObject);
   }
   
+  
+  if (VTraits::IsBaseOf<VTypedObject, VTypedObject const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VTypedObject_GetType", 1, "VTypedObject const *", "deleted native object");
+    SWIG_fail;
+  }
+  
   result = (char *)VTypedObject_GetType((VTypedObject const *)arg1);
   lua_pushstring(L,(const char *)result); SWIG_arg++;
   return SWIG_arg;
@@ -3854,6 +4250,12 @@ static int _wrap_VTypedObject_IsOfType(lua_State* L) {
   }
   
   arg2 = (char *)lua_tostring(L, 2);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VTypedObject>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VTypedObject_IsOfType", 1, "VTypedObject *", "deleted native object");
+    SWIG_fail;
+  }
+  
   result = (bool)VTypedObject_IsOfType(arg1,(char const *)arg2);
   lua_pushboolean(L,(int)(result!=0)); SWIG_arg++;
   return SWIG_arg;
@@ -3882,6 +4284,12 @@ static int _wrap_VTypedObject_GetPropertyType(lua_State* L) {
   }
   
   arg2 = (char *)lua_tostring(L, 2);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VTypedObject>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VTypedObject_GetPropertyType", 1, "VTypedObject *", "deleted native object");
+    SWIG_fail;
+  }
+  
   result = (char *)VTypedObject_GetPropertyType(arg1,(char const *)arg2);
   lua_pushstring(L,(const char *)result); SWIG_arg++;
   return SWIG_arg;
@@ -3914,8 +4322,161 @@ static int _wrap_VTypedObject___eq(lua_State* L) {
     SWIG_fail_ptr("VTypedObject___eq",2,SWIGTYPE_p_VTypedObject);
   }
   
+  
+  if (VTraits::IsBaseOf<VTypedObject, VTypedObject>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VTypedObject___eq", 1, "VTypedObject *", "deleted native object");
+    SWIG_fail;
+  }
+  
   result = (bool)VTypedObject_operator_Se__Se_(arg1,(VTypedObject const &)*arg2);
   lua_pushboolean(L,(int)(result!=0)); SWIG_arg++;
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_VTypedObject_GetProperty(lua_State* L) {
+  int SWIG_arg = 0;
+  VTypedObject *arg1 = (VTypedObject *) 0 ;
+  char *arg2 = (char *) 0 ;
+  VCaptureSwigEnvironment *arg3 = (VCaptureSwigEnvironment *) 0 ;
+  VCaptureSwigEnvironment temp3(L,SWIG_arg) ;
+  
+  {
+    arg3 = &temp3;
+  }
+  SWIG_check_num_args("GetProperty",2,2)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("GetProperty",1,"VTypedObject *");
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("GetProperty",1,"VTypedObject *");
+  if(!SWIG_lua_isnilstring(L,2)) SWIG_fail_arg("GetProperty",2,"char const *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VTypedObject,0))){
+    SWIG_fail_ptr("VTypedObject_GetProperty",1,SWIGTYPE_p_VTypedObject);
+  }
+  
+  arg2 = (char *)lua_tostring(L, 2);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VTypedObject>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VTypedObject_GetProperty", 1, "VTypedObject *", "deleted native object");
+    SWIG_fail;
+  }
+  
+  VTypedObject_GetProperty(arg1,(char const *)arg2,arg3);
+  
+  {
+    if(arg3->HasFailed())
+    {
+      lua_Debug ar;
+      lua_getstack(L, 1, &ar);
+      lua_getinfo(L, "nSl", &ar);
+      lua_pushfstring(L,"Error (%s:%d) in %s, %s", ar.source, ar.currentline, "VTypedObject_GetProperty", arg3->GetErrorMessage());
+      SWIG_fail;
+    }
+  }
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_VTypedObject_GetProperties(lua_State* L) {
+  int SWIG_arg = 0;
+  VTypedObject *arg1 = (VTypedObject *) 0 ;
+  VCaptureSwigEnvironment *arg2 = (VCaptureSwigEnvironment *) 0 ;
+  VCaptureSwigEnvironment temp2(L,SWIG_arg) ;
+  
+  {
+    arg2 = &temp2;
+  }
+  SWIG_check_num_args("GetProperties",1,1)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("GetProperties",1,"VTypedObject *");
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("GetProperties",1,"VTypedObject *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VTypedObject,0))){
+    SWIG_fail_ptr("VTypedObject_GetProperties",1,SWIGTYPE_p_VTypedObject);
+  }
+  
+  
+  if (VTraits::IsBaseOf<VTypedObject, VTypedObject>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VTypedObject_GetProperties", 1, "VTypedObject *", "deleted native object");
+    SWIG_fail;
+  }
+  
+  VTypedObject_GetProperties(arg1,arg2);
+  
+  {
+    if(arg2->HasFailed())
+    {
+      lua_Debug ar;
+      lua_getstack(L, 1, &ar);
+      lua_getinfo(L, "nSl", &ar);
+      lua_pushfstring(L,"Error (%s:%d) in %s, %s", ar.source, ar.currentline, "VTypedObject_GetProperties", arg2->GetErrorMessage());
+      SWIG_fail;
+    }
+  }
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_VTypedObject_SetProperty(lua_State* L) {
+  int SWIG_arg = 0;
+  VTypedObject *arg1 = (VTypedObject *) 0 ;
+  char *arg2 = (char *) 0 ;
+  VLuaStackRef *arg3 = 0 ;
+  VCaptureSwigEnvironment *arg4 = (VCaptureSwigEnvironment *) 0 ;
+  VLuaStackRef temp3(hkvNoInitialization) ;
+  VCaptureSwigEnvironment temp4(L,SWIG_arg) ;
+  
+  {
+    arg4 = &temp4;
+  }
+  SWIG_check_num_args("SetProperty",3,3)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("SetProperty",1,"VTypedObject *");
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("SetProperty",1,"VTypedObject *");
+  if(!SWIG_lua_isnilstring(L,2)) SWIG_fail_arg("SetProperty",2,"char const *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VTypedObject,0))){
+    SWIG_fail_ptr("VTypedObject_SetProperty",1,SWIGTYPE_p_VTypedObject);
+  }
+  
+  arg2 = (char *)lua_tostring(L, 2);
+  {
+    temp3 = VLuaStackRef(L, 3);
+    arg3 = &temp3;
+  }
+  
+  if (VTraits::IsBaseOf<VTypedObject, VTypedObject>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VTypedObject_SetProperty", 1, "VTypedObject *", "deleted native object");
+    SWIG_fail;
+  }
+  
+  VTypedObject_SetProperty(arg1,(char const *)arg2,(VLuaStackRef const &)*arg3,arg4);
+  
+  {
+    if(arg4->HasFailed())
+    {
+      lua_Debug ar;
+      lua_getstack(L, 1, &ar);
+      lua_getinfo(L, "nSl", &ar);
+      lua_pushfstring(L,"Error (%s:%d) in %s, %s", ar.source, ar.currentline, "VTypedObject_SetProperty", arg4->GetErrorMessage());
+      SWIG_fail;
+    }
+  }
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -3937,6 +4498,12 @@ static int _wrap_VTypedObject_GetNumProperties(lua_State* L) {
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VTypedObject,0))){
     SWIG_fail_ptr("VTypedObject_GetNumProperties",1,SWIGTYPE_p_VTypedObject);
+  }
+  
+  
+  if (VTraits::IsBaseOf<VTypedObject, VTypedObject const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VTypedObject_GetNumProperties", 1, "VTypedObject const *", "deleted native object");
+    SWIG_fail;
   }
   
   result = (int)((VTypedObject const *)arg1)->GetNumVariables();
@@ -3970,6 +4537,12 @@ static int _wrap_VTypedObject_UpdateProperty(lua_State* L) {
   
   arg2 = (char *)lua_tostring(L, 2);
   arg3 = (char *)lua_tostring(L, 3);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VTypedObject>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VTypedObject_UpdateProperty", 1, "VTypedObject *", "deleted native object");
+    SWIG_fail;
+  }
+  
   result = (bool)(arg1)->SetVariable((char const *)arg2,(char const *)arg3);
   lua_pushboolean(L,(int)(result!=0)); SWIG_arg++;
   return SWIG_arg;
@@ -3984,14 +4557,14 @@ fail:
 
 static swig_lua_method swig_VTypedObject_methods[] = {
     { "__tostring",VTypedObject_ToString},
-    { "SetProperty",VTypedObject_SetProperty},
-    { "GetProperty",VTypedObject_GetProperty},
-    { "GetProperties",VTypedObject_GetProperties},
     { "__concat",VTypedObject_Concat},
     {"GetType", _wrap_VTypedObject_GetType}, 
     {"IsOfType", _wrap_VTypedObject_IsOfType}, 
     {"GetPropertyType", _wrap_VTypedObject_GetPropertyType}, 
     {"__eq", _wrap_VTypedObject___eq}, 
+    {"GetProperty", _wrap_VTypedObject_GetProperty}, 
+    {"GetProperties", _wrap_VTypedObject_GetProperties}, 
+    {"SetProperty", _wrap_VTypedObject_SetProperty}, 
     {"GetNumProperties", _wrap_VTypedObject_GetNumProperties}, 
     {"UpdateProperty", _wrap_VTypedObject_UpdateProperty}, 
     {0,0}
@@ -4014,6 +4587,12 @@ static int _wrap_VisTypedEngineObject_cl_GetComponentCount(lua_State* L) {
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VisTypedEngineObject_cl,0))){
     SWIG_fail_ptr("VisTypedEngineObject_cl_GetComponentCount",1,SWIGTYPE_p_VisTypedEngineObject_cl);
+  }
+  
+  
+  if (VTraits::IsBaseOf<VTypedObject, VisTypedEngineObject_cl>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VisTypedEngineObject_cl_GetComponentCount", 1, "VisTypedEngineObject_cl *", "deleted native object");
+    SWIG_fail;
   }
   
   result = (int)VisTypedEngineObject_cl_GetComponentCount(arg1);
@@ -4048,6 +4627,12 @@ static int _wrap_VisTypedEngineObject_cl_AddComponent(lua_State* L) {
     SWIG_fail_ptr("VisTypedEngineObject_cl_AddComponent",2,SWIGTYPE_p_IVObjectComponent);
   }
   
+  
+  if (VTraits::IsBaseOf<VTypedObject, VisTypedEngineObject_cl>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VisTypedEngineObject_cl_AddComponent", 1, "VisTypedEngineObject_cl *", "deleted native object");
+    SWIG_fail;
+  }
+  
   result = (bool)VisTypedEngineObject_cl_AddComponent(arg1,arg2);
   lua_pushboolean(L,(int)(result!=0)); SWIG_arg++;
   return SWIG_arg;
@@ -4078,6 +4663,12 @@ static int _wrap_VisTypedEngineObject_cl_RemoveComponent(lua_State* L) {
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,2,(void**)&arg2,SWIGTYPE_p_IVObjectComponent,0))){
     SWIG_fail_ptr("VisTypedEngineObject_cl_RemoveComponent",2,SWIGTYPE_p_IVObjectComponent);
+  }
+  
+  
+  if (VTraits::IsBaseOf<VTypedObject, VisTypedEngineObject_cl>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VisTypedEngineObject_cl_RemoveComponent", 1, "VisTypedEngineObject_cl *", "deleted native object");
+    SWIG_fail;
   }
   
   result = (bool)VisTypedEngineObject_cl_RemoveComponent(arg1,arg2);
@@ -4111,6 +4702,12 @@ static int _wrap_VisTypedEngineObject_cl_RemoveComponentOfType__SWIG_0(lua_State
   
   arg2 = (char *)lua_tostring(L, 2);
   arg3 = (char *)lua_tostring(L, 3);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VisTypedEngineObject_cl>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VisTypedEngineObject_cl_RemoveComponentOfType", 1, "VisTypedEngineObject_cl *", "deleted native object");
+    SWIG_fail;
+  }
+  
   result = (bool)VisTypedEngineObject_cl_RemoveComponentOfType__SWIG_0(arg1,(char const *)arg2,(char const *)arg3);
   lua_pushboolean(L,(int)(result!=0)); SWIG_arg++;
   return SWIG_arg;
@@ -4139,6 +4736,12 @@ static int _wrap_VisTypedEngineObject_cl_RemoveComponentOfType__SWIG_1(lua_State
   }
   
   arg2 = (char *)lua_tostring(L, 2);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VisTypedEngineObject_cl>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VisTypedEngineObject_cl_RemoveComponentOfType", 1, "VisTypedEngineObject_cl *", "deleted native object");
+    SWIG_fail;
+  }
+  
   result = (bool)VisTypedEngineObject_cl_RemoveComponentOfType__SWIG_0(arg1,(char const *)arg2);
   lua_pushboolean(L,(int)(result!=0)); SWIG_arg++;
   return SWIG_arg;
@@ -4222,6 +4825,12 @@ static int _wrap_VisTypedEngineObject_cl_RemoveAllComponents(lua_State* L) {
     SWIG_fail_ptr("VisTypedEngineObject_cl_RemoveAllComponents",1,SWIGTYPE_p_VisTypedEngineObject_cl);
   }
   
+  
+  if (VTraits::IsBaseOf<VTypedObject, VisTypedEngineObject_cl>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VisTypedEngineObject_cl_RemoveAllComponents", 1, "VisTypedEngineObject_cl *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->RemoveAllComponents();
   
   return SWIG_arg;
@@ -4275,6 +4884,12 @@ static int _wrap_VisObjectKey_cl_SetKey(lua_State* L) {
   }
   
   arg2 = (char *)lua_tostring(L, 2);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VisObjectKey_cl>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VisObjectKey_cl_SetKey", 1, "VisObjectKey_cl *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->SetObjectKey((char const *)arg2);
   
   return SWIG_arg;
@@ -4298,6 +4913,12 @@ static int _wrap_VisObjectKey_cl_GetKey(lua_State* L) {
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VisObjectKey_cl,0))){
     SWIG_fail_ptr("VisObjectKey_cl_GetKey",1,SWIGTYPE_p_VisObjectKey_cl);
+  }
+  
+  
+  if (VTraits::IsBaseOf<VTypedObject, VisObjectKey_cl const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VisObjectKey_cl_GetKey", 1, "VisObjectKey_cl const *", "deleted native object");
+    SWIG_fail;
   }
   
   result = (char *)((VisObjectKey_cl const *)arg1)->GetObjectKey();
@@ -4331,6 +4952,12 @@ static int _wrap_VisObjectKey_cl_HasKey__SWIG_0(lua_State* L) {
   
   arg2 = (char *)lua_tostring(L, 2);
   arg3 = (lua_toboolean(L, 3)!=0);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VisObjectKey_cl>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VisObjectKey_cl_HasKey", 1, "VisObjectKey_cl *", "deleted native object");
+    SWIG_fail;
+  }
+  
   result = (bool)VisObjectKey_cl_HasKey__SWIG_0(arg1,(char const *)arg2,arg3);
   lua_pushboolean(L,(int)(result!=0)); SWIG_arg++;
   return SWIG_arg;
@@ -4359,6 +4986,12 @@ static int _wrap_VisObjectKey_cl_HasKey__SWIG_1(lua_State* L) {
   }
   
   arg2 = (char *)lua_tostring(L, 2);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VisObjectKey_cl>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VisObjectKey_cl_HasKey", 1, "VisObjectKey_cl *", "deleted native object");
+    SWIG_fail;
+  }
+  
   result = (bool)VisObjectKey_cl_HasKey__SWIG_0(arg1,(char const *)arg2);
   lua_pushboolean(L,(int)(result!=0)); SWIG_arg++;
   return SWIG_arg;
@@ -4462,6 +5095,12 @@ static int _wrap_VisObject3D_cl_SetPosition__SWIG_0(lua_State* L) {
     SWIG_fail_ptr("VisObject3D_cl_SetPosition",2,SWIGTYPE_p_hkvVec3);
   }
   
+  
+  if (VTraits::IsBaseOf<VTypedObject, VisObject3D_cl>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VisObject3D_cl_SetPosition", 1, "VisObject3D_cl *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->SetPosition((hkvVec3 const &)*arg2);
   
   return SWIG_arg;
@@ -4493,6 +5132,12 @@ static int _wrap_VisObject3D_cl_IncPosition__SWIG_0(lua_State* L) {
     SWIG_fail_ptr("VisObject3D_cl_IncPosition",2,SWIGTYPE_p_hkvVec3);
   }
   
+  
+  if (VTraits::IsBaseOf<VTypedObject, VisObject3D_cl>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VisObject3D_cl_IncPosition", 1, "VisObject3D_cl *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->IncPosition((hkvVec3 const &)*arg2);
   
   return SWIG_arg;
@@ -4518,11 +5163,16 @@ static int _wrap_VisObject3D_cl_GetPosition(lua_State* L) {
     SWIG_fail_ptr("VisObject3D_cl_GetPosition",1,SWIGTYPE_p_VisObject3D_cl);
   }
   
-  result = VisObject3D_cl_GetPosition(arg1);
-  {
-    hkvVec3 * resultptr = new hkvVec3((const hkvVec3 &) result);
-    SWIG_NewPointerObj(L,(void *) resultptr,SWIGTYPE_p_hkvVec3,1); SWIG_arg++;
+  
+  if (VTraits::IsBaseOf<VTypedObject, VisObject3D_cl>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VisObject3D_cl_GetPosition", 1, "VisObject3D_cl *", "deleted native object");
+    SWIG_fail;
   }
+  
+  result = VisObject3D_cl_GetPosition(arg1);
+  
+  SWIG_Lua_NewPodObj(L,&result,SWIGTYPE_p_hkvVec3); SWIG_arg++;
+  
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -4554,6 +5204,12 @@ static int _wrap_VisObject3D_cl_SetPosition__SWIG_1(lua_State* L) {
   arg2 = (float)lua_tonumber(L, 2);
   arg3 = (float)lua_tonumber(L, 3);
   arg4 = (float)lua_tonumber(L, 4);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VisObject3D_cl>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VisObject3D_cl_SetPosition", 1, "VisObject3D_cl *", "deleted native object");
+    SWIG_fail;
+  }
+  
   VisObject3D_cl_SetPosition__SWIG_1(arg1,arg2,arg3,arg4);
   
   return SWIG_arg;
@@ -4656,6 +5312,12 @@ static int _wrap_VisObject3D_cl_IncPosition__SWIG_1(lua_State* L) {
   arg2 = (float)lua_tonumber(L, 2);
   arg3 = (float)lua_tonumber(L, 3);
   arg4 = (float)lua_tonumber(L, 4);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VisObject3D_cl>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VisObject3D_cl_IncPosition", 1, "VisObject3D_cl *", "deleted native object");
+    SWIG_fail;
+  }
+  
   VisObject3D_cl_IncPosition__SWIG_1(arg1,arg2,arg3,arg4);
   
   return SWIG_arg;
@@ -4758,6 +5420,12 @@ static int _wrap_VisObject3D_cl_SetOrientation__SWIG_0(lua_State* L) {
   arg2 = (float)lua_tonumber(L, 2);
   arg3 = (float)lua_tonumber(L, 3);
   arg4 = (float)lua_tonumber(L, 4);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VisObject3D_cl>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VisObject3D_cl_SetOrientation", 1, "VisObject3D_cl *", "deleted native object");
+    SWIG_fail;
+  }
+  
   VisObject3D_cl_SetOrientation__SWIG_0(arg1,arg2,arg3,arg4);
   
   return SWIG_arg;
@@ -4791,6 +5459,12 @@ static int _wrap_VisObject3D_cl_IncOrientation__SWIG_0(lua_State* L) {
   arg2 = (float)lua_tonumber(L, 2);
   arg3 = (float)lua_tonumber(L, 3);
   arg4 = (float)lua_tonumber(L, 4);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VisObject3D_cl>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VisObject3D_cl_IncOrientation", 1, "VisObject3D_cl *", "deleted native object");
+    SWIG_fail;
+  }
+  
   VisObject3D_cl_IncOrientation__SWIG_0(arg1,arg2,arg3,arg4);
   
   return SWIG_arg;
@@ -4818,6 +5492,12 @@ static int _wrap_VisObject3D_cl_SetUseEulerAngles(lua_State* L) {
   }
   
   arg2 = (lua_toboolean(L, 2)!=0);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VisObject3D_cl>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VisObject3D_cl_SetUseEulerAngles", 1, "VisObject3D_cl *", "deleted native object");
+    SWIG_fail;
+  }
+  
   VisObject3D_cl_SetUseEulerAngles(arg1,arg2);
   
   return SWIG_arg;
@@ -4841,6 +5521,12 @@ static int _wrap_VisObject3D_cl_GetUseEulerAngles(lua_State* L) {
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VisObject3D_cl,0))){
     SWIG_fail_ptr("VisObject3D_cl_GetUseEulerAngles",1,SWIGTYPE_p_VisObject3D_cl);
+  }
+  
+  
+  if (VTraits::IsBaseOf<VTypedObject, VisObject3D_cl const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VisObject3D_cl_GetUseEulerAngles", 1, "VisObject3D_cl const *", "deleted native object");
+    SWIG_fail;
   }
   
   result = (bool)VisObject3D_cl_GetUseEulerAngles((VisObject3D_cl const *)arg1);
@@ -4875,11 +5561,16 @@ static int _wrap_VisObject3D_cl_TransformToObjectSpace(lua_State* L) {
     SWIG_fail_ptr("VisObject3D_cl_TransformToObjectSpace",2,SWIGTYPE_p_hkvVec3);
   }
   
-  result = ((VisObject3D_cl const *)arg1)->TransformToObjectSpace((hkvVec3 const &)*arg2);
-  {
-    hkvVec3 * resultptr = new hkvVec3((const hkvVec3 &) result);
-    SWIG_NewPointerObj(L,(void *) resultptr,SWIGTYPE_p_hkvVec3,1); SWIG_arg++;
+  
+  if (VTraits::IsBaseOf<VTypedObject, VisObject3D_cl const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VisObject3D_cl_TransformToObjectSpace", 1, "VisObject3D_cl const *", "deleted native object");
+    SWIG_fail;
   }
+  
+  result = ((VisObject3D_cl const *)arg1)->TransformToObjectSpace((hkvVec3 const &)*arg2);
+  
+  SWIG_Lua_NewPodObj(L,&result,SWIGTYPE_p_hkvVec3); SWIG_arg++;
+  
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -4907,6 +5598,12 @@ static int _wrap_VisObject3D_cl_SetOrientation__SWIG_1(lua_State* L) {
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,2,(void**)&arg2,SWIGTYPE_p_hkvVec3,0))){
     SWIG_fail_ptr("VisObject3D_cl_SetOrientation",2,SWIGTYPE_p_hkvVec3);
+  }
+  
+  
+  if (VTraits::IsBaseOf<VTypedObject, VisObject3D_cl>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VisObject3D_cl_SetOrientation", 1, "VisObject3D_cl *", "deleted native object");
+    SWIG_fail;
   }
   
   (arg1)->SetOrientation((hkvVec3 const &)*arg2);
@@ -5009,6 +5706,12 @@ static int _wrap_VisObject3D_cl_IncOrientation__SWIG_1(lua_State* L) {
     SWIG_fail_ptr("VisObject3D_cl_IncOrientation",2,SWIGTYPE_p_hkvVec3);
   }
   
+  
+  if (VTraits::IsBaseOf<VTypedObject, VisObject3D_cl>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VisObject3D_cl_IncOrientation", 1, "VisObject3D_cl *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->IncOrientation((hkvVec3 const &)*arg2);
   
   return SWIG_arg;
@@ -5103,11 +5806,16 @@ static int _wrap_VisObject3D_cl_GetOrientation(lua_State* L) {
     SWIG_fail_ptr("VisObject3D_cl_GetOrientation",1,SWIGTYPE_p_VisObject3D_cl);
   }
   
-  result = ((VisObject3D_cl const *)arg1)->GetActualOrientation();
-  {
-    hkvVec3 * resultptr = new hkvVec3((const hkvVec3 &) result);
-    SWIG_NewPointerObj(L,(void *) resultptr,SWIGTYPE_p_hkvVec3,1); SWIG_arg++;
+  
+  if (VTraits::IsBaseOf<VTypedObject, VisObject3D_cl const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VisObject3D_cl_GetOrientation", 1, "VisObject3D_cl const *", "deleted native object");
+    SWIG_fail;
   }
+  
+  result = ((VisObject3D_cl const *)arg1)->GetActualOrientation();
+  
+  SWIG_Lua_NewPodObj(L,&result,SWIGTYPE_p_hkvVec3); SWIG_arg++;
+  
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -5137,6 +5845,12 @@ static int _wrap_VisObject3D_cl_SetRotationMatrix(lua_State* L) {
     SWIG_fail_ptr("VisObject3D_cl_SetRotationMatrix",2,SWIGTYPE_p_hkvMat3);
   }
   
+  
+  if (VTraits::IsBaseOf<VTypedObject, VisObject3D_cl>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VisObject3D_cl_SetRotationMatrix", 1, "VisObject3D_cl *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->SetRotationMatrix((hkvMat3 const &)*arg2);
   
   return SWIG_arg;
@@ -5162,11 +5876,16 @@ static int _wrap_VisObject3D_cl_GetRotationMatrix(lua_State* L) {
     SWIG_fail_ptr("VisObject3D_cl_GetRotationMatrix",1,SWIGTYPE_p_VisObject3D_cl);
   }
   
-  result = ((VisObject3D_cl const *)arg1)->GetRotationMatrix();
-  {
-    hkvMat3 * resultptr = new hkvMat3((const hkvMat3 &) result);
-    SWIG_NewPointerObj(L,(void *) resultptr,SWIGTYPE_p_hkvMat3,1); SWIG_arg++;
+  
+  if (VTraits::IsBaseOf<VTypedObject, VisObject3D_cl const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VisObject3D_cl_GetRotationMatrix", 1, "VisObject3D_cl const *", "deleted native object");
+    SWIG_fail;
   }
+  
+  result = ((VisObject3D_cl const *)arg1)->GetRotationMatrix();
+  
+  SWIG_Lua_NewPodObj(L,&result,SWIGTYPE_p_hkvMat3); SWIG_arg++;
+  
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -5190,11 +5909,16 @@ static int _wrap_VisObject3D_cl_GetTransposedRotationMatrix(lua_State* L) {
     SWIG_fail_ptr("VisObject3D_cl_GetTransposedRotationMatrix",1,SWIGTYPE_p_VisObject3D_cl);
   }
   
-  result = ((VisObject3D_cl const *)arg1)->GetTransposedRotationMatrix();
-  {
-    hkvMat3 * resultptr = new hkvMat3((const hkvMat3 &) result);
-    SWIG_NewPointerObj(L,(void *) resultptr,SWIGTYPE_p_hkvMat3,1); SWIG_arg++;
+  
+  if (VTraits::IsBaseOf<VTypedObject, VisObject3D_cl const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VisObject3D_cl_GetTransposedRotationMatrix", 1, "VisObject3D_cl const *", "deleted native object");
+    SWIG_fail;
   }
+  
+  result = ((VisObject3D_cl const *)arg1)->GetTransposedRotationMatrix();
+  
+  SWIG_Lua_NewPodObj(L,&result,SWIGTYPE_p_hkvMat3); SWIG_arg++;
+  
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -5218,11 +5942,16 @@ static int _wrap_VisObject3D_cl_GetDirection(lua_State* L) {
     SWIG_fail_ptr("VisObject3D_cl_GetDirection",1,SWIGTYPE_p_VisObject3D_cl);
   }
   
-  result = ((VisObject3D_cl const *)arg1)->GetDirection();
-  {
-    hkvVec3 * resultptr = new hkvVec3((const hkvVec3 &) result);
-    SWIG_NewPointerObj(L,(void *) resultptr,SWIGTYPE_p_hkvVec3,1); SWIG_arg++;
+  
+  if (VTraits::IsBaseOf<VTypedObject, VisObject3D_cl const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VisObject3D_cl_GetDirection", 1, "VisObject3D_cl const *", "deleted native object");
+    SWIG_fail;
   }
+  
+  result = ((VisObject3D_cl const *)arg1)->GetDirection();
+  
+  SWIG_Lua_NewPodObj(L,&result,SWIGTYPE_p_hkvVec3); SWIG_arg++;
+  
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -5250,6 +5979,12 @@ static int _wrap_VisObject3D_cl_SetDirection(lua_State* L) {
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,2,(void**)&arg2,SWIGTYPE_p_hkvVec3,0))){
     SWIG_fail_ptr("VisObject3D_cl_SetDirection",2,SWIGTYPE_p_hkvVec3);
+  }
+  
+  
+  if (VTraits::IsBaseOf<VTypedObject, VisObject3D_cl>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VisObject3D_cl_SetDirection", 1, "VisObject3D_cl *", "deleted native object");
+    SWIG_fail;
   }
   
   (arg1)->SetDirection((hkvVec3 const &)*arg2);
@@ -5283,6 +6018,12 @@ static int _wrap_VisObject3D_cl_AttachToParent(lua_State* L) {
     SWIG_fail_ptr("VisObject3D_cl_AttachToParent",2,SWIGTYPE_p_VisObject3D_cl);
   }
   
+  
+  if (VTraits::IsBaseOf<VTypedObject, VisObject3D_cl>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VisObject3D_cl_AttachToParent", 1, "VisObject3D_cl *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->AttachToParent(arg2);
   
   return SWIG_arg;
@@ -5305,6 +6046,12 @@ static int _wrap_VisObject3D_cl_DetachFromParent(lua_State* L) {
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VisObject3D_cl,0))){
     SWIG_fail_ptr("VisObject3D_cl_DetachFromParent",1,SWIGTYPE_p_VisObject3D_cl);
+  }
+  
+  
+  if (VTraits::IsBaseOf<VTypedObject, VisObject3D_cl>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VisObject3D_cl_DetachFromParent", 1, "VisObject3D_cl *", "deleted native object");
+    SWIG_fail;
   }
   
   (arg1)->DetachFromParent();
@@ -5330,6 +6077,12 @@ static int _wrap_VisObject3D_cl_GetNumChildren(lua_State* L) {
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VisObject3D_cl,0))){
     SWIG_fail_ptr("VisObject3D_cl_GetNumChildren",1,SWIGTYPE_p_VisObject3D_cl);
+  }
+  
+  
+  if (VTraits::IsBaseOf<VTypedObject, VisObject3D_cl>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VisObject3D_cl_GetNumChildren", 1, "VisObject3D_cl *", "deleted native object");
+    SWIG_fail;
   }
   
   result = (int)(arg1)->GetNumChildren();
@@ -5363,6 +6116,12 @@ static int _wrap_VisObject3D_cl_SetLocalPosition(lua_State* L) {
     SWIG_fail_ptr("VisObject3D_cl_SetLocalPosition",2,SWIGTYPE_p_hkvVec3);
   }
   
+  
+  if (VTraits::IsBaseOf<VTypedObject, VisObject3D_cl>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VisObject3D_cl_SetLocalPosition", 1, "VisObject3D_cl *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->SetLocalPosition((hkvVec3 const &)*arg2);
   
   return SWIG_arg;
@@ -5388,11 +6147,16 @@ static int _wrap_VisObject3D_cl_GetLocalPosition(lua_State* L) {
     SWIG_fail_ptr("VisObject3D_cl_GetLocalPosition",1,SWIGTYPE_p_VisObject3D_cl);
   }
   
-  result = ((VisObject3D_cl const *)arg1)->GetLocalPosition();
-  {
-    hkvVec3 * resultptr = new hkvVec3((const hkvVec3 &) result);
-    SWIG_NewPointerObj(L,(void *) resultptr,SWIGTYPE_p_hkvVec3,1); SWIG_arg++;
+  
+  if (VTraits::IsBaseOf<VTypedObject, VisObject3D_cl const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VisObject3D_cl_GetLocalPosition", 1, "VisObject3D_cl const *", "deleted native object");
+    SWIG_fail;
   }
+  
+  result = ((VisObject3D_cl const *)arg1)->GetLocalPosition();
+  
+  SWIG_Lua_NewPodObj(L,&result,SWIGTYPE_p_hkvVec3); SWIG_arg++;
+  
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -5422,6 +6186,12 @@ static int _wrap_VisObject3D_cl_SetLocalOrientation(lua_State* L) {
     SWIG_fail_ptr("VisObject3D_cl_SetLocalOrientation",2,SWIGTYPE_p_hkvVec3);
   }
   
+  
+  if (VTraits::IsBaseOf<VTypedObject, VisObject3D_cl>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VisObject3D_cl_SetLocalOrientation", 1, "VisObject3D_cl *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->SetLocalOrientation((hkvVec3 const &)*arg2);
   
   return SWIG_arg;
@@ -5447,11 +6217,16 @@ static int _wrap_VisObject3D_cl_GetLocalOrientation(lua_State* L) {
     SWIG_fail_ptr("VisObject3D_cl_GetLocalOrientation",1,SWIGTYPE_p_VisObject3D_cl);
   }
   
-  result = ((VisObject3D_cl const *)arg1)->GetLocalOrientation();
-  {
-    hkvVec3 * resultptr = new hkvVec3((const hkvVec3 &) result);
-    SWIG_NewPointerObj(L,(void *) resultptr,SWIGTYPE_p_hkvVec3,1); SWIG_arg++;
+  
+  if (VTraits::IsBaseOf<VTypedObject, VisObject3D_cl const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VisObject3D_cl_GetLocalOrientation", 1, "VisObject3D_cl const *", "deleted native object");
+    SWIG_fail;
   }
+  
+  result = ((VisObject3D_cl const *)arg1)->GetLocalOrientation();
+  
+  SWIG_Lua_NewPodObj(L,&result,SWIGTYPE_p_hkvVec3); SWIG_arg++;
+  
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -5472,6 +6247,12 @@ static int _wrap_VisObject3D_cl_ResetLocalTransformation(lua_State* L) {
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VisObject3D_cl,0))){
     SWIG_fail_ptr("VisObject3D_cl_ResetLocalTransformation",1,SWIGTYPE_p_VisObject3D_cl);
+  }
+  
+  
+  if (VTraits::IsBaseOf<VTypedObject, VisObject3D_cl>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VisObject3D_cl_ResetLocalTransformation", 1, "VisObject3D_cl *", "deleted native object");
+    SWIG_fail;
   }
   
   (arg1)->ResetLocalTransformation();
@@ -5505,6 +6286,12 @@ static int _wrap_VisObject3D_cl_SetMotionDeltaWorldSpace(lua_State* L) {
     SWIG_fail_ptr("VisObject3D_cl_SetMotionDeltaWorldSpace",2,SWIGTYPE_p_hkvVec3);
   }
   
+  
+  if (VTraits::IsBaseOf<VTypedObject, VisObject3D_cl>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VisObject3D_cl_SetMotionDeltaWorldSpace", 1, "VisObject3D_cl *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->SetMotionDeltaWorldSpace((hkvVec3 const &)*arg2);
   
   return SWIG_arg;
@@ -5534,6 +6321,12 @@ static int _wrap_VisObject3D_cl_SetMotionDeltaLocalSpace(lua_State* L) {
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,2,(void**)&arg2,SWIGTYPE_p_hkvVec3,0))){
     SWIG_fail_ptr("VisObject3D_cl_SetMotionDeltaLocalSpace",2,SWIGTYPE_p_hkvVec3);
+  }
+  
+  
+  if (VTraits::IsBaseOf<VTypedObject, VisObject3D_cl>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VisObject3D_cl_SetMotionDeltaLocalSpace", 1, "VisObject3D_cl *", "deleted native object");
+    SWIG_fail;
   }
   
   (arg1)->SetMotionDeltaLocalSpace((hkvVec3 const &)*arg2);
@@ -5567,6 +6360,12 @@ static int _wrap_VisObject3D_cl_IncMotionDeltaWorldSpace(lua_State* L) {
     SWIG_fail_ptr("VisObject3D_cl_IncMotionDeltaWorldSpace",2,SWIGTYPE_p_hkvVec3);
   }
   
+  
+  if (VTraits::IsBaseOf<VTypedObject, VisObject3D_cl>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VisObject3D_cl_IncMotionDeltaWorldSpace", 1, "VisObject3D_cl *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->IncMotionDeltaWorldSpace((hkvVec3 const &)*arg2);
   
   return SWIG_arg;
@@ -5598,6 +6397,12 @@ static int _wrap_VisObject3D_cl_IncMotionDeltaLocalSpace(lua_State* L) {
     SWIG_fail_ptr("VisObject3D_cl_IncMotionDeltaLocalSpace",2,SWIGTYPE_p_hkvVec3);
   }
   
+  
+  if (VTraits::IsBaseOf<VTypedObject, VisObject3D_cl>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VisObject3D_cl_IncMotionDeltaLocalSpace", 1, "VisObject3D_cl *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->IncMotionDeltaLocalSpace((hkvVec3 const &)*arg2);
   
   return SWIG_arg;
@@ -5623,11 +6428,16 @@ static int _wrap_VisObject3D_cl_GetMotionDeltaWorldSpace(lua_State* L) {
     SWIG_fail_ptr("VisObject3D_cl_GetMotionDeltaWorldSpace",1,SWIGTYPE_p_VisObject3D_cl);
   }
   
-  result = VisObject3D_cl_GetMotionDeltaWorldSpace((VisObject3D_cl const *)arg1);
-  {
-    hkvVec3 * resultptr = new hkvVec3((const hkvVec3 &) result);
-    SWIG_NewPointerObj(L,(void *) resultptr,SWIGTYPE_p_hkvVec3,1); SWIG_arg++;
+  
+  if (VTraits::IsBaseOf<VTypedObject, VisObject3D_cl const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VisObject3D_cl_GetMotionDeltaWorldSpace", 1, "VisObject3D_cl const *", "deleted native object");
+    SWIG_fail;
   }
+  
+  result = VisObject3D_cl_GetMotionDeltaWorldSpace((VisObject3D_cl const *)arg1);
+  
+  SWIG_Lua_NewPodObj(L,&result,SWIGTYPE_p_hkvVec3); SWIG_arg++;
+  
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -5651,11 +6461,16 @@ static int _wrap_VisObject3D_cl_GetMotionDeltaLocalSpace(lua_State* L) {
     SWIG_fail_ptr("VisObject3D_cl_GetMotionDeltaLocalSpace",1,SWIGTYPE_p_VisObject3D_cl);
   }
   
-  result = VisObject3D_cl_GetMotionDeltaLocalSpace((VisObject3D_cl const *)arg1);
-  {
-    hkvVec3 * resultptr = new hkvVec3((const hkvVec3 &) result);
-    SWIG_NewPointerObj(L,(void *) resultptr,SWIGTYPE_p_hkvVec3,1); SWIG_arg++;
+  
+  if (VTraits::IsBaseOf<VTypedObject, VisObject3D_cl const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VisObject3D_cl_GetMotionDeltaLocalSpace", 1, "VisObject3D_cl const *", "deleted native object");
+    SWIG_fail;
   }
+  
+  result = VisObject3D_cl_GetMotionDeltaLocalSpace((VisObject3D_cl const *)arg1);
+  
+  SWIG_Lua_NewPodObj(L,&result,SWIGTYPE_p_hkvVec3); SWIG_arg++;
+  
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -5677,6 +6492,12 @@ static int _wrap_VisObject3D_cl_HasRotationDelta(lua_State* L) {
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VisObject3D_cl,0))){
     SWIG_fail_ptr("VisObject3D_cl_HasRotationDelta",1,SWIGTYPE_p_VisObject3D_cl);
+  }
+  
+  
+  if (VTraits::IsBaseOf<VTypedObject, VisObject3D_cl const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VisObject3D_cl_HasRotationDelta", 1, "VisObject3D_cl const *", "deleted native object");
+    SWIG_fail;
   }
   
   result = (bool)VisObject3D_cl_HasRotationDelta((VisObject3D_cl const *)arg1);
@@ -5704,11 +6525,16 @@ static int _wrap_VisObject3D_cl_GetRotationDelta(lua_State* L) {
     SWIG_fail_ptr("VisObject3D_cl_GetRotationDelta",1,SWIGTYPE_p_VisObject3D_cl);
   }
   
-  result = VisObject3D_cl_GetRotationDelta((VisObject3D_cl const *)arg1);
-  {
-    hkvVec3 * resultptr = new hkvVec3((const hkvVec3 &) result);
-    SWIG_NewPointerObj(L,(void *) resultptr,SWIGTYPE_p_hkvVec3,1); SWIG_arg++;
+  
+  if (VTraits::IsBaseOf<VTypedObject, VisObject3D_cl const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VisObject3D_cl_GetRotationDelta", 1, "VisObject3D_cl const *", "deleted native object");
+    SWIG_fail;
   }
+  
+  result = VisObject3D_cl_GetRotationDelta((VisObject3D_cl const *)arg1);
+  
+  SWIG_Lua_NewPodObj(L,&result,SWIGTYPE_p_hkvVec3); SWIG_arg++;
+  
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -5729,6 +6555,12 @@ static int _wrap_VisObject3D_cl_ResetMotionDeltaLocalSpace(lua_State* L) {
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VisObject3D_cl,0))){
     SWIG_fail_ptr("VisObject3D_cl_ResetMotionDeltaLocalSpace",1,SWIGTYPE_p_VisObject3D_cl);
+  }
+  
+  
+  if (VTraits::IsBaseOf<VTypedObject, VisObject3D_cl>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VisObject3D_cl_ResetMotionDeltaLocalSpace", 1, "VisObject3D_cl *", "deleted native object");
+    SWIG_fail;
   }
   
   (arg1)->ResetMotionDeltaLocalSpace();
@@ -5755,6 +6587,12 @@ static int _wrap_VisObject3D_cl_ResetMotionDeltaWorldSpace(lua_State* L) {
     SWIG_fail_ptr("VisObject3D_cl_ResetMotionDeltaWorldSpace",1,SWIGTYPE_p_VisObject3D_cl);
   }
   
+  
+  if (VTraits::IsBaseOf<VTypedObject, VisObject3D_cl>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VisObject3D_cl_ResetMotionDeltaWorldSpace", 1, "VisObject3D_cl *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->ResetMotionDeltaWorldSpace();
   
   return SWIG_arg;
@@ -5777,6 +6615,12 @@ static int _wrap_VisObject3D_cl_ResetMotionDelta(lua_State* L) {
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VisObject3D_cl,0))){
     SWIG_fail_ptr("VisObject3D_cl_ResetMotionDelta",1,SWIGTYPE_p_VisObject3D_cl);
+  }
+  
+  
+  if (VTraits::IsBaseOf<VTypedObject, VisObject3D_cl>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VisObject3D_cl_ResetMotionDelta", 1, "VisObject3D_cl *", "deleted native object");
+    SWIG_fail;
   }
   
   (arg1)->ResetMotionDelta();
@@ -5810,6 +6654,12 @@ static int _wrap_VisObject3D_cl_SetRotationDelta(lua_State* L) {
     SWIG_fail_ptr("VisObject3D_cl_SetRotationDelta",2,SWIGTYPE_p_hkvVec3);
   }
   
+  
+  if (VTraits::IsBaseOf<VTypedObject, VisObject3D_cl>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VisObject3D_cl_SetRotationDelta", 1, "VisObject3D_cl *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->SetRotationDelta((hkvVec3 const &)*arg2);
   
   return SWIG_arg;
@@ -5841,6 +6691,12 @@ static int _wrap_VisObject3D_cl_IncRotationDelta(lua_State* L) {
     SWIG_fail_ptr("VisObject3D_cl_IncRotationDelta",2,SWIGTYPE_p_hkvVec3);
   }
   
+  
+  if (VTraits::IsBaseOf<VTypedObject, VisObject3D_cl>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VisObject3D_cl_IncRotationDelta", 1, "VisObject3D_cl *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->IncRotationDelta((hkvVec3 const &)*arg2);
   
   return SWIG_arg;
@@ -5863,6 +6719,12 @@ static int _wrap_VisObject3D_cl_ResetRotationDelta(lua_State* L) {
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VisObject3D_cl,0))){
     SWIG_fail_ptr("VisObject3D_cl_ResetRotationDelta",1,SWIGTYPE_p_VisObject3D_cl);
+  }
+  
+  
+  if (VTraits::IsBaseOf<VTypedObject, VisObject3D_cl>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VisObject3D_cl_ResetRotationDelta", 1, "VisObject3D_cl *", "deleted native object");
+    SWIG_fail;
   }
   
   (arg1)->ResetRotationDelta();
@@ -5890,11 +6752,16 @@ static int _wrap_VisObject3D_cl_GetObjDir(lua_State* L) {
     SWIG_fail_ptr("VisObject3D_cl_GetObjDir",1,SWIGTYPE_p_VisObject3D_cl);
   }
   
-  result = ((VisObject3D_cl const *)arg1)->GetObjDir();
-  {
-    hkvVec3 * resultptr = new hkvVec3((const hkvVec3 &) result);
-    SWIG_NewPointerObj(L,(void *) resultptr,SWIGTYPE_p_hkvVec3,1); SWIG_arg++;
+  
+  if (VTraits::IsBaseOf<VTypedObject, VisObject3D_cl const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VisObject3D_cl_GetObjDir", 1, "VisObject3D_cl const *", "deleted native object");
+    SWIG_fail;
   }
+  
+  result = ((VisObject3D_cl const *)arg1)->GetObjDir();
+  
+  SWIG_Lua_NewPodObj(L,&result,SWIGTYPE_p_hkvVec3); SWIG_arg++;
+  
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -5918,11 +6785,16 @@ static int _wrap_VisObject3D_cl_GetObjDir_Right(lua_State* L) {
     SWIG_fail_ptr("VisObject3D_cl_GetObjDir_Right",1,SWIGTYPE_p_VisObject3D_cl);
   }
   
-  result = ((VisObject3D_cl const *)arg1)->GetObjDir_Right();
-  {
-    hkvVec3 * resultptr = new hkvVec3((const hkvVec3 &) result);
-    SWIG_NewPointerObj(L,(void *) resultptr,SWIGTYPE_p_hkvVec3,1); SWIG_arg++;
+  
+  if (VTraits::IsBaseOf<VTypedObject, VisObject3D_cl const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VisObject3D_cl_GetObjDir_Right", 1, "VisObject3D_cl const *", "deleted native object");
+    SWIG_fail;
   }
+  
+  result = ((VisObject3D_cl const *)arg1)->GetObjDir_Right();
+  
+  SWIG_Lua_NewPodObj(L,&result,SWIGTYPE_p_hkvVec3); SWIG_arg++;
+  
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -5946,11 +6818,56 @@ static int _wrap_VisObject3D_cl_GetObjDir_Up(lua_State* L) {
     SWIG_fail_ptr("VisObject3D_cl_GetObjDir_Up",1,SWIGTYPE_p_VisObject3D_cl);
   }
   
-  result = ((VisObject3D_cl const *)arg1)->GetObjDir_Up();
-  {
-    hkvVec3 * resultptr = new hkvVec3((const hkvVec3 &) result);
-    SWIG_NewPointerObj(L,(void *) resultptr,SWIGTYPE_p_hkvVec3,1); SWIG_arg++;
+  
+  if (VTraits::IsBaseOf<VTypedObject, VisObject3D_cl const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VisObject3D_cl_GetObjDir_Up", 1, "VisObject3D_cl const *", "deleted native object");
+    SWIG_fail;
   }
+  
+  result = ((VisObject3D_cl const *)arg1)->GetObjDir_Up();
+  
+  SWIG_Lua_NewPodObj(L,&result,SWIGTYPE_p_hkvVec3); SWIG_arg++;
+  
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_VisObject3D_cl_GetParent(lua_State* L) {
+  int SWIG_arg = 0;
+  VisObject3D_cl *arg1 = (VisObject3D_cl *) 0 ;
+  VisObject3D_cl *result = 0 ;
+  
+  SWIG_check_num_args("GetParent",1,1)
+  if(lua_isnil(L, 1)) SWIG_fail_arg("GetParent",1,"VisObject3D_cl *");
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("GetParent",1,"VisObject3D_cl *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VisObject3D_cl,0))){
+    SWIG_fail_ptr("VisObject3D_cl_GetParent",1,SWIGTYPE_p_VisObject3D_cl);
+  }
+  
+  
+  if (VTraits::IsBaseOf<VTypedObject, VisObject3D_cl>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VisObject3D_cl_GetParent", 1, "VisObject3D_cl *", "deleted native object");
+    SWIG_fail;
+  }
+  
+  result = (VisObject3D_cl *)(arg1)->GetParent();
+  
+  if(VTraits::IsBaseOf<VTypedObject, VisObject3D_cl>::value)
+  {
+    LUA_PushObjectProxy(L, (VTypedObject*)result); SWIG_arg++;
+  }
+  else
+  {
+    SWIG_NewPointerObj(L,result,SWIGTYPE_p_VisObject3D_cl,0); SWIG_arg++;
+  }
+  
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -5963,7 +6880,6 @@ fail:
 
 static swig_lua_method swig_VisObject3D_cl_methods[] = {
     { "__tostring",VisObject3D_cl_ToString},
-    { "GetParent",VisObject3D_cl_GetParent},
     { "GetChild",VisObject3D_cl_GetChild},
     { "__concat",VisObject3D_cl_Concat},
     {"GetPosition", _wrap_VisObject3D_cl_GetPosition}, 
@@ -6005,6 +6921,7 @@ static swig_lua_method swig_VisObject3D_cl_methods[] = {
     {"GetObjDir", _wrap_VisObject3D_cl_GetObjDir}, 
     {"GetObjDir_Right", _wrap_VisObject3D_cl_GetObjDir_Right}, 
     {"GetObjDir_Up", _wrap_VisObject3D_cl_GetObjDir_Up}, 
+    {"GetParent", _wrap_VisObject3D_cl_GetParent}, 
     {0,0}
 };
 static swig_lua_attribute swig_VisObject3D_cl_attributes[] = {
@@ -6043,8 +6960,23 @@ static int _wrap_VFmodManager_CreateSound__SWIG_0(lua_State* L) {
   arg3 = (char *)lua_tostring(L, 3);
   arg4 = (lua_toboolean(L, 4)!=0);
   arg5 = (char *)lua_tostring(L, 5);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VFmodManager>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VFmodManager_CreateSound", 1, "VFmodManager *", "deleted native object");
+    SWIG_fail;
+  }
+  
   result = (VFmodSoundObject *)VFmodManager_CreateSound__SWIG_0(arg1,(hkvVec3 const *)arg2,(char const *)arg3,arg4,(char const *)arg5);
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_VFmodSoundObject,0); SWIG_arg++; 
+  
+  if(VTraits::IsBaseOf<VTypedObject, VFmodSoundObject>::value)
+  {
+    LUA_PushObjectProxy(L, (VTypedObject*)result); SWIG_arg++;
+  }
+  else
+  {
+    SWIG_NewPointerObj(L,result,SWIGTYPE_p_VFmodSoundObject,0); SWIG_arg++;
+  }
+  
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -6081,8 +7013,23 @@ static int _wrap_VFmodManager_CreateSound__SWIG_1(lua_State* L) {
   
   arg3 = (char *)lua_tostring(L, 3);
   arg4 = (lua_toboolean(L, 4)!=0);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VFmodManager>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VFmodManager_CreateSound", 1, "VFmodManager *", "deleted native object");
+    SWIG_fail;
+  }
+  
   result = (VFmodSoundObject *)VFmodManager_CreateSound__SWIG_0(arg1,(hkvVec3 const *)arg2,(char const *)arg3,arg4);
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_VFmodSoundObject,0); SWIG_arg++; 
+  
+  if(VTraits::IsBaseOf<VTypedObject, VFmodSoundObject>::value)
+  {
+    LUA_PushObjectProxy(L, (VTypedObject*)result); SWIG_arg++;
+  }
+  else
+  {
+    SWIG_NewPointerObj(L,result,SWIGTYPE_p_VFmodSoundObject,0); SWIG_arg++;
+  }
+  
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -6116,8 +7063,23 @@ static int _wrap_VFmodManager_CreateSound__SWIG_2(lua_State* L) {
   }
   
   arg3 = (char *)lua_tostring(L, 3);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VFmodManager>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VFmodManager_CreateSound", 1, "VFmodManager *", "deleted native object");
+    SWIG_fail;
+  }
+  
   result = (VFmodSoundObject *)VFmodManager_CreateSound__SWIG_0(arg1,(hkvVec3 const *)arg2,(char const *)arg3);
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_VFmodSoundObject,0); SWIG_arg++; 
+  
+  if(VTraits::IsBaseOf<VTypedObject, VFmodSoundObject>::value)
+  {
+    LUA_PushObjectProxy(L, (VTypedObject*)result); SWIG_arg++;
+  }
+  else
+  {
+    SWIG_NewPointerObj(L,result,SWIGTYPE_p_VFmodSoundObject,0); SWIG_arg++;
+  }
+  
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -6276,8 +7238,23 @@ static int _wrap_VFmodManager_CreateEvent__SWIG_0(lua_State* L) {
   arg3 = (char *)lua_tostring(L, 3);
   arg4 = (char *)lua_tostring(L, 4);
   arg5 = (char *)lua_tostring(L, 5);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VFmodManager>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VFmodManager_CreateEvent", 1, "VFmodManager *", "deleted native object");
+    SWIG_fail;
+  }
+  
   result = (VFmodEvent *)VFmodManager_CreateEvent__SWIG_0(arg1,(hkvVec3 const *)arg2,(char const *)arg3,(char const *)arg4,(char const *)arg5);
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_VFmodEvent,0); SWIG_arg++; 
+  
+  if(VTraits::IsBaseOf<VTypedObject, VFmodEvent>::value)
+  {
+    LUA_PushObjectProxy(L, (VTypedObject*)result); SWIG_arg++;
+  }
+  else
+  {
+    SWIG_NewPointerObj(L,result,SWIGTYPE_p_VFmodEvent,0); SWIG_arg++;
+  }
+  
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -6314,8 +7291,23 @@ static int _wrap_VFmodManager_CreateEvent__SWIG_1(lua_State* L) {
   
   arg3 = (char *)lua_tostring(L, 3);
   arg4 = (char *)lua_tostring(L, 4);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VFmodManager>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VFmodManager_CreateEvent", 1, "VFmodManager *", "deleted native object");
+    SWIG_fail;
+  }
+  
   result = (VFmodEvent *)VFmodManager_CreateEvent__SWIG_0(arg1,(hkvVec3 const *)arg2,(char const *)arg3,(char const *)arg4);
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_VFmodEvent,0); SWIG_arg++; 
+  
+  if(VTraits::IsBaseOf<VTypedObject, VFmodEvent>::value)
+  {
+    LUA_PushObjectProxy(L, (VTypedObject*)result); SWIG_arg++;
+  }
+  else
+  {
+    SWIG_NewPointerObj(L,result,SWIGTYPE_p_VFmodEvent,0); SWIG_arg++;
+  }
+  
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -6431,8 +7423,23 @@ static int _wrap_VFmodManager_GetSound(lua_State* L) {
   }
   
   arg2 = (char *)lua_tostring(L, 2);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VFmodManager>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VFmodManager_GetSound", 1, "VFmodManager *", "deleted native object");
+    SWIG_fail;
+  }
+  
   result = (VFmodSoundObject *)VFmodManager_GetSound(arg1,(char const *)arg2);
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_VFmodSoundObject,0); SWIG_arg++; 
+  
+  if(VTraits::IsBaseOf<VTypedObject, VFmodSoundObject>::value)
+  {
+    LUA_PushObjectProxy(L, (VTypedObject*)result); SWIG_arg++;
+  }
+  else
+  {
+    SWIG_NewPointerObj(L,result,SWIGTYPE_p_VFmodSoundObject,0); SWIG_arg++;
+  }
+  
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -6459,8 +7466,23 @@ static int _wrap_VFmodManager_GetEvent(lua_State* L) {
   }
   
   arg2 = (char *)lua_tostring(L, 2);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VFmodManager>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VFmodManager_GetEvent", 1, "VFmodManager *", "deleted native object");
+    SWIG_fail;
+  }
+  
   result = (VFmodEvent *)VFmodManager_GetEvent(arg1,(char const *)arg2);
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_VFmodEvent,0); SWIG_arg++; 
+  
+  if(VTraits::IsBaseOf<VTypedObject, VFmodEvent>::value)
+  {
+    LUA_PushObjectProxy(L, (VTypedObject*)result); SWIG_arg++;
+  }
+  else
+  {
+    SWIG_NewPointerObj(L,result,SWIGTYPE_p_VFmodEvent,0); SWIG_arg++;
+  }
+  
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -6481,6 +7503,12 @@ static int _wrap_VFmodManager_ResetAll(lua_State* L) {
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VFmodManager,0))){
     SWIG_fail_ptr("VFmodManager_ResetAll",1,SWIGTYPE_p_VFmodManager);
+  }
+  
+  
+  if (VTraits::IsBaseOf<VTypedObject, VFmodManager>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VFmodManager_ResetAll", 1, "VFmodManager *", "deleted native object");
+    SWIG_fail;
   }
   
   VFmodManager_ResetAll(arg1);
@@ -6508,7 +7536,16 @@ static int _wrap_VFmodManager_Cast(lua_State* L) {
   }
   
   result = (VFmodManager *)VFmodManager_Cast(arg1);
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_VFmodManager,0); SWIG_arg++; 
+  
+  if(VTraits::IsBaseOf<VTypedObject, VFmodManager>::value)
+  {
+    LUA_PushObjectProxy(L, (VTypedObject*)result); SWIG_arg++;
+  }
+  else
+  {
+    SWIG_NewPointerObj(L,result,SWIGTYPE_p_VFmodManager,0); SWIG_arg++;
+  }
+  
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -6534,6 +7571,12 @@ static int _wrap_VFmodManager_SetVolumeAll(lua_State* L) {
   }
   
   arg2 = (float)lua_tonumber(L, 2);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VFmodManager>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VFmodManager_SetVolumeAll", 1, "VFmodManager *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->SetVolumeAll(arg2);
   
   return SWIG_arg;
@@ -6561,6 +7604,12 @@ static int _wrap_VFmodManager_SetMuteAll(lua_State* L) {
   }
   
   arg2 = (lua_toboolean(L, 2)!=0);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VFmodManager>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VFmodManager_SetMuteAll", 1, "VFmodManager *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->SetMuteAll(arg2);
   
   return SWIG_arg;
@@ -6588,6 +7637,12 @@ static int _wrap_VFmodManager_SetPauseAll(lua_State* L) {
   }
   
   arg2 = (lua_toboolean(L, 2)!=0);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VFmodManager>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VFmodManager_SetPauseAll", 1, "VFmodManager *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->SetPauseAll(arg2);
   
   return SWIG_arg;
@@ -6630,6 +7685,12 @@ static int _wrap_VFmodSoundObject_Remove(lua_State* L) {
     SWIG_fail_ptr("VFmodSoundObject_Remove",1,SWIGTYPE_p_VFmodSoundObject);
   }
   
+  
+  if (VTraits::IsBaseOf<VTypedObject, VFmodSoundObject>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VFmodSoundObject_Remove", 1, "VFmodSoundObject *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->DisposeObject();
   
   return SWIG_arg;
@@ -6660,6 +7721,12 @@ static int _wrap_VFmodSoundObject_Play__SWIG_0(lua_State* L) {
   
   arg2 = (float)lua_tonumber(L, 2);
   arg3 = (lua_toboolean(L, 3)!=0);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VFmodSoundObject>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VFmodSoundObject_Play", 1, "VFmodSoundObject *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->Play(arg2,arg3);
   
   return SWIG_arg;
@@ -6687,6 +7754,12 @@ static int _wrap_VFmodSoundObject_Play__SWIG_1(lua_State* L) {
   }
   
   arg2 = (float)lua_tonumber(L, 2);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VFmodSoundObject>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VFmodSoundObject_Play", 1, "VFmodSoundObject *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->Play(arg2);
   
   return SWIG_arg;
@@ -6709,6 +7782,12 @@ static int _wrap_VFmodSoundObject_Play__SWIG_2(lua_State* L) {
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VFmodSoundObject,0))){
     SWIG_fail_ptr("VFmodSoundObject_Play",1,SWIGTYPE_p_VFmodSoundObject);
+  }
+  
+  
+  if (VTraits::IsBaseOf<VTypedObject, VFmodSoundObject>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VFmodSoundObject_Play", 1, "VFmodSoundObject *", "deleted native object");
+    SWIG_fail;
   }
   
   (arg1)->Play();
@@ -6809,6 +7888,12 @@ static int _wrap_VFmodSoundObject_Stop(lua_State* L) {
     SWIG_fail_ptr("VFmodSoundObject_Stop",1,SWIGTYPE_p_VFmodSoundObject);
   }
   
+  
+  if (VTraits::IsBaseOf<VTypedObject, VFmodSoundObject>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VFmodSoundObject_Stop", 1, "VFmodSoundObject *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->Stop();
   
   return SWIG_arg;
@@ -6834,6 +7919,12 @@ static int _wrap_VFmodSoundObject_IsPlaying(lua_State* L) {
     SWIG_fail_ptr("VFmodSoundObject_IsPlaying",1,SWIGTYPE_p_VFmodSoundObject);
   }
   
+  
+  if (VTraits::IsBaseOf<VTypedObject, VFmodSoundObject const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VFmodSoundObject_IsPlaying", 1, "VFmodSoundObject const *", "deleted native object");
+    SWIG_fail;
+  }
+  
   result = (bool)((VFmodSoundObject const *)arg1)->IsPlaying();
   lua_pushboolean(L,(int)(result!=0)); SWIG_arg++;
   return SWIG_arg;
@@ -6857,6 +7948,12 @@ static int _wrap_VFmodSoundObject_IsReady(lua_State* L) {
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VFmodSoundObject,0))){
     SWIG_fail_ptr("VFmodSoundObject_IsReady",1,SWIGTYPE_p_VFmodSoundObject);
+  }
+  
+  
+  if (VTraits::IsBaseOf<VTypedObject, VFmodSoundObject const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VFmodSoundObject_IsReady", 1, "VFmodSoundObject const *", "deleted native object");
+    SWIG_fail;
   }
   
   result = (bool)((VFmodSoundObject const *)arg1)->IsReady();
@@ -6887,6 +7984,12 @@ static int _wrap_VFmodSoundObject_GetCurrentPosition__SWIG_0(lua_State* L) {
   }
   
   arg2 = (lua_toboolean(L, 2)!=0);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VFmodSoundObject const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VFmodSoundObject_GetCurrentPosition", 1, "VFmodSoundObject const *", "deleted native object");
+    SWIG_fail;
+  }
+  
   result = (float)((VFmodSoundObject const *)arg1)->GetCurrentPosition(arg2);
   lua_pushnumber(L, (lua_Number) result); SWIG_arg++;
   return SWIG_arg;
@@ -6910,6 +8013,12 @@ static int _wrap_VFmodSoundObject_GetCurrentPosition__SWIG_1(lua_State* L) {
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VFmodSoundObject,0))){
     SWIG_fail_ptr("VFmodSoundObject_GetCurrentPosition",1,SWIGTYPE_p_VFmodSoundObject);
+  }
+  
+  
+  if (VTraits::IsBaseOf<VTypedObject, VFmodSoundObject const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VFmodSoundObject_GetCurrentPosition", 1, "VFmodSoundObject const *", "deleted native object");
+    SWIG_fail;
   }
   
   result = (float)((VFmodSoundObject const *)arg1)->GetCurrentPosition();
@@ -6986,6 +8095,12 @@ static int _wrap_VFmodSoundObject_IsPaused(lua_State* L) {
     SWIG_fail_ptr("VFmodSoundObject_IsPaused",1,SWIGTYPE_p_VFmodSoundObject);
   }
   
+  
+  if (VTraits::IsBaseOf<VTypedObject, VFmodSoundObject const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VFmodSoundObject_IsPaused", 1, "VFmodSoundObject const *", "deleted native object");
+    SWIG_fail;
+  }
+  
   result = (bool)((VFmodSoundObject const *)arg1)->IsPaused();
   lua_pushboolean(L,(int)(result!=0)); SWIG_arg++;
   return SWIG_arg;
@@ -7013,6 +8128,12 @@ static int _wrap_VFmodSoundObject_SetPaused(lua_State* L) {
   }
   
   arg2 = (lua_toboolean(L, 2)!=0);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VFmodSoundObject>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VFmodSoundObject_SetPaused", 1, "VFmodSoundObject *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->SetPaused(arg2);
   
   return SWIG_arg;
@@ -7036,6 +8157,12 @@ static int _wrap_VFmodSoundObject_IsMuted(lua_State* L) {
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VFmodSoundObject,0))){
     SWIG_fail_ptr("VFmodSoundObject_IsMuted",1,SWIGTYPE_p_VFmodSoundObject);
+  }
+  
+  
+  if (VTraits::IsBaseOf<VTypedObject, VFmodSoundObject const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VFmodSoundObject_IsMuted", 1, "VFmodSoundObject const *", "deleted native object");
+    SWIG_fail;
   }
   
   result = (bool)((VFmodSoundObject const *)arg1)->IsMuted();
@@ -7065,6 +8192,12 @@ static int _wrap_VFmodSoundObject_SetMuted(lua_State* L) {
   }
   
   arg2 = (lua_toboolean(L, 2)!=0);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VFmodSoundObject>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VFmodSoundObject_SetMuted", 1, "VFmodSoundObject *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->SetMuted(arg2);
   
   return SWIG_arg;
@@ -7088,6 +8221,12 @@ static int _wrap_VFmodSoundObject_GetVolume(lua_State* L) {
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VFmodSoundObject,0))){
     SWIG_fail_ptr("VFmodSoundObject_GetVolume",1,SWIGTYPE_p_VFmodSoundObject);
+  }
+  
+  
+  if (VTraits::IsBaseOf<VTypedObject, VFmodSoundObject const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VFmodSoundObject_GetVolume", 1, "VFmodSoundObject const *", "deleted native object");
+    SWIG_fail;
   }
   
   result = (float)((VFmodSoundObject const *)arg1)->GetVolume();
@@ -7117,6 +8256,12 @@ static int _wrap_VFmodSoundObject_SetVolume(lua_State* L) {
   }
   
   arg2 = (float)lua_tonumber(L, 2);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VFmodSoundObject>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VFmodSoundObject_SetVolume", 1, "VFmodSoundObject *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->SetVolume(arg2);
   
   return SWIG_arg;
@@ -7140,6 +8285,12 @@ static int _wrap_VFmodSoundObject_GetPan(lua_State* L) {
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VFmodSoundObject,0))){
     SWIG_fail_ptr("VFmodSoundObject_GetPan",1,SWIGTYPE_p_VFmodSoundObject);
+  }
+  
+  
+  if (VTraits::IsBaseOf<VTypedObject, VFmodSoundObject const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VFmodSoundObject_GetPan", 1, "VFmodSoundObject const *", "deleted native object");
+    SWIG_fail;
   }
   
   result = (float)((VFmodSoundObject const *)arg1)->GetPan();
@@ -7169,6 +8320,12 @@ static int _wrap_VFmodSoundObject_SetPan(lua_State* L) {
   }
   
   arg2 = (float)lua_tonumber(L, 2);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VFmodSoundObject>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VFmodSoundObject_SetPan", 1, "VFmodSoundObject *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->SetPan(arg2);
   
   return SWIG_arg;
@@ -7194,6 +8351,12 @@ static int _wrap_VFmodSoundObject_Get3DFadeMinDistance(lua_State* L) {
     SWIG_fail_ptr("VFmodSoundObject_Get3DFadeMinDistance",1,SWIGTYPE_p_VFmodSoundObject);
   }
   
+  
+  if (VTraits::IsBaseOf<VTypedObject, VFmodSoundObject const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VFmodSoundObject_Get3DFadeMinDistance", 1, "VFmodSoundObject const *", "deleted native object");
+    SWIG_fail;
+  }
+  
   result = (float)((VFmodSoundObject const *)arg1)->Get3DFadeMinDistance();
   lua_pushnumber(L, (lua_Number) result); SWIG_arg++;
   return SWIG_arg;
@@ -7217,6 +8380,12 @@ static int _wrap_VFmodSoundObject_Get3DFadeMaxDistance(lua_State* L) {
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VFmodSoundObject,0))){
     SWIG_fail_ptr("VFmodSoundObject_Get3DFadeMaxDistance",1,SWIGTYPE_p_VFmodSoundObject);
+  }
+  
+  
+  if (VTraits::IsBaseOf<VTypedObject, VFmodSoundObject const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VFmodSoundObject_Get3DFadeMaxDistance", 1, "VFmodSoundObject const *", "deleted native object");
+    SWIG_fail;
   }
   
   result = (float)((VFmodSoundObject const *)arg1)->Get3DFadeMaxDistance();
@@ -7249,6 +8418,12 @@ static int _wrap_VFmodSoundObject_Set3DFadeDistance(lua_State* L) {
   
   arg2 = (float)lua_tonumber(L, 2);
   arg3 = (float)lua_tonumber(L, 3);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VFmodSoundObject>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VFmodSoundObject_Set3DFadeDistance", 1, "VFmodSoundObject *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->Set3DFadeDistance(arg2,arg3);
   
   return SWIG_arg;
@@ -7272,6 +8447,12 @@ static int _wrap_VFmodSoundObject_IsFading(lua_State* L) {
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VFmodSoundObject,0))){
     SWIG_fail_ptr("VFmodSoundObject_IsFading",1,SWIGTYPE_p_VFmodSoundObject);
+  }
+  
+  
+  if (VTraits::IsBaseOf<VTypedObject, VFmodSoundObject const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VFmodSoundObject_IsFading", 1, "VFmodSoundObject const *", "deleted native object");
+    SWIG_fail;
   }
   
   result = (bool)((VFmodSoundObject const *)arg1)->IsFading();
@@ -7299,6 +8480,12 @@ static int _wrap_VFmodSoundObject_IsFadingIn(lua_State* L) {
     SWIG_fail_ptr("VFmodSoundObject_IsFadingIn",1,SWIGTYPE_p_VFmodSoundObject);
   }
   
+  
+  if (VTraits::IsBaseOf<VTypedObject, VFmodSoundObject const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VFmodSoundObject_IsFadingIn", 1, "VFmodSoundObject const *", "deleted native object");
+    SWIG_fail;
+  }
+  
   result = (bool)((VFmodSoundObject const *)arg1)->IsFadingIn();
   lua_pushboolean(L,(int)(result!=0)); SWIG_arg++;
   return SWIG_arg;
@@ -7322,6 +8509,12 @@ static int _wrap_VFmodSoundObject_IsFadingOut(lua_State* L) {
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VFmodSoundObject,0))){
     SWIG_fail_ptr("VFmodSoundObject_IsFadingOut",1,SWIGTYPE_p_VFmodSoundObject);
+  }
+  
+  
+  if (VTraits::IsBaseOf<VTypedObject, VFmodSoundObject const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VFmodSoundObject_IsFadingOut", 1, "VFmodSoundObject const *", "deleted native object");
+    SWIG_fail;
   }
   
   result = (bool)((VFmodSoundObject const *)arg1)->IsFadingOut();
@@ -7354,6 +8547,12 @@ static int _wrap_VFmodSoundObject_FadeTo(lua_State* L) {
   
   arg2 = (float)lua_tonumber(L, 2);
   arg3 = (float)lua_tonumber(L, 3);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VFmodSoundObject>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VFmodSoundObject_FadeTo", 1, "VFmodSoundObject *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->FadeTo(arg2,arg3);
   
   return SWIG_arg;
@@ -7381,6 +8580,12 @@ static int _wrap_VFmodSoundObject_FadeOut(lua_State* L) {
   }
   
   arg2 = (float)lua_tonumber(L, 2);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VFmodSoundObject>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VFmodSoundObject_FadeOut", 1, "VFmodSoundObject *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->FadeOut(arg2);
   
   return SWIG_arg;
@@ -7408,6 +8613,12 @@ static int _wrap_VFmodSoundObject_FadeIn(lua_State* L) {
   }
   
   arg2 = (float)lua_tonumber(L, 2);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VFmodSoundObject>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VFmodSoundObject_FadeIn", 1, "VFmodSoundObject *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->FadeIn(arg2);
   
   return SWIG_arg;
@@ -7441,6 +8652,12 @@ static int _wrap_VFmodSoundObject_FadeFromTo(lua_State* L) {
   arg2 = (float)lua_tonumber(L, 2);
   arg3 = (float)lua_tonumber(L, 3);
   arg4 = (float)lua_tonumber(L, 4);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VFmodSoundObject>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VFmodSoundObject_FadeFromTo", 1, "VFmodSoundObject *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->FadeFromTo(arg2,arg3,arg4);
   
   return SWIG_arg;
@@ -7464,6 +8681,12 @@ static int _wrap_VFmodSoundObject_GetPitch(lua_State* L) {
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VFmodSoundObject,0))){
     SWIG_fail_ptr("VFmodSoundObject_GetPitch",1,SWIGTYPE_p_VFmodSoundObject);
+  }
+  
+  
+  if (VTraits::IsBaseOf<VTypedObject, VFmodSoundObject const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VFmodSoundObject_GetPitch", 1, "VFmodSoundObject const *", "deleted native object");
+    SWIG_fail;
   }
   
   result = (float)((VFmodSoundObject const *)arg1)->GetPitch();
@@ -7493,6 +8716,12 @@ static int _wrap_VFmodSoundObject_SetPitch(lua_State* L) {
   }
   
   arg2 = (float)lua_tonumber(L, 2);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VFmodSoundObject>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VFmodSoundObject_SetPitch", 1, "VFmodSoundObject *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->SetPitch(arg2);
   
   return SWIG_arg;
@@ -7518,6 +8747,12 @@ static int _wrap_VFmodSoundObject_GetConeAngleInside(lua_State* L) {
     SWIG_fail_ptr("VFmodSoundObject_GetConeAngleInside",1,SWIGTYPE_p_VFmodSoundObject);
   }
   
+  
+  if (VTraits::IsBaseOf<VTypedObject, VFmodSoundObject const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VFmodSoundObject_GetConeAngleInside", 1, "VFmodSoundObject const *", "deleted native object");
+    SWIG_fail;
+  }
+  
   result = (float)((VFmodSoundObject const *)arg1)->GetConeAngleInside();
   lua_pushnumber(L, (lua_Number) result); SWIG_arg++;
   return SWIG_arg;
@@ -7541,6 +8776,12 @@ static int _wrap_VFmodSoundObject_GetConeAngleOutside(lua_State* L) {
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VFmodSoundObject,0))){
     SWIG_fail_ptr("VFmodSoundObject_GetConeAngleOutside",1,SWIGTYPE_p_VFmodSoundObject);
+  }
+  
+  
+  if (VTraits::IsBaseOf<VTypedObject, VFmodSoundObject const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VFmodSoundObject_GetConeAngleOutside", 1, "VFmodSoundObject const *", "deleted native object");
+    SWIG_fail;
   }
   
   result = (float)((VFmodSoundObject const *)arg1)->GetConeAngleOutside();
@@ -7573,6 +8814,12 @@ static int _wrap_VFmodSoundObject_SetConeAngles(lua_State* L) {
   
   arg2 = (float)lua_tonumber(L, 2);
   arg3 = (float)lua_tonumber(L, 3);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VFmodSoundObject>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VFmodSoundObject_SetConeAngles", 1, "VFmodSoundObject *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->SetConeAngles(arg2,arg3);
   
   return SWIG_arg;
@@ -7596,6 +8843,12 @@ static int _wrap_VFmodSoundObject_IsLooped(lua_State* L) {
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VFmodSoundObject,0))){
     SWIG_fail_ptr("VFmodSoundObject_IsLooped",1,SWIGTYPE_p_VFmodSoundObject);
+  }
+  
+  
+  if (VTraits::IsBaseOf<VTypedObject, VFmodSoundObject const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VFmodSoundObject_IsLooped", 1, "VFmodSoundObject const *", "deleted native object");
+    SWIG_fail;
   }
   
   result = (bool)((VFmodSoundObject const *)arg1)->IsLooped();
@@ -7623,6 +8876,12 @@ static int _wrap_VFmodSoundObject_IsMusic(lua_State* L) {
     SWIG_fail_ptr("VFmodSoundObject_IsMusic",1,SWIGTYPE_p_VFmodSoundObject);
   }
   
+  
+  if (VTraits::IsBaseOf<VTypedObject, VFmodSoundObject const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VFmodSoundObject_IsMusic", 1, "VFmodSoundObject const *", "deleted native object");
+    SWIG_fail;
+  }
+  
   result = (bool)((VFmodSoundObject const *)arg1)->IsMusic();
   lua_pushboolean(L,(int)(result!=0)); SWIG_arg++;
   return SWIG_arg;
@@ -7646,6 +8905,12 @@ static int _wrap_VFmodSoundObject_IsAutoDisposed(lua_State* L) {
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VFmodSoundObject,0))){
     SWIG_fail_ptr("VFmodSoundObject_IsAutoDisposed",1,SWIGTYPE_p_VFmodSoundObject);
+  }
+  
+  
+  if (VTraits::IsBaseOf<VTypedObject, VFmodSoundObject const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VFmodSoundObject_IsAutoDisposed", 1, "VFmodSoundObject const *", "deleted native object");
+    SWIG_fail;
   }
   
   result = (bool)((VFmodSoundObject const *)arg1)->IsAutoDisposed();
@@ -7673,6 +8938,12 @@ static int _wrap_VFmodSoundObject_IsValid(lua_State* L) {
     SWIG_fail_ptr("VFmodSoundObject_IsValid",1,SWIGTYPE_p_VFmodSoundObject);
   }
   
+  
+  if (VTraits::IsBaseOf<VTypedObject, VFmodSoundObject const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VFmodSoundObject_IsValid", 1, "VFmodSoundObject const *", "deleted native object");
+    SWIG_fail;
+  }
+  
   result = (bool)((VFmodSoundObject const *)arg1)->IsValid();
   lua_pushboolean(L,(int)(result!=0)); SWIG_arg++;
   return SWIG_arg;
@@ -7696,6 +8967,12 @@ static int _wrap_VFmodSoundObject_GetStartTime(lua_State* L) {
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VFmodSoundObject,0))){
     SWIG_fail_ptr("VFmodSoundObject_GetStartTime",1,SWIGTYPE_p_VFmodSoundObject);
+  }
+  
+  
+  if (VTraits::IsBaseOf<VTypedObject, VFmodSoundObject const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VFmodSoundObject_GetStartTime", 1, "VFmodSoundObject const *", "deleted native object");
+    SWIG_fail;
   }
   
   result = (float)((VFmodSoundObject const *)arg1)->GetStartTime();
@@ -7723,32 +9000,14 @@ static int _wrap_VFmodSoundObject_GetName(lua_State* L) {
     SWIG_fail_ptr("VFmodSoundObject_GetName",1,SWIGTYPE_p_VFmodSoundObject);
   }
   
-  result = (char *)VFmodSoundObject_GetName(arg1);
-  lua_pushstring(L,(const char *)result); SWIG_arg++;
-  return SWIG_arg;
   
-  if(0) SWIG_fail;
-  
-fail:
-  lua_error(L);
-  return SWIG_arg;
-}
-
-
-static int _wrap_VFmodSoundObject_Cast(lua_State* L) {
-  int SWIG_arg = 0;
-  VTypedObject *arg1 = (VTypedObject *) 0 ;
-  VFmodSoundObject *result = 0 ;
-  
-  SWIG_check_num_args("VFmodSoundObject_Cast",1,1)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("VFmodSoundObject_Cast",1,"VTypedObject *");
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VTypedObject,0))){
-    SWIG_fail_ptr("VFmodSoundObject_Cast",1,SWIGTYPE_p_VTypedObject);
+  if (VTraits::IsBaseOf<VTypedObject, VFmodSoundObject>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VFmodSoundObject_GetName", 1, "VFmodSoundObject *", "deleted native object");
+    SWIG_fail;
   }
   
-  result = (VFmodSoundObject *)VFmodSoundObject_Cast(arg1);
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_VFmodSoundObject,0); SWIG_arg++; 
+  result = (char *)VFmodSoundObject_GetName(arg1);
+  lua_pushstring(L,(const char *)result); SWIG_arg++;
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -7816,6 +9075,12 @@ static int _wrap_VFmodEvent_Remove(lua_State* L) {
     SWIG_fail_ptr("VFmodEvent_Remove",1,SWIGTYPE_p_VFmodEvent);
   }
   
+  
+  if (VTraits::IsBaseOf<VTypedObject, VFmodEvent>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VFmodEvent_Remove", 1, "VFmodEvent *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->DisposeObject();
   
   return SWIG_arg;
@@ -7843,6 +9108,12 @@ static int _wrap_VFmodEvent_Start__SWIG_0(lua_State* L) {
   }
   
   arg2 = (lua_toboolean(L, 2)!=0);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VFmodEvent>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VFmodEvent_Start", 1, "VFmodEvent *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->Start(arg2);
   
   return SWIG_arg;
@@ -7865,6 +9136,12 @@ static int _wrap_VFmodEvent_Start__SWIG_1(lua_State* L) {
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VFmodEvent,0))){
     SWIG_fail_ptr("VFmodEvent_Start",1,SWIGTYPE_p_VFmodEvent);
+  }
+  
+  
+  if (VTraits::IsBaseOf<VTypedObject, VFmodEvent>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VFmodEvent_Start", 1, "VFmodEvent *", "deleted native object");
+    SWIG_fail;
   }
   
   (arg1)->Start();
@@ -7940,6 +9217,12 @@ static int _wrap_VFmodEvent_Stop(lua_State* L) {
     SWIG_fail_ptr("VFmodEvent_Stop",1,SWIGTYPE_p_VFmodEvent);
   }
   
+  
+  if (VTraits::IsBaseOf<VTypedObject, VFmodEvent>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VFmodEvent_Stop", 1, "VFmodEvent *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->Stop();
   
   return SWIG_arg;
@@ -7963,6 +9246,12 @@ static int _wrap_VFmodEvent_IsPlaying(lua_State* L) {
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VFmodEvent,0))){
     SWIG_fail_ptr("VFmodEvent_IsPlaying",1,SWIGTYPE_p_VFmodEvent);
+  }
+  
+  
+  if (VTraits::IsBaseOf<VTypedObject, VFmodEvent const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VFmodEvent_IsPlaying", 1, "VFmodEvent const *", "deleted native object");
+    SWIG_fail;
   }
   
   result = (bool)((VFmodEvent const *)arg1)->IsPlaying();
@@ -7990,6 +9279,12 @@ static int _wrap_VFmodEvent_IsReady(lua_State* L) {
     SWIG_fail_ptr("VFmodEvent_IsReady",1,SWIGTYPE_p_VFmodEvent);
   }
   
+  
+  if (VTraits::IsBaseOf<VTypedObject, VFmodEvent const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VFmodEvent_IsReady", 1, "VFmodEvent const *", "deleted native object");
+    SWIG_fail;
+  }
+  
   result = (bool)((VFmodEvent const *)arg1)->IsReady();
   lua_pushboolean(L,(int)(result!=0)); SWIG_arg++;
   return SWIG_arg;
@@ -8013,6 +9308,12 @@ static int _wrap_VFmodEvent_IsPaused(lua_State* L) {
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VFmodEvent,0))){
     SWIG_fail_ptr("VFmodEvent_IsPaused",1,SWIGTYPE_p_VFmodEvent);
+  }
+  
+  
+  if (VTraits::IsBaseOf<VTypedObject, VFmodEvent const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VFmodEvent_IsPaused", 1, "VFmodEvent const *", "deleted native object");
+    SWIG_fail;
   }
   
   result = (bool)((VFmodEvent const *)arg1)->IsPaused();
@@ -8042,6 +9343,12 @@ static int _wrap_VFmodEvent_SetPaused(lua_State* L) {
   }
   
   arg2 = (lua_toboolean(L, 2)!=0);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VFmodEvent>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VFmodEvent_SetPaused", 1, "VFmodEvent *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->SetPaused(arg2);
   
   return SWIG_arg;
@@ -8065,6 +9372,12 @@ static int _wrap_VFmodEvent_IsMuted(lua_State* L) {
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VFmodEvent,0))){
     SWIG_fail_ptr("VFmodEvent_IsMuted",1,SWIGTYPE_p_VFmodEvent);
+  }
+  
+  
+  if (VTraits::IsBaseOf<VTypedObject, VFmodEvent const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VFmodEvent_IsMuted", 1, "VFmodEvent const *", "deleted native object");
+    SWIG_fail;
   }
   
   result = (bool)((VFmodEvent const *)arg1)->IsMuted();
@@ -8094,6 +9407,12 @@ static int _wrap_VFmodEvent_SetMuted(lua_State* L) {
   }
   
   arg2 = (lua_toboolean(L, 2)!=0);
+  
+  if (VTraits::IsBaseOf<VTypedObject, VFmodEvent>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VFmodEvent_SetMuted", 1, "VFmodEvent *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->SetMuted(arg2);
   
   return SWIG_arg;
@@ -8117,6 +9436,12 @@ static int _wrap_VFmodEvent_IsAutoDisposed(lua_State* L) {
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VFmodEvent,0))){
     SWIG_fail_ptr("VFmodEvent_IsAutoDisposed",1,SWIGTYPE_p_VFmodEvent);
+  }
+  
+  
+  if (VTraits::IsBaseOf<VTypedObject, VFmodEvent const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VFmodEvent_IsAutoDisposed", 1, "VFmodEvent const *", "deleted native object");
+    SWIG_fail;
   }
   
   result = (bool)((VFmodEvent const *)arg1)->IsAutoDisposed();
@@ -8144,6 +9469,12 @@ static int _wrap_VFmodEvent_IsValid(lua_State* L) {
     SWIG_fail_ptr("VFmodEvent_IsValid",1,SWIGTYPE_p_VFmodEvent);
   }
   
+  
+  if (VTraits::IsBaseOf<VTypedObject, VFmodEvent const>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VFmodEvent_IsValid", 1, "VFmodEvent const *", "deleted native object");
+    SWIG_fail;
+  }
+  
   result = (bool)((VFmodEvent const *)arg1)->IsValid();
   lua_pushboolean(L,(int)(result!=0)); SWIG_arg++;
   return SWIG_arg;
@@ -8169,32 +9500,14 @@ static int _wrap_VFmodEvent_GetName(lua_State* L) {
     SWIG_fail_ptr("VFmodEvent_GetName",1,SWIGTYPE_p_VFmodEvent);
   }
   
-  result = (char *)VFmodEvent_GetName(arg1);
-  lua_pushstring(L,(const char *)result); SWIG_arg++;
-  return SWIG_arg;
   
-  if(0) SWIG_fail;
-  
-fail:
-  lua_error(L);
-  return SWIG_arg;
-}
-
-
-static int _wrap_VFmodEvent_Cast(lua_State* L) {
-  int SWIG_arg = 0;
-  VTypedObject *arg1 = (VTypedObject *) 0 ;
-  VFmodEvent *result = 0 ;
-  
-  SWIG_check_num_args("VFmodEvent_Cast",1,1)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("VFmodEvent_Cast",1,"VTypedObject *");
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_VTypedObject,0))){
-    SWIG_fail_ptr("VFmodEvent_Cast",1,SWIGTYPE_p_VTypedObject);
+  if (VTraits::IsBaseOf<VTypedObject, VFmodEvent>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "VFmodEvent_GetName", 1, "VFmodEvent *", "deleted native object");
+    SWIG_fail;
   }
   
-  result = (VFmodEvent *)VFmodEvent_Cast(arg1);
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_VFmodEvent,0); SWIG_arg++; 
+  result = (char *)VFmodEvent_GetName(arg1);
+  lua_pushstring(L,(const char *)result); SWIG_arg++;
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -8233,8 +9546,6 @@ static swig_lua_class _wrap_class_VFmodEvent = { "VFmodEvent", &SWIGTYPE_p_VFmod
 
 static const struct luaL_reg swig_commands[] = {
     { "VFmodManager_Cast", _wrap_VFmodManager_Cast},
-    { "VFmodSoundObject_Cast", _wrap_VFmodSoundObject_Cast},
-    { "VFmodEvent_Cast", _wrap_VFmodEvent_Cast},
     {0,0}
 };
 
@@ -8266,6 +9577,12 @@ static void *_p_VisObject3D_clTo_p_VisTypedEngineObject_cl(void *x, int *SWIGUNU
 static void *_p_VFmodEventTo_p_VisTypedEngineObject_cl(void *x, int *SWIGUNUSEDPARM(newmemory)) {
     return (void *)((VisTypedEngineObject_cl *) (VisObject3D_cl *) ((VFmodEvent *) x));
 }
+static void *_p_VFmodSoundObjectTo_p_VisObject3D_cl(void *x, int *SWIGUNUSEDPARM(newmemory)) {
+    return (void *)((VisObject3D_cl *)  ((VFmodSoundObject *) x));
+}
+static void *_p_VFmodEventTo_p_VisObject3D_cl(void *x, int *SWIGUNUSEDPARM(newmemory)) {
+    return (void *)((VisObject3D_cl *)  ((VFmodEvent *) x));
+}
 static void *_p_VFmodSoundObjectTo_p_VTypedObject(void *x, int *SWIGUNUSEDPARM(newmemory)) {
     return (void *)((VTypedObject *) (VisTypedEngineObject_cl *)(VisObject3D_cl *) ((VFmodSoundObject *) x));
 }
@@ -8278,12 +9595,6 @@ static void *_p_VFmodEventTo_p_VTypedObject(void *x, int *SWIGUNUSEDPARM(newmemo
 static void *_p_VisTypedEngineObject_clTo_p_VTypedObject(void *x, int *SWIGUNUSEDPARM(newmemory)) {
     return (void *)((VTypedObject *)  ((VisTypedEngineObject_cl *) x));
 }
-static void *_p_VFmodSoundObjectTo_p_VisObject3D_cl(void *x, int *SWIGUNUSEDPARM(newmemory)) {
-    return (void *)((VisObject3D_cl *)  ((VFmodSoundObject *) x));
-}
-static void *_p_VFmodEventTo_p_VisObject3D_cl(void *x, int *SWIGUNUSEDPARM(newmemory)) {
-    return (void *)((VisObject3D_cl *)  ((VFmodEvent *) x));
-}
 static void *_p_VFmodSoundObjectTo_p_VisObjectKey_cl(void *x, int *SWIGUNUSEDPARM(newmemory)) {
     return (void *)((VisObjectKey_cl *) (VisObject3D_cl *) ((VFmodSoundObject *) x));
 }
@@ -8293,35 +9604,44 @@ static void *_p_VisObject3D_clTo_p_VisObjectKey_cl(void *x, int *SWIGUNUSEDPARM(
 static void *_p_VFmodEventTo_p_VisObjectKey_cl(void *x, int *SWIGUNUSEDPARM(newmemory)) {
     return (void *)((VisObjectKey_cl *) (VisObject3D_cl *) ((VFmodEvent *) x));
 }
-static swig_type_info _swigt__p_IVObjectComponent = {"_p_IVObjectComponent", "IVObjectComponent *", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_VColorRef = {"_p_VColorRef", "VColorRef *", 0, 0, (void*)&_wrap_class_VColorRef, 0};
-static swig_type_info _swigt__p_VFmodEvent = {"_p_VFmodEvent", "VFmodEvent *", 0, 0, (void*)&_wrap_class_VFmodEvent, 0};
-static swig_type_info _swigt__p_VFmodManager = {"_p_VFmodManager", "VFmodManager *", 0, 0, (void*)&_wrap_class_VFmodManager, 0};
-static swig_type_info _swigt__p_VFmodSoundObject = {"_p_VFmodSoundObject", "VFmodSoundObject *", 0, 0, (void*)&_wrap_class_VFmodSoundObject, 0};
-static swig_type_info _swigt__p_VTypedObject = {"_p_VTypedObject", "VTypedObject *", 0, 0, (void*)&_wrap_class_VTypedObject, 0};
-static swig_type_info _swigt__p_VisObject3D_cl = {"_p_VisObject3D_cl", "VisObject3D_cl *", 0, 0, (void*)&_wrap_class_VisObject3D_cl, 0};
-static swig_type_info _swigt__p_VisObjectKey_cl = {"_p_VisObjectKey_cl", "VisObjectKey_cl *", 0, 0, (void*)&_wrap_class_VisObjectKey_cl, 0};
-static swig_type_info _swigt__p_VisTypedEngineObject_cl = {"_p_VisTypedEngineObject_cl", "VisTypedEngineObject_cl *", 0, 0, (void*)&_wrap_class_VisTypedEngineObject_cl, 0};
-static swig_type_info _swigt__p___int64 = {"_p___int64", "__int64 *|LONGLONG *|LONG64 *", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_char = {"_p_char", "CHAR *|TCHAR *|char *|CCHAR *|SBYTE *", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_float = {"_p_float", "FLOAT *|float *", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_hkvMat3 = {"_p_hkvMat3", "hkvMat3 *", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_hkvVec3 = {"_p_hkvVec3", "hkvVec3 *", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_int = {"_p_int", "BOOL *|INT32 *|VBool *|int *|INT *|INT_PTR *|LONG32 *|SINT *", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_long = {"_p_long", "SHANDLE_PTR *|LONG_PTR *|LONG *|HRESULT *|RETVAL *|long *|SLONG *|SSIZE_T *", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_p_char = {"_p_p_char", "PTCH *|PCTSTR *|LPCTSTR *|LPTCH *|PUTSTR *|LPUTSTR *|PCUTSTR *|LPCUTSTR *|char **|PTSTR *|LPTSTR *", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_p_unsigned_long = {"_p_p_unsigned_long", "unsigned long **|PLCID *", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_short = {"_p_short", "HALF_PTR *|short *|SHORT *|SSHORT *|INT16 *", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_signed___int64 = {"_p_signed___int64", "INT64 *|signed __int64 *", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_signed_char = {"_p_signed_char", "signed char *|INT8 *", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_unsigned___int64 = {"_p_unsigned___int64", "UINT64 *|DWORD64 *|unsigned __int64 *|DWORDLONG *|ULONGLONG *|ULONG64 *", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_unsigned_char = {"_p_unsigned_char", "FCHAR *|unsigned char *|UCHAR *|BYTE *|TBYTE *|UINT8 *|UBYTE *|BOOLEAN *", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_unsigned_int = {"_p_unsigned_int", "UINT32 *|DWORD32 *|UINT *|unsigned int *|UINT_PTR *|ULONG32 *", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_unsigned_long = {"_p_unsigned_long", "HANDLE_PTR *|DWORD *|ULONG_PTR *|DWORD_PTR *|FLONG *|unsigned long *|ULONG *|SIZE_T *|LCID *", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_unsigned_short = {"_p_unsigned_short", "WORD *|UHALF_PTR *|unsigned short *|USHORT *|FSHORT *|LANGID *|UINT16 *", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__p_IVObjectComponent = {"_p_IVObjectComponent", "IVObjectComponent *", 0, 0, (void*)0, 0, NULL};
+static swig_type_info _swigt__p_VCaptureSwigEnvironment = {"_p_VCaptureSwigEnvironment", "VCaptureSwigEnvironment *", 0, 0, (void*)0, 0, NULL};
+static swig_type_info _swigt__p_VColorRef = {"_p_VColorRef", "VColorRef *", 0, 0, (void*)&_wrap_class_VColorRef, 0, NULL};
+static swig_type_info _swigt__p_VFmodEvent = {"_p_VFmodEvent", "VFmodEvent *", 0, 0, (void*)&_wrap_class_VFmodEvent, 0, NULL};
+static swig_type_info _swigt__p_VFmodManager = {"_p_VFmodManager", "VFmodManager *", 0, 0, (void*)&_wrap_class_VFmodManager, 0, NULL};
+static swig_type_info _swigt__p_VFmodSoundObject = {"_p_VFmodSoundObject", "VFmodSoundObject *", 0, 0, (void*)&_wrap_class_VFmodSoundObject, 0, NULL};
+static swig_type_info _swigt__p_VTypedObject = {"_p_VTypedObject", "VTypedObject *", 0, 0, (void*)&_wrap_class_VTypedObject, 0, NULL};
+static swig_type_info _swigt__p_VisObject3D_cl = {"_p_VisObject3D_cl", "VisObject3D_cl *", 0, 0, (void*)&_wrap_class_VisObject3D_cl, 0, NULL};
+static swig_type_info _swigt__p_VisObjectKey_cl = {"_p_VisObjectKey_cl", "VisObjectKey_cl *", 0, 0, (void*)&_wrap_class_VisObjectKey_cl, 0, NULL};
+static swig_type_info _swigt__p_VisTypedEngineObject_cl = {"_p_VisTypedEngineObject_cl", "VisTypedEngineObject_cl *", 0, 0, (void*)&_wrap_class_VisTypedEngineObject_cl, 0, NULL};
+static swig_type_info _swigt__p___int64 = {"_p___int64", "__int64 *|LONGLONG *|LONG64 *", 0, 0, (void*)0, 0, NULL};
+static swig_type_info _swigt__p_char = {"_p_char", "CHAR *|TCHAR *|char *|CCHAR *|SBYTE *", 0, 0, (void*)0, 0, NULL};
+static swig_type_info _swigt__p_float = {"_p_float", "FLOAT *|float *", 0, 0, (void*)0, 0, NULL};
+static swig_type_info _swigt__p_hkvAlignedBBox = {"_p_hkvAlignedBBox", "hkvAlignedBBox *", 0, 0, (void*)0, 0, NULL};
+static swig_type_info _swigt__p_hkvBoundingSphere = {"_p_hkvBoundingSphere", "hkvBoundingSphere *", 0, 0, (void*)0, 0, NULL};
+static swig_type_info _swigt__p_hkvMat3 = {"_p_hkvMat3", "hkvMat3 *", 0, 0, (void*)0, 0, NULL};
+static swig_type_info _swigt__p_hkvMat4 = {"_p_hkvMat4", "hkvMat4 *", 0, 0, (void*)0, 0, NULL};
+static swig_type_info _swigt__p_hkvPlane = {"_p_hkvPlane", "hkvPlane *", 0, 0, (void*)0, 0, NULL};
+static swig_type_info _swigt__p_hkvQuat = {"_p_hkvQuat", "hkvQuat *", 0, 0, (void*)0, 0, NULL};
+static swig_type_info _swigt__p_hkvVec2 = {"_p_hkvVec2", "hkvVec2 *", 0, 0, (void*)0, 0, NULL};
+static swig_type_info _swigt__p_hkvVec3 = {"_p_hkvVec3", "hkvVec3 *", 0, 0, (void*)0, 0, NULL};
+static swig_type_info _swigt__p_hkvVec4 = {"_p_hkvVec4", "hkvVec4 *", 0, 0, (void*)0, 0, NULL};
+static swig_type_info _swigt__p_int = {"_p_int", "BOOL *|INT32 *|VBool *|int *|INT *|INT_PTR *|LONG32 *|SINT *", 0, 0, (void*)0, 0, NULL};
+static swig_type_info _swigt__p_long = {"_p_long", "SHANDLE_PTR *|LONG_PTR *|LONG *|HRESULT *|RETVAL *|long *|SLONG *|SSIZE_T *", 0, 0, (void*)0, 0, NULL};
+static swig_type_info _swigt__p_p_char = {"_p_p_char", "PTCH *|PCTSTR *|LPCTSTR *|LPTCH *|PUTSTR *|LPUTSTR *|PCUTSTR *|LPCUTSTR *|char **|PTSTR *|LPTSTR *", 0, 0, (void*)0, 0, NULL};
+static swig_type_info _swigt__p_p_unsigned_long = {"_p_p_unsigned_long", "unsigned long **|PLCID *", 0, 0, (void*)0, 0, NULL};
+static swig_type_info _swigt__p_short = {"_p_short", "HALF_PTR *|short *|SHORT *|SSHORT *|INT16 *", 0, 0, (void*)0, 0, NULL};
+static swig_type_info _swigt__p_signed___int64 = {"_p_signed___int64", "INT64 *|signed __int64 *", 0, 0, (void*)0, 0, NULL};
+static swig_type_info _swigt__p_signed_char = {"_p_signed_char", "signed char *|INT8 *", 0, 0, (void*)0, 0, NULL};
+static swig_type_info _swigt__p_unsigned___int64 = {"_p_unsigned___int64", "UINT64 *|DWORD64 *|unsigned __int64 *|DWORDLONG *|ULONGLONG *|ULONG64 *", 0, 0, (void*)0, 0, NULL};
+static swig_type_info _swigt__p_unsigned_char = {"_p_unsigned_char", "FCHAR *|unsigned char *|UCHAR *|BYTE *|TBYTE *|UINT8 *|UBYTE *|BOOLEAN *", 0, 0, (void*)0, 0, NULL};
+static swig_type_info _swigt__p_unsigned_int = {"_p_unsigned_int", "UINT32 *|DWORD32 *|UINT *|unsigned int *|UINT_PTR *|ULONG32 *", 0, 0, (void*)0, 0, NULL};
+static swig_type_info _swigt__p_unsigned_long = {"_p_unsigned_long", "HANDLE_PTR *|DWORD *|ULONG_PTR *|DWORD_PTR *|FLONG *|unsigned long *|ULONG *|SIZE_T *|LCID *", 0, 0, (void*)0, 0, NULL};
+static swig_type_info _swigt__p_unsigned_short = {"_p_unsigned_short", "WORD *|UHALF_PTR *|unsigned short *|USHORT *|FSHORT *|LANGID *|UINT16 *", 0, 0, (void*)0, 0, NULL};
 
 static swig_type_info *swig_type_initial[] = {
   &_swigt__p_IVObjectComponent,
+  &_swigt__p_VCaptureSwigEnvironment,
   &_swigt__p_VColorRef,
   &_swigt__p_VFmodEvent,
   &_swigt__p_VFmodManager,
@@ -8333,8 +9653,15 @@ static swig_type_info *swig_type_initial[] = {
   &_swigt__p___int64,
   &_swigt__p_char,
   &_swigt__p_float,
+  &_swigt__p_hkvAlignedBBox,
+  &_swigt__p_hkvBoundingSphere,
   &_swigt__p_hkvMat3,
+  &_swigt__p_hkvMat4,
+  &_swigt__p_hkvPlane,
+  &_swigt__p_hkvQuat,
+  &_swigt__p_hkvVec2,
   &_swigt__p_hkvVec3,
+  &_swigt__p_hkvVec4,
   &_swigt__p_int,
   &_swigt__p_long,
   &_swigt__p_p_char,
@@ -8350,6 +9677,7 @@ static swig_type_info *swig_type_initial[] = {
 };
 
 static swig_cast_info _swigc__p_IVObjectComponent[] = {  {&_swigt__p_IVObjectComponent, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_VCaptureSwigEnvironment[] = {  {&_swigt__p_VCaptureSwigEnvironment, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_VColorRef[] = {  {&_swigt__p_VColorRef, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_VFmodEvent[] = {  {&_swigt__p_VFmodEvent, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_VFmodManager[] = {  {&_swigt__p_VFmodManager, 0, 0, 0},{0, 0, 0, 0}};
@@ -8361,8 +9689,15 @@ static swig_cast_info _swigc__p_VisTypedEngineObject_cl[] = {  {&_swigt__p_VFmod
 static swig_cast_info _swigc__p___int64[] = {  {&_swigt__p___int64, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_char[] = {  {&_swigt__p_char, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_float[] = {  {&_swigt__p_float, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_hkvAlignedBBox[] = {  {&_swigt__p_hkvAlignedBBox, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_hkvBoundingSphere[] = {  {&_swigt__p_hkvBoundingSphere, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_hkvMat3[] = {  {&_swigt__p_hkvMat3, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_hkvMat4[] = {  {&_swigt__p_hkvMat4, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_hkvPlane[] = {  {&_swigt__p_hkvPlane, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_hkvQuat[] = {  {&_swigt__p_hkvQuat, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_hkvVec2[] = {  {&_swigt__p_hkvVec2, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_hkvVec3[] = {  {&_swigt__p_hkvVec3, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_hkvVec4[] = {  {&_swigt__p_hkvVec4, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_int[] = {  {&_swigt__p_int, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_long[] = {  {&_swigt__p_long, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_p_char[] = {  {&_swigt__p_p_char, 0, 0, 0},{0, 0, 0, 0}};
@@ -8378,6 +9713,7 @@ static swig_cast_info _swigc__p_unsigned_short[] = {  {&_swigt__p_unsigned_short
 
 static swig_cast_info *swig_cast_initial[] = {
   _swigc__p_IVObjectComponent,
+  _swigc__p_VCaptureSwigEnvironment,
   _swigc__p_VColorRef,
   _swigc__p_VFmodEvent,
   _swigc__p_VFmodManager,
@@ -8389,8 +9725,15 @@ static swig_cast_info *swig_cast_initial[] = {
   _swigc__p___int64,
   _swigc__p_char,
   _swigc__p_float,
+  _swigc__p_hkvAlignedBBox,
+  _swigc__p_hkvBoundingSphere,
   _swigc__p_hkvMat3,
+  _swigc__p_hkvMat4,
+  _swigc__p_hkvPlane,
+  _swigc__p_hkvQuat,
+  _swigc__p_hkvVec2,
   _swigc__p_hkvVec3,
+  _swigc__p_hkvVec4,
   _swigc__p_int,
   _swigc__p_long,
   _swigc__p_p_char,
@@ -8407,6 +9750,35 @@ static swig_cast_info *swig_cast_initial[] = {
 
 
 /* -------- TYPE CONVERSION AND EQUIVALENCE RULES (END) -------- */
+
+template<typename T, bool IsTypedObject = VTraits::IsBaseOf<VTypedObject, typename VTraits::RemovePointer<T>::type>::value> struct SWIG_InitVisionType { static void Do(swig_type_info*) {} };
+template<typename T> struct SWIG_InitVisionType<T*, true> { static void Do(swig_type_info* info) {
+            VType* pType = VTraits::RemovePointer<T>::type::GetClassTypeId();
+            if(pType->m_pSwigTypeInfo == NULL)
+              pType->m_pSwigTypeInfo = info;
+            info->visiontype = pType;
+  } };
+SWIGRUNTIME void SWIG_InitVisionTypes() {
+  SWIG_InitVisionType<IVObjectComponent *>::Do(&_swigt__p_IVObjectComponent);
+  SWIG_InitVisionType<VCaptureSwigEnvironment *>::Do(&_swigt__p_VCaptureSwigEnvironment);
+  SWIG_InitVisionType<VColorRef *>::Do(&_swigt__p_VColorRef);
+  SWIG_InitVisionType<VFmodEvent *>::Do(&_swigt__p_VFmodEvent);
+  SWIG_InitVisionType<VFmodManager *>::Do(&_swigt__p_VFmodManager);
+  SWIG_InitVisionType<VFmodSoundObject *>::Do(&_swigt__p_VFmodSoundObject);
+  SWIG_InitVisionType<VTypedObject *>::Do(&_swigt__p_VTypedObject);
+  SWIG_InitVisionType<VisObject3D_cl *>::Do(&_swigt__p_VisObject3D_cl);
+  SWIG_InitVisionType<VisObjectKey_cl *>::Do(&_swigt__p_VisObjectKey_cl);
+  SWIG_InitVisionType<VisTypedEngineObject_cl *>::Do(&_swigt__p_VisTypedEngineObject_cl);
+  SWIG_InitVisionType<hkvAlignedBBox *>::Do(&_swigt__p_hkvAlignedBBox);
+  SWIG_InitVisionType<hkvBoundingSphere *>::Do(&_swigt__p_hkvBoundingSphere);
+  SWIG_InitVisionType<hkvMat3 *>::Do(&_swigt__p_hkvMat3);
+  SWIG_InitVisionType<hkvMat4 *>::Do(&_swigt__p_hkvMat4);
+  SWIG_InitVisionType<hkvPlane *>::Do(&_swigt__p_hkvPlane);
+  SWIG_InitVisionType<hkvQuat *>::Do(&_swigt__p_hkvQuat);
+  SWIG_InitVisionType<hkvVec2 *>::Do(&_swigt__p_hkvVec2);
+  SWIG_InitVisionType<hkvVec3 *>::Do(&_swigt__p_hkvVec3);
+  SWIG_InitVisionType<hkvVec4 *>::Do(&_swigt__p_hkvVec4);
+}
 
 /* -----------------------------------------------------------------------------
  * Type initialization:
@@ -8608,6 +9980,9 @@ SWIG_InitializeModule(void *clientdata) {
   }
   printf("**** SWIG_InitializeModule: Cast List ******\n");
 #endif
+  
+  // Vision extension
+  SWIG_InitVisionTypes();
 }
 
 /* This function will propagate the clientdata field of type to
@@ -8738,6 +10113,7 @@ SWIGEXPORT int SWIG_init(lua_State* L)
   /* add a global fn */
   SWIG_Lua_add_function(L,"swig_type",SWIG_Lua_type);
   SWIG_Lua_add_function(L,"swig_equals",SWIG_Lua_equal);
+  SWIG_Lua_add_function(L,"swig_isalive", SWIG_Lua_isalive);  // Vision extension
   /* begin the module (its a table with the same name as the module) */
   SWIG_Lua_module_begin(L,SWIG_name);
   /* add commands/functions */

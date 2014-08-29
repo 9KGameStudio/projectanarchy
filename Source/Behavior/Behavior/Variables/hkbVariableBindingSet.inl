@@ -44,7 +44,7 @@ HK_FORCE_INLINE hkbVariableBindingSet::Binding::Binding( const char* memberPath,
 
 HK_FORCE_INLINE void hkbVariableBindingSet::removeBinding( int index )
 {
-	HK_ASSERT2( 0x7681b3cb, ( m_memSizeAndFlags & hkReferencedObject::MASK_MEMSIZE ) != 0, "don't call removeBinding if I came from a packfile" );
+	HK_ASSERT2( 0x7681b3cb, getAllocatedSize() != 0, "don't call removeBinding if I came from a packfile" );
 
 	// the order may change
 	m_bindings.removeAt( index );
@@ -105,7 +105,7 @@ HK_FORCE_INLINE hkbVariableBindingSet::hkbVariableBindingSet( hkFinishLoadedObje
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

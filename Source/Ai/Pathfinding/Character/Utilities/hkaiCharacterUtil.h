@@ -21,7 +21,7 @@ class hkaiCharacter;
 class hkaiPath;
 
 	/// Utility for managing path requests and results for characters.
-class hkaiCharacterUtil
+class HK_EXPORT_AI hkaiCharacterUtil
 {
 public:
 HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE,hkaiCharacterUtil);
@@ -37,7 +37,7 @@ HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE,hkaiCharacterUtil);
 	};
 
 		/// hkaiPath results and callback type.
-	struct ProcessedPath
+	struct HK_EXPORT_AI ProcessedPath
 	{
 		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE,hkaiCharacterUtil::ProcessedPath);
 
@@ -91,22 +91,22 @@ HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE,hkaiCharacterUtil);
 
 		/// Fill in the face keys right before the path is computed.
 		/// \param effectiveRadiusMultiplier The character's radius is multiplied by this value for A* queries and detecting edge penetrations. This should be greater than 1.0f (preferably around 1.5f).
-	static void HK_CALL updatePathRequest(const hkaiWorld* world, const hkaiCharacter* character, hkaiPathfindingUtil::FindPathInput* input, hkReal querySize, hkReal effectiveRadiusMultiplier = 1.5f);
+	static void HK_CALL updatePathRequest(const hkaiWorld* world, const hkaiCharacter* character, hkaiPathfindingUtil::FindPathInput* input, hkSimdRealParameter querySize, hkReal effectiveRadiusMultiplier = 1.5f);
 	
 		/// Fill in the cell keys right before the path is computed.
-	static void HK_CALL updatePathRequest(const hkaiWorld* world, const hkaiCharacter* character, hkaiVolumePathfindingUtil::FindPathInput* input, hkReal querySize );
+	static void HK_CALL updatePathRequest(const hkaiWorld* world, const hkaiCharacter* character, hkaiVolumePathfindingUtil::FindPathInput* input, hkSimdRealParameter querySize );
 
 		/// Input structure for determing the start and goal faces for nav mesh A*.
-	struct GetFaceForPathfindingSettings
+	struct HK_EXPORT_AI GetFaceForPathfindingSettings
 	{
 		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE, hkaiCharacterUtil::GetFaceForPathfindingSettings );
 		GetFaceForPathfindingSettings();
 
 			/// Length of raycasts performed in the up and down directions.
-		hkReal m_raycastLength; //+default(2.0f);
+		hkSimdReal m_raycastLength; //+default(2.0f);
 
 			/// Query size used for getClosestPoints (if the raycasts miss).
-		hkReal m_aabbQuerySize; //+default(2.0f);
+		hkSimdReal m_aabbQuerySize; //+default(2.0f);
 			
 			/// Whether or not to try to move the character away from the edges of the nav mesh.
 		hkBool m_resolveEdgePenetrations; //+default(true);
@@ -114,11 +114,14 @@ HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE,hkaiCharacterUtil);
 			/// Character radius (only used if m_resolveEdgePenetrations is true).
 		hkReal m_characterRadius; //+default(.5f);
 
+			/// Effective radius multiplier
+		hkReal m_effectiveRadiusMultiplier; 
+
 			/// Whether or not to use hkaiNavMeshQueryMediator::coherentGetClosestPoint and coherentCastRay.
 		hkBool m_useCoherentQueries; //+default(true)
 
 			/// Tolerance used for both hkaiNavMeshQueryMediator::CoherentInput::m_isOnFaceTolerance and m_coherencyTolerance.
-		hkReal m_coherencyTolerance; //+default(1e-3f);
+		hkSimdReal m_coherencyTolerance; //+default(1e-3f);
 
 			/// Previous face that the character was on, used for hkaiNavMeshQueryMediator::coherent*.
 		hkaiPackedKey m_previousFaceKey; //+default(HKAI_INVALID_PACKED_KEY)
@@ -135,6 +138,8 @@ HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE,hkaiCharacterUtil);
 	static hkaiPackedKey HK_CALL getFaceForPathfinding( const hkaiStreamingCollection* collection, hkVector4Parameter point, hkVector4Parameter up,
 		const hkaiNavMeshQueryMediator* mediator, const hkaiNavMeshQueryMediator::QueryInputBase& inputBase, const GetFaceForPathfindingSettings& settings, hkVector4& pointOut );
 
+		/// Determine the character's effective radius, based on the face (used to determine the instance)
+	static hkReal HK_CALL getEffectiveRadius( const hkaiStreamingCollection* collection, hkaiPackedKey faceKey, hkReal characterRadius, hkReal effectiveRadiusMultiplier );
 
 		/// Creates an ProcessedPath frm the request's output for the chracter.
 		/// An extra segment is added between the character's position and the start of the path
@@ -153,29 +158,29 @@ HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE,hkaiCharacterUtil);
 	/// \param world AI world for all the characters
 	/// \param characters Array of pointers to hkaiCharacter objects to update
 	/// \param numCharacters Number of characters in the characters array
-	static void HK_CALL integrateMotion( hkReal timestep, hkaiCharacter* const* characters, int numCharacters );
+	static void HK_CALL integrateMotion( hkSimdRealParameter timestep, hkaiCharacter* const* characters, int numCharacters );
 
 		/// Input parameters for hkaiCharacterUtil::integrateMotionAndProjectToMesh
-	struct ProjectToMeshSettings 
+	struct HK_EXPORT_AI ProjectToMeshSettings 
 	{
 		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE, hkaiCharacterUtil::ProjectToMeshSettings );
 		ProjectToMeshSettings();
 
 			/// GetClosestPoint query radius for putting characters back onto the nav mesh
-		hkReal m_meshQueryRadius; //+default(1.0f)
+		hkSimdReal m_meshQueryRadius; //+default(1.0f)
 
 			/// Raycast length for putting characters back onto the nav mesh
-		hkReal m_meshRaycastLength; //+default(.25f);
+		hkSimdReal m_meshRaycastLength; //+default(.25f);
 
 			/// Integration damping factor between integrated position (at 0.0) and the projected mesh
 			/// position (at 1.0). If this factor is set to 1.0, the characters will snap instantly to the mesh.
-		hkReal m_meshProjectDamping; //+default(.75f)
+		hkSimdReal m_meshProjectDamping; //+default(.75f)
 
 			/// Whether or not to use hkaiNavMeshQueryMediator::coherentGetClosestPoint and coherentCastRay.
 		hkBool m_useCoherentQueries; //+default(true)
 
 			/// Tolerance used for both hkaiNavMeshQueryMediator::CoherentInput::m_isOnFaceTolerance and m_coherencyTolerance
-		hkReal m_coherencyTolerance; //+default(1e-3f);
+		hkSimdReal m_coherencyTolerance; //+default(1e-3f);
 	};
 
 	/// A simple utility for updating the position of AI characters which are 
@@ -200,14 +205,14 @@ HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE,hkaiCharacterUtil);
 	/// \param characters Array of pointers to hkaiCharacter objects to update
 	/// \param numCharacters Number of characters in the characters array
 	/// \param settings Input settings
-	static void HK_CALL integrateMotionAndProjectToMesh( hkReal timestep, const hkaiWorld* world, hkaiCharacter* const* characters, int numCharacters,
+	static void HK_CALL integrateMotionAndProjectToMesh( hkSimdRealParameter timestep, const hkaiWorld* world, hkaiCharacter* const* characters, int numCharacters,
 		const ProjectToMeshSettings& settings );
 };
 
 #endif // HK_AI_CHARACTER_UTIL_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

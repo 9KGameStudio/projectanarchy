@@ -125,7 +125,7 @@ public:
   virtual bool canApplyChanges() const = 0;
   virtual bool canChangeStructure() const = 0;
 
-  virtual bool shouldIgnorePath(const char* path) const = 0;
+  virtual bool shouldIgnorePath(const char* path, bool isFolder) const = 0;
 
   void deferUpdateNotifications();
   void releaseUpdateNotifications();
@@ -166,7 +166,7 @@ bool hkvTrackedDirectory::forEachFile(Function& function) const
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140624)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -14,7 +14,7 @@
 
 
 	/// Shape types
-struct hkcdShapeType
+struct HK_EXPORT_COMMON hkcdShapeType
 {
 	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_GEOMETRY, hkcdShapeType );
 	HK_DECLARE_REFLECTION();
@@ -74,7 +74,7 @@ struct hkcdShapeType
 };
 
 	/// Shape dispatch types
-struct hkcdShapeDispatchType
+struct HK_EXPORT_COMMON hkcdShapeDispatchType
 {
 	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_GEOMETRY, hkcdShapeDispatchType );
 	HK_DECLARE_REFLECTION();
@@ -91,7 +91,7 @@ struct hkcdShapeDispatchType
 };
 
 	/// Shape info codec types
-struct hkcdShapeInfoCodecType
+struct HK_EXPORT_COMMON hkcdShapeInfoCodecType
 {
 	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_GEOMETRY, hkcdShapeInfoCodecType );
 	HK_DECLARE_REFLECTION();
@@ -106,7 +106,7 @@ struct hkcdShapeInfoCodecType
 };
 
 	/// Base class for all Havok shapes
-class hkcdShape : public hkReferencedObject
+class HK_EXPORT_COMMON hkcdShape : public hkReferencedObject
 {
 	public:
 
@@ -172,7 +172,7 @@ class hkcdShape : public hkReferencedObject
 #endif	// HKCD_SHAPE_BASE_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

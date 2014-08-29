@@ -15,7 +15,7 @@ class hkxVertexBuffer;
 
 /// The abstract base class for weighted vertex deformation.
 /// Applies to both indexed and non indexed skinning.
-class hkaMorphingDeformer
+class HK_EXPORT_ANIMATION hkaMorphingDeformer
 {
 	//+hk.MemoryTracker(ignore=True)
 	public:
@@ -65,7 +65,7 @@ class hkaMorphingDeformer
 #endif // HK_SKINNING_DEFORMER_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

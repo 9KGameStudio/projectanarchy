@@ -52,7 +52,7 @@
 	/// Check windows help for details.
 	/// Note that including this file means including a system file, such as windows.h,
 	/// which makes compile time significantly slower.
-class hkCriticalSection
+class HK_EXPORT_COMMON hkCriticalSection
 {
 	public:
 		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE_CLASS, hkCriticalSection);
@@ -155,7 +155,7 @@ class hkCriticalSection
 
 // move to static member when compiler support
 #if HK_CONFIG_THREAD == HK_CONFIG_MULTI_THREADED && defined(HK_TIME_CRITICAL_SECTION_LOCKS)
-	extern HK_THREAD_LOCAL( int ) hkCriticalSection__m_timeLocks;
+	extern HK_EXPORT_COMMON HK_THREAD_LOCAL( int ) hkCriticalSection__m_timeLocks;
 #endif
 
 // include the inl before the hkCriticalSectionLock def so 
@@ -189,7 +189,7 @@ class hkCriticalSection
 #if !defined(HK_PLATFORM_PS3_SPU)
 
 	/// Helper class which locks a critical section as long is this object exists.
-class hkCriticalSectionLock
+class HK_EXPORT_COMMON hkCriticalSectionLock
 {
 	public:
 		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE_CLASS, hkCriticalSectionLock);
@@ -219,7 +219,7 @@ typedef hkCriticalSection hkDmaManager;
 #endif // HKBASE_HK_CRITICAL_SECTION_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

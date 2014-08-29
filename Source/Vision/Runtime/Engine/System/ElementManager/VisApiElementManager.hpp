@@ -46,17 +46,19 @@
 template<class ELEMTYPE>
 class VisElementManager_cl
 {
+protected:
+  // Non-virtual since elements should not be deleted by pointer to the element manager type
+  inline ~VisElementManager_cl()
+  {
+    VASSERT_MSG(m_iListIndex == VIS_INVALID, "Object may not be deleted. Use DisposeObject instead");
+  }
+
 public: 
   /// \brief
   ///   Constructor of the element manager
   /// 
   /// class, initializes the element table
   VisElementManager_cl();
-
-  inline virtual ~VisElementManager_cl()
-  {
-    VASSERT_MSG(m_iListIndex==VIS_INVALID, "Object may not be deleted. Use DisposeObject instead");
-  }
 
   /// \brief
   ///   Adds a reference to an element to the static element table and returns 
@@ -292,7 +294,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -41,7 +41,7 @@ public:
   VisBitmap_cl *m_pTargetData;
 
   // DX readback specific:
-#if ( defined(_VR_DX9) && defined(WIN32) )
+#if ( defined(_VR_DX9) && defined(_VISION_WIN32) )
   IDirect3DSurface9 *pRenderTarget;
   IDirect3DTexture9 *pTexture;
   IDirect3DSurface9 *pSurface;
@@ -84,7 +84,7 @@ private:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

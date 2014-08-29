@@ -10,13 +10,15 @@
 #ifndef HKAI_PATH_REQUESTER_H
 #define HKAI_PATH_REQUESTER_H
 
+#include <Ai/Internal/hkaiExport.h>
+
 	/// Basic interface for requesting paths from hkaiWorld.
 	/// The prePathSearchCallback is fired during hkaiWorld::stepPathSearches(), allowing you a chance to update
 	/// any information in the request.
 	/// For example, the start face index for A* might change from frame to frame because nav mesh cutting would change the face indices.
 	/// If prePathSearchCallback() returns false, the request will not be fully processed by the hkaiWorld; instead it will be treated
 	/// as a search failure.
-class hkaiPathRequestInfoOwner
+class HK_EXPORT_AI hkaiPathRequestInfoOwner
 {
 	//+hk.MemoryTracker(ignore=True)
 public:
@@ -28,7 +30,7 @@ public:
 #endif //HKAI_PATH_REQUESTER_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

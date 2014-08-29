@@ -308,44 +308,56 @@ void VisMirror_cl::InitMirror()
   SetShowDebugMirrorTexture(false);
 }
 
-VisMirror_cl::VisMirror_cl(VisMirrorManager_cl *pManager, int iResolution, bool bUseHDR)
+void VisMirror_cl::CommonInit()
 {
-  m_pParentManager = pManager;
   m_pWorldSurface = NULL;
   m_pReferenceObject = NULL;
-  m_iResolution = iResolution;
-  m_bUseHDR = bUseHDR;
   m_bActive = m_bSupported = true;
   m_bValidFX = false;
   m_bLODFromRefContext = true;
   m_fSizeX = m_fSizeY = 100.f;
   m_fFarClipDist = -1.f;
-  m_eReflectionShaderMode = AlwaysSimple;
   m_bExecuteRenderHooks = false;
+  m_eReflectionShaderMode = AlwaysSimple;
   m_bDoubleSided = false;
   m_bCameraOnFrontSide = true;
   m_fObliqueClippingPlaneOffset = 0.0f;
   m_fFovScale = 1.0f; // Will always remain at 1.0 when using mirrors (not water)
+
+  m_iResolution = 512;
+  m_bUseHDR = false;
+
+  // The shape of the mirror:
+  m_vLocalMirrorVert[0].set(-0.5f, 0.5f, 0.f);
+  m_vLocalMirrorVert[1].set( 0.5f, 0.5f, 0.f);
+  m_vLocalMirrorVert[2].set( 0.5f,-0.5f, 0.f);
+  m_vLocalMirrorVert[3].set(-0.5f,-0.5f, 0.f);
+
+  m_BoundingBox.setInvalid();
+  m_Plane.setInvalid();
+  m_vMirrorPos.setZero();
+  m_MirrorCamRot.setIdentity();
+  m_vModelScale.set(1.0f);
+  m_ObliqueClippingProjection.setZero();
+  m_ObliqueClippingPlane.setInvalid();
+}
+
+VisMirror_cl::VisMirror_cl(VisMirrorManager_cl *pManager, int iResolution, bool bUseHDR)
+{
+  CommonInit();
+
+  m_pParentManager = pManager;
+  
+  m_iResolution = iResolution;
+  m_bUseHDR = bUseHDR;
 }
 
 VisMirror_cl::VisMirror_cl()
 {
-  SetUseEulerAngles(FALSE);
+  CommonInit();
+
   m_pParentManager = &VisMirrorManager_cl::GlobalManager();
-  m_eReflectionShaderMode = AlwaysSimple;
-  m_pWorldSurface = NULL;
-  m_pReferenceObject = NULL;
-  m_iResolution = 512;
-  m_bUseHDR = false;
-  m_bActive = m_bSupported = true;
-  m_bValidFX = false;
-  m_bLODFromRefContext = true;
-  m_fSizeX = m_fSizeY = 100.f;
-  m_fFarClipDist = -1.f;
-  m_bExecuteRenderHooks = false;
-  m_bDoubleSided = false;
-  m_bCameraOnFrontSide = true;
-  m_fObliqueClippingPlaneOffset = 0.0f;
+  SetUseEulerAngles(FALSE);
 }
 
 VisMirror_cl::~VisMirror_cl()
@@ -474,14 +486,15 @@ void VisMirror_cl::SetSize(float x, float y)
 
 void VisMirror_cl::GetWorldSpaceVertices(hkvVec3* pVert) const
 {
-  const hkvMat3 &rotMat(m_cachedRotMatrix);
-  for (int i=0;i<4;i++)
+  EnsureCachedRotationMatrixValid();
+
+  for (int i = 0; i < 4; i++)
   {
     pVert[i] = m_vLocalMirrorVert[i];
     pVert[i].x *= m_fSizeX;
     pVert[i].y *= m_fSizeY;
 
-    pVert[i] = rotMat * pVert[i];
+    pVert[i] = m_cachedRotMatrix * pVert[i];
     pVert[i] += m_vPosition;
   }
 }
@@ -521,6 +534,8 @@ const hkvAlignedBBox& VisMirror_cl::GetBoundingBox()
 
 void VisMirror_cl::UpdateMirror()
 {
+  EnsureCachedRotationMatrixValid();
+
   // Build mirror plane and absolute bounding box
   GetBoundingBox();
   const hkvMat3 &rotMat(m_cachedRotMatrix);
@@ -602,7 +617,7 @@ void VisMirror_cl::SetTechnique(VCompiledTechnique *pTechnique)
   if (pTechnique)
   {
     // Analyze the shaders in the technique
-    for (int i=0;i<pTechnique->GetShaderCount();i++)
+    for (unsigned int i=0;i<pTechnique->GetShaderCount();i++)
     {
       const VStateGroupRasterizer& rasterState = pTechnique->GetShader(i)->GetRenderState()->GetRasterizerState();
       if (rasterState.m_cCullMode == CULL_NONE || rasterState.m_cCullMode == CULL_FRONT)
@@ -1081,7 +1096,10 @@ void VisMirror_cl::HandleMirror(VisRendererNodeDataObject_cl &data)
   PrepareProjectionPlanes();
 }
 
-void VisMirror_cl::SetupSingleShaderProjection(VCompiledShaderPass *shader, const hkvVec3& campos, const hkvMat3 &camrot)
+/////////////////////////////////////////////////////////////////////////////////////
+// SetupShaderProjection : Setup shader projection planes
+/////////////////////////////////////////////////////////////////////////////////////
+void VisMirror_cl::SetupShaderProjection(VCompiledShaderPass *shader, const hkvVec3 &instancePos, const hkvMat3& instanceRotation)
 {
   // Cull the whole shader?
   if (((shader->GetRenderState ()->GetRasterizerState ().m_cCullMode == CULL_FRONT) &&  m_bCameraOnFrontSide) || 
@@ -1093,8 +1111,7 @@ void VisMirror_cl::SetupSingleShaderProjection(VCompiledShaderPass *shader, cons
   shader->GetRenderState ()->SetRenderFlags ((unsigned int) -1);
 
   hkvVec3 vDir(hkvNoInitialization),vRight(hkvNoInitialization),vUp(hkvNoInitialization);
-  camrot.getAxisXYZ(&vDir,&vRight,&vUp);
-
+  m_MirrorCamRot.getAxisXYZ(&vDir,&vRight,&vUp);
   float fAngleX,fAngleY;
   m_spReflectionContext->GetFinalFOV(fAngleX,fAngleY);
   
@@ -1106,23 +1123,52 @@ void VisMirror_cl::SetupSingleShaderProjection(VCompiledShaderPass *shader, cons
   s[0] = tx*vRight.x;
   s[1] = tx*vRight.y;
   s[2] = tx*vRight.z;
-  s[3] = - (s[0]*campos.x+s[1]*campos.y+s[2]*campos.z);
+  s[3] = - (s[0]*m_vMirrorPos.x+s[1]*m_vMirrorPos.y+s[2]*m_vMirrorPos.z);
   shader->GetConstantBuffer (VSS_VertexShader)->SetSingleParameterF("refPlaneS", s);
 
   float t[4];
   t[0] = ty*vUp.x;
   t[1] = ty*vUp.y;
   t[2] = ty*vUp.z;
-  t[3] = - (t[0]*campos.x+t[1]*campos.y+t[2]*campos.z);
+  t[3] = - (t[0]*m_vMirrorPos.x+t[1]*m_vMirrorPos.y+t[2]*m_vMirrorPos.z);
   shader->GetConstantBuffer (VSS_VertexShader)->SetSingleParameterF("refPlaneT", t);
 
   float q[4];
   q[0] = vDir.x;
   q[1] = vDir.y;
   q[2] = vDir.z;
-  q[3] = - (q[0]*campos.x+q[1]*campos.y+q[2]*campos.z);
+  q[3] = - (q[0]*m_vMirrorPos.x+q[1]*m_vMirrorPos.y+q[2]*m_vMirrorPos.z);
   shader->GetConstantBuffer (VSS_VertexShader)->SetSingleParameterF("refPlaneQ", q);
 
+  float mmv[4];
+  mmv[0] = instanceRotation.m_ElementsCM[0]; mmv[1] = instanceRotation.m_ElementsCM[3]; mmv[2] = instanceRotation.m_ElementsCM[6]; mmv[3] = 0.0f;
+  shader->GetConstantBuffer (VSS_VertexShader)->SetSingleParameterF("mmv0", mmv);
+
+  mmv[0] = instanceRotation.m_ElementsCM[1]; mmv[1] = instanceRotation.m_ElementsCM[4]; mmv[2] = instanceRotation.m_ElementsCM[7]; mmv[3] = 0.0f;
+  shader->GetConstantBuffer (VSS_VertexShader)->SetSingleParameterF("mmv1", mmv);
+
+  mmv[0] = instanceRotation.m_ElementsCM[2]; mmv[1] = instanceRotation.m_ElementsCM[5]; mmv[2] = instanceRotation.m_ElementsCM[8]; mmv[3] = 0.0f;
+  shader->GetConstantBuffer (VSS_VertexShader)->SetSingleParameterF("mmv2", mmv);
+
+  mmv[0] = instancePos[0]; mmv[1] = instancePos[1]; mmv[2] = instancePos[2]; mmv[3] = 0.0f;
+  shader->GetConstantBuffer (VSS_VertexShader)->SetSingleParameterF("mmvpos", mmv);
+
+  shader->GetConstantBuffer(VSS_PixelShader)->SetSingleParameterF("TexSize", (float)m_spRenderTarget_Refl->GetTextureWidth(), (float)m_spRenderTarget_Refl->GetTextureHeight(),
+    1.0f / m_spRenderTarget_Refl->GetTextureWidth(), 1.0f / m_spRenderTarget_Refl->GetTextureHeight());
+
+  shader->m_bModified = true; // avoid early-out in engine [#18302]
+}
+
+
+///////////////////////////////////////////////////////////////////////////////////////
+// PrepareProjectionPlanes : Updates the shader projection planes
+///////////////////////////////////////////////////////////////////////////////////////
+void VisMirror_cl::PrepareProjectionPlanes()
+{
+  if (!m_spMirrorTechnique)
+    return;
+
+  // evaluate instance position:
   hkvMat3 mat(hkvNoInitialization);
   hkvVec3 pos(hkvNoInitialization); 
   if (m_pReferenceObject)
@@ -1150,36 +1196,13 @@ void VisMirror_cl::SetupSingleShaderProjection(VCompiledShaderPass *shader, cons
     VASSERT(false);
   }
 
-  float mmv[4];
-  mmv[0] = mat.m_ElementsCM[0]; mmv[1] = mat.m_ElementsCM[3]; mmv[2] = mat.m_ElementsCM[6]; mmv[3] = 0.0f;
-  shader->GetConstantBuffer (VSS_VertexShader)->SetSingleParameterF("mmv0", mmv);
-
-  mmv[0] = mat.m_ElementsCM[1]; mmv[1] = mat.m_ElementsCM[4]; mmv[2] = mat.m_ElementsCM[7]; mmv[3] = 0.0f;
-  shader->GetConstantBuffer (VSS_VertexShader)->SetSingleParameterF("mmv1", mmv);
-
-  mmv[0] = mat.m_ElementsCM[2]; mmv[1] = mat.m_ElementsCM[5]; mmv[2] = mat.m_ElementsCM[8]; mmv[3] = 0.0f;
-  shader->GetConstantBuffer (VSS_VertexShader)->SetSingleParameterF("mmv2", mmv);
-
-  mmv[0] = pos[0]; mmv[1] = pos[1]; mmv[2] = pos[2]; mmv[3] = 0.0f;
-  shader->GetConstantBuffer (VSS_VertexShader)->SetSingleParameterF("mmvpos", mmv);
-
-  shader->GetConstantBuffer(VSS_PixelShader)->SetSingleParameterF("TexSize", (float)m_spRenderTarget_Refl->GetTextureWidth(), (float)m_spRenderTarget_Refl->GetTextureHeight(),
-    1.0f / m_spRenderTarget_Refl->GetTextureWidth(), 1.0f / m_spRenderTarget_Refl->GetTextureHeight());
-
-  shader->m_bModified = true; // Avoid early-out in engine [#18302]
-}
-
-void VisMirror_cl::PrepareProjectionPlanes()
-{
-  if (!m_spMirrorTechnique)
-    return;
-
   const int iShaderCount = m_spMirrorTechnique->m_Shaders.Count();
 
-  // Set planes for all shaders in the effect
+  // set planes for all shaders in the effect
   for (int i=0;i<iShaderCount;i++)
-    SetupSingleShaderProjection(m_spMirrorTechnique->m_Shaders.GetAt(i), m_vMirrorPos, m_MirrorCamRot);
+    SetupShaderProjection(m_spMirrorTechnique->m_Shaders.GetAt(i), pos, mat);
 }
+
 
 V_IMPLEMENT_SERIAL( VisMirror_cl, VisObject3D_cl, 0, &g_VisionEngineModule );
 void VisMirror_cl::Serialize( VArchive &ar )
@@ -1329,7 +1352,7 @@ void VisMirror_cl::Serialize( VArchive &ar )
 VisMirror_cl::VReflectionShaderSets_e g_TempMode = VisMirror_cl::AlwaysSimple;
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

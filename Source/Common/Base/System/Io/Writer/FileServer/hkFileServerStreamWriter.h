@@ -9,17 +9,18 @@
 #define HK_BASE_FILESERVER_STREAMWRITER_H
 
 class hkSocket;
-class hkFileServerStreamWriter : public hkStreamWriter
+class hkCriticalSection;
+class HK_EXPORT_COMMON hkFileServerStreamWriter : public hkStreamWriter
 {
 
 public:
 	HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_STREAM);
 
-	hkFileServerStreamWriter ( hkSocket* connection, hkUint32 m_id );
+	hkFileServerStreamWriter ( hkSocket* connection, hkUint32 m_id, hkCriticalSection* socketLock );
 	void close();
 	virtual ~hkFileServerStreamWriter ();
 	virtual int write( const void* buf, int nbytes);
-	virtual void flush() { } // write waits on ack so final
+	virtual void flush(); 
 	virtual hkBool isOk() const;
 
 	virtual hkBool seekTellSupported() const;
@@ -32,6 +33,7 @@ public:
 		CLOSE = 0x22,
 		SEEK = 0x23,
 		TELL = 0x24,
+		FLUSH = 0x25,
 	};
 
 	enum InCommands
@@ -43,12 +45,13 @@ public:
 
 	hkSocket* m_socket;
 	hkUint32 m_id;
+	class hkCriticalSection* m_socketLock;
 };
 
 #endif //HK_BASE_FILESERVER_STREAMWRITER_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

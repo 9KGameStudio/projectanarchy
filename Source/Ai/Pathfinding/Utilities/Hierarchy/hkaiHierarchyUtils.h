@@ -26,16 +26,16 @@ class hkaiAstarEdgeFilter;
 
 	/// Utilities for constructing clusters of graph nodes (e.g., nav mesh faces).
 	/// These clusters can the be used as a good heuristic for A* searches.
-class hkaiHierarchyUtils
+class HK_EXPORT_AI hkaiHierarchyUtils
 {
 public:
 	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_AI, hkaiHierarchyUtils);
 	HK_DECLARE_REFLECTION();
 
 		/// Cluster generation settings.
-	struct ClusterSettings
+	struct HK_EXPORT_AI ClusterSettings
 	{
-		//+version(1)
+		//+version(2)
 		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_AI, ClusterSettings);
 		HK_DECLARE_REFLECTION();
 		ClusterSettings();
@@ -44,12 +44,6 @@ public:
 			/// The desired number of faces per cluster.
 			/// This is approximate and will vary with the actual nav mesh.
 		int m_desiredFacesPerCluster; //+default(20)
-
-			/// Whether or not every region is guaranteed to get at least one cluster.
-			/// If this is set to false, regions with fewer faces than the group size will not receive a node in the 
-			/// graph. This is a more efficient distribution of the nodes, but means that A* searchs between disconnected
-			/// regions won't early out (and could flood fill).
-		hkBool m_ensureClusterPerRegion; //+default(true)
 
 			/// Search parameters used when determining the final costs for graph edges.
 			/// You can specifiy e.g. an hkaiAstarCostModifier to make the costs as close to possible to the cost of an
@@ -65,11 +59,6 @@ public:
 
 		/// Creates a cluster of the input nav mesh using the specified ClusterSettings.
 	static void HK_CALL clusterNavMesh( hkaiNavMesh& mesh, hkaiDirectedGraphExplicitCost& graphOut, const ClusterSettings& settings);
-
-		/// Creates a cluster of the input nav mesh.
-		/// Each cluster contains approximately blockSize faces per cluster.
-		/// This interface is deprecrated and may be removed soon.
-	static void HK_CALL clusterNavMesh( hkaiNavMesh& mesh, hkaiDirectedGraphExplicitCost& graphOut, int desiredNumGroups, bool ensureClusterPerRegion = true, const hkaiAstarCostModifier* costModifier = HK_NULL, const hkaiAstarEdgeFilter* edgeFilter = HK_NULL);
 	
 
 	//
@@ -77,7 +66,7 @@ public:
 	//
 
 		/// Sortable pair of representative and group.
-	struct RepGroupPair
+	struct HK_EXPORT_AI RepGroupPair
 	{
 		int m_representative;
 		int m_group;
@@ -89,13 +78,13 @@ public:
 	};
 
 		/// A 2d array which is sparse in one direction and direct in the other.
-	struct SemiSparse2dArraySorted
+	struct HK_EXPORT_AI SemiSparse2dArraySorted
 	{
 		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_AI, SemiSparse2dArraySorted );
 		int getSize() { return m_n; }
 
 			/// Cost of travelling to edge t.
-		struct Cost
+		struct HK_EXPORT_AI Cost
 		{
 			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_AI, Cost );
 			int t;
@@ -126,11 +115,11 @@ public:
 
 		/// A simple structure for caching costs between nodes in a graph.
 		/// This is used during graph clustering to get the costs between several nearest neighbors for a graph node.
-	struct CostAdaptor
+	struct HK_EXPORT_AI CostAdaptor
 	{
 		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_AI, CostAdaptor );
 		typedef hkReal PathCost;
-		typedef int SearchIndex;
+		typedef hkaiPackedKey SearchIndex;
 
 		typedef hkaiGraphMultiDistanceHeuristic<hkaiNavMeshFaceGraph>  Heuristic;
 		CostAdaptor(SemiSparse2dArray& costs, int sourceNid);
@@ -138,7 +127,6 @@ public:
 		PathCost getCost( SearchIndex nid ) const;
 		void setCost( Heuristic* h_unused, SearchIndex nid, PathCost d );
 		bool isCostTooHigh( PathCost c) { return false; }
-		hkBool32 estimatedCostLess( SearchIndex a, SearchIndex b ) const;
 
 		PathCost estimatedCost( SearchIndex a ) const;
 		PathCost estimatedCostCurrent( SearchIndex a ) const;
@@ -153,7 +141,7 @@ public:
 #endif // HKAI_HIERARCHY_UTILS_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

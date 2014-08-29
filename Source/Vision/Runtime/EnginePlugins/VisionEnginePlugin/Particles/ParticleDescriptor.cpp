@@ -11,7 +11,7 @@
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Particles/ParticleGroupBase.hpp>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Particles/ParticleGroupManager.hpp>
 #include <Vision/Runtime/Base/ThirdParty/tinyXML/TinyXMLHelper.hpp>
-#include <Vision/Runtime/Base/System/Memory/VMemDbg.hpp>
+
 
 
 
@@ -42,6 +42,8 @@ VisParticleGroupDescriptor_cl::VisParticleGroupDescriptor_cl(VisParticleEffectFi
   , m_bUseSmoothAnimation(false)
   , m_bStartRandomAnimFrame(false)
   , m_bAlwaysInForeground(false)
+  , m_bUseOcclusionCulling(true)
+  , m_bAlwaysVisible(false)
   , m_bHandleWhenVisible(false)// always simulate
   , m_fSizeAspect(1.f)
   , m_iFlags(PGROUPFLAGS_NONE)
@@ -57,13 +59,22 @@ VisParticleGroupDescriptor_cl::VisParticleGroupDescriptor_cl(VisParticleEffectFi
   , m_fDepthOffset(0.f)
   , m_ModColor(255,255,255,255)
   , m_fApplySceneBrightness(0.f)
+  , m_iVisibleBitmask(0xffffffff)
   , m_bSortParticles(false)
   , m_bRepeatLifetime(false)
+
+  // Lighting
   , m_bSoftParticles(false)
-  , m_iVisibleBitmask(0xffffffff)
+  , m_bLightingStatic(false)
+  , m_bLightingDynamic(false)
+  , m_bDomainFreqSamplingEnabled(false)
+  , m_bShadowReceive(false)
+  , m_bUseNormalFromDiffAlpha(false)
+  , m_fDomainFreqSamplingPixelPerVertex(0.0f)
+  , m_fBacklightingScale(0.5f)
 
   //fade
-  , m_eFadeMode(VisParticleGroup_cl::FADEMODE_NONE)
+  , m_eFadeMode(VisParticleGroup_cl::FADEMODE_FOGDISTANCE)
   , m_fFadeStart(1000.f)
   , m_fFadeEnd(2000.f)
   , m_iRenderOrder(VRH_PARTICLES)
@@ -110,8 +121,6 @@ VisParticleGroupDescriptor_cl::VisParticleGroupDescriptor_cl(VisParticleEffectFi
   , m_spDestroyCreateDesc()
 
   // distortion
-  , m_bDistorted(false)
-  , m_bDistortionSizeMode(false)
   , m_bDistortionPlaneAligned(false)
   , m_bHasCustomCenter(false)
   , m_fTrailOverlap(1.0f)
@@ -121,11 +130,10 @@ VisParticleGroupDescriptor_cl::VisParticleGroupDescriptor_cl(VisParticleEffectFi
   , m_vSizeMultiplier(0)
 
    // normal
-  , m_bUseNormal(false)
   , m_vNormal(0.f, 0.f, 1.0f)
   , m_fRotationAxisRandomness(1.0f)
-  , m_vRelativePosition()
-  , m_vRelativeOrientation()
+  , m_vRelativePosition(0.0f)
+  , m_vRelativeOrientation(0.0f)
 
   // spawn
   , m_DefaultEmitter()
@@ -215,9 +223,13 @@ enum VParticleGroupDescriptorVersion_e
   PARTICLE_GROUP_DESCRIPTOR_VERSION_06 = 6,
   PARTICLE_GROUP_DESCRIPTOR_VERSION_07 = 7,
   PARTICLE_GROUP_DESCRIPTOR_VERSION_08 = 8,
-  PARTICLE_GROUP_DESCRIPTOR_VERSION_09 = 9,  //binary format of render hook constants changed
-  PARTICLE_GROUP_DESCRIPTOR_VERSION_10 = 10, //render hook mismatch fix
-  PARTICLE_GROUP_DESCRIPTOR_VERSION_CURRENT = PARTICLE_GROUP_DESCRIPTOR_VERSION_10
+  PARTICLE_GROUP_DESCRIPTOR_VERSION_09 = 9,  // binary format of render hook constants changed.
+  PARTICLE_GROUP_DESCRIPTOR_VERSION_10 = 10, // render hook mismatch fix.
+  PARTICLE_GROUP_DESCRIPTOR_VERSION_11 = 11, // Use occlusion culling.
+  PARTICLE_GROUP_DESCRIPTOR_VERSION_12 = 12, // Dynamic and static lighting options.
+  PARTICLE_GROUP_DESCRIPTOR_VERSION_13 = 13, // Removed several distortion types - all are defined over topology! Also removed old dummies and UseNormal.
+  PARTICLE_GROUP_DESCRIPTOR_VERSION_14 = 14, // Added "Always visible" property
+  PARTICLE_GROUP_DESCRIPTOR_VERSION_CURRENT = PARTICLE_GROUP_DESCRIPTOR_VERSION_14
 };
 
 V_IMPLEMENT_SERIALX( VisParticleGroupDescriptor_cl);
@@ -234,7 +246,10 @@ void VisParticleGroupDescriptor_cl::SerializeX( VArchive &ar )
 
     if (iVersion>=PARTICLE_GROUP_DESCRIPTOR_VERSION_02)
     {
-      ar >> m_eTopology;
+      char topology;
+      ar >> topology;
+      m_eTopology = static_cast<VIS_PARTICLE_TOPOLOGY_e>(topology);
+
       ar >> m_sMeshFilename;
     }
     ar >> m_sTextureFilename;
@@ -247,6 +262,14 @@ void VisParticleGroupDescriptor_cl::SerializeX( VArchive &ar )
     ar >> m_bUseSmoothAnimation;
     ar >> m_bStartRandomAnimFrame;
     ar >> m_bAlwaysInForeground;
+    if(iVersion >= PARTICLE_GROUP_DESCRIPTOR_VERSION_11)
+    {
+      ar >> m_bUseOcclusionCulling;
+    }
+    if(iVersion >= PARTICLE_GROUP_DESCRIPTOR_VERSION_14)
+    {
+      ar >> m_bAlwaysVisible;
+    }
     ar >> m_bHandleWhenVisible;
     ar >> m_fSizeAspect;
     ar >> m_iFlags;
@@ -270,19 +293,42 @@ void VisParticleGroupDescriptor_cl::SerializeX( VArchive &ar )
       ar >> bUseSceneBrightness;
       m_fApplySceneBrightness = bUseSceneBrightness ? 1.0f : 0.0f;
     }
-    bool bDummy;
-    ar >> bDummy;
+
+    if (iVersion < PARTICLE_GROUP_DESCRIPTOR_VERSION_13)
+    {
+      bool bDummy;
+      ar >> bDummy;
+    }
+
     ar >> m_bSortParticles;
     ar >> m_bRepeatLifetime;
 
     if (iVersion >= PARTICLE_GROUP_DESCRIPTOR_VERSION_05)
       ar >> m_bSoftParticles;
+    if (iVersion >= PARTICLE_GROUP_DESCRIPTOR_VERSION_12)
+    {
+      ar >> m_bLightingStatic;
+      ar >> m_bLightingDynamic;
+      ar >> m_bDomainFreqSamplingEnabled;
+      ar >> m_fDomainFreqSamplingPixelPerVertex;
+      ar >> m_bShadowReceive;
+      ar >> m_fBacklightingScale;
+      ar >> m_bUseNormalFromDiffAlpha;
+    }
     ar >> m_iVisibleBitmask;
 
-    VColorRef dummy;
-    ar >> dummy;
-    ar >> dummy;
-    ar >> (int &)m_eFadeMode;
+    if (iVersion < PARTICLE_GROUP_DESCRIPTOR_VERSION_13)
+    {
+      VColorRef dummy;
+      ar >> dummy;
+      ar >> dummy;
+    }
+
+    int iFadeMode;
+    ar >> iFadeMode;
+    if (iFadeMode == 0) // FADEMODE_NONE was removed
+      iFadeMode = VisParticleGroup_cl::FADEMODE_FOGDISTANCE;
+    m_eFadeMode = static_cast<VisParticleGroup_cl::FadeMode_e>(iFadeMode);
     ar >> m_fFadeStart;
     ar >> m_fFadeEnd;
 
@@ -336,9 +382,14 @@ void VisParticleGroupDescriptor_cl::SerializeX( VArchive &ar )
     ar >> m_sDestroyCreateGroup;
     ar >> m_iOnDestroyCopyFlags;
 
-    ar >> m_bDistorted;
-    ar >> m_bDistortionSizeMode;
+    if (iVersion < PARTICLE_GROUP_DESCRIPTOR_VERSION_13)
+    {
+      bool dummy;
+      ar >> dummy; // m_bDistorted
+      ar >> dummy; // m_bDistortionSizeMode
+    }
     ar >> m_bDistortionPlaneAligned;
+    
     ar >> m_bHasCustomCenter;
 
     ar >> m_FixDistortionLength;
@@ -347,7 +398,11 @@ void VisParticleGroupDescriptor_cl::SerializeX( VArchive &ar )
     if (iVersion >= PARTICLE_GROUP_DESCRIPTOR_VERSION_07)
       ar >> m_fTrailOverlap; // vers.7
 
-    ar >> m_bUseNormal;
+    if (iVersion < PARTICLE_GROUP_DESCRIPTOR_VERSION_13)
+    {
+      bool dummy;
+      ar >> dummy; //m_bUseNormal;
+    }
     m_vNormal.SerializeAsVisVector (ar);
     m_vRelativePosition.SerializeAsVisVector (ar);
     m_vRelativeOrientation.SerializeAsVisVector (ar);
@@ -376,21 +431,23 @@ void VisParticleGroupDescriptor_cl::SerializeX( VArchive &ar )
     ar << iVersion;
     ar << m_bActive;
     ar << m_sName;
-    ar << m_sDescription;  // version 6
-    ar << m_eTopology;     // version 2
-    ar << m_sMeshFilename; // version 2
+    ar << m_sDescription;    // version 6
+    ar << (char)m_eTopology; // version 2
+    ar << m_sMeshFilename;   // version 2
 
     ar << m_sTextureFilename;
     ar << m_sNormalmapFilename;
     ar << m_sSpecularmapFilename;
     ar << m_sRandomColorFilename;
 
-    ar << (int &)m_eTransp;
+    ar << static_cast<int>(m_eTransp);
     ar << m_iAnimSubDiv[0] << m_iAnimSubDiv[1];
     ar << m_iUsedAnimFrames;
     ar << m_bUseSmoothAnimation;
     ar << m_bStartRandomAnimFrame;
     ar << m_bAlwaysInForeground;
+    ar << m_bUseOcclusionCulling;
+    ar << m_bAlwaysVisible;
     ar << m_bHandleWhenVisible;
     ar << m_fSizeAspect;
     ar << m_iFlags;
@@ -405,17 +462,22 @@ void VisParticleGroupDescriptor_cl::SerializeX( VArchive &ar )
     ar << m_ModColor;
     ar << m_fApplySceneBrightness;
 
-    bool bDummy = false;
-    ar << bDummy;
     ar << m_bSortParticles;
     ar << m_bRepeatLifetime;
     ar << m_bSoftParticles;
+
+    // version 12
+    ar << m_bLightingStatic;
+    ar << m_bLightingDynamic;
+    ar << m_bDomainFreqSamplingEnabled;
+    ar << m_fDomainFreqSamplingPixelPerVertex;
+    ar << m_bShadowReceive;
+    ar << m_fBacklightingScale;
+    ar << m_bUseNormalFromDiffAlpha;
+
     ar << m_iVisibleBitmask;
 
-    VColorRef dummy (0, 0, 0, 0);
-    ar << dummy;
-    ar << dummy;
-    ar << (int &)m_eFadeMode;
+    ar << static_cast<int>(m_eFadeMode);
     ar << m_fFadeStart;
     ar << m_fFadeEnd;
     ar << m_iRenderOrder;
@@ -424,14 +486,14 @@ void VisParticleGroupDescriptor_cl::SerializeX( VArchive &ar )
     VCurve2D::DoArchiveLookupExchange(ar,m_spSizeCurve);
     VCurve2D::DoArchiveLookupExchange(ar,m_spAnimCurve);
 
-    ar << (int &)m_eParticleAnimMode;
+    ar << static_cast<int>(m_eParticleAnimMode);
     ar << m_ParticleLifeTime;
     ar << m_ParticleAnimTime;
     ar << m_ParticleSpeed;
     ar << m_ParticleStartSize;
     ar << m_ParticleSizeGrowth;
 
-    ar <<  (int &)m_eRotationMode;
+    ar << static_cast<int>(m_eRotationMode);
     ar << m_fInitialAngle[0] << m_fInitialAngle[1];
     ar << m_fConstRotationSpeed[0] << m_fConstRotationSpeed[1];
     VCurve2D::DoArchiveLookupExchange(ar,m_spRotationCurve);
@@ -451,8 +513,6 @@ void VisParticleGroupDescriptor_cl::SerializeX( VArchive &ar )
     ar << m_sDestroyCreateGroup;
     ar << m_iOnDestroyCopyFlags;
 
-    ar << m_bDistorted;
-    ar << m_bDistortionSizeMode;
     ar << m_bDistortionPlaneAligned;
     ar << m_bHasCustomCenter;
 
@@ -461,7 +521,6 @@ void VisParticleGroupDescriptor_cl::SerializeX( VArchive &ar )
     ar << m_vSizeMultiplier;
     ar << m_fTrailOverlap; // vers.7
 
-    ar << m_bUseNormal;
     m_vNormal.SerializeAsVisVector (ar);
     m_vRelativePosition.SerializeAsVisVector (ar);
     m_vRelativeOrientation.SerializeAsVisVector (ar);
@@ -492,7 +551,7 @@ bool VisParticleGroupDescriptor_cl::TechniqueUsesLightGrid(VCompiledTechnique *p
 {
   if (!pTech)
     return false;
-  for (int i=0;i<pTech->GetShaderCount();i++)
+  for (unsigned int i=0;i<pTech->GetShaderCount();i++)
     if (pTech->GetShader(i)->GetRenderState ()->GetTrackingMask () & (VSHADER_TRACKING_LIGHTGRID_PS | VSHADER_TRACKING_LIGHTGRID_VS | VSHADER_TRACKING_LIGHTGRID_GS))
       return true;
   return false;
@@ -536,9 +595,9 @@ void VisParticleGroupDescriptor_cl::Finish(bool bForceCreateLookups)
 
   if (!m_bHasCustomCenter) // fixup non-default center for backwards compatibility
   {
-    if (m_bDistorted)
+    if (m_eTopology != PARTICLE_TOPOLOGY_MESH && m_eTopology != PARTICLE_TOPOLOGY_BILLBOARDS)
     {
-      if (m_bDistortionSizeMode)
+      if (m_eTopology == PARTICLE_TOPOLOGY_RINGWAVE)
         m_vParticleCenter.x = -m_vSizeMultiplier.w;
       else
         m_vParticleCenter.x = 0.f;
@@ -574,22 +633,24 @@ void VisParticleGroupDescriptor_cl::Finish(bool bForceCreateLookups)
   // backwards compatibility fix-up: extract from other properties
   if (m_eTopology==PARTICLE_TOPOLOGY_UNKNOWN)
   {
-    if (m_bDistortionSizeMode && hkvMath::isFloatEqual (m_vSizeMultiplier.w,-0.5f))
-      m_eTopology = PARTICLE_TOPOLOGY_RINGWAVE;
+    if (!m_sMeshFilename.IsEmpty())
+      m_eTopology = PARTICLE_TOPOLOGY_MESH;
     else if (m_FixDistortionLength.m_fAverage < 0.0f && m_SpeedMultiplier.m_fAverage < 0.0f)
       m_eTopology = PARTICLE_TOPOLOGY_BILLBOARDS;
     else if (m_SpeedMultiplier.m_fAverage < 0.0f)
       m_eTopology = PARTICLE_TOPOLOGY_STRETCH_FIXLENGTH;
     else if (m_FixDistortionLength.m_fAverage < 0.0f)
       m_eTopology = PARTICLE_TOPOLOGY_STRETCH_VELOCITY;
-    else if (!m_sMeshFilename.IsEmpty())
-      m_eTopology = PARTICLE_TOPOLOGY_MESH;
   }
-  VASSERT(m_eTopology!=PARTICLE_TOPOLOGY_UNKNOWN);
+  if (m_eTopology == PARTICLE_TOPOLOGY_UNKNOWN)
+  {
+    hkvLog::Error("Particle group \"%s\" topology was unknown and couldn't be reconstructed from other settings! Will fallback to billboard topology.", GetName());
+    m_eTopology = PARTICLE_TOPOLOGY_BILLBOARDS;
+  }
 
   m_MeshBoundingBox.setZero();
   m_spGeometry = NULL;
-  if (!m_sMeshFilename.IsEmpty() && m_eTopology==PARTICLE_TOPOLOGY_MESH)
+  if (!m_sMeshFilename.IsEmpty() && m_eTopology == PARTICLE_TOPOLOGY_MESH)
   {
     char szMeshFile[FS_MAX_PATH];
     MakeFilenameAbsolute(szMeshFile,m_sMeshFilename);
@@ -688,13 +749,25 @@ void VisParticleGroupDescriptor_cl::InitRandomParticle(ParticleExt_t *pParticle,
   hkvMat3 emitCS(hkvNoInitialization);
   bool bEmitCSValid = false;
 
+  bool bOnDestroyParticle = pGroup->m_pParentGroup && pGroup->m_pParentGroup->m_spOnDestroyCreateGroup == pGroup;
+  if (bOnDestroyParticle)
+  {
+    hkvMat3 mLocalRot;
+    mLocalRot.setFromEulerAngles(pGroup->GetLocalOrientation().z, pGroup->GetLocalOrientation().y, pGroup->GetLocalOrientation().x);
+    emitCS = pGroup->GetRotationMatrix() * mLocalRot;
+    bEmitCSValid = true;
+  }
+
   // position
   if (iCopyFlags&PARTICLE_COPYFLAG_POSITION)
   {
-    pParticle->pos[0] = pSrcParticle->pos[0];
-    pParticle->pos[1] = pSrcParticle->pos[1];
-    pParticle->pos[2] = pSrcParticle->pos[2];
-  } else
+    pParticle->m_vPosition = pSrcParticle->m_vPosition;
+    
+    // If the particle was spawned by a another group on-destroy, apply relative position offset anyways!
+    if (bOnDestroyParticle)
+      pParticle->m_vPosition += pGroup->GetRotationMatrix() * pGroup->GetLocalPosition();
+  }
+  else
   {
     VASSERT(pEmitter);
     pEmitter->SpawnSingleParticle(pParticle, pGroup, iThisColor, emitCS, bEmitCSValid);
@@ -702,10 +775,9 @@ void VisParticleGroupDescriptor_cl::InitRandomParticle(ParticleExt_t *pParticle,
 
   if (iCopyFlags&PARTICLE_COPYFLAG_VELOCITY)
   {
-    pParticle->velocity[0] = pSrcParticle->velocity[0];
-    pParticle->velocity[1] = pSrcParticle->velocity[1];
-    pParticle->velocity[2] = pSrcParticle->velocity[2];
-  } else
+    pParticle->m_vVelocity = pSrcParticle->m_vVelocity;
+  }
+  else
   {
     VASSERT(pEmitter);
     // initial velocity
@@ -733,55 +805,61 @@ void VisParticleGroupDescriptor_cl::InitRandomParticle(ParticleExt_t *pParticle,
       // all directions
       VisParticleEmitter_cl::Helper_GetRandomOnSpherePosition(vTempVec,GetRandomSpeed(randGen), randGen);
     }
-    pParticle->velocity[0] = fScale * vTempVec.x;
-    pParticle->velocity[1] = fScale * vTempVec.y;
-    pParticle->velocity[2] = fScale * vTempVec.z;
+    pParticle->m_vVelocity = fScale * vTempVec;
   }
 
   // distortion
-  if (m_bDistorted)
+  if (pGroup->GetUseDistortion())
   {
-    const char &cDistortion(pGroup->m_cUseDistortion);
-    if (m_bDistortionSizeMode)
+    switch (m_eTopology)
     {
-      pParticle->distortion[0] = m_vSizeMultiplier.x * pParticle->size;
-      pParticle->distortion[1] = m_vSizeMultiplier.y * pParticle->size;
-      pParticle->distortion[2] = m_vSizeMultiplier.z * pParticle->size;
-    }
-    else if (cDistortion==DISTORTION_TYPE_FIXLEN)
-    {
-      //pParticle->distorted = DISTORTION_TYPE_FIXLEN;
-      pParticle->m_fDistortionMult = - m_FixDistortionLength.GetRandomValue(randGen);
-      hkvVec3 dist(pParticle->velocity[0],pParticle->velocity[1],pParticle->velocity[2]);
-      if (!dist.isZero ())
+    case PARTICLE_TOPOLOGY_RINGWAVE:
       {
-        dist.setLength(pParticle->m_fDistortionMult);
-        pParticle->distortion[0] = fScale * dist.x;
-        pParticle->distortion[1] = fScale * dist.y;
-        pParticle->distortion[2] = fScale * dist.z;
-      } else
-      {
-        pParticle->distortion[0] = 0.f;
-        pParticle->distortion[1] = 0.f;
-        pParticle->distortion[2] = 0.f;
+        pParticle->distortion[0] = m_vSizeMultiplier.x * pParticle->size;
+        pParticle->distortion[1] = m_vSizeMultiplier.y * pParticle->size;
+        pParticle->distortion[2] = m_vSizeMultiplier.z * pParticle->size;
       }
-    } 
-    else if (cDistortion==DISTORTION_TYPE_VELOCITY)
-    {
-      //pParticle->distorted = DISTORTION_TYPE_VELOCITY;
-      pParticle->m_fDistortionMult = - m_SpeedMultiplier.GetRandomValue(randGen);
-      pParticle->distortion[0] = fScale * pParticle->m_fDistortionMult * pParticle->velocity[0];
-      pParticle->distortion[1] = fScale * pParticle->m_fDistortionMult * pParticle->velocity[1];
-      pParticle->distortion[2] = fScale * pParticle->m_fDistortionMult * pParticle->velocity[2];
-    } else
-    {
-      pParticle->distortion[0] = pParticle->distortion[1] = pParticle->distortion[2] = 0.f;
+      break;
+
+    case PARTICLE_TOPOLOGY_STRETCH_FIXLENGTH:
+      {
+        pParticle->m_fDistortionMult = -m_FixDistortionLength.GetRandomValue(randGen);
+        hkvVec3 dist = pParticle->m_vVelocity;
+        if (!dist.isZero())
+        {
+          dist.setLength(pParticle->m_fDistortionMult);
+          pParticle->distortion[0] = fScale * dist.x;
+          pParticle->distortion[1] = fScale * dist.y;
+          pParticle->distortion[2] = fScale * dist.z;
+        }
+        else
+        {
+          pParticle->distortion[0] = 0.f;
+          pParticle->distortion[1] = 0.f;
+          pParticle->distortion[2] = 0.f;
+        }
+      }
+      break;
+
+    case PARTICLE_TOPOLOGY_STRETCH_VELOCITY:
+      {
+        pParticle->m_fDistortionMult = -m_SpeedMultiplier.GetRandomValue(randGen);
+        pParticle->distortion[0] = fScale * pParticle->m_fDistortionMult * pParticle->m_vVelocity[0];
+        pParticle->distortion[1] = fScale * pParticle->m_fDistortionMult * pParticle->m_vVelocity[1];
+        pParticle->distortion[2] = fScale * pParticle->m_fDistortionMult * pParticle->m_vVelocity[2];
+      }
+      break;
+
+    default:
+      {
+        pParticle->distortion[0] = pParticle->distortion[1] = pParticle->distortion[2] = 0.f;
+      }
     }
     // this looks better when spawning distorted particles
     const float fStartMove = 0.9f; // if 1.0 then the distorted particles initially moved completely outside the emitter
-    pParticle->pos[0] -= pParticle->distortion[0]*fStartMove;
-    pParticle->pos[1] -= pParticle->distortion[1]*fStartMove;
-    pParticle->pos[2] -= pParticle->distortion[2]*fStartMove;
+    pParticle->m_vPosition[0] -= pParticle->distortion[0]*fStartMove;
+    pParticle->m_vPosition[1] -= pParticle->distortion[1]*fStartMove;
+    pParticle->m_vPosition[2] -= pParticle->distortion[2]*fStartMove;
   }
   else
   {
@@ -790,23 +868,20 @@ void VisParticleGroupDescriptor_cl::InitRandomParticle(ParticleExt_t *pParticle,
   }
 
   // normal
-  if (m_bUseNormal) 
+  if (pGroup->GetUseNormals())
   {
-    hkvVec3& nrml = (hkvVec3&) pParticle->normal;
-    nrml = fScale * m_vNormal;
+    pParticle->m_vNormal = fScale * m_vNormal;
 
     if (!bLocalSpace)
-      nrml = pGroup->m_cachedRotMatrix * nrml; // rotate normal
+      pParticle->m_vNormal = pGroup->m_cachedRotMatrix * pParticle->m_vNormal; // rotate normal
   } 
   else if (m_spGeometry!=NULL)
   {
     // for geometry shaders the normal defines the rotation axis
-    hkvVec3& nrml = (hkvVec3&) pParticle->normal;
-    VisParticleEmitter_cl::Helper_GetRandomSpherePosition(nrml,m_fRotationAxisRandomness, randGen); // m_vNormal.w defines the randomness for the axis
-    nrml += m_vNormal; // regular direction
-    nrml.normalizeIfNotZero();
+    VisParticleEmitter_cl::Helper_GetRandomSpherePosition(pParticle->m_vNormal, m_fRotationAxisRandomness, randGen); // m_vNormal.w defines the randomness for the axis
+    pParticle->m_vNormal += m_vNormal; // regular direction
+    pParticle->m_vNormal.normalizeIfNotZero();
   }
-
 
   float fAnimTime;
 
@@ -864,7 +939,7 @@ void VisParticleGroupDescriptor_cl::InitRandomParticle(ParticleExt_t *pParticle,
     default:
       VASSERT(!"Unsupported rotation mode");
   }
-  
+
   // assign modulation color (and get a random gradient if necessary)
   if (m_spRandomColorLookup!=NULL)
   {
@@ -916,10 +991,10 @@ bool VisParticleGroupDescriptor_cl::DataExchangeXML(TiXmlElement *pRoot, bool bW
   if (pGroup)
   {
     int eTopology = bWrite ? (int)m_eTopology : (int)PARTICLE_TOPOLOGY_UNKNOWN;
-    const int eTopologies[6] = {PARTICLE_TOPOLOGY_BILLBOARDS,PARTICLE_TOPOLOGY_STRETCH_VELOCITY,PARTICLE_TOPOLOGY_STRETCH_FIXLENGTH,PARTICLE_TOPOLOGY_RINGWAVE,PARTICLE_TOPOLOGY_MESH,PARTICLE_TOPOLOGY_TRAIL};
+    const int eTopologies[6] = { PARTICLE_TOPOLOGY_BILLBOARDS, PARTICLE_TOPOLOGY_STRETCH_VELOCITY, PARTICLE_TOPOLOGY_STRETCH_FIXLENGTH, PARTICLE_TOPOLOGY_RINGWAVE, PARTICLE_TOPOLOGY_MESH, PARTICLE_TOPOLOGY_TRAIL };
     const char* szTopologies[6] = {"Billboards","StretchVelocity","StretchFixLength","RingWave","Mesh","Trail"};
     XMLHelper::Exchange_Enum(pGroup,"topology",eTopology,sizeof(eTopologies)/sizeof(eTopologies[0]),szTopologies,eTopologies,bWrite);
-    m_eTopology = eTopology;
+    m_eTopology = (VIS_PARTICLE_TOPOLOGY_e)eTopology;
     XMLHelper::Exchange_Float(pGroup,"trailoverlap",m_fTrailOverlap,bWrite);
     XMLHelper::Exchange_Bool(pGroup,"localspace",m_bLocalSpace,bWrite);
     /*iRead =*/ XMLHelper::Exchange_Floats(pGroup,"localpos",m_vRelativePosition.data,3,bWrite);
@@ -980,6 +1055,14 @@ bool VisParticleGroupDescriptor_cl::DataExchangeXML(TiXmlElement *pRoot, bool bW
       }
       XMLHelper::Exchange_Float(pLighting,"applyscenebrightness",m_fApplySceneBrightness,bWrite);
       XMLHelper::Exchange_VString(pLighting,"randomcolor",m_sRandomColorFilename,bWrite);
+
+      XMLHelper::Exchange_Bool(pLighting, "staticlighting", m_bLightingStatic, bWrite);
+      XMLHelper::Exchange_Bool(pLighting, "dynamiclighting", m_bLightingDynamic, bWrite);
+      XMLHelper::Exchange_Bool(pLighting, "domainfreqsamplingenabled", m_bDomainFreqSamplingEnabled, bWrite);
+      XMLHelper::Exchange_Float(pLighting, "domainfreqsamplingpixelpervertex", m_fDomainFreqSamplingPixelPerVertex, bWrite);
+      XMLHelper::Exchange_Bool(pLighting, "shadowreceive", m_bShadowReceive, bWrite);
+      XMLHelper::Exchange_Float(pLighting, "backlightingScale", m_fBacklightingScale, bWrite);
+      XMLHelper::Exchange_Bool(pLighting, "usenormalfromdiffalpha", m_bUseNormalFromDiffAlpha, bWrite);
     }
 
     TiXmlElement *pGeometry = XMLHelper::SubNode(pGroup,"geometry",bWrite);
@@ -996,17 +1079,21 @@ bool VisParticleGroupDescriptor_cl::DataExchangeXML(TiXmlElement *pRoot, bool bW
     TiXmlElement *pVisibility = XMLHelper::SubNode(pGroup,"visibility",bWrite);
     if (pVisibility)
     {
-      XMLHelper::Exchange_BBox(pVisibility,"boundingbox",m_BoundingBox.m_vMin.data,m_BoundingBox.m_vMax.data,bWrite);
-      XMLHelper::Exchange_Float(pVisibility,"dynamicInflateInterval",m_fDynamicInflateInterval,bWrite);
-      XMLHelper::Exchange_Float(pVisibility,"depthofs",m_fDepthOffset,bWrite);
-      XMLHelper::Exchange_Bool(pVisibility,"softparticles",m_bSoftParticles,bWrite);
-      XMLHelper::Exchange_Bool(pVisibility,"alwaysinforeground",m_bAlwaysInForeground,bWrite);
-      XMLHelper::Exchange_Bool(pVisibility,"handlewhenvisible",m_bHandleWhenVisible,bWrite);
-      XMLHelper::Exchange_Int(pVisibility,"filtermask",m_iVisibleBitmask,bWrite);
+      XMLHelper::Exchange_BBox(pVisibility, "boundingbox", m_BoundingBox.m_vMin.data,m_BoundingBox.m_vMax.data, bWrite);
+      XMLHelper::Exchange_Float(pVisibility, "dynamicInflateInterval", m_fDynamicInflateInterval, bWrite);
+      XMLHelper::Exchange_Float(pVisibility, "depthofs", m_fDepthOffset, bWrite);
+
+      XMLHelper::Exchange_Bool(pVisibility, "softparticles", m_bSoftParticles, bWrite);
+
+      XMLHelper::Exchange_Bool(pVisibility, "alwaysinforeground", m_bAlwaysInForeground, bWrite);
+      XMLHelper::Exchange_Bool(pVisibility, "useocclusionculling", m_bUseOcclusionCulling, bWrite);
+      XMLHelper::Exchange_Bool(pVisibility, "alwaysvisible", m_bAlwaysVisible, bWrite);
+      XMLHelper::Exchange_Bool(pVisibility, "handlewhenvisible", m_bHandleWhenVisible, bWrite);
+      XMLHelper::Exchange_Int(pVisibility, "filtermask", m_iVisibleBitmask, bWrite);
 
       // fade particles
-      const char *fadeMode[] = {"none","fog","custom"};
-      const int fadeModeVal[3] = {VisParticleGroup_cl::FADEMODE_NONE, VisParticleGroup_cl::FADEMODE_FOGDISTANCE, VisParticleGroup_cl::FADEMODE_CUSTOM};
+      const char *fadeMode[] = {"fog", "none", "custom"};
+      const int fadeModeVal[3] = { VisParticleGroup_cl::FADEMODE_FOGDISTANCE, VisParticleGroup_cl::FADEMODE_FOGDISTANCE, VisParticleGroup_cl::FADEMODE_CUSTOM };
       XMLHelper::Exchange_Enum(pVisibility,"fadeMode",(int &)m_eFadeMode,3,fadeMode,fadeModeVal,bWrite);
       XMLHelper::Exchange_Float(pVisibility,"fadeStart",m_fFadeStart,bWrite);
       XMLHelper::Exchange_Float(pVisibility,"fadeEnd",m_fFadeEnd,bWrite);
@@ -1113,8 +1200,7 @@ bool VisParticleGroupDescriptor_cl::DataExchangeXML(TiXmlElement *pRoot, bool bW
     TiXmlElement *pDistortion = XMLHelper::SubNode(pParticles,"distortion",bWrite);
     if (pDistortion)
     {
-      XMLHelper::Exchange_Bool(pDistortion,"enabled",m_bDistorted,bWrite);
-      XMLHelper::Exchange_Bool(pDistortion,"planealigned",m_bDistortionPlaneAligned,bWrite);
+      XMLHelper::Exchange_Bool(pDistortion, "planealigned", m_bDistortionPlaneAligned, bWrite);
       m_FixDistortionLength.DataExchangeXML("fixlength",pDistortion,bWrite);
       m_SpeedMultiplier.DataExchangeXML("speedmultiplier",pDistortion,bWrite);
 
@@ -1122,7 +1208,6 @@ bool VisParticleGroupDescriptor_cl::DataExchangeXML(TiXmlElement *pRoot, bool bW
       TiXmlElement *pSizeMode = XMLHelper::SubNode(pDistortion,"sizemode",bWrite);
       if (pSizeMode)
       {
-        XMLHelper::Exchange_Bool(pSizeMode,"enabled",m_bDistortionSizeMode,bWrite);
         XMLHelper::Exchange_Floats(pSizeMode,"sizemultiplier",m_vSizeMultiplier.data,4,bWrite); // 4 components (w used for position re-center)
       }
     }
@@ -1130,8 +1215,6 @@ bool VisParticleGroupDescriptor_cl::DataExchangeXML(TiXmlElement *pRoot, bool bW
     TiXmlElement *pNormal = XMLHelper::SubNode(pParticles,"normal",bWrite);
     if (pNormal)
     {
-      XMLHelper::Exchange_Bool(pNormal,"enabled",m_bUseNormal,bWrite);
-
       hkvVec4 vTemp = m_vNormal.getAsVec4 (m_fRotationAxisRandomness);
       XMLHelper::Exchange_Floats(pNormal,"dir",vTemp.data, 4, bWrite); // m_vNormal.w is used for the randomness (e.g. geometry rotation axis)
       m_vNormal = vTemp.getAsVec3 ();
@@ -1356,7 +1439,7 @@ void VisParticleDescriptorList_cl::SerializeX( VArchive &ar, VisParticleEffectFi
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

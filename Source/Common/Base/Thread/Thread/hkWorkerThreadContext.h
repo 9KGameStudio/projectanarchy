@@ -18,7 +18,7 @@
 /// systems. Create an object of this class in your worker thread before performing any Havok work. Object 
 /// destruction takes care of shutting down the context appropriately. See hkCpuThreadPool::threadMain for an example
 /// of use.
-class hkWorkerThreadContext
+class HK_EXPORT_COMMON hkWorkerThreadContext
 {
 	public:
 
@@ -38,7 +38,7 @@ class hkWorkerThreadContext
 #endif // HK_WORKER_THREAD_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

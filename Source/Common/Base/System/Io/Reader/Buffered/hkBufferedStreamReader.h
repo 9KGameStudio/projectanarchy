@@ -20,7 +20,7 @@
 	/// This takes care of any alignment requirements from the underlying stream
 	/// (e.g. read only multiples of N bytes, read to M-byte-aligned addresses).
 	/// A side effect of buffering is that peek() becomes available.
-class hkBufferedStreamReader : public hkSeekableStreamReader
+class HK_EXPORT_COMMON hkBufferedStreamReader : public hkSeekableStreamReader
 {
 	public:
 		HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE);
@@ -68,7 +68,7 @@ class hkBufferedStreamReader : public hkSeekableStreamReader
 #endif //HKBASE_BUFFERED_STREAMREADER_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

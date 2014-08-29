@@ -13,6 +13,12 @@
 #include <Vision/Runtime/Base/Math/Vector/hkvVec3.h>
 #include <Vision/Runtime/Base/Math/Matrix/hkvMat3Helpers.h>
 
+#ifdef HKVMAT3_CHECK_FOR_NAN
+  #define HKVMAT3_INITIALIZATION_CHECK(obj) (obj)->isInitializedCheck()
+#else
+  #define HKVMAT3_INITIALIZATION_CHECK(obj)
+#endif
+
 /// \brief
 ///   A helper struct for returning matrices as contiguous array on the stack.
 struct hkvMat3_AsArray
@@ -50,28 +56,37 @@ public:
   /// @{
   ///
 
-  #ifdef HKVMATH_DEFAULTCONSTRUCTORS_INITIALIZEDATA
-    /// \brief
-    ///   DEPRECATED: Initializes the matrix to the identity.
-    ///
-    /// Prefer to (not) initialize the matrix with hkvNoInitialization.
-    ///
-    /// Note: At some point the Vision Engine will deactivate this old behavior and use the uninitialized version instead.
-    /// At that time you need to make sure that whenever you default construct a matrix, you do not rely on it being the identity.
-    ///
-    /// You can find all the places where you use the default constructor by defining 
-    /// HKVMATH_DEPRECATE_DEFAULT_CONSTRUCTOR in hkvMathConfig.h and compiling your code for Windows.
-    /// Then the compiler will generate a warning for every location where you use the default constructor.
-    /// Use the macros HKV_DISABLE_DEPRECATION and HKV_ENABLE_DEPRECATION to prevent that warning
-    /// for code that cannot be changed to use a non default constructor (such as for arrays).
-    HKVMATH_DEFAULT_CONSTRUCTOR HKV_FORCE_INLINE hkvMat3 () { setIdentity (); }
+  /// \brief
+  ///   ATTENTION: The object is NOT initialized by the constructor. You MUST initialize it yourself before using it.
+  ///
+  /// \note In Dev and Debug builds the object will be initialized with NaN values. Member functions that read the values will check that they are not NaN.
+  /// If an NaN value is encountered, those functions will trigger an assert. Thus when you run into such an assert, you have not initialized your object
+  /// after construction. Make sure you always initialize objects properly before using them.
+  HKV_FORCE_INLINE hkvMat3 ()
+  {
+#ifdef HKVMAT3_INITIALIZE_TO_NAN
 
-  #else
+    const float nan = hkvMath::generateNaN();
 
-    /// \brief
-    ///   FUTURE BEHAVIOR: Keeps the matrix uninitialized.
-    HKVMATH_DEFAULT_CONSTRUCTOR HKV_FORCE_INLINE hkvMat3 () {}
-  #endif
+    for (int i = 0; i < 9; ++i)
+      m_ElementsCM[i] = nan;
+
+#elif defined(HKVMAT3_INITIALIZE_TO_IDENTITY)
+
+    setIdentity ();
+
+#endif
+  }
+
+#ifdef HKVMAT3_CHECK_FOR_NAN
+  HKV_FORCE_INLINE void isInitializedCheck() const
+  {
+    VASSERT_MSG(!hkvMath::isNaN (m_ElementsCM[0]) && !hkvMath::isNaN (m_ElementsCM[1]) && !hkvMath::isNaN (m_ElementsCM[2]) && 
+                !hkvMath::isNaN (m_ElementsCM[3]) && !hkvMath::isNaN (m_ElementsCM[4]) && !hkvMath::isNaN (m_ElementsCM[5]) && 
+                !hkvMath::isNaN (m_ElementsCM[6]) && !hkvMath::isNaN (m_ElementsCM[7]) && !hkvMath::isNaN (m_ElementsCM[8]),
+      "This object has invalid (NaN) members.\nThis happens when you use this object without properly initializing it first, as the default constructor will set all members to NaN in debug builds.");
+  }
+#endif
 
   /// \brief
   ///   Does not initialize this object. Prefer this constructor over the default constructor.
@@ -470,6 +485,10 @@ public:
   /// As such it has the same limitations when the inversion fails.
   HKV_FORCE_INLINE const hkvMat3 getInverse () const;
 
+  /// \brief
+  ///   Returns the determinant of the matrix.
+  VBASE_IMPEXP float getDeterminant () const;
+
   ///
   /// @}
   ///
@@ -624,7 +643,7 @@ public:
   /// of code that needs to access the deprecated code.
   ///
   /// In some later update operator& will not be marked deprecated anymore.
-  const hkvMat3* getPointer () const { return this; }
+  const hkvMat3* getPointer () const { HKVMAT3_INITIALIZATION_CHECK(this); return this; }
 
   /// \brief Returns a pointer to this matrix.
   /// 
@@ -682,13 +701,9 @@ HKV_FORCE_INLINE const hkvVec3 operator* (const hkvMat3& lhs, const hkvVec3& rhs
 ///   Multiplication operator.
 VBASE_IMPEXP const hkvVec3d operator* (const hkvMat3& lhs, const hkvVec3d& rhs);
 
-#ifdef HKVMATH_ENABLE_NEW_OPERATORS
-  /// \brief
-  ///   Multiplication operator.
-  HKV_FORCE_INLINE const hkvMat3 operator* (const hkvMat3& lhs, const hkvMat3& rhs);
-#else
-  const hkvMat3 operator* (const hkvMat3& lhs, const hkvMat3& rhs);
-#endif
+/// \brief
+///   Multiplication operator.
+HKV_FORCE_INLINE const hkvMat3 operator* (const hkvMat3& lhs, const hkvMat3& rhs);
 
 /// \brief
 ///   Multiplies all components of the matrix by f.
@@ -708,7 +723,7 @@ HKV_FORCE_INLINE const hkvMat3 operator/ (const hkvMat3& lhs, float f);
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

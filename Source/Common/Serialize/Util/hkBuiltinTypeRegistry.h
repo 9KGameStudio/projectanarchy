@@ -18,7 +18,7 @@ class hkTypeInfoRegistry;
 /// All typeinfos and classes in the StaticLinkedTypeInfos and
 /// StaticLinkedClasses lists are added to the registry when
 /// this singleton is created.
-class hkBuiltinTypeRegistry : public hkReferencedObject, public hkSingleton<hkBuiltinTypeRegistry>
+class HK_EXPORT_COMMON hkBuiltinTypeRegistry : public hkReferencedObject, public hkSingleton<hkBuiltinTypeRegistry>
 {
 	public:
 	HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE);
@@ -59,7 +59,7 @@ HK_SINGLETON_SPECIALIZATION_DECL(hkBuiltinTypeRegistry);
 #endif // HK_SERIALIZE_BUILTINTYPEREGISTRY_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

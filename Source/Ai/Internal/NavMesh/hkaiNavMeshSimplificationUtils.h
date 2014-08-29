@@ -10,7 +10,7 @@
 
 #include <Ai/Pathfinding/NavMesh/hkaiNavMesh.h>
 
-extern const class hkClass hkaiNavMeshSimplificationUtilsSettingsClass;
+extern HK_EXPORT_AI const class hkClass hkaiNavMeshSimplificationUtilsSettingsClass;
 
 class hkaiNavMeshGenerationProgressCallback;
 struct hkaiNavMeshGenerationSettings;
@@ -18,14 +18,14 @@ class hkaiEdgeGeometryRaycaster;
 class hkBitField;
 
 /// This utility class simplifies nav meshes.
-class hkaiNavMeshSimplificationUtils
+class HK_EXPORT_AI hkaiNavMeshSimplificationUtils
 {
 	public:
 		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE,hkaiNavMeshSimplificationUtils);
 
 			/// Settings for the addition of extra vertices (also known as Steiner points) to the nav mesh in order to reduce long edges.	
 			/// These generally improve the quality of the mesh, but increase the final data size by roughly m_vertexFraction.
-		struct ExtraVertexSettings
+		struct HK_EXPORT_AI ExtraVertexSettings
 		{
 				//+version(4)
 			HK_DECLARE_REFLECTION();
@@ -72,7 +72,7 @@ class hkaiNavMeshSimplificationUtils
 
 				/// When using PROPORTIONAL_TO_VERTICES, additional vertices will only be considered for partitions
 				/// greater than this area. This is ignored when using PROPORTIONAL_TO_AREA.
-			hkReal m_minPartitionArea; //+default(1000.0f)
+			hkReal m_minPartitionArea;	//+default(1000.0f)
 										//+hk.RangeReal(absmin=0.0, softmax=10000.0)
 
 				/// The number of smoothing steps performed. Increasing this will increase the generation time.
@@ -81,7 +81,8 @@ class hkaiNavMeshSimplificationUtils
 
 				/// Controls how much the old point contributes at each iteration.
 				/// This doesn't have much effect on the final mesh and doesn't generally need to be tuned.
-			hkReal m_iterationDamping; //+default(.05f)
+			hkReal m_iterationDamping;	//+default(.05f)
+										//+hk.RangeReal(absmin=0.0, absmax=1.0)
 
 				/// Whether or not to automatically split long boundary edges.
 			hkBool m_addVerticesOnBoundaryEdges; //+default(true)
@@ -91,21 +92,25 @@ class hkaiNavMeshSimplificationUtils
 
 				/// If m_addVerticesOnBoundaryEdges is enabled, boundary edges over this length will be split
 				/// into smaller segments.
-			hkReal m_boundaryEdgeSplitLength; //+default(50.0f)
+			hkReal m_boundaryEdgeSplitLength;	//+default(50.0f)
+												//+hk.RangeReal(absmin="HK_REAL_MIN", softmin=1.0)
 
 				/// If m_addVerticesOnPartitionBorders is enabled, partition border edges over this length will be split
 				/// into smaller segments.
-			hkReal m_partitionBordersSplitLength; //+default(50.0f)
+			hkReal m_partitionBordersSplitLength;	//+default(50.0f)
+													//+hk.RangeReal(absmin="HK_REAL_MIN", softmin=1.0)
 
 				/// Tolerance for determining if a user vertex (m_userVertices) is on a boundary or partition border edge.
 			hkReal m_userVertexOnBoundaryTolerance; //+default(1e-3f)
 
 				/// Manually placed vertices. These will be added to the mesh before any random vertices.
+				/// These cannot be overridden with OverrideSettings.
 			hkArray<hkVector4> m_userVertices;
 		};
 
-		/// This input structure holds the settings used to control the amount of simplification applied to a nav mesh
-		struct Settings
+		/// This input structure holds the settings used to control the amount of simplification applied to a nav mesh.
+		/// Unless otherwise noted, values can be overridden based on volume regions or material with OverrideSettings.
+		struct HK_EXPORT_AI Settings
 		{
 			//+version(13)
 			HK_DECLARE_REFLECTION();
@@ -157,22 +162,29 @@ class hkaiNavMeshSimplificationUtils
 				/// The maximum number of faces that can be included in a partition.
 				/// Increasing this will result in fewer internal edges in large open areas, but
 				/// may slow down generation times slightly.
+				/// This value cannot be overridden with OverrideSettings.
 			int m_maxPartitionSize;						//+default(40000)
-														//+hk.RangeInt32(absmin=0, softmax=100000)
+														//+hk.RangeInt32(absmin=0)
 
-				/// Whether or not to partition by height
+				/// Whether or not to partition by height.
+				/// For partitioning, this value cannot be overridden with OverrideSettings, but the overridden value is
+				/// used during Hertel-Mehlhorn.
 			hkBool m_useHeightPartitioning;				//+default(false)
 				
-				/// When partitioning by height, the max deviation allowed for a given partition
+				/// When partitioning by height, the max deviation allowed for a given partition.
+				/// For partitioning, this value cannot be overridden with OverrideSettings, but the overridden value is
+				/// used during Hertel-Mehlhorn.
 			hkReal m_maxPartitionHeightError;			//+default(100.f)
 														//+hk.RangeReal(absmin=0.0, softmax=10000.0)
 
 				/// If this is true (and m_useHeightPartitioning is true), a more conservative algorithm will be used to guarantee that the total vertical
 				/// deviation between the simplified and unsimplified nav meshes does not exceed (m_maxPartitionHeightError + m_hertelMehlhornHeightError).
 				/// This will generally result is less simplification however.
+				/// This value cannot be overridden with OverrideSettings.
 			hkBool m_useConservativeHeightPartitioning;	//+default(false)
 
 				/// Additional height error allowed when merging faces into convex pieces. This is only used if m_useConservativeHeightPartitioning is true.
+				/// This value cannot be overridden with OverrideSettings.
 			hkReal m_hertelMehlhornHeightError;			//+default(0.01f)
 
 				/// Faces will only be merged if the cosine of the angle between their normals is greater than this
@@ -198,9 +210,11 @@ class hkaiNavMeshSimplificationUtils
 			hkReal m_maxBoundaryVertexVerticalError;	//+default(1.f)
 
 				/// Whether or not to merge edges by length when doing convex merging (Hertel-Mehlhorn). This usually gives nicer looking results.
+				/// This value cannot be overridden with OverrideSettings.
 			hkBool m_mergeLongestEdgesFirst; //+default(true);
 
 				/// Settings for the addition of extra vertices.
+				/// ExtraVertexSettings::m_userVertices cannot be overridden with OverrideSettings.
 			ExtraVertexSettings m_extraVertexSettings;
 
 				/// If this flag is set, the input data to simplification (Settings, unsimplified nav mesh, and raycaster information) will be serialized out.
@@ -212,13 +226,14 @@ class hkaiNavMeshSimplificationUtils
 		};
 
 			/// Sequence of nav mesh edges that lie on the border between two partitions
-		struct Segment
+		struct HK_EXPORT_AI Segment
 		{
 			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE,hkaiNavMeshSimplificationUtils::Segment);
 			Segment() {}
-			Segment(const Segment& s) : m_materialSettingsIndex(s.m_materialSettingsIndex), m_partitionIdA(s.m_partitionIdA), m_partitionIdB(s.m_partitionIdB) { m_boundary = s.m_boundary; m_indices = s.m_indices; }
+			Segment(const Segment& s) : m_material(s.m_material), m_materialSettingsIndex(s.m_materialSettingsIndex), m_partitionIdA(s.m_partitionIdA), m_partitionIdB(s.m_partitionIdB) { m_boundary = s.m_boundary; m_indices = s.m_indices; }
 
 			bool isOK() const { return m_indices.isEmpty() || m_indices.getSize() == m_boundary.getSize() + 1; }
+			int m_material;					// Material of the faces in m_partitionIdA
 			int m_materialSettingsIndex;	// -1 if global settings should be used instead
 			int m_partitionIdA;
 			int m_partitionIdB;				// -1 if this is an external boundary run
@@ -227,7 +242,7 @@ class hkaiNavMeshSimplificationUtils
 		};
 
 			/// Sortable structure for partitions.
-		struct SegmentIdxPid
+		struct HK_EXPORT_AI SegmentIdxPid
 		{
 			HK_DECLARE_POD_TYPE();
 			int m_segmentIndex;
@@ -240,7 +255,7 @@ class hkaiNavMeshSimplificationUtils
 		};
 
 			/// Return values for hkaiNavMeshSimplificationUtils::simplifyNavMesh().
-		enum SimplificationResult
+		enum HK_EXPORT_AI SimplificationResult
 		{
 			/// Simplification was stopped by the user
 			SIMPLIFICATION_HALTED,
@@ -256,9 +271,9 @@ class hkaiNavMeshSimplificationUtils
 		static hkResult HK_CALL mergeSharedVertices( hkaiNavMesh& mesh );
 
 		/// Partitions the nav mesh into non overlapping (in 3d) partitions
-		static hkResult HK_CALL partition( const hkaiNavMesh& mesh, const hkaiNavMesh& origMesh, const hkaiNavMeshGenerationSettings& settings, hkArray<int>& numFacesInPartition, hkArray<hkaiNavMesh::FaceIndex>& partitions, hkArray<int>& numEdgesInGroupInOut, hkArray<hkaiNavMesh::EdgeIndex>& edgesToRemoveInOut );
+		static hkResult HK_CALL partition( const hkaiNavMesh& mesh, const hkaiNavMesh& origMesh, const hkaiNavMeshGenerationSettings& settings, struct hkaiPartitionTimers& timers, hkArray<int>& numFacesInPartition, hkArray<hkaiNavMesh::FaceIndex>& partitions, hkArray<int>& numEdgesInGroupInOut, hkArray<hkaiNavMesh::EdgeIndex>& edgesToRemoveInOut );
 
-		static void HK_CALL partitionWC( const hkaiNavMesh& mesh, const hkaiNavMesh& origMesh, const hkaiNavMeshGenerationSettings& settings, hkArray<int>& numFacesInPartition, hkArray<int>& partitionDir, hkArray<hkaiNavMesh::FaceIndex>& partitions );
+		static void HK_CALL partitionWC( const hkaiNavMesh& mesh, const hkaiNavMesh& origMesh, const hkaiNavMeshGenerationSettings& settings, struct hkaiPartitionTimers& timers, hkArray<int>& numFacesInPartition, hkArray<int>& partitionDir, hkArray<hkaiNavMesh::FaceIndex>& partitions );
 
 		/// Traces through each partition and produces a set of loops
 		static hkResult HK_CALL tracePartitionBoundaries( const hkaiNavMesh& mesh, const hkArray<int>& numFacesInPartition, const hkArray<hkaiNavMesh::FaceIndex>& partitions, hkArray< Segment >& segments, const hkArray<hkaiNavMesh::EdgeIndex>& edgesToRemove );
@@ -270,7 +285,7 @@ class hkaiNavMeshSimplificationUtils
 		static hkResult HK_CALL setMaterialSettingsIndices( const hkaiNavMeshGenerationSettings& settings, const hkaiNavMesh& mesh, const hkArray<int>& numFacesInPartition, const hkArray<hkaiNavMesh::FaceIndex>& partitions, hkArray<Segment>& segmentsInOut );
 
 		/// Simplifies an array of Segment objects by removing (and moving) vertices
-		static hkResult HK_CALL simplifySegments( const hkaiNavMeshGenerationSettings& settings, hkArray<hkVector4>& verticesInOut, hkArray<Segment>& segmentsInOut, hkArray<int>& segmentToOppositeMap, const hkaiNavMesh& navMesh, const hkBitField& unremovableVertices, const hkArray<int>* partitionDir = HK_NULL, hkaiNavMeshGenerationProgressCallback* callbacks = HK_NULL );
+		static hkResult HK_CALL simplifySegments( const hkaiNavMeshGenerationSettings& settings, hkArray<hkVector4>& verticesInOut, hkArray<Segment>& segmentsInOut, hkArray<int>& segmentToOppositeMap, const hkaiNavMesh& navMesh, const hkBitField& unremovableVertices, struct hkaiSimplifySegmentsTimers& timers, const hkArray<int>* partitionDir = HK_NULL, hkaiNavMeshGenerationProgressCallback* callbacks = HK_NULL );
 
 		static hkResult HK_CALL addVerticesBetweenSegments( const hkaiNavMeshGenerationSettings& settings, hkArray<hkVector4>& verticesInOut, hkArray<Segment>& segmentsInOut, const hkArrayBase<int>& segmentToOppositeMap, const hkaiNavMesh& navMesh, hkBitField& userVertexOnBoundary, hkArray<int>& oppositeEdges);
 
@@ -278,7 +293,7 @@ class hkaiNavMeshSimplificationUtils
 		static hkResult HK_CALL triangulatePartitions( const hkaiNavMeshGenerationSettings& settings, bool wallClimbing, const hkaiNavMesh& originalNavMesh, hkaiNavMesh& navMeshOut, const hkArray<Segment>& segments, const hkArrayBase<hkaiNavMesh::FaceIndex>& partitions, 	const hkArrayBase<int>& numFacesInPartition, const hkArrayBase<int>& partitionDir, hkArray<int>& faceToPartitionMap, const hkBitField& edgeIsBoundary, hkBitField& userVertexOnBoundary, const hkArrayBase<hkUint32>& faceData );
 
 		/// Converts a single partition (defined by one or more segments) into a list of triangles
-		static hkResult HK_CALL triangulatePartition( const hkaiNavMeshSimplificationUtils::ExtraVertexSettings& extraVertSettings, const hkaiNavMesh& originalMesh, hkArray<hkVector4>& vertices, const hkArray<Segment>& segments, const hkArray<int>::Temp& partitionSegments, const hkArray<const hkaiNavMesh::FaceIndex>& facesInPartition, hkVector4Parameter up, hkArray<int>::Temp& triangleIndicesOut, hkArray<int>::Temp& sharedEdgesOut, const hkBitField& edgeIsBoundary, hkBitField& userVertexOnBoundary, hkReferencedObject* globalTriangulatorPtr = HK_NULL, const hkAabb* globalDomainAabb = HK_NULL );
+		static hkResult HK_CALL triangulatePartition( const hkaiNavMeshSimplificationUtils::ExtraVertexSettings& extraVertSettings, const hkArrayBase<hkVector4>& userVertices, const hkaiNavMesh& originalMesh, hkArray<hkVector4>& vertices, const hkArray<Segment>& segments, const hkArray<int>::Temp& partitionSegments, const hkArrayBase<hkVector4>& partitionVertices, const hkArray<const hkaiNavMesh::FaceIndex>& facesInPartition, hkVector4Parameter up, hkArray<int>::Temp& triangleIndicesOut, hkArray<int>::Temp& sharedEdgesOut, const hkBitField& edgeIsBoundary, hkBitField& userVertexOnBoundary, hkReferencedObject* globalTriangulatorPtr = HK_NULL, const hkAabb* globalDomainAabb = HK_NULL );
 
 		/// Tries to merge coplanar triangles in the nav mesh into convex pieces
 		static hkResult HK_CALL hertelMehlhorn( const hkaiNavMeshGenerationSettings& settings, hkaiNavMesh & mesh, const hkReal* heightErrorOverride = HK_NULL, hkArray<int>* faceToPartitionMapInOut = HK_NULL );
@@ -292,7 +307,7 @@ class hkaiNavMeshSimplificationUtils
 		static SimplificationResult HK_CALL simplifyWallClimbingNavMesh( const hkaiNavMeshGenerationSettings& settings, hkaiNavMesh& navMesh, hkaiNavMesh& navMeshOut, hkaiNavMeshGenerationProgressCallback* callback = HK_NULL );
 
 		/// Internal simplification function with a few advanced parameters
-		static SimplificationResult HK_CALL _simplifyNavMesh( const hkaiNavMeshGenerationSettings& settings, hkaiNavMesh& navMesh, hkaiNavMesh& navMeshOut, hkaiEdgeGeometryRaycaster* raycaster, hkaiNavMeshGenerationProgressCallback* callback );
+		static SimplificationResult HK_CALL _simplifyNavMesh( const hkaiNavMeshGenerationSettings& settings, hkaiNavMesh& navMesh, hkaiNavMesh& navMeshOut, struct hkaiSimplificationTimers& timers, hkaiEdgeGeometryRaycaster* raycaster, hkaiNavMeshGenerationProgressCallback* callback );
 
 		/// Merges shared vertices into a single vertex, but only keeps merges which are "safe"
 		static hkResult HK_CALL _selectiveMergeSharedVertices( const hkaiNavMeshGenerationSettings& settings, hkaiNavMesh& mesh );
@@ -300,15 +315,17 @@ class hkaiNavMeshSimplificationUtils
 		/// Find boundary edges which are "removable", e.g small parts of edges that weren't matched.
 		static hkResult HK_CALL _findRemovableBoundaryEdges( const hkaiNavMeshGenerationSettings& settings, const hkaiNavMesh& mesh, const hkaiEdgeGeometryRaycaster* raycaster, hkArray<int>* numEdgesInGroupOut, hkArray<hkaiNavMesh::EdgeIndex>* edgesToRemoveOut, hkBitField* removeableEdges );
 
-		/// Determine how to split a long edge
-		static hkResult HK_CALL getEdgeSplitting( hkVector4Parameter vIn0, hkVector4Parameter vIn1, const ExtraVertexSettings& extraVertexSettings, bool isBoundary, hkBitField& userVertexOnBoundary, hkArray<hkVector4>& edgeVertices);
+		/// Determine how to split a long edge.
+		/// The ExtraVertexSettings may be overridden, but the userVertices must be the "global" array.
+		static hkResult HK_CALL getEdgeSplitting( hkVector4Parameter vIn0, hkVector4Parameter vIn1, const ExtraVertexSettings& extraVertexSettings, bool isBoundary, const hkArrayBase<hkVector4>& userVertices, hkBitField& userVertexOnBoundary, hkArray<hkVector4>& edgeVertices);
 		
 		/// Internal class used to fit a plane to several points
-		class PlaneFitter : public hkReferencedObject
+		class HK_EXPORT_AI PlaneFitter : public hkReferencedObject
 		{
 			public:
 				HK_DECLARE_CLASS_ALLOCATOR( HK_MEMORY_CLASS_AI_NAVMESH );
 				PlaneFitter();
+				bool canCalcPlane() const { return m_numPoints >= 3; }
 				void reset();
 				void addPoint( hkVector4Parameter newPoint );
 				void calcCovariance( hkMatrix3& covariance, hkSimdReal& invNumPointsOut ) const;
@@ -330,7 +347,7 @@ class hkaiNavMeshSimplificationUtils
 #endif	// HKAI_NAVIGATION_MESH_SIMPLIFICATION_UTILS_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

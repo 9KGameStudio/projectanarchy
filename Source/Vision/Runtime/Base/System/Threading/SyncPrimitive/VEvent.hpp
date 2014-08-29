@@ -16,11 +16,6 @@
 #include <sys/synchronization.h>
 #endif
 
-#ifdef _VISION_POSIX
-#include <pthread.h>
-#include <semaphore.h>
-#endif
-
 /// \brief
 ///   Synchronization object class for events.
 ///
@@ -76,7 +71,7 @@ public:
 
 private:
 
-  #if defined(WIN32)  || defined(_VISION_XENON)  
+  #if defined(_VISION_WIN32)  || defined(_VISION_XENON)  
     volatile HANDLE m_hEvent;
 
   #elif defined(_VISION_PS3)
@@ -104,7 +99,7 @@ private:
 
 };
 
-#if defined(WIN32)
+#if defined(_VISION_WIN32)
   #include <Vision/Runtime/Base/System/Threading/SyncPrimitive/VEventPC.inl>
 #elif defined(_VISION_XENON)
   #include <Vision/Runtime/Base/System/Threading/SyncPrimitive/VEventXenon.inl>
@@ -124,7 +119,7 @@ private:
 #endif  // VEVENT_HPP_INCLUDED
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

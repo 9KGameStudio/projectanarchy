@@ -11,10 +11,10 @@
 
 #include <Common/SceneData/Attributes/hkxAttribute.h>
 
-extern const hkClass hkxAnimatedFloatClass;
+extern HK_EXPORT_COMMON const hkClass hkxAnimatedFloatClass;
 
 	/// An hkxAnimatedFloat stores the values associated with an hkxAttribute of type float.
-class hkxAnimatedFloat : public hkReferencedObject
+class HK_EXPORT_COMMON hkxAnimatedFloat : public hkReferencedObject
 {
 	//+vtable(true)
 	//+version(1)
@@ -40,7 +40,7 @@ class hkxAnimatedFloat : public hkReferencedObject
 #endif // HK_SCENEDATA_HKX_ANIMATED_FLOAT_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

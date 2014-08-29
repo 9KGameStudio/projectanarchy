@@ -17,7 +17,7 @@ class hkaSkeleton;
 
 	/// This is a helper class for the hkaMirroredAnimation which encapsulates the 'mirroring' functionality
 	/// and works at a per-bone level (rather than the per-track level of a hkaAnimation).
-class hkaMirroredSkeleton : public hkReferencedObject
+class HK_EXPORT_ANIMATION hkaMirroredSkeleton : public hkReferencedObject
 {
 
 	public:
@@ -189,7 +189,7 @@ class hkaMirroredSkeleton : public hkReferencedObject
 		int getBoneParent( int bone ) const;
 
 			/// Sets all bone axes to canonical (multiples of pi/2) rotations
-   		void canonicalize( hkQuaternion &qInOut, hkReal tolerance );
+   		void canonicalize( hkQuaternion &qInOut, hkReal tolerance, const hkQuaternion cardinals[], int n );
 
 			/// Swap bone transforms with their pair
 		static void HK_CALL inplaceSwap( hkQsTransform* qInOut, const hkInt16* bonePairMap, int numBones );
@@ -233,7 +233,7 @@ class hkaMirroredSkeleton : public hkReferencedObject
 #endif // HKANIMATION_ANIMATION_HKMIRROREDSKELETON_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

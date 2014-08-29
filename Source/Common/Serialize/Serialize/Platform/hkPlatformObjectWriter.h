@@ -16,7 +16,7 @@ class hkOArchive;
 class hkObjectCopier;
 
 /// Write an object in the native format of a given platform.
-class hkPlatformObjectWriter : public hkObjectWriter
+class HK_EXPORT_COMMON hkPlatformObjectWriter : public hkObjectWriter
 {
 public:
 
@@ -63,7 +63,7 @@ public:
 #endif //HK_SERIALIZE_PLATFORM_OBJECT_WRITER_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

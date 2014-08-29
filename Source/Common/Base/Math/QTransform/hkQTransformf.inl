@@ -81,7 +81,7 @@ HK_FORCE_INLINE void hkQTransformf::add(const hkQTransformf& qa)
 
 HK_FORCE_INLINE /*static*/ const hkQTransformf& HK_CALL hkQTransformf::getIdentity()
 {
-	extern hkFloat32 hkQTransformfIdentity_storage[];
+	extern HK_EXPORT_COMMON hkFloat32 hkQTransformfIdentity_storage[];
 	union { const hkFloat32* r; const hkQTransformf* q; } r2q;
 	r2q.r = hkQTransformfIdentity_storage;
 	return *r2q.q;
@@ -181,7 +181,7 @@ inline bool hkQTransformf::_isApproximatelyEqual( const hkQTransformf& other, hk
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

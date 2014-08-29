@@ -11,7 +11,7 @@
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Scripting/Lua/VisionLuaModule_wrapper.hpp>
 
 #include <Vision/Runtime/Base/System/DisableStaticAnalysis.hpp>
-#include <Vision/Runtime/Base/System/Memory/VMemDbg.hpp>
+
 
 #define VLUA_TYPE_VARCHIVE		"VArchive"
 #define VLUA_TTYPEDOBJECT     99
@@ -24,7 +24,6 @@ void LUA_CreateVArchive(lua_State* L, VArchive* pArchive)
   
   *ppAr = pArchive;
 }
-
 
 VArchive* LUA_GetVArchive(lua_State* L, int i)
 {
@@ -72,15 +71,15 @@ static int VArchive_IsSaving(lua_State* L)
 
 static int VArchive_WriteNumber(lua_State* L)
 {
-  bool ARGS_OK = true;
   VArchive *pArchive = LUA_GetVArchive(L,1);
-  GET_ARG(2, lua_Number, value);
- 
-  if (pArchive != NULL && ARGS_OK) {
-    lua_pop(L,2); //remove values
-    *pArchive << LUA_TNUMBER;
-    *pArchive << value;
-  }
+
+ if(pArchive != NULL)
+ {
+   lua_Number value = lua_tonumber(L, 2);
+   lua_pop(L, 2); //remove values
+   *pArchive << LUA_TNUMBER;
+   *pArchive << value;
+ }
  
   return 0;
 }
@@ -103,14 +102,13 @@ static int VArchive_ReadNumber(lua_State* L)
 
 static int VArchive_WriteString(lua_State* L)
 {
-  bool ARGS_OK = true;
   VArchive *pArchive = LUA_GetVArchive(L,1);
-  GET_ARG(2, const char *, pszString);
- 
-  if (pArchive != NULL && ARGS_OK) {
-    lua_pop(L,2); //remove values
+
+  if (pArchive != NULL) {
+    const char * pszString = lua_tostring(L, 2);
     *pArchive << LUA_TSTRING;
     *pArchive << pszString;
+    lua_pop(L,2); //remove values
   }
  
   return 0;
@@ -122,11 +120,10 @@ static int VArchive_ReadString(lua_State* L)
  
   if (pArchive) {
     lua_pop(L,1); //remove value
-    char *pszString;
-    *pArchive >> pszString;
+    VString sString;
+    *pArchive >> sString;
 
-    lua_pushstring(L, pszString);
-    vMemFree(pszString);
+    lua_pushstring(L, sString.AsChar());
 
     return 1;
   }
@@ -138,9 +135,8 @@ static int VArchive_WriteBool(lua_State* L)
 {
   bool ARGS_OK = true;
   VArchive *pArchive = LUA_GetVArchive(L,1);
-  GET_ARG(2, int, iBool);
- 
   if (pArchive != NULL && ARGS_OK) {
+    int iBool = lua_toboolean(L, 2);
     lua_pop(L,2); //remove values
     *pArchive << LUA_TBOOLEAN;
     *pArchive << iBool;
@@ -193,301 +189,125 @@ static int VArchive_ReadNil(lua_State* L)
   return 0;
 }
 
-static int VArchive_WriteVector2(lua_State* L)
+template <typename T>
+static int VArchive_WriteSwigTypeFast(lua_State* L, int iTypeNumber)
 {
-  bool ARGS_OK = true;
   VArchive *pArchive = LUA_GetVArchive(L,1);
-  GET_ARG(2, hkvVec2, v);
-  if (pArchive != NULL && ARGS_OK) 
+  
+  if (pArchive == NULL) //we cannot write anything to NULL
+    return 0;
+
+  T var;
+  if (!LUA_GetValue(L, 2, var))
+  {
+    luaL_argerror (L, 2, "VArchive_Write: Unexpected type on stack index 2");
+  }
+  else
   {
     lua_pop(L,2); //remove values
-    *pArchive << VLUA_TVECTOR2;
-    *pArchive << v;
+    *pArchive << iTypeNumber;
+    *pArchive << var;
   }
   return 0;
 }
 
-static int VArchive_ReadVector2(lua_State* L)
+template <>
+int VArchive_WriteSwigTypeFast<hkvVec3>(lua_State* L, int iTypeNumber)
 {
   VArchive *pArchive = LUA_GetVArchive(L,1);
-  if (pArchive) 
+
+  if (pArchive == NULL) //we cannot write anything to NULL
+    return 0;
+
+  hkvVec3 var;
+  if (!LUA_GetValue(L, 2, var))
   {
-    lua_pop(L,1); //remove value
-    hkvVec2 v;
-    *pArchive >> v;
-    hkvVec2* pVec = new hkvVec2(v);
-    VSWIG_Lua_NewPointerObj(L,pVec,SWIGTYPE_p_hkvVec2, VLUA_MANAGE_MEM_BY_LUA);
-    return 1;
+    luaL_argerror (L, 2, "VArchive_Write: Unexpected type on stack index 2");
   }
-  return 0;
-}
-
-static int VArchive_WriteVector3(lua_State* L)
-{
-  bool ARGS_OK = true;
-  VArchive *pArchive = LUA_GetVArchive(L,1);
-  GET_ARG(2, hkvVec3, v);
-  if (pArchive != NULL && ARGS_OK) 
+  else
   {
     lua_pop(L,2); //remove values
-    *pArchive << VLUA_TVECTOR3;
-    //*pArchive << v;
-    v.SerializeAsVisVector (*pArchive);
+    *pArchive << iTypeNumber;
+    var.SerializeAsVisVector(*pArchive);
   }
   return 0;
 }
 
-static int VArchive_ReadVector3(lua_State* L)
+template <typename T>
+static int VArchive_SerializeXSwigTypeFast(lua_State* L, int iTypeNumber)
 {
   VArchive *pArchive = LUA_GetVArchive(L,1);
-  if (pArchive) 
+
+  if (pArchive == NULL) //we cannot write anything to NULL
+    return 0;
+
+  T var;
+  if (!LUA_GetValue(L, 2, var))
   {
-    lua_pop(L,1); //remove value
-    hkvVec3 v;
-    //*pArchive >> v;
-    v.SerializeAsVisVector (*pArchive);
-    hkvVec3* pVec = new hkvVec3(v);
-    VSWIG_Lua_NewPointerObj(L,pVec,SWIGTYPE_p_hkvVec3, VLUA_MANAGE_MEM_BY_LUA);
-    return 1;
+    luaL_argerror (L, 2, "VArchive_Write: Unexpected type on stack index 2");
   }
-  return 0;
-}
-
-static int VArchive_WriteVector4(lua_State* L)
-{
-  bool ARGS_OK = true;
-  VArchive *pArchive = LUA_GetVArchive(L,1);
-  GET_ARG(2, hkvVec4, v);
-  if (pArchive != NULL && ARGS_OK) 
+  else
   {
     lua_pop(L,2); //remove values
-    *pArchive << VLUA_TVECTOR4;
-    *pArchive << v;
+    *pArchive << iTypeNumber;
+    SerializeX(*pArchive, var);
   }
   return 0;
 }
 
-static int VArchive_ReadVector4(lua_State* L)
+template <typename T>
+static int VArchive_ReadSwigTypeFast(lua_State* L, swig_type_info * pSwigType)
 {
   VArchive *pArchive = LUA_GetVArchive(L,1);
-  if (pArchive) 
-  {
-    lua_pop(L,1); //remove value
-    hkvVec4 v;
-    *pArchive >> v;
-    hkvVec4* pVec = new hkvVec4(v);
-    VSWIG_Lua_NewPointerObj(L,pVec,SWIGTYPE_p_hkvVec4, VLUA_MANAGE_MEM_BY_LUA);
-    return 1;
-  }
-  return 0;
+  lua_pop(L,1); //remove archive from stack
+
+  if (pArchive == NULL) 
+    return 0;
+
+  T v;
+  *pArchive >> v;
+  T* pInstance = new T(v);
+  VSWIG_Lua_NewPointerObj(L, pInstance, pSwigType, VLUA_MANAGE_MEM_BY_LUA);
+
+  return 1;
 }
 
-static int VArchive_WriteMatrix3(lua_State* L)
-{
-  bool ARGS_OK = true;
-  VArchive *pArchive = LUA_GetVArchive(L,1);
-  GET_ARG(2, hkvMat3, m);
-  if (pArchive != NULL && ARGS_OK) 
-  {
-    lua_pop(L,2); //remove values
-    *pArchive << VLUA_TMATRIX3;
-    *pArchive << m;
-  }
-  return 0;
-}
-
-static int VArchive_ReadMatrix3(lua_State* L)
+template <>
+int VArchive_ReadSwigTypeFast<hkvVec3>(lua_State* L, swig_type_info * pSwigType)
 {
   VArchive *pArchive = LUA_GetVArchive(L,1);
-  if (pArchive) 
-  {
-    lua_pop(L,1); //remove value
-    hkvMat3 m;
-    *pArchive >> m;
-    hkvMat3* pMat = new hkvMat3(m);
-    VSWIG_Lua_NewPointerObj(L,pMat,SWIGTYPE_p_hkvMat3, VLUA_MANAGE_MEM_BY_LUA);
-    return 1;
-  }
-  return 0;
+  lua_pop(L,1); //remove archive from stack
+
+  if (pArchive == NULL) 
+    return 0;
+
+  hkvVec3 v;
+  v.SerializeAsVisVector(*pArchive);
+  hkvVec3* pInstance = new hkvVec3(v);
+  VSWIG_Lua_NewPointerObj(L, pInstance, pSwigType, VLUA_MANAGE_MEM_BY_LUA);
+
+  return 1;
 }
 
-static int VArchive_WriteMatrix4(lua_State* L)
-{
-  bool ARGS_OK = true;
-  VArchive *pArchive = LUA_GetVArchive(L,1);
-  GET_ARG(2, hkvMat4, m);
-  if (pArchive != NULL && ARGS_OK) 
-  {
-    lua_pop(L,2); //remove values
-    *pArchive << VLUA_TMATRIX4;
-    *pArchive << m;
-  }
-  return 0;
-}
+#define VArchive_ReadSwigType(L, visionType) VArchive_ReadSwigTypeFast<visionType>(L, SWIGTYPE_p_ ## visionType)
 
-static int VArchive_ReadMatrix4(lua_State* L)
+template <typename T>
+static int VArchive_DeSerializeXSwigTypeFast(lua_State* L, swig_type_info * pSwigType)
 {
   VArchive *pArchive = LUA_GetVArchive(L,1);
-  if (pArchive) 
-  {
-    lua_pop(L,1); //remove value
-    hkvMat4 m;
-    *pArchive >> m;
-    hkvMat4* pMat = new hkvMat4(m);
-    VSWIG_Lua_NewPointerObj(L,pMat,SWIGTYPE_p_hkvMat4, VLUA_MANAGE_MEM_BY_LUA);
-    return 1;
-  }
-  return 0;
+  lua_pop(L,1); //remove archive from stack
+
+  if (pArchive == NULL) 
+    return 0;
+
+  T v;
+  SerializeX(*pArchive, v);
+  T* pInstance = new T(v);
+  VSWIG_Lua_NewPointerObj(L, pInstance, pSwigType, VLUA_MANAGE_MEM_BY_LUA);
+
+  return 1;
 }
-
-static int VArchive_WritePlane(lua_State* L)
-{
-  bool ARGS_OK = true;
-  VArchive *pArchive = LUA_GetVArchive(L,1);
-  GET_ARG(2, hkvPlane, p);
-  if (pArchive != NULL && ARGS_OK) 
-  {
-    lua_pop(L,2); //remove values
-    *pArchive << VLUA_TPLANE;
-    SerializeX(*pArchive, p);
-  }
-  return 0;
-}
-
-static int VArchive_ReadPlane(lua_State* L)
-{
-  VArchive *pArchive = LUA_GetVArchive(L,1);
-  if (pArchive) 
-  {
-    lua_pop(L,1); //remove value
-    hkvPlane p;
-    SerializeX(*pArchive, p);
-    hkvPlane* pPlane = new hkvPlane(p);
-    VSWIG_Lua_NewPointerObj(L,pPlane,SWIGTYPE_p_hkvPlane, VLUA_MANAGE_MEM_BY_LUA);
-    return 1;
-  }
-  return 0;
-}
-
-static int VArchive_WriteQuaternion(lua_State* L)
-{
-  bool ARGS_OK = true;
-  VArchive *pArchive = LUA_GetVArchive(L,1);
-  GET_ARG(2, hkvQuat, q);
-  if (pArchive != NULL && ARGS_OK) 
-  {
-    lua_pop(L,2); //remove values
-    *pArchive << VLUA_TQUATERNION;
-    *pArchive << q;
-  }
-  return 0;
-}
-
-static int VArchive_ReadQuaternion(lua_State* L)
-{
-  VArchive *pArchive = LUA_GetVArchive(L,1);
-  if (pArchive) 
-  {
-    lua_pop(L,1); //remove value
-    hkvQuat q;
-    *pArchive >> q;
-    hkvQuat* pQuat = new hkvQuat(q);
-    VSWIG_Lua_NewPointerObj(L,pQuat,SWIGTYPE_p_hkvQuat, VLUA_MANAGE_MEM_BY_LUA);
-    return 1;
-  }
-  return 0;
-}
-
-static int VArchive_WriteBoundingBox(lua_State* L)
-{
-  bool ARGS_OK = true;
-  VArchive *pArchive = LUA_GetVArchive(L,1);
-  GET_ARG(2, hkvAlignedBBox, b);
-  if (pArchive != NULL && ARGS_OK) 
-  {
-    lua_pop(L,2); //remove values
-    *pArchive << VLUA_TBOUNDINGBOX;
-    SerializeX(*pArchive, b);
-  }
-  return 0;
-}
-
-static int VArchive_ReadBoundingBox(lua_State* L)
-{
-  VArchive *pArchive = LUA_GetVArchive(L,1);
-  if (pArchive) 
-  {
-    lua_pop(L,1); //remove value
-    hkvAlignedBBox b;
-    SerializeX(*pArchive, b);
-    hkvAlignedBBox* pBox = new hkvAlignedBBox(b);
-    VSWIG_Lua_NewPointerObj(L,pBox,SWIGTYPE_p_hkvAlignedBBox, VLUA_MANAGE_MEM_BY_LUA);
-    return 1;
-  }
-  return 0;
-}
-
-static int VArchive_WriteBoundingSphere(lua_State* L)
-{
-  bool ARGS_OK = true;
-  VArchive *pArchive = LUA_GetVArchive(L,1);
-  GET_ARG(2, hkvBoundingSphere, s);
-  if (pArchive != NULL && ARGS_OK) 
-  {
-    lua_pop(L,2); //remove values
-    *pArchive << VLUA_TBOUNDINGSPHERE;
-    *pArchive << s;
-  }
-  return 0;
-}
-
-static int VArchive_ReadBoundingSphere(lua_State* L)
-{
-  VArchive *pArchive = LUA_GetVArchive(L,1);
-  if (pArchive) 
-  {
-    lua_pop(L,1); //remove value
-    hkvBoundingSphere s;
-    *pArchive >> s;
-    hkvBoundingSphere* pSphere = new hkvBoundingSphere(s);
-    VSWIG_Lua_NewPointerObj(L,pSphere,SWIGTYPE_p_hkvBoundingSphere, VLUA_MANAGE_MEM_BY_LUA);
-    return 1;
-  }
-  return 0;
-}
-
-static int VArchive_WriteColor(lua_State* L)
-{
-  bool ARGS_OK = true;
-  VArchive *pArchive = LUA_GetVArchive(L,1);
-  GET_ARG(2, VColorRef, c);
- 
-  if (pArchive != NULL && ARGS_OK) {
-    lua_pop(L,2); //remove values
-    *pArchive << VLUA_TCOLOR;
-    *pArchive << c;
-  }
- 
-  return 0;
-}
-
-static int VArchive_ReadColor(lua_State* L)
-{
-  VArchive *pArchive = LUA_GetVArchive(L,1);
- 
-  if (pArchive) {
-    lua_pop(L,1); //remove value
-    VColorRef c;
-    *pArchive >> c;
-
-    VColorRef *pColor = new VColorRef(c);
-    VSWIG_Lua_NewPointerObj(L,pColor,SWIGTYPE_p_VColorRef, VLUA_MANAGE_MEM_BY_LUA);
-
-    return 1;
-  }
- 
-  return 0;
-}
+#define VArchive_DeSerializeXSwigType(L, visionType) VArchive_DeSerializeXSwigTypeFast<visionType>(L, SWIGTYPE_p_ ## visionType)
 
 static int VArchive_WriteTable(lua_State* L)
 {
@@ -575,13 +395,12 @@ static int VArchive_ReadTable(lua_State* L)
 // write the native VTypedObject 
 static int VArchive_WriteObject(lua_State* L)
 {
-  DECLARE_ARGS_OK;
   VArchive *pArchive = LUA_GetVArchive(L,1);
 
   VisTypedEngineObject_cl* pObj = NULL;
   LUA_GetValue(L, 2, pObj);
 
-  if (pArchive != NULL && ARGS_OK)
+  if (pArchive != NULL)
   {
     *pArchive << VLUA_TTYPEDOBJECT;
     pArchive->WriteObject(pObj);
@@ -594,9 +413,11 @@ static int VArchive_WriteObject(lua_State* L)
 static int VArchive_ReadObject(lua_State* L)
 {
   VArchive *pArchive = LUA_GetVArchive(L,1);
+  lua_pop(L,1); //remove archive from stack
+
   if (pArchive)
   {
-    VisTypedEngineObject_cl* pObj = (VisTypedEngineObject_cl *)pArchive->ReadObject(V_RUNTIME_CLASS(VisTypedEngineObject_cl));
+    VisTypedEngineObject_cl* pObj = pArchive->ReadObject<VisTypedEngineObject_cl>();
     if (pObj)
     {
       VScriptComponent* pComp = VScriptResourceManager::GetScriptComponent(pObj);
@@ -648,52 +469,53 @@ static int VArchive_Write(lua_State* L)
 
   if (LUA_TestUserData(L,2,"hkvVec2") )
   {
-    VArchive_WriteVector2(L);
+    VArchive_WriteSwigTypeFast<hkvVec2>(L, VLUA_TVECTOR2);
     return 0;
   }
   if (LUA_TestUserData(L,2,"hkvVec3") )
   {
-    VArchive_WriteVector3(L);
+    VArchive_WriteSwigTypeFast<hkvVec3>(L, VLUA_TVECTOR3);
     return 0;
   }
   if (LUA_TestUserData(L,2,"hkvVec4") )
   {
-    VArchive_WriteVector4(L);
+    VArchive_WriteSwigTypeFast<hkvVec4>(L, VLUA_TVECTOR4);
     return 0;
   }
   if (LUA_TestUserData(L,2,"hkvMat3") )
   {
-    VArchive_WriteMatrix3(L);
+    VArchive_WriteSwigTypeFast<hkvMat3>(L, VLUA_TMATRIX3);
     return 0;
   }
   if (LUA_TestUserData(L,2,"hkvMat4") )
   {
-    VArchive_WriteMatrix4(L);
+    VArchive_WriteSwigTypeFast<hkvMat4>(L, VLUA_TMATRIX4);
     return 0;
   }
   if (LUA_TestUserData(L,2,"hkvPlane") )
   {
-    VArchive_WritePlane(L);
+    VArchive_SerializeXSwigTypeFast<hkvPlane>(L, VLUA_TPLANE);
     return 0;
   }
   if (LUA_TestUserData(L,2,"hkvQuat") )
   {
-    VArchive_WriteQuaternion(L);
+    VArchive_WriteSwigTypeFast<hkvQuat>(L, VLUA_TQUATERNION);
     return 0;
   }
   if (LUA_TestUserData(L,2,"hkvAlignedBBox") )
   {
-    VArchive_WriteBoundingBox(L);
+    VArchive_SerializeXSwigTypeFast<hkvAlignedBBox>(L, VLUA_TBOUNDINGBOX);
     return 0;
   }
   if (LUA_TestUserData(L,2,"hkvBoundingSphere") )
   {
-    VArchive_WriteBoundingSphere(L);
+    VArchive_WriteSwigTypeFast<hkvBoundingSphere>(L, VLUA_TBOUNDINGSPHERE);
+
     return 0;
   }
   if (LUA_TestUserData(L,2,"VColorRef") )
   {
-    VArchive_WriteColor(L);
+    VArchive_WriteSwigTypeFast<VColorRef>(L, VLUA_TCOLOR);
     return 0;
   }
   if (pUserData != NULL && pUserData->type &&
@@ -738,88 +560,42 @@ static int VArchive_Read(lua_State* L)
     int iType;
     *pArchive >> iType;
 
-    if (iType == VLUA_TTYPEDOBJECT)
+    switch(iType)
     {
-      return VArchive_ReadObject(L);
-    }
-    else if (iType == LUA_TTABLE) 
-    {
-      return VArchive_ReadTable(L);
-    }
-    else if (iType == LUA_TNUMBER) 
-    {
-      return VArchive_ReadNumber(L);
-    }
-    else if (iType == LUA_TSTRING) 
-    {
-      return VArchive_ReadString(L);
-    }
-    else if (iType == LUA_TBOOLEAN)
-    {
-      return VArchive_ReadBool(L);
-    }
-    else if (iType == VLUA_TVECTOR2) 
-    {
-      return VArchive_ReadVector2(L);
-    }
-    else if (iType == VLUA_TVECTOR3) 
-    {
-      return VArchive_ReadVector3(L);
-    }
-    else if (iType == VLUA_TVECTOR4) 
-    {
-      return VArchive_ReadVector4(L);
-    } 
-    else if (iType == VLUA_TMATRIX3) 
-    {
-      return VArchive_ReadMatrix3(L);
-    } 
-    else if (iType == VLUA_TMATRIX4) 
-    {
-      return VArchive_ReadMatrix4(L);
-    } 
-    else if (iType == VLUA_TPLANE) 
-    {
-      return VArchive_ReadPlane(L);
-    } 
-    else if (iType == VLUA_TQUATERNION) 
-    {
-      return VArchive_ReadQuaternion(L);
-    } 
-    else if (iType == VLUA_TBOUNDINGBOX) 
-    {
-      return VArchive_ReadBoundingBox(L);
-    } 
-    else if (iType == VLUA_TBOUNDINGSPHERE) 
-    {
-      return VArchive_ReadBoundingSphere(L);
-    } 
-    else if (iType == VLUA_TCOLOR)
-    {
-      return VArchive_ReadColor(L);
-    }
-    else if (iType == LUA_TNIL) 
-    {
-      return VArchive_ReadNil(L);
-    }
-    //TODO: add any new types here
-    else
-    {
-      // Trigger the callback for the user data serialize function
-      ANALYSIS_IGNORE_WARNING_ONCE(6246)
-      VArchive* pArchive = LUA_GetVArchive(L, 1);
-      VScriptUserDataSerializeObject Obj(&VScriptResourceManager::OnUserDataSerialize, pArchive, L, iType);
-      if(pArchive)
-        Obj.Trigger();
+      case VLUA_TTYPEDOBJECT:     return VArchive_ReadObject(L);
+      case LUA_TTABLE:            return VArchive_ReadTable(L);
+      case LUA_TNUMBER:           return VArchive_ReadNumber(L);
+      case LUA_TSTRING:           return VArchive_ReadString(L);
+      case LUA_TBOOLEAN:          return VArchive_ReadBool(L);
+      case VLUA_TVECTOR2:         return VArchive_ReadSwigType(L, hkvVec2);
+      case VLUA_TVECTOR3:         return VArchive_ReadSwigType(L, hkvVec3);
+      case VLUA_TVECTOR4:         return VArchive_ReadSwigType(L, hkvVec4);
+      case VLUA_TMATRIX3:         return VArchive_ReadSwigType(L, hkvMat3);
+      case VLUA_TMATRIX4:         return VArchive_ReadSwigType(L, hkvMat4);
+      case VLUA_TPLANE:           return VArchive_DeSerializeXSwigType(L, hkvPlane);
+      case VLUA_TQUATERNION:      return VArchive_ReadSwigType(L, hkvQuat);
+      case VLUA_TBOUNDINGBOX:     return VArchive_DeSerializeXSwigType(L, hkvAlignedBBox);
+      case VLUA_TBOUNDINGSPHERE:  return VArchive_ReadSwigType(L, hkvBoundingSphere);
+      case VLUA_TCOLOR:           return VArchive_ReadSwigType(L, VColorRef);
+      case LUA_TNIL:              return VArchive_ReadNil(L);
+      default:
+        {
+          // Trigger the callback for the user data serialize function
+          ANALYSIS_IGNORE_WARNING_ONCE(6246)
+          VArchive* pArchive = LUA_GetVArchive(L, 1);
+          VScriptUserDataSerializeObject Obj(&VScriptResourceManager::OnUserDataSerialize, pArchive, L, iType);
+          if(pArchive)
+            Obj.Trigger();
 
-      // If the userdata type was not processed by one of the callback listeners
-      if(!Obj.bProcessed)
-      {
-        char errMsg[256];
-        const char *pszTypeName = iType >= 0 ? lua_typename(L, iType) : "<Unknown Type>";
-        sprintf(errMsg, "Found an unknown type number in the archive: %s", pszTypeName);
-        luaL_argerror(L, 2, errMsg);
-      }
+          // If the userdata type was not processed by one of the callback listeners
+          if(!Obj.bProcessed)
+          {
+            char errMsg[256];
+            const char *pszTypeName = iType >= 0 ? lua_typename(L, iType) : "<Unknown Type>";
+            sprintf(errMsg, "Found an unknown type number in the archive: %s", pszTypeName);
+            luaL_argerror(L, 2, errMsg);
+          }
+        }
     }
   }
  
@@ -903,7 +679,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

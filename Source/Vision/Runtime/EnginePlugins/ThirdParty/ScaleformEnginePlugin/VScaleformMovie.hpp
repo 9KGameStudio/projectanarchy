@@ -189,6 +189,38 @@ public:
   /// \brief Sets the movie to the authored size.
   SCALEFORM_IMPEXP void SetAuthoredSize();
 
+  /// \brief Alignment Types (must match scaleforms enum, see GFx_Player.h)
+  ///   Note, alignment is only applied if view scale mode is MSM_NoScale (see also scaleform documentation)
+  enum MovieAlignType
+  {
+    MAT_Center,
+    MAT_TopCenter,
+    MAT_BottomCenter,
+    MAT_CenterLeft,
+    MAT_CenterRight,
+    MAT_TopLeft,
+    MAT_TopRight,
+    MAT_BottomLeft,
+    MAT_BottomRight
+  };
+
+  /// \brief Sets the view alignment of the movie.
+  /// \param alignType the alignment type.
+  SCALEFORM_IMPEXP void SetViewAlignment(MovieAlignType alignType);
+
+  /// \brief Scale Modes (must match scaleforms enum, see GFx_Player.h)
+  enum MovieScaleMode
+  {
+    MSM_NoScale,
+    MSM_ShowAll,
+    MSM_ExactFit,
+    MSM_NoBorder
+  };
+
+  /// \brief Sets the view scale mode of the movie.
+  /// \param scaleMode the scale mode.
+  SCALEFORM_IMPEXP void SetViewScaleMode(MovieScaleMode scaleMode);
+
   /// @}
 
   /// @name Movie Control / Properties
@@ -243,15 +275,51 @@ public:
   /// \param bPaused set to true for pause, false for play
   SCALEFORM_IMPEXP void SetPaused(bool bPaused);
 
-  /// \brief  Query if this object is paused.
-  /// \return true if paused, false if not.
+  /// \brief  
+  ///   Query if this object is paused.
+  /// \return 
+  ///   true if paused, false if not.
   SCALEFORM_IMPEXP bool IsPaused() const;
 
-  /// \brief  Restarts the movie playback.
+  /// \brief  
+  ///   Restarts the movie playback.
   SCALEFORM_IMPEXP void Restart();
 
-  /// \brief  Query if this object is focused.
-  /// \return true if focused, false if not.
+  ///
+  /// \brief
+  ///   Returns the current frame index of the movie instance.
+  ///
+  SCALEFORM_IMPEXP unsigned int GetCurrentFrame() const;
+
+  ///
+  /// \brief
+  ///   Moves the movie to the specified frame.
+  ///
+  /// \param uiFrameIndex
+  ///   The 1-based frame index.
+  ///
+  SCALEFORM_IMPEXP void GotoFrame(unsigned int uiFrameIndex);
+
+  ///
+  /// \brief
+  ///   Moves the movie to the frame with the specified label.
+  ///
+  /// \param szLabel
+  ///   The label of the frame.
+  /// \param iFrameOffset
+  ///   Offset from the frame with the specified label.
+  ///
+  /// \return
+  ///   true if the label was found.
+  ///
+  SCALEFORM_IMPEXP bool GotoLabeledFrame(const char* szLabel, int iFrameOffset = 0);
+
+  ///
+  /// \brief  
+  ///   Query if this object is focused.
+  /// \return 
+  ///   true if focused.
+  ///
   SCALEFORM_IMPEXP bool IsFocused() const;
 
   /// @}
@@ -286,6 +354,7 @@ public:
   ///
   /// \sa GetVariable
   SCALEFORM_IMPEXP const VScaleformValue GetVariableValue(const char* szVarName);
+  using VTypedObject::GetVariableValue; // Do not hide base class function.
 
   /// \brief
   ///   Invokes a function on the movie.
@@ -319,12 +388,15 @@ public:
   /// \param bEnable Set to false to stop further input handling. Default is true.
   SCALEFORM_IMPEXP void SetHandleInput(bool bEnable);
 
-#ifdef WIN32
+#if defined(_VISION_WIN32)
   /// \brief  Handle the specified windows input message (if possible).
   SCALEFORM_IMPEXP void HandleWindowsInputMessage(VWindowsMessageDataObject* pObj);
 
+# if defined(USE_SF_IME)
   /// \brief  Handle the specified IME message before message translation.
   SCALEFORM_IMPEXP void HandlePreTranslatedIMEInputMessage(VWindowsMessageDataObject* pObj);
+# endif
+
 #endif
 
   /// @}
@@ -361,8 +433,10 @@ protected:
   //update movie viewport
   void UpdateViewport();
 
+#if defined(_VISION_WIN32)
   //used in the input handling system (as proposed by SF)
   Scaleform::KeyModifiers* UpdateModifiers(bool extendedKeyFlag = false);
+#endif
 
   /// \brief
   ///   Process queued scaleform callbacks in main thread.
@@ -403,7 +477,7 @@ private:
 
   VString m_sFileName;
 
-#if defined(WIN32)
+#if defined(_VISION_WIN32)
   Scaleform::KeyModifiers* m_pKeyModifiers;
 #endif
 
@@ -419,7 +493,7 @@ private:
 #endif // VSCALEFORMMOVIE_HPP_INCLUDED
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -37,10 +37,24 @@ public:
     INSTANCE_SPLITKEY   = V_BIT(7),
     INSTANCE_CONEANGLE  = V_BIT(8),
 
+    // other bits:
+    INSTANCES_IN_LOCALSPACE = V_BIT(24), // hint flag that instances should be transformed with shape
+    INSTANCES_IN_WORLDSPACE = V_BIT(25), // hint flag that instances are in worldspace already. If neither INSTANCES_IN_LOCALSPACE nor INSTANCES_IN_WORLDSPACE is defined (not recommended) it uses the shape's default of handling it
+
     // predefined
     INSTANCE_TYPE_LIGHTPOINT  = INSTANCE_POSITION|INSTANCE_ROTATION|INSTANCE_SCALE|INSTANCE_COLOR|INSTANCE_ANIMATION|INSTANCE_FARCLIP|INSTANCE_SEED|INSTANCE_CONEANGLE|INSTANCE_SPLITKEY,
     INSTANCE_TYPE_DECORATION  = INSTANCE_POSITION|INSTANCE_ROTATION|INSTANCE_SCALE|INSTANCE_SEED|INSTANCE_SPLITKEY|INSTANCE_COLOR,
-    INSTANCE_TYPE_SPEEDTREE6  = INSTANCE_POSITION|INSTANCE_ROTATION|INSTANCE_SCALE|INSTANCE_SEED|INSTANCE_SPLITKEY
+    INSTANCE_TYPE_SPEEDTREE6  = INSTANCE_POSITION|INSTANCE_ROTATION|INSTANCE_SCALE|INSTANCE_SEED|INSTANCE_SPLITKEY,
+
+    // local space versions:
+    INSTANCE_TYPE_LIGHTPOINT_LS = INSTANCE_TYPE_LIGHTPOINT | INSTANCES_IN_LOCALSPACE,
+    INSTANCE_TYPE_DECORATION_LS = INSTANCE_TYPE_DECORATION | INSTANCES_IN_LOCALSPACE,
+    INSTANCE_TYPE_SPEEDTREE6_LS = INSTANCE_TYPE_SPEEDTREE6 | INSTANCES_IN_LOCALSPACE,
+
+    // world space versions:
+    INSTANCE_TYPE_LIGHTPOINT_WS = INSTANCE_TYPE_LIGHTPOINT | INSTANCES_IN_WORLDSPACE,
+    INSTANCE_TYPE_DECORATION_WS = INSTANCE_TYPE_DECORATION | INSTANCES_IN_WORLDSPACE,
+    INSTANCE_TYPE_SPEEDTREE6_WS = INSTANCE_TYPE_SPEEDTREE6 | INSTANCES_IN_WORLDSPACE,
 
   };
 
@@ -97,7 +111,7 @@ inline void VGroupInstance::Read(IVFileInStream *pIn, AvailableFlags_e eFlags)
   if ((eFlags&INSTANCE_ROTATION)>0) pIn->Read(m_Rotation.getPointer(),sizeof(m_Rotation),"9f");
   if ((eFlags&INSTANCE_SCALE)>0) pIn->Read(&m_fScale,sizeof(m_fScale),"f");
   if ((eFlags&INSTANCE_COLOR)>0) {pIn->Read(&m_iColor.r,1);pIn->Read(&m_iColor.g,1);pIn->Read(&m_iColor.b,1);pIn->Read(&m_iColor.a,1);}
-  if ((eFlags&INSTANCE_ANIMATION)>0) {pIn->Read(&m_iAnimationIndex,sizeof(m_iAnimationIndex),"s");pIn->Read(&m_fAnimationOffset,sizeof(m_fAnimationOffset),"f");}
+  if ((eFlags&INSTANCE_ANIMATION)>0) { pIn->Read(&m_iAnimationIndex,sizeof(m_iAnimationIndex),"s"); pIn->Read(&m_fAnimationOffset,sizeof(m_fAnimationOffset),"f"); }
   if ((eFlags&INSTANCE_FARCLIP)>0) pIn->Read(&m_fFarClip,sizeof(m_fFarClip),"f");
   if ((eFlags&INSTANCE_SEED)>0) pIn->Read(&m_fSeed,sizeof(m_fSeed),"f");
   if ((eFlags&INSTANCE_SPLITKEY)>0) pIn->Read(&m_iSplitKey,sizeof(m_iSplitKey),"i");
@@ -110,7 +124,7 @@ inline void VGroupInstance::Write(IVFileOutStream *pOut, AvailableFlags_e eFlags
   if ((eFlags&INSTANCE_ROTATION)>0) pOut->Write(m_Rotation.getPointer(),sizeof(m_Rotation),"9f");
   if ((eFlags&INSTANCE_SCALE)>0) pOut->Write(&m_fScale,sizeof(m_fScale),"f");
   if ((eFlags&INSTANCE_COLOR)>0) {pOut->Write(&m_iColor.r,1);pOut->Write(&m_iColor.g,1);pOut->Write(&m_iColor.b,1);pOut->Write(&m_iColor.a,1);}
-  if ((eFlags&INSTANCE_ANIMATION)>0) {pOut->Write(&m_iAnimationIndex,sizeof(m_iAnimationIndex),"s");pOut->Write(&m_fAnimationOffset,sizeof(m_fAnimationOffset),"f");}
+  if ((eFlags&INSTANCE_ANIMATION)>0) { pOut->Write(&m_iAnimationIndex,sizeof(m_iAnimationIndex),"s"); pOut->Write(&m_fAnimationOffset,sizeof(m_fAnimationOffset),"f"); }
   if ((eFlags&INSTANCE_FARCLIP)>0) pOut->Write(&m_fFarClip,sizeof(m_fFarClip),"f");
   if ((eFlags&INSTANCE_SEED)>0) pOut->Write(&m_fSeed,sizeof(m_fSeed),"f");
   if ((eFlags&INSTANCE_SPLITKEY)>0) pOut->Write(&m_iSplitKey,sizeof(m_iSplitKey),"i");
@@ -173,7 +187,7 @@ inline void VGroupInstanceFile::Close(bool bCloseStream)
 #endif // _VISION_DOC
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

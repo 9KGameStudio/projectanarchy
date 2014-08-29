@@ -923,7 +923,7 @@ namespace Editor.Dialogs
     {
       System.Diagnostics.Debug.Assert(bListBuildInProgress == false);
       bListBuildInProgress = true;
-      listView_Layers.BeginUpdate();
+      listView_Layers.BeginUpdate(); // Prevents Repaint from happening, but not Checked events
       listView_Layers.Items.Clear();
       
       IScene scene = EditorManager.Scene;
@@ -936,12 +936,7 @@ namespace Editor.Dialogs
 
         string itemName = layer.LayerName;
         Color textColor = Color.Black;
-        if (!layer.VisibleInAssetProfile.IsActiveProfileSet)
-        {
-          itemName += " (disabled by asset profile)";
-          textColor = Color.Gray;
-        }
-        ListViewItem item = listView_Layers.Items.Add(itemName);
+        ListViewItem item = new ListViewItem(itemName);
         item.ForeColor = textColor;
         item.ImageIndex = LayerTreeViewNodeBase.GetLayerIcon(layer);
         item.Tag = layer;
@@ -950,22 +945,26 @@ namespace Editor.Dialogs
 
         item.SubItems.Add(layer.Description);
         item.ToolTipText = layer.AbsoluteLayerFilename;
+        listView_Layers.Items.Add(item);
       }
 
+      ListViewGroup group = listView_Layers.Groups["Zones"];
       // zones that can be exported
       foreach (Zone zone in scene.Zones)
       {
         // [#24564] Not modifiable zones can still be exported, otherwise this would not be consistent with unparented layers
         if (_settings.LoadedZonesOnly && !zone.Loaded /* || !zone.Modifiable*/)
           continue;
-        ListViewItem item = listView_Layers.Items.Add(zone.ZoneName);
+        //create item and set properties like Checked BEFORE we add it to the Items list to prevent triggering events and rebuilding the list every time
+        ListViewItem item = new ListViewItem(zone.ZoneName);  
         item.ImageIndex = LayerTreeViewNodeBase.GetZoneIcon(zone);
         item.Tag = zone;
         item.Checked = _settings.ExportedZones.Contains(zone); // zone.Export;
-        item.Group = listView_Layers.Groups["Zones"];
+        item.Group = group;
 
         item.SubItems.Add(zone.Description);
         item.ToolTipText = zone.AbsoluteZoneFilename;
+        listView_Layers.Items.Add(item);
       }
 
       // scene components
@@ -975,7 +974,7 @@ namespace Editor.Dialogs
       Array values = Enum.GetValues(enumType);
       for (int i = 0; i < flags.Length; i++)
       {        
-        ListViewItem item = listView_Layers.Items.Add(flags[i]);
+        ListViewItem item = new ListViewItem(flags[i]);
         item.Tag = values.GetValue(i);
         item.Group = listView_Layers.Groups["SceneComponents"];
 
@@ -984,6 +983,7 @@ namespace Editor.Dialogs
         if (descAttr.Length == 1)
           item.ToolTipText = descAttr[0].Description;
           //item.SubItems.Add(descAttr[0].Description);
+        listView_Layers.Items.Add(item);
       }
       UIExportFlags = (SceneExportFlags_e)_settings.ExportFlags;
 
@@ -993,7 +993,7 @@ namespace Editor.Dialogs
       foreach (KeyValuePair<string, bool> plugin in relevantPlugins)
       {
         string name = plugin.Key;
-        ListViewItem item = listView_Layers.Items.Add(name);
+        ListViewItem item = new ListViewItem(name);
         bool bState = plugin.Value;
         // sync with the settings:
         _settings.PluginsUserSelection.TryGetValue(name, out bState);
@@ -1002,6 +1002,7 @@ namespace Editor.Dialogs
         item.Group = listView_Layers.Groups["Plugins"];
         item.ToolTipText = "If enabled, this plugin will be loaded by the vPlayer";
         item.Checked = bState;
+        listView_Layers.Items.Add(item);
       }
 
       listView_Layers.EndUpdate();
@@ -1285,7 +1286,7 @@ namespace Editor.Dialogs
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

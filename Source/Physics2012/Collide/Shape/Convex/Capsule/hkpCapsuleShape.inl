@@ -44,7 +44,7 @@ void hkpCapsuleShape::setVertex(int i, const hkVector4& position )
 
 #ifdef HK_DEBUG
 	hkVector4 diff; diff.setSub( m_vertexA, m_vertexB);
-	HK_ASSERT2( 0xf010345, diff.length<3>().getReal() != 0.0f, "Capsules cannot have identical vertices. Use a sphere.");
+	HK_ASSERT2( 0xf010345, diff.lengthSquared<3>().isNotEqualZero(), "Capsules cannot have identical vertices. Use a sphere.");
 #endif
 }
 
@@ -57,7 +57,7 @@ void hkpCapsuleShape::setVertex(hkVector4Parameter position )
 
 #ifdef HK_DEBUG
 	hkVector4 diff; diff.setSub( m_vertexA, m_vertexB);
-	HK_ASSERT2( 0xf010345, diff.length<3>().getReal() != 0.0f, "Capsules cannot have identical vertices. Use a sphere.");
+	HK_ASSERT2( 0xf010345, diff.lengthSquared<3>().isNotEqualZero(), "Capsules cannot have identical vertices. Use a sphere.");
 #endif
 }
 
@@ -115,7 +115,7 @@ HK_FORCE_INLINE void hkpCapsuleShape::getSupportingVertex(hkVector4Parameter dir
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

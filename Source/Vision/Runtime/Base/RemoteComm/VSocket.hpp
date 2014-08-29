@@ -17,7 +17,7 @@
 struct fd_set;
 #endif
 
-#if defined(WIN32)
+#if defined(_VISION_WIN32)
 #include <winsock2.h>
 #endif
 
@@ -30,8 +30,11 @@ class VSocket
 public:
 
   /// \brief The platform specific socket handle type.
-#if defined(WIN32)
+#if defined(_VISION_WIN32)
   typedef SOCKET socket_t;
+#elif defined(_VISION_NACL)
+  class Impl;
+  typedef Impl* socket_t;
 #else
   typedef int socket_t;
 #endif
@@ -85,6 +88,9 @@ public:
   /// \brief Accepts an incoming TCP connection from the given listening socket.
   VBASE_IMPEXP hkvResult Accept(VSocket& listeningSocket, VString* pOutHost = NULL, unsigned short* pOutPort = NULL);
 
+  /// \brief Binds the socket to the given IP and port.
+  VBASE_IMPEXP hkvResult Bind(const char* szIpAddress, unsigned short usPort);
+
   /// \brief Establishes a TCP connection to the given IP.
   VBASE_IMPEXP hkvResult Connect(const char* szIpAddress, unsigned short usPort);
 
@@ -114,10 +120,10 @@ public:
 
   /// \brief Monitors the socket FD sets until a time out occurs or one of the sockets becomes ready for I/O operations.
   ///   Returns the number of sockets that changed state.
-  VBASE_IMPEXP static int Select(socket_t maxHandle, fd_set* pReadSet, fd_set* pWriteSet, fd_set* pExceptSet, VTimeSpan timeOut);
+  VBASE_IMPEXP static int Select(int maxHandle, fd_set* pReadSet, fd_set* pWriteSet, fd_set* pExceptSet, VTimeSpan timeOut);
 
-  /// \brief Enables or disables logging of socket errors for this thread. Default is true.
-  VBASE_IMPEXP static void SetAllowErrorLoggingForThread(bool bAllowErrorLogging);
+  /// \brief Enables or disables logging of socket errors. Default is true.
+  VBASE_IMPEXP void SetAllowErrorLogging(bool bAllowErrorLogging);
 
 private:
   // Non-copyable
@@ -126,14 +132,14 @@ private:
 
   socket_t m_handle;
 
-  static VISION_THREADLOCAL_DECL(bool, s_bAllowErrorLogging);
+  bool m_bAllowErrorLogging;
 };
 
 
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -25,13 +25,13 @@ class hkaiCornerPredictor;
 /// individual agent trajectories when rounding corners. It may also produce more
 /// efficient paths when traversing user edges, particularly when paired user
 /// edges are of different lengths. 
-class hkaiEdgeFollowingBehavior : public hkaiSingleCharacterBehavior
+class HK_EXPORT_AI hkaiEdgeFollowingBehavior : public hkaiSingleCharacterBehavior
 {
 public:
 	HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_AI_STEERING);
 
 		/// Construction info
-	struct Cinfo
+	struct HK_EXPORT_AI Cinfo
 	{
 		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_AI_STEERING, hkaiEdgeFollowingBehavior::Cinfo);
 
@@ -39,7 +39,8 @@ public:
 			:	m_pathFollowingProperties(HK_NULL),
 			m_updateQuerySize(2.0f),
 			m_characterRadiusMultiplier(1.5f),
-			m_maxIgnoredHeight(1.0f)
+			m_maxIgnoredHeight(1.0f),
+			m_passiveAvoidance(false)
 		{
 		}
 
@@ -55,6 +56,10 @@ public:
 			/// If the character is within this height offset of the goal, the height offset will be disregarded
 			/// when calculating distance from the goal.
 		hkReal m_maxIgnoredHeight;
+
+			/// If this is set to true, the character will move out of the way
+			/// of other characters even when at its goal.
+		hkBool m_passiveAvoidance;
 	};
 
 	hkaiEdgeFollowingBehavior(hkaiCharacter* character, hkaiWorld* world, Cinfo const& cinfo);
@@ -80,8 +85,6 @@ public:
 
 	virtual bool hasPath() const;
 
-	virtual void getGoalPoints( hkArray<hkVector4>::Temp& goalsOut ) const HK_OVERRIDE;
-
 		/// Get the character radius multiplier.
 	inline hkReal getCharacterRadiusMultiplier() const;
 
@@ -106,6 +109,11 @@ public:
 
 	void getCornerPredictor(hkaiCornerPredictor & cornerPredictorOut) const;
 
+	/// Gets whether the character will avoid other characters while at its goal
+	inline bool getPassiveAvoidance() { return m_passiveAvoidance; }
+	/// Sets whether the character will avoid other characters while at its goal
+	inline void setPassiveAvoidance(bool passiveAvoidance) { m_passiveAvoidance = passiveAvoidance; }
+
 protected:
 	void handlePossibleNewPath();
 
@@ -118,19 +126,9 @@ private:
 		/// The character radius is multiplied by this before A* queries.
 	hkReal m_characterRadiusMultiplier;
 
-	/// If the character is within this height offset of the goal, the height offset will be disregarded
-	/// when calculating distance from the goal.
+		/// If the character is within this height offset of the goal, the height offset will be disregarded
+		/// when calculating distance from the goal.
 	hkReal m_maxIgnoredHeight;
-
-		/// Saved goal information.
-	struct RequestedGoalPoint
-	{
-		hkVector4 m_position;	
-		/// Runtime index of the section this goal point is attached to
-		hkaiRuntimeIndex m_sectionId;
-	};
-
-	hkArray<RequestedGoalPoint> m_requestedGoalPoints;
 
 	hkRefPtr<hkaiEdgePath> m_edgePath;
 
@@ -147,7 +145,7 @@ private:
 	hkaiCharacter::State m_savedCharacterState;
 
 		/// Extra info used to initialize corner prediction.
-	struct CornerPredictorInitInfo
+	struct HK_EXPORT_AI CornerPredictorInitInfo
 	{
 		hkVector4 m_positionLocal;
 		hkVector4 m_forwardVectorLocal;
@@ -159,6 +157,8 @@ private:
 	};
 
 	CornerPredictorInitInfo m_cornerPredictorInitInfo;
+
+	hkBool m_passiveAvoidance;
 };
 
 #include <Ai/Pathfinding/Character/Behavior/hkaiEdgeFollowingBehavior.inl>
@@ -166,7 +166,7 @@ private:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

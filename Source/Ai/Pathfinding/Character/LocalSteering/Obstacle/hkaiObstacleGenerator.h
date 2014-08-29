@@ -14,7 +14,7 @@
 class hkAabb;
 
 	/// Creates and maintains arrays of obstacles for local steering.
-class hkaiObstacleGenerator : public hkReferencedObject
+class HK_EXPORT_AI hkaiObstacleGenerator : public hkReferencedObject
 {
 	public:
 
@@ -65,7 +65,7 @@ class hkaiObstacleGenerator : public hkReferencedObject
 #endif	// HKAI_OBSTACLE_GENERATOR_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

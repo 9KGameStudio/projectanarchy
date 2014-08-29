@@ -76,6 +76,9 @@ HK_FORCE_INLINE hkcdConvexCellsTree3D::PolygonId hkcdConvexCellsTree3D::addClosi
 		poly.setBoundaryPlaneId(k, clippedBounds[k]);
 	}
 
+	// Cache vertices info
+	m_mesh->computePolygonApproxVertices(splitPolyId);
+
 	// Add clipped polygon to the cell boundary, thus closing it off
 	return splitPolyId;
 }
@@ -108,7 +111,7 @@ HK_FORCE_INLINE int hkcdConvexCellsTree3D::getNumBoundaryPlanes(CellId cellId) c
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

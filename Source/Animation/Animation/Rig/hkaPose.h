@@ -26,7 +26,7 @@
 	/// by setting the m_floatSlotValues array to have a *capacity* rounded up to a multiple of 4. If you do not use this class
 	/// you may wish to use the helper method
 	/// hkaMultithreadedAnimationUtils::allocateFloatSlotsArrayRoundedUpToMultipleOf16()
-class hkaPose
+class HK_EXPORT_ANIMATION hkaPose
 {
 public:
 	
@@ -264,7 +264,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

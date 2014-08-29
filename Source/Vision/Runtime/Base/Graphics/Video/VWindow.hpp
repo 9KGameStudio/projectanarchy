@@ -11,7 +11,7 @@
 #ifndef DC_VHAL_VWINDOW_HPP
 #define DC_VHAL_VWINDOW_HPP
 
-#if (defined(WIN32) || defined(_VISION_DOC)) && !defined(_VISION_WINRT)
+#if (defined(_VISION_WIN32) || defined(_VISION_DOC)) && !defined(_VISION_WINRT)
 
 class IVisionWindow;
 
@@ -78,12 +78,12 @@ public:
   ///   Internal use only.
   VBASE_IMPEXP BOOL CheckWindowSettingForIME();
 
-  DWORD WindowCreationFlags;         ///< WIN32 only: Contains the flags used to create the window
-  DWORD WindowsClassStyle;           ///< WIN32 only: Contains the style used to create the window class  
+  DWORD WindowCreationFlags;         ///< Windows only: Contains the flags used to create the window
+  DWORD WindowsClassStyle;           ///< Windows only: Contains the style used to create the window class  
   unsigned int VWindowType;         
   WNDPROC s_pfWindowProc;           
-  HWND CreatedWindowHandle;         ///< WIN32 only: Used to specify an existing window (if NULL, InitializeScreen will create its own window)
-  HWND ParentWindowHandle;          ///< WIN32 only: Parent window (NULL if no parent window)
+  HWND CreatedWindowHandle;         ///< Windows only: Used to specify an existing window (if NULL, InitializeScreen will create its own window)
+  HWND ParentWindowHandle;          ///< Windows only: Parent window (NULL if no parent window)
 };
 
 /// \brief
@@ -286,7 +286,7 @@ VBASE_IMPEXP BOOL VGLWndProcEmbeddedView(UINT message, WPARAM wParam, LPARAM lPa
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

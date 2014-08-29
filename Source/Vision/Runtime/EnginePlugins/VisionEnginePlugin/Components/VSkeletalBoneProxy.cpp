@@ -8,8 +8,9 @@
 
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/VisionEnginePluginPCH.h>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Components/VSkeletalBoneProxy.hpp>
-#include <Vision/Runtime/Base/System/Memory/VMemDbg.hpp>
 
+
+#define BONE_UPDATE_CALLBACK  VisionApp_cl::OnUpdateAnimationFinished
 
 VSkeletalBoneProxyManager VSkeletalBoneProxyManager::g_BoneProxyManager;
 
@@ -22,7 +23,7 @@ VSkeletalBoneProxyObject::VSkeletalBoneProxyObject()
 
 VSkeletalBoneProxyObject::~VSkeletalBoneProxyObject()
 {
-//  g_BoneProxyManager.RemoveProxy(this);
+
 }
 
 void VSkeletalBoneProxyObject::DisposeObject()
@@ -51,14 +52,6 @@ void VSkeletalBoneProxyObject::Serialize( VArchive &ar )
     ar << m_iBoneIndex;
   }
 }
-
-/*
-void VSkeletalBoneProxyObject::ModSysNotifyFunctionParentAltered( int iFlags )
-{
-  if (m_iBoneIndex<0)
-    VisObject3D_cl::ModSysNotifyFunctionParentAltered(iFlags);
-}
-*/
 
 void VSkeletalBoneProxyObject::AttachToEntityBone(VisBaseEntity_cl *pEntity, const char *szBoneName)
 {
@@ -123,7 +116,7 @@ void VSkeletalBoneProxyManager::OneTimeDeInit()
   VASSERT(m_AllProxies.Count()==0);
   if (m_bCallbacksRegistered)
   {
-    Vision::Callbacks.OnUpdateSceneFinished -= this;
+    BONE_UPDATE_CALLBACK -= this;
     Vision::Callbacks.OnAfterSceneUnloaded -= this;
   }
 }
@@ -134,7 +127,7 @@ void VSkeletalBoneProxyManager::AddProxy(VSkeletalBoneProxyObject *pObj)
   if (!m_bCallbacksRegistered)
   {
     m_bCallbacksRegistered = true;
-    Vision::Callbacks.OnUpdateSceneFinished += this;
+    BONE_UPDATE_CALLBACK += this;
     Vision::Callbacks.OnAfterSceneUnloaded += this;
   }
   m_AllProxies.Add(pObj);
@@ -146,14 +139,14 @@ void VSkeletalBoneProxyManager::RemoveProxy(VSkeletalBoneProxyObject *pObj)
   if (m_bCallbacksRegistered && m_AllProxies.Count()==0)
   {
     m_bCallbacksRegistered = false;
-    Vision::Callbacks.OnUpdateSceneFinished -= this;
+    BONE_UPDATE_CALLBACK -= this;
     Vision::Callbacks.OnAfterSceneUnloaded -= this;
   }
 }
 
 void VSkeletalBoneProxyManager::OnHandleCallback(IVisCallbackDataObject_cl *pData)
 {
-  if ( pData->m_pSender == &Vision::Callbacks.OnUpdateSceneFinished )
+  if ( pData->m_pSender == &BONE_UPDATE_CALLBACK )
   {
     const int iCount = m_AllProxies.Count();
     for (int i=0;i<iCount;i++)
@@ -162,7 +155,7 @@ void VSkeletalBoneProxyManager::OnHandleCallback(IVisCallbackDataObject_cl *pDat
   else if ( pData->m_pSender == &Vision::Callbacks.OnAfterSceneUnloaded )
   {
     m_AllProxies.Clear();
-    Vision::Callbacks.OnUpdateSceneFinished -= this;
+    BONE_UPDATE_CALLBACK -= this;
     Vision::Callbacks.OnAfterSceneUnloaded -= this;
     m_bCallbacksRegistered = false;
   }
@@ -191,7 +184,7 @@ VSkeletalBoneProxyObject* VSkeletalBoneProxyManager::FindByKey(const char *szKey
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

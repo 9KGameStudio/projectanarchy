@@ -784,7 +784,7 @@ HK_FORCE_INLINE void HK_CALL hkaBatchBlenderUtilities::normalize4(
 	sum.add( w2 );
 	
 	hkVector4 invMag;
-	invMag.setSqrtInverse<HK_ACC_23_BIT,HK_SQRT_IGNORE>( sum );
+	invMag.setSqrtInverse<HK_ACC_MID,HK_SQRT_IGNORE>( sum );
 
 	x.mul( invMag );
 	y.mul( invMag );
@@ -1419,7 +1419,7 @@ HK_FORCE_INLINE void HK_CALL hkaBatchBlenderUtilities::acos_series_4_terms( hkVe
 	tmp.setSub( hkVector4::getConstant<HK_QUADREAL_1>(), cos_theta );
 	
 	hkVector4 tmp2;
-	tmp2.setSqrtInverse<HK_ACC_23_BIT,HK_SQRT_IGNORE>( tmp );
+	tmp2.setSqrtInverse<HK_ACC_MID,HK_SQRT_IGNORE>( tmp );
 
 	out.setDiv<HK_ACC_FULL,HK_DIV_IGNORE>( theta, tmp2 );
 }
@@ -1818,14 +1818,14 @@ void hkaBatchBlenderUtilities::WeightNormalFunctor::operator() (
 	hkVector4 betaL;
 	betaL.setMul( alpha, weightR );
 	// use 23-bit division because we don't need the accuracy and it doesn't cause a div-by-0 exception on win32
-	betaL.div<HK_ACC_23_BIT,HK_DIV_IGNORE>( weightL );
+	betaL.div<HK_ACC_MID,HK_DIV_IGNORE>( weightL );
 
 	// If weightR > weightL then want (1-beta) < (1-alpha).  Let (1-beta) = (1-alpha) * weightL / weightR
 	hkVector4 betaR;
 	betaR.setSub( hkVector4::getConstant<HK_QUADREAL_1>(), alpha );
 	betaR.mul( weightL );
 	// use 23-bit division because we don't need the accuracy and it doesn't cause a div-by-0 exception on win32
-	betaR.div<HK_ACC_23_BIT,HK_DIV_IGNORE>( weightR );
+	betaR.div<HK_ACC_MID,HK_DIV_IGNORE>( weightR );
 	betaR.setSub( hkVector4::getConstant<HK_QUADREAL_1>(), betaR );
 
 	// Select from betaL, betaR
@@ -1882,7 +1882,7 @@ void hkaBatchBlenderUtilities::WeightAdditiveFunctor::operator() (
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

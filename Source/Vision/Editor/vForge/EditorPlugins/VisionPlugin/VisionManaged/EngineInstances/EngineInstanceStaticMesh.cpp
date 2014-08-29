@@ -676,11 +676,44 @@ namespace VisionManaged
     }
   }
 
+  array<Vector3F>^ EngineInstanceStaticMesh::GetVertices()
+  {
+    VisStaticMeshInstance_cl *pInstance = GetLOD0();
 
+    if(pInstance==NULL || pInstance->GetMesh()==NULL)
+      return nullptr;
+
+    VisMBVertexDescriptor_t desc;
+    desc.m_iPosOfs = VERTEXDESC_FORMAT_FLOAT3;  // We only want the position's info
+    desc.m_iStride = sizeof(float) * 3;
+    int iNumVertecies = pInstance->GetMesh()->GetNumOfVertices();
+
+    if(iNumVertecies < 1)
+      return nullptr;
+
+    // convert vertices
+    float *pVertexPosition = new float[iNumVertecies*3];
+    pInstance->GetMesh()->CopyMeshVertices(pVertexPosition, desc);
+
+    array<Vector3F>^ pVertecies = gcnew array<Vector3F>(iNumVertecies);
+    hkvMat4 transform = pInstance->GetTransform();
+
+    for(int i = 0; i < iNumVertecies ; i++)
+    {
+      int iStride = i*3;
+      hkvVec4 vec4(pVertexPosition[iStride], pVertexPosition[iStride+1], pVertexPosition[iStride+2], 1);
+      vec4 = transform.transform(vec4);
+      pVertecies[i] = Vector3F(vec4.x, vec4.y, vec4.z);
+    }
+
+    delete[] pVertexPosition;
+
+    return pVertecies;
+  }
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

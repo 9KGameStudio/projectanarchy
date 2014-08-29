@@ -6,6 +6,13 @@
  *
  */
 
+#ifndef HK_PLATFORM_SPU
+inline hkaiNavMesh::AddEdgeContext::AddEdgeContext()
+{
+	for (int i=0; i<hkaiNavMesh::MAX_DATA_PER_EDGE; i++)
+		m_data[i] = 0;
+}
+#endif
 
 //
 // hkaiNavMesh::Face methods
@@ -149,7 +156,7 @@ inline int hkaiNavMesh::Face::edgesNext( int e ) const
 	}
 	else
 	{
-		HK_ASSERT(0x6b941507, e == endEdgeIndex() - 1);
+		HK_ASSERT(0x6b941507, (e == endEdgeIndex() - 1) || (m_numEdges == 0));
 		return -1;
 	}
 }
@@ -369,11 +376,11 @@ inline hkaiNavMesh::NavMeshFlags& hkaiNavMesh::getFlags()
 
 inline bool hkaiNavMesh::isWallClimbing() const
 {
-	return m_flags.anyIsSet( hkaiNavMesh::MESH_CLIMBING ) != 0;
+	return m_flags.anyIsSet( hkaiNavMesh::MESH_CLIMBING ) != hkFalse32;
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

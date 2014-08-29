@@ -11,9 +11,10 @@
 
 #include <Common/Base/Math/Vector/hkVector2.h>
 
+#include <Ai/Internal/hkaiExport.h>
 
 /// A piecewise-linear cadlag function (with discontinuities) defined over a real interval.
-class hkaiIntervalPartition
+class HK_EXPORT_AI hkaiIntervalPartition
 {
 public:
 	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_AI_NAVMESH, hkaiIntervalPartition);
@@ -30,7 +31,7 @@ public:
 		COMB_INTERSECTION
 	};
 
-	struct Interval
+	struct HK_EXPORT_AI Interval
 	{
 		HK_DECLARE_POD_TYPE();
 
@@ -271,7 +272,7 @@ public:
 
 	/// Reflect the function around the line X=mid. 
 	/// 
-	/// \post For any a, evaluating the function at mid+a will produce the same
+	/// POSTCONDITION: For any a, evaluating the function at mid+a will produce the same
 	/// result as evaluating the original function at mid-a.
 	void reflectX(hkReal mid);
 
@@ -281,7 +282,7 @@ public:
 	/// defined by an interval; they are used only to compute the mapping
 	/// function.
 	///
-	/// \post Evaluating the function at newX1 will produce the same result
+	/// POSTCONDITION: Evaluating the function at newX1 will produce the same result
 	/// result as evaluating the function at curX1 would have before calling
 	/// this function. Likewise with newX2 and curX2.
 	///
@@ -297,7 +298,7 @@ public:
 	/// in the function's range; they are used only to compute the mapping
 	/// function.
 	///
-	/// \post Wherever evaluating the function would have produced curY1, will
+	/// POSTCONDITION: Wherever evaluating the function would have produced curY1, will
 	/// now produce newY1. Likewise with curY2 and newY2.
 	///
 	/// \param curX1 An x-coordinate in the original domain.
@@ -332,8 +333,17 @@ public:
 	/// Interval &), allowing it to modify the interval. Store the modified
 	/// interval if the functor returns true; otherwise, discard the interval.
 	template<typename FilterType>
+	void filterIntervals(FilterType & filter);
+	template<typename FilterType>
 	void filterIntervals(FilterType const& filter);
 
+	/// Simplify the partition by greedily merging adjacent intervals if their
+	/// endpoints are within the provided window and merging them would not
+	/// result in the merged point experiencing more than the provided amount
+	/// of error.
+	void simplifyGreedy(hkReal maxXGap, hkReal maxYGap, hkReal maxYError);
+
+	void removeShortIntervals(hkReal minXSize);
 protected:
 	typedef hkContainerHeapAllocator Allocator;
 
@@ -352,7 +362,7 @@ protected:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

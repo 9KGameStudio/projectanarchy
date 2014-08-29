@@ -135,7 +135,7 @@ class hkbCharacterControllerModifier : public hkbModifier
 			/// maintained, ignoring the vertical component of the motion extracted from the animation.  This allows the character to fall through the air and
 			/// stick to the ground while running down hills, all while allowing the horizontal motion to come from the animation.
 		hkBool m_forceDownwardMomentum;	//+default(true)
-										//+hk.Description("When this is set to true in conjunction with m_motionMode set to MOTION_MODE_FOLLOW_ANIMATION, whenever the character controller has a downward velocity it is maintained, ignoring the vertical component of the motion extracted from the animation.  This allows the character to fall through the air and stick to the ground while running down hills, all while allowing the horizontal motion to come from the animation.")
+										//+hk.Description("When this is set to true in conjunction with m_motionMode set to MOTION_MODE_FOLLOW_ANIMATION, whenever the character controller has a downward velocity it is maintained, ignoring the vertical component of the motion extracted from the animation.  This allows the character to fall through the air and reduces the launch effect when running off the top of a hill, all while allowing the horizontal motion to come from the animation.")
 
 			/// If this is true, gravity will be applied when the character controller is not touching the ground.
 		hkBool m_applyGravity;	//+default(true)
@@ -182,7 +182,7 @@ class hkbCharacterControllerModifier : public hkbModifier
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

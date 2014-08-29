@@ -6,13 +6,13 @@
  *
  */
 
-inline hkBool hkpRootCdPoint::operator<( const hkpRootCdPoint& b ) const
+inline hkBool32 hkpRootCdPoint::operator<( const hkpRootCdPoint& b ) const
 { 
-	return m_contact.getDistanceSimdReal() < b.m_contact.getDistanceSimdReal(); 
+	return m_contact.getDistanceSimdReal().isLess( b.m_contact.getDistanceSimdReal() ); 
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

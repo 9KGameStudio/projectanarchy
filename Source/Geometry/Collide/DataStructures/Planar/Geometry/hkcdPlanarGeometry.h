@@ -5,6 +5,7 @@
  * Product and Trade Secret source code contains trade secrets of Havok. Havok Software (C) Copyright 1999-2014 Telekinesys Research Limited t/a Havok. All Rights Reserved. Use of this software is subject to the terms of an end user license agreement.
  *
  */
+//HK_HAVOK_ASSEMBLY_EXCLUDE_FILE
 
 #ifndef HKCD_PLANAR_GEOMETRY_H
 #define HKCD_PLANAR_GEOMETRY_H
@@ -14,16 +15,27 @@
 #include <Geometry/Collide/DataStructures/Planar/Memory/hkcdPlanarGeometryPlanesCollection.h>
 
 /// Geometry representation where vertices are stored implicitly as intersections of 3 planes.
-class hkcdPlanarGeometry : public hkcdPlanarEntity
+class HK_EXPORT_COMMON hkcdPlanarGeometry : public hkcdPlanarEntity
 {
 	public:
 
 		HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_GEOMETRY);
-		
+		HK_DECLARE_REFLECTION();
+
 		/// Constants
 		enum
 		{
 			INVALID_MATERIAL_ID	= 0x0FFFFFFF,	///< Material Ids cannot be greater than or equal to INVALID_MATERIAL_ID.
+		};
+
+		typedef hkcdPlanarGeometryPolygonCollection::VertexId		VertexId;
+
+		struct VertexStorage : public hkReferencedObject, public hkArray<hkVector4d>
+		{
+			HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_GEOMETRY);
+		
+			virtual ~VertexStorage()
+			{}
 		};
 
 	public:
@@ -36,6 +48,12 @@ class hkcdPlanarGeometry : public hkcdPlanarEntity
 
 		/// Copy constructor
 		hkcdPlanarGeometry(const hkcdPlanarGeometry& other);
+
+		/// Serialization constructor
+		hkcdPlanarGeometry(class hkFinishLoadedObjectFlag flag);
+
+		/// Destructor
+		virtual ~hkcdPlanarGeometry();
 
 	public:
 
@@ -83,6 +101,9 @@ class hkcdPlanarGeometry : public hkcdPlanarEntity
 		/// Welds the planes so that all planes are unique
 		void weldPlanes(hkArray<int>* planeRemapTable = HK_NULL);
 
+		/// Weld polygon vertices to save memory
+		void weldPolygonVertices();
+
 		/// Adds all polygons from the given geometry to this geometry. The planes are assumed to be already present in this geometry,
 		/// and a mapping from other to this geometry planes is expected as input
 		void appendGeometryPolygons(const hkcdPlanarGeometry& srcGeom, int* HK_RESTRICT planeRemapTable, hkUint32 maxPlaneIdValue, const hkArray<PolygonId>& polygonIdsToAdd, hkArray<PolygonId>& addedPolygonIdsOut, bool flipWinding = false, int materialOffset = 0);
@@ -92,6 +113,9 @@ class hkcdPlanarGeometry : public hkcdPlanarEntity
 
 		/// Collects a bit-field of plane Ids used by the polygons
 		void collectUsedPlaneIds(hkBitField& usedPlaneIdsOut) const;
+
+		/// Collects a bit-field of material Ids used by the polygons
+		void collectUsedMaterialIds(hkBitField& usedMatIdsOut) const;
 
 		/// Returns whether the geometry contains polygon with invalid material
 		bool containsPolygonsWithInvalidMaterial() const;
@@ -106,6 +130,24 @@ class hkcdPlanarGeometry : public hkcdPlanarEntity
 
 		/// Checks planes consistency within the geometry
 		bool checkPlanesConsistency() const;
+
+		/// Deduce the approximate vertex position for the given polygon using plane intersections
+		void computePolygonApproxVertices(const PolygonId& polyId);
+
+		/// (Debug only) check if the cached value at polygon vertices are valid
+		void checkPolygonCachedValues(const PolygonId& polyId);
+
+		/// (Debug only) check if the given polygon is convex
+		void checkPolygonConvexity(const PolygonId& polyId);
+
+		/// Recompute all the vertices pos given the current plane state. This assumes that all polygons have valid vertex ids
+		void recomputeVerticesCache(int nbEstimatedVertices = 0);
+
+		/// Transforms the vertex cache
+		void transformVerticesCache(const hkQTransform& tranform, bool rotate);
+
+		/// Reference the vertices cache from the given geometry
+		void copyVerticesCacheFrom(const hkcdPlanarGeometry& other);
 
 		/// Returns the plane collection associated with this geometry
 		HK_FORCE_INLINE const PlanesCollection* getPlanesCollection() const;
@@ -124,11 +166,18 @@ class hkcdPlanarGeometry : public hkcdPlanarEntity
 		/// Returns the collection of polygons
 		HK_FORCE_INLINE const hkcdPlanarGeometryPolygonCollection& getPolygons() const;
 		HK_FORCE_INLINE hkcdPlanarGeometryPolygonCollection& accessPolygons();
+		HK_FORCE_INLINE void setPolygons(hkcdPlanarGeometryPolygonCollection* polys);
 
 	protected:
 
-		hkRefPtr<PlanesCollection> m_planes;					///< The planes
-		hkRefPtr<hkcdPlanarGeometryPolygonCollection> m_polys;	///< The polygons
+		/// The planes
+		hkRefPtr<PlanesCollection> m_planes;
+
+		/// The polygons
+		hkRefPtr<hkcdPlanarGeometryPolygonCollection> m_polys;
+
+		/// The vertices
+		hkRefPtr<VertexStorage> m_vertices;						//+nosave
 };
 
 #include <Geometry/Collide/DataStructures/Planar/Geometry/hkcdPlanarGeometry.inl>
@@ -136,7 +185,7 @@ class hkcdPlanarGeometry : public hkcdPlanarEntity
 #endif	//	HKCD_PLANAR_GEOMETRY_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

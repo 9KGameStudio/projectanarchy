@@ -12,40 +12,52 @@ template <typename T>
 class hkRelArray
 {
 	//+hk.MemoryTracker(ignore=True)
-public:
-	HK_FORCE_INLINE void* operator new(hk_size_t size, hkRelArray<T>* object);
-	// RelArray can not be directly reflected or allocated
-	hkRelArray() {}
-	// Should be constructed in-place
-	hkRelArray(hkUint16 size, const void* ptr);
-	~hkRelArray() {}
+	public:
 
-	/// Get array element. Individual elements may be changed,
-	/// however the size and storage of the array is fixed
-	HK_FORCE_INLINE T& operator [](int index);
-	/// Get array element. Individual elements may be changed,
-	/// however the size and storage of the array is fixed
-	HK_FORCE_INLINE const T& operator [](int index) const;
+		HK_FORCE_INLINE void* operator new(hk_size_t size, hkRelArray<T>* object);
+
+		// RelArray can not be directly reflected or allocated
+		hkRelArray() {}
+
+		// Should be constructed in-place
+		HK_FORCE_INLINE hkRelArray(hkUint16 size, const void* ptr);
+
+		HK_FORCE_INLINE  void set(hkUint16 size, const void* ptr);
+
+		~hkRelArray() {}
+
+		/// Get array element. Individual elements may be changed,
+		/// however the size and storage of the array is fixed
+		HK_FORCE_INLINE T& operator [](int index);
+		/// Get array element. Individual elements may be changed,
+		/// however the size and storage of the array is fixed
+		HK_FORCE_INLINE const T& operator [](int index) const;
 	
-	/// Get array size
-	HK_FORCE_INLINE hkUint16 getSize() const;
-	/// Get array storage offset
-	HK_FORCE_INLINE hkUint16 getOffset() const;
+		/// Get array size
+		HK_FORCE_INLINE hkUint16 getSize() const;
+		/// Get array storage offset
+		HK_FORCE_INLINE hkUint16 getOffset() const;
 
-	/// Read-only member access
-	HK_FORCE_INLINE const T* begin() const;
-	/// Member access
-	HK_FORCE_INLINE T* begin();
+		/// Read-only member access
+		HK_FORCE_INLINE const T* begin() const;
+		/// Member access
+		HK_FORCE_INLINE T* begin();
 
-	/// Set the size directly. For advanced use only
-	HK_FORCE_INLINE void _setSize(int size);
+		/// Set the size directly. For advanced use only
+		HK_FORCE_INLINE void _setSize(int size);
 
-	/// Set the offset directly. For advanced use only
-	HK_FORCE_INLINE void _setOffset(int offset);
+		/// Set the offset directly. For advanced use only
+		HK_FORCE_INLINE void _setOffset(int offset);
 
-protected:
-	hkUint16 m_size;
-	hkUint16 m_offset;
+	protected:
+		
+		hkRelArray(const hkRelArray&); //Not implemented
+		void operator=(const hkRelArray&); //Not implemented
+
+	protected:
+
+		hkUint16 m_size;
+		hkUint16 m_offset;
 };
 
 #include <Common/Base/Container/RelArray/hkRelArray.inl>
@@ -53,7 +65,7 @@ protected:
 #endif //HK_RELARRAY_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

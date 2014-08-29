@@ -11,24 +11,28 @@
 #include <Ai/Internal/NavMesh/hkaiNavMeshSimplificationUtils.h>
 #include <Ai/Internal/NavMesh/hkaiNavMeshEdgeMatchingParams.h>
 #include <Ai/Pathfinding/Common/hkaiMaterialPainter.h>
+#include <Ai/Pathfinding/Common/hkaiCarver.h>
 #include <Common/Base/Reflection/Attributes/hkAttributes.h>
+#include <Ai/Pathfinding/Utilities/OverlappingTriangles/hkaiFixOverlappingTriangles.h>
 
-extern const class hkClass hkaiNavMeshGenerationSettingsOverrideSettingsClass;
+extern HK_EXPORT_AI const class hkClass hkaiNavMeshGenerationSettingsOverrideSettingsClass;
 
-extern const class hkClass hkaiNavMeshGenerationSettingsRegionPruningSettingsClass;
+extern HK_EXPORT_AI const class hkClass hkaiNavMeshGenerationSettingsRegionPruningSettingsClass;
 
-extern const class hkClass hkaiNavMeshGenerationSettingsMaterialConstructionPairClass;
+extern HK_EXPORT_AI const class hkClass hkaiNavMeshGenerationSettingsMaterialConstructionPairClass;
 
-extern const class hkClass hkaiNavMeshGenerationSettingsClass;
+extern HK_EXPORT_AI const class hkClass hkaiNavMeshGenerationSettingsClass;
 
 class hkaiVolume;
+class hkaiCarver;
+class hkaiMaterialPainter;
 
 /// This input structure controls all of the major settings for automatic nav mesh generation
-struct hkaiNavMeshGenerationSettings
+struct HK_EXPORT_AI hkaiNavMeshGenerationSettings : public hkReferencedObject
 {
-	// +version(25)
+	// +version(29)
 	HK_DECLARE_REFLECTION();
-	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_AI_NAVMESH, hkaiNavMeshGenerationSettings);
+	HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_AI_NAVMESH);
 
 	/// Flags to determine whether the triangles for a material are walkable, extruded, etc.
 	enum ConstructionFlagsBits
@@ -46,7 +50,7 @@ struct hkaiNavMeshGenerationSettings
 	typedef hkFlags<ConstructionFlagsBits, hkUint32> ConstructionFlags;
 
 		/// Storage for material properties. All triangles with the specified index will be treated with the specified flags.
-	struct MaterialConstructionPair
+	struct HK_EXPORT_AI MaterialConstructionPair
 	{
 		HK_DECLARE_REFLECTION();
 		int m_materialIndex;
@@ -54,7 +58,6 @@ struct hkaiNavMeshGenerationSettings
 	};
 
 	typedef hkaiNavMeshEdgeMatchingParameters EdgeMatchingParameters;
-
 
 		/// How the character width (m_minCharacterWidth) is used to remove sections of the nav mesh.
 	enum CharacterWidthUsage
@@ -73,9 +76,9 @@ struct hkaiNavMeshGenerationSettings
 	};
 
 		/// Localized or material-based override settings for nav mesh generation
-	struct OverrideSettings
+	struct HK_EXPORT_AI OverrideSettings
 	{
-		// +version(3)
+		// +version(4)
 		HK_DECLARE_REFLECTION();
 		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_AI_NAVMESH, OverrideSettings);
 
@@ -105,7 +108,8 @@ struct hkaiNavMeshGenerationSettings
 		hkEnum<CharacterWidthUsage, hkUint8> m_characterWidthUsage; //+default(hkaiNavMeshGenerationSettings::BLOCK_EDGES)
 
 			/// Max walkable slope in the region or for the material.
-		hkReal m_maxWalkableSlope;
+		hkReal m_maxWalkableSlope;	//+default( HK_REAL_PI / 3.0f )
+									//+hk.RangeReal(absmin=0,absmax=1.57)
 
 			/// Edge matching parameters to be used in the region or for the material.
 		hkaiNavMeshEdgeMatchingParameters m_edgeMatchingParams;
@@ -131,9 +135,11 @@ struct hkaiNavMeshGenerationSettings
 	hkVector4 m_up;
 
 	/// The size of the grid to which the input vertices are snapped
-	hkReal m_quantizationGridSize;
+	hkReal m_quantizationGridSize;	//+default(1.0f / 128.0f)
+									//+hk.RangeReal(absmin="HK_REAL_MIN",softmax=1.0)
 
 	/// The maximum allowable surface given in radians.
+	/// This can be overridden based on volume regions or material with OverrideSettings.
 	hkReal m_maxWalkableSlope;		//+default( HK_REAL_PI / 3.0f )
 									//+hk.RangeReal(absmin=0,absmax=1.57)
 									//+hk.Description("The maximum walkable slope. Stored in radians.")
@@ -154,19 +160,24 @@ struct hkaiNavMeshGenerationSettings
 	hkEnum< TriangleWinding, hkUint8 > m_triangleWinding; //+default(hkaiNavMeshGenerationSettings::WINDING_CCW)
 
 	/// The threshold for removal of 'degenerate' triangles after triangulation (but before shared edge identification and convexification)
-	hkReal m_degenerateAreaThreshold;
+	hkReal m_degenerateAreaThreshold;	//+default(0.0f)
+										//+hk.RangeReal(absmin=0,softmax=1.0)
 
 	/// The threshold for removal of 'degenerate' triangles after triangulation (but before shared edge identification and convexification)
-	hkReal m_degenerateWidthThreshold;
+	hkReal m_degenerateWidthThreshold;	//+default(5e-3f)
+										//+hk.RangeReal(absmin=0,softmax=1.0)
 
 	/// The threshold for convex piece merging (Hertel-Mehlhorn). Max (reflex) angle in degrees allowed between adjacent edges
-	hkReal m_convexThreshold;
+	hkReal m_convexThreshold;	//+default(0.1f)
+								//+hk.RangeReal(absmin=0,softmax=0.15)
 
 	///	For convex piece merging (Hertel-Mehlhorn), only merges that result in faces with less than this parameter will be accepted.
-	/// Note that in the final mesh, faces with more edges may be created due to splitting of edges during edge matching or generating streaming information.
-	int m_maxNumEdgesPerFace; //+default(255)
+	/// Note that in the final mesh, faces with more edges may be created due to splitting of edges during edge matching.
+	int m_maxNumEdgesPerFace;	//+default(255)
+								//+hk.RangeInt32(absmin=3,softmin=10)
 
-	/// The edge matching params
+	/// The edge matching parameters.
+	/// These can be overridden based on volume regions or material with OverrideSettings.
 	hkaiNavMeshEdgeMatchingParameters m_edgeMatchingParams;
 
 		/// How conflicting edges are prioritized.
@@ -187,7 +198,7 @@ struct hkaiNavMeshGenerationSettings
 										//+hk.RangeInt32(absmin=1,softmax=10)
 
 		/// Parameters to control how regions are removed from the nav mesh
-	struct RegionPruningSettings
+	struct HK_EXPORT_AI RegionPruningSettings
 	{
 		// +version(2)
 		HK_DECLARE_REFLECTION();
@@ -212,7 +223,8 @@ struct hkaiNavMeshGenerationSettings
 
 			/// Minimum acceptable distance to the region seed points (below).
 			/// If no face in a region is within the minimum distance to at least one seed point, the region will be removed.
-		hkReal m_minDistanceToSeedPoints; //+default(1.0f)
+		hkReal m_minDistanceToSeedPoints;	//+default(1.0f)
+											//+hk.RangeReal(absmin=0)
 
 			/// Tolerance to preserve small regions near the boundary AABB of the nav mesh.
 			/// Any region within this distance of the nav mesh AABB will always be preserved.
@@ -240,7 +252,7 @@ struct hkaiNavMeshGenerationSettings
 
 
 		/// Generation settings that are specific to wall-climbing generation.
-	struct WallClimbingSettings
+	struct HK_EXPORT_AI WallClimbingSettings
 	{
 			//+version(1)
 		HK_DECLARE_REFLECTION();
@@ -265,10 +277,17 @@ struct hkaiNavMeshGenerationSettings
 	/// Bounding AABB - if this box is set to be non-empty, then the generated nav mesh will be confined to this bounding volume
 	hkAabb m_boundsAabb;
 
+	//
+	// Carvers and painters
+	//
+
+	void addCarver( const hkaiVolume* volume, bool shouldErodeEdges = false );
+	void addMaterialPainter( int material, const hkaiVolume* volume );
+
 	/// Carver volumes used to remove sections of the input mesh - see "Reducing the Detail of Input Geometry" in the User Guide for more details.
 	/// If the carver fully contains faces from the geometry being carved, then those faces will be removed from processing.
 	/// In places where a carver intersects a walkable surface, the carver will cut out the walkable surface such that the character cannot enter the area.
-	hkArray< hkRefPtr<const hkaiVolume> > m_carvers;
+	hkArray< hkRefPtr<const hkaiCarver> > m_carvers;
 
 	/// Painters set the material for faces that they overlap. This can be used to ensure a specific outline appears in the final nav mesh.
 	hkArray< hkRefPtr<const hkaiMaterialPainter> > m_painters;
@@ -277,6 +296,10 @@ struct hkaiNavMeshGenerationSettings
 	/// If this callback is NULL, then the painter with the highest index in the m_painters array will take precedence.
 	hkaiMaterialPainter::ResolveOverlapCallback* m_painterOverlapCallback; //+nosave
 
+	//
+	// Material construction settings
+	//
+
 	/// Default ConstructionFlag
 	ConstructionFlags m_defaultConstructionProperties; //+default( hkaiNavMeshGenerationSettings::MATERIAL_WALKABLE_AND_CUTTING );
 
@@ -284,11 +307,33 @@ struct hkaiNavMeshGenerationSettings
 	/// If the material index is not found in the map, then m_defaultConstructionProperties is used
 	hkArray<struct hkaiNavMeshGenerationSettings::MaterialConstructionPair> m_materialMap;
 
+	//
+	// Input geometry fixup.
+	// This helps remedy some common conditions that generate problems for nav mesh generation,
+	// namely overlapping coplanar triangles.
+	//
+
+		/// Whether to replace sets of overlapping triangles with non-overlapping equivalents.
+	hkBool m_fixupOverlappingTriangles; //+default(true)
+
+		/// Settings passed to hkaiOverlappingTriangles::fix() if m_fixupOverlappingTriangles is true.
+	hkaiOverlappingTriangles::Settings m_overlappingTrianglesSettings;
+
+
+	//
+	// Vertex welding
+	//
+
 	/// Set if the input vertices should be welded before nav mesh construction
 	hkBool m_weldInputVertices;
 
 	/// The threshold to use when welding input geometry
-	hkReal m_weldThreshold;
+	hkReal m_weldThreshold;		//+default(0.01f)
+								//+hk.RangeReal(absmin="HK_REAL_MIN",softmax=10.0)
+
+	//
+	// Character width and usage
+	//
 
 	/// The minimum character diameter that will be used on this nav mesh.
 	/// This value is used to prune the nav mesh, removing regions that are untraversable based on this value,
@@ -297,8 +342,12 @@ struct hkaiNavMeshGenerationSettings
 									//+hk.RangeReal(absmin=0,softmax=10)
 
 	/// How the minimum character width (m_minCharacterWidth) is used to simplify the nav mesh.
+	/// Toggling between NONE and BLOCK_EDGES can be overridden based on volume regions or material with OverrideSettings.
 	hkEnum<CharacterWidthUsage, hkUint8> m_characterWidthUsage; //+default(hkaiNavMeshGenerationSettings::BLOCK_EDGES)
 
+	//
+	// Simplification
+	// 
 
 	/// If set, simplification will be applied using hkaiNavMeshSimplificationUtils
 	hkBool m_enableSimplification;
@@ -321,8 +370,8 @@ struct hkaiNavMeshGenerationSettings
 		/// Note: this field is only used for deprecated generation and will be removed in a future release.
 	int m_carvedCuttingMaterialDeprecated;
 
-	/// If set, the edge ordering within some faces will be changed, to 
-	/// improve the accuracy of traversability checks.
+		/// If set, the edge ordering within some faces will be changed, to 
+		/// improve the accuracy of traversability checks.
 	hkBool m_setBestFaceCenters; //+default(true)
 
 	//
@@ -347,7 +396,13 @@ struct hkaiNavMeshGenerationSettings
 
 		/// Checks whether not the face (or triangle) is under the max walkable slope.
 	hkBool32 isWalkableBySlope(hkVector4Parameter normal, const hkArrayBase<hkVector4>& points, int material ) const;
-		
+
+	typedef hkPointerMap<hkUint64, hkUint32> MaterialMap;
+
+	hkBool32 isMaterialWalkable( hkUint32 material, const MaterialMap& materialMap ) const;
+
+	hkBool32 isMaterialCutting( hkUint32 material, const MaterialMap& materialMap ) const;
+
 		/// Gets the value of the character width usage for the point and the face material
 	CharacterWidthUsage getCharacterWidthUsage(hkVector4Parameter point, int material) const;
 
@@ -355,19 +410,24 @@ struct hkaiNavMeshGenerationSettings
 	hkReal getMaxWalkableSlope(const hkArrayBase<hkVector4>& points, int material) const;
 	
 	const EdgeMatchingParameters& getEdgeMatchingParameters(const hkArrayBase<hkVector4>& points, int materialA, int materialB ) const;
-	const hkaiNavMeshSimplificationUtils::Settings& getSimplificationSettings(const hkArrayBase<hkVector4>& points, int materialSettingsIndex = -1) const;
+
+		/// Gets the simplification settings for the given points and material
+	const hkaiNavMeshSimplificationUtils::Settings& getSimplificationSettingsForMaterial(const hkArrayBase<hkVector4>& points, int material ) const;
+
+		/// Gets the simplification settings, using materialSettingsIndex as a hint (if no points match).
+	const hkaiNavMeshSimplificationUtils::Settings& getSimplificationSettingsWithIndex(const hkArrayBase<hkVector4>& points, int materialSettingsIndex = -1) const;
 
 protected:
 		/// Returns the index of the override settings to use for a given set of points and material, or -1 if the global settings should be used instead.
 		/// If the points overlap multiple override settings volumes and/or the material is overridden then the one with the smallest index will be returned.
 		/// In other words, it is up to the user to sort the elements in m_overrideSettings to give the desired priority.
-	int getFirstOverrideSettingIndex(const hkArrayBase<hkVector4>& points, int materialA, int materialB, bool checkMaterial = true) const;
+	int getFirstOverrideSettingIndex(const hkArrayBase<hkVector4>& points, int materialA, int materialB, bool checkMaterial) const;
 };
 
 #endif	// HKAI_NAVIGATION_MESH_GENERATION_SETTINGS_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

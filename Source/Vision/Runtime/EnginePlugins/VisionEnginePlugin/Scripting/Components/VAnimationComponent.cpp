@@ -34,7 +34,8 @@ void VAnimationComponent::SetOwner(VisTypedEngineObject_cl *pOwner)
 
 bool VAnimationComponent::Play(const char * szAnimationName, bool bLoop, const char * szEndEventName, bool bEndEventOnce)
 {
-  if (GetOwner() == NULL)
+  VisBaseEntity_cl* pOwnerEntity = vstatic_cast<VisBaseEntity_cl*>(GetOwner());
+  if (pOwnerEntity == NULL)
     return false;
 
   if(m_pAnimCtrl != NULL) 
@@ -42,12 +43,12 @@ bool VAnimationComponent::Play(const char * szAnimationName, bool bLoop, const c
 
   // we know, that the owner is at least a VisBaseEntity_cl,
   // since the component is only attachable to VisBaseEntity_cl or inherited classes
-  m_pAnimCtrl = VisAnimConfig_cl::StartSkeletalAnimation((VisBaseEntity_cl *)m_pOwner, szAnimationName, bLoop ? VANIMCTRL_LOOP : VSKELANIMCTRL_DEFAULTS);
+  m_pAnimCtrl = VisAnimConfig_cl::StartSkeletalAnimation(pOwnerEntity, szAnimationName, bLoop ? VANIMCTRL_LOOP : VSKELANIMCTRL_DEFAULTS);
 
   // fall back for vertex animations
   if(m_pAnimCtrl == NULL)
   {
-    m_pAnimCtrl = VisAnimConfig_cl::StartVertexAnimation((VisBaseEntity_cl *)m_pOwner, szAnimationName, bLoop ? VANIMCTRL_LOOP : VVERTANIMCTRL_DEFAULTS);
+    m_pAnimCtrl = VisAnimConfig_cl::StartVertexAnimation(pOwnerEntity, szAnimationName, bLoop ? VANIMCTRL_LOOP : VVERTANIMCTRL_DEFAULTS);
 
     if(m_pAnimCtrl == NULL) 
       return false;
@@ -59,6 +60,12 @@ bool VAnimationComponent::Play(const char * szAnimationName, bool bLoop, const c
 
   m_pAnimCtrl->AddEventListener(m_pOwner);
 
+  VisAnimConfig_cl* pAnimConfig = pOwnerEntity->GetAnimConfig();
+  if (pAnimConfig != NULL)
+  {
+    pAnimConfig->SetFlags(pAnimConfig->GetFlags() | MULTITHREADED_ANIMATION);
+  }
+  
   m_sCurrentAnim = szAnimationName;
   return true;
 }
@@ -288,13 +295,13 @@ void VAnimationComponent::Serialize( VArchive &ar )
 }
 
 
-V_IMPLEMENT_SERIAL(VAnimationComponent, IVObjectComponent, 0, Vision::GetEngineModule() );
+V_IMPLEMENT_SERIAL(VAnimationComponent, IVObjectComponent, 0, &g_VisionEngineModule );
 
 START_VAR_TABLE(VAnimationComponent, IVObjectComponent, "LUA Animation component. Gives convenient access to the animation interface.", VFORGE_HIDECLASS, "LUA Animation Component" )
 END_VAR_TABLE
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

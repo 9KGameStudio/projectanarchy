@@ -15,14 +15,14 @@
 #include <Animation/Animation/Animation/hkaAnimationBinding.h>
 #include <Animation/Internal/Compression/hkaCompression.h>
 
-extern const class hkClass hkaQuantizedAnimationTrackCompressionParamsClass;
+extern HK_EXPORT_ANIMATION const class hkClass hkaQuantizedAnimationTrackCompressionParamsClass;
 
 /// hkaQuantizedAnimation meta information
-extern const class hkClass hkaQuantizedAnimationClass;
+extern HK_EXPORT_ANIMATION const class hkClass hkaQuantizedAnimationClass;
 
 /// Compresses animation data using a quantized approximation.
 /// See Animation Compression section of the Userguide for details.
-class hkaQuantizedAnimation : public hkaAnimation
+class HK_EXPORT_ANIMATION hkaQuantizedAnimation : public hkaAnimation
 {
 	public:
 
@@ -35,7 +35,7 @@ class hkaQuantizedAnimation : public hkaAnimation
 		//
 
 		/// Compression settings for a single animation track
-		class TrackCompressionParams
+		class HK_EXPORT_ANIMATION TrackCompressionParams
 		{
 			public:
 
@@ -53,7 +53,7 @@ class hkaQuantizedAnimation : public hkaAnimation
 		};
 
 		/// This structure is used when specifying per track compression settings
-		struct PerTrackCompressionParams
+		struct HK_EXPORT_ANIMATION PerTrackCompressionParams
 		{
 			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_ANIM_COMPRESSED,hkaQuantizedAnimation::PerTrackCompressionParams);
 
@@ -241,7 +241,7 @@ class hkaQuantizedAnimation : public hkaAnimation
 		static void HK_CALL sampleRotations( hkQuaternion* poseOut, int numPoseOut, const hkUint16* elements, const hkUint16* values, int n );
 
 		/// Data header description
-		struct QuantizedAnimationHeader
+		struct HK_EXPORT_ANIMATION QuantizedAnimationHeader
 		{
 			/// Total size of header, including this struct, weights and static values/ranges
 			hkUint16 m_headerSize;
@@ -302,7 +302,7 @@ class hkaQuantizedAnimation : public hkaAnimation
 			}
 };
 
-class hkaQuantizedAnimationBuilder
+class HK_EXPORT_ANIMATION hkaQuantizedAnimationBuilder
 {
 	public:
 		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_ANIM_COMPRESSED,hkaQuantizedAnimationBuilder);
@@ -317,21 +317,21 @@ class hkaQuantizedAnimationBuilder
 
 	public:
 
-		struct Range
+		struct HK_EXPORT_ANIMATION Range
 		{
 			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_ANIM_COMPRESSED,hkaQuantizedAnimationBuilder::Range);
 			hkSimdReal m_minimum;
 			hkSimdReal m_span;
 		};
 
-		struct StaticScalar
+		struct HK_EXPORT_ANIMATION StaticScalar
 		{
 			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_ANIM_COMPRESSED,hkaQuantizedAnimationBuilder::StaticScalar);
 			hkSimdReal m_value;
 			hkUint16 m_boneElement;
 		};
 
-		struct DynamicScalar
+		struct HK_EXPORT_ANIMATION DynamicScalar
 		{
 			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_ANIM_COMPRESSED,hkaQuantizedAnimationBuilder::DynamicScalar);
 			Range m_range;
@@ -339,14 +339,14 @@ class hkaQuantizedAnimationBuilder
 			hkUint16 m_boneElement;
 		};
 
-		struct StaticRotation
+		struct HK_EXPORT_ANIMATION StaticRotation
 		{
 			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_ANIM_COMPRESSED,hkaQuantizedAnimationBuilder::StaticRotation);
 			hkQuaternion m_value;
 			hkUint16 m_boneElement;
 		};
 
-		struct DynamicRotation
+		struct HK_EXPORT_ANIMATION DynamicRotation
 		{
 			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_ANIM_COMPRESSED,hkaQuantizedAnimationBuilder::DynamicRotation);
 			hkUint16 m_trackElement;
@@ -404,7 +404,7 @@ class hkaQuantizedAnimationBuilder
 #endif // HK_ANIMATION_QUANTIZED_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

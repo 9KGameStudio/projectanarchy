@@ -88,7 +88,7 @@ V_IMPLEMENT_DYNCREATE(VExitHandler, VAppModule, Vision::GetEngineModule());
 
 VExitHandler::VExitHandler() : VAppModule(), m_spExitDlg(NULL), m_bShowExitDialog(true)
 {
-#if defined(WIN32)
+#if defined(_VISION_WIN32) || defined(_VISION_WIIU)
   m_bShowExitDialog = false;
 #endif
 }
@@ -144,8 +144,6 @@ void VExitHandler::OnHandleCallback(IVisCallbackDataObject_cl* pData)
         {
           m_spExitDlg->SetUnlockInput(false);
         }
-        GetParent()->GetInputMap()->SetEnabled(true);
-
         m_spExitDlg->SetVisible(true);
 
         VAppMenuContextPtr spContext = GetParent()->GetContext();
@@ -160,11 +158,6 @@ void VExitHandler::OnHandleCallback(IVisCallbackDataObject_cl* pData)
         VAppBase::Get()->Quit();
         return;
       }
-
-      if (pInputMap->GetTrigger(VAPP_MENU_CONFIRM))
-        VAppBase::Get()->Quit();
-      else if (pInputMap->GetTrigger(VAPP_MENU_BACK))
-        pDialog->CloseDialog();
     }
   }
   else if (pData->m_pSender == &Vision::Callbacks.OnVideoChanged)
@@ -175,7 +168,7 @@ void VExitHandler::OnHandleCallback(IVisCallbackDataObject_cl* pData)
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -8,24 +8,24 @@
 #ifndef HK_SOME_OBJECT_H
 #define HK_SOME_OBJECT_H
 
-extern const hkClass hkSomeObjectClass;
-class hkSomeObject : public hkReferencedObject
+extern const hkClass SomeObjectClass;
+class SomeObject : public hkReferencedObject
 {
 	public:
 		HK_DECLARE_REFLECTION();
 
-		hkSomeObject(hkSomeObject* n=HK_NULL) : m_next(n) { ++m_numInstances; }
-		hkSomeObject(hkFinishLoadedObjectFlag f) : hkReferencedObject(f) { if( f.m_finishing) { ++m_numInstances; } }
-		virtual ~hkSomeObject() { --m_numInstances; }
+		SomeObject(SomeObject* n=HK_NULL) : m_next(n) { ++m_numInstances; }
+		SomeObject(hkFinishLoadedObjectFlag f) : hkReferencedObject(f) { if( f.m_finishing) { ++m_numInstances; } }
+		virtual ~SomeObject() { --m_numInstances; }
 
-		hkSomeObject* m_next;
+		SomeObject* m_next;
 		static int m_numInstances;
 };
 
 #endif // HK_SOME_OBJECT_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

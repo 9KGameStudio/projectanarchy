@@ -72,16 +72,20 @@ inline int hkaiFaceCutResults::getPolyDataSize(int numPolys, int numEdges)
 	return polyDataSize;
 }
 
-inline int hkaiFaceCutResults::getRequiredSize(int numPolys, int numEdges)
+inline int hkaiFaceCutResults::getRequiredSize(int numPolys, int numEdges, int numVerts)
 {
 	int polyDataSize = getPolyDataSize(numPolys, numEdges);
 
 	// This might reserve more vertex data than it needs
 	
 	// Pad up so that the vectors are aligned
-	const int numVerts = HK_NEXT_MULTIPLE_OF(4, numEdges);
-	const int reserveSize = HK_NEXT_MULTIPLE_OF(sizeof(hkVector4), polyDataSize) + numVerts * sizeof(hkVector4);
-#ifdef HK_ARCH_PS3SPU
+	if(numVerts < 0)
+	{
+		numVerts = numEdges;
+	}
+
+	const int reserveSize = HK_NEXT_MULTIPLE_OF(sizeof(hkVector4), polyDataSize) + HK_NEXT_MULTIPLE_OF(4, numVerts) * sizeof(hkVector4);
+#ifdef HK_PLATFORM_PS3_SPU
 	return (reserveSize > hkMemoryRouterSpuUtil::MEMORY_MAX_SIZE_LARGE_BLOCK) ? HK_INT32_MAX :  hkMemoryRouterSpuUtil::getAllocatedSize(HK_NULL, reserveSize);
 #else
 	return reserveSize;
@@ -156,7 +160,7 @@ inline void hkaiFaceCutResults::writePolyInfo(PolyOutput& dataPtr, int material,
 	HK_ASSERT(0x173e7c95, (hkUlong((const hkUint32*)dataPtr)%4) == 0);
 }
 
-inline hkUint32* hkaiFaceCutResults::init(int numPolys, int numEdges)
+inline hkUint32* hkaiFaceCutResults::init(int numPolys, int numEdges, int numVerts)
 {
 #ifdef HK_PLATFORM_SPU
 #	ifdef HK_PLATFORM_PS3_SPU
@@ -172,7 +176,7 @@ inline hkUint32* hkaiFaceCutResults::init(int numPolys, int numEdges)
 	m_numEdges = (hkInt16) numEdges;
 	m_numVertices = 0;
 	
-	int reserveSize = getRequiredSize(numPolys, numEdges);
+	int reserveSize = getRequiredSize(numPolys, numEdges, numVerts);
 	if( reserveSize > maxAllocationAllowed )
 	{
 		return HK_NULL;
@@ -217,7 +221,7 @@ inline const hkVector4* hkaiFaceCutResults::getVertexStart() const
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -15,7 +15,7 @@
 #define HKGP_TOPOLOGY_UNPACKED_UID	0
 
 /// Topological data structures
-class hkgpTopology
+class  hkgpTopology
 {
 public:
 HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE,hkgpTopology);
@@ -227,7 +227,7 @@ HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE,hkgpTopology);
 #endif // HKGP_TOPOLOGY_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

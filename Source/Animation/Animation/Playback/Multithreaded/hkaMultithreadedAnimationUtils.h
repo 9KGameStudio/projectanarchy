@@ -12,7 +12,7 @@
 #include <Animation/Animation/Playback/Multithreaded/SampleAndCombine/hkaAnimationSampleAndCombineJobs.h>
 #include <Animation/Animation/Mapper/Multithreaded/hkaAnimationMappingJobs.h>
 
-class hkaMultithreadedAnimationUtils
+class HK_EXPORT_ANIMATION hkaMultithreadedAnimationUtils
 {
 	public:
 			/*
@@ -75,7 +75,7 @@ class hkaMultithreadedAnimationUtils
 #endif // HK_MUTLITHREADED_ANIMATION_UTILS_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

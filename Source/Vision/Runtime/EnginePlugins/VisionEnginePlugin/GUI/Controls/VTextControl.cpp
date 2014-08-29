@@ -8,7 +8,7 @@
 
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/VisionEnginePluginPCH.h>         // precompiled header
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/GUI/VMenuIncludes.hpp>
-#include <Vision/Runtime/Base/System/Memory/VMemDbg.hpp>
+
 
 #define CURSOR_FREQ   1.3f
 #define CURSOR_WIDTH  2.f
@@ -75,7 +75,7 @@ bool VTextControl::Build(TiXmlElement *pNode, const char *szPath, bool bWrite)
   XMLHelper::Exchange_Int(pNode,"maxchars",m_iMaxChars,bWrite);
   XMLHelper::Exchange_Int(pNode,"passwordchar",m_iPasswordChar,bWrite);
 
-  m_vTextOfs = GetClientAreaBorder().m_vMin;
+  m_vTextOfs.setZero();
 
   // text
   TiXmlElement *pTextNode = XMLHelper::SubNode(pNode,"text",bWrite);
@@ -113,7 +113,7 @@ void VTextControl::OnPaint(VGraphicsInfo &Graphics, const VItemRenderInfo &paren
   m_Frame.OnPaint(Graphics,thisState);
 
   // render text
-  m_Text.SetTextOfs(m_vTextOfs+hkvVec2(-m_fTextOfs,0.f));
+  m_Text.SetTextOfs(m_vTextOfs - hkvVec2(m_fTextOfs, 0.0f));
   // set clipping rectangle
   Graphics.ClippingStack.Push(GetClientRect(),true);
   m_Text.OnPaint(Graphics,thisState);
@@ -128,9 +128,9 @@ void VTextControl::OnPaint(VGraphicsInfo &Graphics, const VItemRenderInfo &paren
     if (!m_Text.GetFont()->GetTextDimension(sText, rect, m_iCursorPos))
       rect.m_vMax.set(0.f,0.f);
     
-    hkvVec2 p1 = GetAbsPosition() + m_Text.GetTextOfs();
-    p1.x += rect.m_vMax.x;
-    hkvVec2 p2 = p1 + hkvVec2(CURSOR_WIDTH,m_Text.GetFont()->GetFontHeight());
+    hkvVec2 p1 = GetClientRect().m_vMin + m_Text.GetTextOfs();
+    p1.x += rect.m_vMax.x * m_Text.GetScaling();
+    hkvVec2 p2 = p1 + hkvVec2(CURSOR_WIDTH,m_Text.GetFont()->GetFontHeight() * m_Text.GetScaling());
     VSimpleRenderState_t cursorState = VGUIManager::DefaultGUIRenderState();
     Graphics.Renderer.DrawSolidQuad(p1,p2,V_RGBA_WHITE,cursorState);
   }
@@ -357,7 +357,7 @@ void VTextControl::OnClick(VMenuEventDataObject *pEvent)
   const VString &sText(m_iPasswordChar < 0 ? m_sCurrentText : m_sPasswordString);
 
   // relative position inside text
-  hkvVec2 vRelPos = pEvent->m_vMousePos - GetAbsPosition() - m_Text.GetTextOfs();
+  hkvVec2 vRelPos = (pEvent->m_vMousePos - GetClientRect().m_vMin - m_Text.GetTextOfs()) / m_Text.GetScaling();
 
   // find character at mouse click position
   SetCursorPos(m_Text.GetFont()->GetCharacterIndexAtPos(sText, vRelPos.x), true);
@@ -469,7 +469,7 @@ void VTextControl::OnSpecialKey(unsigned int uiKey)
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

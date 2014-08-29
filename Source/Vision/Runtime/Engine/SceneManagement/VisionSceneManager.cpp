@@ -18,6 +18,7 @@
 // *  #includes in order to get this code to compile.
 // *******************************************************************************
 
+static const unsigned int MAX_ZONE_NODES = 4096;
 
 static VisionResourceCreator_cl g_ResourceCreator;
 VisCallback_cl IVisSceneManager_cl::OnReposition(VIS_PROFILE_REPOSITION_CUSTOMOBJECTS);
@@ -35,6 +36,70 @@ VisCallback_cl IVisSceneManager_cl::OnReposition(VIS_PROFILE_REPOSITION_CUSTOMOB
     VisStaticGeometryInstance_cl *pInst = VisStaticGeometryInstance_cl::ElementManagerGet(iInst);\
     if (!pInst) continue;
     
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// class VStreamingAreaComponent
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void VStreamingAreaComponent::SetOwner(VisTypedEngineObject_cl *pOwner)
+{
+  IVObjectComponent::SetOwner(pOwner);
+
+  m_Area.SetStreamingReference((VisObject3D_cl *)GetOwner(), DistanceScaling);
+
+  if (pOwner)
+  {
+    if (!m_bAreaAdded)
+    {
+      Vision::GetSceneManager()->AddStreamingArea(&m_Area);
+      m_bAreaAdded = true;
+    }
+  } else
+  {
+    if (m_bAreaAdded)
+    {
+      Vision::GetSceneManager()->RemoveStreamingArea(&m_Area);
+      m_bAreaAdded = false;
+    }
+  }
+
+}
+
+void VStreamingAreaComponent::OnVariableValueChanged(VisVariable_cl *pVar, const char * value)
+{
+  IVObjectComponent::OnVariableValueChanged(pVar, value);
+  m_Area.SetStreamingReference((VisObject3D_cl *)GetOwner(), DistanceScaling);
+}
+
+
+BOOL VStreamingAreaComponent::CanAttachToObject(VisTypedEngineObject_cl *pObject, VString &sErrorMsgOut)
+{
+  return pObject->IsOfType(V_RUNTIME_CLASS(VisObject3D_cl));
+}
+
+V_IMPLEMENT_SERIAL( VStreamingAreaComponent, IVObjectComponent, 0, &g_engineModule );
+void VStreamingAreaComponent::Serialize( VArchive &ar )
+{
+  IVObjectComponent::Serialize(ar);
+  char iLocalVersion = 0;
+  if (ar.IsLoading())
+  {
+    ar >> iLocalVersion;VASSERT(iLocalVersion==0);
+    ar >> DistanceScaling;
+  } else
+  {
+    ar << iLocalVersion;
+    ar << DistanceScaling;
+  }
+}
+
+START_VAR_TABLE(VStreamingAreaComponent,IVObjectComponent,"Can be attached to a positionable object (camera) to stream in zones around the object pivot",VVARIABLELIST_FLAGS_NONE, "Streaming Area Reference" )
+  DEFINE_VAR_FLOAT(VStreamingAreaComponent, DistanceScaling, "Relative scaling of distances towards the zones.", "1.0", 0, NULL);
+END_VAR_TABLE
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// class IVisSceneManager_cl
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 
 IVisSceneManager_cl::IVisSceneManager_cl()
 {
@@ -123,11 +188,22 @@ VisObject3D_cl* IVisSceneManager_cl::GetStreamingReferenceSafe() const
 }
 
 
+void IVisSceneManager_cl::AddStreamingArea(IVisStreamingArea_cl *pArea)
+{
+  m_StreamingAreas.AddUnique(pArea);
+}
+
+void IVisSceneManager_cl::RemoveStreamingArea(IVisStreamingArea_cl *pArea)
+{
+  m_StreamingAreas.SafeRemove(pArea);
+}
+
+
 
 void IVisSceneManager_cl::GatherStaticGeometryInBoundingBox(const hkvAlignedBBox &bbox, VisStaticGeometryInstanceCollection_cl &destList)
 {
-  VisVisibilityZone_cl *tempNodeList[256];
-  int iNumNodes = FindVisibilityZones(bbox, tempNodeList, 256);
+  VisVisibilityZone_cl *tempNodeList[MAX_ZONE_NODES];
+  int iNumNodes = FindVisibilityZones(bbox, tempNodeList, MAX_ZONE_NODES);
 //  int iNumFoundGIs = 0;
   VisStaticGeometryInstance_cl::ResetTags();
 
@@ -159,8 +235,8 @@ void IVisSceneManager_cl::GatherStaticGeometryInBoundingBox(const hkvAlignedBBox
 
 void IVisSceneManager_cl::GatherEntitiesInBoundingBox(const hkvAlignedBBox &bbox, VisEntityCollection_cl &destList)
 {
-  VisVisibilityZone_cl *tempNodeList[256];
-  int iNumNodes = FindVisibilityZones(bbox, tempNodeList, 256);
+  VisVisibilityZone_cl *tempNodeList[MAX_ZONE_NODES];
+  int iNumNodes = FindVisibilityZones(bbox, tempNodeList, MAX_ZONE_NODES);
   VisBaseEntity_cl::ResetTags();
 
   for (int i=0; i<iNumNodes; i++) 
@@ -234,6 +310,7 @@ VisionSceneManager_cl::VisionSceneManager_cl() : m_ChangingZones(0, 0)
   m_SnapshotQueue.m_pCreator = &g_ResourceCreator;
   m_SnapshotQueue.m_pLoader = &Vision::File.GetMemoryStreamManager();
   m_SnapshotQueue.m_pLog = NULL;
+
 }
 
 
@@ -288,8 +365,8 @@ VisVisibilityZone_cl *VisionSceneManager_cl::FindClosestVisibilityZoneSimple(con
 VisVisibilityZone_cl *VisionSceneManager_cl::FindClosestVisibilityZone(const hkvAlignedBBox &bbox, const hkvVec3* pOrigin)
 {
   VASSERT(bbox.isValid());
-  VisVisibilityZone_cl *pZones[256];
-  unsigned int iNumRelevantNodes = FindVisibilityZones(bbox, pZones, 256);
+  VisVisibilityZone_cl *pZones[MAX_ZONE_NODES];
+  unsigned int iNumRelevantNodes = FindVisibilityZones(bbox, pZones, MAX_ZONE_NODES);
 
   // No relevant nodes, so we determine the best node using a simple bbox/bbox proximity test
   if (iNumRelevantNodes == 0)
@@ -373,6 +450,7 @@ VisVisibilityZone_cl *VisionSceneManager_cl::FindClosestVisibilityZone(const hkv
   return pBestZone;
 }
 
+
 void VisionSceneManager_cl::GetSceneExtents(hkvAlignedBBox& bbox) const
 {
   bbox.setInvalid();
@@ -401,6 +479,7 @@ VisVisibilityZone_cl *VisionSceneManager_cl::TraceIntoZone(const hkvVec3& vPos, 
   hkvVec3 vEndPos = vPos + vDir; // length of dir defines the trace length
 
   hkvAlignedBBox traceBox;
+  traceBox.setInvalid();
   traceBox.expandToInclude(vPos);
   traceBox.expandToInclude(vEndPos);
 
@@ -464,7 +543,7 @@ int SortZonesByActionPriority(const void *arg1, const void *arg2)
 
 void VisionSceneManager_cl::HandleZones(float fTimeDelta)
 {
-#ifdef WIN32
+#ifdef _VISION_WIN32
   // don't handle zones inside the editor (but only test on PC platform as console clients should execute anyway)
   if (Vision::Editor.IsInEditor())
     return;
@@ -487,6 +566,8 @@ void VisionSceneManager_cl::HandleZones(float fTimeDelta)
 
   const int iCount = zones.GetResourceCount();
   int iChangingZones = 0;
+  const int iAreaCount = m_StreamingAreas.Count();
+  hkvVec3 vAreaPos = vCamPos; // just in case the virtual function does not set it
 
   // Loop 1. Evaluate what to do with any of the zones
   for (int i=0;i<iCount;i++)
@@ -495,7 +576,19 @@ void VisionSceneManager_cl::HandleZones(float fTimeDelta)
     VisZoneResource_cl *pZone = zones.GetZoneByIndex(i);
     if (!pZone || !pZone->m_bHandleZone || pZone->IsMissing())
       continue;
+
+    // distance using reference position
     float fDist = pZone->m_BoundingBox.getDistanceTo(vCamPos);
+
+    // calculate minimum distance across all additional areas
+    for (int iArea=0;iArea<iAreaCount && fDist>0.f; iArea++)
+    {
+      float fScaling = 1.f;
+      m_StreamingAreas.GetAt(iArea)->GetStreamingReference(vAreaPos, fScaling);
+      float fAreaDist = pZone->m_BoundingBox.getDistanceTo(vAreaPos) * fScaling;
+      fDist = hkvMath::Min(fDist,fAreaDist);
+    }
+
     pZone->m_fCameraDistance = fDist;
     bool bZoneAdded = false;
     UBYTE &action(pZone->m_iWantedAction);
@@ -754,7 +847,7 @@ bool VisionSceneManager_cl::PurgeResources(__int64 iEndTime)
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140723)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

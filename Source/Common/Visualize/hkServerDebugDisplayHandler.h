@@ -13,7 +13,7 @@
 class hkDisplaySerializeOStream;
 
 /// The server debug display handler is only a process as far as the command router is concerned.
-class hkServerDebugDisplayHandler : public hkReferencedObject, public hkProcess, public hkDebugDisplayHandler
+class HK_EXPORT_COMMON hkServerDebugDisplayHandler : public hkReferencedObject, public hkProcess, public hkDebugDisplayHandler
 {
 	public:
 
@@ -38,10 +38,11 @@ class hkServerDebugDisplayHandler : public hkReferencedObject, public hkProcess,
 		virtual hkResult setGeometryTransparency(float alpha, hkUlong id, int tag) HK_OVERRIDE;
 		virtual hkResult updateGeometry(const hkTransform& transform, hkUlong id, int tag) HK_OVERRIDE;
 		virtual hkResult updateGeometry( const hkMatrix4& transform, hkUlong id, int tag ) HK_OVERRIDE;
+		virtual hkResult updateGeometries(const hkTransform* transforms, const hkUlong* ids, int numIds, int tag) HK_OVERRIDE;
 		virtual hkResult updateGeometryVerts(hkUlong geomID, const hkArray<hkVector4>& newVerts, int tag) HK_OVERRIDE;
 		virtual hkResult skinGeometry(hkUlong* ids, int numIds, const hkMatrix4* poseModel, int numPoseModel, const hkMatrix4& worldFromModel, int tag ) HK_OVERRIDE;
 		virtual hkResult removeGeometry(hkUlong id, int tag, hkUlong shapeIdHint) HK_OVERRIDE;
-				
+
 		virtual hkResult updateCamera(const hkVector4& from, const hkVector4& to, const hkVector4& up, hkReal nearPlane, hkReal farPlane, hkReal fov, const char* name) HK_OVERRIDE;
 
 		virtual hkResult displayPoint(const hkVector4& position, hkColor::Argb color, int id, int tag) HK_OVERRIDE;
@@ -172,7 +173,7 @@ class hkServerDebugDisplayHandler : public hkReferencedObject, public hkProcess,
 #endif // HK_VISUALIZE_SERVER_DEBUG_DISPLAY_HANDLER
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

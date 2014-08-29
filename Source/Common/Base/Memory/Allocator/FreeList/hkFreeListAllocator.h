@@ -18,14 +18,14 @@ class hkMemorySnapshot;
 
 	/// This class implements the hkMemoryAllocator interface, and uses freelists as the basis of
 	/// small memory allocations, and a large block allocator for large memory allocations.
-class hkFreeListAllocator : public hkMemoryAllocator, public hkMemoryAllocator::ExtendedInterface
+class HK_EXPORT_COMMON hkFreeListAllocator : public hkMemoryAllocator, public hkMemoryAllocator::ExtendedInterface
 {
 	public:
 		HK_DECLARE_PLACEMENT_ALLOCATOR();
 
 		enum { SOFT_LIMIT_MAX = 0x7fffffff };
 
-#if defined(HK_REAL_IS_DOUBLE)
+#if defined(HK_REAL_IS_DOUBLE) || defined(HK_PLATFORM_PS4)
 		enum
 		{
 				/// The size smallest differential freelist size
@@ -191,7 +191,7 @@ class hkFreeListAllocator : public hkMemoryAllocator, public hkMemoryAllocator::
 #endif // HK_FREELIST_MEMORY
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

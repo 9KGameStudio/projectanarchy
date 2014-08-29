@@ -21,17 +21,22 @@
 #include <Common/Base/Reflection/hkTypeInfo.h>
 #include <Common/Base/Reflection/Attributes/hkAttributes.h>
 #include <Vision/Tools/SceneDataConverter/MeshFactory/hkVisionMeshShape.h>
+
+// Make VAX ignore symbols from this file
+#if 1 == 0
+_asm {
+#endif
 #define True true
 #define False false
 
 
 // External pointer and enum types
-extern const hkClass VGMeshClass;
-extern const hkClass VGSceneClass;
-extern const hkClass hkMeshMaterialClass;
-extern const hkClass hkMeshSectionClass;
-extern const hkClass hkReferencedObjectClass;
-extern const hkClass hkVisionMeshShapeMeshClass;
+extern  const hkClass VGMeshClass;
+extern  const hkClass VGSceneClass;
+extern HK_EXPORT_COMMON const hkClass hkMeshMaterialClass;
+extern HK_EXPORT_COMMON const hkClass hkMeshSectionClass;
+extern HK_EXPORT_COMMON const hkClass hkReferencedObjectClass;
+extern HK_EXPORT_COMMON const hkClass hkVisionMeshShapeMeshClass;
 
 //
 // Class hkVisionMeshShape::Mesh
@@ -70,7 +75,7 @@ static void HK_CALL cleanupLoadedObjecthkVisionMeshShapeMesh(void* p)
 {
 	static_cast<hkVisionMeshShape::Mesh*>(p)->~Mesh();
 }
-extern const hkTypeInfo hkVisionMeshShapeMeshTypeInfo;
+extern  const hkTypeInfo hkVisionMeshShapeMeshTypeInfo;
 const hkTypeInfo hkVisionMeshShapeMeshTypeInfo(
 	"hkVisionMeshShapeMesh",
 	"!hkVisionMeshShape::Mesh",
@@ -84,7 +89,7 @@ const hkTypeInfo hkVisionMeshShapeMeshTypeInfo(
 //
 // Class hkVisionMeshShape
 //
-extern const hkClass hkxBlobMeshShapeClass;
+extern HK_EXPORT_COMMON const hkClass hkxBlobMeshShapeClass;
 
 const hkInternalClassMember hkVisionMeshShape::Members[] =
 {
@@ -93,7 +98,7 @@ const hkInternalClassMember hkVisionMeshShape::Members[] =
 	{ "sections", HK_NULL, HK_NULL, hkClassMember::TYPE_ARRAY, hkClassMember::TYPE_VOID, 0, 0|hkClassMember::SERIALIZE_IGNORED, HK_OFFSET_OF(hkVisionMeshShape,m_sections), HK_NULL },
 	{ "isBaked", HK_NULL, HK_NULL, hkClassMember::TYPE_BOOL, hkClassMember::TYPE_VOID, 0, 0|hkClassMember::SERIALIZE_IGNORED, HK_OFFSET_OF(hkVisionMeshShape,m_isBaked), HK_NULL }
 };
-extern const hkClass hkVisionMeshShapeClass;
+extern HK_EXPORT_COMMON const hkClass hkVisionMeshShapeClass;
 const hkClass hkVisionMeshShapeClass(
 	"hkVisionMeshShape",
 	&hkxBlobMeshShapeClass, // parent
@@ -142,7 +147,7 @@ static const void* HK_CALL getVtablehkVisionMeshShape()
 	return u.ptr;
 	#endif
 }
-extern const hkTypeInfo hkVisionMeshShapeTypeInfo;
+extern HK_EXPORT_COMMON const hkTypeInfo hkVisionMeshShapeTypeInfo;
 const hkTypeInfo hkVisionMeshShapeTypeInfo(
 	"hkVisionMeshShape",
 	"!hkVisionMeshShape",
@@ -154,7 +159,7 @@ const hkTypeInfo hkVisionMeshShapeTypeInfo(
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -28,7 +28,7 @@ int hkThreadMemory::rowToSize( int row ) const
 
 int hkThreadMemory::constSizeToRow( int size )
 {
-#if defined(HK_REAL_IS_DOUBLE)
+#if defined(HK_REAL_IS_DOUBLE) || defined(HK_PLATFORM_PS4)
 #define HK_LUT_OFFSET (-1)
 #else
 #define HK_LUT_OFFSET (0)
@@ -37,7 +37,7 @@ int hkThreadMemory::constSizeToRow( int size )
 	HK_ASSERT(0x2a4ab5b6, size <= hkThreadMemory::MEMORY_MAX_SIZE_LARGE_BLOCK );
 	HK_ASSERT(0x5dee00b2, hkThreadMemory::MEMORY_MAX_ALL_ROW == (17+HK_LUT_OFFSET));
 
-#if !defined(HK_REAL_IS_DOUBLE)
+#if !defined(HK_REAL_IS_DOUBLE) && !defined(HK_PLATFORM_PS4)
 	if (size <= 16 ) return 1;
 	else
 #endif
@@ -66,7 +66,7 @@ int hkThreadMemory::constSizeToRow( int size )
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

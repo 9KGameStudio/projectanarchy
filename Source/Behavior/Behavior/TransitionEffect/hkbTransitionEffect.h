@@ -16,6 +16,7 @@ extern const class hkClass hkbTransitionEffectClass;
 class hkbContext;
 class hkbGeneratorOutput;
 class hkbEventQueue;
+class hkbStateMachine;
 
 	/// A transition effect between two generators, for example, to blend them.
 	///
@@ -37,6 +38,18 @@ class hkbTransitionEffect : public hkbGenerator
 
 	public:
 
+			/// Sets the generator that is being transitioned from.
+		void setFromGenerator( hkbGenerator* fromGen ) { m_fromGenerator = fromGen; }
+
+			/// Sets the generator that is being transitioned to.
+		void setToGenerator( hkbGenerator* toGen ) { m_toGenerator = toGen; }
+
+			/// Gets the generator that is being transitioned from.
+		const hkbGenerator* getFromGenerator() const { return m_fromGenerator; }
+
+			/// Gets the generator that is being transitioned to.
+		const hkbGenerator* getToGenerator() const { return m_toGenerator; }
+
 		////////////////////////////////////////
 		// hkbBindable virtual methods, overridden to facilitate execution in different behavior graphs
 		////////////////////////////////////////
@@ -49,14 +62,9 @@ class hkbTransitionEffect : public hkbGenerator
 		// hkbTransitionEffect virtual methods
 		////////////////////////////////////////
 
+		
 			/// Indicates whether the transition has completed or not.
 		virtual bool isDone() = 0;
-
-			/// Sets the generator that is being transitioned from.
-		virtual void setFromGenerator( hkbGenerator* fromGen ) = 0;
-
-			/// Sets the generator that is being transitioned to.
-		virtual void setToGenerator( hkbGenerator* toGen ) = 0;
 
 			/// Indicates how long the transition effect plans to blend out the from-generator.
 			/// 
@@ -69,6 +77,11 @@ class hkbTransitionEffect : public hkbGenerator
 			/// This is used by applySelfTransitionMode() to decide how long to blend during a self-transition
 			/// involving the to-generator.
 		virtual hkReal getToGeneratorBlendInTime() = 0;
+		
+
+			/// Called by the state machine when creating the TE.
+			/// By default, this information is not stored.
+		virtual void setParentStateMachine( const hkbContext& context, const hkbStateMachine& parentStateMachine ) {}
 
 			/// These modes determine the behavior when the to-generator is already active when the transition begins.
 		enum SelfTransitionMode
@@ -111,15 +124,6 @@ class hkbTransitionEffect : public hkbGenerator
 													//+hk.Description("How to process the events of the from-generator and to-generator.")
 
 	protected:
-		
-			// For internal use only.
-			// Overriding binding information; used when this TE is executed in the context of a global transition into a different behavior graph.
-		hkRefPtr<hkReferencedObject> m_patchedBindingInfo; //+nosave
-
-			// The default event mode to use when the event mode of a transition effect is EVENT_MODE_USE_DEFAULT.
-			// You should not set this to EVENT_MODE_USE_DEFAULT.
-			// Subclasses should set this to hkbProjectData::m_defaultEventMode inside activate().
-		hkEnum< hkbTransitionEffect::EventMode, hkInt8 > m_defaultEventMode; //+nosave
 
 			// The effective self transition mode depends on the toGenerator (see SELF_TRANSITION_MODE_CONTINUE_IF_CYCLIC_BLEND_IF_ACYCLIC).
 			// This function returns either SELF_TRANSITION_MODE_RESET, SELF_TRANSITION_MODE_BLEND, or SELF_TRANSITION_MODE_CONTINUE taking into account
@@ -132,25 +136,41 @@ class hkbTransitionEffect : public hkbGenerator
 
 			// return the event mode, applying the default if appropriate
 		int getEventMode();
+		
+			// The default event mode to use when the event mode of a transition effect is EVENT_MODE_USE_DEFAULT.
+			// You should not set this to EVENT_MODE_USE_DEFAULT.
+			// Subclasses should set this to hkbProjectData::m_defaultEventMode inside activate().
+		hkEnum< hkbTransitionEffect::EventMode, hkInt8 > m_defaultEventMode; //+nosave
 
+			// For internal use only.
+			// Overriding binding information; used when this TE is executed in the context of a global transition into a different behavior graph.
+		hkRefPtr<hkReferencedObject> m_patchedBindingInfo; //+nosave
+
+			// The generator that is being transformed from (not reference counted)
+		hkbGenerator* m_fromGenerator;	//+nosave
+
+			// The generator that is being transitioned to (not reference counted)
+		hkbGenerator* m_toGenerator; //+nosave
+		
+	public:
+		
 			// Function for internal use.
 			// This function prepares m_patchedBindingInfo to redirect copyVariablesToMembers functions to the proper variables.
 			// This is necessary for effects used by global transitions since they are authored in the context of one
 			// behavior graph but are executed in another.
-		void computePatchedBindings( const hkbContext& context, const hkbBehaviorGraph& referenceBehavior );
+		virtual void computePatchedBindings( const hkbContext& context, const hkbBehaviorGraph& referenceBehavior );
 
-	public:
+			// Function for internal use.
+			// Returns if computePatchedBindings has been called
+		bool isBorrowedTransitionEffect() { return m_patchedBindingInfo != HK_NULL; }
 
 		hkbTransitionEffect( hkFinishLoadedObjectFlag flag ) : hkbGenerator(flag) {}
-
-	friend class hkbCpuUtils;
-	friend class hkbStateMachine;
 };
 
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

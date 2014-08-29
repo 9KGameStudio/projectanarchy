@@ -47,7 +47,7 @@ template<hkMathRoundingMode R, hkMathIoMode I>
 
 /*static*/ HK_FORCE_INLINE void unpackSecond( hkVector4fParameter packedHalf8, hkVector4f& v1 )
 {
-	uint32x4_t r1 = vshll_n_u16(vget_low_u16(vreinterpretq_u16_u32(vreinterpretq_u32_f32(packedHalf8.m_quad))), 16);
+	uint32x4_t r1 = vshll_n_u16(vget_high_u16(vreinterpretq_u16_u32(vreinterpretq_u32_f32(packedHalf8.m_quad))), 16);
 	v1.m_quad = vreinterpretq_f32_u32(r1);
 }
 
@@ -85,7 +85,7 @@ template<hkMathRoundingMode A>
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140625)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

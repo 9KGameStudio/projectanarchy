@@ -12,7 +12,7 @@
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/RenderingHelpers/ScratchTexturePool.hpp>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/RenderingHelpers/RenderingOptimizationHelpers.hpp>
 #include <Vision/Runtime/Engine/Renderer/Shader/VisApiShaderProvider.hpp>
-#include <Vision/Runtime/Base/System/Memory/VMemDbg.hpp>
+
 
 #if defined( _VISION_XENON )
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/DeferredShading/DeferredShadingApp.hpp>
@@ -457,7 +457,7 @@ void VPostProcessGlow::Execute()
 
 void VPostProcessGlow::SetDownsampleRegisters()
 {
-#if defined(_VISION_MOBILE)
+#if defined(_VISION_MOBILE) || defined(_VISION_NACL)
   // Use approximated power function on mobile
   // See: 'A Non-Integer Power Function on the Pixel Shader' @ gamasutra.com
   // (Juan Guardado, Philippe Beaudoin)
@@ -531,7 +531,7 @@ END_VAR_TABLE
 //-----------------------------------------------------------------------------------
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

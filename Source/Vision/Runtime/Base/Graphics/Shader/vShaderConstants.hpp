@@ -41,8 +41,7 @@
   #define VCONSTANTBUFFERINDEX_LIGHTGRID        3
   #define VCONSTANTBUFFERINDEX_SKY              3
   #define VCONSTANTBUFFERINDEX_HOQ_BOXSCALE     3
-  #define VCONSTANTBUFFERINDEX_PARTICLES        3
-  #define VCONSTANTBUFFERINDEX_STENCILLSHADOWS  3
+  #define VCONSTANTBUFFERINDEX_PARTICLES        4
   #define VCONSTANTBUFFERINDEX_SKINNING         4
 
   #define VSHADER_VS_REGISTER_MODELVIEWMATRIX            0
@@ -134,7 +133,7 @@ enum VTargetPlatform_e
   TARGETPLATFORM_WIIU     = 9,
   TARGETPLATFORM_COUNT    = 10,
 
-  #if defined (WIN32)
+  #if defined(_VISION_WIN32)
     #if defined (_VR_DX9)
       TARGETPLATFORM_THIS = TARGETPLATFORM_DX9
     #elif defined (_VR_DX11)
@@ -154,6 +153,8 @@ enum VTargetPlatform_e
       TARGETPLATFORM_THIS = TARGETPLATFORM_GLES2
   #elif defined(_VISION_WIIU)
       TARGETPLATFORM_THIS = TARGETPLATFORM_WIIU
+  #elif defined(_VISION_NACL)
+      TARGETPLATFORM_THIS = TARGETPLATFORM_GLES2
   #else
     #error Undefined platform!
   #endif
@@ -178,11 +179,13 @@ enum VTargetDevice_e
   TARGETDEVICE_ANDROID  = 6,
   TARGETDEVICE_WIIU     = 7,
   TARGETDEVICE_TIZEN    = 8,
-  TARGETDEVICE_COUNT    = 9,
+  TARGETDEVICE_NACL     = 9,
+  TARGETDEVICE_WINPHONE = 10,
+  TARGETDEVICE_COUNT    = 11,
 
-  #if defined (WIN32) && defined (_VR_DX9)
+  #if defined (_VISION_WIN32) && defined (_VR_DX9)
     TARGETDEVICE_THIS = TARGETDEVICE_DX9
-  #elif defined (WIN32) && defined (_VR_DX11)
+  #elif defined (_VISION_WIN32) && defined (_VR_DX11) && !defined( _VISION_WINPHONE )
     TARGETDEVICE_THIS = TARGETDEVICE_DX11
   #elif defined(_VISION_XENON)
     TARGETDEVICE_THIS = TARGETDEVICE_XBOX360
@@ -194,10 +197,14 @@ enum VTargetDevice_e
     TARGETDEVICE_THIS = TARGETDEVICE_IOS
   #elif defined(_VISION_ANDROID)
     TARGETDEVICE_THIS = TARGETDEVICE_ANDROID
-  #elif defined(_VISION_TIZEN)
-    TARGETDEVICE_THIS = TARGETDEVICE_TIZEN
   #elif defined(_VISION_WIIU)
     TARGETDEVICE_THIS = TARGETDEVICE_WIIU
+  #elif defined(_VISION_TIZEN)
+    TARGETDEVICE_THIS = TARGETDEVICE_TIZEN
+  #elif defined(_VISION_NACL)
+    TARGETDEVICE_THIS = TARGETDEVICE_NACL
+  #elif defined(_VISION_WINPHONE)
+    TARGETDEVICE_THIS = TARGETDEVICE_WINPHONE
   #else
     #error Undefined platform!
   #endif
@@ -214,6 +221,8 @@ static const char* VTargetDeviceName[TARGETDEVICE_COUNT] =
   "android",
   "wiiu",
   "tizen",
+  "nacl",
+  "winphone",
 };
 
 enum VTargetPlatformMask_e
@@ -507,8 +516,7 @@ enum VIS_TransparencyType
   VIS_TRANSP_MULTIPLICATIVE = 1,    ///< multiplicative transparency
   VIS_TRANSP_ALPHA = 2,             ///< regular alpha blending
   VIS_TRANSP_ADDITIVE = 3,          ///< additive transparency
-  VIS_TRANSP_COLORKEY = 4,          ///< deprecated, renamed to VIS_TRANSP_ALPHATEST
-  VIS_TRANSP_ALPHATEST = 4,         ///< replaces 'VIS_TRANSP_COLORKEY' : no transparency, only alpha test
+  VIS_TRANSP_ALPHATEST = 4,         ///< no transparency, only alpha test
   VIS_TRANSP_ADD_MODULATE = 5,      ///< add the modulated result (dest=dest*(1+src))
   VIS_TRANSP_ADDITIVE_NOALPHA = 6,  ///< additive transparency, ignoring source and destination alpha
   VIS_TRANSP_NOCOLORWRITE = 7,      ///< no blend, no color write, no alpha test
@@ -535,7 +543,7 @@ enum VisLightingMethod_e
 #endif //VSHADERCONSTANTS_HPP_INCLUDED
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

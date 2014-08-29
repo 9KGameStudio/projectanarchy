@@ -10,7 +10,7 @@
 #include <Vision/Runtime/EnginePlugins/Havok/HavokPhysicsEnginePlugin/VThrowItemComponent.hpp>
 #include <Vision/Runtime/EnginePlugins/Havok/HavokPhysicsEnginePlugin/vHavokRigidBody.hpp>
 #include <Vision/Runtime/EnginePlugins/Havok/HavokPhysicsEnginePlugin/vHavokConversionUtils.hpp>
-#include <Vision/Runtime/Base/System/Memory/VMemDbg.hpp>
+
 
 //-------------------------------------------------------------------------//
 // Input Map                                                               //
@@ -189,7 +189,7 @@ void VThrowItemComponent::ThrowItem(const hkvVec3& vThrowDir)
   // Spawn entity at camera position
   hkvVec3 vPos = pOwner->GetPosition();
   hkvVec3 vThrowPos = vPos + vThrowDir * 100.f;  
-  VisBaseEntity_cl* pEntity = Vision::Game.CreateEntity("VisBaseEntity_cl", vThrowPos, ModelFile);
+  VisBaseEntity_cl* pEntity = Vision::Game.CreateEntity<VisBaseEntity_cl>(vThrowPos, ModelFile);
   pEntity->SetObjectKey("Havok_ThrowItem");
  
   // Check whether model was successfully loaded
@@ -238,13 +238,13 @@ void VThrowItemComponent::RemoveAllItems()
 // Variable Table                                                          //
 //-------------------------------------------------------------------------//
 
-START_VAR_TABLE(VThrowItemComponent, IVObjectComponent, "Throw Item Comnponent. Use the Q key to throw an item.", VVARIABLELIST_FLAGS_NONE, "Throw Item" )
+START_VAR_TABLE(VThrowItemComponent, IVObjectComponent, "Can be attached to entities to add the possibility to throw Havok Physics rigid bodies with the Q key.", VVARIABLELIST_FLAGS_NONE, "Throw Item" )
   DEFINE_VAR_VSTRING(VThrowItemComponent, ModelFile, "Filename of the model to throw table (.model)", "", 0, 0, "assetpicker(Model)");
   DEFINE_VAR_FLOAT  (VThrowItemComponent, Velocity, "Velocity that is applied to the item", "500.0", 0, "Clamp(0, 10000)"); 
 END_VAR_TABLE
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

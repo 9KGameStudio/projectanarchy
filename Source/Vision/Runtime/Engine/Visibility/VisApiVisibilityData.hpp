@@ -129,6 +129,34 @@ public:
   }
 
   /// \brief
+  ///   Returns all bit flags relevant for visibility
+  inline int GetVisibilityTestFlags() const
+  {
+    return m_iPerformTestFlags;
+  }
+
+  /// \brief
+  ///   Sets all bit flags relevant for visibility
+  inline void SetVisibilityTestFlags(int iFlags)
+  {
+    m_iPerformTestFlags = iFlags;
+  }
+
+  /// \brief
+  ///   All new bit flag(s) to the bitmask that is relevant for visibility
+  inline void AddVisibilityTestFlag(int iFlag)
+  {
+    m_iPerformTestFlags |= iFlag;
+  }
+
+  /// \brief
+  ///   Remove bit flag(s) from the bitmask that is relevant for visibility
+  inline void RemoveVisibilityTestFlag(int iFlag)
+  {
+    m_iPerformTestFlags &= ~iFlag;
+  }
+
+  /// \brief
   ///    Returns the clipping reference position which is used if clipping mode is set to VIS_LOD_TEST_CLIPPOSITION
   inline const hkvVec3& GetClipReference() const
   {
@@ -182,7 +210,7 @@ public:
         || ((m_fFarClipDistance>0.f) && (fDistSqr>=(m_fFarClipDistance*m_fFarClipDistance)));
   }
 
-    /// \brief
+  /// \brief
   ///    Helper function to retrieve current distance to a given plane
   ///
   /// \param vCameraPos
@@ -240,6 +268,28 @@ public:
   ///    Member serialization function (not called SerializeX to avoid naming collisions in the inheritance)
   VISION_APIFUNC void Serialize_VisData(VArchive &ar);
 
+  /// \brief
+  ///    Translate visibility data (bounding box and reference position) by specified offset
+  inline void TranslateVisibility(const hkvVec3& vOffset)
+  {
+    m_vClipReference += vOffset;
+    m_BoundingBox.translate(vOffset);
+  }
+
+  /// \brief
+  ///    Helper function to merge another visibility info into this one in a way that it is guaranteed that both are always visible
+  inline void MergeVisibilityData(const VVisibilityData &other)
+  {
+    m_iVisibleMask |= other.m_iVisibleMask;
+    if (other.m_BoundingBox.isValid())
+      m_BoundingBox.expandToInclude(other.m_BoundingBox);
+    m_fNearClipDistance = hkvMath::Min(m_fNearClipDistance, other.m_fNearClipDistance); // also handles -1 gracefully
+    if (other.m_fFarClipDistance>=0.f && m_fFarClipDistance>=0.f)
+      m_fFarClipDistance = hkvMath::Max(m_fFarClipDistance, other.m_fFarClipDistance);
+    else
+      m_fFarClipDistance = -1.f; // turn off farclipping in all other cases
+  }
+
 protected:
   // KEEP THESE ITEMS TOGETHER. IF THIS STRUCTURE IS CHANGED, CHANGE
   // IT EVERYWHERE (entities, static meshes, etc.). ALSO, THE SPU CODE/
@@ -258,7 +308,7 @@ protected:
 #endif // VISAPIVISIBILITYDATA_HPP_INCLUDED
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

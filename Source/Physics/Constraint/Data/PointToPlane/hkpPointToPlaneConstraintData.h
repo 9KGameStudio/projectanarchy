@@ -11,12 +11,12 @@
 
 #include <Physics/Constraint/Data/hkpConstraintData.h>
 
-extern const class hkClass hkpPointToPlaneConstraintDataAtomsClass;
-extern const hkClass hkpPointToPlaneConstraintDataClass;
+extern HK_EXPORT_PHYSICS const class hkClass hkpPointToPlaneConstraintDataAtomsClass;
+extern HK_EXPORT_PHYSICS const hkClass hkpPointToPlaneConstraintDataClass;
 
 
 /// This constrains a point of one body to lie on a plane relative to the second body.
-class hkpPointToPlaneConstraintData : public hkpConstraintData
+class HK_EXPORT_PHYSICS hkpPointToPlaneConstraintData : public hkpConstraintData
 {
 	public:
 
@@ -102,7 +102,7 @@ class hkpPointToPlaneConstraintData : public hkpConstraintData
 #endif // HKP_POINT_TO_PLANE_CONSTRAINT_DATA_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

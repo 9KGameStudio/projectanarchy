@@ -24,12 +24,12 @@
 struct hkvTextureVariant
 {
   hkvTextureVariant()
-  : m_dataFormat(HKV_TEXTURE_DATA_FORMAT_A8R8G8B8), m_fileFormat(HKV_TEXTURE_FILE_FORMAT_DDS)
+  : m_dataFormat(HKV_IMAGE_DATA_FORMAT_A8R8G8B8), m_fileFormat(HKV_IMAGE_FILE_FORMAT_DDS)
   {
   }
 
-  hkvTextureVariant(const char* key, hkvTextureDataFormat dataFormat, 
-    hkvTextureFileFormat fileFormat, const char* filenameAddition, bool isEditorPreview)
+  hkvTextureVariant(const char* key, hkvImageDataFormat dataFormat, 
+    hkvImageFileFormat fileFormat, const char* filenameAddition, bool isEditorPreview)
   : m_variantKey(key), m_dataFormat(dataFormat), m_fileFormat(fileFormat), 
     m_filenameAddition(filenameAddition), m_isEditorPreview(isEditorPreview)
   {
@@ -52,8 +52,8 @@ struct hkvTextureVariant
   }
 
   hkStringPtr m_variantKey;
-  hkvTextureDataFormat m_dataFormat;
-  hkvTextureFileFormat m_fileFormat;
+  hkvImageDataFormat m_dataFormat;
+  hkvImageFileFormat m_fileFormat;
   hkStringPtr m_filenameAddition;
   hkBool m_isEditorPreview;
 };
@@ -75,7 +75,6 @@ private:
     STEP_TYPE_INVALID,
     STEP_TYPE_WIIU_TEXCONV2,
     STEP_TYPE_IMAGE_TO_DDS,
-    STEP_TYPE_NVDXT,
     STEP_TYPE_PVRTEXTOOL,
     STEP_TYPE_TEXCONV,
     STEP_TYPE_TEXCONV_FORCE_DXT10
@@ -141,7 +140,7 @@ public: // Interface
   virtual const char* getTypeName() const HKV_OVERRIDE;
 
   virtual bool executeTransformation(const hkvTransformationInput& input, hkvTransformationOutput& output) const HKV_OVERRIDE;
-  virtual bool queryOutputFileSpecs(const hkvTransformationInput& input, hkvTransformationOutput& output) const HKV_OVERRIDE;
+  virtual bool queryOutputFileSpecs(const hkvTransformationInput& input, hkvTransformationOutput& output, bool forLookUpTable) const HKV_OVERRIDE;
 
 private:
   hkResult determineOutputs(Context& context) const;
@@ -173,7 +172,7 @@ private:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -14,10 +14,10 @@ inline hkaiHashSearchState::hkaiHashSearchState( )
 	m_nodeSize(0),
 	m_heuristicWeight(1.0f)
 {
-	HK_ON_DEBUG( m_currentSearchIndex = SearchIndex(-1); )
-	HK_ON_DEBUG( m_searchIndexToClose = SearchIndex(-1); )
+	HK_ON_DEBUG( m_currentSearchIndex = HKAI_INVALID_PACKED_KEY; )
+	HK_ON_DEBUG( m_searchIndexToClose = HKAI_INVALID_PACKED_KEY; )
 
-	m_bestNode = hkUint32(-1);
+	m_bestNode = HKAI_INVALID_PACKED_KEY;
 	m_bestNodeCost = HK_REAL_MAX;
 	m_maxPathCost = HK_REAL_MAX;
 	
@@ -54,7 +54,7 @@ inline hkBool32 hkaiHashSearchState::isFull() const
 inline void hkaiHashSearchState::setParent( SearchIndex sid, SearchIndex pid )
 {
 	Node& thisNode = getNodeState(sid);
-	if (pid == (hkUint32)(-1))
+	if (pid == HKAI_INVALID_PACKED_KEY)
 	{
 		thisNode.m_parentIndex = -1;
 	}
@@ -81,7 +81,10 @@ inline void hkaiHashSearchState::setParentCurrent( SearchIndex sid, SearchIndex 
 inline hkaiHashSearchState::SearchIndex hkaiHashSearchState::getParent( SearchIndex sid ) const
 {
 	const Node& thisNode = getNodeStateRO(sid);
-	return (thisNode.m_parentIndex == -1) ? hkUint32(-1) : m_nodes[ thisNode.m_parentIndex ].m_index;
+	if (thisNode.m_parentIndex == -1) 
+		return HKAI_INVALID_PACKED_KEY;
+	else
+		return m_nodes[ thisNode.m_parentIndex ].m_index;
 }
 
 inline const hkaiSearchStateNode* hkaiHashSearchState::getParent( const hkaiSearchStateNode* node) const
@@ -140,15 +143,6 @@ inline void hkaiHashSearchState::markClosed( SearchIndex sid )
 	m_parentNodeState->setClosed();
 }
 
-inline hkBool32 hkaiHashSearchState::estimatedCostLess( SearchIndex a, SearchIndex b ) const
-{
-	const Node& nodeA = getNodeStateRO(a);
-	const Node& nodeB = getNodeStateRO(b);
-	const PathCost ca = nodeA.m_gCost + m_heuristicWeight * nodeA.m_hCost;
-	const PathCost cb = nodeB.m_gCost + m_heuristicWeight * nodeB.m_hCost;
-	return ca < cb;
-}
-
 inline hkaiHashSearchState::PathCost hkaiHashSearchState::estimatedCost( SearchIndex i ) const
 {
 	const Node& node = getNodeStateRO(i);
@@ -193,7 +187,7 @@ inline void hkaiHashSearchState::nextNode( SearchIndex sid )
 
 inline void hkaiHashSearchState::nextEdge( SearchIndex sid )
 {
-	if (sid != (SearchIndex)(-1))
+	if (sid != HKAI_INVALID_PACKED_KEY)
 	{
 		setCachedNode(sid);
 	}
@@ -230,6 +224,13 @@ inline hkUint32 hkaiHashSearchState::hash( hkUint32 a )
 	
 	
 	return a * 2654435761U;
+}
+
+inline hkUint64 hkaiHashSearchState::hash( hkUint64 a )
+{
+	// Knuth golden ratio, 64-bit version
+	
+	return a * 0x9e3779b97f4a7c13LL;
 }
 
 template<typename Heuristic>
@@ -271,7 +272,7 @@ inline void hkaiHashSearchState::setCost( Heuristic* heuristic, SearchIndex sid,
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

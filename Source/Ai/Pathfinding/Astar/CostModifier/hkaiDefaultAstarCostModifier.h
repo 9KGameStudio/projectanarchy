@@ -9,11 +9,9 @@
 #ifndef HK_AI_DEFAULT_NAV_MESH_COST_MODIFIER_H
 #define HK_AI_DEFAULT_NAV_MESH_COST_MODIFIER_H
 
-#include <Ai/Pathfinding/NavMesh/hkaiNavMesh.h>
-#include <Ai/Pathfinding/NavMesh/hkaiNavMeshUtils.h>
 #include <Ai/Pathfinding/Astar/CostModifier/hkaiAstarCostModifier.h>
 
-extern const class hkClass hkaiDefaultAstarCostModifierClass;
+extern HK_EXPORT_AI const class hkClass hkaiDefaultAstarCostModifierClass;
 
 struct hkaiAgentTraversalInfo;
 
@@ -25,7 +23,7 @@ struct hkaiAgentTraversalInfo;
 /// m_costMultiplierLookupTable array, otherwise no modification is performed.
 ///
 /// See NavMeshCostModificationDemo and NavVolumeCostModificationDemo for an example of how to use this.
-class hkaiDefaultAstarCostModifier : public hkaiAstarCostModifier
+class HK_EXPORT_AI hkaiDefaultAstarCostModifier : public hkaiAstarCostModifier
 {
 	//+version(3)
 
@@ -77,7 +75,7 @@ class hkaiDefaultAstarCostModifier : public hkaiAstarCostModifier
 #endif // HK_AI_DEFAULT_NAV_MESH_COST_MODIFIER_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

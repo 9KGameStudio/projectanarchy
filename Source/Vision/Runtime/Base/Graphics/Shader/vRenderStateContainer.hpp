@@ -20,7 +20,7 @@
 #include <Vision/Runtime/Base/Graphics/Shader/vShaderDeclarations.hpp>
 
 
-#ifdef WIN32
+#ifdef _VISION_WIN32
 bool ParseFXLib (char *text, int numChars, VShaderCompileFlags_e flags, VShaderEffectLib &fxlib);
 #endif
 
@@ -115,7 +115,7 @@ public:
   /// \brief Allows read/write access to the depth-stencil state object.
   VStateGroupDepthStencil& GetDepthStencilState (void) { return (m_Data.m_sgDepthStencil); }
 
-  /// \brief Allos read/write access to the rasterizer state object.
+  /// \brief Allows read/write access to the rasterizer state object.
   VStateGroupRasterizer& GetRasterizerState (void) { return (m_Data.m_sgRasterizer); }
 
   /// \brief Allows read/write access to the tessellation state object.
@@ -126,7 +126,7 @@ public:
   void ComputeStateHashes (void);
 
 private:
-  #ifdef WIN32
+  #ifdef _VISION_WIN32
   friend bool ParseFXLib (char *text, int numChars, VShaderCompileFlags_e flags, VShaderEffectLib &fxlib);
   #endif
   friend class VShaderPassResource;
@@ -194,7 +194,7 @@ typedef VSmartPtr<VRenderStateContainer> VRenderStateContainerPtr;
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

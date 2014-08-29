@@ -11,7 +11,7 @@
 	/// Records the memory request to the monitor stream and forwards to a child allocator.
 	/// Use this with the details statistics to see the memory requests interleaved with the
 	/// monitor timers. Note that this will require much more memory than the monitor timers.
-class hkMonitorAllocator : public hkMemoryAllocator
+class HK_EXPORT_COMMON hkMonitorAllocator : public hkMemoryAllocator
 {
 	public:
 		HK_DECLARE_PLACEMENT_ALLOCATOR();
@@ -29,7 +29,7 @@ class hkMonitorAllocator : public hkMemoryAllocator
 #endif // HKBASE_MONITOR_ALLOCATOR_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

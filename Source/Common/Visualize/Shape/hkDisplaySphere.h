@@ -11,11 +11,11 @@
 #include <Common/Visualize/Shape/hkDisplayGeometry.h>
 #include <Common/Base/Types/Geometry/Sphere/hkSphere.h>
 
-class hkDisplaySphere : public hkDisplayGeometry
+class HK_EXPORT_COMMON hkDisplaySphere : public hkDisplayGeometry
 {
 	public:
 	HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE);
-		hkDisplaySphere(const hkSphere& sphere, int xRes, int yRes);
+		hkDisplaySphere(const hkSphere& sphere, int subdivisions);
 
 		virtual void buildGeometry();
 
@@ -25,22 +25,20 @@ class hkDisplaySphere : public hkDisplayGeometry
 
 		inline void getSphere(hkSphere& s) const { s = m_sphere; }
 		
-		inline int getXRes() { return m_xRes; }
-		inline int getYRes() { return m_yRes; }
+		inline int getSubdivisions() { return m_subdivisions; }
 
 	protected:
 
 		hkSphere m_sphere;
 
-		int m_xRes;
-		int m_yRes;
+		int m_subdivisions;
 };
 
 
 #endif // HK_VISUALIZE_DISPLAY_SPHERE_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -11,7 +11,7 @@
 #include <Common/Base/Reflection/Registry/hkDynamicClassNameRegistry.h>
 
 /// Partially populated registry which forwards requests for unknown classes.
-class hkChainedClassNameRegistry : public hkDynamicClassNameRegistry
+class HK_EXPORT_COMMON hkChainedClassNameRegistry : public hkDynamicClassNameRegistry
 {
 	public:
 		HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE);
@@ -31,7 +31,7 @@ class hkChainedClassNameRegistry : public hkDynamicClassNameRegistry
 #endif // HK_SERIALIZE_CHAINED_CLASS_NAME_REGISTRY_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

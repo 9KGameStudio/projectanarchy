@@ -21,6 +21,8 @@ public:
 	typedef hkVector4UtilImpl<FT> ThisType;
 	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_MATH, ThisType);
 
+	typedef typename hkRealTypes<FT>::VectorParameter VectorParameter;
+	typedef typename hkRealTypes<FT>::ScalarParameter ScalarParameter;
 
 	/// Sets the calling vector to be the normal to the 2 vectors (b-a) and (c-a).
 	///
@@ -34,8 +36,15 @@ public:
 																typename hkRealTypes<FT>::VectorParameter da, typename hkRealTypes<FT>::VectorParameter db, typename hkRealTypes<FT>::VectorParameter dc,
 																typename hkRealTypes<FT>::Transform& transformOut);
 
-	static HK_FORCE_INLINE typename hkRealTypes<FT>::Scalar HK_CALL atan2Approximation(typename hkRealTypes<FT>::ScalarParameter y, typename hkRealTypes<FT>::ScalarParameter x);
-	static HK_FORCE_INLINE void HK_CALL atan2Approximation(typename hkRealTypes<FT>::VectorParameter y, typename hkRealTypes<FT>::VectorParameter x, typename hkRealTypes<FT>::Vector& result);
+	/// Returns atan2(y,x)
+	static HK_FORCE_INLINE typename hkRealTypes<FT>::Scalar HK_CALL atan2(typename hkRealTypes<FT>::ScalarParameter y, typename hkRealTypes<FT>::ScalarParameter x);
+
+	/// Componentwise: result.xyzw = atan2(y(0),x(0)), atan2(y(1),x(1)), atan2(y(2),x(2)), atan2(y(3),x(3))
+	static HK_FORCE_INLINE void HK_CALL atan2(typename hkRealTypes<FT>::VectorParameter y, typename hkRealTypes<FT>::VectorParameter x, typename hkRealTypes<FT>::Vector& result);
+
+	/// Convenience returns atan2(v(1), v(0))
+	static HK_FORCE_INLINE typename hkRealTypes<FT>::Scalar HK_CALL atan2(typename hkRealTypes<FT>::VectorParameter v);
+
 	static HK_FORCE_INLINE typename hkRealTypes<FT>::Scalar HK_CALL linearAtan2Approximation(typename hkRealTypes<FT>::ScalarParameter y, typename hkRealTypes<FT>::ScalarParameter x);
 	static HK_FORCE_INLINE void HK_CALL linearAtan2Approximation(typename hkRealTypes<FT>::VectorParameter y, typename hkRealTypes<FT>::VectorParameter x, typename hkRealTypes<FT>::Vector& result);
 	static HK_FORCE_INLINE typename hkRealTypes<FT>::Scalar HK_CALL linearAtan2ApproximationRough(typename hkRealTypes<FT>::ScalarParameter y, typename hkRealTypes<FT>::ScalarParameter x);
@@ -51,13 +60,7 @@ public:
 	/// 
 	static HK_FORCE_INLINE void HK_CALL convertFromHalf( const hkHalf& a, const hkHalf& b, const hkHalf& c, const hkHalf& d, typename hkRealTypes<FT>::Vector& out );
 
-	/// Converts a vector to four 16-bit signed integer values.
-	static HK_FORCE_INLINE void HK_CALL convertToInt16( typename hkRealTypes<FT>::VectorParameter in, typename hkRealTypes<FT>::VectorParameter offset, typename hkRealTypes<FT>::VectorParameter scale, hkIntUnion64& out);
-
-	/// Converts a vector to four 16-bit unsigned integer values. Negative values are clamped to 0.
-	static HK_FORCE_INLINE void HK_CALL convertToUint16( typename hkRealTypes<FT>::VectorParameter in, typename hkRealTypes<FT>::VectorParameter offset, typename hkRealTypes<FT>::VectorParameter scale, hkIntUnion64& out );
-
-	/// Converts a vector to four 16-bit unsigned integer values, clamped between min and max. Negative values are clamped to 0.
+	/// Converts a vector to four 16-bit unsigned integer values, clamped between min and max. 
 	static HK_FORCE_INLINE void HK_CALL convertToUint16WithClip( typename hkRealTypes<FT>::VectorParameter in, typename hkRealTypes<FT>::VectorParameter offset, typename hkRealTypes<FT>::VectorParameter scale, typename hkRealTypes<FT>::VectorParameter min, typename hkRealTypes<FT>::VectorParameter max, hkIntUnion64& out);
 
 	/// calculates a value x so that convertToUint16WithClip( out, in + x/scale, ... ) == out = int(floor( (in+offset)*scale
@@ -74,6 +77,9 @@ public:
 
 	static HK_FORCE_INLINE void HK_CALL convertComparison(typename hkRealTypes<FT>::ComparisonParameter cin, hkVector4dComparison& cout);
 	static HK_FORCE_INLINE void HK_CALL convertComparison(typename hkRealTypes<FT>::ComparisonParameter cin, hkVector4fComparison& cout);
+
+	static HK_FORCE_INLINE void HK_CALL convertVector(typename hkRealTypes<FT>::VectorParameter vin, hkVector4d& vout);
+	static HK_FORCE_INLINE void HK_CALL convertVector(typename hkRealTypes<FT>::VectorParameter vin, hkVector4f& vout);
 
 	/// Finds a vector that is perpendicular to a line segment.
 	///
@@ -149,6 +155,9 @@ public:
 	/// Returns HK_FAILURE if determinant is less than or equal to \a tolerance.
 	static HK_FORCE_INLINE hkResult HK_CALL invert2x2Matrix(typename hkRealTypes<FT>::VectorParameter m, typename hkRealTypes<FT>::ScalarParameter tolerance, typename hkRealTypes<FT>::Vector& out);
 
+	/// Compute sin and cos at the same time sines.xyzw = sin(r.x)sin(r.y)sin(r.z)sin(r.w) cosines.xyzw = cos(r.x)cos(r.y)cos(r.z)cos(r.w)
+	static HK_FORCE_INLINE void HK_CALL sinCos(typename hkRealTypes<FT>::VectorParameter r, typename hkRealTypes<FT>::Vector& sines, typename hkRealTypes<FT>::Vector& cosines);
+
 	/// Compute sin and cos in alternating components of sc.xyzw = sin(r.x) cos(r.y) sin(r.z) cos(r.w)
 	static HK_FORCE_INLINE void HK_CALL sinCos(typename hkRealTypes<FT>::VectorParameter r, typename hkRealTypes<FT>::Vector& sc);
 
@@ -174,6 +183,12 @@ public:
 
 	/// Compute acos in all components of sc.xyzw = acos(r.x) acos(r.y) acos(r.z) acos(r.w)
 	static HK_FORCE_INLINE void HK_CALL aCos(typename hkRealTypes<FT>::VectorParameter r, typename hkRealTypes<FT>::Vector& sc);
+
+	/// Return asin from value \a r
+	static HK_FORCE_INLINE typename hkRealTypes<FT>::Scalar HK_CALL aSin(typename hkRealTypes<FT>::ScalarParameter r);
+
+	/// Return acos from value \a r
+	static HK_FORCE_INLINE typename hkRealTypes<FT>::Scalar HK_CALL aCos(typename hkRealTypes<FT>::ScalarParameter r);
 
 	/// Compute asin and acos in alternating components of sc.xyzw = asin(r.x) acos(r.y) asin(r.z) acos(r.w)
 	static HK_FORCE_INLINE void HK_CALL aSinAcos(typename hkRealTypes<FT>::VectorParameter r, typename hkRealTypes<FT>::Vector& sc);
@@ -220,6 +235,17 @@ public:
 	/// Sets this vector components: this(i+j) = AI.dot<3>(bj)
 	static HK_FORCE_INLINE void HK_CALL dot3_2vs2( typename hkRealTypes<FT>::VectorParameter a0, typename hkRealTypes<FT>::VectorParameter a2, typename hkRealTypes<FT>::VectorParameter b0, typename hkRealTypes<FT>::VectorParameter b1, typename hkRealTypes<FT>::Vector& dotsOut);
 
+	/// Sets this vector components: this(i+j) = AI.dot4xyz1(bj)
+	static HK_FORCE_INLINE void HK_CALL dot4xyz1_2vs2( typename hkRealTypes<FT>::VectorParameter a0, typename hkRealTypes<FT>::VectorParameter a2, typename hkRealTypes<FT>::VectorParameter b0, typename hkRealTypes<FT>::VectorParameter b1, typename hkRealTypes<FT>::Vector& dotsOut);
+	
+	/// returns (a0*a1+b0*b1+c0*c1).horizontalAdd<X>()
+	template<int X>
+	static HK_FORCE_INLINE typename hkRealTypes<FT>::Scalar HK_CALL dot3X( VectorParameter a0, VectorParameter a1, VectorParameter b0, VectorParameter b1, VectorParameter c0, VectorParameter c1);
+
+	/// returns (a0*a1+b0*b1).horizontalAdd<X>()
+	template<int X>
+	static HK_FORCE_INLINE typename hkRealTypes<FT>::Scalar HK_CALL dot2X( VectorParameter a0, VectorParameter a1, VectorParameter b0, VectorParameter b1);
+
 	/// Computes an = (a x n), bn = (b x n), cn = (c x n)
 	static HK_FORCE_INLINE void HK_CALL cross_3vs1(	typename hkRealTypes<FT>::VectorParameter a, typename hkRealTypes<FT>::VectorParameter b, typename hkRealTypes<FT>::VectorParameter c, typename hkRealTypes<FT>::VectorParameter n,
 													typename hkRealTypes<FT>::Vector& an, typename hkRealTypes<FT>::Vector& bn, typename hkRealTypes<FT>::Vector& cn);
@@ -250,9 +276,6 @@ public:
 	/// column matches dir2 as close as possible.
 	/// Note: Dir must be normalized
 	static HK_FORCE_INLINE void HK_CALL buildOrthonormal( typename hkRealTypes<FT>::VectorParameter dir, typename hkRealTypes<FT>::VectorParameter dir2, typename hkRealTypes<FT>::Matrix3& out );
-
-	/// Resets the fpu after using MMX instructions on x86. No-op for other architectures.
-	static HK_FORCE_INLINE void HK_CALL exitMmx();
 
 	/// Returns the squared distance from p to the line segment ab
 	static HK_FORCE_INLINE const typename hkRealTypes<FT>::Scalar HK_CALL distToLineSquared( typename hkRealTypes<FT>::VectorParameter a, typename hkRealTypes<FT>::VectorParameter b, typename hkRealTypes<FT>::VectorParameter p );
@@ -329,11 +352,7 @@ public:
 #if HK_CONFIG_SIMD == HK_CONFIG_SIMD_ENABLED
 #	if defined(HK_COMPILER_HAS_INTRINSICS_IA32)
 #			include <Common/Base/Math/Vector/Sse/hkSseVector4Util.inl>
-#			if HK_SSE_VERSION >= 0x50
-#				include <Common/Base/Math/Vector/Sse/hkSseVector4Util_D_AVX.inl>
-#			else
-#				include <Common/Base/Math/Vector/Sse/hkSseVector4Util_D.inl>
-#			endif
+#			include <Common/Base/Math/Vector/Sse/hkSseVector4Util_D.inl>
 #	elif defined(HK_PLATFORM_PS3_SPU) || defined(HK_PLATFORM_PS3_PPU)
 #		include <Common/Base/Math/Vector/Ps3/hkPs3Vector4Util.inl>
 #	elif defined(HK_PLATFORM_XBOX360)
@@ -357,7 +376,7 @@ typedef hkVector4fUtil hkVector4Util;
 #endif // HK_MATH_VECTOR4_UTIL_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

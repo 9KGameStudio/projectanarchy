@@ -396,14 +396,24 @@ void vHavokRagdoll::RemoveFromPhysicsWorld()
 
   VisBaseEntity_cl* pOwnerEntity = GetOwnerEntity();
 
-  vHavokPhysicsModule::GetInstance()->RemoveRagdoll(this);
+  vHavokPhysicsModule *pModule = vHavokPhysicsModule::GetInstance();
+  VASSERT(pModule != NULL);
+
+  pModule->RemoveRagdoll(this);
 
   m_pPhysicsWorld->markForWrite();
+
+  for (int iRigidBodyIndex = 0; iRigidBodyIndex < m_rigidBodies.getSize(); ++iRigidBodyIndex)
+  {
+    pModule->ActivateLinkedCollidables(m_rigidBodies[iRigidBodyIndex].pRigidBody);
+  }
+
   for (int iSystemIdx = 0; iSystemIdx < m_physicsSystems.getSize(); iSystemIdx++)
   {
     const hkpPhysicsSystem* pSystem = m_physicsSystems[iSystemIdx];
     m_pPhysicsWorld->removePhysicsSystem(pSystem);
   }
+
   m_pPhysicsWorld->unmarkForWrite();
   m_bAddedToPhysicsWorld = false;
 
@@ -446,7 +456,6 @@ bool vHavokRagdoll::LoadHktFile()
     {
       hkvLog::Warning("Havok Physics Ragdoll Component: Could not load \"%s\".", m_sFileResourceName.AsChar());
     }
-    pResource->removeReference();
     return false;
   }
 
@@ -825,6 +834,7 @@ void vHavokRagdoll::CopyBoneTransformationToRigidBodies(const VisSkeletalAnimRes
     // the rigid body placement here.
     hkTransform rigidBodyHkWorldTransform; 
     rigidBodyHkWorldTransform.setMulMulInverse(boneHkWorldTransform, rbInfo.relTransform);
+
     pRigidBody->setTransform(rigidBodyHkWorldTransform);
   }
 
@@ -868,8 +878,8 @@ void vHavokRagdoll::CopyRigidBodyTransformationToBones()
   VASSERT(pSkeleton != NULL);
 
   // Assume the skeleton stored in a way that always references back along array.
-  const float fInvScaling = 1.f / m_fScaling;
-  for (int iRigidBodyIdx=0; iRigidBodyIdx < m_rigidBodies.getSize(); iRigidBodyIdx++)
+  const float fInvScaling = 1.0f / m_fScaling;
+  for (int iRigidBodyIdx = 0; iRigidBodyIdx < m_rigidBodies.getSize(); iRigidBodyIdx++)
   {
     const struct RigidBodyInfo& rbInfo = m_rigidBodies[iRigidBodyIdx];
     hkpRigidBody* pRigidBody = rbInfo.pRigidBody;
@@ -881,13 +891,15 @@ void vHavokRagdoll::CopyRigidBodyTransformationToBones()
 
     hkTransform boneHkObjTransform; 
     boneHkObjTransform.setMul(rootHkWorldTransformInv, boneHkWorldTransform);
+
     hkQuaternion boneHkRot; 
     boneHkRot.set(boneHkObjTransform.getRotation());
-
+    boneHkRot.normalize(); // Normalize due to precision issues.
     hkvQuat boneRot;
     vHavokConversionUtils::HkQuatToVisQuat(boneHkRot, boneRot);
+
     hkvVec3 boneTranslation;
-    vHavokConversionUtils::PhysVecToVisVecWorld(boneHkObjTransform.getTranslation(), boneTranslation );
+    vHavokConversionUtils::PhysVecToVisVecWorld(boneHkObjTransform.getTranslation(), boneTranslation);
     boneTranslation *= fInvScaling;
 
     m_spFinalSkeletalResultRagdoll->SetCustomBoneRotation(
@@ -1250,7 +1262,7 @@ hkvVec3 vHavokRagdoll::GetPositionOfRigidBody(int iBoneIndex) const
 
 //-----------------------------------------------------------------------------------
 
-START_VAR_TABLE(vHavokRagdoll, IVObjectComponent, "Havok Physics Ragdoll component. Can be attached to entities to .", VVARIABLELIST_FLAGS_NONE, "Havok Ragdoll" )
+START_VAR_TABLE(vHavokRagdoll, IVObjectComponent, "Can be attached to entities to enable a ragdoll representation.", VVARIABLELIST_FLAGS_NONE, "Havok Ragdoll" )
   DEFINE_VAR_BOOL_AND_NAME(vHavokRagdoll, m_bEnabled, "Enabled", "Enable or disable component", "True", 0, 0);
   DEFINE_VAR_VSTRING_AND_NAME(vHavokRagdoll, m_sFileResourceName,	"Ragdoll Collision File", "Defines what Havok Physics collision file to use", "", 1024, 0, "filepicker(.hkt)");
   DEFINE_VAR_BOOL_AND_NAME(vHavokRagdoll, m_bDebugRenderingEnabled, "Debug", "Enables/Disables Physics Debug Rendering.", "False", 0, 0);
@@ -1260,7 +1272,7 @@ END_VAR_TABLE
 //-----------------------------------------------------------------------------------
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140628)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

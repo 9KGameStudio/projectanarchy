@@ -92,7 +92,7 @@ public:
 
   ///\brief
   ///Internal function to render a batch of instances associated with the passed collector
-  TERRAIN_IMPEXP void RenderVisibleInstances(IVisVisibilityCollector_cl *pCollector);
+  TERRAIN_IMPEXP void RenderVisibleInstances(IVisVisibilityCollector_cl *pCollector, IVTerrainDecorationModel::RenderMode_e eRenderMode = IVTerrainDecorationModel::RENDER_MODE_OTW);
 
   ///\brief
   ///Internal function to render a batch of instances associated with the passed collector into a shadow map (performs additional visibility/relevance tests)
@@ -173,6 +173,13 @@ public:
   ///Removes all instances. Internally uses BeginUpdateInstances/EndUpdateInstances
   TERRAIN_IMPEXP void ClearInstances();
 
+  ///\brief
+  ///Defines how visibility is performed on the group. Has to be called before BeginUpdateInstances/EndUpdateInstances block
+  inline void SetUsePerInstanceVisibility(bool bStatus)
+  {
+    m_bPerInstanceVisibility = bStatus;
+  }
+
   ///
   /// @}
   ///
@@ -210,7 +217,7 @@ public:
   VColorRef m_AmbientColor;
   float m_fMax3DDistance, m_fUnscaledMaxDist;
   VTerrain *m_pDecoOfTerrain;
-  bool m_bUseCollisions, m_bCastLightmapShadows;
+  bool m_bUseCollisions, m_bCastLightmapShadows, m_bCastDynamicShadows;
 protected:
   friend class VTerrainDecorationGroupManager;
 
@@ -236,6 +243,8 @@ protected:
     unsigned int m_iFirstMask;
   };
 #endif
+  void CreateInstanceBuffer();
+  void RenderAllInstancing(bool bShadowmap, IVTerrainDecorationModel::RenderMode_e eRenderMode = IVTerrainDecorationModel::RENDER_MODE_OTW);
 
   inline void FreeAllVisStates()
   {
@@ -262,13 +271,7 @@ protected:
     for (int i=m_iVisStateCount;i<iCount;i++)
       ppVisStates[i] = NULL;
   }
-
-
-  static inline void SetGlobalRenderOffset(const hkvVec3& vOfs)
-  {
-    g_vGlobalRenderOffset = vOfs; // for repositioning
-  }
-   
+ 
 
   VCollectorVisibleState* FindVisStateForCollector(IVisVisibilityCollector_cl* pColl);
   VCollectorVisibleState* CreateVisStateForCollector(IVisVisibilityCollector_cl* pColl);
@@ -277,9 +280,11 @@ protected:
   VMutex m_VisibilityMutex;
   int m_iVisStateCount;
   VMemoryTempBuffer<DEFAULT_NUM_VISIBILITY_COLLECTORS * sizeof(VCollectorVisibleState*)> m_VisStates;
-  bool m_bUseLightgrid, m_bIsRegistered;
+  bool m_bUseLightgrid, m_bIsRegistered, m_bPerInstanceVisibility;
   hkvVec3 m_vPositionBackup; // position at export time (for repositioning)
-  static hkvVec3 g_vGlobalRenderOffset; // for repositioning
+  VisMeshBufferPtr m_spAllInstances;
+  int m_iInstanceStreamMask;
+
   static DynArray_cl<VTerrainDecorationInstance *>g_VisibleInstances; ///< only needed while rendering
 };
 
@@ -336,7 +341,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140711)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

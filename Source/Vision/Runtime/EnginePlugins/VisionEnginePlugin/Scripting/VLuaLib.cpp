@@ -8,7 +8,7 @@
 
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/VisionEnginePluginPCH.h>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Scripting/VScriptIncludes.hpp>
-#include <Vision/Runtime/Base/System/Memory/VMemDbg.hpp>
+
 
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Scripting/Lua/VScriptInput_wrapper.hpp>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Scripting/Lua/VScriptDebug_wrapper.hpp>
@@ -96,7 +96,7 @@ void VLUA_OpenLibraries (lua_State* L)
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

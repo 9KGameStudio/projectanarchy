@@ -20,14 +20,7 @@ inline hkaiMovementProperties::hkaiMovementProperties()
 }
 
 inline hkaiAvoidanceProperties::hkaiAvoidanceProperties()
-:	m_avoidanceSolverType(hkaiAvoidanceProperties::AVOIDANCE_SOLVER_SAMPLING),
-	m_nearbyBoundariesSearchType(hkaiAvoidanceProperties::SEARCH_FLOOD_FILL),
-	m_agentLimitTime(1.0f),
-	m_obstacleLimitTime(1.0f),
-	m_boundaryLimitTime(0.3f),
-	m_limitObstacleDistance(1.0f),
-	m_limitBoundaryDistance(-1.0f), 
-	m_limitObstacleVelocity(0.5f),
+:	m_nearbyBoundariesSearchType(hkaiAvoidanceProperties::SEARCH_FLOOD_FILL),
 	m_wallFollowingAngle(0.1f),
 	m_dodgingPenalty(1.0f),
 	m_velocityHysteresis(0.01f),
@@ -107,9 +100,6 @@ inline void hkaiMovementProperties::setReasonableProperties( hkReal maxSpeed, hk
 		turnSpeed = maxSpeed;
 	}
 
-	m_leftTurnRadius = turnRadius;
-	m_rightTurnRadius = turnRadius;
-
 	m_maxTurnVelocity = turnSpeed;
 
 	hkReal angularVelocityDuringTurn = turnSpeed / turnRadius;
@@ -118,7 +108,7 @@ inline void hkaiMovementProperties::setReasonableProperties( hkReal maxSpeed, hk
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

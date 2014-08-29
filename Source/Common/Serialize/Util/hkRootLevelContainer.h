@@ -9,12 +9,12 @@
 #define HK_ROOT_CONTAINER_H
 
 #include <Common/Base/Reflection/hkClass.h>
-extern const class hkClass hkRootLevelContainerClass;
-extern const class hkClass hkRootLevelContainerNamedVariantClass;
+extern HK_EXPORT_COMMON const class hkClass hkRootLevelContainerClass;
+extern HK_EXPORT_COMMON const class hkClass hkRootLevelContainerNamedVariantClass;
 
 /// This is the root level class exported by our tools.
 /// It contains an array of Variants and associated names.
-class hkRootLevelContainer
+class HK_EXPORT_COMMON hkRootLevelContainer
 {
 	public:
 
@@ -110,7 +110,7 @@ class hkRootLevelContainer
 #endif //HK_ROOT_CONTAINER_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

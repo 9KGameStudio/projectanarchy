@@ -47,7 +47,7 @@ inline void						set(hkMpUint& bi, hkUint64 value)
 template <typename TN, typename TD>
 inline void						hkMpRational::setNumeratorAndDemominator(TN numerator, TD denominator)
 {
-	// the float casts are here to silence PS3 compiler warnings about comparing unsigned TN and TD with 0
+	// the float casts are here to silence PlayStation(R)3 compiler warnings about comparing unsigned TN and TD with 0
 	if((float)denominator < 0)
 	{
 		numerator = TN(0)-numerator;
@@ -127,10 +127,10 @@ void							hkMpRational::getIEEE(const hkMpRational& rat, T& valueAsUint)
 	valueAsUint = 0;
 	if(!rat.isZero())
 	{
-		static const hkMpRational	one(1);
-		static const hkMpRational	two(2);
-		static const hkMpRational	minBound = hkMpRational(2) ^ MANTISSA_BITS;
-		static const hkMpRational	maxBound = minBound * two;		
+		const hkMpRational	one(1);
+		const hkMpRational	two(2);
+		const hkMpRational	minBound = hkMpRational(2) ^ MANTISSA_BITS;
+		const hkMpRational	maxBound = minBound * two;
 		
 		hkMpRational	absRat = rat; abs(absRat);
 		hkMpRational	b0_rat; div(minBound, absRat, b0_rat);
@@ -229,7 +229,7 @@ inline void hkMpLinearSolveGaussSeidel(Axb_TYPE& Axb, int iterations)
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

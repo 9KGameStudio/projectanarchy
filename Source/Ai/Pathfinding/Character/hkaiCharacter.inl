@@ -322,8 +322,19 @@ inline void hkaiCharacter::setCurrentNavMeshFace(hkaiPackedKey faceKey)
 	m_currentNavMeshFace = faceKey;
 }
 
+inline void hkaiCharacter::setLayer( hkaiLayer layer )
+{
+	HK_ASSERT2(0x5687f792, hkMath::countBitsSet(layer) == 1, "Character must belong to exactly one layer.");
+	m_layer = layer;
+}
+
+inline hkaiLayer hkaiCharacter::getLayer() const
+{
+	return m_layer;
+}
+
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

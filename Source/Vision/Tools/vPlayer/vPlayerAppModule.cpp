@@ -28,35 +28,133 @@ public:
     ISceneListDataProvider(flags)
   {
     m_List.LoadFromFile(szFilePath, uiTargetPlatformFilterMask);
-    LoadThumbnails();
+    Finalize();
   }
 
-  virtual VArray<VSceneListEntry>& GetData() HKV_OVERRIDE
+  // ISceneListDataProvider interface implementation
+  virtual int GetSize() const HKV_OVERRIDE
   {
-    return m_List;
+    return m_List.GetSize();
   }
 
-  virtual const VArray<VSceneListEntry>& GetData() const HKV_OVERRIDE
+  virtual VSceneListEntry& GetAt(int iIndex) HKV_OVERRIDE
   {
-    return m_List;
+    return *(m_List[iIndex]);
+  }
+
+  virtual const VSceneListEntry& GetAt(int iIndex) const HKV_OVERRIDE
+  {
+    return *(m_List[iIndex]);
+  }
+
+  virtual int Find(const VSceneListEntry& entry) const HKV_OVERRIDE
+  {
+    for (int i = 0; i < m_List.GetSize(); ++i)
+    {
+      if (entry == *(m_List[i]))
+        return i;   
+    }
+
+    return -1;
+  }
+
+  inline bool IsEmpty() const
+  {
+    return m_List.GetSize() == 0;
+  }
+
+  VSceneListEntry& AddUnique(const VSceneListEntry& entry)
+  {
+    int iIndex = Find(entry);
+    if (iIndex < 0)
+    {
+      iIndex = m_List.Add(new VSceneListEntry(entry));
+
+      if (VFileServeDaemon::IsInitialized())
+      {
+        VSceneListEntry* pNewEntry = m_List[iIndex];
+        for (int i = 0; i < pNewEntry->sSearchPaths.GetSize(); ++i)
+        {
+          m_SearchPathToEntryMap[pNewEntry->sSearchPaths[i]].Add(pNewEntry);
+        }
+      }
+
+      VThumbnailManager::LoadThumbnail(this, iIndex);
+    }
+
+    return *m_List[iIndex];   
+  }
+
+  void RemoveAt(int iIndex)
+  {
+    VSceneListEntry* pOldEntry = m_List[iIndex];
+    m_List.RemoveAt(iIndex);
+
+    if (VFileServeDaemon::IsInitialized())
+    {
+      for (int i = 0; i < pOldEntry->sSearchPaths.GetSize(); ++i)
+      {
+        VArray<VSceneListEntry*>& entries = m_SearchPathToEntryMap[pOldEntry->sSearchPaths[i]];
+        int iOldIndex = entries.Find(pOldEntry);
+        if (iOldIndex >= 0)
+          entries.RemoveAt(iOldIndex);
+      }
+    }
+
+    delete pOldEntry;
+  }
+
+  void SaveAndTriggerChangedCallback()
+  {
+    m_List.SaveToFile();
+    m_OnDataChanged.TriggerCallbacks(&s_EventDataAllChanged);
   }
 
   void Reload()
   {
     m_List.Reload();
-    LoadThumbnails();
+    Finalize();
     m_OnDataChanged.TriggerCallbacks(&s_EventDataAllChanged);
   }
 
-  void LoadThumbnails()
+  inline void Sort()
   {
-    for (int i = 0; i < m_List.GetSize(); ++i)
+    m_List.Sort();
+  }
+
+  void Finalize()
+  {
+    m_SearchPathToEntryMap.Clear();
+
+    for (int iEntryIndex = 0; iEntryIndex < m_List.GetSize(); ++iEntryIndex)
     {
-      VThumbnailManager::LoadThumbnail(this, i);    
+      VThumbnailManager::LoadThumbnail(this, iEntryIndex);
+
+      if (VFileServeDaemon::IsInitialized())
+      {
+        VSceneListEntry* pEntry = m_List[iEntryIndex];
+        pEntry->bAnyCached = false;
+
+        for (int i = 0; i < pEntry->sSearchPaths.GetSize(); ++i)
+        {
+          const VString& searchPath = pEntry->sSearchPaths[i];
+          pEntry->bAnyCached |= VFileServeDaemon::GetInstance()->DirExistsInCache(searchPath);
+
+          m_SearchPathToEntryMap[searchPath].Add(pEntry);
+        }
+      }
     }
   }
 
+  const VArray<VSceneListEntry*>& GetEntriesBySearchPath(const VString& searchDir)
+  {
+    return m_SearchPathToEntryMap[searchDir];
+  }
+
+private:
   VSceneList m_List;
+
+  VMap<VString, VArray<VSceneListEntry*> > m_SearchPathToEntryMap;
 };
 
 //////////////////////////////////////////////////////////////////////////
@@ -64,7 +162,11 @@ public:
 class StatusDataProvider : public ITextDataProvider
 {
 public:
-  StatusDataProvider(hkUint32 flags = Flags::DEFAULT) : ITextDataProvider(flags) {}
+  StatusDataProvider(hkUint32 flags = Flags::DEFAULT)
+   : ITextDataProvider(flags)
+   , m_currentState(Uninitialized)
+  {
+  }
 
   virtual const VString& GetData() const HKV_OVERRIDE
   {
@@ -78,33 +180,50 @@ public:
 
   void Update()
   {
+    State oldState = m_currentState;
+
 #if defined(USE_FILESERVE)
     if (VFileServeDaemon::IsInitialized())
     {
       VFileServeDaemon* pDaemon = VFileServeDaemon::GetInstance();
 
-      if (pDaemon->IsConnected())
+      if (pDaemon->IsConnected() && m_currentState != Connected)
       {
+        m_currentState = Connected;
         m_sData.Format("FileServe connected to %s (%s:%d)", pDaemon->GetRemoteMachineName(), pDaemon->GetRemoteHost(), pDaemon->GetReconnectionPort());
         m_Color = VColorRef(0, 220, 0);
       }
-      else
+      else if (!pDaemon->IsConnected() && m_currentState != UsingCache)
       {
+        m_currentState = UsingCache;
         m_sData.Format("FileServe not connected. Using Cache instead.");
         m_Color = VColorRef(220, 0, 0);
-      }    
+      }
     }
-    else
+    else if (m_currentState != Uninitialized)
     {
+      m_currentState = Uninitialized;
       m_sData.Format("FileServe not initialized.");
       m_Color = VColorRef(128, 128, 128);
     }
 #endif
 
-    m_OnDataChanged.TriggerCallbacks();
+    if (m_currentState != oldState)
+    {
+      m_OnDataChanged.TriggerCallbacks();
+    }
   }
 
 private:
+  enum State
+  {
+    Uninitialized,
+    UsingCache,
+    Connected
+  };
+
+  State m_currentState;
+
   VString m_sData;
   VColorRef m_Color;
 };
@@ -153,8 +272,14 @@ void VPlayerAppModule::Init()
 
     uiFlags |= IDataProvider::Flags::READ_ONLY;
     m_SceneListDataProviders[DP_EXPORTED] = new SceneListDataProvider(":havok_sdk/Data/Vision/Tools/vPlayer/Exported.lua", uiTargetPlatformFilterMask, uiFlags);
-    m_SceneListDataProviders[DP_SAMPLES]  = new SceneListDataProvider(":havok_sdk/Data/Vision/Tools/vPlayer/Samples.lua", uiTargetPlatformFilterMask, uiFlags);
-    m_SceneListDataProviders[DP_SAMPLES]->m_List.Sort();
+
+  #if ! defined ( HAVOK_SIMULATION_KEYCODE )
+	const char* sampleSet = ":havok_sdk/Data/Vision/Tools/vPlayer/Samples.lua";
+  #else
+	const char* sampleSet = ":havok_sdk/Data/Vision/Tools/vPlayer/SimulationSamples.lua";
+  #endif
+    m_SceneListDataProviders[DP_SAMPLES]  = new SceneListDataProvider(sampleSet, uiTargetPlatformFilterMask, uiFlags);
+    m_SceneListDataProviders[DP_SAMPLES]->Sort();
 
     m_pStatusDataProvider = new StatusDataProvider();
     m_pStatusDataProvider->Update();
@@ -177,7 +302,7 @@ void VPlayerAppModule::Init()
 
     // find a non empty page
     int iPageIndex = DP_RECENT;
-    while (m_SceneListDataProviders[iPageIndex]->m_List.GetSize() == 0 && iPageIndex < DP_SAMPLES)
+    while (m_SceneListDataProviders[iPageIndex]->IsEmpty() && iPageIndex < DP_SAMPLES)
     {
       ++iPageIndex;
     }
@@ -272,12 +397,12 @@ void VPlayerAppModule::OnHandleCallback(IVisCallbackDataObject_cl* pData)
   else if (pData->m_pSender == &m_spSelectionDialog->m_OnLoadScene)
   {
     VSceneListEvent* pEventData = static_cast<VSceneListEvent*>(pData);
-    RequestLoad(m_SceneListDataProviders[pEventData->GetListIndex()]->m_List[pEventData->GetEntryIndex()]);
+    RequestLoad(m_SceneListDataProviders[pEventData->GetListIndex()]->GetAt(pEventData->GetEntryIndex()));
   }
   else if (pData->m_pSender == &m_spSelectionDialog->m_OnClearCache)
   {
     VSceneListEvent* pEventData = static_cast<VSceneListEvent*>(pData);
-    ClearCache(m_SceneListDataProviders[pEventData->GetListIndex()]->m_List[pEventData->GetEntryIndex()]);
+    ClearCache(m_SceneListDataProviders[pEventData->GetListIndex()]->GetAt(pEventData->GetEntryIndex()));
   }
   else if (pData->m_pSender == &m_spSelectionDialog->m_OnRemoveFromList)
   {
@@ -319,7 +444,7 @@ void VPlayerAppModule::OnHandleCallback(IVisCallbackDataObject_cl* pData)
   }
 }
 
-int VPlayerAppModule::GetCallbackSortingKey(VCallback *pCallback)
+int64 VPlayerAppModule::GetCallbackSortingKey(VCallback *pCallback)
 {
   if (pCallback == &Vision::Callbacks.OnFrameUpdatePreRender)
   {
@@ -495,6 +620,11 @@ void VPlayerAppModule::ProcessMessages()
       V_SAFE_DELETE(pLastOpenMessage);
       pLastOpenMessage = pMessage;
       break;
+
+    case 'RELD':
+      ProcessAssetReloadMessage(pMessage);
+      V_SAFE_DELETE(pMessage);
+      break;
     }
   }
 
@@ -590,52 +720,92 @@ void VPlayerAppModule::ClearCache(const VSceneListEntry& entry)
       VFileServeDaemon::GetInstance()->ClearCacheDirectory(entry.sSearchPaths[i]);
     }
   }
+
+  UpdateCacheStatus(entry.sSearchPaths);
+}
+
+void VPlayerAppModule::UpdateCacheStatus(const VArray<VString>& sSearchPaths)
+{
+  if (!VFileServeDaemon::IsInitialized())
+    return;
+
+  VMap<VSceneListEntry*, bool> updatedEntries;
+  
+  for (int iProviderIndex = 0; iProviderIndex < DP_COUNT; ++iProviderIndex)
+  {
+    SceneListDataProvider* pProvider = m_SceneListDataProviders[iProviderIndex];
+
+    updatedEntries.Clear();
+
+    for (int iSearchPathIndex = 0; iSearchPathIndex < sSearchPaths.GetSize(); ++iSearchPathIndex)
+    {
+      const VString& sSearchPath = sSearchPaths[iSearchPathIndex];
+      const VArray<VSceneListEntry*>& entries = pProvider->GetEntriesBySearchPath(sSearchPath);
+      for (int i = 0; i < entries.GetSize(); ++i)
+      {
+        updatedEntries[entries[i]] = true;
+      }
+    }
+
+    VPOSITION it = updatedEntries.GetStartPosition();
+    while (it != NULL)
+    {
+      VSceneListEntry* pEntry = NULL;
+      bool dummy;
+      updatedEntries.GetNextPair(it, pEntry, dummy);
+
+      bool bAnyCachedOld = pEntry->bAnyCached;
+      pEntry->bAnyCached = false;
+
+      for (int i = 0; i < pEntry->sSearchPaths.GetSize(); ++i)
+      {
+        pEntry->bAnyCached |= VFileServeDaemon::GetInstance()->DirExistsInCache(pEntry->sSearchPaths[i]);
+      }
+
+      if (pEntry->bAnyCached != bAnyCachedOld)
+      {
+        int iEntryIndex = pProvider->Find(*pEntry);
+        VSceneListEvent data(&pProvider->m_OnDataChanged, iProviderIndex, iEntryIndex, VSceneListEvent::DATA_CHANGED);
+        data.Trigger();
+      }
+    }
+  }  
 }
 
 void VPlayerAppModule::RemoveFromList(int iListIndex, int iEntryIndex)
 {
-  VSceneList& list = m_SceneListDataProviders[iListIndex]->m_List;
-
-  // backup the entry so it can be deleted from the recent list later
-  VSceneListEntry entry = list[iEntryIndex]; 
-  list.RemoveAt(iEntryIndex);
-
-  list.SaveToFile();
-  m_SceneListDataProviders[iListIndex]->m_OnDataChanged.TriggerCallbacks(&s_EventDataAllChanged);
+  SceneListDataProvider* pProvider = m_SceneListDataProviders[iListIndex];
 
   if (iListIndex != DP_RECENT)
-    RemoveFromRecentList(entry);
+    RemoveFromRecentList(pProvider->GetAt(iEntryIndex));
+
+  pProvider->RemoveAt(iEntryIndex);
+  pProvider->SaveAndTriggerChangedCallback();
 }
 
 void VPlayerAppModule::AddToRecentList(const VSceneListEntry& entry)
 {
-  VSceneList& list = m_SceneListDataProviders[DP_RECENT]->m_List;
+  SceneListDataProvider* pProvider = m_SceneListDataProviders[DP_RECENT];
+  
+  VSceneListEntry& newEntry = pProvider->AddUnique(entry);
+  newEntry.LastUsed = VDateTime::Now();
 
-  int iIndex = list.Find(entry);
-  if (iIndex < 0)
-  {
-    iIndex = list.GetSize();
-    list.Add(entry);
-    VThumbnailManager::LoadThumbnail(m_SceneListDataProviders[DP_RECENT], iIndex);
-  }
-  list[iIndex].LastUsed = VDateTime::Now();
-
-  list.Sort();
-  list.SaveToFile();
-  m_SceneListDataProviders[DP_RECENT]->m_OnDataChanged.TriggerCallbacks(&s_EventDataAllChanged);
+  pProvider->Sort();
+  pProvider->SaveAndTriggerChangedCallback();
+  
+  UpdateCacheStatus(newEntry.sSearchPaths);
 }
 
 void VPlayerAppModule::RemoveFromRecentList(const VSceneListEntry& entry)
 {
-  VSceneList& list = m_SceneListDataProviders[DP_RECENT]->m_List;
+  SceneListDataProvider* pProvider = m_SceneListDataProviders[DP_RECENT];
 
-  int iIndex = list.Find(entry);
+  int iIndex = pProvider->Find(entry);
   if (iIndex >= 0)
   {
-    list.RemoveAt(iIndex);
+    pProvider->RemoveAt(iIndex);
 
-    list.SaveToFile();
-    m_SceneListDataProviders[DP_RECENT]->m_OnDataChanged.TriggerCallbacks(&s_EventDataAllChanged);
+    pProvider->SaveAndTriggerChangedCallback();
   } 
 }
 
@@ -679,7 +849,7 @@ void VPlayerAppModule::LoadFromFile(const char* szAbsoluteScenePath)
   VFileHelper::BackToFrontSlash(sWorkspaceDir);
 
   VSceneListEntry entry;
-  entry.uiTargetPlatforms = TARGETPLATFORM_MASK_THIS;
+  entry.uiTargetPlatforms = V_BIT(TARGETDEVICE_THIS);
   entry.sDisplayName.Format("%s (in %s)", szSceneDir, sProjectSearchPath.AsChar());
   entry.sScenePath = szSceneDir;
   entry.sSearchPaths.Append(sProjectSearchPath.AsChar());
@@ -708,8 +878,91 @@ void VPlayerAppModule::SolicitCommandConnection()
   }
 }
 
+void VPlayerAppModule::ProcessAssetReloadMessage(VMessage* pMessage)
+{
+  {
+    int lutCount;
+    if (!pMessage->ReadInt(lutCount))
+    {
+      return;
+    }
+
+    for (int lutIdx = 0; lutIdx < lutCount; ++lutIdx)
+    {
+      char* szLookupTable;
+      if (!pMessage->ReadString(&szLookupTable))
+      {
+        return;
+      }
+      Vision::File.ReloadAssetLookupTables(szLookupTable);
+    }
+  }
+
+  {
+    int allResources;
+    if (!pMessage->ReadInt(allResources))
+    {
+      return;
+    }
+
+    if (allResources)
+    {
+      Vision::ResourceSystem.ReloadModifiedResourceFiles(NULL);
+      return;
+    }
+  }
+
+  VArray<const char*> resourceManagers;
+
+  {
+    int resManagerCount;
+    if (!pMessage->ReadInt(resManagerCount))
+    {
+      return;
+    }
+
+    resourceManagers.Reserve(resManagerCount);
+
+    for (int managerIdx = 0; managerIdx < resManagerCount; ++managerIdx)
+    {
+      char* resManagerName;
+
+      if (!pMessage->ReadString(&resManagerName))
+      {
+        return;
+      }
+
+      resourceManagers.Add(resManagerName);
+    }
+  }
+
+  {
+    int resCount;
+    if (!pMessage->ReadInt(resCount))
+    {
+      return;
+    }
+
+    for (int resIdx = 0; resIdx < resCount; ++resIdx)
+    {
+      int resManagerIdx;
+      char* resourceName;
+
+      if (!pMessage->ReadInt(resManagerIdx) || !pMessage->ReadString(&resourceName))
+      {
+        return;
+      }
+
+      char canonicalPath[FS_MAX_PATH];
+      VPathHelper::CanonicalizePath(resourceName, canonicalPath);
+      
+      Vision::ResourceSystem.ReloadModifiedResourceFile(resourceManagers[resManagerIdx], canonicalPath);
+    }
+  }
+}
+
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140730)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

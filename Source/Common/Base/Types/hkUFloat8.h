@@ -11,11 +11,13 @@
 
 #define HK_UFLOAT8_MAX_VALUE 256
 
+extern HK_EXPORT_COMMON const class hkClass hkUFloat8Class;
+
 /// A wrapper to store an unsigned float into 8 bit.
 /// This has a reduced range. Basically the encoding
 /// uses a table holding an exponential function.
 /// The range is [0.010f to 1000002.f] with an average error of 7%
-class hkUFloat8
+class HK_EXPORT_COMMON hkUFloat8
 {
 	//+hk.MemoryTracker(ignore=True)
 public:
@@ -106,7 +108,7 @@ protected:
 #endif // HKBASE_HKUFLOAT8_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

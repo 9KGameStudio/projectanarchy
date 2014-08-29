@@ -184,7 +184,7 @@ public:
   /// \return
   ///   int iSortinKey: Arbitrary sorting key value. The value can be positive or negative.
   ///   We want the camera to update after other callbacks as they can change the owner entity's position.
-  virtual int GetCallbackSortingKey(VCallback *pCallback) HKV_OVERRIDE
+  virtual int64 GetCallbackSortingKey(VCallback *pCallback) HKV_OVERRIDE
   {
 	  return 42000;
   }
@@ -270,7 +270,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

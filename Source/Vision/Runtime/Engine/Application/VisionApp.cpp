@@ -30,8 +30,8 @@ extern const char* s_pszAuthKey;
 
 VFixStepSceneUpdateController::VFixStepSceneUpdateController(int iTicksPerSec, int iMaxTickCount, bool bDeleteObjectUponUnref)
   : IVisUpdateSceneController_cl(bDeleteObjectUponUnref)
-  , m_iTicksPerSecond(iTicksPerSec)
   , m_iMaxTickCount(iMaxTickCount)
+  , m_iTicksPerSecond(iTicksPerSec)
   , m_bLimitFrameRate(true)
   , m_iLastUpdateTickCount(0)
 {
@@ -280,8 +280,6 @@ bool VisionApp_cl::Run()
   // update everything that has to be done once per loop rather than per simulation steps
   OnFrameUpdatePreRender();
 
-  Vision::Profiling.Update();
-
   VASSERT_MSG(Vision::Renderer.GetRendererNode(0) != NULL, "No renderer node is set. This isn't supported anymore. Use a VSimpleRendererNode instead of registering the main context globally.");
 
   // If in debug build, perform a sanity check - no context registered with the main context should also be registered
@@ -371,10 +369,11 @@ bool VisionApp_cl::Run()
 
   //Display the scene
   Vision::Callbacks.OnBeforeSwapBuffers.TriggerCallbacks();
-#ifdef WIN32
-  if (m_bUpdateScreen) // only supported on win32
-#endif
+
+  if (m_bUpdateScreen)
     Vision::Video.UpdateScreen();
+
+  Vision::Profiling.Update();
 
   if (m_iUpdateSceneTickCount>0) // same as for OnFinishScene
     UpdateTimer();
@@ -396,8 +395,14 @@ bool VisionApp_cl::IsInitialized() const
 
 bool VisionApp_cl::s_bEngineIsInitialized = false;
 
+IVRendererNode* VisionApp_cl::CreateRendererNode()
+{
+  return new VSimpleRendererNode(Vision::Contexts.GetMainRenderContext());
+}
+
 bool VisionApp_cl::InitEngine(VisAppConfig_cl *pConfig)
 {
+  // Initialize default shader provider
   SetShaderProvider(new VisionShaderProvider_cl());
 
   // Use default application configuration if none is provided
@@ -412,7 +417,7 @@ bool VisionApp_cl::InitEngine(VisAppConfig_cl *pConfig)
   HKV_LOG_BLOCK("Engine Initialization");
 
   // Initialize video
-#if defined(WIN32) && !defined(_VISION_WINRT)
+#if defined(_VISION_WIN32) && !defined(_VISION_WINRT)
   if(m_appConfig.m_uiInitFlags & VAPP_PEEK_ALL_MESSAGES_DEPRECATED)
     m_appConfig.m_windowConfig.SetPickAllMessage();
   Vision::Video.Init(&m_appConfig.m_windowConfig);
@@ -428,7 +433,7 @@ bool VisionApp_cl::InitEngine(VisAppConfig_cl *pConfig)
   if ((m_appConfig.m_uiInitFlags & VAPP_FULLSCREEN)!=0)
     m_appConfig.m_videoConfig.m_bFullScreen = true;
 
-#if defined(WIN32) && defined(_VR_DX9)
+#if defined(_VISION_WIN32) && defined(_VR_DX9)
   if ((m_appConfig.m_uiInitFlags & VAPP_USE_NVPERFHUD)!=0)
     m_appConfig.m_videoConfig.m_bEnableNVPerfHUD = true;
 #endif
@@ -457,7 +462,7 @@ bool VisionApp_cl::InitEngine(VisAppConfig_cl *pConfig)
 
   m_iInitFlags = m_appConfig.m_uiInitFlags;
 
-#ifdef WIN32
+#ifdef _VISION_WIN32
   if ((m_appConfig.m_uiInitFlags & VAPP_USE_NVPERFHUD)!=0)
     m_iInitFlags &= ~VAPP_USE_DINPUT;
 #endif
@@ -470,7 +475,8 @@ bool VisionApp_cl::InitEngine(VisAppConfig_cl *pConfig)
   Vision::Contexts.GetMainRenderContext()->SetPriority(VIS_RENDERCONTEXTPRIORITY_DISPLAY);
   Vision::Contexts.GetMainRenderContext()->SetRenderLoop(new VisionRenderLoop_cl());
 
-  VSimpleRendererNode* pRenderer = new VSimpleRendererNode(Vision::Contexts.GetMainRenderContext());
+  IVRendererNode* pRenderer = CreateRendererNode();
+  VASSERT_MSG(pRenderer != NULL, "no renderer node specified");
   pRenderer->InitializeRenderer();
 
   Vision::Renderer.SetRendererNode(0, pRenderer);   
@@ -534,16 +540,12 @@ bool VisionApp_cl::InitInput()
 
   VVERIFY_OR_RET_VAL(!m_bInputInitialized,false);
 
-#if defined(WIN32) && !defined(_VISION_WINRT)
+#if defined(_VISION_WIN32) && !defined(_VISION_WINRT)
   int eInputModeKeyboard = VGL_DIRECTINPUT;
   if ( (m_iInitFlags & VAPP_USE_DINPUT_KEYBOARD) ==0)
     eInputModeKeyboard = VGL_WINDOWSINPUT;
 
-  int eInputModeMouse = VGL_DIRECTINPUT;
-  if ( (m_iInitFlags & VAPP_USE_DINPUT_MOUSE) ==0)
-    eInputModeMouse = VGL_WINDOWSINPUT;
-
-  VInputManagerPC::Init(eInputModeKeyboard, eInputModeMouse, (m_iInitFlags&VAPP_MOUSE_HIDECURSOR)!=0, 
+  VInputManagerPC::Init(eInputModeKeyboard, (m_iInitFlags&VAPP_MOUSE_HIDECURSOR)!=0, 
     (m_iInitFlags&VAPP_MOUSE_NONEXCLUSIVE)==0,
     (m_iInitFlags&VAPP_KEYBOARD_NONEXCLUSIVE)==0);
 #else
@@ -669,7 +671,7 @@ void VisionApp_cl::OnDeInitEngine()
 
 BOOL VisionApp_cl::WantsToLeaveEditorPlayMode() const
 {
-#if defined(WIN32) && !defined(_VISION_WINRT)
+#if defined(_VISION_WIN32) && !defined(_VISION_WINRT)
   // default behaviour: the <ESC> key cancels the play-the-game mode
   //no input map used, because there is only one key in use (ESC)
 
@@ -887,7 +889,7 @@ void VisionApp_cl::OnFrameUpdatePostRender()
   // See ticket #16824 for details.
   // Do this only for PC, since on consoles skipping the update of the input leads in the vForge console-client
   // to endless key-triggering, when these keys are pressed prior to exporting/ running the scene from vForge.
-#ifdef WIN32
+#ifdef _VISION_WIN32
   if (Vision::Editor.IsPlayingTheGame())
 #endif
     Vision::Input.Update();
@@ -1019,7 +1021,7 @@ void VisionApp_cl::RunThink(float fElapsedTime)
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -19,26 +19,6 @@
 #define TEST_ROOT_NAME_READ_BASE "test_read"
 #define TEST_ROOT_NAME_WRITE_BASE "test_write"
 
-// possible styles for the Printf function
-enum ePRINTFSTYLE
-{
-  PS_NORMAL = 0,
-  PS_BAD,
-  PS_GOOD,
-  PS_TITLE,
-  PS_MAINTITLE,
-  PS_CLIENT
-};
-
-
-#define AOUT_NONE        0
-#define AOUT_STDOUT     (1<<0)
-#define AOUT_WINCONSOLE (1<<1)
-#define AOUT_HTMLFILE   (1<<2)
-
-#define AOUT_TIMER
-
-
 // forward declarations
 class VTestClass;
 class VTypeManager;
@@ -60,7 +40,7 @@ class VStrList;
 ///   tests->SetOutput ( AOUT_WINCONSOLE ); // define where the log messages are displayed
 ///   tests->RegisterTest ( new VLightTest ); // add first test
 ///   tests->RegisterTest ( new LoadTextureTest ); // add second test
-///   if(SetupDialog(tests)) // display the userinterface
+///   if(SetupDialog(tests)) // display the user interface
 ///   {
 ///     tests->Printf(0, AIS_MAINTITLE, "Vision Engine Tests"); // Print out a heading into the log
 ///     tests->RunAll(); // run all tests
@@ -73,20 +53,19 @@ class VTestUnit
 public:
 
   ///
-  /// @name Consturctor/destructor
+  /// @name Constructor/destructor
   /// @{
   ///
   
   /// \brief
-  ///   Constructor, sets the default values for the test uint stettings
+  ///   Constructor, sets the default values for the test uint settings
   VBASE_IMPEXP VTestUnit(const char* szTestDirectory_read, const char* szTestDirectory_write, int partIndex = 1, int partCount = 1, bool bSetAsActive = true);
 
-
   /// \brief
-  ///   Destructor which deletes all registred VTestClasses.
+  ///   Destructor which deletes all registered VTestClasses.
   VBASE_IMPEXP virtual ~VTestUnit();
 
-
+  VBASE_IMPEXP static VTestUnit* GetCurrentTestUnit();
 
   ///
   /// @}
@@ -96,12 +75,11 @@ public:
   /// @name Important Functions
   /// @{
   ///
-  
 
   /// \brief
   ///   Adds a new VTestClass derived object to the test suite.
   /// 
-  /// The objects is deleted in the desctructor of VTestUnit!
+  /// The objects is deleted in the destructor of VTestUnit!
   /// 
   /// \param pTest
   ///   pointer to the new VTestClass object
@@ -112,7 +90,6 @@ public:
   ///   \endcode
   VBASE_IMPEXP void RegisterTest( VTestClass *pTest );
 
-  
   /// \brief
   ///   Registers all test classes which are derived from a specified base class
   /// 
@@ -141,25 +118,7 @@ public:
   ///    Advances the tests by one frame, returns false if finished
   VBASE_IMPEXP bool RunTestCallback();
 
-  /// \brief
-  ///   Sets the handling of exceptions and assertions
-  /// 
-  /// \param bBreakOnAssert
-  ///   TRUE if assertions should be handled (breakpoint)
-  /// 
-  /// \param bHandleExceptions
-  ///   TRUE if vTestUnit should catch exceptions
-  VBASE_IMPEXP void SetDebugFlags( VBool bBreakOnAssert, VBool bHandleExceptions );
-
-
-  /// \brief
-  ///   If skip skipOnFrameFail is enabled, then the test units stops the subtest as soon as the
-  ///   first error has occured. Usually the subtest is only stopped when RunSubTest returns FALSE.
-  ///   By default the test unit initializes bSkipOnFrameFail with FALSE.
-  VBASE_IMPEXP void SetSkipOnFrameFail( VBool bSkipOnFrameFail );
   
-
-
   ///
   /// @}
   ///
@@ -169,61 +128,9 @@ public:
   /// @{
   ///
 
-  /// \brief
-  ///   Returns the currently set output mode.
-  /// 
-  /// \return
-  ///   The currently set output mode.
-  VBASE_IMPEXP int GetOutputMode ();
 
 
-  /// \brief
-  ///   Configures where the log messages are written to.
-  /// 
-  /// You can specify were the log messages are printed out.
-  /// 
-  /// \param iMode
-  ///   choose one the following:
-  ///   \li AOUT_NONE: no log output
-  ///   \li AOUT_STDOUT: log output to the standard output
-  ///   \li AOUT_HTMLFILE: log output into a HTML file (you have to pass the filename)
-  ///   \li AOUT_VISIONLOG: log output to the vision log window (only possible with the engine)
-  ///
-  /// \param szHTML
-  ///   If HTML output is desired: file name of the HTML output file. The file is saved into the tests' working directory.
-  /// 
-  /// \example
-  ///   \code
-  ///   tests->SetOutput ( AOUT_WINCONSOLE );
-  ///   \endcode
-  VBASE_IMPEXP void SetOutput( int iMode, const char *szHTML=NULL );
-
-
-  /// \brief
-  ///   Enables/Disables the JUnit compatible xml logging
-  /// 
-  /// \param bEnable
-  ///   if false, no xml file is written 
-  ///
-  /// \param szXMLFile
-  ///   file name of xml output file. The file is saved into the TestDirectory.
-  VBASE_IMPEXP void SetXMLOutput( VBool bEnable, const char* szXMLFile=NULL );
-
-  /// \brief
-  ///   Dumps the content of the file to the std out
-  /// 
-  /// i.e. since it is not possible on to read a file from the Wii
-  /// we need to dump it to the standard out to get its content via
-  /// the log mechanism.
-  /// 
-  /// \param szFileName
-  ///   The filename of the file which should be dumped
-  VBASE_IMPEXP void DumpFile( const char* szFileName );
-
-  /// \brief
-  ///   If the argument is TRUE the html file is displayed 
-  inline void ShowHTMLFile(VBool bShow) { m_bShowHTML = bShow; }
-  
+  VBASE_IMPEXP void SetTestSuiteName(const char* szName);
 
   /// \brief
   ///   Starts the statistic output, calls OutputStatistics, closes the HTML and XML document and
@@ -232,44 +139,7 @@ public:
 
 
 
-  /// \brief
-  ///   Resets the statistics data
-  VBASE_IMPEXP void ResetStatistics();
-
-
-  /// \brief
-  ///   Adds a log messages and works nearly as printf, but you can also specify an indentation level and
-  ///   a font style for HTML output.
-  /// 
-  /// \param iLevel
-  ///   Indentation level, 0 equals no indentation.
-  /// 
-  /// \param eStyle
-  ///   The text style, choose one of the following:
-  ///   \li PS_NORMAL = normal text
-  ///   \li PS_BAD = red text
-  ///   \li PS_GOOD = green text
-  ///   \li PS_TITLE = bigger text
-  ///   \li PS_MAINTITLE = much bigger and bold text
-  ///   \li PS_CLIENT = italic text
-  ///
-  /// \param s
-  ///   The string to print.
-  /// 
-  /// \example
-  ///   \code
-  ///   tests->Printf (0, PS_MAINTITLE, "Vision Engine Tests");
-  ///   \endcode
-  VBASE_IMPEXP void Printf ( int iLevel, ePRINTFSTYLE eStyle, const char *s, ... );  
-
-
-  /// \brief
-  ///   A printf like function that outputs the string to the log
-  VBASE_IMPEXP void Printf ( const char *s, ... );  
-
-  /// \brief 
-  ///  A printf like function that outputs the string to the xml file
-  VBASE_IMPEXP void XMLPrintf ( const char *s, ... );
+public:
 
   ///
   /// @}
@@ -280,28 +150,18 @@ public:
   /// @{
   ///
   
-  
-
-  // set all test state (and obtionaly the subtests states) as enabled
+  // set all test state (and optionally the subtests states) as enabled
   VBASE_IMPEXP void EnableAll(VBool bSubtestsToo = FALSE);    
-  // set all test state (and obtionaly the subtests states) as disabled
+  // set all test state (and optionally the subtests states) as disabled
   VBASE_IMPEXP void DisableAll(VBool bSubtestsToo = FALSE);
-  // toggle all test state (and obtionaly the subtest states)
+  // toggle all test state (and optionally the subtest states)
   VBASE_IMPEXP void ReverseState(VBool bSubtestsToo = FALSE);
-  // set randomly test state (and obtionaly the subtests states)
-  VBASE_IMPEXP void RandomState(VBool bSubtestsToo = FALSE, int iPercent = 50);
-  
+
   // fill the m_iTestOrder array with a growing index
   VBASE_IMPEXP void OrderReset();   
-  // fill it randomly
-  VBASE_IMPEXP void OrderRandom();  
   // reset it and sort the array using the test name
   VBASE_IMPEXP void OrderAlphabetical(VBool bAZ = TRUE); 
-  // fill it with the 'negative' value (TestCount - current index - 1)
-  VBASE_IMPEXP void OrderReverse(); 
   
-
-
   ///
   /// @}
   ///
@@ -318,8 +178,6 @@ public:
   // Gets the base directory for the tests. 
   VBASE_IMPEXP const char* GetTestDirectory(bool readDir) const;
 
-  // Gets the IVFileSystem instance representing the test base directory for reading/writing
-  VBASE_IMPEXP IVFileSystem* GetTestRootFileSystem(bool forRead) const;
 
   // Builds an absolute, platform-independent path for accessing a file in the test directory for
   // reading/writing.
@@ -340,15 +198,10 @@ public:
   VBASE_IMPEXP VBool LoadSettings(const char *szFileName, bool bUseReadDir=true);
   VBASE_IMPEXP VBool SaveSettings(const char *szFileName) const;
 
-  
   ///
   /// @}
   ///
 
-  ///
-  /// @name Get Functions
-  /// @{
-  ///
   
   // return test by index (the index is for the test-array) (m_pTests[iTestIndex])
   VBASE_IMPEXP VTestClass *GetTest(int iTestIndex) const;
@@ -357,11 +210,7 @@ public:
 
   // return the test index found at specified position in the order-array (m_iTestOrder[iPos])
   VBASE_IMPEXP int GetTestIndexAt(int iPos) const;
-  // return the test class founded in the specified position in the order-array (m_pTests[m_iTestOrder[iPos]])
-  VBASE_IMPEXP VTestClass* GetTestAt(int iPos) const;
 
-  // get the position in the test-array of the testcall pointer 
-  VBASE_IMPEXP int GetTestArrayIndex(VTestClass *pTestClass);
   // get the position in the order-array of the testcall pointer 
   VBASE_IMPEXP int GetOrderArrayIndex(VTestClass *pTestClass);
   
@@ -370,33 +219,10 @@ public:
    
   VBASE_IMPEXP VBool MoveTest(int iOldPos, int iNewPos); ///< Moves a test between two position in the order-array and update the other test positions
 
-  // \brief
-  //    - Returns true if fast mode is active:
-  //      = Tests are executed faster.
-  //      This reduces the frames drawn by unit tests that would normally render several hundreds of frames,
-  //      which makes sense if the graphical output isn't important.
-  inline bool IsFastModeEnabled() const
+
+  VBASE_IMPEXP IVFileOutStream* GetLogFileHTML() 
   { 
-    return m_bFastMode != 0; 
-  }
-
-  inline void SetFastModeEnabled(bool bEnabled)
-  {
-    m_bFastMode = bEnabled ? TRUE : FALSE;
-  }
-
-  // \brief
-  //    Returns true if headless mode is active.
-  inline bool IsHeadlessModeEnabled() const
-  {
-    return m_bHeadlessMode != 0;
-  }
-
-  // \brief
-  //    Enables or disables the headless mode.
-  inline void SetHeadlessModeEnabled(bool bEnabled)
-  {
-    m_bHeadlessMode = bEnabled ? TRUE : FALSE;
+    return m_pLogFileHTML; 
   }
 
   // \brief
@@ -427,23 +253,7 @@ public:
   //   Should the DX11 feature level selector be displayed for this test unit?
   VBASE_IMPEXP virtual VBool DisplayFeatureLevelSelector() const;
 
-
-  // \brief
-  //   Add a tag for controlling test execution.
-  void AddTag( const char* szTag );
-
-  // \brief
-  //   Remove a tag for controlling test execution.
-  void RemoveTag( const char* szTag );
-
-  // \brief
-  //   Check whether the given tag is set.
-  VBool HasTag( const char* szTag ) const;
-
-  VBool m_bBreakOnAssert;
-  
   inline int GetFailedTestCount() const { return m_iFailed; }
-  inline void IncreaseFailCount() { m_iFailed++; }
 
   static VTestUnit* m_pActiveTestUnit;
 
@@ -461,24 +271,8 @@ protected:
   ///   pointer to the test class
   /// 
   /// \return
-  ///   VBool: returns FALSE if an exception was catched. Otherwise TRUE is returned
+  ///   VBool: returns FALSE if an exception was caught. Otherwise TRUE is returned
   virtual VBASE_IMPEXP VBool DoTestInit(VTestClass *pTest);
-
-  /// \brief
-  ///   Runs the test (implementation calls RunSubTest)
-  /// 
-  /// This function calls the VTestUnit::RunSubTests function and checks for an exception (if
-  /// exception handling is enabled).
-  /// 
-  /// This function gets called within the VTestUnit::RunAll function.
-  /// 
-  /// \param pTest
-  ///   pointer to the test class
-  /// 
-  /// \return
-  ///   VBool: returns FALSE if an exception was catched. Otherwise the result of
-  ///   VTestUnit::RunSubTests is returned
-  virtual VBASE_IMPEXP VBool DoTestRun(VTestClass *pTest);
 
   /// \brief
   ///   Deinitializes the test
@@ -490,15 +284,8 @@ protected:
   ///   pointer to the test class
   /// 
   /// \return
-  ///   VBool: returns FALSE if an exception was catched. Otherwise TRUE is returned
+  ///   VBool: returns FALSE if an exception was caught. Otherwise TRUE is returned
   virtual VBASE_IMPEXP VBool DoTestDeInit(VTestClass *pTest);
-
-  /// \brief
-  ///   Initializes, runs and deinitializes the subtest (VTestUnit::DoSubTestInit,
-  ///   VTestUnit::DoSubTestRun, VTestUnit::DoSubTestDeInit) It also checks whether subtest is
-  ///   enabled. This function calls the VTestUnit::DoSubTestRun function until it returns FALSE.
-  ///   This is e.g. used by the engine tests to run the same subtest for multiple frames.
-  void RunSubTests(VTestClass *pTest, int iSubTest);
 
   /// \brief
   ///   Initializes the subtest
@@ -513,7 +300,7 @@ protected:
   ///   number of the subtest
   /// 
   /// \return
-  ///   VBool: returns FALSE if an exception was catched. Otherwise TRUE is returned
+  ///   VBool: returns FALSE if an exception was caught. Otherwise TRUE is returned
   virtual VBASE_IMPEXP VBool DoSubTestInit(VTestClass *pTest, int iSubTest);
 
   /// \brief
@@ -532,7 +319,7 @@ protected:
   ///   number of the subtest
   /// 
   /// \return
-  ///   VBool: returns FALSE if an exception was catched. Otherwise the result of
+  ///   VBool: returns FALSE if an exception was caught. Otherwise the result of
   ///   VTestClass::RunSubTest is returned
   virtual VBASE_IMPEXP VBool DoSubTestRun(VTestClass *pTest, int iSubTest);
 
@@ -549,7 +336,7 @@ protected:
   ///   number of the subtest
   /// 
   /// \return
-  ///   VBool: returns FALSE if an exception was catched. Otherwise TRUE is returned
+  ///   VBool: returns FALSE if an exception was caught. Otherwise TRUE is returned
   virtual VBASE_IMPEXP VBool DoSubTestDeInit(VTestClass *pTest, int iSubTest);
 
   /// \brief
@@ -561,20 +348,10 @@ protected:
   // private helper functions
   void SwapTestOrder(int iPos1, int iPos2); ///< Swaps to tests in the order-array
   
-  // change all character that may not appear in a win filename into an ape
-  void FixString ( char *pszString );
-
-  // used internaly to set the tests position in the order-array
+  // used internally to set the tests position in the order-array
   VBool SetTestPos(int iTestArrayIndex, int iPositionInOrderArray); 
 
-  // internal function used by the two Printf functions
-  void PrintfInternal ( int iLevel, ePRINTFSTYLE eStyle, const char *s, va_list args );  
-  
-  // HTML log functions
-  void HTMLStartDoc ();
-  void HTMLEndDoc ();
   void HTMLShowDoc ();
-  void HTMLPrintf ( const char *s, ... );
 
   // add automatically generated tags (for the desired feature level, for example)
   void GenerateTags();
@@ -585,27 +362,53 @@ protected:
   
   VTestClass *m_pCurrentTest;   ///< pointer to the current test
 
-private:
-  static void hkvLogWriter_TestToHTML(hkvLogMsgType::Enum MsgType, const char* szText, int iIndentation, const char* szTag, void* pPassThrough);
-
-  int              m_iOutputMode;             ///< define for output (e.g. AOUT_WINCONSOLE), each combination
-  
-  char             m_szHTMLFile[FS_MAX_PATH]; ///< html outputfilename
-  IVFileOutStream* m_fHTMLFile;               ///< filehandle for the html file
-  
-  VBool            m_bShowHTML;               ///< if true, the system will open the HTML output file in a window (requires HTML output)
-
-  char             m_szXMLFile[FS_MAX_PATH];  ///< xml outputfilename
-  IVFileOutStream* m_fXMLFile;                ///< filehandle for the xml file
-  
+public:
+  //   If skip skipOnFrameFail is enabled, then the test units stops the subtest as soon as the
+  //   first error has occured. Usually the subtest is only stopped when RunSubTest returns FALSE.
+  //   By default the test unit initializes bSkipOnFrameFail with FALSE.
   VBool m_bSkipOnFrameFail;     ///< skip current subtest as soon as the first frame in the subtest fails
-  VBool m_bSkipOnSubTestFail;   ///< skip all remaining \b subtests if one subtest failed
-  VBool m_bSkipOnTestFail;      ///< skip all remainint \b tests if one subtest failed
 
+  VBool m_bShowHTML;            ///< if true, the system will open the HTML output file in a window (requires HTML output)
+  VBool m_bBreakOnAssert;
+  VBool m_bSkipOnSubTestFail;   ///< skip all remaining \b subtests if one subtest failed
+  VBool m_bSkipOnTestFail;      ///< skip all remaining \b tests if one subtest failed
+
+  VBool m_bVsync;               ///< wait for vertical sync on each frame
   VBool m_bFastMode;            ///< faster execution of unit tests (if supported)
   VBool m_bHeadlessMode;        ///< execute the tests in headless mode
+  VBool m_bGrabRefImages;       ///< grabs reference images for image comparisons
 
-  VBool m_bHandleExceptions;
+private:
+  static bool hkvLogMessageFilter(hkvLogMsgType::Enum MsgType, const char* szText, const char* szTag, void* pPassThrough);
+
+  static void hkvLogWriter_ErrorCounter(hkvLogMsgType::Enum MsgType, const char* szText, int iIndentation, const char* szTag, void* pPassThrough);
+  static void hkvLogWriter_TestToHTML(hkvLogMsgType::Enum MsgType, const char* szText, int iIndentation, const char* szTag, void* pPassThrough);
+  static void hkvLogWriter_TestToXML(hkvLogMsgType::Enum MsgType, const char* szText, int iIndentation, const char* szTag, void* pPassThrough);
+
+  const VString GetTestSuiteLogName() const;
+
+  void BeginTesting();
+  void EndTesting();
+
+  void BeginSuperTest(VTestClass* pTest);
+  void EndSuperTest();
+
+  void WriteToXML(bool bAllTests, const char* szText);
+
+  VString m_sTestSuiteName;
+  
+  // Unfortunately, since we need to have one function call to render each frame (iOS / Android model),
+  // we cannot use log blocks as they were meant to be used (by having them destroyed when exiting a scope)
+  // instead we need to do this manually -> they are allocated on the heap and destroyed manually
+  hkvLogBlock* m_pLastSuperBlock;
+  hkvLogBlock* m_pLastSubBlock;
+
+  
+
+  IVFileOutStream* m_pLogFileXML_AllTests;
+  IVFileOutStream* m_pLogFileXML_SuperTest;              
+  IVFileOutStream* m_pLogFileHTML;
+
 
   int m_iTestOrderSeed;
   int m_iTestOrder[MAX_TESTS];
@@ -617,7 +420,7 @@ private:
   int m_iCurrentSubTestNr;      ///< index of the current subtest (within a test)
   int m_iCurrentSubTestFrameNr; ///< frame number within the current subtest
 
-  int m_iFailed; ///< number of failed test
+  int m_iFailed;                ///< number of failed test
 
   VString m_sRootNameRead;
   VString m_sAbsTestPathRead;
@@ -625,6 +428,7 @@ private:
   VString m_sAbsTestPathWrite;
 
   unsigned int m_uiStartTime;
+  unsigned int m_uiTimeTaken;
 
   // test part index/count (e.g., index=2, count=3 runs the second third of the tests)
   int m_iPartIndex, m_iPartCount;
@@ -632,30 +436,32 @@ private:
   // downlevel support on DX11 - this is ignored on everything else
   FeatureLevel  m_featureLevel;
 
-  ///
-  /// @}
-  ///
 
 private:
   VStrList *m_pTagList;
-};
 
+  int m_iOverallErrorCount;
+  int m_iOverallWarningCount;
+  int m_iSuperTestErrorCount;
+  int m_iSuperTestWarningCount;
+  int m_iSubTestErrorCount;
+  int m_iSubTestWarningCount;
+
+  static VTestUnit* s_pCurrentTestUnit;
+};
 
 class VTestUtils
 {
-private:
-  VTestUtils();
-  VTestUtils(const VTestUtils&);
-  VTestUtils& operator=(const VTestUtils&);
-
 public:
   VBASE_IMPEXP static bool AddZipFileAsRoot(const char* szZipFileName, const char* szRootName, bool bAddSearchPath);
+
+
 };
 
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

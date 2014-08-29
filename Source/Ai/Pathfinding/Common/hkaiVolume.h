@@ -9,7 +9,8 @@
 #ifndef HKAI_VOLUME_H
 #define HKAI_VOLUME_H
 
-extern const class hkClass hkaiVolumeClass;
+#include <Ai/Internal/hkaiExport.h>
+extern HK_EXPORT_AI const class hkClass hkaiVolumeClass;
 
 struct hkGeometry;
 class hkBitField;
@@ -22,7 +23,7 @@ class hkBitField;
 /// Note that an hkaiVolume implementation can be 'inverted' - that is, the space considered 'outside' of the volume is 
 /// bounded, and the space considered 'inside' the volume is unbounded. See \ref hkaiInvertedAabbVolume for an example.
 /// Inverted volumes can be useful to remove everything except a particular subset of a walkable area.
-class hkaiVolume : public hkReferencedObject
+class HK_EXPORT_AI hkaiVolume : public hkReferencedObject
 {
 	//+vtable(true)
 	//+version(0)
@@ -51,18 +52,22 @@ class hkaiVolume : public hkReferencedObject
 		virtual hkResult calcGeometry(hkGeometry& geom) const = 0;
 
 			/// Returns whether the given triangle is fully contained in the volume. False negatives are allowed.
-		virtual hkBool32 containsTriangle(const hkVector4& a, const hkVector4& b, const hkVector4& c) const = 0;
+		virtual hkBool32 containsTriangle(const hkVector4& a, const hkVector4& b, const hkVector4& c) const { return false; }
 
 			/// Returns whether the given AABB is fully contained in the volume.
 			/// This is currently only used to speed up carvers in nav volume building.
 			/// False negatives are allowed.
-		virtual hkBool32 containsAabb( const hkAabb& aabbIn ) const = 0;
+		virtual hkBool32 containsAabb( const hkAabb& aabbIn ) const { return false; }
+
+			/// Returns whether the given AABB overlaps with the volume.
+			/// False positives are allowed.
+		virtual hkBool32 overlapsAabb( const hkAabb& aabbIn ) const { return true; }
 };
 
 #endif // HKAI_VOLUME_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

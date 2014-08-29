@@ -19,14 +19,14 @@ class hkInternal3JointsIkIterSolver;
 /// specified axis parallel to the plane. The joints/bones do not
 /// need to be immediate parents of each other (but they must be in
 /// the same chain).
-class hkaThreeJointsIkSolver : public hkReferencedObject
+class HK_EXPORT_ANIMATION hkaThreeJointsIkSolver : public hkReferencedObject
 {
 	public:
 
 		HK_DECLARE_CLASS_ALLOCATOR( HK_MEMORY_CLASS_ANIM_RUNTIME );
 
 		/// This setup data is passed to constructor
-		struct Setup
+		struct HK_EXPORT_ANIMATION Setup
 		{
 			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_ANIM_RUNTIME, hkaThreeJointsIkSolver::Setup );
 
@@ -67,7 +67,7 @@ class hkaThreeJointsIkSolver : public hkReferencedObject
 #endif // HK_THREEJOINTSIKSOLVER_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

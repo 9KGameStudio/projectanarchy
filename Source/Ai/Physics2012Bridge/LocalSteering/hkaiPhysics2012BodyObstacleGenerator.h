@@ -12,6 +12,7 @@
 #include <Ai/Pathfinding/Character/LocalSteering/Obstacle/hkaiObstacleGenerator.h>
 
 class hkpRigidBody;
+class hkaiPhysics2012WorldListener;
 
 #define HK_PROPERTY_OBSTACLE_ALWAYS 0x654e4323
 
@@ -24,7 +25,7 @@ class hkaiPhysics2012BodyObstacleGenerator : public hkaiObstacleGenerator
 		HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_AI);
 		HK_DECLARE_REFLECTION();
 
-		hkaiPhysics2012BodyObstacleGenerator(hkpRigidBody* rigidBody);
+		hkaiPhysics2012BodyObstacleGenerator(hkpRigidBody* rigidBody, const hkaiPhysics2012WorldListener* listener = HK_NULL);
 
 		hkaiPhysics2012BodyObstacleGenerator(hkFinishLoadedObjectFlag f);
 
@@ -41,6 +42,11 @@ class hkaiPhysics2012BodyObstacleGenerator : public hkaiObstacleGenerator
 			/// Accessor for the rigid body.
 		const hkpRigidBody* getRigidBody() const { return m_rigidBody; }
 
+		/// Get the hkaiPhysics2012WorldListener that created this silhouette
+		const hkaiPhysics2012WorldListener* getWorldListener() const;
+
+		void setWorldListener( const hkaiPhysics2012WorldListener* listerner );
+
 	protected:
 
 			/// Velocity below which obstacle generation is diabled.
@@ -48,12 +54,14 @@ class hkaiPhysics2012BodyObstacleGenerator : public hkaiObstacleGenerator
 		hkReal m_velocityThreshold; //+default(3.0f)
 
 		hkRefPtr<const hkpRigidBody>	m_rigidBody;
+
+		const hkaiPhysics2012WorldListener* m_physicsWorldListener; //+nosave
 };
 
 #endif	// HKAI_PHYSICS_2012_BODY_OBSTACLE_GENERATOR_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -37,9 +37,13 @@ public:
   hkResult examineStream(hkStreamReader& stream, hkvImageFileFormat format);
 
   hkvImageFileFormat getImageFileFormat() const;
+  hkvImageDataFormat getImageDataFormat() const;
+  bool hasAlpha() const;
   hkUint32 getWidth() const;
   hkUint32 getHeight() const;
-  hkBool hasAlpha() const;
+  hkUint32 getDepth() const;
+  hkUint32 getNumImages() const;
+  hkUint32 getNumFaces() const;
 
 private:
   hkResult examineBmp(hkStreamReader& reader);
@@ -50,16 +54,20 @@ private:
 
 
 private:
-  hkvEnumInstance m_imageFormatInstance;
+  hkvEnumInstance m_imageFileFormatInstance;
+  hkvEnumInstance m_imageDataFormatInstance;
   hkUint32 m_width;
   hkUint32 m_height;
-  hkBool m_hasAlpha;
+  hkUint32 m_depth;
+  hkUint32 m_images;
+  hkUint32 m_faces;
+  bool m_hasAlpha;
 };
 
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

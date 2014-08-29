@@ -10,7 +10,7 @@
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Particles/ParticleGroupManager.hpp>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Particles/ParticleGroupBase.hpp>
 #include <Vision/Runtime/Base/ThirdParty/tinyXML/TinyXMLHelper.hpp>
-#include <Vision/Runtime/Base/System/Memory/VMemDbg.hpp>
+
 
 
 // global instance of one particle group
@@ -25,6 +25,8 @@ VisParticleGroupManager_cl::VisParticleGroupManager_cl(const char *szManagerName
 {
   m_fGlobalTimeScaling = 1.f;
   m_fLastToDUpdate = -1.f;
+  m_pWindHandler = NULL;
+  m_bForceDeterministicSimulation = false;
 }
 
 VisParticleGroupManager_cl::~VisParticleGroupManager_cl()
@@ -41,24 +43,26 @@ void VisParticleGroupManager_cl::OneTimeInit()
 {
   Vision::ResourceSystem.RegisterResourceManager(this, VColorRef(100,200,255));
 
-  Vision::Callbacks.OnWorldDeInit += this; // register callback
-  Vision::Callbacks.OnUpdateSceneFinished += this; // register callback
-  Vision::Callbacks.OnReassignShaders += this; // register callback
-  Vision::Callbacks.OnAfterSceneUnloaded += this; // register callback
+  Vision::Callbacks.OnWorldDeInit += this;
+  Vision::Callbacks.OnUpdateSceneFinished += this;
+  Vision::Callbacks.OnReassignShaders += this;
+  Vision::Callbacks.OnAfterSceneUnloaded += this;
+  Vision::Callbacks.OnRendererNodeChanged += this;
 }
 
 void VisParticleGroupManager_cl::OneTimeDeInit()
 {
   Vision::ResourceSystem.UnregisterResourceManager(this);
   VisParticleConstraint_cl::GlobalConstraintList().ReleaseAllConstraints();
-  Vision::Callbacks.OnWorldDeInit -= this; // deregister callback
-  Vision::Callbacks.OnUpdateSceneFinished -= this; // deregister callback
-  Vision::Callbacks.OnReassignShaders -= this; // deregister callback
-  Vision::Callbacks.OnAfterSceneUnloaded -= this;  // deregister callback
+  Vision::Callbacks.OnWorldDeInit -= this;
+  Vision::Callbacks.OnUpdateSceneFinished -= this;
+  Vision::Callbacks.OnReassignShaders -= this;
+  Vision::Callbacks.OnAfterSceneUnloaded -= this;
+  Vision::Callbacks.OnRendererNodeChanged -= this;
   m_GlobalConstraints.ReleaseAllConstraints();
 }
 
-#ifdef WIN32
+#ifdef _VISION_WIN32
   bool VisParticleGroupManager_cl::g_bLoopAllEffects = false;
   void VisParticleGroupManager_cl::SetLoopAllEffects(bool bStatus)
   {
@@ -82,30 +86,26 @@ void VisParticleGroupManager_cl::OnHandleCallback(IVisCallbackDataObject_cl *pDa
       }
       
     }
-    return;
   }
 
   // clean up when a scene is unloaded
-  if (pData->m_pSender==&Vision::Callbacks.OnWorldDeInit)
+  else if (pData->m_pSender==&Vision::Callbacks.OnWorldDeInit)
   {
     Instances().Purge();
     VisParticleConstraint_cl::GlobalConstraintList().ReleaseAllConstraints();
     PurgeUnusedResources();
     m_fLastToDUpdate = -1.f;
-    return;
   }
 
-  if (pData->m_pSender==&Vision::Callbacks.OnAfterSceneUnloaded)
+  else if (pData->m_pSender==&Vision::Callbacks.OnAfterSceneUnloaded)
   {
     Instances().Purge();
     VisParticleConstraint_cl::GlobalConstraintList().ReleaseAllConstraints();
-    return;
   }
 
-  if (pData->m_pSender==&Vision::Callbacks.OnReassignShaders)
+  else if (pData->m_pSender==&Vision::Callbacks.OnReassignShaders || pData->m_pSender == &Vision::Callbacks.OnRendererNodeChanged)
   {
     Instances().ReassignShader(true);
-    return;
   }
 }
 
@@ -137,44 +137,6 @@ VisParticleEffectFile_cl* VisParticleGroupManager_cl::LoadFromFile(const char *s
   return pFile;
 }
 
-
-VisParticleGroupDescriptor_cl *VisParticleGroupManager_cl::FindDescriptor(const char *szName) const
-{
-  const int iCount = GetResourceCount();
-  for (int i=0;i<iCount;i++)
-  {
-    VisParticleEffectFile_cl *pFX = (VisParticleEffectFile_cl *)VisResourceManager_cl::GetResourceByIndex(i);
-    if (!pFX) continue;
-    VisParticleGroupDescriptor_cl *pDesc = pFX->FindDescriptor(szName);
-    if (pDesc)
-      return pDesc;
-  }
-  return NULL;
-}
-
-VisParticleGroupDescriptor_cl *VisParticleGroupManager_cl::DoArchiveExchange(VArchive &ar, VisParticleGroupDescriptor_cl *pSource)
-{
-  if (ar.IsLoading())
-  {
-    VString fxname,descname;
-    ar >> fxname;
-    ar >> descname;
-    VisParticleEffectFile_cl* pFX = LoadFromFile(fxname);
-    if (!pFX)
-      return NULL;
-    return pFX->FindDescriptor(descname);
-  } else
-  {
-    // write out effect filename
-    VASSERT(pSource && pSource->m_pOwner);
-    ar << pSource->m_pOwner->GetFilename();
-
-    // name of descriptor
-    ar << pSource->m_sName;
-  }
-  return pSource;
-}
-
 VManagedResource *VisParticleGroupManager_cl::CreateResource(const char *szFilename, VResourceSnapshotEntry *pExtraInfo)
 {
   return LoadFromFile(szFilename);
@@ -204,6 +166,13 @@ void VisParticleGroupManager_cl::SetGlobalFadeDistanceScaling(float fScale)
       pLayer->FadeDistancesFromDesc();
     }
   }
+}
+
+
+void VisParticleGroupManager_cl::SetGlobalWindHandler(IVWindControlHandler *pWindHandler)
+{
+  Vision::GetThreadManager()->WaitForAllThreads(); // brute force stop
+  m_pWindHandler = pWindHandler;
 }
 
 
@@ -566,7 +535,7 @@ VisParticleEffect_cl* VisParticleEffectFile_cl::CreateParticleEffectInstance(con
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

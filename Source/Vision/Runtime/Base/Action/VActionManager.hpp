@@ -288,8 +288,7 @@ protected:
   ///   Private Print function that does not add // in front of the string
   VBASE_IMPEXP void PrintWithoutComments(const char *szText, ...);
   
-  
-  VMapStrToPtr m_actionNameMap; ///< applications global action type list
+  VMap<VString, VActionType*> m_actionNameMap; ///< applications global action type list
   
   // we hold the data in a separate VPList also, for iterating for actions using
   // a part of their name
@@ -336,7 +335,7 @@ protected:
 #endif // MU_VISION_VACTIONMANAGER_HPP
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

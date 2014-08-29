@@ -166,7 +166,8 @@ private:
   
   int m_iAppliedFloorVertexDeltas[256];   ///< keeps the numbers of deltas that already where applied
   int m_iAppliedCeilingVertexDeltas[256]; ///< at the moment there can't be more than 256 vertexanimations on one character playing parallel
-  
+  unsigned int m_iVertexDeltaTrackHash;
+
   /// \brief
   ///   Gets called by the engine to update the animation results with the sequences.
   /// 
@@ -193,7 +194,7 @@ private:
 #endif //VIS_VERTEX_ANIM_DEFORMER_HPP_INCLUDED
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -62,9 +62,13 @@ public:
   /// \param pCopyFrom
   ///   The source material
   ///
+  /// \param bResolveOverrides
+  ///   Only relevant if pCopyFrom has a material override. If bResolveOverrides is true, the override material will be copied
+  ///   instead of the one directly passed. If false, the material override will be removed from the copy of the passed material.
+  ///
   /// \returns
   ///   The cloned material
-  VISION_APIFUNC VisSurface_cl* AddMaterialCopy (const VisSurface_cl* pCopyFrom);
+  VISION_APIFUNC VisSurface_cl* AddMaterialCopy (const VisSurface_cl* pCopyFrom, bool bResolveOverrides);
 
   /// \brief Adds a new empty Material to this library. Returns the pointer to the new material.
   ///
@@ -124,7 +128,7 @@ typedef VSmartPtr<VisSurfaceLibrary_cl> VisSurfaceLibraryPtr;
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

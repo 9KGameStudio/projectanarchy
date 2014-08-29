@@ -185,11 +185,16 @@ namespace FmodManaged
       m_pSound->SetPan(fPan);
   }
 
+  void EngineInstanceFmodSound::Set3DDopplerLevel(float fDopplerLevel)
+  {
+    if (m_pSound != NULL && m_pSound->GetResource() != NULL && m_pSound->GetResource()->Is3D()) 
+      m_pSound->Set3DDopplerLevel(fDopplerLevel);
+  }
+
   void EngineInstanceFmodSound::Set3DFadeDistance(float fMin, float fMax) 
   {
     if (m_pSound != NULL) 
       m_pSound->Set3DFadeDistance(fMin,fMax);
-  
   }
 
   void EngineInstanceFmodSound::SetPitch(float fPitch)
@@ -255,7 +260,7 @@ namespace FmodManaged
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

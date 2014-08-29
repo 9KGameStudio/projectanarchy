@@ -42,13 +42,13 @@ namespace hkCompileError
 ///
 /// \sa hkVector4f hkSimdFloat32
 HK_PASS_IN_REG
-class hkVector4fComparison : public hkVector4ComparisonMask
+class hkVector4fComparison 
 {
 public:
 
 	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_MATH, hkVector4fComparison);
 
-	using hkVector4ComparisonMask::Mask;
+	typedef hkVector4ComparisonMask::Mask Mask;
 
 	/// Static conversion method to create a hkVector4fComparison from a platform dependent comparison mask \a x. ( self.storage = x ).
 	/// This method is implemented platform-specific to avoid constructor initialization overhead
@@ -139,7 +139,7 @@ public:
 	HK_FORCE_INLINE const hkVector4fComparison horizontalAnd() const;
 
 	/// Static method to return a 32 bit integer holding the combined masks of \a ca, \a cb and \a cc.
-	/// The mask of \a ca is returned in Bits [0-7], the mask of \a cb in [8-15] and the mask of \a cc in [16-23].
+	/// The mask of \a ca is returned in Bits [0-3], the mask of \a cb in [4-7] and the mask of \a cc in [8-11].
 	static HK_FORCE_INLINE hkUint32 HK_CALL getCombinedMask(hkVector4fComparisonParameter ca, hkVector4fComparisonParameter cb, hkVector4fComparisonParameter cc );
 
 
@@ -153,13 +153,13 @@ public:
 #endif
 };
 
-extern const hkUint8 hkVector4Comparison_maskToFirstIndex[16]; ///< selection map to lowest index set
-extern const hkUint8 hkVector4Comparison_maskToLastIndex[16];  ///< selection map to highest index set
+extern HK_EXPORT_COMMON const hkUint8 hkVector4Comparison_maskToFirstIndex[16]; ///< selection map to lowest index set
+extern HK_EXPORT_COMMON const hkUint8 hkVector4Comparison_maskToLastIndex[16];  ///< selection map to highest index set
 
 #endif //HK_MATH_VECTOR4f_COMPARISON_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -56,15 +56,13 @@ inline void VMap<KEY_TYPE, VALUE_TYPE, HASH>::InitHashTable(UINT nHashSize, bool
 //   hash table size of (which is fairly small)
 {
   VASSERT(V_IS_VALID_PTR(this));
-  VASSERT(m_nCount == 0);
-  VASSERT(nHashSize > 0);
 
   if (m_pHashTable != NULL)
   {
     RemoveAll();
   }
 
-  if (bAllocNow)
+  if (bAllocNow && nHashSize > 0)
   {
     m_pHashTable = new VPair*[nHashSize];
     memset(m_pHashTable, 0, sizeof(VPair*) * nHashSize);
@@ -399,7 +397,7 @@ inline VMap<KEY_TYPE, VALUE_TYPE, HASH>& VMap<KEY_TYPE, VALUE_TYPE, HASH>::opera
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

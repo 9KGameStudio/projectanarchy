@@ -193,6 +193,14 @@ inline void hkSimdInt<128>::setOr(const hkSimdInt<128>& a, const hkSimdInt<128>&
 }
 
 //
+//	Sets this = a ^ b
+
+inline void hkSimdInt<128>::setXor(const hkSimdInt<128>& a, const hkSimdInt<128>& b)
+{
+	m_quad = _mm_xor_si128(a.m_quad, b.m_quad);
+}
+
+//
 //	Sets this = ~a
 
 inline void hkSimdInt<128>::setNot(const hkSimdInt<128>& v)
@@ -336,7 +344,7 @@ template <int I> inline hkInt64 hkSimdInt<128>::getDoubleWord() const
 inline int hkSimdInt<128>::countLeadingZeros() const
 {
 #ifdef HK_PLATFORM_PS4
-	// The Ps4 compiler creates garbage code from the default version
+	// The PlayStation(R)4 compiler creates garbage code from the default version
 	const __m128i nz10	= _mm_set_epi64x(__lzcnt64(_mm_extract_epi64(m_quad, 1)), __lzcnt64(_mm_extract_epi64(m_quad, 0)));	// [0, nz1, 0, nz0]
 	const __m128i nzs	= _mm_mullo_epi32(_mm_srli_epi64(nz10, 6), _mm_shuffle_epi32(nz10, _MM_SHUFFLE(3, 0, 3, 3)));		// [0, (nz1 >> 6) * nz0, 0, 0]
 	return _mm_extract_epi32(_mm_add_epi32(nz10, nzs), 2);																	// nz1 + (nz1 >> 6) * nz0
@@ -358,7 +366,7 @@ inline int hkSimdInt<128>::countTrailingZeros() const
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

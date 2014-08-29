@@ -132,6 +132,9 @@ public:
   ///
   ///   \li 'o' : The script object proxy representing a VisTypedEngineObject (not supported as return parameter).
   /// 
+  ///   \li 't' : Anything derived from VTypedObject (it will not search for a script object proxy like 'o',
+  ///             and a script wrapper and type safe cast function for this type must exist)
+  ///
   ///   \li More types might be supported for specific implementations. The '>' character separates
   ///     the input parameter list from the return values. Thus, a function that takes two floats
   ///     as input and returns an integer should pass "ff>i" and pass the parameters accordingly.
@@ -147,9 +150,13 @@ public:
   ///   	pScriptInst->ExecuteFunctionArg("GetGlobalTable","r", -10002); // for Lua: -10002 == LUA_GLOBALSINDEX
   ///   	\endcode
   ///
-  ///   \li 't' : Anything derived from VTypedObject (it will not search for a script object proxy like 'o',
-  ///             and a script wrapper and type safe cast function for this type must exist)
-  ///   		
+  ///
+  ///   \li 'T' + MODULE + ':' + TYPE + ';': Cast from void* to the specified type (no type check,
+  ///             and a script wrapper and a cast function for this type must exist)
+  ///   	\code
+  ///   	pScriptInst->ExecuteFunctionArg("SetupLevel","TMyLuaModule:LevelInfoType;", (void *)pLevelInfoInstance);
+  ///   	\endcode
+  ///
   ///   \li 'u' : light user data pointer (as void *).
   ///   		    
   ///   \li '{' + ... + '}' : Create a table containing arbitrary arguments as defined in the variadic parameter.
@@ -403,7 +410,21 @@ public:
   /// \brief
   ///   Helper function to validate a script and output potential problems into the log. Used by
   ///   vForge.
-  VISION_APIFUNC virtual BOOL ValidateScript(const char *szText, int iLen, hkvLogInterface* pLog) = 0;
+  VISION_APIFUNC virtual BOOL ValidateScript(const char* szText, int iLen, hkvLogInterface* pLog) = 0;
+
+  /// \brief
+  ///   Helper function to validate a script silently. This will not execute the script and also not output
+  ///   any warnings to the console but only copy the error to the error parameter.
+  ///
+  /// \param szText 
+  ///   The string that contains the LUA string.
+  ///
+  /// \param pErrorBuffer
+  ///   Buffer that will be filled with the error message in case there is a script error.
+  ///
+  /// \returns
+  ///   true if no script errors were found, false otherwise.
+  VISION_APIFUNC virtual bool ValidateScriptNoRun(const char* szText, VMemoryTempBuffer<512>* pErrorBuffer) = 0;
 
   /// \brief
   ///   Global callback that is triggered to register all script functions.
@@ -504,7 +525,7 @@ protected:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

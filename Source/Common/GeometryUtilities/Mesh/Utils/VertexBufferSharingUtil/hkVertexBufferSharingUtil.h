@@ -32,7 +32,7 @@ class hkMeshShape;
 ///
 /// Future updates could take into account how many vertices are shared when recombining - at the moment, the smallest are
 /// recombined together, the thinking is that the small pieces are likely to be used together.
-class hkVertexBufferSharingUtil
+class HK_EXPORT_COMMON hkVertexBufferSharingUtil
 {
     public:
         HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_SCENE_DATA, hkVertexBufferSharingUtil );
@@ -44,7 +44,7 @@ class hkVertexBufferSharingUtil
 #endif // HK_VERTEX_BUFFER_SHARING_UTIL_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

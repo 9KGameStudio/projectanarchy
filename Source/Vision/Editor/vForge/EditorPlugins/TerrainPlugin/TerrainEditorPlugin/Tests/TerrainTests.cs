@@ -18,6 +18,7 @@ using TerrainEditorPlugin.Shapes;
 using TerrainBase.Editing;
 using TerrainManaged;
 using CSharpFramework.Actions;
+using TerrainEditorPlugin;
 
 /*
 - Bug-Eintraege in Hansoft (auch fuer fehlende Textur bei Terrain-Neuerzeugung), mit Verweis auf automatisierte Test sowie manuelle Repro-Methode
@@ -27,7 +28,7 @@ using CSharpFramework.Actions;
 */
 
 
-namespace TerrainEditorPlugin.Tests
+namespace TerrainEditorPluginTests
 {
 
   [TestFixture]
@@ -137,7 +138,7 @@ namespace TerrainEditorPlugin.Tests
       DetailTextureResource texture = TerrainEditor.CurrentTerrain.CreateDetailTexture();
       texture.DiffuseFilename = "Textures/sand.dds";
       texture.Name = System.IO.Path.GetFileNameWithoutExtension(texture.DiffuseFilename);
-      EditorManager.Actions.Add(new Actions.AddDetailTextureAction(TerrainEditor.CurrentTerrain, texture));
+      EditorManager.Actions.Add(new TerrainEditorPlugin.Actions.AddDetailTextureAction(TerrainEditor.CurrentTerrain, texture));
       
       TerrainEditor.CurrentDetailTexture = texture;
       TestManager.Helpers.ProcessEvents();
@@ -146,7 +147,7 @@ namespace TerrainEditorPlugin.Tests
       texture = TerrainEditor.CurrentTerrain.CreateDetailTexture();
       texture.DiffuseFilename = "Textures/foam.dds";
       texture.Name = System.IO.Path.GetFileNameWithoutExtension(texture.DiffuseFilename);
-      EditorManager.Actions.Add(new Actions.AddDetailTextureAction(TerrainEditor.CurrentTerrain, texture));
+      EditorManager.Actions.Add(new TerrainEditorPlugin.Actions.AddDetailTextureAction(TerrainEditor.CurrentTerrain, texture));
 
       TerrainEditor.CurrentDetailTexture = texture;
       TestManager.Helpers.ProcessEvents();
@@ -159,7 +160,7 @@ namespace TerrainEditorPlugin.Tests
       texture = TerrainEditor.CurrentTerrain.CreateDetailTexture();
       texture.DiffuseFilename = "Textures/Havok_Logo_128x64.dds";
       texture.Name = System.IO.Path.GetFileNameWithoutExtension(texture.DiffuseFilename);
-      EditorManager.Actions.Add(new Actions.AddDetailTextureAction(TerrainEditor.CurrentTerrain, texture));
+      EditorManager.Actions.Add(new TerrainEditorPlugin.Actions.AddDetailTextureAction(TerrainEditor.CurrentTerrain, texture));
 
       TerrainEditor.CurrentDetailTexture = texture;
       TestManager.Helpers.ProcessEvents();
@@ -184,7 +185,7 @@ namespace TerrainEditorPlugin.Tests
       DecorationModelResource model = TerrainEditor.CurrentTerrain.CreateDecorationModelResource();
       model.Filename = "Models\\MissingModel.model";
       model.Name = System.IO.Path.GetFileNameWithoutExtension(model.Filename);
-      EditorManager.Actions.Add(new Actions.AddDecorationModelAction(TerrainEditor.CurrentTerrain, model));
+      EditorManager.Actions.Add(new TerrainEditorPlugin.Actions.AddDecorationModelAction(TerrainEditor.CurrentTerrain, model));
 
       // Configure the model
       TerrainEditor.CurrentDecorationModel = model;
@@ -432,7 +433,7 @@ namespace TerrainEditorPlugin.Tests
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

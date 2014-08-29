@@ -21,7 +21,7 @@
 class hkp1dAngularFollowCam : public  hkReferencedObject
 {
 	public:
-	HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE);
+	HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_CAMERA);
 			/// Default constructor
 		hkp1dAngularFollowCam ();
 
@@ -36,40 +36,40 @@ class hkp1dAngularFollowCam : public  hkReferencedObject
 
 		struct CameraInput
 		{
-			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_CAMERA, CameraInput);
+			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_CAMERA, hkp1dAngularFollowCam::CameraInput);
 			hkVector4		m_linearVelocity;
 			hkVector4		m_angularVelocity;
 			hkTransform		m_fromTrans;
-			hkReal			m_deltaTime;
+			hkSimdReal		m_deltaTime;
 		};
 
 		// Output of the camera calculations
 		struct CameraOutput
 		{
-			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_CAMERA, CameraInput);
+			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_CAMERA, hkp1dAngularFollowCam::CameraOutput);
 			hkVector4  m_positionWS;
 			hkVector4  m_lookAtWS;
 			hkVector4  m_upDirWS;
-			hkReal m_fov;
-			hkReal m_pad[3];
+			hkSimdReal m_fov;
 		};
 
 			/// Immediately jump to the ideal yaw angle.
-		virtual void resetCamera( const hkTransform& trans, const hkVector4& linearVelocity, const hkVector4& angularVelocity);
+		virtual void resetCamera( const hkTransform& trans, hkVector4Parameter linearVelocity, hkVector4Parameter angularVelocity);
 
 		virtual void calculateCamera ( const CameraInput &in, CameraOutput &out );
 		
 	protected:
 
 
-		hkReal m_cameraYawAngle;
+		hkSimdReal m_cameraYawAngle;
 
-		hkReal m_yawCorrection;
-		hkReal m_yawSignCorrection;
+		hkSimdReal m_yawCorrection;
+		hkSimdReal m_yawSignCorrection;
+
+		hkSimdReal m_velocityRange; // derived from the sets
 
 		hkVector4 m_upDirWS;
 		hkVector4 m_rigidBodyForwardDir;
-
 
 		hkVector4 m_flat0DirWS;  // an orthogonal to m_upDirWS
 		hkVector4 m_flat1DirWS;	 // an orthogonal to m_upDirWS and m_flat0DirWS
@@ -78,8 +78,8 @@ class hkp1dAngularFollowCam : public  hkReferencedObject
 
 	protected:
 			/// Internal methods for calculating camera position
-		HK_FORCE_INLINE hkReal calcYawAngle(const hkReal factor1, const hkTransform& trans, const hkVector4& linearVelocity);
-		HK_FORCE_INLINE hkReal calcVelocityFactor(const hkVector4& bodyVelocity);
+		void calcYawAngle(hkSimdRealParameter factor, const hkTransform& trans, hkVector4Parameter linearVelocity, hkSimdReal& yaw_angle);
+		void calcVelocityFactor(hkVector4Parameter bodyVelocity, hkSimdReal& factor);
 };
 
 
@@ -87,7 +87,7 @@ class hkp1dAngularFollowCam : public  hkReferencedObject
 #endif //HK_1D_ANGULAR_FOLLOW_COM
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

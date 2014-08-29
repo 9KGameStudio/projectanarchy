@@ -12,8 +12,10 @@
 #define HK_REF_PROPERTY_BASE_DESTRUCTION 0xf000
 #define HK_REF_PROPERTY_BASE_PHYSICS 0xf100
 
+extern HK_EXPORT_COMMON const class hkClass hkRefCountedPropertiesClass;
+
 	/// Implements a collection of properties uniquely identified by a key
-class hkRefCountedProperties
+class HK_EXPORT_COMMON hkRefCountedProperties
 {
 	//+version(1)
 
@@ -165,7 +167,7 @@ TYPE* hkRefCountedProperties::installProperty( int key )
 #endif	//	HK_BASE_REF_COUNTED_PROPERTIES_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

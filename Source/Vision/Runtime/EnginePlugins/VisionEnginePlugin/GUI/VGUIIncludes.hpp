@@ -15,7 +15,7 @@
 
 struct VItemRenderInfo;
 
-#ifdef WIN32
+#ifdef _VISION_WIN32
   #ifdef GUI_ENGINEPLUGIN_EXPORTS
     #define GUI_IMPEXP      __declspec(dllexport)
     #define GUI_IMPEXP_DATA __declspec(dllexport)
@@ -47,6 +47,7 @@ struct VItemRenderInfo;
 
 // specialized:
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/GUI/Controls/VListControls.hpp>
+#include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/GUI/Controls/VTreeControl.hpp>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/GUI/Controls/VMapLookupControl.hpp>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/GUI/Controls/VSliderControl.hpp>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/GUI/Controls/VTextControl.hpp>
@@ -56,7 +57,7 @@ struct VItemRenderInfo;
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

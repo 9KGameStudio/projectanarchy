@@ -45,7 +45,6 @@
 #include <Vision/Runtime/Base/Container/VCollection.hpp>
 #include <Vision/Runtime/Base/Container/VLinkedList.hpp>
 #include <Vision/Runtime/Base/Container/VPListStack.hpp>
-#include <Vision/Runtime/Base/Container/VMapStrToPtr.hpp>
 #include <Vision/Runtime/Base/Container/VDictionary.hpp>
 #include <Vision/Runtime/Base/Container/VBitField.hpp>
 
@@ -82,70 +81,10 @@
 
 #include <Vision/Runtime/Base/ReportDialog/VReport.hpp>
 
-//Input Mapper
-#include <Vision/Runtime/Base/Input/VInput.hpp>
-
-#if defined(_VISION_WINRT) 
-  #include <Vision/Runtime/Base/Input/VInputWinRT.hpp>
-  #ifndef _VISION_APOLLO
-    #include <Vision/Runtime/Base/Input/VInputXI.hpp>
-  #endif
-#elif defined(WIN32) 
-  #include <Vision/Runtime/Base/Input/VInputPC.hpp>
-  #include <Vision/Runtime/Base/Input/VInputXI.hpp>
-
-#elif defined(_VISION_XENON) || defined(_VISION_WINRT)
-  #include <Vision/Runtime/Base/Input/VInputXenon.hpp>
-  #include <Vision/Runtime/Base/Input/VInputXI.hpp>
-
-
-
-#elif defined(_VISION_PS3)
-
-  #include <Vision/Runtime/Base/Input/VInputPS3.hpp>
-  
-  //move to vbase?
-  #include <stddef.h>
-  #include <stdint.h>
-  #include <string.h>
-  #include <math.h>
-
-  #ifdef SPU
-    #include <cell/spurs/job_chain.h>
-    #include <cell/spurs/event_flag.h>
-    #include <cell/atomic.h>
-    #include <cell/dma.h>
-    #include <spu_printf.h>
-  #endif
-  
-
-
-
-#elif defined(_VISION_IOS)
-
-#elif defined(_VISION_ANDROID)
-  #include <Vision/Runtime/Base/Input/VInputAndroid.hpp>
-
-#elif defined(_VISION_TIZEN)
-  #include <Vision/Runtime/Base/Input/VInputTizen.hpp>
-
-#elif defined(_VISION_PSP2)
-
-  //#include "vhal/VVInputPSP2.hpp"
-
-#elif defined(_VISION_WIIU)
-  #include <Vision/Runtime/Base/Input/VInputWiiU.hpp>
-
-#else
-  #error Undefined platform!
-#endif
-
-
-
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

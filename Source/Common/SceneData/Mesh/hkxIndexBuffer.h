@@ -9,7 +9,7 @@
 #define HKSCENEDATA_MESH_HKXINDEXBUFFER_HKCLASS_H
 
 /// hkxIndexBuffer meta information
-extern const class hkClass hkxIndexBufferClass;
+extern HK_EXPORT_COMMON const class hkClass hkxIndexBufferClass;
 
 #define HKX_INDEX_BUFFER_INVALID_INDEX 0xffffffff
 
@@ -17,7 +17,7 @@ extern const class hkClass hkxIndexBufferClass;
 /// serialization does not support unions, we have two explicit buffers, one of
 /// 16bit storage and one of 32bit storage so that the endianness can be swapped
 /// on write.
-class hkxIndexBuffer : public hkReferencedObject
+class HK_EXPORT_COMMON hkxIndexBuffer : public hkReferencedObject
 {
 	//+vtable(true)
 	//+version(1)
@@ -82,7 +82,7 @@ class hkxIndexBuffer : public hkReferencedObject
 #endif // HKSCENEDATA_MESH_HKXINDEXBUFFER_HKCLASS_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

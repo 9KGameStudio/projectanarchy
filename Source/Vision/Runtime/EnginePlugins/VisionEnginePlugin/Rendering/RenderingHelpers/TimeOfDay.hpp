@@ -26,14 +26,15 @@ typedef VSmartPtr<VColorCurve> VColorCurvePtr;
 
 // Versions
 #define TIMEOFDAY_VERSION_0          0                        // Initial version
-#define TIMEOFDAY_VERSION_1          1                        // Added additonal sky layer for dusk
+#define TIMEOFDAY_VERSION_1          1                        // Added additional sky layer for dusk
 #define TIMEOFDAY_VERSION_2          2                        // fog range
 #define TIMEOFDAY_VERSION_3          3                        // control sky flag, m_spDuskWeight  serialization
 #define TIMEOFDAY_VERSION_4          4                        // fog start distance
 #define TIMEOFDAY_VERSION_5          5                        // sun orientation vector
 #define TIMEOFDAY_VERSION_6          6                        // height fog data
 #define TIMEOFDAY_VERSION_7          7                        // removed weather enum
-#define TIMEOFDAY_VERSION_CURRENT    TIMEOFDAY_VERSION_7      // Current version
+#define TIMEOFDAY_VERSION_8          8                        // added intensity curves and more color curves (back light, moonlight)
+#define TIMEOFDAY_VERSION_CURRENT    TIMEOFDAY_VERSION_8      // Current version
 
 
 /// \brief
@@ -96,13 +97,20 @@ public:
   EFFECTS_IMPEXP virtual void EvaluateSunDirAtDaytime(hkvVec3& dir, float fTime);
 
   /// \brief
-  /// Evaluates the sun color and sky intensities at the current time of day.
+  /// Evaluates the sky color and intensities at the current time of day.
+  ///
+  /// The resulting color is calculated according to the following formula:
+  /// iColor = AmbientColor x (0.5 + 0.5 x cos(falloff x PI)) + SunColor x (1.0 - (0.5 + 0.5 x cos(falloff x PI)))
+  /// Which means that:
+  /// - for a falloff of 1.0, the function will return the full Sun color
+  /// - for a falloff of 0.0, the function will return the full ambient color
+  /// - for a falloff of ]0.0..1.0[, the function will interpolate between the full Sun color and the full ambient color according to the formula.
   /// 
   /// \param falloff
   /// Falloff, between 0 and 1.
   /// 
   /// \param iColor
-  /// Out: Sun Color
+  /// Out: Sky Color
   /// 
   /// \param fDawnWeight
   /// Out: Weight of the dawn sky texture (0..1).
@@ -114,6 +122,28 @@ public:
   /// Out: Weight of the night sky texture (0..1).
   /// 
   EFFECTS_IMPEXP virtual void EvaluateColorValue(float falloff, VColorRef &iColor, float &fDawnWeight, float &fDuskWeight, float &fNightWeight);
+
+  /// \brief
+  /// Evaluates the sky color at the current time of day.
+  ///
+  /// The resulting color is calculated according to the following formula:
+  /// iColor = AmbientColor x (0.5 + 0.5 x cos(falloff x PI)) + SunColor x (1.0 - (0.5 + 0.5 x cos(falloff x PI)))
+  /// Which means that:
+  /// - for a falloff of 1.0, the function will return the full Sun color
+  /// - for a falloff of 0.0, the function will return the full ambient color
+  /// - for a falloff of ]0.0..1.0[, the function will interpolate between the full Sun color and the full ambient color according to the formula.
+  /// 
+  /// \param falloff Falloff between 0 and 1.
+  /// \param iColor Out: Sky Color
+  EFFECTS_IMPEXP virtual void EvaluateColorValue(float falloff, VColorRef &iColor);
+
+  /// \brief
+  /// Evaluates the weight of the Sky layers at the current time of day.
+  ///
+  /// \param fDawnWeight Out: Weight of the dawn sky texture (0..1).
+  /// \param fDuskWeight Out: Weight of the dusk sky texture (0..1). 
+  /// \param fNightWeight Out: Weight of the night sky texture (0..1).
+  EFFECTS_IMPEXP virtual void EvaluateSkyLayersIntensity(float &fDawnWeight, float &fDuskWeight, float &fNightWeight);
 
   /// \brief
   /// Evaluates the fog parameters at the current time of day.
@@ -209,7 +239,7 @@ public:
   /// \returns
   /// bool bIsDay: true if it is currently after sunrise and before sunset.
   /// 
-  inline bool IsDay() const { return ((m_fDayTime - m_fSunRiseTime > 0.f) && (m_fDayTime - m_fSunSetTime < 0.f)); }
+  inline bool IsDay() const { return ((m_fDayTime > m_fSunRiseTime) && (m_fDayTime < m_fSunSetTime)); }
 
   /// \brief
   /// Returns whether the last call to IncDayTime resulted in a switch between day and night time.
@@ -223,7 +253,7 @@ public:
   /// Sets the color curve for ambient light.
   /// 
   /// \param ambientColor
-  /// Ambient Light Color Curve.
+  /// Ambient light color curve.
   /// 
   inline void SetAmbientColorCurve(VColorCurve* ambientColor) { m_spAmbientColor = ambientColor; }
 
@@ -236,20 +266,100 @@ public:
   inline VColorCurve* GetAmbientColorCurve() const { return m_spAmbientColor; }
 
   /// \brief
-  /// Sets the color curve for full-bright sun light.
+  /// Sets the color curve for full-bright Sun light.
   /// 
-  /// \param fullbrightColor
-  /// Full-bright sun light Color Curve.
+  /// \param sunColor
+  /// Full-bright Sun light color curve.
   /// 
-  inline void SetFullbrightColorCurve(VColorCurve* fullbrightColor) { m_spFullbrightColor = fullbrightColor; }
+  inline void SetSunColorCurve(VColorCurve* sunColor) { m_spSunColor = sunColor; }
 
   /// \brief
-  /// Returns the color curve for full-bright sun light.
+  /// Returns the color curve for full-bright Sun light.
   /// 
   /// \returns
-  /// Full-bright sun light Color Curve.
+  /// Full-bright Sun light color curve.
   /// 
-  inline VColorCurve* GetFullbrightColorCurve() const { return m_spFullbrightColor; }
+  inline VColorCurve* GetSunColorCurve() const { return m_spSunColor; }
+
+  /// \brief
+  /// Sets the color curve for full-bright Moon light.
+  /// 
+  /// \param moonColor
+  /// Full-bright Moon light color curve.
+  /// 
+  inline void SetMoonColorCurve(VColorCurve* moonColor) { m_spMoonColor = moonColor; }
+
+  /// \brief
+  /// Returns the color curve for full-bright Moon light.
+  /// 
+  /// \returns
+  /// Full-bright Moon light color curve.
+  /// 
+  inline VColorCurve* GetMoonColorCurve() const { return m_spMoonColor; }
+
+  /// \brief
+  /// Sets the color curve for full-bright back light.
+  /// 
+  /// \param backLightColor
+  /// Full-bright back light color curve.
+  /// 
+  inline void SetBackLightColorCurve(VColorCurve* backLightColor) { m_spBackLightColor = backLightColor; }
+
+  /// \brief
+  /// Returns the color curve for full-bright back light.
+  /// 
+  /// \returns
+  /// Full-bright back light color curve.
+  /// 
+  inline VColorCurve* GetBackLightColorCurve() const { return m_spBackLightColor; }
+
+  /// \brief
+  /// Sets the intensity curve for full-bright Sun light.
+  /// 
+  /// \param sunIntensity
+  /// Full-bright Sun light intensity curve.
+  /// 
+  inline void SetSunIntensityCurve(VCurve2D* sunIntensity) { m_spSunIntensity = sunIntensity; }
+
+  /// \brief
+  /// Returns the intensity curve for full-bright Sun light.
+  /// 
+  /// \returns
+  /// Full-bright Sun light intensity curve.
+  /// 
+  inline VCurve2D* GetSunIntensityCurve() const { return m_spSunIntensity; }
+
+  /// \brief
+  /// Sets the intensity curve for full-bright Moon light.
+  /// 
+  /// \param moonIntensity
+  /// Full-bright Moon light intensity curve.
+  /// 
+  inline void SetMoonIntensityCurve(VCurve2D* moonIntensity) { m_spMoonIntensity = moonIntensity; }
+
+  /// \brief
+  /// Returns the intensity curve for full-bright Moon light.
+  /// 
+  /// \returns
+  /// Full-bright Moon light intensity curve.
+  /// 
+  inline VCurve2D* GetMoonIntensityCurve() const { return m_spMoonIntensity; }
+
+  /// \brief
+  /// Sets the intensity curve for full-bright back light.
+  /// 
+  /// \param backLightIntensity
+  /// Full-bright back light intensity curve.
+  /// 
+  inline void SetBackLightIntensityCurve(VCurve2D* backLightIntensity) { m_spBackLightIntensity = backLightIntensity; }
+
+  /// \brief
+  /// Returns the intensity curve for full-bright back light.
+  /// 
+  /// \returns
+  /// Full-bright back light intensity curve.
+  /// 
+  inline VCurve2D* GetBackLightIntensityCurve() const { return m_spBackLightIntensity; }
 
   /// \brief
   /// Sets the weight curve for the contribution of the dawn sky texture.
@@ -451,11 +561,33 @@ public:
 
   /// \brief
   /// Overridden virtual function.
+  /// Returns the Sun color for the current time of day.
   EFFECTS_IMPEXP virtual VColorRef GetSunColor();
 
   /// \brief
   /// Overridden virtual function.
+  /// Returns the ambient color for the current time of day.
   EFFECTS_IMPEXP virtual VColorRef GetAmbientColor();
+
+  /// \brief
+  /// Returns the back light color for the current time of day.
+  EFFECTS_IMPEXP virtual VColorRef GetBackLightColor();
+
+  /// \brief
+  /// Returns the Moon color for the current time of day.
+  EFFECTS_IMPEXP virtual VColorRef GetMoonColor();
+
+  /// \brief
+  /// Returns the Sun intensity for the current time of day.
+  inline float GetSunIntensity() { return m_spSunIntensity->GetValue(m_fDayTime); }
+
+  /// \brief
+  /// Returns the back light intensity for the current time of day.
+  inline float GetBackLightIntensity() { return m_spBackLightIntensity->GetValue(m_fDayTime); }
+
+  /// \brief
+  /// Returns the Moon intensity for the current time of day.
+  inline float GetMoonIntensity() { return m_spMoonIntensity->GetValue(m_fDayTime); }
 
   #ifndef _VISION_DOC
   V_DECLARE_SERIAL_DLLEXP( VTimeOfDay,  EFFECTS_IMPEXP );
@@ -478,7 +610,15 @@ public:
 
   //color curves
   VColorCurvePtr m_spAmbientColor;
-  VColorCurvePtr m_spFullbrightColor;
+  VColorCurvePtr m_spSunColor;
+  VColorCurvePtr m_spBackLightColor;
+  VColorCurvePtr m_spMoonColor;
+
+  //intensity curves
+  VCurve2DPtr m_spSunIntensity;
+  VCurve2DPtr m_spBackLightIntensity;
+  VCurve2DPtr m_spMoonIntensity;
+
   VCurve2DPtr m_spDawnWeight;
   VCurve2DPtr m_spDuskWeight;
   VCurve2DPtr m_spNightWeight;
@@ -528,7 +668,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140728)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -21,22 +21,30 @@
 /// \ingroup VisionAppFramework
 class VDebugProfiling : public VAppModule
 {
-  V_DECLARE_DYNCREATE(VDebugProfiling);
+  V_DECLARE_DYNCREATE_DLLEXP(VDebugProfiling, VAPP_IMPEXP);
 
 public:
-	VDebugProfiling() : VAppModule() {}
-	virtual ~VDebugProfiling() {}
+  VAPP_IMPEXP VDebugProfiling();
+  VAPP_IMPEXP virtual ~VDebugProfiling() {}
 
-  virtual void Init() HKV_OVERRIDE;
-  virtual void DeInit() HKV_OVERRIDE;
+  VAPP_IMPEXP virtual void Init() HKV_OVERRIDE;
+  VAPP_IMPEXP virtual void DeInit() HKV_OVERRIDE;
 
-  virtual void OnHandleCallback(IVisCallbackDataObject_cl* pData) HKV_OVERRIDE;
+  VAPP_IMPEXP virtual void OnHandleCallback(IVisCallbackDataObject_cl* pData) HKV_OVERRIDE;
+
+private:
+  void RebuildMenu();
+  void OnActionTriggered(int iIndex);
+
+  int m_iCurrentProfilingPage;
+
+  static const int s_iResetMaxValuesAction = -10;
 };
 
 #endif //__V_DEBUG_PROFILING
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140624)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

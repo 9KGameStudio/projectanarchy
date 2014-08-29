@@ -11,7 +11,7 @@
 #include <Common/Serialize/Resource/hkResource.h>
 
 /// hkPackfileSectionHeader meta information
-extern const class hkClass hkPackfileSectionHeaderClass;
+extern HK_EXPORT_COMMON const class hkClass hkPackfileSectionHeaderClass;
 
 /// Packfiles are composed of several sections.
 /// A section contains several areas:
@@ -22,7 +22,7 @@ extern const class hkClass hkPackfileSectionHeaderClass;
 ///  - finish: offset and typename of all objects for finish functions (src, typename).
 ///  - exports: named objects (src,name).
 ///  - imports: named pointer patches outside this packfile (src,name).
-class hkPackfileSectionHeader
+class HK_EXPORT_COMMON hkPackfileSectionHeader
 {
 	public:
 		//+version(1)
@@ -114,7 +114,7 @@ class hkPackfileSectionHeader
 #endif // HKSERIALIZE_SERIALIZE_BINARY_HKPACKFILESECTIONHEADER_XML_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

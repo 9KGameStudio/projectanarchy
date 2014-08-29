@@ -16,7 +16,7 @@
 /// This generator is the base class for one which produces the silhouette of a point cloud (returned by getPoints())
 /// This implementation of hkaiPointCloudSilhouetteGenerator stores the 'local' points explicitly and transforms them
 /// into world space on demand - The user should update the transform of the cloud as required using setTransform().
-class hkaiPointCloudSilhouetteGenerator : public hkaiSilhouetteGenerator
+class HK_EXPORT_AI hkaiPointCloudSilhouetteGenerator : public hkaiSilhouetteGenerator
 {
 	public:
 
@@ -42,7 +42,7 @@ class hkaiPointCloudSilhouetteGenerator : public hkaiSilhouetteGenerator
 		};
 
 			/// Constructor
-		hkaiPointCloudSilhouetteGenerator();
+		hkaiPointCloudSilhouetteGenerator( GeneratorType genType = GENERATOR_POINT_CLOUD );
 		hkaiPointCloudSilhouetteGenerator( hkFinishLoadedObjectFlag f);
 
 			/// Destructor
@@ -83,8 +83,6 @@ class hkaiPointCloudSilhouetteGenerator : public hkaiSilhouetteGenerator
 		//
 		// hkaiPointCloudSilhouetteGenerator-specific methods
 		//
-
-		static void HK_CALL registerMtFunctions();
 
 			/// Set enabled
 		inline void setEnabled(bool enabled);
@@ -183,7 +181,7 @@ class hkaiPointCloudSilhouetteGenerator : public hkaiSilhouetteGenerator
 #endif // HK_POINTCLOUD_SILHOUETTE_GENERATOR_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

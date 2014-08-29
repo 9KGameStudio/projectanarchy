@@ -9,12 +9,12 @@
 #ifndef HKBASE_HKBITFIELD_H
 #define HKBASE_HKBITFIELD_H
 
-extern const hkClass hkBitFieldClass;
+extern HK_EXPORT_COMMON const hkClass hkBitFieldClass;
 
 #include <Common/Base/Container/LocalArray/hkLocalArray.h>
 
 /// Loop type for bit field 
-struct hkBitFieldLoop
+struct HK_EXPORT_COMMON hkBitFieldLoop
 {
 	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_ARRAY, hkBitFieldLoop);
 
@@ -26,7 +26,7 @@ struct hkBitFieldLoop
 };
 
 /// Bit type for bit field
-struct hkBitFieldBit
+struct HK_EXPORT_COMMON hkBitFieldBit
 {
 	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_ARRAY, hkBitFieldBit);
 
@@ -77,6 +77,9 @@ struct hkBitFieldStorage
 		HK_FORCE_INLINE int getOffset() const	{	return 0;	}
 		HK_FORCE_INLINE void setOffset(int o)	{}
 
+		/// Debug check to make sure bit is in range
+		HK_FORCE_INLINE bool isBitInRange( int index ) const { return index >=0 && index < m_numBits; }
+
 		/// Returns the number of bits in the storage
 		HK_FORCE_INLINE int getSize() const		{	return m_numBits;	}
 
@@ -93,6 +96,13 @@ struct hkBitFieldStorage
 		{
 			m_numBits = 0;
 			m_words.clearAndDeallocate();
+		}
+
+		/// Clears the storage (but doesn't deallocate it)
+		HK_FORCE_INLINE void clearStorage()
+		{
+			m_numBits = 0;
+			m_words.clear();
 		}
 
 	public:
@@ -140,6 +150,14 @@ struct hkOffsetBitFieldStorage
 		/// Returns the first bit represented in the storage
 		HK_FORCE_INLINE int getOffset() const	{	return m_offset;	}
 		HK_FORCE_INLINE void setOffset(int o)	{	m_offset = o;		}
+		
+		/// Debug check to make sure bit is in range
+		/// We don't have access to the bit offset or number of bits, but we can at least check the word index is valid.
+		HK_FORCE_INLINE bool isBitInRange( int index ) const
+		{ 
+			const int wordIdx = (index >> 5) - getOffset();
+			return (wordIdx >= 0) && (wordIdx < m_words.getSize()) ;
+		}
 
 		/// Returns the number of bits in the storage
 		HK_FORCE_INLINE int getSize() const		{	return (m_offset + m_words.getSize()) << 5;	}
@@ -159,6 +177,13 @@ struct hkOffsetBitFieldStorage
 		{
 			m_offset = 0;
 			m_words.clearAndDeallocate();
+		}
+
+		/// Clears the storage (but doesn't deallocate it)
+		HK_FORCE_INLINE void clearStorage()
+		{
+			m_offset = 0;
+			m_words.clear();
 		}
 
 	public:
@@ -324,6 +349,9 @@ class hkBitFieldBase
 		/// Counts the bits that are 1.
 		HK_FORCE_INLINE int bitCount() const;
 
+		/// Counts the bits that are 1.
+		HK_FORCE_INLINE int bitCount(int startBit, int numBits) const;
+
 		/// Count the number of 1 bits
 		static int HK_CALL countOnes(const hkUint32* words, int numBits);
 
@@ -355,8 +383,11 @@ class hkBitFieldBase
 		/// Returns HK_FAILURE if memory allocation failed, HK_SUCCESS otherwise.
 		hkResult trySetSize(int startBit, int numBits, int fillValue);
 
-		/// Deallocates the bit-field
+		/// Deallocates the bit-field storage
 		HK_FORCE_INLINE void deallocate();
+
+		/// Clear the bit-field storage
+		HK_FORCE_INLINE void clearStorage();
 
 		/// Gets the number of words required to store the specified number of bits
 		static HK_FORCE_INLINE int HK_CALL getNumWordsRequired(int numBits);
@@ -526,7 +557,7 @@ class hkInplaceBitField : public hkBitFieldBase< hkBitFieldInplaceStorage<(NBITS
 #endif // HKBASE_HKBITFIELD_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

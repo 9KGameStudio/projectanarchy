@@ -50,8 +50,7 @@ class hkpShapeDisplayBuilder: public hkDisplayGeometryBuilder
 			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_VDB, hkpShapeDisplayBuilder::hkpShapeDisplayBuilderEnvironment );
 
 			hkpShapeDisplayBuilderEnvironment();
-			int m_spherePhiRes;
-			int m_sphereThetaRes;
+			int m_sphereSubdivisions;
 		};
 
 		hkpShapeDisplayBuilder(const hkpShapeDisplayBuilderEnvironment& env);
@@ -202,7 +201,7 @@ HK_SINGLETON_SPECIALIZATION_DECL(hkpUserShapeDisplayBuilder);
 #endif // HK_COLLIDE2_SHAPE_DISPLAY_BUILDER_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -120,11 +120,15 @@ HK_FORCE_INLINE void hkMatrix4f::setElement(hkSimdFloat32Parameter element)
 HK_FORCE_INLINE void hkMatrix4f::setRows( hkVector4fParameter r0, hkVector4fParameter r1, hkVector4fParameter r2, hkVector4fParameter r3)
 {
 #if (HK_CONFIG_SIMD == HK_CONFIG_SIMD_ENABLED)
-	m_col0 = r0;
-	m_col1 = r1;
-	m_col2 = r2;
-	m_col3 = r3;
-	HK_TRANSPOSE4f(m_col0,m_col1,m_col2,m_col3);
+	hkVector4f c0 = r0;
+	hkVector4f c1 = r1;
+	hkVector4f c2 = r2;
+	hkVector4f c3 = r3;
+	HK_TRANSPOSE4f(c0, c1, c2, c3);
+	m_col0 = c0;
+	m_col1 = c1;
+	m_col2 = c2;
+	m_col3 = c3;
 #else
 	hkVector4f c0; c0.set( r0(0), r1(0), r2(0), r3(0) );
 	hkVector4f c1; c1.set( r0(1), r1(1), r2(1), r3(1) );
@@ -233,7 +237,7 @@ HK_FORCE_INLINE void hkMatrix4f::setDiagonal( hkFloat32 m00, hkFloat32 m11, hkFl
 HK_FORCE_INLINE void hkMatrix4f::setDiagonal( hkSimdFloat32Parameter m00, hkSimdFloat32Parameter m11, hkSimdFloat32Parameter m22, hkSimdFloat32Parameter m33 )
 {
 #if (HK_CONFIG_SIMD == HK_CONFIG_SIMD_ENABLED)
-	const hkVector4f* HK_RESTRICT id = (const hkVector4f* HK_RESTRICT)(g_vectorfConstants + HK_QUADREAL_1000);
+	const hkVector4f* HK_RESTRICT id = (const hkVector4f*)(g_vectorfConstants + HK_QUADREAL_1000);
 	m_col0.setMul(id[0], m00);
 	m_col1.setMul(id[1], m11);
 	m_col2.setMul(id[2], m22);
@@ -250,7 +254,7 @@ HK_FORCE_INLINE void hkMatrix4f::setDiagonal( hkSimdFloat32Parameter m00, hkSimd
 HK_FORCE_INLINE void hkMatrix4f::setDiagonal( hkVector4fParameter v )
 {
 #if (HK_CONFIG_SIMD == HK_CONFIG_SIMD_ENABLED)
-	const hkVector4f* HK_RESTRICT id = (const hkVector4f* HK_RESTRICT)(g_vectorfConstants + HK_QUADREAL_1000);
+	const hkVector4f* HK_RESTRICT id = (const hkVector4f*)(g_vectorfConstants + HK_QUADREAL_1000);
 	m_col0.setMul(id[0], v);
 	m_col1.setMul(id[1], v);
 	m_col2.setMul(id[2], v);
@@ -267,7 +271,7 @@ HK_FORCE_INLINE void hkMatrix4f::setDiagonal( hkVector4fParameter v )
 HK_FORCE_INLINE void hkMatrix4f::getDiagonal( hkVector4f& v ) const
 {
 #if (HK_CONFIG_SIMD == HK_CONFIG_SIMD_ENABLED)
-	const hkVector4f* HK_RESTRICT id = (const hkVector4f* HK_RESTRICT)(g_vectorfConstants + HK_QUADREAL_1000);
+	const hkVector4f* HK_RESTRICT id = (const hkVector4f*)(g_vectorfConstants + HK_QUADREAL_1000);
 	v.setZero();
 	v.addMul(id[0], m_col0);
 	v.addMul(id[1], m_col1);
@@ -280,7 +284,7 @@ HK_FORCE_INLINE void hkMatrix4f::getDiagonal( hkVector4f& v ) const
 
 HK_FORCE_INLINE void hkMatrix4f::setIdentity()
 {
-	const hkVector4f* HK_RESTRICT id = (const hkVector4f* HK_RESTRICT)(g_vectorfConstants + HK_QUADREAL_1000);
+	const hkVector4f* HK_RESTRICT id = (const hkVector4f*)(g_vectorfConstants + HK_QUADREAL_1000);
 	m_col0 = id[0];
 	m_col1 = id[1];
 	m_col2 = id[2];
@@ -391,7 +395,7 @@ HK_FORCE_INLINE bool hkMatrix4f::isApproximatelyEqual( const hkMatrix4f& m, hkSi
 HK_FORCE_INLINE hkBool32 hkMatrix4f::isApproximatelyIdentity( hkSimdFloat32Parameter epsilon) const
 {
 	hkVector4f epsilon_v; epsilon_v.setAll(epsilon);
-	const hkVector4f* HK_RESTRICT id = (const hkVector4f* HK_RESTRICT)(g_vectorfConstants + HK_QUADREAL_1000);
+	const hkVector4f* HK_RESTRICT id = (const hkVector4f*)(g_vectorfConstants + HK_QUADREAL_1000);
 
 	hkVector4f t0; t0.setSub(m_col0, id[0]);	t0.setAbs( t0 );
 	hkVector4f t1; t1.setSub(m_col1, id[1]);	t1.setAbs( t1 );
@@ -512,7 +516,7 @@ HK_FORCE_INLINE void hkMatrix4f::_add( const hkMatrix4f& a )
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

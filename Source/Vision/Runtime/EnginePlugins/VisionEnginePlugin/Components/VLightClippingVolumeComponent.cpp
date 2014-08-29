@@ -65,13 +65,13 @@ BOOL VLightClippingVolumeComponent::CanAttachToObject(VisTypedEngineObject_cl *p
 /// VLightClippingVolumeComponent Variable Table                                ///
 /// =========================================================================== ///
 
-START_VAR_TABLE(VLightClippingVolumeComponent,IVObjectComponent, "Light Clipping Volume Component. Can be attached to light sources in deferred rendering to limit their extend.", VVARIABLELIST_FLAGS_NONE, "Light Clipping Volume" )
+START_VAR_TABLE(VLightClippingVolumeComponent,IVObjectComponent, "Can be attached to light sources in deferred rendering to limit their extend.", VVARIABLELIST_FLAGS_NONE, "Light Clipping Volume" )
   DEFINE_VAR_OBJECT_REFERENCE(VLightClippingVolumeComponent, Volume, "The volume to be used for clipping the lights extend", NULL, 0, 0);
   DEFINE_VAR_ENUM(VLightClippingVolumeComponent, ClipHandedness, "This setting determines whether geometry outside or inside the light clipping volume will be clipped. 'Outside' is the more common option.", "Outside", "Outside,Inside", 0, 0);
 END_VAR_TABLE
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

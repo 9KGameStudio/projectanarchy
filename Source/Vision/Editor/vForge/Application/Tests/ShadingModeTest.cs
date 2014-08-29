@@ -17,7 +17,7 @@ using System.IO;
 using ManagedFramework;
 using System.Collections.Specialized;
 
-namespace Editor.Tests
+namespace EditorTests.Basic
 {
   [TestFixture]
   public class ShadingModeTest
@@ -74,7 +74,7 @@ namespace Editor.Tests
         em.SetReplacementRenderLoopEffect(iMode);
         for (int i = 0; i < iFrameCount; i++)
         {
-          EditorManager.EngineManager.WriteText2D(10.0f, 10.0f, "Shading mode is now: " + names[iMode], VisionColors.White);
+          EditorManager.EngineManager.WriteText2D(10.0f, 10.0f, "Shading Mode: " + names[iMode], VisionColors.White);
           EditorManager.ActiveView.UpdateView(true);
         }
       }
@@ -85,7 +85,7 @@ namespace Editor.Tests
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

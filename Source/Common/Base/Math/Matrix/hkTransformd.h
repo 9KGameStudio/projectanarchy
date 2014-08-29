@@ -33,7 +33,7 @@
 ///
 /// Do not attempt to put scaling into the rows or columns of the
 /// rotation matrix. It must remain orthogonal at all times.
-class hkTransformd
+class HK_EXPORT_COMMON hkTransformd
 {
 	public:
 
@@ -80,7 +80,7 @@ class hkTransformd
 		bool isApproximatelyEqual( const hkTransformd& t, hkDouble64 epsilon=hkDouble64(1e-3f) ) const;
 
 			/// Checks if this transform is the identity within an epsilon
-		bool isApproximatelyEqualSimd( const hkTransformd& t, hkSimdDouble64Parameter epsilon ) const;
+		hkBool32 isApproximatelyEqualSimd( const hkTransformd& t, hkSimdDouble64Parameter epsilon ) const;
 
 			/// Gets a writable translation component.
 		HK_FORCE_INLINE hkVector4d& getTranslation();
@@ -169,7 +169,7 @@ class hkTransformd
 #endif //HK_MATH_TRANSFORMd_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -15,7 +15,7 @@
 class hkProcessContext;
 
 	/// AI Viewer base class. Takes care of registering itself with the hkaiViewerContext.
-class hkaiViewerBase :	public hkReferencedObject, 
+class HK_EXPORT_AI hkaiViewerBase : public hkReferencedObject, 
 						public hkProcess,
 						protected hkaiViewerContextWorldListener
 {
@@ -44,7 +44,7 @@ class hkaiViewerBase :	public hkReferencedObject,
 #endif  // HKAI_VIEWER_BASE_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

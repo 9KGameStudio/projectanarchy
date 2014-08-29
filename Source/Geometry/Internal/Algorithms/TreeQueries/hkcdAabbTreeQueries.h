@@ -12,13 +12,13 @@
 class hkAabb;
 
 	/// Interface for queries through an hkcdStaticAabbTree or hkcdDynamicAabbTree
-class hkcdAabbTreeQueries
+class HK_EXPORT_COMMON hkcdAabbTreeQueries
 {
 public:
 	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_AI, hkcdAabbTreeQueries);
 
-		/// Interface for raycasting
-	class RaycastCollector
+		/// Interface for raycasting and spherecasting.
+	class HK_EXPORT_COMMON RaycastCollector
 	{
 	public:
 
@@ -32,8 +32,8 @@ public:
 		virtual hkBool32 processLeaf( hkUint32 leafKey, const hkAabb& leafAabb, hkSimdReal& hitFractionInOut) = 0;
 	};
 
-		/// Interface for AABB querues
-	class AabbCollector
+		/// Interface for AABB queries.
+	class HK_EXPORT_COMMON AabbCollector
 	{
 	public:
 
@@ -46,8 +46,8 @@ public:
 		virtual hkBool32 processLeaf( hkUint32 leafKey, const hkAabb& leafAabb ) = 0;
 	};
 
-		/// Interface for closest point queries
-	class ClosestPointCollector
+		/// Interface for closest point queries.
+	class HK_EXPORT_COMMON ClosestPointCollector
 	{
 	public:
 
@@ -76,7 +76,7 @@ public:
 #endif //HKAI_TREE_QUERIES
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

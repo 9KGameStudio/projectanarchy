@@ -9,7 +9,7 @@
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/VisionEnginePluginPCH.h>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Particles/Curve.hpp>
 #include <Vision/Runtime/Base/ThirdParty/tinyXML/TinyXMLHelper.hpp>
-#include <Vision/Runtime/Base/System/Memory/VMemDbg.hpp>
+
 
 VCurve2DBase::VCurve2DBase(int iNumPoints)
 {
@@ -839,6 +839,7 @@ VPositionCurve* VPositionCurve::DoArchiveLookupExchange( VArchive &ar, VPosition
       pSource->m_iLookupCount = iSamples;
       pSource->m_fLookupCount = ((float)iSamples)-0.001f;
       pSource->m_pLookupValues = new hkvVec3[iSamples];
+      memset(pSource->m_pLookupValues, 0, sizeof(hkvVec3) * iSamples);
 
       if (bBrokenCount)
         ar.Read(pSource->m_pLookupValues,iSamples*sizeof(float),"f",iSamples); // OLD version
@@ -890,7 +891,7 @@ VPositionCurve* VPositionCurve::DoArchiveLookupExchange( VArchive &ar, VPosition
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

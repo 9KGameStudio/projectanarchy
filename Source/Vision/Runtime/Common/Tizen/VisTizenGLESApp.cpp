@@ -46,7 +46,9 @@ private:
 
 
 
-VisTizenGLESApp::VisTizenGLESApp(void) : m_pTimer(NULL)
+VisTizenGLESApp::VisTizenGLESApp(void) 
+  : m_pTimer(NULL)
+  , m_bAppIsTerminating(false)
 {
 }
 
@@ -107,11 +109,11 @@ bool VisTizenGLESApp::OnAppInitialized(void)
 
 bool VisTizenGLESApp::OnAppWillTerminate(void)
 {
+  m_bAppIsTerminating = true;
+
 #if defined( DEBUG_VERBOSE )
   hkvLog::Info( "### VisTizenGLESApp::OnAppWillTerminate()" );
 #endif
-
-  //Vision::Callbacks.OnEnterBackground.TriggerCallbacks();
 
   return true;
 }
@@ -119,6 +121,8 @@ bool VisTizenGLESApp::OnAppWillTerminate(void)
 
 bool VisTizenGLESApp::OnAppTerminating(Tizen::App::AppRegistry& appRegistry, bool forcedTermination)
 {
+  m_bAppIsTerminating = true;
+
 #if defined( DEBUG_VERBOSE )
   hkvLog::Info( "### VisTizenGLESApp::OnAppTerminating()" );
 #endif
@@ -184,7 +188,8 @@ void VisTizenGLESApp::OnBackground(void)
   if (m_pTimer)
     m_pTimer->Cancel();
 
-  VisionEnterBackgroundFunction();
+  if (!m_bAppIsTerminating)
+    VisionEnterBackgroundFunction();
 }
 
 void VisTizenGLESApp::OnLowMemory(void)
@@ -299,14 +304,16 @@ void VisTizenGLESApp::OnFrameTerminating(const Tizen::Ui::Controls::Frame &sourc
 
 void VisTizenGLESApp::Draw(void)
 {
+  VVideo::MakeCurrent();
   if ( !VisionRunFunction() )
   {
+    m_bAppIsTerminating = true;
     Terminate();
   }
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140625)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

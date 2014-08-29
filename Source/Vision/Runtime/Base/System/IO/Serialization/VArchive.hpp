@@ -133,6 +133,18 @@ public:
   ///
 
   /// \brief
+  ///   Archive constructor for creating an uninitialized instance.
+  ///   Use 'ReInit' to setup this instance at a later point in time.
+  ///
+  /// \param szArchiveName
+  ///   Archive name. May be NULL.
+  /// \param pTypeManager
+  ///   Type Manager to use in order to resolve class names to types. Usually Vision::GetTypeManager().
+  /// \param nBufSize
+  ///   Buffer size to use for read/write operations. Larger buffer sizes often result in faster IO performance.
+  VBASE_IMPEXP VArchive(const char* szArchiveName, VTypeManager* pTypeManager, int nBufSize = 4096);
+
+  /// \brief
   ///   Archive constructor for loading from an archive
   ///
   /// \param szArchiveName
@@ -179,7 +191,7 @@ public:
   /// \param nBufSize
   ///   Buffer size to use for read/write operations. Larger buffer sizes often result in faster IO performance.
   VBASE_IMPEXP VArchive(const char* szArchiveName, IVFileInStream* pInStream, IVFileOutStream* pOutStream, VTypeManager *pTypeManager, int nBufSize = 4096);
-
+  
 private:
   /// \brief
   ///   Disallow copy construction
@@ -225,7 +237,7 @@ public:
   /// @name Read / Write
   /// @{
   ///
-
+  
 public:
   /// \brief
   ///   Returns the filename of the archive
@@ -258,7 +270,7 @@ public:
   VBASE_IMPEXP virtual UINT Read(void* data, UINT size);
 
   /// \brief
-  ///   Version of Read function that performs endianness conversion 
+  ///   Version of Read function that performs endianness conversion
   /// \param data
   ///   Pointer to the buffer into which to read
   /// \param size
@@ -476,14 +488,16 @@ public:
   VBASE_IMPEXP VArchive& operator<<(__int64 i);
 
   /// \brief
+  ///   Writes an uint64 to the archive
+  VBASE_IMPEXP VArchive& operator<<(uint64 i);
+
+  /// \brief
   ///   Writes a VFloat16 to the archive
   VBASE_IMPEXP VArchive& operator<<(const VFloat16& h);
 
-#ifdef WIN32
   /// \brief
   ///   Writes a LONG to the archive
   VBASE_IMPEXP VArchive& operator<<(LONG l);
-#endif
 
   /// \brief
   ///   Writes a float to the archive
@@ -551,15 +565,16 @@ public:
   VBASE_IMPEXP VArchive& operator>>(__int64& i);
 
   /// \brief
+  ///   Reads an uint64 from the archive
+  VBASE_IMPEXP VArchive& operator>>(uint64& i);
+
+  /// \brief
   ///   Reads a VFloat16 from the archive
   VBASE_IMPEXP VArchive& operator>>(VFloat16& h);
-
-#ifdef WIN32
 
   /// \brief
   ///   Reads a LONG from the archive
   VBASE_IMPEXP VArchive& operator>>(LONG& l);
-#endif
 
   /// \brief
   ///   Reads a float from the archive
@@ -589,17 +604,6 @@ public:
   ///   Reads a bool from the archive
   VBASE_IMPEXP VArchive& operator>>(bool &b);
 
-  /// \brief
-  ///   Reads a string from the archive
-  VBASE_IMPEXP VArchive& operator>>(char*& str);
-
-  /// \brief
-  ///   Reads a const string from the archive
-  VBASE_IMPEXP VArchive& operator>>(const char*& str);
-
-  /// \brief
-  ///   Reads a wide-character string from the archive
-  VBASE_IMPEXP VArchive& operator>>(wchar_t*& str);
 
   // Object I/O is pointer based to avoid added construction overhead.
   // Use the Serialize member function directly for embedded objects.
@@ -667,6 +671,24 @@ public:
   /// \brief
   ///   Read object of the required type from the archive. This function reads the type of the object as well
   ///   as its data by calling the object's Serialize() method.
+  ///
+  /// The template argument specifies the expected type. It is handled equivalent to the first parameter of
+  /// the overload ReadObject(const VType*, unsigned int* pObjectSize), but also causes the return value to be cast to the expected type.
+  /// 
+  /// 
+  /// \param pObjectSize
+  ///   pointer to a variable the object size should be written to, can be NULL
+  /// \return
+  ///   the object that has been read
+  template<typename T>
+  T* ReadObject(unsigned int* pObjectSize = NULL)
+  {
+    return vstatic_cast<T*>(ReadObject(T::GetClassTypeId(), pObjectSize));
+  }
+
+  /// \brief
+  ///   Read object of the required type from the archive. This function reads the type of the object as well
+  ///   as its data by calling the object's Serialize() method.
   /// \param pClassRefRequested 
   ///   Optional parameter; to be used to validate the type of the object being read.
   ///   If this is non-NULL, the function will check whether the passed type matches the loaded object's type or not.
@@ -686,7 +708,7 @@ public:
   ///   the type information that should be written for this object. If \c NULL (default), the object's reflected 
   ///   type information will be written.
   VBASE_IMPEXP virtual void WriteObject( const VTypedObject* pObj, const VType* pForceClass=NULL);
-
+  
   /// \brief
   ///   Internal function: Store object to the map containing pointers already saved/loaded objects
   ///   when serializing.
@@ -708,7 +730,7 @@ public:
   /// \param pObj
   ///   Object to remove from all internal lists.
   VBASE_IMPEXP void UnMapObject( const VTypedObject* pObj );
-
+ 
 public:
   /// \brief
   ///   Write class (type) info to the archive.
@@ -726,7 +748,7 @@ private:
   /// \brief
   ///   Stores a runtime class description
   VBASE_IMPEXP void StoreType( VType *pType ) const;
-
+  
   /// \brief
   ///   Runtime class serialization code, loads a runtime class description
   VBASE_IMPEXP VType* Load( UINT* pwSchemaNum, char *pDestClassname=NULL );
@@ -913,13 +935,13 @@ protected:
 
   VTypeManager* m_pTypeManager; ///< Pointer to the type manager which is used to create objects
   VisZoneResource_cl *m_pCurrentZone; ///< Pointer to the zone currently being serialized (if any)
-
+  
   VMapPtrToUInt m_storeMap; ///< Map for storing Pointer->ID assignments during saving
-
+  
 private:
   IVFileInStream*   m_pInStream;
   IVFileOutStream*  m_pOutStream;
-
+  
   // Buffer management
   int m_nBufSize;
   char *m_lpBufStart,*m_lpBufMax,*m_lpBufCur;
@@ -966,9 +988,9 @@ protected:
 class VArchiveInStream : public IVFileInStream
 {
 public:
-  VArchiveInStream(VArchive &_ar) : IVFileInStream(NULL), ar(_ar) {VASSERT(_ar.IsLoading());}
+  VArchiveInStream(VArchive &_ar, bool bDeleteOnClose=true) : IVFileInStream(NULL), ar(_ar), m_bDeleteOnClose(bDeleteOnClose) {VASSERT(_ar.IsLoading());}
   virtual size_t Read(void* pBuffer,int iLen) {return ar.Read(pBuffer,iLen);}
-  virtual void Close() {delete this;}
+  virtual void Close() {if (m_bDeleteOnClose) delete this;}
 
   virtual BOOL SetPos(LONG iPos, int iMode) {return FALSE;}
   virtual LONG GetPos() {return -1;}
@@ -977,6 +999,7 @@ public:
 
 private:
   VArchive &ar;
+  bool m_bDeleteOnClose;
 };
 
 /// \brief
@@ -984,18 +1007,19 @@ private:
 class VArchiveOutStream : public IVFileOutStream
 {
 public:
-  VArchiveOutStream(VArchive &_ar) : IVFileOutStream(NULL), ar(_ar) {VASSERT(_ar.IsSaving());}
+  VArchiveOutStream(VArchive &_ar, bool bDeleteOnClose=true) : IVFileOutStream(NULL), ar(_ar), m_bDeleteOnClose(bDeleteOnClose) {VASSERT(_ar.IsSaving());}
   virtual size_t Write(const void* pBuffer,size_t iLen) {ar.Write(pBuffer, (UINT) iLen);return iLen;}
-  virtual void Close() {delete this;}
+  virtual void Close() {if (m_bDeleteOnClose) delete this;}
   virtual void Flush() {}
   virtual const char* GetFileName() {return ar.GetFilename();}
 
 private:
   VArchive &ar;
+  bool m_bDeleteOnClose;
 };
 
 
-#if defined(WIN32) && !defined(_VISION_WINRT)
+#if defined(_VISION_WIN32) && !defined(_VISION_WINRT)
 
 inline VArchive& VArchive::operator<<(int i)
   { return VArchive::operator<<((LONG)i); }
@@ -1107,7 +1131,7 @@ void VRefCountedCollection<RCCLASS>::SerializeX(VArchive &ar)
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

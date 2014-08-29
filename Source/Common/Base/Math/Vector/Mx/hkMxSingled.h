@@ -26,7 +26,7 @@
 ///
 /// \sa hkMxVectord hkMxReald
 template <int M>
-class hkMxSingled
+class HK_EXPORT_COMMON hkMxSingled
 {
 public:
 
@@ -68,15 +68,7 @@ public:
 	hkMxSingledStorage<M> m_single; ///< The replicated subvector.
 };
 
-#if defined(HK_COMPILER_HAS_INTRINSICS_IA32)
-	#if (HK_SSE_VERSION >= 0x50) && !defined(HK_REAL_IS_DOUBLE)
-	#include <Common/Base/Math/Vector/Mx/hkMxSingle_AVX.inl>
-	#else
-	#include <Common/Base/Math/Vector/Mx/hkMxSingled.inl>
-	#endif
-#else
-	#include <Common/Base/Math/Vector/Mx/hkMxSingled.inl>
-#endif
+#include <Common/Base/Math/Vector/Mx/hkMxSingled.inl> 
 
 // convenient shortcut
 typedef hkMxSingled<4> hk4xSingled;
@@ -84,7 +76,7 @@ typedef hkMxSingled<4> hk4xSingled;
 #endif // HK_MXSINGLEd_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

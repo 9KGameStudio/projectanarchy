@@ -22,7 +22,7 @@ class hkMemorySnapshot;
 	/// This class scrubs and puts freed memory into limbo to detect use-after-free errors.
 	/// Not all allocations can be kept. There are limits on the number of blocks
 	/// and the total size of all blocks.
-class hkDelayedFreeAllocator : public hkMemoryAllocator
+class HK_EXPORT_COMMON hkDelayedFreeAllocator : public hkMemoryAllocator
 {
 	public:
 	//+hk.MemoryTracker(ignore=True)
@@ -94,7 +94,7 @@ class hkDelayedFreeAllocator : public hkMemoryAllocator
 #endif // HKBASE_hkDelayedFreeAllocator_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

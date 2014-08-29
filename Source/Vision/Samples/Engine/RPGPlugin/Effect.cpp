@@ -278,7 +278,7 @@ bool RPG_Effect::CreateSoundEffect(RPG_EffectDefinition const& effectDefinition,
     Vision::Message.Add(1, msg.AsChar());
   }
 
-  VFmodEvent* event = RPG_VisionEffectHelper::PlayFmodSoundEvent(effectDefinition.m_fmodEventGroupName, effectDefinition.m_fmodEventName, position, VFMOD_FLAG_NODISPOSE);  // hang onto character events for reuse
+  VFmodEvent* event = RPG_VisionEffectHelper::PlayFmodSoundEvent(effectDefinition.m_fmodEventGroupName, effectDefinition.m_fmodEventName, position);
   if (event)
   {
     event->AttachToParent(this);
@@ -286,6 +286,8 @@ bool RPG_Effect::CreateSoundEffect(RPG_EffectDefinition const& effectDefinition,
     // if this is a looped sound event, we need to cache it on the character for manual shutdown.
     if (RPG_VisionEffectHelper::IsLoopedFmodEvent(event))
     {
+	  event->Helper_SetFlag(VFMOD_FLAG_NODISPOSE, true);
+	  
       // looped sound
       m_persistentFmodEvent = event;
     }
@@ -384,7 +386,7 @@ void RPG_Effect::DisposeObject()
 void RPG_Effect::FlashShader(RPG_EffectDefinition const& effectDefinition)
 {
   VASSERT_MSG(m_parentEntity, "FlashShader cannot be called without a valid parent entity. (This entity must have a HighlightableComponent component as well.)");
-  RPG_HighlightableComponent *highlightComp = static_cast<RPG_HighlightableComponent *> (m_parentEntity->Components().GetComponentOfBaseType(V_RUNTIME_CLASS(RPG_HighlightableComponent)));
+  RPG_HighlightableComponent *highlightComp = m_parentEntity->Components().GetComponentOfBaseType<RPG_HighlightableComponent>();
   if (highlightComp)
   {
     highlightComp->Flash(effectDefinition.m_shaderFlashColor, effectDefinition.m_shaderFlashDuration);
@@ -447,8 +449,8 @@ void RPG_Effect::DebugDisplayParticleInformation(const VisParticleEffect_cl* par
 
 RPG_EffectDefinition::RPG_EffectDefinition()
   : m_vfxFilename("")
-  , m_vfxPositionOffset()
-  , m_vfxOrientationOffset()
+  , m_vfxPositionOffset(hkvVec3::ZeroVector())
+  , m_vfxOrientationOffset(hkvVec3::ZeroVector())
   , m_vfxBoneName()
   , m_wallmarkTextureFilename("")
   , m_wallmarkLifetime(0.f)
@@ -466,7 +468,7 @@ RPG_EffectDefinition::RPG_EffectDefinition()
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140624)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

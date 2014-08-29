@@ -23,6 +23,8 @@
   #include <semaphore.h>
 #endif
 
+#include <Vision/Runtime/Base/System/Threading/SyncPrimitive/VConditionVariable.hpp>
+
 /// \brief
 ///   Lightweight synchronization object for mutual-exclusive code execution. Wraps around a "critical
 ///   section" object on Windows platforms.
@@ -68,7 +70,7 @@ public:
 
 private:
   // platform specific members
-  #if defined(WIN32)  || defined (_VISION_XENON) 
+  #if defined(_VISION_WIN32)  || defined (_VISION_XENON) 
     CRITICAL_SECTION m_CriticalSection;
   
   #elif defined(_VISION_PS3)
@@ -91,34 +93,44 @@ private:
 };
 
 /// \brief
-/// Simple RAII class to automatically unlock a mutex when a code block is exited
-class VMutexLocker
+/// Simple RAII class to automatically unlock a mutex or condition when a code block is exited
+class VScopedLock
 {
 public:
   //For backwards compatibility only
-  VMutexLocker(VMutex* pMutex) : m_Mutex(*pMutex)
+  VScopedLock(VMutex* pMutex) : m_Mutex(pMutex), m_condition(NULL)
   {
     VASSERT(pMutex != NULL);
-    m_Mutex.Lock ();
+    m_Mutex->Lock ();
   }
 
-  VMutexLocker(VMutex& mutex) : m_Mutex(mutex)
+  VScopedLock(VMutex& mutex) : m_Mutex(&mutex), m_condition(NULL)
   {
-    m_Mutex.Lock();
+    m_Mutex->Lock();
   }
 
-  ~VMutexLocker ()
+  VScopedLock(VConditionVariable& condition) : m_Mutex(NULL), m_condition(&condition)
   {
-    m_Mutex.Unlock();
+    m_condition->Lock();
+  }
+
+  ~VScopedLock ()
+  {
+    if(m_Mutex)
+      m_Mutex->Unlock();
+    else if(m_condition)
+      m_condition->Unlock();
   }
 
 
 private:
-  VMutex& m_Mutex;
+  VMutex* m_Mutex;
+  VConditionVariable* m_condition;
 };
 
+typedef VScopedLock VMutexLocker;
 
-#if defined(WIN32)
+#if defined(_VISION_WIN32)
   #include <Vision/Runtime/Base/System/Threading/SyncPrimitive/VMutexPC.inl>
 #elif defined(_VISION_XENON)
   #include <Vision/Runtime/Base/System/Threading/SyncPrimitive/VMutexXenon.inl>
@@ -139,7 +151,7 @@ private:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

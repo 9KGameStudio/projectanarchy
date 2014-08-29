@@ -16,7 +16,7 @@ class hkaiSilhouetteGenerator;
 class hkaiObstacleGenerator;
 
 	/// Common interface for hkaiPhysicsWorldListener and hkaiPhysics2012WorldListener.
-class hkaiPhysicsBridgeBase : public hkReferencedObject, public hkaiWorld::Listener
+class HK_EXPORT_AI hkaiPhysicsBridgeBase : public hkReferencedObject, public hkaiWorld::Listener
 {
 	public:
 
@@ -107,7 +107,7 @@ class hkaiPhysicsBridgeBase : public hkReferencedObject, public hkaiWorld::Liste
 #endif	// HKAI_PHYSICS_BRIDGE_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

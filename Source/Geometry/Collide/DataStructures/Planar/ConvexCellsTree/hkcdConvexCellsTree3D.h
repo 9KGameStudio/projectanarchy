@@ -5,6 +5,7 @@
  * Product and Trade Secret source code contains trade secrets of Havok. Havok Software (C) Copyright 1999-2014 Telekinesys Research Limited t/a Havok. All Rights Reserved. Use of this software is subject to the terms of an end user license agreement.
  *
  */
+//HK_HAVOK_ASSEMBLY_EXCLUDE_FILE
 
 #ifndef HKCD_CONVEX_CELLS_TREE_3D_H
 #define HKCD_CONVEX_CELLS_TREE_3D_H
@@ -43,6 +44,9 @@ class hkcdConvexCellsTree3D : public hkcdConvexCellsTree<hkcdConvexCellsCollecti
 
 		/// Constructor from data pointers (connectivity and boundary polys will be copied from the other)
 		hkcdConvexCellsTree3D(hkcdConvexCellsCollection* cells, hkcdPlanarGeometry* geom, const hkcdConvexCellsTree3D& other);
+
+		/// Constructor from data pointers 
+		hkcdConvexCellsTree3D(hkcdConvexCellsCollection* cells, hkcdPlanarGeometry* geom, bool withConnectivity);
 
 		/// Copy constructor. The geometry will not be shared!
 		hkcdConvexCellsTree3D(const hkcdConvexCellsTree3D& other);
@@ -150,7 +154,7 @@ class hkcdConvexCellsTree3D : public hkcdConvexCellsTree<hkcdConvexCellsCollecti
 #endif	// HKCD_CONVEX_CELLS_TREE_3D_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

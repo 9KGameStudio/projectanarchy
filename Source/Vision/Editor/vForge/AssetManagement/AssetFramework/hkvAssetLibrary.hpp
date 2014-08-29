@@ -16,9 +16,9 @@
 #include <Vision/Editor/vForge/AssetManagement/AssetFramework/Assets/hkvDummyAsset.hpp>
 #include <Vision/Editor/vForge/AssetManagement/AssetFramework/Base/hkvBase.hpp>
 #include <Vision/Editor/vForge/AssetManagement/AssetFramework/Base/hkvCriticalSectionLock.hpp>
-#include <Vision/Editor/vForge/AssetManagement/AssetFramework/Base/hkvCriticalSectionLock.hpp>
 #include <Vision/Editor/vForge/AssetManagement/AssetFramework/Base/hkvFlagFieldArray.hpp>
 #include <Vision/Editor/vForge/AssetManagement/AssetFramework/Profiles/hkvProfile.hpp>
+#include <Vision/Editor/vForge/AssetManagement/AssetFramework/hkvFolderIgnoreList.hpp>
 
 #include <vector>
 #include <map>
@@ -470,11 +470,19 @@ public:
   ASSETFRAMEWORK_IMPEXP hkvAssetTrackedDirectory& getRootDirectory();
 
   /// \brief
-  ///   Returns a reference to the list of ignored files and folders.
+  ///   Returns whether a path should be ignored.
   ///
-  /// Each entry in the list is a path component; wild cards are allowed. If, while processing, any one of
-  /// these components is encountered in the path to a
-  ASSETFRAMEWORK_IMPEXP const hkArray<hkStringPtr>& getIgnoreList() const;
+  /// The given path is matched against a list of wildcard string. If a match is found
+  /// in the list the given path will not show up in the asset library.
+  ASSETFRAMEWORK_IMPEXP bool shouldIgnorePath(const char* path, bool isFolder) const;
+
+  /// \brief
+  ///   Clears ignore lists cached for use by 'shouldIgnorePath'.
+  ///
+  /// Should be called before a library / folder is refreshed to find ignore list files that have been changed.
+  ///
+  /// \sa shouldIgnorePath
+  ASSETFRAMEWORK_IMPEXP void clearIgnoreCache();
 
   /// \brief
   ///   Invalidates all asset transforms; i.e., resets the transformation state of all assets to "Unknown".
@@ -610,8 +618,7 @@ private:
   AssetDeletionMap m_deletedAssets;
 
   hkRefPtr<hkvAssetTrackedDirectory> m_rootDirectory;
-  hkArray<hkStringPtr> m_ignoreList;
-
+  hkvFolderIgnoreList m_ignoreList;
 
   // LUT caching
   mutable hkStringPtr m_lutEntriesProfile;
@@ -633,7 +640,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140624)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

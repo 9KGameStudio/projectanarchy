@@ -75,17 +75,9 @@ class hkbGeneratorTransitionEffect : public hkbTransitionEffect
 
 		virtual bool isDone() HK_OVERRIDE;
 
-		virtual void setFromGenerator( hkbGenerator* fromGen ) HK_OVERRIDE;
-
-		virtual void setToGenerator( hkbGenerator* toGen ) HK_OVERRIDE;
-
 		virtual hkReal getFromGeneratorBlendOutTime() HK_OVERRIDE;
 
 		virtual hkReal getToGeneratorBlendInTime() HK_OVERRIDE;
-
-		const hkbGenerator* getFromGenerator() const;
-
-		const hkbGenerator* getToGenerator() const;
 
 	private:
 
@@ -161,12 +153,6 @@ class hkbGeneratorTransitionEffect : public hkbTransitionEffect
 
 		hkEnum< hkbGeneratorTransitionEffect::ChildState, hkInt8 >	m_childState[2];	//+nosave
 
-			// The generator that is being transformed from (not reference counted)
-		hkbGenerator* m_fromGenerator;	//+nosave
-
-			// The generator that is being transitioned to (not reference counted)
-		hkbGenerator* m_toGenerator; //+nosave
-
 		HKB_BEGIN_INTERNAL_STATE(1);
 
 			// The number of seconds the transition has been active.
@@ -176,7 +162,7 @@ class hkbGeneratorTransitionEffect : public hkbTransitionEffect
 		hkReal m_duration; //+nosave
 
 			// The current blendInDuration, as adjusted for any changes in the duration of the transition generator.
-		hkReal m_effectiveBlendInDuration;	//+nosave
+		hkReal m_effectiveBlendInDuration; //+nosave
 
 			// The current blendOutDuration, as adjusted for any changes in the duration of the transition generator.
 		hkReal m_effectiveBlendOutDuration;	//+nosave
@@ -188,7 +174,7 @@ class hkbGeneratorTransitionEffect : public hkbTransitionEffect
 		hkBool m_echoTransitionGenerator; //+nosave
 
 			// Effective self transition mode of the to-generator to be applied when updateSync() is called.
-		hkEnum< hkbTransitionEffect::SelfTransitionMode, hkInt8 > m_toGeneratorSelfTransitionMode;	//+nosave
+		hkEnum< hkbTransitionEffect::SelfTransitionMode, hkInt8 > m_toGeneratorSelfTransitionMode; //+nosave
 
 			// Set to true by activate() and false by updateSync().
 		hkBool m_justActivated; //+nosave
@@ -215,7 +201,7 @@ class hkbGeneratorTransitionEffect : public hkbTransitionEffect
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

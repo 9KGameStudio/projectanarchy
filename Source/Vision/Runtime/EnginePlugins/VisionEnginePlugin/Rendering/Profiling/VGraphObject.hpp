@@ -19,6 +19,10 @@
 /// \brief simple vertex for displaying curves as a line list
 struct VGraphVertex
 {
+  VGraphVertex() : vPos(0)
+  {
+  }
+
   bool operator== (const VGraphVertex &rhs) const
   { 
     if (iColor!=rhs.iColor)
@@ -166,6 +170,11 @@ public:
   ///   Toggles visibility of graph. 
   EFFECTS_IMPEXP void SetVisible(bool bVisible); 
 
+  /// \brief
+  ///   Sets the graph min and max values. To be used when initializing the VGraphObject 
+  ///   instance with range adaptation disabled (bRangeAdaptation = false in VGraphProps).
+  EFFECTS_IMPEXP void SetMinMaxValue(float fMinValue, float fMaxValue); 
+
   /// \brief 
   ///   Overrides the OnHandleCallback function of IVisCallbackHandler_cl
   EFFECTS_IMPEXP virtual void OnHandleCallback(IVisCallbackDataObject_cl *pData) HKV_OVERRIDE;
@@ -177,15 +186,15 @@ protected:
 
   /// \brief
   /// Creates effect for displaying graph
-  virtual VCompiledTechnique* CreateEffect();
+  EFFECTS_IMPEXP virtual VCompiledTechnique* CreateEffect();
 
   /// \brief
   /// Converts screen relative coords [range: 0..1] into pixel coordinates
-  virtual hkvVec2 GetScreenPos(float fRelativePosX, float fRelativePosY);
+  EFFECTS_IMPEXP virtual hkvVec2 GetScreenPos(float fRelativePosX, float fRelativePosY);
 
   /// \brief
   /// Resizes graph
-  virtual void Resize();
+  EFFECTS_IMPEXP virtual void Resize();
   
   VisScreenMaskPtr m_spBackgroundMask;         ///< screen mask for graph background
   VisMeshBufferPtr m_spMeshBuffer;             ///< the mesh buffer data 
@@ -211,7 +220,7 @@ private:
 #endif //VGRAPH_OBJECT_HPP
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

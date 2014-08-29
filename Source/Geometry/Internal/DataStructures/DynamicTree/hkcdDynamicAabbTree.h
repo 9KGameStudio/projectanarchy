@@ -11,13 +11,13 @@
 //HK_HAVOK_ASSEMBLY_EXCLUDE_FILE
 #include <Geometry/Internal/Algorithms/TreeQueries/hkcdAabbTreeQueries.h>
 
-extern const class hkClass hkcdDynamicTreeDefaultTree48StorageClass;
-extern const class hkClass hkDynamicTreeClass;
+extern HK_EXPORT_COMMON const class hkClass hkcdDynamicTreeDefaultTree48StorageClass;
+extern HK_EXPORT_COMMON const class hkClass hkDynamicTreeClass;
 
 	/// A bounding volume tree that can be dynamically updated.
 	/// When adding a leaf, a handle is returned; this must be tracked if the leaf can later be removed or updated.
 	/// After all leaves have been added, the tree can be rebuilt to improve query performance.
-class hkcdDynamicAabbTree : public hkReferencedObject
+class HK_EXPORT_COMMON hkcdDynamicAabbTree : public hkReferencedObject
 {
 public:
 		//+version(1)
@@ -52,7 +52,7 @@ public:
 	void remove( TreeHandle handle );
 
 		/// Rebuild the tree to improve query performance.
-	void rebuild();
+	hkResult rebuild();
 
 		/// Do a fast, in-place optimization on the tree to improve query performance.
 	void rebuildFast( int numPasses );
@@ -68,6 +68,9 @@ public:
 	
 		/// Cast a ray through the tree. The collector's callback is triggered for each leaf in the tree that is hit
 	hkBool32 castRay( hkVector4Parameter start, hkVector4Parameter end, hkcdAabbTreeQueries::RaycastCollector* collector) const;
+
+		/// Cast a ray through the tree. The collector's callback is triggered for each leaf in the tree that is hit
+	hkBool32 castSphere( hkVector4Parameter start, hkVector4Parameter end, hkSimdRealParameter radius, hkcdAabbTreeQueries::RaycastCollector* collector) const;
 
 		/// AABB check on the tree. The collector's callback is triggered for each leaf that overlaps with the AABB.
 	void queryAabb( const hkAabb& aabb, hkcdAabbTreeQueries::AabbCollector* collector) const;
@@ -113,7 +116,7 @@ protected:
 #endif //HK_DYNAMIC_TREE
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

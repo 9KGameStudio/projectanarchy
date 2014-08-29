@@ -14,7 +14,7 @@
 
 
 
-class hkDebugCommand: public hkCommand
+class HK_EXPORT_COMMON hkDebugCommand: public hkCommand
 {
 public:
 	enum
@@ -32,7 +32,7 @@ public:
 #define HK_DEFAULT_DEBUG_COMMAND_FUNCTIONS \
 	void printCommand  (hkOstream& stream) const
 
-struct hkEmptyDebugCommand: public hkDebugCommand
+struct HK_EXPORT_COMMON hkEmptyDebugCommand: public hkDebugCommand
 {
 	hkEmptyDebugCommand( ): hkDebugCommand( CMD_DEBUG_LINE, sizeof(*this)){ ; }
 	HK_FORCE_INLINE void printCommand  (hkOstream& stream) const {}
@@ -47,7 +47,7 @@ struct hkEmptyDebugCommand: public hkDebugCommand
 template <int X>	struct hkDebugCommandTypeDiscriminator			 { typedef hkEmptyDebugCommand CommandType; };
 
 
-struct hkDebugLineCommand: public hkDebugCommand
+struct HK_EXPORT_COMMON hkDebugLineCommand: public hkDebugCommand
 {
 	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_PHYSICS, hkDebugLineCommand);
 	hkDebugLineCommand( hkVector4Parameter start, hkVector4Parameter end, hkColor::Argb color ):
@@ -64,7 +64,7 @@ struct hkDebugLineCommand: public hkDebugCommand
 HK_DECLARE_DEBUG_COMMAND_DISCRIMINATOR( hkDebugLineCommand, CMD_DEBUG_LINE );
 
 
-class hkDebugCommandProcessor: public hkSecondaryCommandDispatcher
+class HK_EXPORT_COMMON hkDebugCommandProcessor: public hkSecondaryCommandDispatcher
 {
 	public:
 		HK_DECLARE_CLASS_ALLOCATOR( HK_MEMORY_CLASS_BASE);
@@ -81,7 +81,7 @@ class hkDebugCommandProcessor: public hkSecondaryCommandDispatcher
 #endif	//HK_DEBUG_COMMANDS
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -15,7 +15,8 @@
 
 /* quad, here for inlining */
 
-#ifndef HK_DISABLE_MATH_CONSTRUCTORS
+// COM-2625: Work around bad code generation in x64, vs2013
+#if !defined(HK_DISABLE_MATH_CONSTRUCTORS) || (defined(HK_PLATFORM_X64) && defined(HK_COMPILER_MSVC) && (HK_COMPILER_MSVC_VERSION >= 1800))
 /* construct, assign, zero */
 HK_FORCE_INLINE hkVector4f::hkVector4f(hkFloat32 a, hkFloat32 b, hkFloat32 c, hkFloat32 d)
 {
@@ -60,6 +61,25 @@ HK_FORCE_INLINE void hkVector4f::setZero()
 	m_quad = _mm_setzero_ps();
 }
 
+template<int vectorConstant>
+HK_FORCE_INLINE void hkVector4f::setConstant()
+{
+	HK_VECTOR4f_CONSTANT_CHECK;
+	if ((vectorConstant == HK_QUADREAL_0) || (vectorConstant == HK_QUADREAL_INV_0))
+	{
+		m_quad = _mm_setzero_ps();
+	}
+	else
+	{
+		m_quad = g_vectorfConstants[vectorConstant];
+	}
+}
+
+template <> 
+HK_FORCE_INLINE void hkVector4f::zeroComponent<0>()
+{
+	m_quad = _mm_move_ss( m_quad, _mm_setzero_ps() );
+}
 #if HK_SSE_VERSION >= 0x41
 template <int I> 
 HK_FORCE_INLINE void hkVector4f::zeroComponent()
@@ -68,11 +88,6 @@ HK_FORCE_INLINE void hkVector4f::zeroComponent()
 	m_quad = _mm_blend_ps(m_quad, _mm_setzero_ps(), 1 << I);
 }
 #else
-template <> 
-HK_FORCE_INLINE void hkVector4f::zeroComponent<0>()
-{
-	m_quad = _mm_castsi128_ps(_mm_slli_si128(_mm_srli_si128(_mm_castps_si128(m_quad),4),4));
-}
 template <>
 HK_FORCE_INLINE void hkVector4f::zeroComponent<1>()
 {
@@ -251,8 +266,14 @@ HK_FORCE_INLINE void hkVector4f::setSelect<hkVector4ComparisonMask::MASK_X>( hkV
 	m_quad = _mm_move_ss(falseValue.m_quad, trueValue.m_quad);
 }
 
+template<> 
+HK_FORCE_INLINE void hkVector4f::setSelect<hkVector4ComparisonMask::MASK_YZW>( hkVector4fParameter trueValue, hkVector4fParameter falseValue )
+{
+	m_quad = _mm_move_ss(trueValue.m_quad, falseValue.m_quad);
+}
+
 #if HK_SSE_VERSION >= 0x41
-template<hkVector4fComparison::Mask M> 
+template<hkVector4ComparisonMask::Mask M> 
 HK_FORCE_INLINE void hkVector4f::setSelect( hkVector4fParameter trueValue, hkVector4fParameter falseValue )
 {
 	HK_VECTORfCOMPARISON_MASK_CHECK;
@@ -266,12 +287,24 @@ HK_FORCE_INLINE void hkVector4f::setSelect<hkVector4ComparisonMask::MASK_XY>( hk
 }
 
 template<> 
+HK_FORCE_INLINE void hkVector4f::setSelect<hkVector4ComparisonMask::MASK_ZW>( hkVector4fParameter trueValue, hkVector4fParameter falseValue )
+{
+	m_quad = _mm_shuffle_ps(falseValue.m_quad, trueValue.m_quad, _MM_SHUFFLE(3,2,1,0));
+}
+
+template<> 
 HK_FORCE_INLINE void hkVector4f::setSelect<hkVector4ComparisonMask::MASK_XYZ>( hkVector4fParameter trueValue, hkVector4fParameter falseValue )
 {
 	m_quad = HK_VECTOR4f_COMBINE_XYZ_W(trueValue.m_quad, falseValue.m_quad);
 }
 
-template<hkVector4fComparison::Mask M> 
+template<> 
+HK_FORCE_INLINE void hkVector4f::setSelect<hkVector4ComparisonMask::MASK_W>( hkVector4fParameter trueValue, hkVector4fParameter falseValue )
+{
+	m_quad = HK_VECTOR4f_COMBINE_XYZ_W(falseValue.m_quad, trueValue.m_quad);
+}
+
+template<hkVector4ComparisonMask::Mask M> 
 HK_FORCE_INLINE void hkVector4f::setSelect( hkVector4fParameter trueValue, hkVector4fParameter falseValue )
 {
 	hkVector4fComparison comp; comp.set<M>();
@@ -279,6 +312,19 @@ HK_FORCE_INLINE void hkVector4f::setSelect( hkVector4fParameter trueValue, hkVec
 }
 #endif
 
+
+HK_FORCE_INLINE void hkVector4f::setClampedZeroOne( hkVector4fParameter a )
+{
+	// This ensures that if a is NAN, clamped will be 1 afterwards	
+	const __m128 one = g_vectorfConstants[HK_QUADREAL_1];
+	__m128 GT = _mm_cmpgt_ps( one, a.m_quad );
+#if HK_SSE_VERSION >= 0x41
+	__m128 clamped = _mm_blendv_ps(one, a.m_quad, GT);
+#else
+	__m128 clamped = _mm_or_ps( _mm_and_ps(GT, a.m_quad), _mm_andnot_ps(GT, one) );
+#endif
+	m_quad = _mm_max_ps(_mm_setzero_ps(), clamped);
+}
 
 template <>
 HK_FORCE_INLINE void hkVector4f::setNeg<1>(hkVector4fParameter v)
@@ -560,7 +606,8 @@ HK_FORCE_INLINE const hkSimdFloat32 hkVector4f::horizontalMax<4>() const
 {
 	const hkQuadFloat32 sum0 = _mm_max_ps( _mm_shuffle_ps( m_quad, m_quad,_MM_SHUFFLE(1,0,3,2)), m_quad); // yxwz+xyzw = xy xy zw zw
 	const hkQuadFloat32 sum1 = _mm_shuffle_ps(sum0,sum0, _MM_SHUFFLE(2,3,0,1)); // = zw zw xy xy
-	return hkSimdFloat32::convert(_mm_max_ps( sum0, sum1 )); // xywz all 4
+	const hkQuadFloat32 xyzw = _mm_max_ps( sum0, sum1 ); // xywz all 4
+	return hkSimdFloat32::convert(_mm_shuffle_ps(xyzw,xyzw,_MM_SHUFFLE(0,0,0,0)));
 }
 
 template <int N>
@@ -595,7 +642,8 @@ HK_FORCE_INLINE const hkSimdFloat32 hkVector4f::horizontalMin<4>() const
 {
 	const hkQuadFloat32 sum0 = _mm_min_ps( _mm_shuffle_ps( m_quad, m_quad,_MM_SHUFFLE(1,0,3,2)), m_quad); // yxwz+xyzw = xy xy zw zw
 	const hkQuadFloat32 sum1 = _mm_shuffle_ps(sum0,sum0, _MM_SHUFFLE(2,3,0,1)); // = zw zw xy xy
-	return hkSimdFloat32::convert(_mm_min_ps( sum0, sum1 )); // xywz all 4
+	const hkQuadFloat32 xyzw = _mm_min_ps( sum0, sum1 ); // xywz all 4
+	return hkSimdFloat32::convert(_mm_shuffle_ps(xyzw,xyzw,_MM_SHUFFLE(0,0,0,0)));
 }
 
 template <int N>
@@ -642,19 +690,19 @@ HK_FORCE_INLINE void hkVector4f::setXYZ(hkVector4fParameter xyz)
 HK_FORCE_INLINE void hkVector4f::addXYZ(hkVector4fParameter xyz)
 {
 	m_quad = _mm_add_ps(m_quad, xyz.m_quad);
-	HK_ON_DEBUG( HK_M128(m_quad).m128_u32[3] = 0xffffffff; )
+	HK_ON_DEBUG( HK_M128(m_quad).m128_u32[3] = HK_M128(HK_VECTOR4f_DEBUG_FILL_VALUE).m128_u32[0]; )
 }
 
 HK_FORCE_INLINE void hkVector4f::subXYZ(hkVector4fParameter xyz)
 {
 	m_quad = _mm_sub_ps(m_quad, xyz.m_quad);
-	HK_ON_DEBUG( HK_M128(m_quad).m128_u32[3] = 0xffffffff; )
+	HK_ON_DEBUG( HK_M128(m_quad).m128_u32[3] = HK_M128(HK_VECTOR4f_DEBUG_FILL_VALUE).m128_u32[0]; )
 }
 
 HK_FORCE_INLINE void hkVector4f::setXYZ(hkFloat32 v)
 {
-	const hkQuadFloat32 q = _mm_set1_ps(v);
-	m_quad = HK_VECTOR4f_COMBINE_XYZ_W( q, m_quad );
+	const hkQuadFloat32 xyz = _mm_set1_ps(v);
+	m_quad = HK_VECTOR4f_COMBINE_XYZ_W( xyz, m_quad );
 }
 
 HK_FORCE_INLINE void hkVector4f::setXYZ(hkSimdFloat32Parameter v)
@@ -664,35 +712,53 @@ HK_FORCE_INLINE void hkVector4f::setXYZ(hkSimdFloat32Parameter v)
 
 HK_FORCE_INLINE void hkVector4f::setXYZ_0(hkVector4fParameter xyz)
 {
-	m_quad = HK_VECTOR4f_COMBINE_XYZ_W( xyz.m_quad, _mm_setzero_ps() );
+	m_quad = _mm_castsi128_ps(_mm_srli_si128(_mm_slli_si128(_mm_castps_si128(xyz.m_quad),4),4));
 }
 
-HK_FORCE_INLINE void hkVector4f::setBroadcastXYZ(const int i, hkVector4fParameter v)
+HK_FORCE_INLINE void hkVector4f::setBroadcastXYZ(const int I, hkVector4fParameter v)
 {
-	setBroadcast(i,v);
-	HK_ON_DEBUG( HK_M128(m_quad).m128_u32[3] = 0xffffffff; )
-}
+	HK_MATH_ASSERT(0x6d0c31d7, I>=0 && I<4, "index out of bounds for component access");
 
-HK_FORCE_INLINE const hkSimdFloat32 hkVector4f::getComponent(const int i) const
-{
-	static HK_ALIGN16 (const hkUint32 indexToMask[16]) = 
+#if defined(HK_COMPILER_GCC)
+	if (__builtin_constant_p(I)) 
 	{
-		0xffffffff, 0x00000000, 0x00000000, 0x00000000,
-		0x00000000, 0xffffffff, 0x00000000, 0x00000000,
-		0x00000000, 0x00000000, 0xffffffff, 0x00000000,
-		0x00000000, 0x00000000, 0x00000000, 0xffffffff
-	};
+		m_quad = _mm_shuffle_ps(v.m_quad, v.m_quad, _MM_SHUFFLE(I,I,I,I));
+	}
+	else
+#endif
+	{
+		setBroadcast(I,v);
+	}
+	HK_ON_DEBUG( HK_M128(m_quad).m128_u32[3] = HK_M128(HK_VECTOR4f_DEBUG_FILL_VALUE).m128_u32[0]; )
+}
 
-	HK_MATH_ASSERT(0x6d0c31d7, i>=0 && i<4, "index out of bounds for component access");
+HK_FORCE_INLINE const hkSimdFloat32 hkVector4f::getComponent(const int I) const
+{
+	HK_MATH_ASSERT(0x6d0c31d7, I>=0 && I<4, "index out of bounds for component access");
 
-	const hkQuadFloat32 mask = *(const hkQuadFloat32*)&indexToMask[ i * 4 ];
-	hkQuadFloat32 selected = _mm_and_ps(mask, m_quad); 
+#if defined(HK_COMPILER_GCC)
+	if (__builtin_constant_p(I)) 
+	{
+		return hkSimdFloat32::convert(_mm_shuffle_ps(m_quad, m_quad, _MM_SHUFFLE(I,I,I,I)));
+	}
+	else
+#endif
+	{
+#if HK_SSE_VERSION >= 0x31
+		__m128i index = _mm_cvtsi32_si128(((I<<2) + (I<<(8+2)) + (I<<(16+2)) + (I<<(24+2))) + (0 + (1<<8) + (2<<16) + (3<<24)));	// 4I+0 4I+1 4I+2 4I+3
+		index = _mm_shuffle_epi32(index, _MM_SHUFFLE(0,0,0,0));
+		__m128 selected = _mm_castsi128_ps(_mm_shuffle_epi8(_mm_castps_si128(m_quad), index));
+#else
+		hkVector4fComparison cmp;	cmp.set((hkVector4ComparisonMask::Mask)(hkVector4ComparisonMask::MASK_X << I));
+		__m128 selected = _mm_and_ps(cmp.m_mask, m_quad); 
 
-	const hkQuadFloat32 zwxy = _mm_shuffle_ps( selected, selected, _MM_SHUFFLE(1,0,3,2));
-	selected = _mm_or_ps( selected, zwxy );
-	const hkQuadFloat32 yxwz = _mm_shuffle_ps( selected, selected, _MM_SHUFFLE(2,3,0,1));
-	selected = _mm_or_ps( selected, yxwz );
-	return hkSimdFloat32::convert(selected);
+		__m128 zwxy = _mm_shuffle_ps( selected, selected, _MM_SHUFFLE(1,0,3,2));
+		selected = _mm_or_ps( selected, zwxy );
+		__m128 yxwz = _mm_shuffle_ps( selected, selected, _MM_SHUFFLE(2,3,0,1));
+		selected = _mm_or_ps( selected, yxwz );
+#endif
+		return hkSimdFloat32::convert(selected);
+	}
 }
 
 template <int I>
@@ -703,28 +769,11 @@ HK_FORCE_INLINE const hkSimdFloat32 hkVector4f::getComponent() const
 }
 
 
-HK_FORCE_INLINE void hkVector4f::setComponent(const int i, hkSimdFloat32Parameter val)
+template <>
+HK_FORCE_INLINE void hkVector4f::setComponent<0>(hkSimdFloat32Parameter val)
 {
-	static HK_ALIGN16 (const hkUint32 indexToMask[16]) = 
-	{
-		0xffffffff, 0x00000000, 0x00000000, 0x00000000,
-		0x00000000, 0xffffffff, 0x00000000, 0x00000000,
-		0x00000000, 0x00000000, 0xffffffff, 0x00000000,
-		0x00000000, 0x00000000, 0x00000000, 0xffffffff
-	};
-
-	HK_MATH_ASSERT(0x6d0c31d7, i>=0 && i<4, "index out of bounds for component access");
-
-	const hkQuadFloat32 mask = *(const hkQuadFloat32*)&indexToMask[ i * 4 ];
-
-#if HK_SSE_VERSION >= 0x41
-	m_quad = _mm_blendv_ps(m_quad, val.m_real, mask);
-#else
-	m_quad = _mm_or_ps( _mm_and_ps(mask, val.m_real), _mm_andnot_ps(mask, m_quad) );
-#endif
+	m_quad = _mm_move_ss( m_quad, val.m_real );
 }
-
-
 #if HK_SSE_VERSION >= 0x41
 template <int I>
 HK_FORCE_INLINE void hkVector4f::setComponent(hkSimdFloat32Parameter val)
@@ -733,11 +782,6 @@ HK_FORCE_INLINE void hkVector4f::setComponent(hkSimdFloat32Parameter val)
 	m_quad = _mm_blend_ps(m_quad, val.m_real, 0x1 << I);
 }
 #else
-template <>
-HK_FORCE_INLINE void hkVector4f::setComponent<0>(hkSimdFloat32Parameter val)
-{
-	m_quad = _mm_move_ss( m_quad, val.m_real );
-}
 template <>
 HK_FORCE_INLINE void hkVector4f::setComponent<1>(hkSimdFloat32Parameter val)
 {
@@ -760,6 +804,34 @@ HK_FORCE_INLINE void hkVector4f::setComponent(hkSimdFloat32Parameter val)
 }
 #endif
 
+
+HK_FORCE_INLINE void hkVector4f::setComponent(const int I, hkSimdFloat32Parameter val)
+{
+	HK_MATH_ASSERT(0x6d0c31d7, I>=0 && I<4, "index out of bounds for component access");
+
+#if defined(HK_COMPILER_GCC)
+	if (__builtin_constant_p(I)) 
+	{
+		switch(I)
+		{
+			case 3: setComponent<3>(val); break;
+			case 2: setComponent<2>(val); break;
+			case 1: setComponent<1>(val); break;
+			default: setComponent<0>(val); break;
+		}
+	}
+	else
+#endif
+	{
+		hkVector4fComparison cmp;	cmp.set((hkVector4ComparisonMask::Mask)(hkVector4ComparisonMask::MASK_X << I));
+
+#if HK_SSE_VERSION >= 0x41
+		m_quad = _mm_blendv_ps(m_quad, val.m_real, cmp.m_mask);
+#else
+		m_quad = _mm_or_ps( _mm_and_ps(cmp.m_mask, val.m_real), _mm_andnot_ps(cmp.m_mask, m_quad) );
+#endif
+	}
+}
 
 HK_FORCE_INLINE void hkVector4f::reduceToHalfPrecision()
 {
@@ -784,22 +856,22 @@ HK_FORCE_INLINE hkBool32 hkVector4f::isOk<1>() const
 template <> 
 HK_FORCE_INLINE hkBool32 hkVector4f::isOk<2>() const
 {
-	const hkQuadFloat32 nanMask = _mm_cmpunord_ps(m_quad, m_quad);
-	return !(_mm_movemask_ps(nanMask) & 0x3);
+	const hkQuadFloat32 nanMask = _mm_cmpord_ps(m_quad, m_quad);
+	return (_mm_movemask_ps(nanMask) & 0x3) == 0x3;
 }
 
 template <> 
 HK_FORCE_INLINE hkBool32 hkVector4f::isOk<3>() const
 {
-	const hkQuadFloat32 nanMask = _mm_cmpunord_ps(m_quad, m_quad);
-	return !(_mm_movemask_ps(nanMask) & 0x7);
+	const hkQuadFloat32 nanMask = _mm_cmpord_ps(m_quad, m_quad);
+	return (_mm_movemask_ps(nanMask) & 0x7) == 0x7;
 }
 
 template <> 
 HK_FORCE_INLINE hkBool32 hkVector4f::isOk<4>() const
 {
-	const hkQuadFloat32 nanMask = _mm_cmpunord_ps(m_quad, m_quad);
-	return !_mm_movemask_ps(nanMask);
+	const hkQuadFloat32 nanMask = _mm_cmpord_ps(m_quad, m_quad);
+	return _mm_movemask_ps(nanMask) == 0xf;
 }
 
 template <int N> 
@@ -836,10 +908,29 @@ HK_FORCE_INLINE void hkVector4f::setPermutation<hkVectorPermutation::XXYY>(hkVec
 	m_quad = _mm_unpacklo_ps(v.m_quad,v.m_quad);
 }
 
+template <> 
+HK_FORCE_INLINE void hkVector4f::setPermutation<hkVectorPermutation::ZZWW>(hkVector4fParameter v)
+{
+	m_quad = _mm_unpackhi_ps(v.m_quad,v.m_quad);
+}
+
+template <> 
+HK_FORCE_INLINE void hkVector4f::setPermutation<hkVectorPermutation::XYXY>(hkVector4fParameter v)
+{
+	m_quad = _mm_movelh_ps(v.m_quad,v.m_quad);
+}
+
+template <> 
+HK_FORCE_INLINE void hkVector4f::setPermutation<hkVectorPermutation::ZWZW>(hkVector4fParameter v)
+{
+	m_quad = _mm_movehl_ps(v.m_quad,v.m_quad);
+}
+
 template <hkVectorPermutation::Permutation P> 
 HK_FORCE_INLINE void hkVector4f::setPermutation(hkVector4fParameter v)
 {
-	const int shuf = ((P >> (12 - 0)) & 0x03) |
+	const int shuf = 
+		((P >> (12 - 0)) & 0x03) |
 		((P >> ( 8 - 2)) & 0x0c) |
 		((P >> ( 4 - 4)) & 0x30) |
 		((P << ( 0 + 6)) & 0xc0);
@@ -882,6 +973,27 @@ HK_FORCE_INLINE void hkVector4f::setFlipSign(hkVector4fParameter v, hkSimdFloat3
 
 namespace hkVector4_AdvancedInterface
 {
+		
+	HK_FORCE_INLINE hkQuadFloat32 quadSelect( const hkQuadFloat32& mask, const hkQuadFloat32& trueValue, const hkQuadFloat32& falseValue )
+	{
+#if HK_SSE_VERSION >= 0x41
+		return _mm_blendv_ps(falseValue, trueValue, mask);
+#else
+		return _mm_or_ps( _mm_and_ps(mask, trueValue), _mm_andnot_ps(mask, falseValue) );
+#endif
+	}
+
+	template<hkMathAccuracyMode ACC>
+	HK_FORCE_INLINE void avoidDivideByZeroInDebug(const hkQuadFloat32& equalsZero, hkQuadFloat32& x)
+	{
+#if defined(HK_ALLOW_FPU_EXCEPTION_CHECKING) 
+		if(ACC == HK_ACC_FULL)
+		{
+			x = quadSelect( equalsZero, g_vectorfConstants[HK_QUADREAL_1], x );
+		}
+#endif
+	}
+
 
 template <hkMathAccuracyMode A, hkMathDivByZeroMode D>
 struct unrollf_setReciprocal { HK_FORCE_INLINE static void apply(hkQuadFloat32& self, hkVector4fParameter a)
@@ -902,14 +1014,22 @@ template <hkMathAccuracyMode A>
 struct unrollf_setReciprocal<A, HK_DIV_SET_ZERO> { HK_FORCE_INLINE static void apply(hkQuadFloat32& self, hkVector4fParameter a)
 {
 	const hkQuadFloat32 equalsZero = _mm_cmpeq_ps(a.m_quad, _mm_setzero_ps());
-	hkQuadFloat32 e; unrollf_setReciprocal<A, HK_DIV_IGNORE>::apply(e, a);
+
+	hkVector4f aNonZero = a;
+	avoidDivideByZeroInDebug<A>(equalsZero, aNonZero.m_quad);
+
+	hkQuadFloat32 e; unrollf_setReciprocal<A, HK_DIV_IGNORE>::apply(e, aNonZero);
 	self = _mm_andnot_ps(equalsZero, e);
 } };
 template <hkMathAccuracyMode A>
 struct unrollf_setReciprocal<A, HK_DIV_SET_HIGH> { HK_FORCE_INLINE static void apply(hkQuadFloat32& self, hkVector4fParameter a)
 {
 	const hkQuadFloat32 equalsZero = _mm_cmpeq_ps(a.m_quad, _mm_setzero_ps());
-	hkQuadFloat32 e; unrollf_setReciprocal<A, HK_DIV_IGNORE>::apply(e, a);
+
+	hkVector4f aNonZero = a;
+	avoidDivideByZeroInDebug<A>(equalsZero, aNonZero.m_quad);
+
+	hkQuadFloat32 e; unrollf_setReciprocal<A, HK_DIV_IGNORE>::apply(e, aNonZero);
 	hkQuadFloat32 huge = _mm_set1_ps(HK_FLOAT_HIGH);
 	const __m128i mask = _mm_slli_epi32(_mm_srli_epi32(_mm_castps_si128(a.m_quad),31),31);
 	huge = _mm_xor_ps(huge, _mm_castsi128_ps(mask));
@@ -923,7 +1043,10 @@ template <hkMathAccuracyMode A>
 struct unrollf_setReciprocal<A, HK_DIV_SET_MAX> { HK_FORCE_INLINE static void apply(hkQuadFloat32& self, hkVector4fParameter a)
 {
 	const hkQuadFloat32 equalsZero = _mm_cmpeq_ps(a.m_quad, _mm_setzero_ps());
-	hkQuadFloat32 e; unrollf_setReciprocal<A, HK_DIV_IGNORE>::apply(e, a);
+	hkVector4f aNonZero = a;
+	avoidDivideByZeroInDebug<A>(equalsZero, aNonZero.m_quad);
+
+	hkQuadFloat32 e; unrollf_setReciprocal<A, HK_DIV_IGNORE>::apply(e, aNonZero);
 	hkQuadFloat32 huge = _mm_set1_ps(HK_FLOAT_MAX);
 	const __m128i mask = _mm_slli_epi32(_mm_srli_epi32(_mm_castps_si128(a.m_quad),31),31);
 	huge = _mm_xor_ps(huge, _mm_castsi128_ps(mask));
@@ -957,7 +1080,7 @@ HK_FORCE_INLINE void hkVector4f::setReciprocal(hkVector4fParameter a)
 
 HK_FORCE_INLINE void hkVector4f::setReciprocal(hkVector4fParameter a)
 {
-	hkVector4_AdvancedInterface::unrollf_setReciprocal<HK_ACC_23_BIT,HK_DIV_IGNORE>::apply(m_quad,a);
+	hkVector4_AdvancedInterface::unrollf_setReciprocal<HK_ACC_MID,HK_DIV_IGNORE>::apply(m_quad,a);
 }
 
 
@@ -984,14 +1107,21 @@ template <hkMathAccuracyMode A>
 struct unrollf_setDiv<A, HK_DIV_SET_ZERO> { HK_FORCE_INLINE static void apply(hkQuadFloat32& self, hkVector4fParameter a, hkVector4fParameter b)
 {
 	const hkQuadFloat32 equalsZero = _mm_cmpeq_ps(b.m_quad, _mm_setzero_ps());
-	hkQuadFloat32 e; unrollf_setDiv<A, HK_DIV_IGNORE>::apply(e, a, b);
+	hkVector4f bNonZero = b;
+	avoidDivideByZeroInDebug<A>(equalsZero, bNonZero.m_quad);
+
+	hkQuadFloat32 e; unrollf_setDiv<A, HK_DIV_IGNORE>::apply(e, a, bNonZero);
 	self = _mm_andnot_ps(equalsZero, e);
 } };
 template <hkMathAccuracyMode A>
 struct unrollf_setDiv<A, HK_DIV_SET_HIGH> { HK_FORCE_INLINE static void apply(hkQuadFloat32& self, hkVector4fParameter a, hkVector4fParameter b)
 {
 	const hkQuadFloat32 equalsZero = _mm_cmpeq_ps(b.m_quad, _mm_setzero_ps());
-	hkQuadFloat32 e; unrollf_setDiv<A, HK_DIV_IGNORE>::apply(e, a, b);
+
+	hkVector4f bNonZero = b;
+	avoidDivideByZeroInDebug<A>(equalsZero, bNonZero.m_quad);
+
+	hkQuadFloat32 e; unrollf_setDiv<A, HK_DIV_IGNORE>::apply(e, a, bNonZero);
 	hkQuadFloat32 huge = _mm_set1_ps(HK_FLOAT_HIGH);
 	const __m128i mask = _mm_slli_epi32(_mm_srli_epi32(_mm_castps_si128(a.m_quad),31),31);
 	huge = _mm_xor_ps(huge, _mm_castsi128_ps(mask));
@@ -1005,7 +1135,10 @@ template <hkMathAccuracyMode A>
 struct unrollf_setDiv<A, HK_DIV_SET_MAX> { HK_FORCE_INLINE static void apply(hkQuadFloat32& self, hkVector4fParameter a, hkVector4fParameter b)
 {
 	const hkQuadFloat32 equalsZero = _mm_cmpeq_ps(b.m_quad, _mm_setzero_ps());
-	hkQuadFloat32 e; unrollf_setDiv<A, HK_DIV_IGNORE>::apply(e, a, b);
+	hkVector4f bNonZero = b;
+	avoidDivideByZeroInDebug<A>(equalsZero, bNonZero.m_quad);
+
+	hkQuadFloat32 e; unrollf_setDiv<A, HK_DIV_IGNORE>::apply(e, a, bNonZero);
 	hkQuadFloat32 huge = _mm_set1_ps(HK_FLOAT_MAX);
 	const __m128i mask = _mm_slli_epi32(_mm_srli_epi32(_mm_castps_si128(a.m_quad),31),31);
 	huge = _mm_xor_ps(huge, _mm_castsi128_ps(mask));
@@ -1039,7 +1172,7 @@ HK_FORCE_INLINE void hkVector4f::setDiv(hkVector4fParameter v0, hkVector4fParame
 
 HK_FORCE_INLINE void hkVector4f::setDiv(hkVector4fParameter v0, hkVector4fParameter v1)
 {
-	hkVector4_AdvancedInterface::unrollf_setDiv<HK_ACC_23_BIT,HK_DIV_IGNORE>::apply(m_quad,v0,v1);
+	hkVector4_AdvancedInterface::unrollf_setDiv<HK_ACC_MID,HK_DIV_IGNORE>::apply(m_quad,v0,v1);
 }
 
 template <hkMathAccuracyMode A, hkMathDivByZeroMode D>
@@ -1091,7 +1224,7 @@ HK_FORCE_INLINE void hkVector4f::setSqrt(hkVector4fParameter a)
 
 HK_FORCE_INLINE void hkVector4f::setSqrt(hkVector4fParameter a)
 {
-	hkVector4_AdvancedInterface::unrollf_setSqrt<HK_ACC_23_BIT,HK_SQRT_SET_ZERO>::apply(m_quad, a);
+	hkVector4_AdvancedInterface::unrollf_setSqrt<HK_ACC_MID,HK_SQRT_SET_ZERO>::apply(m_quad, a);
 }
 
 
@@ -1118,7 +1251,11 @@ template <hkMathAccuracyMode A>
 struct unrollf_setSqrtInverse<A, HK_SQRT_SET_ZERO> { HK_FORCE_INLINE static void apply(hkQuadFloat32& self, hkVector4fParameter a)
 {
 	const hkQuadFloat32 equalsZero = _mm_cmple_ps(a.m_quad, _mm_setzero_ps());
-	hkQuadFloat32 e; unrollf_setSqrtInverse<A, HK_SQRT_IGNORE>::apply(e,a);
+
+	hkVector4f aNonZero = a;
+	avoidDivideByZeroInDebug<A>(equalsZero, aNonZero.m_quad);
+
+	hkQuadFloat32 e; unrollf_setSqrtInverse<A, HK_SQRT_IGNORE>::apply(e,aNonZero);
 	self = _mm_andnot_ps(equalsZero, e);
 } };
 } // namespace 
@@ -1131,7 +1268,7 @@ HK_FORCE_INLINE void hkVector4f::setSqrtInverse(hkVector4fParameter a)
 
 HK_FORCE_INLINE void hkVector4f::setSqrtInverse(hkVector4fParameter a)
 {
-	hkVector4_AdvancedInterface::unrollf_setSqrtInverse<HK_ACC_23_BIT,HK_SQRT_SET_ZERO>::apply(m_quad,a);
+	hkVector4_AdvancedInterface::unrollf_setSqrtInverse<HK_ACC_MID,HK_SQRT_SET_ZERO>::apply(m_quad,a);
 }
 
 
@@ -1155,13 +1292,16 @@ struct unrollf_load<N, HK_IO_BYTE_ALIGNED> { HK_FORCE_INLINE static void apply(h
 		case 1:
 			{
 				self = _mm_load_ss(p);
-				HK_ON_DEBUG(HK_M128(self).m128_u32[1] = 0xffffffff; HK_M128(self).m128_u32[2] = 0xffffffff; HK_M128(self).m128_u32[3] = 0xffffffff;)
+				HK_ON_DEBUG( HK_M128(self).m128_u32[1] = HK_M128(HK_VECTOR4f_DEBUG_FILL_VALUE).m128_u32[0]; )
+				HK_ON_DEBUG( HK_M128(self).m128_u32[2] = HK_M128(HK_VECTOR4f_DEBUG_FILL_VALUE).m128_u32[0]; )
+				HK_ON_DEBUG( HK_M128(self).m128_u32[3] = HK_M128(HK_VECTOR4f_DEBUG_FILL_VALUE).m128_u32[0]; )
 			}
 			break;
 		case 2:
 			{
 				self = _mm_castpd_ps(_mm_load_sd((const double*)p));
-				HK_ON_DEBUG(HK_M128(self).m128_u32[2] = 0xffffffff; HK_M128(self).m128_u32[3] = 0xffffffff;)
+				HK_ON_DEBUG( HK_M128(self).m128_u32[2] = HK_M128(HK_VECTOR4f_DEBUG_FILL_VALUE).m128_u32[0]; )
+				HK_ON_DEBUG( HK_M128(self).m128_u32[3] = HK_M128(HK_VECTOR4f_DEBUG_FILL_VALUE).m128_u32[0]; )
 			}
 			break;
 		case 3:
@@ -1169,7 +1309,7 @@ struct unrollf_load<N, HK_IO_BYTE_ALIGNED> { HK_FORCE_INLINE static void apply(h
 				__m128 xy = _mm_castpd_ps(_mm_load_sd((const double*)p));
 				__m128 z = _mm_load_ss(p+2);
 				self = _mm_movelh_ps(xy,z);
-				HK_ON_DEBUG(HK_M128(self).m128_u32[3] = 0xffffffff;)
+				HK_ON_DEBUG( HK_M128(self).m128_u32[3] = HK_M128(HK_VECTOR4f_DEBUG_FILL_VALUE).m128_u32[0]; )
 			}
 			break;
 		default:
@@ -1192,7 +1332,9 @@ struct unrollf_load_D<N, HK_IO_BYTE_ALIGNED> { HK_FORCE_INLINE static void apply
 		{
 			__m128d a = _mm_load_sd(p);
 			self = _mm_cvtpd_ps(a);
-			HK_ON_DEBUG(HK_M128(self).m128_u32[1] = 0xffffffff; HK_M128(self).m128_u32[2] = 0xffffffff; HK_M128(self).m128_u32[3] = 0xffffffff;)
+			HK_ON_DEBUG( HK_M128(self).m128_u32[1] = HK_M128(HK_VECTOR4f_DEBUG_FILL_VALUE).m128_u32[0]; )
+			HK_ON_DEBUG( HK_M128(self).m128_u32[2] = HK_M128(HK_VECTOR4f_DEBUG_FILL_VALUE).m128_u32[0]; )
+			HK_ON_DEBUG( HK_M128(self).m128_u32[3] = HK_M128(HK_VECTOR4f_DEBUG_FILL_VALUE).m128_u32[0]; )
 		}
 		break;
 	case 2:
@@ -1203,7 +1345,8 @@ struct unrollf_load_D<N, HK_IO_BYTE_ALIGNED> { HK_FORCE_INLINE static void apply
 			__m128d a = _mm_loadu_pd(p);
 #endif
 			self = _mm_cvtpd_ps(a);
-			HK_ON_DEBUG(HK_M128(self).m128_u32[2] = 0xffffffff; HK_M128(self).m128_u32[3] = 0xffffffff;)
+			HK_ON_DEBUG( HK_M128(self).m128_u32[2] = HK_M128(HK_VECTOR4f_DEBUG_FILL_VALUE).m128_u32[0]; )
+			HK_ON_DEBUG( HK_M128(self).m128_u32[3] = HK_M128(HK_VECTOR4f_DEBUG_FILL_VALUE).m128_u32[0]; )
 		}
 		break;
 	case 3:
@@ -1218,7 +1361,7 @@ struct unrollf_load_D<N, HK_IO_BYTE_ALIGNED> { HK_FORCE_INLINE static void apply
 			__m128 xy = _mm_cvtpd_ps(a);
 			__m128 z = _mm_cvtpd_ps(b);
 			self = _mm_movelh_ps(xy,z);
-			HK_ON_DEBUG(HK_M128(self).m128_u32[3] = 0xffffffff;)
+			HK_ON_DEBUG( HK_M128(self).m128_u32[3] = HK_M128(HK_VECTOR4f_DEBUG_FILL_VALUE).m128_u32[0]; )
 		}
 		break;
 	default:
@@ -1285,14 +1428,15 @@ struct unrollf_load_D<N, HK_IO_SIMD_ALIGNED> { HK_FORCE_INLINE static void apply
 			__m128 xy = _mm_cvtpd_ps(a);
 			__m128 z = _mm_cvtpd_ps(b);
 			self = _mm_movelh_ps(xy,z);
-			HK_ON_DEBUG(HK_M128(self).m128_u32[3] = 0xffffffff;)
+			HK_ON_DEBUG( HK_M128(self).m128_u32[3] = HK_M128(HK_VECTOR4f_DEBUG_FILL_VALUE).m128_u32[0]; )
 		}
 		break;
 	case 2:
 		{
 			__m128d a = _mm_load_pd(p);
 			self = _mm_cvtpd_ps(a);
-			HK_ON_DEBUG(HK_M128(self).m128_u32[2] = 0xffffffff; HK_M128(self).m128_u32[3] = 0xffffffff;)
+			HK_ON_DEBUG( HK_M128(self).m128_u32[2] = HK_M128(HK_VECTOR4f_DEBUG_FILL_VALUE).m128_u32[0]; )
+			HK_ON_DEBUG( HK_M128(self).m128_u32[3] = HK_M128(HK_VECTOR4f_DEBUG_FILL_VALUE).m128_u32[0]; )
 		}
 		break;
 	default:
@@ -1342,14 +1486,15 @@ struct unrollf_load_D<N, HK_IO_NOT_CACHED> { HK_FORCE_INLINE static void apply(h
 			__m128 xy = _mm_cvtpd_ps(a);
 			__m128 z = _mm_cvtpd_ps(b);
 			self = _mm_movelh_ps(xy,z);
-			HK_ON_DEBUG(HK_M128(self).m128_u32[3] = 0xffffffff;)
+			HK_ON_DEBUG( HK_M128(self).m128_u32[3] = HK_M128(HK_VECTOR4f_DEBUG_FILL_VALUE).m128_u32[0]; )
 		}
 		break;
 	case 2:
 		{
 			__m128d a = _mm_castsi128_pd(_mm_stream_load_si128((__m128i*) p));
 			self = _mm_cvtpd_ps(a);
-			HK_ON_DEBUG(HK_M128(self).m128_u32[2] = 0xffffffff; HK_M128(self).m128_u32[3] = 0xffffffff;)
+			HK_ON_DEBUG( HK_M128(self).m128_u32[2] = HK_M128(HK_VECTOR4f_DEBUG_FILL_VALUE).m128_u32[0]; )
+			HK_ON_DEBUG( HK_M128(self).m128_u32[3] = HK_M128(HK_VECTOR4f_DEBUG_FILL_VALUE).m128_u32[0]; )
 		}
 		break;
 	default:
@@ -1414,26 +1559,27 @@ struct unrollf_loadH<N, HK_IO_BYTE_ALIGNED> { HK_FORCE_INLINE static void apply(
 	{
 	case 1:
 		{
-			float x; p[0].store(&x);
-			self = _mm_set_ss(x);
-			HK_ON_DEBUG(HK_M128(self).m128_u32[1] = 0xffffffff; HK_M128(self).m128_u32[2] = 0xffffffff; HK_M128(self).m128_u32[3] = 0xffffffff;)
+			self = _mm_castsi128_ps(_mm_cvtsi32_si128(p->getStorage() << 16));
+			HK_ON_DEBUG( HK_M128(self).m128_u32[1] = HK_M128(HK_VECTOR4f_DEBUG_FILL_VALUE).m128_u32[0]; )
+			HK_ON_DEBUG( HK_M128(self).m128_u32[2] = HK_M128(HK_VECTOR4f_DEBUG_FILL_VALUE).m128_u32[0]; )
+			HK_ON_DEBUG( HK_M128(self).m128_u32[3] = HK_M128(HK_VECTOR4f_DEBUG_FILL_VALUE).m128_u32[0]; )
 		}
 		break;
 	case 2:
 		{
 			__m128i twohalfs = _mm_castps_si128( _mm_load_ss((const float*)p) );
 			self = _mm_castsi128_ps( _mm_unpacklo_epi16(_mm_setzero_si128(), twohalfs) );
-			HK_ON_DEBUG(HK_M128(self).m128_u32[2] = 0xffffffff; HK_M128(self).m128_u32[3] = 0xffffffff;)
+			HK_ON_DEBUG( HK_M128(self).m128_u32[2] = HK_M128(HK_VECTOR4f_DEBUG_FILL_VALUE).m128_u32[0]; )
+			HK_ON_DEBUG( HK_M128(self).m128_u32[3] = HK_M128(HK_VECTOR4f_DEBUG_FILL_VALUE).m128_u32[0]; )
 		}
 		break;
 	case 3:
 		{
 			__m128i h = _mm_castps_si128( _mm_load_ss((const float*)p) );
 			__m128 twohalfs = _mm_castsi128_ps( _mm_unpacklo_epi16(_mm_setzero_si128(), h) );
-			float x; p[2].store(&x);
-			__m128 val = _mm_load1_ps(&x);
+			__m128 val = _mm_castsi128_ps(_mm_cvtsi32_si128( p[2].getStorage() << 16) );
 			self = _mm_movelh_ps(twohalfs,val);
-			HK_ON_DEBUG(HK_M128(self).m128_u32[3] = 0xffffffff;)
+			HK_ON_DEBUG( HK_M128(self).m128_u32[3] = HK_M128(HK_VECTOR4f_DEBUG_FILL_VALUE).m128_u32[0]; )
 		}
 		break;
 	default:
@@ -1554,7 +1700,7 @@ struct unrollf_loadF16<N, HK_IO_BYTE_ALIGNED> { HK_FORCE_INLINE static void appl
 	self = _mm_castsi128_ps(_mm_or_si128(sign_shift, exp_mantissa));
 
 #if defined(HK_DEBUG)
-	for(int i=N; i<4; ++i) HK_M128(self).m128_u32[i] = 0xffffffff;
+	for(int i=N; i<4; ++i) HK_M128(self).m128_u32[i] = HK_M128(HK_VECTOR4f_DEBUG_FILL_VALUE).m128_u32[0];
 #endif
 } };
 template <int N>
@@ -1734,6 +1880,10 @@ struct unrollf_store<N, HK_IO_NOT_CACHED> { HK_FORCE_INLINE static void apply(co
 	if (N==4)
 	{
 		_mm_stream_ps(p, self);
+	}
+	else if (N==1)
+	{
+		_mm_stream_si32((int*)p, _mm_cvtsi128_si32(_mm_castps_si128(self)));
 	}
 	else
 	{
@@ -2055,7 +2205,7 @@ HK_FORCE_INLINE void hkVector4f::store(hkFloat16* p) const
 #undef HK_VECTOR4f_COMBINE_XYZ_W
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140621)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

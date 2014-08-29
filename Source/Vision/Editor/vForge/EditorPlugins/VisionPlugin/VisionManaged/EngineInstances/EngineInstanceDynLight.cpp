@@ -10,13 +10,11 @@
 #include <Vision/Editor/vForge/EditorPlugins/VisionPlugin/VisionManaged/EngineInstances/EngineInstanceDynLight.hpp>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/ShadowMapping/IVShadowMapComponent.hpp>
 
-#if defined( HK_ANARCHY )
-  #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/ShadowMapping/VMobileShadowMapComponentSpotDirectional.hpp>
-  #define SHADOW_MAP_COMPONENT_SPOT_DIRECTIONAL VMobileShadowMapComponentSpotDirectional
-#else
+#if !defined( HK_ANARCHY )
+  #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/ForwardRenderer/ForwardRenderer.hpp> 
+  #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/DeferredShading/DeferredShadingApp.hpp>
   #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/ShadowMapping/VShadowMapComponentSpotDirectional.hpp>
   #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/ShadowMapping/VShadowMapComponentPoint.hpp>
-  #define SHADOW_MAP_COMPONENT_SPOT_DIRECTIONAL VShadowMapComponentSpotDirectional
 #endif
 
 #using <mscorlib.dll>
@@ -33,7 +31,8 @@ namespace VisionManaged
     m_iVisibleBitmask = 0xffffffff;
     m_pColorLookUpFile = new VString(); // just a member is not allowed
     m_iColor = V_RGBA_WHITE.GetRGBA();
-    m_fIntensity = 1000.f;
+    m_fRadius = 1000.f;
+    m_fMultiplier = 1.0f;
     m_fAnimTime = 1.f;
     m_fAnimPhase = 0.f;
     m_fCoronaScale = 1.0f;
@@ -98,7 +97,7 @@ namespace VisionManaged
     rotMat.getAxisXYZ(&vDir, &vRight, &vUp);
 
     hkvVec3 vPos = m_pLight->GetPosition();
-    float fRange = m_fIntensity;//m_pLight->GetRadius(); // engine's radius might be 0.0 for static lights
+    float fRange = m_fRadius;
     VColorRef iColor;
     iColor.SetRGBA(m_iColor);
     iColor.a = 80;
@@ -224,7 +223,7 @@ namespace VisionManaged
       VisLightSrc_AnimColor_cl *pAnim = m_pLight->GetColorAnimation();
       pAnim->SetAnimCurve(*m_pColorLookUpFile,m_bSceneAnimated ? m_fAnimTime : 0.f,fPhase);
       pAnim->SetAnimPhaseShift(fPhase);
-      pAnim->SetAnimMaxIntensity(m_bEnabled ? m_fIntensity:0.f);
+      pAnim->SetAnimMaxMultiplier(m_bEnabled ? m_fMultiplier : 0.f);
       pAnim->SetRemoveLightWhenFinished(m_bRemoveLightAfterAnim);
       VColorRef iColor;
       iColor.SetRGBA(m_iColor);
@@ -236,11 +235,11 @@ namespace VisionManaged
   }
 
 
-  void EngineInstanceDynLight::SetIntensity(float fIntensity)
+  void EngineInstanceDynLight::SetIntensity(float fRadius)
   { 
-    m_fIntensity=fIntensity;
+    m_fRadius=fRadius;
     if (m_pLight)
-      m_pLight->SetIntensity(m_fIntensity);
+      m_pLight->SetRadius(m_fRadius);
   }
 
   void EngineInstanceDynLight::SetAttenuation(LightAttenuationType_e eMode, String ^sTextureFile)
@@ -256,7 +255,10 @@ namespace VisionManaged
   
   void EngineInstanceDynLight::SetMultiplier(float fMultiplier)
   {
-    m_pLight->SetMultiplier(fMultiplier);
+    m_fMultiplier = fMultiplier;
+    if (m_pLight)
+      m_pLight->SetMultiplier(m_fMultiplier);
+    UpdateAnimation();
   }
 
   void EngineInstanceDynLight::SetCastShadows(bool bWorld, bool bModel) 
@@ -332,21 +334,28 @@ namespace VisionManaged
   class VShadowMapComponentPoint_PREVIEW : public VShadowMapComponentPoint
   {
   public:
-    VShadowMapComponentPoint_PREVIEW() : VShadowMapComponentPoint(0) {}
-    VOVERRIDE bool IsRelevantForSerialization() const {return false;} // we dont want this component to be exported
+    VShadowMapComponentPoint_PREVIEW() : VShadowMapComponentPoint(0) 
+    {
+      NearClip *= Vision::World.GetGlobalUnitScaling();
+    }
+    VOVERRIDE bool IsRelevantForSerialization() const {return false;} // we don't want this component to be exported
     V_DECLARE_DYNAMIC(VShadowMapComponentPoint_PREVIEW);
   };
   V_IMPLEMENT_DYNAMIC(VShadowMapComponentPoint_PREVIEW,VShadowMapComponentPoint, Vision::GetEngineModule());
-#endif
 
-  class VShadowMapComponentSpotDirectional_PREVIEW : public SHADOW_MAP_COMPONENT_SPOT_DIRECTIONAL
+  class VShadowMapComponentSpotDirectional_PREVIEW : public VShadowMapComponentSpotDirectional
   {
   public:
-    VShadowMapComponentSpotDirectional_PREVIEW() : SHADOW_MAP_COMPONENT_SPOT_DIRECTIONAL(0) {}
-    VOVERRIDE bool IsRelevantForSerialization() const {return false;} // we dont want this component to be exported
+    VShadowMapComponentSpotDirectional_PREVIEW() : VShadowMapComponentSpotDirectional(0)
+    {
+      NearClip *= Vision::World.GetGlobalUnitScaling();
+    }
+
+    VOVERRIDE bool IsRelevantForSerialization() const {return false;} // we don't want this component to be exported
     V_DECLARE_DYNAMIC(VShadowMapComponentSpotDirectional_PREVIEW);
   };
-  V_IMPLEMENT_DYNAMIC(VShadowMapComponentSpotDirectional_PREVIEW, SHADOW_MAP_COMPONENT_SPOT_DIRECTIONAL, Vision::GetEngineModule());
+  V_IMPLEMENT_DYNAMIC(VShadowMapComponentSpotDirectional_PREVIEW, VShadowMapComponentSpotDirectional, Vision::GetEngineModule());
+#endif
 
 
   void EngineInstanceDynLight::RemovePreviewComponents(VType *pType)
@@ -366,53 +375,55 @@ namespace VisionManaged
 
   void EngineInstanceDynLight::SetUsePreviewShadowComponent(bool bEnablePreview)
   {
+#if !defined(HK_ANARCHY)
     if (!m_pLight)
       return;
 
-    bool bHasUserComponent =
-      m_pLight->Components().GetComponentOfType<SHADOW_MAP_COMPONENT_SPOT_DIRECTIONAL>() != NULL;
-
-#if !defined(HK_ANARCHY)
-    bHasUserComponent = bHasUserComponent || m_pLight->Components().GetComponentOfType<VShadowMapComponentPoint>() != NULL;
-#endif
+    const bool bHasUserComponent = (m_pLight->Components().GetComponentOfType<VShadowMapComponentSpotDirectional>() != NULL) ||
+                                   (m_pLight->Components().GetComponentOfType<VShadowMapComponentPoint>() != NULL);
 
     if (!bEnablePreview || bHasUserComponent)
     {
-#if !defined(HK_ANARCHY)
       RemovePreviewComponents(VShadowMapComponentPoint_PREVIEW::GetClassTypeId());
-#endif
       RemovePreviewComponents(VShadowMapComponentSpotDirectional_PREVIEW::GetClassTypeId());
       return;
     }
 
-    if ( m_pLight->GetType() != VIS_LIGHT_POINT )
+    // Currently mobile shadow maps have no filtering, thus are not really a good candidate to preview static light shadows.
+    const IVRendererNode *pRendererNode = Vision::Renderer.GetRendererNode(0);
+    const bool bCompatibleRenderer = pRendererNode->IsOfType(VDeferredRenderingSystem::GetClassTypeId()) || pRendererNode->IsOfType(VForwardRenderingSystem::GetClassTypeId());
+
+    if (m_pLight->GetType() != VIS_LIGHT_POINT)
     {
-#if !defined(HK_ANARCHY)
       RemovePreviewComponents(VShadowMapComponentPoint_PREVIEW::GetClassTypeId());
-#endif
-      VShadowMapComponentSpotDirectional_PREVIEW *pComp = m_pLight->Components().GetComponentOfType<VShadowMapComponentSpotDirectional_PREVIEW>();
-      if (pComp==NULL)
+      if (bCompatibleRenderer)
       {
-        pComp = new VShadowMapComponentSpotDirectional_PREVIEW();
-        pComp->SetShadowMapSize(256); // low resolution
-        pComp->SetCascadeCount(1);
-        m_pLight->AddComponent(pComp);
-        if (pComp->GetShadowMapGenerator()!=NULL) // the only reason why this may be NULL is that the renderer failed to initialize (e.g. no renderer node)
-          pComp->GetShadowMapGenerator()->SetConsiderCastShadowFlag(false);
+        VShadowMapComponentSpotDirectional_PREVIEW *pComp = m_pLight->Components().GetComponentOfType<VShadowMapComponentSpotDirectional_PREVIEW>();
+        if (pComp==NULL)
+        {
+          pComp = new VShadowMapComponentSpotDirectional_PREVIEW(); 
+          pComp->SetShadowMapSize((m_pLight->GetType()==VIS_LIGHT_SPOTLIGHT) ?  128 : 512); // low resolution
+          pComp->SetCascadeCount(1);
+          m_pLight->AddComponent(pComp);
+          if (pComp->GetShadowMapGenerator()!=NULL) // the only reason why this may be NULL is that the renderer failed to initialize (e.g. no renderer node)
+            pComp->GetShadowMapGenerator()->SetConsiderCastShadowFlag(false);
+        }
       }
-    } 
-#if !defined( HK_ANARCHY )
+    }
     else
     {
       RemovePreviewComponents(VShadowMapComponentSpotDirectional_PREVIEW::GetClassTypeId());
-      VShadowMapComponentPoint_PREVIEW *pComp = m_pLight->Components().GetComponentOfType<VShadowMapComponentPoint_PREVIEW>();
-      if (pComp==NULL)
+      if (bCompatibleRenderer)
       {
-        pComp = new VShadowMapComponentPoint_PREVIEW();
-        pComp->SetShadowMapSize(128); // low resolution
-        m_pLight->AddComponent(pComp);
-        if (pComp->GetShadowMapGenerator()!=NULL) // the only reason why this may be NULL is that the renderer failed to initialize (e.g. no renderer node)
-          pComp->GetShadowMapGenerator()->SetConsiderCastShadowFlag(false);
+        VShadowMapComponentPoint_PREVIEW *pComp = m_pLight->Components().GetComponentOfType<VShadowMapComponentPoint_PREVIEW>();
+        if (pComp==NULL)
+        {
+          pComp = new VShadowMapComponentPoint_PREVIEW();
+          pComp->SetShadowMapSize(256); // low resolution
+          m_pLight->AddComponent(pComp);
+          if (pComp->GetShadowMapGenerator()!=NULL) // the only reason why this may be NULL is that the renderer failed to initialize (e.g. no renderer node)
+            pComp->GetShadowMapGenerator()->SetConsiderCastShadowFlag(false);
+        }
       }
     }
 #endif
@@ -421,7 +432,7 @@ namespace VisionManaged
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

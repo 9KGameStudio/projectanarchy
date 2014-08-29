@@ -20,7 +20,7 @@
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Scripting/Lua/VisionLuaModule_wrapper.hpp>
 
 #include <Vision/Runtime/Base/String/VStringTokenizerInPlace.hpp>
-#include <Vision/Runtime/Base/System/Memory/VMemDbg.hpp>
+
 
 
 VRSDClientLuaImplementation::VRSDClientLuaImplementation()
@@ -185,14 +185,7 @@ bool VRSDClientLuaImplementation::UpdateLocalVariable(const char* Variable, cons
         return false;
 
       // now the variable is at the top of the stack, update its value
-      VRSDScriptSymbol::SymbolType Type = VRSDScriptSymbol::SYMBOL_USERDATA;
-
-      if(lua_isnumber(m_pLuaState, -1))
-        Type = VRSDScriptSymbol::SYMBOL_NUMBER;
-      else if(lua_isstring(m_pLuaState, -1))
-        Type = VRSDScriptSymbol::SYMBOL_STRING;
-      else if(lua_isboolean(m_pLuaState, -1))
-        Type = VRSDScriptSymbol::SYMBOL_BOOLEAN;
+      int iLuaType = lua_type(m_pLuaState, -1);
 
       // pop off the field again
       lua_pop(m_pLuaState, 1);
@@ -204,26 +197,10 @@ bool VRSDClientLuaImplementation::UpdateLocalVariable(const char* Variable, cons
         lua_pushnumber(m_pLuaState, (LUA_NUMBER)atoi(pLastField));
       }
 
-      // depending on the type push the correct stuff on the lua stack
-      if(Type == VRSDScriptSymbol::SYMBOL_NUMBER)
+      if (!PushValue(iLuaType, NewValue))
       {
-        lua_Number TempVar;
-        sscanf(NewValue, "%f", &TempVar);
-        lua_pushnumber(m_pLuaState, TempVar);
-      }
-      else if(Type == VRSDScriptSymbol::SYMBOL_STRING)
-      {
-        lua_pushstring(m_pLuaState, NewValue);
-      }
-      else if(Type == VRSDScriptSymbol::SYMBOL_BOOLEAN)
-      {
-        if(!strcmp(NewValue, "true") || !strcmp(NewValue, "1"))
-          lua_pushboolean(m_pLuaState, 1);
-        else
-          lua_pushboolean(m_pLuaState, 0);
-      }
-      else
         return false;
+      }
 
       if(Tokenizer.GetTokenCount() > 1)
       {
@@ -290,34 +267,8 @@ bool VRSDClientLuaImplementation::UpdateGlobalVariable(const char* szVarName, co
     lua_pushnumber(m_pLuaState, (LUA_NUMBER)atoi(pLastField));
   }
 
-  switch(iLuaType)
-  {
-    case LUA_TNUMBER:
-      {
-        lua_Number tempNumber=0;
-        sscanf(szNewValue, "%f", &tempNumber);
-        lua_pushnumber(m_pLuaState, tempNumber);
-      }
-      break;
-    case LUA_TSTRING:
-      lua_pushstring(m_pLuaState, szNewValue);
-      break;
-    case LUA_TBOOLEAN:
-      if( !VStringHelper::SafeCompare(szNewValue, "true") || !VStringHelper::SafeCompare(szNewValue, "1") )
-        lua_pushboolean(m_pLuaState, 1);
-      else
-        lua_pushboolean(m_pLuaState, 0);
-      break;
-
-    //we do not support the following types to edit:
-    //case LUA_TTABLE
-    //case LUA_TFUNCTION
-    //case LUA_TUSERDATA
-    //case LUA_TTHREAD
-    //case LUA_TLIGHTUSERDATA
-    default:
-      return false;
-  }
+  if (!PushValue(iLuaType, szNewValue))
+    return false;
 
   if( Tokenizer.GetTokenCount() > 1 )
   {
@@ -339,18 +290,58 @@ bool VRSDClientLuaImplementation::UpdateGlobalVariable(const char* szVarName, co
   return true;
 }
 
-bool VRSDClientLuaImplementation::UpdateHiddenGlobalVariable(const void* pUserDataParent, 
+bool VRSDClientLuaImplementation::UpdateDynamicProperty(const void* pUserDataParent, 
                                                              const char* szVarName, 
                                                              const char* szNewValue)
 {
-  const char* szFormatStr = "G."LUA_HIDDEN_GLOBAL_PREFIX"-%p-%s$";
+  VASSERT(m_pLuaState);
 
-  // build global variable string
-  VString sHiddenGlobalName;
-  sHiddenGlobalName.Format(szFormatStr, ((swig_lua_userdata *)pUserDataParent)->ptr, szVarName);
+  lua_State* L = m_pLuaState;
 
-  // try to update the global variable
-  return UpdateGlobalVariable(sHiddenGlobalName.AsChar(), szNewValue);
+  VLuaStackCleaner stackCleaner(L);
+
+  VTypedObject* pTypedObject = LUA_ExtractFromUserData(L, pUserDataParent);
+
+  if (pTypedObject == NULL)
+  {
+    return false;
+  }
+
+  LUA_LookupObjectProxy(L, pTypedObject);     // proxy or nil, TOP
+
+  if (lua_isnil(L, -1))
+  {
+    return false;
+  }
+
+  LUA_FetchDynPropertyTable(L);               // proxy, dynproptable or nil, TOP
+
+  if (lua_isnil(L, -1))
+  {
+    return false;
+  }
+
+  lua_pushstring(L, szVarName);               // proxy, dynproptable, key, TOP
+  lua_pushvalue(L, -1);                       // proxy, dynproptable, key, key, TOP
+
+  lua_rawget(L, -3);                          // proxy, dynproptable, key, value, TOP
+
+  if (lua_isnil(L, -1))
+  {
+    return false;
+  }
+
+  int iType = lua_type(L, -1);                // proxy, dynproptable, key, value, TOP
+  lua_pop(L, 1);                              // proxy, dynproptable, key, TOP
+
+  if (!PushValue(iType, szNewValue))          // proxy, dynproptable, key, newvalue, TOP
+  {
+    return false;
+  }
+
+  lua_rawset(L, -3);
+
+  return true;
 }
 
 bool VRSDClientLuaImplementation::GetUserDataPointerFromGlobal(const char* szVariable, void** ppUserData, void ** ppEnvironment)
@@ -602,8 +593,7 @@ bool VRSDClientLuaImplementation::GetGlobalSymbols(DynArray_cl<VRSDScriptSymbol>
     {  
       char* pSymbolName = (char*)lua_tostring(m_pLuaState, -2);
 
-      //filter generated dynamic properties, starting with $node-
-      if(pSymbolName != NULL && pSymbolName!=strstr(pSymbolName, LUA_HIDDEN_GLOBAL_PREFIX))
+      if(pSymbolName != NULL)
       {
         // if the variable is a table, get all child variables (one level deep only)
         if(lua_istable(m_pLuaState, -1))
@@ -825,7 +815,7 @@ bool VRSDClientLuaImplementation::GetSubSymbolsForGlobal(char* GlobalName, DynAr
 
       const char* pSymbolName = sKeyBuffer.AsChar();
 
-      if(pSymbolName && pSymbolName!=strstr(pSymbolName, LUA_HIDDEN_GLOBAL_PREFIX)) //remove the second condition if you would like to see the $node vars in the G table (vRSD)
+      if(pSymbolName)
       {
         // table member variable
         if(lua_istable(m_pLuaState, -1))
@@ -919,8 +909,11 @@ bool VRSDClientLuaImplementation::IsImplementation(const char* Name)
 
 void VRSDClientLuaImplementation::ErrorScriptEvent(VRSDScriptEvent* Event)
 {
+  if(!VScriptResourceManager::GetIgnoreEventsThisRun())
+  {
     VRSDScriptEventCallbackItem SECI(&ScriptEvent, Event);
     ScriptEvent.TriggerCallbacks(&SECI);
+  }
 
     // the data is now invalid
     m_pLuaState = NULL;
@@ -996,8 +989,11 @@ void VRSDClientLuaImplementation::Lua_DebugHook(lua_State* L, lua_Debug* ar)
     VRSDScriptEvent SE(eEventType, ar->currentline, eExecutionType, GetCorrectLuaSourceString(ar->source), ar->name, ar->linedefined);
 
     // create callback item and trigger the callback which in turn will send the event to the remote debugger
-    VRSDScriptEventCallbackItem SECI(&Impl->ScriptEvent, &SE);
-    Impl->ScriptEvent.TriggerCallbacks(&SECI);
+    if(!VScriptResourceManager::GetIgnoreEventsThisRun())
+    {
+      VRSDScriptEventCallbackItem SECI(&Impl->ScriptEvent, &SE);
+      Impl->ScriptEvent.TriggerCallbacks(&SECI);
+    }
 
     // the data is now invalid
     Impl->m_pLuaState = NULL;
@@ -1005,12 +1001,46 @@ void VRSDClientLuaImplementation::Lua_DebugHook(lua_State* L, lua_Debug* ar)
   }
 }
 
+bool VRSDClientLuaImplementation::PushValue(int iLuaType, const char* NewValue)
+{
+  switch (iLuaType)
+  {
+  case LUA_TNUMBER:
+  {
+    lua_Number tempNumber = 0;
+    sscanf(NewValue, "%f", &tempNumber);
+    lua_pushnumber(m_pLuaState, tempNumber);
+  }
+    break;
+  case LUA_TSTRING:
+    lua_pushstring(m_pLuaState, NewValue);
+    break;
+  case LUA_TBOOLEAN:
+    if (!VStringHelper::SafeCompare(NewValue, "true") || !VStringHelper::SafeCompare(NewValue, "1"))
+      lua_pushboolean(m_pLuaState, 1);
+    else
+      lua_pushboolean(m_pLuaState, 0);
+    break;
+
+    //we do not support the following types to edit:
+    //case LUA_TTABLE
+    //case LUA_TFUNCTION
+    //case LUA_TUSERDATA
+    //case LUA_TTHREAD
+    //case LUA_TLIGHTUSERDATA
+  default:
+    return false;
+  }
+
+  return true;
+}
+
 #if defined (_VISION_PS3)
 #pragma diag_pop
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

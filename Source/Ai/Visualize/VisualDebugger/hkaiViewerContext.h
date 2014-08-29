@@ -16,7 +16,7 @@
 /// A simple interface that viewers that want to know
 /// when hkWorlds are added and removed from the physics
 /// context can implement.
-class hkaiViewerContextWorldListener
+class HK_EXPORT_AI hkaiViewerContextWorldListener
 {
 public:
 	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_VDB,hkaiViewerContextWorldListener);
@@ -29,7 +29,7 @@ public:
 };
 
 /// This is the context that stores a list of hkaiWorld pointers for use by (Visual Debugger) AI viewers.
-class hkaiViewerContext :	public hkReferencedObject, 
+class HK_EXPORT_AI hkaiViewerContext : public hkReferencedObject, 
 							public hkProcessContext,
 							public hkaiWorld::Listener
 {
@@ -122,7 +122,7 @@ class hkaiViewerContext :	public hkReferencedObject,
 #endif  // HKAI_VIEWER_CONTEXT_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -18,6 +18,7 @@
 #include <Vision/Runtime/Base/System/VDateTime.hpp>
 
 #include <Vision/Runtime/Base/Math/hkvMath.h> //for hkvResult
+#include <Vision/Runtime/Base/Math/Type/VFloat16.hpp>
 #include <Vision/Runtime/Base/System/VNameValueListParser.hpp>
 
 
@@ -248,6 +249,77 @@ public:
     return m_uiLookupHash;
   }
 
+  ///
+  /// @name Read Operators
+  /// @{
+  ///
+
+  /// \brief
+  ///   Reads a char from the stream
+  inline IVFileInStream& operator>>(char& ch);
+
+  /// \brief
+  ///   Reads a signed char from the stream
+  inline IVFileInStream& operator>>(signed char& ch);
+
+  /// \brief
+  ///   Reads a bool from the stream
+  inline IVFileInStream& operator>>(bool &b);
+
+
+  /// \brief
+  ///   Reads a BYTE from the stream
+  VBASE_IMPEXP IVFileInStream& operator>>(BYTE& by);
+
+  /// \brief
+  ///   Reads a WORD from the stream
+  VBASE_IMPEXP IVFileInStream& operator>>(WORD& w);
+
+  /// \brief
+  ///   Reads a DWORD from the stream
+  VBASE_IMPEXP IVFileInStream& operator>>(DWORD& dw);
+
+  /// \brief
+  ///   Reads a LONG from the stream
+  VBASE_IMPEXP IVFileInStream& operator>>(LONG& l);
+
+  /// \brief
+  ///   Reads an __int64 from the stream
+  VBASE_IMPEXP IVFileInStream& operator>>(__int64& i);
+
+  /// \brief
+  ///   Reads an uint64 from the stream
+  VBASE_IMPEXP IVFileInStream& operator>>(uint64& i);
+
+  /// \brief
+  ///   Reads a VFloat16 from the stream
+  VBASE_IMPEXP IVFileInStream& operator>>(VFloat16& h);
+
+  /// \brief
+  ///   Reads a float from the stream
+  VBASE_IMPEXP IVFileInStream& operator>>(float& f);
+
+  /// \brief
+  ///   Reads a double from the stream
+  VBASE_IMPEXP IVFileInStream& operator>>(double& d);
+
+
+  /// \brief
+  ///   Reads a short from the stream
+  inline IVFileInStream& operator>>(short& w);
+
+  /// \brief
+  ///   Reads an int from the stream
+  inline IVFileInStream& operator>>(int& i);
+
+  /// \brief
+  ///   Reads an unsigned int from the stream
+  inline IVFileInStream& operator>>(unsigned int& u);
+
+  ///
+  /// @}
+  ///
+
 protected:
   VDateTime m_timeStamp;
   bool m_bEOF;
@@ -256,7 +328,19 @@ protected:
   unsigned int m_uiLookupHash;
 };
 
+inline IVFileInStream& IVFileInStream::operator>>(char& ch)
+{ return IVFileInStream::operator>>((BYTE&)ch); }
+inline IVFileInStream& IVFileInStream::operator>>(signed char& ch)
+{ return IVFileInStream::operator>>((BYTE&)ch); }
+inline IVFileInStream& IVFileInStream::operator>>(bool &b)
+{ return IVFileInStream::operator>>((BYTE&)b); }
 
+inline IVFileInStream& IVFileInStream::operator>>(short& w)
+{ return IVFileInStream::operator>>((WORD&)w); }
+inline IVFileInStream& IVFileInStream::operator>>(int& i)
+{ return IVFileInStream::operator>>((LONG&)i); }
+inline IVFileInStream& IVFileInStream::operator>>(unsigned int& u)
+{ return IVFileInStream::operator>>((LONG&)u); }
 
 /// \brief
 ///   This is the base class for all 'out streams', ie. streams that are used for writing to a data stream (e.g. a file or a memory stream).
@@ -341,7 +425,93 @@ public:
 
     return Write(szString, strlen(szString));
   }
+
+  ///
+  /// @name Write Operators
+  /// @{
+  ///
+
+public:
+  /// \brief
+  ///   Writes a char to the stream
+  inline IVFileOutStream& operator<<(char ch);
+
+  /// \brief
+  ///   Writes a signed char to the stream
+  inline IVFileOutStream& operator<<(signed char ch);
+
+  /// \brief
+  ///   Writes a bool to the stream
+  inline IVFileOutStream& operator<<(bool b);
+
+
+  /// \brief
+  ///   Writes a BYTE to the stream
+  VBASE_IMPEXP IVFileOutStream& operator<<(BYTE by);
+
+  /// \brief
+  ///   Writes a WORD to the stream
+  VBASE_IMPEXP IVFileOutStream& operator<<(WORD w);
+
+  /// \brief
+  ///   Writes a DWORD to the stream
+  VBASE_IMPEXP IVFileOutStream& operator<<(DWORD dw);
+
+  /// \brief
+  ///   Writes a LONG to the stream
+  VBASE_IMPEXP IVFileOutStream& operator<<(LONG l);
+
+  /// \brief
+  ///   Writes an __int64 to the stream
+  VBASE_IMPEXP IVFileOutStream& operator<<(__int64 i);
+
+  /// \brief
+  ///   Writes an uint64 to the stream
+  VBASE_IMPEXP IVFileOutStream& operator<<(uint64 i);
+
+  /// \brief
+  ///   Writes a VFloat16 to the stream
+  VBASE_IMPEXP IVFileOutStream& operator<<(const VFloat16& h);
+
+  /// \brief
+  ///   Writes a float to the stream
+  VBASE_IMPEXP IVFileOutStream& operator<<(float f);
+
+  /// \brief
+  ///   Writes a double to the stream
+  VBASE_IMPEXP IVFileOutStream& operator<<(double d);
+
+
+  /// \brief
+  ///   Writes a short to the stream
+  inline IVFileOutStream& operator<<(short w);
+
+  /// \brief
+  ///   Writes an int to the stream
+  inline IVFileOutStream& operator<<(int i);
+
+  /// \brief
+  ///   Writes an unsigned int to the stream
+  inline IVFileOutStream& operator<<(unsigned int u);
+
+  ///
+  /// @}
+  ///
 };
+
+inline IVFileOutStream& IVFileOutStream::operator<<(char ch)
+{ return IVFileOutStream::operator<<((BYTE&)ch); }
+inline IVFileOutStream& IVFileOutStream::operator<<(signed char ch)
+{ return IVFileOutStream::operator<<((BYTE&)ch); }
+inline IVFileOutStream& IVFileOutStream::operator<<(bool b)
+{ return IVFileOutStream::operator<<((BYTE&)b); }
+
+inline IVFileOutStream& IVFileOutStream::operator<<(short w)
+{ return IVFileOutStream::operator<<((WORD&)w); }
+inline IVFileOutStream& IVFileOutStream::operator<<(int i)
+{ return IVFileOutStream::operator<<((LONG&)i); }
+inline IVFileOutStream& IVFileOutStream::operator<<(unsigned int u)
+{ return IVFileOutStream::operator<<((LONG&)u); }
 
 
 /// \brief
@@ -543,41 +713,6 @@ VBASE_IMPEXP void VBase_InitFileManagement();
 // Resets the file access manager and asset management data
 VBASE_IMPEXP void VBase_DeInitFileManagement();
 
-
-namespace AssetSettings
-{
-  /// \brief
-  ///   Returns whether the Vision Engine should try to load default replacements for some file types.
-  ///
-  /// If this functionality is enabled, the Vision Engine tries to load platform-specific alternative 
-  /// versions of files whenever a file is being opened. If an alternative version exists, that version
-  /// is loaded; otherwise, the original file is loaded.
-  ///
-  /// \note
-  ///   While this functionality is currently enabled (as of Version 2013.1), it has been superseded with
-  ///   the functionality offered by the asset management system. If you are working with new scenes, or have
-  ///   converted your scenes to use asset management, you should disable this feature.
-  ///
-  /// \return
-  ///   \c true if the functionality is enabled; \c false if not
-  VBASE_IMPEXP bool GetUseAlternativeFiles();
-
-  /// \brief
-  ///   Sets whether the Vision Engine should try to load default replacements for some file types.
-  ///
-  /// If this functionality is enabled, the Vision Engine tries to load platform-specific alternative 
-  /// versions of files whenever a file is being opened. If an alternative version exists, that version
-  /// is loaded; otherwise, the original file is loaded.
-  ///
-  /// \note
-  ///   While this functionality is currently enabled (as of Version 2013.1), it has been superseded with
-  ///   the functionality offered by the asset management system. If you are working with new scenes, or have
-  ///   converted your scenes to use asset management, you should disable this feature.
-  /// \param bUse
-  ///   \c true to enabled this functionality; \c false to disable it
-  VBASE_IMPEXP void SetUseAlternativeFiles(bool bUse);
-}
-
 namespace AssetProfile
 {
   /// \brief
@@ -670,7 +805,7 @@ namespace AssetVariantKeys
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

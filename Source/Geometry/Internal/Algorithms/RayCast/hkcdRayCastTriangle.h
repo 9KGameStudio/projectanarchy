@@ -11,81 +11,101 @@
 #define HKCD_RAY_TRIANGLE_INTERSECTION_H
 
 #include <Geometry/Internal/Types/hkcdRay.h>
+#include <Geometry/Internal/Types/hkcdRayBundle.h>
 
+struct hkcdRayBundle;
 
+// Uncomment the next line to enable Ray-Triangle false negatives detection. Warning: This is VERY slow.
+//#define HKCD_DETECT_RAY_TRIANGLE_FALSE_NEGATIVES
 
-	
-	/// Performs a line-triangle intersection test.
-	/// Returns true if the line containing the given ray r=pos+t*dir intersects the triangle.
-	///	\param ray (Input) The ray.
-	///	\param a First vertex.
-	///	\param b Second vertex.
-	///	\param c Third vertex.
-	///	\param tolerance Tolerance below which a plane and ray can be considered parallel
-	///	\param distanceOut (Output) Signed distance along the ray direction (t) to the intersection point if hit.
-hkBool32 HK_CALL hkcdLineTriangleIntersect(
-	const hkcdRay& ray,
-	hkVector4Parameter vA, hkVector4Parameter vB, hkVector4Parameter vC,
-	hkSimdRealParameter tolerance, 
-	hkSimdReal& fractionOut);
-
-	/// Returns true and the fraction if the ray intersect the triangle between 0 and fractionInOut.
-HK_FORCE_INLINE hkBool32 HK_CALL hkcdSegmentTriangleIntersect(
-	const hkcdRay& ray,
-	hkVector4Parameter a, hkVector4Parameter b, hkVector4Parameter c,
-	hkVector4& nonUnitNormalOut,
-	hkSimdReal& fractionInOut);
-
-	/// Intersects a line segment with a triangle. Returns 1 if the segment intersects the triangle,
-	/// and 0 otherwise.
-	/// \param vFrom		(Input) Start point of the line segment.
-	/// \param vTo			(Input) End point of the line segment.
-	/// \param vA			(Input) First triangle vertex.
-	/// \param vB			(Input) Second triangle vertex.
-	/// \param vC			(Input) Third triangle vertex.
-	/// \param normalOut	(Output) Normal at the intersection point in case of successful intersection, undefined otherwise.
-HK_FORCE_INLINE hkBool32 HK_CALL hkcdSegmentTriangleIntersect(
-	const hkcdRay& ray,
-	hkVector4Parameter vA, hkVector4Parameter vB, hkVector4Parameter vC,
-	hkSimdRealParameter tolerance,
-	hkVector4& normalOut,
-	hkSimdReal& fractionInOut);
+/// Internal triangle functions, read the function comments carefully before using these functions.
+namespace hkcdRayCastTriangle
+{
+	/// Intersect a ray with a triangle.
+	/// This function ensures that a ray never passes through a closed mesh, however it might report hits slightly
+	/// outside the epsilon boundary of a triangle.
+	/// Triangles are considered two sided by default, but can be seen as one sided by setting the query flags.
+	///
+	/// Usage: This function is optimized for performance, not for usability! So please note that:
+	///		-	The endpoint of the ray is calculated by ray.start + ray.directon * fractionInOut
+	///		-	fractionInOut must be initialized (e.g. by ray.getFraction()).
+	///     -   ray.getFraction() is not used.
+	///		-   fractionInOut and normalOut are modified regardless whether you have a hit or not.
+	///			So you need to make sure that you only modify the input fraction of the next ray-triangle test if a
+	///			previous test had a hit.
+	/// Quality:
+	///     -	The ray will not go through a closed mesh.
+	///		-	If the start point is on a triangle, the ray might or might not hit.
+	///		-	If the end   point is on a triangle, the ray might or might not hit.
+	///         This is due to the fact that we are working with floating point numbers and it does not make sense
+	///         to fix this for some rare esoteric cases (like axis aligned triangles) and thereby making this code slower for
+	///         normal usage.
+	///     -   If a ray hits a triangle where the ray direction is nearly perpendicular to the triangle normal,
+	///         this function might return UNDEFINED_FACE_HIT. But if you change the ray so that it hits another part
+	///			of the triangle you might get a different result.
+	///		-   2 concatenated rays (the second ray's start-point is identical to the first rays end-point) 
+	///			might go through a mesh at the shared point
+	///     -   To account for numerical drift when you have tiled meshes, this function also inflates the triangles by
+	///			hkcdRayCastTriangle::g_tolerance (set to 0.01f by default).
+	/// 
+	/// Note about the implementation: The implementation calculates the perfect epsilon of how to expand the edges 
+	/// so we do not miss collisions. However if 2 edges form a very sharp angle (as seen from the ray start point),
+	/// the intersection of the 2 expanded edges (as seen from the ray start point) might be slightly outside the triangle.
+	/// Since the expanded edges are used to decide whether the ray hits, the ray might hit slightly outside the triangle.
+	/// Example: Your raylength is 100km, so we roughly expand the edges by 2.0f * 100km * FLOAT_EPS(=1e-7) = 2cm.
+	///          If our triangle corner is very sharp as seen from the ray start point (~1degree), the ray might hit the
+	///          triangle easily 20 or more centimeters outside the triangle.
+	HK_EXPORT_COMMON hkcdRayCastResult HK_CALL safeUsingDynamicTolerance(
+		const hkcdRay& ray,	hkVector4Parameter vA, hkVector4Parameter vB, hkVector4Parameter vC,
+		hkFlags<hkcdRayQueryFlags::Enum,hkUint32> flags, 
+		hkSimdReal& fractionInOut, hkVector4& nonUnitNormalOut );
 
 	/// Intersect a ray with a triangle.
-	/// Triangles are considered two sided by default, but can be one sided by setting the query flags.
-HK_FORCE_INLINE hkInt32 hkcdRayTriangleIntersect(
-	const hkcdRay& ray,
-	const hkVector4& a, const hkVector4& b, const hkVector4& c,
-	hkSimdReal* HK_RESTRICT fractionOut = HK_NULL, hkVector4* HK_RESTRICT normalOut = HK_NULL,
-	hkcdRayQueryFlags::Enum flags = hkcdRayQueryFlags::NO_FLAGS );
+	/// Same as safeUsingDynamicTolerance() but without dynamic tolerance.
+	/// Good numerical accuracy, about 30% faster than safeUsingDynamicTolerance(), but might pass through a mesh.
+	/// Also the likelihood of hitting a triangle outside its area is reduced by factor of 10.
+	/// Also this function never returns UNDEFINED_FACE_HIT.
+	/// Also this version ignores hkcdRayCastTriangle::g_tolerance
+	HK_EXPORT_COMMON hkcdRayCastResult HK_CALL fastUsingZeroTolerance(
+		const hkcdRay& ray,	hkVector4Parameter vA, hkVector4Parameter vB, hkVector4Parameter vC,
+		hkFlags<hkcdRayQueryFlags::Enum,hkUint32> flags, 
+		hkSimdReal& fractionInOut, hkVector4& nonUnitNormalOut );
 
-	/// Intersects a ray bundle with the triangle.
-HK_FORCE_INLINE hkVector4Comparison HK_CALL hkcdSegmentBundleTriangleIntersect(
-	const hkcdRayBundle& rayBundle,
-	hkVector4Parameter vA, hkVector4Parameter vB, hkVector4Parameter vC,
-	hkSimdRealParameter tolerance, hkFourTransposedPoints& normalsOut, hkVector4& fractionsInOut);
 
-	/// Intersect a sphere (ray + radius) with a triangle.
-hkBool32 HK_CALL	hkcdSphereCastTriangle(	const hkcdRay& ray, hkSimdRealParameter radius,
-											hkVector4Parameter vA, hkVector4Parameter vB, hkVector4Parameter vC,
-											hkSimdReal* fractionOut, hkVector4* planeOut = HK_NULL);
+	/// DEPRECATED: Intersects a ray bundle with the triangle. Not so fast and bad epsilon behavior.
+	HK_EXPORT_COMMON hkVector4Comparison HK_CALL hkcdSegmentBundleTriangleIntersect(
+		const hkcdRayBundle& rayBundle, hkVector4Parameter vA, hkVector4Parameter vB, hkVector4Parameter vC,
+		hkSimdRealParameter tolerance,
+		hkFourTransposedPoints& normalsOut, hkVector4& fractionsInOut );
 
-	/// intersect a ray with a triangle. This version has no epsilon, but it sorts the edges deterministically
-	/// to increase accuracy.
-	/// Summary:
-	///		- This version can miss triangles when a ray hits a connected mesh, but the likelihood is extremely low.
-	///		- When the ray hits the edge between 2 triangles, exactly one of the two triangle will be hit.
-	///		- This version is slightly slower than the others.
-HK_FORCE_INLINE hkBool32 HK_CALL hkcdSegmentTriangleIntersectImprovedAccuracy(
-	const hkcdRay& ray, hkVector4Parameter vA, hkVector4Parameter vB, hkVector4Parameter vC,
-	hkVector4& nonUnitNormalOut, hkSimdReal& fractionInOut);
+	/// Intersect a sphere (ray + radius) with a triangle. 
+	HK_EXPORT_COMMON hkBool32 HK_CALL sphereCastTriangle(
+		const hkcdRay& ray, hkSimdRealParameter radius,
+		hkVector4Parameter vA, hkVector4Parameter vB, hkVector4Parameter vC,
+		hkSimdReal* fractionOut, hkVector4* planeOut );
 
-#include <Geometry/Internal/Algorithms/RayCast/hkcdRayCastTriangle.inl>
+	/// Inline implementation of safeUsingDynamicTolerance() and fastZeroTolerance(), only available if you have access to the .inl file
+	template<bool ENABLE_DYNAMIC_TOLERANCE, bool SORT_EDGES, bool ENABLE_BEVEL_PLANE_CHECK>
+	HK_FORCE_INLINE hkcdRayCastResult HK_CALL _rayTriangleImpl(
+		const hkcdRay& ray, hkVector4Parameter vA, hkVector4Parameter vB, hkVector4Parameter vC,
+		hkFlags<hkcdRayQueryFlags::Enum,hkUint32> flags, hkSimdReal& fractionInOut, hkVector4& nonUnitNormalOut );
+
+
+	/// When a ray is cast against triangles using safeUsingDynamicTolerance(), the triangles are virtually inflated
+	/// by this tolerance. This might be necessary if your have subdivided a mesh into multiple bodies and you get small
+	/// gaps between neighboring meshes due to numerical inaccuracies.
+	/// The default value is 1cm, which is good for tiled meshes up to 100km away from the origin.
+	/// If you have a perfect mesh, you can set this value to 0.
+	extern hkSimdReal g_tolerance;
+
+	/// The default value for g_tolerance.
+	extern const hkSimdReal g_defaultTolerance;
+}
 
 #endif	//	HKCD_RAY_TRIANGLE_INTERSECTION_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -15,7 +15,7 @@
 /// Unfortunately there is no easy way to check whether OutputDebugString
 /// has succeeded (win9x issues) so console output will simply
 /// disappear when not debugging.
-class hkDebugConsoleStreamWriter : public hkStreamWriter
+class HK_EXPORT_COMMON hkDebugConsoleStreamWriter : public hkStreamWriter
 {
 	public:
 
@@ -27,7 +27,7 @@ class hkDebugConsoleStreamWriter : public hkStreamWriter
 #endif //HK_BASE_DEBUGCONSOLESTREAMWRITER_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

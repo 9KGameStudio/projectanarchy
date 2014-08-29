@@ -54,7 +54,7 @@ class hkOstream;
 	/// All Havok allocations are routed through hkMemoryRouter.
 	/// Generally, each thread has a thread-local hkMemoryRouter instance which
 	/// is initialized by the hkMemorySystem.
-class hkMemoryRouter
+class HK_EXPORT_COMMON hkMemoryRouter
 {
 	//+hk.MemoryTracker(ignore=True)
 	public:
@@ -221,7 +221,7 @@ inline hkMemoryRouter* HK_CALL hkMemoryRouter::getInstancePtr()
 		HK_FORCE_INLINE void  HK_CALL operator delete(void* p, hk_size_t nbytes) { \
 			hkReferencedObject* b = static_cast<hkReferencedObject*>(p); \
 			HK_MEMORY_TRACKER_ON_DELETE_REFOBJECT(b); \
-			hkMemoryRouter::getInstance().ALLOCATOR().blockFree(p, (b->m_memSizeAndFlags == 0xffff) ? static_cast<int>(nbytes) : b->m_memSizeAndFlags); }	\
+			hkMemoryRouter::getInstance().ALLOCATOR().blockFree(p, (b->getMemorySizeAndFlags() == 0xffff) ? static_cast<int>(nbytes) : b->getMemorySizeAndFlags()); }	\
 		HK_FORCE_INLINE void* HK_CALL operator new(hk_size_t, void* p)	{ return p; }	\
 		HK_FORCE_INLINE void* HK_CALL operator new[](hk_size_t, void* p){ HK_BREAKPOINT(0); return p; }	\
 		HK_OPERATOR_DELETE \
@@ -254,7 +254,7 @@ inline hkMemoryRouter* HK_CALL hkMemoryRouter::getInstancePtr()
 	#define HK_DECLARE_DERIVED_FROM_REFERENCEDOBJECT() \
 			HK_FORCE_INLINE const hkReferencedObject* iMustBeDerivedFromReferencedObject() const { return static_cast<const hkReferencedObject*>(this); }
 	#define HK_DECLARE_NOT_A_REFERENCEDOBJECT() \
-			HK_FORCE_INLINE void iShouldNotHaveVtable() const { int m_memSizeAndFlags = 0; m_memSizeAndFlags--; /* if you get this error, you derive from hkReferencedObject! */ }
+		HK_FORCE_INLINE void iShouldNotHaveVtable() const { int m_memSizeFlagsAndRefCount = 0; m_memSizeFlagsAndRefCount--; /* if you get this error, you derive from hkReferencedObject! */ }
 #else
 	#define HK_DECLARE_DERIVED_FROM_REFERENCEDOBJECT()
 	#define HK_DECLARE_NOT_A_REFERENCEDOBJECT()
@@ -414,7 +414,7 @@ HK_TEMPLATE_ALLOCATOR(Heap, heap)
 HK_TEMPLATE_ALLOCATOR(Temp, temp)
 
 #if defined(HK_DEBUG) && !defined(HK_PLATFORM_PS3_SPU)
-extern void HK_CALL HK_ASSERT_OBJECT_SIZE_OK_FUNC(hk_size_t nbytes);
+extern HK_EXPORT_COMMON void HK_CALL HK_ASSERT_OBJECT_SIZE_OK_FUNC(hk_size_t nbytes);
 #	define HK_ASSERT_OBJECT_SIZE_OK(A) HK_ASSERT_OBJECT_SIZE_OK_FUNC(A)
 #else
 #	define HK_ASSERT_OBJECT_SIZE_OK(A)
@@ -423,7 +423,7 @@ extern void HK_CALL HK_ASSERT_OBJECT_SIZE_OK_FUNC(hk_size_t nbytes);
 #endif // HKBASE_hkMemoryRouter_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

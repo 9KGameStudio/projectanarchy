@@ -6,7 +6,7 @@
  *
  */
 
-HK_FORCE_INLINE const hkbSymbolLinker& hkbWorld::getEventLinker()
+HK_FORCE_INLINE const hkbSymbolLinker& hkbWorld::getEventLinker() const
 {
 	return m_eventLinker;
 }
@@ -61,8 +61,18 @@ HK_FORCE_INLINE void hkbWorld::setUnloadedAnimationListener( hkbUnloadedAnimatio
 	m_unloadedAnimationListener = unloadedAnimationListener;
 }
 
+HK_FORCE_INLINE hkReal hkbWorld::getBaseTimestep() const
+{
+	return m_baseTimestep;
+}
+
+HK_FORCE_INLINE void hkbWorld::setBaseTimestep( hkReal baseTimestep )
+{
+	m_baseTimestep = baseTimestep;
+}
+
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

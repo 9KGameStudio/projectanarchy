@@ -86,7 +86,6 @@ public:
   ///   Sets the default lighting color.
   VISION_APIFUNC virtual void SetDefaultLightingColor(VColorRef iColor) HKV_OVERRIDE;
 
-
   ///
   /// @}
   ///
@@ -139,7 +138,6 @@ public:
   ///
   /// @}
   ///
-
 };
 
 
@@ -267,7 +265,8 @@ public:
   /// The default behaviour is that mesh buffer objects are rendered first.
   ///
   /// \note
-  ///   Only the render hooks in between VRH_PRE_RENDERING and VRH_CORONAS_AND_FLARES will be taken into account, see VRenderHook_e.
+  ///   Only the render hooks in between VRH_PRE_RENDERING and VRH_CORONAS_AND_FLARES will be taken into account, see
+  ///   VRenderHook_e. This function has no effect when using interleaved translucency sorted rendering.
   ///
   /// \param eRenderHook
   ///   The render hook order to customize.
@@ -420,14 +419,14 @@ public:
   VTextureObjectPtr m_spSpotlightTexture;                               ///< The default projected texture.
 
   // VTypedObject
-  V_DECLARE_DYNAMIC_DLLEXP(VisionRenderLoop_cl,VISION_APIFUNC)
+  V_DECLARE_DYNAMIC_DLLEXP(VisionRenderLoop_cl,VISION_APIDATA)
 };
 
 
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

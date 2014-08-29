@@ -40,6 +40,9 @@ public:
   /// \brief Sets the effect to be used for rendering the mobile water.
   EFFECTS_IMPEXP void SetEffect(VCompiledEffect *pEffect);
 
+  /// \brief Returns the currently used effet to render the water
+  EFFECTS_IMPEXP VCompiledEffect* GetEffect();
+
   /// \brief Reassign the effect to the mobile water shape.
   EFFECTS_IMPEXP void ReassignEffect();
 
@@ -50,7 +53,7 @@ public:
   EFFECTS_IMPEXP void SetSize(hkvVec2 size);
 
   /// \brief Sets the number of subdivisions to be used for the water plane.
-  EFFECTS_IMPEXP void SetNumGridSubdivisions(int x, int y);
+  EFFECTS_IMPEXP void SetGridCellSize(float x, float y);
 
   /// \brief Sets if a radial grid should be used instead of a plane.
   EFFECTS_IMPEXP void SetUseRadialGrid(bool bValue);
@@ -113,7 +116,7 @@ private:
   // member variables
   VisMeshBufferObjectPtr m_spMeshBufferObject;
   hkvVec3 m_localPlaneCorners[4];
-  int  m_iNumGridSubdivisions[2];
+  hkvVec2 m_gridCellSize;
   bool m_bUseRadialGrid;
   bool m_bUseStaticLighting;
   hkvVec2 m_textureTiling;
@@ -140,6 +143,9 @@ public:
   EFFECTS_IMPEXP static VMobileWaterManager& GlobalManager();
   /// \brief overridden method
   EFFECTS_IMPEXP virtual void OnHandleCallback(IVisCallbackDataObject_cl *pData) HKV_OVERRIDE;
+
+  inline int GetNumInstances() { return m_Instances.Count(); }
+  VMobileWater* GetInstance(int i) { return m_Instances.GetAt(i); }
 
 private:
   void Add(VMobileWater* pElement);
@@ -225,8 +231,8 @@ public:
   VWaterPlaneGeneratorLightgrid(hkvVec3 vWorldPosition, hkvMat3 rotation, hkvVec3 scale, VLightGrid_cl* pLightGrid) :
     m_vWorldPosition(vWorldPosition),
     m_vScale(scale),
-    m_rotation(rotation),
-    m_pLightGrid(pLightGrid)
+    m_pLightGrid(pLightGrid),
+    m_rotation(rotation)
   {
 
   }
@@ -234,8 +240,8 @@ public:
   VWaterPlaneGeneratorLightgrid(hkvVec3 vWorldPosition, hkvMat3 rotation, hkvVec3 scale, VLightGrid_cl* pLightGrid, size_t uiStride ) :
     m_vWorldPosition(vWorldPosition),
     m_vScale(scale),
-    m_rotation(rotation),
-    m_pLightGrid(pLightGrid)
+    m_pLightGrid(pLightGrid),
+    m_rotation(rotation)
   {
     m_uiStride = uiStride;
   }
@@ -257,7 +263,7 @@ private:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140710)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

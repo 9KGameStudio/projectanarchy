@@ -23,7 +23,7 @@
 extern VModule g_vHavokModule;
 
 // Common typedefs
-typedef VPListT<VisStaticMeshInstance_cl> VisStaticMeshInstCollection;
+typedef VPListT<class VisStaticMeshInstance_cl> VisStaticMeshInstCollection;
 
 
 #if defined(SN_TARGET_PS3)
@@ -45,7 +45,6 @@ typedef VPListT<VisStaticMeshInstance_cl> VisStaticMeshInstCollection;
 #pragma managed(push, off)
 
 // Havok - Math and base include
-#include <Common/Base/KeyCode.h>
 #include <Common/Base/hkBase.h>
 #include <Common/Base/Ext/hkBaseExt.h>
 #include <Common/Base/System/hkBaseSystem.h>
@@ -59,9 +58,11 @@ typedef VPListT<VisStaticMeshInstance_cl> VisStaticMeshInstCollection;
 // Havok - Dynamics includes
 #include <Physics2012/Collide/hkpCollide.h>
 #include <Physics2012/Collide/Filter/Group/hkpGroupFilter.h>
-#include <Physics2012/Dynamics/World/hkpWorld.h>
-#include <Physics2012/Dynamics/Entity/hkpRigidBody.h>
+#include <Physics2012/Dynamics/Action/hkpUnaryAction.h>
 #include <Physics2012/Dynamics/Collide/ContactListener/hkpContactListener.h>
+#include <Physics2012/Dynamics/Entity/hkpRigidBody.h>
+#include <Physics2012/Dynamics/World/hkpWorld.h>
+
 
 #include <Physics2012/Collide/Shape/Convex/Box/hkpBoxShape.h>
 #include <Physics2012/Collide/Shape/Convex/Sphere/hkpSphereShape.h>
@@ -116,7 +117,7 @@ public:
 #endif // VISION_HAVOK_INCLUDED_HPP
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

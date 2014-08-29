@@ -117,7 +117,10 @@ namespace Editor
         ITEM_EXPORT = _listBox.Items.Add("Export to engine file");
       }
 
-      editorService.DropDownControl(_listBox);
+      using (EditorManager.ActiveView.AcquireModal())
+      {
+        editorService.DropDownControl(_listBox);
+      }
       return _rendererSetup; // might have changed
     }
 
@@ -174,7 +177,7 @@ namespace Editor
 
       try
       {
-        BinaryFormatter fmt = SerializationHelper.BINARY_FORMATTER;
+        IFormatter fmt = SerializationHelper.AUTO_FORMATTER;
         FileStream fs = new FileStream(filename, FileMode.Create);
         fmt.Serialize(fs, _rendererSetup);
         fs.Close();
@@ -202,7 +205,7 @@ namespace Editor
       RendererSetup _setup = null;
       try
       {
-        BinaryFormatter fmt = SerializationHelper.BINARY_FORMATTER;
+        IFormatter fmt = SerializationHelper.AUTO_FORMATTER;
         FileStream fs = new FileStream(filename, FileMode.Open, FileAccess.Read);
         _setup = (RendererSetup)fmt.Deserialize(fs);
         fs.Close();
@@ -511,30 +514,7 @@ namespace Editor
       _mapProjection.Parent = this;
       EditorManager.EngineManager.SetMapProjection(_mapProjection.Type, _mapProjection.Properties, SceneReferenceLocation);
 
-      try
-      {
-        if (Modifiable)
-        {
-          MigratePostprocessingShapes();
-
-          // old scene import?
-          if (_renderer != null && RendererNodeClass == IRendererNodeManager.RENDERERNODECLASS_NONE)
-          {
-            CheckRendererNodeRequirementVisitor visitor = new CheckRendererNodeRequirementVisitor();
-            EditorManager.Scene.RunShapeVisitor(visitor);
-            if (visitor.NeedsRendererNodeClass)
-              RendererNodeClass = IRendererNodeManager.RENDERERNODECLASS_FORWARD;
-            else
-              RendererNodeClass = IRendererNodeManager.RENDERERNODECLASS_SIMPLE;  // Always use a simple renderer node rather than none
-          }
-        }
-      }
-      catch (Exception ex)
-      {
-        EditorManager.DumpException(ex, true);
-      }
-
-      // Make sure the postprocessor array is not NULL.
+      // Make sure the post-processor array is not NULL.
       if (_currentSettings._rendererSetup._rendererComponents == null)
       {
         _currentSettings._rendererSetup._rendererComponents = new ShapeComponentCollection();
@@ -565,6 +545,7 @@ namespace Editor
       view.NearClipDistance = _currentSettings._fNearClip;
       view.FarClipDistance = _currentSettings._fFarClip;
       view.FOV = new Vector2F(_currentSettings._fFovX, 0.0f);
+      view.LODScale = _currentSettings._fLODScale;
       EditorManager.ActiveView.SetViewSettings(view, true);
 
       // now performed on each engine instance creation
@@ -722,6 +703,20 @@ namespace Editor
         if (TicksPerSecond == 0)
           return PropertyFlags_e.Hidden;
       }
+      else if (HasRendererNode)
+      {
+        DynamicProperty prop = RendererProperties.GetProperty(pd.Name);
+        if (prop != null)
+          return EditorManager.RendererNodeManager.GetRendererPropertyFlags(prop);
+      }
+
+      // make scene location and projection read-only
+      if (_mapProjection != null && _mapProjection.IsLoadedFromFile)
+      {
+        if (pd.Name == "MapProjection" || pd.Name.StartsWith("Location_"))
+          return PropertyFlags_e.Readonly;
+      }
+
       return flags;
     }
 
@@ -914,11 +909,11 @@ namespace Editor
     float _scriptThinkInterval = 0;
 
     /// <summary>
-    /// Defines the think intervall of all scripts
+    /// Defines the think interval of all scripts
     /// </summary>
     [SortedCategory(CAT_SCRIPTING, CATORDER_SCRIPTING), PropertyOrder(2)]
-    [Description("Defines the think intervall of all scripts managed by the VScriptResourceManager. Use 0 for every frame."), DefaultValue(0.0f)]
-    public float ThinkIntervall
+    [Description("Defines the think interval of all scripts managed by the VScriptResourceManager. Use 0 for every frame."), DefaultValue(0.0f)]
+    public float ThinkInterval
     {
       get { return _scriptThinkInterval; }
       set
@@ -1096,6 +1091,48 @@ namespace Editor
       EditorManager.ActiveView.UpdateView(false);
     }
 
+    [Description("Sets the global LOD scaling value. A value of 1.0 defines standard LOD behavior, larger values cause more aggressive LOD clipping.")]
+    [SortedCategory(CAT_VIEW, CATORDER_VIEW), PropertyOrder(10)]
+    [EditorAttribute(typeof(SliderEditor), typeof(UITypeEditor)), SliderRangeAttribute(0.0f, 10.0f, 1001), PropertyLiveUpdate("LODScaleLiveUpdate"),
+    DefaultValue(1.0f)]
+    public float LODScaling
+    {
+      get
+      {
+        return _currentSettings._fLODScale;
+      }
+      set
+      {
+        _currentSettings._fLODScale = value;
+        ApplyLODScale(_currentSettings._fLODScale);
+        if (this.Modifiable)
+          Modified = true;
+      }
+    }
+
+    [Browsable(false)]
+    public object LODScaleLiveUpdate
+    {
+      set
+      {
+        float fLOD = _currentSettings._fLODScale;
+        if (value is float)
+          fLOD = (float)value;
+        ApplyLODScale(fLOD);
+
+      }
+    }
+
+    void ApplyLODScale(float fLODScale)
+    {
+      ViewSettings view = EditorManager.ActiveView.CurrentViewSettings;
+      view.LODScale = fLODScale;
+      EditorManager.ActiveView.SetViewSettings(view, true);
+      EditorManager.ActiveView.UpdateView(false);
+    }
+
+
+
     OrthographicViewBoxShape _orthographicViewBox;
 
 
@@ -1228,6 +1265,10 @@ namespace Editor
         if (RendererNodeClass == old && !_forceSetSettings)
           return;
 
+        // Save the editor mode and stop "Animate / Play the Game" in order to flush the scene state (e.g. OnBeforeSceneUnloaded/OnAfterSceneLoaded needs to be performed)
+        EditorManager.Mode oldMode = EditorManager.EditorMode;
+        EditorManager.EditorMode = EditorManager.Mode.EM_NONE;
+
         // remember old settings
         if (!string.IsNullOrEmpty(old))
         {
@@ -1306,6 +1347,9 @@ namespace Editor
           IScene.SendLayerChangedEvent(new LayerChangedArgs(this, null, LayerChangedArgs.Action.PropertyChanged)); // this event is necessary to update the property flags
           IScene.SendShaderResourceChangedEvent(new EventArgs()); // this event is necessary to ensure that the material editor gets informed about the renderer node change
         }
+
+        // Restore the editor mode
+        EditorManager.EditorMode = oldMode;
       }
     }
 
@@ -1411,8 +1455,17 @@ namespace Editor
       }
     }
 
+    [Browsable(false)]
+    public bool FinalEnableTimeOfDay
+    {
+      get
+      {
+        return _currentSettings._bWantsTimeOfDay && EditorManager.RendererNodeManager.SupportsTimeOfDay();
+      }
+    }
+
     [Browsable(true)]
-    [SortedCategory(CAT_ATMOSPHERE, CATORDER_ATMOSPHERE), PropertyOrder(21)]
+    [SortedCategory(CAT_ATMOSPHERE, CATORDER_ATMOSPHERE), PropertyOrder(20)]
     [EditorAttribute(typeof(TimeOfDayEditor), typeof(UITypeEditor))]
     [Description("All time-of-day properties")]
     public TimeOfDay TimeOfDay
@@ -1430,6 +1483,11 @@ namespace Editor
         {
           _currentSettings._timeOfDay.Owner = this;
           _currentSettings._timeOfDay.SceneSky = this.SkyConfig;
+
+          // Apply to engine
+          EditorManager.RendererNodeManager.UpdateTimeOfDay(_currentSettings._timeOfDay);
+          // Update the SkyConfig since the Time of Day may have taken control over the Sky
+          SkyConfig.Update();
         }
         if (_sunPathShape != null)
           _sunPathShape.TimeOfDay = _currentSettings._timeOfDay;
@@ -1455,9 +1513,10 @@ namespace Editor
     }
 
     [Browsable(true)]
-    [SortedCategory(CAT_ATMOSPHERE, CATORDER_ATMOSPHERE), PropertyOrder(22)]
-    [Description("Current time in the time-of-day system")]
-    [EditorAttribute(typeof(SliderEditor), typeof(UITypeEditor)), SliderRange(0.0f, 1.0f, 1440), PropertyLiveUpdate("CurrentTimeLiveUpdate"),
+    [SortedCategory(CAT_ATMOSPHERE, CATORDER_ATMOSPHERE), PropertyOrder(21)]
+    [Description("Current time of day")]
+    [TypeConverter(typeof(NormalizedFloat2TimeConverter))]
+    [EditorAttribute(typeof(ToDSliderEditor), typeof(UITypeEditor)), SliderRange(0.0f, 1.0f, 1440), PropertyLiveUpdate("CurrentTimeLiveUpdate"),
     DefaultValue(0.5f)]
     public float CurrentTime
     {
@@ -1561,19 +1620,13 @@ namespace Editor
       }
     }
 
-    [Browsable(false)]
-    public bool FinalEnableTimeOfDay
-    {
-      get
-      {
-        return _currentSettings._bWantsTimeOfDay && EditorManager.RendererNodeManager.SupportsTimeOfDay();
-      }
-    }
-
     /// <summary>
     /// Fog setup
     /// </summary>
-    [Browsable(false)]
+    [Browsable(true)]
+    [SortedCategory(CAT_ATMOSPHERE, CATORDER_ATMOSPHERE), PropertyOrder(3)]
+    [Description("Fog setup")]
+    [EditorAttribute(typeof(FogEditor), typeof(UITypeEditor))]
     public FogSetup FogSetup
     {
       get
@@ -1757,13 +1810,12 @@ namespace Editor
       if (EditorManager.GetPluginByName(pluginName) == null)
         return;
 
-      BinaryFormatter fmt = SerializationHelper.BINARY_FORMATTER;
-      FileStream fs = fileInfo.OpenRead();
-      ArrayList objList = (ArrayList)fmt.Deserialize(fs);
-      fs.Close();
-
-      ArrayList targetList = _customSceneObjects.GetObjects(pluginName, true);
-      targetList.AddRange(objList);
+      IFormatter fmt = SerializationHelper.AUTO_FORMATTER;
+      using (FileStream fs = fileInfo.OpenRead())
+      {
+        ArrayList objList = (ArrayList)fmt.Deserialize(fs);
+        _customSceneObjects.SetObjects(pluginName, objList);
+      }
     }
 
     private void LoadCustomObjectsFromFiles(string pathName)
@@ -1773,20 +1825,29 @@ namespace Editor
         DirectoryInfo dirInfo = new DirectoryInfo(pathName);
         foreach (FileInfo fileInfo in dirInfo.GetFiles("*.PluginData", SearchOption.TopDirectoryOnly))
         {
-          LoadCustomObjectsFromFile(fileInfo);
+          try
+          {
+            LoadCustomObjectsFromFile(fileInfo);
+          }
+          catch (System.Exception ex)
+          {
+            EditorManager.DumpException(ex);
+            EditorManager.ShowMessageBox(string.Format("Error loading '{0}': {1}", fileInfo.FullName, ex.Message), "Error ", MessageBoxButtons.OK, MessageBoxIcon.Error);
+          }
         }
       }
-      catch (Exception ex)
+      catch (System.Exception ex)
       {
         EditorManager.DumpException(ex);
-        EditorManager.ShowMessageBox("Error ", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        EditorManager.ShowMessageBox(ex.Message, "Error ", MessageBoxButtons.OK, MessageBoxIcon.Error);
       }
+      
     }
 
     private bool SaveCustomObjectsToFile(string fileName, ArrayList customObjects)
     {
       ManagedBase.RCS.GetProvider().EditFile(fileName);
-      BinaryFormatter fmt = SerializationHelper.BINARY_FORMATTER;
+      IFormatter fmt = SerializationHelper.AUTO_FORMATTER;
 
       try
       {
@@ -1796,7 +1857,7 @@ namespace Editor
         fmt.Serialize(fs, customObjects);
         fs.Close();
 
-        ManagedBase.RCS.GetProvider().AddFile(fileName, true /* Binary file */);
+        ManagedBase.RCS.GetProvider().AddFile(fileName, bIsBinaryFile: !EditorManager.Settings.UseYamlSerialization);
       }
       catch (System.UnauthorizedAccessException)
       {
@@ -1834,8 +1895,21 @@ namespace Editor
         _currentSettings._skyConfig.SaveSky(EditorManager.Scene.AbsoluteFileName + ".Layers\\");
       }
 
+
+      var oldCustomObjects = _customSceneObjects;
+
       // Collect any custom scene objects from plug-ins...
       _customSceneObjects = new CustomSceneObjectCollection(true, this);
+
+      if (oldCustomObjects != null && !oldCustomObjects.IsLegacyMode)
+      {
+        // Reuse the empty array lists from loading in order to keep serialization stable
+        foreach (var pair in oldCustomObjects)
+        {
+          _customSceneObjects.SetObjects(pair.Key, pair.Value);
+        }
+      }
+
       CustomSceneSerializationArgs customObjArg = new CustomSceneSerializationArgs(_customSceneObjects);
       EditorManager.OnCustomSceneSerialization(customObjArg); // collect the objects
 
@@ -1855,13 +1929,15 @@ namespace Editor
           break;
         }
       }
-      _customSceneObjects = null;
+
+      // Clear lists to prevent memory leaks, but keep the ArrayLists around to preserve object identity across serialization
+      foreach (var pair in _customSceneObjects)
+      {
+        pair.Value.Clear();
+      }
 
       return bResult;
     }
-
-    // old 7.6.X version
-    Renderer _renderer = null;
 
     /// <summary>
     /// Called when deserializing
@@ -1900,10 +1976,6 @@ namespace Editor
         // view settings:
         if (SerializationHelper.HasElement(info, "_fovX"))
           _currentSettings._fFovX = info.GetSingle("_fovX");
-
-        // old version
-        if (SerializationHelper.HasElement(info, "_renderer"))
-          _renderer = (Renderer)info.GetValue("_renderer", typeof(Renderer));
 
         // new version:
         if (SerializationHelper.HasElement(info, "_rendererNodeClass"))
@@ -2045,20 +2117,21 @@ namespace Editor
     public override void OnDeserialization()
     {
       base.OnDeserialization();
-      if (_renderer != null)
-        _renderer.Owner = this;
 
       if (_customSceneObjects != null)
       {
         CustomSceneSerializationArgs customObjArg = new CustomSceneSerializationArgs(_customSceneObjects);
         EditorManager.OnCustomSceneSerialization(customObjArg); // notify the tools
-        _customSceneObjects = null;
+
+        // Clear lists to prevent memory leaks, but keep the ArrayLists around to preserve object identity across serialization
+        foreach (var pair in _customSceneObjects)
+        {
+          pair.Value.Clear();
+        }
       }
 
       try
       {
-        MigrateRendererProperties(_renderer); // this can be removed later
-
         // new renderer type properties
         if (RendererNodeClass == IRendererNodeManager.RENDERERNODECLASS_NONE)
         {
@@ -2141,10 +2214,8 @@ namespace Editor
               DynLightShape backLightShape = new DynLightShape("Back Light");
               AddPendingAction(AddShapeAction.CreateAddShapeAction(backLightShape, this.Root, this, true));
             }
-
           }
         }
-
       }
       catch (Exception ex)
       {
@@ -2156,6 +2227,27 @@ namespace Editor
 
 
     }
+
+
+    public override void OnCreateAllEngineInstances(CreateEngineInstanceVisitor visitor)
+    {
+      // load the projection settings from file, if the projection.xml file is available
+      if (this._mapProjection != null)
+      {
+        string dir = Path.GetDirectoryName(this.AbsoluteLayerFilename);
+        string file = Path.Combine(dir, "projection.xml");
+        if (File.Exists(file))
+          _mapProjection.LoadFromXML(file);
+      }
+
+      base.OnCreateAllEngineInstances(visitor);
+      if (FinalEnableTimeOfDay)
+      {
+        EditorManager.RendererNodeManager.UpdateTimeOfDay(this.TimeOfDay);
+        EditorManager.RendererNodeManager.SetCurrentTime(CurrentTime);
+      }
+    }
+
 
     #region Old Renderer properties migration
 
@@ -2201,231 +2293,6 @@ namespace Editor
       }
     }
 
-    string SampleCount2Enum(Renderer.DeferredRendererProperties.SSAOProperties.Samples_e samples)
-    {
-      switch (samples)
-      {
-        case Renderer.DeferredRendererProperties.SSAOProperties.Samples_e._8_: return "8";
-        case Renderer.DeferredRendererProperties.SSAOProperties.Samples_e._16_: return "16";
-        case Renderer.DeferredRendererProperties.SSAOProperties.Samples_e._32_: return "32";
-        case Renderer.DeferredRendererProperties.SSAOProperties.Samples_e._64_: return "64";
-      }
-
-      return "32";
-    }
-
-    string FilterTechnique2Enum(Renderer.DeferredRendererProperties.SSAOProperties.Filter_e filter)
-    {
-      switch (filter)
-      {
-        case Renderer.DeferredRendererProperties.SSAOProperties.Filter_e.Gaussian: return "GAUSSIAN";
-        case Renderer.DeferredRendererProperties.SSAOProperties.Filter_e.Bilateral5Samples: return "BILATERAL_5_SAMPLES";
-        case Renderer.DeferredRendererProperties.SSAOProperties.Filter_e.Bilateral9Samples: return "BILATERAL_9_SAMPLES";
-        case Renderer.DeferredRendererProperties.SSAOProperties.Filter_e.Adaptive: return "ADAPTIVE";
-      }
-      return "ADAPTIVE";
-    }
-
-    string ToneMapType2Enum(Renderer.DeferredRendererProperties.ToneMapperProperties.ToneMapperMode_e mode)
-    {
-      switch (mode)
-      {
-        case Renderer.DeferredRendererProperties.ToneMapperProperties.ToneMapperMode_e.None: return "OFF";
-        case Renderer.DeferredRendererProperties.ToneMapperProperties.ToneMapperMode_e.Scale: return "SCALE";
-        case Renderer.DeferredRendererProperties.ToneMapperProperties.ToneMapperMode_e.ScaleMap: return "SCALE_MAP";
-      }
-      return "OFF";
-    }
-
-    string ShadowQuality2Enum(Renderer.DeferredRendererProperties.TimeOfDayProperties.ShadowQuality_e quality)
-    {
-      switch (quality)
-      {
-        case Renderer.DeferredRendererProperties.TimeOfDayProperties.ShadowQuality_e.PCF4: return "PCF4";
-        case Renderer.DeferredRendererProperties.TimeOfDayProperties.ShadowQuality_e.PCF8: return "PCF8";
-        case Renderer.DeferredRendererProperties.TimeOfDayProperties.ShadowQuality_e.PCF16: return "PCF16";
-        case Renderer.DeferredRendererProperties.TimeOfDayProperties.ShadowQuality_e.PCSS16: return "PCSS16";
-      }
-      return "PCF4";
-    }
-
-    /// <summary>
-    /// From old to new system. Assumes there is no definition of new style
-    /// </summary>
-    /// <param name="renderer"></param>
-    void MigrateRendererProperties(Renderer renderer)
-    {
-      if (renderer == null)
-        return;
-
-      // forward renderer
-      if (renderer.RendererType == Renderer.RendererType_e.ForwardRenderer)
-      {
-        // class name string
-        this._currentSettings._rendererSetup._rendererNodeClass = IRendererNodeManager.RENDERERNODECLASS_SIMPLE;
-
-        /*
-        DynamicPropertyCollectionType propertiesType = EditorManager.RendererNodeManager.NodeClassTypeManager.GetCollectionType(_rendererSetup._rendererNodeClass);
-        if (propertiesType != null)
-          _rendererSetup._rendererProperties = propertiesType.CreateInstance(this);
-        */
-        return; // no more properties to migrate
-      }
-
-      // deferred renderer
-      if (renderer.RendererType == Renderer.RendererType_e.DeferredRenderer)
-      {
-        // class name string
-        this._currentSettings._rendererSetup._rendererNodeClass = IRendererNodeManager.RENDERERNODECLASS_DEFERRED;
-        DynamicPropertyCollectionType propertiesType = EditorManager.RendererNodeManager.NodeClassTypeManager.GetCollectionType(_currentSettings._rendererSetup._rendererNodeClass);
-        if (propertiesType == null)
-          return;
-        _currentSettings._rendererSetup._rendererProperties = propertiesType.CreateInstance(this);
-        Renderer.DeferredRendererProperties oldProp = (Renderer.DeferredRendererProperties)renderer.RendererProperties;
-
-        // migrate root properties
-        _currentSettings._rendererSetup._rendererProperties.SetPropertyValue("UseHDR", oldProp.HDR, false);
-        _currentSettings._rendererSetup._rendererProperties.SetPropertyValue("UseLightmaps", oldProp.StaticLighting, false);
-        _currentSettings._rendererSetup._rendererProperties.SetPropertyValue("SunLight", oldProp.TimeOfDay.Sunlight, false);
-        _currentSettings._rendererSetup._rendererProperties.SetPropertyValue("SunIntensity", oldProp.TimeOfDay.SunlightIntensity, false);
-        _currentSettings._rendererSetup._rendererProperties.SetPropertyValue("SunShadowsEnabled", oldProp.TimeOfDay.SunlightShadows, false);
-        _currentSettings._rendererSetup._rendererProperties.SetPropertyValue("Corona", !string.IsNullOrEmpty(oldProp.TimeOfDay.SunCoronaTexture), false);
-        _currentSettings._rendererSetup._rendererProperties.SetPropertyValue("CoronaFilename", oldProp.TimeOfDay.SunCoronaTexture, false);
-        _currentSettings._rendererSetup._rendererProperties.SetPropertyValue("ShadowRange", oldProp.TimeOfDay.ShadowTextureRange, false);
-        _currentSettings._rendererSetup._rendererProperties.SetPropertyValue("ShadowTextureSize", oldProp.TimeOfDay.ShadowTextureSize, false);
-        _currentSettings._rendererSetup._rendererProperties.SetPropertyValue("ShadowOffset", oldProp.TimeOfDay.ShadowOffset, false);
-        _currentSettings._rendererSetup._rendererProperties.SetPropertyValue("BackLight", oldProp.TimeOfDay.Backlight, false);
-
-        // migrate SSAO properties
-        ShapeComponent ssao = CreatePostprocessor("VPostProcessSSAO");
-        if (ssao != null)
-        {
-          Renderer.DeferredRendererProperties.SSAOProperties old = oldProp.SSAO;
-          ssao.Active = old.Enable;
-          ssao.SetPropertyValue("Samples", SampleCount2Enum(old.Samples), false);
-          ssao.SetPropertyValue("FilterTechnique", FilterTechnique2Enum(old.Filter), false);
-          ssao.SetPropertyValue("Range", old.Range, false);
-          ssao.SetPropertyValue("RangeFactor", old.RangeFactor, false);
-          ssao.SetPropertyValue("Offset", old.Offset, false);
-          ssao.SetPropertyValue("NumBlurPasses", old.BlurPasses, false);
-        }
-
-        // migrate rim light properties
-        ShapeComponent rim = CreatePostprocessor("VDeferredShadingRimLight");
-        if (rim != null)
-        {
-          Renderer.DeferredRendererProperties.RimLightProperties old = oldProp.RimLight;
-          rim.Active = old.Enable;
-          // need Color4 rather than Color4F otherwise dynamic property sytem gest out of sync
-          Color4 col = new Color4(old.RimLightColor.R255, old.RimLightColor.G255, old.RimLightColor.B255, old.RimLightColor.A255);
-          rim.SetPropertyValue("RimLightColor", col, false);
-          rim.SetPropertyValue("RimLightExp", old.RimLightExponent, false);
-          rim.SetPropertyValue("RimLightScale", old.RimLightScale, false);
-        }
-
-        // migrate dof properties
-        ShapeComponent dof = CreatePostprocessor("VPostProcessDepthOfField");
-        if (dof != null)
-        {
-          Renderer.DeferredRendererProperties.DepthofFieldProperties old = oldProp.DepthOfField;
-          dof.Active = old.Enable;
-          dof.SetPropertyValue("QuarterSize", old.QuarterSize, false);
-          dof.SetPropertyValue("FocusPoint", old.FocusPoint, false);
-          dof.SetPropertyValue("FocusDepth", old.FocusDepth, false);
-          dof.SetPropertyValue("BlurRadius", old.BlurRadius, false);
-        }
-
-        // migrate anti alias properties
-        ShapeComponent aa = CreatePostprocessor("VDeferredShadingAntiAlias");
-        if (aa != null)
-        {
-          Renderer.DeferredRendererProperties.AntiAliasingProperties old = oldProp.AntiAliasing;
-          aa.Active = old.Enable;
-          aa.SetPropertyValue("Strength", old.Strength, false);
-          aa.SetPropertyValue("Threshold[0]", old.NormalThreshold, false);
-          aa.SetPropertyValue("Threshold[1]", old.NormalThreshold, false);
-          aa.SetPropertyValue("Weights[0]", old.NormalWeight, false);
-          aa.SetPropertyValue("Weights[1]", old.NormalWeight, false);
-        }
-
-        // migrate glow properties
-        ShapeComponent glow = CreatePostprocessor("VPostProcessGlow");
-        if (glow != null)
-        {
-          Renderer.DeferredRendererProperties.GlowProperties old = oldProp.Glow;
-          glow.Active = old.Enable;
-          glow.SetPropertyValue("DownscaleMode", old.Downscale == Renderer.DeferredRendererProperties.GlowProperties.Downscale_e._2x_ ? "DOWNSCALE_2X" : "DOWNSCALE_4X", false);
-          glow.SetPropertyValue("Bias", old.Bias, false);
-          glow.SetPropertyValue("Exponent", old.Exponent, false);
-          glow.SetPropertyValue("Scale", old.Scale, false);
-          glow.SetPropertyValue("BlurPasses", old.BlurPasses, false);
-        }
-
-        // migrate tone mapping properties
-        ShapeComponent tone = CreatePostprocessor("VPostProcessToneMapping");
-        if (tone != null)
-        {
-          Renderer.DeferredRendererProperties.ToneMapperProperties old = oldProp.ToneMapper;
-          tone.Active = old.ToneMapperMode != Renderer.DeferredRendererProperties.ToneMapperProperties.ToneMapperMode_e.None;
-          tone.SetPropertyValue("ToneMapType", ToneMapType2Enum(old.ToneMapperMode), false);
-          tone.SetPropertyValue("Saturation", old.Saturation, false);
-          tone.SetPropertyValue("Contrast", old.Contrast, false);
-          tone.SetPropertyValue("Brightness", old.Brightness, false);
-          tone.SetPropertyValue("MotionBlurFeedback", old.MotionBlurFeedback, false);
-        }
-
-        // migrate lighting properties (always there)
-        ShapeComponent light = CreatePostprocessor("VDeferredShadingLights");
-        if (light != null)
-        {
-          light.SetPropertyValue("ShadowQuality", ShadowQuality2Enum(oldProp.TimeOfDay.ShadowQuality), false);
-          light.SetPropertyValue("IgnoreStaticSceneLights", oldProp.StaticLighting, false); // uses StaticLighting again
-          light.SetPropertyValue("SampleRadius[0]", oldProp.TimeOfDay.ShadowSampleRadius, false);
-          light.SetPropertyValue("SampleRadius[1]", oldProp.TimeOfDay.ShadowSampleRadius * 0.33333f, false);
-          //light.SetPropertyValue("SunSize", 2.0f, false); //  no corresponding item
-        }
-
-
-        // fog is activated by default
-        ShapeComponent fog = CreatePostprocessor("VDeferredShadingDepthFog");
-
-        // migrate (remaining) time-of-day properties
-        TimeOfDay newT = TimeOfDay;
-        Renderer.DeferredRendererProperties.TimeOfDayProperties oldT = oldProp.TimeOfDay;
-        newT.AmbientColor = oldT.AmbientColor;
-        newT.DawnSkyFade = oldT.DawnSkyFade;
-        newT.DuskSkyFade = oldT.DuskSkyFade;
-        newT.DepthFog.Color = oldT.FogColor;
-        newT.DepthFog.End = oldT.FogEnd;
-        newT.DepthFog.Range = oldT.FogRange * 8.0f; // magic multiplier used in old DeferredRenderingSystem_cl::UpdateSun(). However, fog start used 3.0 but we ignore this here
-        newT.DepthFog.Start = oldT.FogStart;
-        newT.NightSkyFade = oldT.NightSkyFade;
-        newT.SunColor = oldT.SunColor;
-
-        _currentSettings._currentTime = oldT.CurrentTime;
-      }
-    }
-
-    public class GetPostprossingShapesVisitor : IShapeVisitor
-    {
-      public override IShapeVisitor.VisitResult Visit(ShapeBase shape)
-      {
-        PostProcessingShape pshape = shape as PostProcessingShape;
-        if (shape.Modifiable && pshape != null)
-        {
-          if (FirstActive == null || pshape.Active)
-            FirstActive = pshape;
-          Found.Add(pshape);
-        }
-
-        return VisitResult.VisitOk;
-      }
-
-      public PostProcessingShape FirstActive = null;
-      public ShapeCollection Found = new ShapeCollection();
-    }
-
-
     public class CheckRendererNodeRequirementVisitor : IShapeVisitor
     {
       public override IShapeVisitor.VisitResult Visit(ShapeBase shape)
@@ -2450,63 +2317,7 @@ namespace Editor
         return "SCALE_MAP";
       return "SCALE";
     }
-
-    private void MigratePostprocessingShapes()
-    {
-      GetPostprossingShapesVisitor vis = new GetPostprossingShapesVisitor();
-      EditorManager.Scene.RunShapeVisitor(vis);
-      if (vis.Found.Count == 0)
-        return;
-
-      GroupAction action = new GroupAction("Remove postprocessing Shape(s)");
-      foreach (ShapeBase shape in vis.Found)
-      {
-        action.Add(RemoveShapeAction.CreateRemoveShapeAction(shape));
-      }
-
-      // migrate the VPostProcessingHDRBloom effect
-      if (vis.FirstActive != null && vis.FirstActive.EffectClass == "VPostProcessingHDRBloom")
-      {
-        if (RendererNodeClass == EditorManager.RendererNodeManager.DefaultRendererNodeClass)
-          RendererNodeClass = IRendererNodeManager.RENDERERNODECLASS_FORWARD;
-
-        DynamicPropertyCollection oldProp = vis.FirstActive.EffectProperties;
-        int iGlowPasses = int.Parse(oldProp.GetPropertyValue("GlowPasses", false).ToString());
-        float fGlowExponent = (float)oldProp.GetPropertyValue("GlowExponent", false);
-        float fGlowScale = (float)oldProp.GetPropertyValue("GlowScale", false);
-        float fGlowBias = (float)oldProp.GetPropertyValue("GlowBias", false);
-        float fGlowOffset = (float)oldProp.GetPropertyValue("GlowOffset", false);
-        string toneTechnique = oldProp.GetPropertyValue("ToneMappingTechnique", false).ToString();
-        float fToneSaturation = (float)oldProp.GetPropertyValue("ToneSaturation", false);
-        float fToneContrast = (float)oldProp.GetPropertyValue("ToneContrast", false);
-        float fToneBrightness = (float)oldProp.GetPropertyValue("ToneBrightness", false);
-        float fMotionBlurFeedback = (float)oldProp.GetPropertyValue("MotionBlurFeedback", false);
-
-        ShapeComponent bloom = CreatePostprocessor("VPostProcessGlow");
-        if (bloom != null)
-        {
-          //bloom.SetPropertyValue("DownscaleMode",  , false);
-          bloom.SetPropertyValue("Bias", fGlowBias, false);
-          bloom.SetPropertyValue("Exponent", fGlowExponent, false);
-          bloom.SetPropertyValue("Scale", fGlowScale, false);
-          bloom.SetPropertyValue("BlurPasses", iGlowPasses, false);
-        }
-        ShapeComponent tm = CreatePostprocessor("VPostProcessToneMapping");
-        if (tm != null)
-        {
-          tm.SetPropertyValue("ToneMapType", NewToneMappingType(toneTechnique), false);
-          tm.SetPropertyValue("Saturation", fToneSaturation, false);
-          tm.SetPropertyValue("Contrast", fToneContrast, false);
-          tm.SetPropertyValue("Brightness", fToneBrightness, false);
-          tm.SetPropertyValue("MotionBlurFeedback", fMotionBlurFeedback, false);
-        }
-      }
-
-      EditorManager.Actions.Add(action);
-      Modified = true;
-    }
-
-
+    
     ShapeComponent CreatePostprocessor(string nativeClass)
     {
       ShapeComponentType t = (ShapeComponentType)EditorManager.EngineManager.ComponentClassManager.GetCollectionType(nativeClass);
@@ -2539,7 +2350,7 @@ namespace Editor
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140728)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

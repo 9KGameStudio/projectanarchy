@@ -77,7 +77,7 @@ public:
   SCALEFORM_IMPEXP const char*  GetString() const;
   SCALEFORM_IMPEXP float        GetNumber() const;
 
-  // Display Info Getters
+  // Display Object Getters
   SCALEFORM_IMPEXP bool  Display_GetVisible() const;
   SCALEFORM_IMPEXP float Display_GetX() const;
   SCALEFORM_IMPEXP float Display_GetY() const;
@@ -101,7 +101,7 @@ public:
   SCALEFORM_IMPEXP void SetNumber(float fValue);
   SCALEFORM_IMPEXP void SetString(const char* szString);
 
-  // Display Info Setters
+  // Display Object Setters
   SCALEFORM_IMPEXP void Display_SetVisible(bool bVisible);
   SCALEFORM_IMPEXP void Display_SetX(float fX);
   SCALEFORM_IMPEXP void Display_SetY(float fY);
@@ -117,6 +117,34 @@ public:
   SCALEFORM_IMPEXP void Display_SetZScale(float fZScale);
   SCALEFORM_IMPEXP void Display_SetAlpha(float fAlpha);
   SCALEFORM_IMPEXP void Display_SetFOV(float fFov);
+
+  ///
+  /// \brief
+  ///   Moves the display object to the specified frame.
+  ///
+  /// \param uiFrameIndex
+  ///   The 1-based frame index.
+  /// \param bPlay
+  ///   Specifies if the playback should start after moving to the frame independent of the previous play state.
+  ///
+  /// \return
+  ///   true if the display object was moved to the frame.
+  ///
+  SCALEFORM_IMPEXP bool Display_GotoFrame(unsigned int uiFrameIndex, bool bPlay = false);
+
+  ///
+  /// \brief
+  ///   Moves the display object to the frame with the specified label.
+  ///
+  /// \param szLabel
+  ///   The label of the frame.
+  /// \param bPlay
+  ///   Specifies if the playback should start after moving to the frame independent of the previous play state.
+  ///
+  /// \return
+  ///   true if the display object was moved to the frame.
+  ///
+  SCALEFORM_IMPEXP bool Display_GotoLabeledFrame(const char* szLabel, bool bPlay = false);
 
   // Arrays
   SCALEFORM_IMPEXP unsigned int GetArraySize() const;
@@ -288,7 +316,7 @@ private:
 #endif // __VSCALEFORM_UTIL_HPP
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -9,16 +9,17 @@
 #ifndef HK_CONVEX_SILLOUETTE_H
 #define HK_CONVEX_SILLOUETTE_H
 
+#include <Ai/Internal/hkaiExport.h>
 
 /// Represents a convex 'silhouette' made by a hkaiSilhouetteGenerator - a 2D polygon wound anticlockwise.
 typedef hkArrayBase<hkVector4> hkaiConvexSilhouetteVertices;
 
 
 	/// A set of convex silhouettes referring to a single pool of vertices
-class hkaiConvexSilhouetteSet : public hkReferencedObject
+class HK_EXPORT_AI hkaiConvexSilhouetteSet : public hkReferencedObject
 {
 public:
-	//+version(1)
+	//+version(2)
 	HK_DECLARE_REFLECTION();
 	HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_AI_NAVMESH);
 
@@ -83,7 +84,7 @@ public:
 #endif // HK_CONVEX_SILLOUETTE_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

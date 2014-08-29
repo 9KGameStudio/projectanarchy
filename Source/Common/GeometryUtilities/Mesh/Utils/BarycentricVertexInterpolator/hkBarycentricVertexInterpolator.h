@@ -11,7 +11,7 @@
 
 #include <Common/GeometryUtilities/Mesh/hkMeshVertexBuffer.h>
 
-class hkBarycentricVertexInterpolator
+class HK_EXPORT_COMMON hkBarycentricVertexInterpolator
 {
     public:
         HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_DESTRUCTION_2012, hkBarycentricVertexInterpolator );
@@ -60,7 +60,7 @@ class hkBarycentricVertexInterpolator
 #endif // HK_BARYCENTRIC_VERTEX_INTERPOLATOR_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

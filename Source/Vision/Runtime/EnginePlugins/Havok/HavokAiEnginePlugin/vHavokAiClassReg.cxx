@@ -26,9 +26,9 @@ class hkTypeInfo;
 
 // Forward declarations of all used classes and typeinfos
 #if HK_REGISTER_TYPEINFOS || HK_REGISTER_CLASSES
-#	define HK_CLASS(A) extern const hkClass A##Class; extern const hkTypeInfo A##TypeInfo;
-#	define HK_STRUCT(A) extern const hkClass A##Class; extern const hkTypeInfo A##TypeInfo;
-#	define HK_ABSTRACT_CLASS(A) extern const hkClass A##Class;
+#	define HK_CLASS(E,A) extern const hkClass A##Class; extern const hkTypeInfo A##TypeInfo;
+#	define HK_STRUCT(E,A) extern const hkClass A##Class; extern const hkTypeInfo A##TypeInfo;
+#	define HK_ABSTRACT_CLASS(E,A) extern const hkClass A##Class;
 #		include HK_CLASSES_FILE
 #	undef HK_STRUCT
 #	undef HK_CLASS
@@ -37,9 +37,9 @@ class hkTypeInfo;
 
 #if HK_REGISTER_TYPEINFOS
 	// nonvirtual type infos
-#	define HK_CLASS(A) // nothing
-#	define HK_STRUCT(A) // nothing
-#	define HK_ABSTRACT_CLASS(A) // nothing
+#	define HK_CLASS(E,A) // nothing
+#	define HK_STRUCT(E,A) // nothing
+#	define HK_ABSTRACT_CLASS(E,A) // nothing
 #	include HK_CLASSES_FILE
 #	undef HK_STRUCT
 #	undef HK_CLASS
@@ -48,15 +48,15 @@ class hkTypeInfo;
 	// List of all typeinfos
 	const hkTypeInfo* const hkBuiltinAiTypeRegistry::StaticLinkedTypeInfos[] =
 	{
-#		define HK_CLASS(A) &A##TypeInfo,
-#		define HK_STRUCT(A) // nothing
-#		define HK_ABSTRACT_CLASS(A) // nothing
+#		define HK_CLASS(E,A) &A##TypeInfo,
+#		define HK_STRUCT(E,A) // nothing
+#		define HK_ABSTRACT_CLASS(E,A) // nothing
 #		include HK_CLASSES_FILE
 
 #		undef HK_CLASS
-#		define HK_CLASS(A) // nothing
+#		define HK_CLASS(E,A) // nothing
 #		undef HK_STRUCT
-#		define HK_STRUCT(A) &A##TypeInfo,
+#		define HK_STRUCT(E,A) &A##TypeInfo,
 #		include HK_CLASSES_FILE
 
 #		undef HK_STRUCT
@@ -83,25 +83,25 @@ class hkTypeInfo;
 
 	const hkClass* const hkBuiltinAiTypeRegistry::StaticLinkedClasses[] =
 	{
-#		define HK_CLASS(A) &A##Class,
-#		define HK_STRUCT(A)			// nothing
-#		define HK_ABSTRACT_CLASS(A) // nothing
+#		define HK_CLASS(E,A) &A##Class,
+#		define HK_STRUCT(E,A)			// nothing
+#		define HK_ABSTRACT_CLASS(E,A) // nothing
 #		include HK_CLASSES_FILE
 #		undef HK_STRUCT
 #		undef HK_CLASS
 #		undef HK_ABSTRACT_CLASS
 
-#		define HK_CLASS(A)			// nothing
-#		define HK_ABSTRACT_CLASS(A) // nothing
-#		define HK_STRUCT(A) &A##Class,
+#		define HK_CLASS(E,A)			// nothing
+#		define HK_ABSTRACT_CLASS(E,A) // nothing
+#		define HK_STRUCT(E,A) &A##Class,
 #		include HK_CLASSES_FILE
 #		undef HK_STRUCT
 #		undef HK_CLASS
 #		undef HK_ABSTRACT_CLASS
 
-#		define HK_CLASS(A)			// nothing
-#		define HK_STRUCT(A)			// nothing
-#		define HK_ABSTRACT_CLASS(A) &A##Class,
+#		define HK_CLASS(E,A)			// nothing
+#		define HK_STRUCT(E,A)			// nothing
+#		define HK_ABSTRACT_CLASS(E,A) &A##Class,
 #		include HK_CLASSES_FILE
 #		undef HK_STRUCT
 #		undef HK_CLASS
@@ -121,7 +121,7 @@ class hkTypeInfo;
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

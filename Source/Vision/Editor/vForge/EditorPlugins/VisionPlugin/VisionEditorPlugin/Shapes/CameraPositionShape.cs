@@ -29,6 +29,8 @@ using CSharpFramework.Serialization;
 using System.Drawing;
 using System.Windows.Forms;
 using CSharpFramework.ShortCuts;
+using CSharpFramework.AssetManagement;
+using CSharpFramework.Helper;
 
 
 namespace VisionEditorPlugin.Shapes
@@ -181,6 +183,7 @@ namespace VisionEditorPlugin.Shapes
     }
 
     static string RO_RESETVIEW = "Reset view settings";
+    static string RO_BATCH_SCREENSHOTS = "Batch save screenshots for children";
 
     /// <summary>
     /// Overridden function
@@ -194,10 +197,78 @@ namespace VisionEditorPlugin.Shapes
           op = new ArrayList(2);
         op.Add(@"Goto this Position");
         op.Add(@"Set to camera position");
-        if (_fCustomFar > 0.0f || _fCustomNear > 0.0f || _fCustomFOV > 0)
+        if (_fCustomFar > 0.0f || _fCustomNear > 0.0f || _fCustomFOV > 0 || _bApplyTimeOfDay)
           op.Add(RO_RESETVIEW);
+        if (Modifiable && HasChildren())
+          op.Add(RO_BATCH_SCREENSHOTS);
+
         return op;
       }
+    }
+
+
+    void BatchSaveScreenShots()
+    {
+      ShapeCollection shapes = new ShapeCollection();
+      // step #1: filter shapes
+      {
+        foreach (ShapeBase shape in this.ChildCollection)
+        {
+          // filter?
+          shapes.Add(shape);
+        }
+        if (shapes.Count == 0)
+          return;
+      }
+
+      try
+      {
+        SetEditorCameraPosition();
+        int iResX = EditorManager.ActiveView.Size.Width;
+        int iResY = EditorManager.ActiveView.Size.Height;
+        float fFOVX = 90;
+        if (this.FOV > 0)
+          fFOVX = this.FOV;
+
+        // step #2: prepare the target dir
+        string folder = EditorManager.Project.MakeAbsolute(ShapeName);
+        Directory.CreateDirectory(folder);
+
+        // step #3: turn them all to invisible
+        {
+          foreach (ShapeBase shape in shapes)
+          {
+            shape.SetVisible(false, true);
+          }
+        }
+
+        // step #4: render each and save a screenshot
+        foreach (ShapeBase shape in shapes)
+        {
+          shape.SetVisible(true, true);
+          string filename = Path.Combine(folder, shape.ShapeName + ".jpg");
+
+          // Render and save
+          EditorManager.ActiveView.UpdateView(true);
+          EditorManager.ActiveView.UpdateView(true);
+          EditorManager.EngineManager.SaveScreenShot(filename, iResX, iResY, fFOVX, 0.0f);
+          shape.SetVisible(false, true);
+        }
+
+      }
+      catch (Exception ex)
+      {
+        EditorManager.DumpException(ex, true);
+      }
+
+      // #5: Cleanup
+      {
+        foreach (ShapeBase shape in shapes)
+        {
+          shape.SetVisible(shape.FinalVisibleState, true);
+        }
+      }
+
     }
 
 
@@ -222,22 +293,33 @@ namespace VisionEditorPlugin.Shapes
       if (name == RO_RESETVIEW)
       {
         EditorManager.ActiveView.SetViewSettings(EditorManager.ActiveView.DefaultViewSettings, false);
+
+        // retrieve current time of day:
+        GetCurrentSettingsCallbackArgs args = new GetCurrentSettingsCallbackArgs();
+        EditorManager.ProfileManager.OnGetCurrentSettings(args);
+        if (args._settings != null)
+          EditorManager.RendererNodeManager.SetCurrentTime(args._settings._currentTime);
+
+        EditorManager.ActiveView.UpdateView(false);
+        return;
       }
+      if (name == RO_BATCH_SCREENSHOTS)
+      {
+        BatchSaveScreenShots();
+        return;
+      }
+
 
       base.PerformRelevantOperation (name, iShapeIndex, iShapeCount);
     }
 
+
     public override bool OnExport(SceneExportInfo info)
     {     
-      EngineInstanceEntity entity = _engineInstance as EngineInstanceEntity;
-
-      if (entity != null)
-      {
-        // we don't have a specific engine instance class, so assign via standard variable reflection
-        entity.SetVariable("m_fNearClipDistance", NearClipDistance.ToString());
-        entity.SetVariable("m_fFarClipDistance", FarClipDistance.ToString());
-        entity.SetVariable("m_fFovX", FOV.ToString());
-      }
+      EngineEntity.SetVariable("FovX", _fCustomFOV.ToString());
+      EngineEntity.SetVariable("NearClipDistance", NearClipDistance.ToString());
+      EngineEntity.SetVariable("FarClipDistance", FarClipDistance.ToString());
+      EngineEntity.SetVariable("m_fTimeOfDay", _bApplyTimeOfDay ? _fCustomTimeOfDay.ToString() : "-1.0"); // on the runtime side a negative value disables it
       
       bool bResult = base.OnExport(info);
       return bResult;
@@ -252,6 +334,10 @@ namespace VisionEditorPlugin.Shapes
       _engineInstance = new EngineInstanceEntity("CameraPositionEntity", null, this, null, true);
       base.CreateEngineInstance(bCreateChildren);
       SetEngineInstanceBaseProperties(); // sets the position etc.
+
+      EngineEntity.SetVariable("FovX", _fCustomFOV.ToString());
+      EngineEntity.SetVariable("NearClipDistance", NearClipDistance.ToString());
+      EngineEntity.SetVariable("FarClipDistance", FarClipDistance.ToString());
     }
 
 
@@ -259,6 +345,12 @@ namespace VisionEditorPlugin.Shapes
 
 
     ViewSettings _settings = null;
+
+    /// <summary>
+    /// Return the engine instance casted to EngineInstanceEntity
+    /// </summary>
+    [BrowsableAttribute(false)]
+    public EngineInstanceEntity EngineEntity { get { return _engineInstance as EngineInstanceEntity; } }
 
     /// <summary>
     /// Modifies the editor camera position
@@ -286,6 +378,9 @@ namespace VisionEditorPlugin.Shapes
       _settings.FOV.X = (_fCustomFOV > 0.0f) ? _fCustomFOV : defaultS.FOV.X;
 
       EditorManager.ActiveView.SetViewSettings(_settings, false);
+      if (_bApplyTimeOfDay)
+        EditorManager.RendererNodeManager.SetCurrentTime(_fCustomTimeOfDay);
+
       EditorManager.ActiveView.UpdateView(false);
     }
 
@@ -305,6 +400,22 @@ namespace VisionEditorPlugin.Shapes
           _settings.FOV.X = EditorManager.ActiveView.DefaultViewSettings.FOV.X;
 
         EditorManager.ActiveView.SetViewSettings(_settings, false);
+        EditorManager.ActiveView.UpdateView(false);
+      }
+    }
+
+    [Browsable(false)]
+    public object TODLiveUpdate
+    {
+      set
+      {
+        if (!_bApplyTimeOfDay)
+          return;
+        float fTOD = _fCustomTimeOfDay;
+        if (value is float)
+          fTOD = (float)value;
+
+        EditorManager.RendererNodeManager.SetCurrentTime(fTOD);
         EditorManager.ActiveView.UpdateView(false);
       }
     }
@@ -333,6 +444,11 @@ namespace VisionEditorPlugin.Shapes
         _fCustomNear = info.GetSingle("_fCustomNear");
       if (SerializationHelper.HasElement(info, "_fCustomFar"))
         _fCustomFar = info.GetSingle("_fCustomFar");
+      if (SerializationHelper.HasElement(info, "_fCustomTimeOfDay"))
+        _fCustomTimeOfDay = info.GetSingle("_fCustomTimeOfDay");
+      if (SerializationHelper.HasElement(info, "_bApplyTimeOfDay"))
+        _bApplyTimeOfDay = info.GetBoolean("_bApplyTimeOfDay");
+      
     }
 
     /// <summary>
@@ -344,10 +460,11 @@ namespace VisionEditorPlugin.Shapes
     {
       base.GetObjectData(info,context);
       info.AddValue("key",_key); // old version was "_key"
-
       info.AddValue("_fCustomFOV", _fCustomFOV);
       info.AddValue("_fCustomNear", _fCustomNear);
       info.AddValue("_fCustomFar", _fCustomFar);
+      info.AddValue("_fCustomTimeOfDay", _fCustomTimeOfDay);
+      info.AddValue("_bApplyTimeOfDay", _bApplyTimeOfDay);
     }
 
     #endregion
@@ -385,6 +502,8 @@ namespace VisionEditorPlugin.Shapes
     float _fCustomFOV = 0.0f;
     float _fCustomNear = 0.0f;
     float _fCustomFar = 0.0f;
+    bool _bApplyTimeOfDay = false;
+    float _fCustomTimeOfDay = 0.5f;
 
     bool CheckValidKey(Keys newval, bool msgDlg)
     {
@@ -431,6 +550,9 @@ namespace VisionEditorPlugin.Shapes
           _fCustomFOV = 0.0f;
         if (_fCustomFOV > 170.0f)
           _fCustomFOV = 170.0f;
+
+        if (HasEngineInstance())
+          EngineEntity.SetVariable("FovX", _fCustomFOV.ToString());
         UpdateCustomViewSettings();
       }
     }
@@ -445,6 +567,9 @@ namespace VisionEditorPlugin.Shapes
         _fCustomNear = value;
         if (_fCustomNear < 0.0f)
           _fCustomNear = 0.0f;
+
+        if (HasEngineInstance())
+          EngineEntity.SetVariable("NearClipDistance", NearClipDistance.ToString());
         UpdateCustomViewSettings();
       }
     }
@@ -459,7 +584,44 @@ namespace VisionEditorPlugin.Shapes
         _fCustomFar = value;
         if (_fCustomFar < 0.0f)
           _fCustomFar = 0.0f;
+
+        if (HasEngineInstance())
+          EngineEntity.SetVariable("FarClipDistance", FarClipDistance.ToString());
         UpdateCustomViewSettings();
+      }
+    }
+
+    [SortedCategory(CAT_VIEW, CATORDER_VIEW), PropertyOrder(10)]
+    [Description("If enabled, a custom daytime (TimeOfDay property) is associated with this camera and set upon double clicking the camera shape")]
+    public bool ApplyCustomTimeOfDay
+    {
+      get { return _bApplyTimeOfDay; }
+      set
+      {
+        _bApplyTimeOfDay = value;
+        if (_bApplyTimeOfDay)
+          UpdateCustomViewSettings();
+      }
+    }
+
+
+    [SortedCategory(CAT_VIEW, CATORDER_VIEW), PropertyOrder(11)]
+    [Description("Associates a custom daytime with this camera that will be set upon double-clicking this shape. The ApplyCustomTimeOfDay flag has to be set, otherwise this property is ignored")]
+    [TypeConverter(typeof(NormalizedFloat2TimeConverter))]
+    [EditorAttribute(typeof(ToDSliderEditor), typeof(UITypeEditor)), SliderRange(0.0f, 1.0f, 1440), PropertyLiveUpdate("TODLiveUpdate"),DefaultValue(0.5f)]
+    public float TimeOfDay
+    {
+      get { return _fCustomTimeOfDay; }
+      set
+      {
+        _fCustomTimeOfDay = value;
+        if (_fCustomTimeOfDay < 0.0f)
+          _fCustomTimeOfDay = 0.0f;
+        if (_fCustomTimeOfDay > 1.0f)
+          _fCustomTimeOfDay = 1.0f;
+
+        if (_bApplyTimeOfDay)
+          UpdateCustomViewSettings();
       }
     }
 
@@ -550,7 +712,7 @@ namespace VisionEditorPlugin.Shapes
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

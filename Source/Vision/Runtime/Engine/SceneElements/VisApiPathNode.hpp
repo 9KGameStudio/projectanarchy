@@ -78,7 +78,7 @@ public:
   /// \param typeInOut
   ///   constant that defines the in and out type of the tangents. Use the VECTOR_TYPE macro to
   ///   combine the types, e.g. VECTOR_TYPE(LINEAR,LINEAR)
-  VISION_APIFUNC VisPathNode_cl(const hkvVec3& pos = hkvVec3(), const hkvVec3& cv1 = hkvVec3(-8.0f,0.0f,0.0f), const hkvVec3& cv2 = hkvVec3(-8.0f,0.0f,0.0f), UBYTE typeInOut = VECTOR_TYPE(LINEAR,LINEAR));
+  VISION_APIFUNC VisPathNode_cl(const hkvVec3& pos = hkvVec3::ZeroVector(), const hkvVec3& cv1 = hkvVec3(-8.0f,0.0f,0.0f), const hkvVec3& cv2 = hkvVec3(-8.0f,0.0f,0.0f), UBYTE typeInOut = VECTOR_TYPE(LINEAR,LINEAR));
 
   /// \brief
   ///   Copy constructor for VisPathNode_cl
@@ -99,10 +99,6 @@ public:
   ///
 
   /// \brief
-  ///   DEPRECATED, use SetPosition instead
-  HKV_DEPRECATED_2012_1 inline void SetPos(const hkvVec3& pos) {SetPosition(pos);}
-
-  /// \brief
   ///   Sets the position of this path node in world space
   /// 
   /// Internally, this function calculates the local space position relatively to the owner path so
@@ -111,10 +107,6 @@ public:
   /// \param pos
   ///   New node position in world space
   VISION_APIFUNC void SetPosition(const hkvVec3& pos);
-
-  /// \brief
-  ///   DEPRECATED, use GetPosition instead
-  HKV_DEPRECATED_2012_1 inline const hkvVec3& GetPos() const {return GetPosition();}
 
   /// \brief
   ///   Gets the position of this path node in world space
@@ -360,7 +352,7 @@ private:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -14,7 +14,7 @@
 #include <Common/Base/Reflection/Registry/hkClassNameRegistry.h>
 
 	/// Abstract base class for resources which require cleanup.
-class hkObjectResource : public hkResource
+class HK_EXPORT_COMMON hkObjectResource : public hkResource
 {
 	public:
 	HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE);
@@ -65,7 +65,7 @@ class hkObjectResource : public hkResource
 #endif // HK_SERIALIZE_OBJECTRESOURCE_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

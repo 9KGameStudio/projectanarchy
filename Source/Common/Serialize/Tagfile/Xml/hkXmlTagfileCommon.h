@@ -10,21 +10,25 @@
 
 namespace hkXmlTagfile
 {
-	const int XML_TAGFILE_VERSION = 1;
+	const int XML_TAGFILE_VERSION = 2;
 
 	struct Header
 	{
-		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(Header, HK_MEMORY_CLASS_BASE);
+		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_SERIALIZE, Header);
 
 		int m_version;
 		hkStringPtr m_sdkVersion;
+
+		bool supportsPredicates() const { return m_version >= 2; }
+		int m_maxpredicate; // Added in version 2
+		hkArray<hkUint16> m_truePredicates; // Added in version 2
 	};
 }
 
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

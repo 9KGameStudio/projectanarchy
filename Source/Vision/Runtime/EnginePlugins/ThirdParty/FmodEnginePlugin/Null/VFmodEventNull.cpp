@@ -9,7 +9,7 @@
 #include <Vision/Runtime/EnginePlugins/ThirdParty/FmodEnginePlugin/FmodEnginePlugin.hpp>
 #include <Vision/Runtime/EnginePlugins/ThirdParty/FmodEnginePlugin/VFmodManager.hpp>
 
-#include <Vision/Runtime/Base/System/Memory/VMemDbg.hpp>
+
 
 
 // -------------------------------------------------------------------------- //
@@ -28,6 +28,9 @@ VFmodEvent::VFmodEvent() :
   m_bStartPlayback(false)
 {
   m_pOwner = NULL;
+
+  GetPosition(m_vLastPosition);
+
   m_pEvent = (FMOD::Event*)0;
 }
 
@@ -47,6 +50,8 @@ VFmodEvent::VFmodEvent(const char *szEventName, VFmodEventCollection* pOwner, VF
   m_spEventGroup = pEventGroup;
 
   m_pOwner = pOwner;
+
+  GetPosition(m_vLastPosition);
 
   m_pEvent = (FMOD::Event*)0;
   
@@ -125,9 +130,8 @@ void VFmodEvent::OnDisposeObject()
 {
 }
 
-void VFmodEvent::OnObject3DChanged(int iO3DFlags)
+void VFmodEvent::OnHandleCallback(IVisCallbackDataObject_cl *pData)
 {
-  VisObject3D_cl::OnObject3DChanged(iO3DFlags);
 }
 
 static int VFMOD_TRIGGER_ID_PAUSE = -1;
@@ -206,7 +210,7 @@ void VFmodEvent::SetPlaying(bool bStatus)
   m_bIsPlaying = bStatus; 
 }
 
-void VFmodEventCollection::Update()
+void VFmodEventCollection::Update(float fTimeDelta)
 {
 }
 
@@ -225,7 +229,7 @@ VFmodEvent* VFmodEventCollection::SearchEvent(const char* szName) const
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140625)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

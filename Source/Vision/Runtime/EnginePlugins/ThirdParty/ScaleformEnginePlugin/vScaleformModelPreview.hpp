@@ -10,7 +10,7 @@
 #ifndef __VSCALEFORMMODELPREVIEW_HPP_INCLUDED
 #define __VSCALEFORMMODELPREVIEW_HPP_INCLUDED
 
-#if defined(WIN32) || defined(_VISION_XENON) || defined(_VISION_PS3)
+#if defined(_VISION_WIN32) || defined(_VISION_XENON) || defined(_VISION_PS3) || defined(_VR_GLES2)
 
 //forward decls
 namespace Scaleform
@@ -27,10 +27,12 @@ namespace Scaleform
   }
 }
 
+class VModelPreviewComponent;
 
-/// \brief Scalefrom model preview: You can use this class to render an
-/// 			 entity into a texture of a Scalefrom movie
-class VScalefromModelPreview : public VRefCounter, public IVisCallbackHandler_cl
+
+/// \brief Scaleform model preview: You can use this class to render an
+/// 			 entity into a texture of a Scaleform movie
+class VScaleformModelPreview : public VRefCounter, public IVisCallbackHandler_cl
 {
 public:
 
@@ -50,11 +52,11 @@ public:
   /// \param iSizeY (\b optional) y size of the render target, default is 512.
   /// \param fFovH (\b optional) Horizontal Field-Of-View, default is 90.
   /// \param fFovV (\b optional) Vertical Field-Of-View, will be adjusted to the current aspect if 0.
-  SCALEFORM_IMPEXP VScalefromModelPreview(VScaleformMovieInstance * pMainMovieInstance, VisBaseEntity_cl *pPreviewEntity,
+  SCALEFORM_IMPEXP VScaleformModelPreview(VScaleformMovieInstance * pMainMovieInstance, VisBaseEntity_cl *pPreviewEntity,
     const char * szTextureName, const char * szMoviePathAndName = NULL, int iSizeX = 512, int iSizeY = 512, float fFovH = 90, float fFovV = 0);
 
   /// \brief Destructor.
-  SCALEFORM_IMPEXP virtual ~VScalefromModelPreview();
+  SCALEFORM_IMPEXP virtual ~VScaleformModelPreview();
 
   /// \brief Call the update function when rendering.
   /// \param fTimeDiff The time difference for the update process.
@@ -65,7 +67,7 @@ public:
 
   /// \brief Gets the preview component in order to access it's properties.
   /// \return The model preview component.
-  inline VModelPreviewComponent * GetPreviewComponent() { return m_spModelPreview; }
+  inline VModelPreviewComponent* GetPreviewComponent() { return m_spModelPreview; }
 
   /// \brief Callback handler implementation
   SCALEFORM_IMPEXP virtual void OnHandleCallback(IVisCallbackDataObject_cl *pData) HKV_OVERRIDE;
@@ -82,7 +84,7 @@ protected:
 #endif //__VSCALEFORMMODELPREVIEW_HPP_INCLUDED
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

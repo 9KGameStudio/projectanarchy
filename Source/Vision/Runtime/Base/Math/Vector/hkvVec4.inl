@@ -51,6 +51,8 @@ HKV_FORCE_INLINE void hkvVec4::set (float xyzw)
 
 HKV_FORCE_INLINE float hkvVec4::operator[] (hkUint32 i) const
 {
+  HKVVEC4_INITIALIZATION_CHECK(this);
+
   VASSERT (i <= 3);
 
   return data[i];
@@ -70,6 +72,9 @@ HKV_FORCE_INLINE const hkvVec4 hkvVec4::operator- (void) const
 
 HKV_FORCE_INLINE void hkvVec4::operator+= (const hkvVec4& rhs)
 {
+  HKVVEC4_INITIALIZATION_CHECK(this);
+  HKVVEC4_INITIALIZATION_CHECK(&rhs);
+
   HKVVEC4_COPYTEMPS (rhs);
   
   x += rhs_x;
@@ -80,6 +85,9 @@ HKV_FORCE_INLINE void hkvVec4::operator+= (const hkvVec4& rhs)
 
 HKV_FORCE_INLINE void hkvVec4::operator-= (const hkvVec4& rhs)
 {
+  HKVVEC4_INITIALIZATION_CHECK(this);
+  HKVVEC4_INITIALIZATION_CHECK(&rhs);
+
   HKVVEC4_COPYTEMPS (rhs);
 
   x -= rhs_x;
@@ -90,6 +98,8 @@ HKV_FORCE_INLINE void hkvVec4::operator-= (const hkvVec4& rhs)
 
 HKV_FORCE_INLINE void hkvVec4::operator+= (float f)
 {
+  HKVVEC4_INITIALIZATION_CHECK(this);
+
   x += f;
   y += f;
   z += f;
@@ -98,6 +108,8 @@ HKV_FORCE_INLINE void hkvVec4::operator+= (float f)
 
 HKV_FORCE_INLINE void hkvVec4::operator-= (float f)
 {
+  HKVVEC4_INITIALIZATION_CHECK(this);
+
   x -= f;
   y -= f;
   z -= f;
@@ -106,6 +118,8 @@ HKV_FORCE_INLINE void hkvVec4::operator-= (float f)
 
 HKV_FORCE_INLINE void hkvVec4::operator*= (float f)
 {
+  HKVVEC4_INITIALIZATION_CHECK(this);
+
   x *= f;
   y *= f;
   z *= f;
@@ -114,6 +128,8 @@ HKV_FORCE_INLINE void hkvVec4::operator*= (float f)
 
 HKV_FORCE_INLINE void hkvVec4::operator/= (float f0)
 {
+  HKVVEC4_INITIALIZATION_CHECK(this);
+
   const float f = 1.0f / f0;
 
   x *= f;
@@ -124,6 +140,8 @@ HKV_FORCE_INLINE void hkvVec4::operator/= (float f0)
 
 HKV_FORCE_INLINE bool hkvVec4::isZero (float fEpsilon) const
 {
+  HKVVEC4_INITIALIZATION_CHECK(this);
+
   VASSERT (fEpsilon >= 0.0f);
 
   if (fEpsilon == 0.0f)
@@ -151,6 +169,9 @@ HKV_FORCE_INLINE bool hkvVec4::isNormalized (float fEpsilon) const
 
 HKV_FORCE_INLINE bool hkvVec4::isIdentical (const hkvVec4& rhs) const
 {
+  HKVVEC4_INITIALIZATION_CHECK(this);
+  HKVVEC4_INITIALIZATION_CHECK(&rhs);
+
   HKVVEC4_COPYTEMPS (rhs);
 
   return ((x == rhs_x) && (y == rhs_y) && (z == rhs_z) && (w == rhs_w));
@@ -158,6 +179,9 @@ HKV_FORCE_INLINE bool hkvVec4::isIdentical (const hkvVec4& rhs) const
 
 HKV_FORCE_INLINE bool hkvVec4::isEqual (const hkvVec4& rhs, float fEpsilon) const
 {
+  HKVVEC4_INITIALIZATION_CHECK(this);
+  HKVVEC4_INITIALIZATION_CHECK(&rhs);
+
   VASSERT (fEpsilon >= 0.0f);
 
   HKVVEC4_COPYTEMPS (rhs);
@@ -170,6 +194,8 @@ HKV_FORCE_INLINE bool hkvVec4::isEqual (const hkvVec4& rhs, float fEpsilon) cons
 
 HKV_FORCE_INLINE float hkvVec4::getLengthSquared () const
 {
+  HKVVEC4_INITIALIZATION_CHECK(this);
+
   return ((x * x) + (y * y) + (z * z) + (w * w));
 }
 
@@ -261,6 +287,9 @@ HKV_FORCE_INLINE void hkvVec4::clampTo (const hkvVec4& MinVal, const hkvVec4& Ma
 
 HKV_FORCE_INLINE const hkvVec4 hkvVec4::compMul (const hkvVec4& rhs) const
 {
+  HKVVEC4_INITIALIZATION_CHECK(this);
+  HKVVEC4_INITIALIZATION_CHECK(&rhs);
+
   HKVVEC4_COPYTEMPS (rhs);
 
   return hkvVec4 (x * rhs_x, y * rhs_y, z * rhs_z, w * rhs_w);
@@ -268,6 +297,9 @@ HKV_FORCE_INLINE const hkvVec4 hkvVec4::compMul (const hkvVec4& rhs) const
 
 HKV_FORCE_INLINE const hkvVec4 hkvVec4::compDiv (const hkvVec4& rhs) const
 {
+  HKVVEC4_INITIALIZATION_CHECK(this);
+  HKVVEC4_INITIALIZATION_CHECK(&rhs);
+
   HKVVEC4_COPYTEMPS (rhs);
 
   return hkvVec4 (x / rhs_x, y / rhs_y, z / rhs_z, w / rhs_w);
@@ -275,6 +307,9 @@ HKV_FORCE_INLINE const hkvVec4 hkvVec4::compDiv (const hkvVec4& rhs) const
 
 HKV_FORCE_INLINE void hkvVec4::setMin (const hkvVec4& lhs, const hkvVec4& rhs)
 {
+  HKVVEC4_INITIALIZATION_CHECK(&lhs);
+  HKVVEC4_INITIALIZATION_CHECK(&rhs);
+
   HKVVEC4_COPYTEMPS (lhs);
   HKVVEC4_COPYTEMPS (rhs);
 
@@ -286,6 +321,9 @@ HKV_FORCE_INLINE void hkvVec4::setMin (const hkvVec4& lhs, const hkvVec4& rhs)
 
 HKV_FORCE_INLINE void hkvVec4::setMax (const hkvVec4& lhs, const hkvVec4& rhs)
 {
+  HKVVEC4_INITIALIZATION_CHECK(&lhs);
+  HKVVEC4_INITIALIZATION_CHECK(&rhs);
+
   HKVVEC4_COPYTEMPS (lhs);
   HKVVEC4_COPYTEMPS (rhs);
 
@@ -297,6 +335,10 @@ HKV_FORCE_INLINE void hkvVec4::setMax (const hkvVec4& lhs, const hkvVec4& rhs)
 
 HKV_FORCE_INLINE void hkvVec4::setClamped (const hkvVec4& val, const hkvVec4& MinVal, const hkvVec4& MaxVal)
 {
+  HKVVEC4_INITIALIZATION_CHECK(&val);
+  HKVVEC4_INITIALIZATION_CHECK(&MinVal);
+  HKVVEC4_INITIALIZATION_CHECK(&MaxVal);
+
   HKVVEC4_COPYTEMPS (val);
   HKVVEC4_COPYTEMPS (MinVal);
   HKVVEC4_COPYTEMPS (MaxVal);
@@ -309,6 +351,8 @@ HKV_FORCE_INLINE void hkvVec4::setClamped (const hkvVec4& val, const hkvVec4& Mi
 
 HKV_FORCE_INLINE void hkvVec4::setAbs (const hkvVec4& val)
 {
+  HKVVEC4_INITIALIZATION_CHECK(&val);
+
   HKVVEC4_COPYTEMPS (val);
   
   x = hkvMath::Abs (val_x);
@@ -319,6 +363,9 @@ HKV_FORCE_INLINE void hkvVec4::setAbs (const hkvVec4& val)
 
 HKV_FORCE_INLINE void hkvVec4::setInterpolate (const hkvVec4& lhs, const hkvVec4& rhs, float t)
 {
+  HKVVEC4_INITIALIZATION_CHECK(&lhs);
+  HKVVEC4_INITIALIZATION_CHECK(&rhs);
+
   HKVVEC4_COPYTEMPS (lhs);
   HKVVEC4_COPYTEMPS (rhs);
 
@@ -330,6 +377,9 @@ HKV_FORCE_INLINE void hkvVec4::setInterpolate (const hkvVec4& lhs, const hkvVec4
 
 HKV_FORCE_INLINE float hkvVec4::dot (const hkvVec4& rhs) const
 {
+  HKVVEC4_INITIALIZATION_CHECK(this);
+  HKVVEC4_INITIALIZATION_CHECK(&rhs);
+
   HKVVEC4_COPYTEMPS (rhs);
 
   return ((x * rhs_x) + (y * rhs_y) + (z * rhs_z) + (w * rhs_w));
@@ -345,11 +395,15 @@ HKV_FORCE_INLINE void hkvVec4::negate ()
 
 HKV_FORCE_INLINE const hkvVec2 hkvVec4::getAsVec2 () const
 {
+  HKVVEC4_INITIALIZATION_CHECK(this);
+
   return hkvVec2 (x, y);
 }
 
 HKV_FORCE_INLINE const hkvVec3 hkvVec4::getAsVec3 () const
 {
+  HKVVEC4_INITIALIZATION_CHECK(this);
+
   return hkvVec3 (x, y, z);
 }
 
@@ -401,7 +455,7 @@ HKV_FORCE_INLINE const hkvVec4 operator/ (const hkvVec4& lhs, float f)
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

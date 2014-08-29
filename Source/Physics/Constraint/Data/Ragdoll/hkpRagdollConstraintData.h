@@ -11,8 +11,8 @@
 
 #include <Physics/Constraint/Data/hkpConstraintData.h>
 
-extern const class hkClass hkpRagdollConstraintDataAtomsClass;
-extern const hkClass hkpRagdollConstraintDataClass;
+extern HK_EXPORT_PHYSICS const class hkClass hkpRagdollConstraintDataAtomsClass;
+extern HK_EXPORT_PHYSICS const hkClass hkpRagdollConstraintDataClass;
 
 
 /// A ragdoll constraint. You can use this constraint to realistically simulate the behavior of body joints,
@@ -21,7 +21,7 @@ extern const hkClass hkpRagdollConstraintDataClass;
 /// callback the difference between the current angle the desired angle will be passed in. This will result in your
 /// motor driving the difference in the angle to zero. If the motor is enabled, all friction will be disabled,
 /// however once you disable the motor, friction will be enabled again.
-class hkpRagdollConstraintData : public hkpConstraintData
+class HK_EXPORT_PHYSICS hkpRagdollConstraintData : public hkpConstraintData
 {
 	public:
 
@@ -339,7 +339,7 @@ class hkpRagdollConstraintData : public hkpConstraintData
 #endif // HKP_RAGDOLL_CONSTRAINT_DATA_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

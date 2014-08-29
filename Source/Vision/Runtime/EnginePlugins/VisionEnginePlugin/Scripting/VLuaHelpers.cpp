@@ -24,9 +24,7 @@
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Entities/PathCameraEntity.hpp>
 
 #include <Vision/Runtime/Base/System/DisableStaticAnalysis.hpp>
-#include <Vision/Runtime/Base/System/Memory/VMemDbg.hpp>
 
-#define VISION_WRAPPER_LOOKUP "VISION_WRAPPER_LOOKUP"
 
 /****************************************************************************/
 // Helper functions for working with LUA
@@ -230,12 +228,6 @@ void LUA_PushObjectProxy(lua_State* L, VScriptComponent *pObj)
   pObj->SetScriptRefID(id);
 }
 
-void LUA_ResetWrapperLookupTable(lua_State* L)
-{
-  lua_newtable(L);                                            // ..., table, TOP
-  lua_setfield(L, LUA_REGISTRYINDEX, VISION_WRAPPER_LOOKUP);  // ..., TOP
-}
-
 void LUA_PushObjectProxy(lua_State* L, VTypedObject *pObj, VisTypedEngineObject_cl* pOwner)
 {
   if (pObj==NULL)
@@ -243,37 +235,85 @@ void LUA_PushObjectProxy(lua_State* L, VTypedObject *pObj, VisTypedEngineObject_
     lua_pushnil(L);                                           // ..., nil, TOP
     return;                                                   // 1 value left on the stack
   }
+  
+  LUA_LookupObjectProxy(L, pObj);
 
-  lua_getfield(L, LUA_REGISTRYINDEX, VISION_WRAPPER_LOOKUP);  // ..., table, TOP
-                                              
-  //in case the wrapper lookup table does not exist, we create it
-  if(lua_isnil(L, -1))
+  // In case there is no wrapper created yet, we create a new one.
+  if (lua_isnil(L, -1))
   {
-    lua_pop(L,1);                                             // ..., TOP
-    lua_newtable(L);                                          // ..., table, TOP
-    lua_setfield(L, LUA_REGISTRYINDEX, VISION_WRAPPER_LOOKUP);// ..., TOP
-    lua_getfield(L, LUA_REGISTRYINDEX, VISION_WRAPPER_LOOKUP);// ..., table, TOP
+    lua_pop(L, 1);                                            // ..., TOP
+    LUA_CreateNewWrapper(L, pObj, pOwner);                    // ..., wrapper-obj(value), TOP
+    lua_pushlightuserdata(L, pObj);                           // ..., wrapper-obj(value), address(key), TOP
+    lua_pushvalue(L, -2);                                     // ..., wrapper-obj(value), address(key), wrapper-obj, TOP
+    lua_rawset(L, LUA_REGISTRYINDEX);                         // ..., wrapper-obj, TOP
 
-    VASSERT_MSG(!lua_isnil(L, -1), "Could not set Lua wrapper lookup table in Lua registry.");
-  }
+    // Make sure callback is triggered when object gets deleted, so we can remove the object from the lookup table.
+    pObj->SetObjectFlag(VObjectFlag_TriggerCallbackOnDelete);
+  }                                                              // 1 value left on the stack
+}
+
+void LUA_LookupObjectProxy(lua_State* L, VTypedObject* pObject)
+{
+  VASSERT(pObject != NULL);
 
   //we are referencing the wrapper by the pointer address of the original object
-  lua_pushfstring(L, "%p", pObj);                             // ..., table, address, TOP
-  lua_rawget(L, -2);                                          // ..., table, wrapper-obj or nil, TOP
+  lua_pushlightuserdata(L, pObject);                          // ..., address, TOP
+  lua_rawget(L, LUA_REGISTRYINDEX);                           // ..., wrapper-obj or nil, TOP
+}
 
-  //in case there is no stored wrapper we need to create a new wrapper
-  if(lua_isnil(L, -1))
-  {                                                           // ..., table, nil, TOP
-    lua_pop(L, 1);                                            // ..., table, TOP
-    LUA_CreateNewWrapper(L, pObj, pOwner);                    // ..., table, wrapper-obj, TOP
-    lua_pushfstring(L, "%p", pObj);                           // ..., table, wrapper-obj, address, TOP
-    lua_pushvalue(L, -2);                                     // ..., table, wrapper-obj, address, wrapper-obj, TOP
-    lua_rawset(L, -4);                                        // ..., table, wrapper-obj, TOP
+VTypedObject* LUA_ExtractFromUserData(lua_State* L, const void* pUserData)
+{
+  const swig_lua_userdata* pUser = reinterpret_cast<const swig_lua_userdata *>(pUserData);
+
+  if (pUser->type->visiontype == NULL)
+  {
+    return 0;
   }
 
-  //remove the pointer table
-  lua_remove(L, -2);                                          // ..., wrapper-obj, TOP
-                                                              // 1 value left on the stack
+  return VType::CastFrom(pUser->ptr, pUser->type->visiontype);
+}
+
+void LUA_FetchDynPropertyTable(lua_State* L)
+{
+                                                              // ..., userdata, TOP
+  lua_getmetatable(L, -1);                                    // ..., userdata, perinstancetable or perclasstable or nil, TOP
+
+  if (lua_isnil(L, -1))
+  {
+    return;
+  }
+
+  lua_getfield(L, -1, "__index");                             // ..., userdata, perinstancetable or perclasstable, index, TOP
+  if (!lua_equal(L, -1, -2))
+  {
+    lua_pop(L, 2);                                            // ..., userdata, TOP
+    lua_pushnil(L);                                           // ..., userdata, nil, TOP
+    return;
+  }
+
+  lua_pop(L, 1);                                              // ..., userdata, perinstancetable, TOP
+  return;
+}
+
+void LUA_RemoveWrapperFromLookupTable(lua_State* L, VTypedObject* pObj)
+{
+  VASSERT(pObj != NULL);
+
+  // Fetch wrapper and set the stored pointer to NULL
+  LUA_LookupObjectProxy(L, pObj);
+
+  swig_lua_userdata* pData = (swig_lua_userdata*) lua_touserdata(L, -1);
+  if(pData)
+  {
+    pData->ptr = NULL;
+  }
+
+  lua_pop(L, 1);
+
+  // Remove entry by setting its value to nil.
+  lua_pushlightuserdata(L, pObj);                             // ..., address(key), TOP
+  lua_pushnil(L);                                             // ..., address(key), nil(value), TOP
+  lua_rawset(L, LUA_REGISTRYINDEX);                           // ..., TOP
 }
 
 void LUA_PushObjectProxy(lua_State* L, hkvVec2* pVector)
@@ -342,90 +382,46 @@ VisTypedEngineObject_cl * LUA_GetObject(lua_State* L, int iStackIndex)
 void LUA_CreateNewWrapper(lua_State*L, VTypedObject* pObject, VisTypedEngineObject_cl* pIntendedOwner)
 {
   VASSERT_MSG(pObject!=NULL, "Cannot create a Lua wrapper for a NULL value.")
-
+  
   // trigger callback
   VisCallback_cl &cbCreateProxy = IVScriptManager::OnScriptProxyCreation;;
   VScriptCreateStackProxyObject data(&cbCreateProxy, pObject, L, pIntendedOwner);
   cbCreateProxy.TriggerCallbacks(&data);
 
   //do not create an object proxy on the stack if a callback already performed this step...
-  if(data.m_bProcessed) return;
+  if(data.m_bProcessed) 
+    return;
 
-  //no callback handled the data so we do the default handling here
-  
-  //VisObject3D_cl derived classes
-  if(pObject->IsOfType(V_RUNTIME_CLASS(VisObject3D_cl)))
+  VType* pType = pObject->GetTypeId();
+
+  // Search type hierarchy for first type with a SWIG representation
+  while(pType->m_pSwigTypeInfo == NULL)
   {
-    if(pObject->IsOfType(V_RUNTIME_CLASS(PathCameraEntity)))
-      VSWIG_Lua_NewPointerObj(L,pObject, SWIGTYPE_p_PathCameraEntity, VLUA_MANAGE_MEM_MANUAL);
-    else if(pObject->IsOfType(V_RUNTIME_CLASS(TriggerBoxEntity_cl)))
-      VSWIG_Lua_NewPointerObj(L,pObject, SWIGTYPE_p_TriggerBoxEntity_cl, VLUA_MANAGE_MEM_MANUAL);
-    else if(pObject->IsOfType(V_RUNTIME_CLASS(CubeMapHandle_cl)))
-      VSWIG_Lua_NewPointerObj(L,pObject, SWIGTYPE_p_CubeMapHandle_cl, VLUA_MANAGE_MEM_MANUAL);
-    else if(pObject->IsOfType(V_RUNTIME_CLASS(VisBaseEntity_cl)))
-      VSWIG_Lua_NewPointerObj(L,pObject, SWIGTYPE_p_VisBaseEntity_cl, VLUA_MANAGE_MEM_MANUAL);
-    else if(pObject->IsOfType(V_RUNTIME_CLASS(VisLightSource_cl)))
-      VSWIG_Lua_NewPointerObj(L,pObject, SWIGTYPE_p_VisLightSource_cl, VLUA_MANAGE_MEM_MANUAL);
-    else if(pObject->IsOfType(V_RUNTIME_CLASS(VisParticleEffect_cl)))
-      VSWIG_Lua_NewPointerObj(L,pObject, SWIGTYPE_p_VisParticleEffect_cl, VLUA_MANAGE_MEM_MANUAL);
-    else if(pObject->IsOfType(V_RUNTIME_CLASS(VisPath_cl)))
-      VSWIG_Lua_NewPointerObj(L,pObject, SWIGTYPE_p_VisPath_cl, VLUA_MANAGE_MEM_MANUAL);
-    else //if(pObject->IsOfType(V_RUNTIME_CLASS(VisObject3D_cl)))
-      VSWIG_Lua_NewPointerObj(L,pObject, SWIGTYPE_p_VisObject3D_cl, VLUA_MANAGE_MEM_MANUAL);
+    pType = pType->m_pBaseClass;
   }
-  //IVObjectComponent derived classes
-  else if(pObject->IsOfType(V_RUNTIME_CLASS(IVObjectComponent)))
-  {
-    if(pObject->IsOfType(V_RUNTIME_CLASS(VTransitionStateMachine)))
-      VSWIG_Lua_NewPointerObj(L,pObject, SWIGTYPE_p_VTransitionStateMachine, VLUA_MANAGE_MEM_MANUAL);
-    else if(pObject->IsOfType(V_RUNTIME_CLASS(VisTriggerSourceComponent_cl)))
-      VSWIG_Lua_NewPointerObj(L,pObject, SWIGTYPE_p_VisTriggerSourceComponent_cl, VLUA_MANAGE_MEM_MANUAL);
-    else if(pObject->IsOfType(V_RUNTIME_CLASS(VisTriggerTargetComponent_cl)))
-      VSWIG_Lua_NewPointerObj(L,pObject, SWIGTYPE_p_VisTriggerTargetComponent_cl, VLUA_MANAGE_MEM_MANUAL);
-    else if(pObject->IsOfType(V_RUNTIME_CLASS(VAnimationComponent)))
-      VSWIG_Lua_NewPointerObj(L,pObject, SWIGTYPE_p_VAnimationComponent, VLUA_MANAGE_MEM_MANUAL);
-    else if(pObject->IsOfType(V_RUNTIME_CLASS(VTimedValueComponent)))
-      VSWIG_Lua_NewPointerObj(L,pObject, SWIGTYPE_p_VTimedValueComponent, VLUA_MANAGE_MEM_MANUAL);
-    else if(pObject->IsOfType(V_RUNTIME_CLASS(VPostProcessingBaseComponent)))
-      VSWIG_Lua_NewPointerObj(L,pObject, SWIGTYPE_p_VPostProcessingBaseComponent, VLUA_MANAGE_MEM_MANUAL);
-    else //if(pObject->IsOfType(V_RUNTIME_CLASS(IVObjectComponent)))
-      VSWIG_Lua_NewPointerObj(L,pObject, SWIGTYPE_p_IVObjectComponent, VLUA_MANAGE_MEM_MANUAL);
-  }
-  else if(pObject->IsOfType(V_RUNTIME_CLASS(VDialog)))
-    VSWIG_Lua_NewPointerObj(L,pObject, SWIGTYPE_p_VDialog, VLUA_MANAGE_MEM_MANUAL);
-  else if(pObject->IsOfType(V_RUNTIME_CLASS(VWindowBase)))
-    VSWIG_Lua_NewPointerObj(L,pObject, SWIGTYPE_p_VWindowBase, VLUA_MANAGE_MEM_MANUAL);
-  else if(pObject->IsOfType(V_RUNTIME_CLASS(IVRendererNode)))
-    VSWIG_Lua_NewPointerObj(L,pObject, SWIGTYPE_p_IVRendererNode, VLUA_MANAGE_MEM_MANUAL);
-  else if(pObject->IsOfType(V_RUNTIME_CLASS(VisStaticMeshInstance_cl)))
-    VSWIG_Lua_NewPointerObj(L,pObject, SWIGTYPE_p_VisStaticMeshInstance_cl, VLUA_MANAGE_MEM_MANUAL);
-  else if(pObject->IsOfType(V_RUNTIME_CLASS(VisTypedEngineObject_cl)))
-    VSWIG_Lua_NewPointerObj(L,pObject, SWIGTYPE_p_VisTypedEngineObject_cl, VLUA_MANAGE_MEM_MANUAL);
-  else // base class VTypedObject
-    VSWIG_Lua_NewPointerObj(L,pObject, SWIGTYPE_p_VTypedObject, VLUA_MANAGE_MEM_MANUAL);
+
+  // Cast object to the actual type used and create a new proxy
+  VSWIG_Lua_NewPointerObj(L, VType::CastTo(pObject, pType), pType->m_pSwigTypeInfo, VLUA_MANAGE_MEM_MANUAL);
 }
 
 void LUA_CreateLocalsTable(lua_State* L)
-{                                               // ..., TOP
+{
   lua_newtable( L );                            // ..., new globals table (=newglob), TOP
   
   lua_newtable( L );                            // ..., newglob, metatable, TOP
-  lua_pushliteral( L, "__index" );              // ..., newglob, metatable, '__index', TOP
-  lua_pushvalue( L, LUA_GLOBALSINDEX );         // ..., newglob, metatable, '__index', GLOBAL_IDX, TOP
-
-  lua_settable( L, -3 );                        // ..., newglob, metatable, TOP   ( metatable["__index"] = GLOBAL_IDX ; drops 2 items )
+  lua_pushvalue( L, LUA_GLOBALSINDEX );         // ..., newglob, metatable, GLOBAL_IDX, TOP
+  lua_setfield(L, -2, "__index");               // ..., newglob, metatable, TOP   ( metatable["__index"] = GLOBAL_IDX)                 
   
-  lua_setmetatable( L, -2 );                    // ..., newglob, TOP              ( newglob.metatable = metatable ; drops 1 item )
+  lua_setmetatable( L, -2 );                    // ..., newglob, TOP              ( newglob.metatable = metatable )
   
   //add "G" field to new globals table so script can access original globals
   //Scripts can then use G to add variables to the original globals table
-  lua_pushliteral( L, "G" );                    // ..., newglob, 'G', TOP 
-  lua_pushvalue( L, LUA_GLOBALSINDEX );         // ..., newglob, 'G', GLOBAL_IDX, TOP 
-  lua_settable( L, -3 );                        // ..., newglob, TOP              ( newglob["G"] = GLOBAL_IDX ; drops 2 items )
-
-  lua_pushliteral( L, "LOCAL" );                // ..., newglob, 'LOCAL', TOP 
-  lua_pushvalue( L, -2  );                      // ..., newglob, 'LOCAL', newglob, TOP 
-  lua_settable( L, -3 );                        // ..., newglob, TOP              ( newglob["LOCAL"] = newglob ; drops 2 items )
+  lua_getglobal(L, "G");                        // ..., newglob, G, TOP  
+  lua_setfield(L, -2, "G");                     // ..., newglob, TOP              ( newglob["G"] = G )
+  
+  //add "LOCAL" field which references the own table
+  lua_pushvalue( L, -1  );                      // ..., newglob, newglob, TOP 
+  lua_setfield(L, -2, "LOCAL");                 // ..., newglob, TOP              ( newglob["LOCAL"] = newglob )
 
   lua_replace( L, LUA_GLOBALSINDEX );           // ..., TOP                       (uses the upper element <-1> newglob to replace it with the current GLOBAL_IDX)
 
@@ -519,270 +515,126 @@ bool LUA_GetFloatField(lua_State* L, int id, const char *pszField, float &value)
   return bRes;
 }
 
-bool LUA_GetValue(lua_State* L, int id, hkvVec2& value)
+template <typename T>
+bool LUA_GetValueFast(lua_State* L, int stackIndex, void * pSwigType, T &value)
 {
-  int iType = lua_type(L,id);
+  int iType = lua_type(L, stackIndex);
   if (iType <= LUA_TNIL)
   {
     return false;
   }
 
-  VASSERT(lua_isuserdata(L,id));
+  VASSERT(iType==LUA_TUSERDATA);
 
-  swig_lua_userdata *pUserData = (swig_lua_userdata *)lua_touserdata(L,id);
-  if (pUserData==NULL || VSWIG_TypeCheckStruct(pUserData->type,SWIGTYPE_p_hkvVec2)==NULL)
+  swig_lua_userdata *pUserData = (swig_lua_userdata *)lua_touserdata(L, stackIndex);
+  if (pUserData==NULL)
     return false;
 
-  value = *((hkvVec2*) pUserData->ptr);
+  swig_cast_info* cast = VSWIG_TypeCheckStruct(pUserData->type, (swig_type_info *)pSwigType);
+
+  if (cast == NULL)
+    return false;
+
+  T* ptr = (T*) VSWIG_TypeCast(cast, pUserData->ptr, NULL);
+
+  // Native object already deleted
+  if(!ptr)
+    return false;
+
+  value = *ptr;
 
   return true;
 }
 
-bool LUA_GetValue(lua_State* L, int id, hkvVec3& value)
+template <typename T>
+bool LUA_GetValueFast(lua_State* L, int stackIndex, void * pSwigType, T* &value)
 {
-  int iType = lua_type(L,id);
+  int iType = lua_type(L, stackIndex);
   if (iType <= LUA_TNIL)
   {
     return false;
   }
 
-  VASSERT(lua_isuserdata(L,id));
+  VASSERT(iType==LUA_TUSERDATA);
 
-  swig_lua_userdata *pUserData = (swig_lua_userdata *)lua_touserdata(L,id);
-  if (pUserData==NULL || VSWIG_TypeCheckStruct(pUserData->type,SWIGTYPE_p_hkvVec3)==NULL)
+  swig_lua_userdata *pUserData = (swig_lua_userdata *)lua_touserdata(L, stackIndex);
+  if (pUserData==NULL)
     return false;
 
-  value = *((hkvVec3*) pUserData->ptr);
+  swig_cast_info* cast = VSWIG_TypeCheckStruct(pUserData->type, (swig_type_info *)pSwigType);
+
+  if (cast == NULL)
+    return false;
+
+  value = (T*)VSWIG_TypeCast(cast, pUserData->ptr, NULL);
 
   return true;
 }
 
-bool LUA_GetValue(lua_State* L, int id, hkvVec4& value)
+bool LUA_GetValue(lua_State* L, int stackIndex, hkvVec2& value)
 {
-  int iType = lua_type(L,id);
-  if (iType <= LUA_TNIL)
-  {
-    return false;
-  }
-
-  VASSERT(lua_isuserdata(L,id));
-
-  swig_lua_userdata *pUserData = (swig_lua_userdata *)lua_touserdata(L,id);
-  if (pUserData==NULL || VSWIG_TypeCheckStruct(pUserData->type,SWIGTYPE_p_hkvVec4)==NULL)
-    return false;
-
-  value = *((hkvVec4*) pUserData->ptr);
-
-  return true;
+  return LUA_GetValueFast(L, stackIndex, SWIGTYPE_p_hkvVec2, value);
 }
 
-bool LUA_GetValue(lua_State* L, int id, hkvMat3& value)
+bool LUA_GetValue(lua_State* L, int stackIndex, hkvVec3& value)
 {
-  int iType = lua_type(L,id);
-  if (iType <= LUA_TNIL)
-  {
-    return false;
-  }
-
-  VASSERT(lua_isuserdata(L,id));
-
-  swig_lua_userdata *pUserData = (swig_lua_userdata *)lua_touserdata(L,id);
-  if (pUserData==NULL || VSWIG_TypeCheckStruct(pUserData->type,SWIGTYPE_p_hkvMat3)==NULL)
-    return false;
-
-  value = *((hkvMat3*) pUserData->ptr);
-
-  return true;
+  return LUA_GetValueFast(L, stackIndex, SWIGTYPE_p_hkvVec3, value);
 }
 
-bool LUA_GetValue(lua_State* L, int id, hkvMat4& value)
+bool LUA_GetValue(lua_State* L, int stackIndex, hkvVec4& value)
 {
-  int iType = lua_type(L,id);
-  if (iType <= LUA_TNIL)
-  {
-    return false;
-  }
-
-  VASSERT(lua_isuserdata(L,id));
-
-  swig_lua_userdata *pUserData = (swig_lua_userdata *)lua_touserdata(L,id);
-  if (pUserData==NULL || VSWIG_TypeCheckStruct(pUserData->type,SWIGTYPE_p_hkvMat4)==NULL)
-    return false;
-
-  value = *((hkvMat4*) pUserData->ptr);
-
-  return true;
+  return LUA_GetValueFast(L, stackIndex, SWIGTYPE_p_hkvVec4, value);
 }
 
-bool LUA_GetValue(lua_State* L, int id, hkvPlane& value)
+bool LUA_GetValue(lua_State* L, int stackIndex, hkvMat3& value)
 {
-  int iType = lua_type(L,id);
-  if (iType <= LUA_TNIL)
-  {
-    return false;
-  }
-
-  VASSERT(lua_isuserdata(L,id));
-
-  swig_lua_userdata *pUserData = (swig_lua_userdata *)lua_touserdata(L,id);
-  if (pUserData==NULL || VSWIG_TypeCheckStruct(pUserData->type,SWIGTYPE_p_hkvPlane)==NULL)
-    return false;
-
-  value = *((hkvPlane*) pUserData->ptr);
-
-  return true;
+  return LUA_GetValueFast(L, stackIndex, SWIGTYPE_p_hkvMat3, value);
 }
 
-bool LUA_GetValue(lua_State* L, int id, hkvQuat& value)
+bool LUA_GetValue(lua_State* L, int stackIndex, hkvMat4& value)
 {
-  int iType = lua_type(L,id);
-  if (iType <= LUA_TNIL)
-  {
-    return false;
-  }
-
-  VASSERT(lua_isuserdata(L,id));
-
-  swig_lua_userdata *pUserData = (swig_lua_userdata *)lua_touserdata(L,id);
-  if (pUserData==NULL || VSWIG_TypeCheckStruct(pUserData->type,SWIGTYPE_p_hkvQuat)==NULL)
-    return false;
-
-  value = *((hkvQuat*) pUserData->ptr);
-
-  return true;
+  return LUA_GetValueFast(L, stackIndex, SWIGTYPE_p_hkvMat4, value);
 }
 
-bool LUA_GetValue(lua_State* L, int id, hkvAlignedBBox &value)
+bool LUA_GetValue(lua_State* L, int stackIndex, hkvPlane& value)
 {
-  int iType = lua_type(L,id);
-  if (iType <= LUA_TNIL)
-  {
-    return false;
-  }
-
-  VASSERT(lua_isuserdata(L,id));
-
-  swig_lua_userdata *pUserData = (swig_lua_userdata *)lua_touserdata(L,id);
-  if (pUserData==NULL || VSWIG_TypeCheckStruct(pUserData->type,SWIGTYPE_p_hkvAlignedBBox)==NULL)
-    return false;
-
-  value = *((hkvAlignedBBox *)pUserData->ptr);
-
-  return true;
+  return LUA_GetValueFast(L, stackIndex, SWIGTYPE_p_hkvPlane, value);
 }
 
-bool LUA_GetValue(lua_State* L, int id, hkvBoundingSphere &value)
+bool LUA_GetValue(lua_State* L, int stackIndex, hkvQuat& value)
 {
-  int iType = lua_type(L,id);
-  if (iType <= LUA_TNIL)
-  {
-    return false;
-  }
-
-  VASSERT(lua_isuserdata(L,id));
-
-  swig_lua_userdata *pUserData = (swig_lua_userdata *)lua_touserdata(L,id);
-  if (pUserData==NULL || VSWIG_TypeCheckStruct(pUserData->type,SWIGTYPE_p_hkvBoundingSphere)==NULL)
-    return false;
-
-  value = *((hkvBoundingSphere *)pUserData->ptr);
-
-  return true;
+  return LUA_GetValueFast(L, stackIndex, SWIGTYPE_p_hkvQuat, value);
 }
 
-bool LUA_GetValue(lua_State* L, int id, VColorRef &value)
+bool LUA_GetValue(lua_State* L, int stackIndex, hkvAlignedBBox &value)
 {
-  int iType = lua_type(L,id);
-  if (iType <= LUA_TNIL)
-  {
-    return false;
-  }
-
-  VASSERT(lua_isuserdata(L,id));
-
-  swig_lua_userdata *pUserData = (swig_lua_userdata *)lua_touserdata(L,id);
-  if (pUserData==NULL || VSWIG_TypeCheckStruct(pUserData->type,SWIGTYPE_p_VColorRef)==NULL)
-    return false;
-
-  value = *((VColorRef *)pUserData->ptr);
-
-  return true;
+  return LUA_GetValueFast(L, stackIndex, SWIGTYPE_p_hkvAlignedBBox, value);
 }
 
-bool LUA_GetValue(lua_State* L, int id, VisTypedEngineObject_cl* &value)
+bool LUA_GetValue(lua_State* L, int stackIndex, hkvBoundingSphere &value)
 {
-  int iType = lua_type(L,id);
-  if (iType < 0)
-  {
-    return false;
-  }
-  else if (iType==LUA_TNIL)
-  {
-    value = NULL;
-    return true;
-  }
-
-  VASSERT(lua_isuserdata(L,id));
-
-  swig_lua_userdata *pUserData = (swig_lua_userdata *)lua_touserdata(L,id);
-
-  if (pUserData==NULL || VSWIG_TypeCheckStruct(pUserData->type,SWIGTYPE_p_VisTypedEngineObject_cl)==NULL)
-    return false;
-  
-  //this is just a weak test because also simple wrapper objects like vectors pass it...
-  value = (VisTypedEngineObject_cl *)pUserData->ptr;
-  return true;
+  return LUA_GetValueFast(L, stackIndex, SWIGTYPE_p_hkvBoundingSphere, value);
 }
 
-bool LUA_GetValue(lua_State* L, int id, VTypedObject* &value)
+bool LUA_GetValue(lua_State* L, int stackIndex, VColorRef &value)
 {
-  int iType = lua_type(L,id);
-  if (iType < 0)
-  {
-    return false;
-  }
-  else if (iType==LUA_TNIL)
-  {
-    value = NULL;
-    return true;
-  }
+  return LUA_GetValueFast(L, stackIndex, SWIGTYPE_p_VColorRef, value);
+}
 
-  VASSERT(lua_isuserdata(L,id));
+bool LUA_GetValue(lua_State* L, int stackIndex, VisTypedEngineObject_cl* &value)
+{
+  return LUA_GetValueFast(L, stackIndex, SWIGTYPE_p_VisTypedEngineObject_cl, value);
+}
 
-  swig_lua_userdata *pUserData = (swig_lua_userdata *)lua_touserdata(L,id);
-
-  if (pUserData==NULL || VSWIG_TypeCheckStruct(pUserData->type,SWIGTYPE_p_VTypedObject)==NULL)
-    return false;
-
-  //this is just a weak test because also simple wrapper objects like vectors pass it...
-  value = (VTypedObject *)pUserData->ptr;
-  return true;
+bool LUA_GetValue(lua_State* L, int stackIndex, VTypedObject* &value)
+{
+  return LUA_GetValueFast(L, stackIndex, SWIGTYPE_p_VTypedObject, value);
 }
 
 
-bool LUA_GetValue(lua_State* L, int id, IVObjectComponent* &value)
+bool LUA_GetValue(lua_State* L, int stackIndex, IVObjectComponent* &value)
 {
-  int iType = lua_type(L,id);
-  if(iType < 0)
-  {
-    return false;
-  }
-  else if(iType==LUA_TNIL)
-  {
-    value = NULL;
-    return true;
-  }
-
-  VASSERT(lua_isuserdata(L,id));
-
-  swig_lua_userdata *pUserData = (swig_lua_userdata *)lua_touserdata(L,id);
-
-  if(pUserData==NULL || VSWIG_TypeCheckStruct(pUserData->type,SWIGTYPE_p_IVObjectComponent)==NULL)
-    return false;
-
-  value = (IVObjectComponent *)pUserData->ptr;
-
-  return true;
+  return LUA_GetValueFast(L, stackIndex, SWIGTYPE_p_IVObjectComponent, value);
 }
 
 void* LUA_GetSwigType(lua_State* L, int iStackIndex)
@@ -1238,7 +1090,7 @@ VScriptMember * VLuaTableIterator::next()
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

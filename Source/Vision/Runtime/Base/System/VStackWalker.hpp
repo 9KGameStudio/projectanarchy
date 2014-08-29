@@ -68,18 +68,17 @@ public:
 
 private:
 #if defined(WIN32) && !defined(_VISION_WINRT)
-  static bool m_bModulesLoaded;
+  static bool m_bInitialized;
 
   static VString GenerateSearchPath();
-  static bool LoadModules();
-  static void LoadModule( HANDLE hProcess, PCWSTR img, PCWSTR mod, DWORD64 baseAadr, DWORD size);
+  static void Initialize();
 #endif
 };
 
 #endif //V_STACK_WALKER_HPP
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140805)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -30,21 +30,21 @@ public:
   }
 
   /// \brief
-	///  This pure virtual function has to be implemented to return model resources of specified file extension
-	///
-	/// \param szFilename
-	///  Filename of the model
-	///
-	/// \param pProperties
-	///  Additional properties
-	///
-	/// \returns
-	///  A new model resource instance. Or NULL if this factory does not support the file extension in the filename.
-	///
-	/// \remarks
-	///  The speedtree binding uses this to incorporate it into the vegetation painting.
-	///
-	TERRAIN_IMPEXP virtual IVTerrainDecorationModel* CreateModelWithFilename(const char *szFilename, const IVTerrainDecorationModel::ModelProperties_t *pProperties);
+  ///  This pure virtual function has to be implemented to return model resources of specified file extension
+  ///
+  /// \param szFilename
+  ///  Filename of the model
+  ///
+  /// \param pProperties
+  ///  Additional properties
+  ///
+  /// \returns
+  ///  A new model resource instance. Or NULL if this factory does not support the file extension in the filename.
+  ///
+  /// \remarks
+  ///  The speedtree binding uses this to incorporate it into the vegetation painting.
+  ///
+  TERRAIN_IMPEXP virtual IVTerrainDecorationModel* CreateModelWithFilename(const char *szFilename, const IVTerrainDecorationModel::ModelProperties_t *pProperties);
 };
 
 
@@ -57,114 +57,126 @@ class VTerrainDecorationEntityModel : public IVTerrainDecorationModel
 {
 public:
   /// \brief
-	///  Constructor
-	///
-	/// \param szFilename
-	///  Filename of the model
-	///
-	/// \param pProperties
-	///  Additional model properties
-	///
-	TERRAIN_IMPEXP VTerrainDecorationEntityModel(const char *szFilename, const ModelProperties_t *pProperties=NULL) :
+  ///  Constructor
+  ///
+  /// \param szFilename
+  ///  Filename of the model
+  ///
+  /// \param pProperties
+  //(  Additional model properties
+  ///
+  TERRAIN_IMPEXP VTerrainDecorationEntityModel(const char *szFilename, const ModelProperties_t *pProperties=NULL) :
     IVTerrainDecorationModel(szFilename, pProperties)
   {
   }
 
   /// \brief
-	///  Overridden reload function
-	///
-	/// \returns
-	///  Success of the reload function
-	///
-	TERRAIN_IMPEXP virtual BOOL Reload();
+  ///  Overridden reload function
+  ///
+  /// \returns
+  ///  Success of the reload function
+  ///
+  TERRAIN_IMPEXP virtual BOOL Reload();
 
   /// \brief
-	///  Overridden unload function
-	///
-	/// \returns
-	///  Success of the unload function
-	///
+  ///  Overridden unload function
+  ///
+  /// \returns
+  ///  Success of the unload function
+  ///
   TERRAIN_IMPEXP virtual BOOL Unload();
 
   /// \brief
-	///  Overridden function to update shader constants
-	///
-	TERRAIN_IMPEXP virtual void UpdateParameter();
+  ///  Overridden function to update shader constants
+  ///
+  TERRAIN_IMPEXP virtual void UpdateParameter();
 
   /// \brief
-	///  Overridden function to collect an instance's static lighting mesh
-	TERRAIN_IMPEXP virtual void GatherLightmapInfo(VLightmapSceneInfo &info, VTerrainDecorationInstance **pInst, int iCount);
+  ///  Overridden function to collect an instance's static lighting mesh
+  TERRAIN_IMPEXP virtual void GatherLightmapInfo(VLightmapSceneInfo &info, VTerrainDecorationInstance **pInst, int iCount);
 
 
   /// \brief
-	///  Overridable to respond to editing events
-	///
-	/// \param action
-	///  sub-action enum
-	///
-	/// \param pTerrain
-	///  terrain instance
-	///
-	/// \param pDataA
-	///  data pointer, depends on action
-	///
-	/// \param pDataB
-	///  data pointer, depends on action
-	///
-	TERRAIN_IMPEXP virtual void OnEditorEvent(EditorEvent_e action, VTerrain *pTerrain, void *pDataA, void *pDataB);
+  ///  Overridable to respond to editing events
+  ///
+  /// \param action
+  ///  sub-action enum
+  ///
+  /// \param pTerrain
+  ///  terrain instance
+  ///
+  /// \param pDataA
+  ///  data pointer, depends on action
+  ///
+  /// \param pDataB
+  ///  data pointer, depends on action
+  ///
+  TERRAIN_IMPEXP virtual void OnEditorEvent(EditorEvent_e action, VTerrain *pTerrain, void *pDataA, void *pDataB);
 
   /// \brief
-	///  Renders actual instances
-	///
-	/// \param pInfoComp
-	///  source visibility
-	///
-	/// \param pInstList
-	///  List of visible instances
-	///
-	/// \param iCount
-	///  Number of list entries
-	///
+  ///  Renders actual instances
+  ///
+  /// \param pInfoComp
+  ///  source visibility
+  ///
+  /// \param pInstList
+  ///  List of visible instances
+  ///
+  /// \param iCount
+  ///  Number of list entries
+  ///
+  /// \param vTranslate
+  ///  The position translation to render the instances
+  ///
   /// \param eRenderMode
   ///  The render mode to use
   ///
-	TERRAIN_IMPEXP virtual void RenderBatch(VTerrainVisibilityCollectorComponent *pInfoComp, VTerrainDecorationInstance **pInstList, int iCount,
+  TERRAIN_IMPEXP virtual void RenderBatch(VTerrainVisibilityCollectorComponent *pInfoComp, VTerrainDecorationInstance **pInstList, int iCount, const hkvVec3 &vTranslate,
                                           RenderMode_e eRenderMode = RENDER_MODE_OTW) HKV_OVERRIDE;
 
   /// \brief
+  ///  Renders actual instances
+  TERRAIN_IMPEXP virtual void RenderBatch(VisMeshBuffer_cl *pInstanceStreams, int iInstanceCount, int iStreamMask, const hkvVec3 &vTranslate, RenderMode_e eRenderMode = RENDER_MODE_OTW) HKV_OVERRIDE;
+
+  /// \brief
   ///   Internal functions that is used for depth fill rendering
-  void RenderBatchDepthFill(VTerrainVisibilityCollectorComponent *pInfoComp, VTerrainDecorationInstance **pInstList, int iCount);
+  void RenderBatchDepthFill(VTerrainVisibilityCollectorComponent *pInfoComp, VTerrainDecorationInstance **pInstList, int iCount, const hkvVec3 &vTranslate);
 
   /// \brief
   ///   Internal functions that is used for depth shadow rendering
-  void RenderBatchDepthShadow(VTerrainVisibilityCollectorComponent *pInfoComp, VTerrainDecorationInstance **pInstList, int iCount);
+  void RenderBatchDepthShadow(VTerrainVisibilityCollectorComponent *pInfoComp, VTerrainDecorationInstance **pInstList, int iCount, const hkvVec3 &vTranslate);
 
   /// \brief
   ///   Internal functions that is used for OTW rendering
-  void RenderBatchOTW(VTerrainVisibilityCollectorComponent *pInfoComp, VTerrainDecorationInstance **pInstList, int iCount);
+  void RenderBatchOTW(VTerrainVisibilityCollectorComponent *pInfoComp, VTerrainDecorationInstance **pInstList, int iCount, const hkvVec3 &vTranslate);
 
   /// \brief
   ///   Internal functions that is used for IR rendering
-  void RenderBatchIR(VTerrainVisibilityCollectorComponent *pInfoComp, VTerrainDecorationInstance **pInstList, int iCount, RenderMode_e eRenderMode);
+  void RenderBatchIR(VTerrainVisibilityCollectorComponent *pInfoComp, VTerrainDecorationInstance **pInstList, int iCount, const hkvVec3 &vTranslate, RenderMode_e eRenderMode);
 
   /// \brief
-  ///   Recreates the IR Shaders for pre and main pass
+  ///   Recreates the IR Shaders for pre and main pass (instanced rendering)
   void RecreateIRShaders(VisSurface_cl* pSurface, VShaderEffectLib* pEffectLib);
+
+  /// \brief
+  ///   Recreate the IR Shader for main pass (non-instanced rendering)
+  VCompiledTechnique* RecreateIRShaderMain(VisSurface_cl* pSurface, VShaderEffectLib* pEffectLib);
+
+  /// \brief
+  ///   Recreate the IR Shader for pre pass (non-instanced rendering)
+  VCompiledTechnique* RecreateIRShaderPre(VisSurface_cl* pSurface, VShaderEffectLib* pEffectLib);
 
   /// \brief
   ///   Retrieves the param string used to setup the IR shader
   char* GetParamStringForIRSurface(VisSurface_cl* pSurface, char* pszParam);
 
   /// \brief
-	///  Return the decoration type
+  ///  Return the decoration type
   TERRAIN_IMPEXP virtual ModelType_e GetDecorationType() const {return Model;}
 
   ///\brief
-	///  Overridden function that returns 0 or 1 depending on the capsule radius in the model properties
-  TERRAIN_IMPEXP virtual int GetCollisionSubObjectCount() HKV_OVERRIDE
-  {
-    return (IsValid() && m_Properties.m_fCollisionCapsuleRadius > 0.f) ? 1 : 0;
-  }
+  ///  Overridden function that returns 0 or 1 depending on the capsule radius in the model properties
+  TERRAIN_IMPEXP virtual int GetCollisionSubObjectCount() HKV_OVERRIDE;
 
   ///\brief
   ///  Overridden function that returns a capsule in case a capsule radius has been defined
@@ -172,12 +184,12 @@ public:
 
 #ifdef SUPPORTS_SNAPSHOT_CREATION
   /// \brief
-	///  Overridden function to gather resource dependencies
-	///
-	/// \param snapshot
-	///  snapshot info
-	///
-	TERRAIN_IMPEXP virtual void GetDependencies(VResourceSnapshot &snapshot)
+  ///  Overridden function to gather resource dependencies
+  ///
+  /// \param snapshot
+  ///  snapshot info
+  ///
+  TERRAIN_IMPEXP virtual void GetDependencies(VResourceSnapshot &snapshot)
   {
     // A decoration model instance may occur multiple times, and gathering the mesh's dependencies
     // can be rather costly. Thus, only gather mesh dependencies once.
@@ -208,18 +220,20 @@ public:
   VCompiledTechniquePtr m_spInstancingTechShadow;
   VCompiledTechniquePtr m_spInstancingTechIRPrePass;
   VCompiledTechniquePtr m_spInstancingTechIRMainPass;
+  VisShaderSetPtr m_pShaderSetIRPrePass;
+  VisShaderSetPtr m_pShaderSetIRMainPass;
 
   int m_iModelStreams;
 
   VisShaderSetPtr m_spVegetationShaders;
-  VDecorationCollisionPrimitive m_CollisionCapsule;
+  VDecorationCollisionPrimitive m_CollisionObject;
   static VTerrainDecorationEntityModelFactory g_EntityModelFactory; ///< one static instance that is globally registered
 };
 
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

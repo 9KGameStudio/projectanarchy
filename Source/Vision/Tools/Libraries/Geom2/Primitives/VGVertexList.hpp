@@ -21,7 +21,7 @@ public:
   typedef VArray<hkvVec2,    const hkvVec2&>    Vertex2Array;
   typedef VArray<hkvVec3,    const hkvVec3&>    Vertex3Array;
   typedef VArray<hkvVec4,    const hkvVec4&>    Vertex4Array;
-  typedef VArray<hkvVec4,    const hkvVec4&>   ColorArray;
+  typedef VArray<hkvVec4,    const hkvVec4&>    ColorArray;
   typedef VArray<VGVWeights, const VGVWeights&> WeightsArray;
 
 
@@ -533,7 +533,7 @@ private:
 };
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

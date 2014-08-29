@@ -16,7 +16,12 @@
 // #define HK_INT_VECTOR_NATIVE_VARIABLESHIFT // No variable vector shifts in SSE
 #define HK_INT_VECTOR_NATIVE_MERGEPACK
 #define HK_INT_VECTOR_NATIVE_SHUFFLE
-#define HK_INT_VECTOR_NATIVE_VPERM
+#define HK_INT_VECTOR_NATIVE_HORIZONTAL_MAX
+
+#if HK_SSE_VERSION >= 0x31
+#	define HK_INT_VECTOR_NATIVE_PERMUTE8
+#endif 
+
 #define HK_INT_VECTOR_NATIVE_SPLAT
 #define HK_INT_VECTOR_NATIVE_FLOATCONV
 
@@ -59,6 +64,41 @@ HK_FORCE_INLINE void hkIntVector::setZero()
 	m_quad = _mm_setzero_si128();
 }
 
+#if HK_SSE_VERSION >= 0x41
+template <int I> 
+HK_FORCE_INLINE void hkIntVector::zeroComponent32()
+{
+	HK_INT_VECTOR_SUBINDEX_CHECK;
+	m_quad = _mm_blend_epi16(m_quad, _mm_setzero_si128(), 3 << (2*I));
+}
+#else
+template <> 
+HK_FORCE_INLINE void hkIntVector::zeroComponent32<0>()
+{
+	m_quad = _mm_slli_si128(_mm_srli_si128(m_quad,4),4);
+}
+template <>
+HK_FORCE_INLINE void hkIntVector::zeroComponent32<1>()
+{
+	m_quad = _mm_castps_si128(_mm_shuffle_ps( _mm_unpacklo_ps(_mm_castsi128_ps(m_quad), _mm_setzero_ps()), _mm_castsi128_ps(m_quad), _MM_SHUFFLE(3,2,1,0)));
+}
+template <>
+HK_FORCE_INLINE void hkIntVector::zeroComponent32<2>()
+{
+	m_quad = _mm_castps_si128(_mm_shuffle_ps( _mm_castsi128_ps(m_quad), _mm_unpackhi_ps(_mm_castsi128_ps(m_quad), _mm_setzero_ps()), _MM_SHUFFLE(2,3,1,0)));
+}
+template <> 
+HK_FORCE_INLINE void hkIntVector::zeroComponent32<3>()
+{
+	m_quad = _mm_srli_si128(_mm_slli_si128(m_quad,4),4);
+}
+template <int I> 
+HK_FORCE_INLINE void hkIntVector::zeroComponent32()
+{
+	HK_INT_VECTOR_SUBINDEX_CHECK;
+}
+#endif
+
 HK_FORCE_INLINE void hkIntVector::setAll(const int& i)
 {
 	m_quad = _mm_set1_epi32(i);
@@ -69,55 +109,51 @@ HK_FORCE_INLINE void hkIntVector::setFirstComponent(int value)
 	m_quad = _mm_cvtsi32_si128(value);
 }
 
-#if HK_SSE_VERSION >= 0x41
+template <>
+HK_FORCE_INLINE void hkIntVector::setComponent<0>(int value)
+{
+	setFirstComponent(value);
+}
+
 template <int I>
 HK_FORCE_INLINE void hkIntVector::setComponent(int value)
 {
 	HK_INT_VECTOR_SUBINDEX_CHECK;
+#if HK_SSE_VERSION >= 0x41
 	m_quad = _mm_insert_epi32(m_quad, value, I);
-}
 #else
-template <>
-HK_FORCE_INLINE void hkIntVector::setComponent<0>(int value)
-{
-	hkQuadUint val = _mm_set1_epi32(value);
-	m_quad = _mm_castps_si128(_mm_move_ss( _mm_castsi128_ps(m_quad), _mm_castsi128_ps(val) ));
-}
-template <>
-HK_FORCE_INLINE void hkIntVector::setComponent<1>(int value)
-{
-	hkQuadUint val = _mm_set1_epi32(value);
-	__m128 q = _mm_castsi128_ps(m_quad);
-	m_quad = _mm_castps_si128(_mm_shuffle_ps( _mm_unpacklo_ps(q, _mm_castsi128_ps(val)), q, _MM_SHUFFLE(3,2,1,0)));
-}
-template <>
-HK_FORCE_INLINE void hkIntVector::setComponent<2>(int value)
-{
-	hkQuadUint val = _mm_set1_epi32(value);
-	__m128 q = _mm_castsi128_ps(m_quad);
-	m_quad = _mm_castps_si128(_mm_shuffle_ps( q, _mm_unpackhi_ps(q, _mm_castsi128_ps(val)), _MM_SHUFFLE(2,3,1,0)));
-}
-template <>
-HK_FORCE_INLINE void hkIntVector::setComponent<3>(int value)
-{
-	hkQuadUint val = _mm_set1_epi32(value);
-	__m128 q = _mm_castsi128_ps(m_quad);
-	m_quad = _mm_castps_si128(_mm_shuffle_ps( q, _mm_unpackhi_ps(q, _mm_castsi128_ps(val)), _MM_SHUFFLE(3,0,1,0)));
-}
-template <int N>
-HK_FORCE_INLINE void hkIntVector::setComponent(int value)
-{
-	HK_INT_VECTOR_NOT_IMPLEMENTED;
-}
+	m_quad = _mm_insert_epi16(m_quad, value,       (I*2));
+	m_quad = _mm_insert_epi16(m_quad, value >> 16, (I*2)+1);
 #endif
+}
 
-HK_FORCE_INLINE void hkIntVector::setComponent(int componentIdx, int value)
+HK_FORCE_INLINE void hkIntVector::setComponent(int I, int value)
 {
-	hkVector4fComparison cmp;	cmp.set((hkVector4fComparison::Mask)(hkVector4ComparisonMask::MASK_X << componentIdx));
-	const __m128i cmpMask		= _mm_castps_si128(cmp.m_mask);
-	const __m128i val			= _mm_set1_epi32(value);
+	HK_MATH_ASSERT(0x6d0c31d7, I>=0 && I<4, "index out of bounds for component access");
 
-	m_quad = _mm_or_si128(_mm_and_si128(cmpMask, val), _mm_andnot_si128(cmpMask, m_quad));
+#if defined(HK_COMPILER_GCC)
+	if (__builtin_constant_p(I)) 
+	{
+#if HK_SSE_VERSION >= 0x41
+		m_quad = _mm_insert_epi32(m_quad, value, I);
+#else
+		m_quad = _mm_insert_epi16(m_quad, value,       (I*2));
+		m_quad = _mm_insert_epi16(m_quad, value >> 16, (I*2)+1);
+#endif
+	}
+	else
+#endif
+	{
+		hkVector4fComparison cmp;	cmp.set((hkVector4ComparisonMask::Mask)(hkVector4ComparisonMask::MASK_X << I));
+		const __m128i cmpMask		= _mm_castps_si128(cmp.m_mask);
+		const __m128i val			= _mm_set1_epi32(value);
+
+#if HK_SSE_VERSION >= 0x41
+		m_quad = _mm_blendv_epi8(m_quad, val, cmpMask);
+#else
+		m_quad = _mm_or_si128(_mm_and_si128(cmpMask, val), _mm_andnot_si128(cmpMask, m_quad));
+#endif
+	}
 }
 
 HK_FORCE_INLINE void hkIntVector::set(int x, int y, int z, int w)
@@ -176,15 +212,29 @@ HK_FORCE_INLINE hkUint32 hkIntVector::getU32(int idx) const
 	return HK_M128(m_quad).m128i_u32[idx];
 }
 
-HK_FORCE_INLINE int hkIntVector::getComponent(int idx) const
+HK_FORCE_INLINE int hkIntVector::getComponent(int I) const
 {
-	HK_MATH_ASSERT(0x6d0c31d7, (idx >= 0) && (idx < 4), "index out of bounds for component access");
-	switch ( idx )
+	HK_MATH_ASSERT(0x6d0c31d7, (I >= 0) && (I < 4), "index out of bounds for component access");
+
+#if defined(HK_COMPILER_GCC)
+	if (__builtin_constant_p(I)) 
 	{
-	case 1:  return getComponent<1>();
-	case 2:  return getComponent<2>();
-	case 3:  return getComponent<3>();
-	default: return getComponent<0>();
+#if HK_SSE_VERSION >= 0x41
+		return _mm_extract_epi32(m_quad, I);
+#else
+		return _mm_cvtsi128_si32(_mm_shuffle_epi32(m_quad, _MM_SHUFFLE(I,I,I,I)));
+#endif
+	}
+	else
+#endif
+	{
+		switch ( I )
+		{
+			case 1:  return getComponent<1>();
+			case 2:  return getComponent<2>();
+			case 3:  return getComponent<3>();
+			default: return getComponent<0>();
+		}
 	}
 }
 
@@ -209,7 +259,12 @@ namespace hkIntVector_AdvancedInterface
 			self = _mm_castps_si128(_mm_load_ss((const float*)p));
 			break;
 		case 2:
+#if defined(HK_COMPILER_MSVC)
+			// VS bug: movq instruction causes mem corruption
+			self = _mm_castpd_si128(_mm_load_sd((const double*)p));
+#else
 			self = _mm_loadl_epi64((const __m128i*)p);
+#endif
 			break;
 		case 3:
 			self = _mm_set_epi32(0, p[2], p[1], p[0]);
@@ -247,8 +302,19 @@ namespace hkIntVector_AdvancedInterface
 	template <int N>
 	struct unrollU32_load<N, HK_IO_NOT_CACHED> { HK_FORCE_INLINE static void apply(hkQuadUint& self, const hkUint32* HK_RESTRICT p)
 	{
+#if HK_SSE_VERSION >= 0x41
 		HK_MATH_ASSERT(0x70aae483, ( ((hkUlong)p) & ((sizeof(hkUint32)*(N!=3?N:4) )-1) ) == 0, "pointer must be aligned for SIMD.");
+		if (N==4)
+		{
+			self = _mm_stream_load_si128((__m128i*) p);
+		}
+		else
+		{
+			unrollU32_load<N, HK_IO_SIMD_ALIGNED>::apply(self,p);
+		}
+#else
 		unrollU32_load<N, HK_IO_SIMD_ALIGNED>::apply(self,p);
+#endif
 	} };
 
 }
@@ -331,11 +397,21 @@ namespace hkIntVector_AdvancedInterface
 			_mm_store_ss((float*)p, _mm_castsi128_ps(self));
 			break;
 		case 2:
+#if defined(HK_COMPILER_MSVC)
+			// VS bug: movq instruction causes mem corruption
+			_mm_store_sd((double*)p, _mm_castsi128_pd(self));
+#else
 			_mm_storel_epi64((__m128i*) p, self);
+#endif
 			break;
 		case 3:
 			{
+#if defined(HK_COMPILER_MSVC)
+				// VS bug: movq instruction causes mem corruption
+				_mm_store_sd((double*)p, _mm_castsi128_pd(self));
+#else
 				_mm_storel_epi64((__m128i*) p, self);
+#endif
 				const hkQuadUint p2 = _mm_shuffle_epi32(self,_MM_SHUFFLE(2,2,2,2));
 				_mm_store_ss((float*)(p+2), _mm_castsi128_ps(p2));
 			}
@@ -372,7 +448,18 @@ namespace hkIntVector_AdvancedInterface
 	struct unrollU32_store<N, HK_IO_NOT_CACHED> { HK_FORCE_INLINE static void apply(const hkQuadUint& self, hkUint32* HK_RESTRICT p)
 	{
 		HK_MATH_ASSERT(0x64211c2f, ( ((hkUlong)p) & ((sizeof(hkUint32)*(N!=3?N:4) )-1) ) == 0, "pointer must be aligned for SIMD.");
-		unrollU32_store<N, HK_IO_SIMD_ALIGNED>::apply(self,p);
+		if (N==4)
+		{
+			_mm_stream_si128((__m128i*)p, self);
+		}
+		else if (N==1)
+		{
+			_mm_stream_si32((int*)p, _mm_cvtsi128_si32(self));
+		}
+		else
+		{
+			unrollU32_store<N, HK_IO_SIMD_ALIGNED>::apply(self,p);
+		}
 	} };
 
 } // namespace 
@@ -408,7 +495,7 @@ HK_FORCE_INLINE void hkIntVector::storeNotAligned(hkUint32* p) const
 
 HK_FORCE_INLINE void hkIntVector::setNot(hkIntVectorParameter a)
 {
-	m_quad = _mm_andnot_si128(a.m_quad, _mm_set1_epi32(-1));
+	m_quad = _mm_andnot_si128(a.m_quad, _mm_cmpeq_epi32(_mm_setzero_si128(), _mm_setzero_si128()));
 }
 
 HK_FORCE_INLINE hkBool32 hkIntVector::isNegativeAssumingAllValuesEqual(  ) const
@@ -545,6 +632,11 @@ HK_FORCE_INLINE const hkVector4fComparison hkIntVector::equalS32(hkIntVectorPara
 	return hkVector4fComparison::convert(_mm_castsi128_ps(m));
 }
 
+HK_FORCE_INLINE void hkIntVector::setCompareGreaterS16(hkIntVectorParameter a, hkIntVectorParameter b)
+{
+	m_quad = _mm_cmpgt_epi16( a.m_quad, b.m_quad );
+}
+
 HK_FORCE_INLINE void hkIntVector::setOr(hkIntVectorParameter a, hkIntVectorParameter b)
 {
 	m_quad = _mm_or_si128(a.m_quad, b.m_quad);
@@ -599,7 +691,7 @@ HK_FORCE_INLINE void hkIntVector::setAddU32( hkIntVectorParameter a, hkIntVector
 	m_quad = _mm_add_epi32( a.m_quad, b.m_quad );
 }
 
-#define HK_INT_VECTOR_ADD64_AVAILABLE
+#define HK_INT_VECTOR_NATIVE_ADD64
 HK_FORCE_INLINE void hkIntVector::setAddU64( hkIntVectorParameter a, hkIntVectorParameter b )
 {
 	m_quad = _mm_add_epi64( a.m_quad, b.m_quad );
@@ -614,7 +706,7 @@ HK_FORCE_INLINE void hkIntVector::setSubU64( hkIntVectorParameter a, hkIntVector
 HK_FORCE_INLINE void hkIntVector::setAddSaturateU32( hkIntVectorParameter a, hkIntVectorParameter b )
 {
 #if HK_SSE_VERSION >= 0x41
-	hkQuadUint max = _mm_set1_epi32(-1);
+	hkQuadUint max = _mm_cmpeq_epi32(_mm_setzero_si128(), _mm_setzero_si128());
 	hkQuadUint diff = _mm_sub_epi32(max, a.m_quad);
 	hkQuadUint smaller = _mm_min_epu32(diff, b.m_quad);
 	m_quad = _mm_add_epi32(a.m_quad, smaller);
@@ -697,22 +789,12 @@ HK_FORCE_INLINE void hkIntVector::setMaxS32( hkIntVectorParameter a, hkIntVector
 
 HK_FORCE_INLINE void hkIntVector::setMinS16( hkIntVectorParameter a, hkIntVectorParameter b )
 {
-#if HK_SSE_VERSION >= 0x41
 	m_quad = _mm_min_epi16(a.m_quad, b.m_quad);
-#else
-	const __m128i cmp = _mm_cmplt_epi16(a.m_quad, b.m_quad);
-	m_quad = _mm_or_si128( _mm_and_si128(cmp, a.m_quad), _mm_andnot_si128(cmp, b.m_quad));
-#endif
 }
 
 HK_FORCE_INLINE void hkIntVector::setMaxS16( hkIntVectorParameter a, hkIntVectorParameter b )
 {
-#if HK_SSE_VERSION >= 0x41
 	m_quad = _mm_max_epi16(a.m_quad, b.m_quad);
-#else
-	const __m128i cmp = _mm_cmpgt_epi16(a.m_quad, b.m_quad);
-	m_quad = _mm_or_si128( _mm_and_si128(cmp, a.m_quad), _mm_andnot_si128(cmp, b.m_quad));
-#endif
 }
 
 //
@@ -838,13 +920,20 @@ HK_FORCE_INLINE void hkIntVector::setConvertU32ToU16( hkIntVectorParameter a, hk
 
 HK_FORCE_INLINE void hkIntVector::setConvertSaturateS32ToU16( hkIntVectorParameter a, hkIntVectorParameter b )
 {
-	static HK_ALIGN16( const hkUint32 offset[4] )  = { 0x00008000, 0x00008000, 0x00008000, 0x00008000 };
-	static HK_ALIGN16( const hkUint32 offset2[4] ) = { 0x80008000, 0x80008000, 0x80008000, 0x80008000 };
+#if HK_SSE_VERSION >= 0x41
+	m_quad = _mm_packus_epi32( a.m_quad, b.m_quad );
+#else
+	hkQuadUint offset  = _mm_insert_epi16(_mm_setzero_si128(), 0x8000, 0x0); // 0x00008000
+	hkQuadUint offset2 = _mm_shufflelo_epi16(offset, _MM_SHUFFLE(1,1,0,0));	 // 0x80008000
 
-	hkQuadUint a0 = _mm_sub_epi32(a.m_quad, *(hkQuadUint*)&offset);		// shift 0 to -max
-	hkQuadUint b0 = _mm_sub_epi32(b.m_quad, *(hkQuadUint*)&offset);
+	offset = _mm_shuffle_epi32(offset, _MM_SHUFFLE(0,0,0,0)); // broadcast
+	offset2 = _mm_shuffle_epi32(offset2, _MM_SHUFFLE(0,0,0,0)); // broadcast
+
+	hkQuadUint a0 = _mm_sub_epi32(a.m_quad, offset);		// shift 0 to -max
+	hkQuadUint b0 = _mm_sub_epi32(b.m_quad, offset);
 	hkQuadUint r  = _mm_packs_epi32(a0, b0);	// signed saturate
-	m_quad = _mm_add_epi16( r, *(hkQuadUint*)&offset2 );	// revert shift
+	m_quad = _mm_add_epi16( r, offset2 );	// revert shift
+#endif
 }
 
 HK_FORCE_INLINE void hkIntVector::setConvertSaturateS32ToS16( hkIntVectorParameter a, hkIntVectorParameter b )
@@ -891,6 +980,29 @@ HK_FORCE_INLINE void hkIntVector::setPermutation( hkIntVectorParameter v )
 		((P << ( 0 + 6)) & 0xc0);
 
 	m_quad = _mm_shuffle_epi32(v.m_quad, shuf); 
+}
+
+template<unsigned int i, unsigned int j, unsigned int k, unsigned int l>
+HK_FORCE_INLINE void hkIntVector::setPermutation2(hkIntVectorParameter a, hkIntVectorParameter b)
+{
+	HK_COMPILE_TIME_ASSERT(i<8 && j<8 && k<8 && l<8);
+	HK_COMPILE_TIME_ASSERT(i>=0 && j>=0 && k>=0 && l>=0);
+
+	if(i<4 && j<4 && k>=4 && l>=4)
+	{
+		m_quad = _mm_castps_si128(_mm_shuffle_ps(_mm_castsi128_ps(a.m_quad), _mm_castsi128_ps(b.m_quad), _MM_SHUFFLE(l&3, k&3, j&3, i&3)));
+	}
+	else if(i>=4 && j>=4 && k<4 && l<4)
+	{
+		m_quad = _mm_castps_si128(_mm_shuffle_ps(_mm_castsi128_ps(b.m_quad), _mm_castsi128_ps(a.m_quad), _MM_SHUFFLE(l&3, k&3, j&3, i&3)));
+	}
+	else
+	{
+		hkQuadFloat32 tmp1 = _mm_shuffle_ps(_mm_castsi128_ps(a.m_quad), _mm_castsi128_ps(b.m_quad), _MM_SHUFFLE(j&3, i&3, j&3, i&3));
+		hkQuadFloat32 tmp2 = _mm_shuffle_ps(_mm_castsi128_ps(a.m_quad), _mm_castsi128_ps(b.m_quad), _MM_SHUFFLE(l&3, k&3, l&3, k&3));
+
+		m_quad = _mm_castps_si128(_mm_shuffle_ps(tmp1, tmp2, _MM_SHUFFLE((l&4)?3:1, (k&4)?2:0, (j&4)?3:1, (i&4)?2:0)));
+	}
 }
 
 HK_FORCE_INLINE void hkIntVector::setPermuteU8(hkIntVectorParameter aIn, hkIntVectorParameter mask)
@@ -951,6 +1063,16 @@ HK_FORCE_INLINE void hkIntVector::setPermuteU8(hkIntVectorParameter aIn, hkIntVe
 //
 // Splat
 //
+template <> 
+HK_FORCE_INLINE void hkIntVector::splatImmediate32<0>()
+{
+	m_quad = _mm_setzero_si128();
+}
+template <> 
+HK_FORCE_INLINE void hkIntVector::splatImmediate32<-1>()
+{
+	m_quad = _mm_cmpeq_epi32(_mm_setzero_si128(),_mm_setzero_si128());
+}
 template <int VALUE> 
 HK_FORCE_INLINE void hkIntVector::splatImmediate32()
 {
@@ -958,6 +1080,16 @@ HK_FORCE_INLINE void hkIntVector::splatImmediate32()
 	m_quad = _mm_set1_epi32(VALUE);
 }
 
+template <> 
+HK_FORCE_INLINE void hkIntVector::splatImmediate16<0>()
+{
+	m_quad = _mm_setzero_si128();
+}
+template <> 
+HK_FORCE_INLINE void hkIntVector::splatImmediate16<-1>()
+{
+	m_quad = _mm_cmpeq_epi32(_mm_setzero_si128(),_mm_setzero_si128());
+}
 template <int VALUE> 
 HK_FORCE_INLINE void hkIntVector::splatImmediate16()
 {
@@ -965,6 +1097,16 @@ HK_FORCE_INLINE void hkIntVector::splatImmediate16()
 	m_quad = _mm_set1_epi16(VALUE);
 }
 
+template <> 
+HK_FORCE_INLINE void hkIntVector::splatImmediate8<0>()
+{
+	m_quad = _mm_setzero_si128();
+}
+template <> 
+HK_FORCE_INLINE void hkIntVector::splatImmediate8<-1>()
+{
+	m_quad = _mm_cmpeq_epi32(_mm_setzero_si128(),_mm_setzero_si128());
+}
 template <int VALUE> 
 HK_FORCE_INLINE void hkIntVector::splatImmediate8()
 {
@@ -1497,12 +1639,14 @@ HK_FORCE_INLINE void hkIntVector::setSelect( hkIntVectorParameter trueValue, hkI
 template <hkIntVectorConstant vectorConstant>
 HK_FORCE_INLINE /*static*/ const hkIntVector& HK_CALL hkIntVector::getConstant()
 {
+	HK_INT_VECTOR_CONSTANT_CHECK;
 	return *(const hkIntVector*) (g_intVectorConstants + vectorConstant);
 }
 
-HK_FORCE_INLINE /*static*/ const hkIntVector& HK_CALL hkIntVector::getConstant(hkIntVectorConstant constant)
+HK_FORCE_INLINE /*static*/ const hkIntVector& HK_CALL hkIntVector::getConstant(hkIntVectorConstant vectorConstant)
 {
-	return *(const hkIntVector*) (g_intVectorConstants + constant);
+	HK_MATH_ASSERT(0x2771faa1,((vectorConstant>HK_QUADINT_BEGIN)&&(vectorConstant<HK_QUADINT_END)),"unknown vector constant");
+	return *(const hkIntVector*) (g_intVectorConstants + vectorConstant);
 }
 
 /// result.u32[i] = highshorts.u16[i]<<16 + lowShorts.u16[i]. highShorts.u16/lowShorts.u16[4..7] are ignored
@@ -1554,9 +1698,12 @@ HK_FORCE_INLINE int hkIntVector::horizontalMinS32<2>() const
 {
 	const __m128i x		= _mm_shuffle_epi32(m_quad,_MM_SHUFFLE(0,0,0,0));
 	const __m128i y		= _mm_shuffle_epi32(m_quad,_MM_SHUFFLE(1,1,1,1));
+#if (HK_SSE_VERSION >= 0x41)
+	const __m128i xy    = _mm_min_epi32(x,y);
+#else
 	const __m128i mask	= _mm_cmplt_epi32(x, y);
 	const __m128i xy	= _mm_or_si128(_mm_and_si128(mask, x), _mm_andnot_si128(mask, y));
-
+#endif
 	return _mm_cvtsi128_si32(xy);
 }
 
@@ -1566,11 +1713,15 @@ HK_FORCE_INLINE int hkIntVector::horizontalMinS32<3>() const
 	const __m128i x		= _mm_shuffle_epi32(m_quad,_MM_SHUFFLE(0,0,0,0));
 	const __m128i y		= _mm_shuffle_epi32(m_quad,_MM_SHUFFLE(1,1,1,1));
 	const __m128i z		= _mm_shuffle_epi32(m_quad,_MM_SHUFFLE(2,2,2,2));
+#if (HK_SSE_VERSION >= 0x41)
+	__m128i xyz   = _mm_min_epi32(x,y);
+	        xyz   = _mm_min_epi32(z,xyz);
+#else
 	const __m128i mxy	= _mm_cmplt_epi32(x, y);
 	const __m128i xy	= _mm_or_si128(_mm_and_si128(mxy, x), _mm_andnot_si128(mxy, y));
 	const __m128i mxyz	= _mm_cmplt_epi32(xy, z);
 	const __m128i xyz	= _mm_or_si128(_mm_and_si128(mxyz, xy), _mm_andnot_si128(mxyz, z));
-
+#endif
 	return _mm_cvtsi128_si32(xyz);
 }
 
@@ -1578,12 +1729,19 @@ template <>
 HK_FORCE_INLINE int hkIntVector::horizontalMinS32<4>() const
 {
 	const __m128i yxwz	= _mm_shuffle_epi32(m_quad, _MM_SHUFFLE(1,0,3,2));	// [y, x, w, z]
+#if (HK_SSE_VERSION >= 0x41)
+	const __m128i sum0  = _mm_min_epi32(m_quad,yxwz);
+#else
 	const __m128i m0	= _mm_cmplt_epi32(yxwz, m_quad);
 	const __m128i sum0	= _mm_or_si128(_mm_and_si128(m0, yxwz), _mm_andnot_si128(m0, m_quad));
+#endif
 	const __m128i sum1	= _mm_shuffle_epi32(sum0, _MM_SHUFFLE(2,3,0,1)); // = zw zw xy xy
+#if (HK_SSE_VERSION >= 0x41)
+	const __m128i sum2  = _mm_min_epi32(sum0,sum1);
+#else
 	const __m128i m1	= _mm_cmplt_epi32(sum0, sum1);
 	const __m128i sum2	= _mm_or_si128(_mm_and_si128(m1, sum0), _mm_andnot_si128(m1, sum1));
-
+#endif
 	return _mm_cvtsi128_si32(sum2); // xywz all 4
 }
 
@@ -1594,49 +1752,83 @@ HK_FORCE_INLINE int hkIntVector::horizontalMinS32() const
 	return 0;
 }
 
-template <>
-HK_FORCE_INLINE int hkIntVector::horizontalMaxS32<1>() const
+
+
+
+
+
+
+
+template <> HK_FORCE_INLINE void hkIntVector::setHorizontalMaxS32<1>(hkIntVectorParameter v) 
 {
-	return getComponent<0>();
+	m_quad	= _mm_shuffle_epi32(v.m_quad,_MM_SHUFFLE(0,0,0,0));
 }
 
-template <>
-HK_FORCE_INLINE int hkIntVector::horizontalMaxS32<2>() const
+template <> HK_FORCE_INLINE void hkIntVector::setHorizontalMaxS32<2>(hkIntVectorParameter v) 
 {
-	const __m128i x		= _mm_shuffle_epi32(m_quad,_MM_SHUFFLE(0,0,0,0));
-	const __m128i y		= _mm_shuffle_epi32(m_quad,_MM_SHUFFLE(1,1,1,1));
+	const __m128i x		= _mm_shuffle_epi32(v.m_quad,_MM_SHUFFLE(0,0,0,0));
+	const __m128i y		= _mm_shuffle_epi32(v.m_quad,_MM_SHUFFLE(1,1,1,1));
+#if (HK_SSE_VERSION >= 0x41)
+	const __m128i xy    = _mm_max_epi32(x,y);
+#else
 	const __m128i mask	= _mm_cmpgt_epi32(x, y);
 	const __m128i xy	= _mm_or_si128(_mm_and_si128(mask, x), _mm_andnot_si128(mask, y));
-
-	return _mm_cvtsi128_si32(xy);
+#endif
+	m_quad = xy;
 }
 
-template <>
-HK_FORCE_INLINE int hkIntVector::horizontalMaxS32<3>() const
+template <> HK_FORCE_INLINE void hkIntVector::setHorizontalMaxS32<3>(hkIntVectorParameter v) 
 {
-	const __m128i x		= _mm_shuffle_epi32(m_quad,_MM_SHUFFLE(0,0,0,0));
-	const __m128i y		= _mm_shuffle_epi32(m_quad,_MM_SHUFFLE(1,1,1,1));
-	const __m128i z		= _mm_shuffle_epi32(m_quad,_MM_SHUFFLE(2,2,2,2));
+	const __m128i x		= _mm_shuffle_epi32(v.m_quad,_MM_SHUFFLE(0,0,0,0));
+	const __m128i y		= _mm_shuffle_epi32(v.m_quad,_MM_SHUFFLE(1,1,1,1));
+	const __m128i z		= _mm_shuffle_epi32(v.m_quad,_MM_SHUFFLE(2,2,2,2));
+#if (HK_SSE_VERSION >= 0x41)
+	__m128i xyz   = _mm_max_epi32(x,y);
+	        xyz   = _mm_max_epi32(z,xyz);
+#else
 	const __m128i mxy	= _mm_cmpgt_epi32(x, y);
 	const __m128i xy	= _mm_or_si128(_mm_and_si128(mxy, x), _mm_andnot_si128(mxy, y));
 	const __m128i mxyz	= _mm_cmpgt_epi32(xy, z);
 	const __m128i xyz	= _mm_or_si128(_mm_and_si128(mxyz, xy), _mm_andnot_si128(mxyz, z));
-
-	return _mm_cvtsi128_si32(xyz);
+#endif
+	m_quad = xyz;
 }
 
-template <>
-HK_FORCE_INLINE int hkIntVector::horizontalMaxS32<4>() const
+
+/// Sets every component to the maximum value occurring in N components. ( return x,y,z,w = max(x,y,z,w) )
+template <> HK_FORCE_INLINE void hkIntVector::setHorizontalMaxS32<4>(hkIntVectorParameter v) 
 {
-	const __m128i yxwz	= _mm_shuffle_epi32(m_quad, _MM_SHUFFLE(1,0,3,2));	// [y, x, w, z]
-	const __m128i m0	= _mm_cmpgt_epi32(yxwz, m_quad);
-	const __m128i sum0	= _mm_or_si128(_mm_and_si128(m0, yxwz), _mm_andnot_si128(m0, m_quad));
+	const __m128i yxwz	= _mm_shuffle_epi32(v.m_quad, _MM_SHUFFLE(1,0,3,2));	// [y, x, w, z]
+#if (HK_SSE_VERSION >= 0x41)
+	const __m128i sum0  = _mm_max_epi32(v.m_quad,yxwz);
+#else
+	const __m128i m0	= _mm_cmpgt_epi32(yxwz, v.m_quad);
+	const __m128i sum0	= _mm_or_si128(_mm_and_si128(m0, yxwz), _mm_andnot_si128(m0, v.m_quad));
+#endif
 	const __m128i sum1	= _mm_shuffle_epi32(sum0, _MM_SHUFFLE(2,3,0,1)); // = zw zw xy xy
+#if (HK_SSE_VERSION >= 0x41)
+	const __m128i sum2  = _mm_max_epi32(sum0,sum1);
+#else
 	const __m128i m1	= _mm_cmpgt_epi32(sum0, sum1);
 	const __m128i sum2	= _mm_or_si128(_mm_and_si128(m1, sum0), _mm_andnot_si128(m1, sum1));
-
-	return _mm_cvtsi128_si32(sum2); // xywz all 4
+#endif
+	m_quad = sum2;
 }
+
+/// Sets every component to the maximum value occurring in N components. ( return x,y,z,w = max(x,y,z,w) )
+template <int N> HK_FORCE_INLINE void hkIntVector::setHorizontalMaxS32(hkIntVectorParameter v) 
+{
+	HK_INT_VECTOR_NOT_IMPLEMENTED;
+}
+
+
+template <int N>
+HK_FORCE_INLINE int hkIntVector::horizontalMaxS32() const
+{
+	hkIntVector h; h.setHorizontalMaxS32<N>(*this);
+	return h.getComponent<0>();
+}
+
 
 //
 //	Returns the sum of the first N components
@@ -1648,24 +1840,46 @@ template <> HK_FORCE_INLINE int hkIntVector::horizontalAddS32<1>() const
 
 template <> HK_FORCE_INLINE int hkIntVector::horizontalAddS32<2>() const
 {
+#if ( HK_SSE_VERSION >= 0x31 )
+	return _mm_cvtsi128_si32(_mm_hadd_epi32(m_quad,m_quad));
+#else
 	const __m128i x = _mm_shuffle_epi32(m_quad,_MM_SHUFFLE(0,0,0,0));
 	const __m128i y = _mm_shuffle_epi32(m_quad,_MM_SHUFFLE(1,1,1,1));
 	return _mm_cvtsi128_si32(_mm_add_epi32(x, y));
+#endif
 }
 
 template <> HK_FORCE_INLINE int hkIntVector::horizontalAddS32<3>() const
 {
+#if ( HK_SSE_VERSION >= 0x31 )
+	const __m128i xy_zw = _mm_hadd_epi32(m_quad,m_quad);
+	const __m128i z = _mm_shuffle_epi32(m_quad,_MM_SHUFFLE(2,2,2,2));
+	return _mm_cvtsi128_si32(_mm_add_epi32(xy_zw,z));
+#else
 	return _mm_cvtsi128_si32(	_mm_add_epi32(	_mm_add_epi32(	_mm_shuffle_epi32(m_quad,_MM_SHUFFLE(0,0,0,0)),
 																_mm_shuffle_epi32(m_quad,_MM_SHUFFLE(1,1,1,1))),
 												_mm_shuffle_epi32(m_quad,_MM_SHUFFLE(2,2,2,2))));
+#endif
 }
 
 template <> HK_FORCE_INLINE int hkIntVector::horizontalAddS32<4>() const
 {
+#if ( HK_SSE_VERSION >= 0x31 )
+	const __m128i xy_zw = _mm_hadd_epi32(m_quad,m_quad);
+	return _mm_cvtsi128_si32(_mm_hadd_epi32(xy_zw,xy_zw));
+#else
 	const __m128i yxwz	= _mm_shuffle_epi32(m_quad, _MM_SHUFFLE(1,0,3,2));	// [y, x, w, z]
 	const __m128i sum0	= _mm_add_epi32(yxwz, m_quad);						// [x+y, x+y, z+w, z+w]
 	const __m128i sum1	= _mm_shuffle_epi32(sum0, _MM_SHUFFLE(2,3,0,1));	// [z+w, z+w, x+y, x+y]
 	return _mm_cvtsi128_si32(_mm_add_epi32(sum0, sum1));					// xywz all 4
+#endif
+}
+
+template <int N>
+HK_FORCE_INLINE int hkIntVector::horizontalAddS32() const
+{
+	HK_INT_VECTOR_NOT_IMPLEMENTED;
+	return 0;
 }
 
 //
@@ -1699,7 +1913,44 @@ template <> HK_FORCE_INLINE int hkIntVector::horizontalXorS32<4>() const
 }
 
 template <int N>
-HK_FORCE_INLINE int hkIntVector::horizontalMaxS32() const
+HK_FORCE_INLINE int hkIntVector::horizontalXorS32() const
+{
+	HK_INT_VECTOR_NOT_IMPLEMENTED;
+	return 0;
+}
+
+//
+//	Returns the xor of the first N components
+
+template <> HK_FORCE_INLINE int hkIntVector::horizontalOrS32<1>() const
+{
+	return getComponent<0>();
+}
+
+template <> HK_FORCE_INLINE int hkIntVector::horizontalOrS32<2>() const
+{
+	const __m128i x = _mm_shuffle_epi32(m_quad,_MM_SHUFFLE(0,0,0,0));
+	const __m128i y = _mm_shuffle_epi32(m_quad,_MM_SHUFFLE(1,1,1,1));
+	return _mm_cvtsi128_si32(_mm_or_si128(x, y));
+}
+
+template <> HK_FORCE_INLINE int hkIntVector::horizontalOrS32<3>() const
+{
+	return _mm_cvtsi128_si32(	_mm_or_si128(	_mm_or_si128(	_mm_shuffle_epi32(m_quad,_MM_SHUFFLE(0,0,0,0)),
+		_mm_shuffle_epi32(m_quad,_MM_SHUFFLE(1,1,1,1))),
+		_mm_shuffle_epi32(m_quad,_MM_SHUFFLE(2,2,2,2))));
+}
+
+template <> HK_FORCE_INLINE int hkIntVector::horizontalOrS32<4>() const
+{
+	const __m128i yxwz	= _mm_shuffle_epi32(m_quad, _MM_SHUFFLE(1,0,3,2));	// [y, x, w, z]
+	const __m128i sum0	= _mm_or_si128(yxwz, m_quad);						// [x+y, x+y, z+w, z+w]
+	const __m128i sum1	= _mm_shuffle_epi32(sum0, _MM_SHUFFLE(2,3,0,1));	// [z+w, z+w, x+y, x+y]
+	return _mm_cvtsi128_si32(_mm_or_si128(sum0, sum1));					// xywz all 4
+}
+
+template <int N>
+HK_FORCE_INLINE int hkIntVector::horizontalOrS32() const
 {
 	HK_INT_VECTOR_NOT_IMPLEMENTED;
 	return 0;
@@ -1781,18 +2032,49 @@ HK_FORCE_INLINE void hkIntVector::setMul(hkIntVectorParameter vA, hkIntVectorPar
 //
 //	Sets this = abs(v)
 
-#if ( HK_SSE_VERSION >= 0x30 )
-#	define HK_INT_VECTOR_setAbs
-
+#define HK_INT_VECTOR_setAbs
 HK_FORCE_INLINE void hkIntVector::setAbsS32(hkIntVectorParameter v)
 {
+#if HK_SSE_VERSION >= 0x31
 	m_quad = _mm_abs_epi32(v.m_quad);
+#else
+	hkQuadUint mask = _mm_srai_epi32(v.m_quad, 31);
+	m_quad = _mm_sub_epi32(_mm_xor_si128(v.m_quad, mask), mask);
+#endif
 }
 
+
+#define HK_INT_VECTOR_setFlipSignS32
+HK_FORCE_INLINE void hkIntVector::setFlipSignS32(hkIntVectorParameter v, hkVector4ComparisonParameter mask)
+{
+#if HK_SSE_VERSION >= 0x31
+
+#if defined(HK_REAL_IS_FLOAT)
+	hkQuadUint forceNonNullMask = _mm_or_si128(_mm_castps_si128(mask.m_mask), *(const hkQuadUint*)&g_intVectorConstants[HK_QUADINT_1]);
+#else
+	__m128i xzxz = _mm_unpacklo_epi32(_mm_castpd_si128(mask.m_mask.xy),_mm_castpd_si128(mask.m_mask.zw));
+	__m128i ywyw = _mm_unpackhi_epi32(_mm_castpd_si128(mask.m_mask.xy),_mm_castpd_si128(mask.m_mask.zw));
+	hkQuadUint forceNonNullMask = _mm_or_si128(_mm_unpacklo_epi32(xzxz,ywyw), *(const hkQuadUint*)&g_intVectorConstants[HK_QUADINT_1]);
+#endif
+	m_quad = _mm_sign_epi32(v.m_quad, forceNonNullMask);
+
+#else
+
+#if defined(HK_REAL_IS_FLOAT)
+	hkQuadUint m = _mm_castps_si128(mask.m_mask);
+#else
+	__m128i xzxz = _mm_unpacklo_epi32(_mm_castpd_si128(mask.m_mask.xy),_mm_castpd_si128(mask.m_mask.zw));
+	__m128i ywyw = _mm_unpackhi_epi32(_mm_castpd_si128(mask.m_mask.xy),_mm_castpd_si128(mask.m_mask.zw));
+	hkQuadUint m = _mm_unpacklo_epi32(xzxz,ywyw);
 #endif
 
+	m_quad = _mm_add_epi32(_mm_xor_si128(v.m_quad, m), _mm_and_si128(*(const hkQuadUint*)&g_intVectorConstants[HK_QUADINT_1], m));
+
+#endif
+}
+
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

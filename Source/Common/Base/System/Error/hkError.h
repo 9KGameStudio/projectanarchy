@@ -14,7 +14,7 @@
 /// at run time. Asserts and Warnings are only compiled into debug builds.
 /// Errors are compiled in all builds. See hkDefaultError.h for a sample implementation
 /// of the handlers.
-class hkError : public hkReferencedObject, public hkSingleton<hkError>
+class HK_EXPORT_COMMON hkError : public hkReferencedObject, public hkSingleton<hkError>
 {
 	public:
 		HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE);
@@ -75,7 +75,7 @@ HK_SINGLETON_SPECIALIZATION_DECL(hkError);
 #endif
 
 	/// convenience class to disable one error id within a scope
-class hkDisableError
+class HK_EXPORT_COMMON hkDisableError
 {
 	public:
 		hkDisableError( int id )
@@ -97,11 +97,12 @@ class hkDisableError
 };
 
 #if !defined(HK_PLATFORM_PS3_SPU)
-class hkErrStream : public hkOstream
+class HK_EXPORT_COMMON hkErrStream : public hkOstream
 {
 	public:
 		HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE);
 		hkErrStream( void* buf, int bufSize );
+		~hkErrStream();
 };
 typedef void (HK_CALL *hkErrorReportFunction)(const char* s, void* errorReportObject);
 #endif
@@ -128,8 +129,8 @@ namespace hkCompileError
 }
 
 /// Cause a compile error if the assert fails.
-#define HK_COMPILE_TIME_ASSERT(a) \
-	typedef hkCompileError::StaticAssertTest< sizeof(hkCompileError::COMPILE_ASSERTION_FAILURE< static_cast<bool>(a) >) > \
+#define HK_COMPILE_TIME_ASSERT(...) \
+	typedef hkCompileError::StaticAssertTest< sizeof(hkCompileError::COMPILE_ASSERTION_FAILURE< static_cast<bool>(__VA_ARGS__) >) > \
 	HK_PREPROCESSOR_JOIN_TOKEN(hkStaticAssertTypedef, __LINE__)
 
 /// Compile time assert with an error message.
@@ -137,7 +138,7 @@ namespace hkCompileError
 /// from the compile error. MSG should be defined in the hkCompileError namespace.
 #define HK_COMPILE_TIME_ASSERT2(a,MSG) \
 	typedef hkCompileError::StaticAssertTest< sizeof(hkCompileError::MSG< static_cast<bool>(a) >) > \
-	HK_PREPROCESSOR_JOIN_TOKEN(hkStaticAssertTypedef, __LINE__)
+	HK_PREPROCESSOR_JOIN_TOKEN(hkStaticAssert_, HK_PREPROCESSOR_JOIN_TOKEN(MSG, __LINE__))
 
 #define HK_REPORT_SECTION_BEGIN(id, name)	hkError::getInstance().sectionBegin(id, name);
 
@@ -324,7 +325,7 @@ namespace hkCompileError
 
 // A dedicated assert to be used in math functions.
 // For now this will simply forward to a regular HK_ASSERT.
-#define HK_MATH_ASSERT(id, a, TEXT) HK_ASSERT(id, a)
+#define HK_MATH_ASSERT(id, a, args) HK_ASSERT2(id, a, args)
 
 // Critical asserts - these will trigger breakpoints on the SPU. Additionally, they show up as comments in the assembly file.
 //	On non-SPU platforms, they revert to normal asserts.
@@ -383,7 +384,7 @@ namespace hkCompileError
 #endif // HKBASE_HKERROR_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

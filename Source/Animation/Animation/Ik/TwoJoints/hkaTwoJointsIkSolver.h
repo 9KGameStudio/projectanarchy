@@ -15,14 +15,14 @@ class hkaPose;
 /// a desired position. The first joint is considered to be a ball-socket, while the second joint is considered to be
 /// a hinge joint (and therefore an axis must be provided).
 /// The joints/bones do not need to be immediate parents of each other (but they must be in the same chain).
-class hkaTwoJointsIkSolver : public hkReferencedObject
+class HK_EXPORT_ANIMATION hkaTwoJointsIkSolver : public hkReferencedObject
 {
 	public:
 
 		HK_DECLARE_CLASS_ALLOCATOR( HK_MEMORY_CLASS_ANIM_RUNTIME );
 
 		/// This setup data is passed to every call of solve()
-		struct Setup
+		struct HK_EXPORT_ANIMATION Setup
 		{
 			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_ANIM_RUNTIME, hkaTwoJointsIkSolver::Setup );
 
@@ -112,7 +112,7 @@ class hkaTwoJointsIkSolver : public hkReferencedObject
 #endif // INC_HKA_TWO_JOINTS_IK_SOLVER_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

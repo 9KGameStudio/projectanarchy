@@ -13,7 +13,7 @@
 hkvTextureTransformationSettings::hkvTextureTransformationSettings(hkvTargetPlatform platform)
 : m_platform(platform), m_sourceHasAlpha(false), m_sourceWidth(0), m_sourceHeight(0),
   m_usage(HKV_TEXTURE_USAGE_UNDEFINED), m_sourceSrgb(false),
-  m_targetDataFormat(HKV_TEXTURE_DATA_FORMAT_A8R8G8B8), m_targetFileFormat(HKV_TEXTURE_FILE_FORMAT_DDS),
+  m_targetDataFormat(HKV_IMAGE_DATA_FORMAT_A8R8G8B8), m_targetFileFormat(HKV_IMAGE_FILE_FORMAT_DDS),
   m_discardAlpha(false), m_createMipMaps(false), m_downscaleLevel(0),
   m_userMinSize(0), m_userMaxSize(0),
   m_explicitTargetSize(false), m_explicitWidth(0), m_explicitHeight(0),
@@ -59,13 +59,13 @@ void hkvTextureTransformationSettings::setSourceProperties(bool srgb, bool hasAl
 }
 
 
-void hkvTextureTransformationSettings::setTargetFormat(hkvTextureDataFormat dataFormat, hkvTextureFileFormat fileFormat)
+void hkvTextureTransformationSettings::setTargetFormat(hkvImageDataFormat dataFormat, hkvImageFileFormat fileFormat)
 {
-  if (m_targetDataFormat < HKV_TEXTURE_DATA_FORMAT_COUNT)
+  if (m_targetDataFormat < HKV_IMAGE_DATA_FORMAT_COUNT)
   {
     m_targetDataFormat = dataFormat;
   }
-  if (m_targetFileFormat < HKV_TEXTURE_FILE_FORMAT_COUNT)
+  if (m_targetFileFormat < HKV_IMAGE_FILE_FORMAT_COUNT)
   {
     m_targetFileFormat = fileFormat;
   }
@@ -224,7 +224,7 @@ bool hkvTextureTransformationSettings::checkFormatCompatibility(
   {
     hkStringBuf msg;
     msg.printf("The target file format (%s) is not compatible with the target data format (%s)",
-      hkvTextureFileFormatNames[m_targetFileFormat], hkvTextureDataFormatNames[m_targetDataFormat]);
+      hkvImageFileFormatNames[m_targetFileFormat], hkvImageDataFormatNames[m_targetDataFormat]);
     out_messages.pushBack(hkvAssetLogMessage(HKV_MESSAGE_CATEGORY_ASSET_TRANSFORMATION, HKV_MESSAGE_SEVERITY_ERROR, msg));
   }
 
@@ -238,7 +238,7 @@ bool hkvTextureTransformationSettings::checkFormatCompatibility(
       
       hkStringBuf msg;
       msg.printf("The target data format (%s) is not compatible with the target platform (%s)",
-        hkvTextureDataFormatNames[m_targetDataFormat], platformName);
+        hkvImageDataFormatNames[m_targetDataFormat], platformName);
       out_messages.pushBack(hkvAssetLogMessage(HKV_MESSAGE_CATEGORY_ASSET_TRANSFORMATION, HKV_MESSAGE_SEVERITY_ERROR, msg));
     }
   }
@@ -253,7 +253,7 @@ bool hkvTextureTransformationSettings::checkFormatCompatibility(
 
       hkStringBuf msg;
       msg.printf("The target file format (%s) is not compatible with the target platform (%s)",
-        hkvTextureFileFormatNames[m_targetFileFormat], platformName);
+        hkvImageFileFormatNames[m_targetFileFormat], platformName);
       out_messages.pushBack(hkvAssetLogMessage(HKV_MESSAGE_CATEGORY_ASSET_TRANSFORMATION, HKV_MESSAGE_SEVERITY_ERROR, msg));
     }
   }
@@ -301,7 +301,7 @@ bool hkvTextureTransformationSettings::determineRestrictions(
   }
 
   // Apply common restrictions for DXT formats (needs multiple of 4 because of compression block size)
-  if (m_targetDataFormat == HKV_TEXTURE_DATA_FORMAT_DXT1 || m_targetDataFormat == HKV_TEXTURE_DATA_FORMAT_DXT3 || m_targetDataFormat == HKV_TEXTURE_DATA_FORMAT_DXT5)
+  if (m_targetDataFormat == HKV_IMAGE_DATA_FORMAT_DXT1 || m_targetDataFormat == HKV_IMAGE_DATA_FORMAT_DXT3 || m_targetDataFormat == HKV_IMAGE_DATA_FORMAT_DXT5)
   {
     m_validationMinSize = hkvMath::Max(m_validationMinSize, 4u);
     if (!m_validationNeedsPowerOfTwo)
@@ -317,20 +317,20 @@ bool hkvTextureTransformationSettings::determineRestrictionsAndroid(
 {
   switch (m_targetDataFormat)
   {
-  case HKV_TEXTURE_DATA_FORMAT_ETC1:
+  case HKV_IMAGE_DATA_FORMAT_ETC1:
     {
       m_validationMinSize = 4;
       m_validationNeedsMultipleOf = 4;
       break;
     }
-  case HKV_TEXTURE_DATA_FORMAT_PVRTC2:
+  case HKV_IMAGE_DATA_FORMAT_PVRTC2:
     {
       m_validationMinSize = 16;
       m_validationNeedsPowerOfTwo = true;
       m_validationNeedsSquare = true;
       break;
     }
-  case HKV_TEXTURE_DATA_FORMAT_PVRTC4:
+  case HKV_IMAGE_DATA_FORMAT_PVRTC4:
     {
       m_validationMinSize = 8;
       m_validationNeedsPowerOfTwo = true;
@@ -350,14 +350,14 @@ bool hkvTextureTransformationSettings::determineRestrictionsIos(
 {
   switch (m_targetDataFormat)
   {
-  case HKV_TEXTURE_DATA_FORMAT_PVRTC2:
+  case HKV_IMAGE_DATA_FORMAT_PVRTC2:
     {
       m_validationMinSize = 16;
       m_validationNeedsPowerOfTwo = true;
       m_validationNeedsSquare = true;
       break;
     }
-  case HKV_TEXTURE_DATA_FORMAT_PVRTC4:
+  case HKV_IMAGE_DATA_FORMAT_PVRTC4:
     {
       m_validationMinSize = 8;
       m_validationNeedsPowerOfTwo = true;
@@ -378,18 +378,18 @@ bool hkvTextureTransformationSettings::determineRestrictionsPsVita(
 {
   switch (m_targetDataFormat)
   {
-  case HKV_TEXTURE_DATA_FORMAT_DXT1:
-  case HKV_TEXTURE_DATA_FORMAT_DXT3:
-  case HKV_TEXTURE_DATA_FORMAT_DXT5:
+  case HKV_IMAGE_DATA_FORMAT_DXT1:
+  case HKV_IMAGE_DATA_FORMAT_DXT3:
+  case HKV_IMAGE_DATA_FORMAT_DXT5:
     {
       m_validationNeedsPowerOfTwo = true;
       break;
     }
-  case HKV_TEXTURE_DATA_FORMAT_A1R5G5B5:
-  case HKV_TEXTURE_DATA_FORMAT_A4R4G4B4:
-  case HKV_TEXTURE_DATA_FORMAT_A8R8G8B8:
-  case HKV_TEXTURE_DATA_FORMAT_R5G6B5:
-  case HKV_TEXTURE_DATA_FORMAT_R8G8B8:
+  case HKV_IMAGE_DATA_FORMAT_A1R5G5B5:
+  case HKV_IMAGE_DATA_FORMAT_A4R4G4B4:
+  case HKV_IMAGE_DATA_FORMAT_A8R8G8B8:
+  case HKV_IMAGE_DATA_FORMAT_R5G6B5:
+  case HKV_IMAGE_DATA_FORMAT_R8G8B8:
     {
       m_validationNeedsMultipleOf = 8;
       break;
@@ -638,10 +638,10 @@ bool hkvTextureTransformationSettings::checkAlpha(
   bool targetFormatHasAlpha = true;
   switch (m_targetDataFormat)
   {
-  case HKV_TEXTURE_DATA_FORMAT_ETC1:
-  case HKV_TEXTURE_DATA_FORMAT_DXT1:
-  case HKV_TEXTURE_DATA_FORMAT_R5G6B5:
-  case HKV_TEXTURE_DATA_FORMAT_R8G8B8:
+  case HKV_IMAGE_DATA_FORMAT_ETC1:
+  case HKV_IMAGE_DATA_FORMAT_DXT1:
+  case HKV_IMAGE_DATA_FORMAT_R5G6B5:
+  case HKV_IMAGE_DATA_FORMAT_R8G8B8:
     {
       targetFormatHasAlpha = false;
       break;
@@ -660,7 +660,7 @@ bool hkvTextureTransformationSettings::checkAlpha(
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

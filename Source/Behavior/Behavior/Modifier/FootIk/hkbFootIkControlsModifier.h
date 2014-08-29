@@ -67,6 +67,7 @@ class hkbFootIkControlsModifier : public hkbModifier
 		/// The structure holds the output information for each leg.
 		struct Leg
 		{
+			// +version(1)
 			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_BEHAVIOR, Leg );
 			HK_DECLARE_REFLECTION();
 
@@ -77,7 +78,8 @@ class hkbFootIkControlsModifier : public hkbModifier
 				:	m_groundPosition(hkVector4::getZero()),
 					m_verticalError(0.0f),
 					m_hitSomething(false),
-					m_isPlantedMS(false)
+					m_isPlantedMS(false),
+					m_enabled(true)
 			{}
 
 				/// The position of the ground below the foot, as computed by the foot IK raycasts.
@@ -102,6 +104,9 @@ class hkbFootIkControlsModifier : public hkbModifier
 									//+hkb.RoleAttribute("ROLE_DEFAULT","FLAG_OUTPUT")
 									//+hk.Description("Whether or not the foot is planted in model space in the incoming animation. If the height of the ankle goes below m_footPlantedAnkleHeightMS the foot is considered planted.")
 
+			hkBool m_enabled;		//+default(true)
+									//+hk.Description("Whether this leg is enabled.  If enabled, foot IK will be applied to this leg, otherwise foot IK will have no effect for this leg.")
+
 			Leg( hkFinishLoadedObjectFlag flag ) : m_ungroundedEvent(flag) {}
 		};
 
@@ -117,7 +122,7 @@ class hkbFootIkControlsModifier : public hkbModifier
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

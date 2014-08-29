@@ -6,6 +6,10 @@
  *
  */
 
+#if defined(HKCD_DETECT_RAY_AABB_FALSE_NEGATIVES)
+#include <Geometry/Internal/Algorithms/Exact/hkcdExact.h>
+#endif
+
 //
 HK_FORCE_INLINE	hkBool32	hkcdRayDirectionAabbIntersect(hkVector4Parameter rayInvDirection, const hkAabb& aabb, hkSimdReal* HK_RESTRICT fractionInOut)
 {
@@ -54,12 +58,23 @@ HK_FORCE_INLINE	hkBool32	hkcdRayDirectionAabbIntersect(hkVector4Parameter rayInv
 //
 HK_FORCE_INLINE	hkBool32	hkcdIntersectRayAabb(const hkcdRay& ray, const hkAabb& aabb, hkSimdReal* fractionInOut)
 {
+	#if defined(HKCD_DETECT_RAY_AABB_FALSE_NEGATIVES)
+	hkSimdReal	fractionInOutBackup = *fractionInOut;
+	hkBool32	result = 0;
+	#endif
+
+
 	#if HK_CONFIG_SIMD == HK_CONFIG_SIMD_ENABLED
 	hkAabb	relAabb;
 	relAabb.m_min.setSub(aabb.m_min, ray.m_origin);
 	relAabb.m_max.setSub(aabb.m_max, ray.m_origin);
 	
+	#if defined(HKCD_DETECT_RAY_AABB_FALSE_NEGATIVES)
+	result = hkcdRayDirectionAabbIntersect(ray.m_invDirection, relAabb, fractionInOut);
+	#else
 	return hkcdRayDirectionAabbIntersect(ray.m_invDirection, relAabb, fractionInOut);
+	#endif
+
 	#else
 	hkReal	fmin = 0.0f, fmax = fractionInOut->getReal();
 	for(int i=0; i<3; ++i)
@@ -80,7 +95,21 @@ HK_FORCE_INLINE	hkBool32	hkcdIntersectRayAabb(const hkcdRay& ray, const hkAabb& 
 
 	fractionInOut->setFromFloat(fmin);
 
+	#if defined(HKCD_DETECT_RAY_AABB_FALSE_NEGATIVES)
+	result = fmin <= fmax;
+	#else
 	return fmin <= fmax;
+	#endif
+
+	#endif
+
+	#if defined(HKCD_DETECT_RAY_AABB_FALSE_NEGATIVES)
+	if(!result)
+	{
+		const hkBool32 exactResult = hcdIntersectRayAabb_Exact(ray, aabb, fractionInOutBackup);
+		if( exactResult != result ) HK_ERROR( 0x6361BDB8, "Ray-AABB false negative detected" );
+	}	
+	return result;
 	#endif
 }
 
@@ -178,7 +207,7 @@ HK_FORCE_INLINE	hkVector4Comparison	hkcdIntersectRayAabbBundle(const hkcdRay& ra
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

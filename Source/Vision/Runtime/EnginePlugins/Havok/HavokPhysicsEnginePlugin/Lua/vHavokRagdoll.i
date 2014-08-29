@@ -21,8 +21,6 @@ public:
   %extend {
 	VSWIG_CONVERT_BOOL_SETTER(SetEnabled);
     VSWIG_CONVERT_BOOL_SETTER(SetDebugRendering);
-
-    VSWIG_CREATE_CAST(vHavokRagdoll)
   }
 
   bool IsEnabled() const;
@@ -54,7 +52,7 @@ public:
 
   /// \brief
   ///   Enables / Disables the rag doll component.
-  void SetEnabled(boolean bStatus);
+  void SetEnabled(boolean status);
 
   /// \brief
   ///   Returns whether the rag doll component is enabled.
@@ -63,12 +61,12 @@ public:
   /// \brief
   ///   Returns the path to the Havok collision file containing the
   ///   rag doll's rigid body hierarchy (.hkt file).
-  const char* GetRagdollCollisionFile();
+  string GetRagdollCollisionFile();
 
   /// \brief
   ///   Sets the path to the Havok collision file containing the
   ///   rag doll's rigid body hierarchy (.hkt file).
-  void SetRagdollCollisionFile(const char* val);
+  void SetRagdollCollisionFile(string val);
   
   /// @}
   /// @name Debug Rendering
@@ -105,28 +103,28 @@ public:
   ///
   /// \param val
   ///   RigidBody bone name as set in the export pipeline
-  int GetRigidBodyIndex(const char* val) const;
+  int GetRigidBodyIndex(string val);
 
   /// \brief
   ///   Applies a force to the bone at index i. Use GetRigidBodyIndex to retrieve the rigid body index by name.
   ///
-  /// \param iBoneIndex
+  /// \param boneIndex
   ///   Rigid body index to apply force to.
   ///
   /// \param force
   ///   Force vector to apply.
   ///
-  /// \param deltaT
+  /// \param deltaTime
   ///   The time interval over which the force is applied.
   ///
   /// See the documentation for vHavokRigidBody::ApplyForce or vHavokRigidBody::ApplyLinearImpulse for more information
   /// on the distinction between applying forces or impulses.
-  void ApplyForceToRigidBody(int iBoneIndex, const hkvVec3& force, float deltaT);
+  void ApplyForceToRigidBody(number boneIndex, hkvVec3 force, number deltaTime);
 
   /// \brief
   ///   Applies a linear impulse to the bone at index i. Use GetRigidBodyIndex to retrieve the rigid body index by name.
   ///
-  /// \param iBoneIndex
+  /// \param boneIndex
   ///   Rigid body index to apply force to.
   ///
   /// \param impulse
@@ -135,7 +133,7 @@ public:
   ///
   /// See the documentation for vHavokRigidBody::ApplyForce or vHavokRigidBody::ApplyLinearImpulse for more information
   /// on the distinction between applying forces or impulses.
-  void ApplyLinearImpulseToRigidBody(int iBoneIndex, const hkvVec3& impulse);
+  void ApplyLinearImpulseToRigidBody(number boneIndex, hkvVec3 impulse);
 
   /// \brief
   ///   Applies a force to all bones within the given volume.
@@ -179,7 +177,7 @@ public:
   ///
   /// \param boneIndex
   ///   Index of the rigidbody 
-  hkvVec3 GetPositionOfRigidBody(int boneIndex) const;
+  hkvVec3 GetPositionOfRigidBody(number boneIndex) const;
 
   /// @}
 };
@@ -187,7 +185,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

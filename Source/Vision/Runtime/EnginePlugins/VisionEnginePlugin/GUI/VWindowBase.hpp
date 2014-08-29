@@ -53,6 +53,7 @@ class VWindowBase : public VisTypedEngineObject_cl, public IVRenderableItem, pub
 public:
   GUI_IMPEXP VWindowBase();
   GUI_IMPEXP virtual ~VWindowBase();
+  GUI_IMPEXP virtual void DisposeObject() HKV_OVERRIDE;
 
   /// \brief
   ///   Enum that defines the 4 common states of a window
@@ -484,14 +485,19 @@ struct VGUIUserInfo_t
     m_fLastClickTime = 0.f;
     m_pCurrentCursor = NULL;
 
-#if defined(SUPPORTS_MULTITOUCH) || defined(_VISION_WIIU)
-    m_iNextButtonMask = 0;
-#endif
+    m_vMousePos.setZero();
+    m_vMousePosAccum.setZero();
+    m_vLastClickPos.setZero();
+    m_iDragHistorySize = 0;
   }
 
   VGUIUserID_e m_iID;       ///< ID of this user
-  hkvVec2 m_vMousePos;    ///< Current mouse cursor position of this user
-  hkvVec2 m_vMousePosAccum; ///< Internal state for mouse coordinates that are not aligned to pixels
+
+  hkvVec2 m_vMousePos;       ///< Current mouse cursor position of this user
+  hkvVec2 m_vMousePosAccum;  ///< Internal state for mouse coordinates that are not aligned to pixels
+  hkvVec2 m_vLastClickPos;      ///< Mouse position of the last click
+  hkvVec2 m_vDragHistory[4]; ///< A list of the last few mouse positions while the button is held, used in order to estimate dragging speed.
+  int m_iDragHistorySize;    ///< Number of entries in the dragging history.
 
   int m_iButtonMask, m_iLastClickedMask;  ///< Internal state
   float m_fLastClickTime;   ///< Internal state
@@ -500,10 +506,6 @@ struct VGUIUserInfo_t
   VWindowBasePtr m_spMouseDownItem; ///< Internal state
   // Smart pointer does not work on the Wii here (the class is not fully defined)
   VCursor *m_pCurrentCursor; ///< Internal state
-
-#if defined(SUPPORTS_MULTITOUCH) || defined(_VISION_WIIU)
-  int m_iNextButtonMask; ///< Next button mask (one frame ahead of m_iButtonMask)
-#endif
 };
 
 
@@ -511,7 +513,7 @@ struct VGUIUserInfo_t
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

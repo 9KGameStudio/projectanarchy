@@ -176,6 +176,10 @@ public:
   VISION_APIFUNC void AppendCollection(const VisRenderCollection_cl &other,int iFirstIndex=0, int iCount=-1);
 
   /// \brief
+  ///   Appends a list of pointers to this collection
+  VISION_APIFUNC void AppendEntries(void **ppElements, int iCount);
+
+  /// \brief
   ///   Finds the entry in this collection and returns its 0-based index. If the element is not in
   ///   the collection, -1 is returned. Note that this method iterates over the collection and thus
   ///   may take a substantial amount of time.
@@ -1590,7 +1594,7 @@ class VisStaticGeometryInstanceCollection_cl : public VisRenderCollection_cl
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

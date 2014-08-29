@@ -42,35 +42,35 @@ public:
   inline void SetColor(VColorRef col)
   {
     color = col;
-    velocity[2] = (float)color.a; ///< original alpha (255 based)
+    m_vVelocity[2] = (float)color.a; ///< original alpha (255 based)
   }
 
   /// \brief
   ///   Returns the remaining wallmark lifetime in seconds.
   inline float GetRemainingLifeTime() const
   {
-    return velocity[0];
+    return m_vVelocity[0];
   }
 
   /// \brief
   ///   Sets the remaining wallmark lifetime in seconds.
   inline void SetRemainingLifeTime(float fTime)
   {
-    velocity[0] = fTime;
+    m_vVelocity[0] = fTime;
   }
 
   /// \brief
   ///   Gets the current world space position of the wallmark.
   inline hkvVec3 GetPosition() const
   {
-    return hkvVec3 (pos[0],pos[1],pos[2]);
+    return m_vPosition;
   }
 
   /// \brief
   ///   Returns the normal vector (normalized).
   inline hkvVec3 GetNormal() const
   {
-    return hkvVec3 (normal[0],normal[1],normal[2]);
+    return m_vNormal;
   }
 
   /// \brief
@@ -116,7 +116,7 @@ protected:
   void FillCache();
   void RemoveWallmark(VParticleWallmark *p);
   void RecomputeBoundingBox();
-
+  void Reposition(const VisZoneRepositionInfo_t &info);
   short m_iCacheCount;
   bool m_bHasFreeParticles, m_bBBoxValid, m_bApplyDeferredLighting;
   short m_iCacheIndex[MAX_WALLMARK_CACHE_SIZE];
@@ -339,6 +339,7 @@ private:
       m_bUnloadWorldCallbackRegistered = true;
     }
   }
+  void RepositionWallmarks(const VisZoneRepositionInfo_t &info);
 
   friend class VProjectedWallmark;
   static bool IsTracePointOnPlane(const hkvVec3& vPos, const hkvVec3& vNormal, float fTraceRad, float fEpsilon, hkvVec3& vNewNormal);
@@ -347,14 +348,12 @@ private:
 
   static inline __int64 GetGeomHashMask(VisStaticGeometryInstance_cl *pGeom)
   {
-#if defined (WIN32)  || defined (_VISION_XENON)   || defined (_VISION_PS3)   || defined (_VISION_PSP2) 
+#if defined (_MSC_VER)
     __int64 val = (__int64)(unsigned __int64)(ULONG)pGeom; // the cast avoids C4826, see http://msdn.microsoft.com/en-us/library/ms235307.aspx
-#elif defined(_VISION_POSIX)  || defined(_VISION_WIIU)
-    __int64 val = (uint64_t)pGeom;
-
 #else
-  #error Undefined platform!
+    __int64 val = (uint64_t)pGeom;
 #endif
+
     return (__int64)1<<(val%63);
   }
   void OnZoneLoaded(VisZoneResource_cl *pZone);
@@ -362,6 +361,9 @@ private:
   void OnStaticGeometryDeleted(VisStaticGeometryInstance_cl *pGeom);
 
   void DeleteWallmarkShaders();
+
+  /// Deletes all unreferenced wallmarks
+  void DeleteAllUnRef();
 
   VRefCountedCollection<VProjectedWallmark> m_AllProjectedWallmarks;
   VRefCountedCollection<VProjectedWallmark> m_FadingProjectedWallmarks;
@@ -389,7 +391,7 @@ private:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -16,6 +16,7 @@ class IVObjectComponent;
 #include <Vision/Runtime/Engine/System/PluginSystem/VisShareEntityPlugin.hpp>
 
 class VisZoneResource_cl;
+class IVisZone_cl;
 class VisVariable_cl;
 class IVNetworkSynchronizationGroup;
 //class IVNetworkObjectReplicator;
@@ -80,7 +81,7 @@ public:
   VISION_APIFUNC virtual void GetDependencies(VResourceSnapshot &snapshot) HKV_OVERRIDE;
 #endif
 
-#ifdef WIN32
+#ifdef _VISION_WIN32
 
   /// \brief
   ///   Internal function used by vForge
@@ -444,7 +445,7 @@ public:
 
   /// \brief
   ///   Returns the current zone that this instance is attached to. Can be NULL.
-  inline VisZoneResource_cl *GetParentZone() const {return m_pParentZone;}
+  inline IVisZone_cl *GetParentZone() const {return m_pParentZone;}
 
   /// \brief
   ///   Overridable that is called to attach this instance to a new zone
@@ -454,11 +455,11 @@ public:
   ///
   /// \param pNewZone
   ///   The new parent zone for this instance.
-  VISION_APIFUNC virtual void SetParentZone(VisZoneResource_cl *pNewZone);
+  VISION_APIFUNC virtual void SetParentZone(IVisZone_cl *pNewZone);
 
   /// \brief
   ///   Internal function to just set the pointer to new zone
-  VISION_APIFUNC void SetParentZoneInternal(VisZoneResource_cl *pNewZone);
+  VISION_APIFUNC void SetParentZoneInternal(IVisZone_cl *pNewZone);
 
   /// \brief
   ///   Internal function to get the index of the object inside the parent zone.
@@ -549,13 +550,35 @@ public:
   /// @{
   ///
 
-#ifdef WIN32
+#ifdef _VISION_WIN32
 
   /// \brief
   ///   Overridable to provide an instance with instance specific variables. Only called by vForge to retrieve additional component properties.
   VISION_APIFUNC virtual int GetCustomVariableInfo(DynObjArray_cl<VisVariable_cl> &customVarList);
 
-#endif // WIN32
+#endif // _VISION_WIN32
+
+  ///
+  /// @}
+  ///
+
+  ///
+  /// @name Static helper functions
+  /// @{
+  ///
+
+  /// \brief
+  ///   Static helper function to deep clone the passed object.
+  ///
+  /// Serialization through class VArchive is used to clone this object. The object is written to an archive that wraps around a memory stream and then it is deserialized again.
+  /// So all properties that are written to archive (or exported into vscene respectively) are cloned properly.
+  ///
+  /// \param pObject
+  ///   The source object to clone. Can be NULL, in which case this function returns NULL
+  ///
+  /// \return
+  ///   A deep clone of the object
+  static VISION_APIFUNC VTypedObject *CloneObject(VTypedObject *pObject);
 
   ///
   /// @}
@@ -564,11 +587,11 @@ public:
 protected:
   __int64 m_iUniqueID64;                      ///< unique ID, usually exported from scene file
   VObjectComponentCollection m_Components;    ///< list of object components
-  VisZoneResource_cl *m_pParentZone;          ///< parent zone where the object belongs to
+  IVisZone_cl *m_pParentZone;          ///< parent zone where the object belongs to
   int m_iParentZoneIndex;                     ///< object index inside the parent zone object list
 
   friend class VisGame_cl;
-  static VMapUniqueIDToPtr *g_pUniqueIDMap;
+  static VMap<__int64, VisTypedEngineObject_cl*> *g_pUniqueIDMap;
 };
 
 
@@ -641,7 +664,7 @@ inline IVObjectComponent* VObjectComponentCollection::GetComponentOfBaseTypeAndN
 #endif  // FR_DEFINE_VISAPITYPEDENGINEOBJECT
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

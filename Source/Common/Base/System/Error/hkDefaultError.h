@@ -17,7 +17,7 @@
 /// it walks and reports the full stack trace leading up to the error.
 /// Usually you will derive from this class and override showMessage when
 /// integrating this class in you game.
-class hkDefaultError : public hkError
+class HK_EXPORT_COMMON hkDefaultError : public hkError
 {
   public:
   	HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE);
@@ -62,7 +62,7 @@ class hkDefaultError : public hkError
 #endif // HK_DEFAULT_ERROR
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

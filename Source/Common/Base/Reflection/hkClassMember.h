@@ -13,13 +13,13 @@ class hkClass;
 class hkCustomAttributes;
 
 /// hkClassMember meta information
-extern const hkClass hkClassMemberClass;
+extern HK_EXPORT_COMMON const hkClass hkClassMemberClass;
 
 
 
 
 /// Reflection information for a data member of a type.
-class hkClassMember
+class HK_EXPORT_COMMON hkClassMember
 {
 	public:
 
@@ -272,7 +272,7 @@ class hkClassMember
 #endif // HK_BASE_CLASS_MEMBER_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

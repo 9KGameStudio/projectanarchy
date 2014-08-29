@@ -14,7 +14,7 @@
 #if !defined(HK_PLATFORM_PS3_SPU)
 
 		/// Forwards to the temp allocator
-	struct hkContainerTempAllocator
+	struct HK_EXPORT_COMMON hkContainerTempAllocator
 	{
 		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE, hkContainerTempAllocator);
 		struct Allocator : public hkMemoryAllocator
@@ -33,7 +33,7 @@
 	};
 
 		/// Forwards to the heap allocator
-	struct hkContainerHeapAllocator
+	struct HK_EXPORT_COMMON hkContainerHeapAllocator
 	{
 		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE, hkContainerHeapAllocator);
 		struct Allocator : public hkMemoryAllocator
@@ -52,7 +52,7 @@
 	};
 
 		/// Forwards to the debug allocator
-	struct hkContainerDebugAllocator
+	struct HK_EXPORT_COMMON hkContainerDebugAllocator
 	{
 		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE, hkContainerDebugAllocator);
 		struct Allocator : public hkMemoryAllocator
@@ -72,7 +72,7 @@
 
 #else
 
-	struct hkContainerHeapAllocator
+	struct HK_EXPORT_COMMON hkContainerHeapAllocator
 	{
 		hkMemoryAllocator& get(void*) { return hkThreadMemorySpu::getInstance(); }
 	};
@@ -82,7 +82,7 @@
 
 /// Allocator used when generic allocation is required without affecting the
 /// other allocators.
-struct hkContainerDefaultMallocAllocator
+struct HK_EXPORT_COMMON hkContainerDefaultMallocAllocator
 {
 	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE, hkContainerDefaultMallocAllocator);
 	hkMemoryAllocator& get(const void*);
@@ -91,7 +91,7 @@ struct hkContainerDefaultMallocAllocator
 #endif // HK_BASE_CONTAINER_ALLOCATORS_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -55,7 +55,7 @@ public:
   virtual bool canApplyChanges() const HKV_OVERRIDE;
   virtual bool canChangeStructure() const HKV_OVERRIDE;
 
-  virtual bool shouldIgnorePath(const char* path) const HKV_OVERRIDE;
+  virtual bool shouldIgnorePath(const char* path, bool isFolder) const HKV_OVERRIDE;
 
   hkvAssetLibrary& getAssetLibrary() const;
 
@@ -69,7 +69,7 @@ private:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140624)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

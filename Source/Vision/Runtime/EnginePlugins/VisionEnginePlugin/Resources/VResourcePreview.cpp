@@ -13,16 +13,62 @@
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Particles/ParticleGroupManager.hpp>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Resources/VResourcePreview.hpp>
 
-#ifdef WIN32
+#ifdef _VISION_WIN32
 
-class VAnimationResourcePreview : public VResourcePreview
+/// adds vertical scrolling capabilities to text printing, if the output exceeds screen size (e.g. submesh list)
+class VResourcePreviewScrollSupport : public VResourcePreview
+{
+public:
+  VResourcePreviewScrollSupport(VManagedResource *pOwner) : VResourcePreview(pOwner)
+  {
+  }
+  virtual void OnActivate() HKV_OVERRIDE
+  {
+    VResourcePreview::OnActivate();
+    m_fCurrentVerticalOfs = m_fVirtualRenderSizeY = 0.f;
+  }
+
+  virtual bool OnUpdate(float fTimeDiff) HKV_OVERRIDE
+  {
+    VResourcePreview::OnUpdate(fTimeDiff);
+
+    // cant use Vision input here as it is not initialized
+#if defined(WIN32) && !defined(_VISION_WINRT)
+    float fCenterY = (float)Vision::Video.GetYRes() * 0.5f;
+    POINT p;
+    if (!GetCursorPos(&p) || !ScreenToClient(VGLGetWindow(), &p))
+    {
+      m_fCurrentVerticalOfs = 0.f;
+      return false;
+    }
+    // apply scroll speed and 'dead zone'
+    float fMouseY = (float)p.y;
+    float fMouseDY = (fMouseY - fCenterY) / fCenterY;
+    if (fabsf(fMouseDY)<0.25f)
+      fMouseDY = 0.f;
+    fMouseDY *= 50.f;
+    m_fCurrentVerticalOfs += fMouseDY*fabsf(fMouseDY)*fTimeDiff;
+    // clamp at bottom border and top
+    float fMaxY = m_fVirtualRenderSizeY - (float)Vision::Video.GetYRes();
+    if (m_fCurrentVerticalOfs>fMaxY)
+      m_fCurrentVerticalOfs = fMaxY;
+    if (m_fCurrentVerticalOfs<0.f)
+      m_fCurrentVerticalOfs = 0.f;
+#endif
+    return true;
+  }
+
+};
+
+
+
+class VAnimationResourcePreview : public VResourcePreviewScrollSupport
 {
 public:
   VAnimationResourcePreview(VManagedResource *pOwner);
 private:
   VAnimationResourcePreview(const VAnimationResourcePreview&);
   VAnimationResourcePreview& operator=(const VAnimationResourcePreview&);
-
 public:
   virtual void OnRender(int iFlags) HKV_OVERRIDE;
 };
@@ -41,7 +87,7 @@ public:
 };
 
 
-class VMeshBufferResourcePreview : public VResourcePreview
+class VMeshBufferResourcePreview : public VResourcePreviewScrollSupport
 {
 public:
   VMeshBufferResourcePreview(VManagedResource *pOwner);
@@ -51,15 +97,24 @@ private:
 
 public:
   virtual void OnRender(int iFlags) HKV_OVERRIDE;
+  virtual void OnActivate() HKV_OVERRIDE
+  {
+    VResourcePreviewScrollSupport::OnActivate();
+    EvaluateMinMax(GetMeshBuffer());
+  }
 
 protected:
   void RenderStreamOutput(VisMeshBuffer_cl *pMesh, VBaseMesh *pSubMeshes=NULL);
-
+  void EvaluateMinMax(VisMeshBuffer_cl *pMesh);
+  virtual VisMeshBuffer_cl *GetMeshBuffer() {return (VisMeshBuffer_cl *)this->GetOwner();}
 protected:
   int m_iMaterialCount;
   int m_iSubmeshCount;
   int m_iTriCount;
   int m_iVertexCount;
+  int m_iMinMaxComp[32];
+  hkvVec4 m_vStreamMin[32];
+  hkvVec4 m_vStreamMax[32];
 };
 
 
@@ -77,6 +132,7 @@ public:
   virtual bool OnUpdate(float fTimeDiff) HKV_OVERRIDE;
   virtual void OnRender(int iFlags) HKV_OVERRIDE;
   virtual bool SupportsThumbnails() HKV_OVERRIDE;
+  virtual VisMeshBuffer_cl *GetMeshBuffer() HKV_OVERRIDE {return ((VBaseMesh *)this->GetOwner())->GetMeshBuffer();}
 
 private:
   void RenderMesh(VBaseMesh *pMesh, hkvVec3 light0, hkvVec3 light1, hkvVec3 light2);
@@ -122,7 +178,7 @@ private:
 };
 
 
-class VShaderFXLibResourcePreview : public VResourcePreview
+class VShaderFXLibResourcePreview : public VResourcePreviewScrollSupport
 {
 public:
   VShaderFXLibResourcePreview(VManagedResource *pOwner);
@@ -190,7 +246,7 @@ private:
   VCompiledTechniquePtr m_spForegroundFillPassTechnique;
 };
 
-#endif //WIN32
+#endif //_VISION_WIN32
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // VResourcePreviewRenderloop
@@ -227,12 +283,13 @@ bool VResourcePreview::m_bThumbnailRotateMeshes = true;
 
 VResourcePreview::VResourcePreview(VManagedResource *pOwner) : IVResourcePreview(pOwner)
 {
+  m_fCurrentVerticalOfs = 0.f;
 }
 
 
 IVResourcePreview *VResourcePreview::CreateResourcePreview(VManagedResource *pResource)
 {
-#ifdef WIN32
+#ifdef _VISION_WIN32
   if (pResource == NULL)
     return NULL;
 
@@ -253,6 +310,9 @@ IVResourcePreview *VResourcePreview::CreateResourcePreview(VManagedResource *pRe
       return new VTexture2DResourcePreview(pTexture, Vision::TextureManager.GetAnimationInstance(pTexture));
     if (pTexture->GetTextureType() == VTextureLoader::Cubemap)
       return new VTextureCubemapResourcePreview(pTexture);
+
+    pTexture = Vision::TextureManager.GetPlainWhiteTexture();
+    return new VTexture2DResourcePreview(pTexture, Vision::TextureManager.GetAnimationInstance(pTexture));
   }
   if (pManager==&Vision::Shaders.GetShaderFXLibManager())
     return new VShaderFXLibResourcePreview(pResource);
@@ -271,7 +331,7 @@ IVResourcePreview *VResourcePreview::CreateResourcePreview(VManagedResource *pRe
     return new VAnimationResourcePreview(pResource);
   if (pManager==&VisParticleGroupManager_cl::GlobalManager())
     return new VParticleFXResourcePreview(pResource);
-#endif //WIN32
+#endif //_VISION_WIN32
 
   return NULL;
 }
@@ -524,11 +584,13 @@ void VResourcePreview::LookAtBBox(hkvMat4 &transform, float fYaw, const hkvAlign
 
   // center to bounding box center
   hkvMat4 bboxOffset;
+  bboxOffset.setIdentity();
   bboxOffset.setTranslation(-bbox.getCenter());
 
   // rotation around bounding box center
   hkvMat3 rot (hkvNoInitialization);
   rot.setFromEulerAngles (0, 0, fYaw);
+
   hkvMat4 rotation;
   rotation.setIdentity ();
   rotation.setRotationalPart(rot);
@@ -538,6 +600,7 @@ void VResourcePreview::LookAtBBox(hkvMat4 &transform, float fYaw, const hkvAlign
   const hkvVec3& dir = pContext->GetCamera()->GetDirection();
 
   hkvMat4 position;
+  position.setIdentity();
   position.setTranslation(pos + dir * m_fDistance + offset);
 
   // apply
@@ -603,25 +666,38 @@ bool VResourcePreview::SaveRenderTarget(VisRenderableTexture_cl *pTex, const cha
   return iSavingResult == 0;
 }
 
-#if defined(WIN32)
+#if defined(_VISION_WIN32)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // Preview Globals
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
+
 const VColorRef iOverlayBGColor(20,20,20,220);
-const VSimpleRenderState_t iAlphaState(VIS_TRANSP_ALPHA, RENDERSTATEFLAG_FRONTFACE|RENDERSTATEFLAG_NOWIREFRAME|RENDERSTATEFLAG_ALWAYSVISIBLE);
+const VSimpleRenderState_t iAlphaState(VIS_TRANSP_ALPHA, RENDERSTATEFLAG_FRONTFACE|RENDERSTATEFLAG_NOWIREFRAME|RENDERSTATEFLAG_ALWAYSVISIBLE|RENDERSTATEFLAG_NOMULTISAMPLING|RENDERSTATEFLAG_USESCISSORTEST);
+
+
 const float fStartY = 48.f;
+#define START_TEXT_Y (fStartY-m_fCurrentVerticalOfs)
 
 #define PRINT_TEXT(_pos,_szbuffer,_color) \
-  if (iDryRun==0) \
+{\
+  const char *_szTxt = _szbuffer;\
+  if  (_szTxt!=NULL && _szTxt[0]!=0)\
   {\
-    VRectanglef textRect;\
-    pFont->GetTextDimension(_szbuffer,textRect);\
-    textRect+=_pos;\
-    bgRect.Add(textRect);\
+    if (iDryRun==0) \
+    {\
+      VRectanglef textRect;\
+      pFont->GetTextDimension(_szTxt,textRect);\
+      textRect+=_pos;\
+      bgRect.Add(textRect);\
+    }\
+    else\
+    {\
+      pFont->PrintText(pRI, _pos,_szTxt, _color, iAlphaState);\
+    }\
   }\
-  else pFont->PrintText(pRI, _pos,_szbuffer, _color);
+}
 
 #define DRAW_BACKGROUND() \
 {\
@@ -629,22 +705,29 @@ const float fStartY = 48.f;
   {\
     bgRect.Add(4.f);\
     pRI->DrawSolidQuad(bgRect.m_vMin,bgRect.m_vMax, iOverlayBGColor, iAlphaState);\
+    m_fVirtualRenderSizeY = bgRect.m_vMax.y + m_fCurrentVerticalOfs;\
   }\
 }
 
 #define DRAW_WITH_BACKGROUND \
   VRectanglef bgRect;\
+  VRectanglef cliprect(0,fStartY-1.f,(float)Vision::Video.GetXRes(),(float)Vision::Video.GetYRes());\
+  pRI->SetScissorRect(&cliprect);\
   for (int iDryRun=0;iDryRun<2;iDryRun++)\
   {\
     DRAW_BACKGROUND();
 
+    
 
-#define PRINT_STREAM(_checkMember,_name,_member) \
-  if (descr._checkMember) \
+#define PRINT_STREAM(_iCompIndex,_name,_member) \
+  if (descr._member!=-1) \
   {\
+    char szMinMaxBuffer[256];\
     sprintf(szText,"%s : %s",_name,\
       VisMBVertexDescriptor_t::GetComponentFormatString(VisMBVertexDescriptor_t::GetComponentFormat(descr._member)));\
-    PRINT_TEXT(vText, szText, V_RGBA_WHITE); vText.y += fHeight;\
+    PRINT_TEXT(vText, szText, V_RGBA_WHITE);\
+    PRINT_TEXT(vText+hkvVec2(160.f,0.f), GetMinMaxString(m_vStreamMin[_iCompIndex],m_vStreamMax[_iCompIndex],m_iMinMaxComp[_iCompIndex],szMinMaxBuffer), VColorRef(220,230,255,255));\
+    vText.y += fHeight;\
   }
 
 inline static const char *GetMemorySizeStr(int iSize, char *szBuffer)
@@ -658,12 +741,26 @@ inline static const char *GetMemorySizeStr(int iSize, char *szBuffer)
   return szBuffer;
 }
 
+static const char* GetMinMaxString(const hkvVec4 &vMin, const hkvVec4 &vMax, int iCompCount, char *szBuffer)
+{
+  switch (iCompCount)
+  {
+  case 0:strcpy(szBuffer,"n.a.");break;
+  case 1:sprintf(szBuffer,"min(%.3f) max(%.3f)",vMin.x,vMax.x);break;
+  case 2:sprintf(szBuffer,"min(%.3f,%.3f) max(%.3f,%.3f)",vMin.x,vMin.y, vMax.x,vMax.y);break;
+  case 3:sprintf(szBuffer,"min(%.3f,%.3f,%.3f) max(%.3f,%.3f,%.3f)",vMin.x,vMin.y,vMin.z, vMax.x,vMax.y,vMax.z);break;
+  case 4:sprintf(szBuffer,"min(%.3f,%.3f,%.3f,%.3f) max(%.3f,%.3f,%.3f,%.3f)",vMin.x,vMin.y,vMin.z,vMin.w, vMax.x,vMax.y,vMax.z,vMax.w);break;
+  default:
+    szBuffer[0]=0;
+  }
+  return szBuffer;
+}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // VAnimationResourcePreview
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-VAnimationResourcePreview::VAnimationResourcePreview(VManagedResource *pOwner) : VResourcePreview(pOwner)
+VAnimationResourcePreview::VAnimationResourcePreview(VManagedResource *pOwner) : VResourcePreviewScrollSupport(pOwner)
 {
 }
 
@@ -676,7 +773,7 @@ void VAnimationResourcePreview::OnRender(int iFlags)
   char szText[4096];
   IVRender2DInterface *pRI = Vision::RenderLoopHelper.BeginOverlayRendering();
   DRAW_WITH_BACKGROUND
-    hkvVec2 vText(20.f,fStartY);
+    hkvVec2 vText(20.f,START_TEXT_Y);
     for (int i=0;i<pSet->GetSequenceCount();i++,vText.y += fHeight)
     {
       VisAnimSequence_cl* pSeq = pSet->GetSequence(i);
@@ -743,6 +840,8 @@ VBaseMeshResourcePreview::VBaseMeshResourcePreview(VManagedResource *pOwner) : V
 
 void VBaseMeshResourcePreview::OnActivate()
 {
+  VMeshBufferResourcePreview::OnActivate();
+
   VASSERT(m_spTexAnims==NULL);
   VBaseMesh *pMesh = (VBaseMesh *)GetOwner();
   m_spTexAnims = new VisTextureAnimInstancePtr[pMesh->GetSubmeshCount()];
@@ -758,11 +857,14 @@ void VBaseMeshResourcePreview::OnActivate()
 
 void VBaseMeshResourcePreview::OnDeActivate()
 {
+  VMeshBufferResourcePreview::OnDeActivate();
   V_SAFE_DELETE_ARRAY(m_spTexAnims);
 }
 
 bool VBaseMeshResourcePreview::OnUpdate(float fTimeDiff)
 {
+  bool bResult = VMeshBufferResourcePreview::OnUpdate(fTimeDiff);
+
   // manually animate these anim instances
   if (!Vision::Editor.IsAnimatingOrPlaying())
   {
@@ -773,10 +875,10 @@ bool VBaseMeshResourcePreview::OnUpdate(float fTimeDiff)
   }
 
   if (IsAnimationPaused())
-    return FALSE;
+    return bResult;
 
   if (!GetThumbnailRotateMeshes())
-    return FALSE;
+    return bResult;
 
   m_fYaw = hkvMath::mod (m_fYaw + fTimeDiff*60.f,360.f);
   return true;
@@ -937,7 +1039,7 @@ void VBaseMeshResourcePreview::RenderMesh(VBaseMesh *pMesh, hkvVec3 light0, hkvV
     iFirstTri = VisMeshBuffer_cl::GetCalcPrimitiveCount(ePrimType, iFirstTri, iFirstTri); // TODO: the ranges should be available in this format already
     iNumTris = VisMeshBuffer_cl::GetCalcPrimitiveCount(ePrimType, iNumTris, iNumTris);
         
-    for (int iPass=0; iPass<m_spPreviewTechnique->GetShaderCount(); iPass++)
+    for (unsigned int iPass=0; iPass<m_spPreviewTechnique->GetShaderCount(); iPass++)
     {
       VCompiledShaderPass *pShader = m_spPreviewTechnique->GetShader(iPass);
       VASSERT(pShader);
@@ -1016,7 +1118,7 @@ void VFontResourcePreview::OnRender(int iFlags)
   pContext->GetSize(sx,sy);
   IVRender2DInterface *pRI = Vision::RenderLoopHelper.BeginOverlayRendering();
     DRAW_WITH_BACKGROUND
-      hkvVec2 vPos(20.f,fStartY);
+      hkvVec2 vPos(20.f,START_TEXT_Y);
       PRINT_TEXT(vPos, "abcdefghijklmnopqrstuvwxyz0123456789.,+-", V_RGBA_WHITE);
       vPos.y += pFont->GetFontHeight();
       PRINT_TEXT(vPos, "ABCDEFGHIJKLMNOPQRSTUVWXYZ:;_#*!$&/()=?", V_RGBA_WHITE);
@@ -1029,10 +1131,50 @@ void VFontResourcePreview::OnRender(int iFlags)
 // VMeshBufferResourcePreview
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-VMeshBufferResourcePreview::VMeshBufferResourcePreview(VManagedResource *pOwner) : VResourcePreview(pOwner)
+VMeshBufferResourcePreview::VMeshBufferResourcePreview(VManagedResource *pOwner) : VResourcePreviewScrollSupport(pOwner)
 {
   m_iTriCount = m_iVertexCount = m_iMaterialCount = m_iSubmeshCount = -1;
 }
+
+#define CHECK_MINMAX(iCompIndex,_member) \
+  {\
+    m_iMinMaxComp[iCompIndex] = VisMBVertexDescriptor_t::GetAsFloatArray(pSrc, desc_s._member, vValues.data);\
+    if (m_iMinMaxComp[iCompIndex]>0)\
+    {\
+      m_vStreamMin[iCompIndex].setMin(vValues);\
+      m_vStreamMax[iCompIndex].setMax(vValues);\
+    }\
+  }
+
+void VMeshBufferResourcePreview::EvaluateMinMax(VisMeshBuffer_cl *pMesh)
+{
+  VisMBVertexDescriptor_t desc_s;
+  pMesh->GetVertexDescriptor(desc_s);
+  for (int i=0;i<32;i++)
+  {
+    m_vStreamMin[i].set(FLT_MAX);
+    m_vStreamMax[i].set(-FLT_MIN);
+    m_iMinMaxComp[i] = 0;
+  }
+
+  if (pMesh->GetVertexBuffer()->HasSysmemCopy())
+  {
+    const char *pSrc = (const char *)pMesh->LockVertices(VIS_LOCKFLAG_READONLY);
+    int iVertexCount = pMesh->GetVertexCount();
+    hkvVec4 vValues = hkvVec4::ZeroVector();
+    for (int i=0;i<iVertexCount;i++,pSrc+=desc_s.m_iStride)
+    {
+      CHECK_MINMAX(0, m_iPosOfs);
+      CHECK_MINMAX(1, m_iColorOfs);
+      CHECK_MINMAX(2, m_iNormalOfs);
+      CHECK_MINMAX(3, m_iSecondaryColorOfs);
+      for (int j=0;j<MAX_MESHBUFFER_TEXCOORDS;j++)
+        CHECK_MINMAX(4+j, m_iTexCoordOfs[j]);
+    }
+    pMesh->UnLockVertices();
+  }
+}
+
 
 void VMeshBufferResourcePreview::OnRender(int iFlags)
 {
@@ -1055,7 +1197,7 @@ void VMeshBufferResourcePreview::RenderStreamOutput(VisMeshBuffer_cl *pMesh, VBa
   IVRender2DInterface *pRI = Vision::RenderLoopHelper.BeginOverlayRendering();
 
   DRAW_WITH_BACKGROUND
-    hkvVec2 vText(20.f,fStartY);
+    hkvVec2 vText(20.f,START_TEXT_Y);
     if (m_iMaterialCount>=0)
     {
       sprintf(szText,"Materials : %i",m_iMaterialCount);
@@ -1080,14 +1222,14 @@ void VMeshBufferResourcePreview::RenderStreamOutput(VisMeshBuffer_cl *pMesh, VBa
     sprintf(szText,"Streams :");
     PRINT_TEXT(vText, szText, V_RGBA_WHITE); vText.y += fHeight;
     vText.x += 20.f;
-    PRINT_STREAM(HasPosition(), "POSITION", m_iPosOfs);
-    PRINT_STREAM(HasColor(),    "COLOR",    m_iColorOfs);
-    PRINT_STREAM(HasSecondaryColor(),"COLOR2",m_iSecondaryColorOfs);
-    PRINT_STREAM(HasNormal(),   "NORMAL",   m_iNormalOfs);
+    PRINT_STREAM(0, "POSITION", m_iPosOfs);
+    PRINT_STREAM(1, "COLOR",    m_iColorOfs);
+    PRINT_STREAM(3, "COLOR2",   m_iSecondaryColorOfs);
+    PRINT_STREAM(2, "NORMAL",   m_iNormalOfs);
     for (int j=0;j<MAX_MESHBUFFER_TEXCOORDS;j++)
     {
       sprintf(szTemp,"TEXCOORD%i",j);
-      PRINT_STREAM(HasTexCoord(j),szTemp,m_iTexCoordOfs[j]);
+      PRINT_STREAM(4+j,szTemp,m_iTexCoordOfs[j]);
     }
     vText.x -= 20.f;
     sprintf(szText,"Vertex Size : %iB (%s)", descr.m_iStride,GetMemorySizeStr(descr.m_iStride*m_iVertexCount,szTemp));
@@ -1110,7 +1252,11 @@ void VMeshBufferResourcePreview::RenderStreamOutput(VisMeshBuffer_cl *pMesh, VBa
         if (!geom.m_name.IsEmpty())
           sprintf(szName,"Name='%s' ",geom.m_name.AsChar());
         else szName[0]=0;
-        sprintf(szText,"%i. Mat='%s' %sLOD=%i Clip=(%g,%g)", j+1, pSM->GetSurface()->GetName(),szName,(int)geom.m_iLODIndex,geom.m_fNearClipDistance, geom.m_fFarClipDistance);
+        sprintf(szText,"%i. Mat='%s' %s vis=0x%x trace=0x%x LOD=%i Clip=(%g,%g) Ref=(%g,%g,%g)", j+1, pSM->GetSurface()->GetName(),szName,
+          geom.m_iVisibleMask, geom.m_iTraceMask,
+          (int)geom.m_iLODIndex,
+          geom.m_fNearClipDistance, geom.m_fFarClipDistance,
+          geom.m_vClipReference.x,geom.m_vClipReference.y,geom.m_vClipReference.z);
         PRINT_TEXT(vText, szText, V_RGBA_WHITE); vText.y += fHeight;
       }
       vText.x -= 20.f;
@@ -1187,8 +1333,7 @@ void VParticleFXResourcePreview::ComputeBestStartFrame()
 
     // Make sure the AABB is up to date
     hkvAlignedBBox bbox;
-    m_spInst->UpdateVisibilityBoundingBox();
-    m_spInst->GetCurrentBoundingBox(bbox);
+    m_spInst->GetWorldSpaceBoundingBox(bbox);
 
     if (m_spInst->IsLifeTimeOver() || !bbox.isValid())
     {
@@ -1269,6 +1414,8 @@ void VParticleFXResourcePreview::ComputeBestStartFrame()
 
 void VParticleFXResourcePreview::OnActivate()
 {
+  VResourcePreview::OnActivate();
+
   VisParticleEffectFile_cl* pFX = (VisParticleEffectFile_cl *)GetOwner();
 
   // Create the particle effect instance, also call SetRemoveWhenFinished to make sure we can
@@ -1290,8 +1437,7 @@ void VParticleFXResourcePreview::OnActivate()
     hkvAlignedBBox bbox;
     pFX->GetBoundingBox(bbox);
     hkvAlignedBBox instanceAABB;
-    m_spInst->UpdateVisibilityBoundingBox();
-    m_spInst->GetCurrentBoundingBox(instanceAABB);
+    m_spInst->GetWorldSpaceBoundingBox(instanceAABB);
     bbox.expandToInclude(instanceAABB);
     UpdateDistanceFromBBox(bbox);
     m_vBoundingBoxCenter = bbox.getCenter();
@@ -1328,6 +1474,8 @@ void VParticleFXResourcePreview::OnRender(int iFlags)
   m_vLastPos = vPos;
 
   // Create particle group collection.
+  hkvVec3 lgColors[6];
+  VLightGrid_cl::GetDirectionalLightColors(lgColors, hkvVec3(0.75f, 0.75f, 0.75f), hkvVec3(1.0f, 1.0f, 1.0f), hkvVec3(0.0f, 0.0f, 0.0f));
   m_Layers.Clear();
   int iCount = m_spInst->GetParticleGroupCount();
   for (int i = 0; i < iCount; i++)
@@ -1339,6 +1487,9 @@ void VParticleFXResourcePreview::OnRender(int iFlags)
     pLayer->SetVisibleBitmask(1);
     pLayer->SetRenderOrder(1);
     pLayer->SetAlwaysInForeGround(TRUE);
+
+    // Install fake light.
+    pLayer->SetLightGridColorPtr(lgColors);
   }
       
   // Render.
@@ -1348,6 +1499,7 @@ void VParticleFXResourcePreview::OnRender(int iFlags)
   {
     m_Layers.GetEntry(i)->SetVisibleBitmask(0);
     m_Layers.GetEntry(i)->SetRenderOrder(0);
+    m_Layers.GetEntry(i)->SetLightGridColorPtr(NULL);
   }
 }
 
@@ -1385,7 +1537,7 @@ VString VParticleFXResourcePreview::GetThumbnailFilename()
 // VShaderFXLibResourcePreview
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-VShaderFXLibResourcePreview::VShaderFXLibResourcePreview(VManagedResource *pOwner) : VResourcePreview(pOwner)
+VShaderFXLibResourcePreview::VShaderFXLibResourcePreview(VManagedResource *pOwner) : VResourcePreviewScrollSupport(pOwner)
 {
 }
 
@@ -1399,7 +1551,7 @@ void VShaderFXLibResourcePreview::OnRender(int iFlags)
   char szBuffer[1024];
   float fHeight = pFont->GetFontHeight();
   DRAW_WITH_BACKGROUND
-    float y = fStartY;
+    float y = START_TEXT_Y;
     for (int iFX = 0;iFX<pLib->m_Effects.Count();iFX++)
     {
       VShaderEffectResource *pFX = pLib->m_Effects.GetAt(iFX);
@@ -1536,6 +1688,7 @@ VTextureCubemapResourcePreview::VTextureCubemapResourcePreview(VManagedResource 
 
 void VTextureCubemapResourcePreview::OnActivate()
 {
+  VResourcePreview::OnActivate();
   VASSERT(m_spSphere);
 
   UpdateDistanceFromBBox(m_spSphere->GetBoundingBox());
@@ -1577,22 +1730,25 @@ void VTextureCubemapResourcePreview::OnRender(int iFlags)
     Vision::RenderLoopHelper.RenderMeshes(pShader, ePrimType, 0,iNumTris, iVertexCount);
   Vision::RenderLoopHelper.EndMeshRendering();
 
-  char szText[1024],szBuffer[128];
-  sprintf(szText,"Size: %i x %i; Mipmaps: %i; Format: %s",pTex->GetTextureWidth(),pTex->GetTextureHeight(),
-          pTex->GetMipMapLevelCount(),VTextureLoader::GetTextureFormatString(pTex->GetTextureFormat(),szBuffer));
+  if (m_bRenderMetaData)
+  {
+    char szText[1024],szBuffer[128];
+    sprintf(szText,"Size: %i x %i; Mipmaps: %i; Format: %s",pTex->GetTextureWidth(),pTex->GetTextureHeight(),
+            pTex->GetMipMapLevelCount(),VTextureLoader::GetTextureFormatString(pTex->GetTextureFormat(),szBuffer));
 
-  VisFont_cl *pFont = &Vision::Fonts.DebugFont();
-  IVRender2DInterface *pRI = Vision::RenderLoopHelper.BeginOverlayRendering();
-  DRAW_WITH_BACKGROUND
-    PRINT_TEXT(hkvVec2(20.f,fStartY),szText, V_RGBA_WHITE);
+    VisFont_cl *pFont = &Vision::Fonts.DebugFont();
+    IVRender2DInterface *pRI = Vision::RenderLoopHelper.BeginOverlayRendering();
+    DRAW_WITH_BACKGROUND
+      PRINT_TEXT(hkvVec2(20.f,START_TEXT_Y),szText, V_RGBA_WHITE);
+    }
+    Vision::RenderLoopHelper.EndOverlayRendering();
   }
-  Vision::RenderLoopHelper.EndOverlayRendering();
 }
 
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

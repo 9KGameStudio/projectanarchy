@@ -10,16 +10,14 @@
 #include <Vision/Runtime/EnginePlugins/Havok/HavokPhysicsEnginePlugin/vHavokShapeFactory.hpp>
 #include <Vision/Runtime/EnginePlugins/Havok/HavokPhysicsEnginePlugin/vHavokConversionUtils.hpp>
 #include <Vision/Runtime/EnginePlugins/Havok/HavokPhysicsEnginePlugin/vHavokFileStreamAccess.hpp>
-#include <Vision/Runtime/EnginePlugins/Havok/HavokPhysicsEnginePlugin/vHavokCachedShape.hpp>
+#include <Vision/Runtime/EnginePlugins/Havok/HavokPhysicsEnginePlugin/vHavokShapeCache.hpp>
 
-#ifdef SUPPORTS_TERRAIN
+#if defined(SUPPORTS_TERRAIN)
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Terrain/Geometry/TerrainSector.hpp>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Terrain/Geometry/TerrainSectorManager.hpp>
 #endif
 
 #include <Physics2012/Collide/Shape/Compound/Collection/SimpleMesh/hkpSimpleMeshShape.h>
-#include <Physics2012/Collide/Shape/HeightField/SampledHeightField/hkpSampledHeightFieldShape.h>
-#include <Physics2012/Collide/Shape/HeightField/SampledHeightField/hkpSampledHeightFieldBaseCinfo.h>
 #include <Physics2012/Collide/Shape/HeightField/SampledHeightField/hkpSampledHeightFieldShape.h>
 #include <Physics2012/Collide/Shape/HeightField/SampledHeightField/hkpSampledHeightFieldBaseCinfo.h>
 #include <Physics2012/Collide/Shape/HeightField/TriSampledHeightField/hkpTriSampledHeightFieldCollection.h>
@@ -32,415 +30,226 @@
 #include <Common/Base/Reflection/Registry/hkVtableClassRegistry.h>
 #include <Common/Base/Reflection/hkClass.h>
 
-// Initialize static members
-vHavokShapeCache* vHavokShapeFactory::m_pShapeCacheTable = NULL;
+//-----------------------------------------------------------------------------------
 
-// -------------------------------------------------------------------------- //
-// Init/ Deinit                                                               //
-// -------------------------------------------------------------------------- //
-
-void vHavokShapeFactory::Init()
+hkRefNew<hkpShape> vHavokShapeFactory::CreateShapeFromMesh(VBaseMesh* pMesh, const hkvVec3& vScale, 
+  unsigned int uiCreationFlags, VisWeldingType_e eWeldingType)
 {
-  // hkStoragStringMap allocates at construction already memory. Since at static construction time the memory system of Havok
-  // is still not initialized, the creation must be done later.
-  m_pShapeCacheTable = new vHavokShapeCache;
-}
+  VASSERT(pMesh != NULL);
 
-void vHavokShapeFactory::Deinit()
-{
-  V_SAFE_DELETE(m_pShapeCacheTable);
-}
-
-
-// -------------------------------------------------------------------------- //
-// Havok Shape - Convex                                                       //
-// -------------------------------------------------------------------------- //
-
-hkRefNew<hkpShape> vHavokShapeFactory::CreateConvexHullShapeFromMesh(VBaseMesh *pMesh, const hkvVec3& vScaleIn, const char **szShapeCacheId, int iCreationFlags)
-{
-  VVERIFY_OR_RET_VAL(pMesh != NULL, NULL);
-
-  const bool bAllowStaticMeshCaching = vHavokPhysicsModule_GetDefaultWorldRuntimeSettings().m_bEnableShapeCaching==TRUE;
-  const bool bCacheShape = iCreationFlags & VShapeCreationFlags_CACHE_SHAPE;
   const vHavokPhysicsModule *pModule = vHavokPhysicsModule::GetInstance();
   VASSERT(pModule != NULL);
-  const bool bForceHktShapeCaching = pModule->IsHktShapeCachingEnforced();
-  const bool bShrinkShape = iCreationFlags & VShapeCreationFlags_SHRINK;
 
+  const bool bCacheShape = (pMesh->GetFilename() != NULL && (uiCreationFlags & VShapeCreationFlags_CACHE_SHAPE) != 0);
   char szShapeId[512];
+
+  const bool bIsConvex = IsShapeConvex(pMesh, uiCreationFlags);
+
+  hkpShape* pShape = HK_NULL;
   if (bCacheShape)
   {
-    VASSERT(szShapeCacheId != NULL);
+    // Check whether the shape has already been cached.
+    if (bIsConvex)
+      vHavokShapeCache::ComputeShapeIdForConvexShape(szShapeId, pMesh->GetFilename(), vScale, uiCreationFlags);
+    else
+      vHavokShapeCache::ComputeShapeIdForMeshShape(szShapeId, pMesh->GetFilename(), vScale, VisStaticMeshInstance_cl::VIS_COLLISION_BEHAVIOR_CUSTOM, eWeldingType);
 
-    // Check whether shape has been already cached for this model with the respective scaling.
-    vHavokShapeFactory::GetIDStringForConvexShape(szShapeId, pMesh->GetFilename(), vScaleIn, bShrinkShape);
-    hkpShape *pCachedShape = FindShape(szShapeId, szShapeCacheId);
-    if (pCachedShape)
-    {
-      pCachedShape->addReference();
-      return pCachedShape;
-    }
- 
-    // Check if shape is already cached on disk 
-    if (bAllowStaticMeshCaching)
-    {
-      pCachedShape = vHavokCachedShape::LoadConvexShape(pMesh, vScaleIn, bShrinkShape);
-      if (pCachedShape)
-      {
-        *szShapeCacheId = AddShape(szShapeId, pCachedShape);
-
-  #ifdef HK_DEBUG_SLOW
-        const hkClass* loadedClassType = hkVtableClassRegistry::getInstance().getClassFromVirtualInstance(pCachedShape);
-        HK_ASSERT2(0x695cc897, loadedClassType && (hkString::strCmp( loadedClassType->getName(), "hkvConvexVerticesShape" ) == 0), "Serialized in a unexpected cached Havok shape type!");
-  #endif
-
-        return pCachedShape;
-      }
-      else if(!Vision::Editor.IsInEditor() && !bForceHktShapeCaching)
-      {
-        hkvLog::Warning("Cached HKT file for %s is missing. Please generate HKT file (see documentation for details).", pMesh->GetFilename());
-      }
-    }
+    pShape = vHavokShapeCache::FindShapeOnDisk(szShapeId, GetCollisionMesh(pMesh, uiCreationFlags)->GetFileTime());
+    if (pShape != HK_NULL)
+      return pShape;
   }
 
-  // Get the collision mesh for the specified mesh
-  const IVCollisionMesh *pColMesh = (iCreationFlags & VShapeCreationFlags_USE_VCOLMESH) ? pMesh->GetCollisionMesh(true, true) : pMesh->GetTraceMesh(true, true);
-  VASSERT(pColMesh != NULL);
+  // Create new shape.
+  hkvMat4 mTransform;
+  mTransform.setScalingMatrix(vScale);
 
-  hkvMat4 tranform;
-  tranform.setScalingMatrix(vScaleIn);
+  if (bIsConvex)
+  {
+    pShape = CreateConvexHullShapeFromMesh(pMesh, mTransform, uiCreationFlags);
+  }
+  else
+  {
+    pShape = CreateCompressedBvMeshShapeFromMesh(pMesh, mTransform, uiCreationFlags, eWeldingType);
+  }
+
+  // Add to cache.
+  if (bCacheShape && pShape != HK_NULL)
+  {
+    vHavokShapeCache::AddShape(szShapeId, pShape);
+  }
+
+  return pShape;
+}
+
+hkRefNew<hkpShape> vHavokShapeFactory::CreateShapeFromStaticMeshInstances(
+  VisStaticMeshInstance_cl const* const* ppInstances, unsigned int uiNumInstances, unsigned int uiCreationFlags)
+{
+  VASSERT(uiNumInstances > 0 && ppInstances[0] != NULL);
+  VBaseMesh* pMesh = ppInstances[0]->GetMesh();
+  VASSERT(pMesh != NULL);
+
+  const vHavokPhysicsModule *pModule = vHavokPhysicsModule::GetInstance();
+  VASSERT(pModule != NULL);
+
+  // Only create a convex shape if a single mesh instance is used, since otherwise merging multiple mesh instances in one single convex hull
+  // will provide in most cases not the desired behavior. Moreover we can only create either a convex hull or a concave mesh shape, therefore
+  // mesh instances with different collision types can't be merged into one shape.
+  const bool bIsConvex = (uiNumInstances == 1 && IsShapeConvex(ppInstances[0]->GetMesh(), uiCreationFlags));
+
+  // We are just caching single static mesh instances and no static mesh collections.
+  const bool bCacheShape = (pMesh->GetFilename() != NULL && (uiCreationFlags & VShapeCreationFlags_CACHE_SHAPE) != 0 && uiNumInstances == 1);
+
+  char szShapeId[512];
+  hkpShape* pShape = HK_NULL;
+
+  if (bCacheShape)
+  {
+    const hkvVec3 vScale = ExtractScaling(ppInstances[0]->GetTransform());
+
+    // Check whether the shape has already been cached.
+    if (bIsConvex)
+      vHavokShapeCache::ComputeShapeIdForConvexShape(szShapeId, pMesh->GetFilename(), vScale, uiCreationFlags);
+    else
+      vHavokShapeCache::ComputeShapeIdForMeshShape(szShapeId, pMesh->GetFilename(), vScale, ppInstances[0]->GetCollisionBehavior(), VIS_WELDING_TYPE_NONE);
+
+    pShape = vHavokShapeCache::FindShapeOnDisk(szShapeId, GetCollisionMesh(pMesh, uiCreationFlags)->GetFileTime());
+    if (pShape != NULL)
+      return pShape;
+  }
+
+  if (bIsConvex)
+  {
+    // Calculate scaling matrix in local space.
+    hkvMat4 mTransform = ComputeReferenceTransform(ppInstances[0]->GetTransform());
+    mTransform = mTransform.multiply(ppInstances[0]->GetTransform()); 
+
+    pShape = CreateConvexHullShapeFromMesh(pMesh, mTransform, uiCreationFlags);
+  }
+  else
+  {
+    pShape = CreateMeshShapeFromStaticMeshInstances(ppInstances, uiNumInstances, uiCreationFlags);
+  }
+
+  if (bCacheShape && pShape != HK_NULL)
+  {
+    vHavokShapeCache::AddShape(szShapeId, pShape);
+  }
+
+  return pShape;
+}
+
+//-----------------------------------------------------------------------------------
+// Shape Creation
+
+hkpShape* vHavokShapeFactory::CreateConvexHullShapeFromMesh(VBaseMesh* pMesh, const hkvMat4& mTransform, unsigned int uiCreationFlags)
+{
+  // Get the collision mesh for the specified mesh
+  const IVCollisionMesh *pColMesh = GetCollisionMesh(pMesh, uiCreationFlags);
+  VASSERT(pColMesh != NULL);
 
   hkGeometry geom;
 
   const int iNumColMeshes = hkvMath::Max(pColMesh->GetSubmeshCount(), 1);
-  for (int i=0;i<iNumColMeshes;i++)
-    BuildGeomFromCollisionMesh(pColMesh, i, tranform, true, geom);
+  for (int i = 0; i < iNumColMeshes; i++)
+    BuildGeometryFromCollisionMesh(pColMesh, i, mTransform, true, geom);
   VVERIFY_OR_RET_VAL(geom.m_vertices.getSize() > 0, NULL);
 
   // Set the build configuration to set planes equations and connectivity automatically
   hkpConvexVerticesShape::BuildConfig config;
   config.m_createConnectivity = true;
-  config.m_shrinkByConvexRadius = bShrinkShape;
+  config.m_shrinkByConvexRadius = (uiCreationFlags & VShapeCreationFlags_SHRINK) != 0;
 
   hkStridedVertices stridedVerts;
   stridedVerts.m_numVertices = geom.m_vertices.getSize();
-  stridedVerts.m_striding    = sizeof(hkVector4);
-  stridedVerts.m_vertices    = (const hkReal*)geom.m_vertices.begin();
+  stridedVerts.m_striding = sizeof(hkVector4);
+  stridedVerts.m_vertices = (const hkReal*)geom.m_vertices.begin();
 
   // Create convex shape
-  hkvConvexVerticesShape *pConvexShape = new hkvConvexVerticesShape(pColMesh->GetFileTime(), stridedVerts, config);
-
-  // Add shape to cache
-  if (bCacheShape)
-    *szShapeCacheId = AddShape(szShapeId, pConvexShape);
-
-  // Only cache shape to HKT file when inside vForge or when enforced.
-  if ((Vision::Editor.IsInEditor() && bAllowStaticMeshCaching && bCacheShape) || bForceHktShapeCaching)
-    vHavokCachedShape::SaveConvexShape(pMesh, vScaleIn, bShrinkShape, pConvexShape);
-
-  return pConvexShape;
+  return new hkvConvexVerticesShape(pColMesh->GetFileTime(), stridedVerts, config);
 }
 
-
-// -------------------------------------------------------------------------- //
-// Havok Shape - Mesh                                                         //
-// -------------------------------------------------------------------------- //
-hkRefNew<hkpShape> vHavokShapeFactory::CreateShapeFromMesh(VBaseMesh* pMesh, const hkvVec3& vScale, const char **szShapeCacheId,
-                                                           int iCreationFlags, VisWeldingType_e eWeldingType)
+hkpShape* vHavokShapeFactory::CreateCompressedBvMeshShapeFromMesh(VBaseMesh* pMesh, const hkvMat4& mTransform, unsigned int uiCreationFlags, VisWeldingType_e eWeldingType)
 {
-  VVERIFY_OR_RET_VAL(pMesh != NULL, NULL);
-
-  const bool bAllowStaticMeshCaching = vHavokPhysicsModule_GetDefaultWorldRuntimeSettings().m_bEnableShapeCaching==TRUE;
-  const bool bCacheShape = iCreationFlags & VShapeCreationFlags_CACHE_SHAPE;  
-  const vHavokPhysicsModule *pModule = vHavokPhysicsModule::GetInstance();
-  VASSERT(pModule != NULL);
-  const bool bForceHktShapeCaching = pModule->IsHktShapeCachingEnforced();
-  
-  char szShapeId[512];
-  if (bCacheShape)
-  {
-    VASSERT(szShapeCacheId != NULL);
-
-    // Check whether shape has been already cached for this model with the respective scaling
-    vHavokShapeFactory::GetIDStringForMeshShape(szShapeId, pMesh->GetFilename(), vScale, VisStaticMeshInstance_cl::VIS_COLLISION_BEHAVIOR_CUSTOM, eWeldingType);
-    hkpShape *pCachedShape = FindShape(szShapeId, szShapeCacheId);
-    if (pCachedShape)
-    {
-      pCachedShape->addReference();
-      return pCachedShape;
-    }
-
-    // Check if shape is already cached on disk
-    if (bAllowStaticMeshCaching )
-    {
-      pCachedShape = vHavokCachedShape::LoadMeshShape(pMesh, vScale, VisStaticMeshInstance_cl::VIS_COLLISION_BEHAVIOR_CUSTOM, eWeldingType);
-      if (pCachedShape)
-      {
-        *szShapeCacheId = AddShape(szShapeId, pCachedShape);
-
-#ifdef HK_DEBUG_SLOW
-        const hkClass* loadedClassType = hkVtableClassRegistry::getInstance().getClassFromVirtualInstance(pCachedShape);
-        HK_ASSERT2(0x695cc897, loadedClassType && (hkString::strCmp( loadedClassType->getName(), "hkvBvCompressedMeshShape" ) == 0), "Serialized in a unexpected cached Havok shape type!");
-#endif
-
-        hkvBvCompressedMeshShape* pCompressedMeshShape = reinterpret_cast<hkvBvCompressedMeshShape*>(pCachedShape);
-        pCompressedMeshShape->SetupMaterials(); // just to be sure we don't try to access it as material ptr ever
-        return pCompressedMeshShape;
-      }
-      else if(!Vision::Editor.IsInEditor() && !bForceHktShapeCaching)
-      {
-        hkvLog::Warning("Cached HKT file for %s is missing. Please generate HKT file (see documentation for details).", pMesh->GetFilename());
-      }
-    }
-  }
- 
-  hkGeometry geom;
-
   // Get the collision mesh for the specified mesh
-  IVCollisionMesh *pColMesh = (iCreationFlags & VShapeCreationFlags_USE_VCOLMESH) ? pMesh->GetCollisionMesh(true, true) : pMesh->GetTraceMesh(true, true);
+  const IVCollisionMesh *pColMesh = GetCollisionMesh(pMesh, uiCreationFlags);
   VASSERT(pColMesh != NULL);
-
-  hkvMat4 tranform;
-  tranform.setScalingMatrix(vScale);
-
-  int iNumColMeshes = hkvMath::Max(pColMesh->GetSubmeshCount(), 1);
-  for (int i=0;i<iNumColMeshes;i++)
-    BuildGeomFromCollisionMesh(pColMesh, i, tranform, false, geom);
+  
+  const int iNumColMeshes = hkvMath::Max(pColMesh->GetSubmeshCount(), 1);
+  hkGeometry geom;
+  for (int i = 0; i < iNumColMeshes; i++)
+    BuildGeometryFromCollisionMesh(pColMesh, i, mTransform, false, geom);
   VVERIFY_OR_RET_VAL(geom.m_vertices.getSize() > 0, NULL);
 
-  ///XX A DynamicMesh can be animated. We are treating it as static here.
-
-  hkpDefaultBvCompressedMeshShapeCinfo ci( &geom );
-  ci.m_collisionFilterInfoMode = hkpBvCompressedMeshShape::PER_PRIMITIVE_DATA_NONE; // Collision info
+  // Note: A DynamicMesh can be animated. We are treating it as static here.
+  hkpDefaultBvCompressedMeshShapeCinfo ci(&geom);
+  ci.m_collisionFilterInfoMode = hkpBvCompressedMeshShape::PER_PRIMITIVE_DATA_NONE;
   ci.m_userDataMode = hkpBvCompressedMeshShape::PER_PRIMITIVE_DATA_NONE; // Materials
   ci.m_weldingType = vHavokConversionUtils::VisToHkWeldingType(eWeldingType);
+
   hkvBvCompressedMeshShape* pCompressedMeshShape = new hkvBvCompressedMeshShape(ci, pColMesh->GetFileTime());
 
   if (pCompressedMeshShape->getNumChildShapes() <= 0)
   {
     pCompressedMeshShape->removeReference();
 
-    const char *szMeshFilename = (pMesh->GetFilename() != NULL) ? pMesh->GetFilename() : "UnnamedMesh";
+    const char* szMeshFilename = (pMesh->GetFilename() != NULL) ? pMesh->GetFilename() : "<noname>";
     hkvLog::Warning("Physics Shape for [%s] is empty. Volume too small?",  szMeshFilename);
-    return NULL;
+    return HK_NULL;
   }
-  
-  if (bCacheShape)
-    *szShapeCacheId = AddShape(szShapeId, pCompressedMeshShape);
-
-  // Only cache shape to HKT file when inside vForge or when enforced.
-  if ((Vision::Editor.IsInEditor() && bAllowStaticMeshCaching && bCacheShape) || bForceHktShapeCaching)   
-    vHavokCachedShape::SaveMeshShape(pMesh, vScale, VisStaticMeshInstance_cl::VIS_COLLISION_BEHAVIOR_CUSTOM, eWeldingType, pCompressedMeshShape);
 
   return pCompressedMeshShape;
-}
-
-
-// -------------------------------------------------------------------------- //
-// Havok Shape - Static Mesh                                                  //
-// -------------------------------------------------------------------------- //
-
-void vHavokShapeFactory::ExtractScaling(const hkvMat4 &mat, hkvVec3& destScaling)
-{
-  hkvVec3 vx(hkvNoInitialization),vy(hkvNoInitialization),vz(hkvNoInitialization);
-  mat.getAxisXYZ (&vx, &vy, &vz);
-  destScaling.set(vx.getLength(),vy.getLength(),vz.getLength());
 }
 
 class vHavokCompressedInfoCinfo : public hkpDefaultBvCompressedMeshShapeCinfo
 {
 public:
-  
-    vHavokCompressedInfoCinfo( const hkGeometry* geometry, hkUint8* collisionInfoPerTri ) : 
-      hkpDefaultBvCompressedMeshShapeCinfo( geometry ), m_collisionInfoPerTri(collisionInfoPerTri)
+  vHavokCompressedInfoCinfo(const hkGeometry* geometry, hkUint8* collisionInfoPerTri) 
+    : hkpDefaultBvCompressedMeshShapeCinfo(geometry)
+    , m_collisionInfoPerTri(collisionInfoPerTri)
+  {
+  }
+
+  virtual ~vHavokCompressedInfoCinfo() {}
+
+  virtual hkUint32 getTriangleCollisionFilterInfo(int triangleIndex) const 
+  {
+    if (m_collisionInfoPerTri)
     {
+      hkUint8 cdinfo = m_collisionInfoPerTri[ triangleIndex ];
+      return cdinfo;
     }
+    else return 0;
+  }
 
-    virtual ~vHavokCompressedInfoCinfo() {}
-
-		virtual hkUint32 getTriangleCollisionFilterInfo(int triangleIndex) const 
+  virtual hkUint32 getTriangleUserData(int triangleIndex) const
+  {
+    int matId = m_geometry->m_triangles[triangleIndex].m_material;
+    if (matId >= 0) 
     {
-      if (m_collisionInfoPerTri)
-      {
-        hkUint8 cdinfo = m_collisionInfoPerTri[ triangleIndex ];
-        return cdinfo;
-      }
-      else return 0;
+      VASSERT(matId < 256);
+      return (hkUint32)matId;
     }
+    return 0;
+  }
 
-		virtual hkUint32 getTriangleUserData(int triangleIndex) const
-    {
-      int matId = m_geometry->m_triangles[triangleIndex].m_material;
-      if (matId >= 0) 
-      {
-        VASSERT(matId < 256);
-        return (hkUint32)matId;
-      }
-      return 0;
-    }
-
-    hkUint8* m_collisionInfoPerTri;
+  hkUint8* m_collisionInfoPerTri;
 };
 
-hkRefNew<hkpShape> vHavokShapeFactory::CreateShapeFromStaticMeshInstances(const VisStaticMeshInstCollection &meshInstances, int iCreationFlags, const char **szShapeCacheId)
+hkpShape* vHavokShapeFactory::CreateMeshShapeFromStaticMeshInstances(
+  VisStaticMeshInstance_cl const* const* ppInstances, unsigned int uiNumInstances, unsigned int uiCreationFlags)
 {
-  int iCount = meshInstances.GetLength();
-  VVERIFY_OR_RET_VAL(iCount>0 && szShapeCacheId!=NULL, NULL);
-  
-  // Actual mesh scale, which is only used for caching.
-  hkvVec3 vScale(hkvNoInitialization);
-  ExtractScaling(meshInstances[0]->GetTransform(), vScale);
-
-  char szShapeId[512];
-  const bool bAllowStaticMeshCaching = vHavokPhysicsModule_GetDefaultWorldRuntimeSettings().m_bEnableShapeCaching==TRUE;
-  const vHavokPhysicsModule *pModule = vHavokPhysicsModule::GetInstance();
-  VASSERT(pModule != NULL);
-  const bool bForceHktShapeCaching = pModule->IsHktShapeCachingEnforced();
-
-  // For single mesh instances the per instance welding type is used. For merged mesh instances the global merged welding type is used. 
-  VisWeldingType_e eWeldingType = (iCount==1) ? meshInstances[0]->GetWeldingType() : (VisWeldingType_e)vHavokPhysicsModule_GetWorldSetupSettings().m_iMergedStaticWeldingType;
-
-  const bool bAllowPerTriCollisionInfo = iCreationFlags & VShapeCreationFlags_ALLOW_PERTRICOLINFO;
-  const bool bShrinkByCvxRadius = iCreationFlags & VShapeCreationFlags_SHRINK;
-
-  // Check whether shape has been already cached for this mesh with the respective scaling.
-  // We are just caching single static mesh instances and no static mesh collections.
-  hkpShape *pCachedShape = HK_NULL; 
-  if (iCount == 1)
-  {
-    // first, find the convex version
-    GetIDStringForConvexShape(szShapeId, meshInstances[0]->GetMesh()->GetFilename(), vScale, bShrinkByCvxRadius);
-    pCachedShape = FindShape(szShapeId, szShapeCacheId);
-    if (!pCachedShape)
-    {
-      // then find the mesh version
-      GetIDStringForMeshShape(szShapeId, meshInstances[0]->GetMesh()->GetFilename(), vScale, meshInstances[0]->GetCollisionBehavior(), eWeldingType);
-      pCachedShape = FindShape(szShapeId, szShapeCacheId);
-    }
-    if (pCachedShape)
-    {
-      pCachedShape->addReference();
-      return pCachedShape; 
-    }
-
-    if (bAllowStaticMeshCaching)
-    {
-      // first, find the convex version
-      pCachedShape = vHavokCachedShape::LoadConvexShape(meshInstances[0]->GetMesh(), vScale, bShrinkByCvxRadius);
-      if (pCachedShape)
-      {
-        *szShapeCacheId = AddShape(szShapeId, pCachedShape);
-#ifdef HK_DEBUG_SLOW
-        const hkClass* loadedClassType = hkVtableClassRegistry::getInstance().getClassFromVirtualInstance(pCachedShape);
-        HK_ASSERT2(0x5432c902, loadedClassType && (hkString::strCmp( loadedClassType->getName(), "hkvConvexVerticesShape" ) == 0), "Serialized in a unexpected cached Havok shape type!");
-#endif
-        return pCachedShape; 
-      }
-      else
-      {
-        // then find the mesh version
-        pCachedShape = vHavokCachedShape::LoadMeshShape(meshInstances[0]->GetMesh(), vScale, meshInstances[0]->GetCollisionBehavior(), eWeldingType);
-      }
-      if (pCachedShape )
-      {
-        *szShapeCacheId = AddShape(szShapeId, pCachedShape);
-#ifdef HK_DEBUG_SLOW
-        const hkClass* loadedClassType = hkVtableClassRegistry::getInstance().getClassFromVirtualInstance(pCachedShape);
-        HK_ASSERT2(0x5432c902, loadedClassType && (hkString::strCmp( loadedClassType->getName(), "hkvBvCompressedMeshShape" ) == 0), "Serialized in a unexpected cached Havok shape type!");
-#endif
-        hkvBvCompressedMeshShape *pCompressedMeshShape = reinterpret_cast<hkvBvCompressedMeshShape*>(pCachedShape);
-        pCompressedMeshShape->SetupMaterials();
-        return pCachedShape; 
-      }
-      else if(!Vision::Editor.IsInEditor() && !bForceHktShapeCaching)
-      {
-        hkvLog::Warning("Cached HKT file for %s is missing. Please generate HKT file (see documentation for details).", meshInstances[0]->GetMesh()->GetFilename());
-      }
-    }
-  }
+  VASSERT(uiNumInstances > 0);
 
   // Get the reference transformation. We use the first static mesh as reference
   // transformation, and thus as the position of the corresponding rigid body.
-  hkvMat4 referenceTransform = meshInstances[0]->GetTransform();
+  const hkvMat4 refTransform = ComputeReferenceTransform(ppInstances[0]->GetTransform());
 
-  // Remove any scaling from the reference matrix. This one has to be applied to
-  // the Havok shapes, and thus needs to be part of the mesh transforms.
-  referenceTransform.setScalingFactors(hkvVec3 (1));
+  // For single mesh instances the per instance welding type is used. For merged mesh instances the global merged welding type is used. 
+  const VisWeldingType_e eWeldingType = (uiNumInstances == 1) ? 
+    ppInstances[0]->GetWeldingType() : 
+    static_cast<VisWeldingType_e>(vHavokPhysicsModule_GetWorldSetupSettings().m_iMergedStaticWeldingType);
 
-  // We need the inverse referenceTransform to transform each instance into reference space
-  referenceTransform.invert();
-  referenceTransform.setRow (3, hkvVec4 (0, 0, 0, 1));
-
-  // Determine collision type from first static mesh instance.
-  const VisStaticMeshInstance_cl *pMeshInstance = meshInstances[0];
-  VisStaticMesh_cl *pMesh = pMeshInstance->GetMesh();
-  IVCollisionMesh *pColMesh = pMesh->GetCollisionMesh(true, true);
-  const bool bIsConvex = pColMesh->GetType()==VIS_COLMESH_GEOTYPE_CONVEXHULL;
-
-  // Only create a convex shape if a single mesh instance is used, since otherwise merging multiple mesh instances in one single convex hull
-  // will provide in most cases not the desired behavior. Moreover we can only create either a convex hull or a concave mesh shape, therefore
-  // mesh instances with different collision type can't be merged into one shape.
-  hkpShape *pShape = (bIsConvex && iCount==1) ?
-    CreateConvexShapeFromStaticMeshInstances(meshInstances, referenceTransform, bShrinkByCvxRadius) : 
-    CreateMeshShapeFromStaticMeshInstances(meshInstances, referenceTransform, bAllowPerTriCollisionInfo, eWeldingType);
-
-  // We are just caching single static mesh instances and no static mesh collections.
-  if ((pShape != NULL) && (iCount == 1))
-  {
-    *szShapeCacheId = AddShape(szShapeId, pShape);
-
-    // Only cache shape to HKT file when inside vForge or when enforced.
-    if ((Vision::Editor.IsInEditor() && bAllowStaticMeshCaching) || bForceHktShapeCaching)
-    {
-      if (bIsConvex)
-        vHavokCachedShape::SaveConvexShape(meshInstances[0]->GetMesh(), vScale, bShrinkByCvxRadius, (hkvConvexVerticesShape*)pShape);
-      else
-        vHavokCachedShape::SaveMeshShape(meshInstances[0]->GetMesh(), vScale, meshInstances[0]->GetCollisionBehavior(), eWeldingType, (hkvBvCompressedMeshShape*)pShape);
-    }
-  }
-  return pShape;
-}
-
-hkpShape* vHavokShapeFactory::CreateConvexShapeFromStaticMeshInstances(const VisStaticMeshInstCollection &meshInstances, hkvMat4 &refTransform, bool shrinkByCvxRadius)
-{
-  VVERIFY_OR_RET_VAL(meshInstances.GetLength()==1, NULL);
-
-  // Get the collision mesh for the static mesh instance
-  VisStaticMeshInstance_cl *pMeshInstance = meshInstances[0];
-  VisStaticMesh_cl *pMesh = pMeshInstance->GetMesh();
-  IVCollisionMesh *pColMesh = pMesh->GetCollisionMesh(true, true);
-  VVERIFY_OR_RET_VAL(pColMesh!=NULL, NULL);
-
-  // We transform each static mesh into the reference space.
-  hkvMat4 mTransform = refTransform;
-  mTransform = mTransform.multiply (pMeshInstance->GetTransform());
-
-  hkGeometry geom;
-  int iNumColMeshes = hkvMath::Max(pColMesh->GetSubmeshCount(), 1);
-  for (int i=0;i<iNumColMeshes;i++)
-    BuildGeomFromCollisionMesh(pColMesh, i, mTransform, false, geom);
- 
-  // Set the build configuration to set planes equations and connectivity automatically
-  hkpConvexVerticesShape::BuildConfig config;
-  config.m_createConnectivity = true;
-  config.m_shrinkByConvexRadius = shrinkByCvxRadius;
-
-  hkStridedVertices stridedVerts;
-  stridedVerts.m_numVertices = geom.m_vertices.getSize();
-  stridedVerts.m_striding    = sizeof(hkVector4);
-  stridedVerts.m_vertices    = (const hkReal*)geom.m_vertices.begin();
-
-  // Create convex shape
-  hkvConvexVerticesShape *pConvexShape = new hkvConvexVerticesShape(pColMesh->GetFileTime(), stridedVerts, config);
-  
-  return pConvexShape;
-}
-
-hkpShape* vHavokShapeFactory::CreateMeshShapeFromStaticMeshInstances(const VisStaticMeshInstCollection &meshInstances, hkvMat4 &refTransform, 
-                                                                     bool bAllowPerTriCollisionInfo, VisWeldingType_e eWeldingType)
-{
-  int iCount = meshInstances.GetLength();
-  VVERIFY_OR_RET_VAL(iCount>0, NULL);
+  const bool bAllowPerTriCollisionInfo = (ppInstances[0]->GetCollisionBehavior() == VisStaticMeshInstance_cl::VIS_COLLISION_BEHAVIOR_FROMFILE);
 
   hkGeometry geom;
   hkInt64 iFileTime = 0;
@@ -449,17 +258,24 @@ hkpShape* vHavokShapeFactory::CreateMeshShapeFromStaticMeshInstances(const VisSt
   hkvMeshMaterialCache materials;
   hkArray<hkUint8> collisionMask;
   int subPartIndex = 0;
-  for (int i = 0; i < iCount; i++)
+  bool bHasValidShape = false;
+
+  for (unsigned int i = 0; i < uiNumInstances; i++)
   { 
     // Get the collision mesh for the static mesh instance
-    const VisStaticMeshInstance_cl *pMeshInstance = meshInstances[i];
+    const VisStaticMeshInstance_cl *pMeshInstance = ppInstances[i];
     VisStaticMesh_cl *pMesh = pMeshInstance->GetMesh();
-    IVCollisionMesh *pColMesh = pMesh->GetCollisionMesh(true, true);
+    IVCollisionMesh *pColMesh = GetCollisionMesh(pMesh, uiCreationFlags);
     if (pColMesh == NULL)
     {
       VASSERT(false);
       continue;
     }
+
+    if(pColMesh->GetMeshData()->GetIndexCount() == 0)
+      continue;
+    else
+      bHasValidShape = true;
 
     // Simply retrieve file time from last static mesh instance
     iFileTime = pColMesh->GetFileTime();
@@ -470,22 +286,21 @@ hkpShape* vHavokShapeFactory::CreateMeshShapeFromStaticMeshInstances(const VisSt
 
       // We transform each static mesh into the reference space.
       hkvMat4 mTransform = refTransform;
-      mTransform = mTransform.multiply (pMeshInstance->GetTransform());
+      mTransform = mTransform.multiply(pMeshInstance->GetTransform());
 
       int iNumColMeshes = hkvMath::Max(pColMesh->GetSubmeshCount(), 1);
       for (int i=0;i<iNumColMeshes;i++)
       {
         int startingNumVerts = geom.m_vertices.getSize();
-        BuildGeomFromCollisionMesh(pColMesh, i, mTransform, false, geom);
+        BuildGeometryFromCollisionMesh(pColMesh, i, mTransform, false, geom);
         int endNumVerts = geom.m_vertices.getSize();
         int endNumTris = geom.m_triangles.getSize();
         VASSERT( (endNumVerts - startingNumVerts) > 0 );
 
-        hkUint32 cdMask = 0;
         if (bAllowPerTriCollisionInfo && (pColMesh->GetSubmeshCount() > 0))
         {
           const VPhysicsSubmesh& submesh = pColMesh->GetSubmeshes()[i];
-          cdMask = submesh.iGroupFilter & 0xff; // only lower 8 bits stored in compressed mesh.
+          hkUint32 cdMask = submesh.iGroupFilter & 0xff; // only lower 8 bits stored in compressed mesh.
 
           int numCD = endNumTris - collisionMask.getSize();
           hkUint8* cdi = collisionMask.expandBy( numCD );
@@ -533,8 +348,11 @@ hkpShape* vHavokShapeFactory::CreateMeshShapeFromStaticMeshInstances(const VisSt
     }
   }
 
-  const bool bHaveTriCDData = collisionMask.getSize() > 0;
-  vHavokCompressedInfoCinfo ci( &geom, bHaveTriCDData ? collisionMask.begin() : HK_NULL );
+  if(!bHasValidShape)
+    return HK_NULL;
+
+  const bool bHaveTriCDData = !collisionMask.isEmpty();
+  vHavokCompressedInfoCinfo ci(&geom, bHaveTriCDData ? collisionMask.begin() : HK_NULL);
   ci.m_weldingType = vHavokConversionUtils::VisToHkWeldingType(eWeldingType);
   ci.m_collisionFilterInfoMode = bHaveTriCDData ? hkpBvCompressedMeshShape::PER_PRIMITIVE_DATA_8_BIT : hkpBvCompressedMeshShape::PER_PRIMITIVE_DATA_NONE;
   
@@ -556,216 +374,156 @@ hkpShape* vHavokShapeFactory::CreateMeshShapeFromStaticMeshInstances(const VisSt
     pCompressedMeshShape->removeReference();
     pCompressedMeshShape = NULL;
   }
-  else
-  {
-    pCompressedMeshShape->SetupMaterials();
-  }
   
   return pCompressedMeshShape;
 }
-
 
 // -------------------------------------------------------------------------- //
 // Havok Shape - Terrain                                                      //
 // -------------------------------------------------------------------------- //
 
-#ifdef SUPPORTS_TERRAIN
+#if defined(SUPPORTS_TERRAIN)
 
-hkpShape* vHavokShapeFactory::CreateShapeFromTerrain(const VTerrainSector& terrain)
+hkpShape* vHavokShapeFactory::CreateShapeFromTerrain(const VTerrainSector& sector)
 {
   // Check if shape is already cached on disk. Only try to load cached shape file outside of vForge, since otherwise the physics
   // representation will not be updated on terrain editing.
-  const bool bAllowStaticMeshCaching = vHavokPhysicsModule_GetDefaultWorldRuntimeSettings().m_bEnableShapeCaching==TRUE;
-  if (!Vision::Editor.IsInEditor() && bAllowStaticMeshCaching)
+  const bool bAllowDiskCaching = (vHavokPhysicsModule_GetDefaultWorldRuntimeSettings().m_bEnableDiskShapeCaching == TRUE);
+  if (!Vision::Editor.IsInEditor() && bAllowDiskCaching)
   {
-    hkpShape *pCachedShape = vHavokCachedShape::LoadTerrainSectorShape(&terrain);
+    hkpShape* pCachedShape = vHavokShapeCache::LoadTerrainSectorShape(&sector);
     if (pCachedShape)
+    {
       return pCachedShape;
+    }
+#if defined(HK_DEBUG)
     else
-      hkvLog::Warning("Cached HKT file for %s is missing. Please generate HKT file (see documentation for details).", terrain.GetFilename());
+    {
+      // Only warn when terrain sector was created from file, since code-generated sectors can't have cached shapes. 
+      // Those are only generated in vForge.
+      char szFilename[FS_MAX_PATH];
+      sector.m_Config.GetSectorFilename(szFilename, sector.m_iIndexX, sector.m_iIndexY, "hmap", true);
+      if (Vision::File.Exists(szFilename))
+      {
+        hkvLog::Warning("Cached HKT file for %s is missing. Please generate HKT file (see documentation for details).", szFilename);
+      }
+    }
+#endif
   }
 
   hkpSampledHeightFieldBaseCinfo ci; 
-  ci.m_xRes = terrain.m_Config.m_iHeightSamplesPerSector[0]+1; 
-  ci.m_zRes = terrain.m_Config.m_iHeightSamplesPerSector[1]+1;
+
+  ci.m_xRes = sector.m_Config.m_iHeightSamplesPerSector[0]+1;
+  ci.m_zRes = sector.m_Config.m_iHeightSamplesPerSector[1]+1;
 
   // Overlapping samples into next sectors on all edges (so res-1 is scale)
-  ci.m_scale.set( VIS2HK_FLOAT_SCALED(terrain.m_Config.m_vSectorSize.x/float(ci.m_xRes-1)), 1, VIS2HK_FLOAT_SCALED(terrain.m_Config.m_vSectorSize.y/float(ci.m_zRes-1)) );
-  ci.m_minHeight = VIS2HK_FLOAT_SCALED(terrain.m_fMinHeightValue);
-  ci.m_maxHeight = VIS2HK_FLOAT_SCALED(terrain.m_fMaxHeightValue);
+  ci.m_scale.set( VIS2HK_FLOAT_SCALED(sector.m_Config.m_vSectorSize.x/float(ci.m_xRes-1)), 1, VIS2HK_FLOAT_SCALED(sector.m_Config.m_vSectorSize.y/float(ci.m_zRes-1)) );
+  ci.m_minHeight = VIS2HK_FLOAT_SCALED(sector.m_fMinHeightValue);
+  ci.m_maxHeight = VIS2HK_FLOAT_SCALED(sector.m_fMaxHeightValue);
 
-  hkvSampledHeightFieldShape* heightFieldShape = new hkvSampledHeightFieldShape(ci, &terrain);  
-  const bool bExact = terrain.GetPhysicsType() >= VTerrainSector::VPHYSICSTYPE_PRECISE;
-  const bool bHasHoles = terrain.HasHoles();
+  const bool bHasHoles = sector.HasHoles();
+  const bool bPrecise = (sector.GetPhysicsType() >= VTerrainSector::VPHYSICSTYPE_PRECISE);
+  const bool bTriShape = (bPrecise || bHasHoles);
 
-  if (!bExact && bHasHoles)
+  // Tight-fit only needed for triangle shapes since they have a convex shape radius.
+  const bool bTightFit = (bTriShape && sector.GetPhysicsTightFit());
+  hkpSampledHeightFieldShape* pHeightFieldShape = bTightFit ?
+    new hkvSampledOffsetHeightFieldShape(ci, &sector, -hkConvexShapeDefaultRadius) :
+    new hkvSampledHeightFieldShape(ci, &sector);
+
+  if (!bPrecise && bHasHoles)
     hkvLog::Info("Warning: Terrain sector has holes but uses approximated physics representation. Therefore precise physics representation enforced.");
 
-  // Two choices here.. could use just the heightfield as is, or
-  // wrap it in a tri sampler. The tri sampler will give exact collisions, the heightfield alone will be based on collision spheres.
-  // We *have* to use the accurate version in case the sector has holes
-  if (bExact || bHasHoles)
+  // Two choices here: Use just the height field as is, or wrap it in a triangle sampler. 
+  // The triangle sampler will give exact collisions, the height field alone will be based on collision spheres.
+  // We *have* to use the accurate version in case the sector has holes.
+  if (bTriShape)
   {
-    hkpTriSampledHeightFieldCollection* collection;
-    hkpTriSampledHeightFieldBvTreeShape* bvTree;
+    hkpTriSampledHeightFieldCollection* pCollection;
+    hkpTriSampledHeightFieldBvTreeShape* pBvTree;
 
     if (bHasHoles) // use a slightly modified version of hkpTriSampledHeightFieldCollection in case it has holes
     {
-      collection = new hkvTriSampledHeightFieldCollection(&terrain, heightFieldShape);
-      bvTree = new hkvTriSampledHeightFieldBvTreeShape(collection);    
+      pCollection = new hkvTriSampledHeightFieldCollection(&sector, pHeightFieldShape);
+      pBvTree = new hkvTriSampledHeightFieldBvTreeShape(pCollection);
     } 
     else
     {
-      collection = new hkpTriSampledHeightFieldCollection(heightFieldShape);
-      bvTree = new hkpTriSampledHeightFieldBvTreeShape(collection);
+      pCollection = new hkpTriSampledHeightFieldCollection(pHeightFieldShape);
+      pBvTree = new hkpTriSampledHeightFieldBvTreeShape(pCollection);
     }
 
     // Winding must be set to WELDING_TYPE_ANTICLOCKWISE (see hkpTriSampledHeightFieldCollection::initWeldingInfo()).
-    if (terrain.GetPhysicsType() == VTerrainSector::VPHYSICSTYPE_PRECISE_OFFLINE_WELDING)
-      hkpMeshWeldingUtility::computeWeldingInfo(collection, bvTree, hkpWeldingUtility::WELDING_TYPE_ANTICLOCKWISE);
+    if (sector.GetPhysicsType() == VTerrainSector::VPHYSICSTYPE_PRECISE_OFFLINE_WELDING)
+      hkpMeshWeldingUtility::computeWeldingInfo(pCollection, pBvTree, hkpWeldingUtility::WELDING_TYPE_ANTICLOCKWISE);
 
-    collection->removeReference();
-    heightFieldShape->removeReference();
-    return bvTree;	
+    pCollection->removeReference();
+    pHeightFieldShape->removeReference();
+    return pBvTree;
   }
   else
   {
-    return heightFieldShape;
+    return pHeightFieldShape;
   }
 }
 
 #endif
 
+//-----------------------------------------------------------------------------------
+// Helpers
 
-// -------------------------------------------------------------------------- //
-// Havok Shape Caching                                                        //
-// -------------------------------------------------------------------------- //
-
-const char* vHavokShapeFactory::AddShape(const char *szShapeId, hkpShape *pShape)
+const hkvVec3 vHavokShapeFactory::GetPivotOffset(const VDynamicMesh *pMesh, const hkvVec3& vScaleEntity)
 {
-  VASSERT(m_pShapeCacheTable!=NULL && szShapeId!=NULL);
-
-  VASSERT_MSG(!m_pShapeCacheTable->hasKey(szShapeId), "Shape shouldn't be cached twice");
-
-  const char *szShapeCacheId = m_pShapeCacheTable->insert(szShapeId, pShape); 
-
-  // We will keep the shape in our table, thus need to have a reference on it
-  pShape->addReference();
-
-  return szShapeCacheId;
-}
-
-void vHavokShapeFactory::RemoveShape(const char *szShapeID)
-{
-  VASSERT(m_pShapeCacheTable != NULL);
-  if (szShapeID == NULL)
-    return;
-
-  hkpShape* pShape = FindShape(szShapeID);
-  if (pShape == NULL)
-    return;
-
-  if (pShape->m_referenceCount == 1)
+  // Get center of bounding box
+  hkvAlignedBBox bbox = pMesh->GetCollisionBoundingBox();
+  // fall back to rendering bbox
+  if (!bbox.isValid())
   {
-    m_pShapeCacheTable->remove(szShapeID);
-    pShape->removeReference();
-  }
-}
-
-bool vHavokShapeFactory::ClearCache()
-{
-  VASSERT(m_pShapeCacheTable != NULL);
-
-  // Iterate all shapes in cache and check whether all shapes have a reference count 
-  // of 1 before we call removeReferecne(). If so return true, false otherwise.
-  bool bRefCountSafe = true;
-  
-  // Remove reference from all shapes
-  vHavokShapeCache::Iterator iter = m_pShapeCacheTable->getIterator();
-  while (m_pShapeCacheTable->isValid(iter))
-  {
-    hkpShape *pShape = m_pShapeCacheTable->getValue(iter);
-    if (pShape->m_referenceCount != 1)
-      bRefCountSafe = false;
-    pShape->removeReference();
-    iter = m_pShapeCacheTable->getNext(iter);
+    bbox = pMesh->GetBoundingBox();
+    if (!bbox.isValid())
+      return hkvVec3::ZeroVector();
   }
 
-  // Purge all
-  m_pShapeCacheTable->clear();
- 
-  return bRefCountSafe;
+  // Take scaling into account
+  return bbox.getCenter().compMul(vScaleEntity);
 }
 
-hkpShape* vHavokShapeFactory::FindShape(const char *szShapeId, const char **szShapeCacheId)
-{
-  VASSERT(m_pShapeCacheTable!=NULL && szShapeId!=NULL);
-
-  vHavokShapeCache::Iterator iter = m_pShapeCacheTable->findKey(szShapeId);
-  if (m_pShapeCacheTable->isValid(iter))
-  {
-    if (szShapeCacheId)
-      *szShapeCacheId = m_pShapeCacheTable->getKey(iter);
-    return m_pShapeCacheTable->getValue(iter);
-  }
-
-  return HK_NULL;
-}
-
-
-// -------------------------------------------------------------------------- //
-// Havok Shape - Helper                                                       //
-// -------------------------------------------------------------------------- //
-
-hkvVec3 vHavokShapeFactory::GetPivotOffset(const VDynamicMesh *pMesh, const hkvVec3& vScaleEntity)
+const hkvVec3 vHavokShapeFactory::GetPivotOffset(const VDynamicMesh *pMesh, float fUniformScaleEntity)
 {
   // Get center of bounding box
   const hkvAlignedBBox& bbox = pMesh->GetCollisionBoundingBox();
-  hkvVec3 vCenter = bbox.getCenter();
 
   // Take scaling into account
-  vCenter.x *= vScaleEntity.x;
-  vCenter.y *= vScaleEntity.y;
-  vCenter.z *= vScaleEntity.z;
-
-  return vCenter;
+  return bbox.getCenter() * fUniformScaleEntity;
 }
 
-hkvVec3 vHavokShapeFactory::GetPivotOffset(const VDynamicMesh *pMesh, float fUniformScaleEntity)
+const hkvVec3 vHavokShapeFactory::ExtractScaling(const hkvMat4& mTransform)
 {
-  // Get center of bounding box
-  const hkvAlignedBBox& bbox = pMesh->GetCollisionBoundingBox();
-  hkvVec3 vCenter = bbox.getCenter();
-
-  // Take scaling into account
-  vCenter.x *= fUniformScaleEntity;
-  vCenter.y *= fUniformScaleEntity;
-  vCenter.z *= fUniformScaleEntity;
-
-  return vCenter;
+  hkvVec3 vx(hkvNoInitialization), vy(hkvNoInitialization), vz(hkvNoInitialization);
+  mTransform.getAxisXYZ(&vx, &vy, &vz);
+  return hkvVec3(vx.getLength(), vy.getLength(), vz.getLength());
 }
 
-void vHavokShapeFactory::GetIDStringForConvexShape(char *szIDString, const char *szMeshName, const hkvVec3& vScale, bool bShrinkByCvxRadius)
+const hkvMat4 vHavokShapeFactory::ComputeReferenceTransform(const hkvMat4& mTransform)
 {
-  // Use Havok instead of Vision scale to account for global HavokToVision scale. 
-  const hkvVec3 vHavokScale = vScale * vHavokConversionUtils::GetVision2HavokScale();
+  hkvMat4 mReferenceTransform = mTransform;
 
-  if (bShrinkByCvxRadius)
-    sprintf(szIDString, "%s|C_%.3g_%.3g_%.3g_t", szMeshName, vHavokScale.x, vHavokScale.y, vHavokScale.z);
-  else
-    sprintf(szIDString, "%s|C_%.3g_%.3g_%.3g", szMeshName, vHavokScale.x, vHavokScale.y, vHavokScale.z);
+  // Remove any scaling from the reference matrix. This one has to be applied to
+  // the Havok shapes, and thus needs to be part of the mesh transforms.
+  mReferenceTransform.setScalingFactors(hkvVec3(1.0f));
+
+  // We need the inverse to transform each instance into reference space
+  // Since we have a rigid transformation, transposing the rotational part and 
+  // inverting the rotated translation vector is just fine.
+  const hkvMat3 mInvRotation = mReferenceTransform.getRotationalPart().getTransposed();
+  mReferenceTransform.setRotationalPart(mInvRotation);
+  mReferenceTransform.setTranslation(mInvRotation.transformDirection(-mReferenceTransform.getTranslation()));
+
+  return mReferenceTransform;
 }
 
-void vHavokShapeFactory::GetIDStringForMeshShape(char *szIDString, const char *szMeshName, const hkvVec3& vScale, VisStaticMeshInstance_cl::VisCollisionBehavior_e eCollisionBehavior,
-                                                 VisWeldingType_e eWeldingType) 
-{
-  // Use Havok instead of Vision scale to account for global HavokToVision scale.
-  const hkvVec3 vHavokScale = vScale * vHavokConversionUtils::GetVision2HavokScale();
-
-  sprintf(szIDString, "%s|M_%.3g_%.3g_%.3g_%i_%i", szMeshName, vHavokScale.x, vHavokScale.y, vHavokScale.z, (int)eCollisionBehavior, (int)eWeldingType);
-}
-
-void vHavokShapeFactory::BuildGeomFromCollisionMesh(const IVCollisionMesh *pColMesh, int iSubmeshIndex,const hkvMat4 &transform, bool bConvex, hkGeometry& geom)
+void vHavokShapeFactory::BuildGeometryFromCollisionMesh(
+  const IVCollisionMesh *pColMesh, int iSubmeshIndex,const hkvMat4 &transform, bool bConvex, hkGeometry& geom)
 {
   const VSimpleCollisionMeshBase *pMeshBase = pColMesh->GetMeshData();
 
@@ -870,44 +628,37 @@ void vHavokShapeFactory::BuildGeomFromCollisionMesh(const IVCollisionMesh *pColM
   }
 }
 
-#ifdef SUPPORTS_SNAPSHOT_CREATION
+//-----------------------------------------------------------------------------------
+// Resource dependencies
+
+#if defined(SUPPORTS_SNAPSHOT_CREATION)
 
 void vHavokShapeFactory::GetHktDependencies(VResourceSnapshot &snapshot, VisStaticMeshInstance_cl *pMeshInstance)
 {
   VASSERT(pMeshInstance != NULL);
 
-  // Get scale
-  hkvVec3 vScale(hkvNoInitialization);
-  ExtractScaling(pMeshInstance->GetTransform(), vScale);
+  if (!vHavokPhysicsModule_GetDefaultWorldRuntimeSettings().m_bEnableDiskShapeCaching)
+    return;
 
-  // There is no real way to figure out if a convex or mesh shape is required and the filename is based on that.
-  // So try them both.
+  if (pMeshInstance->GetPhysicsObject() == NULL)
+    return;
 
-  // Convex version
+  vHavokStaticMesh* pWrappedStaticMesh = static_cast<vHavokStaticMesh*>(pMeshInstance->GetPhysicsObject());
+  hkpRigidBody *pRigidBody = pWrappedStaticMesh->GetHkRigidBody();
+  if (pRigidBody == NULL)
+    return;
+
+  pRigidBody->markForRead();
+  const hkpShape* pShape = pRigidBody->getCollidable()->getShape();
+  pRigidBody->unmarkForRead();
+  if (pShape == NULL)
+    return;
+
+  VStaticString<FS_MAX_PATH> szCachedShapePath;
+  if (vHavokShapeCache::GetShapePath(pShape, szCachedShapePath, false))
   {
-    VStaticString<FS_MAX_PATH> szCachedShapeName(pMeshInstance->GetMesh()->GetFilename());
-    bool shrinkToFit = false; //how do if true / can it be true for static mesh?
-    vHavokCachedShape::GetConvexShapePath(szCachedShapeName, vScale, shrinkToFit);
-    IVFileInStream *pIn = Vision::File.Open(szCachedShapeName);
-    if (pIn)
-    {
-      snapshot.AddFileDependency(pMeshInstance->GetMesh(), szCachedShapeName, pIn->GetSize() );
-      pIn->Close();
-      return;
-    }
-  }
-
-  // Mesh version
-  {
-    VStaticString<FS_MAX_PATH> szCachedShapeName(pMeshInstance->GetMesh()->GetFilename());
-    vHavokCachedShape::GetMeshShapePath(szCachedShapeName, vScale, pMeshInstance->GetCollisionBehavior(), pMeshInstance->GetWeldingType());
-    IVFileInStream *pIn = Vision::File.Open(szCachedShapeName);
-    if (pIn)
-    {
-      snapshot.AddFileDependency(pMeshInstance->GetMesh(), szCachedShapeName, pIn->GetSize() );
-      pIn->Close();
-      return;
-    }
+    // The hkt file may not yet exist, so don't try to open the file.
+    snapshot.AddFileDependency(pMeshInstance->GetMesh(), szCachedShapePath, pShape->getAllocatedSize());
   }
 }
 
@@ -915,27 +666,23 @@ void vHavokShapeFactory::GetHktDependencies(VResourceSnapshot &snapshot, VisBase
 {
   VASSERT(pEntity != NULL);
 
+  if (!vHavokPhysicsModule_GetDefaultWorldRuntimeSettings().m_bEnableDiskShapeCaching)
+    return;
+
   // Get wrapped rigid body
   vHavokRigidBody *pWrappedRigidBody = pEntity->Components().GetComponentOfType<vHavokRigidBody>();
   if (pWrappedRigidBody == NULL)
     return;
 
   // Get shape
-  vHavokPhysicsModule *pModule = vHavokPhysicsModule::GetInstance();
-  VASSERT(pModule != NULL);
-  pModule->MarkForRead();
-  const hkpRigidBody *pRigidBody = pWrappedRigidBody->GetHkRigidBody();
+  hkpRigidBody *pRigidBody = pWrappedRigidBody->GetHkRigidBody();
   if (pRigidBody == NULL)
-  {
-    pModule->UnmarkForRead();
     return;
-  }
-  const hkpShape *pShape = pRigidBody->getCollidable()->getShape();
-  pModule->UnmarkForRead();
-  
-  // Only convex/ mesh rigid bodies have a cached HKT file
-  const hkClass* loadedClassType = hkVtableClassRegistry::getInstance().getClassFromVirtualInstance(pShape);
-  if (loadedClassType!=&hkvConvexVerticesShapeClass && loadedClassType!=&hkvBvCompressedMeshShapeClass)
+
+  pRigidBody->markForRead();
+  const hkpShape* pShape = pRigidBody->getCollidable()->getShape();
+  pRigidBody->unmarkForRead();
+  if (pShape == NULL)
     return;
 
   // Get mesh
@@ -943,32 +690,12 @@ void vHavokShapeFactory::GetHktDependencies(VResourceSnapshot &snapshot, VisBase
   if (pMesh == NULL)
     return;
 
-  // Get scale
-  hkvVec3 vScale = pEntity->GetScaling();
-  bool shrinkToFit = pWrappedRigidBody->Havok_TightFit;
-
-  // Get HKT file dependency for convex/ mesh rigid body
-  if (loadedClassType == &hkvConvexVerticesShapeClass) 
+  // Get HKT file dependency for convex / mesh rigid body.
+  VStaticString<FS_MAX_PATH> szCachedShapePath;
+  if (vHavokShapeCache::GetShapePath(pShape, szCachedShapePath, false))
   {
-    VStaticString<FS_MAX_PATH> szCachedShapeName(pMesh->GetFilename());
-    vHavokCachedShape::GetConvexShapePath(szCachedShapeName, vScale, shrinkToFit);
-    IVFileInStream *pIn = Vision::File.Open(szCachedShapeName);
-    if (pIn)
-    {
-      snapshot.AddFileDependency(pMesh, szCachedShapeName, pIn->GetSize() );
-      pIn->Close();
-    }
-  }
-  else if(loadedClassType == &hkvBvCompressedMeshShapeClass) 
-  {
-    VStaticString<FS_MAX_PATH> szCachedShapeName(pMesh->GetFilename());
-    vHavokCachedShape::GetMeshShapePath(szCachedShapeName, vScale, VisStaticMeshInstance_cl::VIS_COLLISION_BEHAVIOR_CUSTOM, (VisWeldingType_e)pWrappedRigidBody->Havok_WeldingType);
-    IVFileInStream *pIn = Vision::File.Open(szCachedShapeName);
-    if (pIn)
-    {
-      snapshot.AddFileDependency(pMesh, szCachedShapeName, pIn->GetSize() );
-      pIn->Close();
-    }
+    // The hkt file may not yet exist, so don't try to open the file.
+    snapshot.AddFileDependency(pMesh, szCachedShapePath, pShape->getAllocatedSize());
   }
 }
 
@@ -976,43 +703,42 @@ void vHavokShapeFactory::GetHktDependencies(VResourceSnapshot &snapshot, VTerrai
 {
   VASSERT(pSector != NULL);
 
+  if (!vHavokPhysicsModule_GetDefaultWorldRuntimeSettings().m_bEnableDiskShapeCaching)
+    return;
+
   // Return when no physics representation
-  vHavokTerrain *pHavokTerrain = (vHavokTerrain*) pSector->GetPhysicsUserData();
+  vHavokTerrain* pHavokTerrain = static_cast<vHavokTerrain*>(pSector->GetPhysicsUserData());
   if (pHavokTerrain == NULL)
     return;
 
-  const VTerrainSector::VPhysicsType_e ePhysicsType = pSector->GetPhysicsType();
-  const bool bHasHoles = pSector->HasHoles();
-
-  // First get filename by specifying extension (hmap) to be able to retrieve the absolute path. 
-  // Afterwards remove extension.
-  char szFilename[FS_MAX_PATH];
-  pSector->m_Config.GetSectorFilename(szFilename, pSector->m_iIndexX, pSector->m_iIndexY, "hmap", true);
-
-  VFileAccessManager::NativePathResult sectorNativeResult;
-  if (VFileAccessManager::GetInstance()->MakePathNative(szFilename, sectorNativeResult, VFileSystemAccessMode::READ, VFileSystemElementType::FILE) != HKV_SUCCESS)
-  {
-    VASSERT_MSG(FALSE, "vHavokShapeFactory::GetHktDependencies: Failed to determine the native path to the sector hmap; the file may not exist!");
-    return;
-  }
-  VFileHelper::GetFilenameNoExt(szFilename, sectorNativeResult.m_sNativePath);
-
   // Build the cached shape filename
-  VStaticString<FS_MAX_PATH> szCachedShapeName(szFilename);
-  vHavokCachedShape::GetTerrainSectorShapePath(szCachedShapeName, ePhysicsType, bHasHoles);
-  IVFileInStream *pIn = Vision::File.Open(szCachedShapeName);
-  if (pIn)
+  VStaticString<FS_MAX_PATH> szCachedShapePath;
+  if (!vHavokShapeCache::GetTerrainSectorShapePath(szCachedShapePath, pSector))
+    return;
+
+  // The Terrain HKT file is always written when its respective sector is saved, so it's safe to open it.
+  IVFileInStream* pIn = Vision::File.Open(szCachedShapePath);
+  if (pIn == NULL)
   {
-    snapshot.AddFileDependency(pSector, szCachedShapeName, pIn->GetSize());
-    pIn->Close();
+    // User might have deleted the HKT file manually -> re-generate.
+    pHavokTerrain->SaveShapeToFile();
+    pIn = Vision::File.Open(szCachedShapePath);
+
+    if (pIn == NULL)
+    {
+      hkvLog::Warning("vHavokShapeFactory::GetHktDependencies: Terrain Sector Shape '%s' was not saved to disk.", szCachedShapePath.AsChar());
+      return;
+    }
   }
 
+  snapshot.AddFileDependency(pSector, szCachedShapePath, pIn->GetSize());
+  pIn->Close();
 }
 
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140710)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

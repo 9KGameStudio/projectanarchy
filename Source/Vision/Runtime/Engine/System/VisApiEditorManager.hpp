@@ -95,13 +95,27 @@ public:
   ///   pointer to a variable the object size should be written to, can be NULL
   /// \return
   ///   the object that has been read
-  VISION_APIFUNC virtual VTypedObject* ReadObject( const VType* pClassRefRequested, unsigned int* pObjectLength = NULL );
+  VISION_APIFUNC virtual VTypedObject* ReadObject( const VType* pClassRefRequested, unsigned int* pObjectLength = NULL ) HKV_OVERRIDE;
 
-  VISION_APIFUNC virtual void WriteObject( const VTypedObject* pObj, const VType* pForceClass=NULL);
+  /// \brief
+  ///   Overridden write function
+  VISION_APIFUNC virtual void WriteObject( const VTypedObject* pObj, const VType* pForceClass=NULL) HKV_OVERRIDE;
+
+  /// \brief
+  ///   Overridden function; Adds the offset defined in SetShapeOffset
+  VISION_APIFUNC virtual BOOL GetCustomShapeTransformation(hkvVec3& offset, hkvMat3& rotation, hkvVec3& rotationAsEuler) HKV_OVERRIDE;
 
   /// \brief
   ///   Custom close function (non-virtual)
   VISION_APIFUNC void Close();
+
+  /// \brief
+  ///   A custom translation can be applied to all de-serialized shapes
+  inline void SetShapeOffset(const hkvVec3& vOffset)
+  {
+    m_vShapesOffset = vOffset;
+    m_bHasShapesTransform = vOffset.getLength()>0.0f;
+  }
 
   int m_iObjectCount, m_iNonNullCount, m_iRootObjectCount;
   int m_iRecursionDepth, m_iNonNullCountRead;
@@ -111,11 +125,14 @@ public:
   VProgressStatus *m_pProgress;
   bool m_bRetainRange, m_bRangeSet;
   bool m_bHasPerObjectRangeInfo;
+  bool m_bHasShapesTransform;
   float m_fProgressStep;
+
+  hkvVec3 m_vShapesOffset;
 };
 
 
-#if defined (WIN32) || defined _VISION_DOC
+#if defined (_VISION_WIN32) || defined _VISION_DOC
 
 /// \brief
 ///   VForge export related helper class
@@ -246,7 +263,7 @@ public:
 
 typedef VSmartPtr<IVisSceneExporter_cl> IVisSceneExporterPtr;
 
-#endif // win32
+#endif // _VISION_WIN32
 
 
 /// \brief
@@ -355,8 +372,8 @@ public:
   /// \brief
   ///   Returns the base data path used by the editor.
   /// \return
-  ///   \c NULL if no project is loaded; the base data path otherwise
-  inline VString& GetBaseDataPath()
+  ///   \c Empty string if no project is loaded; the base data path otherwise
+  inline const VString& GetBaseDataPath() const
   {
     return m_BaseDataPath;
   }
@@ -364,38 +381,37 @@ public:
   /// \brief
   ///   Returns the path used by the editor to load internal.
   /// \return
-  ///   \c NULL if no project is loaded; the edtor data path otherwise
-  inline VString& GetEditorDataPath()
+  ///   \c Empty string if no project is loaded; the edtor data path otherwise
+  inline const VString& GetEditorDataPath() const
   {
     return m_EditorDataPath;
   }
 
   ///
-  /// \brief  Gets the project path of the currently loaded project in the editor. This value is only valid (non-NULL) when InEditor() is true. (E.g. a project loaded and in play-the-game mode)
+  /// \brief  Returns the project path of the currently loaded project in the editor. This value is only valid (non-NULL) when InEditor() is true. (E.g. a project loaded and in play-the-game mode)
   ///
-  /// \return null if no project is loaded, else the project path. 
+  /// \return Empty string if no project is loaded, else the project path. 
   ///
-  inline VString& GetProjectPath()
+  inline const VString& GetProjectPath() const
   {
     return m_ProjectPath;
   }
 
   ///
-  /// \brief  Gets the project path of the currently loaded project in the editor. This value is only valid (non-NULL) when InEditor() is true. (E.g. a project loaded and in play-the-game mode)
+  /// \brief  Returns the project path of the currently loaded project in the editor. This value is only valid (non-NULL) when InEditor() is true. (E.g. a project loaded and in play-the-game mode)
   ///
-  /// \return null if no project is loaded, else the project path. 
+  /// \return Empty string if no project is loaded, else the scene name. 
   ///
-  inline VString& GetSceneName()
+  inline const VString& GetSceneName() const
   {
     return m_SceneName;
   }
 
-  /// \brief
-  ///  Gets the sdk path of the editor. This value is only valid (non-empty) when InEditor() is true.
+  /// \brief Returns the SDK path of the editor. This value is only valid (non-empty) when InEditor() is true.
   ///
-  /// \return an empty string if not in editor, else the sdk path. (E.g. C:/Havok/VisionSDK/)
+  /// \return Empty string if not in editor, else the SDK path. (E.g. C:/Havok/VisionSDK/)
   ///
-  inline VString& GetSDKPath()
+  inline const VString& GetSDKPath() const
   {
     return m_SDKPath;
   }
@@ -412,15 +428,58 @@ public:
   VISION_APIFUNC bool MakePathAbsoluteForProject(const char *szPath, VString& sResult) const;
 
   /// \brief
-  ///   Gets the executable path of the editor. This value is only valid (non-empty) when InEditor() is true.
+  ///   Returns the executable path of the editor. This value is only valid (non-empty) when InEditor() is true.
   ///
-  /// \return an empty string if not in editor, else the executable path.
+  /// \return Empty string if not in editor, else the executable path.
   ///
-  inline VString& GetExecutablePath()
+  inline const VString& GetExecutablePath() const
   {
     return m_ExecutablePath;
   }
 
+  ///
+  /// @}
+  ///
+
+  ///
+  /// @name Editor status change functions
+  /// @{
+  ///
+
+  /// \brief
+  ///   This function can be called by client code to change an editor property of the shape that corresponds to the passed native object
+  ///
+  /// \param pNativeObj
+  ///   Pointer to the native object (e.g. entity)
+  /// \param szVariableName
+  ///   Display name in vForge of the variable to update. If this is a variable from the entity variable list, then bIsSubProperty must be set to true
+  /// \param szNewValue
+  ///   String representation of the new value (e.g. "1.2" for float value)
+  /// \param bIsSubProperty
+  ///   true if the variable is a nested property (e.g. from var table for entity), false if it is a first level shape property. This parameter has no effect if the native object is a component.
+  /// \param bSetViaAction
+  ///   true if an editor action should be generated so the change appears in the UNDO/REDO history of the editor and thus is undoable.
+  /// \returns
+  ///   true if the operation was successful on the editor side
+  VISION_APIFUNC bool SetVariableInEditor(VisTypedEngineObject_cl *pNativeObj, const char *szVariableName, const char *szNewValue, bool bIsSubProperty, bool bSetViaAction);
+
+  /// \brief
+  ///   Internal callback used by vForge to listen to SetVariableInEditor function calls
+  VisCallback_cl OnTriggerSetVariable;
+
+
+  /// \brief Requests changing the current editor mode.
+  ///
+  /// Note that changing the mode can only happen in between frames, so the new mode will not
+  /// be active immediately.
+  ///
+  /// \param requestedMode The requested editor mode
+  /// \returns HKV_SUCCESS if the request was received and will be active in the next frame, HKV_FAILURE otherwise.
+  VISION_APIFUNC hkvResult ChangeMode(EditorMode_e requestedMode);
+
+  /// \brief
+  ///   Internal callback used by vForge to listen to ChangeMode function calls
+  VisCallback_cl OnTriggerChangeMode;
 
   ///
   /// @}
@@ -486,7 +545,7 @@ public:
     return m_bIgnoreAdvancedEffects;
   }
 
-#if defined (WIN32) || defined _VISION_DOC
+#if defined (_VISION_WIN32) || defined _VISION_DOC
 
   /// \brief
   ///   Called by the editor if the editor is running the tests
@@ -516,27 +575,6 @@ public:
   /// \brief
   ///   This callback can be triggered by custom code to trigger a repaint of the vForge engine view
   VisCallback_cl OnTriggerViewUpdate;
-
-  /// \brief
-  ///   This function can be called by client code to change an editor property of the shape that corresponds to the passed native object
-  ///
-  /// \param pNativeObj
-  ///   Pointer to the native object (e.g. entity)
-  /// \param szVariableName
-  ///   Display name in vForge of the variable to update. If this is a variable from the entity variable list, then bIsSubProperty must be set to true
-  /// \param szNewValue
-  ///   String representation of the new value (e.g. "1.2" for float value)
-  /// \param bIsSubProperty
-  ///   true if the variable is a nested property (e.g. from var table for entity), false if it is a first level shape property. This parameter has no effect if the native object is a component.
-  /// \param bSetViaAction
-  ///   true if an editor action should be generated so the change appears in the UNDO/REDO history of the editor and thus is undoable.
-  /// \returns
-  ///   true if the operation was successful on the editor side
-  VISION_APIFUNC bool SetVariableInEditor(VisTypedEngineObject_cl *pNativeObj, const char *szVariableName, const char *szNewValue, bool bIsSubProperty, bool bSetViaAction);
-
-  /// \brief
-  ///   Internal callback used by vForge to listen to SetVariableInEditor function calls
-  VisCallback_cl OnTriggerSetVariable;
 
   /// \brief
   ///  This function can be called by client code to change the size of the 3d display inside the editor engine panel
@@ -604,7 +642,7 @@ friend class Vision;
   VString m_SceneName;
   VString m_SDKPath;
   VString m_ExecutablePath;
-#ifdef WIN32
+#ifdef _VISION_WIN32
   IVisSceneExporterFactory_cl *m_pExporterFactory;
 #endif
 };
@@ -637,10 +675,27 @@ public:
   VisEditorManager_cl::EditorMode_e m_eNewMode;
 };
 
+/// \brief
+///   Internal data object class used by the OnTriggerChangeMode callback
+class VisEditorModeChangeRequestDataObject_cl : public IVisCallbackDataObject_cl 
+{
+public:
+  inline VisEditorModeChangeRequestDataObject_cl(VisCallback_cl* pSender, VisEditorManager_cl::EditorMode_e requestedMode) 
+    : IVisCallbackDataObject_cl(pSender),
+    m_requestedMode(requestedMode),
+    m_bProcessed(false)
+  {
+  }
+
+  const VisEditorManager_cl::EditorMode_e m_requestedMode;
+  bool m_bProcessed;
+};
+
+
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

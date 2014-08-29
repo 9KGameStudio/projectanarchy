@@ -698,14 +698,14 @@ void RPG_Character::Die()
   RaiseAnimationEvent(RPG_CharacterAnimationEvent::kDie);
 
   // remove the blob shadow component
-  VBlobShadow *blobShadow = static_cast<VBlobShadow *>(Components().GetComponentOfType(V_RUNTIME_CLASS(VBlobShadow)));
+  VBlobShadow *blobShadow = Components().GetComponentOfType<VBlobShadow>();
   if(blobShadow)
   {
     RemoveComponent(blobShadow);
   }
 
   // remove the attackable component
-  RPG_AttackableComponent* attackableComponent = static_cast<RPG_AttackableComponent*>(Components().GetComponentOfType(V_RUNTIME_CLASS(RPG_AttackableComponent)));
+  RPG_AttackableComponent* attackableComponent = Components().GetComponentOfType<RPG_AttackableComponent>();
   if(attackableComponent)
   {
     RemoveComponent(attackableComponent);
@@ -839,7 +839,7 @@ void RPG_Character::OnHavokAnimationEvent(hkbEvent const& behaviorEvent, bool ra
 
 void RPG_Character::SetController(RPG_ControllerComponent *newController)
 {
-  IVObjectComponent *const controller = Components().GetComponentOfBaseType(V_RUNTIME_CLASS(RPG_ControllerComponent));
+  IVObjectComponent *const controller = Components().GetComponentOfBaseType<RPG_ControllerComponent>();
   if(controller)
   {
     RemoveComponent(controller);
@@ -975,13 +975,14 @@ void RPG_Character::PostInitialize()
   }
 
   // Behavior animation init
-  m_havokBehavior = static_cast<vHavokBehaviorComponent *>(Components().GetComponentOfType(V_RUNTIME_CLASS(vHavokBehaviorComponent)));
+  m_havokBehavior = Components().GetComponentOfType<vHavokBehaviorComponent>();
 
   VASSERT(m_havokBehavior->m_character);
   if(!m_havokBehavior->m_character)
   {
     m_havokBehavior->InitVisionCharacter(this);
   }
+  GetAnimConfig()->SetFlags(GetAnimConfig()->GetFlags() | MULTITHREADED_ANIMATION);
 
   InitAnimationEventIds();
   InitAnimationVariableIds();
@@ -1000,7 +1001,7 @@ void RPG_Character::PostInitialize()
   }
   else
   {
-    m_controller = static_cast<RPG_ControllerComponent*>(Components().GetComponentOfBaseType(V_RUNTIME_CLASS(RPG_ControllerComponent)));
+    m_controller = Components().GetComponentOfBaseType<RPG_ControllerComponent>();
   }
   VASSERT_MSG(m_controller, "This character requires an AI component. Please put an (RPG) AI Controller or (RPG) Player AI Controller on it.");
 
@@ -1253,7 +1254,7 @@ void RPG_Character::SetWeaponTrailEnabledForEquippedWeapon(bool const enabled)
     VisBaseEntity_cl* eqippedWeaponEntity = equippedWeapon->GetEquippedEntity();
     if (eqippedWeaponEntity)
     {
-      RPG_MeshTrailEffectComponent* meshTrailComponent = static_cast<RPG_MeshTrailEffectComponent*>(eqippedWeaponEntity->Components().GetComponentOfType(V_RUNTIME_CLASS(RPG_MeshTrailEffectComponent)));
+      RPG_MeshTrailEffectComponent* meshTrailComponent = eqippedWeaponEntity->Components().GetComponentOfType<RPG_MeshTrailEffectComponent>();
       if (meshTrailComponent)
       {
         meshTrailComponent->SetEnabled(enabled);
@@ -1356,7 +1357,7 @@ float RPG_CharacterUtil::CalcImpactSpeed(RPG_Character const *character, float c
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

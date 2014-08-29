@@ -63,8 +63,8 @@ inline hkBool32 HK_CALL hkcdRayCastBox(
 		tExit.setMax(T1, T2);
 
 		// Select only the intersection times for the slabs not parallel to the ray direction
-		hkVector4 tFar = hkVector4::getConstant<HK_QUADREAL_MAX>();
-		hkVector4 tNear = hkVector4::getConstant<HK_QUADREAL_MINUS_MAX>();
+		hkVector4 tFar; tFar.setConstant<HK_QUADREAL_MAX>();
+		hkVector4 tNear; tNear.setConstant<HK_QUADREAL_MINUS_MAX>();
 		tNear.setSelect(cmp0, tEntry, tNear);
 		tFar.setSelect(cmp0, tExit, tFar);
 
@@ -90,7 +90,7 @@ inline hkBool32 HK_CALL hkcdRayCastBox(
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

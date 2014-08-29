@@ -237,6 +237,20 @@ inline hkaiNavMeshCutter* hkaiWorld::getNavMeshCutter()
 	return m_cutter;
 }
 
+inline bool hkaiWorld::getPerformValidationChecks() const
+{
+	return m_performValidationChecks;
+}
+
+inline void hkaiWorld::setPerformValidationChecks( bool performValidationChecks )
+{
+	m_performValidationChecks = performValidationChecks;
+	if(m_cutter)
+	{
+		m_cutter->m_performValidationChecks = performValidationChecks;
+	}
+}
+
 inline bool hkaiWorld::getForceSilhouetteUpdates() const
 {
 	return m_forceSilhouetteUpdates;
@@ -287,34 +301,34 @@ inline void hkaiWorld::setPriorityThreshold( int t )
 	m_priorityThreshold = t;
 }
 
-inline int hkaiWorld::getNumPathRequestsPerJob() const
+inline int hkaiWorld::getNumPathRequestsPerTask() const
 {
-	return m_numPathRequestsPerJob;
+	return m_numPathRequestsPerTask;
 }
 
-inline void hkaiWorld::setNumPathRequestsPerJob(int n)
+inline void hkaiWorld::setNumPathRequestsPerTask(int n)
 {
-	m_numPathRequestsPerJob = n;
+	m_numPathRequestsPerTask = n;
 }
 
-inline int hkaiWorld::getNumBehaviorUpdatesPerJob() const
+inline int hkaiWorld::getNumBehaviorUpdatesPerTask() const
 {
-	return m_numBehaviorUpdatesPerJob;
+	return m_numBehaviorUpdatesPerTask;
 }
 
-inline void hkaiWorld::setNumBehaviorUpdatesPerJob(int n)
+inline void hkaiWorld::setNumBehaviorUpdatesPerTask(int n)
 {
-	m_numBehaviorUpdatesPerJob = n;
+	m_numBehaviorUpdatesPerTask = n;
 }
 
-inline int hkaiWorld::getNumCharactersPerAvoidanceJob() const
+inline int hkaiWorld::getNumCharactersPerAvoidanceTask() const
 {
-	return m_numCharactersPerAvoidanceJob;
+	return m_numCharactersPerAvoidanceTask;
 }
 
-inline void hkaiWorld::setNumCharactersPerAvoidanceJob(int n) 
+inline void hkaiWorld::setNumCharactersPerAvoidanceTask(int n) 
 {
-	m_numCharactersPerAvoidanceJob = n;
+	m_numCharactersPerAvoidanceTask = n;
 }
 
 inline int hkaiWorld::getMaxPathSearchEdgesOut() const
@@ -337,19 +351,28 @@ inline void hkaiWorld::setMaxPathSearchPointsOut( int n )
 	m_maxPathSearchPointsOut = n;
 }
 
-inline hkReal hkaiWorld::getErosionRadius() const
+inline hkReal hkaiWorld::getErosionRadiusForFace( hkaiPackedKey faceKey ) const
 {
-	return m_erosionRadius;
+	return getErosionRadiusForFace( getStreamingCollection(), faceKey );
 }
 
-inline void hkaiWorld::setErosionRadius(hkReal erosionRadius)
+inline hkReal HK_CALL hkaiWorld::getErosionRadiusForFace( const hkaiStreamingCollection* collection, hkaiPackedKey faceKey )
 {
-	m_erosionRadius = erosionRadius;
-	m_silhouetteGenerationParameters.m_extraExpansion = m_erosionRadius;
+	hkReal erosionRadius = 0.0f;
+	if( faceKey != HKAI_INVALID_PACKED_KEY)
+	{
+		hkaiRuntimeIndex sectionIdx = hkaiGetRuntimeIdFromPacked(faceKey);
+		if( const hkaiNavMeshInstance* instance = collection->getInstanceAt( sectionIdx ) )
+		{
+			erosionRadius = instance->getErosionRadius();
+		}
+	}
+
+	return erosionRadius;
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

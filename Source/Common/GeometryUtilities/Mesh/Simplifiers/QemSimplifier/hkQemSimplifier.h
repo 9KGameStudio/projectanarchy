@@ -10,8 +10,8 @@
 #define HK_QEM_SIMPLIFIER_H
 
 #include <Common/Internal/GeometryProcessing/Topology/hkgpVertexTriangleTopology.h>
-#include <Common/Base/Algorithm/Sort/hkSort.h>
 #include <Common/Base/Container/MinHeap/hkMinHeap.h>
+#include <Common/Base/Types/hkHandle.h>
 #include <Common/Base/Types/Geometry/Aabb/hkAabb.h>
 #include <Common/GeometryUtilities/Mesh/hkMeshVertexBuffer.h>
 #include <Common/GeometryUtilities/Mesh/Utils/VertexSharingUtil/hkVertexSharingUtil.h>
@@ -263,8 +263,8 @@ class hkQemSimplifier: public hkReferencedObject
 			HK_FORCE_INLINE static void setIndex(EdgeContraction* a, int index) { a->m_contractionIndex = index; }
 			HK_FORCE_INLINE static void swap(EdgeContraction*& a, EdgeContraction*&b)
 			{
-				hkAlgorithm::swap(a->m_contractionIndex, b->m_contractionIndex);
-				hkAlgorithm::swap(a, b);
+				hkMath::swap(a->m_contractionIndex, b->m_contractionIndex);
+				hkMath::swap(a, b);
 			}
 			HK_FORCE_INLINE static hkBool32 hasIndex(const EdgeContraction* a, int index) { return a->m_contractionIndex == index; }
 
@@ -414,21 +414,56 @@ class hkQemSimplifier: public hkReferencedObject
 
 	protected:
 
+		/// The Id of a boundary edge
+		HK_DECLARE_HANDLE(BoundaryEdgeId, hkUint32, 0xFFFFFFFFU);
+
+		/// An edge on the boundary between two materials
 		struct BoundaryEdge
 		{
+			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_SCENE_DATA, hkQemSimplifier::BoundaryEdge);
+
+			/// Cnstructor
+			HK_FORCE_INLINE BoundaryEdge()
+			{
+				m_nextAdjEdgeId[0] = BoundaryEdgeId::invalid();
+				m_nextAdjEdgeId[1] = BoundaryEdgeId::invalid();
+			}
+
+			/// Returns the index of the given vertex within the edge's m_vertices.
+			HK_FORCE_INLINE int getVertexIdx(int vertexIdx) const;
+
 			HK_FORCE_INLINE void set(int vA, int vB);
-			HK_FORCE_INLINE bool equals(const BoundaryEdge& be) const;
+
 			HK_FORCE_INLINE bool containsVertex(int v) const;
 			HK_FORCE_INLINE void replaceVertex(int srcVertex, int dstVertex);
 			HK_FORCE_INLINE bool isDegenerate() const;
 
-				/// Start vertex
-			int m_start;
+			static HK_FORCE_INLINE bool HK_CALL less(const BoundaryEdge& eA, const BoundaryEdge& eB)
+			{
+				return	(eA.m_vertices[0] < eB.m_vertices[0]) || ((eA.m_vertices[0] == eB.m_vertices[0]) && (eA.m_vertices[1] < eB.m_vertices[1]));
+			}
 
-				/// End vertex
-			int m_end;
+			static HK_FORCE_INLINE bool HK_CALL eq(const BoundaryEdge& eA, const BoundaryEdge& eB)
+			{
+				return (eA.m_vertices[0] == eB.m_vertices[0]) && (eA.m_vertices[1] == eB.m_vertices[1]);
+			}
+
+			int m_vertices[2];						///< Edge vertices
+			BoundaryEdgeId m_nextAdjEdgeId[2];		///< The Id of the next boundary edge adjacent to start / end.
 		};
 
+		/// A boundary vertex
+		struct BoundaryVertex
+		{
+			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_SCENE_DATA, hkQemSimplifier::BoundaryVertex);
+
+			/// Constructor
+			HK_FORCE_INLINE BoundaryVertex()
+			:	m_firstEdgeId(BoundaryEdgeId::invalid())
+			{}
+
+			BoundaryEdgeId m_firstEdgeId;	///< The Id of the first boundary edge adjacent to this vertex
+		};
 
 	protected:
 
@@ -440,12 +475,6 @@ class hkQemSimplifier: public hkReferencedObject
 
 			/// Propagates a contraction (srcVertex -> dstVertex) to the boundary edges
 		void applyContractionOnBoundary(int srcVertex, int dstVertex);
-
-			/// Locates the boundary edge and returns its index, -1 if nothing was found
-		HK_FORCE_INLINE int findBoundaryEdge(int srcVertex, int  dstVertex);
-
-			/// Adds a boundary edge
-		HK_FORCE_INLINE void addBoundaryEdge(int srcVertex, int  dstVertex);
 
 	protected:
 
@@ -517,7 +546,7 @@ class hkQemSimplifier: public hkReferencedObject
 
 		hkFreeList m_contractionFreeList;										///< Storage for all the contractions.
 		hkMinHeap<EdgeContraction*, EdgeContraction> m_contractions;			///< Provides a fast way to get the min error.
-		hkPointerMap<hkUint64, EdgeContraction*> m_edgeContractionMap;			///< Map edge keys, to contractions.
+		hkMap<hkUint64, EdgeContraction*> m_edgeContractionMap;					///< Map edge keys, to contractions.
 
 		hkArray<Group> m_groups;												///< Storage for all of the groups.
 
@@ -549,13 +578,14 @@ class hkQemSimplifier: public hkReferencedObject
 
 		hkRefPtr<ScaleCalculator> m_scaleCalc;
 
-		hkArray<BoundaryEdge> m_materialBoundaries;								///< Material boundary edges
+		hkArray<BoundaryEdge> m_mtlBoundaryEdges;								///< Material boundary edges
+		hkArray<BoundaryVertex> m_mtlBoundaryVertices;							///< Material boundary vertices
 };
 
 #endif // HK_QEM_SIMPLIFIER_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

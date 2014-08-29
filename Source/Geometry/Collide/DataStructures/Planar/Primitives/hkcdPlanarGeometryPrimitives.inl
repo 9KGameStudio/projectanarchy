@@ -81,7 +81,7 @@ HK_FORCE_INLINE void hkcdPlanarGeometryPrimitives::Plane::setOpposite(const Plan
 
 	setExactNormal(iNrm);
 	setExactOffset(iOffset);
-	m_dEqn.setNeg<4>(srcPlane.m_dEqn);
+	accessApproxEquation().setNeg<4>(srcPlane.getApproxEquation());
 }
 
 //
@@ -114,7 +114,20 @@ HK_FORCE_INLINE hkBool32 hkcdPlanarGeometryPrimitives::Plane::isEqual(const Plan
 
 HK_FORCE_INLINE const hkVector4d& hkcdPlanarGeometryPrimitives::Plane::getApproxEquation() const
 {
+#if defined(HK_PLATFORM_PS3)
+	return reinterpret_cast<const hkVector4d&>(m_dEqn);
+#else
 	return m_dEqn;
+#endif
+}
+
+HK_FORCE_INLINE hkVector4d& hkcdPlanarGeometryPrimitives::Plane::accessApproxEquation()
+{
+#if defined(HK_PLATFORM_PS3)
+	return reinterpret_cast<hkVector4d&>(m_dEqn);
+#else
+	return m_dEqn;
+#endif
 }
 
 //
@@ -138,7 +151,7 @@ HK_FORCE_INLINE hkResult HK_CALL hkcdPlanarGeometryPrimitives::computePlaneEquat
 
 	// Compute normal & plane offset
 	normalOut.setCross(eAB, eAC);
-	if ( normalOut.equalZero().allAreSet<hkVector4Comparison::MASK_XYZ>() )
+	if ( normalOut.equalZero().allAreSet<hkVector4ComparisonMask::MASK_XYZ>() )
 	{
 		return HK_FAILURE;
 	}
@@ -240,7 +253,7 @@ HK_FORCE_INLINE void hkcdPlanarGeometryPrimitives::Plane::computeApproxEquation(
 		// Set proper signs
 		hkVector4d dEqnW;		dEqnW.setFlipSign(dEqn, iOff.lessZero<hkVector4dComparison>());
 		hkVector4d dEqnN;		dEqnN.setFlipSign(dEqn, iNrm.lessZero<hkVector4dComparison>());
-		m_dEqn.setXYZ_W(dEqnN, dEqnW);
+		accessApproxEquation().setXYZ_W(dEqnN, dEqnW);
 	}
 }
 
@@ -250,17 +263,37 @@ HK_FORCE_INLINE void hkcdPlanarGeometryPrimitives::Plane::computeApproxEquation(
 HK_FORCE_INLINE void hkcdPlanarGeometryPrimitives::Vertex::set(hkIntVectorParameter iPos)
 {
 	m_iPos = iPos;
-	m_dPos.set((hkDouble64)iPos.getComponent<0>(), (hkDouble64)iPos.getComponent<1>(), (hkDouble64)iPos.getComponent<2>(), 0.0);
+	accessApproxPosition().set((hkDouble64)iPos.getComponent<0>(), (hkDouble64)iPos.getComponent<1>(), (hkDouble64)iPos.getComponent<2>(), 0.0);
 }
 
 //
 //	Returns the fixed precision position
 
 HK_FORCE_INLINE const hkIntVector& hkcdPlanarGeometryPrimitives::Vertex::getExactPosition() const			{	return m_iPos;	}
-HK_FORCE_INLINE const hkVector4d& hkcdPlanarGeometryPrimitives::Vertex::getApproxPosition() const			{	return m_dPos;	}
+
+//
+//	Returns the approximate position
+
+HK_FORCE_INLINE const hkVector4d& hkcdPlanarGeometryPrimitives::Vertex::getApproxPosition() const
+{
+#if defined(HK_PLATFORM_PS3)
+	return reinterpret_cast<const hkVector4d&>(m_dPos);
+#else
+	return m_dPos;
+#endif
+}
+
+HK_FORCE_INLINE hkVector4d& hkcdPlanarGeometryPrimitives::Vertex::accessApproxPosition()
+{
+#if defined(HK_PLATFORM_PS3)
+	return reinterpret_cast<hkVector4d&>(m_dPos);
+#else
+	return m_dPos;
+#endif
+}
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

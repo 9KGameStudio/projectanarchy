@@ -82,17 +82,8 @@ protected:
 
 
 
-#if defined(HK_COMPILER_HAS_INTRINSICS_IA32)
-//	#if (HK_SSE_VERSION >= 0x50)
-//		#include <Common/Base/Math/Vector/Mx/hkMxHalf8f_AVX.inl>
-//	#else
-		#include <Common/Base/Math/Vector/Mx/hkMxHalf8f.inl>
-//	#endif
-	#include <Common/Base/Math/Vector/Mx/hkMxHalf8d.inl>
-#else
-	#include <Common/Base/Math/Vector/Mx/hkMxHalf8f.inl>
-	#include <Common/Base/Math/Vector/Mx/hkMxHalf8d.inl>
-#endif
+#include <Common/Base/Math/Vector/Mx/hkMxHalf8f.inl>
+#include <Common/Base/Math/Vector/Mx/hkMxHalf8d.inl>
 
 // convenient shortcuts
 typedef hkMxHalf8<4> hk4xHalf8;
@@ -101,7 +92,7 @@ typedef hkMxHalf8<4> hk4xHalf8;
 #endif // HK_MXHALF_8_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

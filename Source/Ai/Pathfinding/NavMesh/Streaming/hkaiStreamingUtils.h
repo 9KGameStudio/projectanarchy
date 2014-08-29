@@ -15,15 +15,16 @@
 class hkAabb;
 class hkaiNavMeshQueryMediator;
 class hkaiDirectedGraphExplicitCost;
+struct hkaiNavMeshGenerationSettings;
 
 	/// Miscellaneous utility functions for setting up streaming nav mesh sections
-class hkaiStreamingUtils
+class HK_EXPORT_AI hkaiStreamingUtils
 {
 	public:
 	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE,hkaiStreamingUtils);
 		
 			/// Input structure for hkaiStreamingUtils::findEdgeOverlaps
-		struct FindEdgeOverlapInput
+		struct HK_EXPORT_AI FindEdgeOverlapInput
 		{
 			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_AI_NAVMESH, FindEdgeOverlapInput);
 			FindEdgeOverlapInput();
@@ -63,6 +64,11 @@ class hkaiStreamingUtils
 				/// Edge matching parameters used to determine whether edges can be connected.
 			hkaiNavMeshEdgeMatchingParameters m_edgeMatchingParams;
 
+				/// Optional hkaiNavMeshGenerationSettings - if provided,
+				/// hkaiNavMeshGenerationSettings::getEdgeMatchingParameters() will be used to get the edge matching
+				/// parameters instead of m_edgeMatchingParams. This allows for the use of override settings.
+			const hkaiNavMeshGenerationSettings* m_generationSettings; //+default(HK_NULL)
+
 				/// Mesh-to-world transform for the first mesh.
 			hkTransform	m_transformA;
 
@@ -70,9 +76,22 @@ class hkaiStreamingUtils
 			hkTransform	m_transformB;
 		};
 
+		struct AabbInfo
+		{
+			AabbInfo();
+
+				/// Initialize the AabbInfo from an hkaiNavMesh. Implemented in hkaiStreamingUtils.h.
+			void init(const hkaiNavMesh* mesh, hkaiLayer layer = HKAI_DEFAULT_LAYER);
+				/// Initialize the AabbInfo from an hkaiNavMesh. Implemented in hkaiVolumeStreamingUtils.h.
+			void init(const class hkaiNavVolume* vol, hkaiLayer layer = HKAI_DEFAULT_LAYER);
+
+			hkAabb m_aabb;
+			hkaiLayer m_layer;
+		};
+
 			/// Finds overlaps between an array of AABBs. This should be used to test for potential dependencies between nav mesh sections.
 			/// Once the potential dependencies are known, the individual edges can be collided against each other
-		static void HK_CALL findPotentialDependencies( const hkArrayBase<hkAabb>& aabbs, hkArray<struct hkKeyPair>::Temp& pairs, hkReal tolerance = .05f );
+		static void HK_CALL findPotentialDependencies( const hkArrayBase<AabbInfo>& aabbs, hkArray<struct hkKeyPair>::Temp& pairs, hkReal tolerance = .05f );
 
 			/// Finds all boundary edges in the mesh that overlap with the specified AABB, and appends their integer AABB to the array.
 			/// The AabbInt's keys are indices into the FaceEdgeKeyPair array
@@ -91,7 +110,7 @@ class hkaiStreamingUtils
 #endif // HKAI_STREAMING_UTILS_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

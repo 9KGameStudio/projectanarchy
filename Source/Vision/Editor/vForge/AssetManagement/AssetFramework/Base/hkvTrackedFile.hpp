@@ -42,7 +42,8 @@ public:
   ASSETFRAMEWORK_IMPEXP virtual ~hkvTrackedFile() = 0;
 
 public:
-  static int getNumInstances() { return s_numInstances; }
+  ASSETFRAMEWORK_IMPEXP static int getNumInstances() { return s_numInstances; }
+  ASSETFRAMEWORK_IMPEXP static hkUint32 hashFile(hkStreamReader& reader, hkUint32 startHash = 0);
 
 public:
   ASSETFRAMEWORK_IMPEXP hkvTrackedDirectory* getParent() const;
@@ -136,7 +137,7 @@ private:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

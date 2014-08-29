@@ -13,26 +13,43 @@
 #include <Ai/Internal/SegmentCasting/hkaiIntervalPartition.h>
 #include <Ai/Internal/SegmentCasting/hkaiGeometrySegmentCaster.h>
 #include <Ai/Internal/SegmentCasting/hkaiNavMeshInstanceSegmentCaster.h>
+#include <Common/Base/Types/Geometry/hkGeometry.h>
+#include <Common/Base/Container/ObjectCache/hkObjectCache.h>
+#include <Ai/SpatialAnalysis/Traversal/hkaiTraversalAnnotationLibrary.h>
+#include <Ai/SpatialAnalysis/Traversal/hkaiTraversalAnalysisSettings.h>
+#include <Common/Base/Container/BitField/hkBitField.h>
 
-class hkaiTraversalAnnotationLibrary;
 struct hkaiTraversalAnalysisContext;
-struct hkaiTraversalAnalysisSettings;
-template<typename KeyType> class hkObjectCache;
 struct hkKeyPair;
 class hkaiNavMeshInstance;
 class hkaiTraversalAnalyzer;
-class hkBitField;
 
-struct hkaiTraversalAnalysisInput : public hkReferencedObject
+struct HK_EXPORT_AI hkaiTraversalAnalysisInput : public hkReferencedObject
 {
 	HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_AI_SPATIAL);
-	struct Section
+	HK_DECLARE_REFLECTION();
+
+	hkaiTraversalAnalysisInput() {}
+	hkaiTraversalAnalysisInput(hkFinishLoadedObjectFlag flag)
+		: hkReferencedObject(flag)
+		, m_sections(flag) { }
+
+	struct HK_EXPORT_AI Section
 	{
 		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_AI_SPATIAL, Section);
+		HK_DECLARE_REFLECTION();
+
+		Section() { }
+		Section(hkFinishLoadedObjectFlag flag)
+			: m_navMeshInstance(flag)
+			, m_geometry(flag)
+			, m_walkableBitfield(flag)
+			, m_cuttingBitfield(flag) { }
+
 		hkRefPtr<const hkaiNavMeshInstance> m_navMeshInstance;
 		hkRefPtr<const hkGeometry> m_geometry;
-		hkBitField const* m_walkableBitfield;
-		hkBitField const* m_cuttingBitfield;
+		hkBitField m_walkableBitfield;
+		hkBitField m_cuttingBitfield;
 	};
 
 	hkArray<Section> m_sections;
@@ -40,12 +57,24 @@ struct hkaiTraversalAnalysisInput : public hkReferencedObject
 	Section const& getSectionByUid(hkaiSectionUid uid) const;
 };
 
-struct hkaiTraversalAnalysisOutput : public hkReferencedObject
+struct HK_EXPORT_AI hkaiTraversalAnalysisOutput : public hkReferencedObject
 {
 	HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_AI_SPATIAL);
-	struct Section
+	HK_DECLARE_REFLECTION();
+
+	hkaiTraversalAnalysisOutput() { }
+	hkaiTraversalAnalysisOutput(hkFinishLoadedObjectFlag flag) 
+		: hkReferencedObject(flag)
+		, m_sections(flag) { }
+
+	struct HK_EXPORT_AI Section
 	{
 		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_AI_SPATIAL, Section);
+		HK_DECLARE_REFLECTION();
+
+		Section() { }
+		Section(hkFinishLoadedObjectFlag flag) : m_annotationLibrary(flag) { }
+
 		hkaiSectionUid m_uid;
 		hkRefPtr<hkaiTraversalAnnotationLibrary> m_annotationLibrary;
 	};
@@ -57,10 +86,11 @@ struct hkaiTraversalAnalysisOutput : public hkReferencedObject
 
 /// Utility for automatically creating user edges corresponding to jumps and vaults.
 /// This feature is in beta. Behavior or interface may change in future releases.
-class hkaiTraversalAnalysis : public hkReferencedObject
+class HK_EXPORT_AI hkaiTraversalAnalysis : public hkReferencedObject
 {
 public:
 	HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_AI_SPATIAL);
+	HK_DECLARE_REFLECTION();
 
 	hkaiTraversalAnalysis();
 	hkaiTraversalAnalysis(hkFinishLoadedObjectFlag f);
@@ -106,7 +136,7 @@ private:
 		InternalContext & internalContext, 
 		hkaiTraversalAnalysisContext & context);
 
-	struct SectionAccelerationData : public hkReferencedObject
+	struct HK_EXPORT_AI SectionAccelerationData : public hkReferencedObject
 	{
 		HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_AI_SPATIAL);
 		hkRefPtr<hkaiPairedEdgeFinder::AccelerationData> m_pairedEdgeData;
@@ -117,7 +147,7 @@ private:
 		hkUint32 getSize() const;
 	};
 
-	struct InternalContext
+	struct HK_EXPORT_AI InternalContext
 	{
 		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_AI_SPATIAL, InternalContext);
 		hkRefPtr<hkObjectCache<hkaiSectionUid> > m_sectionAccelerationDatas;
@@ -129,7 +159,7 @@ private:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

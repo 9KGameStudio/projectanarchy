@@ -13,18 +13,18 @@ template< typename Graph >
 struct hkaiGraphDistanceHeuristic
 {
 	typedef typename Graph::EdgeCost PathCost;
-	typedef int SearchIndex;
+	typedef typename Graph::SearchIndex SearchIndex;
 
 	enum{ HEURISTIC_IS_INVARIANT = 1};
 
-	void init(const Graph* g, int e)
+	void init(const Graph* g, SearchIndex e)
 	{
 		m_graph = g;
 		m_endKey = e;
 		g->getPositionForHeuristic(e, m_endPosition);
 	}
 
-	void setGoal(int e)
+	void setGoal(SearchIndex e)
 	{
 		m_endKey = e;
 		m_graph->getPositionForHeuristic(e, m_endPosition);
@@ -54,7 +54,7 @@ struct hkaiGraphMultiDistanceHeuristic
 {
 	typedef typename Graph::Position Position;
 	typedef typename Graph::EdgeCost PathCost;
-	typedef int SearchIndex;
+	typedef typename Graph::SearchIndex SearchIndex;
 	
 	enum{ HEURISTIC_IS_INVARIANT = 1};
 
@@ -62,7 +62,7 @@ struct hkaiGraphMultiDistanceHeuristic
 	struct Goal
 	{
 		HK_ALIGN16(Position) m_position;
-		hkPadSpu<SearchIndex> m_index;
+		HK_PAD_ON_SPU(SearchIndex) m_index;
 	};
 
 	void init(const Graph* g)
@@ -112,7 +112,7 @@ struct hkaiGraphMultiDistanceHeuristic
 		m_numGoals = m_numGoals + 1;
 	}
 
-	SearchIndex indexOfGoal(int g) const
+	int indexOfGoal(SearchIndex g) const
 	{
 		for (int i=0; i<m_numGoals; i++)
 		{
@@ -135,7 +135,7 @@ struct hkaiGraphMultiDistanceHeuristic
 #endif // HKAI_ASTAR_GRAPHDISTANCEHEURISTIC_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

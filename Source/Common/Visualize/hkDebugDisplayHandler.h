@@ -41,7 +41,7 @@ class hkAabb;
 /// to show the text in some manner in any case. The displayAnnotation() however can
 /// have a null implementation. It is used for additional, non operation relevant
 /// debug output only.
-class hkDebugDisplayHandler
+class HK_EXPORT_COMMON hkDebugDisplayHandler
 {
 	//+hk.MemoryTracker(ignore=True)
 	public:
@@ -87,9 +87,12 @@ class hkDebugDisplayHandler
 		virtual hkResult updateGeometry( const hkMatrix4& transform, hkUlong id, int tag ) = 0;
 
 			/// Updates the root transform of a display object in the display world. The hkQsTransform
-			/// can include scale. Scale is, however, only supported for geometries of type
-			/// hkDisplayMesh.
+			/// can include scale. Scale is, however, only supported for geometries of type hkDisplayMesh.
 		hkResult updateGeometry( const hkQsTransform& transform, hkUlong id, int tag );
+
+			/// Updates the transforms of a batch of objects in the display world.
+			/// Please refer to the class description for the meaning of id and tag.
+		virtual hkResult updateGeometries(const hkTransform* transforms, const hkUlong* ids, int numIds, int tag);
 
 			/// Skins an object in the display world. Only geometries of type hkDisplayMesh can be skinned.
 		virtual hkResult skinGeometry(hkUlong* ids, int numIds, const hkMatrix4* poseModel, int numPoseModel, const hkMatrix4& worldFromModel, int tag ) = 0;
@@ -221,7 +224,7 @@ class hkDebugDisplayHandler
 #endif // HK_VISUALIZE_DISPLAY_HANDLER
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -16,7 +16,7 @@
 class hkaiNavMesh;
 
 /// An implementation of hkaiNavMeshQueryMediator that bounds the nav mesh with an AABB tree.
-class hkaiStaticTreeNavMeshQueryMediator : public hkaiNavMeshQueryMediator
+class HK_EXPORT_AI hkaiStaticTreeNavMeshQueryMediator : public hkaiNavMeshQueryMediator
 {
 	public:
 		HK_DECLARE_REFLECTION();
@@ -37,7 +37,8 @@ class hkaiStaticTreeNavMeshQueryMediator : public hkaiNavMeshQueryMediator
 		virtual hkaiPackedKey	getClosestPoint( const GetClosestPointInput& input, hkVector4& closestPointOut ) const HK_OVERRIDE;
 		virtual hkaiPackedKey	getClosestBoundaryEdge( const GetClosestBoundaryEdgeInput& input, hkVector4& closestPointOut ) const HK_OVERRIDE;
 
-		virtual bool		castRay( const RaycastInput& input, HitDetails& hitOut ) const HK_OVERRIDE;
+		virtual bool castRay( const RaycastInput& input, HitDetails& hitOut ) const HK_OVERRIDE;
+		virtual bool castSphere( const SphereCastInput& input, HitDetails& hitOut ) const HK_OVERRIDE;
 
 		virtual void		queryAabb( const AabbQueryInput& input, hkArray<hkaiPackedKey>::Temp& hits ) const HK_OVERRIDE;
 
@@ -54,7 +55,7 @@ class hkaiStaticTreeNavMeshQueryMediator : public hkaiNavMeshQueryMediator
 #endif // HK_AI_STATIC_TREE_NAV_MESH_MEDIATOR_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

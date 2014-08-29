@@ -15,46 +15,58 @@
 struct hkaiTraversalAnalysisContext;
 class hkaiTraversalAnnotationLibrary;
 
-class hkaiVaultAnalyzer : public hkaiTraversalAnalyzer
+class HK_EXPORT_AI hkaiVaultAnalyzer : public hkaiTraversalAnalyzer
 {
 public:
-	//+version(0)
+	//+version(1)
 	HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_AI_SPATIAL);
 	HK_DECLARE_REFLECTION();
 
-	hkaiVaultAnalyzer() { }
+	hkaiVaultAnalyzer() 
+		: m_minWallWidth(0.0078125f)
+		, m_maxWallWidth(0.5f)
+		, m_minWallHeight(0.5f)
+		, m_maxWallHeight(1.5f)
+		, m_maxUpHeight(0.5f)
+		, m_maxDownHeight(1.0f)
+		, m_verticalApex(1.5f)
+		, m_handPlantAngle(0.5f)
+		, m_handPlantLeftExtent(0.0f)
+		, m_handPlantRightExtent(0.0f)
+	{ }
+
 	hkaiVaultAnalyzer(hkFinishLoadedObjectFlag f)
 		: hkaiTraversalAnalyzer(f)
 	{ }
 
 	/// The minimum horizontal distance between the two sides of the vault.
 	/// Must be greater than 0.
-	hkReal m_minWallWidth;
+	hkReal m_minWallWidth; //+default(0.0078125f)
 
 	/// The maximum horizontal distance between the two sides of the vault.
 	/// Must be greater than m_minWallWidth.
-	hkReal m_maxWallWidth;
+	hkReal m_maxWallWidth; //+default(0.5f)
 
 	/// The minimum height of the wall separating the two surfaces, measured
 	/// relative to the height of the starting surface. Must be greater than 0.
-	hkReal m_minWallHeight;
+	hkReal m_minWallHeight; //+default(0.5f)
 
 	/// The maximum height of the wall separating the two surfaces, measured
 	/// relative to the height of the starting surface. Must be greater than
 	/// m_minWallHeight.
-	hkReal m_maxWallHeight;
+	hkReal m_maxWallHeight; //+default(1.5f)
 
 	/// The maximum upward height difference between the starting and ending
 	/// surfaces.
-	hkReal m_maxUpHeight;
+	hkReal m_maxUpHeight; //+default(0.5f)
 
 	/// The maximum downward height difference between the starting and ending
 	/// surfaces.
-	hkReal m_maxDownHeight;
+	hkReal m_maxDownHeight; //+default(1.0f)
 
 	/// The vertical distance above the vault, measured relative to the top of
 	/// the wall, which must be unoccluded.
-	hkReal m_verticalApex;
+	hkReal m_verticalApex; //+default(1.5f)
 
 	/// The angle to use when extracting a hand plant profile for the climb, in
 	/// radians. Should be between -pi/2 and pi/2. Higher magnitude represents
@@ -62,7 +74,15 @@ public:
 	/// straight downward onto the top of the wall. Positive angles represent
 	/// handplants on the side of the wall closer to the beginning of the 
 	/// vault.
-	hkReal m_handPlantAngle;
+	hkReal m_handPlantAngle; //+default(0.5)
+
+	/// The left extent, relative to the character center, of the interval which
+	/// should be scanned for hand plants. This should be nonnegative.
+	hkReal m_handPlantLeftExtent; //+default(0)
+
+	/// The left extent, relative to the character center, of the interval which
+	/// should be scanned for hand plants. This should be nonnegative.
+	hkReal m_handPlantRightExtent; //+default(0)
 
 	virtual void analyze(hkaiTraversalAnalysisContext & context) const HK_OVERRIDE;
 };
@@ -94,7 +114,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -247,6 +247,9 @@ public:
   ASSETFRAMEWORK_IMPEXP bool isBackgroundProcessingEnabled() const;
   ASSETFRAMEWORK_IMPEXP void setBackgroundProcessingEnabled(bool enabled);
 
+  ASSETFRAMEWORK_IMPEXP bool isAutomaticAssetTransformEnabled() const;
+  ASSETFRAMEWORK_IMPEXP void setAutomaticAssetTransformEnabled(bool enabled);
+
   ASSETFRAMEWORK_IMPEXP void setAddTransformedToRCS(bool addTransformed);
   ASSETFRAMEWORK_IMPEXP void setAddThumbnailsToRCS(bool addThumbnails);
 
@@ -262,7 +265,9 @@ public:
 
   ASSETFRAMEWORK_IMPEXP void fetchBackgroundTransformationResults();
   ASSETFRAMEWORK_IMPEXP void evaluateBackgroundTransformationResults();
-  ASSETFRAMEWORK_IMPEXP bool performMainThreadWork();
+  ASSETFRAMEWORK_IMPEXP void performMainThreadWork();
+  ASSETFRAMEWORK_IMPEXP bool isMainThreadQueryEvalEnabled() const;
+  ASSETFRAMEWORK_IMPEXP void setMainThreadQueryEvalEnabled(bool enabled);
 
   ASSETFRAMEWORK_IMPEXP void postEngineMessage(hkvMessageSeverity severity, const char* message);
 
@@ -296,11 +301,13 @@ private: //data
 
   bool m_editorProjectLoaded;
   bool m_invalidateQueryInMainThread;
+  bool m_mainThreadQueryEvalEnabled;
 
   bool m_addTransformedToRCS;
   bool m_addThumbnailsToRCS;
 
   bool m_backgroundProcessingEnabled;
+  bool m_automaticAssetTransformEnabled;
   hkRefPtr<hkvBackgroundAssetHandling> m_backgroundAssetHandling;
 
   std::vector<hkvAsset::RefPtr> m_assetsToRefreshInEngine;
@@ -314,7 +321,7 @@ private: // static data
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140624)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

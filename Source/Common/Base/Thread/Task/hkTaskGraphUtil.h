@@ -9,40 +9,25 @@
 #ifndef HK_TASK_GRAPH_UTILS_H
 #define HK_TASK_GRAPH_UTILS_H
 
-struct hkDefaultTaskGraph;
-class hkTask;
+struct hkTaskGraph;
 class hkStringBuf;
 
-class hkTaskGraphUtil
+/// Utility functions for use with hkTaskGraph.
+class HK_EXPORT_COMMON hkTaskGraphUtil
 {
 	public:
 
-		/// You must provide an object implementing this interface to the print function to generate the names for your
-		/// tasks.
-		class TaskPrinter
-		{
-			public:
+		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_BASE_CLASS, hkTaskGraphUtil );
 
-				HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE_CLASS, TaskPrinter);
-
-				virtual void print(const hkTask* job, hkStringBuf& nodeNameOut, hkStringBuf& nodeAttributesOut) = 0;
-
-				virtual ~TaskPrinter() {}
-		};
-
-	public:
-
-		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE_CLASS, hkTaskGraphUtil);
-
-		/// Prints the job group as a directed graph in .gv format.
-		/// The output can be turned into an image using Graphviz's dot.exe.
-		static void HK_CALL print(const hkDefaultTaskGraph* taskGraph, TaskPrinter* taskPrinter, hkOstream& outStream);
+		/// Print a task graph using the plain text DOT graph description language.
+		/// The output can be turned into an image using e.g Graphviz.
+		static void HK_CALL printGraph( const hkTaskGraph& taskGraph, hkOstream& outStream );
 };
 
 #endif // HK_TASK_GRAPH_UTILS_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

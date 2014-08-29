@@ -7,21 +7,32 @@
  */
 
 #include <Geometry/Internal/Algorithms/ClosestPoint/hkcdClosestPointSegmentSegment.h>
-HK_FORCE_INLINE hkSimdReal hkcdDistanceSegmentSegment(hkVector4Parameter A, hkVector4Parameter dA, hkVector4Parameter B, hkVector4Parameter dB)
+HK_FORCE_INLINE hkSimdReal hkcdSegmentSegmentDistanceSquared(hkVector4Parameter A, hkVector4Parameter dA, hkVector4Parameter B, hkVector4Parameter dB)
 {
 	hkSimdReal t,u;
 	hkcdClosestPointSegmentSegment(A,dA,B,dB, t,u);
 
-	
-	hkVector4 closestPointA; closestPointA.setAddMul( A, dA, t );
-	hkVector4 closestPointB; closestPointB.setAddMul( B, dB, u );
+	hkVector4 offset; offset.setSub(B, A);
+	offset.subMul(dA, t);
+	offset.addMul(dB, u);
 
-	hkVector4 AminusB; AminusB.setSub( closestPointA, closestPointB );
-	return AminusB.lengthSquared<3>();
+	return offset.lengthSquared<3>();
+}
+
+HK_FORCE_INLINE hkSimdReal hkcdSegmentSegmentDistance(hkVector4Parameter A, hkVector4Parameter dA, hkVector4Parameter B, hkVector4Parameter dB)
+{
+	hkSimdReal t,u;
+	hkcdClosestPointSegmentSegment(A,dA,B,dB, t,u);
+
+	hkVector4 offset; offset.setSub(B, A);
+	offset.subMul(dA, t);
+	offset.addMul(dB, u);
+
+	return offset.length<3>();
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -20,16 +20,18 @@
 //#define HK_ENABLE_TASK_QUEUE_TIMERS
 
 
-/// Task queue used to process task graphs (hkDefaultTaskGraph) from multiple threads. The normal work flow is as follows:
-/// 1. A thread adds a graph to the queue via addGraph(), becoming the owner of the graph. Tasks without unfulfilled
-///    dependencies in the graph become immediately available.
-/// 2. Threads obtain tasks from the queue via finishTaskAndGetNext(), process them calling hkTask::process() and
-///    report them as finished in the queue using finishTask() or finishTaskAndGetNext(). When a task is finished
-///    dependencies of other tasks on it are marked as fulfilled potentially making them available for processing.
-/// 3. The owner thread either polls the queue to see if its graph has been finished with isGraphFinished() or joins
-///	   processing the tasks in the graph with finishTaskAndGetNextInGraph().
-/// 4. Once the graph is finihsed the owner thread calls removeGraph().
-class hkTaskQueue : public hkReferencedObject
+/// A queue used to process task graphs (hkTaskGraph), by providing tasks from any number of graphs to any number of
+/// threads for processing. Tasks are provided only when they have no unfulfilled dependencies, so threads may have to
+/// wait for tasks when there are none immediately available.
+/// The normal work flow is as follows:
+/// -# A thread adds a graph to the queue via addGraph(), becoming the owner of the graph.
+/// -# Threads get tasks from the queue via finishTaskAndGetNext(), process them calling hkTask::process() and
+/// report them as finished in the queue using finishTask() or finishTaskAndGetNext(). When a task is finished
+/// any dependencies of other tasks on it are marked as fulfilled, potentially making them available for processing.
+/// -# The owner thread either polls the queue to see if its graph has been finished with isGraphFinished() or joins
+/// processing the tasks in the graph with finishTaskAndGetNextInGraph().
+/// -# Once the graph is finished, the owner thread calls removeGraph().
+class HK_EXPORT_COMMON hkTaskQueue : public hkReferencedObject
 {
 	public:
 
@@ -37,10 +39,10 @@ class hkTaskQueue : public hkReferencedObject
 		HK_DECLARE_HANDLE(GraphId, hkUint8, 0xFF);
 
 		/// Unique identifier for a task within a graph.
-		typedef hkDefaultTaskGraph::TaskId TaskId;
+		typedef hkTaskGraph::TaskId TaskId;
 
 		/// Task multiplicity, i.e. number of times a task must be processed.
-		typedef hkDefaultTaskGraph::Multiplicity Multiplicity;
+		typedef hkTaskScheduler::Multiplicity Multiplicity;
 
 		/// Task priority. The lower the number the higher the priority (0 = maximum priority). Tasks with the same
 		/// priority will be ordered by their task ID (lower IDs are executed before higher ones).
@@ -91,7 +93,7 @@ class hkTaskQueue : public hkReferencedObject
 
 		/// Queue entry.
 		/// Contains the information required to sort tasks and obtain the original task pointer (see getTask()).
-		struct PrioritizedTask
+		struct HK_EXPORT_COMMON PrioritizedTask
 		{
 			PrioritizedTask() : m_priorityAndTaskId(0), m_graphId(0), m_reaminingMultiplicity(0) {}
 			HK_FORCE_INLINE void setPriorityAndTaskId(Priority priority, TaskId taskId)
@@ -124,7 +126,9 @@ class hkTaskQueue : public hkReferencedObject
 
 		/// Add a task graph.
 		/// Any of its tasks without unfulfilled dependencies will be immediately available for processing.
-		GraphId addGraph( hkDefaultTaskGraph* taskGraph, Priority priority );
+		GraphId addGraph(
+			const hkTaskGraph* taskGraph, Priority priority,
+			hkTaskScheduler::ExecutionPolicy executionPolicy = hkTaskScheduler::EXECUTION_POLICY_DEFAULT );
 
 		/// Remove a task graph.
 		/// Must be called by the thread which added the graph, after all tasks in the graph have finished processing.
@@ -146,8 +150,12 @@ class hkTaskQueue : public hkReferencedObject
 		void close();
 
 		/// Re-opens the queue after is has been closed with a call to close().
-		HK_FORCE_INLINE void open();
-		
+		/// Returns true if the queue is not already open, and returns false if otherwise.
+		HK_FORCE_INLINE bool open();
+
+		/// Returns true if the queue is open.
+		HK_FORCE_INLINE bool isOpen();
+
 		/// Non-blocking check whether a graph has been finished.
 		/// Can only be called by the thread that added the graph.
 		HK_FORCE_INLINE hkBool32 isGraphFinished( GraphId graphId ) const;
@@ -203,7 +211,7 @@ class hkTaskQueue : public hkReferencedObject
 		};
 
 		/// Information about a queued graph.
-		struct GraphInfo
+		struct HK_EXPORT_COMMON GraphInfo
 		{
 			public:
 
@@ -242,11 +250,20 @@ class hkTaskQueue : public hkReferencedObject
 				hkBool m_isEmpty;
 
 				/// ID of the thread that added the graph to the queue.
-				HK_ON_DEBUG(int m_ownerThreadId);
+				HK_DEBUG_ONLY_MEMBER(int, m_ownerThreadId);
 		};
 
 		/// Free list array used to store the graph infos
 		typedef hkFreeListArray< GraphInfo, GraphId, MAX_GRAPHS, GraphInfo::FreeListArrayOperations > FreeListArray;
+
+		/// Task used as a placeholder for inactive tasks.
+		class EmptyTask : public hkTask
+		{
+			public:
+
+				HK_DECLARE_CLASS_ALLOCATOR(hkTaskQueue::EmptyTask);
+				virtual void process() HK_OVERRIDE {};
+		};
 
 	protected:
 
@@ -275,6 +292,9 @@ class hkTaskQueue : public hkReferencedObject
 		/// Critical section controlling access to the queue.
 		hkCriticalSection m_queueLock;
 
+		/// Task returned when a null task is found (representing an inactive task).
+		EmptyTask m_emptyTask;
+
 		/// Number of threads currently waiting on the task available semaphore.
 		int m_numThreadsWaiting;
 
@@ -302,7 +322,7 @@ class hkTaskQueue : public hkReferencedObject
 #endif // HK_TASK_QUEUE_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

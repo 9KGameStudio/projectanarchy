@@ -12,7 +12,7 @@
 
 /// Compressed hkTransformf into 16 bytes.
 /// For accuracy informations, please refer to hkPackedVector3 and hkPackUnitVector.
-struct hkPackedTransform
+struct HK_EXPORT_COMMON hkPackedTransform
 {
 	HK_FORCE_INLINE void	pack(const hkTransformf& t)		{ hkQuaternionf q; q.set(t.getRotation()); m_translation.pack(t.getTranslation()); m_orientation.pack(q.m_vec); }
 	HK_FORCE_INLINE void	unpack(hkTransformf& t) const	{ hkQuaternionf q; m_orientation.unpack(&q.m_vec); m_translation.unpack(t.getTranslation()); t.getRotation().set(q); }
@@ -28,7 +28,7 @@ struct hkPackedTransform
 #endif //HKMATH_MATH_PACKED_TRANSFORM_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

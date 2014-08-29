@@ -22,7 +22,7 @@
 struct hkaiSearchMemoryInfo;
 
 	/// Utility for performing A* searches on a nav mesh.
-	/// This is used by hkaiPathfindingUtility and the multithreaded jobs; it is recommended that you use those instead of
+	/// This is used by hkaiPathfindingUtility and the multithreaded tasks; it is recommended that you use those instead of
 	/// using this directly.
 struct hkaiNavVolumeSearch
 {
@@ -60,7 +60,7 @@ struct hkaiNavVolumeSearch
 
 		/// Initialize the search
 	void init(Graph* graph, const hkaiAgentTraversalInfo& agentInfo, const StartGoalInfo& goalInfo );
-	inline hkReal getCost(int nid)
+	inline hkReal getCost(hkaiPackedKey nid)
 	{
 		m_state.nextNode( nid );
 		return m_state.getCost(nid);
@@ -68,8 +68,8 @@ struct hkaiNavVolumeSearch
 
 protected:
 		/// Set start and end cells.
-	void setStartCellAndPosition( hkaiNavVolume::CellIndex startCellIndex, hkVector4Parameter startPos, const struct hkaiAgentTraversalInfo& agentInfo );
-	void setEndCell(  hkaiNavVolume::CellIndex endCellIndex );
+	void setStartCellAndPosition( hkaiPackedKey  startCellIndex, hkVector4Parameter startPos, const struct hkaiAgentTraversalInfo& agentInfo );
+	void setEndCell(  hkaiPackedKey endCellIndex );
 
 public:
 		/// Do one iteration of A*
@@ -94,7 +94,7 @@ public:
 	//hkaiNavVolume::CellIndex m_lastOppositeCell;
 
 		/// The last closed node
-	hkaiNavVolume::CellIndex m_lastClosedCell;
+	hkaiPackedKey m_lastClosedCell;
 
 		/// Hierarchy graph (if applicable)
 	//ClusterGraph m_spuClusterGraph;
@@ -105,7 +105,7 @@ public:
 #endif // HK_AI_NAV_VOLUME_SEARCH_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

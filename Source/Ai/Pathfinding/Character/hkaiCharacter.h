@@ -8,32 +8,31 @@
 #ifndef HK_AI_CHARACTER_H
 #define HK_AI_CHARACTER_H
 
-#include <Ai/Pathfinding/NavMesh/hkaiNavMesh.h>
 #include <Ai/Pathfinding/Character/LocalSteering/hkaiAvoidanceSolver.h>
 #include <Ai/Pathfinding/Character/hkaiPath.h>
 #include <Ai/Pathfinding/Character/Utilities/hkaiAdaptiveRanger.h>
+#include <Ai/Pathfinding/Astar/CostModifier/hkaiAstarCostModifier.h>
+#include <Ai/Pathfinding/Astar/EdgeFilter/hkaiAstarEdgeFilter.h>
+#include <Ai/Pathfinding/Collide/hkaiSpatialQueryHitFilter.h>
+#include <Ai/Pathfinding/Character/LocalSteering/hkaiLocalSteeringFilter.h>
 
-class hkaiAstarCostModifier;
-class hkaiAstarEdgeFilter;
 class hkaiBehavior;
-class hkaiSpatialQueryHitFilter;
-class hkaiLocalSteeringFilter;
 class hkaiNavMeshPathRequestInfo;
 class hkaiNavVolumePathRequestInfo;
 class hkaiWorld;
 
 	/// The hkaiCharacter class binds a character to path and tracks the character movement along the path.
 	/// The class is used to provide velocity information to keep the character on the path.
-class hkaiCharacter : public hkReferencedObject 
+class HK_EXPORT_AI hkaiCharacter : public hkReferencedObject 
 {
 	//+vtable(true)
-	//+version(28)
+	//+version(29)
 	public:
 	HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE);
 		
 		HK_DECLARE_REFLECTION();
 			/// This interface allows you to receive callbacks as the character traverses along a path
-		class BehaviorListener
+		class HK_EXPORT_AI BehaviorListener
 		{
 			public:
 				HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE,hkaiCharacter::BehaviorListener);
@@ -69,7 +68,7 @@ class hkaiCharacter : public hkReferencedObject
 				virtual void pathSucceeded(hkaiBehavior* behavior, hkaiCharacter* character) {}
 
 				/// Data passed to userEdgeEntered below.
-				struct UserEdgeEntry
+				struct HK_EXPORT_AI UserEdgeEntry
 				{
 					HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_AI_STEERING, hkaiCharacter::BehaviorListener::UserEdgeEntry);
 
@@ -81,7 +80,7 @@ class hkaiCharacter : public hkReferencedObject
 
 					/// The userdata attached to the user edge being entered. If path-based steering is used, 
 					/// only the first element is valid.
-					hkaiNavMesh::EdgeData const* m_entryDataPtr;
+					hkaiNavMeshEdgeData const* m_entryDataPtr;
 
 					/// The runtime ID of the nav mesh instance the exit edge is on
 					hkaiRuntimeIndex m_oppositeSection;
@@ -161,7 +160,7 @@ class hkaiCharacter : public hkReferencedObject
 		};
 
 			///
-		struct Cinfo
+		struct HK_EXPORT_AI Cinfo
 		{
 			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE,hkaiCharacter::Cinfo);
 			Cinfo();
@@ -186,6 +185,10 @@ class hkaiCharacter : public hkReferencedObject
 				/// Character radius
 			hkReal m_radius;
 
+				/// Layer that the character can "see". Used for determining start/end points of A* queries.
+				/// A character may only belong to one layer at time.
+			hkaiLayer m_layer;
+				
 			hkUlong m_userData;
 		};
 
@@ -427,6 +430,9 @@ class hkaiCharacter : public hkReferencedObject
 		/// hkaiWorld::stepMultithreaded.
 		inline void	setCurrentNavMeshFace( hkaiPackedKey faceKey );
 
+		inline void setLayer( hkaiLayer l );
+		inline hkaiLayer getLayer() const;
+
 			/// Validate determinism of data. Does nothing unless determinism checks enabled.
 		void checkDeterminism();
 		
@@ -478,7 +484,7 @@ class hkaiCharacter : public hkReferencedObject
 
 		// Pathfinding properties
 		hkRefPtr<const hkaiAstarCostModifier>		m_costModifier; //+default(HK_NULL)
-		hkRefPtr<const hkaiAstarEdgeFilter>		m_edgeFilter; //+default(HK_NULL)
+		hkRefPtr<const hkaiAstarEdgeFilter>			m_edgeFilter; //+default(HK_NULL)
 		hkRefPtr<const hkaiSpatialQueryHitFilter>	m_hitFilter; //+nosave
 		hkRefPtr<const hkaiLocalSteeringFilter>		m_steeringFilter; //+nosave
 		hkUint32 m_agentFilterInfo; //+default(0)
@@ -499,6 +505,8 @@ class hkaiCharacter : public hkReferencedObject
 		hkEnum<State,int> m_state;
 
 		hkArray<BehaviorListener*> m_behaviorListeners; //+nosave
+
+		hkaiLayer m_layer;			//+default( HKAI_DEFAULT_LAYER )
 		
 	public:
 		/// This method is deprecated.
@@ -516,7 +524,7 @@ class hkaiCharacter : public hkReferencedObject
 #endif // HK_AI_CHARACTER_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

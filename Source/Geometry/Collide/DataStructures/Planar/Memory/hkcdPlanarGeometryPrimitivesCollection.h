@@ -5,6 +5,7 @@
  * Product and Trade Secret source code contains trade secrets of Havok. Havok Software (C) Copyright 1999-2014 Telekinesys Research Limited t/a Havok. All Rights Reserved. Use of this software is subject to the terms of an end user license agreement.
  *
  */
+//HK_HAVOK_ASSEMBLY_EXCLUDE_FILE
 
 #ifndef HKCD_PLANAR_GEOMETRY_PRIMITIVES_COLLECTION_H
 #define HKCD_PLANAR_GEOMETRY_PRIMITIVES_COLLECTION_H
@@ -18,6 +19,7 @@ namespace hkcdPlanarGeometryPrimitives
 	class Collection : public hkReferencedObject
 	{
 		public:
+			HK_DECLARE_REFLECTION();
 
 			/// Constants. We store free blocks in lists as follows:
 			///		32 - LOG_MIN_BLOCK_SIZE master lists, each storing free blocks with sizes between [2^M, 2^(M + 1) - 1]
@@ -79,6 +81,15 @@ namespace hkcdPlanarGeometryPrimitives
 			};
 
 		public:
+
+			/// Constructor
+			HK_FORCE_INLINE Collection() {}
+
+			/// Serialization constructor
+			Collection(class hkFinishLoadedObjectFlag flag)
+			:	hkReferencedObject(flag)
+			,	m_storage(flag)
+			{}
 
 			/// Allocates a block having the given size (in ints).
 			hkUint32 blockAlloc(hkUint32& blockSize);
@@ -153,7 +164,7 @@ namespace hkcdPlanarGeometryPrimitives
 			hkUint32 m_secondaryBitmaps[NUM_SECONDARY_BMPS];
 
 			/// Heads of the free block lists
-			hkUint32 m_freeBlocks[NUM_SECONDARY_BMPS][MAX_DIVISIONS];
+			hkUint32 m_freeBlocks[NUM_SECONDARY_BMPS][MAX_DIVISIONS];		//+overridetype(hkUint32[NUM_SECONDARY_BMPS*MAX_DIVISIONS])
 	};
 }
 
@@ -162,7 +173,7 @@ namespace hkcdPlanarGeometryPrimitives
 #endif	//	HKCD_PLANAR_GEOMETRY_PRIMITIVES_COLLECTION_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

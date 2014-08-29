@@ -323,12 +323,6 @@ public:
   }
 
   /// \brief
-  ///   Extracts the parent directory of a file name. Truncates the string.
-  ///   Resulting path will end in slash
-  ///   To use this function with a directory only, the directory must end with a backslash or slash
-  VBASE_IMPEXP static void GetParentDir(char* szPath);
-
-  /// \brief
   ///   Extracts the parent dir from a file name
   ///   Resulting path will end in slash
   ///   To use this function with a directory only, the directory must end with a backslash or slash
@@ -758,7 +752,7 @@ public:
   VBASE_IMPEXP static bool IsFileWritable(const char* szFilename)
   {
     VFileHandle fileHandle;
-    if (!VFileAccess::Open(&fileHandle, szFilename, VFileAccess::write))
+    if (!VFileAccess::Open(&fileHandle, szFilename, VFileAccess::write | VFileAccess::append))
     {
       return false;
     }
@@ -778,7 +772,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

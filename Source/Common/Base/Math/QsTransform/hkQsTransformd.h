@@ -23,7 +23,7 @@
 /// transformations can be represented with an hkQsTransformd, operations like multiplications have specific definitions
 /// in order to keep the result inside the space of hkQsTransforms.
 /// For more information about this, please check the Havok User Manual.
-class hkQsTransformd
+class HK_EXPORT_COMMON hkQsTransformd
 {
 	public:
 
@@ -209,7 +209,7 @@ class hkQsTransformd
 #endif //HK_MATH_QSTRANSFORMd_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

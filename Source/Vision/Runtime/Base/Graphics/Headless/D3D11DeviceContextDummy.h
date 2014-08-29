@@ -21,16 +21,6 @@ public:
   HKV_NR_IMPLEMENT_IUNKNOWN;
   HKV_NR_IMPLEMENT_ID3D11DEVICECHILD;
 
-  virtual void STDMETHODCALLTYPE DrawInstanced( 
-    /* [annotation] */ 
-    __in  UINT VertexCountPerInstance,
-    /* [annotation] */ 
-    __in  UINT InstanceCount,
-    /* [annotation] */ 
-    __in  UINT StartVertexLocation,
-    /* [annotation] */ 
-    __in  UINT StartInstanceLocation) HKV_NR_UNIMPLEMENTED_VOID
-
     virtual void STDMETHODCALLTYPE SetPredication( 
     /* [annotation] */ 
     __in_opt  ID3D11Predicate *pPredicate,
@@ -100,36 +90,6 @@ public:
     /* [annotation] */ 
     __in  ID3D11CommandList *pCommandList,
     BOOL RestoreContextState) HKV_NR_UNIMPLEMENTED_VOID
-
-    virtual void STDMETHODCALLTYPE HSSetShaderResources( 
-    /* [annotation] */ 
-    __in_range( 0, D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT - 1 )  UINT StartSlot,
-    /* [annotation] */ 
-    __in_range( 0, D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT - StartSlot )  UINT NumViews,
-    /* [annotation] */ 
-    __in_ecount(NumViews)  ID3D11ShaderResourceView *const *ppShaderResourceViews) HKV_NR_UNIMPLEMENTED_VOID
-
-    virtual void STDMETHODCALLTYPE HSSetShader( 
-    /* [annotation] */ 
-    __in_opt  ID3D11HullShader *pHullShader,
-    /* [annotation] */ 
-    __in_ecount_opt(NumClassInstances)  ID3D11ClassInstance *const *ppClassInstances,
-    UINT NumClassInstances) HKV_NR_UNIMPLEMENTED_VOID
-
-    virtual void STDMETHODCALLTYPE DSSetShaderResources( 
-    /* [annotation] */ 
-    __in_range( 0, D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT - 1 )  UINT StartSlot,
-    /* [annotation] */ 
-    __in_range( 0, D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT - StartSlot )  UINT NumViews,
-    /* [annotation] */ 
-    __in_ecount(NumViews)  ID3D11ShaderResourceView *const *ppShaderResourceViews) HKV_NR_UNIMPLEMENTED_VOID
-
-    virtual void STDMETHODCALLTYPE DSSetShader( 
-    /* [annotation] */ 
-    __in_opt  ID3D11DomainShader *pDomainShader,
-    /* [annotation] */ 
-    __in_ecount_opt(NumClassInstances)  ID3D11ClassInstance *const *ppClassInstances,
-    UINT NumClassInstances) HKV_NR_UNIMPLEMENTED_VOID
 
     virtual void STDMETHODCALLTYPE VSGetConstantBuffers( 
     /* [annotation] */ 
@@ -448,10 +408,13 @@ public:
   virtual void STDMETHODCALLTYPE Dispatch(UINT ThreadGroupCountX, UINT ThreadGroupCountY, UINT ThreadGroupCountZ) HKV_OVERRIDE {}
   virtual void STDMETHODCALLTYPE DispatchIndirect(ID3D11Buffer *pBufferForArgs, UINT AlignedByteOffsetForArgs) HKV_OVERRIDE {}
   virtual void STDMETHODCALLTYPE Draw(UINT VertexCount, UINT StartVertexLocation) HKV_OVERRIDE {}
+  virtual void STDMETHODCALLTYPE DrawInstanced(UINT VertexCountPerInstance, UINT InstanceCount, UINT StartVertexLocation, UINT StartInstanceLocation) HKV_OVERRIDE {}
   virtual void STDMETHODCALLTYPE DrawIndexed(UINT IndexCount, UINT StartIndexLocation, INT BaseVertexLocation) HKV_OVERRIDE {}
   virtual void STDMETHODCALLTYPE DrawIndexedInstanced(UINT IndexCountPerInstance, UINT InstanceCount, UINT StartIndexLocation, INT BaseVertexLocation, UINT StartInstanceLocation) HKV_OVERRIDE {}
+  virtual void STDMETHODCALLTYPE DSSetShader(ID3D11DomainShader *pDomainShader, ID3D11ClassInstance *const *ppClassInstances, UINT NumClassInstances) HKV_OVERRIDE{}
   virtual void STDMETHODCALLTYPE DSSetConstantBuffers(UINT StartSlot, UINT NumBuffers, ID3D11Buffer *const *ppConstantBuffers) HKV_OVERRIDE {}
   virtual void STDMETHODCALLTYPE DSSetSamplers(UINT StartSlot, UINT NumSamplers, ID3D11SamplerState *const *ppSamplers) HKV_OVERRIDE {}
+  virtual void STDMETHODCALLTYPE DSSetShaderResources(UINT StartSlot, UINT NumViews, ID3D11ShaderResourceView *const *ppShaderResourceViews) HKV_OVERRIDE{}
   virtual void STDMETHODCALLTYPE End(ID3D11Asynchronous *pAsync) HKV_OVERRIDE {}
   virtual void STDMETHODCALLTYPE GenerateMips(ID3D11ShaderResourceView *pShaderResourceView) HKV_OVERRIDE {}
   virtual HRESULT STDMETHODCALLTYPE GetData(ID3D11Asynchronous *pAsync, void *pData, UINT DataSize, UINT GetDataFlags) HKV_OVERRIDE;
@@ -459,8 +422,10 @@ public:
   virtual void STDMETHODCALLTYPE GSSetConstantBuffers(UINT StartSlot, UINT NumBuffers, ID3D11Buffer *const *ppConstantBuffers) HKV_OVERRIDE {}
   virtual void STDMETHODCALLTYPE GSSetSamplers(UINT StartSlot, UINT NumSamplers, ID3D11SamplerState *const *ppSamplers) HKV_OVERRIDE {}
   virtual void STDMETHODCALLTYPE GSSetShader(ID3D11GeometryShader *pShader, ID3D11ClassInstance *const *ppClassInstances, UINT NumClassInstances) HKV_OVERRIDE {}
+  virtual void STDMETHODCALLTYPE HSSetShader(ID3D11HullShader *pHullShader, ID3D11ClassInstance *const *ppClassInstances, UINT NumClassInstances) HKV_OVERRIDE {}
   virtual void STDMETHODCALLTYPE HSSetConstantBuffers(UINT StartSlot, UINT NumBuffers, ID3D11Buffer *const *ppConstantBuffers) HKV_OVERRIDE {}
   virtual void STDMETHODCALLTYPE HSSetSamplers(UINT StartSlot, UINT NumSamplers, ID3D11SamplerState *const *ppSamplers) HKV_OVERRIDE {}
+  virtual void STDMETHODCALLTYPE HSSetShaderResources(UINT StartSlot, UINT NumViews, ID3D11ShaderResourceView *const *ppShaderResourceViews) HKV_OVERRIDE{}
   virtual void STDMETHODCALLTYPE IASetIndexBuffer(ID3D11Buffer *pIndexBuffer, DXGI_FORMAT Format, UINT Offset) {}
   virtual void STDMETHODCALLTYPE IASetInputLayout(ID3D11InputLayout *pInputLayout) HKV_OVERRIDE {}
   virtual void STDMETHODCALLTYPE IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY Topology) HKV_OVERRIDE {}
@@ -489,7 +454,7 @@ public:
 #pragma warning(pop)
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

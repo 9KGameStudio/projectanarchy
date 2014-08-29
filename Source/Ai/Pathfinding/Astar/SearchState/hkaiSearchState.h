@@ -8,6 +8,9 @@
 #ifndef HKAI_ASTAR_SEARCHSTATE_H
 #define HKAI_ASTAR_SEARCHSTATE_H
 
+#include <Ai/Pathfinding/hkaiBaseTypes.h>
+
+
 /// A single node in an A* search.
 struct hkaiSearchStateNode
 {
@@ -38,7 +41,7 @@ struct hkaiSearchStateNode
 		
 		m_gCost = HK_REAL_MAX;
 		m_hCost = HK_REAL_MAX;
-		m_index = hkUint32(-1);
+		m_index = HKAI_INVALID_PACKED_KEY;
 		m_parentIndex = -1;
 		m_flags = FLAGS_NONE;
 	}
@@ -110,8 +113,8 @@ struct hkaiSearchStateNode
 	/// The approximate (heuristic) cost of travelling from this node to the goal node
 	hkReal m_hCost;
 
-	/// This node's index (i.e. nav mesh edge, nav volume cell)
-	hkUint32 m_index;
+	/// This node's index (i.e. nav mesh edge key, nav volume cell key)
+	hkaiPackedKey m_index;
 
 	/// The index of this node's parent, or -1 if it doesn't have one.
 	/// This is an absolute index into the hkaiHashSearchState's m_node array.
@@ -245,7 +248,7 @@ protected:
 #endif // HKAI_ASTAR_SEARCHSTATE_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

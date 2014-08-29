@@ -130,7 +130,6 @@ inline void hkaiSearchMemoryStorage::initBuffers( const hkaiSearchParameters::Se
 
 inline void HK_CALL hkaiSearchMemoryStorage::_setupArray(hkArray<char>::Temp& array, char* buffer, int size)
 {
-	HK_ASSERT(0x7752effc, array.isEmpty());
 	if (buffer)
 		array.setDataUserFree(buffer, 0, size);
 	else
@@ -139,7 +138,7 @@ inline void HK_CALL hkaiSearchMemoryStorage::_setupArray(hkArray<char>::Temp& ar
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

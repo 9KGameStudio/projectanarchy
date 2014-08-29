@@ -13,11 +13,11 @@ class hkStreamWriter;
 class hkCustomAttributes;
 
 /// hkClassEnum meta information
-extern const hkClass hkClassEnumClass;
-extern const hkClass hkClassEnumItemClass;
+extern HK_EXPORT_COMMON const hkClass hkClassEnumClass;
+extern HK_EXPORT_COMMON const hkClass hkClassEnumItemClass;
 
 /// Reflection object for enumerated types.
-class hkClassEnum
+class HK_EXPORT_COMMON hkClassEnum
 {
 	public:
 
@@ -105,7 +105,7 @@ class hkClassEnum
 #endif // HK_BASE_CLASS_ENUM_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

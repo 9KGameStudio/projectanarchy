@@ -18,23 +18,19 @@
 #	include <Common/Base/Container/LocalArray/hkLocalArray.h>
 #endif
 
-extern const class hkClass hkaiAvoidancePairPropertiesPairDataClass;
+extern HK_EXPORT_AI const class hkClass hkaiAvoidancePairPropertiesPairDataClass;
 
-extern const class hkClass hkaiAvoidancePairPropertiesClass;
+extern HK_EXPORT_AI const class hkClass hkaiAvoidancePairPropertiesClass;
 
-extern const class hkClass hkaiAvoidanceSolverAvoidancePropertiesClass;
+extern HK_EXPORT_AI const class hkClass hkaiAvoidanceSolverAvoidancePropertiesClass;
 
-extern const class hkClass hkaiAvoidanceSolverMovementPropertiesClass;
+extern HK_EXPORT_AI const class hkClass hkaiAvoidanceSolverMovementPropertiesClass;
 
 #define HK_AI_OBSTACLE_PROPERTY		8989
 
-// If this is not defined, new-style RVO will not be available for SPU jobs
-#define HKAI_INCLUDE_NEW_AVOIDANCE_ON_SPU
-
-
 
 /// Movement properties define kinematic and dynamic constraints for agent movement
-struct hkaiMovementProperties
+struct HK_EXPORT_AI hkaiMovementProperties
 {
 	//+version(8)
 	HK_DECLARE_REFLECTION();
@@ -108,29 +104,16 @@ public:
 };
 
 /// Avoidance properties define control parameters for agent local avoidance
-struct hkaiAvoidanceProperties : public hkReferencedObject
+struct HK_EXPORT_AI hkaiAvoidanceProperties : public hkReferencedObject
 {
 	// +vtable(true)
-	//+version(12)
+	//+version(13)
 	HK_DECLARE_REFLECTION();
 	HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_AI_STEERING);
 	inline hkaiAvoidanceProperties();
 
 	/// Agent movement kinematic and dynamic constraints
 	struct hkaiMovementProperties m_movementProperties;
-
-	/// Determines which solver will be used to determine avoidance velocities.
-	enum AvoidanceSolverType
-	{
-		/// Use the sampling solver.
-		AVOIDANCE_SOLVER_SAMPLING = 0,
-
-		/// Use the old penalty-forces-based solver. This will be deprecated in a future release.
-		AVOIDANCE_SOLVER_PENALTY_FORCES
-	};
-
-	hkEnum<AvoidanceSolverType, hkUint8> m_avoidanceSolverType; //+default(hkaiAvoidanceSolver::AvoidanceProperties::AVOIDANCE_SOLVER_SAMPLING)
-
 
 	/// Search type for detecting nearby boundary edges to avoid
 	enum NearbyBoundariesSearchType
@@ -148,62 +131,19 @@ struct hkaiAvoidanceProperties : public hkReferencedObject
 	/// Character/obstacle sensor, in world axes and relative to character position
 	hkAabb m_localSensorAabb;
 
-	/// \name Parameters only used by the penalty forces-based solver
-	/// @{
-
-	/// Critical collision time for agent obstacle.
-	///
-	/// This value is not used by the sampling-based solver.
-	hkReal m_agentLimitTime; //+default(1.0f)
-
-	/// Critical collision time for passive sphere obstacle
-	///
-	/// This value is not used by the sampling-based solver.
-	hkReal m_obstacleLimitTime; //+default(1.0f)
-
-	/// Critical collision time for passive boundary obstacle
-	///
-	/// This value is not used by the sampling-based solver.
-	hkReal m_boundaryLimitTime; //+default(0.3f)
-
-	/// Limit distance to 'static' obstacle taken into account by sos solver
-	///
-	/// This value is not used by the sampling-based solver.
-	hkReal m_limitObstacleDistance; //+default(1.0f)
-
-	/// Limit distance to 'static' boundary taken into account by sos solver.
-	/// If this is set to a negative value, the actual value used will be
-	/// 3 times the character radius, which is a good default to avoid
-	/// becoming "pinched" between characters and boundaries.
-	///
-	/// This value is not used by the sampling-based solver.
-	hkReal m_limitBoundaryDistance; //+default(-1.0f)
-
-	/// Limit velocity to 'static' obstacle taken into account by sos solver
-	///
-	/// This value is not used by the sampling-based solver.
-	hkReal m_limitObstacleVelocity; //+default(0.5f)
-
-	/// @}
-
-	/// \name Parameters only used by the sampling-based solver
-	/// @{
-
 	/// Maximum angle between wall following direction and sideways direction.
 	/// Characters will not wall follow if the angle between the wall following
 	/// direction and the sideways direction (a direction perpendicular to the
-	/// forward direction) exceeds this angle. This should be between 0 and pi/2; 
-	/// a value of zero disables wall following. (Wall following is used to 
-	/// resolve certain collision avoidance stalemates, so should not generally
-	/// be disabled.) 
+	/// forward direction) exceeds this angle. This angle should be less than
+	/// pi/2, and must be nonnegative. A value of zero disables wall following. 
+	/// (Wall following is used to resolve certain collision avoidance 
+	/// stalemates, so should not generally be disabled.) 
 	///
 	/// Increasing this value allows characters to successfully traverse larger
 	/// obstacles which are not in the navmesh, but can cause agents to take
-	/// the long way around these obstacles, or wall-follow in crowded situations
-	/// where it would be more effective to simply wait.
-	///
-	/// This value is only used by the sampling-based solver. 
-	/// Wall-following above the default value is in beta.
+	/// the long way around these obstacles, or to wall-follow in inappropriate
+	/// situations. These artifacts will become severe as the angle approaches
+	/// 2/pi.
 	hkReal m_wallFollowingAngle; //+default(0.1f)
 
 	/// A penalty applied to velocity candidates which avoid collisions by 
@@ -233,8 +173,6 @@ struct hkaiAvoidanceProperties : public hkReferencedObject
 	/// Velocity hysteresis can avoid certain types of velocity twitch. 
 	/// If it is set too high, characters may follow visibly inefficient 
 	/// trajectories, or have difficulty reaching their goals.
-	///
-	/// This value is only used by the sampling-based solver.
 	hkReal m_velocityHysteresis; //+default(0.01f)
 
 	/// Unwillingness to change the side on which an agent plans to pass
@@ -247,8 +185,6 @@ struct hkaiAvoidanceProperties : public hkReferencedObject
 	/// oscillation which occurs when agents are approaching each other.
 	/// If it is set too high, agents may wander far from their desired
 	/// trajectories to avoid changing sides.
-	///
-	/// This value is only used by the sampling-based solver.
 	hkReal m_sidednessChangingPenalty; //+default(0.0f)
 
 	/// A multiplier applied to the penalty for projected collisions. This
@@ -259,8 +195,6 @@ struct hkaiAvoidanceProperties : public hkReferencedObject
 	/// Increasing this value causes agents to be more timid; they will
 	/// react earlier and more smoothly to distant collisions, but will
 	/// be less effective at pushing through very crowded situations. 
-	///
-	/// This value is only used by the sampling-based solver.
 	hkReal m_collisionPenalty; //+default(1.0f)
 
 	/// A multiplier applied to the penalty for ongoing penetrations.
@@ -272,11 +206,7 @@ struct hkaiAvoidanceProperties : public hkReferencedObject
 	/// and sharply when collisions occur, minimizing the time in a 
 	/// penetrating state. Decreasing this value can lead to smoother
 	/// locomotion, particularly if agents are controlled by physics.
-	///
-	/// This value is only used by the sampling-based solver.
 	hkReal m_penetrationPenalty; //+default(100.0f)
-
-	/// @}
 
 	/// The approximate maximum number of neighbors before a character
 	/// adaptively contracts its sensor region. 
@@ -293,8 +223,10 @@ struct hkaiAvoidanceProperties : public hkReferencedObject
 
 };
 
+
+
 	///	Pairwise avoidance properties for local steering. This allows an override between different types of characters.
-struct hkaiAvoidancePairProperties : public hkReferencedObject
+struct HK_EXPORT_AI hkaiAvoidancePairProperties : public hkReferencedObject
 {
 	//+version(2)
 public:
@@ -303,7 +235,7 @@ HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE);
 	HK_DECLARE_REFLECTION();
 	
 		/// Modified weight and view angle information
-	struct PairData
+	struct HK_EXPORT_AI PairData
 	{
 		//+version(1)
 		HK_DECLARE_REFLECTION();
@@ -321,7 +253,7 @@ HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE);
 	/// Constructor
 	hkaiAvoidancePairProperties(){}
 	
-	// In-place constructor for use during jobs
+	// In-place constructor for use during tasks
 	hkaiAvoidancePairProperties( PairData* pairs, int numPairs)
 	:	m_avoidancePairDataMap(pairs, numPairs, numPairs)
 	{
@@ -394,12 +326,12 @@ protected:
 /// This avoidance solver solves a local steering problem for a single agent according to its current position in the scene.
 /// The solver operates on the array of the agents and obstacles in the velocity space and computes optimal velocity change for safe navigation to local goal.
 /// The solver works separately for every single agent and for every update frame.
-class hkaiAvoidanceSolver
+class HK_EXPORT_AI hkaiAvoidanceSolver
 {
 	public:
 		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE,hkaiAvoidanceSolver);
 		/// Global information about AI world
-		struct WorldInfo
+		struct HK_EXPORT_AI WorldInfo
 		{
 			/// AI world up direction
 			hkVector4 m_up;
@@ -409,7 +341,7 @@ class hkaiAvoidanceSolver
 		};
 
 		/// The sphere obstacle
-		struct SphereObstacle
+		struct HK_EXPORT_AI SphereObstacle
 		{
 			HK_DECLARE_POD_TYPE();
 			HK_DECLARE_REFLECTION();
@@ -422,7 +354,7 @@ class hkaiAvoidanceSolver
 		};
 
 		/// The wall obstacle
-		struct BoundaryObstacle
+		struct HK_EXPORT_AI BoundaryObstacle
 		{
 			HK_DECLARE_POD_TYPE();
 			HK_DECLARE_REFLECTION();
@@ -440,7 +372,7 @@ class hkaiAvoidanceSolver
 
 		
 		/// An obstacle which is another agent.
-		struct ObstacleAgent
+		struct HK_EXPORT_AI ObstacleAgent
 		{
 			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_AI_STEERING, ObstacleAgent );
 				/// The current position
@@ -472,7 +404,7 @@ class hkaiAvoidanceSolver
 			/// SteeringAgent is the main input to the avoidance solver.
 			/// holds all information about its current position and orientation, dynamic state,
 			/// all nearby agents and obstacles, its current goal and its kinematic and dynamic constraints.
-		struct SteeringAgent : public ObstacleAgent
+		struct HK_EXPORT_AI SteeringAgent : public ObstacleAgent
 		{
 			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_AI_STEERING, SteeringAgent );
 
@@ -504,35 +436,10 @@ class hkaiAvoidanceSolver
 			void validate() const;
 		};
 
-		
-			/// Internal accumulator for avoidance results
-		struct ControlGradient
-		{
-			// The sos system gradient direction or normal of the nearest boundary (normalized). The fourth element is delta velocity ratio.
-			hkVector4	m_direction;
-
-			// The total gradient. The fourth element is total distance to edge (step length).
-			hkVector4	m_total;
-
-			// The repulsion velocity in the case of penetration. The fourth element is a sum of penetration depths.
-			hkVector4  m_repulsion;
-
-			// True indicates a tricky avoidance situation. 
-			HK_PAD_ON_SPU(bool) m_failed;
-		};
-
-
 		/// The solver solves avoidance problem for single agent and returns the velocity change of the current velocity
 		static hkResult HK_CALL solveSingleAgent( const WorldInfo& worldInfo,
 												  const SteeringAgent& agent,
 											      hkVector4& deltaVelocity);
-						
-
-		static hkResult HK_CALL calculateDeltaVelocity( const WorldInfo& worldInfo,
-														const SteeringAgent& agent,
-												   		const ControlGradient& gradient,
-														hkVector4& deltaVelocity );
-
 };
 
 #include <Ai/Pathfinding/Character/LocalSteering/hkaiAvoidanceSolver.inl>
@@ -540,7 +447,7 @@ class hkaiAvoidanceSolver
 #endif // HK_AI_AVOIDANCE_SOLVER_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

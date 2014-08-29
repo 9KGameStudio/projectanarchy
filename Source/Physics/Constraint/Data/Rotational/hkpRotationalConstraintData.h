@@ -11,12 +11,12 @@
 
 #include <Physics/Constraint/Data/hkpConstraintData.h>
 
-extern const class hkClass hkpRotationalConstraintDataAtomsClass;
-extern const hkClass hkpRotationalConstraintDataClass;
+extern HK_EXPORT_PHYSICS const class hkClass hkpRotationalConstraintDataAtomsClass;
+extern HK_EXPORT_PHYSICS const hkClass hkpRotationalConstraintDataClass;
 
 
 //
-class hkpRotationalConstraintData : public hkpConstraintData
+class HK_EXPORT_PHYSICS hkpRotationalConstraintData : public hkpConstraintData
 {
 	public:
 
@@ -96,7 +96,7 @@ class hkpRotationalConstraintData : public hkpConstraintData
 #endif // HKP_ROTATIONAL_CONSTRAINT_DATA_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

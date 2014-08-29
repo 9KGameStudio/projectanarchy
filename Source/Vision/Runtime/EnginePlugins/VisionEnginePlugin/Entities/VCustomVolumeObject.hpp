@@ -21,12 +21,12 @@ private:
   enum VVersion_e 
   {
     VV_Version1 = 1,
-    VV_CurrentVersion = VV_Version1
+    VV_Version2 = 2,
+    VV_CurrentVersion = VV_Version2
   };
 
   VStaticString<FS_MAX_PATH> m_sStaticMeshPath;
   VisStaticMeshPtr m_spStaticMesh;
-  bool m_bCustomStaticMesh;
   bool m_bCreatedFromEditor;
   hkvVec3 m_vScale;
   int m_iManagerIndex;
@@ -45,39 +45,36 @@ public:
   /// \brief disposes the object
   EFFECTS_IMPEXP virtual void DisposeObject() HKV_OVERRIDE;
 
-  /// \brief
-  ///   init function. Needs to be called manually when dynamically creating an object of this type
-  EFFECTS_IMPEXP VOVERRIDE void Init();
-
   /// \brief overrides the OnHandleCallback function of IVisCallbackHandler_cl
   EFFECTS_IMPEXP virtual void OnHandleCallback(IVisCallbackDataObject_cl *pData) HKV_OVERRIDE;
 
-  //serialization
+  // serialization
   V_DECLARE_SERIAL_DLLEXP( VCustomVolumeObject,  EFFECTS_IMPEXP );
-  /// \brief serialization
-  EFFECTS_IMPEXP virtual void Serialize( VArchive &ar ) HKV_OVERRIDE;
-  /// \brief for initialization after deserialization
-  EFFECTS_IMPEXP virtual void OnSerialized( VArchive& ar ) HKV_OVERRIDE;
 
-  /// \brief returns the static mesh in use
-  inline VisStaticMesh_cl* GetStaticMesh() { return m_spStaticMesh.GetPtr(); }
+  EFFECTS_IMPEXP virtual void Serialize(VArchive &ar) HKV_OVERRIDE;
+
+  EFFECTS_IMPEXP virtual void OnSerialized(VArchive& ar) HKV_OVERRIDE;
 
   /// \brief 
-  ///   sets the path of the static mesh to be used
+  /// Returns the static mesh in use.
+  inline VisStaticMesh_cl* GetStaticMesh() { return m_spStaticMesh.GetPtr(); }
+  
+  /// \brief 
+  ///   Directly sets the static mesh resource to use.
+  EFFECTS_IMPEXP void SetStaticMesh(VisStaticMesh_cl* pStaticMesh);
+
+  /// \brief 
+  ///   Sets the path of the static mesh to be used and loads the new mesh.
   ///
   /// \param szPath
-  ///   
+  ///   The path to load the mesh from.
   EFFECTS_IMPEXP void SetStaticMeshPath(const char* szPath);
-
-  /// \brief returns if this volume uses a custom static mesh (.vmesh file) or not  
-  inline bool GetCustomStaticMesh() const { return m_bCustomStaticMesh; }
-  /// \brief sets if this volume uses a custom static mesh (.vmesh file) or not
-  EFFECTS_IMPEXP void SetCustomStaticMesh(bool bValue);
 
   /// \brief sets the scale for this volume
   inline void SetScale(hkvVec3 vScale) { m_vScale = vScale; }
+
   /// \brief gets the scale for this volume
-  inline hkvVec3 GetScale() const { return m_vScale; }
+  inline const hkvVec3 GetScale() const { return m_vScale; }
 
   /// \brief sets the loaded from editor flag
   EFFECTS_IMPEXP void SetCreatedFromEditor();
@@ -94,7 +91,7 @@ private:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

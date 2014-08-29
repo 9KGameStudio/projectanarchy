@@ -11,7 +11,7 @@
 
 #include <Common/Base/Thread/JobQueue/hkJobQueue.h>
 
-struct hkaAnimationMappingJobQueueUtils
+struct HK_EXPORT_ANIMATION hkaAnimationMappingJobQueueUtils
 {
 	static hkJobQueue::JobPopFuncResult  HK_CALL popAnimationJob   ( hkJobQueue& queue, hkJobQueue::DynamicData* data,       hkJobQueue::JobQueueEntry& jobIn, hkJobQueue::JobQueueEntry& jobOut  );
 	static hkJobQueue::JobCreationStatus HK_CALL finishAnimationJob( hkJobQueue& queue, hkJobQueue::DynamicData* data, const hkJobQueue::JobQueueEntry& jobIn, hkJobQueue::JobQueueEntryInput& newJobCreated );
@@ -25,7 +25,7 @@ struct hkaAnimationMappingJobQueueUtils
 #endif // HK_ANIMATION_MAPPING_JOB_QUEUE_UTILS
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

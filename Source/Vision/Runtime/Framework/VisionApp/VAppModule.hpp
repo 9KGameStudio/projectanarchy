@@ -10,6 +10,7 @@
 #define __V_APP_COMPONENT
 
 #include <Vision/Runtime/Engine/System/Vision.hpp>
+#include <Vision/Runtime/Framework/VisionApp/VAppImportExport.hpp>
 #include <Vision/Runtime/Framework/VisionApp/Helper/VAppHelper.hpp>
 
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/GUI/VMenuIncludes.hpp>
@@ -76,7 +77,7 @@ public:
 /// \ingroup VisionAppFramework
 class VAppModule : public VTypedObject, public VRefCounter, public IVisCallbackHandler_cl
 {
-  V_DECLARE_DYNCREATE(VAppModule);
+  V_DECLARE_DYNCREATE_DLLEXP(VAppModule, VAPP_IMPEXP);
 
 public:
   VAppModule() : m_bEnabled(true), m_pParent(NULL) {}
@@ -94,14 +95,14 @@ public:
   inline void SetEnabled(bool bEnabled) { m_bEnabled = bEnabled; }
 
 protected:
-  int GetCallbackIndex(IVisCallbackDataObject_cl* pData);
-  int GetCallbackIndex(VArray<VisCallback_cl*>& callbacks, IVisCallbackDataObject_cl* pData);
+  VAPP_IMPEXP int GetCallbackIndex(IVisCallbackDataObject_cl* pData);
+  VAPP_IMPEXP int GetCallbackIndex(VArray<VisCallback_cl*>& callbacks, IVisCallbackDataObject_cl* pData);
 
-  void RegisterCallbacks();
-  void RegisterCallbacks(VArray<VisCallback_cl*>& callbacks);
+  VAPP_IMPEXP void RegisterCallbacks();
+  VAPP_IMPEXP void RegisterCallbacks(VArray<VisCallback_cl*>& callbacks);
   
-  void DeRegisterCallbacks();
-  void DeRegisterCallbacks(VArray<VisCallback_cl*>& callbacks);
+  VAPP_IMPEXP void DeRegisterCallbacks();
+  VAPP_IMPEXP void DeRegisterCallbacks(VArray<VisCallback_cl*>& callbacks);
 
   VArray<VisCallback_cl*> m_callbacks;
   bool m_bEnabled;
@@ -134,13 +135,11 @@ public:
   VAppMenuContext() : VGUIMainContext(NULL) {}
   virtual ~VAppMenuContext() {}
 
-  virtual int ShowDialogModal(VDialog *pParent, const char *szDialogResource, const hkvVec2 &vPos, IVisApp_cl *pRunApp) HKV_OVERRIDE;
-  virtual int ShowDialogModal(VDialog *pDialog, IVisApp_cl *pRunApp = NULL) HKV_OVERRIDE;
-  virtual VDialog* ShowDialog(const char *szDialogResource) HKV_OVERRIDE;
-  virtual void ShowDialog(VDialog* pDialog) HKV_OVERRIDE;
-  virtual void CloseDialog(VDialog* pDialog) HKV_OVERRIDE;
+  VAPP_IMPEXP virtual VDialog* ShowDialog(const char *szDialogResource) HKV_OVERRIDE;
+  VAPP_IMPEXP virtual void ShowDialog(VDialog* pDialog) HKV_OVERRIDE;
+  VAPP_IMPEXP virtual void CloseDialog(VDialog* pDialog) HKV_OVERRIDE;
 
-  void OnRender();
+  VAPP_IMPEXP virtual void OnRender() HKV_OVERRIDE;
 
 private:
   virtual void SetActivate(bool bStatus) HKV_OVERRIDE;
@@ -159,6 +158,7 @@ public:
     COLOR_LIST_CONTROL_BG,
     COLOR_LIST_ITEM_BG,
     COLOR_LIST_GROUP_BG,
+    COLOR_LIST_ITEM_TEXT_DISABLED,
     COLOR_LIST_ITEM_TEXT_NORMAL,
     COLOR_LIST_ITEM_TEXT_OVER,
     COLOR_LIST_ITEM_TEXT_SELECTED,
@@ -166,8 +166,8 @@ public:
     COLOR_COUNT
   };
 
-  static void SetColor(VDialogColors item, const VColorRef& color) { VASSERT(item < COLOR_COUNT); m_colors[item] = color; }
-  static const VColorRef& GetColor(VDialogColors item) { VASSERT(item < COLOR_COUNT); return m_colors[item]; }
+  VAPP_IMPEXP static void SetColor(VDialogColors item, const VColorRef& color);
+  VAPP_IMPEXP static const VColorRef& GetColor(VDialogColors item);
 
 private:
   static VColorRef m_colors[COLOR_COUNT];
@@ -178,8 +178,20 @@ private:
 struct VAppMenuItem
 {
 public:
-  VAppMenuItem() : m_sItemName(), m_iAction(-1), m_uiSortingKey(0), m_bCheckable(true), m_bInitCheckState(false) {}
-  VAppMenuItem(const char* szItemName, int iAction, unsigned int uiSortingKey, bool bCheckable, bool bInitCheckState = false) : m_sItemName(szItemName), m_uiSortingKey(uiSortingKey), m_bCheckable(bCheckable), m_bInitCheckState(bInitCheckState), m_iAction(iAction) {}
+  VAppMenuItem()
+    : m_sItemName()
+    , m_uiSortingKey(0)
+    , m_bCheckable(true)
+    , m_bInitCheckState(false)
+    , m_iAction(-1) {}
+  
+  VAppMenuItem(const char* szItemName, int iAction, unsigned int uiSortingKey, bool bCheckable, bool bInitCheckState = false)
+    : m_sItemName(szItemName)
+    , m_uiSortingKey(uiSortingKey)
+    , m_bCheckable(bCheckable)
+    , m_bInitCheckState(bInitCheckState)
+    , m_iAction(iAction) {}
+  
   VString      m_sItemName;       ///< Display Name
   unsigned int m_uiSortingKey;    ///< Sorting key by which all items with the same parent should be sorted.
   bool         m_bCheckable;      ///< true: item can be turned on and off, false: item represents a one-shot action
@@ -200,7 +212,7 @@ typedef VArray<VAppMenuItem> VAppMenuItems;
 /// \ingroup VisionAppFramework
 class VAppMenu : public VAppModule
 {
-  V_DECLARE_DYNCREATE(VAppMenu);
+  V_DECLARE_DYNCREATE_DLLEXP(VAppMenu, VAPP_IMPEXP);
 
 public:
   /// \brief
@@ -299,8 +311,8 @@ public:
 class VStyledButton : public VPushButton
 {
 public:
-  VStyledButton(const char* szText, bool bUseGradient, VisFontPtr spFont, float fScale, float fBorderWidth, float fFontScale);
-  virtual void OnPaint(VGraphicsInfo& Graphics, const VItemRenderInfo& parentState) HKV_OVERRIDE;
+  VAPP_IMPEXP VStyledButton(const char* szText, bool bUseGradient, VisFontPtr spFont, float fScale, float fBorderWidth, float fFontScale);
+  VAPP_IMPEXP virtual void OnPaint(VGraphicsInfo& Graphics, const VItemRenderInfo& parentState) HKV_OVERRIDE;
 
 private:
   float m_fBorderWidth;
@@ -309,7 +321,7 @@ private:
 #endif //__V_APP_COMPONENT
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

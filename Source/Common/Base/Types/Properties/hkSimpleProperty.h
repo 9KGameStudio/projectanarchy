@@ -9,12 +9,12 @@
 #ifndef HK_PROPERTY_H
 #define HK_PROPERTY_H
 
-extern const hkClass hkSimplePropertyValueClass;
-extern const hkClass hkSimplePropertyClass;
+extern HK_EXPORT_COMMON const hkClass hkSimplePropertyValueClass;
+extern HK_EXPORT_COMMON const hkClass hkSimplePropertyClass;
 
 /// A union of an int and a hkReal, used for the value field of a property
 /// Note: pointers will not be serialized properly, to store pointers use hkRefCountedProperties
-struct hkSimplePropertyValue
+struct HK_EXPORT_COMMON hkSimplePropertyValue
 {
 	//+version(1)
 
@@ -45,7 +45,7 @@ struct hkSimplePropertyValue
 /// You can use properties to add additional information to an entity - for instance,
 /// for using your own collision filters or flagging certain types of game objects.
 /// Note: pointers will not be serialized properly, to store pointers use hkRefCountedProperties
-class hkSimpleProperty
+class HK_EXPORT_COMMON hkSimpleProperty
 {
 	//+version(2)
 
@@ -167,7 +167,7 @@ class hkSimpleProperty
 #endif // HK_PROPERTY_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -14,11 +14,11 @@
 // internal static non-inline code, please use hkMatrix4Util methods
 namespace __hkMatrix4UtilAlgo
 {
-	hkResult invert(hkMatrix4f& m, hkSimdFloat32Parameter  epsilon);
-	hkResult invert(hkMatrix4d& m, hkSimdDouble64Parameter epsilon);
+	HK_EXPORT_COMMON hkResult HK_CALL invert(hkMatrix4f& m, hkSimdFloat32Parameter  epsilon);
+	HK_EXPORT_COMMON hkResult HK_CALL invert(hkMatrix4d& m, hkSimdDouble64Parameter epsilon);
 
-	hkResult setInverse(const hkMatrix4f& m, hkMatrix4f& out, hkSimdFloat32Parameter epsilon);
-	hkResult setInverse(const hkMatrix4d& m, hkMatrix4d& out, hkSimdDouble64Parameter epsilon);
+	HK_EXPORT_COMMON hkResult HK_CALL setInverse(const hkMatrix4f& m, hkMatrix4f& out, hkSimdFloat32Parameter epsilon);
+	HK_EXPORT_COMMON hkResult HK_CALL setInverse(const hkMatrix4d& m, hkMatrix4d& out, hkSimdDouble64Parameter epsilon);
 }
 
 /// Utility functions for hkMatrix4
@@ -68,7 +68,7 @@ typedef hkMatrix4fUtil hkMatrix4Util;
 #endif	//	HK_MATH_MATRIX4_UTIL_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

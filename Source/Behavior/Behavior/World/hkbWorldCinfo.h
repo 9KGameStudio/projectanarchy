@@ -23,7 +23,12 @@ class hkbWorldCinfo
 			:m_up(0.0f, 1.0f, 0.0f),
 			 m_physicsInterface(HK_NULL),
 			 m_useDefaultSceneModifiers(true),
-			 m_scriptDebuggerPort(27726)
+#if defined(HK_PLATFORM_DURANGO)
+			 m_scriptDebuggerPort(57726),
+#else
+			 m_scriptDebuggerPort(27726),
+#endif
+			 m_baseTimestep( -1.f )
 		{
 #if HK_CONFIG_THREAD==HK_CONFIG_SINGLE_THREADED || defined(HK_PLATFORM_PS3_PPU)
 			m_enableMultithreadedUpdate = false;
@@ -76,12 +81,16 @@ class hkbWorldCinfo
 
 			/// Port for Havok Script
 		hkInt32 m_scriptDebuggerPort;
+
+			/// The base timestep - used for adjusting gains.  Should be set to
+			/// the timestep value that is not considered slow/fast motion.
+		hkReal m_baseTimestep;
 };
 
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

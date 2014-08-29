@@ -489,7 +489,7 @@ HK_FORCE_INLINE void hkMxRealf<M>::div(hkMxRealfParameter r)
 template <int M>
 HK_FORCE_INLINE void hkMxRealf<M>::div(hkMxRealfParameter r)
 {
-	hkMxRealf_Implementation::divHR<M,HK_ACC_23_BIT,HK_DIV_IGNORE>::apply(m_real.r, r.m_real.r);
+	hkMxRealf_Implementation::divHR<M,HK_ACC_MID,HK_DIV_IGNORE>::apply(m_real.r, r.m_real.r);
 }
 
 
@@ -523,7 +523,7 @@ HK_FORCE_INLINE void hkMxRealf<M>::setReciprocal(hkMxRealfParameter r)
 template <int M>
 HK_FORCE_INLINE void hkMxRealf<M>::setReciprocal(hkMxRealfParameter r)
 {
-	hkMxRealf_Implementation::setReciprocalHR<M,HK_ACC_23_BIT,HK_DIV_IGNORE>::apply(m_real.r, r.m_real.r);
+	hkMxRealf_Implementation::setReciprocalHR<M,HK_ACC_MID,HK_DIV_IGNORE>::apply(m_real.r, r.m_real.r);
 }
 
 template <int M>
@@ -548,7 +548,7 @@ HK_FORCE_INLINE void hkMxRealf<M>::sqrt()
 template <int M>
 HK_FORCE_INLINE void hkMxRealf<M>::sqrt()
 {
-	hkMxRealf_Implementation::sqrtHR<M,HK_ACC_23_BIT,HK_SQRT_SET_ZERO>::apply(m_real.r);
+	hkMxRealf_Implementation::sqrtHR<M,HK_ACC_MID,HK_SQRT_SET_ZERO>::apply(m_real.r);
 }
 
 
@@ -853,11 +853,11 @@ HK_FORCE_INLINE void hkMxRealf<M>::setDiv(hkMxRealfParameter v0, hkMxRealfParame
 template <int M>
 HK_FORCE_INLINE void hkMxRealf<M>::setDiv(hkMxRealfParameter v0, hkMxRealfParameter v1)
 {
-	hkMxRealf_Implementation::setDivHR<M,HK_ACC_23_BIT,HK_DIV_IGNORE>::apply(m_real.r, v0.m_real.r, v1.m_real.r);
+	hkMxRealf_Implementation::setDivHR<M,HK_ACC_MID,HK_DIV_IGNORE>::apply(m_real.r, v0.m_real.r, v1.m_real.r);
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

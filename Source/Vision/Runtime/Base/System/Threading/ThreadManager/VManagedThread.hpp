@@ -45,7 +45,7 @@ public:
   /// 
   /// \return
   ///   HANDLE: The thread handle
-  VBASE_IMPEXP HANDLE GetHandle() const;
+  VBASE_IMPEXP VPlatformThreadHandle GetHandle() const;
 
   /// \brief
   ///   Ensures that one of the thread's local heaps has at least the specified size.
@@ -96,15 +96,17 @@ public:
 
   VBASE_IMPEXP void Start();
 
+  VBASE_IMPEXP void Exit();
+
   bool IsIdle()
   {
-    VMutexLocker locker(m_TaskMutex);
+    VScopedLock locker(m_TaskMutex);
     return m_pTask == NULL;
   }
   inline bool IsSignaled() const { return m_bSignaled; }
   //bool IsLocked() const { return m_bIsLocked; }
 
-#ifdef WIN32
+#if defined(_VISION_WIN32)
   static DWORD WINAPI Process(void *pParam);
 
 #elif defined(_VISION_XENON)
@@ -152,7 +154,10 @@ private:
 
   VMutex m_TaskMutex;
 
-#if defined (WIN32)  || defined (_VISION_XENON) 
+  /// Mutex used when triggering thread local variable init/de-init callbacks
+  static VMutex m_ThreadLocalVaribaleMutex;
+
+#if defined (_VISION_WIN32)  || defined (_VISION_XENON) 
   DynArray_cl<void * volatile> m_pLocalScratchHeaps;
   DynArray_cl<volatile unsigned int> m_iScratchHeapSizes;
 #else
@@ -162,7 +167,6 @@ private:
 
   VThreadManager * volatile m_pManager;
 
-  volatile bool m_bProcessingFinished;
   volatile bool m_bExit;
   volatile unsigned int m_iTasksExecuted;
   volatile unsigned int m_iTasksExecutedLastFrame;
@@ -187,7 +191,7 @@ private:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

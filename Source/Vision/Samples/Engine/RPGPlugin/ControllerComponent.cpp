@@ -378,7 +378,8 @@ void RPG_ControllerUtil::CalcDirection(hkvVec3& resultDir, hkvVec3 const& curren
 {
   if(currentDir.dot(desiredDir) < 0.99f)
   {
-    float const dot = currentDir.dot(desiredDir);
+    // Clamp dot product to account for numerical errors.
+    float const dot = hkvMath::clamp(currentDir.dot(desiredDir), -1.0f, 1.0f);
     float const theta = hkvMath::acosRad(dot) * hkvMath::clamp(t, 0.f, 1.f);
     hkvVec3 const vec = (desiredDir - currentDir * dot).getNormalized();
     resultDir = currentDir * hkvMath::cosRad(theta) + vec * hkvMath::sinRad(theta);
@@ -524,7 +525,7 @@ hkBool32 LocalSteeringFilter::isObstacleEnabled(hkaiCharacter const *aiCharacter
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

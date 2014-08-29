@@ -22,7 +22,7 @@
 
 extern VModule g_vHavokBehaviorModule;
 
-#ifdef WIN32
+#ifdef _VISION_WIN32
 #	ifdef VHAVOKBEHAVIORMODULE_EXPORTS
 #		define VHAVOKBEHAVIOR_IMPEXP __declspec(dllexport)
 #	elif defined VHAVOKBEHAVIORMODULE_IMPORTS
@@ -30,26 +30,14 @@ extern VModule g_vHavokBehaviorModule;
 #	else
 #		define VHAVOKBEHAVIOR_IMPEXP
 #	endif
-#elif defined (_VISION_XENON)
-#	define VHAVOKBEHAVIOR_IMPEXP 
-#elif defined (_VISION_PS3)
-#	define VHAVOKBEHAVIOR_IMPEXP
-#elif defined (_VISION_WII)
-#	define VHAVOKBEHAVIOR_IMPEXP 
-#elif defined (_VISION_IOS) || defined(_VISION_ANDROID) || defined (_VISION_TIZEN)
-#	define VHAVOKBEHAVIOR_IMPEXP
-#elif defined(_VISION_PSP2)
-#	define VHAVOKBEHAVIOR_IMPEXP 
-#elif defined(_VISION_WIIU)
-#	define VHAVOKBEHAVIOR_IMPEXP 
 #else
-#	error Undefined platform!
+#	define VHAVOKBEHAVIOR_IMPEXP 
 #endif
 
 #endif //VISION_HAVOKBEHAVIOR_INCLUDED_HPP
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -27,6 +27,9 @@ class VisSurface_cl;
 class IVisShaderProvider_cl : public VTypedObject, public VRefCounter
 {
 protected:
+  /// \brief Constructor.
+  ///
+  /// Pre-computes shader tag indices for custom shader assignments.
   VISION_APIFUNC IVisShaderProvider_cl();
   VISION_APIFUNC virtual ~IVisShaderProvider_cl();
 
@@ -285,11 +288,51 @@ public:
 
   /// \brief
   ///   This function can be overridden to return the 'Particles.ShaderLib' shader library from a custom path.
+  ///   
+  /// Will be used in the constructor to fill the intern list of default particle shaders.
   VISION_APIFUNC virtual VShaderEffectLib *LoadDefaultParticleShaderLib();
 
   ///
   /// @}
   ///
+  /// 
+
+  /// @name Particle default shader related functions.
+  /// @{
+  ///
+
+  /// \brief
+  ///   Returns one of the shaders in the effect previously set with SetDefaultParticleEffect.
+  /// 
+  /// \param[in] iFlags           Flags configuring which particle shader to use.
+  /// 
+  /// \return
+  ///   VCompiledShaderPass *pShader: The particle shader, or NULL if the requested type is not available in the default particle effect.
+  /// 
+  /// \sa VisParticleGroup_cl::SetHardwareSpanning
+  /// \sa VisApiShaderProvider::SetDefaultParticleShader
+  VISION_APIFUNC virtual VCompiledShaderPass *GetDefaultParticleShader(VisParticleGroup_cl::ParticleShaderFlags_e iFlags=VisParticleGroup_cl::PARTICLESHADERFLAGS_NONE);
+
+  /// \brief
+  ///   Returns if the shader output by GetDefaultParticleShader is meant to be mainly targeted for mobile platforms.
+  inline bool GetUseMobileParticleShader() { return m_bUseMobileParticleShader; }
+
+  /// \brief
+  ///   Sets up a shader technique config (inclusion/exclusion flags) that can be used to get the
+  ///   appropriate particle shader technique.
+  /// 
+  /// \param iFlags
+  ///   Combination of multiple VisParticleGroup_cl::ParticleShaderFlags_e bitflags.
+  /// 
+  /// \param config
+  ///   Out: The destination config. Inclusion and exclusion tags are applied here.
+ VISION_APIFUNC virtual void GetParticleEffectConfig(VisParticleGroup_cl::ParticleShaderFlags_e iFlags, VTechniqueConfig &config) const;
+
+
+  ///
+  /// @}
+  ///
+  /// 
 
   // internal handling functions
   VCompiledEffectPtr m_spReplacementEffect;
@@ -326,6 +369,9 @@ protected:
     VisSurface_cl *pSurface, VCompiledEffect *pFX, 
     const VTechniqueConfig* pConfigChain, int iNumConfigsInChain, 
     const VTechniqueConfig* pGlobalConfig);
+
+
+  bool m_bUseMobileParticleShader;
 };
 
 typedef VSmartPtr<IVisShaderProvider_cl> IVisShaderProviderPtr; 
@@ -335,7 +381,7 @@ typedef VSmartPtr<IVisShaderProvider_cl> IVisShaderProviderPtr;
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

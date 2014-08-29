@@ -42,7 +42,8 @@
   #define SUPPORTS_TESSELATION_SHADER
   #define SUPPORTS_SELECTIVE_BLENDING
   #define SUPPORTS_CLOUD_LAYER
-  
+  #define SUPPORTS_DXGI11_INTERFACE
+
   #define VERTEX_RGBA8_ATTRIB_SWIZZLE_MODE SWIZZLE_VERTEX_RGBA8_TO_BGRA8
 
   #if defined(_DEBUG) || defined(PROFILING)
@@ -53,6 +54,7 @@
   
 #ifndef _VISION_WINRT
   #define D3DDevice ID3D11Device
+  #define DXGIDevice IDXGIDevice1
   #define D3DDeviceContext ID3D11DeviceContext
   #define D3DSwapChain IDXGISwapChain
   #define D3DSwapChainDesc DXGI_SWAP_CHAIN_DESC
@@ -255,7 +257,7 @@
 #endif // HKVPLATFORMDEFINESDX11_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

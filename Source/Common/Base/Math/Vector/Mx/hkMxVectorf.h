@@ -54,7 +54,7 @@ template <int M> class hkMxQuaternionf;
 /// The purpose of this vector is to implement efficient loop-unrolled algorithms without branching
 /// to efficiently use the SIMD processing hardware capabilities.
 template <int M>
-class hkMxVectorf
+class HK_EXPORT_COMMON hkMxVectorf
 {
 public:
 
@@ -346,15 +346,7 @@ public:
 	hkMxVectorfStorage<M> m_vec; ///< The subvectors.
 };
 
-#if defined(HK_COMPILER_HAS_INTRINSICS_IA32)
-	#if (HK_SSE_VERSION >= 0x50)
-	#include <Common/Base/Math/Vector/Mx/hkMxVector_AVX.inl>
-	#else
-	#include <Common/Base/Math/Vector/Mx/hkMxVectorf.inl>
-	#endif
-#else
-	#include <Common/Base/Math/Vector/Mx/hkMxVectorf.inl>
-#endif
+#include <Common/Base/Math/Vector/Mx/hkMxVectorf.inl> 
 
 // convenient shortcuts
 typedef hkMxVectorf<4> hk4xVector4f;
@@ -363,7 +355,7 @@ typedef hkMxVectorf<4> hk4xVector4f;
 #endif // HK_MXVECTORf_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -18,39 +18,38 @@
 /// \ingroup VisionAppFramework
 class VHelp : public VAppModule
 {
-  V_DECLARE_DYNCREATE(VHelp);
+  V_DECLARE_DYNCREATE_DLLEXP(VHelp, VAPP_IMPEXP);
 
 public:
-  VHelp() : 
-    m_bToggleEnabled(false) 
+  inline VHelp()
+    : m_bToggleEnabled(false)
   {
   }
 
-	VHelp(const VArray<const char*>& text) : 
-    m_bToggleEnabled(false),  
-    m_text(text) 
+	inline VHelp(const VArray<const char*>& text)
+    : m_text(text)
+    , m_bToggleEnabled(false)
   { 
   }
 
 	virtual ~VHelp() {}
 
-  virtual void Init() HKV_OVERRIDE;
-  virtual void DeInit() HKV_OVERRIDE;
+  VAPP_IMPEXP virtual void Init() HKV_OVERRIDE;
+  VAPP_IMPEXP virtual void DeInit() HKV_OVERRIDE;
 
   inline void SetText(VArray<const char*> text) { m_text = text; }
 
-  virtual void OnHandleCallback(IVisCallbackDataObject_cl* pData) HKV_OVERRIDE;
+  VAPP_IMPEXP virtual void OnHandleCallback(IVisCallbackDataObject_cl* pData) HKV_OVERRIDE;
 
 private:
   VArray<const char*> m_text;
-
   bool m_bToggleEnabled;
 };
 
 #endif //__V_HELP
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

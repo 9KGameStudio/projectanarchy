@@ -439,10 +439,6 @@ class VInputManagerTizen : public VInputManagerBase
 
     static IVSoftKeyboardAdapter& GetSoftkeyboardAdapter();
 
-    static IVInputDevice s_NoInputDevice;
-	
-    static int s_iFrameCounter;
-
   private:
 
     static VMultiTouchInputTizen* s_pMultiTouchInput;
@@ -463,7 +459,7 @@ class VInputManagerTizen : public VInputManagerBase
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140625)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -36,7 +36,7 @@ typedef unsigned int CHUNKIDTYPE;
 /// StartChunk/EndChunk calls.
 /// 
 /// For reading, you have two options. You can derive a class and override OnStartChunk. This
-/// function receives the chunk information (ID and length) and allows you to load all the root
+/// function  receives the chunk information (ID and length) and allows you to load all the root
 /// chunks by calling ParseFile. You can also use OpenChunk/EndChunk directly.
 /// 
 /// Chunks that are unknown, i.e. those who have an unsupported chunk ID, can be skipped or be
@@ -325,7 +325,7 @@ public:
   ///   Opens a new chunk in the input file for reading.
   ///
   ///   If you specify a expected chunk type when traversing the root chunks, all other chunks will
-  ///   be skipped. 
+  ///   be skipped.
   ///
   /// \param piChunkID
   ///   if not \c NULL, this receives the ID of the chunk that has been opened
@@ -858,6 +858,7 @@ private:
   BOOL _OnStartSaving();
   void ResetParsingVars();
   void WriteFileEndTag();
+  void ReadFileEndTag();
   void ResetStoredChunkData();
   BOOL StoreChunkData(CHUNKIDTYPE chunkID, int iSize);
   BOOL SaveStoredChunkData();
@@ -1009,7 +1010,7 @@ public:
   /// \brief
   ///   Closes the stream and deletes this instance
   virtual void Close() HKV_OVERRIDE {delete this;}
-  
+
   virtual void Flush() HKV_OVERRIDE {}
 
   /// \brief
@@ -1024,7 +1025,7 @@ private:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

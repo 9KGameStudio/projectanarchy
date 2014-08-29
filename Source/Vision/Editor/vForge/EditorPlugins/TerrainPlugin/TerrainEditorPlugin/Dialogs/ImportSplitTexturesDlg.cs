@@ -126,7 +126,7 @@ namespace TerrainEditorPlugin.Dialogs
       OpenFileDialog dlg = new OpenFileDialog();
       dlg.InitialDirectory = EditorManager.Project.ProjectDir;
       dlg.FileName = oldFilename;
-      dlg.Filter = "Texture files|*.bmp;*.jpg;*.jpeg;*.png;*.dds;*.tex";
+      dlg.Filter = "Texture files|*.bmp;*.jpg;*.jpeg;*.png;*.dds";
       if (dlg.ShowDialog(this) != DialogResult.OK)
         return oldFilename;
       if (string.IsNullOrEmpty(dlg.FileName))
@@ -160,7 +160,7 @@ namespace TerrainEditorPlugin.Dialogs
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

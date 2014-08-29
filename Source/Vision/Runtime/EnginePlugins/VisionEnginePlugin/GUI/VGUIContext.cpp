@@ -9,7 +9,7 @@
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/VisionEnginePluginPCH.h>         // precompiled header
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/GUI/VMenuIncludes.hpp>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/GUI/VGUIContext.hpp>
-#include <Vision/Runtime/Base/System/Memory/VMemDbg.hpp>
+
 
 #define THUMBSTICK_DEADZONE 5000
 #define DOUBLECLICK_DELAY 0.2f
@@ -50,6 +50,7 @@ IVGUIContext::IVGUIContext(VGUIManager *pManager)
   m_pManager = pManager;
   
   m_bActive = false;
+  m_bCursorActive = true;
   m_bShowCursor = true;
   m_bHandleKeyboard = false; // true in main context
   m_bMouseOverOnInputOnly = false;
@@ -65,7 +66,6 @@ IVGUIContext::IVGUIContext(VGUIManager *pManager)
   m_iUserIDMask = 1<<VGUIUserInfo_t::GUIUser0;
 
   m_fDragThreshold = 0.0f;
-  m_fAccumulatedMoveDistance = 0.0f;
 
 #if defined(VISION_GUI_USE_WINDOWS_INPUT)
   VInputCallbacks::OnPreTranslateMessage += this;
@@ -198,175 +198,211 @@ void IVGUIContext::OnTickFunction(float fTimeDelta)
   {
     if ((m_iUserIDMask&(1<<i))==0)
       continue; // user active?
-    VGUIUserInfo_t &userState(m_UserStates[i]);
-    int iOldButton = userState.m_iButtonMask;
-    hkvVec2 vMouseDelta;
-    hkvVec2 vOldMousePos = userState.m_vMousePos;
-    
-    UpdateCursorPos(userState);
 
-    vMouseDelta = userState.m_vMousePos-vOldMousePos; // both coordinates are integer based
-
-    float fMoveDistance = vMouseDelta.getLength();
-    m_fAccumulatedMoveDistance += fMoveDistance;
-    bool bMouseMoving = m_fAccumulatedMoveDistance > m_fDragThreshold;
-
-    if (bMouseMoving)
-      INVALIDATE_DOUBLECLICK;
-
-    VWindowBase *pOldMouseOver = userState.m_spMouseOverItem;
-
-#if defined(SUPPORTS_MULTITOUCH) || defined(_VISION_WIIU)
-    userState.m_iButtonMask = userState.m_iNextButtonMask;
-    userState.m_iNextButtonMask = GetButtonMask(userState);
-#else
-    userState.m_iButtonMask = GetButtonMask(userState);
-#endif
-
-    // tick function for all dialogs and tooltip
-    m_openDialogs.OnTickFunction(fTimeDelta);
-    if (m_spTooltip)
-      m_spTooltip->OnTick(fTimeDelta);
-
-    // dragging finished?
-    bool bDragging = IsDragging();
-    if (userState.m_spDragItem && userState.m_iButtonMask==0)
+    if(m_bCursorActive)
     {
-      userState.m_spDragItem->OnDragEnd(userState.m_spMouseOverItem);
-      userState.m_spDragItem = NULL;
-    }
+      // Store old state
+      VGUIUserInfo_t &userState(m_UserStates[i]);
+      int iOldButton = userState.m_iButtonMask;
+      hkvVec2 vOldMousePos = userState.m_vMousePos;
+      VWindowBase *pOldMouseOver = userState.m_spMouseOverItem;
 
-    // if no focus dialog set, use the first in hierarchy
-    if (m_openDialogs.Count()>0)
-    {
-      if (!m_spFocusDlg)
-        m_spFocusDlg = m_openDialogs.GetAt(0);
-      userState.m_pCurrentCursor = m_spFocusDlg->GetCurrentCursor(userState);
-    }
-    else
-    {
-      m_spFocusDlg = NULL;
-      userState.m_pCurrentCursor = NULL;
-    }
+      // Fetch new state
+      UpdateCursorPos(userState);
+      userState.m_iButtonMask = GetButtonMask(userState);
 
-    if (!userState.m_pCurrentCursor && m_bShowCursor)
-      userState.m_pCurrentCursor = (m_spOverrideCursor!=NULL) ? m_spOverrideCursor.GetPtr() : GetManager()->GetDefaultCursor();
-      
-    // handle click event
-    int iClicked = (userState.m_iButtonMask & (~iOldButton)) & BUTTONMASK_CLICKEVENTS;
-    int iReleased = (iOldButton & (~userState.m_iButtonMask)) & BUTTONMASK_CLICKEVENTS;
+      // Compute state deltas
+      int iClicked = (userState.m_iButtonMask & (~iOldButton)) & BUTTONMASK_CLICKEVENTS;
+      int iReleased = (iOldButton & (~userState.m_iButtonMask)) & BUTTONMASK_CLICKEVENTS;
+      hkvVec2 vMouseDelta = userState.m_vMousePos - vOldMousePos; 
+      hkvVec2 vLastClickDistance = userState.m_vMousePos - userState.m_vLastClickPos;     
 
-    // mouse over
-    if (m_spFocusDlg != NULL)
-    {
-      VMenuEventDataObject data(NULL, this, NULL, NULL, userState, userState.m_iButtonMask);
-      m_spFocusDlg->FillEvent(&data); 
+      if (vLastClickDistance.getLength() > m_fDragThreshold)
+        INVALIDATE_DOUBLECLICK;
 
-      SetMouseOverItem(userState, data.m_pItem);
-    }
-
-    // Handle pointer down / up events
-    if(iClicked)
-    {
-      VMenuEventDataObject data(&OnPointerDown, this, NULL, NULL, userState, iClicked);
-      FillEvent(data);
-
-      if (m_spFocusDlg != NULL) 
-        m_spFocusDlg->OnPointerDown(&data);
-
-      if(data.m_pItem != NULL)
-        data.m_pItem->OnPointerDown(&data);
-
-      OnPointerDown.TriggerCallbacks(&data);
-
-      m_fAccumulatedMoveDistance = 0;
-    }
-
-    if (iReleased)
-    {
-      VMenuEventDataObject pointerData(&OnPointerUp, this, NULL, NULL, userState, iReleased);
-      FillEvent(pointerData);
-
-      VMenuEventDataObject itemData(&OnItemClick, this, NULL, NULL, userState, iReleased);
-      FillEvent(itemData);
-
-      if (m_fAccumulatedMoveDistance <= m_fDragThreshold)
+      // Reset dragging history on click
+      if(iClicked)
       {
-        if (m_spFocusDlg != NULL)
-          m_spFocusDlg->OnPointerUp(&pointerData);
-
-        if(pointerData.m_pItem != NULL)
-          pointerData.m_pItem->OnPointerUp(&pointerData);
-
-        OnPointerUp.TriggerCallbacks(&pointerData);
-
-        if (m_spFocusDlg != NULL) 
-          m_spFocusDlg->OnClick(&itemData);
-
-        if (itemData.m_pItem != NULL && itemData.m_pItem == userState.m_spMouseDownItem)
-        {
-          VASSERT(itemData.m_pDialog);
-          itemData.m_pDialog->OnItemClicked(&itemData); // this one forwards it to the item
-          OnItemClick.TriggerCallbacks(&itemData);
-        }
+        userState.m_vLastClickPos = userState.m_vMousePos;
+        userState.m_iDragHistorySize = 0;
+        vLastClickDistance.setZero();
       }
 
-      if (m_bMouseOverOnInputOnly && (userState.m_spMouseOverItem != NULL))
-        userState.m_spMouseOverItem->OnMouseLeave(userState);
-
-      userState.m_fLastClickTime = 0.f;
-      userState.m_iLastClickedMask = iReleased;
-
-      m_fAccumulatedMoveDistance = 0;
-    }
-
-    // check for click and doubleclick
-    if (userState.m_fLastClickTime>=0.f) userState.m_fLastClickTime+=fTimeDelta;
-    if (iClicked && !bDragging)
-    {
-      userState.m_spMouseDownItem = userState.m_spMouseOverItem;
-
-      if (iClicked == userState.m_iLastClickedMask)
+      if(userState.m_iButtonMask)
       {
-        if (userState.m_fLastClickTime>=0.f && userState.m_fLastClickTime<DOUBLECLICK_DELAY)
+        // Remove first entry if drag history is full
+        if(userState.m_iDragHistorySize >= V_ARRAY_SIZE(userState.m_vDragHistory))
         {
-          VMenuEventDataObject data(&OnItemDoubleClick, this, NULL,NULL,userState,iReleased);
-          if (m_spFocusDlg) // first, notify the dialog
-            m_spFocusDlg->OnDoubleClick(&data);
-          FillEvent(data);
-          if (data.m_pItem)
-          {
-            VASSERT(data.m_pDialog);
-            data.m_pDialog->OnItemDoubleClicked(&data); // forwards it to the item
-            OnItemDoubleClick.TriggerCallbacks(&data);
-          }
+          userState.m_iDragHistorySize--;
+          memmove(&userState.m_vDragHistory[0], &userState.m_vDragHistory[1], userState.m_iDragHistorySize * sizeof(userState.m_vDragHistory[0]));
         }
+
+        // Append current mouse position
+        userState.m_vDragHistory[userState.m_iDragHistorySize] = userState.m_vMousePos;
+        userState.m_iDragHistorySize++;
+      }
+
+      // Estimated current dragging speed (in px/frame)
+      hkvVec2 vDragSpeed; 
+      if(userState.m_iDragHistorySize > 0)
+      {
+        vDragSpeed = (userState.m_vDragHistory[userState.m_iDragHistorySize - 1] - userState.m_vDragHistory[0]) / float(userState.m_iDragHistorySize);
       }
       else
-        INVALIDATE_DOUBLECLICK;
-    }
-
-    // dragging?
-    if (userState.m_iButtonMask && bMouseMoving)
-    {
-      if (!userState.m_spDragItem && userState.m_spMouseOverItem)
       {
-        userState.m_spDragItem = userState.m_spMouseOverItem;
-        userState.m_spDragItem->OnDragBegin(vOldMousePos, userState.m_iButtonMask); // pass the old mouse pos (where it started dragging)
+        vDragSpeed.setZero();
       }
-      if (userState.m_spDragItem)
-        userState.m_spDragItem->OnDragging(vMouseDelta);
-    }
 
-    // show tooltip
-    if (fMoveDistance > m_fDragThreshold)
-    {
-      SetTooltip(NULL); // remove tooltip if mouse is moving
-    } 
-    else if (userState.m_spMouseOverItem && m_spTooltip==NULL)
-    {
-      VTooltip *pTT = userState.m_spMouseOverItem->GetTooltip(userState);
-      SetTooltip(pTT);
+      // tick function for all dialogs and tooltip
+      m_openDialogs.OnTickFunction(fTimeDelta);
+      if (m_spTooltip)
+        m_spTooltip->OnTick(fTimeDelta);
+
+      // if no focus dialog set, use the first in hierarchy
+      if (m_openDialogs.Count()>0)
+      {
+        if (!m_spFocusDlg)
+          m_spFocusDlg = m_openDialogs.GetAt(0);
+        userState.m_pCurrentCursor = m_spFocusDlg->GetCurrentCursor(userState);
+      }
+      else
+      {
+        m_spFocusDlg = NULL;
+        userState.m_pCurrentCursor = NULL;
+      }
+
+      if (!userState.m_pCurrentCursor && m_bShowCursor)
+        userState.m_pCurrentCursor = (m_spOverrideCursor!=NULL) ? m_spOverrideCursor.GetPtr() : GetManager()->GetDefaultCursor();
+
+      // mouse over
+      if (m_spFocusDlg != NULL)
+      {
+        VMenuEventDataObject data(NULL, this, NULL, NULL, userState, userState.m_iButtonMask);
+        m_spFocusDlg->FillEvent(&data); 
+
+        SetMouseOverItem(userState, data.m_pItem);
+      }
+
+      // Handle pointer down / up events
+      if(iClicked)
+      {
+        VMenuEventDataObject data(&OnPointerDown, this, NULL, NULL, userState, iClicked);
+        FillEvent(data);
+
+        if (m_spFocusDlg != NULL) 
+          m_spFocusDlg->OnPointerDown(&data);
+
+        if(data.m_pItem != NULL)
+          data.m_pItem->OnPointerDown(&data);
+
+        OnPointerDown.TriggerCallbacks(&data);
+      }
+
+      if (iReleased)
+      {
+        VMenuEventDataObject pointerData(&OnPointerUp, this, NULL, NULL, userState, iReleased);
+        FillEvent(pointerData);
+
+        VMenuEventDataObject itemData(&OnItemClick, this, NULL, NULL, userState, iReleased);
+        FillEvent(itemData);
+
+        if (vLastClickDistance.getLength() <= m_fDragThreshold)
+        {
+          if (m_spFocusDlg != NULL)
+            m_spFocusDlg->OnPointerUp(&pointerData);
+
+          if(pointerData.m_pItem != NULL)
+            pointerData.m_pItem->OnPointerUp(&pointerData);
+
+          OnPointerUp.TriggerCallbacks(&pointerData);
+
+          if (m_spFocusDlg != NULL) 
+            m_spFocusDlg->OnClick(&itemData);
+
+          if (itemData.m_pItem != NULL && itemData.m_pItem == userState.m_spMouseDownItem)
+          {
+            VASSERT(itemData.m_pDialog);
+            itemData.m_pDialog->OnItemClicked(&itemData); // this one forwards it to the item
+            OnItemClick.TriggerCallbacks(&itemData);
+          }
+        }
+        else
+        {
+          // On touch devices, the delta is usually zero
+          // in the frame in which the touch was released, so 
+          // use the average drag delta
+          // to allow scrolling to continue after release.
+          if (userState.m_spDragItem)
+          {
+            userState.m_spDragItem->OnDragging(vDragSpeed);
+          }
+        }
+
+        if (m_bMouseOverOnInputOnly && (userState.m_spMouseOverItem != NULL))
+          userState.m_spMouseOverItem->OnMouseLeave(userState);
+
+        userState.m_fLastClickTime = 0.f;
+        userState.m_iLastClickedMask = iReleased;
+      }
+
+      // dragging finished?
+      bool bDragging = IsDragging();
+      if (userState.m_spDragItem && userState.m_iButtonMask==0)
+      {
+        userState.m_spDragItem->OnDragEnd(userState.m_spMouseOverItem);
+        userState.m_spDragItem = NULL;
+      }
+
+      // check for click and doubleclick
+      if (userState.m_fLastClickTime>=0.f)
+        userState.m_fLastClickTime+=fTimeDelta;
+
+      if (iClicked && !bDragging)
+      {
+        userState.m_spMouseDownItem = userState.m_spMouseOverItem;
+
+        if (iClicked == userState.m_iLastClickedMask)
+        {
+          if (userState.m_fLastClickTime>=0.f && userState.m_fLastClickTime<DOUBLECLICK_DELAY)
+          {
+            VMenuEventDataObject data(&OnItemDoubleClick, this, NULL,NULL,userState,iReleased);
+            if (m_spFocusDlg) // first, notify the dialog
+              m_spFocusDlg->OnDoubleClick(&data);
+            FillEvent(data);
+            if (data.m_pItem)
+            {
+              VASSERT(data.m_pDialog);
+              data.m_pDialog->OnItemDoubleClicked(&data); // forwards it to the item
+              OnItemDoubleClick.TriggerCallbacks(&data);
+            }
+          }
+        }
+        else
+          INVALIDATE_DOUBLECLICK;
+      }
+
+      // dragging?
+      if (userState.m_iButtonMask && vLastClickDistance.getLength() > m_fDragThreshold)
+      {
+        if (!userState.m_spDragItem && userState.m_spMouseOverItem)
+        {
+          userState.m_spDragItem = userState.m_spMouseOverItem;
+          userState.m_spDragItem->OnDragBegin(vOldMousePos, userState.m_iButtonMask); // pass the old mouse pos (where it started dragging)
+        }
+        if (userState.m_spDragItem)
+          userState.m_spDragItem->OnDragging(vMouseDelta);  
+      }
+
+      // show tooltip
+      if (vMouseDelta.getLength() > m_fDragThreshold)
+      {
+        SetTooltip(NULL); // remove tooltip if mouse is moving
+      } 
+      else if (userState.m_spMouseOverItem && m_spTooltip==NULL)
+      {
+        VTooltip *pTT = userState.m_spMouseOverItem->GetTooltip(userState);
+        SetTooltip(pTT);
+      }
     }
 
     if (m_bHandleKeyboard)
@@ -486,6 +522,8 @@ int IVGUIContext::ShowDialogModal(VDialog *pDialog, IVisApp_cl *pRunApp)
 
 int IVGUIContext::ShowDialogModal(VDialog *pParent, const char *szDialogResource, const hkvVec2 &vPos, IVisApp_cl *pRunApp)
 {
+  HKV_DISABLE_DEPRECATION
+
   VDialogPtr spDlg = GetManager()->CreateDialogInstance(szDialogResource,this,pParent,DIALOGFLAGS_MODAL);
   if (spDlg==NULL)
     return -1;
@@ -711,11 +749,10 @@ VGUIMainContext::VGUIMainContext(VGUIManager *pManager) : IVGUIContext(pManager)
   Vision::Callbacks.OnVideoChanged += this;
   m_bHandleKeyboard = true; // only if supported
 
-  m_eCursorMode = CURSOR_DELTAS;  //work with deltas  (Controllers, Windows Input)
+  m_eCursorMode = CURSOR_DELTAS;
 
-#if defined(WIN32) && defined(SUPPORTS_MOUSE)
-  if (VGLGetMouseMethod()==VGL_DIRECTINPUT)
-    m_eCursorMode = CURSOR_ABSPOS;  //map directly to cursor pos
+#if defined(_VISION_WIN32) || defined(_VISION_NACL)
+  m_eCursorMode = CURSOR_ABSPOS;
 #endif
 
 
@@ -838,8 +875,8 @@ void VGUIMainContext::UpdateCursorPos(VGUIUserInfo_t &userState)
     if(VInputManager::GetMouse().IsActive())
     {
       userState.m_vMousePosAccum.set(
-          (float)VInputManager::GetMouse().GetRawControlValue(CT_MOUSE_RAW_CURSOR_X),
-          (float)VInputManager::GetMouse().GetRawControlValue(CT_MOUSE_RAW_CURSOR_Y)
+          (float)VInputManager::GetMouse().GetRawControlValue(CT_MOUSE_ABS_X),
+          (float)VInputManager::GetMouse().GetRawControlValue(CT_MOUSE_ABS_Y)
         );
     }
 
@@ -951,7 +988,7 @@ int VGUIMainContext::GetButtonMask(VGUIUserInfo_t &user)
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

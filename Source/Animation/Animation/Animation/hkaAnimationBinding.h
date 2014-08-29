@@ -12,14 +12,14 @@
 #include <Animation/Animation/Rig/hkaSkeleton.h>
 
 /// hkaAnimationBinding meta information
-extern const class hkClass hkaAnimationBindingClass;
+extern HK_EXPORT_ANIMATION const class hkClass hkaAnimationBindingClass;
 
 /// Describes how an animation is bound to a skeleton.
 /// This class is useful when we have partial animations which only animate a subset of the skeleton
 /// or when we have reordered the tracks to aid in LOD. All hkaAnimationControl objects
 /// (added to a hkaAnimatedSkeleton) require a hkaAnimationBinding to map from tracks to bones/slots
 /// for blending of multiple animations.
-class hkaAnimationBinding : public hkReferencedObject
+class HK_EXPORT_ANIMATION hkaAnimationBinding : public hkReferencedObject
 {
 	public:
 		// +version(3)
@@ -80,8 +80,10 @@ class hkaAnimationBinding : public hkReferencedObject
 		{
 				/// Normal
 			NORMAL = 0,
+				/// Additive (deprecated format)
+			ADDITIVE_DEPRECATED = 1,
 				/// Additive
-			ADDITIVE = 1
+			ADDITIVE = 2,
 		};
 
 			/// The blend hint.
@@ -98,7 +100,7 @@ class hkaAnimationBinding : public hkReferencedObject
 #endif // HKANIMATION_ANIMATION_HKANIMATIONBINDING_HKCLASS_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

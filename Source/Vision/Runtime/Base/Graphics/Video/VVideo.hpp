@@ -32,7 +32,7 @@
   #include <FGrpGlPlayer.h>
 #endif
 
-#if defined(WIN32) && !defined(_VISION_WINRT) 
+#if defined(_VISION_WIN32) && !defined(_VISION_WINRT) 
 
 #include <Vision/Runtime/Base/Graphics/Video/VWindow.hpp>
 
@@ -64,34 +64,34 @@ struct hkvDirect3D;
 #define VVIDEO_DEFAULTHEIGHT 720
 #define VVIDEO_PRESENTPARAMFLAGS 0
 
-
-
 #elif defined (_VISION_LINUX)
 #define VVIDEO_DEFAULTWIDTH 1024
 #define VVIDEO_DEFAULTHEIGHT 768
 #define VVIDEO_PRESENTPARAMFLAGS 0
 //@@@L  const unsigned int g_MultiSampleTypes[5]={GL_MULTISAMPLING_NONE_SCE, GL_MULTISAMPLING_2X_DIAGONAL_CENTERED_SCE, GL_MULTISAMPLING_4X_SQUARE_CENTERED_SCE, GL_MULTISAMPLING_4X_SQUARE_CENTERED_SCE, GL_MULTISAMPLING_4X_SQUARE_CENTERED_SCE};
 
-
 #elif defined(_VISION_PSP2)
 #define VVIDEO_DEFAULTWIDTH 480
 #define VVIDEO_DEFAULTHEIGHT 272
-#define VVIDEO_DISPLAY_STRIDE_IN_PIXELS 512
-/*
-#define VVIDEO_DEFAULTWIDTH 960
-#define VVIDEO_DEFAULTHEIGHT 544
-#define VVIDEO_DISPLAY_STRIDE_IN_PIXELS 1024
-*/
+
+//#define VVIDEO_DEFAULTWIDTH 960
+//#define VVIDEO_DEFAULTHEIGHT 544
+
 #define VVIDEO_PRESENTPARAMFLAGS 0
 
 #elif defined (_VISION_IOS)
-#define VVIDEO_DEFAULTWIDTH 1024
-#define VVIDEO_DEFAULTHEIGHT 768
+#define VVIDEO_DEFAULTWIDTH 0 // Use native resolution
+#define VVIDEO_DEFAULTHEIGHT 0
 #define VVIDEO_PRESENTPARAMFLAGS 0
 
 #elif defined(_VISION_ANDROID) || defined(_VISION_TIZEN)
-#define VVIDEO_DEFAULTWIDTH 1024
-#define VVIDEO_DEFAULTHEIGHT 600
+#define VVIDEO_DEFAULTWIDTH 0 // Use native resolution
+#define VVIDEO_DEFAULTHEIGHT 0
+#define VVIDEO_PRESENTPARAMFLAGS 0
+
+#elif defined(_VISION_NACL)
+#define VVIDEO_DEFAULTWIDTH 1280
+#define VVIDEO_DEFAULTHEIGHT 720
 #define VVIDEO_PRESENTPARAMFLAGS 0
 
 #elif defined (_VISION_WIIU)
@@ -112,9 +112,21 @@ class VVideo;
 #define VIS_LOCKFLAG_NOOVERWRITE        0x00000004
 #define VIS_LOCKFLAG_REPLACE_ALL        0x00000008
 
-#if defined (WIN32) ||defined (_VISION_XENON) ||defined (_VISION_PS3)
+#if defined (_VISION_WIN32) ||defined (_VISION_XENON) ||defined (_VISION_PS3)
 
 #ifdef _VISION_WINRT
+
+/// \brief
+///   This structure stores the display orientation of the WinRT surface.
+enum EDisplayRotation
+{
+  ROTATION_NONE = -1,   // Rotation unknown or not set yet.
+
+  ROTATION_0 = 0,
+  ROTATION_90 = 1,
+  ROTATION_180 = 2,
+  ROTATION_270 = 3,
+};
 
 struct VWinRTConfig
 {
@@ -123,7 +135,7 @@ struct VWinRTConfig
     ViewWidth = ViewHeight = 0;
     DisplayDensity = 1.0f;
     DisplayDensityDPI = -1;
-    ScreenRotation = 0; //0,90,180,270
+    DisplayRotation = ROTATION_NONE;
     CoreWindow = NULL;
     #ifdef _VISION_METRO
       SwapChainBackgroundPanelNative = NULL;
@@ -139,7 +151,7 @@ struct VWinRTConfig
   unsigned int ViewHeight;
   float DisplayDensity;
   int DisplayDensityDPI;
-  unsigned int ScreenRotation;
+  EDisplayRotation DisplayRotation;
 };
 #endif
 
@@ -251,18 +263,16 @@ struct VGCMDisplayConfig
 
 #endif
 
-#elif defined(_VISION_IOS)
-
-class CAEAGLLayer;
+#elif defined(_VISION_IOS) || defined(_VISION_NACL)
 
 /// \brief
-///   This structure stores the display configuration of the display used by GLES2 on iOS. It will be filled by the
+///   This structure stores the display configuration of the display used by GLES2 on iOS or Native Client. It will be filled by the
 ///   GLES2/screen initialization functions.
 /// \note
 ///   Changing the backbuffer format (R5G6B5 or RGBA8) can be done by modifying the view properties (default implemention is in VisEAGLViewIOS.m)
-struct VIOSGLES2Config
+struct VGLES2Config
 {
-  VIOSGLES2Config()
+  VGLES2Config()
   {
     ViewWidth = ViewHeight = 0;
     DisplayDensity = 1.0f;
@@ -279,7 +289,7 @@ struct VIOSGLES2Config
   bool LandscapeMode;                 ///< Stores if the device is currently in landscape mode or not.
   bool LazyShaderCompilation;         ///< If true, GLES2 shader programs are created when they are first used rather than at load time. This reduces load time and saves memory, but can result in runtime lags.
 
-  CAEAGLLayer* GLLayer;               ///< Stores the eagl layer used for rendering
+  void* GLLayer;               ///< Stores the gl layer used for rendering
 };
 
 #elif defined(_VISION_PSP2)
@@ -385,7 +395,7 @@ public:
 
   /// \brief
   ///   Returns the display texture object
-  SceGxmTexture &GetTexture();
+  SceGxmTexture *GetTexture();
 
   /// \brief
   ///   Returns the display buffer data
@@ -425,11 +435,14 @@ protected:
   uint32_t m_nWidth, m_nHeight;
 };
 
-#elif defined(_VISION_ANDROID)
+#elif defined(_VISION_ANDROID) || defined(_VISION_TIZEN)
+
+#if defined (_VISION_ANDROID)
 #include <EGL/egl.h>
+#endif
 
 /// \brief
-///   This structure stores the display orientation from the Android Surface
+///   This structure stores the display orientation of the Android / Tizen Surface
 enum EDisplayRotation
 {
   ROTATION_0 = 0,
@@ -439,37 +452,43 @@ enum EDisplayRotation
 };
 
 /// \brief
-///   This structure stores the display configuration of the display used by GLES2 on Android. It will be filled by the
+///   This structure stores the display configuration of the display used by GLES2 on Android and Tizen. It will be filled by the
 ///   GLES2/screen initialization functions.
-struct VAndroidGLES2Config
+struct VGLES2Config
 {
-  VAndroidGLES2Config()
+  VGLES2Config()
+    : DisplayRotation(ROTATION_0)
+    , ViewWidth(0)
+    , ViewHeight(0)
+    , ScreenWidth(0)
+    , ScreenHeight(0)
+    , DisplayDensity(1.0f)
+    , DisplayDensityDPI(-1)
+    , DisplayXDPI(-1.0f)
+    , DisplayYDPI(-1.0f)
+    , Display(EGL_NO_DISPLAY)
+    , Surface(EGL_NO_SURFACE)
+    , Context(EGL_NO_CONTEXT)
+    , Config(0)
+    , Transparent(false)
+    , bEglSurfaceInitialized(false)
+    , LazyShaderCompilation(true)
+    , bDisablePVRUsage(false)
+    , UseR5G6B5Format(false)
+#if defined(_VISION_ANDROID)
+    , bEglWindowInitialized(false)
+    , bRunWhileSleeping(false)
+#endif
   {
-    ViewWidth = ViewHeight = 0;
-    
-    DisplayDensity = 1.0f;
-    DisplayDensityDPI = -1;
-    DisplayXDPI = -1.0f;
-    DisplayYDPI = -1.0f;
-    
-    Display = EGL_NO_DISPLAY;
-    Context = EGL_NO_CONTEXT;
-    Surface = EGL_NO_SURFACE;
-    Config = EGLConfig(0);
-    Transparent = false;
-    UseR5G6B5Format = false;
-    bEglSurfaceInitialized = false;
-    bEglWindowInitialized = false;
-    LazyShaderCompilation = true;
-    bRunWhileSleeping = false;
-    bDisablePVRUsage = false;
   }
 
-  EDisplayRotation DisplayRotation; ///< Stores the currently rotation of the display of the device (used by the input system)
-  unsigned int ViewWidth;           ///< Stores the view width of the buffer given by the OS specified GLES2 surface
-  unsigned int ViewHeight;          ///< Stores the view height of the buffer given by the OS specified GLES2 surface
+  EDisplayRotation DisplayRotation; ///< Stores the current rotation of the display of the device (used by the input system)
+  unsigned int ViewWidth;           ///< Stores the view width of the buffer given by the GLES2 surface.
+  unsigned int ViewHeight;          ///< Stores the view height of the buffer given by the GLES2 surface.
+  unsigned int ScreenWidth;         ///< Stores the native screen width of the device.
+  unsigned int ScreenHeight;        ///< Stores the native screen height of the device.
 
-  float DisplayDensity;             ///< Stores the logical density of the display as reported by Android (see http://developer.android.com/reference/android/util/DisplayMetrics.html - density)
+  float DisplayDensity;             ///< Stores the logical density of the display as reported by Android / Tizen (see http://developer.android.com/reference/android/util/DisplayMetrics.html - density)
   int DisplayDensityDPI;            ///< Stores the density in DPI of the display
   float DisplayXDPI;                ///< Stores the exact DPI in the x dimension of the display
   float DisplayYDPI;                ///< Stores the exact DPI in the y dimension of the display
@@ -480,67 +499,15 @@ struct VAndroidGLES2Config
   EGLConfig Config;                 ///< Stores the chosen egl config (based on the parameters below)
 
   bool Transparent;                 ///< Configuration value which allows to specify that the backing EGL surface should be created transparent or not (for overlay rendering for example), default = false
-  bool UseR5G6B5Format;             ///< Internal value which stores whether a RGBA8 or R5G6B5 backing surface was created
   bool bEglSurfaceInitialized;      ///< Internal value which stores if there currently is a egl surface correctly initialized
-  bool bEglWindowInitialized;       ///< Internal value which stores if there currently is a egl window correctly initialized
   bool LazyShaderCompilation;       ///< Configuration value which allows to enable / disable lazy shader compilation (speeds up loading times but may produce small stalls when spawning new models), default = true
-  bool bRunWhileSleeping;           ///< Configuration value which allows the app to run even when in background (not recommended due to battery consumption - but may be useful for automated tests), default = false
   bool bDisablePVRUsage;            ///< Configuration value which allows to disable PVR texture usage (useful when stripping PVR textures from the APK for example), default = false
-};
+  bool UseR5G6B5Format;             ///< Internal value which stores whether a RGBA8 or R5G6B5 backing surface was created
 
-#elif defined(_VISION_TIZEN)
-
-/// \brief
-///   This structure stores the display orientation from the Android Surface
-enum EDisplayRotation
-{
-  ROTATION_0 = 0,
-  ROTATION_90 = 1,
-  ROTATION_180 = 2,
-  ROTATION_270 = 3,
-};
-
-/// \brief
-///   This structure stores the display configuration of the display used by GLES2. It will be filled by the
-///   GLES2/screen initialization functions.
-struct VTizenGLES2Config
-{
-  VTizenGLES2Config()
-  {
-    ViewWidth = ViewHeight = 0;
-
-    DisplayDensity = 1.0f;
-    DisplayDensityDPI = -1;
-    DisplayXDPI = -1.0f;
-    DisplayYDPI = -1.0f;
-    
-    Display = EGL_NO_DISPLAY;
-    Context = EGL_NO_CONTEXT;
-    Surface = EGL_NO_SURFACE;
-    
-    Transparent = false;
-    UseR5G6B5Format = true;
-    bEglSurfaceInitialized = false;
-    LazyShaderCompilation = true;
-  }
-
-  EDisplayRotation DisplayRotation;
-  unsigned int ViewWidth;
-  unsigned int ViewHeight;
-
-  float DisplayDensity;
-  int DisplayDensityDPI;
-  float DisplayXDPI;
-  float DisplayYDPI;
-
-  EGLDisplay Display;
-  EGLSurface Surface;
-  EGLContext Context;
-
-  bool Transparent;
-  bool UseR5G6B5Format;
-  bool bEglSurfaceInitialized;
-  bool LazyShaderCompilation;       ///< Configuration value which allows to enable / disable lazy shader compilation (speeds up loading times but may produce small stalls when spawning new models), default = true
+#if defined(_VISION_ANDROID)
+  bool bEglWindowInitialized;       ///< Internal value which stores if there currently is a egl window correctly initialized
+  bool bRunWhileSleeping;           ///< Configuration value which allows the app to run even when in background (not recommended due to battery consumption - but may be useful for automated tests), default = false
+#endif
 };
 
 #elif defined(_VISION_WIIU)
@@ -571,8 +538,6 @@ struct VWiiUDisplayConfig
     drcMultiSampleMode = 0;
   }
 
-
-  
   GX2RAllocateFunc pfnGX2RAlloc;        ///< Custom GX2R allocation functions (default = Vision provided functions)
   GX2RFreeFunc pfnGX2RFree;             ///< Custom GX2R allocation functions (default = Vision provided functions)
   u32 uiCommandBufferSize;              ///< Command buffer size (default = 4 Mb)
@@ -583,11 +548,10 @@ struct VWiiUDisplayConfig
   bool bDRCNeedsStencilBuffer;          ///< true if the DRC depth buffer should have stencil bits (default = true), note that this will lead to D24_S8 usage (ignoring lower settings for uiDRCDepthBits)
   bool b30HzDRCMode;                    ///< Should the DRCs run in 30Hz mode (default = false). Note that with 2 DRCs it will always be 30Hz - this has only an effect with single mode.
   bool bDRCHiZEnabled;                  ///< Do the DRC depth buffers (if used) want to use HiZ (default = true)
-
 };
 
 #else
-#warning "Probably missing platform!"
+#error "Probably missing platform!"
 #endif
 
 /// \brief
@@ -617,7 +581,7 @@ struct VVideoMode
   unsigned int m_iXboxFlags;    ///< Reserved
 };
 
-#ifdef WIN32
+#ifdef _VISION_WIN32
 
 #ifdef _VR_DX9
 
@@ -628,7 +592,7 @@ enum D3D9ExtendedVersionFlags // Internal flags
 };
 
 /// \brief
-///   Stores a device configuration. Internal use only, Win32 DX9 only.
+///   Stores a device configuration. Internal use only, Windows DX9 only.
 struct DeviceConfig_t
 {
   DEVMODEA m_OrigDevMode;                     ///< internal
@@ -639,7 +603,7 @@ struct DeviceConfig_t
 #if defined(_VR_DX11)
 
 /// \brief
-///   Stores an output/adapter configuration. Internal use only, Win32 DX10/DX11 only.
+///   Stores an output/adapter configuration. Internal use only, Windows DX10/DX11 only.
 struct OutputConfig_t
 {
   VSmartPtr<IDXGIOutput> pOutput;
@@ -672,6 +636,9 @@ public:
   /// 
   /// \param iHeight
   ///   height of the screen or window
+  ///
+  /// \note
+  ///   On mobile, a width and / or a height of 0 causes the engine to initialize with the native resolution.
   VBASE_IMPEXP VVideoConfig(int iWidth = VVIDEO_DEFAULTWIDTH, int iHeight = VVIDEO_DEFAULTHEIGHT);
 
   /// \brief
@@ -706,8 +673,8 @@ public:
 
   int m_iXPos;                          ///< Horizontal position of the window (in windowed mode, Windows only - irrelevant for other platforms)
   int m_iYPos;                          ///< Vertical position of the window (in windowed mode, Windows only - irrelevant for other platforms)
-  int m_iXRes;                          ///< Horizontal size of the target buffer
-  int m_iYRes;                          ///< Vertical size of the target buffer
+  int m_iXRes;                          ///< Horizontal size of the target buffer. On mobile, a width of 0 causes the engine to initialize with the native resolution.
+  int m_iYRes;                          ///< Vertical size of the target buffer. On mobile, a height of 0 causes the engine to initialize with the native resolution.
   int m_iRefreshRate;                   ///< Refresh rate in Hz, 0 if default refresh rate is to be used
 
   // Monitor
@@ -741,12 +708,12 @@ public:
 
   VVIDEO_Multisample m_eMultiSample;    ///< Multisampling type
 
-#if ( defined (WIN32)  || defined (_VISION_XENON) ) && !defined( _VISION_WINRT )
+#if ( defined (_VISION_WIN32)  || defined (_VISION_XENON) ) && !defined( _VISION_WINRT )
   HWND m_hWnd;                          ///(deprecated, use VWindow::CreatedWindowHandle)
   HWND m_hParentWnd;                    ///(deprecated, use VWindow::ParentWindowHandle)
 #endif
 
-#if defined (WIN32)
+#if defined (_VISION_WIN32)
   bool m_bEnableNVPerfHUD;              ///< Initializes the graphics device with NV Performance HUD enabled. Requires running the application from NVPerfHUD. (Windows only)
   bool m_bForceReferenceRasterizer;     ///< Initializes the graphics device with the software reference rasterizer. Useful for automating vForge exports in virtual machines. (Windows only)
 
@@ -802,20 +769,20 @@ public:
 
 
 #if defined(_VR_DX9)
-  DWORD m_iCreateDeviceBehaviorFlags;           ///< WIN32 DX9 only: behavior flags for device creation
-  DWORD m_iCreateDeviceFallbackBehaviorFlags;   ///< WIN32 DX9 only: fallback behavior flags for device creation (if the device could not be created using the primary behavior flags)
+  DWORD m_iCreateDeviceBehaviorFlags;           ///< Windows DX9 only: behavior flags for device creation
+  DWORD m_iCreateDeviceFallbackBehaviorFlags;   ///< Windows DX9 only: fallback behavior flags for device creation (if the device could not be created using the primary behavior flags)
 #endif
 
 #if defined(_VR_DX11)
-  DXGI_MODE_SCANLINE_ORDER m_iScanlineOrder;    ///< WIN32 DX10/DX11 only: Scanline order for the video mode
-  DXGI_MODE_SCALING m_iScaling;                 ///< WIN32 DX10/DX11 only: Scaling for the video mode
-  bool m_bUseDebugRuntime;                      ///< WIN32 DX10/DX11 only: Set to true to enable debug runtime
-  int m_iWindowAssociationFlags;                ///< WIN32 DX10/DX11 only: Window association flags
-  bool m_bIgnoreFullScreenErrors;               ///< WIN32 DX10/DX11 only: if fullscreen mode is not applied, keep throguth with windoe mode.
+  DXGI_MODE_SCANLINE_ORDER m_iScanlineOrder;    ///< Windows DX10/DX11 only: Scanline order for the video mode
+  DXGI_MODE_SCALING m_iScaling;                 ///< Windows DX10/DX11 only: Scaling for the video mode
+  bool m_bUseDebugRuntime;                      ///< Windows DX10/DX11 only: Set to true to enable debug runtime
+  int m_iWindowAssociationFlags;                ///< Windows DX10/DX11 only: Window association flags
+  bool m_bIgnoreFullScreenErrors;               ///< Windows DX10/DX11 only: if fullscreen mode is not applied, keep throguth with windoe mode.
 
-  D3D_DRIVER_TYPE m_iDriverType;                ///< WIN32 DX11 only: Driver Type
-  D3D_FEATURE_LEVEL *m_pFeatureLevels;          ///< WIN32 DX11 only: NULL, or a list of feature levels to attempt to create.
-  int m_iNumFeatureLevels;                      ///< WIN32 DX11 only: The number of feature levels in the m_pFeatureLevels list.
+  D3D_DRIVER_TYPE m_iDriverType;                ///< Windows DX11 only: Driver Type
+  D3D_FEATURE_LEVEL *m_pFeatureLevels;          ///< Windows DX11 only: NULL, or a list of feature levels to attempt to create.
+  int m_iNumFeatureLevels;                      ///< Windows DX11 only: The number of feature levels in the m_pFeatureLevels list.
 #endif
 
 #ifdef _VR_GX2
@@ -853,7 +820,7 @@ public:
     //Nothing to do here  
   }
 
-#ifdef WIN32
+#if defined(_VISION_WIN32)
 
   /// \brief
   ///   Returns the handle of the application instance.
@@ -1085,7 +1052,7 @@ public:
   /// \brief
   ///   For devices supporting querying device display resolutions, this function returns the display resolution in dots per inch (dpi).
   /// 
-  /// Supported on Android, iOS, and Windows RT. Returns a default value of 96 on other platforms, which is the value used by Windows.
+  /// Supported on Android, Tizen, iOS, and Windows RT. Returns a default value of 96 on other platforms, which is the value used by Windows.
   VBASE_IMPEXP float GetDeviceDpi() const;
 
   /// \brief
@@ -1161,7 +1128,7 @@ public:
   /// \brief
   ///   Returns the currently active D3D Instance.
   /// 
-  /// Only available on Xbox360 and WIN32 DirectX9. Will return NULL for WIN32 DirectX10/DirectX11.
+  /// Only available on Xbox360 and Windows DirectX9. Will return NULL for Windows DirectX10/DirectX11.
   /// 
   /// \return
   ///   D3DDevice* or NULL
@@ -1170,7 +1137,7 @@ public:
   /// \brief
   ///   Returns the currently active D3D Device.
   /// 
-  /// Only available on Xbox360 and WIN32 (DX9, DX10, and DX11).
+  /// Only available on Xbox360 and Windows (DX9, DX10, and DX11).
   /// 
   /// \return
   ///   D3DDevice* or NULL
@@ -1181,6 +1148,15 @@ public:
   /// \brief
   ///   Returns currently active D3D Device Context used for immediate rendering.
   static VBASE_IMPEXP D3DDeviceContext* GetD3DDeviceContext();
+
+#ifndef _VISION_WINRT
+  /// \brief
+  ///   Sets the number of frames that the system is allowed to queue for rendering.
+  ///
+  /// \param iMaxLatency
+  ///   The maximum number of back buffer frames that a driver can queue.
+  static VBASE_IMPEXP void SetMaximumFrameLatency(unsigned int iMaxLatency);
+#endif
 
 #endif
 
@@ -1198,7 +1174,7 @@ public:
   ///   Deinitializes the Direct3D version of VVideo (Xbox360/DirectX9 only)
   /// 
   /// Frees memory allocated by InitializeD3D.
-  /// Only supported on Xbox360 and WIN32 DX9.
+  /// Only supported on Xbox360 and Windows DX9.
   /// 
   /// \return
   ///   bool: true if the deinitialization suceeded, otherwise false. Use VVideo::GetLastError to get
@@ -1330,6 +1306,15 @@ public:
   static inline bool IsPackedDepthStencilSupported() { return m_bPackedDepthStencilSupported; }
 
   /// \brief
+  ///   Returns whether the GL_EXT_shadow_samplers extension is supported on the OpenGL ES 2.0 device. Needs to be called after screen initialization.
+  ///
+  /// On compatible OpenGL ES 2.0 devices this extension will be used to provide hardware filtered shadows.
+  ///
+  /// \return
+  ///   bool: true if GL_EXT_shadow_samplers extension is supported.
+  static inline bool AreShadowSamplersSupported() { return m_bShadowSamplersSupported; }
+
+  /// \brief
   ///   Returns the max texture size supported by the devices.
   ///
   /// \return
@@ -1338,15 +1323,15 @@ public:
 
 #endif
 
-#if defined(_VISION_IOS)
+#if defined(_VISION_IOS) || defined(_VISION_NACL)
 
-  static VBASE_IMPEXP VIOSGLES2Config* GetVideoConfig() { return &m_IOSGLES2Config; }
+  static VBASE_IMPEXP VGLES2Config* GetVideoConfig() { return &m_GLES2Config; }
 
 #endif
 
  #if defined(_VISION_WINRT)
 
-  static VBASE_IMPEXP VWinRTConfig* GetVideoConfig() { return &m_winRTConfig; }
+  static inline VWinRTConfig* GetVideoConfig() { return &m_winRTConfig; }
   static VBASE_IMPEXP void SetVideoConfig(VWinRTConfig& newCfg); 
 
 #endif
@@ -1420,15 +1405,15 @@ public:
 
 #if defined(_VISION_ANDROID)
 
-  static VBASE_IMPEXP VAndroidGLES2Config* GetVideoConfig() { return &m_AndroidGLES2Config; }
+  static VBASE_IMPEXP VGLES2Config* GetVideoConfig() { return &m_GLES2Config; }
 
-  static VBASE_IMPEXP bool IsGLViewRecreationWished() { bool bRetVal = m_bGLViewRecreationWished; m_bGLViewRecreationWished = false; return bRetVal; }
+  static VBASE_IMPEXP void MakeCurrent();
 
 #endif
 
 #if defined(_VISION_TIZEN)
 
-  static VBASE_IMPEXP VTizenGLES2Config* GetVideoConfig() { return &m_TizenGLES2Config; }
+  static VBASE_IMPEXP VGLES2Config* GetVideoConfig() { return &m_GLES2Config; }
 
   static VBASE_IMPEXP void SetUIForm( Tizen::Ui::Controls::Form* pUIForm ) { m_pUIForm = pUIForm; }
      
@@ -1663,13 +1648,13 @@ public:
   /// \return
   ///   bool bDeviceLost: false if the device is lost, true if this is not the case. For semantics
   ///   regarding the device lost state, please refer to the DirectX9 SDK documentation. Note that
-  ///   this state can only be returned on WIN32 DX9.
+  ///   this state can only be returned on Windows DX9.
   static VBASE_IMPEXP bool Present(const VVideoConfig &vc);
 
   /// \brief
   ///   Returns the system's default color depth
   /// 
-  /// On WIN32 systems, this is the desktop color depth.
+  /// On Windows systems, this is the desktop color depth.
   /// 
   /// On Xbox360, this will always be 32.
   /// 
@@ -1680,11 +1665,11 @@ public:
   static VBASE_IMPEXP int  GetDefaultBPP();
 
 
-#if defined(WIN32) && defined(_VR_DX9)
+#if defined(_VISION_WIN32) && defined(_VR_DX9)
   /// \brief
   ///   Returns the current display mode for a specific adapter
   /// 
-  /// Available on Win32 only.
+  /// Available on Windows only.
   /// 
   /// \param iAdapter
   ///   Index of the adapter/device to be used
@@ -1699,12 +1684,12 @@ public:
 
 #endif
 
-#if defined(WIN32) && !defined(_VISION_WINRT)
+#if defined(_VISION_WIN32) && !defined(_VISION_WINRT)
 
   /// \brief
   ///   Returns the current display mode for a specific device
   ///
-  /// Available on Win32 only.
+  /// Available on Windows only.
   /// 
   /// \param iAdapter
   ///   Index of the monitor adapter/device to be used
@@ -1755,6 +1740,19 @@ public:
   /// \param videoConfig
   ///   Only the adapter information inside this VVideoConfig is used.
   static VBASE_IMPEXP bool IsTextureFilteringSupported(VTextureLoader::VTextureFormat_e eFormat, const VVideoConfig &videoConfig);
+
+  /// \brief
+  ///   Returns whether specified multi-sampling mode is supported for a specific texture format and video device.
+  /// 
+  /// \param eMultisampleMode
+  ///   The multi-sampling mode that should be queried for support.
+  /// 
+  /// \param eTextureFormat
+  ///   The texture format.
+  /// 
+  /// \param videoConfig
+  ///   Only the adapter information inside this VVideoConfig is used.
+  static VBASE_IMPEXP bool IsMultisamplingModeSupported(VVIDEO_Multisample eMultisampleMode, VTextureLoader::VTextureFormat_e eTextureFormat, const VVideoConfig &videoConfig);
 
   /// \brief
   ///   Initializes a secondary screen.
@@ -1832,7 +1830,7 @@ public:
   static VBASE_IMPEXP bool ChangeSecondaryScreenSettings(VVideoConfig &vc);
 
 
-#if defined(WIN32) && defined(_VR_DX9)
+#if defined(_VISION_WIN32) && defined(_VR_DX9)
 
   // Internal use!
   static VBASE_IMPEXP IDirect3DSwapChain9 *GetSecondaryScreenSwapChain(VVideoConfig &vc);
@@ -1906,7 +1904,7 @@ public:
 
 #endif
 
-#if defined(_VR_DX11) || ( defined(_VR_DX9) && defined(WIN32) )
+#if defined(_VR_DX11) || ( defined(_VR_DX9) && defined(_VISION_WIN32) )
 
   /// \brief
   ///   Returns the D3D feature level of the current device.
@@ -1920,7 +1918,7 @@ public:
 #endif
 #if defined(_VR_DX11)
   static VBASE_IMPEXP D3D_FEATURE_LEVEL GetDXFeatureLevel();
-#elif defined(_VR_DX9) && defined(WIN32)
+#elif defined(_VR_DX9) && defined(_VISION_WIN32)
   static inline D3D_FEATURE_LEVEL GetDXFeatureLevel() { return D3D_FEATURE_LEVEL_9_3; }
 #endif
 
@@ -2008,6 +2006,8 @@ public:
 
   #ifndef _VISION_WINRT
     static VBASE_IMPEXP IDXGIFactory *GetDXGIFactory();
+    static VBASE_IMPEXP IDXGIFactory1 *GetDXGIFactory1();
+    static VBASE_IMPEXP IDXGIFactory *GetDXGIFactory0();
   #endif
 #endif // dx11
 
@@ -2080,7 +2080,7 @@ protected:
   static VBASE_IMPEXP bool m_bRenderingIsSuspended;
 
 
-#ifdef WIN32
+#ifdef _VISION_WIN32
   
   #ifndef _VISION_WINRT
     static bool CreateWindowX(VVideoConfig &vc);
@@ -2132,7 +2132,7 @@ protected:
   static int m_iStateFlags;
 
 
-#ifdef WIN32
+#if defined(_VISION_WIN32)
 
   #if defined(_VR_DX9)
     static DynArray_cl<IDirect3DSwapChain9 *>m_pSecondarySwapChains;
@@ -2148,8 +2148,12 @@ protected:
     static D3DDeviceContext *m_pImmediateContext;
     static D3D_FEATURE_LEVEL m_FeatureLevel;
 
-	#ifdef _VISION_WINRT
-	   static VWinRTConfig m_winRTConfig; // Current used state
+    #ifdef _VISION_WINRT
+      static VWinRTConfig m_winRTConfig; // Current used state
+    #else
+      #ifdef SUPPORTS_DXGI11_INTERFACE
+        static DXGIDevice *m_pDxgiDevice;
+      #endif
     #endif
   #endif
   #ifndef _VISION_WINRT
@@ -2197,8 +2201,8 @@ protected:
 
 
 
-#elif defined(_VISION_IOS)
-  static VIOSGLES2Config m_IOSGLES2Config;
+#elif defined(_VISION_IOS) || defined(_VISION_NACL)
+  static VGLES2Config m_GLES2Config;
 
 #elif defined(_VISION_PSP2)
   static VGXMConfig m_GxmConfig;
@@ -2226,11 +2230,10 @@ protected:
   static bool m_bFirstPresent;
 
 #elif defined(_VISION_ANDROID)
-  static VAndroidGLES2Config m_AndroidGLES2Config;
-  static bool m_bGLViewRecreationWished;
+  static VGLES2Config m_GLES2Config;
 
 #elif defined(_VISION_TIZEN)
-  static VTizenGLES2Config m_TizenGLES2Config;
+  static VGLES2Config m_GLES2Config;
   static Tizen::Ui::Controls::Form* m_pUIForm;
 
 #elif defined(_VISION_WIIU)
@@ -2285,6 +2288,7 @@ protected:
   static bool m_bPVRTCSupported;
   static bool m_bETCSupported;
   static bool m_bPackedDepthStencilSupported;
+  static bool m_bShadowSamplersSupported;
   static int m_iMaxGLTextureSize;
 #endif
 
@@ -2314,17 +2318,12 @@ private:
 #endif
 };
 
-#ifndef _VISION_WIIU // does not like ___ in names for debugging
-#define ENSURE_RENDERING_ALLOWED_IN_SCOPE VEnsureRenderingAllowedInScope ___temp___EnsureRenderingAllowedInScope;
-#else
 #define ENSURE_RENDERING_ALLOWED_IN_SCOPE VEnsureRenderingAllowedInScope _temp_EnsureRenderingAllowedInScope;
-#endif
-
 
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

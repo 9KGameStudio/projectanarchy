@@ -10,11 +10,11 @@
 #define INC_EDGE_SELECTION_CHANNEL_H
 
 /// Meta information
-extern const class hkClass hkxEdgeSelectionChannelClass;
+extern HK_EXPORT_COMMON const class hkClass hkxEdgeSelectionChannelClass;
 
 
 	/// Stores a selection of edges. Edges are specified by triangleIndex*3 + {0,1,2} .
-class hkxEdgeSelectionChannel : public hkReferencedObject
+class HK_EXPORT_COMMON hkxEdgeSelectionChannel : public hkReferencedObject
 {
 	//+vtable(true)
 	//+version(1)
@@ -38,7 +38,7 @@ class hkxEdgeSelectionChannel : public hkReferencedObject
 #endif // INC_EDGE_SELECTION_CHANNEL_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

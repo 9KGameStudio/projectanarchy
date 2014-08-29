@@ -11,7 +11,6 @@
 
 #include <Physics2012/Collide/Shape/Query/hkpRayHitCollector.h>
 #include <Physics2012/Collide/Query/CastUtil/hkpWorldRayCastOutput.h>
-#include <Common/Base/Algorithm/Sort/hkSort.h>
 
 /// This class implements the hkpRayHitCollector, and stores all the points the ray hits.
 /// It never causes an early out for the ray cast.
@@ -48,7 +47,7 @@ class hkpAllRayHitCollector : public hkpRayHitCollector
 #endif //HK_ALL_RAY_HIT_COLLECTOR_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

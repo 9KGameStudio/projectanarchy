@@ -9,7 +9,7 @@
 #include <Vision/Runtime/EnginePlugins/ThirdParty/FmodEnginePlugin/FmodEnginePlugin.hpp>
 #include <Vision/Runtime/EnginePlugins/ThirdParty/FmodEnginePlugin/VFmodManager.hpp>
 
-#include <Vision/Runtime/Base/System/Memory/VMemDbg.hpp>
+
 
 
 VManagedResource* VFmodSoundResourceManager::CreateResource(const char *szFilename, VResourceSnapshotEntry *pExtraInfo)
@@ -28,7 +28,7 @@ VManagedResource* VFmodSoundResourceManager::CreateResource(const char *szFilena
 // -------------------------------------------------------------------------- //
 // Constructor/ Destructor                                                 
 // -------------------------------------------------------------------------- //
-VFmodSoundResource::VFmodSoundResource(VFmodSoundResourceManager *pManager,int iUsageFlags) : VManagedResource(pManager)
+VFmodSoundResource::VFmodSoundResource(VFmodSoundResourceManager *pManager, int iUsageFlags) : VManagedResource(pManager)
 {
   m_iSysMem = 0;
   m_iSoundFlags = iUsageFlags;
@@ -41,7 +41,6 @@ VFmodSoundResource::VFmodSoundResource(VFmodSoundResourceManager *pManager,int i
 VFmodSoundResource::~VFmodSoundResource()
 {
 }
-
 
 // -------------------------------------------------------------------------- //
 // Instances                                                 
@@ -59,7 +58,7 @@ VFmodSoundObject *VFmodSoundResource::CreateInstance(const hkvVec3 &vPos, int iF
 bool VFmodSoundResource::IsReady() const
 {
   if (!VFmodManager::GlobalManager().IsInitialized())
-    return true;
+    return false;
 
   VASSERT(m_pSound!=NULL);
 
@@ -83,7 +82,7 @@ BOOL VFmodSoundResource::Reload()
 {
   VFmodManager &manager = VFmodManager::GlobalManager();
   if (!manager.IsInitialized())
-    return TRUE;
+    return FALSE;
 
   VASSERT(!m_pSound);
 
@@ -171,7 +170,7 @@ void VFmodSoundResource::GetDependencies(VResourceSnapshot &snapshot)
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

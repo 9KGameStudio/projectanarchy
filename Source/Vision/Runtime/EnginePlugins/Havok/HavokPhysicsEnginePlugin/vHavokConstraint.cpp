@@ -225,12 +225,30 @@ bool vHavokConstraint::Init(vHavokConstraintDesc &desc)
 
   Reset();
 
+  // Make sure that at least one rigid body is given. If two are given, the constraint
+  // is between two entities; if only one is given, the constraint is between one
+  // entity and a fixed anchor. The managed part of the framework makes sure that in
+  // this case the entity-based anchor comes first.
+  hkpRigidBody* pHavokBody1 = desc.m_spBodies[0] ? desc.m_spBodies[0]->GetHkRigidBody() : NULL;
+  hkpRigidBody* pHavokBody2 = desc.m_spBodies[1] ? desc.m_spBodies[1]->GetHkRigidBody() : NULL;
+
+  if (pHavokBody1 == NULL)
+  {
+    hkvLog::Warning("vHavokConstraint: No entity with Havok Rigid Body Component attached!");
+    return false;
+  }
+
+  // If the user attached both anchors to the same entity just ignore the second one. In this case is a Entity-World constraint.
+  if (pHavokBody1 == pHavokBody2) 
+    pHavokBody2 = NULL;
+
   // Create the constraint data for the requested constraint type, and let
   // the subclass fill in all data required for the specific constraint type.
   m_pBaseConstraintData = CreateConstraintData();
   VASSERT(m_pBaseConstraintData);
   if (!m_pBaseConstraintData)
     return false;
+  
   InitConstraintDataFromDesc(*m_pBaseConstraintData, desc);
   m_pFinalConstraintData = m_pBaseConstraintData;
 
@@ -251,20 +269,6 @@ bool vHavokConstraint::Init(vHavokConstraintDesc &desc)
     m_pMalleableData = new hkpMalleableConstraintData(m_pFinalConstraintData);
     m_pMalleableData->setStrength(desc.m_fConstraintStrength);
     m_pFinalConstraintData = m_pMalleableData;
-  }
-
-  // Make sure that at least one rigid body is given. If two are given, the constraint
-  // is between two entities; if only one is given, the constraint is between one
-  // entity and a fixed anchor. The managed part of the framework makes sure that in
-  // this case the entity-based anchor comes first.
-  hkpRigidBody *pHavokBody1 = desc.m_spBodies[0] ? desc.m_spBodies[0]->GetHkRigidBody() : NULL;
-  hkpRigidBody *pHavokBody2 = desc.m_spBodies[1] ? desc.m_spBodies[1]->GetHkRigidBody() : NULL;
-  VASSERT(pHavokBody1);
-  if(pHavokBody1 == pHavokBody2) pHavokBody2 = NULL;	// If the user attached both anchors to the same entity just ignore the second one. In this case is a Entity-World constraint.
-  if (!pHavokBody1)
-  {
-    hkvLog::Warning("vHavokConstraint: First entity has no Havok Rigid Body Component attached!");
-    return false;
   }
 
   // Finally, create the constraint. All type distinction is made in the 
@@ -543,7 +547,7 @@ void vHavokConstraint::SetBreakThreshold(float fThreshold)
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

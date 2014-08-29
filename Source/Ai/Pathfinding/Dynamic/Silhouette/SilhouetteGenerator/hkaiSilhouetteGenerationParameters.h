@@ -28,7 +28,7 @@ struct hkaiSilhouetteGenerationParameters
 
 	hkaiSilhouetteGenerationParameters( hkFinishLoadedObjectFlag f) : m_referenceFrame(f) {}
 
-		/// Extra expansion (for eroded nav meshes) . Must be non-negative
+		/// Extra expansion. Must be non-negative. The nav mesh's erosion radius is added to this value for silhouette calculations.
 	hkReal m_extraExpansion;
 
 		/// Bevel threshold (see docs) . Must be in range [0,1]
@@ -54,7 +54,7 @@ struct hkaiSilhouetteGenerationParameters
 //
 
 
-class hkaiSilhouetteMerger : public hkReferencedObject
+class HK_EXPORT_AI hkaiSilhouetteMerger : public hkReferencedObject
 {
 public:
 	// +version(0)
@@ -77,7 +77,7 @@ protected:
 	hkaiSilhouetteGenerationParameters m_mergeParams;
 };
 
-class hkaiSimpleSilhouetteMerger : public hkaiSilhouetteMerger 
+class HK_EXPORT_AI hkaiSimpleSilhouetteMerger : public hkaiSilhouetteMerger 
 {
 	// +version(0)
 public:
@@ -89,7 +89,7 @@ public:
 	hkaiSimpleSilhouetteMerger( hkFinishLoadedObjectFlag f): hkaiSilhouetteMerger(f) {}
 };
 
-class hkaiConvexHullSilhouetteMerger : public hkaiSilhouetteMerger 
+class HK_EXPORT_AI hkaiConvexHullSilhouetteMerger : public hkaiSilhouetteMerger 
 {
 	// +version(0)
 public:
@@ -105,7 +105,7 @@ public:
 #endif // HK_SILHOUETTE_GENERATOR_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

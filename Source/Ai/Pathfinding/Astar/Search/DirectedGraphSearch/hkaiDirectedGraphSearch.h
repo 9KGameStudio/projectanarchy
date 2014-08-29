@@ -57,7 +57,7 @@ struct hkaiDirectedGraphSearch
 		/// Initialize the search
 	void init(Graph* graph, const hkaiStreamingCollection::InstanceInfo* clusterGraphInfo, const StartGoalInfo& goalInfo);
 
-	inline hkReal getCost(int nid)
+	inline hkReal getCost(hkaiPackedKey nid)
 	{
 		m_state.nextNode( nid );
 		return m_state.getCost(nid);
@@ -95,7 +95,7 @@ public:
 #endif // HK_AI_GRAPH_HIERARCHICAL_SEARCH_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -19,6 +19,8 @@ VAppWin::VAppWin(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, 
 
   VFileHelper::GetCurrentWorkingDir(szBuffer, FS_MAX_PATH);
   m_sInitialWorkingDirectory = szBuffer;
+
+  RetrieveCommandLine();
 }
 
 VAppWin::~VAppWin()
@@ -105,7 +107,7 @@ void VAppWin::SetupPlatformRootFileSystem()
     return;
   }
 
-  szApplicationDir = VPathHelper::CombineDirAndDir(szApplicationDir.AsChar(), "../../../../");
+  szApplicationDir = VPathHelper::CombineDirAndDir(szApplicationDir.AsChar(), m_appConfig.m_sFileSystemRootPathRelative);  
 
   const VString& sRoot = m_appConfig.m_sFileSystemRootName;
   if(VFileServeDaemon::IsInitialized())
@@ -137,6 +139,19 @@ VString VAppWin::GetPlatformCacheDirectory()
 {
   return GetPlatformStorageDirectory();
 }
+
+unsigned int VAppWin::GetNumCommandLineArguments() const
+{
+  return m_commandLineArguments.GetLength();
+}
+
+const char* VAppWin::GetCommandLineArgument(unsigned int index) const
+{
+  return (index < (unsigned int)m_commandLineArguments.GetLength())
+    ? m_commandLineArguments.GetString(index)
+    : NULL;
+}
+
 
 VAppHelper::VPlatformThreadingModel VAppWin::GetThreadingModel()
 {
@@ -181,6 +196,7 @@ bool VAppWin::CheckFullscreenResolution(int iAdapter, int desiredX, int desiredY
     {
       *selectedX = desiredX;
       *selectedY = desiredY;
+      V_SAFE_DELETE_ARRAY(arrayModes);
       return true;
     }
 
@@ -202,8 +218,28 @@ bool VAppWin::CheckFullscreenResolution(int iAdapter, int desiredX, int desiredY
   return false;
 }
 
+void VAppWin::RetrieveCommandLine()
+{
+  m_commandLineArguments.Reset();
+
+  int argc;
+  LPWSTR* argv = CommandLineToArgvW(GetCommandLineW(), &argc);
+
+  VMemoryTempBuffer<1024> tempBuffer;
+
+  // skip the first argument since it contains the executable
+  for (int i = 1; i < argc; ++i)
+  {
+    char* argUtf8 = NULL;
+    V_WCHAR_TO_UTF8_TEMPBUFFER(argv[i], argUtf8, tempBuffer);
+    m_commandLineArguments.AddString(argUtf8);
+  }
+
+  LocalFree(argv);
+}
+
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140723)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -9,7 +9,7 @@
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/VisionEnginePluginPCH.h>         // precompiled header
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Entities/PathCameraEntity.hpp>
 #include <Vision/Runtime/Base/ThirdParty/tinyXML/TinyXMLHelper.hpp>
-#include <Vision/Runtime/Base/System/Memory/VMemDbg.hpp>
+
 #include <Vision/Runtime/Engine/SceneElements/VisApiPath.hpp>
 
 VisCallback_cl PathCameraAction::OnTriggerEvent;
@@ -43,7 +43,10 @@ void PathParameter::EvaluatePosition(hkvVec3& vPos, hkvMat3 *pCamRot)
   if (pCamRot)
   {
     hkvVec3 vDirection(hkvNoInitialization), vRight(hkvNoInitialization);
-    m_pPath->EvalPointSmooth(m_fCurrentParam, vPos,&vDirection);
+    if (m_bConstantSpeed)
+      m_pPath->EvalPointSmooth(m_fCurrentParam, vPos,&vDirection);
+    else
+      m_pPath->EvalPoint(m_fCurrentParam, vPos,&vDirection);
     if (!vDirection.isZero ())
     {
       vDirection.normalizeIfNotZero(); // needed for next operation
@@ -55,7 +58,10 @@ void PathParameter::EvaluatePosition(hkvVec3& vPos, hkvMat3 *pCamRot)
       {
         float fPathStep = 0.1f / m_fTime; // Speed, basically
         hkvVec3 vNextDirection(hkvNoInitialization);
-        m_pPath->EvalPointSmooth(hkvMath::mod (m_fCurrentParam+fPathStep,1.0f), (hkvVec3&) vPos,&vNextDirection);
+        if (m_bConstantSpeed)
+          m_pPath->EvalPointSmooth(hkvMath::mod (m_fCurrentParam+fPathStep,1.0f), (hkvVec3&) vPos,&vNextDirection);
+        else
+          m_pPath->EvalPoint(hkvMath::mod (m_fCurrentParam+fPathStep,1.0f), (hkvVec3&) vPos,&vNextDirection);
         vNextDirection.normalizeIfNotZero();
         vUp += (vNextDirection - vDirection) * m_fRolliness;
         vRight = vUp.cross(vDirection);
@@ -78,20 +84,25 @@ void PathParameter::EvaluatePosition(hkvVec3& vPos, hkvMat3 *pCamRot)
   }
   else
   {
-    m_pPath->EvalPointSmooth(m_fCurrentParam, (hkvVec3&) vPos,NULL,NULL);
+    if (m_bConstantSpeed)
+      m_pPath->EvalPointSmooth(m_fCurrentParam, (hkvVec3&) vPos,NULL,NULL);
+    else
+      m_pPath->EvalPoint(m_fCurrentParam, (hkvVec3&) vPos,NULL,NULL);
   }
 }
 
-void PathParameter::FromXMLNode(TiXmlElement *pNode)
+void PathParameter::FromXMLNode(TiXmlElement *pNode, bool bDefaultConstantSpeed)
 {
   Clear();
   if (!pNode)
     return;
 
+  m_bConstantSpeed = bDefaultConstantSpeed;
   XMLHelper::Exchange_Float(pNode,"start",m_fMinParam,false);
   XMLHelper::Exchange_Float(pNode,"end",m_fMaxParam,false);
   XMLHelper::Exchange_Float(pNode,"time",m_fTime,false);
   XMLHelper::Exchange_Float(pNode,"rolliness",m_fRolliness,false);
+  XMLHelper::Exchange_Bool(pNode,"constantspeed",m_bConstantSpeed,false);
   
   m_fTimeScale = 1.f/m_fTime;
   m_fStartParam = m_fMinParam;
@@ -113,12 +124,13 @@ PathCameraAction::~PathCameraAction()
   V_SAFE_DELETE_ARRAY(m_pEventNode);
 }
 
-void PathCameraAction::FromXMLNode(TiXmlElement *pNode)
+void PathCameraAction::FromXMLNode(TiXmlElement *pNode, bool bDefaultConstantSpeed)
 {
   if (!pNode)
     return;
-  m_PositionPath.FromXMLNode(XMLHelper::SubNode(pNode,"positionpath",false));
-  m_LookatPath.FromXMLNode(XMLHelper::SubNode(pNode,"lookatpath",false));
+  XMLHelper::Exchange_Bool(pNode,"constantspeed",bDefaultConstantSpeed,false); // overridden?
+  m_PositionPath.FromXMLNode(XMLHelper::SubNode(pNode,"positionpath",false), bDefaultConstantSpeed);
+  m_LookatPath.FromXMLNode(XMLHelper::SubNode(pNode,"lookatpath",false), bDefaultConstantSpeed);
   XMLHelper::Exchange_Float(pNode,"fadeintime",m_fFadeInTime,false);
   XMLHelper::Exchange_Float(pNode,"fadeouttime",m_fFadeOutTime,false);
 
@@ -245,11 +257,16 @@ void PathCameraEntity::TickFunction(float dtime)
   PathCameraAction &action = m_pActions[m_iCurrentAction];
   action.Handle(this, dtime);
   float fBlendWeight = action.GetBlendWeight();
-  if (fBlendWeight<1.f)
+  if (fBlendWeight < 1.0f)
   {
-    int its = (int)(fBlendWeight*255.99f);
-    m_spFadeMask->SetColor(VColorRef(its,its,its,255-its));
+    int its = (int)(fBlendWeight * 255.99f);
+    m_spFadeMask->SetColor(VColorRef(its, its, its, 255-its));
     m_spFadeMask->SetVisible(true);
+
+    // Re-set target size every frame to account for screen resolution changes.
+    m_spFadeMask->SetTargetSize(
+      static_cast<float>(Vision::Video.GetXRes()), 
+      static_cast<float>(Vision::Video.GetYRes()));
   } 
   else
   {
@@ -318,12 +335,14 @@ bool PathCameraEntity::LoadScriptFile(const char *szFilename)
 
   // base properties
   float fDefaultFOV = -1.f;
+  bool bDefaultConstantSpeed = true;
   TiXmlElement *pProperties = XMLHelper::SubNode(doc.RootElement(),"properties",false);
   if (pProperties)
   {
     XMLHelper::Exchange_Bool(pProperties,"looped",m_bPlayLooped,false);
     XMLHelper::Exchange_Bool(pProperties,"paused",m_bPaused,false);
     XMLHelper::Exchange_Float(pProperties,"fov",fDefaultFOV,false);
+    XMLHelper::Exchange_Bool(pProperties,"constantspeed",bDefaultConstantSpeed,false);
   }
 
   const char *szActionNode = "cameraaction";
@@ -342,7 +361,7 @@ bool PathCameraEntity::LoadScriptFile(const char *szFilename)
   for (TiXmlElement *pNode=doc.RootElement()->FirstChildElement(szActionNode); pNode; pNode=pNode->NextSiblingElement(szActionNode),i++ )
   {
     PathCameraAction &action = m_pActions[i];
-    action.FromXMLNode(pNode);
+    action.FromXMLNode(pNode, bDefaultConstantSpeed);
     if (action.m_fDefaultFOV<0.f && fDefaultFOV>0.f)
       action.m_fDefaultFOV = fDefaultFOV;
     if (action.IsValid()) // only count valid actions
@@ -391,12 +410,11 @@ bool PathCameraEntity::Start()
   if (!m_spFadeMask)
   {
     m_spFadeMask = new VisScreenMask_cl("plainwhite.dds");
-    m_spFadeMask->SetTargetSize((float)Vision::Video.GetXRes(),(float)Vision::Video.GetYRes());
     m_spFadeMask->SetPos(0,0);
     m_spFadeMask->SetDepthWrite(FALSE);
     m_spFadeMask->SetTransparency(VIS_TRANSP_MULTIPLICATIVE);
     m_spFadeMask->SetVisible(FALSE);
-    m_spFadeMask->SetUserData(m_spFadeMask); // render in main scene [HACK]
+    m_spFadeMask->SetUserData(m_spFadeMask); // render in main scene
   }
 
   for (int i = 0; i < m_iActionCount; i++)
@@ -462,7 +480,7 @@ START_VAR_TABLE(PathCameraEntity, VisBaseEntity_cl, "PathCameraEntity", VFORGE_H
 END_VAR_TABLE
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140627)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

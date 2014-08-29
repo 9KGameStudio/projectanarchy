@@ -280,7 +280,7 @@ public:
   inline void SetTransparency(VIS_TransparencyType transp)
   {
     m_iRenderState.SetTransparency(transp);
-    if (transp==VIS_TRANSP_COLORKEY)
+    if (transp == VIS_TRANSP_ALPHATEST)
       m_iRenderState.SetFlag(RENDERSTATEFLAG_ALPHATEST);
     else
       m_iRenderState.RemoveFlag(RENDERSTATEFLAG_ALPHATEST);
@@ -1068,7 +1068,6 @@ private:
   VColorRef m_iColor;           ///< modulation color (usually 255,255,255 = white)
   char  colordepth;             ///< color depth (8 or 24)
   char  wrapU, wrapV;           ///< wrapping for texture
-  char  useS3TC;                ///< use texture compression (if available!)
   char  filtering;              ///< flag for bil.filtering
   char  masktype;               ///< constant: file/memory/frontbuffer frontbuffer mask
   char  bUseTexelShift;         ///< at initialisation, copy from global settings
@@ -1099,7 +1098,7 @@ VISION_ELEMENTMANAGER_TEMPLATE_DECL(VisScreenMask_cl)
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -29,26 +29,6 @@ public:
     /* [annotation] */ 
     __out_opt  ID3D11Texture1D **ppTexture1D) HKV_NR_UNIMPLEMENTED
 
-    virtual HRESULT STDMETHODCALLTYPE CreateHullShader( 
-    /* [annotation] */ 
-    __in  const void *pShaderBytecode,
-    /* [annotation] */ 
-    __in  SIZE_T BytecodeLength,
-    /* [annotation] */ 
-    __in_opt  ID3D11ClassLinkage *pClassLinkage,
-    /* [annotation] */ 
-    __out_opt  ID3D11HullShader **ppHullShader) HKV_NR_UNIMPLEMENTED
-
-    virtual HRESULT STDMETHODCALLTYPE CreateDomainShader( 
-    /* [annotation] */ 
-    __in  const void *pShaderBytecode,
-    /* [annotation] */ 
-    __in  SIZE_T BytecodeLength,
-    /* [annotation] */ 
-    __in_opt  ID3D11ClassLinkage *pClassLinkage,
-    /* [annotation] */ 
-    __out_opt  ID3D11DomainShader **ppDomainShader) HKV_NR_UNIMPLEMENTED
-
     virtual HRESULT STDMETHODCALLTYPE CreateClassLinkage( 
     /* [annotation] */ 
     __out  ID3D11ClassLinkage **ppLinkage) HKV_NR_UNIMPLEMENTED
@@ -164,11 +144,13 @@ public:
   virtual HRESULT STDMETHODCALLTYPE CreateTexture3D(const D3D11_TEXTURE3D_DESC *pDesc, const D3D11_SUBRESOURCE_DATA *pInitialData, ID3D11Texture3D **ppTexture3D) HKV_OVERRIDE;
   virtual HRESULT STDMETHODCALLTYPE CreateUnorderedAccessView(ID3D11Resource *pResource, const D3D11_UNORDERED_ACCESS_VIEW_DESC *pDesc, ID3D11UnorderedAccessView **ppUAView) HKV_OVERRIDE;
   virtual HRESULT STDMETHODCALLTYPE CreateVertexShader(const void *pShaderBytecode, SIZE_T BytecodeLength, ID3D11ClassLinkage *pClassLinkage, ID3D11VertexShader **ppVertexShader) HKV_OVERRIDE;
+  virtual HRESULT STDMETHODCALLTYPE CreateHullShader(const void *pShaderBytecode, SIZE_T BytecodeLength, ID3D11ClassLinkage *pClassLinkage, ID3D11HullShader **ppHullShader) HKV_OVERRIDE;
+  virtual HRESULT STDMETHODCALLTYPE CreateDomainShader(const void *pShaderBytecode, SIZE_T BytecodeLength, ID3D11ClassLinkage *pClassLinkage, ID3D11DomainShader **ppDomainShader) HKV_OVERRIDE;
   virtual D3D_FEATURE_LEVEL STDMETHODCALLTYPE GetFeatureLevel() HKV_OVERRIDE;
 };
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

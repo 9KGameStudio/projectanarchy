@@ -79,7 +79,7 @@ inline void hkaiDirectedGraphVisitor::setGoals( const hkaiPackedKey* goalKeys, c
 
 #define HKAI_NULL_GRAPH_MSG "Null graph at section index " << sectionId << ". Make sure to specify the graph in e.g. hkaiWorld::loadNavMeshInstance, or disable hierarchical A*."
 
-inline void hkaiDirectedGraphVisitor::setIncomingAccessor( int sectionId )
+inline void hkaiDirectedGraphVisitor::setIncomingAccessor( hkaiRuntimeIndex sectionId )
 {
 	if ( HK_VERY_UNLIKELY(m_cachedIncomingSectionId != sectionId) )
 	{
@@ -92,7 +92,7 @@ inline void hkaiDirectedGraphVisitor::setIncomingAccessor( int sectionId )
 	}
 }
 
-inline void hkaiDirectedGraphVisitor::setOutgoingAccessor( int sectionId )
+inline void hkaiDirectedGraphVisitor::setOutgoingAccessor( hkaiRuntimeIndex sectionId )
 {
 	if ( HK_VERY_UNLIKELY(m_cachedOutgoingSectionId != sectionId) )
 	{
@@ -105,7 +105,7 @@ inline void hkaiDirectedGraphVisitor::setOutgoingAccessor( int sectionId )
 	}
 }
 
-inline void hkaiDirectedGraphVisitor::setGeneralAccessor( int sectionId )
+inline void hkaiDirectedGraphVisitor::setGeneralAccessor( hkaiRuntimeIndex sectionId )
 {
 	if ( HK_VERY_UNLIKELY(m_cachedGeneralSectionId != sectionId) )
 	{
@@ -120,21 +120,21 @@ inline void hkaiDirectedGraphVisitor::setGeneralAccessor( int sectionId )
 }
 
 
-inline hkBool32 hkaiDirectedGraphVisitor::isGoal( SearchIndex nit ) const
+inline hkBool32 hkaiDirectedGraphVisitor::isGoal( hkaiPackedKey nit ) const
 {
 	
 	return false;
 }
 
 // Get an upper bound on the number of nodes adjacent to a given node.
-int hkaiDirectedGraphVisitor::getMaxNeighborCount( SearchIndex nit ) const
+int hkaiDirectedGraphVisitor::getMaxNeighborCount( hkaiPackedKey nit ) const
 {
 	HK_ASSERT(0x43af1466, nit == m_cachedNodeKey);
 	HK_ON_SPU( hkSpuDmaManager::waitForDmaCompletion(EDGE_DMA_GROUP); )
 	return m_cachedNode.m_numEdges + m_cachedInstanceNode.m_numEdges;
 }
 
-void hkaiDirectedGraphVisitor::getNeighbors( SearchIndex nit, hkArrayBase< EdgeKey >& neighbors ) const
+void hkaiDirectedGraphVisitor::getNeighbors( hkaiPackedKey nit, hkArrayBase< EdgeKey >& neighbors ) const
 {
 	HK_ASSERT(0x43af1466, nit == m_cachedNodeKey);
 
@@ -167,7 +167,7 @@ void hkaiDirectedGraphVisitor::getNeighbors( SearchIndex nit, hkArrayBase< EdgeK
 	}
 }
 
-inline hkaiDirectedGraphVisitor::SearchIndex hkaiDirectedGraphVisitor::edgeTarget( SearchIndex nit, EdgeKey edgeIndex ) const
+inline hkaiPackedKey hkaiDirectedGraphVisitor::edgeTarget( hkaiPackedKey nit, EdgeKey edgeIndex ) const
 {
 	//HK_ASSERT(0x1ab9fd3b, eit - m_cachedNode.m_startEdgeIndex >= 0);
 	//HK_ASSERT(0xb2326f3, eit - m_cachedNode.m_startEdgeIndex < MAX_VERTEX_DEGREE + 2);
@@ -176,7 +176,7 @@ inline hkaiDirectedGraphVisitor::SearchIndex hkaiDirectedGraphVisitor::edgeTarge
 	return m_currentEdge->getOppositeNodeKeyUnchecked();
 }
 
-inline hkaiDirectedGraphVisitor::EdgeCost hkaiDirectedGraphVisitor::getTotalCost(SearchIndex nit, SearchIndex adj, EdgeKey edgeIndex, const EdgeCost costToParent_float) const
+inline hkaiDirectedGraphVisitor::EdgeCost hkaiDirectedGraphVisitor::getTotalCost(hkaiPackedKey nit, hkaiPackedKey adj, EdgeKey edgeIndex, const EdgeCost costToParent_float) const
 {
 	//HK_ASSERT(0x2665283f, eit - m_cachedNode.m_startEdgeIndex >= 0);
 	//HK_ASSERT(0x59a664b2, eit - m_cachedNode.m_startEdgeIndex < MAX_VERTEX_DEGREE + 2);
@@ -238,7 +238,7 @@ inline hkBool32 hkaiDirectedGraphVisitor::isValidEdgeTarget( hkaiPackedKey adj )
 
 // Edges with negative costs aren't traversable
 // During streaming, we negate the edge cost for edges into sections that haven't been loaded let
-inline hkBool32 hkaiDirectedGraphVisitor::isEdgeTraversable(SearchIndex curNodeKey, SearchIndex adjNodeKey, EdgeKey curEdgeIndex) const
+inline hkBool32 hkaiDirectedGraphVisitor::isEdgeTraversable(hkaiPackedKey curNodeKey, hkaiPackedKey adjNodeKey, EdgeKey curEdgeIndex) const
 {
 	//HK_ASSERT(0x2665283f, eit - m_cachedNode.m_startEdgeIndex >= 0);
 	//HK_ASSERT(0x59a664b2, eit - m_cachedNode.m_startEdgeIndex < MAX_VERTEX_DEGREE + 2);
@@ -269,14 +269,14 @@ inline hkBool32 hkaiDirectedGraphVisitor::isEdgeTraversable(SearchIndex curNodeK
 }
 
 
-inline void hkaiDirectedGraphVisitor::getCurrentPosition( SearchIndex a, hkVector4& v ) const
+inline void hkaiDirectedGraphVisitor::getCurrentPosition( hkaiPackedKey a, hkVector4& v ) const
 {
 	HK_ASSERT(0x27c345f7, m_cachedIncomingSectionId == hkaiGetRuntimeIdFromPacked(a) );
 	NodeIndex nodeIdx = hkaiGetIndexFromPacked( a );
 	getIncomingAccessor()->getPosition(nodeIdx, v);
 }
 
-inline void hkaiDirectedGraphVisitor::getPositionForHeuristic( SearchIndex a, hkVector4& v ) const
+inline void hkaiDirectedGraphVisitor::getPositionForHeuristic( hkaiPackedKey a, hkVector4& v ) const
 {
 	HK_ASSERT(0x27c345f7, m_cachedOutgoingSectionId == hkaiGetRuntimeIdFromPacked(a) );
 	NodeIndex nodeIdx = hkaiGetIndexFromPacked( a );
@@ -328,7 +328,7 @@ static void _copyEdges( hkaiDirectedGraphExplicitCost::Edge* edgeLocalDst, const
 //
 // Listener interface
 //
-inline void hkaiDirectedGraphVisitor::nextNode(SearchIndex nid, hkBool32 updateSearchState)
+inline void hkaiDirectedGraphVisitor::nextNode(hkaiPackedKey nid, hkBool32 updateSearchState)
 {
 	m_cachedNodeKey = nid;
 
@@ -411,7 +411,7 @@ inline void hkaiDirectedGraphVisitor::nextNode(SearchIndex nid, hkBool32 updateS
 	}
 }
 
-inline void hkaiDirectedGraphVisitor::nextEdge(SearchIndex nid, EdgeKey ekey, hkBool32 updateSearchState) 
+inline void hkaiDirectedGraphVisitor::nextEdge(hkaiPackedKey nid, EdgeKey ekey, hkBool32 updateSearchState) 
 {
 	m_currentEdge = m_currentEdge + 1;
 
@@ -454,7 +454,7 @@ inline void hkaiDirectedGraphVisitor::nodeClosed(SearchIndex) const {}
 //
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

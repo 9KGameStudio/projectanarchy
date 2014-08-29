@@ -9,7 +9,7 @@
 #ifndef HKBASE_HKOPTIONPARSER_H
 #define HKBASE_HKOPTIONPARSER_H
 
-class hkOptionParser
+class HK_EXPORT_COMMON hkOptionParser
 {
 public:
 
@@ -36,7 +36,7 @@ public:
 	{
 		PARSE_SUCCESS,
 		PARSE_FAILURE,
-		PARSE_HELP		/// help was sought (using the help option)
+		PARSE_HELP		// help was sought (using the help option)
 	};
 
 	union OptionValue
@@ -105,7 +105,7 @@ private:
 #endif // HKBASE_HKOPTIONPARSER_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

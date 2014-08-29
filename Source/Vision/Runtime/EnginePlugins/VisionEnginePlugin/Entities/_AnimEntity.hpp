@@ -35,12 +35,13 @@ public:
   HKV_DEPRECATED EFFECTS_IMPEXP virtual void InitFunction() HKV_OVERRIDE;
   HKV_DEPRECATED EFFECTS_IMPEXP virtual void ThinkFunction() HKV_OVERRIDE;
   HKV_DEPRECATED EFFECTS_IMPEXP virtual void MessageFunction( int iID, INT_PTR iParamA, INT_PTR iParamB ) HKV_OVERRIDE;
+  HKV_DEPRECATED EFFECTS_IMPEXP virtual void OnVariableValueChanged(VisVariable_cl *pVar, const char * value) HKV_OVERRIDE;
 
   HKV_DEPRECATED EFFECTS_IMPEXP bool StartAnimation(const char *szAnimName);
 
   HKV_DEPRECATED EFFECTS_IMPEXP virtual void OnHandleCallback(IVisCallbackDataObject_cl *pData) HKV_OVERRIDE;
 
-#ifdef WIN32
+#ifdef _VISION_WIN32
 
   HKV_DEPRECATED EFFECTS_IMPEXP virtual void GetVariableAttributes(VisVariable_cl *pVariable, VVariableAttributeInfo &destInfo) HKV_OVERRIDE;
 
@@ -49,6 +50,8 @@ public:
   // entity parameter
   char AnimationName[128];
   char PathKey[128];
+  float PlaybackSpeed;
+  float PlaybackOffset;
   float PathTime;
   VisPath_cl *m_pFollowPath; // no smart pointer here as de-referencing it would delete the path
   float m_fPathPos;
@@ -59,24 +62,6 @@ public:
   EFFECTS_IMPEXP virtual void Serialize( VArchive &ar ) HKV_OVERRIDE;
 
   IMPLEMENT_OBJ_CLASS(AnimEntity_cl)
-};
-
-#endif // _VISION_DOC
-
-// class StaticCollisionEntity_cl is deprecated - should not be used anymore
-#ifndef _VISION_DOC
-
-class StaticCollisionEntity_cl : public VisBaseEntity_cl
-{
-public:
-  EFFECTS_IMPEXP void CommonInit();
-
-  EFFECTS_IMPEXP virtual void InitFunction() HKV_OVERRIDE {CommonInit();}
-  //serialization
-  V_DECLARE_SERIAL_DLLEXP( StaticCollisionEntity_cl,  EFFECTS_IMPEXP );
-  EFFECTS_IMPEXP virtual void Serialize( VArchive &ar ) HKV_OVERRIDE;
-
-  IMPLEMENT_OBJ_CLASS(StaticCollisionEntity_cl)
 };
 
 #endif // _VISION_DOC
@@ -135,7 +120,7 @@ private:
 
   /// \brief
   ///   Static helper function to start the animation of an entity.
-  static bool StartAnimation(VisBaseEntity_cl* pEntity, const char* szAnimName);
+  static bool StartAnimation(VisBaseEntity_cl* pEntity, const char* szAnimName, float fSpeed=1.0f, float fOffset=0.0f);
 };
 
 
@@ -200,7 +185,7 @@ protected:
 #endif // _ANIMENTITY_HPP_INCLUDED
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -19,25 +19,31 @@ class hkbGeneratorOutput;
 class hkbRagdollModifierUtils
 {
 	public:
-		static void HK_CALL poweredRagdollControlsModifierModify(	const hkbPoweredRagdollControlsModifier& mod,
-																	hkbGeneratorOutput& inOut );
 
-		static void HK_CALL rigidBodyRagdollControlsModifierModify(	const hkbRigidBodyRagdollControlsModifier& mod,
-																	hkbGeneratorOutput& inOut );
+		static void HK_CALL poweredRagdollControlsModifierModify(
+			const hkbPoweredRagdollControlsModifier& mod,
+			hkbGeneratorOutput& inOut );
 
-		static void HK_CALL keyframeBonesModifierModify(	const hkbKeyframeBonesModifier& mod,
-															hkbGeneratorOutput& inOut );
+		static void HK_CALL rigidBodyRagdollControlsModifierModify(
+			const hkbRigidBodyRagdollControlsModifier& mod,
+			hkbGeneratorOutput& inOut );
+
+		static void HK_CALL keyframeBonesModifierModify(
+			const hkbKeyframeBonesModifier& mod,
+			hkbGeneratorOutput& inOut );
 
 	private:
-		static void HK_CALL setRealTrackData(	hkbGeneratorOutput& inOut,
-												hkbGeneratorOutput::StandardTracks track,
-												hkReal trackData );
+
+		static void HK_CALL setRealTrackData(
+			hkbGeneratorOutput& inOut,
+			int trackId,
+			hkReal trackData );
 };
 
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

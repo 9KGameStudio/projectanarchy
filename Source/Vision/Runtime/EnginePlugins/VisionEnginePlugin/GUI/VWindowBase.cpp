@@ -8,7 +8,7 @@
 
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/VisionEnginePluginPCH.h>         // precompiled header
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/GUI/VMenuIncludes.hpp>
-#include <Vision/Runtime/Base/System/Memory/VMemDbg.hpp>
+
 
   
 VWindowBase::VWindowBase()
@@ -22,10 +22,17 @@ VWindowBase::VWindowBase()
   m_iID = VGUIManager::ID_STATIC;
   m_iDialogResult = 0;
   m_ClientAreaBorder.Set(0,0,0,0);
+  m_vPosition.setZero();
 }
 
 VWindowBase::~VWindowBase()
 {
+}
+
+
+void VWindowBase::DisposeObject()
+{
+  VisTypedEngineObject_cl::DisposeObject();
 }
 
 
@@ -312,7 +319,7 @@ void VWindowBase::OnMouseLeave(VGUIUserInfo_t &user)
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

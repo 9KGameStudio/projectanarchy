@@ -17,7 +17,7 @@
 #include <Common/Base/Reflection/hkTypeInfo.h>
 
 /// Registry of vtables to hkClass instances.
-class hkVtableClassRegistry : public hkReferencedObject, public hkSingleton<hkVtableClassRegistry>
+class HK_EXPORT_COMMON hkVtableClassRegistry : public hkReferencedObject, public hkSingleton<hkVtableClassRegistry>
 {
 	public:
 		HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE);
@@ -86,7 +86,7 @@ HK_SINGLETON_SPECIALIZATION_DECL(hkVtableClassRegistry);
 #endif // HK_VTABLE_CLASS_REGISTRY_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -45,8 +45,27 @@ public:
     CONTROL_TAP_X,
     CONTROL_TAP_Y,
 
-    CONTROL_LAST_ELEMENT = CONTROL_VERTICAL_LOOK
+    CONTROL_LAST_ELEMENT = CONTROL_TAP_Y
   };
+
+  /// \brief
+  ///   Static factory method to create a free camera entity which optionally uses the position and
+  ///   orientation from a given entity, e.g. a camera position shape.
+  /// 
+  /// \param szCameraRefObjectKey
+  ///   Entity object key of the entity that defines the initial camera position and rotation.
+  ///
+  /// \param fMoveSpeed
+  ///   Camera move speed. A value less than 0 uses default value.
+  ///
+  /// \return
+  ///   Pointer to the created camera entity
+  /// 
+  /// \example
+  ///   \code
+  ///     VFreeCamera::Create("CameraPosition", 10.0f);
+  ///   \endcode
+  EFFECTS_IMPEXP static VFreeCamera* Create(const char* szCameraRefObjectKey = NULL, float fMoveSpeed = -1.0f);
 
   EFFECTS_IMPEXP VFreeCamera();
   EFFECTS_IMPEXP virtual ~VFreeCamera();
@@ -63,9 +82,9 @@ public:
   inline void SetSensititvity(const float fSensitivity) { m_fSensitivity = hkvMath::Max(0.0f, fSensitivity); }
 
   inline float GetMoveSpeed() const { return m_fMoveSpeed; }
-  inline void SetMoveSpeed(const float fMoveSpeed) { m_fMoveSpeed = hkvMath::Max(0.0f, fMoveSpeed); }
+  EFFECTS_IMPEXP void SetMoveSpeed(const float fMoveSpeed);
 
-  EFFECTS_IMPEXP VInputMap* GetInputMap();
+  inline VInputMap* GetInputMap() { return m_pInputMap; }
 
   EFFECTS_IMPEXP virtual void Serialize(VArchive& ar) HKV_OVERRIDE;
   EFFECTS_IMPEXP virtual void OnHandleCallback(IVisCallbackDataObject_cl *pData) HKV_OVERRIDE;
@@ -83,6 +102,7 @@ public:
   {
     return m_pVirtualThumbStick;
   }
+
 #endif
 
 protected:
@@ -100,8 +120,22 @@ protected:
 
   EFFECTS_IMPEXP virtual void OnThinkFunctionStatusChanged() HKV_OVERRIDE;
 
+  EFFECTS_IMPEXP virtual void OnVariableValueChanged(VisVariable_cl* pVar, const char* value) HKV_OVERRIDE;
+
+  EFFECTS_IMPEXP virtual void ModSysAddChild(VisModuleSystemChild_cl *child) HKV_OVERRIDE;
+  EFFECTS_IMPEXP virtual void ModSysRemoveChild(VisModuleSystemChild_cl *child, BOOL deleteChild) HKV_OVERRIDE;
+
+  /// \brief
+  ///   This function gets called whenever the active state of the free camera changes.
+  virtual void OnActiveStateChanged(bool bActive) {}
+
 private:
+  void UpdateActiveState();
   void ClearWASDAlternativeIndices();
+
+#if defined(SUPPORTS_MULTITOUCH)
+  void UpdateVirtualThumbstickVisibility();
+#endif
 
   // Private Variables
   float m_fSensitivity;  ///< Look sensitivity
@@ -109,6 +143,8 @@ private:
 
   bool m_bWASDEnabled;
   int m_iWASDAlternativeIndices[6];
+
+  bool m_bActive;
 
   VInputMap* m_pInputMap;
 
@@ -138,7 +174,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140726)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

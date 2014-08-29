@@ -12,14 +12,14 @@
 #include <Ai/Pathfinding/hkaiBaseTypes.h>
 #include <Ai/Pathfinding/NavMesh/Streaming/hkaiStreamingSet.h>
 
-extern const class hkClass hkaiNavVolumeClass;
-extern const class hkClass hkaiNavVolumeCellClass;
-extern const class hkClass hkaiNavVolumeEdgeClass;
+extern HK_EXPORT_AI const class hkClass hkaiNavVolumeClass;
+extern HK_EXPORT_AI const class hkClass hkaiNavVolumeCellClass;
+extern HK_EXPORT_AI const class hkClass hkaiNavVolumeEdgeClass;
 
 /// This contains the nav volume data which is used for 3D pathfinding in Havok A.I.
 /// 
 /// The nav volume represents navigable space as a set of connected axis-aligned boxes.
-class hkaiNavVolume : public hkReferencedObject
+class HK_EXPORT_AI hkaiNavVolume : public hkReferencedObject
 {
 	public:
 
@@ -31,8 +31,8 @@ class hkaiNavVolume : public hkReferencedObject
 		friend class hkaiNavVolumeGenerationUtils;
 		friend class hkaiNavVolumeUtils;
 		
-		typedef hkInt32 CellIndex;
-		typedef hkInt32 EdgeIndex;
+		typedef hkaiNavVolumeCellIndex CellIndex;
+		typedef hkaiNavVolumeEdgeIndex EdgeIndex;
 		typedef hkInt32 CellData;
 
 			/// Constant values
@@ -159,21 +159,23 @@ class hkaiNavVolume : public hkReferencedObject
 
 	public:
 		
-		/// Nav volume cells
+			/// Nav volume cells
 		hkArray<Cell>	m_cells;
-		/// Nav volume edges
+			/// Nav volume edges
 		hkArray<Edge>	m_edges;
-		/// Streaming information
+			/// Streaming information
 		hkArray<hkaiStreamingSet> m_streamingSets;
 	protected:
-		/// Bounding AABB
+			/// Bounding AABB
 		hkAabb m_aabb;
-		/// Cached scale (computed from m_aabb and m_res)
+			/// Cached scale (computed from m_aabb and m_res)
 		hkVector4 m_quantizationScale;
-		/// Cached offset (computed from m_aabb and m_res)
+			/// Cached offset (computed from m_aabb and m_res)
 		hkVector4 m_quantizationOffset;
-		/// Quantization resolution
+			/// Quantization resolution
 		int m_res[3];
+
+	public:
 
 			/// User-defined data - Havok never touches this.
 		hkUlong						m_userData; //+default(0)
@@ -188,7 +190,7 @@ class hkaiNavVolume : public hkReferencedObject
 #endif // HKAI_NAV_VOLUME_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

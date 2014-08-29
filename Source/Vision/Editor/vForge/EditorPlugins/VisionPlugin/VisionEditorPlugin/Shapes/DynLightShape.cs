@@ -171,7 +171,7 @@ namespace VisionEditorPlugin.Shapes
       /// <summary>
       /// get or set the projected texture filename
       /// </summary>
-      [PropertyOrder(5), EditorAttribute(typeof(AssetEditor), typeof(UITypeEditor)), AssetDialogFilter(new string[] { "Texture" })]
+      [PropertyOrder(5), EditorAttribute(typeof(AssetEditor), typeof(UITypeEditor)), AssetDialogFilter(new string[] { "Texture | Cubemap" })]
       [Description("Texture used for projection by the light.")]
       public string ProjectedCubemap { get { return Owner.ProjectedTexture; } set { Owner.ProjectedTexture = value; } }
     }
@@ -196,7 +196,7 @@ namespace VisionEditorPlugin.Shapes
       /// <summary>
       /// get or set the projected texture filename
       /// </summary>
-      [PropertyOrder(5), EditorAttribute(typeof(AssetEditor), typeof(UITypeEditor)), AssetDialogFilter(new string[] { "Texture" })]
+      [PropertyOrder(5), EditorAttribute(typeof(AssetEditor), typeof(UITypeEditor)), AssetDialogFilter(new string[] { "Texture | 2D" })]
       [Description("Texture used for projection by the light.")]
       public string ProjectedTexture { get { return Owner.ProjectedTexture; } set { Owner.ProjectedTexture = value; } }
     }
@@ -588,7 +588,7 @@ namespace VisionEditorPlugin.Shapes
     /// </summary>
     [Browsable(true)]
     [SortedCategory(CAT_APPEARANCE, CATORDER_APPEARANCE),
-    Description("The custom light attenuation curve\n"),
+    Description("The custom light attenuation curve. Note that the default Mobile shaders do not support custom attenuation curves.\n"),
     PropertyOrder(3)]
     public LightAttenuationCurve_e LightAttenuationCurve
     {
@@ -614,7 +614,7 @@ namespace VisionEditorPlugin.Shapes
 
     [SortedCategory(CAT_APPEARANCE, CATORDER_APPEARANCE), PropertyOrder(4)]
     [Description("The custom light attenuation curve texture (only used when LightAttenuationCurve is set to Custom)\nThe first row of the texture is used to define a gradient from white to black over the radius of the light.")]
-    [EditorAttribute(typeof(AssetEditor), typeof(UITypeEditor)), AssetDialogFilter(new string[] { "Texture" })]
+    [EditorAttribute(typeof(AssetEditor), typeof(UITypeEditor)), AssetDialogFilter(new string[] { "Texture | 2D" })]
     public string CustomAttenuationCurveTexture
     {
       get { return _sLightAttenuationTex; }
@@ -1321,7 +1321,7 @@ namespace VisionEditorPlugin.Shapes
     [PrefabResolveFilename]
     [SortedCategory(CAT_ANIMATIONS, CATORDER_ANIMATIONS),
     Description("Animation curve texture to get the color lookup used for animating the light."),
-    EditorAttribute(typeof(AssetEditor), typeof(UITypeEditor)), AssetDialogFilter(new string[] { "Texture" }),
+    EditorAttribute(typeof(AssetEditor), typeof(UITypeEditor)), AssetDialogFilter(new string[] { "Texture | 2D" }),
     PropertyOrder(1)]
     public string AnimationCurve
     {
@@ -1878,6 +1878,10 @@ namespace VisionEditorPlugin.Shapes
         this._bBakedToLightmap = false;
         bNeedsDynUpdate = true;
       }
+      if (e.action == SceneEventArgs.Action.AfterRendererNodeChanged)
+      {
+        bNeedsDynUpdate = true;
+      }
 
       if (bNeedsDynUpdate)
       {
@@ -2254,7 +2258,7 @@ namespace VisionEditorPlugin.Shapes
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

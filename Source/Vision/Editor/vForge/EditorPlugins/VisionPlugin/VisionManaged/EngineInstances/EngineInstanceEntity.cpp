@@ -187,6 +187,21 @@ namespace VisionManaged
     return false;
   }
 
+  bool EngineInstanceEntity::HasLightgridMaterials()
+  {
+    if ((GetEntity() == nullptr) || (!GetEntity()->HasMesh()))
+      return false;
+
+    const VDynamicMesh *pModel = GetEntity()->GetMesh();
+    for (int i=0; i<pModel->GetSurfaceCount(); i++)
+    {
+      if (pModel->GetSurface(i)->GetLightingMode() == VIS_LIGHTING_LIGHTGRID)
+        return true;
+    }
+
+    return false;
+  }
+
   void EngineInstanceEntity::TraceShape(Shape3D ^ownerShape, Vector3F rayStart,Vector3F rayEnd, ShapeTraceResult ^%result)
   {
     if ( GetEntity() == nullptr )
@@ -584,6 +599,44 @@ namespace VisionManaged
     pEnt->SetClipMode((fNear>0.f || fFar>0.f) ? VIS_LOD_TEST_BOUNDINGBOX :VIS_LOD_TEST_NONE);
   }
 
+  array<Vector3F>^ EngineInstanceEntity::GetVertices()
+  {
+    if (GetEntity()==nullptr || !GetEntity()->HasMesh())
+      return nullptr;
+
+    VDynamicMesh *mesh = GetEntity()->GetMesh();
+
+    int iNumVertices = mesh->GetNumOfVertices();
+
+    if(iNumVertices < 1)
+      return nullptr;
+
+    VisMBVertexDescriptor_t desc;
+    desc.m_iPosOfs = VERTEXDESC_FORMAT_FLOAT3;  // We only want the position's info
+    desc.m_iStride = sizeof(float) * 3;
+
+    // convert vertices
+    float *pVertexPosition = new float[iNumVertices*3];
+    mesh->CopyMeshVertices(pVertexPosition, desc);
+
+    array<Vector3F>^ vertices = gcnew array<Vector3F>(iNumVertices);
+
+    hkvMat4 transform = GetEntity()->GetWorldMatrix();
+
+    for(int i = 0; i < iNumVertices ; i++)
+    {
+      int iStride = i*3;
+      hkvVec4 vec4(pVertexPosition[iStride], pVertexPosition[iStride+1], pVertexPosition[iStride+2], 1);
+      vec4 = transform.transform(vec4);
+      vertices[i] = Vector3F(vec4.x, vec4.y, vec4.z);
+    }
+
+    delete[] pVertexPosition;
+
+    return vertices;
+  }
+
+
   /////////////////////////////////////////////////////////////////////////////////////////////////////
   // class EngineInstanceBoneProxy
   /////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -680,7 +733,7 @@ namespace VisionManaged
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

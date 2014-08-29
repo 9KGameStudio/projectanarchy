@@ -23,7 +23,7 @@ namespace VisionManaged
     m_iResX=m_iResY=-1;
     m_eType = RenderTargetType_e::ColorBuffer;
     m_bVisible = true;
-    m_pCameraModel = Vision::Game.CreateEntity("VisBaseEntity_cl",hkvVec3(0,0,0),"Models\\camera.model");
+    m_pCameraModel = Vision::Game.CreateEntity<VisBaseEntity_cl>(hkvVec3(0,0,0),"Models\\camera.model");
 
     //m_iContextPos = Vision::Contexts.GetFreeContextPos();
     m_pContext = new VisRenderContext_cl();
@@ -193,7 +193,7 @@ namespace VisionManaged
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

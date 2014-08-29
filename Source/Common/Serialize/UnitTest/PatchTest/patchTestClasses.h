@@ -9,12 +9,12 @@
 #ifndef HK_PATCH_TEST_CLASSES_H
 #define HK_PATCH_TEST_CLASSES_H
 
-extern const class hkClass hkTestBClass;
-extern const class hkClass hkTestAClass;
-extern const class hkClass hkTestCClass;
-extern const class hkClass hkTestPatchObjectClass;
+extern HK_EXPORT_COMMON const class hkClass hkTestBClass;
+extern HK_EXPORT_COMMON const class hkClass hkTestAClass;
+extern HK_EXPORT_COMMON const class hkClass hkTestCClass;
+extern HK_EXPORT_COMMON const class hkClass hkTestPatchObjectClass;
 
-struct hkTestC
+struct HK_EXPORT_COMMON hkTestC
 {
 	// +version(3)
 	HK_DECLARE_REFLECTION();
@@ -23,7 +23,7 @@ struct hkTestC
 	int m_userData2;
 };
 
-struct hkTestA
+struct HK_EXPORT_COMMON hkTestA
 {
 	// +version(2)
 	HK_DECLARE_REFLECTION();
@@ -31,7 +31,7 @@ struct hkTestA
 	float m_float;
 };
 
-struct hkTestB
+struct HK_EXPORT_COMMON hkTestB
 {
 	// +version(1)
 	HK_DECLARE_REFLECTION();
@@ -40,7 +40,7 @@ struct hkTestB
 	struct hkTestC* m_object;
 };
 
-struct hkTestPatchObject
+struct HK_EXPORT_COMMON hkTestPatchObject
 {
 	// +version(2)
 	HK_DECLARE_REFLECTION();
@@ -53,7 +53,7 @@ struct hkTestPatchObject
 #endif // HK_PATCH_TEST_CLASSES_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

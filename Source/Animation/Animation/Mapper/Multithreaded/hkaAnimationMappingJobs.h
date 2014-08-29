@@ -16,7 +16,7 @@
 #include <Animation/Animation/Mapper/hkaSkeletonMapper.h>
 
 
-class hkaAnimationMappingJob : public hkJob
+class HK_EXPORT_ANIMATION hkaAnimationMappingJob : public hkJob
 {
 	public:
 
@@ -38,7 +38,7 @@ class hkaAnimationMappingJob : public hkJob
 
 
 /// A job which maps poses either for ragdolls or for animation retargeting
-class hkaAnimationMapPoseJob : public hkaAnimationMappingJob
+class HK_EXPORT_ANIMATION hkaAnimationMapPoseJob : public hkaAnimationMappingJob
 {
 	public:
 
@@ -76,9 +76,8 @@ class hkaAnimationMapPoseJob : public hkaAnimationMappingJob
 		/// Only respected when doing partitions
 		hkBool m_mapToFullPose;
 
-
 		/// Used only for animation retargeting
-		hkBool m_isAdditive;
+		hkaAnimationBinding::BlendHint m_blendHint;
 
 		/// This semaphore is released when the work is finished.
 		/// Can be set to HK_NULL if you don't need to wait on a specific job
@@ -94,7 +93,7 @@ class hkaAnimationMapPoseJob : public hkaAnimationMappingJob
 #endif // HK_ANIMATION_MAPPING_JOBS_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

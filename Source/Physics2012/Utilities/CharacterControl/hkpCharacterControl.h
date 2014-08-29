@@ -51,7 +51,7 @@ struct hkpSurfaceInfo
 	hkpSurfaceInfo()
 	{
 		m_supportedState = SUPPORTED; 
-		m_surfaceNormal = hkVector4::getConstant<HK_QUADREAL_0010>();
+		m_surfaceNormal.setConstant<HK_QUADREAL_0010>();
 		m_surfaceVelocity.setZero();
 		m_surfaceDistanceExcess = hkReal(0);
 		m_surfaceIsDynamic = false;
@@ -105,7 +105,7 @@ struct hkpSurfaceInfoDeprecated
 #endif //HK_CHARACTER_CONTROLLER_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

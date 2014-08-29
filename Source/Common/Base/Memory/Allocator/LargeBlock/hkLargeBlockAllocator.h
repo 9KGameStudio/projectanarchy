@@ -39,7 +39,7 @@ class hkMemorySnapshot;
 	///       of memory between the blocks owned by this allocator appear as 'inuse', when in reality they
 	///       don't belong to this allocator.
 	///     - Allocations from the hkMemoryBlockServer are held in hkMemPages
-class hkLargeBlockAllocator : public hkMemoryAllocator, public hkMemoryAllocator::ExtendedInterface
+class HK_EXPORT_COMMON hkLargeBlockAllocator : public hkMemoryAllocator, public hkMemoryAllocator::ExtendedInterface
 {
 	//+hk.MemoryTracker(ignore=True)
 	public:
@@ -59,7 +59,11 @@ class hkLargeBlockAllocator : public hkMemoryAllocator, public hkMemoryAllocator
 			static const hk_size_t CINUSE_BIT = 2;
 			static const hk_size_t INUSE_BITS = 3;
 
+#if defined(HK_PLATFORM_PS4)
+			static const hk_size_t ALIGN = HK_DOUBLE_ALIGNMENT;
+#else
 			static const hk_size_t ALIGN = HK_REAL_ALIGNMENT;
+#endif
 			static const hk_size_t ALIGN_MASK = ALIGN-1;
 
 				/// The bytes from the MemChunk to the payload inside.
@@ -545,7 +549,7 @@ class hkLargeBlockAllocator : public hkMemoryAllocator, public hkMemoryAllocator
 #endif // HK_LARGE_BLOCK_ALLOCATOR_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

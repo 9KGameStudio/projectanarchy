@@ -10,11 +10,12 @@
 #define HKP_VEHICLE_FRICTION_H
 
 #include <Common/Base/hkBase.h>
+#include <Physics/Constraint/hkpConstraintExport.h>
 
-extern const class hkClass hkpVehicleFrictionDescriptionAxisDescriptionClass;
-extern const class hkClass hkpVehicleFrictionStatusAxisStatusClass;
-extern const hkClass hkpVehicleFrictionDescriptionClass;
-extern const hkClass hkpVehicleFrictionStatusClass;
+extern HK_EXPORT_PHYSICS const class hkClass hkpVehicleFrictionDescriptionAxisDescriptionClass;
+extern HK_EXPORT_PHYSICS const class hkClass hkpVehicleFrictionStatusAxisStatusClass;
+extern HK_EXPORT_PHYSICS const hkClass hkpVehicleFrictionDescriptionClass;
+extern HK_EXPORT_PHYSICS const hkClass hkpVehicleFrictionStatusClass;
 
 
 // This must be changed below in the carrays too
@@ -22,12 +23,12 @@ enum { HK_VEHICLE_FRICTION_N_AXIS = 2 };
 
 
 /// Info about the time for our vehicle.
-struct hkpVehicleStepInfo
+struct HK_EXPORT_PHYSICS hkpVehicleStepInfo
 {
 	public:
 		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_VEHICLE, hkpVehicleStepInfo );
-		float m_deltaTime;
-		float m_invDeltaTime;
+		hkReal m_deltaTime;
+		hkReal m_invDeltaTime;
 };
 
 
@@ -36,7 +37,7 @@ struct hkpVehicleStepInfo
 /// hkVehicleFrictionDescriptionInitValues().
 /// Please examine hkpVehicleFrictionDescription::Cinfo for details on how to setup this structure
 /// and information on its various members.
-class hkpVehicleFrictionDescription : public hkReferencedObject
+class HK_EXPORT_PHYSICS hkpVehicleFrictionDescription : public hkReferencedObject
 {
 public:
 	//+version(1)
@@ -46,7 +47,7 @@ public:
 
 	/// A helper construction info class to fill in the values for a hkpVehicleFrictionDescription.
 	/// All values should be specified in chassis local space.
-	struct Cinfo
+	struct HK_EXPORT_PHYSICS Cinfo
 	{
 		public:
 			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_VEHICLE, hkpVehicleFrictionDescription::Cinfo );
@@ -57,7 +58,6 @@ public:
 			/// Note: If in the final game the wheels change position, this internal table can become slightly incorrect.
 			/// However the effect is minimal (<1% in normal situations). If you are worried and you want to check the correctness
 			/// of this function, you can call hkVehicleFrictionDescriptionInitValues every step with the correct wheel positions.
-			/// (On PlayStation(R)2, this could be rather slow).
 		hkVector4 m_wheelPosition[2];/*HK_VEHICLE_FRICTION_N_AXIS*/
 		hkVector4 m_chassisCenterOfMass;
 		hkVector4 m_directionRight;
@@ -85,7 +85,7 @@ public:
 	enum { hkFricionEllipseLineSegments = 16 };
 
 	/// Used by the vehicle friction solver as a const description for a certain type of vehicle.
-	struct AxisDescription
+	struct HK_EXPORT_PHYSICS AxisDescription
 	{
 		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_VEHICLE, hkpVehicleFrictionDescription::AxisDescription );
 		HK_DECLARE_REFLECTION();
@@ -123,12 +123,12 @@ public:
 
 
 /// This class is used for persistent and export data of the vehicle friction solver
-struct hkpVehicleFrictionStatus
+struct HK_EXPORT_PHYSICS hkpVehicleFrictionStatus
 {
 	HK_DECLARE_REFLECTION();
 	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_CONSTRAINT, hkpVehicleFrictionStatus);
 
-	struct AxisStatus
+	struct HK_EXPORT_PHYSICS AxisStatus
 	{
 		HK_DECLARE_REFLECTION();
 		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_CONSTRAINT, AxisStatus);
@@ -196,7 +196,7 @@ struct hkpVehicleFrictionStatus
 #endif // HKP_VEHICLE_FRICTION_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

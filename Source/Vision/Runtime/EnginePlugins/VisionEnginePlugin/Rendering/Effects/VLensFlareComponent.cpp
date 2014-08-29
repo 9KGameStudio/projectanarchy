@@ -10,7 +10,7 @@
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/Effects/VLensFlareComponent.hpp>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/Effects/VLensFlareManager.hpp>
 #include <Vision/Runtime/Engine/Renderer/Texture/VisApiTextureManager.hpp> 
-#include <Vision/Runtime/Base/System/Memory/VMemDbg.hpp>
+
 
 /////////////////////////////////////////////////////////////////////////////
 // VOcclusionQueryObjectPixelCounterLensFlare: public functions
@@ -212,7 +212,7 @@ BOOL VLensFlareComponent::CanAttachToObject(VisTypedEngineObject_cl *pObject, VS
 #endif
 }
 
-#if defined(WIN32) || defined(_VISION_DOC)
+#if defined(_VISION_WIN32) || defined(_VISION_DOC)
 
 void VLensFlareComponent::GetVariableAttributes(VisVariable_cl *pVariable, VVariableAttributeInfo &destInfo)
 {
@@ -569,7 +569,7 @@ START_VAR_TABLE(VLensFlareComponent,IVObjectComponent,"Lens flare component",VVA
 END_VAR_TABLE
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

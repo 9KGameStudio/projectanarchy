@@ -24,9 +24,24 @@ class VGroupInstance;
 using namespace System::Collections;
 using namespace System::Runtime::Serialization;
 using namespace System::ComponentModel;
+using namespace CSharpFramework::PropertyEditors;
+
+#include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Terrain/Geometry/TerrainDecorationModel.hpp>
 
 namespace VisionManaged
 {
+  [Editor(EnumEditor::typeid, System::Drawing::Design::UITypeEditor::typeid)]
+  public enum class DecorationCollisionType_e
+  {
+    [Description("No collision associated with the instances")]
+    None          = VDecorationCollisionPrimitive::VDecorationCollision_None,
+    [Description("Each instance is approximated by a vertical capsule. The relative radius can be set.")]
+    Capsule       = VDecorationCollisionPrimitive::VDecorationCollision_Capsule,
+    [Description("The exact render mesh is used for collision")]
+    RenderMesh    = VDecorationCollisionPrimitive::VDecorationCollision_RenderMesh,
+    [Description("The exact render mesh is used for collision. In addition, raycasts consider alphatested materials properly")]
+    RenderMeshAlphaTest = VDecorationCollisionPrimitive::VDecorationCollision_RenderMeshAlphaTest,
+  };
 
   //public ref class DecorationInstanceShape;
 
@@ -142,16 +157,17 @@ namespace VisionManaged
     {
       m_pInstances=pData;
       m_pInstancesSortedByModel = pInstancesSortedByModel;
-      //UpdateInstances();
     }
+    void SetPerInstanceVisibility(bool bPerInstanceVisibility) {m_bPerInstanceVisibility = bPerInstanceVisibility;}
     void UpdateInstances();
+    float GetAverageModelRadius(array<ModelGroup::GroupEntry ^> ^models);
 
-    String^ BakeInstances(String ^filename);
-    String^ CreateFromBinaryFile(String ^filename, IGroupHelper ^atlas);
-    String^ UnbakeInstances(String ^filename, IGroupHelper ^creator, ShapeCollection ^instances);
+    String^ BakeInstances(Shape3D ^owner, String ^filename);
+    String^ CreateFromBinaryFile(Shape3D ^owner, String ^filename, IGroupHelper ^atlas, BoundingBox ^localBBox);
+    String^ UnbakeInstances(Shape3D ^owner, String ^filename, IGroupHelper ^creator, ShapeCollection ^instances);
     IVTerrainDecorationModel* Helper_LoadNativeModel(ModelGroup::GroupEntry ^pGroup);
-    void Helper_Assign(VTerrainDecorationInstance &dest, const VGroupInstance &src, float fExternalScale, IVTerrainDecorationModel* pModel);
-
+    void Helper_Assign(VTerrainDecorationInstance &dest, const VGroupInstance &src, float fExternalScale, IVTerrainDecorationModel* pModel, const hkvVec3& apply_ofs, const hkvMat3 &apply_rotation);
+ 
     void SetVisibleBitmask(unsigned int iMask) {m_iVisibleBitMask=iMask;UpdateVisibleStatus();}
     void SetFarClipDistance(float fDistance);
 
@@ -175,8 +191,9 @@ namespace VisionManaged
       m_bUseLightgrid = bStatus;
       UpdateLightgridColors();
     }
-    void SetCollisionCapsule(float fRadius);
+    void SetCollisionType(DecorationCollisionType_e eType, float fCapsuleRadius);
     void SetCastLightmapShadows(bool bStatus);
+    void SetCastDynamicShadows(bool bStatus);
 
     void UpdateVisibleStatus();
     void RenderCollisionCapsules();
@@ -194,15 +211,16 @@ namespace VisionManaged
     array<ArrayList ^>^ m_pInstancesSortedByModel;
 
     VTerrainDecorationGroupCollection *m_pGroups;
-    bool m_bVisible, m_bUseLightgrid, m_bUseCollisions;
+    bool m_bVisible, m_bUseLightgrid, m_bUseCollisions, m_bCastDynamicShadows, m_bPerInstanceVisibility;
     unsigned int m_iVisibleBitMask;
     unsigned int m_iAmbientColor;
     float m_fFarClip, m_fCollisionCapsuleRadius;
+    DecorationCollisionType_e m_eCollisionType;
   };
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

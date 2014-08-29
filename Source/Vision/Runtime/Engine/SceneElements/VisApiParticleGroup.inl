@@ -18,33 +18,135 @@ inline void VisParticleGroup_cl::SetParticleStride(short iStructStride, short iS
   m_iStructOfs = iStructOfs;
 }
 
-inline void VisParticleGroup_cl::SetAnimationSubdivisions(int iSubDivX,int iSubDivY)
+inline void VisParticleGroup_cl::SetAnimationSubdivisions(unsigned int iSubDivX, unsigned int iSubDivY)
 {
   m_iAnimSubDivX = iSubDivX;
   m_iAnimSubDivY = iSubDivY;
   UpdateDefaultShaderFlags();
 }
 
-inline void VisParticleGroup_cl::SetUseSmoothAnimationFading(BOOL bStatus)
+inline int VisParticleGroup_cl::GetAnimationSubdivisionsX() const
 {
-  m_bUseSmoothAnimation = bStatus==TRUE;
+  return m_iAnimSubDivX;
+}
+
+inline int VisParticleGroup_cl::GetAnimationSubdivisionsY() const
+{
+  return m_iAnimSubDivY;
+}
+
+inline void VisParticleGroup_cl::SetUseSmoothAnimationFading(bool bStatus)
+{
+  m_bUseSmoothAnimation = bStatus;
   UpdateDefaultShaderFlags();
 }
 
-inline BOOL VisParticleGroup_cl::GetUseSmoothAnimationFading() const
+inline bool VisParticleGroup_cl::GetUseSmoothAnimationFading() const
 {
   return m_bUseSmoothAnimation;
 }
 
+inline void VisParticleGroup_cl::SetDepthOffset(float fScale)
+{
+  VASSERT(fScale>-1.f && fScale<1.f);
+  m_fDepthOffset = fScale;
+}
+
+inline float VisParticleGroup_cl::GetDepthOffset() const
+{
+  return m_fDepthOffset;
+}
+
+inline void VisParticleGroup_cl::SetUseLocalSpaceMatrix(bool bStatus)
+{
+  m_bUseLocalSpaceMatrix = bStatus;
+  UpdateDefaultShaderFlags();
+}
+
+inline bool VisParticleGroup_cl::GetUseLocalSpaceMatrix() const
+{
+  return m_bUseLocalSpaceMatrix;
+}
+
+
+inline void VisParticleGroup_cl::SetRenderSoftParticles(bool bStatus)
+{
+  m_bSoftParticles = bStatus;
+  UpdateDefaultShaderFlags();
+}
+
+inline bool VisParticleGroup_cl::GetRenderSoftParticles() const
+{
+  return m_bSoftParticles;
+}
+
+inline void VisParticleGroup_cl::SetLightingStatic(bool bStatus)
+{
+  m_bLightingStatic = bStatus;
+  UpdateDefaultShaderFlags();
+}
+
+inline bool VisParticleGroup_cl::GetLightingStatic() const
+{
+  return m_bLightingStatic;
+}
+
+inline void VisParticleGroup_cl::SetLightingDynamic(bool bStatus)
+{
+  m_bLightingDynamic = bStatus;
+  UpdateDefaultShaderFlags();
+}
+
+inline bool VisParticleGroup_cl::GetLightingDynamic() const
+{
+   return m_bLightingDynamic;
+}
 
 inline void VisParticleGroup_cl::SetParticleSizeAspectRatio(float fAspectRatio)
 {
   m_fSizeAspect = fAspectRatio;
 }
 
+inline float VisParticleGroup_cl::GetParticleSizeAspectRatio() const
+{
+  return m_fSizeAspect;
+}
+
+inline void VisParticleGroup_cl::SetBacklightingScale(float fBacklightingScale)
+{
+  m_fBacklightingScale = fBacklightingScale;
+}
+
+inline float VisParticleGroup_cl::GetBacklightingScale() const
+{
+  return m_fBacklightingScale;
+}
+
 inline VisVisibilityObject_cl* VisParticleGroup_cl::GetVisibilityObject() const
 {
   return m_spVisObject;
+}
+
+inline void VisParticleGroup_cl::SetShadowReceive(bool bStatus)
+{
+  m_bShadowReceive = bStatus;
+  UpdateDefaultShaderFlags();
+}
+
+inline bool VisParticleGroup_cl::GetShadowReceive() const
+{
+  return m_bShadowReceive;
+}
+
+inline void VisParticleGroup_cl::SetUseNormalFromDiffAlpha(bool bStatus)
+{
+  m_bUseNormalFromDiffAlpha = bStatus;
+  UpdateDefaultShaderFlags();
+}
+
+inline bool VisParticleGroup_cl::GetUseNormalFromDiffAlpha() const
+{
+  return m_bUseNormalFromDiffAlpha;
 }
 
 inline void VisParticleGroup_cl::SetVisibilityObject(VisVisibilityObject_cl* pVisObj)
@@ -118,23 +220,32 @@ inline void VisParticleGroup_cl::SetAlwaysInForeGround(BOOL status)
   if (status)
   {
     m_iRenderState.SetFlag(RENDERSTATEFLAG_ALWAYSVISIBLE);
-    if (m_spVisObject) 
-      m_spVisObject->SetVisTestFlags(m_spVisObject->GetVisTestFlags() & (~VISTESTFLAGS_HARDWAREOCCLUSIONQUERY));
   }
   else
   {
     m_iRenderState.RemoveFlag(RENDERSTATEFLAG_ALWAYSVISIBLE);
-    if (m_spVisObject) 
-      m_spVisObject->SetVisTestFlags(m_spVisObject->GetVisTestFlags() | VISTESTFLAGS_HARDWAREOCCLUSIONQUERY);
   }
+
+  UpdateOcclusionCullingSettings();
 }
 
+inline void VisParticleGroup_cl::SetUseOcclusionCulling(bool bStatus)
+{
+  m_bUseOcclusionCulling = bStatus;
+
+  UpdateOcclusionCullingSettings();
+}
+
+inline bool VisParticleGroup_cl::GetUseOcclusionCulling() const
+{
+  return m_bUseOcclusionCulling;
+}
 
 inline void VisParticleGroup_cl::SetTransparencyType(VIS_TransparencyType newTransparencyType)
 {
   m_iRenderState.SetTransparency(newTransparencyType);
-  int iOpaqueFlags = RENDERSTATEFLAG_WRITETOZBUFFER|RENDERSTATEFLAG_ALPHATEST|RENDERSTATEFLAG_USEFOG;
-  if (newTransparencyType==VIS_TRANSP_COLORKEY||newTransparencyType==VIS_TRANSP_NONE)
+  int iOpaqueFlags = RENDERSTATEFLAG_WRITETOZBUFFER | RENDERSTATEFLAG_ALPHATEST | RENDERSTATEFLAG_USEFOG;
+  if (newTransparencyType == VIS_TRANSP_ALPHATEST || newTransparencyType == VIS_TRANSP_NONE)
     m_iRenderState.SetFlag(iOpaqueFlags);
   else
     m_iRenderState.RemoveFlag(iOpaqueFlags);
@@ -158,31 +269,40 @@ inline Particle_t *VisParticleGroup_cl::GetParticles() const
 } 
 
 
-inline BOOL VisParticleGroup_cl::GetCheckVisibility() const
-{
-  return (m_spVisObject!=NULL);
-}
-
-
 inline void VisParticleGroup_cl::SetTextureRepetitions(float numOfRepetitions)
 {
-  numtexrepetitions = numOfRepetitions;
+  m_fNumTexRepetitions = numOfRepetitions;
 }
 
+inline float VisParticleGroup_cl::GetTextureRepetitions() const
+{
+  return m_fNumTexRepetitions;
+}
 
 inline void VisParticleGroup_cl::SetBoundingBox(float minX, float minY, float minZ, float maxX, float maxY, float maxZ)
 {
-  SetBoundingBox (hkvAlignedBBox(hkvVec3 (minX,minY,minZ), hkvVec3 (maxX,maxY,maxZ)));
+  SetVisibilityBoundingBox(GetUseLocalSpaceMatrix(), hkvAlignedBBox(hkvVec3(minX, minY, minZ), hkvVec3(maxX, maxY, maxZ)));
+}
+
+inline BOOL VisParticleGroup_cl::GetCheckVisibility() const
+{
+  return m_bUseVisibility ? TRUE : FALSE;
+}
+
+inline void VisParticleGroup_cl::SetBoundingBox(const hkvAlignedBBox & bbox)
+{
+  SetVisibilityBoundingBox(GetUseLocalSpaceMatrix(), bbox);
 }
 
 inline void VisParticleGroup_cl::SetTechnique(VCompiledTechnique *pTechnique)
 {
-  m_spTechnique = pTechnique;
+  m_spCustomTechnique = pTechnique;
+  m_spLastShader = NULL;
 }
 
 inline VCompiledTechnique *VisParticleGroup_cl::GetTechnique() const
 {
-  return m_spTechnique;
+  return m_spCustomTechnique;
 }
 
 inline void VisParticleGroup_cl::SetUseNormals(bool bStatus)
@@ -197,27 +317,60 @@ inline bool VisParticleGroup_cl::GetUseNormals() const
 
 inline void VisParticleGroup_cl::SetUseDistortion(bool bStatus)
 {
-  // This sets DISTORTION_TYPE_VELOCITY only
-  m_cUseDistortion = (unsigned char)bStatus;
-  if (bStatus) m_vParticleCenter.set(0.f,0.5f);
+  m_bUseDistortion = bStatus;
 }
 
 inline bool VisParticleGroup_cl::GetUseDistortion() const
 {
-  return m_cUseDistortion!=0;
+  return m_bUseDistortion;
 }
 
-void VisParticleGroup_cl::SetParticleCenter(float x, float y)
+inline void VisParticleGroup_cl::SetTessellationEnabled(bool bStatus)
+{
+  m_bUseTesselation = bStatus;
+  UpdateDefaultShaderFlags();
+}
+
+inline bool VisParticleGroup_cl::GetTessellationEnabled() const
+{
+  return m_bUseTesselation;
+}
+
+inline void VisParticleGroup_cl::SetTessellationFactorPixelPerVertex(float fTessellationFactorPixelPerVertex)
+{
+  m_fTessellationFactorPixelPerVertex = fTessellationFactorPixelPerVertex;
+}
+
+inline float VisParticleGroup_cl::GetTessellationFactorPixelPerVertex() const
+{
+  return m_fTessellationFactorPixelPerVertex;
+}
+
+inline hkvVec3 VisParticleGroup_cl::GetLightSamplingOffset() const
+{
+  return hkvVec3::ZeroVector();
+}
+
+inline void VisParticleGroup_cl::SetParticleCenter(float x, float y)
 {
   m_vParticleCenter.set(x,y);
 }
 
-void VisParticleGroup_cl::GetParticleCenter(float &x, float &y) const
+inline void VisParticleGroup_cl::SetParticleCenter(const hkvVec2& center)
+{
+  m_vParticleCenter = center;
+}
+
+inline void VisParticleGroup_cl::GetParticleCenter(float &x, float &y) const
 {
   x = m_vParticleCenter.x;
   y = m_vParticleCenter.y;
 }
 
+inline hkvVec2 VisParticleGroup_cl::GetParticleCenter() const
+{
+  return m_vParticleCenter;
+}
 
 inline bool VisParticleGroup_cl::GetHardwareSpanning() const
 {
@@ -267,7 +420,7 @@ inline unsigned int VisParticleGroup_cl::GetVisibleBitmask() const
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

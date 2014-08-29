@@ -14,7 +14,7 @@ class hkProcess;
 /// This class defines the interface to control the state of viewers
 /// in the visual debugger. Implementations exist on both the client
 /// and server side.
-class hkProcessHandler
+class HK_EXPORT_COMMON hkProcessHandler
 {
 	//+hk.MemoryTracker(ignore=True)
 	public:
@@ -56,7 +56,7 @@ class hkProcessHandler
 #endif // HK_VISUALIZE_PROCESS_HANDLER
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

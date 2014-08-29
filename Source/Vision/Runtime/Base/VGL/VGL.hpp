@@ -103,10 +103,43 @@ public:
 //
 // Now integrated into VBase
 
-#if defined(WIN32) && !defined(_VISION_WINRT)
+#if defined(_VISION_WIN32) && !defined(_VISION_WINRT)
 
 class VVideoConfig;
 void SetVGLWindowParameters(VVideoConfig &vc);
+
+/// \brief Converts a HRESULT to a human readable error string. Supply a VString or VStaticString for stringBuffer.
+template<typename T>
+const char* VErrorMessageFromHresult(HRESULT result, T& stringBuffer)
+{
+  LPVOID lpMsgBuf = NULL;
+  FormatMessageW(
+    FORMAT_MESSAGE_ALLOCATE_BUFFER |
+    FORMAT_MESSAGE_FROM_SYSTEM |
+    FORMAT_MESSAGE_IGNORE_INSERTS,
+    NULL,
+    result,
+    MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+    (LPWSTR)&lpMsgBuf,
+    0, NULL);
+
+  VString string;
+
+  if(lpMsgBuf != NULL)
+  {
+    char errorBuffer[4096];
+    V_WCHAR_TO_UTF8((LPWSTR)lpMsgBuf, errorBuffer, V_ARRAY_SIZE(errorBuffer));
+
+    stringBuffer.Format("(0x%08X) %s", result, errorBuffer);
+    LocalFree(lpMsgBuf);
+  }
+  else
+  {
+    stringBuffer.Format("0x%08X", result);
+  }
+
+  return stringBuffer;
+}
 
 #endif
 
@@ -141,8 +174,6 @@ class VConnection;
 ///   Struct for mouse data
 struct VGLMouse_t
 {
-  SLONG posX;           ///< X position of the mouse. Reconstructed from deltas
-  SLONG posY;           ///< Y position of the mouse. Reconstructed from deltas
   SLONG deltaX;         ///< Difference in X position since last call
   SLONG deltaY;         ///< Difference in Y position since last call
   
@@ -156,8 +187,8 @@ struct VGLMouse_t
   SLONG buttonX0;       ///< TRUE if first extra button is pressed
   SLONG buttonX1;       ///< TRUE if second extra button is pressed
   
-  SSHORT cursorX;       ///< Client window cursor position for GUI. Windows: From cursor, Console: Same as posX
-  SSHORT cursorY;       ///< Client window cursor position for GUI. Windows: From cursor, Console: Same as posY
+  SSHORT cursorX;       ///< Client window cursor position for GUI. Windows: From cursor, Console: accumulated from deltas
+  SSHORT cursorY;       ///< Client window cursor position for GUI. Windows: From cursor, Console: accumulated from deltas
 
 };
 
@@ -189,7 +220,7 @@ struct VGLKey_t
 ///
 
 
-#if defined(WIN32) && !defined(_VISION_WINRT)
+#if defined(_VISION_WIN32) && !defined(_VISION_WINRT)
 
 /// \brief
 /// deprecated. use VGLInitialize with window config.
@@ -300,14 +331,6 @@ VBASE_IMPEXP BOOL VGLRunMessagePump();
 /// VGLInitializeMouse will select the proper way of getting mouse input, make sure that the mouse
 /// is properly initialized for the set screen mode, and make the mouse cursor invisible
 /// 
-/// \param method
-///   The preferred method for input. If this is not available, the basic method for the platform
-///   will be used. This parameter is just on windows systems supported.
-///   \li VGL_DEFAULTINPUT: Use the default
-/// 
-///   \li VGL_WINDOWSINPUT: Force Windows mouse input
-/// 
-///   \li VGL_DIRECTINPUT:  Force DirectInput mouse input
 ///
 /// \param bHideCursor
 ///   Whether the cursor will be hidden
@@ -326,7 +349,7 @@ VBASE_IMPEXP BOOL VGLRunMessagePump();
 /// 
 /// \note
 ///   Only call this after the display has been initialized
-VBASE_IMPEXP RETVAL VGLInitializeMouse(SLONG method = VGL_DEFAULTINPUT, bool bHideCursor = true, bool bExclusive = true);
+VBASE_IMPEXP RETVAL VGLInitializeMouse(bool bHideCursor = true, bool bExclusive = true);
 
 
 /// \brief
@@ -360,24 +383,6 @@ VBASE_IMPEXP RETVAL VGLDeInitializeMouse(void);
 /// 
 ///   \li FALSE if not
 VBASE_IMPEXP RETVAL VGLIsMouseInit(void);
-
-
-
-/// \brief
-///   Get mouse input method
-/// 
-/// This function will return the medthod used by VGL to handle the mouse movement and status.
-/// 
-/// \return
-///   RETVAL:
-///   \li VGL_DIRECTINPUT   if DirectInput is used for mouse input
-/// 
-///   \li VGL_WINDOWSINPUT  if Windows standard functions are used for mouse input
-/// 
-/// \errcodes
-///   \li \c VERR_DEVICENOTINIT:  The mouse was not at all initialized
-VBASE_IMPEXP RETVAL VGLGetMouseMethod(void);
-
 
 /// \brief
 ///   Sets the new on-screen position of the mouse
@@ -1060,7 +1065,7 @@ VBASE_IMPEXP int  VGLGetQuitBehaviour();
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

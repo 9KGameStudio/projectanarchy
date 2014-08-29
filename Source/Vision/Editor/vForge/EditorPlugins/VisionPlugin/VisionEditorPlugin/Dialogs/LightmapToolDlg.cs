@@ -1212,12 +1212,12 @@ namespace VisionEditorPlugin.Dialogs
     {
       if (e.Button==toolBarButton_Save)
       {
-        // turn this temporarely off (these properties aren't target specific!)
+        // turn this temporarily off (these properties aren't target specific!)
         // enabled again when changing target
         LightmapManager.bNoBaseLight = false;
         LightmapManager.bNoRadiosity = false;
         
-        // when saving, apply the respective color matrix (hack)
+        // when saving, apply the respective color matrix
         LightmapManager.ApplyColorMatrices(_lightmapsParameter.BaseLightingParams.ColorMatrix, _lightmapsParameter.RadiosityParams.ColorMatrix);
         LightmapManager.SaveAllLightmaps();
 
@@ -1328,7 +1328,7 @@ namespace VisionEditorPlugin.Dialogs
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

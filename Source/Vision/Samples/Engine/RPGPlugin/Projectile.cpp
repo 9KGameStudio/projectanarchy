@@ -262,7 +262,7 @@ bool RPG_Projectile::ShouldHit(RPG_DamageableEntity* target)
       return true;
     }
   }
-  else if(target->Components().GetComponentOfType(V_RUNTIME_CLASS(RPG_AttackableComponent)))
+  else if(target->Components().GetComponentOfType<RPG_AttackableComponent>())
   {
     return true;
   }
@@ -492,7 +492,7 @@ hkvVec3 RPG_Projectile::NormalToYpr(hkvVec3 const &normal)
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

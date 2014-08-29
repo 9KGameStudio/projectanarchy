@@ -17,7 +17,8 @@
 // Versions
 #define ENTITYLODCOMPONENT_VERSION_0          0     // Initial version
 #define ENTITYLODCOMPONENT_VERSION_1          1     // LOD count incremented by one in order to make code easier to read.
-#define ENTITYLODCOMPONENT_VERSION_CURRENT    1     // Current version
+#define ENTITYLODCOMPONENT_VERSION_2          2     // Save out filename of highres mesh
+#define ENTITYLODCOMPONENT_VERSION_CURRENT    2     // Current version
 
 ///
 /// \brief
@@ -352,7 +353,7 @@ public:
   /// @{
   ///
 
-#if defined(WIN32) || defined(_VISION_DOC)
+#if defined(_VISION_WIN32) || defined(_VISION_DOC)
 
   EFFECTS_IMPEXP virtual void GetVariableAttributes(VisVariable_cl *pVariable, VVariableAttributeInfo &destInfo) HKV_OVERRIDE;
 
@@ -522,7 +523,7 @@ protected:
 #endif // VENTITYLODCOMPONENT_HPP_INCLUDED
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

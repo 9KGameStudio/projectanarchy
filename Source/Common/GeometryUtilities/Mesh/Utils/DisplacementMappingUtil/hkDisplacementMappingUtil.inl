@@ -43,10 +43,10 @@ HK_FORCE_INLINE void hkDisplacementMappingUtil::DominantInfo::setNormal(hkVector
 		HK_ALIGN16(hkFloat32) conversionBuf[4];
 		vNrm.store<4>(conversionBuf);
 		hkVector4f vNrmF; vNrmF.load<4>(conversionBuf);
-		m_data1.setSelect<hkVector4Comparison::MASK_XY>(vNrmF, m_data1);
+		m_data1.setSelect<hkVector4ComparisonMask::MASK_XY>(vNrmF, m_data1);
 	}
 #else
-	m_data1.setSelect<hkVector4Comparison::MASK_XY>(vNrm, m_data1);
+	m_data1.setSelect<hkVector4ComparisonMask::MASK_XY>(vNrm, m_data1);
 #endif
 }
 
@@ -138,10 +138,10 @@ HK_FORCE_INLINE void hkDisplacementMappingUtil::DominantInfo::setUv<0>(hkVector4
 		HK_ALIGN16(hkFloat32) convBuffer[4];
 		uv.store<4>(convBuffer);
 		hkVector4f uvf;	uvf.load<4>(convBuffer);
-		m_data0.setSelect<hkVector4Comparison::MASK_XY>(uvf, m_data0);
+		m_data0.setSelect<hkVector4ComparisonMask::MASK_XY>(uvf, m_data0);
 	}
 #else
-	m_data0.setSelect<hkVector4Comparison::MASK_XY>(uv, m_data0);
+	m_data0.setSelect<hkVector4ComparisonMask::MASK_XY>(uv, m_data0);
 #endif
 }
 
@@ -156,10 +156,10 @@ HK_FORCE_INLINE void hkDisplacementMappingUtil::DominantInfo::setUv<1>(hkVector4
 		HK_ALIGN16(hkFloat32) convBuffer[4];
 		uvuv.store<4>(convBuffer);
 		hkVector4f uvuvf;	uvuvf.load<4>(convBuffer);
-		m_data0.setSelect<hkVector4Comparison::MASK_ZW>(uvuvf, m_data0);
+		m_data0.setSelect<hkVector4ComparisonMask::MASK_ZW>(uvuvf, m_data0);
 	}
 #else
-	m_data0.setSelect<hkVector4Comparison::MASK_ZW>(uvuv, m_data0);
+	m_data0.setSelect<hkVector4ComparisonMask::MASK_ZW>(uvuv, m_data0);
 #endif
 }
 
@@ -168,8 +168,8 @@ HK_FORCE_INLINE void hkDisplacementMappingUtil::DominantInfo::setUv<1>(hkVector4
 
 HK_FORCE_INLINE void hkDisplacementMappingUtil::DominantInfo::setUv(int mapIdx, hkVector4Parameter uv)
 {
-	const int m				= (mapIdx * hkVector4fComparison::MASK_ZW + (1 - mapIdx) * hkVector4fComparison::MASK_XY);
-	hkVector4fComparison c;	c.set((hkVector4fComparison::Mask)m);
+	const int m				= (mapIdx * hkVector4ComparisonMask::MASK_ZW + (1 - mapIdx) * hkVector4ComparisonMask::MASK_XY);
+	hkVector4fComparison c;	c.set((hkVector4ComparisonMask::Mask)m);
 
 	hkVector4f uvuv;
 #if defined(HK_REAL_IS_DOUBLE)
@@ -192,8 +192,8 @@ HK_FORCE_INLINE void hkDisplacementMappingUtil::DominantInfo::setUv(int mapIdx, 
 HK_FORCE_INLINE void hkDisplacementMappingUtil::DominantInfo::getUv(int mapIdx, hkVector4& uvOut) const
 {
 	hkVector4f uv1;			uv1.setPermutation<hkVectorPermutation::ZWZW>(m_data0);
-	const int m				= (-mapIdx) & hkVector4fComparison::MASK_XYZW;	// map0 -> MASK_NONE, map1 -> MASK_XYZW
-	hkVector4fComparison c;	c.set((hkVector4fComparison::Mask)m);
+	const int m				= (-mapIdx) & hkVector4ComparisonMask::MASK_XYZW;	// map0 -> MASK_NONE, map1 -> MASK_XYZW
+	hkVector4fComparison c;	c.set((hkVector4ComparisonMask::Mask)m);
 	hkVector4f uvOutF;		uvOutF.setSelect(c, uv1, m_data0);
 
 #if defined(HK_REAL_IS_DOUBLE)
@@ -270,7 +270,7 @@ HK_FORCE_INLINE void hkDisplacementMappingUtil::DominantInfo::load(const void* b
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

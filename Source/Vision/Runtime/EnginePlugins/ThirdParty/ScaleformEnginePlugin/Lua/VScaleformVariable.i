@@ -74,6 +74,9 @@ public:
   void Display_SetZScale(float fZScale);
   void Display_SetFOV(float fFov);
 
+  bool Display_GotoFrame(unsigned int uiFrameIndex, bool bPlay = false);
+  bool Display_GotoLabeledFrame(const char* szLabel, bool bPlay = false);
+
   unsigned int GetArraySize() const;
   void SetArraySize(unsigned int uiSize);
   const VScaleformValue GetArrayElement(unsigned int uiIndex) const;
@@ -236,6 +239,11 @@ public:
   /// \copydoc VScaleformValue::Display_SetFOV()
   void Display_SetFOV(number fov);
 
+  /// \copydoc VScaleformValue::Display_GotoFrame()
+  boolean Display_GotoFrame(number frameIndex, boolean play = false);
+  /// \copydoc VScaleformValue::Display_GotoLabeledFrame()
+  boolean Display_GotoLabeledFrame(string label, boolean play = false);
+
   /// @}
 
   /// @name Arrays
@@ -285,7 +293,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

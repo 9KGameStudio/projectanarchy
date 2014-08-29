@@ -98,7 +98,7 @@ public:
   virtual VTextureObject* CreateTexture(const char *szFilename, int &iFlags) = 0;
 
   /// \brief
-  ///   Optional: Create a system memory preview of the passed texture filename. This function is only used inside the editor, so the relevant code can be ifdef'd with WIN32.
+  ///   Optional: Create a system memory preview of the passed texture filename. This function is only used inside the editor.
   ///
   /// \param szFilename
   ///   Filename to load
@@ -109,10 +109,13 @@ public:
   /// \param bAlphaMap
   ///   if true, the alpha channel of this texture is to be loaded
   ///
+  /// \param sDescription
+  ///   Optionally fill out this string with additional description text for the texture
+  ///
   /// \return 
   ///   bool bResult: true if the image has been generated successfully
   ///
-  virtual bool CreatePreview(const char *szFilename, Image_cl &destImg, bool bAlphaMap)
+  virtual bool CreatePreview(const char *szFilename, Image_cl &destImg, bool bAlphaMap, VString &sDescription)
   {
     return false;
   }
@@ -288,18 +291,6 @@ public:
   /// @}
   ///
 
-#ifdef _VR_GLES2
-
-  /// @name Resource access
-  /// @{
-
-  /// \brief
-  ///   Gets a replacement filename (e.g. for compressed textures)
-  VBASE_IMPEXP virtual const char* GetStreamingReplacementFilename(VResourceSnapshotEntry &resourceDesc, const char* szResolvedFilename, char* szBuffer);
-
-  /// @}
-
-#endif
 
   /// @name Device information
   /// @{
@@ -404,7 +395,7 @@ inline IVTextureFormatProvider& VTextureManager::GetFormatProvider(int iIndex) c
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

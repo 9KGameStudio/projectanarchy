@@ -302,7 +302,7 @@ namespace Editor
           FileName = "";
         });
 
-        EditorManager.EngineManager.SetProjectPath(Path.GetDirectoryName(PathName));
+        EditorManager.EngineManager.SetProjectPath(ProjectDir);
 
         // Open MultiUser Editing Dialog
         if (!TestManager.IsRunning && !EditorManager.SilentMode && EditorManager.Settings.OpenMultiUserEditingDialogOnProjectLoad)
@@ -356,13 +356,9 @@ namespace Editor
 
         EditorManager.ProfileManager.InitNewProject(ProjectDir);
 
-        //Add the project directory to the engine base data directory
-        EditorManager.EngineManager.File_AddSearchPath(ProjectSearchPath, SearchPathFlags.Writable | SearchPathFlags.PathMustExist);
-
         // Notify the asset manager of automatically added data directories
         EditorManager.AssetManager.AddDataDirectory(
           EditorManager.IsCustomBaseDataDir ? ":base_data" : EditorManager.DefaultBaseDataSearchPath, "Base", false, false, true);
-        EditorManager.AssetManager.AddDataDirectory(ProjectSearchPath, new DirectoryInfo(ProjectDir).Name, false, true, true);
 
         // If a custom simulation data path has been set, add it as a file system.
         if (EditorManager.IsCustomSimulationDataDir)
@@ -383,12 +379,27 @@ namespace Editor
         AppDomain.CurrentDomain.AssemblyResolve -= new ResolveEventHandler(ProjectPlugins_AssemblyResolve);
 
         //Load the entity plugins (so they can register their application) before engine init
-      EditorManager.EngineManager.Plugins_LoadAllEnginePlugins(projectDirNoEndingSlash);
+        EditorManager.EngineManager.Plugins_LoadAllEnginePlugins(projectDirNoEndingSlash);
         if (additionalPluginDir != null)
           EditorManager.EngineManager.Plugins_LoadAllEnginePlugins(additionalPluginDir);
 
         // load the manifest file which may contain additional engine plugins:
-        EditorManager.LoadManifestFile(this,Path.Combine(projectDirNoEndingSlash,"vForgeManifest.txt"));
+        EditorManager.LoadManifestFile(this, Path.Combine(projectDirNoEndingSlash, "vForgeManifest.txt"));
+
+        // Find out whether the project directory is already added as a search path; i.e., whether we open 
+        // a project in one of the previously added directories. If yes, set the project search path 
+        // accordingly and don't add another search path. Otherwise, add a search path for the project.
+        String searchPathOfProjectDir = EditorManager.EngineManager.File_GetSearchPathForPath(
+          filename, FileSystemAccessMode.Read, FileSystemElementType.File);
+        if (searchPathOfProjectDir != null)
+        {
+          ProjectSearchPath = searchPathOfProjectDir;
+        }
+        else
+        {
+          EditorManager.EngineManager.File_AddSearchPath(ProjectSearchPath, SearchPathFlags.Writable | SearchPathFlags.PathMustExist);
+          EditorManager.AssetManager.AddDataDirectory(ProjectSearchPath, new DirectoryInfo(ProjectDir).Name, false, true, true);
+        }
 
         _deinitStack.Push(() =>
         {
@@ -456,7 +467,8 @@ namespace Editor
           {
             return false;
           }
-          ProjectSearchPath = ":workspace/" + ProjectDir.Substring(WorkspaceDir.Length).Replace('\\', '/').Trim('/');
+          ProjectSearchPath = ":workspace/" + ProjectDir.Substring(WorkspaceDir.Length).Replace('\\', '/');
+          ProjectSearchPath = ProjectSearchPath.Trim('/');
         }
         else
         {
@@ -609,11 +621,9 @@ namespace Editor
         if (files.Length>0)
           return files[0]; //Return first match. (There shouldn't be multiple anyway)
 
-        int iPos = dir.LastIndexOf(Path.DirectorySeparatorChar);
-        if (iPos <=2)
-          break; // no more slashes left  ('\\x' or 'x:\')
-
-        dir = dir.Substring(0, iPos);
+        //Move one directory up
+        dir = Path.GetDirectoryName(dir);
+        if (dir.Length == 0) break;
       }
 
       return null;
@@ -683,7 +693,7 @@ namespace Editor
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -140,8 +140,7 @@ void vHavokAiNavMeshInstance::DisposeObject()
 
 void vHavokAiNavMeshInstance::AssertValid()
 {
-	VASSERT(m_resource);
-	VASSERT(m_resource->IsLoaded());
+	VASSERT_MSG(m_resource && m_resource->IsLoaded(), "The resource must be available and valid");
 }
 
 static unsigned int s_iSerialVersion = 1; // need to increment this everytime Serialize function is modified.
@@ -160,6 +159,7 @@ void vHavokAiNavMeshInstance::Serialize(VArchive &ar)
 		ar.ReadStringBinary(szResourceFile, FS_MAX_PATH);
 
 		m_resource = (vHavokAiNavMeshResource*)(vHavokAiNavMeshResourceManager::GetInstance()->LoadResource(szResourceFile));
+		VASSERT_MSG( m_resource != NULL, "Failed to load nav mesh resource" );
 
 		CreateInstance();
 	}
@@ -282,7 +282,7 @@ void vHavokAiNavMeshInstance::DebugRender(float displayOffsetHavokScale, bool co
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

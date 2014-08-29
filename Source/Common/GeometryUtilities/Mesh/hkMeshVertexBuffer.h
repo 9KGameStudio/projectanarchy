@@ -9,9 +9,9 @@
 #define HK_MESH_VERTEX_BUFFER_H
 
 
-extern const class hkClass hkVertexFormatElementClass;
+extern HK_EXPORT_COMMON const class hkClass hkVertexFormatElementClass;
 
-extern const class hkClass hkVertexFormatClass;
+extern HK_EXPORT_COMMON const class hkClass hkVertexFormatClass;
 
 /// The hkVertexFormat defines the 'elements' which make up a vertex.
 ///
@@ -40,7 +40,7 @@ extern const class hkClass hkVertexFormatClass;
 /// component is shared.
 ///
 /// \sa hkMeshVertexBuffer
-struct hkVertexFormat
+struct HK_EXPORT_COMMON hkVertexFormat
 {
 	HK_DECLARE_REFLECTION();
 
@@ -205,7 +205,7 @@ struct hkVertexFormat
 	static const hkUint8 s_dataTypeToSize[];                    ///< Static array to convert from dataType to its size
 };
 
-extern const hkClass hkMeshVertexBufferClass;
+extern HK_EXPORT_COMMON const hkClass hkMeshVertexBufferClass;
 
 
 /// This is an abstract interface to a vertex buffer
@@ -213,7 +213,7 @@ extern const hkClass hkMeshVertexBufferClass;
 /// A vertex buffer contains an array of vertices in the format defined by the hkVertexFormat
 ///
 /// \sa hkMeshShape hkVertexFormat
-class hkMeshVertexBuffer: public hkReferencedObject
+class HK_EXPORT_COMMON hkMeshVertexBuffer : public hkReferencedObject
 {
 	public:
 		HK_DECLARE_REFLECTION();
@@ -346,7 +346,7 @@ class hkMeshVertexBuffer: public hkReferencedObject
 #endif	// HK_MESH_VERTEX_BUFFER_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

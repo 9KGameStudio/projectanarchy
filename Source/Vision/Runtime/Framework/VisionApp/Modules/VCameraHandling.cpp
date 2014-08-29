@@ -94,7 +94,7 @@ void VCameraHandling::BuildCameraList()
   VAppMenuItems menuItems;
   menuItems.Add(VAppMenuItem("<Switch to Free Camera>", iActionIndex++, 0, false));
 
-#if defined(WIN32) && !defined(_VISION_WINRT)
+#if defined(_VISION_WIN32) && !defined(_VISION_WINRT)
   // Add option to disable WASD controls.
   m_iWASDActionIndex = iActionIndex++;
   menuItems.Add(VAppMenuItem("<Toggle Free Camera WASD Controls>", m_iWASDActionIndex, 1, true, m_bWASDEnabled));
@@ -127,7 +127,7 @@ void VCameraHandling::BuildCameraList()
     if (pOrbitCamera != NULL)
     {
       // If the owner entity's key is not set, use the model's file name.
-      const char* szKey = pEntity->GetObjectKey();
+      szKey = pEntity->GetObjectKey();
       if (VStringUtil::IsEmpty(szKey))
         szKey = (pEntity->GetMesh() ? pEntity->GetMesh()->GetFilename() : "");
 
@@ -341,7 +341,7 @@ void VCameraHandling::DeactivateAllCameras()
 
 void VCameraHandling::SetWASDControlsEnabled(bool bEnabled)
 {
-#if defined(WIN32) && !defined(VISION_WINRT)
+#if defined(_VISION_WIN32) && !defined(VISION_WINRT)
   const unsigned int uiNumEntities = VisBaseEntity_cl::ElementManagerGetSize();
   for (unsigned int uiElementIndex = 0; uiElementIndex < uiNumEntities; uiElementIndex++)
   {
@@ -356,7 +356,7 @@ void VCameraHandling::SetWASDControlsEnabled(bool bEnabled)
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

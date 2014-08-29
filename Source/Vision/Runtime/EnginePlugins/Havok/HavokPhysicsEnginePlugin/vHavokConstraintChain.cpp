@@ -30,14 +30,12 @@ const unsigned int vHavokConstraintChainDesc::s_iSerialVersion = 6;
 // ----------------------------------------------------------------------------
 vHavokConstraintChainDesc::vHavokConstraintChainDesc()
 {
-  m_pszPathKey = NULL;
   Reset();
 }
 
 // ----------------------------------------------------------------------------
 vHavokConstraintChainDesc::vHavokConstraintChainDesc(bool bDummyNoInit)
 {
-  m_pszPathKey = NULL;
 }
 
 // ----------------------------------------------------------------------------
@@ -49,7 +47,7 @@ vHavokConstraintChainDesc::~vHavokConstraintChainDesc()
 // ----------------------------------------------------------------------------
 const char *vHavokConstraintChainDesc::GetPathKey() const
 {
-  return m_pszPathKey;
+  return m_sPathKey.AsChar();
 }
 
 // ----------------------------------------------------------------------------
@@ -89,9 +87,7 @@ void vHavokConstraintChainDesc::Reset()
   m_fFrictionFactorMin = 0.3f;
   m_fFrictionFactorMax = 30.f;
   m_fBaseTension = 0.f;
-
-  if (m_pszPathKey)
-    V_SAFE_STRFREE(m_pszPathKey);
+  m_sPathKey.Reset();
 }
 
 // ----------------------------------------------------------------------------
@@ -124,15 +120,14 @@ void vHavokConstraintChainDesc::Serialize( VArchive &ar )
         if (!pParentObj || !pParentObj->IsOfType(V_RUNTIME_CLASS(VisBaseEntity_cl)))
           continue;
         VisBaseEntity_cl *pParentEntity = static_cast<VisBaseEntity_cl*>(pParentObj);
-        m_spAnchorBodies[i] = static_cast<vHavokRigidBody*>(
-          pParentEntity->Components().GetComponentOfBaseType(V_RUNTIME_CLASS(vHavokRigidBody)));
+        m_spAnchorBodies[i] = pParentEntity->Components().GetComponentOfBaseType<vHavokRigidBody>();
       }
     }
 
     m_vAnchorPivots[0].SerializeAsVisVector (ar);
     m_vAnchorPivots[1].SerializeAsVisVector (ar);
 
-    ar >> m_pszPathKey;
+    ar >> m_sPathKey;
 
     ar >> m_fLinkLength;
     ar >> m_fLinkGap;
@@ -204,7 +199,7 @@ void vHavokConstraintChainDesc::Serialize( VArchive &ar )
     m_vAnchorPivots[0].SerializeAsVisVector (ar);
     m_vAnchorPivots[1].SerializeAsVisVector (ar);
 
-    ar << m_pszPathKey;
+    ar << m_sPathKey;
 
     ar << m_fLinkLength;
     ar << m_fLinkGap;
@@ -246,10 +241,7 @@ void vHavokConstraintChainDesc::Serialize( VArchive &ar )
 // ----------------------------------------------------------------------------
 void vHavokConstraintChainDesc::SetPathKey(const char* pszPathKey)
 {
-  if (m_pszPathKey)
-    V_SAFE_STRFREE(m_pszPathKey);
-  if (pszPathKey)
-    m_pszPathKey = vStrDup(pszPathKey);
+  m_sPathKey = pszPathKey;
 }
 
 
@@ -774,7 +766,7 @@ bool vHavokConstraintChain::GetLinkTransform(unsigned int iIndex,
 
   // Get the transformation from Havok
   const hkTransform &hkTrafo = m_LinkBodies.Get(iIndex)->getTransform();
-  vHavokConversionUtils::PhysTransformToVisMatVec(hkTrafo, mRotation, vTranslation);
+  vHavokConversionUtils::PhysTransformToVisMatVecWorld(hkTrafo, mRotation, vTranslation);
 
   return true;
 }
@@ -885,6 +877,8 @@ bool vHavokConstraintChain::Init(vHavokConstraintChainDesc &desc)
 
   // Calculate the pivot points
   DynObjArray_cl<hkvVec3> pivots;
+  pivots.SetDefaultValue(hkvVec3::ZeroVector());
+
   unsigned int iNumPivots = CalcPivotPoints(pivots);
 
   // We must have at least one link in our chain (which means, at least two
@@ -1436,7 +1430,7 @@ vHavokConstraintChain::TempRemoveFromWorld::~TempRemoveFromWorld()
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

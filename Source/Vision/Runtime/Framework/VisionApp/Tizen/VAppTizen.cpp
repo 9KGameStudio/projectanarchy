@@ -16,10 +16,41 @@
 extern "C" void VisionEnterBackgroundFunction();
 extern "C" void VisionEnterForegroundFunction();
 
+// Custom UI Form implementation for detecting the termination event.
+class VTizenForm : public Tizen::Ui::Controls::Form
+{
+public:
+  VTizenForm(VAppTizen* pApp) 
+    : Tizen::Ui::Controls::Form()
+    , m_pApp(pApp)
+  {}
+
+  virtual result OnTerminating() HKV_OVERRIDE
+  {
+    m_pApp->OnFormTerminating();
+
+    return Tizen::Ui::Controls::Form::OnTerminating();
+  }
+
+private:
+  VAppTizen* m_pApp;
+};
+
+VSmartPtr<VAppTizen> VAppTizen::s_spInstance = NULL;
 VAppImpl* VAppTizen::s_pAppImpl = NULL;
+
+Tizen::App::UiApp* VAppTizen::CreateInstance()
+{
+  if (s_spInstance == NULL)
+    s_spInstance = new VAppTizen();
+
+  return s_spInstance;
+}
 
 VAppTizen::VAppTizen()
   : VAppMobile()
+  , m_pTimer(NULL)
+  , m_bIsTerminating(false)
 {
   Tizen::Base::String path = Tizen::App::App::GetInstance()->GetAppResourcePath().GetPointer();
   m_sAppDirectory = path.GetPointer();
@@ -109,7 +140,7 @@ VString VAppTizen::GetPlatformCacheDirectory()
 
 bool VAppTizen::OnAppInitializing(Tizen::App::AppRegistry& appRegistry)
 {
-  m_pTimer = new Tizen::Base::Runtime::Timer;
+  m_pTimer = new Tizen::Base::Runtime::Timer();
   m_pTimer->Construct(*this);
 
   return true;
@@ -127,7 +158,7 @@ bool VAppTizen::OnAppInitialized(void)
   AddFrame(*pAppFrame);
 
   // Create and register our Tizen form with the app frame.
-  Tizen::Ui::Controls::Form* pTizenForm = new Tizen::Ui::Controls::Form();
+  Form* pTizenForm = new VTizenForm(this);
   pTizenForm->Construct(FORM_STYLE_NORMAL);
   GetAppFrame()->GetFrame()->AddControl(pTizenForm);
 
@@ -144,8 +175,6 @@ bool VAppTizen::OnAppInitialized(void)
 
   // Initialize application
   PlatformInit();
-  VAppMobile::Execute(s_pAppImpl);
-  s_pAppImpl = NULL;
   
   if ((s_pStartupModules != NULL) && (s_pStartupModules->GetSize() > 0))
   {
@@ -154,23 +183,66 @@ bool VAppTizen::OnAppInitialized(void)
   }
   else
   {
+    VAppMobile::Execute(s_pAppImpl);
+    s_pAppImpl = NULL;
     return AppInit();
   }
 }
 
 bool VAppTizen::OnAppTerminating(Tizen::App::AppRegistry& appRegistry, bool forcedTermination)
 {
-  if (m_pTimer)
+  if (m_pTimer != NULL)
   {
     m_pTimer->Cancel();
     delete m_pTimer;
     m_pTimer = NULL;
   }
 
+  // Release the application, but let Tizen handle the actual destruction in order to shut down properly.
+  VASSERT(s_spInstance.m_pPtr->GetRefCount() == 1);
+  s_spInstance.m_pPtr->ReleaseNoDelete();
+  s_spInstance.m_pPtr = NULL;
+  return true;
+}
+
+void VAppTizen::OnFrameActivated(const Tizen::Ui::Controls::Frame &source)
+{
+  // Try to disable automatic screen locking.
+  // Note: The application requires the http://tizen.org/privilege/power privilege for this.
+  // Note: We do this here (instead of in OnForeground()) in order to make it work when the application starts up.
+  //       Trying this in OnForeground() makes it work *after* the device is woken up again, but doesn't prevent
+  //       the device to be put to sleep right after the application has been started (as of SDK 2.2.0b).
+  if (Tizen::Security::AccessController::CheckPrivilege("http://tizen.org/privilege/power") == E_SUCCESS)
+  {
+    result res = Tizen::System::PowerManager::KeepScreenOnState(true, false);
+    if (res != E_SUCCESS)
+      hkvLog::Warning( "Unable to keep screen on - error: '%s'", (res == E_PRIVILEGE_DENIED) ? "PRIVILEGE DENIED" : "SYSTEM ERROR");
+  }
+  else
+  {
+#if defined(DEBUG_VERBOSE)
+    hkvLog::Info("Unable to keep screen on - insufficient privileges\n");
+#endif
+  }
+}
+
+void VAppTizen::OnFrameDeactivated(const Tizen::Ui::Controls::Frame &source)
+{
+}
+
+void VAppTizen::OnFrameTerminating(const Tizen::Ui::Controls::Frame &source)
+{
+}
+
+void VAppTizen::OnFormTerminating()
+{
+  VASSERT_MSG(Vision::Video.GetUIForm() != NULL, "Tizen UI form already destroyed.");
+
+  // Shut down the engine as soon as the form is terminating.
   AppDeInit();
   PlatformDeInit();
 
-  return true;
+  Vision::Video.SetUIForm(NULL);
 }
 
 void VAppTizen::OnForeground(void)
@@ -214,7 +286,8 @@ void VAppTizen::OnBackground(void)
   if (m_pTimer)
     m_pTimer->Cancel();
 
-  if(IsInitialized())
+  // No need to trigger a background event if the app gets terminated afterwards anyway.
+  if (IsInitialized() && !m_bIsTerminating)
   {
     VisionEnterBackgroundFunction();
   }
@@ -235,7 +308,7 @@ void VAppTizen::OnBatteryLevelChanged(Tizen::System::BatteryLevel batteryLevel)
 
 void VAppTizen::OnTimerExpired(Tizen::Base::Runtime::Timer& timer)
 {
-  if ((m_pTimer == null) || (&timer != m_pTimer))
+  if ((m_pTimer == NULL) || (&timer != m_pTimer))
     return;
   
   m_pTimer->Start(1);
@@ -261,34 +334,12 @@ void VAppTizen::OnOrientationChanged(const Tizen::Ui::Control &source, Tizen::Ui
   }
 }
 
-void VAppTizen::OnFrameActivated(const Tizen::Ui::Controls::Frame &source)
-{
-  // Try to disable automatic screen locking.
-  // Note: The application requires the http://tizen.org/privilege/power privilege for this.
-  // Note: We do this here (instead of in OnForeground()) in order to make it work when the application starts up.
-  //       Trying this in OnForeground() makes it work *after* the device is woken up again, but doesn't prevent
-  //       the device to be put to sleep right after the application has been started (as of SDK 2.2.0b).
-  if (Tizen::Security::AccessController::CheckPrivilege("http://tizen.org/privilege/power") == E_SUCCESS)
-  {
-    result res = Tizen::System::PowerManager::KeepScreenOnState(true, false);
-    if (res != E_SUCCESS)
-      hkvLog::Warning( "Unable to keep screen on - error: '%s'", (res == E_PRIVILEGE_DENIED) ? "PRIVILEGE DENIED" : "SYSTEM ERROR");
-  }
-  else
-  {
-#if defined(DEBUG_VERBOSE)
-    hkvLog::Info("Unable to keep screen on - insufficient privileges\n");
-#endif
-  }
-}
-
-void VAppTizen::OnFrameTerminating(const Tizen::Ui::Controls::Frame &source)
-{
-
-}
-
 void VAppTizen::Draw(void)
 {
+  // The OS may change the current GL context in between callbacks.
+  // Call MakeCurrent early to make sure texture uploading etc. works at any point during the frame.
+  VVideo::MakeCurrent();
+
   if ((s_pStartupModules != NULL) && (s_pStartupModules->GetSize() > 0))
   {
     if (ProcessStartupModule(0))
@@ -297,23 +348,35 @@ void VAppTizen::Draw(void)
     delete s_pStartupModules->GetAt(0).m_pModule;
     s_pStartupModules->RemoveAt(0);
 
-    if(WantsToQuit())
+    if (WantsToQuit())
     {
-      V_SAFE_DELETE(m_pAppImpl);
-      Terminate();
-      return;
+      DoQuit();
     }
-
-    if (s_pStartupModules->GetSize() > 0)
+    else if (s_pStartupModules->GetSize() > 0)
+    {
+      // Set up next startup module.
       s_pStartupModules->GetAt(0).m_pModule->Init();
-    else
+    }
+    else if (s_pAppImpl != NULL)
+    {
+      // Install the app implementation.
+      VAppMobile::Execute(s_pAppImpl);
+      s_pAppImpl = NULL;
       AppInit();
+    }
+    else
+    {
+      // Nothing left to do.
+      DoQuit();
+    }
 
     return;
   }
 
   if (!AppRun())
-    Terminate();
+  {
+    DoQuit();
+  }
 }
 
 bool VAppTizen::ProcessStartupModule(int iIndex)
@@ -323,7 +386,7 @@ bool VAppTizen::ProcessStartupModule(int iIndex)
 
   bool bResult = pModule->Run();
 
-  if(WantsToQuit() || !bResult)
+  if (WantsToQuit() || !bResult)
   {
     pModule->DeInit();
     return false;
@@ -332,8 +395,14 @@ bool VAppTizen::ProcessStartupModule(int iIndex)
   return true;
 }
 
+void VAppTizen::DoQuit()
+{
+  m_bIsTerminating = true;
+  Terminate();
+}
+
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140625)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

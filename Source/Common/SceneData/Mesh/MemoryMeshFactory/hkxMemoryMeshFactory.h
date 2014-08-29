@@ -17,7 +17,7 @@
 
 class hkMemoryMeshSystem;
 
-class hkxMemoryMeshFactory : public hkxMeshFactory
+class HK_EXPORT_COMMON hkxMemoryMeshFactory : public hkxMeshFactory
 {
 	public:
 
@@ -25,7 +25,7 @@ class hkxMemoryMeshFactory : public hkxMeshFactory
 
 	public:
 
-		hkxMemoryMeshFactory();
+		hkxMemoryMeshFactory(hkMemoryMeshSystem* meshSystem);
 		virtual ~hkxMemoryMeshFactory();
 
 			// hkxMeshFactory methods
@@ -49,13 +49,13 @@ class hkxMemoryMeshFactory : public hkxMeshFactory
 
 	protected:
 
-		hkMemoryMeshSystem* m_meshSystem;
+		hkRefPtr<hkMemoryMeshSystem> m_meshSystem;
 };
 
 #endif // HK_HKX_MEMORY_MESH_FACTORY_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

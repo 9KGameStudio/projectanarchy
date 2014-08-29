@@ -17,8 +17,10 @@ template<int vectorConstant>
 HK_FORCE_INLINE /*static*/ const hkSimdFloat32 HK_CALL hkSimdFloat32::getConstant()
 {
 	HK_COMPILE_TIME_ASSERT2( 
+		(vectorConstant>HK_QUADREAL_BEGIN) && (vectorConstant<HK_QUADREAL_END) && 
 		(vectorConstant!=HK_QUADREAL_1000) && (vectorConstant!=HK_QUADREAL_0100) && (vectorConstant!=HK_QUADREAL_0010) && (vectorConstant!=HK_QUADREAL_0001) &&
-		(vectorConstant!=HK_QUADREAL_m11m11) && (vectorConstant!=HK_QUADREAL_1248) && (vectorConstant!=HK_QUADREAL_8421) && (vectorConstant!=HK_QUADREAL_1010)  && (vectorConstant!=HK_QUADREAL_1100)
+		(vectorConstant!=HK_QUADREAL_m11m11) && (vectorConstant!=HK_QUADREAL_1m11m1) && (vectorConstant!=HK_QUADREAL_1248) && (vectorConstant!=HK_QUADREAL_8421) && 
+		(vectorConstant!=HK_QUADREAL_0011) && (vectorConstant!=HK_QUADREAL_1010)  && (vectorConstant!=HK_QUADREAL_1100)
 		, HK_SIMDFLOAT_ILLEGAL_CONSTANT_REQUEST);
 #if !defined(HK_PLATFORM_RVL) && !defined(HK_PLATFORM_WIIU)
 	return convert((g_vectorfConstants + vectorConstant)->v[0]);
@@ -27,16 +29,18 @@ HK_FORCE_INLINE /*static*/ const hkSimdFloat32 HK_CALL hkSimdFloat32::getConstan
 #endif
 }
 
-HK_FORCE_INLINE /*static*/ const hkSimdFloat32 HK_CALL hkSimdFloat32::getConstant(hkVectorConstant constant)
+HK_FORCE_INLINE /*static*/ const hkSimdFloat32 HK_CALL hkSimdFloat32::getConstant(hkVectorConstant vectorConstant)
 {	
 	HK_MATH_ASSERT( 0x909ff234,
-		(constant!=HK_QUADREAL_1000) && (constant!=HK_QUADREAL_0100) && (constant!=HK_QUADREAL_0010) && (constant!=HK_QUADREAL_0001) &&
-		(constant!=HK_QUADREAL_m11m11) && (constant!=HK_QUADREAL_1248) && (constant!=HK_QUADREAL_8421) && (constant!=HK_QUADREAL_1010)  && (constant!=HK_QUADREAL_1100)
+		(vectorConstant>HK_QUADREAL_BEGIN) && (vectorConstant<HK_QUADREAL_END) && 
+		(vectorConstant!=HK_QUADREAL_1000) && (vectorConstant!=HK_QUADREAL_0100) && (vectorConstant!=HK_QUADREAL_0010) && (vectorConstant!=HK_QUADREAL_0001) &&
+		(vectorConstant!=HK_QUADREAL_m11m11) && (vectorConstant!=HK_QUADREAL_1m11m1) && (vectorConstant!=HK_QUADREAL_1248) && (vectorConstant!=HK_QUADREAL_8421) && 
+		(vectorConstant!=HK_QUADREAL_0011) && (vectorConstant!=HK_QUADREAL_1010)  && (vectorConstant!=HK_QUADREAL_1100)
 		, "not a simdreal constant");
 #if !defined(HK_PLATFORM_RVL) && !defined(HK_PLATFORM_WIIU)
-	return convert((g_vectorfConstants + constant)->v[0]);
+	return convert((g_vectorfConstants + vectorConstant)->v[0]);
 #else
-	return *(const hkSimdFloat32*) (g_vectorfConstants + constant);
+	return *(const hkSimdFloat32*) (g_vectorfConstants + vectorConstant);
 #endif
 }
 
@@ -457,7 +461,7 @@ HK_FORCE_INLINE void hkSimdFloat32::setReciprocal(hkSimdFloat32Parameter a)
 
 HK_FORCE_INLINE void hkSimdFloat32::setReciprocal(hkSimdFloat32Parameter a)
 {
-	hkSimdFloat32_AdvancedInterface::unroll_setReciprocal<HK_ACC_23_BIT,HK_DIV_IGNORE>::apply(m_real,a);
+	hkSimdFloat32_AdvancedInterface::unroll_setReciprocal<HK_ACC_MID,HK_DIV_IGNORE>::apply(m_real,a);
 }
 
 
@@ -517,7 +521,7 @@ HK_FORCE_INLINE void hkSimdFloat32::setDiv(hkSimdFloat32Parameter a, hkSimdFloat
 
 HK_FORCE_INLINE void hkSimdFloat32::setDiv(hkSimdFloat32Parameter a, hkSimdFloat32Parameter b)
 {
-	hkSimdFloat32_AdvancedInterface::unroll_setDiv<HK_ACC_23_BIT,HK_DIV_IGNORE>::apply(m_real,a,b);
+	hkSimdFloat32_AdvancedInterface::unroll_setDiv<HK_ACC_MID,HK_DIV_IGNORE>::apply(m_real,a,b);
 }
 
 template <hkMathAccuracyMode A, hkMathDivByZeroMode D> 
@@ -575,7 +579,7 @@ HK_FORCE_INLINE const hkSimdFloat32 hkSimdFloat32::sqrt() const
 }
 HK_FORCE_INLINE const hkSimdFloat32 hkSimdFloat32::sqrt() const
 {
-	return hkSimdFloat32::convert(hkSimdFloat32_AdvancedInterface::unroll_sqrt<HK_ACC_23_BIT,HK_SQRT_SET_ZERO>::apply(*this));
+	return hkSimdFloat32::convert(hkSimdFloat32_AdvancedInterface::unroll_sqrt<HK_ACC_MID,HK_SQRT_SET_ZERO>::apply(*this));
 }
 
 
@@ -615,7 +619,7 @@ HK_FORCE_INLINE const hkSimdFloat32 hkSimdFloat32::sqrtInverse() const
 
 HK_FORCE_INLINE const hkSimdFloat32 hkSimdFloat32::sqrtInverse() const
 {
-	return hkSimdFloat32::convert(hkSimdFloat32_AdvancedInterface::unroll_sqrtInverse<HK_ACC_23_BIT,HK_SQRT_SET_ZERO>::apply(*this));
+	return hkSimdFloat32::convert(hkSimdFloat32_AdvancedInterface::unroll_sqrtInverse<HK_ACC_MID,HK_SQRT_SET_ZERO>::apply(*this));
 }
 
 
@@ -1003,7 +1007,7 @@ HK_FORCE_INLINE void hkSimdFloat32::store(  hkFloat16 *p ) const
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

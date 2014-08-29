@@ -10,7 +10,6 @@
 
 #include <Vision/Runtime/EnginePlugins/RemoteInputEnginePlugin/vRemoteInputPlugin.hpp>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Scripting/VScriptIncludes.hpp>
-#include <Vision/Runtime/Base/System/Memory/VMemDbg.hpp>
 
 #ifndef _VISION_DOC
 
@@ -356,6 +355,7 @@ typedef struct swig_type_info {
   struct swig_cast_info  *cast;			/* linked list of types that can cast into this type */
   void                   *clientdata;		/* language specific type data */
   int                    owndata;		/* flag if the structure owns the clientdata */
+  VType                  *visiontype; // Vision extension
 } swig_type_info;
 
 /* Structure to store a type and conversion function used for casting */
@@ -755,7 +755,7 @@ SWIG_UnpackDataName(const char *c, void *ptr, size_t sz, const char *name) {
  * and includes code for managing global variables and pointer
  * type checking.
  * ----------------------------------------------------------------------------- */
-
+ 
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -1043,54 +1043,31 @@ SWIGINTERN void  SWIG_Lua_module_add_function(lua_State* L,const char* name,lua_
 /* -----------------------------------------------------------------------------
  * global variable support code: classes
  * ----------------------------------------------------------------------------- */
-
-//Expecting the same stack format as SWIG:
-//stack: userdata, key, ..., TOP
-//afterwards: userdata, key, ..., value, TOP
+ 
+// Note: this is not called from SWIG_Lua_class_get since dynamic properties are accessed directly by lua,
+// but it's implemented to allow access from native
 SWIGINTERN void VisionLuaClassGet(lua_State *L)
 {
-  //solution 1: retrieve element when accessing an user data object from a global $node-POINTER_ADR-NAME_OF_ELEM$
-  //(+): allows user to associate elemets with an instance of an user data object
-  //(-): elements are not stored in a table, so you cannot iterate over all elements of an instance
-  
-  const char * pKey = lua_tostring(L, 2);
-  swig_lua_userdata * pUser = (swig_lua_userdata *) lua_topointer(L, 1);
-                                                                             //stack: userdata, key, ..., TOP
-  lua_pushliteral(L, "G");                                                   //stack: userdata, key, ..., 'G', TOP
-  lua_gettable(L, LUA_GLOBALSINDEX);                                         //stack: userdata, key, ..., globalTable, TOP
+  // Fetch the meta table and the __index field
+  lua_getmetatable(L, 1);                                                     // userdata, key, ..., perinstancetable or perclasstable, TOP
+  lua_getfield(L, -1, "__index");                                             // userdata, key, ..., perinstancetable or perclasstable, index, TOP
 
-  if( lua_isnil(L, -1)==1 ) //test if the global table is valid
-  {                                                                          //stack: userdata, key, ..., nil, TOP
-    lua_pop(L, 1);                                                           //stack: userdata, key, ..., TOP
-    lua_pushfstring(L, "$node-%p-%s$", ((pUser==0) ? 0 : pUser->ptr), pKey); //stack: userdata, key, ..., new key, TOP
-    lua_gettable(L, LUA_GLOBALSINDEX);                                       //stack: userdata, key, ..., requested val, TOP
-  }
-  else
-  {                                                                          //stack: userdata, key,  ..., globalTable, TOP
-    lua_pushfstring(L, "$node-%p-%s$", ((pUser==0) ? 0 : pUser->ptr), pKey); //stack: userdata, key,  ..., globalTable, new key, TOP
-    lua_gettable(L, -2);                                                     //stack: userdata, key,  ..., globalTable, requested val, TOP
-    lua_remove(L, -2);                                                       //stack: userdata, key,  ..., requested val, TOP
-  }
-
-/*
-  //solution 2: get element from a global table $node-POINTER_ADR$
-  //(+): user data object instance behaves like a table (you can iterate on this table)
-  //(-): slower than solution 1 when setting the variable
-  
-  int iPtr = (int) lua_topointer(L, 1);
-  lua_pushfstring(L, "$node-%p$", iPtr);          //stack: userdata, key, ..., instance string, TOP
-  lua_gettable(L, LUA_GLOBALSINDEX); 		      //stack: userdata, key, ..., table of instance or nil, TOP
-  
-  if(!lua_isnil(L, -1))
+  // If there is no perinstance table, push nil
+  if (!lua_equal(L, -1, -2))
   {
-    lua_pushvalue(L, 2);		  				  //stack: userdata, key, ..., table of instance, dup key, TOP
-    lua_gettable(L, -2); 	     				  //stack: userdata, key, ..., table of instance, requested val, TOP
-    lua_replace(L, -2);		  					  //stack: userdata, key, ..., requested val or nil, TOP
+    lua_pop(L, 2);                                                            // userdata, key, ..., TOP
+    lua_pushnil(L);                                                           // userdata, key, ..., nil, TOP
+    return;
   }
-  
-*/
-}
 
+  lua_pop(L, 1);                                                            // userdata, key, ..., perinstancetable, TOP
+  
+  // Now fetch the value from the per-instance table
+  lua_pushvalue(L, 2);                                                      // userdata, key, ..., perinstancetable, key, TOP
+  lua_rawget(L, -2);                                                        // userdata, key, ..., perinstancetable, value, TOP
+  lua_remove(L, -2);                                                        // userdata, key, ..., value, TOP
+}
+ 
 /* the class.get method, performs the lookup of class attributes */
 SWIGINTERN int  SWIG_Lua_class_get(lua_State* L)
 {
@@ -1099,8 +1076,24 @@ SWIGINTERN int  SWIG_Lua_class_get(lua_State* L)
   (2) string name of the attribute
 */
 
-  assert(lua_isuserdata(L,-2));  /* just in case */
-  lua_getmetatable(L,-2);    /* get the meta table */
+  // Vision extension: In case the first argument is a table and not the userdata,
+  // then the table is the per-instance metatable. Recover the userdata and its
+  // per-class metatable from the "__visionwrapper" field in the per-instance table.
+  if (lua_istable(L, 1))
+  {
+    lua_pushvalue(L, 1);                    // perinstancetable, key, perinstancetable, TOP
+    lua_getfield(L, 1, "__visionwrapper");  // perinstancetable, key, perinstancetable, userdata, TOP
+    assert(!lua_isnil(L, -1));
+    lua_replace(L, 1);                      // userdata, key, perinstancetable, TOP
+    lua_getmetatable(L, -1);                // userdata, key, perinstancetable, perclasstable, TOP
+    lua_remove(L, -2);                      // userdata, key, perclasstable, TOP
+  }
+  else
+  {
+    assert(lua_isuserdata(L, 1));  /* just in case */
+    lua_getmetatable(L, 1);    /* get the meta table */
+  }
+
   assert(lua_istable(L,-1));  /* just in case */
   SWIG_Lua_get_table(L,".get"); /* find the .get table */
   assert(lua_istable(L,-1));  /* just in case */
@@ -1140,16 +1133,6 @@ SWIGINTERN int  SWIG_Lua_class_get(lua_State* L)
     return 1;
   }
   
-  //////////////////////
-  // Vision Extension //
-  
-  VisionLuaClassGet(L);
-  if (!lua_isnil(L, -1))
-    return 1;
-
-  // End of Extension //
-  //////////////////////
-
   return 0;  /* sorry not known */
 }
 
@@ -1157,62 +1140,47 @@ SWIGINTERN int  SWIG_Lua_class_get(lua_State* L)
 //stack: userdata, key, value, ..., TOP
 SWIGINTERN void VisionLuaClassSet(lua_State *L)
 {
-  //solution 1: store all elements when accessing an user data objects as a global $node-POINTER_ADR-NAME_OF_ELEM$
-  //(+): allows user to associate elemets with an instance of an user data object
-  //(-): elements are not stored in a table, so you cannot iterate over all elements of an instance
-  
-  const char * pKey = lua_tostring(L, 2);
-  swig_lua_userdata * pUser = (swig_lua_userdata *) lua_topointer(L, 1);
-                                                                             //stack: userdata, key, value, ..., TOP
-  lua_pushliteral(L, "G");                                                   //stack: userdata, key, value, ..., 'G', TOP
-  lua_gettable(L, LUA_GLOBALSINDEX);                                         //stack: userdata, key, value, ..., globalTable, TOP
+  // Fetch the meta table and the __index field
+  lua_getmetatable(L, 1);                                                     // userdata, key, value, ..., perinstancetable or perclasstable, TOP
+  lua_getfield(L, -1, "__index");                                             // userdata, key, value, ..., perinstancetable or perclasstable, index, TOP
 
-  if( lua_isnil(L, -1)==1 ) //test if the global table is valid
-  {                                                                          //stack: userdata, key, value, ..., nil, TOP
-    lua_pop(L, 1);                                                           //stack: userdata, key, value, ..., TOP
-    lua_pushfstring(L, "$node-%p-%s$", ((pUser==0) ? 0 : pUser->ptr), pKey); //stack: userdata, key, value, ..., new key, TOP
-    lua_pushvalue(L, 3);                                                     //stack: userdata, key, value, ..., new key, value, TOP
-    lua_settable(L, LUA_GLOBALSINDEX);                                       //stack: userdata, key, value, ..., TOP
-  }
-  else
-  {                                                                          //stack: userdata, key, value, ..., globalTable, TOP
-    lua_pushfstring(L, "$node-%p-%s$", ((pUser==0) ? 0 : pUser->ptr), pKey); //stack: userdata, key, value, ..., globalTable, new key, TOP
-    lua_pushvalue(L, 3);                                                     //stack: userdata, key, value, ..., globalTable, new key, value, TOP
-    lua_settable(L, -3);                                                     //stack: userdata, key, value, ..., globalTable, TOP
-    lua_pop(L, 1);                                                           //stack: userdata, key, value, ..., TOP
-  }
-
-/*  
-  //solution 2: create a table $node-POINTER_ADR$ and save the element as element of this table
-  //(+): user data object instance behaves like a table (you can iterate on this table)
-  //(-): much slower than solution 1
-  
-  int iPtr = (int) lua_topointer(L, 1);
-  lua_pushfstring(L, "$node-%p$", iPtr);      //stack: userdata, key, value, ..., instance string, TOP
-  lua_gettable(L, LUA_GLOBALSINDEX); 		      //stack: userdata, key, value, ..., table of instance (maybe nil), TOP
-  
-  if(lua_isnil(L, -1))
+  // If the __index field points back to the table, it must be a per-instance table. If not, create one.
+  if (!lua_equal(L, -1, -2))
   {
-    //create a new empty table
-    lua_pop(L, 1);                            //stack: userdata, key, value, ..., TOP
-	  lua_pushfstring(L, "$node-%p$", iPtr);    //stack: userdata, key, value, ..., instance string, TOP
-  	lua_newtable(L);						              //stack: userdata, key, value, ..., instance string, new table, TOP
-	  lua_settable(L, LUA_GLOBALSINDEX);        //stack: userdata, key, value, ..., TOP
-	
-	  //query empty table
-	  lua_pushfstring(L, "$node-%p$", iPtr);    //stack: userdata, key, value, ..., instance string, TOP
-	  lua_gettable(L, LUA_GLOBALSINDEX); 		    //stack: userdata, key, value, ..., table of instance, TOP
-	
-	  //ensure that this time the table is present
-	  assert(!lua_isnil(L, -1));
+    lua_pop(L, 1);                                                            // userdata, key, value, ..., perclasstable, TOP
+
+    // Create new metatable
+    lua_newtable(L);                                                          // userdata, key, value, ..., perclasstable, perinstancetable, TOP
+
+    // __visionwrapper points to the userdata
+    lua_pushvalue(L, 1);                                                      // userdata, key, value, ..., perclasstable, perinstancetable, userdata, TOP
+    lua_setfield(L, -2, "__visionwrapper");                                   // userdata, key, value, ..., perclasstable, perinstancetable, TOP
+
+    // __index and __newindex point to the table itself
+    // That way, accessing keys can be performed using the per-instance table without having to call a native function.
+    lua_pushvalue(L, -1);                                                     // userdata, key, value, ..., perclasstable, perinstancetable, newmetatable, TOP
+    lua_setfield(L, -2, "__index");                                           // userdata, key, value, ..., perclasstable, perinstancetable, TOP
+
+    lua_pushvalue(L, -1);                                                     // userdata, key, value, ..., perclasstable, perinstancetable, newmetatable, TOP
+    lua_setfield(L, -2, "__newindex");                                        // userdata, key, value, ..., perclasstable, perinstancetable, TOP
+
+    // Set the original metatable as the metatable of the new one so that we can fallback to the per-class table
+    lua_pushvalue(L, -2);                                                     // userdata, key, value, ..., perclasstable, perinstancetable, metatable, TOP
+    lua_setmetatable(L, -2);                                                  // userdata, key, value, ..., perclasstable, perinstancetable, TOP
+    lua_pushvalue(L, -1);                                                     // userdata, key, value, ..., perclasstable, perinstancetable, newmetatable, TOP
+
+    // Set the per-instance table as the meta table of the userdata
+    lua_setmetatable(L, 1);                                                   // userdata, key, value, ..., perclasstable, perinstancetable, TOP
+
+    lua_remove(L, -2);                                                        // userdata, key, value, ..., perinstancetable, TOP
   }
-  
-  lua_pushvalue(L, 2);		  				          //stack: userdata, key, value, ..., table of instance, dup key, TOP
-  lua_pushvalue(L, 3);		  				          //stack: userdata, key, value, ..., table of instance, dup key, dup value, TOP
-  lua_settable(L, -3); 	     				          //stack: userdata, key, value, ..., table of instance, TOP
-  lua_pop(L, 1);                                    //stack: userdata, key, value, ..., TOP
-*/
-}
+
+  // Now set the value in the per-isntance table
+  lua_pushvalue(L, 2);                                                      // userdata, key, value, ..., perinstancetable, key, TOP
+  lua_pushvalue(L, 3);                                                      // userdata, key, value, ..., perinstancetable, key, value, TOP
+  lua_rawset(L, -3);                                                        // userdata, key, value, ..., perinstancetable, TOP
+  lua_pop(L, 1);                                                            // userdata, key, value, ..., TOP
+} 
 
 /* the class.set method, performs the lookup of class attributes */
 SWIGINTERN int  SWIG_Lua_class_set(lua_State* L)
@@ -1226,8 +1194,24 @@ printf("SWIG_Lua_class_set %p(%s) '%s' %p(%s)\n",
       lua_tostring(L,2),
       lua_topointer(L,3),lua_typename(L,lua_type(L,3))); */
 
-  assert(lua_isuserdata(L,1));  /* just in case */
-  lua_getmetatable(L,1);    /* get the meta table */
+  // Vision extension: In case the first argument is a table and not the userdata,
+  // then the table is the per-instance metatable. Recover the userdata and its
+  // per-class metatable from the "__visionwrapper" field in the per-instance table.
+  if (lua_istable(L, 1))
+  {
+    lua_pushvalue(L, 1);                    // perinstancetable, key, value, perinstancetable, TOP
+    lua_getfield(L, 1, "__visionwrapper");  // perinstancetable, key, value, perinstancetable, userdata, TOP
+    assert(!lua_isnil(L, -1));
+    lua_replace(L, 1);                      // userdata, key, value, perinstancetable, TOP
+    lua_getmetatable(L, -1);                // userdata, key, value, perinstancetable, perclasstable, TOP
+    lua_remove(L, -2);                      // userdata, key, value, perclasstable, TOP
+  }
+  else
+  {
+    assert(lua_isuserdata(L, 1));  /* just in case */
+    lua_getmetatable(L, 1);    /* get the meta table */
+  }
+
   assert(lua_istable(L,-1));  /* just in case */
 
   SWIG_Lua_get_table(L,".set"); /* find the .set table */
@@ -1286,7 +1270,7 @@ SWIGINTERN int  SWIG_Lua_class_destruct(lua_State* L)
     if (clss && clss->destructor)  /* there is a destroy fn */
     {
       clss->destructor(usr->ptr);  /* bye bye */
-    }
+  } 
   }
   return 0;
 }
@@ -1451,6 +1435,41 @@ SWIGINTERN void _SWIG_Lua_AddMetatable(lua_State* L,swig_type_info *type)
   }
 }
 
+#ifdef __cplusplus
+}
+#endif
+
+/* pushes a new object into the lua stack by copying the value into the userdata object */
+template<typename T>
+SWIGRUNTIME void SWIG_Lua_NewPodObj(lua_State* L, const T* ptr, swig_type_info *type)
+{
+  if (!ptr){
+    lua_pushnil(L);
+    return;
+  }
+  
+  struct value_user_data
+  {
+    swig_lua_userdata swigdata;
+    T object;
+  };
+  
+  value_user_data* usr = (value_user_data*) lua_newuserdata(L, sizeof(value_user_data));
+  
+  // Make sure that the swig_lua_userdata is at offset 0 of the extended user data
+  V_COMPILE_ASSERT(offsetof(value_user_data, swigdata) == 0);
+  
+  usr->object = *ptr;
+  usr->swigdata.ptr = &usr->object;
+  usr->swigdata.type = type;
+  usr->swigdata.own = 0;
+  _SWIG_Lua_AddMetatable(L, type); /* add metatable */
+}
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* pushes a new object into the lua stack */
 SWIGRUNTIME void SWIG_Lua_NewPointerObj(lua_State* L,void* ptr,swig_type_info *type, int own)
 {
@@ -1461,8 +1480,8 @@ SWIGRUNTIME void SWIG_Lua_NewPointerObj(lua_State* L,void* ptr,swig_type_info *t
   }
   usr=(swig_lua_userdata*)lua_newuserdata(L,sizeof(swig_lua_userdata));  /* get data */
   usr->ptr=ptr;  /* set the ptr */
-  usr->type=type;
-  usr->own=own;
+    usr->type=type;
+    usr->own=own;
   _SWIG_Lua_AddMetatable(L,type); /* add metatable */
 }
 
@@ -1485,13 +1504,37 @@ SWIGRUNTIME int  SWIG_Lua_ConvertPtr(lua_State* L,int index,void** ptr,swig_type
       *ptr=usr->ptr;
       return SWIG_OK; /* ok */
     }
-    cast=SWIG_TypeCheckStruct(usr->type,type); /* performs normal type checking */
-    if (cast)
+ 
+    if(usr->ptr == NULL)
     {
-      int newmemory = 0;
-      *ptr=SWIG_TypeCast(cast,usr->ptr,&newmemory);
-      assert(!newmemory); /* newmemory handling not yet implemented */
-      return SWIG_OK;  /* ok */
+      *ptr=0;
+      return SWIG_OK;
+    }
+    
+    // Vision extension: handle cast manually using our own RTTI - no need for virtual function calls
+    if(type->visiontype != NULL && usr->type->visiontype != NULL)
+    {
+      // SWIG only needs to cast to a less derived type, since the proxy object already has the most derived type
+      if(type->visiontype == usr->type->visiontype || usr->type->visiontype->IsDerivedFrom(type->visiontype))
+      {
+        *ptr = VType::CastFromTo(usr->ptr, usr->type->visiontype, type->visiontype);
+        return SWIG_OK;
+      }
+      else
+      {
+        return SWIG_ERROR;
+      }
+    }
+    else
+    {
+      cast=SWIG_TypeCheckStruct(usr->type,type); /* performs normal type checking */
+      if (cast)
+      {
+        int newmemory = 0;
+        *ptr=SWIG_TypeCast(cast,usr->ptr,&newmemory);
+        assert(!newmemory); /* newmemory handling not yet implemented */
+        return SWIG_OK;  /* ok */
+      }
     }
   }
   return SWIG_ERROR;  /* error */
@@ -1542,9 +1585,9 @@ SWIGRUNTIME const char *SWIG_Lua_typename(lua_State *L, int tp)
   {
     usr=(swig_lua_userdata*)lua_touserdata(L,tp);  /* get data */
     if (usr && usr->type && usr->type->str)
-      return usr->type->str;
-    return "userdata (unknown type)";
-  }
+        return usr->type->str;
+      return "userdata (unknown type)";
+    }
   return lua_typename(L,lua_type(L,tp));
 }
 
@@ -1561,14 +1604,38 @@ but to lua, they are different objects */
 SWIGRUNTIME int SWIG_Lua_equal(lua_State* L)
 {
   int result;
-  swig_lua_userdata *usr1,*usr2;
+  swig_lua_userdata * usr1, *usr2;
   if (!lua_isuserdata(L,1) || !lua_isuserdata(L,2))  /* just in case */
     return 0;  /* nil reply */
-  usr1=(swig_lua_userdata*)lua_touserdata(L,1);  /* get data */
-  usr2=(swig_lua_userdata*)lua_touserdata(L,2);  /* get data */
+  usr1 = (swig_lua_userdata*)lua_touserdata(L, 1); /* get data */
+  usr2 = (swig_lua_userdata*)lua_touserdata(L, 2); /* get data */
   /*result=(usr1->ptr==usr2->ptr && usr1->type==usr2->type); only works if type is the same*/
   result=(usr1->ptr==usr2->ptr);
-   lua_pushboolean(L,result);
+  lua_pushboolean(L,result);
+  return 1;
+}
+
+// Vision extension: check if weak pointer points to a live object
+SWIGRUNTIME int SWIG_Lua_isalive(lua_State* L)
+{
+  int result;
+  swig_lua_userdata * usr1;
+  
+  if(lua_isuserdata(L, 1))
+  {
+    usr1 = (swig_lua_userdata*)lua_touserdata(L, 1);
+    result = (usr1->ptr != NULL);
+  }
+  else if(lua_isnil(L, 1))
+  {
+    result = 0;
+  }
+  else
+  {
+    return 0;
+  }
+    
+  lua_pushboolean(L, result);
   return 1;
 }
 
@@ -1659,13 +1726,22 @@ SWIG_Lua_dostring(lua_State *L, const char* str) {
 #define SWIGTYPE_p_IVRemoteInput swig_types[0]
 #define SWIGTYPE_p_VColorRef swig_types[1]
 #define SWIGTYPE_p_char swig_types[2]
-#define SWIGTYPE_p_int swig_types[3]
-#define SWIGTYPE_p_long swig_types[4]
-#define SWIGTYPE_p_short swig_types[5]
-#define SWIGTYPE_p_unsigned_char swig_types[6]
-#define SWIGTYPE_p_unsigned_long swig_types[7]
-static swig_type_info *swig_types[9];
-static swig_module_info swig_module = {swig_types, 8, 0, 0, 0, 0};
+#define SWIGTYPE_p_hkvAlignedBBox swig_types[3]
+#define SWIGTYPE_p_hkvBoundingSphere swig_types[4]
+#define SWIGTYPE_p_hkvMat3 swig_types[5]
+#define SWIGTYPE_p_hkvMat4 swig_types[6]
+#define SWIGTYPE_p_hkvPlane swig_types[7]
+#define SWIGTYPE_p_hkvQuat swig_types[8]
+#define SWIGTYPE_p_hkvVec2 swig_types[9]
+#define SWIGTYPE_p_hkvVec3 swig_types[10]
+#define SWIGTYPE_p_hkvVec4 swig_types[11]
+#define SWIGTYPE_p_int swig_types[12]
+#define SWIGTYPE_p_long swig_types[13]
+#define SWIGTYPE_p_short swig_types[14]
+#define SWIGTYPE_p_unsigned_char swig_types[15]
+#define SWIGTYPE_p_unsigned_long swig_types[16]
+static swig_type_info *swig_types[18];
+static swig_module_info swig_module = {swig_types, 17, 0, 0, 0, 0};
 #define SWIG_TypeQuery(name) SWIG_TypeQueryModule(&swig_module, &swig_module, name)
 #define SWIG_MangledTypeQuery(name) SWIG_MangledTypeQueryModule(&swig_module, &swig_module, name)
 
@@ -1683,7 +1759,37 @@ typedef struct{} LANGUAGE_OBJ;
 }
 
 
-#include <Vision/Runtime/EnginePlugins/RemoteInputEnginePlugin/IVRemoteInput.hpp>
+  // Redefine SWIG_fail_* macros to make them display file and line information
+  // See http://stackoverflow.com/questions/14664541/line-number-where-swig-runtimeerror-occurs
+  SWIGRUNTIME void SWIG_push_fail_arg_info(lua_State* L, const char* func_name, int argnum, const char* expected, const char* actual)
+  {
+    lua_Debug ar;
+    lua_getstack(L, 1, &ar);
+    lua_getinfo(L, "nSl", &ar);
+    lua_pushfstring(L,"Error (%s:%d) in %s (arg %d), expected '%s' got '%s'", ar.source,ar.currentline,func_name,argnum,expected,actual);
+  }
+  
+  SWIGRUNTIME void SWIG_push_fail_check_num_args_info(lua_State* L, const char* func_name, int a, int b, int c)
+  {
+    lua_Debug ar;
+    lua_getstack(L, 1, &ar);
+    lua_getinfo(L, "nSl", &ar);
+    lua_pushfstring(L,"Error (%s:%d) in %s expected %d..%d args, got %d",ar.source,ar.currentline,func_name,a,b,lua_gettop(L));
+  }
+  
+  #undef SWIG_fail_arg
+  #define SWIG_fail_arg(func_name,argnum,type) \
+    {SWIG_push_fail_arg_info(L,func_name,argnum,type,SWIG_Lua_typename(L,argnum));\
+    goto fail;}
+  
+  #undef SWIG_check_num_args
+  #define SWIG_check_num_args(func_name,a,b) \
+    if (lua_gettop(L)<a || lua_gettop(L)>b) \
+    { SWIG_push_fail_check_num_args_info(L,func_name,a,b,lua_gettop(L));\
+    goto fail;}
+
+
+  #include <Vision/Runtime/EnginePlugins/RemoteInputEnginePlugin/IVRemoteInput.hpp>
 
 
 SWIGINTERN int SWIG_lua_isnilstring(lua_State *L, int idx) {
@@ -1718,6 +1824,12 @@ static int _wrap_IVRemoteInput_StartServer__SWIG_0(lua_State* L) {
   
   arg2 = (char *)lua_tostring(L, 2);
   arg3 = (int)lua_tonumber(L, 3);
+  
+  if (VTraits::IsBaseOf<VTypedObject, IVRemoteInput>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "IVRemoteInput_StartServer", 1, "IVRemoteInput *", "deleted native object");
+    SWIG_fail;
+  }
+  
   result = (bool)(arg1)->StartServer((char const *)arg2,arg3);
   lua_pushboolean(L,(int)(result!=0)); SWIG_arg++;
   return SWIG_arg;
@@ -1746,6 +1858,12 @@ static int _wrap_IVRemoteInput_StartServer__SWIG_1(lua_State* L) {
   }
   
   arg2 = (char *)lua_tostring(L, 2);
+  
+  if (VTraits::IsBaseOf<VTypedObject, IVRemoteInput>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "IVRemoteInput_StartServer", 1, "IVRemoteInput *", "deleted native object");
+    SWIG_fail;
+  }
+  
   result = (bool)(arg1)->StartServer((char const *)arg2);
   lua_pushboolean(L,(int)(result!=0)); SWIG_arg++;
   return SWIG_arg;
@@ -1829,6 +1947,12 @@ static int _wrap_IVRemoteInput_StopServer(lua_State* L) {
     SWIG_fail_ptr("IVRemoteInput_StopServer",1,SWIGTYPE_p_IVRemoteInput);
   }
   
+  
+  if (VTraits::IsBaseOf<VTypedObject, IVRemoteInput>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "IVRemoteInput_StopServer", 1, "IVRemoteInput *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->StopServer();
   
   return SWIG_arg;
@@ -1861,6 +1985,12 @@ static int _wrap_IVRemoteInput_DebugDrawTouchAreas(lua_State* L) {
     SWIG_fail_ptr("IVRemoteInput_DebugDrawTouchAreas",2,SWIGTYPE_p_VColorRef);
   }
   arg2 = *argp2;
+  
+  
+  if (VTraits::IsBaseOf<VTypedObject, IVRemoteInput>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "IVRemoteInput_DebugDrawTouchAreas", 1, "IVRemoteInput *", "deleted native object");
+    SWIG_fail;
+  }
   
   (arg1)->DebugDrawTouchAreas(arg2);
   
@@ -1895,6 +2025,12 @@ static int _wrap_IVRemoteInput_DebugDrawTouchPoints(lua_State* L) {
   }
   arg2 = *argp2;
   
+  
+  if (VTraits::IsBaseOf<VTypedObject, IVRemoteInput>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "IVRemoteInput_DebugDrawTouchPoints", 1, "IVRemoteInput *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->DebugDrawTouchPoints(arg2);
   
   return SWIG_arg;
@@ -1919,6 +2055,12 @@ static int _wrap_IVRemoteInput_InitEmulatedDevices(lua_State* L) {
     SWIG_fail_ptr("IVRemoteInput_InitEmulatedDevices",1,SWIGTYPE_p_IVRemoteInput);
   }
   
+  
+  if (VTraits::IsBaseOf<VTypedObject, IVRemoteInput>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "IVRemoteInput_InitEmulatedDevices", 1, "IVRemoteInput *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->InitEmulatedDevices();
   
   return SWIG_arg;
@@ -1941,6 +2083,12 @@ static int _wrap_IVRemoteInput_DeinitEmulatedDevices(lua_State* L) {
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_IVRemoteInput,0))){
     SWIG_fail_ptr("IVRemoteInput_DeinitEmulatedDevices",1,SWIGTYPE_p_IVRemoteInput);
+  }
+  
+  
+  if (VTraits::IsBaseOf<VTypedObject, IVRemoteInput>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "IVRemoteInput_DeinitEmulatedDevices", 1, "IVRemoteInput *", "deleted native object");
+    SWIG_fail;
   }
   
   (arg1)->DeinitEmulatedDevices();
@@ -1974,6 +2122,12 @@ static int _wrap_IVRemoteInput_AddVariableDirect(lua_State* L) {
   
   arg2 = (char *)lua_tostring(L, 2);
   arg3 = (char *)lua_tostring(L, 3);
+  
+  if (VTraits::IsBaseOf<VTypedObject, IVRemoteInput>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "IVRemoteInput_AddVariableDirect", 1, "IVRemoteInput *", "deleted native object");
+    SWIG_fail;
+  }
+  
   result = (bool)(arg1)->AddVariableDirect((char const *)arg2,(char const *)arg3);
   lua_pushboolean(L,(int)(result!=0)); SWIG_arg++;
   return SWIG_arg;
@@ -2005,6 +2159,12 @@ static int _wrap_IVRemoteInput_UpdateVariableDirect(lua_State* L) {
   
   arg2 = (char *)lua_tostring(L, 2);
   arg3 = (char *)lua_tostring(L, 3);
+  
+  if (VTraits::IsBaseOf<VTypedObject, IVRemoteInput>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "IVRemoteInput_UpdateVariableDirect", 1, "IVRemoteInput *", "deleted native object");
+    SWIG_fail;
+  }
+  
   result = (bool)(arg1)->UpdateVariableDirect((char const *)arg2,(char const *)arg3);
   lua_pushboolean(L,(int)(result!=0)); SWIG_arg++;
   return SWIG_arg;
@@ -2033,6 +2193,12 @@ static int _wrap_IVRemoteInput_RemoveVariable(lua_State* L) {
   }
   
   arg2 = (char *)lua_tostring(L, 2);
+  
+  if (VTraits::IsBaseOf<VTypedObject, IVRemoteInput>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "IVRemoteInput_RemoveVariable", 1, "IVRemoteInput *", "deleted native object");
+    SWIG_fail;
+  }
+  
   result = (bool)(arg1)->RemoveVariable((char const *)arg2);
   lua_pushboolean(L,(int)(result!=0)); SWIG_arg++;
   return SWIG_arg;
@@ -2060,6 +2226,12 @@ static int _wrap_IVRemoteInput_SetResizeOnConnect(lua_State* L) {
   }
   
   arg2 = (lua_toboolean(L, 2)!=0);
+  
+  if (VTraits::IsBaseOf<VTypedObject, IVRemoteInput>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "IVRemoteInput_SetResizeOnConnect", 1, "IVRemoteInput *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->SetResizeOnConnect(arg2);
   
   return SWIG_arg;
@@ -2087,6 +2259,12 @@ static int _wrap_IVRemoteInput_SetSmoothTouchInput(lua_State* L) {
   }
   
   arg2 = (lua_toboolean(L, 2)!=0);
+  
+  if (VTraits::IsBaseOf<VTypedObject, IVRemoteInput>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "IVRemoteInput_SetSmoothTouchInput", 1, "IVRemoteInput *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->SetSmoothTouchInput(arg2);
   
   return SWIG_arg;
@@ -2114,6 +2292,12 @@ static int _wrap_IVRemoteInput_SetDisableMouseInput(lua_State* L) {
   }
   
   arg2 = (lua_toboolean(L, 2)!=0);
+  
+  if (VTraits::IsBaseOf<VTypedObject, IVRemoteInput>::value && !arg1) {
+    SWIG_push_fail_arg_info(L, "IVRemoteInput_SetDisableMouseInput", 1, "IVRemoteInput *", "deleted native object");
+    SWIG_fail;
+  }
+  
   (arg1)->SetDisableMouseInput(arg2);
   
   return SWIG_arg;
@@ -2139,7 +2323,16 @@ static int _wrap_IVRemoteInput_Cast(lua_State* L) {
   }
   
   result = (IVRemoteInput *)IVRemoteInput_Cast(arg1);
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_IVRemoteInput,0); SWIG_arg++; 
+  
+  if(VTraits::IsBaseOf<VTypedObject, IVRemoteInput>::value)
+  {
+    LUA_PushObjectProxy(L, (VTypedObject*)result); SWIG_arg++;
+  }
+  else
+  {
+    SWIG_NewPointerObj(L,result,SWIGTYPE_p_IVRemoteInput,0); SWIG_arg++;
+  }
+  
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -2191,19 +2384,37 @@ static swig_lua_const_info swig_constants[] = {
 
 /* -------- TYPE CONVERSION AND EQUIVALENCE RULES (BEGIN) -------- */
 
-static swig_type_info _swigt__p_IVRemoteInput = {"_p_IVRemoteInput", "IVRemoteInput *", 0, 0, (void*)&_wrap_class_IVRemoteInput, 0};
-static swig_type_info _swigt__p_VColorRef = {"_p_VColorRef", "VColorRef *", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_char = {"_p_char", "char *|SBYTE *", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_int = {"_p_int", "VBool *|int *|SINT *", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_long = {"_p_long", "RETVAL *|long *|SLONG *", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_short = {"_p_short", "short *|SSHORT *", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_unsigned_char = {"_p_unsigned_char", "unsigned char *|UBYTE *", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_unsigned_long = {"_p_unsigned_long", "unsigned long *", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__p_IVRemoteInput = {"_p_IVRemoteInput", "IVRemoteInput *", 0, 0, (void*)&_wrap_class_IVRemoteInput, 0, NULL};
+static swig_type_info _swigt__p_VColorRef = {"_p_VColorRef", "VColorRef *", 0, 0, (void*)0, 0, NULL};
+static swig_type_info _swigt__p_char = {"_p_char", "char *|SBYTE *", 0, 0, (void*)0, 0, NULL};
+static swig_type_info _swigt__p_hkvAlignedBBox = {"_p_hkvAlignedBBox", "hkvAlignedBBox *", 0, 0, (void*)0, 0, NULL};
+static swig_type_info _swigt__p_hkvBoundingSphere = {"_p_hkvBoundingSphere", "hkvBoundingSphere *", 0, 0, (void*)0, 0, NULL};
+static swig_type_info _swigt__p_hkvMat3 = {"_p_hkvMat3", "hkvMat3 *", 0, 0, (void*)0, 0, NULL};
+static swig_type_info _swigt__p_hkvMat4 = {"_p_hkvMat4", "hkvMat4 *", 0, 0, (void*)0, 0, NULL};
+static swig_type_info _swigt__p_hkvPlane = {"_p_hkvPlane", "hkvPlane *", 0, 0, (void*)0, 0, NULL};
+static swig_type_info _swigt__p_hkvQuat = {"_p_hkvQuat", "hkvQuat *", 0, 0, (void*)0, 0, NULL};
+static swig_type_info _swigt__p_hkvVec2 = {"_p_hkvVec2", "hkvVec2 *", 0, 0, (void*)0, 0, NULL};
+static swig_type_info _swigt__p_hkvVec3 = {"_p_hkvVec3", "hkvVec3 *", 0, 0, (void*)0, 0, NULL};
+static swig_type_info _swigt__p_hkvVec4 = {"_p_hkvVec4", "hkvVec4 *", 0, 0, (void*)0, 0, NULL};
+static swig_type_info _swigt__p_int = {"_p_int", "VBool *|int *|SINT *", 0, 0, (void*)0, 0, NULL};
+static swig_type_info _swigt__p_long = {"_p_long", "RETVAL *|long *|SLONG *", 0, 0, (void*)0, 0, NULL};
+static swig_type_info _swigt__p_short = {"_p_short", "short *|SSHORT *", 0, 0, (void*)0, 0, NULL};
+static swig_type_info _swigt__p_unsigned_char = {"_p_unsigned_char", "unsigned char *|UBYTE *", 0, 0, (void*)0, 0, NULL};
+static swig_type_info _swigt__p_unsigned_long = {"_p_unsigned_long", "unsigned long *", 0, 0, (void*)0, 0, NULL};
 
 static swig_type_info *swig_type_initial[] = {
   &_swigt__p_IVRemoteInput,
   &_swigt__p_VColorRef,
   &_swigt__p_char,
+  &_swigt__p_hkvAlignedBBox,
+  &_swigt__p_hkvBoundingSphere,
+  &_swigt__p_hkvMat3,
+  &_swigt__p_hkvMat4,
+  &_swigt__p_hkvPlane,
+  &_swigt__p_hkvQuat,
+  &_swigt__p_hkvVec2,
+  &_swigt__p_hkvVec3,
+  &_swigt__p_hkvVec4,
   &_swigt__p_int,
   &_swigt__p_long,
   &_swigt__p_short,
@@ -2214,6 +2425,15 @@ static swig_type_info *swig_type_initial[] = {
 static swig_cast_info _swigc__p_IVRemoteInput[] = {  {&_swigt__p_IVRemoteInput, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_VColorRef[] = {  {&_swigt__p_VColorRef, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_char[] = {  {&_swigt__p_char, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_hkvAlignedBBox[] = {  {&_swigt__p_hkvAlignedBBox, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_hkvBoundingSphere[] = {  {&_swigt__p_hkvBoundingSphere, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_hkvMat3[] = {  {&_swigt__p_hkvMat3, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_hkvMat4[] = {  {&_swigt__p_hkvMat4, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_hkvPlane[] = {  {&_swigt__p_hkvPlane, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_hkvQuat[] = {  {&_swigt__p_hkvQuat, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_hkvVec2[] = {  {&_swigt__p_hkvVec2, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_hkvVec3[] = {  {&_swigt__p_hkvVec3, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_hkvVec4[] = {  {&_swigt__p_hkvVec4, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_int[] = {  {&_swigt__p_int, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_long[] = {  {&_swigt__p_long, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_short[] = {  {&_swigt__p_short, 0, 0, 0},{0, 0, 0, 0}};
@@ -2224,6 +2444,15 @@ static swig_cast_info *swig_cast_initial[] = {
   _swigc__p_IVRemoteInput,
   _swigc__p_VColorRef,
   _swigc__p_char,
+  _swigc__p_hkvAlignedBBox,
+  _swigc__p_hkvBoundingSphere,
+  _swigc__p_hkvMat3,
+  _swigc__p_hkvMat4,
+  _swigc__p_hkvPlane,
+  _swigc__p_hkvQuat,
+  _swigc__p_hkvVec2,
+  _swigc__p_hkvVec3,
+  _swigc__p_hkvVec4,
   _swigc__p_int,
   _swigc__p_long,
   _swigc__p_short,
@@ -2233,6 +2462,28 @@ static swig_cast_info *swig_cast_initial[] = {
 
 
 /* -------- TYPE CONVERSION AND EQUIVALENCE RULES (END) -------- */
+
+template<typename T, bool IsTypedObject = VTraits::IsBaseOf<VTypedObject, typename VTraits::RemovePointer<T>::type>::value> struct SWIG_InitVisionType { static void Do(swig_type_info*) {} };
+template<typename T> struct SWIG_InitVisionType<T*, true> { static void Do(swig_type_info* info) {
+            VType* pType = VTraits::RemovePointer<T>::type::GetClassTypeId();
+            if(pType->m_pSwigTypeInfo == NULL)
+              pType->m_pSwigTypeInfo = info;
+            info->visiontype = pType;
+  } };
+SWIGRUNTIME void SWIG_InitVisionTypes() {
+  SWIG_InitVisionType<IVRemoteInput *>::Do(&_swigt__p_IVRemoteInput);
+  SWIG_InitVisionType<VColorRef *>::Do(&_swigt__p_VColorRef);
+  SWIG_InitVisionType<hkvAlignedBBox *>::Do(&_swigt__p_hkvAlignedBBox);
+  SWIG_InitVisionType<hkvBoundingSphere *>::Do(&_swigt__p_hkvBoundingSphere);
+  SWIG_InitVisionType<hkvMat3 *>::Do(&_swigt__p_hkvMat3);
+  SWIG_InitVisionType<hkvMat4 *>::Do(&_swigt__p_hkvMat4);
+  SWIG_InitVisionType<hkvPlane *>::Do(&_swigt__p_hkvPlane);
+  SWIG_InitVisionType<hkvQuat *>::Do(&_swigt__p_hkvQuat);
+  SWIG_InitVisionType<hkvVec2 *>::Do(&_swigt__p_hkvVec2);
+  SWIG_InitVisionType<hkvVec3 *>::Do(&_swigt__p_hkvVec3);
+  SWIG_InitVisionType<hkvVec4 *>::Do(&_swigt__p_hkvVec4);
+  SWIG_InitVisionType<unsigned long *>::Do(&_swigt__p_unsigned_long);
+}
 
 /* -----------------------------------------------------------------------------
  * Type initialization:
@@ -2434,6 +2685,9 @@ SWIG_InitializeModule(void *clientdata) {
   }
   printf("**** SWIG_InitializeModule: Cast List ******\n");
 #endif
+  
+  // Vision extension
+  SWIG_InitVisionTypes();
 }
 
 /* This function will propagate the clientdata field of type to
@@ -2564,6 +2818,7 @@ SWIGEXPORT int SWIG_init(lua_State* L)
   /* add a global fn */
   SWIG_Lua_add_function(L,"swig_type",SWIG_Lua_type);
   SWIG_Lua_add_function(L,"swig_equals",SWIG_Lua_equal);
+  SWIG_Lua_add_function(L,"swig_isalive", SWIG_Lua_isalive);  // Vision extension
   /* begin the module (its a table with the same name as the module) */
   SWIG_Lua_module_begin(L,SWIG_name);
   /* add commands/functions */

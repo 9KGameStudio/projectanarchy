@@ -228,12 +228,18 @@ void RPG_GuiManager_VisionGUI::InitializeHealthAndManaBarDefinitions()
   m_manaBarTextureFilename            = "GUI/Textures/ind_mana.tga";
   m_manaBarGlowTextureFilename        = "GUI/Textures/ind_mana_glow.tga";
 
-  const float offset = Vision::Video.GetUse2xAssetsForCurrentConfig() ? 32.f : 0.f;
-  const float multiplier = Vision::Video.GetUse2xAssetsForCurrentConfig() ? 2.f : 1.f;
-  const float smallScreenOffset = Vision::Video.GetYRes() > SMALLSCREENSIZELIMIT ? 30.f : 0.f;
-  m_indicatorBarFlareOrigin = hkvVec2(72.f, 16.f) * multiplier;
-  m_healthBarPosition = hkvVec2(22.f + smallScreenOffset + offset, 22.f + smallScreenOffset + offset);
-  m_manaBarPosition = hkvVec2(22.f + smallScreenOffset + offset, 54.f + smallScreenOffset + offset + offset);
+  {
+    const float offset = Vision::Video.GetUse2xAssetsForCurrentConfig() ? 32.f : 0.f;
+    const float smallScreenOffset = Vision::Video.GetYRes() > SMALLSCREENSIZELIMIT ? 30.f : 0.f;
+        
+    m_healthBarPosition = hkvVec2(62.f + smallScreenOffset + offset, 22.f + smallScreenOffset + offset);
+    m_manaBarPosition = hkvVec2(62.f + smallScreenOffset + offset, 54.f + smallScreenOffset + offset + offset);
+  }
+
+  {
+    const float multiplier = Vision::Video.GetUse2xAssetsForCurrentConfig() ? 2.f : 1.f;
+    m_indicatorBarFlareOrigin = hkvVec2(72.f, 16.f) * multiplier;
+  }
 
   m_indicatorBarTrackTexture = Vision::TextureManager.Load2DTexture(m_indicatorBarTrackTextureFilename.AsChar());
   VASSERT_MSG(m_indicatorBarTrackTexture, "m_indicatorBarTrackTexture failed to load.");
@@ -760,7 +766,7 @@ RPG_SkillButtonDefinition::RPG_SkillButtonDefinition()
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -17,8 +17,9 @@ extern const class hkClass hkbFootIkDriverInfoClass;
 class hkbFootIkDriverInfo : public hkReferencedObject
 {
 	public:
-		
+		//+version(1)
 		//+vtable(true)
+
 		HK_DECLARE_CLASS_ALLOCATOR( HK_MEMORY_CLASS_BEHAVIOR );
 		HK_DECLARE_REFLECTION();
 
@@ -33,12 +34,15 @@ class hkbFootIkDriverInfo : public hkReferencedObject
 				m_sidewaysSampleWidth(0.2f),
 				m_lockFeetWhenPlanted(false),
 				m_useCharacterUpVector(false),
-				m_isQuadrupedNarrow(false)
+				m_isQuadrupedNarrow(false),
+				m_keepSourceFootEndAboveGround(true)
 		{}
 
 			/// The structure holds the information required by the footPlacementIkSolver
 		struct Leg
 		{
+			// +version(1)
+
 			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_BEHAVIOR, Leg );
 			HK_DECLARE_REFLECTION();
 
@@ -97,11 +101,23 @@ class hkbFootIkDriverInfo : public hkReferencedObject
 								//+hk.Description("The hip bone.")
 								//+hk.Ui(group="Foot IK Bones")
 
+				/// Index of the sibling of the hip bone. If the bone is specified then the foot IK driver applies the same rotation to the sibling bone as it does to the shoulder bone.
+			hkInt16 m_hipSiblingIndex;	//+default(-1)
+										//+hkb.RoleAttribute("ROLE_BONE_INDEX","FLAG_NONE")
+										//+hk.Description("The sibling of the hip bone. If the bone is specified then the foot IK driver applies the same rotation to the sibling bone as it does to the hip bone.")
+										//+hk.Ui(group="Foot IK Sibling Bones")
+
 				/// Index of the knee bone.  If this is not -1, it overrides the character boneInfo.
 			hkInt16 m_kneeIndex;	//+default(-1)
 									//+hkb.RoleAttribute("ROLE_BONE_INDEX","FLAG_CHAIN")
 									//+hk.Description("The knee bone.")
 									//+hk.Ui(group="Foot IK Bones")
+
+				/// Index of the sibling of the knee bone. If the bone is specified then the foot IK driver applies the same rotation to the sibling bone as it does to the shoulder bone.
+			hkInt16 m_kneeSiblingIndex;	//+default(-1)
+										//+hkb.RoleAttribute("ROLE_BONE_INDEX","FLAG_NONE")
+										//+hk.Description("The sibling of the knee bone. If the bone is specified then the foot IK driver applies the same rotation to the sibling bone as it does to the knee bone.")
+										//+hk.Ui(group="Foot IK Sibling Bones")
 
 				/// Index of the ankle bone.  If this is not -1, it overrides the character boneInfo.
 			hkInt16 m_ankleIndex;	//+default(-1)
@@ -173,6 +189,10 @@ class hkbFootIkDriverInfo : public hkReferencedObject
 		hkBool m_isQuadrupedNarrow;	//+default(false)
 									//+hk.Description("This works for any character with more the two legs. If the character is such that in the sideways direction the feet are really close then set this to true.")
 
+			/// If true, foot source will be displaced upward if foot end penetrates ground.
+		hkBool m_keepSourceFootEndAboveGround;	//+default(true)
+												//+hk.Description("If true, the desired foot height will be displaced upward if foot end of the source animation penetrates ground.  This can be useful if blending animations causes the blended foot position to go below ground.  Uses legs' Foot End LS parameter.")
+
 	public:
 
 		bool isValid( const hkaSkeleton* skeleton, hkStringPtr& errorString ) const;
@@ -186,7 +206,7 @@ class hkbFootIkDriverInfo : public hkReferencedObject
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

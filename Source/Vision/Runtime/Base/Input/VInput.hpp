@@ -311,9 +311,6 @@ enum VInputControl
 
   CT_MOUSE_DATA_CHANGED,
 
-  CT_MOUSE_RAW_CURSOR_X,          ///< Client window X coordinate from Windows cursor
-  CT_MOUSE_RAW_CURSOR_Y,          ///< Client window Y coordinate from Windows cursor
-
   //psp2/android/iOS/PC motion control
   CT_MOTION_ACCELERATION_X,
   CT_MOTION_ACCELERATION_Y,
@@ -551,6 +548,12 @@ HKV_DEPRECATED_2013_1 static const VInputControl CT_MOUSE_DELTA_Y_NEG = CT_MOUSE
 /// Deprecated. Replace by CT_TOUCH_TRIPLE_TAP.
 HKV_DEPRECATED_2013_1 static const VInputControl CT_TOUCH_TRIPPLE_TAP = CT_TOUCH_TRIPLE_TAP;
 
+/// Deprecated. Replace by CT_MOUSE_ABS_X.
+HKV_DEPRECATED_2013_3 static const VInputControl CT_MOUSE_RAW_CURSOR_X = CT_MOUSE_ABS_X;
+
+/// Deprecated. Replace by CT_MOUSE_ABS_Y.
+HKV_DEPRECATED_2013_3 static const VInputControl CT_MOUSE_RAW_CURSOR_Y = CT_MOUSE_ABS_Y;
+
 class IVInputDevice;
 
 
@@ -606,6 +609,10 @@ public:
   /// \brief
   ///   Helper to apply a positive or negative deadzone to a given input value
   static float ApplyDeadZone(float fValue, float fDeadZone);
+
+  VBASE_IMPEXP static IVInputDevice s_NoInputDevice;
+
+  VBASE_IMPEXP static int s_iFrameCounter;
 
 protected:
 
@@ -1396,7 +1403,7 @@ public:
   ///   You can query the state of the mapped control via the trigger id.
   /// 
   /// \param inputDevice
-  ///   The device that provides the specified control. E.g. VInputManagerPC::Keyboard() or it's macro V_PC_KEYBOARD.
+  ///   The device that provides the specified control. E.g. VInputManagerPC::Keyboard() or its macro V_PC_KEYBOARD.
   /// 
   /// \param uiControl
   ///   The control (key, button, position, etc.) which gets mapped to the specified trigger.
@@ -1512,7 +1519,7 @@ public:
   ///   You can query the state of the mapped control via the trigger id.
   /// 
   /// \param inputDevice
-  ///   The device that provides the specified control. E.g. VInputManagerPC::Keyboard() or it's macro V_PC_KEYBOARD.
+  ///   The device that provides the specified control. E.g. VInputManagerPC::Keyboard() or its macro V_PC_KEYBOARD.
   /// 
   /// \param uiControlNegative
   ///   The control which is associated with the negative deflection along the axis.
@@ -2075,7 +2082,7 @@ public:
 };
 
 
-#ifdef WIN32
+#if defined(_VISION_WIN32)
 
 /// \brief
 ///   Callback data object for the Windows specific VInputCallbacks::OnPreTranslateMessage
@@ -2136,7 +2143,7 @@ public:
   ///   be casted to VInputMouseButtonDataObject and provides the mouse button index
   VBASE_IMPEXP static VCallback OnMouseButtonDown;
 
-#ifdef WIN32
+#if defined(_VISION_WIN32)
   /// \brief
   ///   Windows specific callback that is called inside the windows message loop.
   /// 
@@ -2206,7 +2213,7 @@ public:
 #endif //VINPUT_HPP_INCLUDED
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

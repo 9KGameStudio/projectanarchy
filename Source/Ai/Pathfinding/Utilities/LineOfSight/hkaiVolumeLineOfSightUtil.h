@@ -18,14 +18,14 @@ class hkaiAstarEdgeFilter;
 
 /// A utility for performing line of sight checks on a nav volume.
 /// Optionally outputs a list of edges crossed.
-class hkaiVolumeLineOfSightUtil
+class HK_EXPORT_AI hkaiVolumeLineOfSightUtil
 {
 	public:
 	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE,hkaiVolumeLineOfSightUtil);
 
 	
 			/// Input parameters for line of sight check.
-		struct LineOfSightInput
+		struct HK_EXPORT_AI LineOfSightInput
 		{
 			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_AI_ASTAR, LineOfSightInput );
 
@@ -58,8 +58,11 @@ class hkaiVolumeLineOfSightUtil
 				/// If this value is negative, the check will be skipped
 		//	hkReal m_searchCapsuleRadius;
 
-				/// Optional pointer to hkaiAstarEdgeFilter, which can be used to reject nav volume edges.
-			const hkaiAstarEdgeFilter* m_edgeFilter;
+				/// Optional pointer to hkaiAstarCostModifier, which can be used to modify costs based on the hkaiAgentTraversalInfo.
+			HK_PAD_ON_SPU(const hkaiAstarCostModifier*) m_costModifier;
+
+				/// Optional pointer to hkaiAstarEdgeFilter, which can be used to reject nav mesh edges
+			HK_PAD_ON_SPU(const hkaiAstarEdgeFilter*) m_edgeFilter;
 
 				/// Constructor.
 			LineOfSightInput();
@@ -68,7 +71,7 @@ class hkaiVolumeLineOfSightUtil
 		/// Check whether or not a straight-line path exists between the start and end points.
 		static bool HK_CALL checkLineOfSight( const hkaiStreamingCollection::InstanceInfo* streamingInfo, const LineOfSightInput& input,
 			hkArray<hkaiPackedKey>* cellsArrayOut = HK_NULL, bool doNotExceedArrayCapacity = false,
-			int* numIterationsOut = HK_NULL );
+			int* numIterationsOut = HK_NULL, hkReal* accumulatedDistanceOut = HK_NULL );
 
 			
 };
@@ -76,7 +79,7 @@ class hkaiVolumeLineOfSightUtil
 #endif // VOLUME_LINE_OF_SIGHT_UTIL_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

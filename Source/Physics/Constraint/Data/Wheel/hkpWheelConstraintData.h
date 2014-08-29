@@ -11,14 +11,14 @@
 
 #include <Physics/Constraint/Data/hkpConstraintData.h>
 
-extern const class hkClass hkpWheelConstraintDataAtomsClass;
-extern const hkClass hkpWheelConstraintDataClass;
+extern HK_EXPORT_PHYSICS const class hkClass hkpWheelConstraintDataAtomsClass;
+extern HK_EXPORT_PHYSICS const hkClass hkpWheelConstraintDataClass;
 
 #define HKP_CONSTRAINT_FILL_PADDING_WITH_ZERO(fromAfter, to) { for (hkUint8* ptr = reinterpret_cast<hkUint8*>(fromAfter.next()); ptr < reinterpret_cast<hkUint8*>(&to); *(ptr++) = 0) { } }
 
 
 /// A wheel constraint. The constraint's body A is the wheel, while its body B is the chassis.
-class hkpWheelConstraintData : public hkpConstraintData
+class HK_EXPORT_PHYSICS hkpWheelConstraintData : public hkpConstraintData
 {
 	public:
 
@@ -176,7 +176,7 @@ void hkpWheelConstraintData::setSuspensionDamping(hkReal damping)
 #endif // HKP_WHEEL_CONSTRAINT_DATA_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

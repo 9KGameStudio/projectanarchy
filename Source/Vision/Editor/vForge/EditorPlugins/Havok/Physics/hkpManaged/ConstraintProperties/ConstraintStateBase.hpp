@@ -135,7 +135,7 @@ namespace HavokManaged
     property float Strength
     {
       float get() { return m_fStrength; }
-      void set(float fStrength) { m_fStrength = min(1.f, max(0.f, fStrength)); }
+      void set(float fStrength) { m_fStrength = hkvMath::Min(1.f, hkvMath::Max(0.f, fStrength)); }
     }
 
     // Deserialization method
@@ -378,7 +378,7 @@ namespace HavokManaged
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

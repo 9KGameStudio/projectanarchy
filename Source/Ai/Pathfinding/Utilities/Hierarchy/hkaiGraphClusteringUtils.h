@@ -17,17 +17,17 @@ class hkcdDynamicAabbTree;
 class hkaiStreamingCollection;
 
 	/// Graph clustering utilities.
-class hkaiGraphClusteringUtils
+class HK_EXPORT_AI hkaiGraphClusteringUtils
 {
 public:
 	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_AI, hkaiGraphClusteringUtils);
 
-	enum 
+	enum
 	{
 		INVALID_REGION_INDEX = -1,
 	};
 
-		/// How the closest cluster center to a node is determined.	
+		/// How the closest cluster center to a node is determined.
 	enum ClusterMethod
 	{
 			/// Naive linear search.
@@ -51,11 +51,11 @@ public:
 	};
 
 		/// Cluster generation settings.
-	struct ClusterSettings
+	struct HK_EXPORT_AI ClusterSettings
 	{
 		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_AI, ClusterSettings);
 		ClusterSettings();
-		hkEnum<ClusterMethod, hkUint8> m_method;	
+		hkEnum<ClusterMethod, hkUint8> m_method;
 		hkEnum<ClusterCostCalculation, hkUint8> m_costCalculation;
 		hkBool m_symmetricCosts;
 		int m_nodesPerCluster;
@@ -64,14 +64,14 @@ public:
 		// Multithreading options
 		//
 
-			/// Clustering will only be split until multiple jobs if the region is larger than this
+			/// Clustering will only be split until multiple tasks if the region is larger than this
 		int m_minSplitSize; //+default(100)
 
-			/// Number of jobs to split into
-		int m_numJobs; //+default(16)
+			/// Number of tasks to split into
+		int m_numTasks; //+default(16)
 
-		class hkJobQueue* m_jobQueue;
-		class hkJobThreadPool* m_threadPool;
+		class hkTaskQueue* m_taskQueue;
+		class hkThreadPool* m_threadPool;
 	};
 
 	typedef hkaiDirectedGraphExplicitCost::NodeIndex NodeIndex;
@@ -105,7 +105,7 @@ public:
 #endif // HKAI_GRAPH_CLUSTERING_UTILS_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

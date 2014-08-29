@@ -63,6 +63,22 @@ public:
     return NULL;
   }
 
+  VisStaticMeshInstance_cl * PickStaticMesh(float x, float y, float fMaxDist=10000.f)
+  {
+    hkvVec3 traceStart = Vision::Camera.GetCurrentCameraPosition();
+    hkvVec3 traceDir;
+    Vision::Contexts.GetCurrentContext()->GetTraceDirFromScreenPos(x, y, traceDir, fMaxDist);
+    hkvVec3 traceEnd = traceStart + traceDir;
+    VisTraceLineInfo_t traceInfo;
+    if (!Vision::CollisionToolkit.TraceLine(traceStart, traceEnd, (ULONG) VIS_TRACE_ALL, (ULONG) 0, NULL, NULL, &traceInfo))
+    {
+      if(traceInfo.pGeoInstance!=NULL && traceInfo.pGeoInstance->GetGeometryType()==STATIC_GEOMETRY_TYPE_MESHINSTANCE)
+        return static_cast<VisStaticSubmeshInstance_cl *>(traceInfo.pGeoInstance)->GetMeshInstance();
+    }
+
+    return NULL;
+  }
+
   bool SaveToFile(const char * szFileName = NULL, bool bJpgInsteadBmp = true)
   {
     return Vision::Game.SaveScreenShot(szFileName, bJpgInsteadBmp);
@@ -77,7 +93,7 @@ public:
 #endif // __VSCRIPSCREEN_WRAPPER_HPP
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

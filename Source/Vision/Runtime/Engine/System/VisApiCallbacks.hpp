@@ -65,12 +65,12 @@ public:
   /// \code
   ///    int iLastIndex = Vision::Callbacks.OnRenderHook.TriggerCallbacks(&data, -1000);
   ///    DoSomething();
-  ///    Vision::Callbacks.OnRenderHook.TriggerCallbacks(&data, INT_MAX, iLastIndex);
+  ///    Vision::Callbacks.OnRenderHook.TriggerCallbacks(&data, INT64_MAX, iLastIndex);
   /// \endcode
   ///
   /// \note
   ///   When all remaining callbacks above the start index shall be called, best performance can be
-  /// achieved by defining MAX_INT as max priority instead of any high "magic value" like 1000000.
+  /// achieved by defining INT64_MAX as max priority instead of any high "magic value" like 1000000.
   ///
   /// \param pData
   ///   The data object to send to all handlers. If NULL, this function creates a base object with
@@ -91,7 +91,7 @@ public:
   /// \sa VCallback::DeregisterCallback
   /// \sa class IVisCallbackHandler_cl
   /// \sa IVisCallbackHandler_cl::OnHandleCallback
-  VISION_APIFUNC int TriggerCallbacks(IVisCallbackDataObject_cl *pData, int iMaxPriority, int iStartIndex = 0);
+  VISION_APIFUNC int TriggerCallbacks(IVisCallbackDataObject_cl *pData, int64 iMaxPriority, int iStartIndex = 0);
 };
 
 
@@ -1177,7 +1177,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

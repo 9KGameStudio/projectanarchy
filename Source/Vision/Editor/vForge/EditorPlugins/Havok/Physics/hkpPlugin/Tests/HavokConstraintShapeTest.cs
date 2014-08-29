@@ -17,12 +17,16 @@ using CSharpFramework.Shapes;
 using CSharpFramework.Math;
 using HavokEditorPlugin.Shapes;
 using HavokManaged;
+using ManagedBase;
+using ManagedBase.LogManaged;
 
-namespace HavokEditorPlugin.Tests
+namespace HavokEditorPluginTests
 {
   [TestFixture]
   public class HavokConstraintShapeTest
   {
+    private float _GlobalUnitScalingBackup = 1.0f;
+
     /// <summary>
     /// Test function
     /// </summary>
@@ -34,6 +38,15 @@ namespace HavokEditorPlugin.Tests
 
       TestManager.Helpers.OpenSceneFromFile(TestManager.Helpers.TestDataDir + @"\HavokBinding\JointMuseum.scene");
       TestManager.Helpers.ProcessEvents();
+
+       _GlobalUnitScalingBackup = EditorManager.Settings.GlobalUnitScaling;
+
+      if (EditorManager.Settings.GlobalUnitScaling != 1.0f)
+      {
+        Log.Info("GlobalUnitScaling is " + EditorManager.Settings.GlobalUnitScaling + ", temporarily setting it to 1.0 - Otherwise Physics Constraints tests will not run properly.");
+      
+        EditorManager.Settings.GlobalUnitScaling = 1.0f;
+      }
     }
 
     /// <summary>
@@ -43,6 +56,14 @@ namespace HavokEditorPlugin.Tests
     public void TearDown()
     {
       TestManager.Helpers.CloseActiveProject();
+
+      if (EditorManager.Settings.GlobalUnitScaling != _GlobalUnitScalingBackup)
+      {
+        Log.Info("Setting back GlobalUnitScaling to " + _GlobalUnitScalingBackup + ".");
+
+        EditorManager.Settings.GlobalUnitScaling = _GlobalUnitScalingBackup;
+      }
+      
     }
 
     /// <summary>
@@ -64,10 +85,16 @@ namespace HavokEditorPlugin.Tests
           break;
 
         TestManager.Helpers.ProcessEvents();
+        EditorManager.ActiveView.UpdateView(true);
       }
 
       try
       {
+        // Since the test data are clean, they will not have the HavokEditorPlugin.EditorPlugin.PluginData file in scene.Layers folder
+        // which means that the Unit Scale in the Physics panel will be derived from the Global Unit Scaling instead of being loaded from that file.
+        // For this to be set correctly, the GlobalUnitScaling has to be 1.
+        Assert.IsTrue(EditorManager.Settings.GlobalUnitScaling == 1, "GlobalUnitScaling is " + EditorManager.Settings.GlobalUnitScaling + " but should be 1 - Physics Constraints tests will not run properly");
+
         { // Check the Ball and Socket constraint
           ShapeBase basLower = EditorManager.Scene.FindShapeByName("Ball and Socket - Lower barrel");
           Assert.IsNotNull(basLower, "Failed to find entity");
@@ -235,10 +262,16 @@ namespace HavokEditorPlugin.Tests
           break;
 
         TestManager.Helpers.ProcessEvents();
+        EditorManager.ActiveView.UpdateView(true);
       }
 
       try
       {
+        // Since the test data are clean, they will not have the HavokEditorPlugin.EditorPlugin.PluginData file in scene.Layers folder
+        // which means that the Unit Scale in the Physics panel will be derived from the Global Unit Scaling instead of being loaded from that file.
+        // For this to be set correctly, the GlobalUnitScaling has to be 1.
+        Assert.IsTrue(EditorManager.Settings.GlobalUnitScaling == 1, "GlobalUnitScaling is " + EditorManager.Settings.GlobalUnitScaling + " but should be 1 - Physics Constraints tests will not run properly");
+
         // Check the Ball and Socket constraint
         ShapeBase basLower = EditorManager.Scene.FindShapeByName("Ball and Socket - Lower barrel");
         Assert.IsNotNull(basLower, "Failed to find entity");
@@ -255,12 +288,11 @@ namespace HavokEditorPlugin.Tests
         EditorManager.EditorMode = EditorManager.Mode.EM_NONE;
       }
     }
-  
   }
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

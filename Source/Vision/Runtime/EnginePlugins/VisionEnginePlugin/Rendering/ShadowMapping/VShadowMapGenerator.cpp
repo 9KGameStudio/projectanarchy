@@ -12,7 +12,7 @@
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/ShadowMapping/VBaseShadowMapComponentSpotDirectional.hpp>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/RenderingHelpers/ScratchTexturePool.hpp>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/RenderingHelpers/RenderingOptimizationHelpers.hpp>
-#include <Vision/Runtime/Base/System/Memory/VMemDbg.hpp>
+
 
 #if !defined( HK_ANARCHY )
   #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/DeferredShading/DeferredShadingApp.hpp>
@@ -54,7 +54,7 @@ VShadowMapGenerator::VShadowMapGenerator(IVRendererNode *pRendererNode, VisLight
   m_bShowProfilingData = false;
   m_bConsiderCastShadowFlag = true;
 
-  Vision::Callbacks.OnUpdateSceneFinished += this;
+  Vision::Callbacks.OnFrameUpdatePreRender += this;
   Vision::Callbacks.OnUpdateSceneBegin += this;
   
   // The OnContextSwitching callback is used to skip rendering in the first place and do it later in the light pass
@@ -75,7 +75,7 @@ VShadowMapGenerator::VShadowMapGenerator(IVRendererNode *pRendererNode, VisLight
 
 VShadowMapGenerator::~VShadowMapGenerator()
 {
-  Vision::Callbacks.OnUpdateSceneFinished -= this;
+  Vision::Callbacks.OnFrameUpdatePreRender -= this;
   Vision::Callbacks.OnUpdateSceneBegin -= this;
   
   Vision::Callbacks.OnContextSwitching -= this;
@@ -100,7 +100,7 @@ void VShadowMapGenerator::DeInitialize()
     m_pParts[i].SetRenderContext(NULL);
   }
 
-#if defined(WIN32)
+#if defined(_VISION_WIN32)
   m_spShadowMap = NULL;
 #elif defined (_VISION_PS3)
   m_spPatchedShadowMapDepthStencil = NULL;
@@ -194,7 +194,7 @@ bool VShadowMapGenerator::Initialize()
   config.m_iWidth = m_iTextureSize[0];
   config.m_iHeight = m_iTextureSize[1];
 
-#if !defined( _VISION_MOBILE ) && !defined( HK_ANARCHY )
+#if !defined( _VISION_MOBILE ) && !defined(_VISION_NACL) && !defined( HK_ANARCHY )
   // Check if interleaved shadow map rendering should be used
   m_bIsRenderedInterleaved = false;
   if(VDeferredRenderingSystem* pDeferred = vdynamic_cast<VDeferredRenderingSystem*>(m_pRendererNode))
@@ -203,7 +203,7 @@ bool VShadowMapGenerator::Initialize()
   }
 #endif
 
-#if defined(WIN32) && defined(_VR_DX9)
+#if defined(_VISION_WIN32) && defined(_VR_DX9)
   config.m_eFormat = m_spShadowMapFormat->GetShadowMapFormat();
   VASSERT(config.m_eFormat != VTextureLoader::NONE);
 
@@ -384,7 +384,7 @@ bool VShadowMapGenerator::Initialize()
     pContext->SetUserData(this);
 
     // Set Render Targets to the shared shadow map / depth stencil map
-#if defined(WIN32)
+#if defined(_VISION_WIN32)
     VASSERT( VVideo::GetDXFeatureLevel() < D3D_FEATURE_LEVEL_10_0 || m_spShadowMap.GetPtr() == NULL );
     pContext->SetRenderTarget(0, m_spShadowMap);
 #else
@@ -643,9 +643,9 @@ void VShadowMapGenerator::OnHandleCallback(IVisCallbackDataObject_cl *pData)
     return;
   }
 
-  if (pData->m_pSender==&Vision::Callbacks.OnUpdateSceneFinished)
+  if (pData->m_pSender==&Vision::Callbacks.OnFrameUpdatePreRender)
   {
-    Update();
+    Update(false);
     return;
   }
 
@@ -662,7 +662,15 @@ void VShadowMapGenerator::OnHandleCallback(IVisCallbackDataObject_cl *pData)
 		  }
 	  }
   }
+}
 
+int64 VShadowMapGenerator::GetCallbackSortingKey(VCallback *pCallback)
+{
+  // make sure shadow maps are updated after the camera updates its position
+  if (pCallback == &Vision::Callbacks.OnFrameUpdatePreRender)
+    return 1000;
+
+  return IVisCallbackHandler_cl::GetCallbackSortingKey(pCallback);
 }
 
 void VShadowMapGenerator::GetDepthFillShaderConstantValues(int iCascade, float &fDepthBias, float &fSlopScaleDepthBias, hkvVec3& vClipPlanes)
@@ -968,6 +976,14 @@ void VShadowMapFormatDepthOnly::PostProcess()
 VShadowMapPart::VShadowMapPart()
 {
   Reset();
+
+  // don't know why there is a 'Reset' function, if that doesn't reset everything properly
+  // moving this code in there, breaks Vision though
+  m_mTexMatrix.setIdentity(); 
+  m_vTextureOffset.setZero();
+
+  for (int i = 0; i < 8; ++i)
+    m_vFrustumMesh[i].setZero();
 }
 
 VShadowMapPart::~VShadowMapPart()
@@ -1240,7 +1256,7 @@ void VShadowMapApplyShaderPass::PostCompileFunction(VShaderEffectResource *pSour
 // VShadowMapRenderLoop
 // ================================================================================
 
-V_IMPLEMENT_DYNAMIC(VShadowMapRenderLoop,VisTypedEngineObject_cl, &g_VisionEngineModule);
+V_IMPLEMENT_DYNAMIC(VShadowMapRenderLoop,IVisRenderLoop_cl, &g_VisionEngineModule);
 
 
 VShadowMapRenderLoop::VShadowMapRenderLoop(VShadowMapGenerator *pShadowMapGenerator)
@@ -1719,7 +1735,7 @@ void VShadowMapRenderLoop::SplitByRenderState(const VisEntityCollection_cl *pEnt
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140624)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

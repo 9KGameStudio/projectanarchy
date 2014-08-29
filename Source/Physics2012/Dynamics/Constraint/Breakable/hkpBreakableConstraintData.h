@@ -9,7 +9,7 @@
 #ifndef HKP_BREAKABLE_CONSTRAINT_H
 #define HKP_BREAKABLE_CONSTRAINT_H
 
-#include <Physics/Constraint/Data/hkpConstraintData.h>
+#include <Physics/Constraint/Data/Wrapper/hkpWrappedConstraintData.h>
 #include <Physics2012/Dynamics/Constraint/hkpConstraintInstance.h>
 #include <Physics/Constraint/Atom/Bridge/hkpBridgeConstraintAtom.h>
 
@@ -23,8 +23,11 @@ extern const hkClass hkpBreakableConstraintDataClass;
 /// based on the magnitude of the force(s) required to maintain the constraint and
 /// must be hand-tweaked, but larger values produce "harder-to-break" constraints.
 /// N.B This constraint can be shared. In this case all constraints will break at the very same time
-class hkpBreakableConstraintData : public hkpConstraintData
+class hkpBreakableConstraintData : public hkpWrappedConstraintData 
 {
+	//+version(2)
+	//+hk.PostFinish("hkpBreakableConstraintData::postFinish")
+
 	public:
 	
 		HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE);
@@ -40,8 +43,8 @@ class hkpBreakableConstraintData : public hkpConstraintData
 			/// removed from the world when breakage occurs. NOTE: Instead of adding the
 			/// original constraint to the world, you should add this breakable constraint.
 			/// Do not add both constraints.
-		hkpBreakableConstraintData( hkpConstraintData* constraintData );	
-		
+		hkpBreakableConstraintData( hkpConstraintData* constraintData );
+
 			/// The reference to the original constraint is removed.
 		~hkpBreakableConstraintData();
 
@@ -83,11 +86,11 @@ class hkpBreakableConstraintData : public hkpConstraintData
 			/// Returns the breaking threshold
 		inline hkReal getThreshold() const;
 
-			/// Check consistency of constraint members
-		virtual hkBool isValid() const;
-		
 			// hkpConstraintData interface implementation
 		virtual int getType() const;
+
+		/// Deep-clones the constraint
+		virtual hkpWrappedConstraintData* deepClone() const HK_OVERRIDE;
 
 		struct Runtime
 		{
@@ -105,12 +108,9 @@ class hkpBreakableConstraintData : public hkpConstraintData
 			// hkpConstraintData interface implementation
 		virtual void getRuntimeInfo( hkBool wantRuntime, hkpConstraintData::RuntimeInfo& infoOut ) const;
 
-	public:
-			/// Gets the wrapped constraint
-		inline hkpConstraintData* getWrappedConstraintData();
+		// Post finish serialization constructor
+		static void HK_CALL postFinish(void* data);
 
-			/// Gets the wrapped constraint
-		inline const hkpConstraintData* getWrappedConstraintData() const;
 
 	//protected:
 	public: // as they are reset in hkpWorld::addConstraint.
@@ -118,15 +118,11 @@ class hkpBreakableConstraintData : public hkpConstraintData
 
 		struct hkpBridgeAtoms m_atoms;
 		
-
-			/// The wrapped constraint
-		hkpConstraintData* m_constraintData;
-
 			// the size of the runtime of the child constraint
-		hkUint16 m_childRuntimeSize;
+		hkUint16 m_childRuntimeSize;		//+nosave
 
 			// the number of solver results of the child constraint
-		hkUint16 m_childNumSolverResults;
+		hkUint16 m_childNumSolverResults;	//+nosave
 
 	public:
 
@@ -177,7 +173,7 @@ class hkpBreakableConstraintData : public hkpConstraintData
 #endif // HKP_BREAKABLE_CONSTRAINT_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

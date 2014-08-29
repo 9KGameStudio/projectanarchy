@@ -56,7 +56,7 @@ public:
 
   /// \brief
   ///   Overridden VisTypedEngineObject_cl function to remove this instance from the scene
-  VISION_APIFUNC VOVERRIDE void DisposeObject();
+  VISION_APIFUNC virtual void DisposeObject() HKV_OVERRIDE;
 
   /// \brief
   ///   Non-virtual overload of Release
@@ -102,11 +102,11 @@ public:
 
   /// \brief
   ///   Overridden function to handle zone repositioning
-  VISION_APIFUNC VOVERRIDE void OnReposition(const VisZoneRepositionInfo_t &info, const hkvVec3 &vLocalPos);
+  VISION_APIFUNC virtual void OnReposition(const VisZoneRepositionInfo_t &info, const hkvVec3 &vLocalPos) HKV_OVERRIDE;
 
   /// \brief
   ///   Overridden function return the position locally to the parent zone
-  VISION_APIFUNC VOVERRIDE bool GetZoneLocalSpacePosition(hkvVec3& vDest);
+  VISION_APIFUNC virtual bool GetZoneLocalSpacePosition(hkvVec3& vDest) HKV_OVERRIDE;
 
   ///
   /// @}
@@ -416,14 +416,14 @@ public:
   ///
 
   // Internal
-  VISION_APIFUNC VOVERRIDE void Serialize( VArchive& ar );
-  VISION_APIFUNC VOVERRIDE void OnSerialized(VArchive& ar);
+  VISION_APIFUNC virtual void Serialize( VArchive& ar) HKV_OVERRIDE;
+  VISION_APIFUNC virtual void OnSerialized(VArchive& ar) HKV_OVERRIDE;
 
   void DiscardSubmeshInstances(VArchive &ar, int iCount);
-  VISION_APIFUNC VOVERRIDE void MessageFunction(int iID, INT_PTR iParamA, INT_PTR iParamB);
+  VISION_APIFUNC virtual void MessageFunction(int iID, INT_PTR iParamA, INT_PTR iParamB) HKV_OVERRIDE;
 
 #ifdef SUPPORTS_SNAPSHOT_CREATION
-  VISION_APIFUNC VOVERRIDE void GetDependencies(VResourceSnapshot &snapshot);
+  VISION_APIFUNC virtual void GetDependencies(VResourceSnapshot &snapshot) HKV_OVERRIDE;
 #endif
 protected:
   void Init();
@@ -501,38 +501,24 @@ public:
   ///   Returns a pointer to the static mesh instance this submesh instance is part of.
   inline VisStaticMeshInstance_cl *GetMeshInstance() const { return m_pMeshInstance; }
 
-  /// \brief
-  ///   Overridden function. See base class (VisStaticGeometryInstance_cl).
-  VISION_APIFUNC VOVERRIDE int TraceTest(const hkvVec3& startOfLine, const hkvVec3& endOfLine, int iStoreResultCount=0, VisTraceLineInfo_t *pFirstTraceInfo=NULL);
+  VISION_APIFUNC virtual int TraceTest(const hkvVec3& startOfLine, const hkvVec3& endOfLine, int iStoreResultCount=0, VisTraceLineInfo_t *pFirstTraceInfo=NULL) HKV_OVERRIDE;
 
 #ifdef SUPPORTS_SNAPSHOT_CREATION
-  /// \brief
-  ///   Overridden function. See base class (VisStaticGeometryInstance_cl).
-  VISION_APIFUNC VOVERRIDE void GetDependencies(VResourceSnapshot &snapshot);
+  VISION_APIFUNC virtual void GetDependencies(VResourceSnapshot &snapshot) HKV_OVERRIDE;
 #endif
 
-  /// \brief
-  ///   Overridden function. See base class (VisStaticGeometryInstance_cl).
-  VISION_APIFUNC VOVERRIDE void ComputeSortingKey();  
+  VISION_APIFUNC virtual void ComputeSortingKey() HKV_OVERRIDE;  
 
-  /// \brief
-  ///   Overridden function. See base class (VisStaticGeometryInstance_cl).
-  VISION_APIFUNC VOVERRIDE int GetNumPrimitives();
+  VISION_APIFUNC virtual int GetNumPrimitives() HKV_OVERRIDE;
 
-  /// \brief
-  ///   Overridden function. See base class (VisStaticGeometryInstance_cl).
-  VISION_APIFUNC VOVERRIDE int GetSupportedStreamMask();
+  VISION_APIFUNC virtual int GetSupportedStreamMask() HKV_OVERRIDE;
 
-  /// \brief
-  ///   Overridden function. See base class (VisStaticGeometryInstance_cl).
-  VISION_APIFUNC VOVERRIDE void DebugRenderCollisionMesh(VColorRef iMeshColor, VColorRef iNormalColor, float fNormalLength);
+  VISION_APIFUNC virtual void DebugRenderCollisionMesh(VColorRef iMeshColor, VColorRef iNormalColor, float fNormalLength) HKV_OVERRIDE;
+
+  VISION_APIFUNC virtual IVisZone_cl *GetParentZone() HKV_OVERRIDE; 
 
   // Internal function
   VISION_APIFUNC void SerializeX( VArchive &ar );
-
-  /// \brief
-  ///   Overridden function
-  VISION_APIFUNC VOVERRIDE VisZoneResource_cl *GetParentZone(); 
 
 private:
   VisStaticSubmeshInstance_cl();
@@ -600,11 +586,10 @@ inline void VisStaticMeshInstance_cl::SetVisibleBitmask(unsigned int iMask)
   }
 }
 
-
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

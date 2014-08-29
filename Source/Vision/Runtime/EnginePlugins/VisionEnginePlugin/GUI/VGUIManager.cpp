@@ -8,7 +8,7 @@
 
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/VisionEnginePluginPCH.h>         // precompiled header
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/GUI/VMenuIncludes.hpp>
-#include <Vision/Runtime/Base/System/Memory/VMemDbg.hpp>
+
 
 VStrList VGUIManager::g_IDList;
 int VGUIManager::ID_STATIC = 0;
@@ -95,6 +95,7 @@ void VGUIManager::OneTimeInit()
   FORCE_LINKDYNCLASS(VTextLabel)
   FORCE_LINKDYNCLASS(VImageControl)
   FORCE_LINKDYNCLASS(VDialogTitleBar)
+  FORCE_LINKDYNCLASS(VTreeViewControl)
   FORCE_LINKDYNCLASS(VDialogResizeCtrl)
   FORCE_LINKDYNCLASS(VDialogCloseButton)
   FORCE_LINKDYNCLASS(VListControl)
@@ -473,7 +474,7 @@ const char *VGUIManager::TranslateString(VWindowBase *pItem, const char *szIn) c
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

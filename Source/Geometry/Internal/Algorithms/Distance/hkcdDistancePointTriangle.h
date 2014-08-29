@@ -14,7 +14,7 @@
 #include <Geometry/Internal/Algorithms/Intersect/hkcdIntersectPointTriangle.h>
 
 /// Identify the Voronoi region of a point projected to a triangle.
-struct hkcdTriangleVoronoi
+struct HK_EXPORT_COMMON hkcdTriangleVoronoi
 {
 	enum Region
 	{
@@ -36,7 +36,7 @@ struct hkcdTriangleVoronoi
 	};
 
 	static HK_FORCE_INLINE hkBool32 isEdge(Region r) { return (hkBool32) (r&1); }
-	static HK_FORCE_INLINE hkBool32	isVertex(Region r) { return r < 6 ? (hkBool32)((r+1)&1) : 0; }
+	static HK_FORCE_INLINE hkBool32	isVertex(Region r) { return r < 6 ? (hkBool32)((r+1)&1) : (hkBool32) hkFalse32; }
 	static HK_FORCE_INLINE Feature	getFeature(Region r) { return r == 6 ? FACE : (r&1 ? EDGE : VERTEX); }
 };
 
@@ -47,25 +47,27 @@ HK_FORCE_INLINE	hkSimdReal HK_CALL hkcdPointTriangleDistanceSquared(hkVector4Par
 																	hkVector4Parameter vA, hkVector4Parameter vB, hkVector4Parameter vC,
 																	hkVector4* HK_RESTRICT normalOut, hkVector4* HK_RESTRICT baryOut);
 
-		/// Project a point on a triangle, returns true if the point is projected inside the triangle.
+	/// Project a point on a triangle, returns true if the point is projected inside the triangle.
+	/// Note that the triangle normal is not normalized.
 HK_FORCE_INLINE hkBool32 HK_CALL hkcdPointTriangleProject(	hkVector4Parameter vP, 
 																				hkVector4Parameter vA, hkVector4Parameter vB, hkVector4Parameter vC,
 																				hkVector4* HK_RESTRICT projectionOut,
-																				hkVector4* HK_RESTRICT normalOut = HK_NULL);
+																				hkVector4* HK_RESTRICT triangleNormalOut = HK_NULL);
 
 
-/// Project a point on a triangle, returns the voronoi region that the projected point is in.
+	/// Project a point on a triangle, returns the voronoi region that the projected point is in.
+/// Note that the triangle normal is not normalized.
 HK_FORCE_INLINE hkcdTriangleVoronoi::Region HK_CALL hkcdPointTriangleProjectWithVoronoi(	hkVector4Parameter vP, 
 																			 hkVector4Parameter vA, hkVector4Parameter vB, hkVector4Parameter vC,
 																			 hkVector4* HK_RESTRICT projectionOut,
-																			 hkVector4* HK_RESTRICT normalOut = HK_NULL);
+																			 hkVector4* HK_RESTRICT triangleNormalOut = HK_NULL);
 
 #include <Geometry/Internal/Algorithms/Distance/hkcdDistancePointTriangle.inl>
 
 #endif	//	HKCD_DISTANCES_POINT_TRIANGLE
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

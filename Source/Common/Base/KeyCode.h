@@ -8,19 +8,21 @@
 #ifndef HK_HAVOK_KEYCODE
 #define HK_HAVOK_KEYCODE
 
+//[KEYCODES_START]
 // Please enter your Havok keycode(s) here:
 #define HAVOK_AI_KEYCODE "Anarchy:2081-01-05.Ai.Anarchy"
 #define HAVOK_ANIMATION_KEYCODE "Anarchy:2081-01-05.Animation.Anarchy"
 #define HAVOK_BEHAVIOR_KEYCODE "Anarchy:2081-01-05.Behavior.Anarchy"
 #define HAVOK_PHYSICS_2012_KEYCODE "Anarchy:2081-01-05.Physics_2012.Anarchy"
 
+//[KEYCODES_END]
 
 #include <Common/Base/KeyCode.inl>
 
 #endif // HK_HAVOK_KEYCODE
 
 /*
- * Havok SDK - Base file, BUILD(#20140403)
+ * Havok SDK - Base file, BUILD(#20140809)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

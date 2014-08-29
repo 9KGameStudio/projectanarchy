@@ -16,14 +16,12 @@
 /* The VTex library currently has support for loading the following       */
 /* image file formats:                                                    */
 /*    -Microsoft DirectDraw Surface (DDS)                                 */
-/*    -Vision Texture Format (TEX)                                        */
 /*    -Truevision Targa (TGA)                                             */
 /*    -JPEG File Interchange Format (JFIF)                                */
 /*   Legacy formats                                                       */
 /*    -Microsoft Bitmap (except 1-bit and 4-bit) (BMP)                    */
 /*    -Tagged Image File Format (uncompressed only) (TIFF)                */
 /*    -Portable Network Graphics Format (PNG)                             */
-/*    -Digital Elevation Map (Bryce only) (DEM)                           */
 /**************************************************************************/
 /* The VTex library is using the following third-party libraries:          */
 /*    -libjpeg of the Independent JPEG Group                              */
@@ -54,9 +52,6 @@
 #define VTEX_ERR_WRONGDIMENSIONS       -20201
 #define VTEX_ERR_WRONGCOLORDEPTH       -20202
 
-#define VTEX_ERR_NODEM                 -20203
-#define VTEX_ERR_DEM_ALREADYSCALED     -20204
-
 #ifndef _VISION_DOC
 
 enum ColorDepth_e
@@ -70,16 +65,12 @@ enum ColorDepth_e
 enum ImageFileType_e
 {
   FILETYPE_NONE,
-  FILETYPE_TEX,
-  FILETYPE_T24,
   FILETYPE_BMP,
-  FILETYPE_PCX_OBSOLETE,
   FILETYPE_TGA,
-  FILETYPE_TIF, FILETYPE_TIFF_OBSOLETE,
-  FILETYPE_JPG, FILETYPE_JPEG_OBSOLETE, FILETYPE_JFIF_OBSOLETE, FILETYPE_JIF_OBSOLETE,
+  FILETYPE_TIF,
+  FILETYPE_JPG,
   FILETYPE_PNG,
-  FILETYPE_DEM,
-  FILETYPE_DDS, FILETYPE_DDS_PAL8, FILETYPE_DDS_NORMAL8,
+  FILETYPE_DDS,
   FILETYPE_TEXANIM_REFS,
   FILETYPE_ANY = 0xFF
 };
@@ -106,13 +97,6 @@ enum AnimType_e
   ANIMTYPE_DIRECTDEFINITION = 10
 };
 
-enum ScaleToBPP_e
-{
-  SCALE_DOWN_TO_BPP,
-  SCALE_TO_BOUNDS,
-  CUT_HIGHER_BITS,
-  SHIFT_TO_ZERO
-};
 
 // hint on what multiple maps in one image specify
 enum ImageRawMapType_e
@@ -136,8 +120,6 @@ enum ImageRawMapHint_e
 // decoder to use
 enum ImageRawDecoder_e
 {
-  RAWDECODER_TGA,
-  RAWDECODER_TEX,
   RAWDECODER_DDS,
   RAWDECODER_NONE
 };
@@ -164,7 +146,8 @@ enum RawExternalFormal_e
   RAWEXTERNAL_R32G32B32A32F = 17,
   RAWEXTERNAL_R16F          = 18,
   RAWEXTERNAL_R32F          = 19,
-  RAWEXTERNAL_L8A8          = 20
+  RAWEXTERNAL_L8A8          = 20,
+  RAWEXTERNAL_BC5U          = 21
 };
 
 class ImageMap_cl
@@ -240,8 +223,8 @@ public:
   VTEX_EXPFUNC static IVFileInStream* OpenFile(const char* pszFileName , VFileAccessManager* pMan = NULL);
 
   //Loads an image from the specified stream
-  // All formats, except DEM and TEX usually yield one colormap, with an additional opacitymap if an alpha-channel
-  // is present. The DEM format yields one 32-bit heightmap. The TEX format can yield any possible configuration.
+  // All formats usually yield one colormap, with an additional opacitymap if an alpha-channel
+  // is present.
   // WARNING: every imagemap and image data in this object will be deleted before the new data is loaded.
   //Loads an image from the specified stream
   //New function
@@ -250,9 +233,6 @@ public:
   //New helper function that opens and closes the file stream for you
   VTEX_EXPFUNC RETVAL Load(const char *pszFileName, VFileAccessManager* pMan = NULL);
 
-
-  // This function saves the image data in this object to the TEX file with the name in imgFilename.
-  VTEX_EXPFUNC RETVAL SaveTEX(IVFileOutStream* pOut);
 
   // This function saves the first colormap frame in this object to the BMP file with the name in imgFilename.
   VTEX_EXPFUNC RETVAL SaveBMP(IVFileOutStream* pOut);
@@ -263,68 +243,14 @@ public:
   // This function saves the first colormap frame in this object to uncompressed DDS format. Either 24 bit or 32 bit if alpha is specified
   VTEX_EXPFUNC RETVAL SaveUncompressedDDS(IVFileOutStream* pOut);
 
-  // This function saves the first colormap frame in this object to the 8 bit paletted dds file with the name in imgFilename.
-  VTEX_EXPFUNC RETVAL Save8BitPalettedDDS(IVFileOutStream* pOut, bool bNormalize);
-
-  // This function saves the first colormap frame in this object to the 8 bit paletted tga file with the name in imgFilename.
-  VTEX_EXPFUNC RETVAL Save8BitPalettedTGA(IVFileOutStream* pOut, bool bNormalize);
-
   // This function saves the first colormap frame in this object to the JPEG file with the name in imgFilename.
   // The jpegQuality parameter determines the quality of the saved JPEG image (scale 1-100, default 75).
   VTEX_EXPFUNC RETVAL SaveJPEG(IVFileOutStream* pOut, int jpegQuality = 75);
-
-  // This function saves the first heightmap frame in this object to the DEM file with the name in imgFilename.
-  // The DEM file that this function writes has the same layout as a Bryce DEM.
-  VTEX_EXPFUNC RETVAL SaveDEM(const char *imgFilename);
-
-  // This function saves the colormaps/heightmaps in this Image splitted up in multiple TEX files if
-  // the width exceeds max_x and the height exceeds max_y. the separate image files are named as follows:
-  // <imgFilename>_<x tile nr>_<y tile nr><extension>
-  // WARNING: opacitymaps aren't supported by this function
-  // EXAMPLE: ret = img->SaveSplittedTex("image", ".tex", 32, 64);
-  VTEX_EXPFUNC RETVAL SaveSplittedTEX(const char *imgFilename, char *extention, int max_x, int max_y, VFileAccessManager* pMan = NULL);
-
-  // WARNING: This is an old function that might be removed in the future. Do not use it!
-  // This function saves the image data in this object to the TEX file with the name in imgFilename.
-  // With the rest of the parameters, the following TEX file features can be set:
-  // genMipMaps:      if TRUE, Vision will generate mipmaps for this texture
-  // sprite:          if TRUE, this image may be used as a sprite in Vision
-  // texMorphing:     if TRUE, Vision interpolates between the subsequent animation frames
-  // animStartStatus: if TRUE, the texture starts in animated status in Vision. if FALSE, the 1st frame is showed
-  VTEX_EXPFUNC RETVAL SaveTEX(IVFileOutStream* pOut, BOOL genMipMaps, BOOL sprite, BOOL texMorphing, BOOL animStartStatus);
 
 
   /////////////////////////////////////////////////////////////////////////////////////////
   //Helpers
   /////////////////////////////////////////////////////////////////////////////////////////
-  inline RETVAL SaveTEX(const char* pszFilename, VFileAccessManager* pMan = NULL)
-  {
-    if (pMan == NULL)
-    {
-      pMan = VFileAccessManager::GetInstance();
-    }
-    VScopedFileStream<IVFileOutStream> pOut(pMan->Create(pszFilename));
-    if (pOut == NULL)
-    {
-      return VERR_CANTOPEN;
-    }
-    return SaveTEX(pOut, genMipMaps, sprite, texMorphing, animStartStatus);
-  }
-
-  inline RETVAL SaveTEX(const char* pszFilename, BOOL genMipMaps, BOOL sprite, BOOL texMorphing, BOOL animStartStatus, VFileAccessManager* pMan = NULL)
-  {
-    if (pMan == NULL)
-    {
-      pMan = VFileAccessManager::GetInstance();
-    }
-    VScopedFileStream<IVFileOutStream> pOut(pMan->Create(pszFilename));
-    if (pOut == NULL)
-    {
-      return VERR_CANTOPEN;
-    }
-    return SaveTEX(pOut, genMipMaps, sprite, texMorphing, animStartStatus);
-  }
-
   inline RETVAL SaveJPEG(const char* pszFilename, int jpegQuality = 75, VFileAccessManager* pMan = NULL)
   {
     if (pMan == NULL)
@@ -381,34 +307,6 @@ public:
     return SaveUncompressedDDS(pOut);
   }
 
-  inline RETVAL Save8BitPalettedDDS(const char* pszFilename, bool bNormalize, VFileAccessManager* pMan = NULL)
-  {
-    if (pMan == NULL)
-    {
-      pMan = VFileAccessManager::GetInstance();
-    }
-    VScopedFileStream<IVFileOutStream> pOut(pMan->Create(pszFilename));
-    if (pOut == NULL)
-    {
-      return VERR_CANTOPEN;
-    }
-    return Save8BitPalettedDDS(pOut, bNormalize);
-  }
-
-  inline RETVAL Save8BitPalettedTGA(const char* pszFilename, bool bNormalize, VFileAccessManager* pMan = NULL)
-  {
-    if (pMan == NULL)
-    {
-      pMan = VFileAccessManager::GetInstance();
-    }
-    VScopedFileStream<IVFileOutStream> pOut(pMan->Create(pszFilename));
-    if (pOut == NULL)
-    {
-      return VERR_CANTOPEN;
-    }
-    return Save8BitPalettedTGA(pOut, bNormalize);
-  }
-
   // saves the image to known format according to file extension (bmp, tga, dds, ...)
   inline RETVAL Save(const char* pszFilename, VFileAccessManager* pMan = NULL)
   {
@@ -421,7 +319,6 @@ public:
     if (!_stricmp(szExt,"dds"))  return SaveUncompressedDDS(pszFilename, pMan);
     if (!_stricmp(szExt,"jpg"))  return SaveJPEG(pszFilename, 75, pMan);
     if (!_stricmp(szExt,"jpeg")) return SaveJPEG(pszFilename, 75, pMan);
-    if (!_stricmp(szExt,"tex"))  return SaveTEX(pszFilename, pMan);
     return VTEX_ERR_FILETYPENOTSUPPORTED;
   }
 
@@ -673,10 +570,6 @@ private:
   void ScaleX(UBYTE *dest, UBYTE *src, SLONG destxsize, SLONG srcxsize, SLONG ysize, SLONG pixellen);
   void ScaleY(UBYTE *dest, UBYTE *src, SLONG destysize, SLONG srcysize, SLONG xsize, SLONG pixellen);
 
-  // special fprintf function for printing reals in a DEM file
-  static void DEMfprintf(FILE *stream, double d);
-
-
   // general purpose rounding functions
   static SLONG Round(double number);
 
@@ -821,7 +714,7 @@ namespace VTex
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

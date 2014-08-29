@@ -22,7 +22,7 @@ struct hkMassProperties;
 
 
 /// 
-struct hkDiagonalizedMassProperties
+struct HK_EXPORT_COMMON hkDiagonalizedMassProperties
 {
 	void pack( const hkMassProperties& mp );
 
@@ -51,8 +51,10 @@ struct hkDiagonalizedMassProperties
 };
 
 
+extern HK_EXPORT_COMMON const class hkClass hkCompressedMassPropertiesClass;
+
 /// Packed inertia, 15 bit accuracy, 32 bytes (hkMassProperties is 96 bytes)
-HK_CLASSALIGN(struct,8) hkCompressedMassProperties
+HK_CLASSALIGN(struct,8) HK_EXPORT_COMMON hkCompressedMassProperties
 {
 	HK_DECLARE_REFLECTION();
 	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_PHYSICS, hkCompressedMassProperties );
@@ -80,7 +82,7 @@ HK_CLASSALIGN(struct,8) hkCompressedMassProperties
 #endif // HK_BASE_COMPRESSED_INERTIA_TENSOR_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

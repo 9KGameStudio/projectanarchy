@@ -160,13 +160,16 @@ namespace HavokAiEditorPlugin.Shapes
 
         #region Serialization and Export
 
-        protected HavokNavMeshTestPathShape(SerializationInfo info, StreamingContext context) : base(info, context)
+        protected HavokNavMeshTestPathShape(SerializationInfo info, StreamingContext context)
+            : base(info, context)
         {
             AddHint(HintFlags_e.NoScale | HintFlags_e.NoRotation);
 
             _vStartPoint = (Vector3F)info.GetValue("_vStartPoint", typeof(Vector3F));
             _vEndPoint = (Vector3F)info.GetValue("_vEndPoint", typeof(Vector3F));
             _fCharacterRadius = info.GetSingle("_fCharacterRadius");
+            if (SerializationHelper.HasElement(info, "_fCharacterHeight"))
+                _fCharacterHeight = info.GetSingle("_fCharacterHeight");
             if (SerializationHelper.HasElement(info, "_pathColor"))
                 _pathColor = (Color)info.GetValue("_pathColor", typeof(Color));
             if (SerializationHelper.HasElement(info, "_fpathDisplayOffset"))
@@ -184,6 +187,7 @@ namespace HavokAiEditorPlugin.Shapes
             info.AddValue("_vStartPoint", _vStartPoint);
             info.AddValue("_vEndPoint", _vEndPoint);
             info.AddValue("_fCharacterRadius", _fCharacterRadius);
+            info.AddValue("_fCharacterHeight", _fCharacterHeight);
             info.AddValue("_pathColor", _pathColor);
             info.AddValue("_fpathDisplayOffset", _fpathDisplayOffset);
         }
@@ -356,7 +360,7 @@ namespace HavokAiEditorPlugin.Shapes
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -28,7 +28,7 @@ using CSharpFramework.PropertyEditors;
 using CSharpFramework.Scene;
 using CSharpFramework.Serialization;
 using CSharpFramework.Shapes;
-using CSharpFramework.Tests;
+using CSharpFrameworkTests;
 using CSharpFramework.UndoRedo;
 using CSharpFramework.View;
 using CSharpFramework.Visitors;
@@ -611,6 +611,10 @@ namespace TerrainEditorPlugin.Shapes
                   if (sectorFileName == null)
                     continue;
 
+                  sectorFileName = EditorManager.EngineManager.File_MakeRelative(sectorFileName, FileSystemAccessMode.ReadNoRedirect, FileSystemElementType.File);
+                  if (sectorFileName == null)
+                    continue;
+
                   // create static mesh
                   StaticMeshShape shape = new StaticMeshShape(Path.GetFileNameWithoutExtension(sectorFileName));
                   shape.Position = (Vector3F)EngineTerrain.GetSectorOrigin(sx, sy);
@@ -699,15 +703,27 @@ namespace TerrainEditorPlugin.Shapes
     {
       base.OnSceneEvent(e);
 
-      // save the native terrain sectors also when the scene is saved
-      if (e.action == SceneEventArgs.Action.AfterSaving && e.Success && HasEngineInstance())
-        EngineTerrain.SaveToFile();
+      if (!HasEngineInstance())
+      {
+        return;
+      }
 
-      // after lighting, we should mark the layer as dirty to save the terrain sector files
-      //      if (e.action == SceneEventArgs.Action.AfterStaticLighting && e.Success && HasEngineInstance() && Lightmapped && Modifiable)
-      //        this.Modified = true;
-      if (e.action == SceneEventArgs.Action.AfterRendererNodeChanged && HasEngineInstance())
-        EngineTerrain.SetShaderEffect(this.ShaderConfig);
+      switch (e.action)
+      {
+        case SceneEventArgs.Action.AfterSaving:
+          // save the native terrain sectors also when the scene is saved
+          if(e.Success)
+          {
+            EngineTerrain.SaveToFile();
+          }
+          break;
+
+        case SceneEventArgs.Action.AfterStaticLighting:
+        case SceneEventArgs.Action.StaticLightingReset:
+        case SceneEventArgs.Action.AfterRendererNodeChanged:
+          UpdateAutoTerrainEffect();
+          break;
+      }
     }
 
 
@@ -878,7 +894,7 @@ namespace TerrainEditorPlugin.Shapes
     [PrefabResolveFilename]
     [Description("Optional mini map texture that is shown in the 2D overview panel.")]
     [SortedCategory(CAT_EDITING, CATORDER_EDITING), PropertyOrder(4)]
-    [EditorAttribute(typeof(AssetEditor), typeof(UITypeEditor)), AssetDialogFilter(new string[] { "Texture" })]
+    [EditorAttribute(typeof(AssetEditor), typeof(UITypeEditor)), AssetDialogFilter(new string[] { "Texture | 2D" })]
     public string MinimapTexture
     {
       get { return _minimapTexture; }
@@ -2524,7 +2540,7 @@ namespace TerrainEditorPlugin.Shapes
 
   #region TerrainShape Creator Plugin
 
-  [PrefabTest.IgnoreForPrefabTests]
+  [CSharpFrameworkTests.Common.PrefabTest.IgnoreForPrefabTests]
   class TerrainShapeCreator : CSharpFramework.IShapeCreatorPlugin
   {
       public TerrainShapeCreator()
@@ -2591,7 +2607,7 @@ namespace TerrainEditorPlugin.Shapes
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

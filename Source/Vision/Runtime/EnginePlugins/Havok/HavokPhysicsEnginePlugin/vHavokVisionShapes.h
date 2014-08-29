@@ -79,9 +79,7 @@ public:
 
 private:
   hkInt64 m_iFileTime; ///< system time at which corresponding .vcolmesh has been exported
-
 };
-
 
 // -------------------------------------------------------------------------- //
 // hkvBvCompressedMeshShape                                                
@@ -116,7 +114,6 @@ public:
   float m_fRestitution; 
   hkStringPtr m_userData;
   int m_iOrignalSubMeshIndex;
-
 };
 
 extern const hkClass hkvBvCompressedMeshShapeClass;
@@ -155,13 +152,6 @@ public:
   }
 
   /// \brief
-  ///   Apply materials to user data of hkpBvCompressedMeshShape.
-  inline void SetupMaterials()
-  {
-    m_userData = (m_materials.getSize()) >0  ? (hkUlong)(&m_materials) : HK_NULL;
-  }
-
-  /// \brief
   ///   Returns system time at which corresponding .vcolmesh had been exported.
   HK_FORCE_INLINE hkInt64 GetFileTime() const
   {
@@ -172,10 +162,14 @@ public:
   ///   hkReferencedObject implementation.
   VHAVOK_IMPEXP virtual const hkClass* getClassType() const HK_OVERRIDE;
 
+  inline const hkvMeshMaterialCache& GetMaterialCache() const
+  {
+    return m_materials;
+  }
+
 private:
   hkInt64 m_iFileTime; // system time at which corresponding .vcolmesh had been exported
   hkvMeshMaterialCache m_materials;
-
 };
 
 // -------------------------------------------------------------------------- //
@@ -204,7 +198,7 @@ public:
 
   /// \brief
   ///   Constructor
-  hkvSampledHeightFieldShape(const hkpSampledHeightFieldBaseCinfo &ci, const VTerrainSector *pSector);
+  hkvSampledHeightFieldShape(const hkpSampledHeightFieldBaseCinfo& ci, const VTerrainSector* pSector);
 
   /// \brief
   ///   Serialization constructor
@@ -217,13 +211,13 @@ public:
   /// \brief
   ///   hkpSampledHeightFieldShape interface implementation.
   virtual hkBool getTriangleFlipImpl() const HK_OVERRIDE
-  {	
+  {
     return false;
   }
 
   /// \brief
   ///   hkpHeightFieldShape interface implementation.
-  virtual void collideSpheres(const CollideSpheresInput &input,SphereCollisionOutput *pOutputArray) const HK_OVERRIDE
+  virtual void collideSpheres(const CollideSpheresInput& input,SphereCollisionOutput* pOutputArray) const HK_OVERRIDE
   {
     hkSampledHeightFieldShape_collideSpheres(*this, input, pOutputArray);
   }
@@ -238,7 +232,48 @@ private:
   int m_iTerrainIndex;
   int m_iSectorIndexX;
   int m_iSectorIndexY;
+};
 
+// -------------------------------------------------------------------------- //
+// hkvSampledOffsetHeightFieldShape                                                
+// -------------------------------------------------------------------------- //
+
+extern const hkClass hkvSampledOffsetHeightFieldShapeClass;
+extern const hkTypeInfo hkvSampledOffsetHeightFieldShapeTypeInfo;
+
+/// \brief
+///   Special version of hkvSampledHeightFieldShape that allows to specify a height offset.
+///
+class hkvSampledOffsetHeightFieldShape: public hkvSampledHeightFieldShape
+{
+  // +version(0)
+
+public:
+  HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_SHAPE);
+  HK_DECLARE_REFLECTION();
+
+  /// \brief
+  ///   Constructor
+  ///
+  /// \param ci
+  ///   The construction info for hkpSampledHeightFieldShape.
+  /// \param pSector
+  ///   The terrain sector.
+  /// \param fHeightOffset
+  ///   Height offset that can be used to account for the radius that is always added to the terrain shape.
+  ///
+  hkvSampledOffsetHeightFieldShape(const hkpSampledHeightFieldBaseCinfo& ci, const VTerrainSector* pSector, hkReal fHeightOffset);
+
+  /// \brief
+  ///   Serialization constructor
+  hkvSampledOffsetHeightFieldShape(hkFinishLoadedObjectFlag flag);
+
+  virtual hkReal getHeightAtImpl(int x, int z) const HK_OVERRIDE;
+
+  VHAVOK_IMPEXP virtual const hkClass* getClassType() const HK_OVERRIDE;
+
+private:
+  hkReal m_fHeightOffset;
 };
 
 // -------------------------------------------------------------------------- //
@@ -331,13 +366,12 @@ public:
   /// \brief
   ///   hkReferencedObject implementation.
   VHAVOK_IMPEXP virtual const hkClass* getClassType() const HK_OVERRIDE;
-
 };
 
 #endif // VHAVOKVISIONSHAPES_H_INCLUDED
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

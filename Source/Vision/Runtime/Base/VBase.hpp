@@ -53,52 +53,6 @@
   #define VISION_FORCEINLINE __forceinline
 #endif
 
-#if ( ((defined(__GCC__) || defined(__GNUC__)) && !defined(_VISION_WIIU)) || defined(__SNC__) ) && !defined(_VISION_POSIX) /* No TLS on iOS devices available */
-
-  //Creates an instance in the source
-  #define VISION_THREADLOCAL_INST(TYPE,VAR,VAL)   __thread   TYPE VAR = VAL;
-  //Declares the variable in the header
-  #define VISION_THREADLOCAL_DECL(TYPE,VAR)       __thread   TYPE VAR;
-  //Declares a TYPE array
-  #define VISION_THREADLOCAL_DECL_CHARBUFF(SIZE,VAR)  __thread   char VAR[SIZE];
- 
-#elif defined(_VISION_POSIX)
-  #include <Vision/Runtime/Base/System/Threading/Thread/VThreadVariable.hpp>
-  //Creates an instance in the source
-  #define VISION_THREADLOCAL_INST(TYPE,VAR,VAL)   VThreadVariable<TYPE> VAR(VAL);
-  //Declares the variable in the header
-  #define VISION_THREADLOCAL_DECL(TYPE,VAR)       VThreadVariable<TYPE> VAR;
-  //Declares the variable in the header
-  #define VISION_THREADLOCAL_DECL_CHARBUFF(SIZE,VAR) VThreadBuffer<char,SIZE> VAR;    
-
-#else
-
-  #if (defined(VBASE_LIB) && !defined(_VISION_WIIU) && !defined(WIN32) ) || defined(_VISION_XENON) || defined(_VISION_PS3) || defined(_VISION_PSP2) || defined(_VISION_WINRT)
-    //Using TLS:  Doesn't work for dynamically loaded DLLs
-
-    //Creates an instance in the source
-    #define VISION_THREADLOCAL_INST(TYPE,VAR,VAL)   __declspec(thread)  TYPE VAR = VAL;
-    //Declares the variable in the header
-    #define VISION_THREADLOCAL_DECL(TYPE,VAR)       __declspec(thread)  TYPE VAR;
-    //Declares the array variable
-    #define VISION_THREADLOCAL_DECL_CHARBUFF(SIZE,VAR) __declspec(thread) char VAR[SIZE];
-
-  #else
-    //Using TlsAlloc/TlsFree for DLL
-    //Remember to call FreeThreadData for each thread variable in DllMain on thread detach
-    
-    #include <Vision/Runtime/Base/System/Threading/Thread/VThreadVariable.hpp>
-    //Creates an instance in the source
-    #define VISION_THREADLOCAL_INST(TYPE,VAR,VAL)   VThreadVariable<TYPE> VAR(VAL);
-    //Declares the variable in the header
-    #define VISION_THREADLOCAL_DECL(TYPE,VAR)       VThreadVariable<TYPE> VAR;
-    //Declares the variable in the header
-    #define VISION_THREADLOCAL_DECL_CHARBUFF(SIZE,VAR) VThreadBuffer<char,SIZE> VAR;    
-    
-  #endif
-  
-#endif
-
 #if !defined(SET_RESOURCE_DEBUG_NAME)
   // No platform or build target defined this, so comment it out
   #define SET_RESOURCE_DEBUG_NAME(pRes, szName) 
@@ -117,7 +71,7 @@
 #endif
 
 // VISION_ALIGN_NOWIN : Some alignments should only be defined on console versions
-#ifdef WIN32
+#ifdef _VISION_WIN32
   #define VISION_ALIGN_NOWIN(X) 
 #else
   #define VISION_ALIGN_NOWIN(X) VISION_ALIGN(X)
@@ -141,7 +95,7 @@ typedef int intptr_t;
 // Defines for DLL linkage (used in the engine plugin for example)
 #if !defined(VBASE_LIB) && !defined(VISION_LINK_STATIC)
 
-  #if (defined(WIN32) || defined(_VISION_XENON)) && !defined(_VISION_WINRT) 
+  #if (defined(_VISION_WIN32) || defined(_VISION_XENON)) && !defined(_VISION_WINRT) 
     #define V_DYNLINK_EXPORT __declspec(dllexport)
     #define V_DYNLINK_IMPORT __declspec(dllimport)
     #define V_DYNLINK_NONE __declspec()
@@ -202,11 +156,11 @@ typedef int intptr_t;
 namespace 
 {
   template <typename T, size_t N>
-  char (*ArraySizeHelper( T (&)[N] ))[N];
+  char (*vArraySizeHelper( T (&)[N] ))[N];
 }
 // Add zero to avoid warnings when multiplying
 // ARRAYSIZE and sizeof(arr[0])
-#define V_ARRAY_SIZE(A) (sizeof(*::ArraySizeHelper(A))+0)
+#define V_ARRAY_SIZE(A) (sizeof(*::vArraySizeHelper(A))+0)
 
 template<class T> void V_IGNORE_UNUSED( const T& ) { }
 
@@ -223,6 +177,52 @@ template<class T> void V_IGNORE_UNUSED( const T& ) { }
 #include <Vision/Runtime/Base/vBaseImpExp.hpp>
 #include <Vision/Runtime/Base/System/Memory/VBaseMem.hpp>
 #include <Vision/Runtime/Base/Vulpine.hpp>
+
+#if ( ((defined(__GCC__) || defined(__GNUC__)) && !defined(_VISION_WIIU)) || defined(__SNC__) ) && !defined(_VISION_POSIX) /* No TLS on iOS devices available */
+
+  //Creates an instance in the source
+  #define VISION_THREADLOCAL_INST(TYPE,VAR)       __thread   TYPE VAR;
+  //Declares the variable in the header
+  #define VISION_THREADLOCAL_DECL(TYPE,VAR)       __thread   TYPE VAR;
+  //Declares a TYPE array
+  #define VISION_THREADLOCAL_DECL_CHARBUFF(SIZE,VAR)  __thread   char VAR[SIZE];
+ 
+#elif defined(_VISION_POSIX)
+  #include <Vision/Runtime/Base/System/Threading/Thread/VThreadVariable.hpp> 
+  //Creates an instance in the source
+  #define VISION_THREADLOCAL_INST(TYPE,VAR)       VThreadVariable<TYPE> VAR;
+  //Declares the variable in the header
+  #define VISION_THREADLOCAL_DECL(TYPE,VAR)       VThreadVariable<TYPE> VAR;
+  //Declares the variable in the header
+  #define VISION_THREADLOCAL_DECL_CHARBUFF(SIZE,VAR) VThreadBuffer<char,SIZE> VAR;    
+
+#else
+
+  #if (defined(VBASE_LIB) && !defined(_VISION_WIIU) && !defined(_VISION_WIN32) ) || defined(_VISION_XENON) || defined(_VISION_PS3) || defined(_VISION_PSP2) || defined(_VISION_WINRT)
+    //Using TLS:  Doesn't work for dynamically loaded DLLs
+
+    //Creates an instance in the source
+    #define VISION_THREADLOCAL_INST(TYPE,VAR)       __declspec(thread)  TYPE VAR;
+    //Declares the variable in the header
+    #define VISION_THREADLOCAL_DECL(TYPE,VAR)       __declspec(thread)  TYPE VAR;
+    //Declares the array variable
+    #define VISION_THREADLOCAL_DECL_CHARBUFF(SIZE,VAR) __declspec(thread) char VAR[SIZE];
+
+  #else
+    //Using TlsAlloc/TlsFree for DLL
+    //Remember to call FreeThreadData for each thread variable in DllMain on thread detach
+    
+    #include <Vision/Runtime/Base/System/Threading/Thread/VThreadVariable.hpp> 
+    //Creates an instance in the source
+    #define VISION_THREADLOCAL_INST(TYPE,VAR)       VThreadVariable<TYPE> VAR;
+    //Declares the variable in the header
+    #define VISION_THREADLOCAL_DECL(TYPE,VAR)       VThreadVariable<TYPE> VAR;
+    //Declares the variable in the header
+    #define VISION_THREADLOCAL_DECL_CHARBUFF(SIZE,VAR) VThreadBuffer<char,SIZE> VAR;    
+    
+  #endif
+  
+#endif
 
 inline char* vStrDup(const char* the_string)         
 {
@@ -253,25 +253,22 @@ inline wchar_t* vwStrDup(const wchar_t* the_string)
 inline void vStrDupOver(char*& dst, const char* src)  {vStrFree(dst); if(src) dst=vStrDup(src); else dst=NULL;}
 
 #ifdef SPU
-  #include <Vision/Runtime/Base/Graphics/VColor.hpp>
+  #include <Vision/Runtime/Base/Graphics/VColor.hpp> 
   #include "VMath/VMatrix.hpp"
-  #include <Vision/Runtime/Base/Math/Primitive/VLine.hpp>
-  #include <Vision/Runtime/Base/Math/Deprecated/VPlane.hpp>
-  #include <Vision/Runtime/Base/Physics/VIntersect.hpp>
-  #include <Vision/Runtime/Base/Math/Deprecated/VMappingVertex.hpp>
-  #include <Vision/Runtime/Base/Math/Deprecated/VVertex2.hpp>
+  #include <Vision/Runtime/Base/Math/Primitive/VLine.hpp> 
+  #include <Vision/Runtime/Base/Physics/VIntersect.hpp> 
   #include <Vision/Runtime/Base/Math/Primitive/VRectanglef.hpp>
 
-  #include <Vision/Runtime/Base/Math/hkvMath.h>
-  #include <Vision/Runtime/Base/Math/Vector/hkvVec2.h>
-  #include <Vision/Runtime/Base/Math/Vector/hkvVec3.h>
-  #include <Vision/Runtime/Base/Math/Vector/hkvVec3d.h>
-  #include <Vision/Runtime/Base/Math/Vector/hkvVec4.h>
-  #include <Vision/Runtime/Base/Math/Matrix/hkvMat3.h>
-  #include <Vision/Runtime/Base/Math/Matrix/hkvMat4.h>
-  #include <Vision/Runtime/Base/Math/Plane/hkvPlane.h>
-  #include <Vision/Runtime/Base/Math/BoundingVolume/hkvAlignedBBox.h>
-  #include <Vision/Runtime/Base/Math/BoundingVolume/hkvBoundingSphere.h>
+  #include <Vision/Runtime/Base/Math/hkvMath.h> 
+  #include <Vision/Runtime/Base/Math/Vector/hkvVec2.h> 
+  #include <Vision/Runtime/Base/Math/Vector/hkvVec3.h> 
+  #include <Vision/Runtime/Base/Math/Vector/hkvVec3d.h> 
+  #include <Vision/Runtime/Base/Math/Vector/hkvVec4.h> 
+  #include <Vision/Runtime/Base/Math/Matrix/hkvMat3.h> 
+  #include <Vision/Runtime/Base/Math/Matrix/hkvMat4.h> 
+  #include <Vision/Runtime/Base/Math/Plane/hkvPlane.h> 
+  #include <Vision/Runtime/Base/Math/BoundingVolume/hkvAlignedBBox.h> 
+  #include <Vision/Runtime/Base/Math/BoundingVolume/hkvBoundingSphere.h> 
 #else
 
   //The order of these includes are important, these classes depend on each other
@@ -292,7 +289,7 @@ inline void vStrDupOver(char*& dst, const char* src)  {vStrFree(dst); if(src) ds
   
   
 
-  #include <Vision/Runtime/Base/Graphics/VColor.hpp>
+  #include <Vision/Runtime/Base/Graphics/VColor.hpp> 
 
   //misc includes  
   #include <Vision/Runtime/Base/Graphics/Textures/VTex.hpp>
@@ -311,7 +308,6 @@ inline void vStrDupOver(char*& dst, const char* src)  {vStrFree(dst); if(src) ds
 
   #include <Vision/Runtime/Base/System/Command/VCommand.hpp>
   #include <Vision/Runtime/Base/System/Command/VCommandManager.hpp>
-  #include <Vision/Runtime/Base/String/VString.hpp>
   #include <Vision/Runtime/Base/String/VStringUtil.hpp>
   #include <Vision/Runtime/Base/System/VVarType.hpp>
   #include <Vision/Runtime/Base/String/VStringTokenizer.hpp>
@@ -319,8 +315,6 @@ inline void vStrDupOver(char*& dst, const char* src)  {vStrFree(dst); if(src) ds
 
   #include <Vision/Runtime/Base/System/VNameValueListParser.hpp>
   #include <Vision/Runtime/Base/System/VRestoreValue.hpp>
-  #include <Vision/Runtime/Base/System/IO/Serialization/VArchive.hpp>
-
 
   #include <Vision/Runtime/Base/Container/vstrlist.hpp>
   #include <Vision/Runtime/Base/Container/VMaps.hpp>
@@ -328,21 +322,21 @@ inline void vStrDupOver(char*& dst, const char* src)  {vStrFree(dst); if(src) ds
   #include <Vision/Runtime/Base/Container/VElementCache.hpp>
   #include <Vision/Runtime/Base/Container/VRawDataBlock.hpp>
 
-  #include <Vision/Runtime/Base/Physics/VIntersect.hpp>
+  #include <Vision/Runtime/Base/Physics/VIntersect.hpp> 
 
-  #include <Vision/Runtime/Base/Math/hkvMath.h>
-  #include <Vision/Runtime/Base/Math/Vector/hkvVec2.h>
-  #include <Vision/Runtime/Base/Math/Vector/hkvVec3.h>
-  #include <Vision/Runtime/Base/Math/Vector/hkvVec3d.h>
-  #include <Vision/Runtime/Base/Math/Vector/hkvVec4.h>
-  #include <Vision/Runtime/Base/Math/Matrix/hkvMat3.h>
-  #include <Vision/Runtime/Base/Math/Matrix/hkvMat4.h>
-  #include <Vision/Runtime/Base/Math/Plane/hkvPlane.h>
-  #include <Vision/Runtime/Base/Math/BoundingVolume/hkvAlignedBBox.h>
-  #include <Vision/Runtime/Base/Math/BoundingVolume/hkvBoundingSphere.h>
+  #include <Vision/Runtime/Base/Math/hkvMath.h> 
+  #include <Vision/Runtime/Base/Math/Vector/hkvVec2.h> 
+  #include <Vision/Runtime/Base/Math/Vector/hkvVec3.h> 
+  #include <Vision/Runtime/Base/Math/Vector/hkvVec3d.h> 
+  #include <Vision/Runtime/Base/Math/Vector/hkvVec4.h> 
+  #include <Vision/Runtime/Base/Math/Matrix/hkvMat3.h> 
+  #include <Vision/Runtime/Base/Math/Matrix/hkvMat4.h> 
+  #include <Vision/Runtime/Base/Math/Plane/hkvPlane.h> 
+  #include <Vision/Runtime/Base/Math/BoundingVolume/hkvAlignedBBox.h> 
+  #include <Vision/Runtime/Base/Math/BoundingVolume/hkvBoundingSphere.h> 
 
   #include <Vision/Runtime/Base/Math/hkvMathHelpers.h>
-  #include <Vision/Runtime/Base/Math/Primitive/VLine.hpp>
+  #include <Vision/Runtime/Base/Math/Primitive/VLine.hpp> 
 
 
   #include <Vision/Runtime/Base/Graphics/Shader/vShaderFXParser.hpp>
@@ -383,9 +377,9 @@ inline void vStrDupOver(char*& dst, const char* src)  {vStrFree(dst); if(src) ds
 
   #include <Vision/Runtime/Base/VGL/VGL.hpp>
 
-  #ifdef WIN32
+  #ifdef _VISION_WIN32
 
-    // WIN32 vBase only includes
+    // _VISION_WIN32 vBase only includes
     #include <Vision/Runtime/Base/System/Param/VParam.hpp>
     #include <Vision/Runtime/Base/System/Param/VParamArray.hpp>
     #include <Vision/Runtime/Base/System/Param/VParamContainer.hpp>
@@ -413,9 +407,9 @@ inline void vStrDupOver(char*& dst, const char* src)  {vStrFree(dst); if(src) ds
     #include <Vision/Runtime/Base/Input/VSoftKeyboardAdapter.hpp>
   #endif
 
-  #ifdef WIN32
-    #if !defined(_VISION_NO_XINPUT) && !defined(_VISION_APOLLO)
-      #include <Vision/Runtime/Base/Input/VInputXI.hpp>
+  #if defined(_VISION_WIN32)
+    #if !defined(_VISION_NO_XINPUT) && !defined(_VISION_WINPHONE)
+      #include <Vision/Runtime/Base/Input/VInputXI.hpp> 
     #endif
     #if !defined(_VISION_WINRT)  // No DirectInput
       #include <Vision/Runtime/Base/Input/VInputPC.hpp>
@@ -424,7 +418,7 @@ inline void vStrDupOver(char*& dst, const char* src)  {vStrFree(dst); if(src) ds
     #endif
 
   #elif defined(_VISION_XENON)
-    #include <Vision/Runtime/Base/Input/VInputXI.hpp>
+    #include <Vision/Runtime/Base/Input/VInputXI.hpp> 
     #include <Vision/Runtime/Base/Input/VInputXenon.hpp>
   
   #elif defined(_VISION_PS3)
@@ -449,6 +443,9 @@ inline void vStrDupOver(char*& dst, const char* src)  {vStrFree(dst); if(src) ds
 
   #elif defined(_VISION_WIIU)
     #include <Vision/Runtime/Base/Input/VInputWiiU.hpp>
+
+  #elif defined(_VISION_NACL)
+    #include <Vision/Runtime/Base/Input/VInputNaCl.hpp>
 
   #else
     #error Undefined platform!
@@ -475,7 +472,7 @@ VBASE_IMPEXP void vBaseInterReleaseDebugLinkingCheck();
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -42,7 +42,7 @@ class hkMemorySnapshot;
 	/// If an implementation may supply more memory than requested
 	/// or may be able to reallocate without copying, it may benefit from
 	/// also overriding the buf* methods.
-class hkMemoryAllocator
+class HK_EXPORT_COMMON hkMemoryAllocator
 {
 	//+hk.MemoryTracker(ignore=True)
 	public:
@@ -91,7 +91,7 @@ class hkMemoryAllocator
 			/// In implementing the interface - the allocator can be used to provide easily a full implementation of
 			/// a memory system, using the hkFreeListMemorySystem. (NOTE - that the underlying memory allocator does not
 			/// need to be a freelist to work within the hkFreeListMemorySystem)
-		struct ExtendedInterface
+		struct HK_EXPORT_COMMON ExtendedInterface
 		{
 			virtual ~ExtendedInterface() {}
 
@@ -237,7 +237,7 @@ class hkMemoryAllocator
 #endif // HKBASE_hkMemoryAllocator_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

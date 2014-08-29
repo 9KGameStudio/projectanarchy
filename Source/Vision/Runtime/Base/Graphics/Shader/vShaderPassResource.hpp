@@ -235,7 +235,7 @@ public:
   ///   Allows write-access to the underlying Shader source. For internal use.
   VBASE_IMPEXP VShaderProgramResource& GetShaderProgram_WriteAccess (VShaderStage_e Shader) { return (m_ShaderProgram[Shader]); }
 
-  #ifdef WIN32
+  #ifdef _VISION_WIN32
     /// \brief Used internally while saving.
     int m_iShaderNum;
     bool m_bIsReferenced;
@@ -270,7 +270,7 @@ private:
   unsigned int m_uiSupportedTargetPlatforms;  ///< Each bit represents a VTargetPlatformMask_e value
   VString m_sPerPrimitiveCallback;    ///< callback function name
   
-  #ifdef WIN32
+  #ifdef _VISION_WIN32
    friend bool ParseFXLib (char *text, int numChars, VShaderCompileFlags_e flags, VShaderEffectLib &fxlib);
   #endif
   
@@ -302,7 +302,7 @@ private:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

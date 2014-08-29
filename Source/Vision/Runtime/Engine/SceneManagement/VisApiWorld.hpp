@@ -19,14 +19,21 @@ class VisCoordinateSystem_cl;
 
 /// \brief
 ///   Base class for defining a customized map projection in Vision
-class IVProjection : public VisTypedEngineObject_cl
+class IVProjection : public VisTypedEngineObject_cl, public VRefCounter
 {
 public:
+  VISION_APIFUNC IVProjection();
+
   /// \brief
   ///   Creates a coordinate system object for this map projection
   ///
   /// \sa VisCoordinateSystem_cl
-  VISION_APIFUNC virtual VisCoordinateSystem_cl *CreateCoordinateSystem() const { return 0; }
+  VISION_APIFUNC virtual VisCoordinateSystem_cl *CreateCoordinateSystem() { return 0; }
+
+
+  /// \brief
+  ///   Overridable to determine whether this projection type should be exported to vscene file. Returns true by default
+  VISION_APIFUNC virtual bool WantsSerialization() const { return true; }
 
 #ifndef _VISION_DOC
   VISION_APIFUNC virtual void Serialize( VArchive &ar ) { };
@@ -190,15 +197,15 @@ public:
 
   /// \brief
   ///   Project a coordinate from the input system to the system defined by IVProjection
-  VISION_APIFUNC virtual void ProjectCoordinate( hkvVec3d const& inputCoordinate, hkvVec3d& cartesianCoordinate ) = 0;
+  VISION_APIFUNC virtual void ProjectCoordinate( hkvVec3d const& inputCoordinate, hkvVec3d& cartesianCoordinate ) const = 0;
 
   /// \brief
   ///   Unproject a coordinate from the system defined by IVProjection to the unprojected type
-  VISION_APIFUNC virtual void UnprojectCoordinate( hkvVec3d const& cartesianCoordinate, hkvVec3d& outputCoordinate ) = 0;
+  VISION_APIFUNC virtual void UnprojectCoordinate( hkvVec3d const& cartesianCoordinate, hkvVec3d& outputCoordinate ) const = 0;
 
   /// \brief
   ///   Returns the projection object
-  virtual const IVProjection *GetProjection() const = 0;
+  virtual IVProjection* GetProjection() const = 0;
 private:
 
 };
@@ -320,16 +327,13 @@ public:
   ///   Get the scene reference position if applicable for a coordinate system
   virtual void GetSceneReferencePosition(hkvVec3d& referencePosition) const;
 
-  virtual void ProjectCoordinate( hkvVec3d const& inputCoordinate, hkvVec3d& cartesianCoordinate ) HKV_OVERRIDE;
+  virtual void ProjectCoordinate( hkvVec3d const& inputCoordinate, hkvVec3d& cartesianCoordinate ) const HKV_OVERRIDE;
 
-  virtual void UnprojectCoordinate( hkvVec3d const& cartesianCoordinate, hkvVec3d& outputCoordinate ) HKV_OVERRIDE;
+  virtual void UnprojectCoordinate( hkvVec3d const& cartesianCoordinate, hkvVec3d& outputCoordinate ) const HKV_OVERRIDE;
 
   /// \brief
   ///   Returns the projection object
-  virtual const IVProjection *GetProjection() const HKV_OVERRIDE
-  {
-    return NULL;
-  }
+  virtual IVProjection* GetProjection() const HKV_OVERRIDE;
 
 private:
 
@@ -440,7 +444,7 @@ public:
   ///   Utility function to calculate the tangent space frustum far corners given the current location of the object (and current context's camera).
   ///
   /// \param[in] pNode
-  ///   The render node to query the frustum from
+  ///   The render node to query the frustum from or NULL to use the current render context
   ///
   /// \param[out] tl
   ///   The top left frustum corner, in world space, transformed to tangent space
@@ -460,13 +464,13 @@ public:
   /// \param[out] downDir
   ///   bl - tl, not normalized
   ///
-	VISION_APIFUNC void GetTangentFrustumFarCorners( IVRendererNode *pNode, hkvVec3* tl, hkvVec3* bl, hkvVec3* br, hkvVec3* tr, hkvVec3* rightDir = 0, hkvVec3* downDir = 0 );
+  VISION_APIFUNC void GetTangentFrustumFarCorners( IVRendererNode *pNode, hkvVec3* tl, hkvVec3* bl, hkvVec3* br, hkvVec3* tr, hkvVec3* rightDir = 0, hkvVec3* downDir = 0 );
 
   /// \brief
   ///   Utility function to calculate the local frame frustum far corners given the current location of the object (and current context's camera).
   ///
   /// \param[in] pNode
-  ///   The render node to query the frustum from
+  ///   The render node to query the frustum from or NULL to use the current render context
   ///
   /// \param[out] tl
   ///   The top left frustum corner, in world space, transformed to local frame
@@ -505,6 +509,19 @@ public:
   /// 
   /// \sa VisCoordinateSystem_cl::GetCosineHorizon
   VISION_APIFUNC float CosineHorizon() const;
+
+protected:
+
+  /// \brief
+  ///   Internal helper function to compute the frustom far corners.
+  ///
+  /// \param[in] pNode
+  ///   The render node to query the frustum from or NULL to use the current render context
+  ///
+  /// \param[out] vFarCorners
+  ///   Reference to the four frustum corners, in world space, transformed to local frame
+  ///
+  void ComputeFrustumFarCorners( IVRendererNode *pNode, hkvVec3 vFarCorners[4]);
 
 private:
 
@@ -657,7 +674,7 @@ private:
 #endif //DEFINE_VISAPIWORLD
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140624)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

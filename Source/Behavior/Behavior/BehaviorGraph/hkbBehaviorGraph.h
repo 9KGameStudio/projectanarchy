@@ -746,16 +746,21 @@ class hkbBehaviorGraph : public hkbGenerator
 		void processEventlessGlobalTransitions( const hkbContext& context );
 
 			// Initiate a global transition.
-		void doGlobalTransition( const hkbContext& context, StateMachineInfo* info, int transitionIndex );
+			// Returns if a global transition was started.
+		bool processGlobalTransition(
+			const hkbContext& context,
+			StateMachineInfo* stateMachineInfo,
+			int transitionIndex );
 
 			// A helper function for initalizeGlobalTransitionData.  Returns the nested state machine info index.
-		int collectStateMachinesRootFirstInternal(	hkbGenerator* generator,
-													hkbBehaviorGraph* behavior,
-													int parentStateMachineInfoIndex,
-													int childIndex,
-													hkPointerMap<hkbGenerator*, int>& generatorToIndexMap,
-													bool& foundNestedTransitions,
-													hkPointerMap<hkbGenerator*,int>& generatorToNestedStateMachineInfoIndexMap );
+		int collectStateMachinesRootFirstInternal(
+			hkbGenerator* generator,
+			hkbBehaviorGraph* behavior,
+			int parentStateMachineInfoIndex,
+			int childIndex,
+			hkPointerMap<hkbGenerator*, int>& generatorToIndexMap,
+			bool& foundNestedTransitions,
+			hkPointerMap<hkbGenerator*,int>& generatorToNestedStateMachineInfoIndexMap );
 
 			// Copy variable values into nodes.
 			//
@@ -795,8 +800,7 @@ class hkbBehaviorGraph : public hkbGenerator
 
 			// This is called on the root node to create a clone, recursively.
 		void addRootNodeReference(	const hkbContext& context,
-									hkbNode* nodeTemplate,
-									hkPointerMap<hkInt16, const hkbNodeInternalStateInfo*>* nodeIdToInternalState );
+									hkbNode* nodeTemplate );
 
 			// This is called on the root node to remove a clone, recursively.
 		void removeRootNodeReference( const hkbContext& context, hkbNode* nodeClone );
@@ -813,8 +817,7 @@ class hkbBehaviorGraph : public hkbGenerator
 			// and adds a reference.  Returns the clone.
 		hkbNode* addNodeReference(	const hkbContext& context,
 									hkbNode* nodeTemplate,
-									bool reset,
-									hkPointerMap<hkInt16, const hkbNodeInternalStateInfo*>* nodeIdToInternalState );
+									bool reset );
 
 			// Removes a reference to a clone and deactivates it if this is a last reference.
 		void removeNodeReference( const hkbContext& context, hkbNode* nodeClone );
@@ -822,8 +825,7 @@ class hkbBehaviorGraph : public hkbGenerator
 			// This is called when a node's set of active children needs to be reprocessed.
 		void requestUpdateActiveNodesInternal(	const hkbContext& context,
 												hkbNode* nodeClone,
-												bool reset,
-												hkPointerMap<hkInt16, const hkbNodeInternalStateInfo*>* nodeIdToInternalState );
+												bool reset );
 
 	public:
 
@@ -842,7 +844,7 @@ class hkbBehaviorGraph : public hkbGenerator
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

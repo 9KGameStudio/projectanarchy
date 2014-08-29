@@ -20,6 +20,8 @@ public:
 
   VisBaseEntity_cl * PickEntity(float x, float y, float fMaxDist=10000.f, bool bIgnoreStaticGeomerty=false);
 
+  VisStaticMeshInstance_cl * PickStaticMesh(float x, float y, float fMaxDist=10000.f);
+
   bool SaveToFile(const char * szFileName = NULL, bool bJpgInsteadBmp = true);
 
   float GetDeviceDpi();
@@ -34,8 +36,13 @@ public:
 
     SWIG_CONVERT_POINTER(L, 2, hkvVec3, pVec)
 
+    if(!pVec)
+    {
+      hkvLog::Warning("LUA method Screen:Project2D(point) - parameter point is not valid, return values will be nil.");
+    }
+
     float x,y;
-    if(Vision::IsInitialized() && Vision::Contexts.GetCurrentContext()->Project2D(*pVec,x,y))
+    if(pVec != NULL && Vision::IsInitialized() && Vision::Contexts.GetCurrentContext()->Project2D(*pVec,x,y))
     {
       lua_pushnumber(L, (lua_Number)x);
       lua_pushnumber(L, (lua_Number)y);
@@ -49,15 +56,13 @@ public:
     return 2; 
   }
 %}
-   
+
 //we return two parameter in GetViewportSize, so it has to be implemented native
 %native(GetViewportSize) int VScriptScreen_wrapper_GetViewportSize(lua_State *L);
 %{
   SWIGINTERN int VScriptScreen_wrapper_GetViewportSize(lua_State *L)
   {
     IS_MEMBER_OF(VScriptScreen_wrapper) //this will move this function to the method table of the specified class
-
-    lua_settop(L,0);
 
     if(Vision::IsInitialized() && Vision::Contexts.GetMainRenderContext())
     {
@@ -130,7 +135,7 @@ public:
   /// \param y Screen space y.
   /// \param maxDist (\b optional) farthest test distance.
   /// \param ignoreStaticGeomerty (\b optional) Set to true if you would like to ignore static geometry.
-  /// \return An entity if picking was successful, otherwise nil.
+  /// \return An entity or derived instance if picking was successful, otherwise nil.
   /// \par Example
   ///   \code
   ///  function OnThink(self)
@@ -145,6 +150,25 @@ public:
   ///   \endcode
   /// \see vForge Sampe "Scripting/LuaScreen.scene"
   VisBaseEntity_cl PickEntity(number x, number y, number maxDist=10000, boolean ignoreStaticGeomerty=false);
+
+  /// \brief Pick a static mesh instance from 2D screen coordinates.
+  /// \param x Screen space x.
+  /// \param y Screen space y.
+  /// \param maxDist (\b optional) farthest test distance.
+  /// \return A static mesh instance if picking was successful, otherwise nil.
+  /// \par Example
+  ///   \code
+  ///  function OnThink(self)
+  ///    if Input:IsMouseButtonPressed(Vision.BUTTON_LEFT) then
+  ///      local x,y = Input:GetMousePosition()
+  ///      local staticMesh = Sceen:PickStaticMesh(x,y)
+  ///      if staticMesh ~= nil then
+  ///        Debug:PrintLine("You picked "..tostring(staticMesh))
+  ///      end
+  ///    end
+  ///  end
+  ///   \endcode
+  VisStaticGeometryInstance_cl PickStaticMesh(number x, number y, number maxDist=10000);
  
   /// \brief Transform a 3D position into a 2D screen position.
   /// \param point The 3D world space position to transform to screen space.
@@ -194,7 +218,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -14,7 +14,7 @@ extern const class hkClass hkStreamWriterClass;
 /// A generic interface to writing a stream of bytes.
 /// The reader may optionally support buffering or may be
 /// wrapped as a child stream of an hkBufferedStreamWriter.
-class hkStreamWriter : public hkReferencedObject
+class HK_EXPORT_COMMON hkStreamWriter : public hkReferencedObject
 {
 	public:
 		HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_STREAM);
@@ -44,12 +44,14 @@ class hkStreamWriter : public hkReferencedObject
 			/// Get the current file offset if supported or -1 on error.
 			/// Default implementation calls seek(0, STREAM_CUR);
 		virtual int tell() const;
+
+		virtual hkBool isBuffered() const;
 };
 
 #endif //HKBASE_STREAM_WRITER_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

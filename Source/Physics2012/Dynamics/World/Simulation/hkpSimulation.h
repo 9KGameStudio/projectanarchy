@@ -10,7 +10,7 @@
 #define HK_DYNAMICS2_SIMULATION_H
 
 #include <Common/Base/DebugUtil/DeterminismUtil/hkCheckDeterminismUtil.h>
-#include <Physics2012/Dynamics/World/hkpWorld.h>	
+#include <Physics2012/Dynamics/World/hkpWorld.h>
 
 class hkpConstraintQueryIn;
 class hkpSimulationIsland;
@@ -85,7 +85,7 @@ class hkpSimulation: public hkReferencedObject
 
 		virtual hkpStepResult stepBeginSt( hkJobQueue* queue, hkReal physicsDeltaTime ){ return HK_STEP_RESULT_SUCCESS; }
 
-		virtual hkpStepResult finishMtStep( hkJobQueue* queue, hkJobThreadPool* threadPool ){return HK_STEP_RESULT_SUCCESS; }
+		virtual hkpStepResult finishMtStep( hkJobQueue* queue, hkThreadPool* threadPool ){return HK_STEP_RESULT_SUCCESS; }
 
 		virtual void getMultithreadConfig( hkpMultithreadConfig& config ){}
 
@@ -263,7 +263,7 @@ void HK_CALL hkLs_doSimpleCollisionResponse( hkpWorld* world, const hkpToiEvent&
 #endif // HK_DYNAMICS2_SIMULATION_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

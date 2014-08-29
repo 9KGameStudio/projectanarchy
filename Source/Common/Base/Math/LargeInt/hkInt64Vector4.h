@@ -147,6 +147,14 @@ class hkInt64Vector4
 		template <int I>
 		inline void countLeadingZeros(hkIntVector& leadingZerosOut) const;
 
+		/// Load values for N components from linear addresses at \a p. Not loaded components are undefined. 
+		/// See the documentation at the template values for the requested IO mode.
+		template <int N, hkMathIoMode A> HK_FORCE_INLINE void load(const hkUint64* p);
+
+		/// Store values of N components to linear addresses at \a p.
+		/// See the documentation at the template values for the requested IO mode.
+		template <int N, hkMathIoMode A> HK_FORCE_INLINE void store(hkUint64* p) const;
+
 	public:
 
 		HK_ALIGN16(hkQuadUlong m_quad);
@@ -155,7 +163,7 @@ class hkInt64Vector4
 #endif	//	HK_MATH_LONG_VECTOR4_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

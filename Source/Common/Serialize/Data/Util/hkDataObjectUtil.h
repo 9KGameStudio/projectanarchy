@@ -21,16 +21,16 @@ namespace hkDataObjectUtil
 {
 		/// Recursively copy the object into an hkResource.
 		/// This function calls hkDataObjectUtil::toResourceWithRegistry using hkBuiltinTypeRegistry.
-	hkResource* HK_CALL toResource( const hkDataObject& src, hkBool32 destroyOnCopy);
+	HK_EXPORT_COMMON hkResource* HK_CALL toResource( const hkDataObject& src, hkBool32 destroyOnCopy);
 
 		/// Recursively copy the object into an hkResource using classes from the supplied
 		/// 'classReg' registry. If class is not found then the object is not copied.
 		/// Usually you should use hkDataObjectUtil::toResource() instead of this function.
-	hkResource* HK_CALL toResourceWithRegistry(const hkDataObject& src, const hkClassNameRegistry* classReg, hkBool32 destroyOnCopy);
+	HK_EXPORT_COMMON hkResource* HK_CALL toResourceWithRegistry(const hkDataObject& src, const hkClassNameRegistry* classReg, hkBool32 destroyOnCopy);
 
 		/// Recursively copy the object into an hkObjectResource.
 		/// This function calls hkDataObjectUtil::toObjectWithRegistry() using hkBuiltinTypeRegistry.
-	hkObjectResource* HK_CALL toObject( const hkDataObject& src, hkBool32 destroyOnCopy);
+	HK_EXPORT_COMMON hkObjectResource* HK_CALL toObject( const hkDataObject& src, hkBool32 destroyOnCopy);
 
 		/// Recursively copy the object into an hkObjectResource using classes and type infos from the supplied
 		/// 'classReg' and 'typeReg' registries correspondingly.
@@ -38,29 +38,29 @@ namespace hkDataObjectUtil
 		/// array of hkVariants, simple array or homogeneous array then the object is not copied and
 		/// this function returns HK_NULL.
 		/// Usually you should use hkDataObjectUtil::toObject() instead of this function.
-	hkObjectResource* HK_CALL toObjectWithRegistry(const hkDataObject& src, const hkClassNameRegistry* classReg, const hkTypeInfoRegistry* typeReg, hkBool32 destroyOnCopy);
+	HK_EXPORT_COMMON hkObjectResource* HK_CALL toObjectWithRegistry(const hkDataObject& src, const hkClassNameRegistry* classReg, const hkTypeInfoRegistry* typeReg, hkBool32 destroyOnCopy);
 
 		/// Convert a type/klass into a 'basic' type. Either a terminal or a tuple of a terminal (in case of VEC types)
-	hkDataObject::Type HK_CALL getBasicType(hkTypeManager& typeManager, hkClassMember::Type type, const char* typeName);
+	HK_EXPORT_COMMON hkDataObject::Type HK_CALL getBasicType(hkTypeManager& typeManager, hkClassMember::Type type, const char* typeName);
 
 			/// Convert hkClassMember::Type to hkDataObject::Type.
-	hkDataObject::Type HK_CALL getTypeFromMemberType(hkTypeManager& typeManager, hkClassMember::Type mtype, hkClassMember::Type stype, const hkClass* klass, int count);
+	HK_EXPORT_COMMON hkDataObject::Type HK_CALL getTypeFromMemberType(hkTypeManager& typeManager, hkClassMember::Type mtype, hkClassMember::Type stype, const hkClass* klass, int count);
 
 		/// Convert hkClassMember::Type to hkDataObject::Type.
-	hkDataObject::Type HK_CALL getTypeFromMemberTypeClassName(hkTypeManager& typeManager, hkClassMember::Type mtype, hkClassMember::Type stype, const char* typeName, int count);
+	HK_EXPORT_COMMON hkDataObject::Type HK_CALL getTypeFromMemberTypeClassName(hkTypeManager& typeManager, hkClassMember::Type mtype, hkClassMember::Type stype, const char* typeName, int count);
 
 		/// Copy the contents of one world into another.
-	hkResult HK_CALL deepCopyWorld( hkDataWorld& dst, const hkDataWorld& src );
+	HK_EXPORT_COMMON hkResult HK_CALL deepCopyWorld( hkDataWorld& dst, const hkDataWorld& src );
 
 		/// Calculate the extra storage (above the normal hkClass size) required to create
 		/// a native version of the given object. Normally this is 0
-	int HK_CALL getExtraStorageSize(const hkClass* klass, const hkDataObject& obj);
+	HK_EXPORT_COMMON int HK_CALL getExtraStorageSize(const hkClass* klass, const hkDataObject& obj);
 }
 
 #endif // HK_DATA_OBJECT_UTIL_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

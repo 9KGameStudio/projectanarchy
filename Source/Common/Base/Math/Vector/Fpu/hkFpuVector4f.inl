@@ -65,6 +65,13 @@ HK_FORCE_INLINE void hkVector4f::setAll(hkSimdFloat32Parameter a)
 	setAll( a.getReal() );
 }
 
+template<int vectorConstant>
+HK_FORCE_INLINE void hkVector4f::setConstant()
+{
+	HK_VECTOR4f_CONSTANT_CHECK;
+	m_quad = g_vectorfConstants[vectorConstant];
+}
+
 HK_FORCE_INLINE void hkVector4f::setZero()
 {
 	m_quad.v[0] = hkFloat32(0);
@@ -328,6 +335,10 @@ HK_FORCE_INLINE void hkVector4f::setSelect( hkVector4fParameter trueValue, hkVec
 	m_quad.v[3] = (M & hkVector4ComparisonMask::MASK_W) ? trueValue.m_quad.v[3] : falseValue.m_quad.v[3];
 }
 
+HK_FORCE_INLINE void hkVector4f::setClampedZeroOne( hkVector4fParameter a )
+{
+	setClamped(a, getConstant<HK_QUADREAL_0>(), getConstant<HK_QUADREAL_1>());
+}
 
 HK_FORCE_INLINE void hkVector4f::zeroIfFalse( hkVector4fComparisonParameter comp )
 {
@@ -556,11 +567,7 @@ HK_FORCE_INLINE void hkVector4f::addXYZ(hkVector4fParameter xyz)
 	m_quad.v[0] += xyz.m_quad.v[0];
 	m_quad.v[1] += xyz.m_quad.v[1];
 	m_quad.v[2] += xyz.m_quad.v[2];
-#if defined(HK_REAL_IS_DOUBLE)
-	HK_ON_DEBUG( *((hkUint64*)&(m_quad.v[3])) = 0xffffffffffffffffull; )
-#else
-	HK_ON_DEBUG( *((hkUint32*)&(m_quad.v[3])) = 0xffffffff; )
-#endif
+	HK_ON_DEBUG( m_quad.v[3] = HK_VECTOR4f_DEBUG_FILL_VALUE.v[0]; )
 }
 
 HK_FORCE_INLINE void hkVector4f::subXYZ(hkVector4fParameter xyz)
@@ -568,11 +575,7 @@ HK_FORCE_INLINE void hkVector4f::subXYZ(hkVector4fParameter xyz)
 	m_quad.v[0] -= xyz.m_quad.v[0];
 	m_quad.v[1] -= xyz.m_quad.v[1];
 	m_quad.v[2] -= xyz.m_quad.v[2];
-#if defined(HK_REAL_IS_DOUBLE)
-	HK_ON_DEBUG( *((hkUint64*)&(m_quad.v[3])) = 0xffffffffffffffffull; )
-#else
-	HK_ON_DEBUG( *((hkUint32*)&(m_quad.v[3])) = 0xffffffff; )
-#endif
+	HK_ON_DEBUG( m_quad.v[3] = HK_VECTOR4f_DEBUG_FILL_VALUE.v[0]; )
 }
 
 HK_FORCE_INLINE void hkVector4f::setXYZ(hkFloat32 v)
@@ -597,11 +600,7 @@ HK_FORCE_INLINE void hkVector4f::setBroadcastXYZ(const int i, hkVector4fParamete
 {
 	HK_MATH_ASSERT(0x6d0c31d7, i>=0 && i<4, "index out of bounds for component access");
 	setXYZ( v.m_quad.v[i] );
-#if defined(HK_REAL_IS_DOUBLE)
-	HK_ON_DEBUG( *((hkUint64*)&(m_quad.v[3])) = 0xffffffffffffffffull; )
-#else
-	HK_ON_DEBUG( *((hkUint32*)&(m_quad.v[3])) = 0xffffffff; )
-#endif
+	HK_ON_DEBUG( m_quad.v[3] = HK_VECTOR4f_DEBUG_FILL_VALUE.v[0]; )
 }
 
 HK_FORCE_INLINE const hkSimdFloat32 hkVector4f::getComponent(const int i) const
@@ -633,41 +632,20 @@ HK_FORCE_INLINE void hkVector4f::setComponent(hkSimdFloat32Parameter val)
 HK_FORCE_INLINE void hkVector4f::reduceToHalfPrecision()
 {
 #if defined(HK_HALF_IS_FLOAT)
-	#if defined(HK_REAL_IS_DOUBLE)
-		static const hkUint64 precisionMask = 0xffffffff00000000ull;
-		const hkUint64* src = reinterpret_cast<const hkUint64*>( &m_quad );
-		hkUint64* dest = reinterpret_cast<hkUint64*>( &m_quad );
-		dest[0] = src[0] & precisionMask;
-		dest[1] = src[1] & precisionMask;
-		dest[2] = src[2] & precisionMask;
-		dest[3] = src[3] & precisionMask;
-	#endif
+	// we are done
 #else
 		static const hkUint32 precisionMask = 0xffff0000;
-	#if defined(HK_REAL_IS_DOUBLE)
-		hkFloat32 fsrc[4];
-		fsrc[0] = hkFloat32(m_quad.v[0]);
-		fsrc[1] = hkFloat32(m_quad.v[1]);
-		fsrc[2] = hkFloat32(m_quad.v[2]);
-		fsrc[3] = hkFloat32(m_quad.v[3]);
-		const hkUint32* src = reinterpret_cast<const hkUint32*>( fsrc );
-		hkUint32* dest = reinterpret_cast<hkUint32*>( fsrc );
-		dest[0] = src[0] & precisionMask;
-		dest[1] = src[1] & precisionMask;
-		dest[2] = src[2] & precisionMask;
-		dest[3] = src[3] & precisionMask;
-		m_quad.v[0] = hkFloat32(fsrc[0]);
-		m_quad.v[1] = hkFloat32(fsrc[1]);
-		m_quad.v[2] = hkFloat32(fsrc[2]);
-		m_quad.v[3] = hkFloat32(fsrc[3]);
-	#else
-		const hkUint32* src = reinterpret_cast<const hkUint32*>( &m_quad );
-		hkUint32* dest = reinterpret_cast<hkUint32*>( &m_quad );
-		dest[0] = src[0] & precisionMask;
-		dest[1] = src[1] & precisionMask;
-		dest[2] = src[2] & precisionMask;
-		dest[3] = src[3] & precisionMask;
-	#endif
+		typedef union { hkUint32 i; hkFloat32 f; } i2f;
+
+		i2f* v0 = (i2f*)&m_quad.v[0];
+		i2f* v1 = (i2f*)&m_quad.v[1];
+		i2f* v2 = (i2f*)&m_quad.v[2];
+		i2f* v3 = (i2f*)&m_quad.v[3];
+
+		v0->i &= precisionMask;
+		v1->i &= precisionMask;
+		v2->i &= precisionMask;
+		v3->i &= precisionMask;
 #endif
 }
 
@@ -933,7 +911,7 @@ HK_FORCE_INLINE void hkVector4f::setReciprocal(hkVector4fParameter v)
 
 HK_FORCE_INLINE void hkVector4f::setReciprocal(hkVector4fParameter v)
 {
-	hkVector4_AdvancedInterface::unrollf_setReciprocal<HK_ACC_23_BIT,HK_DIV_IGNORE>::apply(m_quad,v);
+	hkVector4_AdvancedInterface::unrollf_setReciprocal<HK_ACC_MID,HK_DIV_IGNORE>::apply(m_quad,v);
 }
 
 
@@ -1096,7 +1074,7 @@ HK_FORCE_INLINE void hkVector4f::setDiv(hkVector4fParameter v0, hkVector4fParame
 
 HK_FORCE_INLINE void hkVector4f::setDiv(hkVector4fParameter v0, hkVector4fParameter v1)
 {
-	hkVector4_AdvancedInterface::unrollf_setDiv<HK_ACC_23_BIT,HK_DIV_IGNORE>::apply(m_quad,v0,v1);
+	hkVector4_AdvancedInterface::unrollf_setDiv<HK_ACC_MID,HK_DIV_IGNORE>::apply(m_quad,v0,v1);
 }
 
 template <hkMathAccuracyMode A, hkMathDivByZeroMode D>
@@ -1193,7 +1171,7 @@ HK_FORCE_INLINE void hkVector4f::setSqrt(hkVector4fParameter a)
 
 HK_FORCE_INLINE void hkVector4f::setSqrt(hkVector4fParameter a)
 {
-	hkVector4_AdvancedInterface::unrollf_setSqrt<HK_ACC_23_BIT,HK_SQRT_SET_ZERO>::apply(m_quad, a);
+	hkVector4_AdvancedInterface::unrollf_setSqrt<HK_ACC_MID,HK_SQRT_SET_ZERO>::apply(m_quad, a);
 }
 
 
@@ -1279,7 +1257,7 @@ HK_FORCE_INLINE void hkVector4f::setSqrtInverse(hkVector4fParameter a)
 
 HK_FORCE_INLINE void hkVector4f::setSqrtInverse(hkVector4fParameter a)
 {
-	hkVector4_AdvancedInterface::unrollf_setSqrtInverse<HK_ACC_23_BIT,HK_SQRT_SET_ZERO>::apply(m_quad, a);
+	hkVector4_AdvancedInterface::unrollf_setSqrtInverse<HK_ACC_MID,HK_SQRT_SET_ZERO>::apply(m_quad, a);
 }
 
 
@@ -1308,11 +1286,7 @@ struct unrollf_load<N, HK_IO_BYTE_ALIGNED> { HK_FORCE_INLINE static void apply(h
 	if ( N >= 4){ self.v[3] = hkFloat32(p[3]);	}
 
 #if defined(HK_DEBUG)
-#if defined(HK_REAL_IS_DOUBLE)
-	for(int i=N; i<4; ++i) *((hkUint64*)&(self.v[i])) = 0xffffffffffffffffull;
-#else
-	for(int i=N; i<4; ++i) *((hkUint32*)&(self.v[i])) = 0xffffffff;
-#endif
+	for(int i=N; i<4; ++i) self.v[i] = HK_VECTOR4f_DEBUG_FILL_VALUE.v[0];
 #endif
 } };
 template <int N>
@@ -1327,11 +1301,7 @@ struct unrollf_load_D<N, HK_IO_BYTE_ALIGNED> { HK_FORCE_INLINE static void apply
 	if ( N >= 4){ self.v[3] = hkFloat32(p[3]);	}
 
 #if defined(HK_DEBUG)
-#if defined(HK_REAL_IS_DOUBLE)
-	for(int i=N; i<4; ++i) *((hkUint64*)&(self.v[i])) = 0xffffffffffffffffull;
-#else
-	for(int i=N; i<4; ++i) *((hkUint32*)&(self.v[i])) = 0xffffffff;
-#endif
+	for(int i=N; i<4; ++i) self.v[i] = HK_VECTOR4f_DEBUG_FILL_VALUE.v[0];
 #endif
 } };
 
@@ -1424,10 +1394,8 @@ struct unrollf_loadH<N, HK_IO_BYTE_ALIGNED> { HK_FORCE_INLINE static void apply(
 		case 2:  self.v[1] = p[1].getFloat32();
 		default: self.v[0] = p[0].getFloat32(); break;
 	}
-#if defined(HK_REAL_IS_DOUBLE)
-	for(int i=N; i<4; ++i) *((hkUint64*)&(self.v[i])) = 0xffffffffffffffffull;
-#else
-	for(int i=N; i<4; ++i) *((hkUint32*)&(self.v[i])) = 0xffffffff;
+#if defined(HK_DEBUG)
+	for(int i=N; i<4; ++i) self.v[i] = HK_VECTOR4f_DEBUG_FILL_VALUE.v[0];
 #endif
 } };
 
@@ -1489,11 +1457,7 @@ namespace hkVector4_AdvancedInterface
 		default: self.v[0] = p[0].getFloat32(); break;
 		}
 #if defined(HK_DEBUG)
-#if defined(HK_REAL_IS_DOUBLE)
-		for(int i=N; i<4; ++i) *((hkUint64*)&(self.v[i])) = 0xffffffffffffffffull;
-#else
-		for(int i=N; i<4; ++i) *((hkUint32*)&(self.v[i])) = 0xffffffff;
-#endif
+		for(int i=N; i<4; ++i) self.v[i] = HK_VECTOR4f_DEBUG_FILL_VALUE.v[0];
 #endif
 	} };
 
@@ -1786,7 +1750,7 @@ HK_FORCE_INLINE void hkVector4f::store(hkFloat16* p) const
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

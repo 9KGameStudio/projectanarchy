@@ -71,6 +71,8 @@ enum hkbNodeType
 	HKB_NODE_TYPE_END_OF_SPU_TRANSITION_EFFECTS,
 
 	// The rest of the transition effects don't run on SPU.
+
+	HKB_NODE_TYPE_MANUAL_SELECTOR_TRANSITION_EFFECT = HKB_NODE_TYPE_END_OF_SPU_TRANSITION_EFFECTS,
 	
 	// This is where you can define your custom transition effect types if they don't run on SPU.
 	// HKB_NODE_TYPE_USER_TRANSITION_EFFECT_0
@@ -123,6 +125,8 @@ enum hkbNodeType
 	HKB_NODE_TYPE_SEQUENCE,
 	HKB_NODE_TYPE_AI_STEERING_MODIFIER,
 	HKB_NODE_TYPE_AI_CONTROL_MODIFIER,
+	HKB_NODE_TYPE_ROCKETBOX_CHARACTER_CONTROLLER_MODIFIER,
+	HKB_NODE_TYPE_LEAN_ROCKETBOX_CHARACTER_CONTROLLER_MODIFIER,
 	HKB_NODE_TYPE_OTHER_MODIFIER,
 
 	// This is where you can define your custom modifier types if they don't run on SPU.
@@ -183,14 +187,14 @@ class hkbNode : public hkbBindable
 		enum GetChildrenFlagBits
 		{
 				/// If true, only return the active children (otherwise, all children).
-			FLAG_ACTIVE_ONLY = 0x1,
+			FLAG_ACTIVE_ONLY = (1 << 0),
 				
 				/// If true, only return generators (else also return modifiers).
-			FLAG_GENERATORS_ONLY = 0x2,
+			FLAG_GENERATORS_ONLY = (1 << 2),
 
 				/// If true, the behavior graphs pointed to by hkbBehaviorReferenceGenerators
 				/// will be ignored (along with all of their descendants).
-			FLAG_IGNORE_REFERENCED_BEHAVIORS = 0x4,
+			FLAG_IGNORE_REFERENCED_BEHAVIORS = (1 << 3),
 		};
 
 			/// An integer type for storing combinations of GetChildrenFlagsBits.
@@ -426,7 +430,7 @@ class hkbNode : public hkbBindable
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

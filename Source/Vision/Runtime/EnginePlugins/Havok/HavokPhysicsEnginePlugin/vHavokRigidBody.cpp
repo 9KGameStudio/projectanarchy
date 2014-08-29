@@ -10,6 +10,7 @@
 #include <Vision/Runtime/EnginePlugins/Havok/HavokPhysicsEnginePlugin/vHavokRigidBody.hpp>
 #include <Vision/Runtime/EnginePlugins/Havok/HavokPhysicsEnginePlugin/vHavokUserData.hpp>
 #include <Vision/Runtime/EnginePlugins/Havok/HavokPhysicsEnginePlugin/vHavokShapeFactory.hpp>
+#include <Vision/Runtime/EnginePlugins/Havok/HavokPhysicsEnginePlugin/vHavokShapeCache.hpp>
 #include <Vision/Runtime/EnginePlugins/Havok/HavokPhysicsEnginePlugin/vHavokContactListener.hpp>
 #include <Vision/Runtime/EnginePlugins/Havok/HavokPhysicsEnginePlugin/vHavokConversionUtils.hpp>
 #include <Vision/Runtime/EnginePlugins/Havok/HavokPhysicsEnginePlugin/vHavokFileStreamAccess.hpp>
@@ -30,12 +31,10 @@
 
 V_IMPLEMENT_SERIAL(vHavokRigidBody,IVObjectComponent,0,&g_vHavokModule);
 
-
 vHavokRigidBody::vHavokRigidBody(int iComponentFlags)
   : IVisPhysicsObject_cl(0, iComponentFlags)
   , m_pModule(NULL)
   , m_bAddedToWorld(false)
-  , m_szShapeCacheId(NULL)
 {
   m_pModule = vHavokPhysicsModule::GetInstance();
 
@@ -51,6 +50,7 @@ vHavokRigidBody::vHavokRigidBody(int iComponentFlags)
   Havok_NoDeactivate = FALSE;
 
   Havok_Mass = 10.f;
+  Havok_GravityFactor = 1.0f;
   Havok_InertiaTensorComputeMode = InertiaTensorComputeMode_NONE;
   Havok_SurfaceThickness = 0.1f;
   Havok_InertiaTensorAxisScaling.set (1.0f);
@@ -79,6 +79,8 @@ vHavokRigidBody::vHavokRigidBody(int iComponentFlags)
   Havok_AlwaysInitAsDynamic = FALSE;
   Havok_Active = TRUE;
   Havok_TightFit = FALSE; // false so back compat. Better as true though.
+
+  m_vCenterOfMassOffset.setZero();
 }
 
 vHavokRigidBody::~vHavokRigidBody()
@@ -103,7 +105,6 @@ vHavokRigidBody *vHavokRigidBody::FromHkRigidBody(const hkpRigidBody *pHkRigidBo
 
   return (eType == V_USERDATA_OBJECT) ? (vHavokRigidBody*)pDataPtr : NULL;
 }
-
 
 // -------------------------------------------------------------------------- //
 // Common Init                                                                //
@@ -148,18 +149,22 @@ void vHavokRigidBody::CommonInit()
     {
       if (pMesh)
       {
-		  const hkvAlignedBBox& bbox = pMesh->GetBoundingBox();
-		  hkVector4 bbox_min; vHavokConversionUtils::VisVecToPhysVec_noscale(bbox.m_vMin, bbox_min);
-		  hkVector4 bbox_max; vHavokConversionUtils::VisVecToPhysVec_noscale(bbox.m_vMax, bbox_max);
-		  hkVector4 bbox_extent; bbox_extent.setSub(bbox_max,bbox_min); bbox_extent.mul(vScale); bbox_extent.mul(vHavokConversionUtils::GetVision2HavokScaleSIMD());
+        const hkvAlignedBBox& bbox = pMesh->GetBoundingBox();
+        hkVector4 bbox_min; vHavokConversionUtils::VisVecToPhysVec_noscale(bbox.m_vMin, bbox_min);
+        hkVector4 bbox_max; vHavokConversionUtils::VisVecToPhysVec_noscale(bbox.m_vMax, bbox_max);
+        hkVector4 bbox_extent; 
+        bbox_extent.setSub(bbox_max,bbox_min); 
+        bbox_extent.mul(vScale); 
+        bbox_extent.mul(vHavokConversionUtils::GetVision2HavokScaleSIMD());
 
-		  hkVector4 meshTol; meshTol.setAll(hkReal((Shape_Type==ShapeType_CONVEX) ? HKVIS_CONVEX_SHAPE_TOLERANCE : HKVIS_MESH_SHAPE_TOLERANCE));
-		  hkVector4Comparison::Mask largeEnough = bbox_extent.greaterEqual(meshTol).getMask<hkVector4ComparisonMask::MASK_XYZ>();
-		  if (hkMath::countBitsSet(largeEnough) < 2)
+        hkVector4 meshTol; meshTol.setAll(hkReal((Shape_Type==ShapeType_CONVEX) ? HKVIS_CONVEX_SHAPE_TOLERANCE : HKVIS_MESH_SHAPE_TOLERANCE));
+        hkVector4ComparisonMask::Mask largeEnough = bbox_extent.greaterEqual(meshTol).getMask<hkVector4ComparisonMask::MASK_XYZ>();
+        
+        if (hkMath::countBitsSet(largeEnough) < 2)
         {
           const char *szMeshFilename = (pMesh->GetFilename()!=NULL) ? pMesh->GetFilename() : "Unnamed";
           hkvLog::Warning("Initializing vHavokRigidBody with a mesh [%s] with undersized extents (%.4f, %4f, %.4f), when using a shape type Mesh or Convex", 
-                                szMeshFilename, bbox_extent(0), bbox_extent(1), bbox_extent(2));
+            szMeshFilename, bbox_extent(0), bbox_extent(1), bbox_extent(2));
           return;
         }
       }
@@ -415,7 +420,6 @@ void vHavokRigidBody::CommonDeinit()
   RemoveHkRigidBody();
 }
 
-
 // -------------------------------------------------------------------------- //
 // Shape Initialization                                                       //
 // -------------------------------------------------------------------------- //
@@ -480,8 +484,8 @@ void vHavokRigidBody::InitBoxRb(HkBoxGeometry const& geometry, vHavokRigidBody::
 
   if (Havok_TightFit)
   {
-	  hkVector4 r; r.set(hkConvexShapeDefaultRadius, hkConvexShapeDefaultRadius, hkConvexShapeDefaultRadius);
-	  geometry0.m_HalfExtents.sub4(r);
+    hkVector4 r; r.set(hkConvexShapeDefaultRadius, hkConvexShapeDefaultRadius, hkConvexShapeDefaultRadius);
+    geometry0.m_HalfExtents.sub4(r);
   }
 
   // ensure valid box size
@@ -687,7 +691,7 @@ void vHavokRigidBody::InitCapsuleRb(HkCapsuleGeometry const& geometry, vHavokRig
   vd.setSub(geometry0.m_StartAxis, geometry0.m_EndAxis);
   if (vd.lengthSquared<3>() < hkSimdReal::fromFloat(HKVMATH_LARGE_EPSILON*HKVMATH_LARGE_EPSILON))
   {
-	  geometry0.m_StartAxis.setAddMul(geometry0.m_EndAxis, hkVector4::getConstant<HK_QUADREAL_0010>(), hkSimdReal::fromFloat(HKVMATH_LARGE_EPSILON));
+    geometry0.m_StartAxis.setAddMul(geometry0.m_EndAxis, hkVector4::getConstant<HK_QUADREAL_0010>(), hkSimdReal::fromFloat(HKVMATH_LARGE_EPSILON));
     hkvLog::Info("Warning: vHavokRigidBody: Capsule-height below tolerance, clamped to %.4f", HKVMATH_LARGE_EPSILON);
   } 
   if (geometry0.m_Radius < HKVMATH_LARGE_EPSILON)
@@ -726,7 +730,6 @@ void vHavokRigidBody::InitCapsuleRb(HkCapsuleGeometry const& geometry, vHavokRig
   //Set shape type
   Shape_Type = ShapeType_CAPSULE;
 }
-
 
 void vHavokRigidBody::InitCylinderRb(const hkvVec3& vVertexA, const hkvVec3& vVertexB, float fRadius, float fScale, vHavokRigidBody::InitTemplate &initTempl)
 {
@@ -775,11 +778,11 @@ void vHavokRigidBody::InitCylinderRb(HkCylinderGeometry const& geometry, vHavokR
 
   if (Havok_TightFit)
   {
-	  hkVector4 r; r.set(hkConvexShapeDefaultRadius, hkConvexShapeDefaultRadius, hkConvexShapeDefaultRadius);
-	  hkVector4 a; a.setSub4( geometry0.m_EndAxis, geometry0.m_StartAxis ); a.normalize3();
-	  a.mul(r);
-	  geometry0.m_StartAxis.add4(a);
-	  geometry0.m_EndAxis.sub4(a);
+    hkVector4 r; r.set(hkConvexShapeDefaultRadius, hkConvexShapeDefaultRadius, hkConvexShapeDefaultRadius);
+    hkVector4 a; a.setSub4( geometry0.m_EndAxis, geometry0.m_StartAxis ); a.normalize3();
+    a.mul(r);
+    geometry0.m_StartAxis.add4(a);
+    geometry0.m_EndAxis.sub4(a);
   }
 
   // ensure valid height and radius
@@ -787,7 +790,7 @@ void vHavokRigidBody::InitCylinderRb(HkCylinderGeometry const& geometry, vHavokR
   vd.setSub(geometry0.m_StartAxis, geometry0.m_EndAxis);
   if (vd.lengthSquared<3>() < hkSimdReal::fromFloat(HKVMATH_LARGE_EPSILON*HKVMATH_LARGE_EPSILON))
   {
-	  geometry0.m_StartAxis.setAddMul(geometry0.m_EndAxis, hkVector4::getConstant<HK_QUADREAL_0010>(), hkSimdReal::fromFloat(HKVMATH_LARGE_EPSILON));
+    geometry0.m_StartAxis.setAddMul(geometry0.m_EndAxis, hkVector4::getConstant<HK_QUADREAL_0010>(), hkSimdReal::fromFloat(HKVMATH_LARGE_EPSILON));
     hkvLog::Info("Warning: vHavokRigidBody: Cylinder-height below tolerance, clamped to %.4f", HKVMATH_LARGE_EPSILON);
   }
   if (geometry0.m_Radius < HKVMATH_LARGE_EPSILON)
@@ -836,13 +839,15 @@ void vHavokRigidBody::InitConvexRb(VDynamicMesh *pMesh, const hkvVec3& vScale, v
   FillConstructionInfo(cInfo, initTempl);
 
   // Create convex shape
-  int flags = vHavokShapeFactory::VShapeCreationFlags_CACHE_SHAPE | vHavokShapeFactory::VShapeCreationFlags_USE_VCOLMESH;
+  unsigned int uiCreationFlags = vHavokShapeFactory::VShapeCreationFlags_CACHE_SHAPE | 
+    vHavokShapeFactory::VShapeCreationFlags_CONVEX | 
+    vHavokShapeFactory::VShapeCreationFlags_USE_VCOLMESH;
   if (Havok_TightFit)
   {
-	  flags |= vHavokShapeFactory::VShapeCreationFlags_SHRINK;
+    uiCreationFlags |= vHavokShapeFactory::VShapeCreationFlags_SHRINK;
   }
   
-  hkRefPtr<hkpShape> spShape = vHavokShapeFactory::CreateConvexHullShapeFromMesh(pMesh, vScale, &m_szShapeCacheId, flags);
+  hkRefPtr<hkpShape> spShape = vHavokShapeFactory::CreateShapeFromMesh(pMesh, vScale, uiCreationFlags);
   cInfo.m_shape = spShape;
 
   // Compute the shape's inertia tensor (if required)
@@ -881,8 +886,10 @@ void vHavokRigidBody::InitMeshRb(VDynamicMesh* pMesh, const hkvVec3& vScale, vHa
   FillConstructionInfo(cInfo, initTempl);
 
   // Create mesh shape
-  const int iCreationFlags = vHavokShapeFactory::VShapeCreationFlags_CACHE_SHAPE | vHavokShapeFactory::VShapeCreationFlags_USE_VCOLMESH;
-  hkRefPtr<hkpShape> spShape = vHavokShapeFactory::CreateShapeFromMesh(pMesh, vScale, &m_szShapeCacheId, iCreationFlags, (VisWeldingType_e)Havok_WeldingType);
+  const int iCreationFlags = vHavokShapeFactory::VShapeCreationFlags_CACHE_SHAPE | 
+    vHavokShapeFactory::VShapeCreationFlags_MESH |
+    vHavokShapeFactory::VShapeCreationFlags_USE_VCOLMESH;
+  hkRefPtr<hkpShape> spShape = vHavokShapeFactory::CreateShapeFromMesh(pMesh, vScale, iCreationFlags, (VisWeldingType_e)Havok_WeldingType);
   cInfo.m_shape = spShape;
 
   // Compute the shape's inertia tensor (if required)
@@ -934,7 +941,7 @@ bool vHavokRigidBody::InitRbFromFile(const char* filename, BOOL takeRbDataFromFi
   char szShapeId[512];
   sprintf(szShapeId, "%s_FromFile_%.2f", filename, scale);
 
-  shape = vHavokShapeFactory::FindShape(szShapeId, &m_szShapeCacheId);
+  shape = vHavokShapeCache::FindShape(szShapeId);
 
   hkRefPtr<hkpRigidBody> spRbData;
 
@@ -994,7 +1001,7 @@ bool vHavokRigidBody::InitRbFromFile(const char* filename, BOOL takeRbDataFromFi
         shape = fileShape;
       }
 
-      m_szShapeCacheId = vHavokShapeFactory::AddShape(szShapeId, shape);
+      vHavokShapeCache::AddShape(szShapeId, shape);
     }
   }
 
@@ -1066,7 +1073,7 @@ void vHavokRigidBody::FillConstructionInfo(hkpRigidBodyCinfo &cInfo, const vHavo
   cInfo.m_qualityType = initTempl.m_qualityType;
   if (!hkvMath::isFloatEqual (initTempl.m_restitution, -1.0f))
     cInfo.m_restitution = initTempl.m_restitution;
-}
+  }
 
 bool vHavokRigidBody::CreateHkRigidBody(hkpRigidBodyCinfo &cInfo,
   hkpMassProperties const& massProperties)
@@ -1105,6 +1112,8 @@ bool vHavokRigidBody::CreateHkRigidBody(hkpRigidBodyCinfo &cInfo,
   {
     cInfo.m_mass = Havok_Mass;
   }
+
+  cInfo.m_gravityFactor = Havok_GravityFactor;
 
   // Scale the inertia tensor with the given values
   cInfo.m_inertiaTensor.mul(hkSimdReal::fromFloat(Havok_InertiaTensorScaling));
@@ -1160,13 +1169,14 @@ void vHavokRigidBody::RemoveHkRigidBody()
     m_bAddedToWorld = false;
   }
 
+  m_spRigidBody->markForRead();
+  const hkpShape* pShape = m_spRigidBody->getCollidable()->getShape();
+  m_spRigidBody->unmarkForRead();
   m_spRigidBody = NULL;
 
   // Remove shape from cache
-  vHavokShapeFactory::RemoveShape(m_szShapeCacheId);
-  m_szShapeCacheId = NULL;
+  vHavokShapeCache::RemoveShape(pShape);
 }
-
 
 // -------------------------------------------------------------------------- //
 // Access Members                                                             //
@@ -1249,20 +1259,20 @@ void vHavokRigidBody::Step(float dt)
   // Local motion delta
   if (bHasLocalPositionDelta)
   {
-	  // Assign the animation MotionDelta 
-	  vHavokConversionUtils::VisVecToPhysVecLocal(pOwnerEntity->GetMotionDeltaLocalSpace(), hkMotionDelta);
+    // Assign the animation MotionDelta 
+    vHavokConversionUtils::VisVecToPhysVecLocal(pOwnerEntity->GetMotionDeltaLocalSpace(), hkMotionDelta);
 
-	  // Get rotation matrix for world space transformation and transform 
-	  // the motion delta
-	  hkMotionDelta._setRotatedDir(hkTargetOrientation, hkMotionDelta);  
+    // Get rotation matrix for world space transformation and transform 
+    // the motion delta
+    hkMotionDelta._setRotatedDir(hkTargetOrientation, hkMotionDelta);  
   }
   
   // World motion delta. Needs to be processed after the local delta.
   if (bHasWorldPositionDelta)
   {
-	  hkVector4 hkWorldDelta;
-	  vHavokConversionUtils::VisVecToPhysVecLocal(pOwnerEntity->GetMotionDeltaWorldSpace(), hkWorldDelta);
-	  hkMotionDelta.add(hkWorldDelta);
+    hkVector4 hkWorldDelta;
+    vHavokConversionUtils::VisVecToPhysVecLocal(pOwnerEntity->GetMotionDeltaWorldSpace(), hkWorldDelta);
+    hkMotionDelta.add(hkWorldDelta);
   }
 
   // Clear the entity's motion delta.
@@ -1280,7 +1290,7 @@ void vHavokRigidBody::Step(float dt)
   hkVector4 hkTargetPos;
   vHavokConversionUtils::VisVecToPhysVecWorld(GetOwner3D()->GetPosition(), hkTargetPos);
   hkTargetPos.add(hkMotionDelta);
-	  
+    
   if (hkTargetPos.distanceTo(m_spRigidBody->getPosition()) > hkSimdReal::fromFloat(Havok_MaxKinematicVelocity * dt))
   {
     m_spRigidBody->setRotation(hkTargetOrientation);
@@ -1304,6 +1314,14 @@ void vHavokRigidBody::UpdateOwner()
   if (m_bAddedToWorld && (m_spRigidBody->isActive()))
     UpdateHavok2Vision();
 }
+
+void vHavokRigidBody::Reposition()
+{
+  // very similar to vHavokRigidBody::UpdateOwner(), but does not check the isActive flag.
+  if ( (Havok_MotionType != MotionType_KEYFRAMED ) && (m_bAddedToWorld))
+    UpdateHavok2Vision();
+}
+
 
 void vHavokRigidBody::UpdateHavok2Vision()
 {
@@ -1375,17 +1393,17 @@ hkReal vHavokRigidBody::GetLinearDamping() const
 
 void vHavokRigidBody::SetDamageMultiplier(float fMultiplier)
 {
-	VVERIFY_OR_RET(m_spRigidBody);
+  VVERIFY_OR_RET(m_spRigidBody);
 
-	m_pModule->MarkForWrite();
-	m_spRigidBody->m_damageMultiplier = fMultiplier;
-	m_pModule->UnmarkForWrite();
+  m_pModule->MarkForWrite();
+  m_spRigidBody->m_damageMultiplier = fMultiplier;
+  m_pModule->UnmarkForWrite();
 }
 
 hkReal vHavokRigidBody::GetDamageMultiplier() const
 {
-	VVERIFY_OR_RET_VAL(m_spRigidBody, 1.0f);
-	return m_spRigidBody->m_damageMultiplier;
+  VVERIFY_OR_RET_VAL(m_spRigidBody, 1.0f);
+  return m_spRigidBody->m_damageMultiplier;
 }
 
 void vHavokRigidBody::SetAngularDamping(float fDamping)
@@ -1666,6 +1684,17 @@ void vHavokRigidBody::SetFriction(float fFriction)
   Havok_Friction = fFriction;
 }
 
+void vHavokRigidBody::SetGravityFactor(float fGravityFactor)
+{
+  VVERIFY_OR_RET(m_spRigidBody);
+
+  m_pModule->MarkForWrite();
+  m_spRigidBody->setGravityFactor(fGravityFactor);
+  m_pModule->UnmarkForWrite();
+
+  Havok_GravityFactor = fGravityFactor;
+}
+
 void vHavokRigidBody::SetCollisionInfo(int iLayer, int iGroup,
   int iSubsystem, int iSubsystemDontCollideWith)
 {
@@ -1713,12 +1742,6 @@ void vHavokRigidBody::SetActive(bool bStatus)
     m_bAddedToWorld = false;
   }
 }
-
-bool vHavokRigidBody::GetActive() const
-{
-  return Havok_Active;
-}
-
 
 // -------------------------------------------------------------------------- //
 // Debug Rendering                                                            //
@@ -1797,8 +1820,7 @@ BOOL vHavokRigidBody::CanAttachToObject(VisTypedEngineObject_cl *pObject, VStrin
   }
 
   // Object has to be derived from VisBaseEntity_cl or from VisMirror_cl
-  bool bIsValidType = false;
-  bIsValidType = (pObject->IsOfType(V_RUNTIME_CLASS(VisBaseEntity_cl)) == TRUE) || (pObject->IsOfType(V_RUNTIME_CLASS(VisMirror_cl)) == TRUE);
+  const bool bIsValidType = (pObject->IsOfType(V_RUNTIME_CLASS(VisBaseEntity_cl)) == TRUE) || (pObject->IsOfType(V_RUNTIME_CLASS(VisMirror_cl)) == TRUE);
 
   if (!bIsValidType)
   {
@@ -1840,7 +1862,7 @@ void vHavokRigidBody::SetOwner(VisTypedEngineObject_cl *pOwner)
       GetOwner3D()->EnsureCachedRotationMatrixValid();
       GetOwner3D()->SetUseEulerAngles(false); 
     }
-
+    GetOwner3D()->SetObjectFlag(VObjectFlag_AutoRepositioningDelta);
     // Add the rigid body to the Havok physics world
     if (m_spRigidBody)
     {
@@ -1860,16 +1882,12 @@ void vHavokRigidBody::SetOwner(VisTypedEngineObject_cl *pOwner)
   }
   else
   {
-    // Remove the rigid body from the Havok physics world
-    if (m_spRigidBody && m_bAddedToWorld)
+    // Remove the rigid body from the Havok physics world, do not delete it.
+    if (m_spRigidBody != NULL && m_bAddedToWorld)
     {
       m_pModule->RemoveRigidBody(this);
       m_bAddedToWorld = false;
     }
-
-    // Remove shape from cache
-    vHavokShapeFactory::RemoveShape(m_szShapeCacheId);
-    m_szShapeCacheId = NULL;
   }
 }
 
@@ -2060,10 +2078,16 @@ void vHavokRigidBody::Serialize( VArchive &ar )
       ar >> Havok_WeldingType;
     }
 
-	 // VHAVOKRIGIDBODY_VERSION_11
+   // VHAVOKRIGIDBODY_VERSION_11
     if (iFileVersion >= VHAVOKRIGIDBODY_VERSION_11)
     {
       ar >> Havok_TightFit;
+    }
+
+    // VHAVOKRIGIDBODY_VERSION_12
+    if (iFileVersion >= VHAVOKRIGIDBODY_VERSION_12)
+    {
+      ar >> Havok_GravityFactor;
     }
 
     //For save games: Additional physics state like current velocity
@@ -2139,6 +2163,9 @@ void vHavokRigidBody::Serialize( VArchive &ar )
 
     // VHAVOKRIGIDBODY_VERSION_11
     ar << Havok_TightFit;
+    
+    // VHAVOKRIGIDBODY_VERSION_12
+    ar << Havok_GravityFactor;
   }
 }
 
@@ -2166,7 +2193,7 @@ void vHavokRigidBody::OnDeserializationCallback(const VSerializationContext &con
 // Variable Attributes                                                        //
 // -------------------------------------------------------------------------- //
 
-#ifdef WIN32
+#ifdef _VISION_WIN32
 
 void vHavokRigidBody::GetVariableAttributes(VisVariable_cl *pVariable, VVariableAttributeInfo &destInfo)
 {
@@ -2251,26 +2278,19 @@ void vHavokRigidBody::GetVariableAttributes(VisVariable_cl *pVariable, VVariable
 
 #endif
 
-START_VAR_TABLE(vHavokRigidBody,IVObjectComponent,"Havok Rigid Body Component",VVARIABLELIST_FLAGS_NONE, "Havok Rigid Body" )
+START_VAR_TABLE(vHavokRigidBody,IVObjectComponent,"Can be attached to entities to make them interact with the physics world.",VVARIABLELIST_FLAGS_NONE, "Havok Rigid Body" )
+  DEFINE_CATEGORY (vHavokRigidBody, "Basic")
   DEFINE_VAR_ENUM_AND_NAME         (vHavokRigidBody, Shape_Type, "Shape Type", "Geometry shape type used for Physics. When possible, try to approximate objects by a simpler shape type (such as Box or Sphere).", "Convex Hull","Box/Sphere/Convex Hull/File/Capsule/Cylinder/Mesh", 0, 0);
   DEFINE_VAR_FLOAT_AND_NAME        (vHavokRigidBody, Shape_Radius, "Radius", "Sphere/Capsule/Cylinder Radius", "0", 0, "Clamp(0,1e6)");
   DEFINE_VAR_VECTOR_FLOAT_AND_NAME (vHavokRigidBody, Shape_BoxSize, "Box Size", "XYZ Box Size", "0/0/0", 0, 0);
   DEFINE_VAR_FLOAT_AND_NAME        (vHavokRigidBody, Shape_Height, "Height", "Capsule/Cylinder Height", "0", 0, "Clamp(0,1e6)");
-  DEFINE_VAR_VECTOR_FLOAT_AND_NAME (vHavokRigidBody, Shape_PivotOffset, "Pivot Offset", "Offset between center of owner object and its RB.", "0/0/0", 0,0);
-  DEFINE_VAR_VECTOR_FLOAT_AND_NAME (vHavokRigidBody, Shape_CenterOfMass, "Center of Mass", "The center of mass of this rigid body in its local space.", "0/0/0", 0,0);
   DEFINE_VAR_BOOL_AND_NAME         (vHavokRigidBody, Havok_NoDeactivate, "No Deactivate", "Prevents deactivation of the rigid body when it is moving very slowly. Usually this setting should be left as FALSE, which helps stabilize stacks of objects.", "FALSE", 0, NULL);
   DEFINE_VAR_FLOAT_AND_NAME        (vHavokRigidBody, Havok_Mass, "Mass", "The mass of the RB in kilograms.", "10.0", 0,"Clamp(1e-3,1e12)");
-  DEFINE_VAR_ENUM_AND_NAME         (vHavokRigidBody, Havok_InertiaTensorComputeMode, "Inertia Tensor computation mode", "Inertia tensor computation mode. Use Volume for solid objects, and Surface for objects which consist of a hollow shell. If set to None, the inertia tensor needs to be specified manually via the InertiaTensorAxisScaling and InertiaTensorScaling properties. Surface is only supported for Box and Sphere type objects.", "Volume", "None/Surface/Volume", 0, 0);
-  DEFINE_VAR_FLOAT_AND_NAME        (vHavokRigidBody, Havok_SurfaceThickness, "Surface Thickness", "The thickness of the object's shell for surface inertia tensor computation.", "0.1", 0, 0);
-  DEFINE_VAR_VECTOR_FLOAT_AND_NAME (vHavokRigidBody, Havok_InertiaTensorAxisScaling, "Inertia Tensor Axis Scaling", "Factors to scale the inertia tensor's axes with. Increasing the inertia for an axis will increase the RB's resistance to changes in angular momentum in that axis.", "1/1/1", 0, 0);
-  DEFINE_VAR_FLOAT_AND_NAME        (vHavokRigidBody, Havok_InertiaTensorScaling, "Inertia Tensor Scaling", "Factor to scale all components of the inertia tensor with. Increasing the inertia will increase the RB's resistance to changes in angular momentum.", "1", 0, "Clamp(1e-3, 1e3)");
   DEFINE_VAR_FLOAT_AND_NAME        (vHavokRigidBody, Havok_Friction, "Friction", "The coefficient of friction of the surface of this RB. Lower values will result in a smoother surface and more slipping, while higher values will result in a less smooth surface and less slipping.", "0.5", 0, "Clamp(0,1)");
   DEFINE_VAR_FLOAT_AND_NAME        (vHavokRigidBody, Havok_Restitution, "Restitution", "The restitution defines how much impulse is preserved during a collision. A restitution of 0 will result in the body losing its entire momentum, while higher values result in \"bouncier\" collisions. A value of 1 corresponds to a perfectly elastic collision where no energy is lost. You may use values higher than 1 to achieve a certain desired behavior, although this may result in unrealistic collisions.", "0.4", 0, "Clamp(0,1.98)");
   DEFINE_VAR_FLOAT_AND_NAME        (vHavokRigidBody, Havok_LinearDamping, "Linear Damping", "Additional damping to control the rigid body velocity. A value of 0.05 corresponds to losing 5% of the velocity every second.", "0.0", 0, "Clamp(0,1)");
   DEFINE_VAR_FLOAT_AND_NAME        (vHavokRigidBody, Havok_AngularDamping, "Angular Damping", "Additional damping to control the rigid body angular velocity. A value of 0.05 corresponds to losing 5% of the angular velocity every second.", "0.05", 0, "Clamp(0,1)");
   DEFINE_VAR_VSTRING_AND_NAME      (vHavokRigidBody, Havok_FileResourceName, "File Resource", "The .hkt file which contains the serialized Physics shape if the shape type is set to File.", "", 1024, 0, "filepicker(.hkt)");
-  DEFINE_VAR_BOOL_AND_NAME         (vHavokRigidBody, Debug_Render, "Debug Render", "Enables/Disables Physics Debug Rendering.", "FALSE", 0, 0);
-  DEFINE_VAR_COLORREF_AND_NAME     (vHavokRigidBody, Debug_Color, "Debug Render Color", "Color of this RB when Debug Rendering is active.", "50,255,50,255", 0, NULL);
   DEFINE_VAR_BOOL_AND_NAME         (vHavokRigidBody, Havok_TakeRbDataFromFile, "All RB data from file", "Defines whether to use the entire set of RB properties from the .hkt file or just the collision shape.", "FALSE", 0, 0);
   DEFINE_VAR_ENUM_AND_NAME         (vHavokRigidBody, Havok_MotionType, "Motion Type",
     "Type of Physics:\n"
@@ -2279,7 +2299,6 @@ START_VAR_TABLE(vHavokRigidBody,IVObjectComponent,"Havok Rigid Body Component",V
     "Fixed - Collides but doesn't move.\n"
     "Others - Should not be used",
     "Dynamic", "Dynamic/Keyframed/Fixed/Sphere Inertia/Box Inertia/Thin Box Inertia/Character", 0, 0);
-  DEFINE_VAR_BOOL_AND_NAME         (vHavokRigidBody, Shape_PivotOffsetAutoAlign, "Auto-Align Pivot Offset", "Automatic Alignment of the pivot offset.", "TRUE", 0,0);
   DEFINE_VAR_INT_AND_NAME          (vHavokRigidBody, Havok_CollisionLayer, "Collision Layer", "Defines the collision layer this RB is assigned to.\n" COLLISION_LAYER_NUMBER_VARTABLE_DESCRIPTION, "1", 0, "Clamp(0, 31)");
   DEFINE_VAR_INT_AND_NAME          (vHavokRigidBody, Havok_CollisionGroup, "Collision Group", "Defines the collision group this RB is assigned to.", "0", 0, "Clamp(0, 65535)");
   DEFINE_VAR_INT_AND_NAME          (vHavokRigidBody, Havok_SubSystemId, "SubSystem ID", "Defines the sub system ID of this RB.", "0", 0, "Clamp(0, 31)");
@@ -2301,10 +2320,24 @@ START_VAR_TABLE(vHavokRigidBody,IVObjectComponent,"Havok Rigid Body Component",V
   DEFINE_VAR_BOOL_AND_NAME         (vHavokRigidBody, Havok_Active, "Active", "Whether the rigid body is active or not. The object is removed from the Havok World on deactivation so its collision is ignored then.", "TRUE", 0,0);
   DEFINE_VAR_ENUM_AND_NAME         (vHavokRigidBody, Havok_WeldingType , "WeldingType", "Welding is used to reduce the problem of objects bouncing while transitioning from a collision with one shape to a collision with a neighboring shape. Only considered for Shape Type Mesh. When enabled, the orientation for meshes used in Vision is usually Anticlockwise.", "None", "None/Anticlockwise/Clockwise/Two-sided", 0, 0);
   DEFINE_VAR_BOOL_AND_NAME         (vHavokRigidBody, Havok_TightFit, "TightFitShape", "If object is convex, this will shrink the collision geometry such that the surface, including the 'convex radius', is as close as possible to the graphical one. Only affects generated shapes, not shapes from HKT files.", "FALSE", 0,0);
+
+  DEFINE_CATEGORY (vHavokRigidBody, "Extended")
+  DEFINE_VAR_VECTOR_FLOAT_AND_NAME (vHavokRigidBody, Shape_CenterOfMass, "Center of Mass", "The center of mass of this rigid body in its local space.", "0/0/0", 0,0);
+  DEFINE_VAR_FLOAT_AND_NAME        (vHavokRigidBody, Havok_GravityFactor, "Gravity Factor", "Scale the world gravity to disable gravity or reverse the direction", "1.0", 0, "Clamp(-1e12, 1e12)");
+  DEFINE_VAR_ENUM_AND_NAME         (vHavokRigidBody, Havok_InertiaTensorComputeMode, "Inertia Tensor computation mode", "Inertia tensor computation mode. Use Volume for solid objects, and Surface for objects which consist of a hollow shell. If set to None, the inertia tensor needs to be specified manually via the InertiaTensorAxisScaling and InertiaTensorScaling properties. Surface is only supported for Box and Sphere type objects.", "Volume", "None/Surface/Volume", 0, 0);
+  DEFINE_VAR_FLOAT_AND_NAME        (vHavokRigidBody, Havok_SurfaceThickness, "Surface Thickness", "The thickness of the object's shell for surface inertia tensor computation.", "0.1", 0, 0);
+  DEFINE_VAR_VECTOR_FLOAT_AND_NAME (vHavokRigidBody, Havok_InertiaTensorAxisScaling, "Inertia Tensor Axis Scaling", "Factors to scale the inertia tensor's axes with. Increasing the inertia for an axis will increase the RB's resistance to changes in angular momentum in that axis.", "1/1/1", 0, 0);
+  DEFINE_VAR_FLOAT_AND_NAME        (vHavokRigidBody, Havok_InertiaTensorScaling, "Inertia Tensor Scaling", "Factor to scale all components of the inertia tensor with. Increasing the inertia will increase the RB's resistance to changes in angular momentum.", "1", 0, "Clamp(1e-3, 1e3)");
+  DEFINE_VAR_VECTOR_FLOAT_AND_NAME (vHavokRigidBody, Shape_PivotOffset, "Pivot Offset", "Offset between center of owner object and its RB.", "0/0/0", 0,0);
+  DEFINE_VAR_BOOL_AND_NAME         (vHavokRigidBody, Shape_PivotOffsetAutoAlign, "Auto-Align Pivot Offset", "Automatic Alignment of the pivot offset.", "TRUE", 0,0);
+
+  DEFINE_CATEGORY (vHavokRigidBody, "Debug")
+  DEFINE_VAR_BOOL_AND_NAME         (vHavokRigidBody, Debug_Render, "Debug Render", "Enables/Disables Physics Debug Rendering.", "FALSE", 0, 0);
+  DEFINE_VAR_COLORREF_AND_NAME     (vHavokRigidBody, Debug_Color, "Debug Render Color", "Color of this RB when Debug Rendering is active.", "50,255,50,255", 0, NULL);
 END_VAR_TABLE
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140628)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

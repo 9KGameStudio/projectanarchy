@@ -9,12 +9,12 @@
 #ifndef HK_MATH_AABB_H
 #define HK_MATH_AABB_H
 
-extern const class hkClass hkAabbClass;
+extern HK_EXPORT_COMMON const class hkClass hkAabbClass;
 
-extern const class hkClass hkAabbUint32Class;
+extern HK_EXPORT_COMMON const class hkClass hkAabbUint32Class;
 
 /// Axis aligned bounding box.
-class hkAabb
+class HK_EXPORT_COMMON hkAabb
 {
 	public:
 
@@ -30,6 +30,9 @@ class hkAabb
 			
 			/// Set from center and radius.
 		HK_FORCE_INLINE void setFromCenterRadius(const hkVector4& center, const hkSimdReal& radius) { hkVector4 r; r.setAll(radius); m_min.setSub(center, r); m_max.setAdd(center, r); }
+
+			/// Set from center and halfextent
+		HK_FORCE_INLINE void setFromCenterRadius(const hkVector4& center, const hkVector4& halfExtent) { m_min.setSub(center, halfExtent); m_max.setAdd(center, halfExtent); }
 
 			/// Set from a point.
 		HK_FORCE_INLINE void setFromPoint(const hkVector4& x) { m_min = x; m_max = x; }
@@ -163,7 +166,7 @@ HK_CLASSALIGN16(struct) hkAabbUint32
 #endif // HK_MATH_AABB_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

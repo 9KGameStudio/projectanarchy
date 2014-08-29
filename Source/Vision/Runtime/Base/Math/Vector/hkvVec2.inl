@@ -45,6 +45,8 @@ HKV_FORCE_INLINE void hkvVec2::set (float xy)
 
 HKV_FORCE_INLINE float hkvVec2::operator[] (hkUint32 i) const
 {
+  HKVVEC2_INITIALIZATION_CHECK(this);
+
   VASSERT (i <= 1);
 
   return data[i];
@@ -64,6 +66,9 @@ HKV_FORCE_INLINE const hkvVec2 hkvVec2::operator- () const
 
 HKV_FORCE_INLINE void hkvVec2::operator+= (const hkvVec2& rhs)
 {
+  HKVVEC2_INITIALIZATION_CHECK(this);
+  HKVVEC2_INITIALIZATION_CHECK(&rhs);
+
   HKVVEC2_COPYTEMPS (rhs);
   x += rhs_x;
   y += rhs_y;
@@ -71,6 +76,9 @@ HKV_FORCE_INLINE void hkvVec2::operator+= (const hkvVec2& rhs)
 
 HKV_FORCE_INLINE void hkvVec2::operator-= (const hkvVec2& rhs)
 {
+  HKVVEC2_INITIALIZATION_CHECK(this);
+  HKVVEC2_INITIALIZATION_CHECK(&rhs);
+
   HKVVEC2_COPYTEMPS (rhs);
   x -= rhs_x;
   y -= rhs_y;
@@ -78,24 +86,32 @@ HKV_FORCE_INLINE void hkvVec2::operator-= (const hkvVec2& rhs)
 
 HKV_FORCE_INLINE void hkvVec2::operator+= (float f)
 {
+  HKVVEC2_INITIALIZATION_CHECK(this);
+
   x += f;
   y += f;
 }
 
 HKV_FORCE_INLINE void hkvVec2::operator-= (float f)
 {
+  HKVVEC2_INITIALIZATION_CHECK(this);
+
   x -= f;
   y -= f;
 }
 
 HKV_FORCE_INLINE void hkvVec2::operator*= (float f)
 {
+  HKVVEC2_INITIALIZATION_CHECK(this);
+
   x *= f;
   y *= f;
 }
 
 HKV_FORCE_INLINE void hkvVec2::operator/= (float f0)
 {
+  HKVVEC2_INITIALIZATION_CHECK(this);
+
   const float f = 1.0f / f0;
 
   x *= f;
@@ -104,6 +120,8 @@ HKV_FORCE_INLINE void hkvVec2::operator/= (float f0)
 
 HKV_FORCE_INLINE bool hkvVec2::isZero (float fEpsilon) const
 {
+  HKVVEC2_INITIALIZATION_CHECK(this);
+
   VASSERT (fEpsilon >= 0.0f);
 
   if (fEpsilon == 0.0f)
@@ -129,6 +147,9 @@ HKV_FORCE_INLINE bool hkvVec2::isNormalized (float fEpsilon) const
 
 HKV_FORCE_INLINE bool hkvVec2::isIdentical (const hkvVec2& rhs) const
 {
+  HKVVEC2_INITIALIZATION_CHECK(this);
+  HKVVEC2_INITIALIZATION_CHECK(&rhs);
+
   HKVVEC2_COPYTEMPS (rhs);
 
   return ((x == rhs_x) && (y == rhs_y));
@@ -136,6 +157,9 @@ HKV_FORCE_INLINE bool hkvVec2::isIdentical (const hkvVec2& rhs) const
 
 HKV_FORCE_INLINE bool hkvVec2::isEqual (const hkvVec2& rhs, float fEpsilon) const
 {
+  HKVVEC2_INITIALIZATION_CHECK(this);
+  HKVVEC2_INITIALIZATION_CHECK(&rhs);
+
   VASSERT (fEpsilon >= 0.0f);
 
   HKVVEC2_COPYTEMPS (rhs);
@@ -146,6 +170,8 @@ HKV_FORCE_INLINE bool hkvVec2::isEqual (const hkvVec2& rhs, float fEpsilon) cons
 
 HKV_FORCE_INLINE float hkvVec2::getLengthSquared () const
 {
+  HKVVEC2_INITIALIZATION_CHECK(this);
+
   return ((x * x) + (y * y));
 }
 
@@ -237,6 +263,9 @@ HKV_FORCE_INLINE void hkvVec2::clampTo (const hkvVec2& MinVal, const hkvVec2& Ma
 
 HKV_FORCE_INLINE const hkvVec2 hkvVec2::compMul (const hkvVec2& rhs) const
 {
+  HKVVEC2_INITIALIZATION_CHECK(this);
+  HKVVEC2_INITIALIZATION_CHECK(&rhs);
+
   HKVVEC2_COPYTEMPS (rhs);
 
   return hkvVec2 (x * rhs_x, y * rhs_y);
@@ -244,6 +273,9 @@ HKV_FORCE_INLINE const hkvVec2 hkvVec2::compMul (const hkvVec2& rhs) const
 
 HKV_FORCE_INLINE const hkvVec2 hkvVec2::compDiv (const hkvVec2& rhs) const
 {
+  HKVVEC2_INITIALIZATION_CHECK(this);
+  HKVVEC2_INITIALIZATION_CHECK(&rhs);
+
   HKVVEC2_COPYTEMPS (rhs);
 
   return hkvVec2 (x / rhs_x, y / rhs_y);
@@ -251,6 +283,9 @@ HKV_FORCE_INLINE const hkvVec2 hkvVec2::compDiv (const hkvVec2& rhs) const
 
 HKV_FORCE_INLINE void hkvVec2::setMin (const hkvVec2& lhs, const hkvVec2& rhs)
 {
+  HKVVEC2_INITIALIZATION_CHECK(&lhs);
+  HKVVEC2_INITIALIZATION_CHECK(&rhs);
+
   HKVVEC2_COPYTEMPS (lhs);
   HKVVEC2_COPYTEMPS (rhs);
 
@@ -260,6 +295,9 @@ HKV_FORCE_INLINE void hkvVec2::setMin (const hkvVec2& lhs, const hkvVec2& rhs)
 
 HKV_FORCE_INLINE void hkvVec2::setMax (const hkvVec2& lhs, const hkvVec2& rhs)
 {
+  HKVVEC2_INITIALIZATION_CHECK(&lhs);
+  HKVVEC2_INITIALIZATION_CHECK(&rhs);
+
   HKVVEC2_COPYTEMPS (lhs);
   HKVVEC2_COPYTEMPS (rhs);
 
@@ -269,6 +307,10 @@ HKV_FORCE_INLINE void hkvVec2::setMax (const hkvVec2& lhs, const hkvVec2& rhs)
 
 HKV_FORCE_INLINE void hkvVec2::setClamped (const hkvVec2& val, const hkvVec2& MinVal, const hkvVec2& MaxVal)
 {
+  HKVVEC2_INITIALIZATION_CHECK(&val);
+  HKVVEC2_INITIALIZATION_CHECK(&MinVal);
+  HKVVEC2_INITIALIZATION_CHECK(&MaxVal);
+
   HKVVEC2_COPYTEMPS (val);
   HKVVEC2_COPYTEMPS (MinVal);
   HKVVEC2_COPYTEMPS (MaxVal);
@@ -279,6 +321,8 @@ HKV_FORCE_INLINE void hkvVec2::setClamped (const hkvVec2& val, const hkvVec2& Mi
 
 HKV_FORCE_INLINE void hkvVec2::setAbs (const hkvVec2& val)
 {
+  HKVVEC2_INITIALIZATION_CHECK(&val);
+
   HKVVEC2_COPYTEMPS (val);
   
   x = hkvMath::Abs (val_x);
@@ -287,6 +331,9 @@ HKV_FORCE_INLINE void hkvVec2::setAbs (const hkvVec2& val)
 
 HKV_FORCE_INLINE void hkvVec2::setInterpolate (const hkvVec2& lhs, const hkvVec2& rhs, float t)
 {
+  HKVVEC2_INITIALIZATION_CHECK(&lhs);
+  HKVVEC2_INITIALIZATION_CHECK(&rhs);
+
   HKVVEC2_COPYTEMPS (lhs);
   HKVVEC2_COPYTEMPS (rhs);
 
@@ -296,6 +343,9 @@ HKV_FORCE_INLINE void hkvVec2::setInterpolate (const hkvVec2& lhs, const hkvVec2
 
 HKV_FORCE_INLINE float hkvVec2::dot (const hkvVec2& rhs) const
 {
+  HKVVEC2_INITIALIZATION_CHECK(this);
+  HKVVEC2_INITIALIZATION_CHECK(&rhs);
+
   HKVVEC2_COPYTEMPS (rhs);
 
   return ((x * rhs_x) + (y * rhs_y));
@@ -303,6 +353,9 @@ HKV_FORCE_INLINE float hkvVec2::dot (const hkvVec2& rhs) const
 
 HKV_FORCE_INLINE void hkvVec2::makeOrthogonalTo (const hkvVec2& vNormal)
 {
+  HKVVEC2_INITIALIZATION_CHECK(this);
+  HKVVEC2_INITIALIZATION_CHECK(&vNormal);
+
   HKVMATH_ASSERT (vNormal.isNormalized (), "The normal must be normalized.");
 
   // get the distance v is along this vector
@@ -314,6 +367,8 @@ HKV_FORCE_INLINE void hkvVec2::makeOrthogonalTo (const hkvVec2& vNormal)
 
 HKV_FORCE_INLINE const hkvVec2 hkvVec2::getOrthogonalVector (void) const
 {
+  HKVVEC2_INITIALIZATION_CHECK(this);
+
   return hkvVec2 (y, -x);
 }
 
@@ -339,11 +394,13 @@ HKV_FORCE_INLINE const hkvVec2 hkvVec2::getReflected (const hkvVec2& vNormal) co
 
 HKV_FORCE_INLINE const hkvVec3 hkvVec2::getAsVec3 (float _z) const
 {
+  HKVVEC2_INITIALIZATION_CHECK(this);
   return hkvVec3 (x, y, _z);
 }
 
 HKV_FORCE_INLINE const hkvVec4 hkvVec2::getAsVec4 (float _z, float _w) const
 {
+  HKVVEC2_INITIALIZATION_CHECK(this);
   return hkvVec4 (x, y, _z, _w);
 }
 
@@ -395,7 +452,7 @@ HKV_FORCE_INLINE const hkvVec2 operator/ (const hkvVec2& lhs, float f)
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

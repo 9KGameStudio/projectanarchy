@@ -73,9 +73,9 @@ class hkpPoweredChainData : public hkpConstraintChainData
 			//        hkQuaternion                   [m_infos.getSize()] // motor's runtime data
 		};
 
-		inline const Runtime* getRuntime( hkpConstraintRuntime* runtime )     { return reinterpret_cast<Runtime*>(runtime); }
+		inline const Runtime* getRuntime( hkpConstraintRuntime* runtime ) { return reinterpret_cast<Runtime*>(runtime); }
 
-		inline hkpSolverResults* getSolverResults(hkpConstraintRuntime* runtime) { return reinterpret_cast<hkpSolverResults*>( runtime ); }
+		inline hkpSolverResults* getSolverResults( hkpConstraintRuntime* runtime ) const { return reinterpret_cast<hkpSolverResults*>( runtime ); }
 
 			// assuming we always want solver results
 			// -- other wise swap the order of solverResults and externalRuntimeData 
@@ -194,7 +194,7 @@ class hkpPoweredChainData : public hkpConstraintChainData
 #endif // HK_DYNAMICS2_POWERED_CHAIN_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

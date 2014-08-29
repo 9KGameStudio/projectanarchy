@@ -10,9 +10,9 @@
 #ifndef VSCALEFORMMANAGER_HPP_INCLUDED
 #define VSCALEFORMMANAGER_HPP_INCLUDED
 
-#if defined(WIN32) && !defined(HK_ANARCHY)
-//remove USE_SF_IME and recompile the vScaleForm plugin if you haven't purchased ScaleformIME (included in VisionPlus)
-#define USE_SF_IME
+#if defined(_VISION_WIN32) && !defined(HK_ANARCHY)
+  // Remove USE_SF_IME and recompile the vScaleForm plugin if you haven't purchased ScaleformIME (included in VisionPlus).
+  #define USE_SF_IME
 #endif
 
 #include <Vision/Runtime/EnginePlugins/ThirdParty/ScaleformEnginePlugin/VScaleformImpExp.hpp>
@@ -49,9 +49,9 @@ namespace Scaleform
     class Loader;
     class Event;
     class MouseEvent;
-#ifdef _VISION_MOBILE
+#if defined(_VISION_MOBILE)
     class TouchEvent;
-#elif defined(WIN32)
+#elif defined(_VISION_WIN32)
     class FontConfigSet;
 #endif
   }
@@ -64,9 +64,9 @@ namespace Scaleform
     class Renderer2D;
     class ImageBase;
 
-#if defined (WIN32) && defined(_VR_DX9)
+#if defined(_VISION_WIN32) && defined(_VR_DX9)
     namespace D3D9 { class HAL; }
-#elif defined(WIN32) && defined(_VR_DX11)
+#elif defined(_VISION_WIN32) && defined(_VR_DX11)
     namespace D3D1x { class HAL; }
 #elif defined (_VISION_XENON)
     namespace X360 { class HAL; }
@@ -199,7 +199,7 @@ public:
   /// \see SetHandleCursorInput
   inline bool GetHandleCursorInput() {return m_bHandleInput;}
 
-#ifdef WIN32
+#if defined(_VISION_WIN32)
   /// \brief Allows to control weather the Scaleform Manager should handle windows input and IME
   /// 			(key input and windows messages excluding mouse messages) or not.
   /// \note The windows input handling can be enabled additionally to the cursor (mouse)
@@ -297,7 +297,7 @@ public:
 
   /// @}
 
-#if defined(WIN32)
+#if defined(_VISION_WIN32)
 
   /// @name Font Configuration
   /// @{
@@ -352,7 +352,7 @@ public:
   /// \return NULL if no movie and therefore no texture manager is present.
   SCALEFORM_IMPEXP Scaleform::Render::TextureManager* GetTextureManager() const;
 
-  #if defined(_VISION_XENON) || defined(WIN32) || defined(_VISION_PS3)
+  #if defined(_VISION_XENON) || defined(_VISION_WIN32) || defined(_VISION_PS3) || defined(_VR_GLES2)
     /// \brief Convert a vision texture to a Scaleform in order to be used inside a SWF movie.
     /// \param pTexture  The texture to convert.
     /// \return NULL if it fails, else the Scaleform texture.
@@ -465,9 +465,12 @@ protected:
   //handle the customized input map
   void HandleInputMap();
 
+  // Handle changed render target (Scaleform needs to be notified about this)
+  void UpdateRenderTargetToScaleform();
+
   /// @}
 
-#ifdef WIN32
+#if defined(_VISION_WIN32)
   /// \brief Get Font config index.
   int GetFontConfigIndexByName(const char *szConfigName);
 
@@ -485,9 +488,9 @@ protected:
 
   // Scaleform renderer HAL (we cannot use Scaleform smart pointers here,
   // because it looks like an instance for the compiler - and not like a pointer)
-  #if defined (WIN32) && defined(_VR_DX9)
+  #if defined(_VISION_WIN32) && defined(_VR_DX9)
     Scaleform::Render::D3D9::HAL *  m_pRenderHal;
-  #elif defined(WIN32) && defined(_VR_DX11)
+  #elif defined(_VISION_WIN32) && defined(_VR_DX11)
     Scaleform::Render::D3D1x::HAL * m_pRenderHal; 
   #elif defined (_VISION_XENON)
     Scaleform::Render::X360::HAL * m_pRenderHal;
@@ -510,6 +513,11 @@ protected:
     ID3D11Device*  m_pd3dDevice;
     ID3D11DeviceContext* m_pd3dContext;
   #endif
+
+  // Store previously used render target to check if they have changed.
+  // Scaleform needs to be notified in case this happens.
+  VTextureObject* m_pLastUsedColorRenderTarget;
+  VTextureObject* m_pLastUsedDepthStencilTarget;
 
   #if defined(_VISION_MOBILE)
     static const int s_iMaxTouchPoints;
@@ -570,7 +578,7 @@ private:
 #endif // VSCALEFORMMANAGER_HPP_INCLUDED
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

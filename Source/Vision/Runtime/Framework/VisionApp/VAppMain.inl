@@ -7,13 +7,14 @@
  */
 
 #include <Vision/Runtime/Framework/VisionApp/VAppBase.hpp>
+#include <Vision/Runtime/Base/System/Memory/Manager/VMemoryManager.hpp>
 
 /// \brief
 ///   Platform specific main routines
-#if defined(WIN32)
+#if defined(_VISION_WIN32)
   #pragma comment(linker,"/manifestdependency:\"type='win32' name='Microsoft.Windows.Common-Controls' " "version='6.0.0.0' processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
   #include <Vision/Runtime/Framework/VisionApp/Win/VAppWin.hpp> 
-  #define VAPP_IMPLEMENT_SAMPLE(vapp_impl_class_name)                                                   \
+  #define VAPP_IMPLEMENT_SAMPLE_IMPL(vapp_impl_class_name)                                                   \
     int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow ) \
     {                                                                                                   \
       VAppBase::VAppBasePtr spApp = new VAppWin(hInstance, hPrevInstance, lpCmdLine, nCmdShow);         \
@@ -27,7 +28,7 @@
 
 #elif defined(_VISION_IOS)
   #include <Vision/Runtime/Framework/VisionApp/iOS/VAppIOS.hpp> 
-  #define VAPP_IMPLEMENT_SAMPLE(vapp_impl_class_name)                                                   \
+  #define VAPP_IMPLEMENT_SAMPLE_IMPL(vapp_impl_class_name)                                                   \
     VAppImpl* CreateInstance()                                                                          \
     {                                                                                                   \
       return new vapp_impl_class_name();                                                                \
@@ -35,7 +36,7 @@
 
 #elif defined(_VISION_ANDROID)
   #include <Vision/Runtime/Framework/VisionApp/Android/VAppAndroid.hpp> 
-  #define VAPP_IMPLEMENT_SAMPLE(vapp_impl_class_name)                                                   \
+  #define VAPP_IMPLEMENT_SAMPLE_IMPL(vapp_impl_class_name)                                                   \
     extern "C" void android_main(struct android_app* state)                                             \
     {                                                                                                   \
       app_dummy();                                                                                      \
@@ -49,7 +50,7 @@
 
 #elif defined(_VISION_TIZEN)
   #include <Vision/Runtime/Framework/VisionApp/Tizen/VAppTizen.hpp> 
-  #define VAPP_IMPLEMENT_SAMPLE(vapp_impl_class_name)                                                   \
+  #define VAPP_IMPLEMENT_SAMPLE_IMPL(vapp_impl_class_name)                                                   \
     extern "C" _EXPORT_ int OspMain(int argc, char* argv[])                                             \
     {                                                                                                   \
       Tizen::Base::Collection::ArrayList* pArgs = new Tizen::Base::Collection::ArrayList();             \
@@ -62,9 +63,17 @@
       return 0;                                                                                         \
     }                                                                                                   \
 
+#elif defined(_VISION_NACL)
+  #include <Vision/Runtime/Framework/VisionApp/NaCl/VAppNaCl.hpp> 
+  #define VAPP_IMPLEMENT_SAMPLE_IMPL(vapp_impl_class_name)                                                   \
+    VAppImpl* CreateInstance()                                                                          \
+    {                                                                                                   \
+      return new vapp_impl_class_name();                                                                \
+    } 
+
 #elif defined(_VISION_PS3)
   #include <Vision/Runtime/Framework/VisionApp/PS3/VAppPS3.hpp> 
-  #define VAPP_IMPLEMENT_SAMPLE(vapp_impl_class_name)                                                   \
+  #define VAPP_IMPLEMENT_SAMPLE_IMPL(vapp_impl_class_name)                                                   \
     SYS_PROCESS_PARAM (1001, 512*1024)                                                                  \
     int main(int argc, char* argv[])                                                                    \
     {                                                                                                   \
@@ -78,7 +87,7 @@
 
 #elif defined(_VISION_XENON)
   #include <Vision/Runtime/Framework/VisionApp/Xbox360/VAppXbox360.hpp> 
-  #define VAPP_IMPLEMENT_SAMPLE(vapp_impl_class_name)                                                   \
+  #define VAPP_IMPLEMENT_SAMPLE_IMPL(vapp_impl_class_name)                                                   \
     int main(int argc, char* argv[])                                                                    \
     {                                                                                                   \
       VAppBase::VAppBasePtr spApp = new VAppXbox360(argc, argv);                                        \
@@ -113,7 +122,7 @@
   // NOTE: When changing the main thread priority and/or the CPU affinity mask, 
   //       certain limitations apply. Please refer to the SDK documentation,
   //       section 5.6 "Thread Scheduling" in the System chapter, for further details.
-  #define VAPP_IMPLEMENT_SAMPLE(vapp_impl_class_name)                                                   \
+  #define VAPP_IMPLEMENT_SAMPLE_IMPL(vapp_impl_class_name)                                                   \
     int sceUserMainThreadPriority        = SCE_KERNEL_DEFAULT_PRIORITY_USER;                            \
     int sceUserMainThreadCpuAffinityMask = SCE_KERNEL_THREAD_CPU_AFFINITY_MASK_DEFAULT;                 \
     unsigned int sceUserMainStackSize    = VISION_PSP2_MAIN_STACK_SIZE;                                 \
@@ -131,7 +140,7 @@
 
 #elif defined(_VISION_WIIU)
   #include <Vision/Runtime/Framework/VisionApp/WiiU/VAppWiiU.hpp> 
-  #define VAPP_IMPLEMENT_SAMPLE(vapp_impl_class_name)                                                   \
+  #define VAPP_IMPLEMENT_SAMPLE_IMPL(vapp_impl_class_name)                                                   \
     int main(int argc, char* argv[])                                                                    \
     {                                                                                                   \
       VAppBase::VAppBasePtr spApp = new VAppWiiU(argc, argv);                                           \
@@ -144,12 +153,27 @@
 
 #endif
 
+#if defined(HK_DEBUG_SLOW)
+#define VAPP_IMPLEMENT_SAMPLE(vapp_impl_class_name) \
+  VAPP_IMPLEMENT_SAMPLE_IMPL(vapp_impl_class_name)  \
+  DEFINE_MEMORYMANAGER(TRACKING_MEMORYMANAGER)
+#else
+#define VAPP_IMPLEMENT_SAMPLE(vapp_impl_class_name) \
+  VAPP_IMPLEMENT_SAMPLE_IMPL(vapp_impl_class_name)  \
+  DEFINE_MEMORYMANAGER(DEFAULT_MEMORYMANAGER)
+#endif
+
+#define VAPP_IMPLEMENT_SAMPLE_WITH_MEMORYMANAGER(vapp_impl_class_name, memorymanager) \
+  VAPP_IMPLEMENT_SAMPLE_IMPL(vapp_impl_class_name)  \
+  DEFINE_MEMORYMANAGER(memorymanager)
+
+
 
 #define REGISTER_STARTUP_MODULE(class_name, prio)                                                       \
   static bool module_dummy##class_name = VAppBase::RegisterStartupModule(new class_name, prio);         \
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

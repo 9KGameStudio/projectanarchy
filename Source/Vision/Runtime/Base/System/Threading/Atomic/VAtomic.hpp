@@ -36,7 +36,7 @@ public:
   inline static int Decrement(int &i32);
 };
 
-#if defined(WIN32)
+#if defined(_VISION_WIN32)
   #include <Vision/Runtime/Base/System/Threading/Atomic/VAtomicPC.inl>
 #elif defined(_VISION_XENON)
   #include <Vision/Runtime/Base/System/Threading/Atomic/VAtomicXenon.inl>
@@ -47,11 +47,13 @@ public:
 #elif defined(_VISION_ANDROID)
   #include <Vision/Runtime/Base/System/Threading/Atomic/VAtomicAndroid.inl>
 #elif defined(_VISION_TIZEN)
-#include <Vision/Runtime/Base/System/Threading/Atomic/VAtomicTizen.inl>
+  #include <Vision/Runtime/Base/System/Threading/Atomic/VAtomicTizen.inl>
 #elif defined(_VISION_PSP2)
   #include <Vision/Runtime/Base/System/Threading/Atomic/VAtomicPSP2.inl>
 #elif defined(_VISION_WIIU)
   #include <Vision/Runtime/Base/System/Threading/Atomic/VAtomicWiiU.inl>
+#elif defined(_VISION_NACL)
+  #include <Vision/Runtime/Base/System/Threading/Atomic/VAtomicNaCl.inl>
 #else
   #error Undefined platform!
 #endif
@@ -60,7 +62,7 @@ public:
 #endif  // VATOMIC_HPP_INCLUDED
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

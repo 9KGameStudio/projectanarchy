@@ -92,8 +92,7 @@ class hkbLodUtils
 		static void HK_CALL transformLocalBoneToModelBone(	int boneIndex, 
 															const hkbGeneratorOutput& output,
 															const hkaSkeleton* skeleton,
-															hkQsTransform& boneModelOut,
-															bool ignoreBoneWeights = false );
+															hkQsTransform& boneModelOut );
 
 			/// Fill in the weights array with 1.0f
 		static void HK_CALL fillWeights(int numWeightsBones, hkReal* weightsInOut);
@@ -108,8 +107,7 @@ class hkbLodUtils
 			const int numPoseLocal,
 			const hkReal* boneWeights,
 			const hkaSkeleton* skeleton,
-			const hkbGeneratorPartitionInfo& partitionInfo,
-			bool ignoreBoneWeights );
+			const hkbGeneratorPartitionInfo& partitionInfo);
 
 			/// When using partitions it is necessary to clear out the boneweights  since they are going to be filled in sparsely
 			/// The pose will get filled with reference pose, so we don't need to clear it
@@ -119,7 +117,7 @@ class hkbLodUtils
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -11,7 +11,7 @@
 
 // This is a Pseudorandom Number generator from  Num. Recip. p284:  Knuth-Lewis "quick and dirty" rand,
 // otherwise known as randq1(). It's not great, but it's fast. Don't use it for "serious" work.
-class hkPseudoRandomGenerator
+class HK_EXPORT_COMMON hkPseudoRandomGenerator
 {
 public:
 
@@ -38,7 +38,7 @@ public:
 	}
 
 		// Get current value (NOT equal to getRand32), but will allow you to "monitor" the RNG so you
-		// can reseed it later. 
+		// can reseed it later.
 	int getCurrent()
 	{
 		return int(m_current);
@@ -47,7 +47,7 @@ public:
 		// Get random number as unsigned int
 	hkUint32 getRand32()
 	{
-		m_current = 1664525U * m_current + 1013904223U;		
+		m_current = 1664525U * m_current + 1013904223U;
 		return m_current;
 	}
 
@@ -55,8 +55,8 @@ public:
 	hkUint32 getRandChar(int x)
 	{
 		HK_ASSERT(0x777504aa,  x > 0 && x <= 256 );
-		m_current = 1664525L * m_current + 1013904223L;	
-		
+		m_current = 1664525L * m_current + 1013904223L;
+
 		hkUint32 temp = (hkUint32)m_current;
 		temp >>= 13;
 		temp = temp % x;
@@ -69,7 +69,7 @@ public:
 	hkUint32 getRandInt16(int x)
 	{
 		HK_ASSERT(0x777504ab,  x > 0 && x <= 65536 );
-		m_current = 1664525L * m_current + 1013904223L;	
+		m_current = 1664525L * m_current + 1013904223L;
 
 		hkUint32 temp = (hkUint32)m_current;
 		temp >>= 11;
@@ -80,15 +80,11 @@ public:
 	}
 
 		// Get random real in range [0,1] using getRand32()
-	hkReal getRandReal01()
-	{	
-		const hkReal v = getRand32()*( 1.0f / 0xffffffff);
-		return v;
-	}
-
+	hkReal getRandReal01();
+	
 		// Get random real in range [-1,1] using getRand32()
 	hkReal getRandReal11()
-	{	
+	{
 		return 2*getRandReal01() - 1.0f;
 	}
 
@@ -98,82 +94,26 @@ public:
 		return getRandReal01() * ( max - min ) + min;
 	}
 
-	void getRandomRotation( hkRotation& rotOut )
-	{
-		hkVector4 v;
-		v(0) = getRandReal11();
-		v(1) = getRandReal11();
-		v(2) = getRandReal11();
-		v(3) = getRandReal11();
-		v.normalize<4>();
-		hkQuaternion q;
-		q.m_vec = v;
-		rotOut.set( q );
-	}
+	void getRandomRotation( hkRotation& rotOut );
 
-	void getRandomRotation( hkQuaternion& rotOut )
-	{
-		hkVector4 v;
-		v(0) = getRandReal11();
-		v(1) = getRandReal11();
-		v(2) = getRandReal11();
-		v(3) = getRandReal11();
-		v.normalize<4>();
-		rotOut.m_vec = v;
-	}
+	void getRandomRotation( hkQuaternion& rotOut );
 
 		/// sets xyzw randomly between -1 and 1
-	void getRandomVector11( hkVector4& vecOut )
-	{
-		vecOut(0) = getRandReal11();
-		vecOut(1) = getRandReal11();
-		vecOut(2) = getRandReal11();
-		vecOut(3) = getRandReal11();
-	}
+	void getRandomVector11( hkVector4& vecOut );
 
 	/// sets xyzw randomly between -1 and 1
-	void getRandomVectorRange( hkReal maxValue, hkVector4& vecOut )
-	{
-		vecOut(0) = maxValue * getRandReal11();
-		vecOut(1) = maxValue * getRandReal11();
-		vecOut(2) = maxValue * getRandReal11();
-		vecOut(3) = maxValue * getRandReal11();
-	}
+	void getRandomVectorRange( hkReal maxValue, hkVector4& vecOut );
 
 
 		/// sets xyzw randomly between 0 and 1
-	void getRandomVector01( hkVector4& vecOut )
-	{
-		vecOut(0) = getRandReal01();
-		vecOut(1) = getRandReal01();
-		vecOut(2) = getRandReal01();
-		vecOut(3) = getRandReal01();
-	}
+	void getRandomVector01( hkVector4& vecOut );
 
-	void getRandomVectorRange( hkVector4Parameter min, hkVector4Parameter max, hkVector4& vecOut)
-	{
-		hkVector4 t; getRandomVector01(t);
-		hkVector4 delta; delta.setSub(max, min);
-		vecOut.setAddMul(min, delta, t);
-	}
+	void getRandomVectorRange( hkVector4Parameter min, hkVector4Parameter max, hkVector4& vecOut);
 
-	void getRandomPointInTriangle( hkVector4Parameter A, hkVector4Parameter B, hkVector4Parameter C, hkVector4& vecOut)
-	{
-		// Use barycentric. http://www.cgafaq.info/wiki/Random_Point_In_Triangle or http://www.exaflop.org/docs/cgafaq/cga6.html
-		hkSimdReal x = hkSimdReal::fromFloat( getRandReal01() );
-		hkSimdReal y = hkSimdReal::fromFloat( getRandReal01() );
-		hkVector4Comparison xPlusY_gt_1 = (x+y).greater(hkSimdReal_1);
+		/// Use barycentric. http://www.cgafaq.info/wiki/Random_Point_In_Triangle or http://www.exaflop.org/docs/cgafaq/cga6.html
+	void getRandomPointInTriangle( hkVector4Parameter A, hkVector4Parameter B, hkVector4Parameter C, hkVector4& vecOut);
 
-		x.setSelect(xPlusY_gt_1, hkSimdReal_1 - x, x);
-		y.setSelect(xPlusY_gt_1, hkSimdReal_1 - y, y);
-
-		hkVector4 p;
-		p.setMul( (hkSimdReal_1 - x - y), A);
-		p.addMul(x, B);
-		p.addMul(y, C);
-		
-		vecOut = p;
-	}
+	void randomizeMemory( void* data, int numBytes );
 
 	template<typename T>
 	void shuffle( T* t, int num )
@@ -203,7 +143,7 @@ private:
 #endif // HK_MATH_PSEUDORANDOMGENERATOR_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

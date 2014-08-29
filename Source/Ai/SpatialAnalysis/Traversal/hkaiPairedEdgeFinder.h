@@ -17,7 +17,7 @@ class hkcdDynamicAabbTree;
 class hkAabb;
 class hkaiNavMeshInstance;
 
-class hkaiPairedEdgeFinder : public hkReferencedObject
+class HK_EXPORT_AI hkaiPairedEdgeFinder : public hkReferencedObject
 {
 public:
 	HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_AI_SPATIAL);
@@ -128,11 +128,18 @@ private:
 		hkVector4 & filteredEndLeft,
 		hkVector4 & filteredEndRight);
 
+	static hkBool32 HK_CALL edgeLengthAcceptable(
+		hkVector4Parameter left,
+		hkVector4Parameter right,
+		hkVector4Parameter up,
+		hkReal minLength);
+
 	static hkBool32 HK_CALL edgeAnglesMatch(
 		hkVector4Parameter startLeft, 
 		hkVector4Parameter startRight, 
 		hkVector4Parameter endLeft, 
-		hkVector4Parameter endRight, 
+		hkVector4Parameter endRight,
+		hkVector4Parameter up,
 		hkReal cosMaxHorizontalAngle);
 
 	static hkBool32 HK_CALL matchEdgeEnds(
@@ -140,7 +147,8 @@ private:
 		hkVector4 & startRightInOut, 
 		hkVector4 &endLeftInOut, 
 		hkVector4 &endRightInOut, 
-		hkVector4Parameter up);
+		hkVector4Parameter up,
+		hkReal cosMaxHorizontalAngle);
 
 	static hkBool32 HK_CALL slopeAnglesMatch(
 		hkVector4Parameter startLeft, 
@@ -177,7 +185,7 @@ private:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

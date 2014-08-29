@@ -17,8 +17,8 @@
 class hkpConstraintQueryIn;
 class hkpConstraintQueryOut;
 
-extern const hkClass hkpConstraintDataClass;
-extern const hkClass hkpConstraintInfoClass;
+extern HK_EXPORT_PHYSICS const hkClass hkpConstraintDataClass;
+extern HK_EXPORT_PHYSICS const hkClass hkpConstraintInfoClass;
 
 
 /// Opaque undefined type for constraint runtimes.
@@ -30,7 +30,7 @@ struct hkpConstraintRuntime;
 /// constraint atoms and their memory requirements. Defines the structure of the constraint's runtime data, if any,
 /// and provides methods to access its data.
 /// \sa hkpConstraintAtom
-class hkpConstraintData : public hkReferencedObject
+class HK_EXPORT_PHYSICS hkpConstraintData : public hkReferencedObject
 {
 	public:
 
@@ -187,7 +187,7 @@ class hkpConstraintData : public hkReferencedObject
 		virtual void getRuntimeInfo( hkBool wantRuntime, RuntimeInfo& infoOut ) const = 0;
 
 		/// Access to the solver results in a generic way. Use getRuntimeInfo() to get the number of solver results.
-		virtual hkpSolverResults* getSolverResults( hkpConstraintRuntime* runtime );
+		virtual hkpSolverResults* getSolverResults( hkpConstraintRuntime* runtime ) const;
 
 		/// Initialize the runtime data.
 		/// Default implementation zeros all values.
@@ -224,7 +224,7 @@ class hkpConstraintData : public hkReferencedObject
 #endif // HKP_CONSTRAINT_DATA_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -149,8 +149,8 @@ HKGP_FORCE_INLINE hkBool32								TRIANGULATOR_TYP::checkOrientation(hkInt32 x0,
 {
 	if(cfgIsCW)
 	{
-		hkAlgorithm::swap(x0,x1);
-		hkAlgorithm::swap(y0,y1);
+		hkMath::swap(x0,x1);
+		hkMath::swap(y0,y1);
 	}
 	if(x0==x1)
 	{
@@ -657,8 +657,8 @@ TRIANGULATOR_HDR
 inline void												TRIANGULATOR_TYP::setDomainFromPoints(const hkStridedVertices& points, const hkMatrix4& worldToXYPlane, bool margin, bool keepRatio)
 {
 	/* Calculate domain bounds			*/ 
-	hkVector4 dmin = hkVector4::getConstant<HK_QUADREAL_MAX>();
-	hkVector4 dmax = hkVector4::getConstant<HK_QUADREAL_MINUS_MAX>();
+	hkVector4 dmin; dmin.setConstant<HK_QUADREAL_MAX>();
+	hkVector4 dmax; dmax.setConstant<HK_QUADREAL_MINUS_MAX>();
 	for(int i=0,ni=points.getSize();i<ni;++i)
 	{
 		hkVector4	tp;
@@ -702,7 +702,7 @@ inline void												TRIANGULATOR_TYP::setDomainFromPoints(const hkStridedVert
 	/* Evaluate transforms				*/ 
 	m_margin	=	margin?1:0;
 	hkVector4	ext; ext.setAll(hkSimdReal::fromInt32(cfgBoundary-m_margin*2));
-	ext.div<HK_ACC_23_BIT,HK_DIV_SET_ZERO>(extents);
+	ext.div<HK_ACC_MID,HK_DIV_SET_ZERO>(extents);
 	ext.setComponent<2>(hkSimdReal_1);
 	ext.setComponent<3>(hkSimdReal_1);
 	hkMatrix4		trs;
@@ -811,8 +811,8 @@ HKGP_FORCE_INLINE void								TRIANGULATOR_TYP::quantize(hkVector4Parameter v, t
 	const int	bmi=m_margin;
 	const int	bmx=cfgBoundary-m_margin;
 	{
-		hkVector4 negRound; negRound.setSub(v, hkVector4::getConstant<HK_QUADREAL_INV_2>());
-		hkVector4 posRound; posRound.setAdd(v, hkVector4::getConstant<HK_QUADREAL_INV_2>());
+		hkVector4 negRound; negRound.setSub(v, hkSimdReal_Half);
+		hkVector4 posRound; posRound.setAdd(v, hkSimdReal_Half);
 		hkVector4 rounded; rounded.setSelect(v.lessZero(), negRound, posRound);
 
 		hkIntVector roundedInt; roundedInt.setConvertF32toS32(rounded);
@@ -1777,7 +1777,7 @@ inline int												TRIANGULATOR_TYP::partition()
 	next->pushBack(locateVertex(0,0).m_edge.uid());
 	do
 	{
-		hkAlgorithm::swap(next,current);
+		hkMath::swap(next,current);
 		next->clear();
 		++region;
 		do 
@@ -1959,7 +1959,7 @@ inline hkResult												TRIANGULATOR_TYP::partitionWithPolicy(const FLOODPOLI
 	next->pushBack(locateVertex(0,0).m_edge.uid());
 	do
 	{
-		hkAlgorithm::swap(next,current);
+		hkMath::swap(next,current);
 		next->clear();
 		++region;
 		do 
@@ -2493,7 +2493,7 @@ inline void				hkgpTriangulatorBase::DenseEdgeDataPolicy<EDGEDATA,ALLOCATOR>::pr
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

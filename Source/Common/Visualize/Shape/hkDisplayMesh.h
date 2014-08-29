@@ -11,11 +11,10 @@
 
 #include <Common/Visualize/Shape/hkDisplayGeometry.h>
 #include <Common/Visualize/hkDisplayGeometryBuilder.h>
-
-class hkMeshBody;
+#include <Common/GeometryUtilities/Mesh/hkMeshBody.h>
 
 	/// Display geometry that contains a generic mesh body.
-class hkDisplayMesh: public hkDisplayGeometry
+class HK_EXPORT_COMMON hkDisplayMesh : public hkDisplayGeometry
 {
 	public:
 		
@@ -56,7 +55,7 @@ class hkDisplayMesh: public hkDisplayGeometry
 };
 
 	/// Simple geometry builder that given a hkMeshBody wraps the hkMeshBody in a hkDisplayMesh.
-class hkForwardingDisplayGeometryBuilder: public hkDisplayGeometryBuilder
+class HK_EXPORT_COMMON hkForwardingDisplayGeometryBuilder: public hkDisplayGeometryBuilder
 {
 	public:
 		HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE);
@@ -68,7 +67,7 @@ class hkForwardingDisplayGeometryBuilder: public hkDisplayGeometryBuilder
 #endif // HK_VISUALIZE_SHAPE_AABB_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

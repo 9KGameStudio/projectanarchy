@@ -30,29 +30,29 @@ struct hkSingletonInitNode;
 namespace hkMemoryInitUtil
 {
 		/// Initialize with an hkFreeListMemorySystem + leak detection.
-	hkMemoryRouter* HK_CALL initLeakDetect(hkMemoryAllocator *memoryAllocator, const hkMemorySystem::FrameInfo& info);
+	HK_EXPORT_COMMON hkMemoryRouter* HK_CALL initLeakDetect(hkMemoryAllocator *memoryAllocator, const hkMemorySystem::FrameInfo& info);
 
 		/// Initialize with an hkFreeListMemorySystem using a hkFreeListAllocator for heap allocations, and a hkLargeBlockAllocator for 
 		/// larger allocations that the hkFreeListAllocator can't handle. The hkLargeBlockAllocator will allocate memory from the memoryAllocator.
-	hkMemoryRouter* HK_CALL initFreeListLargeBlock(hkMemoryAllocator *memoryAllocator, const hkMemorySystem::FrameInfo& info, const hkFreeListAllocator::Cinfo* cinfo = HK_NULL, hkFreeListMemorySystem::SetupFlags flags = hkFreeListMemorySystem::DEFAULT_SETUP_FLAGS);
+	HK_EXPORT_COMMON hkMemoryRouter* HK_CALL initFreeListLargeBlock(hkMemoryAllocator *memoryAllocator, const hkMemorySystem::FrameInfo& info, const hkFreeListAllocator::Cinfo* cinfo = HK_NULL, hkFreeListMemorySystem::SetupFlags flags = hkFreeListMemorySystem::DEFAULT_SETUP_FLAGS);
 
 		/// Initialize with an hkFreeListMemorySystem using a hkFreeListAllocator for heap allocations, and the memoryAllocator for any allocations that 
 		/// the hkFreeListAllocator can't handle.
-	hkMemoryRouter* HK_CALL initFreeList(hkMemoryAllocator *memoryAllocator, hkMemoryAllocator::ExtendedInterface* memoryAllocatorExtended, const hkMemorySystem::FrameInfo& info, const hkFreeListAllocator::Cinfo* cinfo = HK_NULL, hkFreeListMemorySystem::SetupFlags flags = hkFreeListMemorySystem::DEFAULT_SETUP_FLAGS);
+	HK_EXPORT_COMMON hkMemoryRouter* HK_CALL initFreeList(hkMemoryAllocator *memoryAllocator, hkMemoryAllocator::ExtendedInterface* memoryAllocatorExtended, const hkMemorySystem::FrameInfo& info, const hkFreeListAllocator::Cinfo* cinfo = HK_NULL, hkFreeListMemorySystem::SetupFlags flags = hkFreeListMemorySystem::DEFAULT_SETUP_FLAGS);
 
 		/// Initialize with an hkCheckingMemorySystem.
 		/// This checks for leaks and some other common errors and is several orders of magnitude
 		/// slower than the free list system.
-	hkMemoryRouter* HK_CALL initChecking(hkMemoryAllocator *memoryAllocator, const hkMemorySystem::FrameInfo& info);
+	HK_EXPORT_COMMON hkMemoryRouter* HK_CALL initChecking(hkMemoryAllocator *memoryAllocator, const hkMemorySystem::FrameInfo& info);
 
 		/// Initialize with an hkSimpleMemorySystem.
 		/// This is slower than the free list system and is intended as an example.
-	hkMemoryRouter* HK_CALL initSimple(hkMemoryAllocator *memoryAllocator, const hkMemorySystem::FrameInfo& info);
+	HK_EXPORT_COMMON hkMemoryRouter* HK_CALL initSimple(hkMemoryAllocator *memoryAllocator, const hkMemorySystem::FrameInfo& info);
 
 		/// Initialize with an hkOptimizerMemorySystem.
 		/// This is mainly for internal use to detect where the memory system is being used
 		/// sub-optimally.
-	hkMemoryRouter* HK_CALL initOptimizer(hkMemoryAllocator *memoryAllocator, const hkMemorySystem::FrameInfo& info);
+	HK_EXPORT_COMMON hkMemoryRouter* HK_CALL initOptimizer(hkMemoryAllocator *memoryAllocator, const hkMemorySystem::FrameInfo& info);
 
 		/// Initialize using an explicit heap allocator. 
 		/// The heapAllocator, and heapInteface provide the direct implementation of the heap (in contrast to other methods
@@ -60,31 +60,31 @@ namespace hkMemoryInitUtil
 		/// methods for garbageCollection/memoryWalk, etc., on the heapAllocator; it is optional and can be passed as HK_NULL.
 		/// The memoryAllocator is the allocator which will be used for non heap allocations; for example
 		/// the solver's memory block is allocated from the memoryAllocator.
-	hkMemoryRouter* HK_CALL initHeapAllocator(hkMemoryAllocator *memoryAllocator, hkMemoryAllocator *heapAllocator, hkMemoryAllocator::ExtendedInterface* heapInterface, const hkMemorySystem::FrameInfo& info);
+	HK_EXPORT_COMMON hkMemoryRouter* HK_CALL initHeapAllocator(hkMemoryAllocator *memoryAllocator, hkMemoryAllocator *heapAllocator, hkMemoryAllocator::ExtendedInterface* heapInterface, const hkMemorySystem::FrameInfo& info);
 
 		/// Will destroy the memory allocator, by calling mainQuit() and destroying the allocator.
 		/// Should only be called if an init call has been made.
-	hkResult HK_CALL quit();
+	HK_EXPORT_COMMON hkResult HK_CALL quit();
 
 		/// Initialize with the default system, currently hkFreeListMemorySystem.
-	inline hkMemoryRouter* HK_CALL initDefault(hkMemoryAllocator *memoryAllocator, const hkMemorySystem::FrameInfo& info) { return initFreeListLargeBlock(memoryAllocator, info); }
+	HK_EXPORT_COMMON inline hkMemoryRouter* HK_CALL initDefault(hkMemoryAllocator *memoryAllocator, const hkMemorySystem::FrameInfo& info) { return initFreeListLargeBlock(memoryAllocator, info); }
 
 		/// When using Checking mem, if you load DLLs dynamically you should let the stacktracer know by calling this function
-	void HK_CALL refreshDebugSymbols();
+	HK_EXPORT_COMMON void HK_CALL refreshDebugSymbols();
 
 #if defined(HK_MEMORY_TRACKER_ENABLE)
 		/// Init the memory tracker.
 		/// Call this before the hkMemorySystem has been initialized.
-	void HK_CALL initMemoryTracker();
+	HK_EXPORT_COMMON void HK_CALL initMemoryTracker();
 		/// Quit the memory tracker.
 		/// Call this after the hkMemorySystem has been shut down.
-	void HK_CALL quitMemoryTracker();
+	HK_EXPORT_COMMON void HK_CALL quitMemoryTracker();
 #endif
 
-	void HK_CALL outputDebugString(const char* s, void*);
+	HK_EXPORT_COMMON void HK_CALL outputDebugString(const char* s, void*);
 
 		/// Cross DLL sync info
-	struct SyncInfo
+	struct HK_EXPORT_COMMON SyncInfo
 	{
 		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE, SyncInfo);
 		hkMemoryRouter* m_memoryRouter;
@@ -97,16 +97,16 @@ namespace hkMemoryInitUtil
 		hkUint32* m_mtRefLockedAllPtr;
 	};
 
-	extern hkMemorySystem* s_system;
+	HK_EXPORT_COMMON extern hkMemorySystem* s_system;
 
 	typedef void (HK_CALL *onQuitFunc)( void );
-	extern onQuitFunc s_onQuitFunc;
+	HK_EXPORT_COMMON extern onQuitFunc s_onQuitFunc;
 }
 
 #endif // HKBASE_hkMemoryInitUtil_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

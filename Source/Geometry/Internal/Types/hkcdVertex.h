@@ -9,14 +9,16 @@
 #ifndef HKCD_VERTEX_H
 #define HKCD_VERTEX_H
 
+
 	/// A class holding a position and a 16-bit id in the .w component.
-class hkcdVertex : public hkVector4
+class HK_EXPORT_COMMON hkcdVertex : public hkVector4
 {
 	public:
 
 		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_COLLIDE, hkcdVertex );
 		HK_DECLARE_POD_TYPE();
 
+		HK_FORCE_INLINE const hkcdVertex& operator=( const hkcdVertex& p ) { assign(p); return *this; }
 
 			/// Overwrite self with an hkVector4
 		HK_FORCE_INLINE void assign( hkVector4Parameter p ) { m_quad = p.m_quad; }
@@ -28,7 +30,7 @@ class hkcdVertex : public hkVector4
 #endif // HKCD_VERTEX_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

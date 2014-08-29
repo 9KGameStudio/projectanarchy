@@ -9,12 +9,12 @@
 #ifndef HKAI_VELOCITY_CANDIDATE_GENERATOR_H
 #define HKAI_VELOCITY_CANDIDATE_GENERATOR_H
 
+#include <Ai/Internal/hkaiExport.h>
 class hkaiVelocityCandidateList;
-
 class hkFourTransposedPoints;
 
 	/// Utility class to generate a list of potential velocity values.
-class hkaiVelocityCandidateGenerator
+class HK_EXPORT_AI hkaiVelocityCandidateGenerator
 {
 public:
 	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_AI_STEERING, hkaiVelocityCandidateGenerator);
@@ -87,6 +87,7 @@ private:
 
 	HK_ALIGN16(static const hkUint8 s_main_template[(NUM_BLOCKS+1)*8]);
 	HK_ALIGN16(static const hkUint8 s_halfSpeed_template[(NUM_BLOCKS+1)*8]);
+	HK_ALIGN16(static const hkUint8 s_passive_template[(NUM_BLOCKS+1)*8]);
 };
 
 #include <Ai/Pathfinding/Character/LocalSteering/Sampling/hkaiVelocityCandidateGenerator.inl>
@@ -94,7 +95,7 @@ private:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

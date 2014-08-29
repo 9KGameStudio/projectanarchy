@@ -70,8 +70,8 @@ public:
   ///   VisParticleGroup_cl::SetFadeMode
   enum FadeMode_e
   {
-    FADEMODE_NONE = 0,          ///< does not fade out the particles
-    FADEMODE_FOGDISTANCE = 1,   ///< always uses fog distance for fading
+    //FADEMODE_NONE = 0,        ///< Removed. (old behaviour: does not fade out the particles)
+    FADEMODE_FOGDISTANCE = 1,   ///< Always uses fog distance for fading if available.
     FADEMODE_CUSTOM = 2         ///< uses custom start and end distance (set per particle group)
   };
 
@@ -80,18 +80,24 @@ public:
   ///   VisRenderLoopHelper_cl::GetParticleEffectConfig
   enum ParticleShaderFlags_e
   {
-    PARTICLESHADERFLAGS_NONE              = 0x00000000,
-    PARTICLESHADERFLAGS_HARDWARESPANNING  = 0x00000001, ///< the shader must provide hardware vertex spanning
-    PARTICLESHADERFLAGS_SMOOTHANIMATION   = 0x00000002, ///< the shader uses animation and smooth transition between the frames
+    PARTICLESHADERFLAGS_NONE              = 0x00000000, 
+    PARTICLESHADERFLAGS_HARDWARESPANNING  = V_BIT(0), ///< Must provide hardware vertex spanning.
+    PARTICLESHADERFLAGS_SMOOTHANIMATION   = V_BIT(1), ///< Uses animation and smooth transition between the frames.
 #ifndef SUPPORTS_ALPHATEST_BLENDSTATE
-    PARTICLESHADERFLAGS_ALPHATESTINSHADER = 0x00000004, ///< an instruction inside the pixel shader is used to perform the alpha test
+    PARTICLESHADERFLAGS_ALPHATESTINSHADER = V_BIT(2), ///< an instruction inside the pixel shader is used to perform the alpha test
 #endif
-    PARTICLESHADERFLAGS_ALLFLAGS          = (PARTICLESHADERFLAGS_HARDWARESPANNING |
-                                            PARTICLESHADERFLAGS_SMOOTHANIMATION
-#ifndef SUPPORTS_ALPHATEST_BLENDSTATE
-                                            | PARTICLESHADERFLAGS_ALPHATESTINSHADER
+    PARTICLESHADERFLAGS_SOFTPARTICLES     = V_BIT(3), ///< Uses depth buffer to create fix seams with geometry.
+    PARTICLESHADERFLAGS_LOCALSPACE        = V_BIT(4), ///< Particles are computed in local space
+
+    PARTICLESHADERFLAGS_LIGHTING_STATIC   = V_BIT(5), ///< Static particle lighting using lightgrid and normalmap.
+    PARTICLESHADERFLAGS_LIGHTING_DYNAMIC  = V_BIT(6), ///< Dynamic particle lighting using normalmap.
+    PARTICLESHADERFLAGS_LIGHTING_SHADOWRECEIVE = V_BIT(7), ///< Shadow receiving for a single dynamic directional light.
+    PARTICLESHADERFLAGS_NORMAL_FROM_DIFF_ALPHA = V_BIT(8), ///< Will compute normals on the fly interpreting the diffuse texture's alpha as a curvature value.
+
+#ifdef SUPPORTS_TESSELATION_SHADER
+    PARTICLESHADERFLAGS_LIGHTING_DOMAINFREQ = V_BIT(9), ///< Will perform lighting calculations in Domain shader instead of vertex shader
 #endif
-                                            )
+    PARTICLESHADERFLAGS_GEOMETRY = V_BIT(10) ///< Use geometry compatible shader.
   };
 
   ///
@@ -111,13 +117,6 @@ public:
   /// 
   /// Use the DisposeObject function instead of directly deleting the particle group.
   VISION_APIFUNC virtual ~VisParticleGroup_cl();
-
-  /// \brief
-  ///   DEPRECATED; Use DisposeObject() instead
-  HKV_DEPRECATED_2012_1 inline void Remove()
-  {
-    DisposeObject();
-  }
 
   /// \brief
   ///   Overridden VisTypedEngineObject_cl function to remove this instance from the scene.
@@ -224,6 +223,19 @@ public:
   ///   TRUE/FALSE
   inline void SetAlwaysInForeGround (BOOL status);
 
+  /// \brief
+  ///  Enables occlusion culling for this particle effect when visibility is enabled.
+  ///
+  /// The default is true. Disable this only to prevent small particles from becoming stuck inside
+  /// geometry. In case the particle is always in foreground, this flag is ignored.
+  ///
+  /// \param bStatus
+  ///   Whether to use occlusion culling or not
+  inline void SetUseOcclusionCulling (bool bStatus);
+
+  /// \brief
+  ///  Retrieves whether occlusion culling is enabled for this particle effect.
+  inline bool GetUseOcclusionCulling () const;
 
   /// \brief
   ///   Sets the texture for the particle group
@@ -304,6 +316,10 @@ public:
   inline void SetTextureRepetitions(float numOfRepetitions = 1.0f);
 
   /// \brief
+  ///   Get number of texture repetitions previously set with SetTextureRepetitions.
+  inline float GetTextureRepetitions() const;
+
+  /// \brief
   ///   Sets a size aspect ratio for non square particle textures
   /// 
   /// In case a non square texture is used, it might be useful to display the screen-aligned
@@ -315,6 +331,10 @@ public:
   ///   The ratio between height and width of the particle.  For instance use 0.5f if you have a
   ///   256x128 texture
   inline void SetParticleSizeAspectRatio(float fAspectRatio = 1.f);
+
+  /// \brief
+  ///   Get aspect ratio previously set with SetParticleSizeAspectRatio.
+  inline float GetParticleSizeAspectRatio() const;
 
   /// \brief
   ///   Subdivides a single particle texture into animation frames
@@ -346,8 +366,22 @@ public:
   /// \note
   ///   The number of subdivisions does not have to be a power of two. For instance 3x5 subdivsions
   ///   are allowed.
-  inline void SetAnimationSubdivisions(int iSubDivX,int iSubDivY);
-  
+  ///
+  /// \see GetAnimationSubdivisionsX, GetAnimationSubdivisionsY
+  inline void SetAnimationSubdivisions(unsigned int iSubDivX, unsigned int iSubDivY);
+
+  /// \brief
+  ///   Returns number of subdivisons in x-direction set with SetAnimationSubdivisions.
+  ///
+  /// \see GetAnimationSubdivisionsX, SetAnimationSubdivisions
+  inline int GetAnimationSubdivisionsX() const;
+
+  /// \brief
+  ///   Returns number of subdivisons in y-direction set with SetAnimationSubdivisions.
+  ///
+  /// \see SetAnimationSubdivisions, GetAnimationSubdivisionsY
+  inline int GetAnimationSubdivisionsY() const;
+
   /// \brief
   ///   Defines whether the pixel shader should use smooth interpolation between animation frames
   /// 
@@ -359,11 +393,11 @@ public:
   ///
   /// \param bStatus
   ///   true to use smooth animation fading, otherwise false.
-  inline void SetUseSmoothAnimationFading(BOOL bStatus);
+  inline void SetUseSmoothAnimationFading(bool bStatus);
 
   /// \brief
   ///   Returns the status previously set with SetUseSmoothAnimationFading
-  inline BOOL GetUseSmoothAnimationFading() const;
+  inline bool GetUseSmoothAnimationFading() const;
 
   /// \brief
   ///   Set the transparency type of the particle group
@@ -386,40 +420,120 @@ public:
   /// \param fScale
   ///   Fraction of the distance to subtract. Accordingly this value must be in -1..1 range, but only small values (e.g. 0.05) actually make sense.
   ///   Positive values move the particles towards the camera.
-  inline void SetDepthOffset(float fScale)
-  {
-    VASSERT(fScale>-1.f && fScale<1.f);
-    m_fDepthOffset = fScale;
-  }
+  inline void SetDepthOffset(float fScale);
 
   /// \brief
   ///   Returns the value previously set with SetDepthOffset
-  inline float GetDepthOffset() const
-  {
-    return m_fDepthOffset;
-  }
+  inline float GetDepthOffset() const;
 
   /// \brief
   ///   If enabled, particle group rendering tracks the transformation of this object rather than world space transformation matrix
   ///
   /// \param bStatus
-  ///   New status. Default is FALSE
+  ///   New status. Default is false
   ///
   /// If enabled, particles are considered in local space during rendering. The shader needs to consider this matrix additionally
-  /// If disabled (which is default) then relevant particle groups are rendered with identity model matrix thus ussuming
+  /// If disabled (which is default) then relevant particle groups are rendered with identity model matrix thus assuming
   /// particles are in world space.
-  inline void SetUseLocalSpaceMatrix(BOOL bStatus)
+  inline void SetUseLocalSpaceMatrix(bool bStatus);
+
+  /// \brief
+  ///   Returns the value previously set with SetUseLocalSpaceMatrix. Default is false
+  inline bool GetUseLocalSpaceMatrix() const;
+
+  /// \brief
+  ///   Defines whether particles should be soft particles.
+  ///
+  /// \param bStatus
+  ///   New status. Default is false
+  ///
+  /// If enabled, particles will read depth buffer to fade particles at geometry intersection. If the current render node doesn't support reading from 
+  /// depth buffer (for example MobileForwardRendering), a warning will written into the log and the setting will be ignored.
+  inline void SetRenderSoftParticles(bool bStatus);
+
+  /// \brief
+  ///   Returns the value previously set with SetRenderSoftParticles. Default is false
+  inline bool GetRenderSoftParticles() const;
+
+
+  /// \brief
+  ///   Defines whether particles should be affected by static lightgrids.
+  ///
+  /// \param bStatus
+  ///   New status. Default is false
+  inline void SetLightingStatic(bool bStatus);
+
+  /// \brief
+  ///   Returns the value previously set with SetStaticDynamic. Default is false.
+  inline bool GetLightingStatic() const;
+
+
+  /// \brief
+  ///   Defines whether particles should be affected by dynamic lights.
+  ///
+  /// \param bStatus
+  ///   New status. Default is false
+  inline void SetLightingDynamic(bool bStatus);
+
+  /// \brief
+  ///   Returns the value previously set with SetLightingDynamic. Default is false.
+  inline bool GetLightingDynamic() const;
+
+
+  /// \brief
+  ///   Sets the backlighting scale that determines how much particles are influenced from lights behind them.
+  ///
+  /// \param fBacklightingScale
+  ///   New backlighting scale. Default is 0.5f
+  inline void SetBacklightingScale(float fBacklightingScale);
+
+  /// \brief
+  ///   Returns the value previously set with SetLightingDynamic. Default is 0.5f.
+  inline float GetBacklightingScale() const;
+
+
+  /// \brief
+  ///   Defines whether particles should receive shadow from a single directional light source.
+  ///
+  /// Only relevant if GetLightingDynamic true
+  /// 
+  /// \param bStatus
+  ///   New status. Default is false
+  inline void SetShadowReceive(bool bStatus);
+
+  /// \brief
+  ///   Returns the value previously set with GetShadowReceive. Default is false.
+  inline bool GetShadowReceive() const;
+
+  ///   Defines whether particles should compute normals by interpreting diffuse texture alpha as curvature instead of using a normal map.
+  ///
+  /// Only relevant if the particle shader uses any normals. While the normalmap is still available, it is normally useless if this option is enabled.
+  /// 
+  /// \param bStatus
+  ///   New status. Default is false
+  inline void SetUseNormalFromDiffAlpha(bool bStatus);
+
+  /// \brief
+  ///   Returns the value previously set with GetShadowReceive. Default is true.
+  inline bool GetUseNormalFromDiffAlpha() const;
+
+  /// \brief
+  ///   Sets the squared distance value used when interleaved distance sorting is active. A negative value (=default) forces to compute
+  ///   the distance based on current the particle group's position.
+  ///
+  /// \param fDistSqr
+  ///   Squared distance value used in interleaved distance sorting mode (default=-1)
+  inline void SetInterleavedSortingDistanceSqr(float fDistSqr)
   {
-    m_bTrackModelViewMatrix = (bStatus==TRUE);
+    m_fInterleavedSortingDistSqr = fDistSqr;
   }
 
   /// \brief
-  ///   Returns the value previously set with SetUseLocalSpaceMatrix. Default is FALSE
-  inline BOOL GetUseLocalSpaceMatrix() const
+  ///   Returns the squared distance value used when interleaved distance sorting is active.
+  inline float GetInterleavedSortingDistanceSqr() const
   {
-    return m_bTrackModelViewMatrix;
+    return m_fInterleavedSortingDistSqr;
   }
-
 
   ///
   /// @}
@@ -437,7 +551,7 @@ public:
   /// set to TRUE then the visibility calculations will be applied to the particle group, otherwise
   /// the particle group will always be drawn.
   /// 
-  /// As soon as the VisParticleGroup_cl::SetBoundingBox function has been called, the visibility
+  /// As soon as the VisParticleGroup_cl::SetVisibilityBoundingBox function has been called, the visibility
   /// check will automatically be enabled.
   /// 
   /// Internally, the particle group creates a visibility object of class
@@ -447,10 +561,21 @@ public:
   ///   visibility flag of the particle group
   /// 
   /// \sa VisParticleGroup_cl::IsVisible
-  /// \sa VisParticleGroup_cl::SetBoundingBox
+  /// \sa VisParticleGroup_cl::SetVisibilityBoundingBox
   /// \sa VisParticleGroup_cl::SetVisibilityObject
   VISION_APIFUNC void SetCheckVisibility(BOOL checkVis);
 
+  /// \brief
+  ///   Get the visibility check flag of the particle group
+  /// 
+  /// GetCheckVisibility returns the current status of the visibility flag of the particle group.
+  /// This flag can be set with the VisParticleGroup_cl::SetCheckVisibility function and defines
+  /// whether visibility calculations will be performed for the particle group or whether the
+  /// particle group will always be drawn.
+  /// 
+  /// \return
+  ///   BOOL checkVisFlag: if TRUE then visibility calculations will be done for the particle group
+  inline BOOL GetCheckVisibility() const;
 
   /// \brief
   ///   Set the bounding box of the particle group
@@ -460,6 +585,9 @@ public:
   /// 
   /// This function sets the global bounding box in world space
   /// 
+  /// \deprecated
+  ///   Use SetVisibilityBoundingBox instead.
+  ///
   /// \param minX
   /// 
   /// \param minY
@@ -473,7 +601,7 @@ public:
   /// \param maxZ
   /// 
   /// \sa VisParticleGroup_cl::GetBoundingBox
-  inline void SetBoundingBox(float minX, float minY, float minZ, float maxX, float maxY, float maxZ);
+  HKV_DEPRECATED_2014_1 inline void SetBoundingBox(float minX, float minY, float minZ, float maxX, float maxY, float maxZ);
 
   /// \brief
   ///   Set the bounding box of the particle group
@@ -482,12 +610,27 @@ public:
   /// visibility checks. It also automatically enables the visibility checks.
   /// 
   /// This function sets the global bounding box in world space
-  /// 
+  ///
+  /// \deprecated
+  ///   Use SetVisibilityBoundingBox instead.
+  ///
   /// \param bbox
   ///   Reference to the new bounding box
   /// 
   /// \sa VisParticleGroup_cl::GetBoundingBox
-  VISION_APIFUNC void SetBoundingBox(const hkvAlignedBBox &bbox);
+  HKV_DEPRECATED_2014_1 inline void SetBoundingBox(const hkvAlignedBBox &bbox);
+
+  /// \brief
+  ///   Sets the visibility bounding box.
+  ///
+  /// SetVisibilityBoundingBox sets the bounding box of visibility object. It also automatically enables the visibility checks.
+  ///
+  /// \param bLocalBoundingBox
+  ///   Determines if the incoming bounding box is a local or world bounding box.
+  ///
+  /// \param boundingBox
+  ///   Reference to the new bounding box - either local or world depending on localBoundingBox.
+  VISION_APIFUNC void SetVisibilityBoundingBox(bool bLocalBoundingBox, const hkvAlignedBBox& boundingBox);
 
 
   /// \brief
@@ -637,7 +780,10 @@ public:
   /// be returned and the bounding box variables won't be set.
   /// 
   /// This function returns the global bounding box in world space
-  /// 
+  ///
+  /// \deprecated
+  ///   Get visibility bounding boxes directly from the visibility object using GetVisibilityObject().
+  ///
   /// \param minX
   ///   minimum x value of the bounding box
   /// 
@@ -661,7 +807,7 @@ public:
   ///   there is no bounding box and the bounding box variables won't be set.
   /// 
   /// \sa VisParticleGroup_cl::SetBoundingBox
-  VISION_APIFUNC BOOL GetBoundingBox(float &minX, float &minY, float &minZ, float &maxX, float &maxY, float &maxZ) const;
+  HKV_DEPRECATED_2014_1 VISION_APIFUNC BOOL GetBoundingBox(float &minX, float &minY, float &minZ, float &maxX, float &maxY, float &maxZ) const;
 
   
   /// \brief
@@ -689,18 +835,6 @@ public:
   ///   VIS_TransparencyType transparencyType: transparency type of the particle group
   inline VIS_TransparencyType GetTransparencyType() const;
 
-  /// \brief
-  ///   Get the visibility check flag of the particle group
-  /// 
-  /// GetCheckVisibility returns the current status of the visibility flag of the particle group.
-  /// This flag can be set with the VisParticleGroup_cl::SetCheckVisibility function and defines
-  /// whether visibility calculations will be performed for the particle group or whether the
-  /// particle group will always be drawn.
-  /// 
-  /// \return
-  ///   BOOL checkVisFlag: if TRUE then visibility calculations will be done for the particle group
-  inline BOOL GetCheckVisibility() const;
-  
   /// \brief
   ///   Returns the actual visibility status of the particle group
   /// 
@@ -749,48 +883,6 @@ public:
   /// \sa VisParticleGroup_cl::SetVisibleBitmask
   /// \sa VisParticleGroup_cl::IsVisible
   VISION_APIFUNC BOOL IsVisibleInAnyContext() const;
-
-
-  ///
-  /// @}
-  ///
-
-  ///
-  /// @name Overridden Child Functions
-  /// @{
-  ///
-  
-  /// \brief
-  ///   Virtual handle function of the module system
-  /// 
-  /// This function is the virtual handle function of the module system. Since the particle group
-  /// is part of the Vision module system the virtual functions of the module system will be called
-  /// by the parent entity. The handle function will be called by the parent entity once per frame
-  /// to allow you doing regular updates. Use this function to update, move and change your
-  /// particles.
-  /// 
-  /// Note that you still have to call the base implementation when overriding this function
-  VISION_APIFUNC virtual void ModSysNotifyFunctionHandle() {}
-
-
-  /// \brief
-  ///   Virtual info function of the module system
-  /// 
-  /// This function is another virtual function of the module system which will be called whenever
-  /// the parent's position or orientation changes. You should have a look at the
-  /// VisModuleSystemChild_cl for more information about this function. Use this function to keep
-  /// track of the position and orientation of the parent entity.
-  /// 
-  /// Note that you still have to call the base implementation when overriding this function
-  /// 
-  /// \param flags
-  ///   Status flags which tell you which values of the parent entity have been changed (see
-  ///   VisModuleSystemChild_cl::ModSysNotifyFunctionParentAltered function)
-  VISION_APIFUNC virtual void ModSysNotifyFunctionParentAltered(int flags) { VisObject3D_cl::ModSysNotifyFunctionParentAltered(flags); }
-
-
-
-
 
 
   ///
@@ -1152,17 +1244,42 @@ public:
 
 
   /// \brief
-  ///   Sets a new relative center pivot position for particles (stretched and billboards)
+  ///   Sets if the particles are rendered using tessellation.
+  ///   
+  /// Currently only supported in DX11. Will render instanced quad patches.
+  /// 
+  /// \param bStatus
+  ///   true If particles should be rendered as quad patches or not.
+  inline void SetTessellationEnabled(bool bStatus);
+
+  /// \brief
+  ///   Returns the value pair previously set with GetParticleCenter.
+  inline bool GetTessellationEnabled() const;
+
+  /// \brief
+  ///   Controls how many vertices will be generated when using SetTessellationEnabled.
+  ///
+  /// \param fTessellationPixelPerVertex
+  ///   New per pixel tessellation factor.
+  ///   
+  /// \sa SetTessellationEnabled
+  inline void SetTessellationFactorPixelPerVertex(float fTessellationPixelPerVertex);
+
+  /// \brief
+  ///   Returns the value previously set with SetTessellationPixelPerVertex.
+  inline float GetTessellationFactorPixelPerVertex() const;
+
+  /// \brief
+  ///   Returns light sampling offset used for lightgrid sampling and mobile lighting.
+  virtual hkvVec3 GetLightSamplingOffset() const;
+
+  /// \brief
+  ///   Sets a new relative center pivot position for particles.
   /// 
   /// If the particle rotates, this defines the rotation center for instance.
   /// 
   /// The default values are (0.5,0.5) which is the center of the particle. (0,0) defines the upper
   /// left corner.
-  /// 
-  /// When enabling stretched particles (SetUseDistortion(TRUE)) the center resets to (0,0.5),
-  /// which is the center of the left edge.
-  /// 
-  /// This is to maintain backwards compatibility.
   /// 
   /// \param x
   ///   New relative center in x direction
@@ -1172,15 +1289,31 @@ public:
   inline void SetParticleCenter(float x, float y);
 
   /// \brief
+  ///   Sets a new relative center pivot position for particles.
+  /// 
+  /// If the particle rotates, this defines the rotation center for instance.
+  /// 
+  /// The default values are (0.5,0.5) which is the center of the particle. (0,0) defines the upper
+  /// left corner.
+  /// 
+  /// \param center
+  ///   New relative center
+  inline void SetParticleCenter(const hkvVec2& center);
+
+  /// \brief
   ///   Returns the value pair previously set with SetParticleCenter
   inline void GetParticleCenter(float &x, float &y) const;
+
+  /// \brief
+  ///   Returns the value pair previously set with SetParticleCenter
+  inline hkvVec2 GetParticleCenter() const;
 
   /// \brief
   ///   Specifies whether the particle vertices should be computed in the vertex shader or in
   ///   software
   /// 
   /// If set to true, the particles vertices will be fully computed in a vertex shader. Hardware
-  /// instancing will additionally be used if avaialble.
+  /// instancing will additionally be used if available.
   /// 
   /// Hardware spanning yields up to five times better performance than software spanning.
   /// 
@@ -1196,8 +1329,6 @@ public:
   ///   Returns whether the particle vertices are computed in the vertex shader or in software
   /// 
   /// If true, the particles vertices are fully computed in a vertex shader. 
-  /// 
-  /// This feature is currently only supported on Xbox360, it will be ignored on PC.
   /// 
   /// \return
   ///   bool: true if hardware spanning is used, otherwise false.
@@ -1227,6 +1358,13 @@ public:
   inline VisMeshBuffer_cl* GetGeometry() const
   {
     return m_spGeometry;
+  }
+
+  /// \brief
+  ///   Returns the render state that contains information like blending state, whether the group is always visible, etc.
+  inline const VSimpleRenderState_t& GetRenderState() const
+  {
+    return m_iRenderState;
   }
 
   ///
@@ -1324,8 +1462,7 @@ public:
   /// \brief
   ///   Sets the shader technique with this particle group is to be rendered
   /// 
-  /// Passing NULL will result in the particle group being rendered with the default shader
-  /// (texture or texture*color, default blending). This is also the default behavior.
+  /// Passing NULL will result in the particle group being rendered with the default shader. This is also the default behavior.
   /// 
   /// \param pTechnique
   ///   Technique to assign
@@ -1334,15 +1471,15 @@ public:
   /// \brief
   ///   Returns the technique previously set with SetTechnique
   /// 
-  /// NULL is returned if no shader technique is assigned to this particle group.
+  /// NULL is returned if no non-default shader technique is assigned to this particle group.
   /// 
   /// \return
   ///   VCompiledTechnique *pTechnique: Technique to assign
   inline VCompiledTechnique *GetTechnique() const;
 
   /// \brief
-  ///   Returns the shader instance that the particle group would use if no shader is assigned
-  VISION_APIFUNC VCompiledShaderPass *GetDefaultShader() const;
+  ///   Returns the flag combination used for the default shader
+  VISION_APIFUNC ParticleShaderFlags_e GetDefaultShaderFlags() const;
 
   /// \brief
   ///   Enables light grid color tracking for this particle group
@@ -1385,10 +1522,9 @@ public:
   /// Distance fading of particles is a useful mechanism to save performance and to interact with
   /// linear depth fog.
   /// 
-  /// The following fade modes are supported by this function: FADEMODE_NONE :  particles are not
-  /// faded out (default) FADEMODE_FOGDISTANCE : always uses the fog distance for fading (See
-  /// VisWorld_cl::SetLinearDepthFog). If depth fog is globally disabled (i.e.
-  /// VisWorld_cl::IsLinearDepthFogEnabled returns false), particle fading is disabled.
+  /// The following fade modes are supported by this function:
+  /// FADEMODE_FOGDISTANCE : Uses the fog distance for fading (See VisWorld_cl::SetLinearDepthFog).
+  /// If depth fog is globally disabled (i.e. VisWorld_cl::IsLinearDepthFogEnabled returns false), particle fading is disabled.
   /// FADEMODE_CUSTOM : This particle group uses a custom fade range, that can be set via
   /// VisParticleGroup_cl::SetCustomFadeRange.
   /// 
@@ -1460,6 +1596,46 @@ public:
   ///
 
   ///
+  /// @name Dynamic Particle lighting
+  /// @{
+  ///
+
+  /// \brief
+  ///   Returns a hkvVec4* array with s_uiNumDynamicLightShaderConstantRegisters or s_uiNumMobileLightShaderConstantRegisters (for mobile shading) elements containing lighting informations.
+  virtual const hkvVec4* GetDynamicLightingShaderConstants() { return NULL; }
+
+  /// \brief
+  ///   Returns shadow map texture of shadowmap used for shadow receive.
+  ///  
+  /// \returns  NULL if GetUseShadowReceive() returns false or no texture is set.
+  /// \sa GetUseShadowReceive()
+  virtual VTextureObject* GetShadowReceiveShadowMap() { return NULL; }
+
+  /// Maximum number of supported directional lights for dynamic lighting - this constant is dependent on the default particle shading.
+  static const unsigned int s_uiMaxNumSupportedDynamicLightsDirectional = 1;
+  /// Maximum number of supported directional lights for dynamic lighting - this constant is dependent on the default particle shading.
+  static const unsigned int s_uiMaxNumSupportedDynamicLightsPoint = 32;
+  /// Maximum number of supported directional lights for dynamic lighting - this constant is dependent on the default particle shading.
+  static const unsigned int s_uiMaxNumSupportedDynamicLightsSpot = 32;
+
+  /// Number of constants (sizeof(float) * 4) needed for particle effect rendering.
+  /// See VisCoreParticles.cpp - SetParticleVertexShaderConstants
+  static const unsigned int s_uiNumDynamicLightShaderConstantRegisters = 1 + // Dynamic light count info
+                                                                         4 + // Shadow receive lightmap view projection matrix
+                                                                         1 + // Shadow receive fadeout parameters
+                                                                         2*VisParticleGroup_cl::s_uiMaxNumSupportedDynamicLightsDirectional + 
+                                                                         2*VisParticleGroup_cl::s_uiMaxNumSupportedDynamicLightsPoint +
+                                                                         3*VisParticleGroup_cl::s_uiMaxNumSupportedDynamicLightsSpot;
+
+  static const unsigned int s_uiNumMobileLightShaderConstantRegisters = 1;
+  static const unsigned int s_uiNumMobileDynamicLightShaderConstantRegisters = 3;
+
+  ///
+  /// @}
+  ///
+
+
+  ///
   /// @name Misc
   /// @{
   ///
@@ -1477,21 +1653,19 @@ public:
   /// @}
   ///
 
+
 protected:
   // overridden module system child functions
   VThreadedTask *m_pUpdateTask;
-  unsigned char m_cUseDistortion;
-  bool m_bUseNormals;
-  bool m_bSortParticles;
-  bool m_bUseHardwareSpanning;
   ParticleSort_t *m_pIndexList;
   int m_iHighWaterMark;
 
   unsigned int m_uiLastRenderFrame;           ///< Last frame the particle system was rendered
   
+  VISION_APIFUNC virtual void UpdateDefaultShaderFlags();
+
 private:
   friend int FillParticleInstanceBuffer(VisParticleGroup_cl *pgroup);
-  friend void SetParticleVertexShaderConstants(VisParticleGroup_cl *pgroup);
   friend void RenderParticleGroups(const VisParticleGroupCollection_cl *pGroups, bool bUseFiltering, unsigned int iOrder, unsigned int iFilterMask);
   friend void RenderSingleParticleGroup(VisParticleGroup_cl *pgroup, VCompiledShaderPass *pShader);
   friend inline void RenderParticleGroupPrimitives(VisParticleGroup_cl *pgroup);
@@ -1510,14 +1684,21 @@ private:
   void CheckForAnimatedTexture();
   void AllocateParticles(int iCount, void *pCustomMem);
   void UpdateFarclipDistance();
-  VISION_APIFUNC void UpdateDefaultShaderFlags();
+  VISION_APIFUNC void UpdateOcclusionCullingSettings();
 
-  VCompiledTechniquePtr m_spTechnique;
+  VCompiledTechniquePtr m_spCustomTechnique;  ///< NULL means that the default shader should be used.
+  VCompiledShaderPassPtr m_spLastShader;      ///< Shader used for last rendering.
 
   static bool g_bSortParticleGroups;
   static bool g_bUseDistanceSorting;  ///< flag for sorting by distance or by user sort key
   static unsigned int g_iAvailableMask; ///< analogue to mesh buffer objects
   static IVisParticleGroupSorter_cl *g_pParticleSorter;
+
+
+  bool m_bUseDistortion;
+  bool m_bUseNormals;
+  bool m_bSortParticles;
+  bool m_bUseHardwareSpanning;
 
   short m_iStructStride;            ///< stride value for particles
   short m_iStructOfs;               ///< structure ofs for particles
@@ -1527,27 +1708,45 @@ private:
   VTextureObjectPtr spTexture;      ///< texture to use
   VTextureObjectPtr spNormalmap;    ///< normalmap texture to use
   VTextureObjectPtr spSpecularmap;  ///< specular texture to use
-  float numtexrepetitions;          ///< texture repetitions
   VisTextureAnimInstancePtr texanim_id; ///< animation instance
+  float m_fNumTexRepetitions;          ///< texture repetitions
   VSimpleRenderState_t m_iRenderState; ///< transparency,...
   ParticleShaderFlags_e m_eDefaultShaderFlags; ///< defines which default shader to use (always up-to-date)
 
   int m_iUserSortKey;               ///< sort key that can be set by the user
   float m_fDistanceSortValue;       ///< internal sort value for distance-based sorting
+  float m_fInterleavedSortingDistSqr; ///< internal sort value for when interleaved translucency sorting is used
 
   unsigned int m_iRenderOrder;      ///< render order flag
   unsigned int m_iVisibleBitmask;   ///< context render filter
 
   VisVisibilityObjectPtr m_spVisObject; ///< visibility object
 
-  short m_iAnimSubDivX,m_iAnimSubDivY;  ///< texture animation frame subdivision
+  unsigned short m_iAnimSubDivX,m_iAnimSubDivY;  ///< texture animation frame subdivision
   float m_fSizeAspect;
   hkvVec2 m_vParticleCenter;      ///< pivot
 
+  bool m_bUseOcclusionCulling;
+protected:
+  bool m_bUseVisibility;            ///< if disabled, no visibility object is associated with this layer
+private:
   bool m_bUseSmoothAnimation;       ///< fading between animation frames
   char m_eFadeMode;                 ///< fade mode (casted to FadeMode_e)
-  bool m_bTrackModelViewMatrix;
+  bool m_bUseLocalSpaceMatrix;
+  bool m_bSoftParticles;
+
+  bool m_bLightingStatic;
+  bool m_bLightingDynamic;
+  bool m_bUseTesselation;
+  bool m_bShadowReceive;
+  
+  bool m_bUseNormalFromDiffAlpha;
+
   bool m_bOwnsParticleArray;
+  
+  float m_fTessellationFactorPixelPerVertex;
+  float m_fBacklightingScale;
+
   float m_fFadeStart, m_fFadeEnd;   ///< fading out the particles for FADEMODE_CUSTOM
   float m_fDepthOffset;                 ///< z-offset value
 
@@ -1562,7 +1761,7 @@ VISION_ELEMENTMANAGER_TEMPLATE_DECL(VisParticleGroup_cl)
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

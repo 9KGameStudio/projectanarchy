@@ -26,7 +26,6 @@ public:
   ULONG m_iFilePos; ///< file start
   ULONG m_iFileNum; ///< file number in zip
   ULONG m_iSize;
-  ULONG m_iCRCFilename; ///< CRC value of the filename for faster lookup
 };
 
 
@@ -92,12 +91,12 @@ public:
   ///   the package file to operate on. This should be a path usable with native file functions
   ///   of the target platform. It is possible to limit access to a path within the archive; such
   ///   a path can be appended to the .zip file name, separated with a question mark.
-  VZipFileSystem(const char* szZipFile);
+  VBASE_IMPEXP VZipFileSystem(const char* szZipFile);
 private:
   VZipFileSystem(const VZipFileSystem&);
   VZipFileSystem& operator=(const VZipFileSystem&);
 public:
-  ~VZipFileSystem();
+  virtual ~VZipFileSystem();
 
 public:
   virtual IVFileInStream* Open(const char* szFileName, unsigned int uiOpenFlags) HKV_OVERRIDE;
@@ -125,13 +124,9 @@ public:
   ///   Returns the number of files in the underlying zip file
   VBASE_IMPEXP unsigned int GetNumZipFileEntries() const;
 
-  /// \brief
-  ///   Returns an information struct describing the requested zip file entry.
-  VBASE_IMPEXP const VZipFileInfo& GetZipFileEntry(unsigned int iIndex) const;
-
 private:
   bool BuildFileList(void *pZipFile);
-  int FindFile(const char* pszFilename);
+  bool FindFile(const char* pszFilename, VZipFileInfo& info);
 
   VZipFileInStream *CreateInStream();
   void CloseFile(VZipFileInStream *pStream);
@@ -142,8 +137,7 @@ private:
 private:
   VMutex m_IOMutex;
 
-  ULONG m_iFileCount;
-  VZipFileInfo *m_pFileInfo;
+  VMap<VString, VZipFileInfo> m_FileInfos;
   char *m_pNameBuffer;
 
   VString m_sCompletePath;
@@ -157,7 +151,7 @@ private:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -11,7 +11,7 @@
 #include <Common/SceneData/Mesh/hkxVertexBuffer.h>
 #include <Common/Base/Container/BitField/hkBitField.h>
 
-class hkxVertexAnimation : public hkReferencedObject
+class HK_EXPORT_COMMON hkxVertexAnimation : public hkReferencedObject
 {
   //+vtable(true)
   //+version(0)
@@ -41,7 +41,7 @@ class hkxVertexAnimation : public hkReferencedObject
 
 /// A util class to keep track of all applied partial vertex anims on a vert buffer.
 /// It does no interpolation, so is just a raw state as per last applied keys (used in exporters to see if new key needed per vert, etc.).
-class hkxVertexAnimationStateCache : public hkReferencedObject
+class HK_EXPORT_COMMON hkxVertexAnimationStateCache : public hkReferencedObject
 {
   public:
     HK_DECLARE_CLASS_ALLOCATOR( HK_MEMORY_CLASS_SCENE_DATA );
@@ -80,7 +80,7 @@ class hkxVertexAnimationStateCache : public hkReferencedObject
 #endif //HKSCENEDATA_MESH_HKXVERTEXBUFFERANIMATION__H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

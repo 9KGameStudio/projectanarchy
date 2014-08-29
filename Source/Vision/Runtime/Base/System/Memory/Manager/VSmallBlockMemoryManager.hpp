@@ -17,7 +17,12 @@
 
 class VSmallBlockBin;
 
-#define V_SMALLBLOCK_NUMBER_OF_BINS 20
+#ifdef _VISION_PS3
+  #define V_SMALLBLOCK_NUMBER_OF_BINS 11
+#else
+  #define V_SMALLBLOCK_NUMBER_OF_BINS 20
+#endif
+
 #define V_SMALLBLOCK_MAX_SIZE 128
 
 #ifndef _VISION_DOC
@@ -92,8 +97,8 @@ private:
 
   signed char m_cBDIndexLookup[V_SMALLBLOCK_MAX_SIZE+1];
 
-  bool m_bIsInAlloc;
-  bool m_bIsInFree;
+  volatile bool m_bIsInAlloc;
+  volatile bool m_bIsInFree;
 
   VMutex m_Mutex;
 
@@ -105,7 +110,7 @@ private:
 #endif //SMALLBLOCKMEMORYMANAGER_HPP
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

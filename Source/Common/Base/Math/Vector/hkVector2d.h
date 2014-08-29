@@ -70,6 +70,9 @@ class hkVector2d
 			/// Set this += a
 		HK_FORCE_INLINE void add( const hkVector2d& a );
 		
+			/// Set this -= a
+		HK_FORCE_INLINE void sub( const hkVector2d& a );
+
 			/// Set this to the elementwise product of v and r.
 		HK_FORCE_INLINE void setMul( const hkVector2d& v, hkDouble64 r );
 		
@@ -150,7 +153,7 @@ class hkVector2d
 #endif //HKMATH_VECTOR2D_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

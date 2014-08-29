@@ -11,7 +11,7 @@ inline hkaiNavMeshPathSearchParameters::hkaiNavMeshPathSearchParameters()
 	m_edgeFilter( HK_NULL ),
 	m_validateInputs( true ),
 	m_outputPathFlags( OUTPUT_PATH_SMOOTHED | OUTPUT_PATH_PROJECTED ),
-	m_lineOfSightFlags( CHECK_LINE_OF_SIGHT_IF_NO_COST_MODIFIER ),
+	m_lineOfSightFlags( EARLY_OUT_IF_NO_COST_MODIFIER ),
 	m_useHierarchicalHeuristic( false ),
 	m_projectedRadiusCheck(true),
 	m_userEdgeTraversalTestType( USER_EDGE_TRAVERSAL_TEST_DISABLED ),
@@ -70,47 +70,21 @@ inline hkBool32 hkaiNavMeshPathSearchParameters::shouldComputePathNormals() cons
 
 inline void hkaiNavMeshPathSearchParameters::setUp( hkVector4Parameter up )
 {
-	m_up.pack( up );
+	m_up = up;
 }
 
 hkBool32 hkaiNavMeshPathSearchParameters::shouldPerformLineOfSightCheck() const
 {
-	return m_lineOfSightFlags.anyIsSet(CHECK_LINE_OF_SIGHT_ALWAYS) ||
-		( m_lineOfSightFlags.anyIsSet(CHECK_LINE_OF_SIGHT_IF_NO_COST_MODIFIER) && !m_costModifier);
+	return m_lineOfSightFlags.anyIsSet(EARLY_OUT_IF_NO_COST_MODIFIER | EARLY_OUT_ALWAYS);
 }
-
-
-#include <Common/Base/DebugUtil/DeterminismUtil/hkCheckDeterminismUtil.h>
-
-void hkaiNavMeshPathSearchParameters::checkDeterminism() const
+hkBool32 hkaiNavMeshPathSearchParameters::canEarlyOutFromLineOfSight() const
 {
-#ifdef HK_ENABLE_DETERMINISM_CHECKS
-	hkCheckDeterminismUtil::checkMt(0x593ff9cf, m_up);
-	hkCheckDeterminismUtil::checkMt(0x7ea51797, m_validateInputs);
-	hkCheckDeterminismUtil::checkMt(0x7163642a, m_outputPathFlags);
-	hkCheckDeterminismUtil::checkMt(0x6eda326c, m_lineOfSightFlags);
-	hkCheckDeterminismUtil::checkMt(0x1e64172d, m_useHierarchicalHeuristic);
-
-	hkCheckDeterminismUtil::checkMt(0x45b29a2e, m_searchCapsuleRadius);
-	hkCheckDeterminismUtil::checkMt(0x3054e4c6, m_searchSphereRadius);
-	hkCheckDeterminismUtil::checkMt(0x48ed35a1, m_projectedRadiusCheck);
-
-	hkCheckDeterminismUtil::checkMt(0x75cce74d, m_userEdgeTraversalTestType);
-	hkCheckDeterminismUtil::checkMt(0x1c2eca99, m_useGrandparentDistanceCalculation);
-	hkCheckDeterminismUtil::checkMt(0x5b8c7e29, m_maximumPathLength);
-	
-	hkCheckDeterminismUtil::checkMt(0x7d70a485, m_heuristicWeight);
-	hkCheckDeterminismUtil::checkMt(0x4eaaebe3, m_simpleRadiusThreshold);
-
-	hkCheckDeterminismUtil::checkMt(0x7bbfd8b1, m_bufferSizes.m_maxOpenSetSizeBytes);
-	hkCheckDeterminismUtil::checkMt(0x79a2d9e8, m_bufferSizes.m_maxSearchStateSizeBytes);
-	hkCheckDeterminismUtil::checkMt(0x5fcea3b9, m_hierarchyBufferSizes.m_maxOpenSetSizeBytes);
-	hkCheckDeterminismUtil::checkMt(0x1f2c574a, m_hierarchyBufferSizes.m_maxSearchStateSizeBytes);
-#endif
+	return m_lineOfSightFlags.anyIsSet(EARLY_OUT_ALWAYS) ||
+		( m_lineOfSightFlags.anyIsSet(EARLY_OUT_IF_NO_COST_MODIFIER) && !m_costModifier);
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

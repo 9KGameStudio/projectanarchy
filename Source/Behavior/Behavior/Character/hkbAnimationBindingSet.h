@@ -41,7 +41,7 @@ class hkbAnimationBindingWithTriggers : public hkReferencedObject
 		hkArray<Trigger> m_triggers;
 
 			/// The name of the animation for debug purposes
-		HK_ON_DEBUG(hkStringPtr m_name;)
+		HK_DEBUG_ONLY_MEMBER(hkStringPtr, m_name);
 };
 
 	/// An set of animation bindings with triggers that have been converted from annotations.
@@ -71,7 +71,7 @@ class hkbAnimationBindingSet : public hkReferencedObject
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

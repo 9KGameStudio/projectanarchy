@@ -154,11 +154,11 @@ public:
   ///   Adds two color values. Clamps the components appropriately.
   inline void operator += (const VColorRef& other)
   {
-    int m;
-    m = (int)r+(int)other.r; if (m>255) m=255; r=(UBYTE)m;
-    m = (int)g+(int)other.g; if (m>255) m=255; g=(UBYTE)m;
-    m = (int)b+(int)other.b; if (m>255) m=255; b=(UBYTE)m;
-    m = (int)a+(int)other.a; if (m>255) m=255; a=(UBYTE)m;
+    unsigned int m;
+    m = r+other.r; if (m>255) m=255; r=(UBYTE)m;
+    m = g+other.g; if (m>255) m=255; g=(UBYTE)m;
+    m = b+other.b; if (m>255) m=255; b=(UBYTE)m;
+    m = a+other.a; if (m>255) m=255; a=(UBYTE)m;
   }
 
   /// \brief
@@ -166,33 +166,33 @@ public:
   inline void operator -= (const VColorRef& other)
   {
     int m;
-    m = (int)r-(int)other.r; if (m<0) m=0; r=(UBYTE)m;
-    m = (int)g-(int)other.g; if (m<0) m=0; g=(UBYTE)m;
-    m = (int)b-(int)other.b; if (m<0) m=0; b=(UBYTE)m;
-    m = (int)a-(int)other.a; if (m<0) m=0; a=(UBYTE)m;
+    m = r-other.r; if (m<0) m=0; r=(UBYTE)m;
+    m = g-other.g; if (m<0) m=0; g=(UBYTE)m;
+    m = b-other.b; if (m<0) m=0; b=(UBYTE)m;
+    m = a-other.a; if (m<0) m=0; a=(UBYTE)m;
   }
 
   /// \brief
   ///   Multiplies two color values
   inline void operator *= (const VColorRef& other)
   {
-    int m;
-    m = (int)r*(int)other.r; r=(UBYTE)(m>>8);
-    m = (int)g*(int)other.g; g=(UBYTE)(m>>8);
-    m = (int)b*(int)other.b; b=(UBYTE)(m>>8);
-    m = (int)a*(int)other.a; a=(UBYTE)(m>>8);
+    unsigned int m;
+    m = (unsigned int)r*(unsigned int)other.r; r = (UBYTE)(m / 255);
+    m = (unsigned int)g*(unsigned int)other.g; g = (UBYTE)(m / 255);
+    m = (unsigned int)b*(unsigned int)other.b; b = (UBYTE)(m / 255);
+    m = (unsigned int)a*(unsigned int)other.a; a = (UBYTE)(m / 255);
   }
 
   /// \brief
   ///   Multiplies a color value with a float scalar factor. Clamps the components appropriately.
   inline void operator *= (float factor)
   {
-    int m;
+    unsigned int m;
     if (factor<0.f) factor=0.f;
-    m = (int)((float)r*factor); if (m>255) m=255; r=(UBYTE)m;
-    m = (int)((float)g*factor); if (m>255) m=255; g=(UBYTE)m;
-    m = (int)((float)b*factor); if (m>255) m=255; b=(UBYTE)m;
-    m = (int)((float)a*factor); if (m>255) m=255; a=(UBYTE)m;
+    m = (unsigned int)((float)r*factor); if (m>255) m = 255; r = (UBYTE)m;
+    m = (unsigned int)((float)g*factor); if (m>255) m = 255; g = (UBYTE)m;
+    m = (unsigned int)((float)b*factor); if (m>255) m = 255; b = (UBYTE)m;
+    m = (unsigned int)((float)a*factor); if (m>255) m = 255; a = (UBYTE)m;
   }
 
   /// \brief
@@ -295,9 +295,9 @@ public:
   ///   Color as union (r|g|b|a or _colorValue as DWORD)
   union
   {
-#if (defined(WIN32) && defined(_VR_DX11)) || defined(_VISION_IOS) || defined(_VISION_ANDROID) || defined (_VISION_PS3) || defined (_VISION_POSIX) || defined (_VISION_PSP2) || defined(_VISION_WIIU) || defined(_VISION_TIZEN)
+#if (defined(_VISION_WIN32) && defined(_VR_DX11)) || defined(_VISION_IOS) || defined(_VISION_ANDROID) || defined (_VISION_PS3) || defined (_VISION_POSIX) || defined (_VISION_PSP2) || defined(_VISION_WIIU) || defined(_VISION_TIZEN)
     struct { UBYTE r,g,b,a; };
-#elif defined (WIN32)
+#elif defined (_VISION_WIN32)
     struct { UBYTE b,g,r,a; };
 #elif defined (_VISION_XENON)
     struct { UBYTE a,r,g,b; };
@@ -507,7 +507,7 @@ struct VColorExpRef
 
   union
   {
-#if defined(WIN32)
+#if defined(_VISION_WIN32)
     struct { UBYTE b,g,r,e; };
 #elif defined(_VISION_XENON)
     struct { UBYTE e,r,g,b; };
@@ -524,7 +524,7 @@ struct VColorExpRef
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

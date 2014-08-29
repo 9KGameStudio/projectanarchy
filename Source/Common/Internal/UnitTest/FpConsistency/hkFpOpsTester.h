@@ -13,7 +13,7 @@
 
 
 
-class hkFpOpsTester
+class  hkFpOpsTester
 {
 public:
 	union DoubleUnion
@@ -87,7 +87,7 @@ private:
 #endif _FP_OPS_H_
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -11,8 +11,7 @@
 
 #include <Physics2012/Collide/Shape/hkpShapeType.h>
 
-// A mapping of pre-2011.3 shape types (e.g. HK_SHAPE_LIST)
-// to current shape types (e.g. hkcdShapeType::LIST).
+// A mapping of pre-2011.3 shape types (e.g. HK_SHAPE_LIST) to current shape types (e.g. hkcdShapeType::LIST).
 // Warning: This exists only to help users who are migrating from pre-2011.3 versions.
 // It will be removed in future versions.
 #define HK_SHAPE_INVALID				( hkcdShapeType::INVALID )
@@ -52,7 +51,7 @@
 #endif // HKP_LEGACY_SHAPE_TYPE_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

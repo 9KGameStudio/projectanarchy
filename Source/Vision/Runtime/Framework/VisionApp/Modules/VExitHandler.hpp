@@ -19,17 +19,17 @@
 class VExitDialog : public VDialog
 {
 public:
-  VExitDialog();
+  VAPP_IMPEXP VExitDialog();
 
-  virtual void OnItemClicked(VMenuEventDataObject* pEvent) HKV_OVERRIDE;
+  VAPP_IMPEXP virtual void OnItemClicked(VMenuEventDataObject* pEvent) HKV_OVERRIDE;
 
   inline bool IsExitTriggered() const { return m_bExitTriggered; }
-  void CloseDialog();
+  VAPP_IMPEXP void CloseDialog();
 
   inline void SetUnlockInput(bool bValue) { m_bUnlockInput = bValue; }
 
 protected:
-  V_DECLARE_SERIAL_DLLEXP(VExitDialog, DECLSPEC_DLLEXPORT);
+  V_DECLARE_SERIAL_DLLEXP(VExitDialog, VAPP_IMPEXP);
   VOVERRIDE void Serialize(VArchive &ar) {}
 
 private:
@@ -52,17 +52,17 @@ private:
 /// \ingroup VisionAppFramework
 class VExitHandler : public VAppModule
 {
-  V_DECLARE_DYNCREATE(VExitHandler);
+  V_DECLARE_DYNCREATE_DLLEXP(VExitHandler, VAPP_IMPEXP);
 
 public:
-	VExitHandler();
+	VAPP_IMPEXP VExitHandler();
 	virtual ~VExitHandler() {}
 
-  virtual void Init() HKV_OVERRIDE;
-  virtual void DeInit() HKV_OVERRIDE;
+  VAPP_IMPEXP virtual void Init() HKV_OVERRIDE;
+  VAPP_IMPEXP virtual void DeInit() HKV_OVERRIDE;
 
-  virtual void OnHandleCallback(IVisCallbackDataObject_cl* pData) HKV_OVERRIDE;
-  virtual int GetCallbackSortingKey(VCallback *pCallback) HKV_OVERRIDE { return 1; }
+  VAPP_IMPEXP virtual void OnHandleCallback(IVisCallbackDataObject_cl* pData) HKV_OVERRIDE;
+  virtual int64 GetCallbackSortingKey(VCallback *pCallback) HKV_OVERRIDE { return 1; }
 
   /// \brief
   ///   Sets the flag if the Exit Handler should show an exit dialog or not.
@@ -85,7 +85,7 @@ protected:
 #endif //__V_EXIT_HANDLER
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

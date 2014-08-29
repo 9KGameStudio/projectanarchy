@@ -9,18 +9,19 @@
 #define HKANIMATION_DEFORM_SKINNING_HKMESHBINDING_HKCLASS_H
 
 #include <Common/SceneData/Mesh/hkxMesh.h>
+#include <Animation/Animation/Rig/hkaSkeleton.h>
 
-extern const class hkClass hkaMeshBindingMappingClass;
+extern HK_EXPORT_ANIMATION const class hkClass hkaMeshBindingMappingClass;
 
 class hkaBone;
-class hkaSkeleton;
+
 
 /// hkaMeshBinding meta information
-extern const class hkClass hkaMeshBindingClass;
+extern HK_EXPORT_ANIMATION const class hkClass hkaMeshBindingClass;
 
 /// A link between a set of bones and an index mesh (the indices referring to the
 /// bones, in order).
-class hkaMeshBinding : public hkReferencedObject
+class HK_EXPORT_ANIMATION hkaMeshBinding : public hkReferencedObject
 {
 	public:
 		// +version(3)
@@ -94,7 +95,7 @@ class hkaMeshBinding : public hkReferencedObject
 #endif // HKANIMATION_DEFORM_SKINNING_HKMESHBINDING_HKCLASS_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

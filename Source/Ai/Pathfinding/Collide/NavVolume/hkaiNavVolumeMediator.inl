@@ -6,21 +6,9 @@
  *
  */
 
-hkaiNavVolumeMediator::GetClosestPointInput::GetClosestPointInput()
-:	m_queryRadius(hkSimdReal_5),
-	m_filterInfo(0),
-	m_userData(0),
-	m_hitFilter(HK_NULL),
-	m_instance(HK_NULL),
-	m_translation(HK_NULL)
-{
-	m_position = hkVector4::getConstant<HK_QUADREAL_MAX>();
-}
-
-hkaiNavVolumeMediator::GetClosestPointInput::GetClosestPointInput( hkVector4Parameter position, hkSimdRealParameter radius )
-:	m_position(position),
-	m_queryRadius(radius),
-	m_filterInfo(0),
+hkaiNavVolumeMediator::QueryInputBase::QueryInputBase()
+:	m_filterInfo(0),
+	m_layers(HKAI_ALL_LAYERS),
 	m_userData(0),
 	m_hitFilter(HK_NULL),
 	m_instance(HK_NULL),
@@ -28,14 +16,44 @@ hkaiNavVolumeMediator::GetClosestPointInput::GetClosestPointInput( hkVector4Para
 {
 }
 
-void hkaiNavVolumeMediator::GetClosestPointInput::setInstance( const hkaiNavVolumeInstance* instance )
+void hkaiNavVolumeMediator::QueryInputBase::setInstance( const hkaiNavVolumeInstance* instance )
 {
 	m_instance = instance;
 	m_translation = &instance->getTranslation();
 }
 
+//////////////////////////////////////////////////////////////////////////
+
+hkaiNavVolumeMediator::GetClosestPointInput::GetClosestPointInput()
+:	QueryInputBase(),
+	m_queryRadius(hkSimdReal_5)
+{
+	m_position = hkVector4::getConstant<HK_QUADREAL_MAX>();
+}
+
+hkaiNavVolumeMediator::GetClosestPointInput::GetClosestPointInput( hkVector4Parameter position, hkSimdRealParameter radius )
+:	QueryInputBase(),
+	m_position(position),
+	m_queryRadius(radius)
+{
+}
+
+hkaiNavVolumeMediator::GetClosestPointInput::GetClosestPointInput( const QueryInputBase& base)
+:	QueryInputBase(base),
+	m_queryRadius(hkSimdReal_5)
+{
+	m_position = hkVector4::getConstant<HK_QUADREAL_MAX>();
+}
+
+//////////////////////////////////////////////////////////////////////////
+
+inline hkaiNavVolumeMediator::AabbQueryInput::AabbQueryInput()	
+{
+	m_aabb.setEmpty();
+}
+
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

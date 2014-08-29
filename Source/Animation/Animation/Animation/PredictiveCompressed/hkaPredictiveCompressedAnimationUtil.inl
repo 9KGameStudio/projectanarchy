@@ -26,7 +26,7 @@ typedef hkaPredictiveCompressedAnimation PCA;
 
 // Used to write the bitmaps used for decompression
 template <int Width, class StorageT = hkUint32>
-class BitmapWriteIterator
+class HK_EXPORT_ANIMATION BitmapWriteIterator
 {
 	HK_COMPILE_TIME_ASSERT((sizeof(StorageT)*8) % Width == 0);
 	HK_COMPILE_TIME_ASSERT((static_cast<StorageT>(-1) > static_cast<StorageT>(0))); // unsigned types only
@@ -77,7 +77,7 @@ class BitmapWriteIterator
 };
 
 // Finds the span (i.e. min, max) of a channel and quantizes values
-class Range
+class HK_EXPORT_ANIMATION Range
 {
 	// This class performs quantization with a tolerance, which is somewhat subtle.
 	// The quantization bins are chosen so that:
@@ -256,7 +256,7 @@ HK_FORCE_INLINE void quaternionRecoverW4(hkVector4& a, hkVector4& b, hkVector4& 
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -24,21 +24,21 @@ class VGraphObject;
 /// \ingroup VisionAppFramework
 class VDebugOptions : public VAppModule
 {
-  V_DECLARE_DYNCREATE(VDebugOptions);
+  V_DECLARE_DYNCREATE_DLLEXP(VDebugOptions, VAPP_IMPEXP);
 
 public:
-	VDebugOptions();
+	VAPP_IMPEXP VDebugOptions();
 	virtual ~VDebugOptions() {}
 
-  virtual void Init() HKV_OVERRIDE;
-  virtual void DeInit() HKV_OVERRIDE;
+  VAPP_IMPEXP virtual void Init() HKV_OVERRIDE;
+  VAPP_IMPEXP virtual void DeInit() HKV_OVERRIDE;
 
-  virtual void OnHandleCallback(IVisCallbackDataObject_cl* pData) HKV_OVERRIDE;
+  VAPP_IMPEXP virtual void OnHandleCallback(IVisCallbackDataObject_cl* pData) HKV_OVERRIDE;
 
-  void SetFrameRateVisible(bool bVisible);
+  VAPP_IMPEXP void SetFrameRateVisible(bool bVisible);
   inline bool IsFrameRateVisible() const { return m_bFpsVisible; }
 
-  void SetWireframe(bool bWireframe);
+  VAPP_IMPEXP void SetWireframe(bool bWireframe);
   inline bool IsWireframe() const { return Vision::Renderer.GetWireframeMode(); }
 
   inline float GetCurrentFrameRate() const { return m_fCurrentFps; }
@@ -72,7 +72,7 @@ protected:
 #endif //__V_DEBUG_OPTIONS
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

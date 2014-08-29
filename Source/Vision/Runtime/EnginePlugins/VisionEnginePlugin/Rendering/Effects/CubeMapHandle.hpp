@@ -169,11 +169,17 @@ public:
   EFFECTS_IMPEXP int GetBlurPasses() const;
 
   /// \brief
-  ///   Enables/disables automatic mipmap generation for this cubemap (affects performance)
+  ///   Enables/disables automatic mipmap generation for this cubemap.
+  /// 
+  /// \param bStatus
+  ///   True to enable automatic mipmap generation.
+  /// 
+  /// \note
+  ///   Automatic mipmap generation is currently not supported for mobile platforms.
   EFFECTS_IMPEXP void SetAutoGenMipMaps(bool bStatus);
 
   /// \brief
-  ///   Enables/disables automatic mipmap generation for this cubemap (affects performance)
+  ///   Enables/disables automatic mipmap generation for this cubemap.
   EFFECTS_IMPEXP bool GetAutoGenMipMaps() const;
 
   /// \brief
@@ -261,7 +267,7 @@ private:
 #endif  // CUBEMAPHANDLE_HPP_INCLUDED
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

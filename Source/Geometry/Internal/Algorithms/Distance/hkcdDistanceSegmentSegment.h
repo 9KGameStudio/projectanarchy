@@ -10,10 +10,13 @@
 #ifndef	HKCD_DISTANCE_SEGMENT_SEGMENT
 #define HKCD_DISTANCE_SEGMENT_SEGMENT
 
+/// Computes the squared distance between two line segments.
+/// Each segment is given by its starting point and its direction.
+HK_FORCE_INLINE hkSimdReal hkcdSegmentSegmentDistanceSquared(hkVector4Parameter A, hkVector4Parameter dA, hkVector4Parameter B, hkVector4Parameter dB );
 
-	/// Computes the distance between two line segments.
-	/// Each segment is given by its starting point and its direction.
-HK_FORCE_INLINE hkSimdReal hkcdDistanceSegmentSegment(hkVector4Parameter A, hkVector4Parameter dA, hkVector4Parameter B, hkVector4Parameter dB );
+/// Computes the distance between two line segments.
+/// Each segment is given by its starting point and its direction.
+HK_FORCE_INLINE hkSimdReal hkcdSegmentSegmentDistance(hkVector4Parameter A, hkVector4Parameter dA, hkVector4Parameter B, hkVector4Parameter dB );
 
 
 #include <Geometry/Internal/Algorithms/Distance/hkcdDistanceSegmentSegment.inl>
@@ -21,7 +24,7 @@ HK_FORCE_INLINE hkSimdReal hkcdDistanceSegmentSegment(hkVector4Parameter A, hkVe
 #endif // HKCD_DISTANCE_SEGMENT_SEGMENT
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

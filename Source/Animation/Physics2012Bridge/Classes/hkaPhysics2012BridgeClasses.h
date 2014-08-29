@@ -14,12 +14,12 @@
 // - The corresponding reflection database (reflection.db) is deleted
 // - The --force-output or --force-rebuild option is added to the pre-build generateReflection.py execution
 
-HK_CLASS(hkaRagdollInstance)
-HK_STRUCT(hkaKeyFrameHierarchyUtility)
-HK_STRUCT(hkaKeyFrameHierarchyUtilityControlData)
+HK_CLASS(HK_EXPORT_ANIMATION,hkaRagdollInstance)
+HK_STRUCT(HK_EXPORT_ANIMATION,hkaKeyFrameHierarchyUtility)
+HK_STRUCT(HK_EXPORT_ANIMATION,hkaKeyFrameHierarchyUtilityControlData)
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -13,12 +13,12 @@
 
 #include <Geometry/Internal/Algorithms/TreeQueries/hkcdAabbTreeQueries.h>
 
-extern const class hkClass hkcdStaticTreeDefaultTreeStorage6Class;
+extern HK_EXPORT_COMMON const class hkClass hkcdStaticTreeDefaultTreeStorage6Class;
 extern const class hkClass hkStaticTreeClass;
 
 	/// Bounding volume tree that can't be updated.
 	/// It is built from an hkcdDynamicAabbTree, then optimized for data size.
-class hkcdStaticAabbTree : public hkReferencedObject
+class HK_EXPORT_COMMON hkcdStaticAabbTree : public hkReferencedObject
 {
 public:
 		//+version(1)
@@ -38,6 +38,9 @@ public:
 
 		/// Cast a ray through the tree. The collector's callback is triggered for each leaf in the tree that is hit
 	hkBool32 castRay( hkVector4Parameter start, hkVector4Parameter end, hkcdAabbTreeQueries::RaycastCollector* collector) const;
+
+		/// Cast a ray through the tree. The collector's callback is triggered for each leaf in the tree that is hit
+	hkBool32 castSphere( hkVector4Parameter start, hkVector4Parameter end, hkSimdRealParameter radius, hkcdAabbTreeQueries::RaycastCollector* collector) const;
 
 		/// AABB check on the tree. The collector's callback is triggered for each leaf that overlaps with the AABB.
 	void queryAabb( const hkAabb& aabb, hkcdAabbTreeQueries::AabbCollector* collector) const;
@@ -79,7 +82,7 @@ protected:
 #endif // HK_STATIC_TREE
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

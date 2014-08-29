@@ -13,7 +13,7 @@
 
 // Template for working out the alignment of an arbitrary type
 
-class hkTrackerTypeInit //+reflected(false)
+class HK_EXPORT_COMMON hkTrackerTypeInit //+reflected(false)
 {
 	public:
 		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE,hkTrackerTypeInit);
@@ -34,7 +34,7 @@ class hkTrackerTypeInit //+reflected(false)
 
 Example
 
-class Fred
+class HK_EXPORT_COMMON Fred
 {
 	protected:
 		class Bloggs
@@ -66,7 +66,7 @@ class Fred
 
 enum GlobalEnum { GLOBAL_ENUM_1 };
 
-class ScanType
+class HK_EXPORT_COMMON ScanType
 {
 	private:
 	void* m_ptr;
@@ -291,7 +291,7 @@ struct TYPE::TrackerStruct \
 #endif // HKBASE_TRACKER_CLASS_DEFINITION_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

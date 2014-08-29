@@ -9,7 +9,11 @@
 #ifndef HK_VISUALIZE__VIRTUAL_FRAMEBUFFER_SERVER
 #define HK_VISUALIZE__VIRTUAL_FRAMEBUFFER_SERVER
 
+#if defined(HK_PLATFORM_DURANGO)
+static const hkUint32 HK_VIRTUAL_FRAMEBUFFER_SERVER_PORT = 58001;
+#else
 static const hkUint32 HK_VIRTUAL_FRAMEBUFFER_SERVER_PORT = 26001;
+#endif
 static const hkUint32 HK_VIRTUAL_FRAMEBUFFER_CURRENT_PROTOCOL_VER = 1;
 
 #include <Common/Visualize/hkVirtualFramebufferProtocol.h>
@@ -18,7 +22,7 @@ static const hkUint32 HK_VIRTUAL_FRAMEBUFFER_CURRENT_PROTOCOL_VER = 1;
 // Screen 
 //
 
-class hkVirtualFramebufferRelativeRect
+class HK_EXPORT_COMMON hkVirtualFramebufferRelativeRect
 {
 
 public:
@@ -82,7 +86,7 @@ public:
  	float m_endY;// -1 == all
 };
 
-class hkVirtualFramebuffer
+class HK_EXPORT_COMMON hkVirtualFramebuffer
 {
 public:
 	
@@ -137,7 +141,7 @@ public:
 // Gamepad
 //
 
-class hkVirtualGamepad
+class HK_EXPORT_COMMON hkVirtualGamepad
 {
 public:
 	
@@ -163,13 +167,13 @@ public:
 		PAD_BUTTON_RSTICK   = (1<<15)
 	};
 
-	struct Stick
+	struct HK_EXPORT_COMMON Stick
 	{
 		float x;
 		float y;
 	};
 
-	struct Trigger
+	struct HK_EXPORT_COMMON Trigger
 	{
 		float z;
 	};
@@ -180,7 +184,7 @@ public:
 	hkUint32 m_gamePadNum; //0..4 etc
 };
 
-class hkVirtualGamepadHandler
+class HK_EXPORT_COMMON hkVirtualGamepadHandler
 {
 public:
 	//+hk.MemoryTracker(ignore=True)
@@ -193,7 +197,7 @@ public:
 // Keyboard
 //
 
-class hkVirtualKeyEvent
+class HK_EXPORT_COMMON hkVirtualKeyEvent
 {
 public:
 	
@@ -288,7 +292,7 @@ public:
 	hkUint16 m_focusBufferId;
 };
 
-class hkVirtualKeyEventHandler
+class HK_EXPORT_COMMON hkVirtualKeyEventHandler
 {
 	public:
 		//+hk.MemoryTracker(ignore=True)
@@ -301,7 +305,7 @@ class hkVirtualKeyEventHandler
 // Mouse
 //
 
-class hkVirtualMouse
+class HK_EXPORT_COMMON hkVirtualMouse
 {
 public:
 	
@@ -322,7 +326,7 @@ public:
 
 };
 
-class hkVirtualMouseHandler
+class HK_EXPORT_COMMON hkVirtualMouseHandler
 {
 	public:
 		//+hk.MemoryTracker(ignore=True)
@@ -336,7 +340,7 @@ class hkVirtualMouseHandler
 // Mouse
 //
 
-class hkVirtualFileDrop
+class HK_EXPORT_COMMON hkVirtualFileDrop
 {
 public:
 	
@@ -348,7 +352,7 @@ public:
 
 };
 
-class hkVirtualFileDropHandler
+class HK_EXPORT_COMMON hkVirtualFileDropHandler
 {
 	public:
 		//+hk.MemoryTracker(ignore=True)
@@ -361,7 +365,7 @@ class hkVirtualFileDropHandler
 //
 // The main server, very simple
 //
-struct hkVirtualFramebufferServerClient
+struct HK_EXPORT_COMMON hkVirtualFramebufferServerClient
 {
 	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_UTILITIES, hkVirtualFramebufferServerClient );
 
@@ -369,7 +373,7 @@ struct hkVirtualFramebufferServerClient
 	class hkDisplaySerializeOStream* m_outStream; 
 	class hkDisplaySerializeIStream* m_inStream;
 
-	struct RuntimeOptions
+	struct HK_EXPORT_COMMON RuntimeOptions
 	{
 		RuntimeOptions() : m_scale(2), m_maxSendFormat(hkVirtualFramebufferProtocol::PIXEL_RGB565), m_allowDiffSend(true) 
 		{ 
@@ -395,7 +399,7 @@ struct hkVirtualFramebufferServerClient
 	RuntimeOptions m_lastDiffSendOptions; // if the same then the diff will be ok
 };
 
-class hkVirtualFramebufferServer : public hkReferencedObject
+class HK_EXPORT_COMMON hkVirtualFramebufferServer : public hkReferencedObject
 {
 public:
 	
@@ -448,7 +452,7 @@ protected:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

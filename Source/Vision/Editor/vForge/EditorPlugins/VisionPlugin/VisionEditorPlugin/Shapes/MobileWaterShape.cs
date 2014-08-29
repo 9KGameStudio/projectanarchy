@@ -101,10 +101,11 @@ namespace VisionEditorPlugin.Shapes
       EngineMobileWater.SetUseRadialGrid(_useRadialGrid);
       EngineMobileWater.SetSize(_size.X, _size.Y);
       EngineMobileWater.SetTextureTiling(_textureTiling.X, _textureTiling.Y);
-      EngineMobileWater.SetNumGridSubdivisions(_gridSubdivisions.X, _gridSubdivisions.Y);
+      EngineMobileWater.SetGridCellSize(_gridCellSize.X, _gridCellSize.Y);
       if(_shaderFX != null)
         EngineMobileWater.SetShaderEffect(_shaderFX);
       EngineMobileWater.SetUseStaticLighting(_useStaticLighting);
+      EngineMobileWater.SetRenderHook((uint)_renderHook);
     }
     #endregion
 
@@ -135,7 +136,18 @@ namespace VisionEditorPlugin.Shapes
       _size = (Vector2F)info.GetValue("_size", typeof(Vector2F));
       _useRadialGrid = info.GetBoolean("_useRadialGrid");
       _textureTiling = (Vector2F)info.GetValue("_textureTiling", typeof(Vector2F));
-      _gridSubdivisions = (Vector2I)info.GetValue("_gridSubdivisions", typeof(Vector2I));
+      if(SerializationHelper.HasElement(info, "_gridSubdivisions"))
+      {
+        Vector2I gridSubdivisions = (Vector2I)info.GetValue("_gridSubdivisions", typeof(Vector2I));
+        _gridCellSize = new Vector2F(_size.X / (float)gridSubdivisions.X, _size.Y / (float)gridSubdivisions.Y);
+        _textureTiling.X = _size.X / _textureTiling.X;
+        _textureTiling.Y = _size.Y / _textureTiling.Y;
+      }
+      else
+      {
+        _gridCellSize = (Vector2F)info.GetValue("_gridCellSize", typeof(Vector2F));
+      }
+      
       _renderHook = (RenderOrderBits_e)info.GetValue("_renderHook", typeof(RenderOrderBits_e));
       _shaderFX = (ShaderEffectConfig)info.GetValue("_shaderFX", typeof(ShaderEffectConfig));
       if (SerializationHelper.HasElement(info, "_useStaticLighting"))
@@ -154,7 +166,7 @@ namespace VisionEditorPlugin.Shapes
       base.GetObjectData(info,context);
       info.AddValue("_size", _size);
       info.AddValue("_useRadialGrid", _useRadialGrid);
-      info.AddValue("_gridSubdivisions",_gridSubdivisions);
+      info.AddValue("_gridCellSize", _gridCellSize);
       info.AddValue("_renderHook", _renderHook);
       info.AddValue("_shaderFX", _shaderFX);
       info.AddValue("_textureTiling", _textureTiling);
@@ -176,12 +188,12 @@ namespace VisionEditorPlugin.Shapes
     public EngineInstanceMobileWater EngineMobileWater { get { return (EngineInstanceMobileWater)_engineInstance; } }
 
     Vector2F _size = new Vector2F(1024.0f, 1024.0f);
-    Vector2I _gridSubdivisions = new Vector2I(10, 10);
+    Vector2F _gridCellSize = new Vector2F(100.0f, 100.0f);
     bool _useRadialGrid = false;
     bool _useStaticLighting = true;
     RenderOrderBits_e _renderHook = RenderOrderBits_e.PreTransparentPassEntities;
     ShaderEffectConfig _shaderFX;
-    Vector2F _textureTiling = new Vector2F(1.0f, 1.0f);
+    Vector2F _textureTiling = new Vector2F(256.0f, 256.0f);
     #endregion
 
     #region properties
@@ -200,20 +212,18 @@ namespace VisionEditorPlugin.Shapes
       }
     }
 
-    [Description("Number of subdivisions for the water plane")]
+    [Description("Size of one subdivision cell of the water")]
     [SortedCategory(CAT_GEOMETRY, CATORDER_GEOMETRY), PropertyOrder(2)]
-    public Vector2I GridSubdivisions
+    public Vector2F GridCellSize
     {
-      get { return _gridSubdivisions; }
+      get { return _gridCellSize; }
       set
       {
-        if (value.X < 1 || (!UseRadialGrid && value.Y < 1) // for a regular grid there should be at least 1 subdivision
-           || (UseRadialGrid && value.Y < 3) || // for a radial grid there need to be at least 3 y-subdivisions => triangle
-           (value.X + 1) * (value.Y + 1) > 0xFFFF) // ensure that the amount of generated vertices fits into a 16-bit index buffer (mobile limitation)
+        if (value.X <= 0 || value.Y <= 0)
           return;
-        _gridSubdivisions = value;
+        _gridCellSize = value;
         if (HasEngineInstance())
-          EngineMobileWater.SetNumGridSubdivisions(value.X, value.Y);
+          EngineMobileWater.SetGridCellSize(value.X, value.Y);
       }
     }
 
@@ -225,14 +235,12 @@ namespace VisionEditorPlugin.Shapes
       set
       {
         _useRadialGrid = value;
-        if (value && _gridSubdivisions.Y < 3)
-          this.GridSubdivisions = new Vector2I(this.GridSubdivisions.X, 3);
         if (HasEngineInstance())
           EngineMobileWater.SetUseRadialGrid(value);
       }
     }
 
-    [Description("How many times the textures should be repeated on the water plane")]
+    [Description("Size of the texture tiles (in world coordinates)")]
     [SortedCategory(CAT_GEOMETRY, CATORDER_GEOMETRY), PropertyOrder(4)]
     public Vector2F TextureTiling
     {
@@ -594,7 +602,7 @@ namespace VisionEditorPlugin.Shapes
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

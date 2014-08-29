@@ -13,6 +13,8 @@
 #include <Behavior/Behavior/Generator/hkbGeneratorPartitionInfo.h>
 #include <Animation/Animation/Rig/hkaSkeleton.h>
 
+class hkBitField;
+
 	/// Helper functions for dealing with hkbGeneratorOutput and auxiliary track data.
 class hkbGeneratorOutputUtils
 {
@@ -93,13 +95,15 @@ class hkbGeneratorOutputUtils
 			/// \param numFloatSlots The number of float slots that your animation skeleton has.
 			/// \param numTracks The number of tracks desired (if you want less than the full set of standard tracks).
 			/// \param trackInfos A buffer of TrackInfos with numTracks elements.
+			/// \param enabledTracks A bitfield of tracks to enable.  If size of bitfield is zero, all tracks are enabled.
 		static void HK_CALL initTrackInfos(	int numBones,
 											int numRagdollBones, 
 											int numAttributes, 
 											int numHands,
 											int numFloatSlots,
 											int numTracks,
-											TrackInfo* trackInfos );
+											TrackInfo* trackInfos,
+											const hkBitField& enabledTracks );
 
 			/// Computes the number of bytes needed for the given tracks.
 		static int HK_CALL computeTrackBufferSizeBytes(	int numTracks,
@@ -177,6 +181,7 @@ class hkbGeneratorOutputUtils
 												const hkbGeneratorPartitionInfo& childPartitionInfo,
 												int childNumPoseLocal,
 												hkReal weight,
+												hkInt8 additiveFlag,
 												hkQsTransform* poseOut,
 												const hkbGeneratorPartitionInfo& partitionInfoOut);
 
@@ -201,12 +206,15 @@ class hkbGeneratorOutputUtils
 
 			/// For internal use.  Sparse and palette tracks require per-element weights during blending.
 			/// This method sums the capacity of all such tracks so that we can allocate the weights.
-		static int computeNumSparseTrackWeights( const hkbGeneratorOutput& output );
+		static int HK_CALL computeNumSparseTrackWeights( const hkbGeneratorOutput& output );
 			
 
 #ifdef HK_DEBUG
 			/// Checks whether a pose has any garbage bones and optionally whether it's dense.  This is for debugging only.
-		static void checkPose( const hkbGeneratorOutput& output, bool mustBeDense=false );
+		static void HK_CALL checkPose( const hkbGeneratorOutput& output, bool mustBeDense=false );
+
+			/// Checks to see if the outputs have the same additive animation formats
+		static void HK_CALL checkAdditiveFormats( const hkbGeneratorOutput** outputs, int numOutputs );
 #endif
 
 			/// Compute the size of bone weights buffer.
@@ -225,7 +233,7 @@ class hkbGeneratorOutputUtils
 												hkInt16 rootwardBoneIdx = 0);
 
 			/// Determine if the bone is in the partition or Lod pose.
-		static bool  HK_CALL hasBoneIndex(	const hkbGeneratorPartitionInfo& partitionInfo,
+		static bool HK_CALL hasBoneIndex(	const hkbGeneratorPartitionInfo& partitionInfo,
 											int numPoseLocal, hkInt16 boneIdx );
 
 	private:
@@ -253,7 +261,7 @@ class hkbGeneratorOutputUtils
 	private:
 
 			// Track descriptions for the default tracks.
-		static TrackInfo m_defaultTrackInfos[hkbGeneratorOutput::NUM_STANDARD_TRACKS];
+		static TrackInfo m_defaultTrackInfos[hkbGeneratorOutput::NUM_TRACKS];
 };
 
 #include <Behavior/Behavior/Generator/hkbGeneratorOutputUtils.inl>
@@ -261,7 +269,7 @@ class hkbGeneratorOutputUtils
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

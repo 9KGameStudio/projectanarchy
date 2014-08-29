@@ -16,7 +16,7 @@
 	/// This report shows the fields taken in each class that reach the different blocks owned.
 	/// Ownership is determined by following the references between blocks from the root block passed
 	/// to the report method. Ownership can be controlled using the FollowFilter.
-class hkFieldHierarchyReportUtil
+class HK_EXPORT_COMMON hkFieldHierarchyReportUtil
 {
 	public:
 		typedef hkScanReportUtil::Block Block;
@@ -38,7 +38,7 @@ class hkFieldHierarchyReportUtil
 #endif // HKBASE_FIELD_HIERARCHY_REPORT_UTIL_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

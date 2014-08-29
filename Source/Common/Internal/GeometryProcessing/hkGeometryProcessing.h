@@ -18,8 +18,11 @@
 #include <Geometry/Internal/Algorithms/Intersect/hkcdIntersectTriangleTriangle.h>
 
 /// Control inlining to HKGP related code.
-#if defined(HK_PLATFORM_WIN32)
+#if defined(HK_PLATFORM_WIN32) 
 	#define HK_COMPILE_ENABLE_GP_FULL_INLINING 1
+	#ifdef HK_DYNAMIC_DLL
+		#pragma warning(disable:4714) // will not be always inlined for dll
+	#endif
 #else
 	#define HK_COMPILE_ENABLE_GP_FULL_INLINING 0
 #endif
@@ -36,7 +39,7 @@
 struct hkGeometry;
 
 /// Tools for geometry processing
-struct hkGeometryProcessing
+struct  hkGeometryProcessing
 {
 	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE,hkGeometryProcessing);
 	
@@ -261,7 +264,7 @@ struct hkGeometryProcessing
 	};
 
 	/// KISS Based PRNG (http://www.cs.ucl.ac.uk/staff/d.jones/GoodPracticeRNG.pdf)
-	struct Prng
+	struct HK_EXPORT_COMMON Prng
 	{
 		/// Ctor.
 		HK_FORCE_INLINE Prng(hkUint32 seed = 123456789) : m_x(seed), m_y(234567891), m_z(345678912), m_w(456789123), m_c(0) {}
@@ -330,7 +333,7 @@ struct hkGeometryProcessing
 	};
 
 	/// Uniform triangulated surface sampler.
-	struct SurfaceSampler
+	struct HK_EXPORT_COMMON SurfaceSampler
 	{
 		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_GEOMETRY,SurfaceSampler);
 		
@@ -414,150 +417,162 @@ struct hkGeometryProcessing
 	//
 
 	/// evaluate (a-o) x (b-o)
-	static HKGP_FORCE_INLINE void HK_CALL crossOffset(hkVector4Parameter o, hkVector4Parameter a, hkVector4Parameter b, hkVector4& ret);
+	static HK_EXPORT_COMMON HKGP_FORCE_INLINE void HK_CALL		crossOffset(hkVector4Parameter o, hkVector4Parameter a, hkVector4Parameter b, hkVector4& ret);
 
 	/// evaluate (a1-a0) x (b1-b0)
-	static HKGP_FORCE_INLINE hkVector4	crossEdges(const hkVector4& a0, const hkVector4& a1, const hkVector4& b0, const hkVector4& b1);
+	static HK_EXPORT_COMMON HKGP_FORCE_INLINE hkVector4			crossEdges(const hkVector4& a0, const hkVector4& a1, const hkVector4& b0, const hkVector4& b1);
 
 	/// Compare two plane for equality
-	static HKGP_FORCE_INLINE bool		comparePlanes(const hkVector4& a, const hkVector4& b, hkReal maxDistance, hkReal minCosAngle);
+	static HK_EXPORT_COMMON HKGP_FORCE_INLINE bool				comparePlanes(const hkVector4& a, const hkVector4& b, hkReal maxDistance, hkReal minCosAngle);
 
 	/// Decompose a vector into parallel and perpendicular components, return vector/axis dot product.
-	static HKGP_FORCE_INLINE hkSimdReal	decomposeVector(const hkVector4& vector, const hkVector4& axis, hkVector4& para, hkVector4& perp);
+	static HK_EXPORT_COMMON HKGP_FORCE_INLINE hkSimdReal		decomposeVector(const hkVector4& vector, const hkVector4& axis, hkVector4& para, hkVector4& perp);
 
 	/// Project vector on plane
-	static HKGP_FORCE_INLINE hkVector4	projectOnPlane(const hkVector4& vector,const hkVector4& axis);
+	static HK_EXPORT_COMMON HKGP_FORCE_INLINE hkVector4			projectOnPlane(const hkVector4& vector,const hkVector4& axis);
 
 	/// Project vector on axis
-	static HKGP_FORCE_INLINE hkVector4	projectOnAxis(const hkVector4& vector,const hkVector4& axis);
+	static HK_EXPORT_COMMON HKGP_FORCE_INLINE hkVector4			projectOnAxis(const hkVector4& vector,const hkVector4& axis);
 
 	/// calculate triangle (area * 2)^2
-	static HKGP_FORCE_INLINE hkSimdReal		triangleArea2Squared(hkVector4Parameter a, hkVector4Parameter b);
+	static HK_EXPORT_COMMON HKGP_FORCE_INLINE hkSimdReal		triangleArea2Squared(hkVector4Parameter a, hkVector4Parameter b);
 
 	/// calculate triangle area * 2
-	static HKGP_FORCE_INLINE hkSimdReal		triangleArea2(hkVector4Parameter a, hkVector4Parameter b, hkVector4Parameter c);	
+	static HK_EXPORT_COMMON HKGP_FORCE_INLINE hkSimdReal		triangleArea2(hkVector4Parameter a, hkVector4Parameter b, hkVector4Parameter c);	
 
 	/// calculate tetrahedron (signed) volume * 6
-	static HKGP_FORCE_INLINE hkSimdReal		tetrahedronVolume6(hkVector4Parameter a, hkVector4Parameter b, hkVector4Parameter c, hkVector4Parameter d);
+	static HK_EXPORT_COMMON HKGP_FORCE_INLINE hkSimdReal		tetrahedronVolume6(hkVector4Parameter a, hkVector4Parameter b, hkVector4Parameter c, hkVector4Parameter d);
 
 	/// apply a transform to a plane.
-	static HKGP_FORCE_INLINE hkVector4	transformPlaneToWorld(const hkTransform& transform,const hkVector4& plane);
+	static HK_EXPORT_COMMON HKGP_FORCE_INLINE hkVector4		transformPlaneToWorld(const hkTransform& transform,const hkVector4& plane);
 
 	/// apply the inverse of a transform to a plane.
-	static HKGP_FORCE_INLINE hkVector4	transformPlaneToLocal(const hkTransform& transform,const hkVector4& plane);
+	static HK_EXPORT_COMMON HKGP_FORCE_INLINE hkVector4		transformPlaneToLocal(const hkTransform& transform,const hkVector4& plane);
 
 	/// compute the circum-center of a triangle.
-	static HKGP_FORCE_INLINE hkBool32	circumCenter(hkVector4Parameter a, hkVector4Parameter b, hkVector4Parameter c, hkVector4& centerOut);
+	static HK_EXPORT_COMMON HKGP_FORCE_INLINE hkBool32		circumCenter(hkVector4Parameter a, hkVector4Parameter b, hkVector4Parameter c, hkVector4& centerOut);
 
 	/// compute the circum-center of a tetrahedron.
-	static HKGP_FORCE_INLINE hkBool32	circumCenter(hkVector4Parameter a, hkVector4Parameter b, hkVector4Parameter c, hkVector4Parameter d, hkVector4& centerOut);
+	static HK_EXPORT_COMMON HKGP_FORCE_INLINE hkBool32		circumCenter(hkVector4Parameter a, hkVector4Parameter b, hkVector4Parameter c, hkVector4Parameter d, hkVector4& centerOut);
 
 	/// intersect 3 planes
-	static bool	HK_CALL					intersectPlanes(hkVector4Parameter p0, hkVector4Parameter p1, hkVector4Parameter p2, hkVector4& intersection);
+	static HK_EXPORT_COMMON bool	HK_CALL					intersectPlanes(hkVector4Parameter p0, hkVector4Parameter p1, hkVector4Parameter p2, hkVector4& intersection);
 	
 	/// intersect a line with a plane
-	static bool	HK_CALL					intersectLineWithPlane(hkVector4Parameter x0, hkVector4Parameter x1, hkVector4Parameter plane, hkSimdReal& toi);
+	static HK_EXPORT_COMMON bool	HK_CALL					intersectLineWithPlane(hkVector4Parameter x0, hkVector4Parameter x1, hkVector4Parameter plane, hkSimdReal& toi);
 
 	/// check intersection between two triangles. Thin wrapper, calls the implementation in hkcdCollide 
-	static HK_FORCE_INLINE hkBool32 HK_CALL	checkTrianglesIntersection(const hkVector4* triangleA,const hkVector4* triangleB);
+	static HK_EXPORT_COMMON HK_FORCE_INLINE hkBool32 HK_CALL	checkTrianglesIntersection(const hkVector4* triangleA,const hkVector4* triangleB);
 
 	/// distance from a point to a line
-	static hkSimdReal HK_CALL			squaredDistanceFromPointToLine(hkVector4Parameter p, hkVector4Parameter p0, hkVector4Parameter p1, hkSimdReal& toi);
+	static HK_EXPORT_COMMON hkSimdReal HK_CALL				squaredDistanceFromPointToLine(hkVector4Parameter p, hkVector4Parameter p0, hkVector4Parameter p1, hkSimdReal& toi);
 	
 	/// distance from a point to a line
-	static hkSimdReal HK_CALL			squaredDistanceFromPointToLine(hkVector4Parameter p, hkVector4Parameter p0, hkVector4Parameter p1, hkVector4& normalOut, hkReal* baryOut=HK_NULL);	
+	static HK_EXPORT_COMMON hkSimdReal HK_CALL				squaredDistanceFromPointToLine(hkVector4Parameter p, hkVector4Parameter p0, hkVector4Parameter p1, hkVector4& normalOut, hkReal* baryOut=HK_NULL);	
 
 	/// distance from a point to a triangle
-	static hkSimdReal HK_CALL			squaredDistanceFromPointToTriangle(hkVector4Parameter p, hkVector4Parameter p0, hkVector4Parameter p1, hkVector4Parameter p2, hkVector4& normalOut, hkVector4* baryOut=HK_NULL);
+	static HK_EXPORT_COMMON hkSimdReal HK_CALL				squaredDistanceFromPointToTriangle(hkVector4Parameter p, hkVector4Parameter p0, hkVector4Parameter p1, hkVector4Parameter p2, hkVector4& normalOut, hkVector4* baryOut=HK_NULL);
 
 	/// nearest distance between two 3d lines
-	static hkSimdReal HK_CALL			nearestDistanceBetweenLines(hkVector4Parameter a0, hkVector4Parameter a1, hkVector4Parameter b0, hkVector4Parameter b1, hkSimdReal& u, hkSimdReal& v);
+	static HK_EXPORT_COMMON hkSimdReal HK_CALL				nearestDistanceBetweenLines(hkVector4Parameter a0, hkVector4Parameter a1, hkVector4Parameter b0, hkVector4Parameter b1, hkSimdReal& u, hkSimdReal& v);
 	
 	/// check if a point is inside a triangle
-	static bool HK_CALL					checkPointInsideTriangle(hkVector4Parameter p, hkVector4Parameter a, hkVector4Parameter b, hkVector4Parameter c, hkSimdRealParameter epsilon);
+	static HK_EXPORT_COMMON bool HK_CALL					checkPointInsideTriangle(hkVector4Parameter p, hkVector4Parameter a, hkVector4Parameter b, hkVector4Parameter c, hkSimdRealParameter epsilon);
 
 	/// build a transposed array of hkVector4
-	static void HK_CALL					buildTransposedArray(const hkArray<hkVector4>& vertices, hkArray<hkFourTransposedPoints>& output);
+	static HK_EXPORT_COMMON void HK_CALL					buildTransposedArray(const hkArray<hkVector4>& vertices, hkArray<hkFourTransposedPoints>& output);
 
 	/// get supporting vertex (index stored in W)
-	static void	HK_CALL					getSupportingVertex(const hkArrayBase<hkFourTransposedPoints>& transposedVertices,const hkVector4& direction, hkVector4& vertexOut);
+	static HK_EXPORT_COMMON void	HK_CALL					getSupportingVertex(const hkArrayBase<hkFourTransposedPoints>& transposedVertices,const hkVector4& direction, hkVector4& vertexOut);
 		
 	/// generate random points distribution inside a geometry
-	static bool HK_CALL					generateRandomDistribution(const hkGeometry& geometry,int numPoints,hkArray<hkVector4>& points,int seed=180673);
+	static HK_EXPORT_COMMON bool HK_CALL					generateRandomDistribution(const hkGeometry& geometry,int numPoints,hkArray<hkVector4>& points,int seed=180673);
 
 	/// generate a density controlled points distribution inside a geometry, if densityFunction is not set, uniform density is assumed.
-	static bool HK_CALL					generateUniformDistribution(const hkGeometry& geometry,int numPoints,hkArray<hkVector4>& points,int maxIterations=256,int seed=180673,const IFunction_4_1* densityFunction=HK_NULL);
+	static HK_EXPORT_COMMON bool HK_CALL					generateUniformDistribution(const hkGeometry& geometry,int numPoints,hkArray<hkVector4>& points,int maxIterations=256,int seed=180673,const IFunction_4_1* densityFunction=HK_NULL);
 
 	/// make sure the aspect ratio of an AABB is one.
-	static void HK_CALL					normalizeAspectRatio(hkAabb& box);
+	static HK_EXPORT_COMMON void HK_CALL					normalizeAspectRatio(hkAabb& box);
 
 	/// take a regular sample of an AABB.
-	static hkVector4 HK_CALL			sampleAabb(const hkAabb& box, hkVector4Parameter unitLocation);
+	static HK_EXPORT_COMMON hkVector4 HK_CALL				sampleAabb(const hkAabb& box, hkVector4Parameter unitLocation);
 	
 	/// get one the AABB vertex.
-	static HKGP_FORCE_INLINE void		getVertex(const hkAabb& box, int index, hkVector4& vertexOut);
+	static HK_EXPORT_COMMON HKGP_FORCE_INLINE void			getVertex(const hkAabb& box, int index, hkVector4& vertexOut);
 	
 	/// create an hash code based on two pointer size values, with makeHash(0,0)==0
 	template <typename A,typename B>
-	static HKGP_FORCE_INLINE hkUlong	makeHash(A a,B b);
+	static HKGP_FORCE_INLINE hkUlong						makeHash(A a,B b);
 
 	/// create a symmetric hash code based on two pointer size values, with makeSymmetricHash(0,0)==0 and makeSymmetricHash(a,b)==makeSymmetricHash(b,a)
 	template <typename A,typename B>
-	static HKGP_FORCE_INLINE hkUlong	makeSymmetricHash(A a,B b);
+	static HKGP_FORCE_INLINE hkUlong						makeSymmetricHash(A a,B b);
 
 	/// Evaluate tri-linear barycentric coordinates on hkVector4
-	static HK_FORCE_INLINE hkVector4	evaluateBarycentricCoordinates(hkVector4Parameter baryCenter, hkVector4Parameter a, hkVector4Parameter b, hkVector4Parameter c);
+	static HK_EXPORT_COMMON HK_FORCE_INLINE hkVector4		evaluateBarycentricCoordinates(hkVector4Parameter baryCenter, hkVector4Parameter a, hkVector4Parameter b, hkVector4Parameter c);
 	
 	/// Choose N from M with N <= M , count permutations.
-	static HKGP_FORCE_INLINE int		chooseMN_count(int m,int n);
+	static HK_EXPORT_COMMON HKGP_FORCE_INLINE int			chooseMN_count(int m,int n);
 	
 	/// Choose N from M with N <= M , get a permutation.
-	static inline void					chooseMN_pick(int m,int n,int i,int* set);
+	static HK_EXPORT_COMMON inline void						chooseMN_pick(int m,int n,int i,int* set);
 
 	/// Map unfold octahedron coordinates to unit normal.
-	static void	HK_CALL					octahedronToNormal(const hkVector4& uv, hkVector4& normal);
+	static HK_EXPORT_COMMON void	HK_CALL					octahedronToNormal(const hkVector4& uv, hkVector4& normal);
 
 	/// Map unit normal to unfold octahedron coordinates.
-	static void	HK_CALL					normalToOctahedron(const hkVector4& normal, hkVector4& uv);
+	static HK_EXPORT_COMMON void	HK_CALL					normalToOctahedron(const hkVector4& normal, hkVector4& uv);
 
 	/// Wrap unfold octahedron coordinates.
-	static void	HK_CALL					wrapOctahedronCoordinates(hkVector4& uv);
+	static HK_EXPORT_COMMON void	HK_CALL					wrapOctahedronCoordinates(hkVector4& uv);
 
 	/// Compute triangle quality.
-	static hkSimdReal HK_CALL			computeTriangleQuality(hkVector4Parameter p0, hkVector4Parameter p1, hkVector4Parameter p2);
+	static HK_EXPORT_COMMON hkSimdReal HK_CALL				computeTriangleQuality(hkVector4Parameter p0, hkVector4Parameter p1, hkVector4Parameter p2);
 
 	/// Compute the median of two vectors
-	static hkVector4 HK_CALL			computeMedian(hkVector4Parameter a, hkVector4Parameter b);
+	static HK_EXPORT_COMMON hkVector4 HK_CALL				computeMedian(hkVector4Parameter a, hkVector4Parameter b);
 	
 	/// Compute the median of three vectors
-	static hkVector4 HK_CALL			computeMedian(hkVector4Parameter a, hkVector4Parameter b, hkVector4Parameter c);
+	static HK_EXPORT_COMMON hkVector4 HK_CALL				computeMedian(hkVector4Parameter a, hkVector4Parameter b, hkVector4Parameter c);
 
 	/// Compute the median of four vectors
-	static hkVector4 HK_CALL			computeMedian(hkVector4Parameter a, hkVector4Parameter b, hkVector4Parameter c, hkVector4Parameter d);
+	static HK_EXPORT_COMMON hkVector4 HK_CALL				computeMedian(hkVector4Parameter a, hkVector4Parameter b, hkVector4Parameter c, hkVector4Parameter d);
 
 	/// Weld duplicated vertices in an hkGeometry.
-	static void HK_CALL					weldVertices(hkGeometry& geometry);
+	static HK_EXPORT_COMMON void HK_CALL					weldVertices(hkGeometry& geometry);
 
 	/// Return true if the geometry is a closed mesh. Many algorithms require the input mesh to be closed.
-	static hkBool HK_CALL				isGeometryClosed(const hkGeometry& geometry);
+	static HK_EXPORT_COMMON hkBool HK_CALL					isGeometryClosed(const hkGeometry& geometry);
+
+	/// Return the surface area of a given geometry.
+	static HK_EXPORT_COMMON hkReal HK_CALL					computeSurfaceArea(const hkGeometry& geometry);
 
 	/// Generate clusters from hkVector4 data points.
 	/// Note: weights be can set to HK_NULL, in which case 1.0 will be used for all data points.
-	static void HK_CALL					generateClusters(const hkArray<hkVector4>& data, const hkArray<hkSimdReal>* weights, int numClusters, hkArray<int>& clusterIds, int maxIterations = 512);
+	static HK_EXPORT_COMMON void HK_CALL					generateClusters(const hkArray<hkVector4>& data, const hkArray<hkSimdReal>* weights, int numClusters, hkArray<int>& clusterIds, int maxIterations = 512);
 
 	/// Generate clusters from hkReal data points.
 	/// Note: weights be can set to HK_NULL, in which case 1.0 will be used for all data points.
-	static void HK_CALL					generateClusters(const hkArray<hkReal>& data, const hkArray<hkSimdReal>* weights, int numClusters, hkArray<int>& clusterIds, int maxIterations = 512);
+	static HK_EXPORT_COMMON void HK_CALL					generateClusters(const hkArray<hkReal>& data, const hkArray<hkSimdReal>* weights, int numClusters, hkArray<int>& clusterIds, int maxIterations = 512);
 
 	/// Generate clusters from a set of hkAabb.
 	/// On return, the 'clusterRoots' array contains the first AABB index of each cluster and 'clusterNexts' contains the next AABB index in the cluster or -1.
-	static void HK_CALL					generateClusters(const hkAabb* aabbs, int numAabbs, int maxClusters, hkArray<int>& clusterRoots, hkArray<int>& clusterNexts);
+	static HK_EXPORT_COMMON void HK_CALL					generateClusters(const hkAabb* aabbs, int numAabbs, int maxClusters, hkArray<int>& clusterRoots, hkArray<int>& clusterNexts);
 
 	/// Stores max curvature in the W component of the vertices.
-	static void HK_CALL					computeCurvature(hkGeometry& geometry, hkSimdReal& maxCurvature);
+	static HK_EXPORT_COMMON void HK_CALL					computeCurvature(hkGeometry& geometry, hkSimdReal& maxCurvature);
 
 	/// Resolve T-junctions in geometry.
-	static void	HK_CALL					fixTJunctions(hkGeometry& geometry, hkReal maxDistance);
+	static HK_EXPORT_COMMON void	HK_CALL					fixTJunctions(hkGeometry& geometry, hkReal maxDistance);
+
+	/// Subdivide geometry, increases the number of triangles by 4.
+	static void HK_CALL					subdivideGeometry(hkGeometry& geometry);
+
+	/// Detach triangles by preventing triangles from sharing vertices.
+	static void HK_CALL					detachTriangles(hkGeometry& geometry);
+
+	/// Laplacian smoothing.
+	static void HK_CALL					laplacianSmoothing(hkGeometry& geometry, int iterations = 1, hkReal factor = 1);
 
 	/// Minimize a scalar function of a normalized vector.
 	/// Returns the normal that minimize the function as well as the value in its W component.
@@ -571,7 +586,7 @@ struct hkGeometryProcessing
 	// Performance scope
 	#define HK_PERF_SCOPE_EX(_name_,_ID_,_SILENT_)	hkGeometryProcessing::PerformanceScope performance_scope_##_ID_(_name_,_SILENT_)
 	#define HK_PERF_SCOPE(_name_)					hkGeometryProcessing::PerformanceScope performance_scope(_name_,false)
-	struct PerformanceScope
+	struct HK_EXPORT_COMMON PerformanceScope
 	{
 		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE,hkGeometryProcessing::PerformanceScope);
 		HKGP_FORCE_INLINE PerformanceScope(const char* name,bool silent) : m_name(name),m_silent(silent)
@@ -598,7 +613,7 @@ struct hkGeometryProcessing
 	// Accumulator scope
 	#define HK_ACC_SCOPE_EX(_storage_,_ID_)	hkGeometryProcessing::AccumulatorScope accumulator_scope_##_ID_(_storage_)
 	#define HK_ACC_SCOPE(_storage_)			hkGeometryProcessing::AccumulatorScope accumulator_scope(_storage_)
-	struct AccumulatorScope
+	struct HK_EXPORT_COMMON AccumulatorScope
 	{
 		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE,hkGeometryProcessing::AccumulatorScope);
 		struct Item
@@ -618,7 +633,7 @@ struct hkGeometryProcessing
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

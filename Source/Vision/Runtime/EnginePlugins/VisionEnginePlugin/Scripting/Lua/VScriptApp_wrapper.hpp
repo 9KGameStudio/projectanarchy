@@ -68,6 +68,8 @@ public:
     return "WIIU";
 #elif defined(_VISION_TIZEN)
     return "TIZEN";
+#elif defined(_VISION_NACL)
+    return "NACL";
 #elif defined(_VISION_POSIX)
     return "POSIX";
 #elif defined(_VR_DX9)
@@ -113,7 +115,7 @@ public:
 #endif // __VSCRIPTAPP_WRAPPER_HPP
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

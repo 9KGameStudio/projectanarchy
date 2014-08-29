@@ -9,31 +9,36 @@
 #define HK_SERVER_FILESYSTEM__H
 
 #include <Common/Base/System/Io/FileSystem/hkNativeFileSystem.h>
+#include <Common/Base/Thread/CriticalSection/hkCriticalSection.h>
 
-class hkServerFileSystem : public hkNativeFileSystem
+class HK_EXPORT_COMMON hkServerFileSystem : public hkFileSystem
 {
 	public:
 
 		HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE);
 
+#if defined(HK_PLATFORM_DURANGO)
+		enum { HK_SERVER_FILE_SYSTEM_DEFAULT_PORT=58002 };
+#else
 		enum { HK_SERVER_FILE_SYSTEM_DEFAULT_PORT=26002 };
+#endif
 
 		static hkReferencedObject* create(int port=HK_SERVER_FILE_SYSTEM_DEFAULT_PORT)
 		{
 			return new hkServerFileSystem(port);
 		}
 
-		virtual hkRefNew<hkStreamReader> openReader( const char* name, OpenFlags flags );
+		virtual hkRefNew<hkStreamReader> openReader( const char* name, OpenFlags flags ) HK_OVERRIDE;
 
-		virtual hkRefNew<hkStreamWriter> openWriter( const char* name, OpenFlags flags );
+		virtual hkRefNew<hkStreamWriter> openWriter( const char* name, OpenFlags flags ) HK_OVERRIDE;
 
-// 		virtual hkResult remove(const char* path);
-// 
-// 		virtual hkResult mkdir(const char* path);
+		virtual Result remove(const char* path) HK_OVERRIDE;
 
-		virtual Result stat( const char* path, Entry& entryOut );
+		virtual Result mkdir(const char* path) HK_OVERRIDE;
 
-		virtual hkRefNew<Iterator::Impl> createIterator( const char* top, const char* wildcard );
+		virtual Result stat( const char* path, Entry& entryOut ) HK_OVERRIDE;
+
+		virtual hkRefNew<Iterator::Impl> createIterator( const char* top, const char* wildcard ) HK_OVERRIDE;
 
 		// Default = VIRTUAL_READWRITE | WAIT_FOR_CONNECT
 		enum Mode
@@ -61,6 +66,9 @@ class hkServerFileSystem : public hkNativeFileSystem
 			FILE_WRITE = 0x02,
 			DIR_LIST = 0x03,
 			FILE_STAT = 0x04,
+			SHUT_DOWN = 0x05,
+			REMOVE = 0x06,
+			MKDIR = 0x07,
 		};
 	
 		enum InCommands
@@ -84,16 +92,20 @@ class hkServerFileSystem : public hkNativeFileSystem
 
 	protected:
 
+		Result removeOrMkdir( const char* path, OutCommands command );
+
 		Mode m_mode;
 		int m_connectionPort;
 		class hkSocket* m_listenSocket;
 		class hkSocket* m_connectSocket;
+
+		hkCriticalSection m_connectionLock;
 };
 
 #endif // HK_SERVER_FILESYSTEM__H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

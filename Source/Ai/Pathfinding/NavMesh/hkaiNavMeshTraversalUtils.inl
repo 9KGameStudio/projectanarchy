@@ -14,15 +14,15 @@
 
 inline hkaiNavMeshTraversalUtils::ClearanceValue::ClearanceValue()
 {
-	m_exactValue = 0;
-	m_truncatedValue = 0;
+	m_exactValue.setZero();
+	m_truncatedValue.setZero();
 	m_valueHalf.setZero();
 	m_exactValueComputed = false;
 }
 
 inline void hkaiNavMeshTraversalUtils::ClearanceValue::setFromHalf( const hkHalf& h )
 {
-	m_exactValue = 0;
+	m_exactValue.setZero();
 	m_exactValueComputed = false;
 	m_truncatedValue.setFromHalf( h );
 	m_valueHalf = h; 
@@ -118,7 +118,7 @@ HK_FORCE_INLINE_ON_CPU hkSimdReal HK_CALL hkaiNavMeshTraversalUtils::getGlobalCl
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

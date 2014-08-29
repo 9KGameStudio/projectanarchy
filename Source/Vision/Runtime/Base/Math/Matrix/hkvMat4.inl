@@ -52,6 +52,8 @@ HKV_FORCE_INLINE void hkvMat4::setZero ()
 
 HKV_FORCE_INLINE bool hkvMat4::isZero (float fEpsilon) const
 {
+  HKVMAT4_INITIALIZATION_CHECK(this);
+
   // should not use a negative epsilon
   VASSERT (fEpsilon >= 0.0f);
 
@@ -78,6 +80,8 @@ HKV_FORCE_INLINE bool hkvMat4::isZero (float fEpsilon) const
 
 HKV_FORCE_INLINE bool hkvMat4::isIdentity (float fEpsilon) const
 {
+  HKVMAT4_INITIALIZATION_CHECK(this);
+
   // should not use a negative epsilon
   VASSERT (fEpsilon >= 0.0f);
 
@@ -150,6 +154,8 @@ HKV_FORCE_INLINE void hkvMat4::set (const hkvMat3& m3x3, const hkvVec3& vTransla
 
 HKV_FORCE_INLINE void hkvMat4::get (float* HKV_RESTRICT pData, Layout layout) const
 {
+  HKVMAT4_INITIALIZATION_CHECK(this);
+
   VASSERT (pData != NULL);
 
   if (layout == ColumnMajor)
@@ -194,6 +200,8 @@ HKV_FORCE_INLINE void hkvMat4::setRow (hkUint32 iRow, const hkvVec4& values)
 
 HKV_FORCE_INLINE const hkvVec4 hkvMat4::getColumn (hkUint32 iColumn) const
 {
+  HKVMAT4_INITIALIZATION_CHECK(this);
+
   VASSERT (iColumn <= 3);
 
   return hkvVec4 (m_Column[iColumn][0], m_Column[iColumn][1], m_Column[iColumn][2], m_Column[iColumn][3]);
@@ -201,6 +209,8 @@ HKV_FORCE_INLINE const hkvVec4 hkvMat4::getColumn (hkUint32 iColumn) const
 
 HKV_FORCE_INLINE const hkvVec4 hkvMat4::getRow (hkUint32 iRow) const
 {
+  HKVMAT4_INITIALIZATION_CHECK(this);
+
   VASSERT (iRow <= 3);
 
   return hkvVec4 (m_Column[0][iRow], m_Column[1][iRow], m_Column[2][iRow], m_Column[3][iRow]);
@@ -208,6 +218,8 @@ HKV_FORCE_INLINE const hkvVec4 hkvMat4::getRow (hkUint32 iRow) const
 
 HKV_FORCE_INLINE float hkvMat4::getElement (hkUint32 iNthElement, Layout layout) const
 {
+  HKVMAT4_INITIALIZATION_CHECK(this);
+
   VASSERT (iNthElement <= 15);
 
   if (layout == ColumnMajor)
@@ -236,11 +248,15 @@ HKV_FORCE_INLINE void hkvMat4::setDiagonal (const hkvVec4& values)
 
 HKV_FORCE_INLINE const hkvVec4 hkvMat4::getDiagonal () const
 {
+  HKVMAT4_INITIALIZATION_CHECK(this);
+
   return hkvVec4 (m_Column[0][0], m_Column[1][1], m_Column[2][2], m_Column[3][3]);
 }
 
 HKV_FORCE_INLINE hkvVec3 hkvMat4::getScalingFactors () const
 {
+  HKVMAT4_INITIALIZATION_CHECK(this);
+
   hkvVec3 v;
 
   v.x = hkvVec3 (m_Column[0][0], m_Column[0][1], m_Column[0][2]).getLength ();
@@ -300,6 +316,8 @@ HKV_FORCE_INLINE const hkvMat4 hkvMat4::getInverse () const
 
 HKV_FORCE_INLINE const hkvVec3 hkvMat4::getAxis (hkUint32 iAxisXYZ) const
 {
+  HKVMAT4_INITIALIZATION_CHECK(this);
+
   VASSERT (iAxisXYZ < 3);
 
   return hkvVec3 (m_Column[iAxisXYZ][0], m_Column[iAxisXYZ][1], m_Column[iAxisXYZ][2]);
@@ -318,6 +336,8 @@ HKV_FORCE_INLINE void hkvMat4::setAxis (hkUint32 iAxisXYZ, const hkvVec3& v)
 
 HKV_FORCE_INLINE void hkvMat4::getAxisXYZ (hkvVec3* HKV_RESTRICT out_AxisX, hkvVec3* HKV_RESTRICT out_AxisY, hkvVec3* HKV_RESTRICT out_AxisZ) const
 {
+  HKVMAT4_INITIALIZATION_CHECK(this);
+
   VASSERT ((out_AxisX != NULL) && (out_AxisY != NULL) && (out_AxisZ != NULL));
 
   *out_AxisX = getAxis (0);
@@ -334,6 +354,8 @@ HKV_FORCE_INLINE void hkvMat4::setAxisXYZ (const hkvVec3& AxisX, const hkvVec3& 
 
 HKV_FORCE_INLINE const hkvVec3 hkvMat4::getTranslation () const
 {
+  HKVMAT4_INITIALIZATION_CHECK(this);
+
   return hkvVec3 (m_Column[3][0], m_Column[3][1], m_Column[3][2]);
 }
 
@@ -362,6 +384,9 @@ HKV_FORCE_INLINE void hkvMat4::setScalingMatrix (const hkvVec3& vScaleXYZ)
 
 HKV_FORCE_INLINE bool hkvMat4::isIdentical (const hkvMat4& rhs) const
 {
+  HKVMAT4_INITIALIZATION_CHECK(this);
+  HKVMAT4_INITIALIZATION_CHECK(&rhs);
+
   // mostly used for unit-tests
 
   for (hkUint32 i = 0; i < 16; ++i)
@@ -375,6 +400,9 @@ HKV_FORCE_INLINE bool hkvMat4::isIdentical (const hkvMat4& rhs) const
 
 HKV_FORCE_INLINE bool hkvMat4::isEqual (const hkvMat4& rhs, float fEpsilon) const
 {
+  HKVMAT4_INITIALIZATION_CHECK(this);
+  HKVMAT4_INITIALIZATION_CHECK(&rhs);
+
   // should not use a negative epsilon
   VASSERT (fEpsilon >= 0.0f);
 
@@ -400,6 +428,9 @@ HKV_FORCE_INLINE bool hkvMat4::isValid () const
 
 HKV_FORCE_INLINE void hkvMat4::operator+= (const hkvMat4& rhs)
 {
+  HKVMAT4_INITIALIZATION_CHECK(this);
+  HKVMAT4_INITIALIZATION_CHECK(&rhs);
+
   // partially unrolled loop
   for (hkUint32 i = 0; i < 4; ++i)
   {
@@ -414,6 +445,9 @@ HKV_FORCE_INLINE void hkvMat4::operator+= (const hkvMat4& rhs)
 
 HKV_FORCE_INLINE void hkvMat4::operator-= (const hkvMat4& rhs)
 {
+  HKVMAT4_INITIALIZATION_CHECK(this);
+  HKVMAT4_INITIALIZATION_CHECK(&rhs);
+
   // partially unrolled loop
   for (hkUint32 i = 0; i < 4; ++i)
   {
@@ -428,6 +462,8 @@ HKV_FORCE_INLINE void hkvMat4::operator-= (const hkvMat4& rhs)
 
 HKV_FORCE_INLINE void hkvMat4::operator*= (float f)
 {
+  HKVMAT4_INITIALIZATION_CHECK(this);
+
   for (hkUint32 i = 0; i < 16; ++i)
     m_ElementsCM[i] *= f;
 }
@@ -441,6 +477,8 @@ HKV_FORCE_INLINE void hkvMat4::operator/= (float f0)
 
 HKV_FORCE_INLINE const hkvVec3 hkvMat4::transformPosition (const hkvVec3& v) const
 {
+  HKVMAT4_INITIALIZATION_CHECK(this);
+
   HKVVEC3_COPYTEMPS (v);
 
   const float rx = m_Column[0][0] * v_x + m_Column[1][0] * v_y + m_Column[2][0] * v_z + m_Column[3][0];
@@ -452,6 +490,8 @@ HKV_FORCE_INLINE const hkvVec3 hkvMat4::transformPosition (const hkvVec3& v) con
 
 HKV_FORCE_INLINE const hkvVec3 hkvMat4::transformDirection (const hkvVec3& v) const
 {
+  HKVMAT4_INITIALIZATION_CHECK(this);
+
   HKVVEC3_COPYTEMPS (v);
 
   const float rx = m_Column[0][0] * v_x + m_Column[1][0] * v_y + m_Column[2][0] * v_z;
@@ -478,6 +518,9 @@ HKV_FORCE_INLINE bool operator!= (const hkvMat4& lhs, const hkvMat4& rhs)
 
 HKV_FORCE_INLINE const hkvMat4 operator+ (const hkvMat4& lhs, const hkvMat4& rhs)
 {
+  HKVMAT4_INITIALIZATION_CHECK(&lhs);
+  HKVMAT4_INITIALIZATION_CHECK(&rhs);
+
   hkvMat4 temp (hkvNoInitialization);
 
   // partially unrolled loop, looks stupid but gives the compiler more room for optimization
@@ -501,6 +544,9 @@ HKV_FORCE_INLINE const hkvMat4 operator+ (const hkvMat4& lhs, const hkvMat4& rhs
 
 HKV_FORCE_INLINE const hkvMat4 operator- (const hkvMat4& lhs, const hkvMat4& rhs)
 {
+  HKVMAT4_INITIALIZATION_CHECK(&lhs);
+  HKVMAT4_INITIALIZATION_CHECK(&rhs);
+
   hkvMat4 temp (hkvNoInitialization);
 
   // partially unrolled loop, looks stupid but gives the compiler more room for optimization
@@ -524,6 +570,8 @@ HKV_FORCE_INLINE const hkvMat4 operator- (const hkvMat4& lhs, const hkvMat4& rhs
 
 HKV_FORCE_INLINE const hkvMat4 operator* (const hkvMat4& lhs, float f)
 {
+  HKVMAT4_INITIALIZATION_CHECK(&lhs);
+
   hkvMat4 temp (hkvNoInitialization);
 
   // partially unrolled loop, looks stupid but gives the compiler more room for optimization
@@ -570,17 +618,17 @@ HKV_FORCE_INLINE const hkvVec3 operator* (const hkvMat4& lhs, const hkvVec3& rhs
   return lhs.transformPosition (rhs);
 }
 
-#ifdef HKVMATH_ENABLE_NEW_OPERATORS
-  HKV_FORCE_INLINE const hkvMat4 operator* (const hkvMat4& lhs, const hkvMat4& rhs)
-  {
-    return lhs.multiply (rhs);
-  }
-#endif
+HKV_FORCE_INLINE const hkvMat4 operator* (const hkvMat4& lhs, const hkvMat4& rhs)
+{
+  return lhs.multiply (rhs);
+}
 
 
 
 HKV_FORCE_INLINE const hkvMat3 hkvMat4::getRotationalPart () const
 {
+  HKVMAT4_INITIALIZATION_CHECK(this);
+
   return hkvMat3 (m_Column[0][0], m_Column[1][0], m_Column[2][0], 
                   m_Column[0][1], m_Column[1][1], m_Column[2][1], 
                   m_Column[0][2], m_Column[1][2], m_Column[2][2], hkvMat3::RowMajor);
@@ -610,6 +658,8 @@ HKV_FORCE_INLINE hkvResult hkvMat4::normalize (float fEpsilon /* = HKVMATH_SMALL
 
 HKV_FORCE_INLINE const hkvVec4 hkvMat4::transform (const hkvVec4& v) const
 {
+  HKVMAT4_INITIALIZATION_CHECK(this);
+
   HKVVEC4_COPYTEMPS (v);
 
   const float rx = m_Column[0][0] * v_x + m_Column[1][0] * v_y + m_Column[2][0] * v_z + m_Column[3][0] * v_w;
@@ -627,6 +677,8 @@ HKV_FORCE_INLINE void hkvMat4::setFromEulerAngles (float fRoll, float fPitch, fl
 
 HKV_FORCE_INLINE void hkvMat4::getAsEulerAngles (float& out_fRoll, float& out_fPitch, float& out_fYaw) const
 {
+  HKVMAT4_INITIALIZATION_CHECK(this);
+
   hkvEulerUtil::ConvertMat4ToEuler_Deg (*this, out_fRoll, out_fPitch, out_fYaw, hkvEulerMode::VisionDefault);
 }
 
@@ -641,7 +693,7 @@ HKV_FORCE_INLINE const hkvMat4_AsArray hkvMat4::getAsArray (Layout layout) const
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

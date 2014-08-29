@@ -15,7 +15,7 @@
 	/// This class is useful for detecting leaks in a single allocator.
 	/// Mostly you'll want to use the hkCheckingMemorySystem which hooks
 	/// all allocators in all threads.
-class hkLeakDetectAllocator : public hkMemoryAllocator
+class HK_EXPORT_COMMON hkLeakDetectAllocator : public hkMemoryAllocator
 {
 	//+hk.MemoryTracker(ignore=True)
 	public:
@@ -87,7 +87,7 @@ class hkLeakDetectAllocator : public hkMemoryAllocator
 #endif //HKBASE_hkLeakDetectAllocator_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

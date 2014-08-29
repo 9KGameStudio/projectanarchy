@@ -163,6 +163,13 @@ void VGraphObject::SetVisible(bool bVisible)
   m_bVisible = bVisible;
 }
 
+void VGraphObject::SetMinMaxValue(float fMinValue, float fMaxValue)
+{
+  VASSERT(fMaxValue > fMinValue);
+  m_props.fMaxValue = fMaxValue;
+  m_props.fMinValue = fMinValue;
+}
+
 void VGraphObject::OnHandleCallback(IVisCallbackDataObject_cl *pData)
 {
   if (pData->m_pSender == &Vision::Callbacks.OnFrameUpdatePreRender)
@@ -303,7 +310,7 @@ void VGraphObject::Resize()
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

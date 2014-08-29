@@ -14,32 +14,45 @@
 #include <Vision/Runtime/Base/Math/Matrix/hkvMat3.h>
 #include <Vision/Runtime/Base/Math/Matrix/hkvMat4.h>
 
+#ifdef HKVQUAT_CHECK_FOR_NAN
+  #define HKVQUAT_INITIALIZATION_CHECK(obj) (obj)->isInitializedCheck()
+#else
+  #define HKVQUAT_INITIALIZATION_CHECK(obj) 
+#endif
+
 /// \brief A quaternion class that can be used to represent rotations.
 class hkvQuat
 {
 public:
 
-  #ifdef HKVMATH_DEFAULTCONSTRUCTORS_INITIALIZEDATA
+  /// \brief
+  ///   ATTENTION: The object is NOT initialized by the constructor. You MUST initialize it yourself before using it.
+  ///
+  /// \note In Dev and Debug builds the object will be initialized with NaN values. Member functions that read the values will check that they are not NaN.
+  /// If an NaN value is encountered, those functions will trigger an assert. Thus when you run into such an assert, you have not initialized your object
+  /// after construction. Make sure you always initialize objects properly before using them.
+  HKV_FORCE_INLINE hkvQuat ()
+  {
+    #ifdef HKVQUAT_INITIALIZE_TO_NAN
 
-    /// \brief
-    ///   DEPRECATED: Initializes the quaternion to identity.
-    ///
-    /// Prefer to not initialize the quaternion by using hkvNoInitialization.
-    /// Note: At some point the Vision Engine will deactivate this old behavior and use the uninitialized version instead.
-    /// At that time you need to make sure that whenever you default construct a vector, you do not rely on it being zero.
-    ///
-    /// You can find all the places where you use the default constructor by defining 
-    /// HKVMATH_DEPRECATE_DEFAULT_CONSTRUCTOR in hkvMathConfig.h and compiling your code for Windows.
-    /// Then the compiler will generate a warning for every location where you use the default constructor.
-    /// Use the macros HKV_DISABLE_DEPRECATION and HKV_ENABLE_DEPRECATION to prevent that warning
-    /// for code that cannot be changed to use a non default constructor (such as for arrays).
-    HKVMATH_DEFAULT_CONSTRUCTOR HKV_FORCE_INLINE hkvQuat () { setIdentity (); }
+      x = hkvMath::generateNaN();
+      y = hkvMath::generateNaN();
+      z = hkvMath::generateNaN();
+      w = hkvMath::generateNaN();
 
-  #else
+    #elif defined(HKVQUAT_INITIALIZE_TO_IDENTITY)
 
-    /// \brief Default Constructor: Does not initialize the quaternion.
-    HKV_FORCE_INLINE hkvQuat () { }
+      setIdentity ();
 
+    #endif
+  }
+
+  #ifdef HKVQUAT_CHECK_FOR_NAN
+    HKV_FORCE_INLINE void isInitializedCheck() const
+    {
+      VASSERT_MSG(!hkvMath::isNaN (x) && !hkvMath::isNaN (y) && !hkvMath::isNaN (z) && !hkvMath::isNaN (w), 
+        "This object has invalid (NaN) members: (%.2f | %.2f | %.2f | %.2f).\nThis happens when you use this object without properly initializing it first, as the default constructor will set all members to NaN in debug builds.", x, y, z, w);
+    }
   #endif
 
   /// \brief
@@ -175,162 +188,30 @@ public:
   HKV_FORCE_INLINE void setValuesDirect (float inx, float iny, float inz, float inw) { x = inx; y = iny; z = inz; w = inw; }
 
   /// \brief Returns the x component.
-  HKV_FORCE_INLINE float getX () const { return x; }
+  HKV_FORCE_INLINE float getX () const;
   
   /// \brief Returns the y component.
-  HKV_FORCE_INLINE float getY () const { return y; }
+  HKV_FORCE_INLINE float getY () const;
 
   /// \brief Returns the z component.
-  HKV_FORCE_INLINE float getZ () const { return z; }
+  HKV_FORCE_INLINE float getZ () const;
 
   /// \brief Returns the w component.
-  HKV_FORCE_INLINE float getW () const { return w; }
+  HKV_FORCE_INLINE float getW () const;
 
   /// \brief Checks whether the 4 components are all valid (ie. not NaN or infinity). Does NOT check whether the quaternion is normalized.
   HKV_FORCE_INLINE bool isValid () const;
 
   /// \brief Returns a float pointer to the internal data.
-  HKV_FORCE_INLINE const float* getDataPointer () const { return &x; }
+  HKV_FORCE_INLINE const float* getDataPointer () const;
 
   /// \brief Returns a float pointer to the internal data.
-  HKV_FORCE_INLINE float* getDataPointer () { return &x; }
+  HKV_FORCE_INLINE float* getDataPointer ();
 
   /// \brief Sets this quaternion to the spherical interpolation of 'qFrom' and 'qTo' by the factor 't'.
   VBASE_IMPEXP void setSlerp (const hkvQuat& qFrom, const hkvQuat& qTo, float t);
 
-  //union
-  //{
-  //  struct
-  //  {
-      float x, y, z, w;
-  //  };
-
-  //  float data[4];
-  //};
-
-  // ********************* OLD INTERFACE **********************
-
-  /// \brief DEPRECATED: Use hkvQuat::flipSigns instead.
-  HKVMATH_DEPRECATED_STAGE2 HKV_FORCE_INLINE void Negate () { flipSigns (); }
-
-  /// \brief DEPRECATED: Use hkvQuat::setSlerp instead.
-  HKVMATH_DEPRECATED_STAGE2 HKV_FORCE_INLINE void SLerp(const hkvQuat &from, const hkvQuat &to, float t) { setSlerp (from, to, t); }
-
-  /// \brief DEPRECATED: Use hkvQuat::setSlerp instead.
-  HKVMATH_DEPRECATED_STAGE2 HKV_FORCE_INLINE const hkvQuat Slerp(const hkvQuat& other, float t) { hkvQuat res; res.setSlerp (*this, other, t); return res; }
-
-  /// \brief DEPRECATED: Use hkvQuat::setSlerp instead.
-  HKVMATH_DEPRECATED_STAGE2 HKV_FORCE_INLINE void SLerpFast(const hkvQuat &from, const hkvQuat &to, float t) { setSlerp (from, to, t); }
-
-  /// \brief DEPRECATED: Use hkvQuat::invert instead. You should also normalize your quaternion first.
-  HKVMATH_DEPRECATED_STAGE2 HKV_FORCE_INLINE void Invert () { normalize (); invert (); }
-
-  /// \brief DEPRECATED: Use hkvQuat::transform instead.
-  HKVMATH_DEPRECATED_STAGE2 HKV_FORCE_INLINE hkvVec3 PreTransformVector (const hkvVec3& vector1) const { return transform (vector1); }
-
-  /// \brief DEPRECATED: Use hkvQuat::transformReverse instead.
-  HKVMATH_DEPRECATED_STAGE2 HKV_FORCE_INLINE hkvVec3 TransformVector (const hkvVec3& vector1) const { return transformReverse (vector1); }
-
-  /// \brief DEPRECATED: Use hkvQuat::setFromMat3 instead.
-  HKVMATH_DEPRECATED_STAGE3 HKV_FORCE_INLINE void FromMatrix (const hkvMat3& mRotation) { setFromMat3 (mRotation); }
-
-  /// \brief DEPRECATED: Use hkvQuat::dot instead.
-  HKVMATH_DEPRECATED_STAGE2 HKV_FORCE_INLINE float Dot (const hkvQuat& rhs) const { return dot (rhs); }
-
-  /// \brief DEPRECATED: Use hkvQuat::dot instead.
-  HKVMATH_DEPRECATED_STAGE2 HKV_FORCE_INLINE float DotProduct (const hkvQuat& rhs) const { return dot (rhs); }
-
-  /// \brief DEPRECATED: Use hkvQuat::getLength instead.
-  HKVMATH_DEPRECATED_STAGE3 HKV_FORCE_INLINE float Length () const { return getLength (); }
-
-  /// \brief DEPRECATED: Use hkvQuat::setIdentity instead.
-  HKVMATH_DEPRECATED_STAGE2 HKV_FORCE_INLINE void Identity () { setIdentity (); }
-
-  /// \brief DEPRECATED: Use hkvQuat::normalize instead.
-  HKVMATH_DEPRECATED_STAGE3 HKV_FORCE_INLINE void Normalize () { normalize (); }
-
-  /// \brief DEPRECATED: Use hkvQuat::getAsMat3 instead.
-  HKVMATH_DEPRECATED_STAGE2 HKV_FORCE_INLINE void Get (hkvMat3& m) const { m = getAsMat3 (); }
-
-  /// \brief DEPRECATED: Use hkvQuat::getAsMat3 instead.
-  HKVMATH_DEPRECATED_STAGE3 HKV_FORCE_INLINE void ToMatrix (hkvMat3& m) const { m = getAsMat3 (); }
-
-  /// \brief DEPRECATED: Use hkvQuat::isEqual instead.
-  HKVMATH_DEPRECATED_STAGE3 HKV_FORCE_INLINE bool Equals (const hkvQuat& rhs, float fEpsilon = HKVMATH_LARGE_EPSILON) const { return isEqual (rhs, fEpsilon); }
-
-  /// \brief DEPRECATED: Use hkvQuat::multiplyReverse instead.
-  HKVMATH_DEPRECATED_STAGE2 HKV_FORCE_INLINE void operator*= (const hkvQuat& rhs) { *this = this->multiplyReverse (rhs); }
-
-  /// \brief DEPRECATED: Use hkvQuat::setFromEulerAngles instead.
-  HKVMATH_DEPRECATED_STAGE2 HKV_FORCE_INLINE void Set (const hkvVec3& vEuler) { setFromEulerAngles (vEuler.z, vEuler.y, vEuler.x); }
-
-  /// \brief DEPRECATED: Use hkvQuat::setFromEulerAngles instead.
-  HKVMATH_DEPRECATED_STAGE2 HKV_FORCE_INLINE void Set (const float eulerangles[3]) { setFromEulerAngles (eulerangles[2], eulerangles[1], eulerangles[0]); }
-
-  /// \brief DEPRECATED: Use hkvQuat::getAxisAndAngle instead.
-  HKVMATH_DEPRECATED_STAGE2 HKV_FORCE_INLINE void Get (float& fAngle, hkvVec3& vAxis) const { getAxisAndAngle (vAxis, fAngle); }
-
-  // DEPRECATED: Use hkvQuat::setValuesDirect_Old instead.
-  //HKVMATH_DEPRECATED_STAGE1 HKV_FORCE_INLINE hkvQuat (float inx, float iny, float inz, float negw) { x = inx; y = iny; z = inz; w = -negw; }
-
-  /// \brief DEPRECATED: Use hkvNoInitialization instead.
-  HKVMATH_DEPRECATED_STAGE2 HKV_FORCE_INLINE explicit hkvQuat (bool b) { }
-
-  /// \brief DEPRECATED: Use hkvQuat::getAsMat4 instead.
-  HKVMATH_DEPRECATED_STAGE2 HKV_FORCE_INLINE void Get (hkvMat4& m) const { m = getAsMat4 (); }
-
-  /// \brief DEPRECATED: Use hkvQuat::setFromEulerAngles instead.
-  HKVMATH_DEPRECATED_STAGE3 HKV_FORCE_INLINE void SetEuler (float yaw, float pitch, float roll) { setFromEulerAngles (roll, pitch, yaw); }
-
-  /// \brief DEPRECATED: Use hkvQuat::setFromMat3 instead.
-  HKVMATH_DEPRECATED_STAGE2 HKV_FORCE_INLINE void Set (const hkvMat3& m) { setFromMat3 (m); }
-
-  /// \brief DEPRECATED: Use hkvQuat::setFromMat3 instead.
-  HKVMATH_DEPRECATED_STAGE2 HKV_FORCE_INLINE void Set (const hkvMat4& m) { setFromMat3 (m.getRotationalPart ()); }
-
-  /// \brief DEPRECATED: Use hkvQuat::setFromAxisAndAngle instead.
-  HKVMATH_DEPRECATED_STAGE3 HKV_FORCE_INLINE void FromAngleAxis (const hkvVec3& vAxis, float fAngle) { setFromAxisAndAngle (vAxis.getNormalized (), fAngle); }
-
-  /// \brief DEPRECATED: Use hkvQuat::setFromEulerAngles instead, but be sure to pass the values properly (roll, pitch, yaw, which is the reverse order).
-  HKVMATH_DEPRECATED_STAGE2 HKV_FORCE_INLINE explicit hkvQuat (const float eulerAngles[3]) { setFromEulerAngles (eulerAngles[2], eulerAngles[1], eulerAngles[0]); }
-
-  /// \brief DEPRECATED: Use hkvQuat::setFromMat3 instead.
-  HKVMATH_DEPRECATED_STAGE2 HKV_FORCE_INLINE explicit hkvQuat (const hkvMat3& rotmatrix) { setFromMat3 (rotmatrix); }
-
-  /// \brief DEPRECATED: Use hkvQuat::setFromMat3 instead.
-  HKVMATH_DEPRECATED_STAGE2 HKV_FORCE_INLINE explicit hkvQuat (const hkvMat4& rotmatrix) { setFromMat3 (rotmatrix.getRotationalPart ()); }
-
-  /// \brief DEPRECATED: Use hkvQuat::getAxisAndAngle instead.
-  HKVMATH_DEPRECATED_STAGE2 HKV_FORCE_INLINE void ToAngleAxis (hkvVec3& axis, float &angle) const { getAxisAndAngle (axis, angle); }
-
-  // DEPRECATED: Use hkvQuat::getLengthSquared instead.
-  //HKVMATH_DEPRECATED_STAGE1 HKV_FORCE_INLINE float NormSquared () const { return getLengthSquared (); }
-
-  // DEPRECATED: Use hkvQuat::getLength instead.
-  //HKVMATH_DEPRECATED_STAGE1 HKV_FORCE_INLINE float Norm () const { return getLength (); }
-
-  // DEPRECATED: Use hkvQuat::getAxisAndAngle instead.
-  //HKVMATH_DEPRECATED_STAGE1 HKV_FORCE_INLINE float GetAngle () const { hkvVec3 vAxis; float fAngle; getAxisAndAngle (vAxis, fAngle); return fAngle; }
-
-  // Missing Functions:
-
-  // void Conjugate();
-  // float GetAngleBetween(const VisQuaternion_cl &otherQuat) const;
-
-
-  // Not going to be added for now:
-
-  // void SLerpNoAdjust (const VisQuaternion_cl &startQuat, const VisQuaternion_cl &endQuat, float slerp)
-  // float MaxAbsError (const VisQuaternion_cl &q) const; 
-  // float MeanSquareError (const VisQuaternion_cl &q) const; 
-  // void LogDiff (const VisQuaternion_cl &a, const VisQuaternion_cl &b);
-  // void InnerQuadPoint (const VisQuaternion_cl &p1, const VisQuaternion_cl &p2, const VisQuaternion_cl &p3);
-  // void Log (const VisQuaternion_cl &q1);
-  // void Pow(const VisQuaternion_cl &q, float x);
-  // void Exp (const VisQuaternion_cl &q1);
-  // void Squad (const VisQuaternion_cl &p, const VisQuaternion_cl &a, const VisQuaternion_cl &b, const VisQuaternion_cl &q, float t);
-  // void SquadSpline4 (const VisQuaternion_cl &p1, const VisQuaternion_cl &p2, const VisQuaternion_cl &p3, const VisQuaternion_cl &p4, float t);
-  // void SquadSpline4Robust (const VisQuaternion_cl &p1, const VisQuaternion_cl &p2, const VisQuaternion_cl &p3, const VisQuaternion_cl &p4, float t);
+  float x, y, z, w;
 };
 
 // Allows to serialize the hkvQuat to a VArchiv using >> and <<
@@ -339,10 +220,8 @@ V_DECLARE_SERIALX_NONINTRUSIVE (hkvQuat, VBASE_IMPEXP);
 /// \brief Rotates the vector rhs by the quaternion lhs.
 HKV_FORCE_INLINE const hkvVec3 operator* (const hkvQuat& lhs, const hkvVec3& rhs);
 
-#ifdef HKVMATH_ENABLE_NEW_OPERATORS
-  /// \brief Concatenates the rotations of lhs and rhs.
-  HKV_FORCE_INLINE const hkvQuat operator* (const hkvQuat& lhs, const hkvQuat& rhs);
-#endif
+/// \brief Concatenates the rotations of lhs and rhs.
+HKV_FORCE_INLINE const hkvQuat operator* (const hkvQuat& lhs, const hkvQuat& rhs);
 
 /// \brief Compares the two quaternions for equality.
 HKV_FORCE_INLINE bool operator== (const hkvQuat& lhs, const hkvQuat& rhs);
@@ -355,7 +234,7 @@ HKV_FORCE_INLINE bool operator!= (const hkvQuat& lhs, const hkvQuat& rhs);
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -97,7 +97,7 @@ namespace FmodEditorPlugin
       if (!_b3D)
       {
         if (pd.Name == "MinDistance" || pd.Name == "MaxDistance" || pd.Name == "Directional" || pd.Name == "ConeInside" ||
-            pd.Name == "ConeOutside" || pd.Name == "LogAttenuation")
+            pd.Name == "ConeOutside" || pd.Name == "LogAttenuation" || pd.Name == "DopplerLevel")
           return PropertyFlags_e.Readonly;
       }
       else
@@ -186,6 +186,7 @@ namespace FmodEditorPlugin
       EngineFmodSound.SetVolume(_fVolume); 
       EngineFmodSound.SetPitch(_fPitch);
       EngineFmodSound.SetPan(_fPan);
+      EngineFmodSound.Set3DDopplerLevel(_fDopplerLevel);
       EngineFmodSound.Set3DFadeDistance(_fFadeMin*UniformScaling, _fFadeMax*UniformScaling);
       EngineFmodSound.SetConeAngles(_bDirectional, _fConeInside, _fConeOutside);
 
@@ -266,6 +267,7 @@ namespace FmodEditorPlugin
     float _fVolume = 1.0f;
     float _fPitch = 1.0f;
     float _fPan = 0.0f;
+    float _fDopplerLevel = 1.0f;
     float _fFadeMin = 100.0f;
     float _fFadeMax = 1000.0f;
     float _fTimeOfs = 0.0f; // TODO
@@ -535,11 +537,35 @@ namespace FmodEditorPlugin
     }
 
     /// <summary>
+    /// Defines the strength of the doppler effect for moving 3D sounds (ignored for 2D sounds)
+    /// </summary>
+    [SortedCategory(CAT_SOUND, CATORDER_SOUND),
+    PropertyOrder(14),
+    Description("Defines the strength of the doppler effect for moving 3D sounds (ignored for 2D sounds)")]
+    [EditorAttribute(typeof(SliderEditor), typeof(UITypeEditor)), SliderRange(0.0f, 5.0f, 500)]
+    public float DopplerLevel
+    {
+      get { return _fDopplerLevel; }
+      set
+      {
+        if (_fDopplerLevel == value)
+          return;
+        _fDopplerLevel = value;
+        if (_fDopplerLevel < 0.0f)
+          _fDopplerLevel = 0.0f;
+        else if (_fDopplerLevel > 5.0f)
+          _fDopplerLevel = 5.0f;
+        if (HasEngineInstance())
+          EngineFmodSound.Set3DDopplerLevel(_fDopplerLevel);
+      }
+    }
+
+    /// <summary>
     /// Priority of the sound [0..255]. Only relevant if more channels are audible than supported by the sound engine.
     /// Important sounds should have a higher priority.
     /// </summary>
     [SortedCategory(CAT_SOUND, CATORDER_SOUND),
-    PropertyOrder(14),
+    PropertyOrder(15),
     Description("Priority of the sound [0..255]. Only relevant if more channels are audible than supported by the sound engine. Important sounds should have a higher priority.")]
     public int Priority
     {
@@ -558,7 +584,7 @@ namespace FmodEditorPlugin
     /// Determines whether the sound is directional or omni sound. Directional sounds use the cone angle.
     /// </summary>
     [SortedCategory(CAT_SOUND, CATORDER_SOUND),
-    PropertyOrder(15),
+    PropertyOrder(16),
     Description("Determines whether the sound is directional or omni sound. Directional sounds use the cone angle.")]
     public bool Directional
     {
@@ -579,7 +605,7 @@ namespace FmodEditorPlugin
     /// Inside this angle the volume is full.
     /// </summary>
     [SortedCategory(CAT_SOUND, CATORDER_SOUND),
-    PropertyOrder(16),
+    PropertyOrder(17),
     Description("Sets the inside cone angle in degrees for directional sounds. Ignored for omni-sounds. Inside this angle the volume is full.")]
     public float ConeInside
     {
@@ -600,7 +626,7 @@ namespace FmodEditorPlugin
     /// Outside this angle the volume is zero.
     /// </summary>
     [SortedCategory(CAT_SOUND, CATORDER_SOUND),
-    PropertyOrder(17),
+    PropertyOrder(18),
     Description("Sets the outside cone angle in degrees for directional sounds. Ignored for omni-sounds. Outside this angle the volume is zero.")]
     public float ConeOutside
     {
@@ -620,7 +646,7 @@ namespace FmodEditorPlugin
     /// Determines if the sound instance plays background music or not.
     /// </summary>
     [SortedCategory(CAT_SOUND, CATORDER_SOUND),
-    PropertyOrder(18),
+    PropertyOrder(19),
     Description("Determines if the sound instance plays background music or not.")]
     public bool BackgroundMusic
     {
@@ -661,6 +687,10 @@ namespace FmodEditorPlugin
 
           case "Pan":
             Pan = (float)newValue;
+            break;
+
+          case "DopplerLevel":
+            DopplerLevel = (float)newValue;
             break;
         }
       }
@@ -983,6 +1013,8 @@ namespace FmodEditorPlugin
       _fPitch = info.GetSingle("_fPitch");
       _bStreaming = info.GetBoolean("_bStreaming");
       _fPan = info.GetSingle("_fPan");
+      if (SerializationHelper.HasElement(info, "_fDopplerLevel"))
+        _fDopplerLevel = info.GetSingle("_fDopplerLevel");
       _fTimeOfs = info.GetSingle("_fTimeOfs");
       _fFadeMin = info.GetSingle("_fFadeMin");
       _fFadeMax = info.GetSingle("_fFadeMax");
@@ -1018,6 +1050,7 @@ namespace FmodEditorPlugin
       info.AddValue("_fPitch", _fPitch);
       info.AddValue("_bStreaming",_bStreaming);
       info.AddValue("_fPan",_fPan);
+      info.AddValue("_fDopplerLevel", _fDopplerLevel);
       info.AddValue("_fTimeOfs",_fTimeOfs);
       info.AddValue("_fFadeMin",_fFadeMin);
       info.AddValue("_fFadeMax",_fFadeMax);
@@ -1120,7 +1153,7 @@ namespace FmodEditorPlugin
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

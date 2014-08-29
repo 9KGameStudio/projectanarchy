@@ -13,6 +13,7 @@
 #include <Vision/Runtime/Base/Container/VScopedPtr.hpp>
 
 class IVNativeDialog;
+class VMessage;
 
 /// \brief A helper that runs in the background and takes care of setting up and maintaining a FileServe connection.
 class VFileServeDaemon : private IVisCallbackHandler_cl, private VBackgroundThread
@@ -67,6 +68,12 @@ public:
   /// \brief Clears the directory that is used to cache the files in \c szAbsolutePath.
   VBASE_IMPEXP hkvResult ClearCacheDirectory(const char* szAbsolutePath) const;
 
+  /// \brief Checks if the file given by \c szAbsolutePath exists in the cache.
+  VBASE_IMPEXP bool FileExistsInCache(const char* szAbsolutePath) const;
+
+  /// \brief Checks if the directory given by \c szAbsolutePath exists in the cache.
+  VBASE_IMPEXP bool DirExistsInCache(const char* szAbsolutePath) const;
+
   /// \brief Returns the remote host that is used.
   VBASE_IMPEXP const char* GetRemoteHost()
   {
@@ -97,6 +104,9 @@ public:
 
   /// \brief Internal, do not use
   void Log(hkvLogMsgType::Enum MsgType, const char* szText, int iIndentation, const char* szTag);
+  
+  /// \brief Internal, do not use
+  VBASE_IMPEXP void LogBlocking(hkvLogMsgType::Enum MsgType, const char* szText, int iIndentation, const char* szTag);
 
 private:
   friend class VFileServeFileSystem;
@@ -146,6 +156,8 @@ private:
 
   void GetCachedModifyTime(const char* szAbsolutePath, VDateTime& time) const;
   void SetCachedModifyTime(const char* szAbsolutePath, const VDateTime& time) const;
+
+  void LogErrorFromMessage(VMessage* pMessage) const;
 
   enum InitState
   {
@@ -197,7 +209,7 @@ private:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

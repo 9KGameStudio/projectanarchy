@@ -31,17 +31,17 @@ class hkOstream;
 	/// Assuming there are no hard dependencies and the only dependencies left are through function pointers,
 	/// the following 2 things are needed to make a component optional:
 	/// 
-	/// 1) Use the macro HK_OPTIONAL_COMPONENT_DEFINE(systemName, funcPtr, implementation) to define a helper variable.
-	///    Assignment of the function pointer will not happen until HK_OPTIONAL_COMPONENT_REQUEST is called (see below).
-	/// 2) Whenever the component is actually used (typically in "implementation", above) indicate that system has been used
-	///    by calling HK_OPTIONAL_COMPONENT_MARK_USED(systemName).
+	/// -# Use the macro HK_OPTIONAL_COMPONENT_DEFINE(systemName, funcPtr, implementation) to define a helper variable.
+	/// Assignment of the function pointer will not happen until HK_OPTIONAL_COMPONENT_REQUEST is called (see below).
+	/// -# Whenever the component is actually used (typically in "implementation", above) indicate that system has been used
+	/// by calling HK_OPTIONAL_COMPONENT_MARK_USED(systemName).
 	///
 	/// To use an optional component use the HK_OPTIONAL_COMPONENT_REQUEST(systemName) macro.
 	/// This assigns the function pointer and marks the system as being requested.
 	///
 	/// Finally you can iterate through the registered systems using getFirstComponent() and getNext()
 	/// to examine which systems were linked and used. Alternatively writeReport() writes a text summary.
-class hkOptionalComponent
+class HK_EXPORT_COMMON hkOptionalComponent
 {
 	public:
 
@@ -121,7 +121,7 @@ class hkOptionalComponent
 #endif // HK_hkOptionalComponent_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

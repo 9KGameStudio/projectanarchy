@@ -15,7 +15,7 @@ using namespace System::Diagnostics;
 EngineInstancePrefab::EngineInstancePrefab(void)
 {
   m_bExport = false;
-  m_instance = (VPrefabInstance *)Vision::Game.CreateEntity("VPrefabInstance", hkvVec3(0,0,0));
+  m_instance = Vision::Game.CreateEntity<VPrefabInstance>(hkvVec3(0,0,0));
   m_instance->AddRef();
 }
 
@@ -74,7 +74,7 @@ void EngineInstancePrefab::SetFilename(String ^filename)
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

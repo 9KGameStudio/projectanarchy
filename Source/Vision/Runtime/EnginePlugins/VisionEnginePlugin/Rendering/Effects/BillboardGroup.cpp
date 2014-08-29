@@ -14,6 +14,10 @@
   #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/DeferredShading/DeferredShadingApp.hpp>
 #endif
 
+#define BILLBOARD_GROUP_INSTANCE_VERSION_1 1
+#define BILLBOARD_GROUP_INSTANCE_VERSION_2 2
+#define BILLBOARD_GROUP_INSTANCE_VERSION_3 3
+#define BILLBOARD_GROUP_INSTANCE_CURRENT_VERSION BILLBOARD_GROUP_INSTANCE_VERSION_3 // Updated current
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 // Class VBillboardStaticMesh
@@ -173,10 +177,11 @@ VCompiledEffect *VBillboardStaticMesh::CreateBillboardEffect(VBillboardGroupInst
   if ((bDeferredRenderer && bForceNoDeferred) || bNoDepthWrite)
     szPassType = VPassTypeToString(VPT_TransparentPass);
 
-  const hkvVec2 &vClipDist(pInstance->m_vClipDist);
+  const hkvVec2& vClipDist(pInstance->m_vClipDist);
+  const hkvVec4& vWindParams(pInstance->m_vWindParams); 
   char szParam[256];
   float fFar = vClipDist.y>0.f ? vClipDist.y : 999999999999.f;
-  sprintf(szParam,"ClipDistances=%.3f,%.3f;%s;PassType=%s",vClipDist.x,fFar,szDepthWrite,szPassType);
+  sprintf(szParam,"ClipDistances=%.3f,%.3f;WindParams=%.3f,%.3f,%.3f,%.3f;%s;PassType=%s",vClipDist.x,fFar,vWindParams.x,vWindParams.y,vWindParams.z,vWindParams.w,szDepthWrite,szPassType);
 
   return Vision::Shaders.CreateEffect(szFXName,szParam,EFFECTCREATEFLAG_NONE,pFXLib);
 }
@@ -196,6 +201,10 @@ VBillboardGroupInstance::VBillboardGroupInstance(int iBillboardCount,bool bCreat
 {
   m_vClipDist.x = 0.f;
   m_vClipDist.y = -1.f;
+  m_vWindParams.x = 0.5f;
+  m_vWindParams.y = 0.5f;
+  m_vWindParams.z = 0.05f;
+  m_vWindParams.w = 5.0f;
   m_iCollisionMask = 0;
   VBillboardStaticMesh *pSM = new VBillboardStaticMesh();
   pSM->InitMesh(iBillboardCount,bCreateDefaultFX ? this : (VBillboardGroupInstance *)NULL);
@@ -233,13 +242,15 @@ void VBillboardGroupInstance::SetUsedBillboardCount(int iBillboardCount, const h
 V_IMPLEMENT_SERIAL( VBillboardGroupInstance, VisStaticMeshInstance_cl, 0, &g_VisionEngineModule );
 void VBillboardGroupInstance::Serialize( VArchive &ar )
 {
-  char iLocalVersion = 2;
+  char iLocalVersion = BILLBOARD_GROUP_INSTANCE_CURRENT_VERSION;
   if (ar.IsLoading())
   {
     int iBillboardCount;
-    ar >> iLocalVersion; VASSERT_MSG(iLocalVersion<=2,"Invalid version number");
-    if (iLocalVersion>=2)
+    ar >> iLocalVersion; VASSERT_MSG(iLocalVersion<=BILLBOARD_GROUP_INSTANCE_CURRENT_VERSION,"Invalid version number");
+    if (iLocalVersion>=BILLBOARD_GROUP_INSTANCE_VERSION_2)
       ar >> m_vClipDist; // version 2
+    if (iLocalVersion>=BILLBOARD_GROUP_INSTANCE_VERSION_3)
+      ar >> m_vWindParams; // version 2
 
     // create static mesh
     VBillboardStaticMesh *pSM = new VBillboardStaticMesh();
@@ -263,10 +274,6 @@ void VBillboardGroupInstance::Serialize( VArchive &ar )
     VisEffectConfig_cl fx;
     fx.SerializeX(ar);
 
-#ifndef BILLBOARDS_AS_CROSSES
-    if (fx.HasEffects())
-      srf.SetEffect(fx.GetEffect()); // otherwise gets an effect in Init
-#endif
     // mesh data
     ar >> iBillboardCount;
     pSM->InitMesh(iBillboardCount,this);
@@ -303,23 +310,34 @@ void VBillboardGroupInstance::Serialize( VArchive &ar )
 
 #endif
 
-	// Set the color components in the correct place.
-#if (defined (WIN32) && defined(_VR_DX11))
-    for(int i = 0; i < iVertCount; ++i)
+    // Configure the color components
+    for(int i = 0; i < iBillboardCount; ++i)
     {
-      VColorRef* pRGBA = &(pV+i)->iColor;
-      pRGBA->SetRGBA(pRGBA->b, pRGBA->g, pRGBA->r, pRGBA->a);
+      for(int j = 0; j < 4; ++j)
+      {
+        /*  We use the alpha value as a boolean to animate or not the vertices in the VS 
+            depending on Wind conditions.
+
+            0 ----- 1  (wind animated vertices)
+            |       |
+            |       |
+            2 ----- 3  (fixed vertices)
+        */
+        VColorRef* pRGBA = &(pV+i*4+j)->iColor;
+        if (j == 2 || j == 3)
+        {
+          pRGBA->a = 0;
+        }
+
+        #if (defined (WIN32) && defined(_VR_DX11))
+          pRGBA->SetRGBA(pRGBA->b, pRGBA->g, pRGBA->r, pRGBA->a);
+        #elif defined (_VISION_PS3) 
+          pRGBA->SetRGBA(pRGBA->g, pRGBA->b, pRGBA->a, pRGBA->r);
+        #endif
+
+      }
     }
           
-#elif defined (_VISION_PS3) 
-    for(int i = 0; i < iVertCount; ++i)
-    {
-      VColorRef* pRGBA = &(pV+i)->iColor;
-      pRGBA->SetRGBA(pRGBA->g, pRGBA->b, pRGBA->a, pRGBA->r);
-    }
-    
-#endif
-
     UnLockVertices();
 
     // base serialization
@@ -328,6 +346,7 @@ void VBillboardGroupInstance::Serialize( VArchive &ar )
   {
     ar << iLocalVersion;
     ar << m_vClipDist; // version 2
+    ar << m_vWindParams; // version 3
 
     // save surface information
     VBillboardStaticMesh *pSM = (VBillboardStaticMesh *)GetMesh();
@@ -355,7 +374,7 @@ void VBillboardGroupInstance::Serialize( VArchive &ar )
 	// Because the color doesn't get stored in a VColorRef object we need to always save
 	// the color components in the same way. For DX11 we need to change the color components
 	// in order gets saved in the same order as DX9 and then restore it to its previous order.
-#if defined (WIN32) && defined(_VR_DX11)
+#if defined (_VISION_WIN32) && defined(_VR_DX11)
     for(int i = 0; i < iVertCount; ++i)
     {
       VColorRef* pRGBA = &(pV+i)->iColor;
@@ -365,7 +384,7 @@ void VBillboardGroupInstance::Serialize( VArchive &ar )
 
     ar.Write(pV,iVertCount*sizeof(VBillboardStaticMesh::VBillboardVertex_t),VBillboardStaticMesh::VBillboardVertex_t::GetFormatString(),iVertCount);
 
-#if defined (WIN32) && defined(_VR_DX11)
+#if defined (_VISION_WIN32) && defined(_VR_DX11)
     for(int i = 0; i < iVertCount; ++i)
     {
       VColorRef* pRGBA = &(pV+i)->iColor;
@@ -409,6 +428,15 @@ void VBillboardGroupInstance::SetClipDistances(float fNear, float fFar)
   ReassignShader();
 }
 
+void VBillboardGroupInstance::SetWindParameters(float dirX, float dirY, float strength)
+{
+  m_vWindParams.x = dirX;
+  m_vWindParams.y = dirY;
+  m_vWindParams.z = strength;
+  m_vWindParams.w = strength * 5.0f;
+
+  ReassignShader();
+}
 #ifdef SUPPORTS_LIT_FILE_LOADING
 
 bool VBillboardGroupInstance::GatherLightmapInfo(VLightmapSceneInfo &sceneInfo)
@@ -500,7 +528,7 @@ bool VBillboardGroupInstance::GatherLightmapInfo(VLightmapSceneInfo &sceneInfo)
 #endif // SUPPORTS_LIT_FILE_LOADING
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

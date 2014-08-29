@@ -10,7 +10,7 @@
 
 #include <Vision/Runtime/Base/System/Memory/Manager/VGuardingMemoryManager.hpp>
 
-#if defined(WIN32) && !defined(_VISION_WINRT)
+#if defined(_VISION_WIN32) && !defined(_VISION_WINRT)
 
 #define NOMANSLANDSIZE 32
 #define MAGIC 0x52574152
@@ -195,8 +195,7 @@ void VGuardingMemoryManager::AlignedFree(void* ptr)
     return;
   }
 
-  static VMutex mutex;
-  VMutexLocker lock(mutex);
+  VMutexLocker lock(m_mutex);
 
   if(iNumRetainedAllocations == iRetainAllocations)
   {
@@ -266,7 +265,7 @@ size_t VGuardingMemoryManager::AlignedMemSize(void* ptr, int iAlignment)
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

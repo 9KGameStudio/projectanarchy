@@ -18,10 +18,10 @@
 
 
 #if !(defined(ANDROID_NDK) || defined(ANDROID) || defined(NDK) || defined(__ANDROID_API__) || defined(HK_PLATFORM_TIZEN))
-#include <Common/Base/hkBase.h>
+#include <Common/Base/hkBase.h> 
 #endif
 
-class extAllocator 
+class HK_EXPORT_COMMON extAllocator 
 {
 	public:
 			// Get the allocator. If one of the init methods has not
@@ -36,7 +36,7 @@ class extAllocator
 		static void HK_CALL quit();
 };
 
-struct extContainerAllocator
+struct HK_EXPORT_COMMON extContainerAllocator
 {
 	hkMemoryAllocator& get(void*) { return extAllocator::getInstance(); }
 };
@@ -66,9 +66,9 @@ HK_FORCE_INLINE void HK_CALL extAlignedDeallocate(TYPE* ptr)
 }
 
 // make sure these are defined before we redefine them
-#include <Common/Base/Container/String/hkStringBuf.h>
-#include <Common/Base/Container/String/hkStringPtr.h>
-#include <Common/Base/Container/PointerMap/hkPointerMap.h>
+#include <Common/Base/Container/String/hkStringBuf.h> 
+#include <Common/Base/Container/String/hkStringPtr.h> 
+#include <Common/Base/Container/PointerMap/hkPointerMap.h> 
 
 #if defined(HK_COMPILER_MWERKS)
 #	define EXT_OPERATOR_DELETE
@@ -78,7 +78,7 @@ HK_FORCE_INLINE void HK_CALL extAlignedDeallocate(TYPE* ptr)
 
 #define EXT_DECLARE_REFOBJECT_ALLOCATOR() \
 	HK_FORCE_INLINE void* HK_CALL operator new(hk_size_t nbytes)	{ HK_ASSERT_OBJECT_SIZE_OK(nbytes); hkReferencedObject* b = static_cast<hkReferencedObject*>(extAllocator::getInstance().blockAlloc(static_cast<int>(nbytes))); return b; } \
-	HK_FORCE_INLINE void  HK_CALL operator delete(void* p, hk_size_t nbytes) { hkReferencedObject* b = static_cast<hkReferencedObject*>(p); extAllocator::getInstance().blockFree(p, (b->m_memSizeAndFlags == 0xffff) ? static_cast<int>(nbytes) : b->m_memSizeAndFlags); } \
+	HK_FORCE_INLINE void  HK_CALL operator delete(void* p, hk_size_t nbytes) { hkReferencedObject* b = static_cast<hkReferencedObject*>(p); extAllocator::getInstance().blockFree(p, (b->getMemorySizeAndFlags() == 0xffff) ? static_cast<int>(nbytes) : b->getMemorySizeAndFlags()); } \
 	HK_FORCE_INLINE void* HK_CALL operator new(hk_size_t, void* p)	{ return p; }	\
 	EXT_OPERATOR_DELETE \
 	HK_MUST_END_WITH_SEMICOLON
@@ -146,15 +146,16 @@ class extMap : public hkMap<KEY,VAL,OPS,Allocator>
 #define hkArrayBase extArrayBase
 #define hkArray extArray
 #define hkPointerMapStorage extPointerMapStorage
+#define hkPointerMapCast extPointerMapCast
 #define hkPointerMap extPointerMap
 #define hkMap extMap
 
 #undef HKBASE_HKSTRINGBUF_H
-#include <Common/Base/Container/String/hkStringBuf.h>
+#include <Common/Base/Container/String/hkStringBuf.h> 
 #undef HKBASE_HKSTRINGPTR_H
-#include <Common/Base/Container/String/hkStringPtr.h>
+#include <Common/Base/Container/String/hkStringPtr.h> 
 #undef HKBASE_POINTER_MAP_H
-#include <Common/Base/Container/PointerMap/hkPointerMap.h>
+#include <Common/Base/Container/PointerMap/hkPointerMap.h> 
 
 #undef hkContainerHeapAllocator
 #undef hkContainerTempAllocator
@@ -170,7 +171,7 @@ class extMap : public hkMap<KEY,VAL,OPS,Allocator>
 
 class hkCriticalSection;
 
-class extCriticalSection
+class HK_EXPORT_COMMON extCriticalSection
 {
 	public:
 		
@@ -190,7 +191,7 @@ class extCriticalSection
 #endif // HKBASE_HKBASEEXT_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

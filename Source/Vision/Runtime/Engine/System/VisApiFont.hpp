@@ -265,79 +265,6 @@ public:
     float fZCoord=-1.f);
 
   /// \brief
-  ///   Wide character version of PrintText
-  ///
-  /// \param pRI
-  ///   target interface. Can be NULL to batch the text and render it later (automatically)
-  /// 
-  /// \param vPos
-  ///   Text position on screen
-  ///
-  /// \param szText
-  ///   Text to print
-  /// 
-  /// \param iColor
-  ///   text color
-  /// 
-  /// \param iState
-  ///   Text render state (e.g. transparency mode), can be left to VisFont_cl::DEFAULT_STATE
-  /// 
-  /// \param fScaling
-  ///   Text scaling
-  /// 
-  /// \param pClipRect
-  ///   Optional clipping rectangle for software clipping. This function only clips away characters
-  ///   that are completely outside the rectangle. Partially clipping has to be done with a scissor
-  ///   rectangle by the hardware.
-  ///
-  /// \param fZCoord
-  ///   Optional z-coordinate for sorting into z-buffer. This value only affects the font rendering
-  ///   if the RENDERSTATEFLAG_ALWAYSVISIBLE is not specified for the iState member. In
-  ///   VisFont_cl::DEFAULT_STATE that flag is set.
-  ///
-  /// \note
-  ///   Wide character (wchar_t) versions are deprecated. Use UTF8 strings for unicode text.
-  HKV_DEPRECATED_2012_1 VISION_APIFUNC void PrintText(IVRender2DInterface *pRI, const hkvVec2 &vPos, const wchar_t *szText, 
-    VColorRef iColor, const VSimpleRenderState_t &iState=VisFont_cl::DEFAULT_STATE, float fScaling=1.f, 
-    const VRectanglef *pClipRect=NULL, float fZCoord=-1.f);
-
-  /// \brief
-  ///   Wide character version of PrintText with customizable direction
-  ///
-  /// \param pRI
-  ///   target interface. Can be NULL to batch the text and render it later (automatically)
-  ///
-  /// \param vPos
-  ///   Text position on screen
-  /// 
-  /// \param vDir
-  ///   Text direction. Use hkvVec2(1.f,0.f) for standard direction. The length of this vector
-  ///   defines the scaling
-  /// 
-  /// \param vUp
-  ///   The text up-vector. Use hkvVec2(0.f,-1.f) for standard up-direction.
-  /// 
-  /// \param szText
-  ///   Text to print
-  /// 
-  /// \param iColor
-  ///   text color
-  /// 
-  /// \param iState
-  ///   Text render state (e.g. transparency mode), can be left to VisFont_cl::DEFAULT_STATE
-  /// 
-  /// \param fZCoord
-  ///   Optional z-coordinate for sorting into z-buffer. This value only affects the font rendering
-  ///   if the RENDERSTATEFLAG_ALWAYSVISIBLE is not specified for the iState member. In
-  ///   VisFont_cl::DEFAULT_STATE that flag is set.
-  ///
-  /// \note
-  ///   Wide character (wchar_t) versions are deprecated. Use UTF8 strings for unicode text.
-  HKV_DEPRECATED_2012_1 VISION_APIFUNC void PrintText(IVRender2DInterface *pRI, const hkvVec2 &vPos, const hkvVec2 &vDir, 
-    const hkvVec2 &vUp, const wchar_t *szText, VColorRef iColor, const VSimpleRenderState_t &iState=VisFont_cl::DEFAULT_STATE, 
-    float fZCoord=-1.f);
-
-  /// \brief
   ///   Overloaded version that renders text using a a shader instead of a VSimpleRenderState_t.
   ///
   /// \param pRI
@@ -369,39 +296,6 @@ public:
   ///   VisFont_cl::DEFAULT_STATE that flag is set.
   VISION_APIFUNC void PrintText(IVRender2DInterface *pRI, const hkvVec2 &vPos, const char *szText, VColorRef iColor, 
     VCompiledShaderPass &shader, float fScaling=1.f, const VRectanglef *pClipRect=NULL, float fZCoord=-1.f);
-
-  /// \brief
-  ///   Overloaded version that renders with a shader instead of using a VSimpleRenderState_t
-  ///
-  /// \param pRI
-  ///   target interface. Can be NULL to batch the text and render it later (automatically)
-  /// 
-  /// \param vPos
-  ///   Text position on screen
-  ///
-  /// \param szText
-  ///   Text to print
-  /// 
-  /// \param iColor
-  ///   text color
-  ///
-  /// \param shader
-  ///   The shader used for rendering
-  /// 
-  /// \param fScaling
-  ///   Text scaling
-  /// 
-  /// \param pClipRect
-  ///   Optional clipping rectangle for software clipping. This function only clips away characters
-  ///   that are completely outside the rectangle. Partially clipping has to be done with a scissor
-  ///   rectangle by the hardware.
-  ///
-  /// \param fZCoord
-  ///   Optional z-coordinate for sorting into z-buffer. This value only affects the font rendering
-  ///   if the RENDERSTATEFLAG_ALWAYSVISIBLE is not specified for the iState member. In
-  ///   VisFont_cl::DEFAULT_STATE that flag is set.
-  HKV_DEPRECATED_2012_1 VISION_APIFUNC void PrintText(IVRender2DInterface *pRI, const hkvVec2 &vPos, const wchar_t *szText, 
-    VColorRef iColor, VCompiledShaderPass &shader, float fScaling=1.f, const VRectanglef *pClipRect=NULL, float fZCoord=-1.f);
 
   /// \brief
   ///   Overloaded version that renders text using a shader instead of a VSimpleRenderState_t.
@@ -436,41 +330,6 @@ public:
     const char *szText, VColorRef iColor, VCompiledShaderPass &shader, float fZCoord=-1.f);
 
   /// \brief
-  ///   Overloaded version that renders with a shader instead of using a VSimpleRenderState_t
-  ///
-  /// \param pRI
-  ///   target interface. Can be NULL to batch the text and render it later (automatically)
-  /// 
-  /// \param vPos
-  ///   Text position on screen
-  /// 
-  /// \param vDir
-  ///   Text direction. Use hkvVec2(1.f,0.f) for standard direction. The length of this vector
-  ///   defines the scaling
-  /// 
-  /// \param vUp
-  ///   The text up-vector. Use hkvVec2(0.f,-1.f) for standard up-direction.
-  ///
-  /// \param szText
-  ///   Text to print
-  /// 
-  /// \param iColor
-  ///   text color
-  ///
-  /// \param shader
-  ///   The shader used for rendering 
-  /// 
-  /// \param fZCoord
-  ///   Optional z-coordinate for sorting into z-buffer. This value only affects the font rendering
-  ///   if the RENDERSTATEFLAG_ALWAYSVISIBLE is not specified for the iState member. In
-  ///   VisFont_cl::DEFAULT_STATE that flag is set.
-  ///
-  /// \note
-  ///   Wide character (wchar_t) versions are deprecated. Use UTF8 strings for unicode text.
-  HKV_DEPRECATED_2012_1 VISION_APIFUNC void PrintText(IVRender2DInterface *pRI, const hkvVec2 &vPos, const hkvVec2 &vDir, 
-    const hkvVec2 &vUp, const wchar_t *szText, VColorRef iColor, VCompiledShaderPass &shader, float fZCoord=-1.f);
-
-  /// \brief
   ///   Creates a mesh buffer from the text, where each character creates two triangles in the mesh
   /// 
   /// This is useful to display 3D text in the scene. To actually display the mesh, set this mesh
@@ -502,29 +361,6 @@ public:
     VisMeshBuffer_cl *pUseMesh=NULL);
 
   /// \brief
-  ///   Wide character version of CreateTextMesh.
-  ///
-  /// \param szText
-  ///   Text to "print" into the mesh
-  /// 
-  /// \param iColor
-  ///   text color
-  /// 
-  /// \param iPageFilter
-  ///   Page index of the font bitmap. Multiple meshes have to be created if there is more than one
-  ///   font bitmap page
-  ///
-  /// \param pUseMesh
-  ///   Optional existing mesh to use. It must have a position, UV0 and color stream, other streams remain untouched. 
-  ///   This function re-allocates vertices if the number of vertices (6 per character) is not sufficient.
-  ///   The primitive type must be MB_PRIMTYPE_TRILIST.
-  ///
-  /// \note
-  ///   Wide character (wchar_t) versions are deprecated. Use UTF8 strings for unicode text.
-  HKV_DEPRECATED_2012_1 VISION_APIFUNC VisMeshBuffer_cl *CreateTextMesh(const wchar_t *szText, VColorRef iColor, 
-    int iPageFilter=0, VisMeshBuffer_cl *pUseMesh=NULL);
-
-  /// \brief
   ///   Evaluates the dimension of a text string in pixels
   ///
   /// \param szText
@@ -536,23 +372,6 @@ public:
   /// \param iCharCount
   ///   The character count of the text. Use -1 if character count is unknown.
   VISION_APIFUNC bool GetTextDimension(const char *szText, VRectanglef &dest, int iCharCount=-1);
-
-  /// \brief
-  ///   Wide character version of GetTextDimension (same parameters otherwise)
-  ///
-  ///
-  /// \param szText
-  ///   Text to compute the dimensions from.
-  ///
-  /// \param dest
-  ///   Output rectangle.
-  ///
-  /// \param iCharCount
-  ///   The character count of the text. Use -1 if character count is unknown. 
-  ///
-  /// \note
-  ///   Wide character (wchar_t) versions are deprecated. Use UTF8 strings for unicode text.
-  HKV_DEPRECATED_2012_1 VISION_APIFUNC bool GetTextDimension(const wchar_t *szText, VRectanglef &dest, int iCharCount=-1);
 
   /// \brief
   ///   Evaluates the position offset of text using the alignment
@@ -578,32 +397,6 @@ public:
     Alignment_e vAlign, float fScaling=1.f);
 
   /// \brief
-  ///   Wide character version of GetTextPositionOfs.
-  ///
-  /// \param szText
-  ///   Text to compute the offset from.
-  ///
-  /// \param vSize
-  ///   The size of the rectangle containing the text.
-  ///
-  /// \param hAlign
-  ///   Horizontal aAlignment of the text.
-  ///
-  /// \param vAlign
-  ///   Vertical aAlignment of the text.
-  ///
-  /// \param fScaling
-  ///   Optional scaling parameter.
-  ///
-  /// \return
-  ///   Returns the two-dimensional offset from the upper-left corner of the rectangle containing the text.
-  ///
-  /// \note
-  ///   Wide character (wchar_t) versions are deprecated. Use UTF8 strings for unicode text.
-  HKV_DEPRECATED_2012_1 VISION_APIFUNC hkvVec2 GetTextPositionOfs(const wchar_t *szText, const hkvVec2 &vSize, 
-    Alignment_e hAlign, Alignment_e vAlign, float fScaling=1.f);
-
-  /// \brief
   ///   Returns the character index at horizontal position in pixels. Useful when clicking into a
   ///   text field.
   ///
@@ -622,29 +415,6 @@ public:
   /// \return
   ///   Returns the character index at position fHorizPos.
   VISION_APIFUNC int GetCharacterIndexAtPos(const char *szText, 
-    float fHorizPos, int iCharCount=-1, bool bRounding=true);
-
-  /// \brief
-  ///   Wide character version of GetCharacterIndexAtPos (same parameters otherwise)
-  ///
-  /// \param szText
-  ///   The text subject to determining the character.
-  ///
-  /// \param fHorizPos
-  ///   The horizontal position of the character.
-  ///
-  /// \param iCharCount
-  ///   The character count of the text. Use -1 if character count is unknown.
-  ///
-  /// \param bRounding
-  ///   If set to true, rounding to the nearest character is enabled.
-  ///
-  /// \return
-  ///   Returns the character index at position fHorizPos.
-  ///
-  /// \note
-  ///   Wide character (wchar_t) versions are deprecated. Use UTF8 strings for unicode text.
-  HKV_DEPRECATED_2012_1 VISION_APIFUNC int GetCharacterIndexAtPos(const wchar_t *szText, 
     float fHorizPos, int iCharCount=-1, bool bRounding=true);
 
   /// \brief
@@ -1037,7 +807,7 @@ public:
 #endif // VISAPIFONT_HPP_INCLUDED
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

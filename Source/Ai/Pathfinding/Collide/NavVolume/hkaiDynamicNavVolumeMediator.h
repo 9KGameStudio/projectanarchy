@@ -9,12 +9,12 @@
 #define HK_DYNAMIC_NAV_VOLUME_MEDIATOR_H
 
 #include <Ai/Pathfinding/Collide/NavVolume/hkaiNavVolumeMediator.h>
+#include <Ai/Pathfinding/NavMesh/Streaming/hkaiStreamingCollection.h>
 
-class hkaiStreamingCollection;
 class hkcdDynamicAabbTree;
 
 /// An implementation of hkaiNavVolumeMediator for streaming nav volumes.
-class hkaiDynamicNavVolumeMediator : public hkaiNavVolumeMediator
+class HK_EXPORT_AI hkaiDynamicNavVolumeMediator : public hkaiNavVolumeMediator
 {
 	//+version(0)
 	public:
@@ -26,6 +26,7 @@ class hkaiDynamicNavVolumeMediator : public hkaiNavVolumeMediator
 		~hkaiDynamicNavVolumeMediator();
 
 		virtual hkaiPackedKey getClosestPoint(const GetClosestPointInput& gcpInput, hkVector4& closestPointOut ) const;
+		virtual void queryAabb( const AabbQueryInput& input, hkArray<hkaiPackedKey>::Temp& hits ) const;
 
 		/// Pointer to the hkaiStreamingCollection
 		hkRefPtr<const class hkaiStreamingCollection> m_collection; 
@@ -36,7 +37,7 @@ class hkaiDynamicNavVolumeMediator : public hkaiNavVolumeMediator
 #endif // HK_DYNAMIC_NAV_VOLUME_MEDIATOR_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

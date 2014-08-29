@@ -15,7 +15,7 @@
 /// Sends a memory snapshot to the VDB clients.
 /// Does not a consume command, but rather sends the packet when stepped for the
 /// first time and then deletes itself.
-class hkMemorySnapshotProcess : public hkReferencedObject, public hkProcess
+class HK_EXPORT_COMMON hkMemorySnapshotProcess : public hkReferencedObject, public hkProcess
 {
 	public:
 		HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_VDB);
@@ -44,7 +44,7 @@ class hkMemorySnapshotProcess : public hkReferencedObject, public hkProcess
 #endif	// HK_UTILITIES2_MEMORY_SNAPSHOT_VIEWER_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -433,10 +433,17 @@ public:
 class VMemBlockWrapperStream : public IVFileInStream
 {
 public:
+  /// \brief
+  ///   Constructor. Use this version if you are going to supply the data block via a ReInit call later on.
+  VBASE_IMPEXP VMemBlockWrapperStream();
 
   /// \brief
-  ///   Constructor. Takes the memory pointer and the amount of memory in the block. The memory must persist the lifetime of this stream
+  ///   Constructor. Takes the memory pointer and the amount of memory in the block. The memory must persist the lifetime of this stream.
   VBASE_IMPEXP VMemBlockWrapperStream(const void* pData, int iSize);
+
+  /// \brief
+  ///   Re-initializes the read block for the stream. Takes the memory pointer and the amount of memory in the block. The memory must persist the lifetime of this stream.
+  VBASE_IMPEXP void ReInit(const void* pData, int iSize);
 
   /// \brief
   ///   Left empty (does not delete this stream object).
@@ -697,6 +704,8 @@ public:
   }
 
 private:
+  VMemoryTempBuffer(const VMemoryTempBuffer& rhs);
+  void operator=(const VMemoryTempBuffer& rhs);
 
   int m_iAllocatedSize;
   VISION_ALIGN(16) char m_StaticBuffer[iStaticSize];
@@ -705,10 +714,67 @@ private:
 };
 
 
+/// \brief
+///   Derived IVFileOutStream class that wraps around a VMemoryTempBuffer.
+///   Use this class if you want to write to a stream without doing any heap allocations.
+///
+/// The size of the stack buffer is supplied via the template argument 'iStaticSize'.
+/// If write operations should go beyond this size a new buffer will be allocated on the heap.
+template<int iStaticSize>
+class VMemoryTempBufferOutStream : public IVFileOutStream
+{
+public:
+  /// \brief
+  ///   Constructor.
+  inline VMemoryTempBufferOutStream() : IVFileOutStream(NULL), m_iCurrentPos(0) {}
+
+  inline virtual size_t Write(const void* pBuffer, size_t iLen)
+  {
+    int iBufferSize = m_Buffer.GetBufferSize();
+    int iNewBufferSize = static_cast<int>(m_iCurrentPos + iLen);
+    // Increase buffer size by a factor of 1.5 if the current buffer is full.
+    if (iNewBufferSize > iBufferSize)
+      m_Buffer.EnsureCapacity(iNewBufferSize + iNewBufferSize / 2, true);
+    
+    memcpy(m_Buffer.AsChar() + m_iCurrentPos, pBuffer, iLen);
+    m_iCurrentPos += static_cast<int>(iLen);
+    return iLen;
+  }
+
+  /// \brief
+  ///   Left empty (does not delete this stream object).
+  inline virtual void Close() {}
+
+  /// \brief
+  ///   Left empty.
+  inline virtual void Flush() {}
+
+  /// \brief
+  ///   Returns NULL.
+  inline virtual const char* GetFileName() { return NULL; }
+
+  /// \brief
+  ///   Resets the current position of the stream.
+  inline void Reset() { m_iCurrentPos = 0; };
+
+  /// \brief
+  ///   Returns a pointer to the start of the data. In case the buffer needs to be
+  ///   re-allocated this pointer can become invalid after calling 'Write'.
+  inline const char* GetData() const { return m_Buffer.AsChar(); }
+
+  /// \brief
+  ///   Returns the size of the data that has already been written to the stream.
+  inline int GetSize() const { return m_iCurrentPos; }
+
+private:
+  VMemoryTempBuffer<iStaticSize> m_Buffer;
+  int m_iCurrentPos;
+};
+
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

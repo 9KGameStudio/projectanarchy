@@ -13,10 +13,10 @@
 #include <Common/Base/Types/Geometry/hkGeometry.h>
 #include <Common/Base/Types/Geometry/Aabb/hkAabb.h>
 
-extern const class hkClass hkaiInvertedAabbVolumeClass;
+extern HK_EXPORT_AI const class hkClass hkaiInvertedAabbVolumeClass;
 
 /// An implementation of the hkaiVolume interface representing the exterior of an AABB.
-class hkaiInvertedAabbVolume : public hkaiVolume
+class HK_EXPORT_AI hkaiInvertedAabbVolume : public hkaiVolume
 {
 	//+vtable(true)
 	//+version(0)
@@ -34,6 +34,8 @@ class hkaiInvertedAabbVolume : public hkaiVolume
 
 		virtual hkBool32 containsAabb( const hkAabb& aabbIn ) const HK_OVERRIDE;
 
+		virtual hkBool32 overlapsAabb( const hkAabb& aabbIn ) const HK_OVERRIDE;
+
 		virtual hkResult calcGeometry(hkGeometry& geom) const HK_OVERRIDE;
 
 		virtual void getAabb( hkAabb& aabbOut ) const HK_OVERRIDE;
@@ -47,7 +49,7 @@ class hkaiInvertedAabbVolume : public hkaiVolume
 #endif // HKAI_INVERTED_AABB_VOLUME_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

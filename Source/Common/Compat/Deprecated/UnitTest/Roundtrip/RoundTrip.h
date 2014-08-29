@@ -8,14 +8,14 @@
 #ifndef HKSERIALIZE_RoundTrip_H
 #define HKSERIALIZE_RoundTrip_H
 
-extern const hkClass hkRoundTripClass;
+extern const hkClass RoundTripClass;
 
-class hkRoundTrip
+class RoundTrip
 {
 	public:
 
 		HK_DECLARE_REFLECTION();
-		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_DEMO,hkRoundTrip);
+		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_DEMO,RoundTrip);
 
 		enum FlagBits
 		{
@@ -25,7 +25,7 @@ class hkRoundTrip
 			BIT_XZ = 5
 		};
 
-		hkRoundTrip() :
+		RoundTrip() :
 			m_flags0(0),
 			m_flags1(BIT_X),
 			m_flags2(BIT_XZ|BIT_Y),
@@ -41,7 +41,7 @@ class hkRoundTrip
 #endif // HKSERIALIZE_RoundTrip_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

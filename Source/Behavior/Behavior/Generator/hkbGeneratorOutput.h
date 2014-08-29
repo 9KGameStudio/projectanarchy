@@ -9,9 +9,9 @@
 #ifndef HKB_GENERATOR_OUTPUT_H
 #define HKB_GENERATOR_OUTPUT_H
 
-
 #include <Behavior/Behavior/Generator/hkbGeneratorPartitionInfo.h>
 #include <Animation/Animation/Rig/hkaSkeleton.h>
+#include <Common/Base/Container/BitField/hkBitField.h>
 
 /// Stores the output produced by an hkbGenerator.
 class hkbGeneratorOutput
@@ -20,42 +20,116 @@ class hkbGeneratorOutput
 
 		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_BEHAVIOR, hkbGeneratorOutput );
 
-			/// The standard tracks used by behavior graphs.
-		enum StandardTracks
+			// Tracks for pose generation and blending only.
+			
+		enum PoseTracks
 		{
-			TRACK_WORLD_FROM_MODEL,
-			TRACK_EXTRACTED_MOTION,
-			TRACK_POSE,
-			TRACK_FLOAT_SLOTS,
-			TRACK_RIGID_BODY_RAGDOLL_CONTROLS,
-			TRACK_RIGID_BODY_RAGDOLL_BLEND_TIME,
-			TRACK_POWERED_RAGDOLL_CONTROLS,
-			TRACK_POWERED_RAGDOLL_WORLD_FROM_MODEL_MODE,
-			TRACK_KEYFRAMED_RAGDOLL_BONES,
-			TRACK_KEYFRAME_TARGETS,
-			TRACK_ANIMATION_BLEND_FRACTION,
-			TRACK_ATTRIBUTES,
-			TRACK_FOOT_IK_CONTROLS,
-			TRACK_CHARACTER_CONTROLLER_CONTROLS,
-			TRACK_HAND_IK_CONTROLS_0,
-			TRACK_HAND_IK_CONTROLS_1,
-			TRACK_HAND_IK_CONTROLS_2,
-			TRACK_HAND_IK_CONTROLS_3,
-			TRACK_HAND_IK_CONTROLS_NON_BLENDABLE_0,
-			TRACK_HAND_IK_CONTROLS_NON_BLENDABLE_1,
-			TRACK_HAND_IK_CONTROLS_NON_BLENDABLE_2,
-			TRACK_HAND_IK_CONTROLS_NON_BLENDABLE_3,
-			TRACK_DOCKING_CONTROLS,
-			TRACK_AI_CONTROL_CONTROLS_BLENDABLE,
-			TRACK_AI_CONTROL_CONTROLS_NON_BLENDABLE,
-			NUM_STANDARD_TRACKS,
+			START_OF_POSE_TRACKS,
+				TRACK_WORLD_FROM_MODEL = START_OF_POSE_TRACKS,
+				TRACK_EXTRACTED_MOTION,
+				TRACK_POSE,
+			END_OF_POSE_TRACKS,
+
+			START_OF_POSE_DATA_TRACKS = END_OF_POSE_TRACKS,
+				TRACK_FLOAT_SLOTS = START_OF_POSE_DATA_TRACKS,
+				TRACK_ATTRIBUTES, 
+			END_OF_POSE_DATA_TRACKS,
 		};
 
-		enum
+			// Extra feature tracks.
+			
+		enum FeatureTracks
 		{
-			// This needs to be set to the number of tracks in StandardTracks above
-			// that have the prefix TRACK_HAND_IK_CONTROLS.
-			NUM_HAND_IK_CONTROLS_TRACKS = 4,
+			START_OF_FEATURE_TRACKS = END_OF_POSE_DATA_TRACKS,
+				TRACK_DOCKING_CONTROLS = START_OF_FEATURE_TRACKS,
+			END_OF_FEATURE_TRACKS,
+		};
+
+			// Physics-optional tracks.
+			// These tracks may be used in such a way that requires physics, but can be used w/o physics.
+			
+		enum PhysicsOptionalTracks
+		{
+			START_OF_OPTIONAL_PHYSICS_TRACKS = END_OF_FEATURE_TRACKS,
+				START_OF_HAND_IK_TRACKS = START_OF_OPTIONAL_PHYSICS_TRACKS,
+					TRACK_HAND_IK_CONTROLS_0 = START_OF_HAND_IK_TRACKS,
+					TRACK_HAND_IK_CONTROLS_1,
+					TRACK_HAND_IK_CONTROLS_2,
+					TRACK_HAND_IK_CONTROLS_3,
+				END_OF_HAND_IK_TRACKS,
+			END_OF_OPTIONAL_PHYSICS_TRACKS = END_OF_HAND_IK_TRACKS,
+
+			// This needs to be set to the number of tracks above that have the prefix TRACK_HAND_IK_CONTROLS.
+			HAND_IK_CONTROLS_TRACK_COUNT = (TRACK_HAND_IK_CONTROLS_3 - TRACK_HAND_IK_CONTROLS_0) + 1,
+		};
+
+			// Physics-required tracks.
+			// These tracks are used in a way that requires physics support.
+			
+		enum PhysicsRequiredTracks
+		{
+			START_OF_PHYSICS_TRACKS = END_OF_OPTIONAL_PHYSICS_TRACKS,
+				TRACK_CHARACTER_CONTROLLER_CONTROLS = START_OF_PHYSICS_TRACKS,
+				START_OF_RAGDOLL_TRACKS, 
+					TRACK_RIGID_BODY_RAGDOLL_CONTROLS = START_OF_RAGDOLL_TRACKS,
+					TRACK_RIGID_BODY_RAGDOLL_BLEND_TIME,
+					TRACK_POWERED_RAGDOLL_CONTROLS,
+					TRACK_POWERED_RAGDOLL_WORLD_FROM_MODEL_MODE,
+					TRACK_KEYFRAMED_RAGDOLL_BONES,
+					TRACK_KEYFRAME_TARGETS,
+					TRACK_ANIMATION_BLEND_FRACTION,
+				END_OF_RAGDOLL_TRACKS,
+				TRACK_FOOT_IK_CONTROLS = END_OF_RAGDOLL_TRACKS,
+			END_OF_PHYSICS_TRACKS,
+		};
+
+			// Ai-required tracks.
+			// These tracks are used in a way that requires ai support.
+			
+		enum AiRequiredTracks
+		{
+			START_OF_AI_TRACKS = END_OF_PHYSICS_TRACKS,
+				TRACK_AI_CONTROL_CONTROLS_BLENDABLE = START_OF_AI_TRACKS,
+				TRACK_AI_CONTROL_CONTROLS_NON_BLENDABLE,
+			END_OF_AI_TRACKS,
+		};
+
+			/// Convenience counts for various track capabilities.
+			/// Each count implies support for the previous.
+		enum TrackCounts
+		{
+				/// Only support pose generation and blending (no extra data like attributes and float data)
+			NUM_POSE_TRACKS = END_OF_POSE_TRACKS,
+
+				/// Support pose generation and blending along with extra data like attributes and float data
+			NUM_POSE_DATA_TRACKS = END_OF_POSE_DATA_TRACKS,
+
+				/// Support Docking.
+			NUM_DOCKING_TRACKS = TRACK_DOCKING_CONTROLS + 1,
+
+				/// Support HandIk.
+			NUM_HAND_IK_TRACKS = END_OF_HAND_IK_TRACKS,
+
+				/// Support Character Control.
+			NUM_CHARACTER_CONTROL_TRACKS = TRACK_CHARACTER_CONTROLLER_CONTROLS + 1,
+
+				/// Support Ragdoll.
+			NUM_RAGDOLL_TRACKS = END_OF_RAGDOLL_TRACKS,
+
+				/// Support FootIk.
+			NUM_FOOT_IK_TRACKS = TRACK_FOOT_IK_CONTROLS + 1,
+
+				/// Support all physics related behavior.
+			NUM_PHYSICS_TRACKS = END_OF_PHYSICS_TRACKS,
+
+				/// The standard tracks used by behavior graphs.
+			NUM_STANDARD_TRACKS = NUM_PHYSICS_TRACKS,
+
+				/// Support all ai related behavior.
+			NUM_AI_TRACKS = END_OF_AI_TRACKS,
+
+				/// All tracks.
+			NUM_TRACKS = NUM_AI_TRACKS,
 		};
 
 			/// The different types of data in the tracks.
@@ -73,9 +147,11 @@ class hkbGeneratorOutput
 
 		enum TrackFlags
 		{
-			TRACK_FLAG_ADDITIVE_POSE = 1,
-			TRACK_FLAG_PALETTE = 1<<1,
-			TRACK_FLAG_SPARSE = 1<<2,
+			TRACK_FLAG_ADDITIVE_POSE = 1<<0,
+			TRACK_FLAG_ADDITIVE_DEPRECATED_POSE = 1<<1,
+			TRACK_FLAG_PALETTE = 1<<2,
+			TRACK_FLAG_SPARSE = 1<<3,
+			TRACK_FLAG_DISABLED = 1<<4,
 		};
 
 			/// The header of a track describes the track.
@@ -230,27 +306,61 @@ class hkbGeneratorOutput
 				void setNumData( hkInt16 numData );
 		};
 
+			/// Struct for setting up an hkbGeneratorOutput
+		struct OutputSetup {
+
+			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_BEHAVIOR, hkbGeneratorOutput::OutputSetup );
+
+				// Ctor.
+			OutputSetup() : m_numBones(1), m_numRagdollBones(0), m_numAttributes(0), m_numHands(0), m_numFloatSlots(0), m_numTracks(NUM_STANDARD_TRACKS) {}
+
+				/// The number of pose bones in the output.
+				/// Default is 1.
+			int m_numBones;
+
+				/// The number of ragdoll bones in the output.
+				/// Default is 0.
+			int m_numRagdollBones;
+
+				/// The number of attributes in the output.
+				/// Default is 0.
+			int m_numAttributes;
+
+				/// The number of ik hand data in the output.
+				/// Default is 0.
+			int m_numHands;
+
+				/// The number of float slots in the output.
+				/// Default is 0.
+			int m_numFloatSlots;
+
+				/// The number of output tracks.
+				/// Default is NUM_STANDARD_TRACKS.
+			int m_numTracks;
+
+				/// The enabled tracks.
+				/// Default enables all tracks up to numTracks.
+			hkBitField m_enabledTracks;
+		};
+
 	public:
 
 			/// Construct with a single track for the world-from-model transform.
 		hkbGeneratorOutput();
 
 			/// Construct with internal memory allocation and standard track layout.
-		hkbGeneratorOutput(	int numBones,
-							int numRagdollBones,
-							int numAttributes,
-							int numHands,
-							int numTracks = NUM_STANDARD_TRACKS,
-							int numFloatSlots = 0 );
+			/// enabledTracks contains enough bits up to numTracks.  Each bit signifies if the track is enabled or not.
+		hkbGeneratorOutput(	const OutputSetup& setup );
 
 			/// Construct given a pose buffer, which will not be deleted on destruction.
 			/// Use this if you want to allocate your own track memory instead of having
 			/// it allocated on the heap.
+			/// This is for advanced use only and requires extra setup for the allocated Tracks data.
 		hkbGeneratorOutput( Tracks* tracks );
-
+		
 			/// Construct given the track buffer size.  Track memory will be allocated internally.
-			/// The track buffer will be totally uninitialized, so be careful.  This constructor
-			/// is mainly intended to be used internally.
+			/// The track buffer will be totally uninitialized, so be careful.
+			/// This is for advanced use only and requires extra setup for the allocated Tracks data.
 		hkbGeneratorOutput( int trackBufferSizeBytes );
 
 		~hkbGeneratorOutput();
@@ -312,8 +422,14 @@ class hkbGeneratorOutput
 			/// Returns the number of tracks.
 		int getNumTracks() const;
 
+			/// Returns the number of enabled tracks.
+		int getNumEnabledTracks() const;
+
 			/// Returns the size of the pose track.
 		int getNumPoseLocal() const;
+
+			/// Returns the number of ragdoll bones used to allocate.
+		int getNumRagdollBones() const;
 
 			/// Returns the size of the bone weights.
 		int getNumBoneWeights() const;
@@ -323,6 +439,12 @@ class hkbGeneratorOutput
 
 			/// Returns the size of the attribute track.
 		int getNumAttributes() const;
+
+			/// Returns the number of datas for a generic track.
+		int getNumData( int trackId ) const;
+
+			/// Returns the capacity for a generic track.
+		int getCapacity( int trackId ) const;
 
 			/// Non-const access to track data as hkReals.
 		hkReal* accessTrackDataReal( int trackId );
@@ -346,10 +468,13 @@ class hkbGeneratorOutput
 		hkbGeneratorPartitionInfo& accessPartitionInfo();
 
 			/// Set the pose to be additive.
-		void setPoseAdditive(); 
+		void setPoseAdditive( hkInt8 additiveFlag ); 
 
 			/// Returns whether or not the pose is additive.
 		bool isPoseAdditive() const;
+
+			/// Returns the type of additive pose.
+		hkInt8 getPoseAdditive() const;
 
 			/// Set the pose to be dense.
 		void setPoseLocalDense();
@@ -371,7 +496,7 @@ class hkbGeneratorOutput
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

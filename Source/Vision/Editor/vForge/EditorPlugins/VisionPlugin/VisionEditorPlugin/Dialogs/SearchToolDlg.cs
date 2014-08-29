@@ -26,9 +26,9 @@ namespace VisionEditorPlugin.Dialogs
 		private System.Windows.Forms.Label label1;
 		private System.Windows.Forms.Button buttonSelect;
 		private System.Windows.Forms.TextBox textEntityClass;
-    private System.Windows.Forms.CheckBox checkEntityClass;
-    private System.Windows.Forms.CheckBox checkModel;
-    private System.Windows.Forms.TextBox textModel;
+		private System.Windows.Forms.CheckBox checkEntityClass;
+		private System.Windows.Forms.CheckBox checkModel;
+		private System.Windows.Forms.TextBox textModel;
 		/// <summary>
 		/// Required designer variable.
 		/// </summary>
@@ -44,9 +44,8 @@ namespace VisionEditorPlugin.Dialogs
 			//
 			InitializeComponent();
 
-			//
-			// TODO: Add any constructor code after InitializeComponent call
-			//
+			// Add any constructor code after InitializeComponent call
+			
 		}
 
 		/// <summary>
@@ -217,7 +216,7 @@ namespace VisionEditorPlugin.Dialogs
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

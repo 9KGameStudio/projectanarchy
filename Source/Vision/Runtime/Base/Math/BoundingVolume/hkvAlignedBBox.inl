@@ -24,6 +24,8 @@ HKV_FORCE_INLINE void hkvAlignedBBox::setZero ()
 
 HKV_FORCE_INLINE bool hkvAlignedBBox::isZero (float fEpsilon) const
 {
+  HKVBBOX_INITIALIZATION_CHECK(this);
+
   return (m_vMin.isZero (fEpsilon) && m_vMax.isZero (fEpsilon));
 }
 
@@ -56,25 +58,42 @@ HKV_FORCE_INLINE void hkvAlignedBBox::setInvalid ()
 
 HKV_FORCE_INLINE bool hkvAlignedBBox::isValid (void) const
 {
+  HKVBBOX_INITIALIZATION_CHECK(this);
+
   return (m_vMin.x <= m_vMax.x) &&
          (m_vMin.y <= m_vMax.y) && 
          (m_vMin.z <= m_vMax.z);
 }
 
+HKV_FORCE_INLINE void hkvAlignedBBox::reduceToIntersection (const hkvAlignedBBox& rhs)
+{
+  HKVBBOX_INITIALIZATION_CHECK(this);
+
+  m_vMin.setMax (rhs.m_vMin);
+  m_vMin.setMin (rhs.m_vMax);
+}
+
 HKV_FORCE_INLINE void hkvAlignedBBox::expandToInclude (const hkvVec3& v)
 {
+  HKVBBOX_INITIALIZATION_CHECK(this);
+
   m_vMin.setMin (v);
   m_vMax.setMax (v);
 }
 
 HKV_FORCE_INLINE void hkvAlignedBBox::expandToInclude (const hkvAlignedBBox& cc)
 {
+  HKVBBOX_INITIALIZATION_CHECK(this);
+  HKVBBOX_INITIALIZATION_CHECK(&cc);
+
   m_vMin.setMin (cc.m_vMin);
   m_vMax.setMax (cc.m_vMax);
 }
 
 HKV_FORCE_INLINE void hkvAlignedBBox::expandToInclude (const hkvBoundingSphere& cc)
 {
+  HKVBBOX_INITIALIZATION_CHECK(this);
+
   m_vMin.setMin (cc.m_vCenter - hkvVec3 (cc.m_fRadius));
   m_vMax.setMax (cc.m_vCenter + hkvVec3 (cc.m_fRadius));
 }
@@ -94,6 +113,9 @@ HKV_FORCE_INLINE void hkvAlignedBBox::transformFromCenter (const hkvMat4& mTrans
 
 HKV_FORCE_INLINE void hkvAlignedBBox::transformFromOrigin (const hkvMat4& mTransform)
 {
+  HKVBBOX_INITIALIZATION_CHECK(this);
+  HKVMAT4_INITIALIZATION_CHECK(&mTransform);
+
   hkvVec3 vCorners[8];
   getCorners (vCorners);
 
@@ -105,6 +127,8 @@ HKV_FORCE_INLINE void hkvAlignedBBox::transformFromOrigin (const hkvMat4& mTrans
 
 HKV_FORCE_INLINE void hkvAlignedBBox::translate (const hkvVec3& vTranslation)
 {
+  HKVBBOX_INITIALIZATION_CHECK(this);
+
   m_vMin += vTranslation;
   m_vMax += vTranslation;
 }
@@ -125,12 +149,16 @@ HKV_FORCE_INLINE void hkvAlignedBBox::scaleFromCenter (const hkvVec3& vScaleXYZ)
 
 HKV_FORCE_INLINE void hkvAlignedBBox::scaleFromOrigin (const hkvVec3& vScaleXYZ)
 {
+  HKVBBOX_INITIALIZATION_CHECK(this);
+
   m_vMin = m_vMin.compMul (vScaleXYZ);
   m_vMax = m_vMax.compMul (vScaleXYZ);
 }
 
 HKV_FORCE_INLINE void hkvAlignedBBox::addBoundary (const hkvVec3& vChangeXYZ)
 {
+  HKVBBOX_INITIALIZATION_CHECK(this);
+
   m_vMin -= vChangeXYZ;
   m_vMax += vChangeXYZ;
 }
@@ -149,16 +177,22 @@ HKV_FORCE_INLINE void hkvAlignedBBox::expandToCube ()
 
 HKV_FORCE_INLINE bool hkvAlignedBBox::isIdentical (const hkvAlignedBBox& rhs) const
 {
+  HKVBBOX_INITIALIZATION_CHECK(this);
+
   return (m_vMin.isIdentical (rhs.m_vMin) && m_vMax.isIdentical (rhs.m_vMax));
 }
 
 HKV_FORCE_INLINE bool hkvAlignedBBox::isEqual (const hkvAlignedBBox& rhs, float fEpsilon) const
 {
+  HKVBBOX_INITIALIZATION_CHECK(this);
+
   return (m_vMin.isEqual (rhs.m_vMin, fEpsilon) && m_vMax.isEqual (rhs.m_vMax, fEpsilon));
 }
 
 HKV_FORCE_INLINE const hkvVec3 hkvAlignedBBox::getCenter () const
 {
+  HKVBBOX_INITIALIZATION_CHECK(this);
+
   hkvVec3 half_diff = (m_vMax - m_vMin) * 0.5f;
 
   return m_vMin + half_diff;
@@ -166,21 +200,29 @@ HKV_FORCE_INLINE const hkvVec3 hkvAlignedBBox::getCenter () const
 
 HKV_FORCE_INLINE float hkvAlignedBBox::getSizeX () const
 {
+  HKVBBOX_INITIALIZATION_CHECK(this);
+
   return (m_vMax.x - m_vMin.x);
 }
 
 HKV_FORCE_INLINE float hkvAlignedBBox::getSizeY () const
 {
+  HKVBBOX_INITIALIZATION_CHECK(this);
+
   return (m_vMax.y - m_vMin.y);
 }
 
 HKV_FORCE_INLINE float hkvAlignedBBox::getSizeZ () const
 {
+  HKVBBOX_INITIALIZATION_CHECK(this);
+
   return (m_vMax.z - m_vMin.z);
 }
 
 HKV_FORCE_INLINE void hkvAlignedBBox::getCorners (hkvVec3* HKV_RESTRICT out_pVertices) const
 {
+  HKVBBOX_INITIALIZATION_CHECK(this);
+
   VASSERT (out_pVertices != NULL);
 
   out_pVertices[0].set (m_vMin.x, m_vMin.y, m_vMin.z);
@@ -195,6 +237,8 @@ HKV_FORCE_INLINE void hkvAlignedBBox::getCorners (hkvVec3* HKV_RESTRICT out_pVer
 
 HKV_FORCE_INLINE hkvVec3 hkvAlignedBBox::getCorner (bool bMaxX, bool bMaxY, bool bMaxZ) const
 {
+  HKVBBOX_INITIALIZATION_CHECK(this);
+
   return hkvVec3 (bMaxX ? m_vMax.x : m_vMin.x, 
                   bMaxY ? m_vMax.y : m_vMin.y, 
                   bMaxZ ? m_vMax.z : m_vMin.z);
@@ -269,18 +313,24 @@ HKV_FORCE_INLINE const hkvBoundingSphere hkvAlignedBBox::getBoundingSphere () co
 
 HKV_FORCE_INLINE bool hkvAlignedBBox::contains (const hkvVec3& v) const
 {
+  HKVBBOX_INITIALIZATION_CHECK(this);
+
   return ((v.x >= m_vMin.x) && (v.y >= m_vMin.y) && (v.z >= m_vMin.z) && 
           (v.x <= m_vMax.x) && (v.y <= m_vMax.y) && (v.z <= m_vMax.z));
 }
 
 HKV_FORCE_INLINE bool hkvAlignedBBox::contains (const hkvAlignedBBox& rhs) const
 {
+  HKVBBOX_INITIALIZATION_CHECK(this);
+
   return ((rhs.m_vMin.x >= m_vMin.x) && (rhs.m_vMin.y >= m_vMin.y) && (rhs.m_vMin.z >= m_vMin.z) && 
           (rhs.m_vMax.x <= m_vMax.x) && (rhs.m_vMax.y <= m_vMax.y) && (rhs.m_vMax.z <= m_vMax.z));
 }
 
 HKV_FORCE_INLINE bool hkvAlignedBBox::contains (const hkvBoundingSphere& rhs) const
 {
+  HKVBBOX_INITIALIZATION_CHECK(this);
+
   return ((rhs.m_vCenter.x - rhs.m_fRadius >= m_vMin.x) &&
           (rhs.m_vCenter.y - rhs.m_fRadius >= m_vMin.y) &&
           (rhs.m_vCenter.z - rhs.m_fRadius >= m_vMin.z) &&
@@ -291,6 +341,8 @@ HKV_FORCE_INLINE bool hkvAlignedBBox::contains (const hkvBoundingSphere& rhs) co
 
 HKV_FORCE_INLINE bool hkvAlignedBBox::overlaps (const hkvAlignedBBox& rhs) const
 {
+  HKVBBOX_INITIALIZATION_CHECK(this);
+
   if (m_vMin.x > rhs.m_vMax.x) return false;
   if (m_vMin.y > rhs.m_vMax.y) return false;
   if (m_vMin.z > rhs.m_vMax.z) return false;
@@ -316,6 +368,8 @@ HKV_FORCE_INLINE float hkvAlignedBBox::getDistanceToSquared (const hkvVec3& v) c
 
 HKV_FORCE_INLINE float hkvAlignedBBox::getDistanceToSquared (const hkvAlignedBBox& rhs) const
 {
+  HKVBBOX_INITIALIZATION_CHECK(this);
+
   // This will return zero for overlapping boxes
 
   float fSqrDist = 0.0f;
@@ -379,6 +433,8 @@ HKV_FORCE_INLINE bool hkvAlignedBBox::getLineSegmentIntersection (const hkvVec3&
 
 HKV_FORCE_INLINE hkvVec3 hkvAlignedBBox::getClampedPosition (const hkvVec3& v) const
 {
+  HKVBBOX_INITIALIZATION_CHECK(this);
+
   hkvVec3 c (v);
   c.setMax (m_vMin);
   c.setMin (m_vMax);
@@ -399,7 +455,7 @@ HKV_FORCE_INLINE bool operator!= (const hkvAlignedBBox& lhs, const hkvAlignedBBo
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

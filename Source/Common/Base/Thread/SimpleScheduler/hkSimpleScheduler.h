@@ -16,7 +16,7 @@
 /// The basic idea is that all tasks and dependencies are known at start of frame time
 /// and that no dependencies or tasks are changed by the worker threads.
 /// If your schedule is completely constant over frames, you could keep an instance of this class around.
-class hkSimpleSchedulerTaskBuilder
+class HK_EXPORT_COMMON hkSimpleSchedulerTaskBuilder
 {
 	public:
 		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_BASE, hkSimpleSchedulerTaskBuilder );
@@ -155,7 +155,7 @@ class hkSimpleSchedulerTaskBuilder
 
 
 
-class hkSimpleScheduler
+class HK_EXPORT_COMMON hkSimpleScheduler
 {
 	public:
 
@@ -327,7 +327,7 @@ hkSimpleScheduler::TaskId hkSimpleScheduler::getFirstTask(void** taskDataOut )
 #endif // HKBASE_HK_SIMPLE_SCHEDULER_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

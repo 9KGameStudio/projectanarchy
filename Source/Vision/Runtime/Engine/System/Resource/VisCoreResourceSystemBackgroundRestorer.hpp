@@ -23,10 +23,10 @@ class VisResourceSystemBackgroundRestorer_cl : public IVisBackgroundResourceRest
 {
 public:
   // Constructor
-  VisResourceSystemBackgroundRestorer_cl(const VisResourceConfig_t &config);
+  VisResourceSystemBackgroundRestorer_cl();
 
   // Interface
-  void Unload(const DynArray_cl<VResourceManager*>& resourceManagers, int iNumResourceManagers);
+  void Unload(const VisResourceConfig_t &config, const DynArray_cl<VResourceManager*>& resourceManagers, int iNumResourceManagers);
 
   void BeginRestore();
 
@@ -54,6 +54,7 @@ private:
   unsigned int m_iTotalResourceSize, m_iRestoredSize;
   int m_iOldParticleRingBufferSize;
   VisResourceConfig_t m_config;
+  bool m_bVTargetWasActive;
 
   // use pointer to not to try to unload dependent resources if they
   // were already unloaded by a parent resource (static mesh -> buffer)
@@ -72,7 +73,7 @@ private:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

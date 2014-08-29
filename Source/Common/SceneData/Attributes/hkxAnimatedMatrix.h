@@ -11,10 +11,10 @@
 
 #include <Common/SceneData/Attributes/hkxAttribute.h>
 
-extern const hkClass hkxAnimatedMatrixClass;
+extern HK_EXPORT_COMMON const hkClass hkxAnimatedMatrixClass;
 
 	/// An hkxAnimatedMatrix stores the values associated with an hkxAttribute of type matrix.
-class hkxAnimatedMatrix : public hkReferencedObject
+class HK_EXPORT_COMMON hkxAnimatedMatrix : public hkReferencedObject
 {
 	//+vtable(true)
 	//+version(2)
@@ -39,7 +39,7 @@ public:
 #endif //HK_SCENEDATA_HKX_ANIMATED_MATRIX_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -31,10 +31,6 @@ public:
   unsigned int GetNumCallbacks();
   bool EvaluateAttachedScripts();
   void AddCallback(const char * szCallbackName, float callTime = -1);
-  
-  %extend{
-    VSWIG_CREATE_CAST(VTimedValueComponent)
-  }
 };
 
 //add lua tostring and concat operators
@@ -253,7 +249,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -15,6 +15,8 @@
 
 #include <Vision/Runtime/Engine/Animation/VisApiAnimEventList.hpp>
 
+#include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Animation/Transition/IVTransitionEventTrigger.hpp>
+
 /// Serialization versions
 #define V_VFMODANIMATIONEVENTSOUNDTRIGGER_VERSION_0         0x00000000                             // Initial version
 #define V_VFMODANIMATIONEVENTSOUNDTRIGGER_VERSION_CURRENT   V_VFMODANIMATIONEVENTSOUNDTRIGGER_VERSION_0
@@ -44,7 +46,7 @@ public:
 ///   the parent owner entity. In addition to the animation sequence and the animation event
 ///   it is possible to specify the filename of the sound effect that should be triggered.    
 /// 
-class VFmodAnimationEventSoundTrigger : public IVAnimationEventTrigger
+class VFmodAnimationEventSoundTrigger : public IVTransitionEventTrigger
 {
 public: 
 
@@ -79,7 +81,7 @@ public:
   ///
   /// \param ar
   ///   Binary archive
-  FMOD_IMPEXP VOVERRIDE void Serialize( VArchive &ar );
+  FMOD_IMPEXP virtual void Serialize( VArchive &ar ) HKV_OVERRIDE;
 
   ///
   /// @}
@@ -89,11 +91,11 @@ protected:
 
   /// \brief
   ///   Initializes the component.
-  FMOD_IMPEXP VOVERRIDE bool CommonInit();
+  FMOD_IMPEXP virtual bool CommonInit() HKV_OVERRIDE;
 
   /// \brief
   ///   Overridable that can be implemented to respond to animation events.
-  FMOD_IMPEXP VOVERRIDE void OnAnimationEvent();
+  FMOD_IMPEXP virtual void OnAnimationEvent() HKV_OVERRIDE;
 
 private:  
 
@@ -105,7 +107,7 @@ private:
 #endif // VFMODANIMATIONEVENTSOUNDTRIGGER_HPP_INCLUDED
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

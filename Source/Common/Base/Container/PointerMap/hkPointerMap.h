@@ -10,6 +10,7 @@
 #define HKBASE_POINTER_MAP_H
 
 #include <Common/Base/Container/PointerMap/hkMap.h>
+#include <Common/Base/Fwd/hkcstring.h>
 
 // Helpers to get the hkMap implementation for a given key size.
 template<int N>
@@ -24,16 +25,80 @@ struct hkPointerMapStorage<8>
 	typedef hkUint64 Type;
 };
 
-/// A class to map between pointer or integer keys and arbitrary pointer/integer values.
-/// The key is not allowed to be -1.
+// Helpers to convert between keys/values and storage.
+// Normally we can do a simple cast, but for floats/doubles, we have to do a copy.
+template< typename T, typename Storage >
+struct hkPointerMapCast
+{
+	static HK_FORCE_INLINE Storage StoreCast( T t )
+	{
+		HK_COMPILE_TIME_ASSERT( sizeof(T)<=sizeof(Storage) );
+		return Storage(t);
+	}
+
+	static HK_FORCE_INLINE T LoadCast( Storage s )
+	{
+		HK_COMPILE_TIME_ASSERT( sizeof(T)<=sizeof(Storage) );
+		typedef typename hkPointerMapStorage<sizeof(T)>::Type ValueType;
+		return (T) (ValueType) s;
+	}
+};
+
+template< typename Storage >
+struct hkPointerMapCast< hkFloat32, Storage >
+{
+	static HK_FORCE_INLINE Storage StoreCast( hkFloat32 r )
+	{
+		HK_COMPILE_TIME_ASSERT( sizeof(hkFloat32)<=sizeof(Storage) );
+		Storage s = 0;	HK_STD_NAMESPACE::memcpy(&s, &r, sizeof(hkFloat32));	return s;
+	}
+
+	static HK_FORCE_INLINE hkFloat32 LoadCast( Storage s )
+	{
+		HK_COMPILE_TIME_ASSERT( sizeof(hkFloat32)<=sizeof(Storage) );
+		hkFloat32 r;	HK_STD_NAMESPACE::memcpy(&r, &s, sizeof(hkFloat32));	return r;
+	}
+};
+
+template< typename Storage >
+struct hkPointerMapCast< hkDouble64, Storage >
+{
+	static HK_FORCE_INLINE Storage StoreCast( hkDouble64 r )
+	{
+		HK_COMPILE_TIME_ASSERT( sizeof(hkDouble64)<=sizeof(Storage) );
+		Storage s = 0;	HK_STD_NAMESPACE::memcpy(&s, &r, sizeof(hkDouble64));	return s;
+	}
+
+	static HK_FORCE_INLINE hkDouble64 LoadCast( Storage s )
+	{
+		HK_COMPILE_TIME_ASSERT( sizeof(hkDouble64)<=sizeof(Storage) );
+		hkDouble64 r;	HK_STD_NAMESPACE::memcpy(&r, &s, sizeof(hkDouble64));	return r;
+	}
+};
+
+	/// A class to map between pointer or integer keys and arbitrary pointer/integer values.
+	/// The key is not allowed to be -1.
 template <typename K, typename V, typename Allocator=hkContainerHeapAllocator>
 class hkPointerMap
 {
 	public:
 		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_MAP, hkPointerMap );
 
-		typedef typename hkPointerMapStorage<sizeof(K)>::Type Storage;
-		typedef typename hkPointerMapStorage<sizeof(V)>::Type ValueCast;
+		// Note: pick the larger type for storage, so we don't truncate one
+		typedef typename hkPointerMapStorage< sizeof(K) >= sizeof(V) ? sizeof(K) : sizeof(V) >::Type Storage;
+
+		template< typename T >
+		static Storage StoreCast(T t)
+		{
+			return hkPointerMapCast<T, Storage>::StoreCast(t);
+		};
+
+		template< typename T >
+		static T LoadCast( Storage s)
+		{
+			return hkPointerMapCast<T, Storage>::LoadCast(s);
+		};
+
 
 			/// Iterator class.
 			/// All iterators are invalidated after a mutating operation, i.e., insertion, removal.
@@ -55,8 +120,10 @@ class hkPointerMap
 		{
 		}
 
+		~hkPointerMap() {}
+
 	protected:
-		
+
 			/// For creating an uninitialized map.
 		enum InternalInitializer
 		{
@@ -81,7 +148,7 @@ class hkPointerMap
 			/// and false if an existing key was overwritten.
 		HK_FORCE_INLINE hkBool32 insert( K key, V val )
 		{
-			return m_map.insert( Storage(key), ValueCast(val) );
+			return m_map.insert( StoreCast(key), StoreCast(val) );
 		}
 
 			///	Try to insert key with associated value val. Keys are unique and cannot be -1.
@@ -91,41 +158,41 @@ class hkPointerMap
 			/// otherwise it is set to HK_SUCCESS.
 		HK_FORCE_INLINE hkBool32 tryInsert( K key, V val, hkResult& res )
 		{
-			return m_map.tryInsert( Storage(key), ValueCast(val), res );
+			return m_map.tryInsert( StoreCast(key), StoreCast(val), res );
 		}
 
 			/// Return the iterator associated with key or the end iterator if not present.
 		HK_FORCE_INLINE Iterator findKey( K key ) const
 		{
-			return m_map.findKey( Storage(key) );
+			return m_map.findKey( StoreCast(key) );
 		}
 
 			/// If key is present return its iterator, else insert (key,val) and return the new iterator.
 			/// Thus the returned iterator is always valid.
 		HK_FORCE_INLINE Iterator findOrInsertKey( K key, V val )
 		{
-			return m_map.findOrInsertKey( Storage(key), ValueCast(val) );
+			return m_map.findOrInsertKey( StoreCast(key), StoreCast(val) );
 		}
 
 			/// Return if this map contains the given key.
 		HK_FORCE_INLINE hkBool hasKey( K key ) const
 		{
-			return m_map.hasKey( Storage(key) );
+			return m_map.hasKey( StoreCast(key) );
 		}
 
 			/// Return the value associated with key or def if not present.
 		HK_FORCE_INLINE V getWithDefault( K key, V def ) const
 		{
-			return (V)(ValueCast)m_map.getWithDefault( Storage(key), ValueCast(def) );
+			return LoadCast<V>( m_map.getWithDefault( StoreCast(key), StoreCast(def) ) );
 		}
 
 			/// If key present, write value into out and return HK_SUCCESS. Else return HK_FAILURE.
 		hkResult get( K key, V* out ) const
 		{
 			Storage tmp;
-			if( m_map.get( Storage(key), &tmp ) == HK_SUCCESS )
+			if( m_map.get( StoreCast(key), &tmp ) == HK_SUCCESS )
 			{
-				*out = (V)(ValueCast)tmp;
+				*out = LoadCast<V>(tmp);
 				return HK_SUCCESS;
 			}
 			return HK_FAILURE;
@@ -140,7 +207,7 @@ class hkPointerMap
 			/// If key present, remove it and return HK_SUCCESS. Otherwise return HK_FAILURE.
 		hkResult remove( K key )
 		{
-			return m_map.remove( Storage(key) );
+			return m_map.remove( StoreCast(key) );
 		}
 
 			/// Return the number of elements in this map.
@@ -182,19 +249,19 @@ class hkPointerMap
 			/// Get the key at iterator i.
 		K getKey( Iterator i ) const
 		{
-			return (K)m_map.getKey(i);
+			return LoadCast<K>( m_map.getKey(i) );
 		}
 
 			/// Get the value at iterator i.
 		V getValue( Iterator i ) const
 		{
-			return (V)(ValueCast)m_map.getValue(i);
+			return LoadCast<V>( m_map.getValue(i) );
 		}
 
 			/// Overwrite the value at iterator i.
 		void setValue( Iterator i, V val )
 		{
-			m_map.setValue(i, ValueCast(val) );
+			m_map.setValue(i, StoreCast(val) );
 		}
 
 			/// Get the next iterator after i.
@@ -253,10 +320,11 @@ class hkPointerMap
 		hkMap<Storage,Storage, hkMapOperations<Storage>, Allocator > m_map;
 };
 
+
 #endif // HKBASE_HKPOINTERMAP_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

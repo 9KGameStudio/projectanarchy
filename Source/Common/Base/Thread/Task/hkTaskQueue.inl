@@ -51,11 +51,14 @@
 #if !defined(HK_PLATFORM_SPU)
 
 // On debug we keep track of the thread ID that owns each group
-HK_ON_DEBUG(extern HK_THREAD_LOCAL(int) hkThreadNumber);
+HK_ON_DEBUG(extern HK_EXPORT_COMMON HK_THREAD_LOCAL(int) hkThreadNumber);
 
 HK_FORCE_INLINE hkTask* hkTaskQueue::getTask(const hkTaskQueue::PrioritizedTask& prioritizedTask) const
 {
-	return m_graphInfos[prioritizedTask.m_graphId].m_scheduler.getTask(prioritizedTask.getTaskId());
+	hkTask* task = m_graphInfos[prioritizedTask.m_graphId].m_scheduler.getTask(prioritizedTask.getTaskId());
+
+	// If the task is inactive return the empty task.
+	return task ? task : (hkTask*) &m_emptyTask;
 }
 
 HK_FORCE_INLINE const hkTaskQueue::GraphInfo& hkTaskQueue::getGraphInfo(hkTaskQueue::GraphId groupId) const
@@ -76,14 +79,21 @@ HK_FORCE_INLINE hkBool32 hkTaskQueue::isGraphFinished(GraphId graphId) const
 	return !getGraphInfo(graphId).m_scheduler.getNumUnfinishedTasks();
 }
 
-HK_FORCE_INLINE void hkTaskQueue::open()
+HK_FORCE_INLINE bool hkTaskQueue::open()
 {
 	m_queueLock.enter();
+	bool res = !m_isQueueOpen;
 	if (!m_isQueueOpen)
 	{
 		m_isQueueOpen = true;
 	}
 	m_queueLock.leave();
+	return res;
+}
+
+HK_FORCE_INLINE bool hkTaskQueue::isOpen()
+{
+	return m_isQueueOpen;
 }
 
 HK_FORCE_INLINE void hkTaskQueue::GraphInfo::FreeListArrayOperations::setEmpty(
@@ -117,7 +127,7 @@ HK_FORCE_INLINE void hkTaskQueue::GraphInfo::checkThreadOwnership() const
 #endif // !defined(HK_PLATFORM_SPU)
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

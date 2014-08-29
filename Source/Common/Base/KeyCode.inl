@@ -73,14 +73,14 @@
 // SIMULATION
 //
 #if defined( HAVOK_SIMULATION_KEYCODE )
-#define HK_FEATURE_PRODUCT_MILSIM
+#define HK_FEATURE_PRODUCT_SIMULATION
 #endif
 
 //
 // Raise an error if no keycodes are set.
 //
 #if 0 // can happen when just Vision XXXCK
-#if !defined(HK_FEATURE_PRODUCT_PHYSICS_2012) && !defined(HK_FEATURE_PRODUCT_PHYSICS) && !defined(HK_FEATURE_PRODUCT_ANIMATION) && !defined(HK_FEATURE_PRODUCT_BEHAVIOR) && !defined(HK_FEATURE_PRODUCT_CLOTH) && !defined(HK_FEATURE_PRODUCT_DESTRUCTION_2012) && !defined(HK_FEATURE_PRODUCT_AI) && !defined(HK_FEATURE_PRODUCT_SCRIPT) && !defined(HK_FEATURE_PRODUCT_MILSIM)
+#if !defined(HK_FEATURE_PRODUCT_PHYSICS_2012) && !defined(HK_FEATURE_PRODUCT_PHYSICS) && !defined(HK_FEATURE_PRODUCT_ANIMATION) && !defined(HK_FEATURE_PRODUCT_BEHAVIOR) && !defined(HK_FEATURE_PRODUCT_CLOTH) && !defined(HK_FEATURE_PRODUCT_DESTRUCTION_2012) && !defined(HK_FEATURE_PRODUCT_AI) && !defined(HK_FEATURE_PRODUCT_SCRIPT) && !defined(HK_FEATURE_PRODUCT_SIMULATION)
 #error No keycodes found. Please enter your keycode(s) in <Common/Base/KeyCode.h>
 #endif
 #endif
@@ -100,8 +100,19 @@
 #error "Can't use DESTRUCTION without PHYSICS. Please add your PHYSICS keycode to <Common/Base/KeyCode.h>"
 #endif
 
+#ifdef HK_DYNAMIC_DLL
+extern HK_EXPORT_COMMON const char* HK_PHYSICS_2012_KEYCODE;
+extern HK_EXPORT_COMMON const char* HK_PHYSICS_KEYCODE;
+extern HK_EXPORT_COMMON const char* HK_ANIMATION_KEYCODE;
+extern HK_EXPORT_COMMON const char* HK_BEHAVIOR_KEYCODE;
+extern HK_EXPORT_COMMON const char* HK_CLOTH_KEYCODE;
+extern HK_EXPORT_COMMON const char* HK_DESTRUCTION_2012_KEYCODE;
+extern HK_EXPORT_COMMON const char* HK_DESTRUCTION_KEYCODE;
+extern HK_EXPORT_COMMON const char* HK_AI_KEYCODE;
+#endif
+
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

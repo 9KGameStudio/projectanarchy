@@ -28,7 +28,7 @@
 ///
 /// Using this manager has a very high memory and CPU overhead.
 ///
-#if !( defined(WIN32) && !defined( _VISION_WINRT ) ) && !defined(_VISION_DOC)
+#if !( defined(_VISION_WIN32) && !defined( _VISION_WINRT ) ) && !defined(_VISION_DOC)
 
 typedef VMemoryManager_CRT VGuardingMemoryManager;
 
@@ -56,6 +56,7 @@ public:
 private:
   static const int iRetainAllocations = 1 << 16;
 
+  VMutex m_mutex;
   void** pRetainedAllocations;
 
   int iLastRetainedAllocation;
@@ -67,7 +68,7 @@ private:
 #endif // VGuardingMemoryManager_h__
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

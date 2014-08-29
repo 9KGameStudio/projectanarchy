@@ -10,7 +10,7 @@
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Components/VEntityLODComponent.hpp>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Animation/Transition/VTransitionStateMachine.hpp>
 #include <Vision/Runtime/Engine/Animation/VisApiAnimNormalizeMixerNode.hpp>
-#include <Vision/Runtime/Base/System/Memory/VMemDbg.hpp>
+
 
 /// =========================================================================== ///
 /// Entity LOD Level Info Methods                                               ///
@@ -299,7 +299,7 @@ int VEntityLODComponent::GetLODLevel() const
 }
 #endif //SUPPORTS_LOD_HYSTERESIS_THRESHOLDING
 
-#if defined(WIN32) || defined(_VISION_DOC)
+#if defined(_VISION_WIN32) || defined(_VISION_DOC)
 
 void VEntityLODComponent::GetVariableAttributes(VisVariable_cl *pVariable, VVariableAttributeInfo &destInfo)
 {
@@ -351,7 +351,7 @@ void VEntityLODComponent::MessageFunction(int iID, INT_PTR iParamA, INT_PTR iPar
 
     CommonInit();
   }
-#ifdef WIN32
+#ifdef _VISION_WIN32
   else if (iID == VIS_MSG_EDITOR_PROPERTYCHANGED)
   {
     const char *szPropertyName = reinterpret_cast<const char*>(iParamA);
@@ -440,6 +440,8 @@ void VEntityLODComponent::Serialize( VArchive &ar )
     if (iLocalVersion < ENTITYLODCOMPONENT_VERSION_1)
       LOD_LevelCount += 1; // Enum values started at "1" (instead of "0") in old version.
 
+    if (iLocalVersion>=ENTITYLODCOMPONENT_VERSION_2)
+      ar >> Level_High_Mesh;
     ar >> Level_Medium_Mesh;
     ar >> Level_Low_Mesh;
     ar >> Level_UltraLow_Mesh;
@@ -456,6 +458,7 @@ void VEntityLODComponent::Serialize( VArchive &ar )
     ar << LOD_LevelMode;
     ar << LOD_LevelCount;
 
+    ar << Level_High_Mesh; // ENTITYLODCOMPONENT_VERSION_2
     ar << Level_Medium_Mesh;
     ar << Level_Low_Mesh;
     ar << Level_UltraLow_Mesh;
@@ -496,9 +499,9 @@ void VEntityLODComponentManager::OnHandleCallback(IVisCallbackDataObject_cl *pDa
 /// VEntityLODComponent Variable Table                                          ///
 /// =========================================================================== ///
 
-START_VAR_TABLE(VEntityLODComponent,IVObjectComponent, "Entity LOD Component. Can be attached to any entity so it can have multiple LOD levels each represented by a different model. The highest level is defined by the model of the owner entity.", VVARIABLELIST_FLAGS_NONE, "Entity LOD" )
-  DEFINE_VAR_ENUM     (VEntityLODComponent, LOD_LevelMode,            "LOD Mode - Activate a specific LOD Level or let the component set the LOD dynamically depending on the distance to the camera.", "LOD_AUTO", "LOD_HIGH,LOD_MEDIUM,LOD_LOW,LOD_ULTRALOW,LOD_DISABLED,LOD_AUTO", 0, 0);
-  DEFINE_VAR_ENUM     (VEntityLODComponent, LOD_LevelCount,           "LOD Count - Specify the number of LOD Levels.", "1","0,1,2,3", 0, 0);
+START_VAR_TABLE(VEntityLODComponent,IVObjectComponent, "Can be attached to entities to have multiple Levels of detail (LODs), each represented by a different model. The highest level is defined by the model of the owner entity.", VVARIABLELIST_FLAGS_NONE, "Entity LOD" )
+  DEFINE_VAR_ENUM     (VEntityLODComponent, LOD_LevelMode,            "Activate a specific LOD or let the component set the LOD dynamically depending on the distance to the camera.", "LOD_AUTO", "LOD_HIGH,LOD_MEDIUM,LOD_LOW,LOD_ULTRALOW,LOD_DISABLED,LOD_AUTO", 0, 0);
+  DEFINE_VAR_ENUM     (VEntityLODComponent, LOD_LevelCount,           "Specify the number of LODs.", "1","0,1,2,3", 0, 0);
   DEFINE_VAR_VSTRING  (VEntityLODComponent, Level_Medium_Mesh,        "Modelfile for the Medium Level.", "", 0, 0, "assetpicker(Model)");
   DEFINE_VAR_VSTRING  (VEntityLODComponent, Level_Low_Mesh,           "Modelfile for the Low Level.", "", 0, 0, "assetpicker(Model)");
   DEFINE_VAR_VSTRING  (VEntityLODComponent, Level_UltraLow_Mesh,      "Modelfile for the Ultralow Level.", "", 0, 0, "assetpicker(Model)");
@@ -508,7 +511,7 @@ START_VAR_TABLE(VEntityLODComponent,IVObjectComponent, "Entity LOD Component. Ca
 END_VAR_TABLE
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

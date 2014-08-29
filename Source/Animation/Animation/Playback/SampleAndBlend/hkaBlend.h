@@ -9,6 +9,8 @@
 #ifndef HK_ANIMATION_BLEND_H
 #define HK_ANIMATION_BLEND_H
 
+#include <Animation/Animation/Animation/Util/hkaAdditiveAnimationUtility.h>
+
 namespace hkaBlend
 {
 // Used for constructing something analogous to a linear combination of poses
@@ -38,7 +40,8 @@ template <class Type, int flags>
 void HK_CALL blendAdditive(
 	Type* base,
 	const Type* sample, const hkReal* sampleW, hkSimdRealParameter sampleAlpha, // new pose
-	int n); // length
+	int n, // length
+	hkaAnimationBinding::BlendHint blendHint ); // to support deprecated additive animation format
 
 // After using blendAddMul to combine animations, the resulting pose must be
 // normalized before it can be drawn. This is analogous to the division step
@@ -52,7 +55,7 @@ inline void blendNormalize(Type* transforms, hkReal* weights, int n);
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

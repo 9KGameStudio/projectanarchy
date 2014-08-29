@@ -9,73 +9,35 @@
 /// \file VisionTimer.inl
 
 //Inlines
-inline void IVTimer::SkipOneFrame()
+inline void IVTimer::Disable()
 {
-  m_bFirstStart = TRUE;
+  m_bDisabled = true;
 }
 
-
-inline float IVTimer::GetTimeDifference() const
+inline void IVTimer::Enable()
 {
-  return(m_fTimeDifference);
+  m_bDisabled = false;
+  m_bFirstStart = true;
 }
-
 
 inline float IVTimer::GetTime() const
 {
-  return(m_fTime);
+  return m_fTime;
 }
 
+inline float IVTimer::GetTimeDifference() const
+{
+  return m_fTimeDifference;
+}
+
+inline void IVTimer::SetTimeDifference(float fDiff)
+{
+  m_fTimeDifference = fDiff;
+}
 
 inline bool IVTimer::IsDisabled() const
 {
-  return(m_bDisabled);
-}
-
-
-inline uint64 IVTimer::GetClockFreq() const
-{
-  return VGLGetTimerResolution();
-}
-
-
-
-void IVTimer::SetMaxTimeDifference(float fMaxDifference)
-{
-  m_fMaxTimeDifference = fMaxDifference;
-}
-
-
-void IVTimer::SetSlowMotion(bool bEnable)
-{
-  m_bSlowMotionEnabled = bEnable;
-}
-
-
-void IVTimer::SetSlowMotionTimeScale(float fTimeScale)
-{
-  m_fSlowMotionScale   = fTimeScale;
-}
-
-
-inline float IVTimer::GetMaxTimeDifference() const
-{
-  return m_fMaxTimeDifference;
-}
-
-inline bool IVTimer::GetSlowMotion() const
-{
-  return m_bSlowMotionEnabled;
-}
-
-inline bool IVTimer::GetFrozen() const
-{
-  return m_bFrozen;
-}
-
-inline float IVTimer::GetSlowMotionTimeScale() const
-{
-  return m_fSlowMotionScale;
+  return m_bDisabled;
 }
 
 inline int IVTimer::GetForcedFrameRate() const
@@ -86,20 +48,48 @@ inline int IVTimer::GetForcedFrameRate() const
     return int(GetClockFreq() / m_iForcedCountNumber);
 }
 
-void IVTimer::Disable()
+inline void IVTimer::SkipOneFrame()
 {
-  m_bDisabled = true;
+  m_bFirstStart = TRUE;
 }
 
-
-void IVTimer::Enable()
+inline void IVTimer::SetMaxTimeDifference(float fMaxDifference)
 {
-  m_bDisabled = false;
-  m_bFirstStart = true;
+  m_fMaxTimeDifference = fMaxDifference;
+}
+
+inline float IVTimer::GetMaxTimeDifference() const
+{
+  return m_fMaxTimeDifference;
+}
+
+inline void IVTimer::SetSlowMotion(bool bEnable)
+{
+  m_bSlowMotionEnabled = bEnable;
+}
+
+inline bool IVTimer::GetSlowMotion() const
+{
+  return m_bSlowMotionEnabled;
+}
+
+inline void IVTimer::SetSlowMotionTimeScale(float fTimeScale)
+{
+  m_fSlowMotionScale = fTimeScale;
+}
+
+inline float IVTimer::GetSlowMotionTimeScale() const
+{
+  return m_fSlowMotionScale;
+}
+
+inline uint64 IVTimer::GetClockFreq() const
+{
+  return VGLGetTimerResolution();
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

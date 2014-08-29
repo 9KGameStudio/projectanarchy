@@ -20,7 +20,7 @@
 
 	///  A memory system which wraps the free list.
 	///  It also wraps the heap memory with hkThreadMemory to speed up thread local memory allocs/frees
-class hkFreeListMemorySystem : public hkMemorySystem
+class HK_EXPORT_COMMON hkFreeListMemorySystem : public hkMemorySystem
 {
 	//+hk.MemoryTracker(ignore=True)
 	public:
@@ -39,11 +39,7 @@ class hkFreeListMemorySystem : public hkMemorySystem
 			DEFAULT_SETUP_FLAGS = USE_LIFO_ALLOCATOR_FOR_TEMP | USE_THREAD_MEMORY
 		};
 
-#if defined(HK_PLATFORM_WIN32)
 		enum { THREAD_MAX=64 };
-#else
-		enum { THREAD_MAX=16 };
-#endif
 
 			/// Some information for each thread.
 		struct ThreadData
@@ -127,7 +123,7 @@ class hkFreeListMemorySystem : public hkMemorySystem
 #endif // HKBASE_hkFreeListSystem_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -12,7 +12,7 @@
 #include <Common/Base/Memory/Tracker/ScanCalculator/hkTrackerSnapshot.h>
 #include <Common/Base/Memory/Tracker/LayoutCalculator/hkTrackerLayoutCalculator.h>
 
-class hkVerifySnapshotTypesUtil
+class HK_EXPORT_COMMON hkVerifySnapshotTypesUtil
 {
 	public:
 
@@ -25,7 +25,7 @@ class hkVerifySnapshotTypesUtil
 #endif // HKBASE_VERIFY_SNAPSHOT_TYPES_UTIL_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

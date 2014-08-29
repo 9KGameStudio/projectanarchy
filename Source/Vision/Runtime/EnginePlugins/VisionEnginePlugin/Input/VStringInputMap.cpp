@@ -6,65 +6,22 @@
  *
  */
 
-#include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/VisionEnginePluginPCH.h>         // precompiled header
+#include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/VisionEnginePluginPCH.h>      
+#include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Input/VStringInputMapManager.hpp>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Input/VStringInputMap.hpp>
 
-#include <Vision/Runtime/Base/System/Memory/VMemDbg.hpp>
 
-V_ENGINE_PLUGIN_ELEMENT_MANAGER_INIT_STATICS(VStringInputMap)
-
-VStringInputMap::VStringInputMap(const char * szMapName, int iNumTriggers, int iNumAlternatives) :
+VStringInputMap::VStringInputMap(int iNumTriggers, int iNumAlternatives):
   VInputMap(iNumTriggers, iNumAlternatives),
   m_hashMap(iNumTriggers)
 {
-  VASSERT_MSG(!VStringUtil::IsEmpty(szMapName), "Specify a valid name!");
-
-  VStringInputMap* pMap = FindByKey(szMapName);
-  VASSERT_ALWAYS_MSG(pMap == NULL, "VStringInputMap with the same name already exists.");
-  
-  VisObjectKey_cl::SetObjectKey(szMapName);
-  AddToElementManager();
+  m_iManagerIndex = VStringInputMapManager::GlobalManager().AddInstance(this);
 }
 
 VStringInputMap::~VStringInputMap()
 {
-  //do a check just in case somebody removed the map manually
-  if(ElementManagerIndexOf(this)>=0)
-    RemoveFromElementManager();
+  VStringInputMapManager::GlobalManager().RemoveInstance(m_iManagerIndex);
 }
-
-void VStringInputMap::OneTimeInit()
-{
-  //Vision::Callbacks.OnEditorModeChanged += this;
-}
-
-void VStringInputMap::OneTimeDeInit()
-{
-  //Vision::Callbacks.OnEditorModeChanged -= this;
-
-  int iCount = ElementManagerGetSize();
-
-  for(int i=0;i<iCount;i++)
-  {
-    VStringInputMap *pMap = ElementManagerGetAt(i);
-    if(pMap!=NULL)
-    {
-      //in case the user does not use smart pointers and did not clean up manually
-      //(as it works in Lua scripts... input maps are just created, but not explicitly deleted!)
-      if(pMap->GetRefCount()==0)
-        pMap->AddRef();
-
-      pMap->Release();
-    }
-  }
-
-  VASSERT_MSG(ElementManagerDeleteAllUnRef()==0, "Found unreferenced VStringInputMap after calling Release()");
-}
-
-//void VScriptResourceManager::OnHandleCallback(IVisCallbackDataObject_cl *pData)
-//{
-//}
-
 
 int VStringInputMap::MapTrigger(const char* szTriggerName, IVInputDevice &inputDevice, unsigned int uiControl, const VInputOptions &options, int iOptTriggerIndex)
 {
@@ -178,7 +135,7 @@ int VStringInputMap::GetNextFreeTriggerIndex() const
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

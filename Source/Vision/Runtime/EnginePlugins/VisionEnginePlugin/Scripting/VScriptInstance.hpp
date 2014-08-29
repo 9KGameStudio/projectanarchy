@@ -157,6 +157,10 @@ public:
   ///   Internal function: Executes the OnSerialize method of the script instance to load/save a chunk of data
   SCRIPT_IMPEXP void ScriptSerialize(VArchive &ar);
 
+  /// \brief
+  ///   Internal function: Triggers OnExpose and matches the collected members against already existing ones to detect duplicate exposed properties.
+  SCRIPT_IMPEXP void TriggerOnExpose(LinkedList_cl<VScriptMember>& existingMembers);
+
   /// \brief  Gets all the members previously collected in the OnExpose Callback. 
   /// \param  members The new members will be stored in here if not already present.
   SCRIPT_IMPEXP void GetMembers(LinkedList_cl<VScriptMember> &members);
@@ -249,7 +253,7 @@ protected:
 #endif // VSCRIPT_INSTANCE_HPP_INCLUDED
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

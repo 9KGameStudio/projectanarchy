@@ -137,6 +137,17 @@ public:
   VISION_APIFUNC static const VStateGroupBlend *GetBlendStateGroup(VIS_TransparencyType state);
 
   /// \brief
+  ///   Modifies the default blend state that is used for alpha tested rendering (transparencies of type VIS_TRANSP_ALPHATEST).
+  ///
+  /// Since it just affects the default state, it can be overridden by any shader that does not use the 'blending from surface' option.
+  /// Enabling Alpha to Coverage (A2C) may have significant performance impact. However it improves visual quality when used inside MSAA render targets
+  /// (both deferred and non-deferred)
+  ///
+  /// \param bState
+  ///    The new alpha-to-coverage state of the default blend group used for transparencies of type VIS_TRANSP_ALPHATEST
+  VISION_APIFUNC static void SetUseAlphaToCoverage(bool bState);
+
+  /// \brief
   ///   Returns an instance of a blend group state (used for 2D overlay rendering) determined by the enum
   ///   VIS_TransparencyType.
   VISION_APIFUNC static const VStateGroupBlend *GetOverlayBlendStateGroup(VIS_TransparencyType state);
@@ -494,7 +505,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140711)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

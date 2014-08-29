@@ -11,16 +11,16 @@
 #include <Ai/Pathfinding/hkaiBaseTypes.h>
 #include <Ai/Pathfinding/NavMesh/Streaming/hkaiStreamingSet.h>
 
-extern const class hkClass hkaiDirectedGraphExplicitCostExternalEdgeInfoClass;
-extern const class hkClass hkaiDirectedGraphExplicitCostEdgeClass;
-extern const class hkClass hkaiDirectedGraphExplicitCostNodeClass;
-extern const hkClass hkaiDirectedGraphExplicitCostClass;
+extern HK_EXPORT_AI const class hkClass hkaiDirectedGraphExplicitCostExternalEdgeInfoClass;
+extern HK_EXPORT_AI const class hkClass hkaiDirectedGraphExplicitCostEdgeClass;
+extern HK_EXPORT_AI const class hkClass hkaiDirectedGraphExplicitCostNodeClass;
+extern HK_EXPORT_AI const hkClass hkaiDirectedGraphExplicitCostClass;
 
 /// A simple directed graph.
 /// Each node has multiple edges starting from it, and going to another node (specified by the edge's target).
 /// Each edge has an explicitly defined cost with it; this is typically the Euclidean distance between nodes,
 /// but isn't required to be.
-class hkaiDirectedGraphExplicitCost : public hkReferencedObject
+class HK_EXPORT_AI hkaiDirectedGraphExplicitCost : public hkReferencedObject
 {
 public:
 	//+vtable(true)
@@ -157,9 +157,9 @@ public:
 	//
 	// Accessor interface
 	//	
-	HK_FORCE_INLINE void getPosition( SearchIndex a, hkVector4& v ) const;
-	HK_FORCE_INLINE const Node& getNode( SearchIndex a) const;
-	HK_FORCE_INLINE       Node& getNode( SearchIndex a);
+	HK_FORCE_INLINE void getPosition( NodeIndex a, hkVector4& v ) const;
+	HK_FORCE_INLINE const Node& getNode( NodeIndex a) const;
+	HK_FORCE_INLINE       Node& getNode( NodeIndex a);
 	HK_FORCE_INLINE const Edge& getEdge( EdgeIndex a) const;
 	HK_FORCE_INLINE       Edge& getEdge( EdgeIndex a);
 
@@ -207,7 +207,7 @@ protected:
 #endif // HKAI_DIRECTEDGRAPHEXPLICITCOST_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

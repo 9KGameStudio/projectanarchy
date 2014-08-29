@@ -74,6 +74,14 @@ namespace VisionEditorPlugin.Dialogs
       dlg.FileName = _outFile;
       if (dlg.ShowDialog(this) != DialogResult.OK)
         return;
+      if (!EditorManager.Project.CheckRelative(dlg.FileName))
+      {
+        EditorManager.ShowMessageBox(
+          "The specified path cannot be accessed from this project. Please choose a path below the project directory or below one of the asset libraries included by this project.", 
+          "Cannot access path from project", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        return;
+      }
+
       int iSize = int.Parse(comboBox_Size.Text);
       _outFile = dlg.FileName;
       string error = ColorGradingTool.CreateGradingLUT(_filenameOrig, _filenameTarget, _outFile, iSize);
@@ -87,7 +95,7 @@ namespace VisionEditorPlugin.Dialogs
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

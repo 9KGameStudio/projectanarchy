@@ -13,7 +13,7 @@
 #include <Animation/Animation/Motion/hkaAnimatedReferenceFrame.h>
 
 class hkaInterleavedUncompressedAnimation;
-extern const hkClass hkaDefaultAnimatedReferenceFrameClass;
+extern HK_EXPORT_ANIMATION const hkClass hkaDefaultAnimatedReferenceFrameClass;
 
 /// Default implementation for the extraction and storage of motion from an animation.
 /// Multiple samples can be used for motions with variable velocity. Motion can also be
@@ -21,7 +21,7 @@ extern const hkClass hkaDefaultAnimatedReferenceFrameClass;
 /// Objects of this class are usually generated during toolchain operations (motion extraction).
 /// If required at runtime, the static method "extractMotionFrom" constructs an instance of this
 /// class by extracting the motion from an hkaInterleavedUncompressedAnimation.
-class hkaDefaultAnimatedReferenceFrame : public hkaAnimatedReferenceFrame
+class HK_EXPORT_ANIMATION hkaDefaultAnimatedReferenceFrame : public hkaAnimatedReferenceFrame
 {
 	public:
 		HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_ANIM_UNCOMPRESSED);
@@ -124,7 +124,7 @@ class hkaDefaultAnimatedReferenceFrame : public hkaAnimatedReferenceFrame
 #endif // HK_DEFAULT_EXTRACTED_MOTION_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

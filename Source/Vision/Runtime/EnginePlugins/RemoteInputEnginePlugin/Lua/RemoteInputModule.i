@@ -6,27 +6,57 @@
  *
  */
 
-// ===========================================================
-// Remote Input Lua Module - SWIG Interface
-// ===========================================================
+#ifndef VLUA_APIDOC
+
 // This interface file generates RemoteInputModule_wrapper.cpp
 // and is represented in Lua as the "RemoteInput" module.
 
 %include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Scripting/Lua/vision_types.i>
 
-#ifndef VLUA_APIDOC
-/// \brief 
-///   Additional functionality provided by the RemoteInput plugin
 %module RemoteInput
 %{
-#include <Vision/Runtime/EnginePlugins/RemoteInputEnginePlugin/IVRemoteInput.hpp>
+  #include <Vision/Runtime/EnginePlugins/RemoteInputEnginePlugin/IVRemoteInput.hpp>
 %}
-#endif
 
 %nodefaultctor IVRemoteInput;
 %nodefaultdtor IVRemoteInput;
 
-/// \brief MODULE: The Lua \b IVRemoteInput module contains all generated wrapper classes of the RemoteInputEnginePlugin.
+class IVRemoteInput {
+public:
+
+  bool StartServer(const char* dataDirectory, int iPort = 8080);
+
+  void StopServer();
+
+  void DebugDrawTouchAreas(VColorRef color);
+
+  void DebugDrawTouchPoints(VColorRef color);
+
+  void InitEmulatedDevices();
+
+  void DeinitEmulatedDevices();
+
+  bool AddVariableDirect(const char* varName, const char* value);  
+
+  bool UpdateVariableDirect(const char* varName, const char* value);
+
+  bool RemoveVariable(const char* varName);
+
+  void SetResizeOnConnect(bool bOn);
+
+  void SetSmoothTouchInput(bool bOn);
+
+  void SetDisableMouseInput(bool bOn);
+
+  %extend
+  {
+    VSWIG_CREATE_CAST_UNSAFE(IVRemoteInput)
+  }
+};
+
+#else
+
+/// \brief MODULE: The Lua \b RemoteInput module contains the wrapped class IVRemoteInput, accessible through a global variable of the same name \b RemoteInput.
 class IVRemoteInput {
 public:
   /// \brief
@@ -37,7 +67,7 @@ public:
   /// \param dataDirectory
   ///   The directory the user GUI data is located in.
   ///
-  /// \param iPort
+  /// \param port
   ///   The port the http server should use.
   ///
   /// \return
@@ -47,7 +77,7 @@ public:
   ///   \code
   ///     RemoteInput:StartServer('RemoteGUI')
   ///   \endcode
-  bool StartServer(const char* dataDirectory, int iPort = 8080);
+  boolean StartServer(string dataDirectory, number port = 8080);
 
   /// \brief
   ///   Stops the HTTP server if it is running.
@@ -114,7 +144,7 @@ public:
   ///   \code
   ///     RemoteInput:AddVariableDirect('greeting', 'hello, world')
   ///   \endcode
-  bool AddVariableDirect(const char* varName, const char* value);  
+  boolean AddVariableDirect(string varName, string value);  
 
   /// \brief
   ///   Updates an existing variable.
@@ -127,7 +157,7 @@ public:
   ///
   /// \return
   ///   True on success, false otherwise.
-  bool UpdateVariableDirect(const char* varName, const char* value);
+  boolean UpdateVariableDirect(string varName, string value);
 
   /// \brief
   ///   Removes an existing variable.
@@ -137,41 +167,39 @@ public:
   ///
   /// \return
   ///   True on success, false otherwise.
-  bool RemoveVariable(const char* varName);
+  boolean RemoveVariable(string varName);
 
   /// \brief
   ///  Enables or disables the resizing of the screen to the mobile device resolution.
   ///
-  /// \param bOn
+  /// \param resize
   ///   True for on, false for off.
-  void SetResizeOnConnect(bool bOn);
+  void SetResizeOnConnect(boolean resize);
 
   /// \brief
   ///  Enables or disables the smoothing of the incoming touch data.
   ///
   ///  Enabled by default.
   /// 
-  /// \param bOn
+  /// \param smoothTouchInput
   ///   True for on, false for off.
-  void SetSmoothTouchInput(bool bOn);
+  void SetSmoothTouchInput(boolean smoothTouchInput);
 
   /// \brief
   ///   If the mouse input should be disabled when the remote device connects.
   ///
   /// On by default (mouse input disabled).
   ///
-  /// \param bOn
+  /// \param disableMouseInput
   ///   True to disable mouse input, false for enable it.
-  void SetDisableMouseInput(bool bOn);
-
-  %extend
-  {
-    VSWIG_CREATE_CAST_UNSAFE(IVRemoteInput)
-  }
+  void SetDisableMouseInput(boolean disableMouseInput);
 };
 
+
+#endif
+
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

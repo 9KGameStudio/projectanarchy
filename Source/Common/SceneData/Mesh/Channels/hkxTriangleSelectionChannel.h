@@ -10,11 +10,11 @@
 #define INC_TRIANGLE_SELECTION_CHANNEL_H
 
 /// Meta information
-extern const class hkClass hkxTriangleSelectionChannelClass;
+extern HK_EXPORT_COMMON const class hkClass hkxTriangleSelectionChannelClass;
 
 
 	/// Stores a selection of triangle indices
-class hkxTriangleSelectionChannel : public hkReferencedObject
+class HK_EXPORT_COMMON hkxTriangleSelectionChannel : public hkReferencedObject
 {
 	//+vtable(true)
 	//+version(1)
@@ -38,7 +38,7 @@ class hkxTriangleSelectionChannel : public hkReferencedObject
 #endif // INC_TRIANGLE_SELECTION_CHANNEL_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

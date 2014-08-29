@@ -186,7 +186,7 @@ namespace Editor
       // But if the user manually added the file under version control, 
       // we must make sure to disable the write protection by calling edit file
       ManagedBase.RCS.GetProvider().EditFile(filename);
-      BinaryFormatter fmt = SerializationHelper.BINARY_FORMATTER;
+      IFormatter fmt = SerializationHelper.AUTO_FORMATTER;
 
       try
       {
@@ -222,7 +222,7 @@ namespace Editor
         if (!System.IO.File.Exists(filename))
           return false;
 
-        BinaryFormatter fmt = SerializationHelper.BINARY_FORMATTER;
+        IFormatter fmt = SerializationHelper.AUTO_FORMATTER;
         FileStream fs = new FileStream(filename, FileMode.Open, FileAccess.Read);
         Settings = (EditorSceneSettings)fmt.Deserialize(fs);
         fs.Close();
@@ -287,7 +287,7 @@ namespace Editor
       catch (Exception ex)
       {
         EditorManager.DumpException(ex);
-        EditorManager.ShowMessageBox("An exception occurred while loading scene file '" + relFileName + "'.\nPlease check whether the file is there and it is not write protected.\n\nDetailed Message:\n" + ex.ToString(),
+        EditorManager.ShowMessageBox("An exception occurred while loading scene file '" + relFileName + "'.\nPlease check whether the file is there and it is not write protected.\n\nDetailed Message:\n" + ex.Message,
           "Scene loading error", MessageBoxButtons.OK, MessageBoxIcon.Error);
         _bSceneLoadingInProgress = false;
         return false; // the file isn't there at all or write protected?
@@ -573,7 +573,7 @@ namespace Editor
         // and lock the layer right away
         bool useBackupRestore = fileInfoEntry.Value == true;
 
-        BinaryFormatter fmt = SerializationHelper.BINARY_FORMATTER;
+        IFormatter fmt = SerializationHelper.AUTO_FORMATTER;
         try
         {
           string layerToLoad = fileInfo.FullName;
@@ -601,7 +601,7 @@ namespace Editor
         catch (Exception ex)
         {
           EditorManager.DumpException(ex);
-          EditorManager.ShowMessageBox("An exception occurred while loading layer '" + fileInfo.Name + "'\n\nDetailed Message:\n" + ex.ToString(),
+          EditorManager.ShowMessageBox("An exception occurred while loading layer '" + fileInfo.Name + "'\n\nDetailed Message:\n" + ex.Message,
             "Layer loading error", MessageBoxButtons.OK, MessageBoxIcon.Error);
           continue;
         }
@@ -741,7 +741,7 @@ namespace Editor
     }
 
 
-    public bool ImportLayers(LayerCollection newLayers, ProgressStatus progress, FileInfo[] files)
+    public bool LoadLayersFromXML(LayerCollection newLayers, ProgressStatus progress, FileInfo[] files)
     {
       bool bOK = true;
       float fPercentage = 0.0f;
@@ -750,16 +750,14 @@ namespace Editor
         fPercentage += 100.0f / (float)files.Length;
         if (fileInfo == null || (fileInfo.Attributes & FileAttributes.Directory) != 0) // file info can be null
           continue;
-        if (string.Compare(fileInfo.Extension, IScene.LayerImportExtension, true) != 0)
+        if (string.Compare(fileInfo.Extension, IScene.LayerFileExtensionXML, true) != 0)
           continue;
-
         try
         {
           string absfilename = fileInfo.FullName;
           string filename = fileInfo.Name;
-          XmlTextReader xmlReader = new XmlTextReader(absfilename);
-          xmlReader.WhitespaceHandling = WhitespaceHandling.None;
-
+          using (XmlTextReader xmlReader = new XmlTextReader(absfilename))
+          {
           XmlDocument doc = new XmlDocument();
           doc.Load(xmlReader);
           if (doc.DocumentElement == null)
@@ -773,6 +771,8 @@ namespace Editor
 
             string classname = node.GetAttribute("class");
             string name = node.GetAttribute("name");
+            string uid = node.GetAttribute("uid");
+
             if (string.IsNullOrEmpty(name))
               name = Path.GetFileNameWithoutExtension(filename);
 
@@ -783,6 +783,11 @@ namespace Editor
             if (layer == null)
               throw new Exception("Could not instantiate Layer");
             layer.SetLayerFileNameInternal(filename); // same filename but will replace extension
+
+            if (!string.IsNullOrEmpty(uid))
+            {
+              layer.SetLayerIDInternal(Convert.ToUInt32(uid));
+            }
 
             newLayers.Add(layer);
 
@@ -817,7 +822,7 @@ namespace Editor
                 }
                 continue;
               }
-
+              }
             }
           }
         }
@@ -904,7 +909,7 @@ namespace Editor
         return bOK;
 
       FileInfo[] files = layerFolder.GetFiles("*" + IScene.LayerFileExtension); // filter out *.Layer
-      FileInfo[] filesXML = layerFolder.GetFiles("*" + IScene.LayerImportExtension); // filter out *.LayerXML
+      FileInfo[] filesXML = layerFolder.GetFiles("*" + IScene.LayerFileExtensionXML); // filter out *.LayerXML
 
       // add layer references:
       string refFile = LayerReferenceFile;
@@ -931,7 +936,7 @@ namespace Editor
       FilterLayerFiles(filesXML, files);
 
       bOK = LoadLayers(newLayers, progress, files);
-      bOK &= ImportLayers(newLayers, progress, filesXML);
+      bOK &= LoadLayersFromXML(newLayers, progress, filesXML);
 
       return bOK;
     }
@@ -1013,9 +1018,10 @@ namespace Editor
 
     }
 
-    Zone ImportZone(string filename)
+    Zone LoadZoneFromXML(string filename)
     {
-      XmlTextReader xmlReader = new XmlTextReader(filename);
+      using (XmlTextReader xmlReader = new XmlTextReader(filename))
+    {
       xmlReader.WhitespaceHandling = WhitespaceHandling.None;
       try
       {
@@ -1075,6 +1081,7 @@ namespace Editor
         EditorManager.DumpException(ex, true);
         return null;
       }
+      }
       return null;
     }
 
@@ -1098,7 +1105,7 @@ namespace Editor
       FileInfo[] files = layerFolder.GetFiles("*" + IScene.ZoneFileExtension); // filter out *.Zone
       foreach (FileInfo fileInfo in files)
       {
-        BinaryFormatter fmt = SerializationHelper.BINARY_FORMATTER;
+        IFormatter fmt = SerializationHelper.AUTO_FORMATTER;
         Zone zone = null;
         try
         {
@@ -1111,7 +1118,7 @@ namespace Editor
         catch (Exception ex)
         {
           EditorManager.DumpException(ex);
-          EditorManager.ShowMessageBox("An exception occurred while loading zone" + fileInfo.Name + "\n\nDetailed Message:\n" + ex.ToString(),
+          EditorManager.ShowMessageBox("An exception occurred while loading zone" + fileInfo.Name + "\n\nDetailed Message:\n" + ex.Message,
             "Zone loading error", MessageBoxButtons.OK, MessageBoxIcon.Error);
           continue;
         }
@@ -1130,14 +1137,14 @@ namespace Editor
       }
 
       // import from XML
-      FileInfo[] filesXML = layerFolder.GetFiles("*" + IScene.ZoneImportExtension); // filter out *.ZoneXML
+      FileInfo[] filesXML = layerFolder.GetFiles("*" + IScene.ZoneFileExtensionXML); // filter out *.ZoneXML
       foreach (FileInfo fileInfo in filesXML)
       {
         // already loaded as binary?
         if (newZones.GetZoneByFilename(fileInfo.Name, null) != null)
           continue;
 
-        Zone zone = ImportZone(fileInfo.FullName);
+        Zone zone = LoadZoneFromXML(fileInfo.FullName);
         if (zone == null)
           continue;
 
@@ -1223,7 +1230,7 @@ namespace Editor
       // STEP 1: Create a 0 byte scene file if it doesn't exist
       if (!File.Exists(absFileName))
       {
-        FileStream fs = Project.CreateDataFile(absFileName, true /* Binary file */);
+        FileStream fs = Project.CreateDataFile(absFileName, !EditorManager.Settings.UseYamlSerialization);
         if (fs != null) fs.Close();
       }
 
@@ -1321,6 +1328,7 @@ namespace Editor
         FileHelper.CopyFiles(oldDir, "lighting.cfg", newDir, false, false, FileAttributes.Hidden, false);
         FileHelper.CopyFiles(oldDir, "*.user", newDir, false, false, FileAttributes.Hidden, false);
         FileHelper.CopyFiles(oldDir, "*." + SceneExportProfile.FILE_EXTENSION_EXPORTPROFILE, newDir, false, false, FileAttributes.Hidden, false);
+        FileHelper.CopyFiles(oldDir, "*.vProfile", newDir, false, false, FileAttributes.Hidden, false);
         foreach (string layerFile in additionalFilesToCopy)
           FileHelper.CopyFiles(oldDir, layerFile, newDir, false, false, FileAttributes.Hidden, false);
 
@@ -1504,9 +1512,9 @@ namespace Editor
       return true;
     }
 
-    public override bool RemoveLayer(Layer layer)
+    public override bool RemoveLayer(Layer layer, bool triggerChangeEvents = true)
     {
-      if (!base.RemoveLayer(layer))
+      if (!base.RemoveLayer(layer, triggerChangeEvents))
         return false;
 
       if (layer.IsReference)
@@ -1515,7 +1523,7 @@ namespace Editor
       return true;
     }
 
-    #endregion
+    #endregion  
 
     #region ISerializable Members
 
@@ -1784,10 +1792,18 @@ namespace Editor
       public string DisplayName;
       public string Scene;
       public string[] SearchPaths;
+      public string NativeWorkspace;
 
       public string GetLuaLine()
       {
-        return string.Format("AddScene ({0}, \"{1}\", \"{2}\", \"{3}\")", Platform, DisplayName, Scene, string.Join(";", SearchPaths));
+        if (string.IsNullOrEmpty(NativeWorkspace))
+        {
+          return string.Format(@"AddScene ({0}, ""{1}"", ""{2}"", ""{3}"")", Platform, DisplayName, Scene, string.Join(";", SearchPaths));
+        }
+        else
+        {
+          return string.Format(@"AddScene ({0}, ""{1}"", ""{2}"", ""{3}"", ""{4}"")", Platform, DisplayName, Scene, string.Join(";", SearchPaths), NativeWorkspace);
+        }
       }
     }
 
@@ -1877,7 +1893,7 @@ namespace Editor
             }
           }
 
-          if(launchProfile != null)
+          if (launchProfile != null)
           {
             string sceneForProfile = Path.ChangeExtension(absExportPath, string.Format("{0}.vscene", launchProfile.ToString()));
 
@@ -1885,7 +1901,7 @@ namespace Editor
             string absPlayerPath = Path.Combine(Path.GetDirectoryName(Application.ExecutablePath), "vPlayer.exe");
 
             FileHelper.RunExternalTool("vPlayer", absPlayerPath, "\"" + sceneForProfile + "\"", false);
-          }          
+          }
         }
       }
 
@@ -1900,7 +1916,7 @@ namespace Editor
 
       string luaFile = Path.Combine(Application.StartupPath, @"..\..\..\..\Data\Vision\Tools\vPlayer\Exported.lua");
 
-      Regex entryRegex = new Regex(@"AddScene \((?<platform>\w+), ""(?<displayname>[^""]+)"", ""(?<scene>[^""]+)"", ""(?<searchpaths>[^""]+)""\)");
+      Regex entryRegex = new Regex(@"AddScene \((?<platform>\w+), ""(?<displayname>[^""]+)"", ""(?<scene>[^""]+)"", ""(?<searchpaths>[^""]+)""(, ""(?<nativeworkspace>[^""]+)"")?\)");
 
       try
       {
@@ -1924,6 +1940,7 @@ namespace Editor
               entry.DisplayName = match.Groups["displayname"].Value;
               entry.Scene = match.Groups["scene"].Value.Replace('\\', '/');
               entry.SearchPaths = match.Groups["searchpaths"].Value.Split(';');
+              entry.NativeWorkspace = match.Groups["nativeworkspace"].Value;
 
               sceneEntries.Add(entry);
             }
@@ -1938,9 +1955,9 @@ namespace Editor
       string sceneName = Path.GetFileNameWithoutExtension(absExportPath);
 
       List<string> searchPaths = new List<string> { EditorManager.Project.ProjectSearchPath };
-      if(EditorManager.Project.CustomDataDirectories != null)
+      if (EditorManager.Project.CustomDataDirectories != null)
       {
-        foreach(IProject.CustomDataDirectoryEntry dir in EditorManager.Project.CustomDataDirectories)
+        foreach (IProject.CustomDataDirectoryEntry dir in EditorManager.Project.CustomDataDirectories)
         {
           searchPaths.Add(dir.AbsolutePath);
         }
@@ -1963,15 +1980,26 @@ namespace Editor
       {
         SceneEntry newEntry = new SceneEntry();
 
+        var platform = EditorManager.ProfileManager.GetProfileByName(profile).GetPlatform();
+
         // Default profile name is equivalent to platform name
-        newEntry.Platform = EditorManager.ProfileManager.GetDefaultProfile(EditorManager.ProfileManager.GetProfileByName(profile).GetPlatform()).ToUpper();
+        newEntry.Platform = EditorManager.ProfileManager.GetDefaultProfile(platform).ToUpper();
 
         newEntry.DisplayName = string.Format("{0} (Exported scene)", sceneName);
         newEntry.Scene = Path.ChangeExtension(projectRelativeScenePath, string.Format("{0}.vscene", profile)).Replace('\\', '/');
         newEntry.SearchPaths = searchPaths.ToArray();
 
+        if (platform == TargetDevice_e.TARGETDEVICE_DX9 || platform == TargetDevice_e.TARGETDEVICE_DX11)
+        {
+          newEntry.NativeWorkspace = EditorManager.Project.WorkspaceDir.Replace('\\', '/').TrimEnd('/');
+        }
+        else
+        {
+          newEntry.NativeWorkspace = "";
+        }
+
         // Remove existing entries for this scene and profile and place the new one on top of the list
-        sceneEntries.RemoveAll(entry => entry.Scene == newEntry.Scene && entry.SearchPaths[0] == newEntry.SearchPaths[0] && entry.Platform == newEntry.Platform);
+        sceneEntries.RemoveAll(entry => entry.Scene == newEntry.Scene && entry.SearchPaths[0] == newEntry.SearchPaths[0] && entry.Platform == newEntry.Platform && entry.NativeWorkspace == newEntry.NativeWorkspace);
         sceneEntries.Insert(0, newEntry);
       }
 
@@ -2132,6 +2160,9 @@ namespace Editor
             break;
           case TargetDevice_e.TARGETDEVICE_WIIU:
             info.ShapeFilter = (int)TargetPlatformSupport.WiiU;
+            break;
+          case TargetDevice_e.TARGETDEVICE_NACL:
+            info.ShapeFilter = (int)TargetPlatformSupport.NaCl;
             break;
           default:
             break;
@@ -2406,7 +2437,15 @@ namespace Editor
           zone.RunLighting = zones.Contains(zone);
       }
 
-      return EditorManager.LightingTool.RunLighting(bShowDlg, zones, bIncludeMainZone);
+      try
+      {
+        return EditorManager.LightingTool.RunLighting(bShowDlg, zones, bIncludeMainZone);
+      }
+      catch (System.Exception ex)
+      {
+        EditorManager.ShowMessageBox(string.Format("Computing the static lighting failed: {0}", ex.Message), "Static lighting failed");
+        return false;
+      }
     }
 
     private void CreateBackupFileDeleteOriginal(string sOriginal)
@@ -2536,7 +2575,7 @@ namespace Editor
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

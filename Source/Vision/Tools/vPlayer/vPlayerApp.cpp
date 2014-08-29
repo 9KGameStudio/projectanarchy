@@ -28,7 +28,6 @@ VAPP_IMPLEMENT_SAMPLE(VPlayerApp);
 
 VPlayerApp::VPlayerApp()
 {
-  ParseCommandLine();
 }
 
 VPlayerApp::~VPlayerApp()
@@ -38,6 +37,8 @@ VPlayerApp::~VPlayerApp()
 
 void VPlayerApp::SetupAppConfig(VisAppConfig_cl& config)
 {
+  ParseCommandLine();
+
   config.m_videoConfig.m_szWindowTitle = "vPlayer";
   config.m_videoConfig.m_iXRes = m_Config.iResX;
   config.m_videoConfig.m_iYRes = m_Config.iResY;
@@ -124,88 +125,81 @@ bool VPlayerApp::Run()
 
 void VPlayerApp::ParseCommandLine()
 {
-  // Command line is only supported on desktop windows
-#if defined(WIN32) && !defined(_VISION_WINRT)
-    
-  int argc;
-  LPWSTR* argv = CommandLineToArgvW(GetCommandLineW(), &argc);
+  VAppBase* pApp = VAppBase::Get();
 
-  // skip the first argument since it contains the executable
-  for (int i = 1; i < argc; ++i)
+  unsigned int numArgs = pApp->GetNumCommandLineArguments();
+  for (unsigned int argIdx = 0; argIdx < numArgs; ++argIdx)
   {
     bool bScenefileRequired = false;
 
-    LPWSTR pArg = argv[i];
-    VASSERT(pArg);
+    const char* pArg = pApp->GetCommandLineArgument(argIdx);
 
     if (pArg[0]=='-' || pArg[0]=='/') // the argument is a command
     {
       pArg++;
 
-      if (_wcsicmp(pArg, L"res") == 0)
+      if (VStringHelper::SafeCompare(pArg, "res") == 0)
       {
-        if (i >= argc-2) // next two ones are x resp. y res
+        if (argIdx + 2 >= numArgs) // next two ones are x resp. y res
           continue;
 
-        m_Config.iResX = _wtoi(argv[i+1]);
-        m_Config.iResY = _wtoi(argv[i+2]);
-        
+        m_Config.iResX = atoi(pApp->GetCommandLineArgument(argIdx + 1));
+        m_Config.iResY = atoi(pApp->GetCommandLineArgument(argIdx + 2));
+
         hkvMath::clamp(m_Config.iResX, 0, 4096);
         hkvMath::clamp(m_Config.iResY, 0, 4096);
 
-        i+=2;
+        argIdx += 2;
       }
 
-      else if (_wcsicmp(pArg, L"fullscreen") == 0)
+      else if (VStringHelper::SafeCompare(pArg, "fullscreen") == 0)
       {
         m_Config.bFullscreen = true;
       }
 
-      else if (_wcsicmp(pArg, L"borderlessfullscreen") == 0)
+      else if (VStringHelper::SafeCompare(pArg, "borderlessfullscreen") == 0)
       {
         m_Config.bBorderlessFullscreen = true;
       }
 
-      else if (_wcsicmp(pArg, L"novsync") == 0)
+      else if (VStringHelper::SafeCompare(pArg, "novsync") == 0)
       {
         m_Config.bWaitForVSync = false;
       }
-      
-      else if (_wcsicmp(pArg, L"adapter") == 0)
+
+      else if (VStringHelper::SafeCompare(pArg, "adapter") == 0)
       {
-        if (i >= argc-1) // next one is adapter index
+        if (argIdx + 1 >= numArgs) // next one is adapter index
           continue;
 
-        i++;
-        m_Config.iAdapter = _wtoi(argv[i]);
-        hkvMath::clamp(m_Config.iAdapter, 0, 16);        
+        m_Config.iAdapter = atoi(pApp->GetCommandLineArgument(argIdx + 1));
+        hkvMath::clamp(m_Config.iAdapter, 0, 16);
+
+        argIdx++;
       }
 
-      else if (_wcsicmp(pArg, L"varkeys") == 0)
+      else if (VStringHelper::SafeCompare(pArg, "varkeys") == 0)
       {
-        if (i >= argc-1) // next one is variant key list
+        if (argIdx + 1 >= numArgs) // next one is variant key list
           continue;
 
-        i++;
-        m_Config.sVariantKeys = argv[i];
+        m_Config.sVariantKeys = pApp->GetCommandLineArgument(argIdx + 1);
+
+        argIdx++;
       }
     }
     else // interpret the argument as a filename
     {
-      VString sPath(argv[i]);
-      if (VFileAccessManager::IsPathRelative(sPath))
+      if (VFileAccessManager::IsPathRelative(pArg))
       {
-        m_Config.sFileToLoad = VPathHelper::CombineDirAndFile(VAppBase::Get()->GetStartupPath(), sPath);
+        m_Config.sFileToLoad = VPathHelper::CombineDirAndFile(VAppBase::Get()->GetStartupPath(), pArg);
       }
       else
       {
-        m_Config.sFileToLoad = sPath;
+        m_Config.sFileToLoad = pArg;
       }
     }
   }
-
-  LocalFree(argv);
-#endif
 }
 
 void VPlayerApp::PreloadHavokPlugins()
@@ -239,6 +233,8 @@ void VPlayerApp::PreloadHavokPlugins()
     #if defined ( HAVOK_SIMULATION_KEYCODE )
       VISION_PLUGIN_ENSURE_LOADED(vHavokVehicle);
       VISION_PLUGIN_ENSURE_LOADED(vHavokCharacter);
+      VISION_PLUGIN_ENSURE_LOADED(SGEnginePlugin);
+      VISION_PLUGIN_ENSURE_LOADED(OceanWaterEnginePlugin);
     #else
       #pragma message ( "No Havok Simulation found. If you do not have a license for Havok Simulation, please remove the following library dependencies (and this line): hkmsCharacter.lib, hkmsVehicle.lib, hkmsCommon.lib" )
     #endif
@@ -256,11 +252,10 @@ void VPlayerApp::PreloadThirdPartyPlugins()
   #endif   
 #endif // !defined(HK_ANARCHY)
 
-#if defined(HK_ANARCHY)
-  #if !defined(_VISION_TIZEN)
-    VISION_PLUGIN_ENSURE_LOADED(vScaleformPlugin);
-  #endif
-#endif // defined(HK_ANARCHY)
+#if (!defined(WIN32) || defined(_VISION_WINRT)) && defined(USE_SCALEFORM)
+  VISION_PLUGIN_ENSURE_LOADED(vScaleformPlugin);
+  #pragma message ( "If you have a license for Scaleform, please define USE_SCALEFORM and add the following library dependencies: ScaleformEnginePlugin*.lib, gfx_air.lib, gfx_as2, gfx_as3.lib, gfx.lib, gfxexpat.lib, gfxplatform.lib, gfxrender_gl.lib, gfxsound_fmod.lib")
+#endif
 }
 
 void VPlayerApp::SetWindowIcon()
@@ -276,7 +271,7 @@ void VPlayerApp::SetWindowIcon()
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140624)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

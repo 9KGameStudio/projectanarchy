@@ -10,7 +10,7 @@
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Terrain/Application/Terrain.hpp>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Terrain/Application/EditableTerrain.hpp>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Terrain/Editing/MeshPaintingComponent.hpp>
-#include <Vision/Runtime/Base/System/Memory/VMemDbg.hpp>
+
 
 V_IMPLEMENT_SERIAL(VMeshPaintingComponent,IVObjectComponent,0,&g_VisionEngineModule);
 
@@ -92,7 +92,7 @@ START_VAR_TABLE(VMeshPaintingComponent,IVObjectComponent, "If attached to a stat
 END_VAR_TABLE
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

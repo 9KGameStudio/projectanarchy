@@ -15,7 +15,7 @@
 #include <Common/Base/Math/hkMath.h>
 #include <Common/Base/Reflection/hkTypeInfo.h>
 
-struct TestSimpleStruct
+struct HK_EXPORT_COMMON TestSimpleStruct
 {
 	HK_DECLARE_REFLECTION();
 	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_SERIALIZE, TestSimpleStruct);
@@ -29,7 +29,7 @@ extern const hkTypeInfo TestSimpleStructTypeInfo;
 
 // Unsupported data
 
-struct TestUnsupportedCstring
+struct HK_EXPORT_COMMON TestUnsupportedCstring
 {
 	HK_DECLARE_REFLECTION();
 	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_SERIALIZE, TestUnsupportedCstring);
@@ -53,7 +53,7 @@ struct TestUnsupportedCstring
 extern const hkClass TestUnsupportedCstringClass;
 extern const hkTypeInfo TestUnsupportedCstringTypeInfo;
 
-struct TestUnsupportedCstringArray
+struct HK_EXPORT_COMMON TestUnsupportedCstringArray
 {
 	HK_DECLARE_REFLECTION();
 	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_SERIALIZE, TestUnsupportedCstringArray);
@@ -78,7 +78,7 @@ struct TestUnsupportedCstringArray
 extern const hkClass TestUnsupportedCstringArrayClass;
 extern const hkTypeInfo TestUnsupportedCstringArrayTypeInfo;
 
-struct TestUnsupportedVariant
+struct HK_EXPORT_COMMON TestUnsupportedVariant
 {
 	HK_DECLARE_REFLECTION();
 	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_SERIALIZE, TestUnsupportedVariant);
@@ -110,7 +110,7 @@ struct TestUnsupportedVariant
 extern const hkClass TestUnsupportedVariantClass;
 extern const hkTypeInfo TestUnsupportedVariantTypeInfo;
 
-struct TestUnsupportedVariantArray
+struct HK_EXPORT_COMMON TestUnsupportedVariantArray
 {
 	HK_DECLARE_REFLECTION();
 	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_SERIALIZE, TestUnsupportedVariantArray);
@@ -144,7 +144,7 @@ struct TestUnsupportedVariantArray
 extern const hkClass TestUnsupportedVariantArrayClass;
 extern const hkTypeInfo TestUnsupportedVariantArrayTypeInfo;
 
-struct TestUnsupportedSimpleArray
+struct HK_EXPORT_COMMON TestUnsupportedSimpleArray
 {
 	HK_DECLARE_REFLECTION();
 	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_SERIALIZE, TestUnsupportedSimpleArray);
@@ -173,7 +173,7 @@ struct TestUnsupportedSimpleArray
 extern const hkClass TestUnsupportedSimpleArrayClass;
 extern const hkTypeInfo TestUnsupportedSimpleArrayTypeInfo;
 
-struct TestUnsupportedHomogeneousArray
+struct HK_EXPORT_COMMON TestUnsupportedHomogeneousArray
 {
 	HK_DECLARE_REFLECTION();
 	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_SERIALIZE, TestUnsupportedHomogeneousArray);
@@ -209,7 +209,7 @@ struct TestUnsupportedHomogeneousArray
 extern const hkClass TestUnsupportedHomogeneousArrayClass;
 extern const hkTypeInfo TestUnsupportedHomogeneousArrayTypeInfo;
 
-struct TestMemberOfUnsupportedClass
+struct HK_EXPORT_COMMON TestMemberOfUnsupportedClass
 {
 	HK_DECLARE_REFLECTION();
 	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_SERIALIZE, TestMemberOfUnsupportedClass);
@@ -226,7 +226,7 @@ extern const hkClass TestMemberOfUnsupportedClassClass;
 extern const hkTypeInfo TestMemberOfUnsupportedClassTypeInfo;
 // Supported data examples
 
-class TestSupportedVirtual : public hkReferencedObject
+class HK_EXPORT_COMMON TestSupportedVirtual : public hkReferencedObject
 {
 	// +vtable(true)
 	public:
@@ -292,7 +292,7 @@ extern const hkTypeInfo TestSupportedVirtualTypeInfo;
 extern const hkClass TestSupportedVirtualSimpleDataClass;
 extern const hkTypeInfo TestSupportedVirtualSimpleDataTypeInfo;
 
-class TestSupportedNonVirtual
+class HK_EXPORT_COMMON TestSupportedNonVirtual
 {
 	public:
 		HK_DECLARE_REFLECTION();
@@ -329,7 +329,7 @@ extern const hkTypeInfo TestSupportedNonVirtualTypeInfo;
 #endif // HKSERIALIZE_LOAD_AS_OBJECT
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

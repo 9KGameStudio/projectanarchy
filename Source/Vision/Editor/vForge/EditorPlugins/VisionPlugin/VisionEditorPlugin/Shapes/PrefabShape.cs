@@ -620,7 +620,7 @@ namespace VisionEditorPlugin.Shapes
       {
         _uniqueIDMatch = (LocalIDDict)info.GetValue("_uniqueIDMatch", typeof(LocalIDDict));
         if (_uniqueIDMatch != null)
-          _uniqueIDMatch.AfterSerialization(); // This hack is necessary so that custom objects are available here and just after whole serialization
+          _uniqueIDMatch.AfterSerialization(); // This is necessary so that custom objects are available here and just after whole serialization
       }
 
       if (SerializationHelper.HasElement(info, "_nestedPrefabs"))
@@ -2017,7 +2017,7 @@ namespace VisionEditorPlugin.Shapes
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

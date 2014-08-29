@@ -249,12 +249,14 @@ protected:
   bool m_bCachedLocalResult;
   VisSkeletalAnimResult_cl m_LocalAnimResult;   ///< used to keep buffered pAnimResult
   VisAnimState_cl m_LocalAnimState;             ///< used to keep buffered pAnimState
+
+  V_DECLARE_SERIAL_DLLEXP(IVisAnimResultGenerator_cl, VISION_APIDATA);
 };
 
 #endif //VIS_ANIM_RESULT_GENERATOR_HPP_INCLUDED
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

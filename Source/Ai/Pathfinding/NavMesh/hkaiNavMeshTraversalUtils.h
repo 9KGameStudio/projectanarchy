@@ -20,7 +20,7 @@
 
 /// This set of utility functions are used to compute and evaluate traversability information for a nav mesh.
 /// These utilities allow to ascertain if a character of arbitrary radius can pass through a particular face.
-class hkaiNavMeshTraversalUtils
+class HK_EXPORT_AI hkaiNavMeshTraversalUtils
 {
 	private:
 		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_UTILITIES, hkaiNavMeshTraversalUtils );
@@ -30,7 +30,7 @@ class hkaiNavMeshTraversalUtils
 	public:
 
 		/// Used for temporary storage in getVertexClearanceForEdge.
-		struct FaceStackNode
+		struct HK_EXPORT_AI FaceStackNode
 		{	
 			/// Distance squared from the vertex.
 			hkReal m_distanceSquared;
@@ -53,19 +53,19 @@ class hkaiNavMeshTraversalUtils
 		/// 
 		/// An angle is indexable if all the following are true:
 		/// 
-		/// 1. All vertex indices are distinct.
-		/// 2. Exactly one of the vertices has index zero.
-		/// 3. The angle is oriented CCW (see isOriented() for details).
-		/// 4. If the apex of the angle is zero, the angle must subtend exactly
-		///    one face edge.
-		/// 5. If the apex of the angle is not zero, the two non-zero vertices
-		///    must be consecutive.
+		/// -# All vertex indices are distinct.
+		/// -# Exactly one of the vertices has index zero.
+		/// -# The angle is oriented CCW (see isOriented() for details).
+		/// -# If the apex of the angle is zero, the angle must subtend exactly
+		/// one face edge.
+		/// -# If the apex of the angle is not zero, the two non-zero vertices
+		/// must be consecutive.
 		///
 		/// If a face is decomposed into a triangle fan, with the fan apex at
 		/// vertex zero, the indexable angles are those which are angles of the
 		/// fan triangles. A face with n vertices has exactly (n-2)*3 indexable
 		/// angles. 
-		class Angle
+		class HK_EXPORT_AI Angle
 		{
 		public:
 			/// The index of the vertices (relative to the a-vertex of the
@@ -137,7 +137,7 @@ class hkaiNavMeshTraversalUtils
 
 			/// Internal representation for clearance values that stores both the truncated
 			/// and non-truncated values.
-		struct ClearanceValue
+		struct HK_EXPORT_AI ClearanceValue
 		{
 			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_AI_ASTAR, ClearanceValue );
 			inline ClearanceValue();
@@ -266,7 +266,7 @@ class hkaiNavMeshTraversalUtils
 #endif // HKAI_NAVIGATION_MESH_UTILS_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

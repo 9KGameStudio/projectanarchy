@@ -10,13 +10,13 @@
 
 #include <Common/SceneData/Attributes/hkxAttributeHolder.h>
 
-extern const class hkClass hkxNodeAnnotationDataClass;
+extern HK_EXPORT_COMMON const class hkClass hkxNodeAnnotationDataClass;
 
 /// hkxNode meta information
-extern const class hkClass hkxNodeClass;
+extern HK_EXPORT_COMMON const class hkClass hkxNodeClass;
 
 /// A node in a scene graph
-class hkxNode : public hkxAttributeHolder
+class HK_EXPORT_COMMON hkxNode : public hkxAttributeHolder
 {
 	//+vtable(true)
 	//+version(4)
@@ -103,7 +103,7 @@ class hkxNode : public hkxAttributeHolder
 #endif // HKSCENEDATA_GRAPH_HKXNODE_HKCLASS_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -18,7 +18,7 @@ namespace FmodManaged
   {
     m_bIsVisible = true;
     m_bSelected = false;  
-    m_pEntity = Vision::Game.CreateEntity("VisBaseEntity_cl", hkvVec3(0.0f,0.0f,0.0f), NULL);
+    m_pEntity = Vision::Game.CreateEntity<VisBaseEntity_cl>(hkvVec3(0.0f,0.0f,0.0f), NULL);
     m_pStaticMeshInst = NULL;
     m_pMeshInstance = new VFmodCollisionMeshInstance();
     m_pEntity->AttachToParent(m_pMeshInstance); // move with it
@@ -196,7 +196,7 @@ namespace FmodManaged
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

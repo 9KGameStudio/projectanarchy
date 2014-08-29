@@ -72,6 +72,31 @@ public:
   ///   the raw time delta since the last frame.
   VISION_APIFUNC virtual float GetUnfilteredTimeDifference() const;
 
+  /// \brief
+  ///   Enables or disables freezing of the timer
+  /// 
+  /// If enabled, all timing operations are stopped until disabled, when the time
+  /// value and count continue where they were stopped. This feature internally sets the slow motion time scale to 0.0f.
+  /// 
+  /// \param bFrozen
+  ///   new status for frozen timer. If true, the timer is paused, if
+  ///   false, the timer is switched back to normal mode.
+  /// 
+  /// \note
+  ///   You can call this function at any time after the engine has been initialized.
+  /// 
+  /// \sa IVTimer::GetFrozen
+  VISION_APIFUNC virtual void SetFrozen(bool bFrozen);
+
+  /// \brief
+  ///   Gets the current freezing status of the timer
+  /// 
+  /// \return
+  ///   bool enable: the current freezing status of the timer
+  /// 
+  /// \sa IVTimer::SetFrozen
+  VISION_APIFUNC virtual bool GetFrozen() const;
+
   ///
   /// @}
   ///
@@ -121,7 +146,7 @@ public:
   ///   elapsed time in seconds since the first frame
   /// 
   /// \sa IVTimer::GetCurrentTime
-  VISION_APIFUNC float GetTime() const;
+  inline float GetTime() const;
 
 
 
@@ -169,14 +194,14 @@ public:
   /// 
   /// \param fDiff
   ///   The time difference in seconds used for this frame until next call of Vision::GetTimer()->Update()
-  inline void SetTimeDifference(float fDiff) {m_fTimeDifference=fDiff;}
+  inline void SetTimeDifference(float fDiff);
 
   /// \brief
   ///   Returns the current status of the timer (see Enable/Disable function)
   /// 
   /// \return
   ///   \c true if the timer is currently disabled
-  VISION_APIFUNC bool IsDisabled() const;  
+  inline bool IsDisabled() const;  
 
 
   ///
@@ -235,7 +260,7 @@ public:
   /// SkipOneFrame causes the timer class to ignore the next timer update. You can use this
   /// function to pause the game for a while without updating the in-game time. If you call this
   /// function the next call of the Update-function will not cause any updates.
-  VISION_APIFUNC void SkipOneFrame();
+  inline void SkipOneFrame();
 
   /// \brief
   ///   Sets the clamping value for the maximum time difference.
@@ -333,31 +358,6 @@ public:
   /// \sa IVTimer::SetSlowMotionTimeScale
   inline float GetSlowMotionTimeScale() const;
 
-  /// \brief
-  ///   Enables or disables freezing of the timer
-  /// 
-  /// If enabled, all timing operations are stopped until disabled, when the time
-  /// value and count continue where they were stopped. This feature internally sets the slow motion time scale to 0.0f.
-  /// 
-  /// \param bFrozen
-  ///   new status for frozen timer. If true, the timer is paused, if
-  ///   false, the timer is switched back to normal mode.
-  /// 
-  /// \note
-  ///   You can call this function at any time after the engine has been initialized.
-  /// 
-  /// \sa IVTimer::GetFrozen
-  VISION_APIFUNC void SetFrozen(bool bFrozen);
-
-  /// \brief
-  ///   Gets the current freezing status of the timer
-  /// 
-  /// \return
-  ///   bool enable: the current freezing status of the timer
-  /// 
-  /// \sa IVTimer::SetFrozen
-  bool GetFrozen() const;
-
   ///
   /// @}
   ///
@@ -386,16 +386,16 @@ public:
 protected:
   /// \brief
   ///   Returns the clock frequency of the timer in counts per second
-  uint64 GetClockFreq() const;
+  inline uint64 GetClockFreq() const;
 
   bool m_bFirstStart;                    ///< used for skipping the next frame
   bool m_bDisabled;                      ///< if set to TRUE if timer is currently disabled
   bool m_bFrozen;                        ///< is set to TRUE if timer is currently frozen
   bool  m_bSlowMotionEnabled;
   float m_fDivCountsPerSecond;           ///< normally 1 / 1000
-  uint64 m_iOldCount;                     ///< old timer value in counts per second
-  uint64 m_iStartTimerValue;              ///< startup value of the timer at initialisation
-  uint64 m_iForcedCountNumber;            ///< contains the ms to simulate if timer is disabled or ForceFrameRate has been called
+  uint64 m_iOldCount;                    ///< old timer value in counts per second
+  uint64 m_iStartTimerValue;             ///< startup value of the timer at initialisation
+  uint64 m_iForcedCountNumber;           ///< contains the ms to simulate if timer is disabled or ForceFrameRate has been called
   float m_fTime;                         ///< current time in seconds
   float m_fTimeDifference;               ///< time difference between last frame and current frame in seconds
 
@@ -460,6 +460,7 @@ public:
   VISION_APIFUNC virtual void Init() HKV_OVERRIDE;
   VISION_APIFUNC virtual void Update() HKV_OVERRIDE;
   VISION_APIFUNC virtual float GetUnfilteredTimeDifference() const HKV_OVERRIDE;
+  VISION_APIFUNC virtual void SetFrozen(bool bFrozen) HKV_OVERRIDE;
 
   /// \brief
   ///   Returns whether time steps are currently filtered/ smoothed.
@@ -558,7 +559,7 @@ protected:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140805)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

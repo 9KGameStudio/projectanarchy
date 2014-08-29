@@ -139,7 +139,7 @@ void HK_CALL hkcdTriangleUtil::calcBarycentricCoordinatesNonDegenerate(hkVector4
 		// We can normalize the barycentric coordinates and exit!
 		hkSimdReal barySum = vDots.horizontalAdd<3>();
 		hkSimdReal baryInvSum;
-		baryInvSum.setReciprocal<HK_ACC_23_BIT, HK_DIV_SET_ZERO>(barySum);
+		baryInvSum.setReciprocal<HK_ACC_MID, HK_DIV_SET_ZERO>(barySum);
 		result.setMul(vDots, baryInvSum);
 		return;
 	}
@@ -150,7 +150,7 @@ HK_FORCE_INLINE hkSimdReal hkcdTriangleUtil::calcConvexity( hkVector4Parameter n
 {
 	hkVector4 edge; edge.setSub( edgePoint1, edgePoint0 );
 	hkVector4 cross; cross.setCross( normalA, normalB );
-	edge.normalize<3, HK_ACC_23_BIT, HK_SQRT_IGNORE>();
+	edge.normalize<3, HK_ACC_MID, HK_SQRT_IGNORE>();
 	return edge.dot<3>( cross );
 }
 
@@ -159,7 +159,7 @@ HK_FORCE_INLINE hkSimdReal hkcdTriangleUtil::calcConvexity( hkVector4Parameter n
 //
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

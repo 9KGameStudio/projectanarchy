@@ -9,6 +9,8 @@
 #ifndef HK_ANIMATION_BLENDER_H
 #define HK_ANIMATION_BLENDER_H
 
+#include <Animation/Animation/Animation/Util/hkaAdditiveAnimationUtility.h>
+
 namespace hkaBlender
 {
 	// Blend modes
@@ -102,7 +104,7 @@ namespace hkaBlender
 #ifndef HK_USE_BATCH_BLENDER
 
 // (Allow for user override)
-#define HK_USE_BATCH_BLENDER (( HK_CONFIG_SIMD == HK_CONFIG_SIMD_ENABLED ) && defined(HK_PLATFORM_SUPPORTS_MANY_SIMD_REGISTERS))
+#define HK_USE_BATCH_BLENDER (( HK_CONFIG_SIMD == HK_CONFIG_SIMD_ENABLED ) && (HK_NUM_SIMD_REGISTERS >=32) )
 
 #endif // HK_USE_BATCH_BLENDER
 
@@ -123,7 +125,7 @@ namespace hkaBlender
 #endif // HK_ANIMATION_BLENDER_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

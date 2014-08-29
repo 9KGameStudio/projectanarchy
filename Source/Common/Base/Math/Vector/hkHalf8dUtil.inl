@@ -42,7 +42,7 @@ template<hkMathRoundingMode A>
 	v0.store<4,HK_IO_SIMD_ALIGNED,A>(halves);
 	v1.store<4,HK_IO_SIMD_ALIGNED,A>(halves+4);
 
-	hkHalf* HK_RESTRICT outInterleaved = (hkHalf* HK_RESTRICT)&packedHalf8;
+	hkHalf* HK_RESTRICT outInterleaved = (hkHalf*)&packedHalf8;
 
 	outInterleaved[0] = halves[0];
 	outInterleaved[1] = halves[4];
@@ -58,7 +58,7 @@ template<hkMathRoundingMode A>
 {
 	HK_ALIGN_DOUBLE(hkHalf halves[4]);
 
-	hkHalf* HK_RESTRICT inInterleaved = (hkHalf* HK_RESTRICT)&packedHalf8;
+	hkHalf* HK_RESTRICT inInterleaved = (hkHalf*)&packedHalf8;
 
 	halves[0] = inInterleaved[0];
 	halves[1] = inInterleaved[2];
@@ -72,7 +72,7 @@ template<hkMathRoundingMode A>
 {
 	HK_ALIGN_DOUBLE(hkHalf halves[4]);
 
-	hkHalf* HK_RESTRICT inInterleaved = (hkHalf* HK_RESTRICT)&packedHalf8;
+	hkHalf* HK_RESTRICT inInterleaved = (hkHalf*)&packedHalf8;
 
 	halves[0] = inInterleaved[1];
 	halves[1] = inInterleaved[3];
@@ -86,7 +86,7 @@ template<hkMathRoundingMode A>
 {
 	HK_ALIGN_DOUBLE(hkHalf halves[8]);
 
-	hkHalf* HK_RESTRICT inInterleaved = (hkHalf* HK_RESTRICT)&packedHalf8;
+	hkHalf* HK_RESTRICT inInterleaved = (hkHalf*)&packedHalf8;
 
 	halves[0] = inInterleaved[0];
 	halves[4] = inInterleaved[1];
@@ -104,7 +104,7 @@ template<hkMathRoundingMode A>
 } // namespace hkHalf8Util
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

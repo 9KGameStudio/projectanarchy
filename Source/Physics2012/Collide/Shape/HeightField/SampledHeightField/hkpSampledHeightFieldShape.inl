@@ -46,7 +46,7 @@ HK_FORCE_INLINE void HK_CALL hkSampledHeightFieldShape_collideSpheres(
 		hkVector4 pos; 	pos.setMul( spheres->getPosition(), impl.m_floatToIntScale );
 
 		HK_ALIGN16(hkIntUnion64 out);
-		hkVector4Util::convertToInt16( spheres->getPosition(), impl.m_floatToIntOffsetFloorCorrected, impl.m_floatToIntScale, out );
+		hkVector4Util::convertToUint16WithClip( spheres->getPosition(), impl.m_floatToIntOffsetFloorCorrected, impl.m_floatToIntScale, hkVector4::getZero(), hkVector4::getConstant<HK_QUADREAL_HIGH>(), out );
 		hkInt32 x = out.u16[0];
 		hkInt32 z = out.u16[2];
 
@@ -224,7 +224,7 @@ HK_FORCE_INLINE void hkpSampledHeightFieldShape::_getHeightAndNormalAt( int x, i
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

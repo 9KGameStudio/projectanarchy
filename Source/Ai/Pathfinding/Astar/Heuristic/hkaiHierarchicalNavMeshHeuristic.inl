@@ -37,7 +37,7 @@ inline const hkaiNavMesh::Edge& hkaiHierarchicalNavMeshHeuristic::getEdge( hkaiP
 }
 
 
-inline hkaiHierarchicalNavMeshHeuristic::ClusterKey hkaiHierarchicalNavMeshHeuristic::getClusterForFace( FaceKey faceKey ) const
+inline hkaiHierarchicalNavMeshHeuristic::ClusterKey hkaiHierarchicalNavMeshHeuristic::getClusterKeyForFace( FaceKey faceKey ) const
 {	
 	if (faceKey == HKAI_INVALID_PACKED_KEY)
 	{
@@ -49,15 +49,16 @@ inline hkaiHierarchicalNavMeshHeuristic::ClusterKey hkaiHierarchicalNavMeshHeuri
 	
 	m_accessor.setSection(sectionId);
 	const hkaiNavMesh::Face& face = m_accessor->getFace( faceIndex );
-	return getClusterForFace(face, sectionId);
+	return getClusterKeyForFace(face, sectionId);
 }
 
 inline hkaiHierarchicalNavMeshHeuristic::ClusterKey 
-hkaiHierarchicalNavMeshHeuristic::getClusterForFace(const hkaiNavMesh::Face& face, hkaiRuntimeIndex sectionId) const
+hkaiHierarchicalNavMeshHeuristic::getClusterKeyForFace(const hkaiNavMesh::Face& face, hkaiRuntimeIndex sectionId) const
 {
 	const int clusterIndex = face.m_clusterIndex;
 	if (clusterIndex == -1)
 	{
+		HK_ASSERT(0x6e665c5c, "Face doesn't have cluster assigned. If this is an old nav mesh/graph, regenerate it.");
 		return HKAI_INVALID_PACKED_KEY;
 	}
 	return hkaiGetPackedKey(sectionId, clusterIndex);
@@ -69,7 +70,7 @@ inline void hkaiHierarchicalNavMeshHeuristic::getEdgePosition( EdgeKey edgeId, h
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

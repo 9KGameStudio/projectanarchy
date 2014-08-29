@@ -68,10 +68,8 @@ inline hkSimdReal HK_CALL hkcdPointTriangleDistanceSquared(	hkVector4Parameter p
 		// Compute times of intersection
 		hkVector4 vTois;
 		{
-			hkVector4 zero = hkVector4::getConstant<HK_QUADREAL_0>();
-			hkVector4 one = hkVector4::getConstant<HK_QUADREAL_1>();
 			vTois.setDiv(vSegLen, vEdgeLen);
-			vTois.setClamped(vTois, zero, one);
+			vTois.setClampedZeroOne(vTois);
 		}
 
 		// Compute normals & distances
@@ -93,7 +91,7 @@ inline hkSimdReal HK_CALL hkcdPointTriangleDistanceSquared(	hkVector4Parameter p
 		// Compute barycentric coords if required
 		if ( baryOut )
 		{
-			hkVector4 vOne= hkVector4::getConstant<HK_QUADREAL_1>();
+			const hkVector4 vOne= hkVector4::getConstant<HK_QUADREAL_1>();
 
 			hkVector4 b0;	b0.setSub(vOne, vTois);	// (u0, u1, u2, *)
 			hkVector4 b1 = vTois;					// (v0, v1, v2, *)
@@ -118,7 +116,7 @@ inline hkSimdReal HK_CALL hkcdPointTriangleDistanceSquared(	hkVector4Parameter p
 //
 HK_FORCE_INLINE hkBool32 HK_CALL hkcdPointTriangleProject(	hkVector4Parameter x,
 														hkVector4Parameter a, hkVector4Parameter b, hkVector4Parameter c,
-														hkVector4* HK_RESTRICT projectionOut, hkVector4* HK_RESTRICT normalOut)
+														hkVector4* HK_RESTRICT projectionOut, hkVector4* HK_RESTRICT triangleNormalOut)
 {
 	hkVector4	loBounds; loBounds.setXYZ_W(hkVector4::getConstant<HK_QUADREAL_0>(), hkSimdReal::getConstant<HK_QUADREAL_MINUS_MAX>());
 	hkVector4	hiBounds; hiBounds.setXYZ_W(hkVector4::getConstant<HK_QUADREAL_1>(), hkSimdReal::getConstant<HK_QUADREAL_MAX>());
@@ -175,9 +173,9 @@ HK_FORCE_INLINE hkBool32 HK_CALL hkcdPointTriangleProject(	hkVector4Parameter x,
 
 	}
 
-	if(normalOut)
+	if(triangleNormalOut)
 	{
-		*normalOut = n;
+		*triangleNormalOut = n;
 	}
 
 	return isInside;
@@ -186,7 +184,7 @@ HK_FORCE_INLINE hkBool32 HK_CALL hkcdPointTriangleProject(	hkVector4Parameter x,
 //
 HK_FORCE_INLINE hkcdTriangleVoronoi::Region HK_CALL hkcdPointTriangleProjectWithVoronoi(	hkVector4Parameter x,
 																			 hkVector4Parameter a, hkVector4Parameter b, hkVector4Parameter c,
-																			 hkVector4* HK_RESTRICT projectionOut, hkVector4* HK_RESTRICT normalOut)
+																			 hkVector4* HK_RESTRICT projectionOut, hkVector4* HK_RESTRICT triangleNormalOut)
 {
 	hkVector4	loBounds; loBounds.setXYZ_W(hkVector4::getConstant<HK_QUADREAL_0>(), hkSimdReal::getConstant<HK_QUADREAL_MINUS_MAX>());
 	hkVector4	hiBounds; hiBounds.setXYZ_W(hkVector4::getConstant<HK_QUADREAL_1>(), hkSimdReal::getConstant<HK_QUADREAL_MAX>());
@@ -248,16 +246,16 @@ HK_FORCE_INLINE hkcdTriangleVoronoi::Region HK_CALL hkcdPointTriangleProjectWith
 		ret = regions[minDist][solRegion];
 	}
 
-	if(normalOut)
+	if(triangleNormalOut)
 	{
-		*normalOut = n;
+		*triangleNormalOut = n;
 	}
 
 	return ret;
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

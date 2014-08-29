@@ -8,12 +8,12 @@
 #ifndef HKAI_ASTAR_HEAP_OPENSET_H
 #define HKAI_ASTAR_HEAP_OPENSET_H
 
-#include <Common/Base/Algorithm/Sort/hkSort.h>
+#include <Ai/Pathfinding/hkaiBaseTypes.h>
 
 /// A* open set that stores potential nodes in a heap.
 struct hkaiHeapOpenSet
 {
-	typedef int SearchIndex;
+	typedef hkaiPackedKey SearchIndex;
 	typedef hkReal PathCost;
 #if defined(HK_REAL_IS_DOUBLE)
 	typedef hkInt64 IntCost;
@@ -97,7 +97,7 @@ public:
 #endif // HKAI_ASTAR_HEAP_OPENSET_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

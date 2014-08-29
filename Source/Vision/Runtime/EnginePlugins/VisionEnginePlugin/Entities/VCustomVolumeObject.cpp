@@ -15,7 +15,6 @@ extern VModule g_VisionEngineModule;
 VCustomVolumeObject::VCustomVolumeObject()
 {
   m_bCreatedFromEditor = false;
-  m_bCustomStaticMesh = true;
   m_vScale.set(1.0f, 1.0f, 1.0f);
   Vision::Callbacks.OnAfterSceneLoaded += this;
   m_iManagerIndex = VCustomVolumeManager::GlobalManager().AddInstance(this);
@@ -32,51 +31,45 @@ void VCustomVolumeObject::DisposeObject()
   m_spStaticMesh = NULL;
 }
 
-void VCustomVolumeObject::Init()
-{
-  LoadStaticMesh();
-}
-
 void VCustomVolumeObject::LoadStaticMesh()
 {
-  if(m_bCustomStaticMesh || !m_bCreatedFromEditor )
+  if (m_sStaticMeshPath.IsEmpty())
   {
-    if(!m_sStaticMeshPath.IsEmpty())
-    {
-      Vision::GetApplication()->GetLoadingProgress().PushRange(0.f,100.f); // provide range for loading the mesh
-      m_spStaticMesh = VisStaticMesh_cl::GetResourceManager().LoadStaticMeshFile(m_sStaticMeshPath.AsChar());
-      VASSERT_MSG(m_spStaticMesh != NULL, "Loading static mesh failed");
-      Vision::GetApplication()->GetLoadingProgress().PopRange();
-    }
-    else {
-      m_spStaticMesh = NULL;
-    }
+    m_spStaticMesh = NULL;
   }
-  else {
-    m_spStaticMesh = new VisStaticMesh_cl();
-    m_spStaticMesh->SetSupportMaterialEditing(false);
-    m_spStaticMesh->SetResourceFlag(VRESOURCEFLAG_AUTODELETE);
-    VASSERT(Vision::Editor.IsInEditor());
+  else
+  {
+    m_spStaticMesh = VisStaticMesh_cl::GetResourceManager().LoadStaticMeshFile(m_sStaticMeshPath);
+    if (m_spStaticMesh == NULL)
+    {
+      hkvLog::Warning("VCustomVolumeObject: Can't load '%s'.", m_sStaticMeshPath.AsChar());
+    }
   }
 }
 
 V_IMPLEMENT_SERIAL( VCustomVolumeObject, VisObject3D_cl, 0, &g_VisionEngineModule );
-void VCustomVolumeObject::Serialize( VArchive &ar )
+void VCustomVolumeObject::Serialize(VArchive &ar)
 {
   VisObject3D_cl::Serialize(ar);
   if(ar.IsLoading())
   {
     unsigned int uiVersion = 0;
     ar >> uiVersion;
-    VASSERT(uiVersion == VV_Version1);
+    VASSERT(uiVersion >= VV_Version1 && uiVersion <= VV_CurrentVersion);
     ar >> m_sStaticMeshPath;
-    ar >> m_bCustomStaticMesh;
+
+    if (uiVersion == VV_Version1)
+    {
+      bool bDummy;
+      ar >> bDummy;
+    }
+    
     m_vScale.SerializeAsVec3(ar);
   }
-  else {
+  else 
+  {
     ar << static_cast<unsigned int>(VV_CurrentVersion);
     ar << m_sStaticMeshPath;
-    ar << m_bCustomStaticMesh;
     m_vScale.SerializeAsVec3(ar);
   }
 }
@@ -84,41 +77,35 @@ void VCustomVolumeObject::Serialize( VArchive &ar )
 void VCustomVolumeObject::OnSerialized(VArchive& ar)
 {
   VisObject3D_cl::OnSerialized(ar);
-  if(ar.IsLoading())
-    Init();
+
+  if (ar.IsLoading())
+  {
+    Vision::GetApplication()->GetLoadingProgress().PushRange(0.0f, 100.0f); // provide range for loading the mesh
+    LoadStaticMesh();
+    Vision::GetApplication()->GetLoadingProgress().PopRange();
+  }
 }
 
 void VCustomVolumeObject::OnHandleCallback(IVisCallbackDataObject_cl *pData)
 {
   VASSERT(pData->m_pSender == &Vision::Callbacks.OnAfterSceneLoaded);
 
-  if(m_spStaticMesh == NULL)
+  if (m_spStaticMesh == NULL)
   {
     LoadStaticMesh();
   }
 }
 
-void VCustomVolumeObject::SetCustomStaticMesh(bool bValue)
-{ 
-  if(m_bCustomStaticMesh != bValue)
-  {
-    m_bCustomStaticMesh = bValue; 
-    LoadStaticMesh();
-  }
+void VCustomVolumeObject::SetStaticMesh(VisStaticMesh_cl* pStaticMesh)
+{
+  m_sStaticMeshPath = (pStaticMesh != NULL ? pStaticMesh->GetFilename() : "");
+  m_spStaticMesh = pStaticMesh;
 }
 
 void VCustomVolumeObject::SetStaticMeshPath(const char* szPath)
 {
-  if(m_bCustomStaticMesh && m_sStaticMeshPath != szPath)
-  {
-    m_sStaticMeshPath = szPath;
-    if(!m_sStaticMeshPath.IsEmpty())
-      LoadStaticMesh();
-    else
-      m_spStaticMesh = NULL;
-  }
-  else
-    m_sStaticMeshPath = szPath;
+  m_sStaticMeshPath = szPath;
+  LoadStaticMesh();
 }
 
 void VCustomVolumeObject::SetCreatedFromEditor()
@@ -136,7 +123,7 @@ START_VAR_TABLE(VCustomVolumeObject, VisObject3D_cl, "Custom Volume Entity", VFO
 END_VAR_TABLE
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

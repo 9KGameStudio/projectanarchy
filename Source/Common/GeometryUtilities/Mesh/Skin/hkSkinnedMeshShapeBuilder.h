@@ -21,7 +21,7 @@
 class hkAabb;
 
 /// Skinned mesh builder
-class hkSkinnedMeshBuilder
+class HK_EXPORT_COMMON hkSkinnedMeshBuilder
 {
 	public:
 
@@ -99,6 +99,7 @@ class hkSkinnedMeshBuilder
 		struct SkinDescriptor
 		{
 			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_SCENE_DATA, hkSkinnedMeshBuilder::SkinDescriptor);
+			SkinDescriptor(const SkinDescriptor& ) { }
 
 			/// Constructor
 			SkinDescriptor();
@@ -185,7 +186,7 @@ class hkSkinnedMeshBuilder
 #endif	//	HK_SKINNED_MESH_SHAPE_BUILDER_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

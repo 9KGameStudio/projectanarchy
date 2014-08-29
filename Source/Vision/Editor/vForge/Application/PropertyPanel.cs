@@ -61,7 +61,7 @@ namespace Editor
       // This call is required by the Windows.Forms Form Designer.
       InitializeComponent();
 
-      // TODO: Add any initialization after the InitializeComponent call
+      // Add any initialization after the InitializeComponent call
       propertyGrid.AddHelpButton("Property Panel", "shapes");
 
       // configure the propertygrid refresh timer
@@ -1041,7 +1041,7 @@ namespace Editor
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

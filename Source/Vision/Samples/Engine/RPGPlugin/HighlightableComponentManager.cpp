@@ -62,7 +62,7 @@ void RPG_HighlightableComponentManager::InitShaders()
 void RPG_HighlightableComponentManager::InitShader(VCompiledTechnique *shader, DynArray_cl<int>& regsOut)
 {
   regsOut.Resize(shader->GetShaderCount());
-  for(int i = 0; i < shader->GetShaderCount(); i++)
+  for(unsigned int i = 0; i < shader->GetShaderCount(); i++)
   {
     VCompiledShaderPass *const shaderPass = shader->GetShader(i);
     regsOut[i] = shader->GetShader(i)->GetConstantBuffer(VSS_VertexShader)->GetRegisterByName("HighlightColor");
@@ -94,7 +94,7 @@ void RPG_HighlightableComponentManager::RenderHighlightableEntities(VCompiledTec
     VColorRef color = comp->GetColor();
     hkvVec4 const color4 = color.getAsVec4(); //(0.15f, 0.15f, 0.15f, 1.0f);
 
-    for(int j = 0; j < shader->GetShaderCount(); j++)
+    for(unsigned int j = 0; j < shader->GetShaderCount(); j++)
     {
       VCompiledShaderPass *const shaderPass = shader->GetShader(j);
       if(regs[j] >= 0)
@@ -166,7 +166,7 @@ int RPG_HighlightableComponentManager::GetTraceBitmask() const
 RPG_HighlightableComponentManager RPG_HighlightableComponentManager::s_instance;
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -8,7 +8,8 @@
 #ifndef HKAI_NAVMESH_INSTANCE_H
 #define HKAI_NAVMESH_INSTANCE_H
 
-extern const hkClass hkaiNavMeshInstanceClass;
+#include <Ai/Internal/hkaiExport.h>
+extern HK_EXPORT_AI const hkClass hkaiNavMeshInstanceClass;
 #include <Ai/Pathfinding/Common/hkaiReferenceFrame.h>
 #include <Ai/Pathfinding/NavMesh/hkaiNavMesh.h>
 #include <Ai/Pathfinding/Utilities/hkaiUserDataUtils.h>
@@ -20,10 +21,10 @@ class hkaiNavMeshUtils;
 	/// For faces and edges, a map is stored; if the value of this is -1, the face or edge is unchanged and the original can be read.
 	/// If the map value is non-negative, it is an index into the corresponding m_instancedEdges or m_instancedFaces array.
 	/// New faces, edges, and vertices (e.g. from cutting or user edges) are added to the m_ownedFaces, m_ownedEdges, and m_ownedVertices arrays.
-class hkaiNavMeshInstance : public hkReferencedObject
+class HK_EXPORT_AI hkaiNavMeshInstance : public hkReferencedObject
 {
 	//+vtable(true)
-	//+version(4)
+	//+version(6)
 
 	friend class hkaiNavMeshUtils;
 
@@ -177,29 +178,36 @@ class hkaiNavMeshInstance : public hkReferencedObject
 		inline hkaiNavMesh::Edge* getWritableEdge( hkaiNavMesh::EdgeIndex eIdx, hkBool32 instanceIfNotAlready = false );
 
 
-		//
-		// Read-only access for original faces/edges
-		// The structure returned always belongs to the original face, it is never an instanced version.
-		//
-
-			/// Get the original face at the given index
+		/// Get the face at the given index, which must be an original face.
+		///
+		/// @note The original version of the face will be returned, even if
+		/// the face has been hidden or instanced.
 		inline const hkaiNavMesh::Face& getOriginalFace( hkaiNavMesh::FaceIndex fIdx ) const;
 
-			/// Get the original edge at the given index.
+		/// Get the edge at the given index, which must be an original edge.
+		///
+		/// @note The original version of the edge will be returned, even if
+		/// the edge has been hidden or instanced.
 		inline const hkaiNavMesh::Edge& getOriginalEdge( hkaiNavMesh::EdgeIndex eIdx ) const;
 
 
-			/// Get the owned face at the given index
-		inline const hkaiNavMesh::Face& getOwnedFace( int fIdx ) const;
+		/// Get the face at the given index, which must be an owned face.
+		inline const hkaiNavMesh::Face& getOwnedFace( hkaiNavMesh::FaceIndex fIdx ) const;
 
-			/// Get the owned face at the given index
-		inline hkaiNavMesh::Face& getOwnedFace( int fIdx );
+		/// Get the face at the given index, which must be an owned face.
+		inline hkaiNavMesh::Face& getOwnedFace( hkaiNavMesh::FaceIndex fIdx );
 
-			/// Get the owned edge at the given index.
-		inline const hkaiNavMesh::Edge& getOwnedEdge( int eIdx ) const;
+		/// Get the edge at the given index, which must be an owned edge.
+		///
+		/// @note some owned edges might not belong to faces which are currently
+		/// present in the instance.
+		inline const hkaiNavMesh::Edge& getOwnedEdge( hkaiNavMesh::EdgeIndex eIdx ) const;
 
-		/// Get the owned edge at the given index.
-		inline hkaiNavMesh::Edge& getOwnedEdge( int eIdx );
+		/// Get the edge at the given index, which must be an owned edge.
+		///
+		/// @note some owned edges might not belong to faces which are currently
+		/// present in the instance.
+		inline hkaiNavMesh::Edge& getOwnedEdge( hkaiNavMesh::EdgeIndex eIdx );
 
 		//
 		// Local-to-world transform access
@@ -235,25 +243,69 @@ class hkaiNavMeshInstance : public hkReferencedObject
 		void removeInstancedEdge( hkaiNavMesh::EdgeIndex eIdx );
 
 
-		//
-		// Simple self-explanatory accessors
-		//
+		/// Return the total number of faces in the instance, either original or 
+		/// owned.
+		/// 
+		/// @note This will include faces that have been hidden by cutting. To
+		/// iterate over all non-hidden faces, check each face index with
+		/// hkaiNavMeshInstance::isFaceHidden().
 		inline int getNumFaces() const {return m_numOriginalFaces + m_ownedFaces.getSize(); }
+
+		/// Return the total number of elements in the edge arrays.
+		///
+		/// @note This will include edges which belong to hidden faces, and may
+		/// include edges which do not belong to any faces at all. To iterate 
+		/// over all edges which are actually present in the world, iterate over 
+		/// non-hidden faces (as described in getNumFaces() ), and for each
+		/// non-hidden face, iterate over its edges.
 		inline int getNumEdges() const {return m_numOriginalEdges + m_ownedEdges.getSize(); }
+
+		/// Return the total number of elements in the vertex arrays.
+		/// 
+		/// @note some vertices might only be used by hidden or removed edges.
 		inline int getNumVertices() const {return m_numOriginalVertices + m_ownedVertices.getSize(); }
 
+		/// Return the number of original faces in the instance -- that is, the
+		/// number of faces in the original mesh. 
+		/// 
+		/// @note Some of these faces may have been hidden, or instanced.
 		inline int getNumOriginalFaces() const {return m_numOriginalFaces; }
+
+		/// Return the number of original edges in the instance -- that is, the
+		/// number of edges in the original mesh.
+		/// 
+		/// @note Some of these edges may belong to faces which have been 
+		/// hidden, or instanced.
 		inline int getNumOriginalEdges() const {return m_numOriginalEdges; }
+
+		/// Return the number of original vertices in the instance -- that is,
+		/// the number of vertices in the original mesh.
+		/// 
+		/// @note Some of these vertices may belong to faces which have been 
+		/// hidden, or instanced.
 		inline int getNumOriginalVertices() const {return m_numOriginalVertices; }
 
+		/// Return the number of owned (not instanced) faces in the instance.
 		inline int getNumOwnedFaces() const {return m_ownedFaces.getSize(); }
+
+		/// Return the number of owned (not instanced) edges in the instance.
+		/// 
+		/// @note This may include edges which do not actually belong to any
+		/// face.
 		inline int getNumOwnedEdges() const {return m_ownedEdges.getSize(); }
+
+		/// Return the number of owned vertices in the instance.
+		///
+		/// @note This may include vertices which do not actually belong to any
+		/// face.
 		inline int getNumOwnedVertices() const {return m_ownedVertices.getSize(); }
 
 		inline const hkaiNavMesh* getOriginalMesh() const { return m_originalMesh; }
 		inline hkaiSectionUid getSectionUid() const  { return m_sectionUid; }
 		inline hkaiRuntimeIndex getRuntimeId() const  { return m_runtimeId; }
 		inline bool isWallClimbing() const { return m_originalMesh->isWallClimbing(); }
+		inline hkaiLayer getLayer() const { return m_layer; }
+		inline void setLayer( hkaiLayer layer );
 
 		inline void setSectionUid(hkaiSectionUid uid)  { m_sectionUid = uid; }
 		inline void setRuntimeId(hkaiRuntimeIndex idx) { m_runtimeId = idx; }
@@ -270,6 +322,7 @@ class hkaiNavMeshInstance : public hkReferencedObject
 		// These are called by nav mesh cutting and never need to be called by the user.
 		//
 
+#ifndef HK_PLATFORM_SPU
 			/// Information to add a face.
 		struct AddFaceContext
 		{
@@ -281,12 +334,10 @@ class hkaiNavMeshInstance : public hkReferencedObject
 		};
 
 			/// Information to add an edge.
-		struct AddEdgeContext
+		struct AddEdgeContext : public hkaiNavMesh::AddEdgeContext
 		{
 			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_AI, AddEdgeContext);
 			inline AddEdgeContext();
-			hkaiNavMesh::Edge m_edge;
-			hkaiNavMesh::EdgeData m_data[hkaiNavMesh::MAX_DATA_PER_EDGE];
 			CutInfo m_cutInfo; //+default(NOT_CUT_EDGE)
 		};
 
@@ -294,7 +345,6 @@ class hkaiNavMeshInstance : public hkReferencedObject
 		void getFaceDataForContext( hkaiNavMesh::FaceIndex fIdx, AddFaceContext& ctx ) const;
 		void getEdgeContext( hkaiNavMesh::EdgeIndex eIdx, AddEdgeContext& ctx ) const;
 		void getEdgeDataForContext( hkaiNavMesh::EdgeIndex eIdx, AddEdgeContext& ctx ) const;
-
 
 			/// Add new vertices to the end of the owned vertex array.
 		void appendVertices( const hkVector4* v, int numVerts );
@@ -304,6 +354,7 @@ class hkaiNavMeshInstance : public hkReferencedObject
 		
 			/// Add new faces to the end of the owned face array. The start of the new edges is returned.
 		hkaiNavMesh::Edge* appendEdges( const AddEdgeContext* ctxs, int numEdges );
+#endif
 
 			/// Expand the owned edge array, and return a pointer to the start of the new edges
 		hkaiNavMesh::Edge* expandEdgesBy(int n);
@@ -471,22 +522,17 @@ class hkaiNavMeshInstance : public hkReferencedObject
 			/// Only assigned when the mesh is loaded.
 		hkaiRuntimeIndex			m_runtimeId; //+default(0)
 
+			/// Bitfield to indicate which layer the instance belongs to.
+		hkaiLayer					m_layer; //+default( HKAI_DEFAULT_LAYER );
 };
 
-
-
-#ifndef HK_PLATFORM_SPU
-typedef hkaiNavMeshInstance hkaiNavMeshAccessor;
-#else
-typedef class hkaiSpuNavMeshAccessor hkaiNavMeshAccessor;
-#endif
 
 #include <Ai/Pathfinding/NavMesh/hkaiNavMeshInstance.inl>
 
 #endif //HKAI_NAVMESH_INSTANCE_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

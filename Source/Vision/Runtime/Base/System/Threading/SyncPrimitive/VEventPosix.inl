@@ -52,7 +52,7 @@ VEvent::WaitResult_e VEvent::Wait(VTimeSpan timeOut)
     return SIGNALED;
   }
 
-  struct timeval now;
+  timeval now;
   gettimeofday(&now, NULL);
 
   // pthread_cond_timedwait needs an absolute time value, so compute
@@ -104,7 +104,7 @@ void VEvent::Reset()
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140625)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

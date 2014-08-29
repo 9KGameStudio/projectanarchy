@@ -292,16 +292,31 @@ HK_FORCE_INLINE bool hkbStateMachine::shouldTransition(	const hkbStateMachine* c
 														bool isInTriggerInterval,
 														const hkbContext& context )
 {
-	hkStringPtr errorStr;
-	hkbStateMachine::StateInfo& toStateInfo = getStateInfoById( t.m_toStateId );
-	return (	(	ignoreToState || ( t.m_toStateId == toStateId ) )
+	// Check event Id first, to avoid doing further checks
+	{
+		const bool correctEvent = (	( ignoreEvents ) ||
+									( t.m_eventId == eventId ) ||
+									(	isReturnToPreviousStateTransition( t, eventId ) ) ||
+									(	( eventId != hkbEvent::EVENT_ID_NULL ) &&
+										( eventId == m_randomTransitionEventId ) &&
+										( !( t.m_flags.get() & TransitionInfo::FLAG_DISALLOW_RANDOM_TRANSITION ) ) ) );
+
+		if ( !correctEvent )
+		{
+			return false;
+		}
+	}
+
+	// Other quick flags
+	{
+		const bool otherFlagsCorrect =
+			(
+				// To state id
+				( ignoreToState || ( t.m_toStateId == toStateId ) )
 
 				&&
 
-				( toStateInfo.m_enable && ( !context.getRootBehavior()->m_checkNodeValidity || (toStateInfo.m_generator != HK_NULL && toStateInfo.m_generator->isValid(context.getCharacter(), errorStr) ) ) )
-
-				&&
-
+				// Wildcards
 				(	( !fromAnyState ) || 
 					(	( t.m_flags.get() & TransitionInfo::FLAG_IS_LOCAL_WILDCARD ) &&
 						(	( m_currentStateId != t.m_toStateId ) || 
@@ -309,34 +324,45 @@ HK_FORCE_INLINE bool hkbStateMachine::shouldTransition(	const hkbStateMachine* c
 
 				&&
 
+				// Trigger Intervals
 				(	!( t.m_flags.get() & TransitionInfo::FLAG_USE_TRIGGER_INTERVAL ) ||
 					( isInTriggerInterval ) )
 
 				&&
 
+				// Disabled flags
 				(	!( t.m_flags.get() & TransitionInfo::FLAG_DISABLED ) )
 
 				&&
 
-				(	( ignoreEvents ) ||
-					( t.m_eventId == eventId ) ||
-					(	isReturnToPreviousStateTransition( t, eventId ) ) ||
-					(	( eventId != hkbEvent::EVENT_ID_NULL ) &&
-						( eventId == m_randomTransitionEventId ) &&
-						( !( t.m_flags.get() & TransitionInfo::FLAG_DISALLOW_RANDOM_TRANSITION ) ) ) )
-
-				&&
-
+				// Is coming from correct nested state
 				(	!(t.m_flags.get() & TransitionInfo::FLAG_FROM_NESTED_STATE_ID_IS_VALID ) ||
 					isCurrentNestedStateId( currentNestedStateMachine, t.m_fromNestedStateId ) )
+			);
 
-				&&
+		if ( !otherFlagsCorrect )
+		{
+			return false;
+		}
+	}
 
-				(	( t.m_condition == HK_NULL ) ||
+	// We do the costly checks last
+	{
+		hkStringPtr errorStr;
+		hkbStateMachine::StateInfo& toStateInfo = getStateInfoById( t.m_toStateId );
+		
+		return
+			
+			// To state is enabled and valid
+			( toStateInfo.m_enable && ( !context.getRootBehavior()->m_checkNodeValidity || (toStateInfo.m_generator != HK_NULL && toStateInfo.m_generator->isValid(context.getCharacter(), errorStr) ) ) )
+			
+			&&
+
+			// Condition is valid
+			(	( t.m_condition == HK_NULL ) ||
 					( t.m_flags.get() & TransitionInfo::FLAG_DISABLE_CONDITION ) ||
-					( t.m_condition->isTrue( context ) ) )
-
-				);
+					( t.m_condition->isTrue( context ) ) );
+	}
 }
 
 HK_FORCE_INLINE void hkbStateMachine::initTransitionInterval(	const hkbStateMachine::TimeInterval& interval, 
@@ -514,6 +540,9 @@ HK_FORCE_INLINE hkbTransitionEffect* hkbStateMachine::createTransitionEffect( co
 	// Create our TE
 	hkbTransitionEffect* te = static_cast<hkbTransitionEffect*>( getTransitionInfo(rootBehavior, transitionInfoReference)->m_transition->cloneNode( rootBehavior ) );
 
+	// give the te a reference to the state machine in which it is executing
+	te->setParentStateMachine( context, *this );
+
 	// Fix up any bindings if the TE is "borrowed" from another behavior graph
 	if ( transitionInfoReference.m_stateMachineId != TransitionInfoReference::SAME_STATE_MACHINE_ID && te->hasBindings() )
 	{
@@ -550,7 +579,7 @@ HK_FORCE_INLINE const hkbStateMachine::TransitionInfo::InternalFlags* hkbStateMa
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

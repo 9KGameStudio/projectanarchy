@@ -33,45 +33,56 @@ public:
 
   /// \brief
   ///   Overridden renderloop function
-  VISION_APIFUNC VOVERRIDE void OnDoRenderLoop(void *pUserData);
+  VISION_APIFUNC virtual void OnDoRenderLoop(void *pUserData) HKV_OVERRIDE;
 
   /// \brief
   ///   Called to change the shading mode
-  VISION_APIFUNC void SetEffect(VCompiledEffect *pFX, bool bRenderSky = true);
+  VISION_APIFUNC void SetEffects(VCompiledEffect *pGeometryFX, VCompiledEffect* pParticleEffect, bool bRenderSky = true);
+
+
+private:
+
+  /// \brief
+  ///   Performs debug rendering for particle effects.
+  void RenderParticles(const VisParticleGroupCollection_cl* pVisibleParticleGroups);
 
   /// \brief
   ///   Internal function to update the zone color (if m_LMVisZoneColorReg,m_LGVisZoneColorReg is
   ///   valid)
-  VISION_APIFUNC void SetVisibilityZoneColor(VCompiledShaderPass *pShader, VConstantBufferRegister &colorReg, VConstantBufferRegister &textureReg, VisVisibilityZone_cl *pZone, int iModulation);
+  void SetVisibilityZoneColor(VCompiledShaderPass *pShader, VConstantBufferRegister &colorReg, VConstantBufferRegister &textureReg, VisVisibilityZone_cl *pZone, int iModulation);
 
   /// \brief
   ///   Wraps around SetZoneColor for object3d
-  VISION_APIFUNC void SetVisibilityZoneColorObj(VCompiledShaderPass *pShader, VConstantBufferRegister &colorReg, VConstantBufferRegister &textureReg, VisObject3D_cl *pObj);
+  void SetVisibilityZoneColorObj(VCompiledShaderPass *pShader, VConstantBufferRegister &colorReg, VConstantBufferRegister &textureReg, VisObject3D_cl *pObj);
 
   /// \brief
   ///   Internal function to update the zone color (if m_LMZoneColorReg,m_LGZoneColorReg is valid)
-  VISION_APIFUNC void SetZoneColor(VCompiledShaderPass *pShader, VConstantBufferRegister &colorReg, VisZoneResource_cl *pZone, int iModulation);
+  void SetZoneColor(VCompiledShaderPass *pShader, VConstantBufferRegister &colorReg, IVisZone_cl *pZone, int iModulation);
 
   /// \brief
-  ///   Internal function to update texture related properties (if m_LGVisZoneTextureReg,
-  ///   m_LMVisZoneTextureReg is valid)
-  VISION_APIFUNC void SetBaseTextureParams(VCompiledShaderPass *pShader, VConstantBufferRegister &colorReg, const VisSurface_cl *pSurface);
+  ///   Internal function to update texture related properties
+  void SetBaseTextureParams(VCompiledShaderPass *pShader, VConstantBufferRegister &colorReg, const VTextureObject* pTexture) const;
 
   /// \brief
   ///   Generates and sets a unique color per material pointer
-  VISION_APIFUNC void SetMaterialColor(VCompiledShaderPass *pShader, VConstantBufferRegister &colorReg, const VisSurface_cl *pSurface);
+  void SetMaterialColor(VCompiledShaderPass *pShader, VConstantBufferRegister &colorReg, const VisSurface_cl *pSurface);
 
   /// \brief
   ///   Generates and sets color per material pointer whether the texture is missing
-  VISION_APIFUNC void SetMaterialMissingColor(VCompiledShaderPass *pShader, VConstantBufferRegister &colorReg, const VisSurface_cl *pSurface);
+  void SetMaterialMissingColor(VCompiledShaderPass *pShader, VConstantBufferRegister &colorReg, const VisSurface_cl *pSurface);
+
+  /// \brief
+  ///   Generates and sets color per material pointer whether the texture is missing
+  void SetMaterialMissingColor(VCompiledShaderPass *pShader, VConstantBufferRegister &colorReg, const VTextureObject *pTexture);
+  
 
   /// \brief
   ///   Internal function to update the worldspace texture density levels used for interpolating the density 'color' of pixels when shading
-  VISION_APIFUNC void SetTextureDensityLevels(VCompiledShaderPass *pShader, VConstantBufferRegister &densityLevelsReg);
+  void SetTextureDensityLevels(VCompiledShaderPass *pShader, VConstantBufferRegister &densityLevelsReg);
 
   /// \brief
   ///   Internal function to update the size (X/Y resolution) of the base texture, which is used to determine the worldspace texture density of a pixel
-  VISION_APIFUNC void SetTextureDensitySize(VCompiledShaderPass *pShader, VConstantBufferRegister &densitySizeReg, const VisSurface_cl *pSurface);
+  void SetTextureDensitySize(VCompiledShaderPass *pShader, VConstantBufferRegister &densitySizeReg, const VTextureObject *pTexture);
 
   void SplitGeometryInstances(const VisStaticGeometryInstanceCollection_cl &visibleInst);
 
@@ -91,7 +102,15 @@ public:
   bool m_bPerSurfaceChanges;      ///< true if geometry needs update parameter every time the surface changes while rendering
   bool m_bRenderSky;              ///< true if the sky should be rendered
 
-  hkvVec4 m_vOldTexParams;   ///< internal value
+  VCompiledEffectPtr m_spParticleEffect; ///< Effect for debug rendering of particles.
+  VConstantBufferRegister m_VisZoneTextureReg_Particle;       ///< If valid, the rendered particles need individual zone texture binding.
+  VConstantBufferRegister m_VisZoneColorReg_Particle;         ///< If valid, the rendered particles need individual zone color tinting.
+  VConstantBufferRegister m_ZoneColorReg_Particle;            ///< If valid, the rendered particles need individual zone color tinting.
+  VConstantBufferRegister m_MaterialMissingReg_Particle;      ///< If valid, the rendered particles need individual per material color indicating whether a texture is missing or not.
+  VConstantBufferRegister m_BaseTextureParamsReg_Particle;    ///< If valid, the rendered particles need individual texture parameter setup.
+  VConstantBufferRegister m_TextureDensitySizeReg_Particle;		///< If valid, the rendered particles need to know the size of its base texture.
+  VConstantBufferRegister m_TextureDensityLevelsReg_Particle;	///< If valid, the rendered particles need to know the min/normal/max texture density ranges to interpolate its own density color.
+
 
   VTextureObject *m_pMultiVisZoneTex;  ///< texture that holds the "multiple viszones" texture
 
@@ -101,7 +120,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

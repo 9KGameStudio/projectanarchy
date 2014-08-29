@@ -19,26 +19,22 @@ HK_FORCE_INLINE hkBool32 hkcdClosestPointLineLine(hkVector4Parameter A, hkVector
 	hkSimdReal D1 = dA.dot<3>(dA);
 	hkSimdReal D2 = dB.dot<3>(dB);
 
-	HK_ASSERT2(0x7b0f0426, D1.getReal() > 0 && D2.getReal() > 0, "edge lengths must be nonzero");
+	HK_ASSERT2(0x7b0f0426, D1.getReal() > 0 && D2.getReal() > 0, "Edge lengths must be nonzero");
 
 	// denom == 0 means the lines are parallel
 	hkSimdReal numer = (S1 * D2 - S2 * R);
 	hkSimdReal denom = D1 * D2 - R * R;
 
 	
-	hkSimdReal epsFactor = hkSimdReal_Eps;
-	epsFactor.add(epsFactor); //2e
-	epsFactor.add(epsFactor); //4e
-	epsFactor.add(epsFactor); //8e
+	hkSimdReal epsFactor = hkSimdReal_Eps * hkSimdReal_8;
 	
 	hkSimdReal epsilon = (D1 * D2 + R * R) * epsFactor;
 
 	// We can't use the trick or relying on the clamp in seg-seg to handle parallel lines.
 	// If we are parallel, we arbitrarily choose t=1
 	hkVector4Comparison mask = denom.greater(epsilon);
-	hkSimdReal safeDenom; safeDenom.setSelect(mask, denom, numer);
-
-	t = numer / safeDenom;
+	t.setDiv(numer, denom);
+	t.setSelect(mask,t,hkSimdReal_1);
 	u = (t * R - S2) / D2;
 
 	return mask.anyIsSet();
@@ -65,11 +61,9 @@ HK_FORCE_INLINE void hkcdClosestPointLineLine(const hkFourTransposedPoints& A, c
 	hkVector4 denom; denom.setSub(D1D2, RSqr);
 	
 	D1D2.setAbs(D1D2);
-	hkVector4 epsConst = hkVector4::getConstant<HK_QUADREAL_EPS>();
-	const hkSimdReal eight = hkSimdReal::fromFloat(8.0f);
-	epsConst.mul(eight);
-	
-	hkVector4 eps; eps.setAdd(D1D2, RSqr);
+	const hkSimdReal epsConst = hkSimdReal_Eps * hkSimdReal_8;
+	hkVector4 eps; 
+	eps.setAdd(D1D2, RSqr);
 	eps.mul(epsConst);
 
 	hkVector4 denomAbs; denomAbs.setAbs(denom);
@@ -86,7 +80,7 @@ HK_FORCE_INLINE void hkcdClosestPointLineLine(const hkFourTransposedPoints& A, c
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

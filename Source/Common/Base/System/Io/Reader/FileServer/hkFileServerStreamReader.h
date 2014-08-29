@@ -8,14 +8,17 @@
 #ifndef HK_BASE_FILESERVER_STREAMREADER_H
 #define HK_BASE_FILESERVER_STREAMREADER_H
 
+#include <Common/Base/System/Io/Reader/hkStreamReader.h>
+
 class hkSocket;
-class hkFileServerStreamReader : public hkSeekableStreamReader
+class hkCriticalSection;
+class HK_EXPORT_COMMON hkFileServerStreamReader : public hkSeekableStreamReader
 {
 
 public:
 	HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_STREAM);
 
-	hkFileServerStreamReader( hkSocket* connection, hkUint32 id );
+	hkFileServerStreamReader( hkSocket* connection, hkUint32 id, hkCriticalSection* socketLock );
 	void close();
 	virtual ~hkFileServerStreamReader();
 	virtual int read( void* buf, int nbytes);
@@ -31,6 +34,7 @@ public:
 		// Use Seek and Tell sparingly..
 		SEEK = 0x13,
 		TELL = 0x14,
+		IS_OK = 0x15,
 	};
 
 	enum InCommands
@@ -42,12 +46,17 @@ public:
 
 	hkSocket* m_socket;
 	hkUint32 m_id;
+	hkBool m_isAtEof;
+	hkCriticalSection* m_socketLock;
+
+protected:
+	hkBool remoteReaderIsOk() const;
 };
 
 #endif //HK_BASE_FILESERVER_STREAMREADER_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

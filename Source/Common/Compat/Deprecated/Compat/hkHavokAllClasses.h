@@ -22,6 +22,15 @@
 		extern const int ClassVersion; \
 		extern const hkStaticClassNameRegistry hkHavokDefaultClassRegistry; \
 	}
+
+#define HK_HAVOK_COMMON_CLASSES_VERSION(VER) \
+	namespace hkHavok##VER##Classes \
+	{ \
+		extern HK_EXPORT_COMMON const char VersionString[]; \
+		extern HK_EXPORT_COMMON const int ClassVersion; \
+		extern HK_EXPORT_COMMON const hkStaticClassNameRegistry hkHavokDefaultClassRegistry; \
+	}
+
 #include <Common/Compat/Deprecated/Compat/hkHavokVersionClasses.h>
 #undef HK_HAVOK_CLASSES_VERSION
 #undef HK_SERIALIZE_MIN_COMPATIBLE_VERSION_INTERNAL_VALUE
@@ -29,7 +38,7 @@
 #endif // HK_COMPAT_HAVOK_ALL_CLASSES_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

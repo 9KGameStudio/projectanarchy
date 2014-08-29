@@ -30,7 +30,7 @@ public:
   {}
 
   // Returns NULL if the entity does not exist.
-  VisBaseEntity_cl* GetEntity() const;
+  VAPP_IMPEXP VisBaseEntity_cl* GetEntity() const;
   inline bool IsValid() const { return (GetEntity() != NULL); }
 
   inline VisBaseEntity_cl* operator->() const { return GetEntity(); }
@@ -62,16 +62,16 @@ private:
 /// \ingroup VisionAppFramework
 class VCameraHandling : public VAppModule
 {
-  V_DECLARE_DYNCREATE(VCameraHandling);
+  V_DECLARE_DYNCREATE_DLLEXP(VCameraHandling, VAPP_IMPEXP);
 
 public:
-  VCameraHandling();
+  VAPP_IMPEXP VCameraHandling();
   virtual ~VCameraHandling() {}
 
-  virtual void Init() HKV_OVERRIDE;
-  virtual void DeInit() HKV_OVERRIDE;
+  VAPP_IMPEXP virtual void Init() HKV_OVERRIDE;
+  VAPP_IMPEXP virtual void DeInit() HKV_OVERRIDE;
 
-  virtual void OnHandleCallback(IVisCallbackDataObject_cl* pData) HKV_OVERRIDE;
+  VAPP_IMPEXP virtual void OnHandleCallback(IVisCallbackDataObject_cl* pData) HKV_OVERRIDE;
 
 private:
   void BuildCameraList();
@@ -100,7 +100,7 @@ private:
 #endif // __V_CAMERA_HANDLING_HPP
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

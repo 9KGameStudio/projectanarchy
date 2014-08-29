@@ -141,6 +141,9 @@ namespace Editor
       this.selectRecursivelyToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
       this.moveToLayerToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
       this.layersGoHereToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+      this.toolStripMenuItem2 = new System.Windows.Forms.ToolStripMenuItem();
+      this.cameraPositionToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+      this.shapeOriginToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
       this.toolStripMenuItem7 = new System.Windows.Forms.ToolStripSeparator();
       this.setShapeActiveToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
       this.jumpToToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -206,6 +209,7 @@ namespace Editor
       this.button_UpdateIgnore = new System.Windows.Forms.Button();
       this.button_LayerUpdate = new System.Windows.Forms.Button();
       this.label1 = new System.Windows.Forms.Label();
+      this.propertiesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
       this.toolStrip_Search = new System.Windows.Forms.ToolStrip();
       this.toolStripButtonClearSearch = new System.Windows.Forms.ToolStripButton();
       this.contextMenuStrip_Shapes.SuspendLayout();
@@ -252,13 +256,15 @@ namespace Editor
             this.sortShapesToolStripMenuItem,
             this.childNodesToolStripMenuItem,
             this.moveToLayerToolStripMenuItem,
+            this.toolStripMenuItem2,
             this.toolStripMenuItem7,
             this.setShapeActiveToolStripMenuItem,
             this.jumpToToolStripMenuItem,
             this.lockShapesToolStripMenuItem,
-            this.createPrefabToolStripMenuItem});
+            this.createPrefabToolStripMenuItem,
+            this.propertiesToolStripMenuItem});
       this.contextMenuStrip_Shapes.Name = "contextMenuStrip_Shapes";
-      this.contextMenuStrip_Shapes.Size = new System.Drawing.Size(181, 352);
+      this.contextMenuStrip_Shapes.Size = new System.Drawing.Size(181, 418);
       this.contextMenuStrip_Shapes.Opening += new System.ComponentModel.CancelEventHandler(this.contextMenuStrip_Shapes_Opening);
       // 
       // relevantOperationsToolStripMenuItem
@@ -512,6 +518,29 @@ namespace Editor
       this.layersGoHereToolStripMenuItem.Name = "layersGoHereToolStripMenuItem";
       this.layersGoHereToolStripMenuItem.Size = new System.Drawing.Size(166, 22);
       this.layersGoHereToolStripMenuItem.Text = "<Layers go here>";
+      // 
+      // toolStripMenuItem2
+      // 
+      this.toolStripMenuItem2.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.cameraPositionToolStripMenuItem,
+            this.shapeOriginToolStripMenuItem});
+      this.toolStripMenuItem2.Name = "toolStripMenuItem2";
+      this.toolStripMenuItem2.Size = new System.Drawing.Size(180, 22);
+      this.toolStripMenuItem2.Text = "Move To";
+      // 
+      // cameraPositionToolStripMenuItem
+      // 
+      this.cameraPositionToolStripMenuItem.Name = "cameraPositionToolStripMenuItem";
+      this.cameraPositionToolStripMenuItem.Size = new System.Drawing.Size(161, 22);
+      this.cameraPositionToolStripMenuItem.Text = "Camera Position";
+      this.cameraPositionToolStripMenuItem.Click += new System.EventHandler(this.cameraPositionToolStripMenuItem_Click);
+      // 
+      // shapeOriginToolStripMenuItem
+      // 
+      this.shapeOriginToolStripMenuItem.Name = "shapeOriginToolStripMenuItem";
+      this.shapeOriginToolStripMenuItem.Size = new System.Drawing.Size(161, 22);
+      this.shapeOriginToolStripMenuItem.Text = "Shape Origin";
+      this.shapeOriginToolStripMenuItem.Click += new System.EventHandler(this.shapeOriginToolStripMenuItem_Click);
       // 
       // toolStripMenuItem7
       // 
@@ -1157,6 +1186,14 @@ namespace Editor
       this.label1.TabIndex = 0;
       this.label1.Text = "One or more layers have been modified";
       // 
+      // propertiesToolStripMenuItem
+      // 
+      this.propertiesToolStripMenuItem.Image = global::Editor.Properties.Resources.wrench;
+      this.propertiesToolStripMenuItem.Name = "propertiesToolStripMenuItem";
+      this.propertiesToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+      this.propertiesToolStripMenuItem.Text = "Properties";
+      this.propertiesToolStripMenuItem.Click += new System.EventHandler(this.propertiesToolStripMenuItem_Click);
+      // 
       // toolStrip_Search
       // 
       this.toolStrip_Search.GripStyle = System.Windows.Forms.ToolStripGripStyle.Hidden;
@@ -1248,6 +1285,10 @@ namespace Editor
     private ToolStripLabel toolStripLabelSearch;
     private IncrementalSearchPanel searchPanel;
     private ToolStripSeparator toolStripSeparator7;
+    private ToolStripMenuItem toolStripMenuItem2;
+    private ToolStripMenuItem cameraPositionToolStripMenuItem;
+    private ToolStripMenuItem shapeOriginToolStripMenuItem;
+    private ToolStripMenuItem propertiesToolStripMenuItem;    
     private ToolStrip toolStrip_Search;
     private ToolStripButton toolStripButtonClearSearch;    
   }

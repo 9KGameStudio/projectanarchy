@@ -32,6 +32,10 @@
 #	define HK_FEATURE_REFLECTION_CLOTH
 #endif
 
+#ifdef HK_FEATURE_PRODUCT_SIMULATION
+#   define HK_FEATURE_REFLECTION_SIMULATION
+#endif
+
 #if defined (HK_FEATURE_PRODUCT_DESTRUCTION_2012)
 #	define HK_FEATURE_REFLECTION_DESTRUCTION_2012
 #endif
@@ -44,14 +48,14 @@
 #	define HK_FEATURE_REFLECTION_AI
 #endif
 
-#ifdef HK_FEATURE_PRODUCT_MILSIM
-#	define HK_FEATURE_REFLECTION_MILSIM
+#ifdef HK_FEATURE_PRODUCT_SIMULATION
+#	define HK_FEATURE_REFLECTION_SIMULATION
 #endif
 
 #include <Common/Serialize/Classlist/hkClasses.h>
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

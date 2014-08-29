@@ -122,24 +122,9 @@ public:
   hkvVec3 GetObjDir_Right() const;
   hkvVec3 GetObjDir_Up() const;
 
+  VisObject3D_cl* GetParent();
+
 };
-
-//Implement this method native in order to return the concrete type instance
-//instead of the base class VisObject3D_cl
-%native(VisObject3D_cl_GetParent) int VisObject3D_cl_GetParent(lua_State *L);
-%{
-  SWIGINTERN int VisObject3D_cl_GetParent(lua_State *L)
-  {
-    IS_MEMBER_OF(VisObject3D_cl) //this will move this function to the method table of the specified class
-
-    SWIG_CONVERT_POINTER(L, 1, VisObject3D_cl, pSelf)
-
-    lua_settop(L, 0);
-    LUA_PushObjectProxy(L, pSelf->GetParent()); //will handle NULL as well
-
-    return 1;
-  }
-%} 
 
 //Implement this method native in order to return the concrete type instance
 //instead of the base class VisObject3D_cl
@@ -488,7 +473,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

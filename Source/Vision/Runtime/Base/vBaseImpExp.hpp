@@ -13,7 +13,7 @@
 
 
 
-#if (defined(_WIN32) || defined(_VISION_XENON) ) && !defined(_VISION_WINRT) ///< do it always for MSDev projects (windows and Xenon)
+#if (defined(_VISION_WIN32) || defined(_VISION_XENON) ) && !defined(_VISION_WINRT) ///< do it always for MSDev projects (windows and Xenon)
 
   // Define VBASE_LIB to compile vBase as a static lib
   // or if you want to use vBase as a static lib in your project
@@ -74,7 +74,7 @@
   #endif //VBASE_IMPEXP_CLASS
 
 
-#else ///<not WIN32, XENON, PS3 or LINUX
+#else ///<not _VISION_WIN32, XENON, PS3 or LINUX
 
   #pragma chMSG( Define the VBASE_IMPEXP here for other operating systems )
 
@@ -91,7 +91,7 @@ typedef int INT;
 #endif // _VISION_VBASEIMPEX_HPP
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

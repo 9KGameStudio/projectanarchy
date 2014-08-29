@@ -12,6 +12,7 @@
 
 #include <Common/Base/Math/Vector/hkFourTransposedPoints.h>
 #include <Geometry/Internal/Types/hkcdRay.h>
+#include <Geometry/Internal/Types/hkcdRayBundle.h>
 
 
 	//// Raycast against a sphere.
@@ -23,24 +24,24 @@
 	/// -	If the ray start lies on the sphere surface and the end is not contained in the sphere there is no intersection
 	///
 	/// \sa hkcdRayBundleSphereIntersect for a version for multiple rays.
-	HK_FORCE_INLINE	hkInt32 hkcdRayCastSphere(const hkcdRay& ray, 
-												hkVector4Parameter spherePosAndRadius, 
-												hkSimdReal* HK_RESTRICT hitFractionInOut,
-												hkVector4* HK_RESTRICT normalOut,
-												hkcdRayQueryFlags::Enum flags);
+HK_FORCE_INLINE	hkcdRayCastResult hkcdRayCastSphere(
+	const hkcdRay& ray, 
+	hkVector4Parameter spherePosAndRadius, 
+	hkSimdReal* HK_RESTRICT hitFractionInOut,
+	hkVector4* HK_RESTRICT normalOut,
+	hkFlags<hkcdRayQueryFlags::Enum,hkUint32> flags);
 
 
-
-
-HK_FORCE_INLINE hkVector4Comparison hkcdRayBundleSphereIntersect(const hkcdRayBundle& rayBundle, hkSimdRealParameter sphereRadius, 
-																 hkVector4& fractionsInOut, hkFourTransposedPoints& normalsOut);
+HK_FORCE_INLINE hkVector4Comparison hkcdRayBundleSphereIntersect(
+	const hkcdRayBundle& rayBundle, hkSimdRealParameter sphereRadius, 
+	hkVector4& fractionsInOut, hkFourTransposedPoints& normalsOut );
 
 #include <Geometry/Internal/Algorithms/RayCast/hkcdRayCastSphere.inl>
 
 #endif // HKCD_INTERSECTIONS_RAY_SPHERE
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

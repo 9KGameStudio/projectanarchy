@@ -18,7 +18,7 @@
   #pragma warning(disable : 4127)
 #endif // !defined(__GCC__) && !defined(__SNC__) && !defined(__GNUC__)
 
-#if defined(WIN32)
+#if defined(_VISION_WIN32)
 #define VISION_LITTLE_ENDIAN
 
 #elif defined(_VISION_LINUX)
@@ -38,9 +38,9 @@
 
 #elif defined(_VISION_PSP2)
   #define VISION_LITTLE_ENDIAN
-#elif defined(_VISION_ANDROID) || defined(_VISION_TIZEN)
+#elif defined(_VISION_IOS) || defined(_VISION_ANDROID) || defined(_VISION_TIZEN)
   #define VISION_LITTLE_ENDIAN
-#elif defined(_VISION_IOS)
+#elif defined(_VISION_NACL)
   #define VISION_LITTLE_ENDIAN
 #else
 #error Undefined plattform!
@@ -209,7 +209,7 @@ int LittleEndianToNativeInt(int iVal);
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -11,7 +11,7 @@
 #include <Common/Serialize/Packfile/hkPackfileWriter.h>
 #include <Common/Serialize/Util/hkSerializeUtil.h>
 
-class hkSerializeDeprecated : public hkReferencedObject, public hkSingleton<hkSerializeDeprecated>
+class HK_EXPORT_COMMON hkSerializeDeprecated : public hkReferencedObject, public hkSingleton<hkSerializeDeprecated>
 {
 	public:
 
@@ -22,6 +22,10 @@ class hkSerializeDeprecated : public hkReferencedObject, public hkSingleton<hkSe
 			int m_classVersion;
 			hkStringPtr m_contentsVersion;
 			hkStringPtr m_topLevelObject;
+
+			bool supportsPredicates() const { return m_classVersion >= 10; }
+			hkUint16 m_maxpredicate;
+			hkArray<hkUint16> m_truePredicates;
 		};
 
 		HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE);
@@ -41,6 +45,12 @@ class hkSerializeDeprecated : public hkReferencedObject, public hkSingleton<hkSe
 		virtual hkResult readXmlPackfileHeader(hkStreamReader* stream, XmlPackfileHeader& out, hkSerializeUtil::ErrorDetails* errorOut);
 };
 
+namespace hkSerializeDeprecatedInit
+{
+	// You need to link to hkCompat if you call this
+	void HK_CALL initDeprecated();
+};	
+
 #if defined(HK_COMPILER_ARMCC) || defined(HK_COMPILER_GHS) // have to specialize before use so that generalized one not auto gen-d<<<<
 HK_SINGLETON_SPECIALIZATION_DECL(hkSerializeDeprecated);
 #endif
@@ -48,7 +58,7 @@ HK_SINGLETON_SPECIALIZATION_DECL(hkSerializeDeprecated);
 #endif // HK_COMPAT_SERIALIZE_DEPRECATED_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

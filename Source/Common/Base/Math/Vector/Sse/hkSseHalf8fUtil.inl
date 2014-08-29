@@ -19,7 +19,7 @@ template<hkMathRoundingMode R, hkMathIoMode I>
 	hkVector4f vs0, vs1; 
 	if ( R == HK_ROUND_NEAREST )
 	{
-		const hkVector4f packHalf = hkVector4::getConstant<HK_QUADREAL_PACK_HALF>();
+		const hkVector4f packHalf = hkVector4f::getConstant<HK_QUADREAL_PACK_HALF>();
 		vs0.setMul( v0, packHalf);
 		vs1.setMul( v1, packHalf);
 	}
@@ -109,7 +109,7 @@ template<hkMathRoundingMode A>
 	hkVector4f vs0, vs1; 
 	if ( A == HK_ROUND_NEAREST )
 	{
-		const hkVector4f packHalf = hkVector4::getConstant<HK_QUADREAL_PACK_HALF>();
+		const hkVector4f packHalf = hkVector4f::getConstant<HK_QUADREAL_PACK_HALF>();
 		vs0.setMul( v0, packHalf);
 		vs1.setMul( v1, packHalf);
 	}
@@ -144,7 +144,7 @@ template<hkMathRoundingMode A>
 } // namespace hkHalf8Util
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

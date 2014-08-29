@@ -11,11 +11,11 @@
 #include <Animation/Animation/Animation/hkaAnimation.h>
 
 /// hkaInterleavedUncompressedAnimation meta information
-extern const class hkClass hkaInterleavedUncompressedAnimationClass;
+extern HK_EXPORT_ANIMATION const class hkClass hkaInterleavedUncompressedAnimationClass;
 
 /// The information needed to construct an hkSimpleAnimation (An interleaved
 /// uncompressed stream of Bone Transforms)
-class hkaInterleavedUncompressedAnimation : public hkaAnimation
+class HK_EXPORT_ANIMATION hkaInterleavedUncompressedAnimation : public hkaAnimation
 {
 	public:
 
@@ -89,7 +89,7 @@ class hkaInterleavedUncompressedAnimation : public hkaAnimation
 #endif // HKANIMATION_ANIMATION_INTERLEAVED_HKINTERLEAVEDANIMATION_HKCLASS_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

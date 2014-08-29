@@ -9,178 +9,83 @@
 #ifndef HK_TASK_GRAPH_H
 #define HK_TASK_GRAPH_H
 
+#include <Common/Base/Thread/Task/hkTask.h>
 #include <Common/Base/Types/hkHandle.h>
 
-class hkTask;
 
-
-/// A interface for adding a set of tasks and optional dependencies between them.
-/// When processing the graph, available tasks are expected to be processed in FIFO order.
-struct hkTaskGraph
-{
-	/// A dependency between two tasks.
-	struct Dependency
-	{
-		int m_parentId;
-		int m_childId;
-	};
-
-	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_BASE_CLASS, hkTaskGraph );
-
-	/// Virtual empty destructor. Non-virtual on SPU to avoid code bloat.
-	HK_FORCE_INLINE HK_NOSPU_VIRTUAL ~hkTaskGraph() {}
-
-	/// Add a set of tasks.
-	/// A task is allowed to be added multiple times.
-	/// The multiplicity of a task is the number of times that it has to be processed before it is considered finished.
-	/// If the array of multiplicities is NULL all tasks will have multiplicity 1.
-	/// If taskIdsOut is not NULL, it will be filled with IDs for the added tasks.
-	virtual void addTasks(
-		hkTask** tasks, int numTasks, const int* multiplicities = HK_NULL, int* taskIdsOut = HK_NULL ) = 0;
-
-	/// Add a set of task dependencies.
-	virtual void addDependencies( Dependency* dependencies, int numDependencies ) = 0;
-
-	/// Get the number of tasks that have been added.
-	virtual int getNumTasks() = 0;
-};
-
-
-/// A default task graph implementation, used by hkTaskQueue.
-struct hkDefaultTaskGraph : public hkTaskGraph
+/// A set of tasks to be processed, with optional dependencies between them.
+/// To process a task graph, you can add it to a hkTaskQueue and have your threads call the methods there,
+/// or you could convert it to a form that suits your own scheduling system.
+struct HK_EXPORT_COMMON hkTaskGraph
 {
 	public:
 
-		// Type used to handle pointers as unsigned integers
-	#if HK_POINTER_SIZE == 4
-		typedef hkUint32 UintPtr;
-	#elif HK_POINTER_SIZE == 8
-		typedef hkUint64 UintPtr;
-	#endif
+		/// Task identifier.
+		HK_DECLARE_HANDLE( TaskId, hkUint16, 0xFFFF );
 
-		HK_DECLARE_HANDLE(TaskId, hkUint16, 0xFFFF);
-		typedef hkUint16 DependencyCount;
-
-		/// Type used to store the multiplicity of a task
-		typedef hkUint8 Multiplicity;
-
-		enum
+		/// A node in the graph, describing a task and its multiplicity.
+		struct HK_EXPORT_COMMON TaskInfo
 		{
-			MAX_TASKS = 1 << 16,
-			MAX_DEPENDENCIES = 0xFFFF
+			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_BASE, TaskInfo );
+
+			hkRefPtr<hkTask> m_task;	///< The task to be processed. Can be HK_NULL.
+			int m_multiplicity;			///< The number of times that the task must be processed.
 		};
 
-		enum ExecutionPolicy
+		/// An edge in the graph, describing a dependency between two tasks.
+		struct HK_EXPORT_COMMON Dependency
 		{
-			EXECUTION_POLICY_NONE,
-			EXECUTION_POLICY_BREADTH_FIRST,
-			EXECUTION_POLICY_DEPTH_FIRST,
-		};
+			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_BASE, Dependency );
 
-		struct TaskInfo
-		{
-			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_BASE_CLASS, hkDefaultTaskGraph::TaskInfo );
-
-			hkTask* m_task;
-			int m_firstChildIndex;
-			DependencyCount m_numParents;
-			DependencyCount m_numChildren;
-			Multiplicity m_multiplicity;
+			TaskId m_parentId;	///< The task that must be processed first.
+			TaskId m_childId;	///< The task that must be processed after the parent is finished.
 		};
 
 	public:
 
-		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_BASE_CLASS, hkDefaultTaskGraph );
+		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_BASE, hkTaskGraph );
 
-		hkDefaultTaskGraph() : m_maxAvailableTasks(0), m_numInactiveTasks(0) {}
+		/// Add a task to the graph with the given multiplicity.
+		/// A placeholder can be added by passing in a HK_NULL task pointer and overriding it later.
+		/// The multiplicity is the number of times that the task must be processed before it is considered
+		/// to be finished and its dependent tasks are made available.
+		HK_FORCE_INLINE TaskId addTask( hkTask* task, int multiplicity = 1 );
 
-		HK_FORCE_INLINE hkTask* getTask(TaskId taskId) const
-		{
-			return m_taskInfos[taskId.value()].m_task;
-		}
+		/// Same as addTask but does not increment the reference count on the task.
+		/// However the reference count will be removed once the task is finished.
+		HK_FORCE_INLINE TaskId addTaskAndDontIncrementReference( hkTask* task, int multiplicity = 1 );
 
-		/// A task is active if it is set to a valid task pointer.
-		/// Otherwise it is just a place holder for an optional task.
-		HK_FORCE_INLINE hkBool32 isTaskActive(TaskId taskId) const
-		{
-			return !(UintPtr(m_taskInfos[taskId.value()].m_task) & 1);
-		}
+		/// Add a parent-child dependency between two tasks.
+		HK_FORCE_INLINE void addDependency( TaskId parentId, TaskId childId );
 
-		HK_FORCE_INLINE hkUint16 getInactiveTaskIndex(TaskId taskId) const
-		{
-			return hkUint16(UintPtr(m_taskInfos[taskId.value()].m_task) >> 1);
-		}
+		/// Clear all tasks and dependencies from the graph.
+		HK_FORCE_INLINE void clear();
 
-		/// The maximum number of tasks that can be available at any given time. Pass in 0 to calculate it automatically
-		/// with calculateMaxAvailableTasks (beware, that this can be very costly).
-		void finish(int maxAvailableTasks, ExecutionPolicy executionPolicy = EXECUTION_POLICY_NONE);
+		/// Get read only access to the tasks array.
+		HK_FORCE_INLINE const hkArray<TaskInfo>& getTasks() const { return m_tasks; }
 
-		/// Reset the task graph to its initial state
-		void reset(bool unrefTasks = false);
+		/// Get read only access to the dependencies array.
+		HK_FORCE_INLINE const hkArray<Dependency>& getDependencies() const { return m_dependencies; }
 
-		//
-		// hkTaskGraph implementation
-		//
-
-		virtual void addTasks( hkTask** tasks, int numTasks, const int* multiplicities, int* taskIdsOut ) HK_OVERRIDE;
-
-		virtual void addDependencies( Dependency* dependencies, int numDependencies ) HK_OVERRIDE;
-
-		virtual int getNumTasks() HK_OVERRIDE;
-
-		
-		HK_FORCE_INLINE TaskId addTask( hkTask* task, int multiplicity = 1 )
-		{
-			hkTask** tasks = &task;
-			int id;
-			addTasks( tasks, 1, &multiplicity, &id );
-			return TaskId(id);
-		}
-
-		
-		HK_FORCE_INLINE void addDependency( TaskId parentId, TaskId childId )
-		{
-			Dependency d;
-			d.m_parentId = parentId.value();
-			d.m_childId = childId.value();
-			addDependencies( &d, 1 );
-		}
+		/// Allocate space for the specified number of tasks and dependencies (calls hkArray::reserve)
+		HK_FORCE_INLINE void reserve( int numTasks, int numDependencies = 0);
 
 	protected:
 
-		struct TaskDetph
-		{
-			TaskId m_taskId;
-			int m_depth;
-			static HK_FORCE_INLINE bool HK_CALL lessDepthFirst(const TaskDetph& jA, const TaskDetph& jB)	{ return jB.m_depth < jA.m_depth; }
-			static HK_FORCE_INLINE bool HK_CALL lessBreadthFirst(const TaskDetph& jA, const TaskDetph& jB)	{ return jA.m_depth < jB.m_depth; }
-		};
+		/// The nodes of the graph.
+		/// Any available nodes (those with no unfinished parents) are expected to be processed in ascending order.
+		hkArray<TaskInfo> m_tasks;
 
-		void calculateTaskDepths(hkArray<TaskDetph>& taskDepths);
-		int calculateTaskDepthsRec(TaskDetph& node, hkArray<TaskDetph>& taskDepths);
-		void setDepthFirstExecOrderRec(TaskId taskId, int& newId, const hkArray<int>& taskIdToDepthId, hkArray<TaskDetph>& taskDepths, hkArray<int>& remapTable);
-		void reorderTasksForExecutionPolicy(ExecutionPolicy executionPolicy);
-
-		void reshuffleTasks(hkArray<int>& remapTable);
-
-		
-		int calculateMaxAvailableTasks() const;
-
-		int calculateMaxAvailableTasks(TaskId taskId) const;
-
-	public:
-
-		hkArray<TaskInfo> m_taskInfos;
-		hkArray<TaskId> m_children;
+		/// The edges of the graph.
 		hkArray<Dependency> m_dependencies;
-		int m_maxAvailableTasks;
-		hkUint16 m_numInactiveTasks;
 };
+
+#include <Common/Base/Thread/Task/hkTaskGraph.inl>
 
 #endif // HK_TASK_GRAPH_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

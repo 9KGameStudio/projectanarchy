@@ -9,7 +9,6 @@
 #include <Vision/Editor/vForge/AssetManagement/VisionAssets/VisionAssetsPCH.h>
 
 #include <Vision/Editor/vForge/AssetManagement/VisionAssets/ExternalTools/hkvExternalToolWiiUTexConv2.hpp>
-#include <Vision/Editor/vForge/AssetManagement/VisionAssets/ExternalTools/hkvExternalToolNvDxt.hpp>
 #include <Vision/Editor/vForge/AssetManagement/VisionAssets/ExternalTools/hkvExternalToolPvrTexTool.hpp>
 #include <Vision/Editor/vForge/AssetManagement/VisionAssets/ExternalTools/hkvExternalToolTexConv.hpp>
 #include <Vision/Editor/vForge/AssetManagement/VisionAssets/ImageFile/hkvImageFileProperties.hpp>
@@ -214,10 +213,26 @@ void hkvTextureTransformationRule::setProperty(const hkvProperty& prop, const hk
     else if (hkvStringHelper::safeCompare(prop.getName(), "MinimumSize") == 0)
     {
       m_minSize = prop.getUint();
+      if (m_minSize < 0)
+      {
+        m_minSize = 0;
+      }
+      if (m_minSize > 0 && m_maxSize > 0 && m_minSize > m_maxSize)
+      {
+        m_minSize = m_maxSize;
+      }
     }
     else if (hkvStringHelper::safeCompare(prop.getName(), "MaximumSize") == 0)
     {
       m_maxSize = prop.getUint();
+      if (m_maxSize < 0)
+      {
+        m_maxSize = 0;
+      }
+      if (m_minSize > 0 && m_maxSize > 0 && m_maxSize < m_minSize)
+      {
+        m_maxSize = m_minSize;
+      }
     }
   }
 }
@@ -288,7 +303,7 @@ bool hkvTextureTransformationRule::executeTransformation(const hkvTransformation
 }
 
 
-bool hkvTextureTransformationRule::queryOutputFileSpecs(const hkvTransformationInput& input, hkvTransformationOutput& output) const
+bool hkvTextureTransformationRule::queryOutputFileSpecs(const hkvTransformationInput& input, hkvTransformationOutput& output, bool forLookUpTable) const
 {
   Context context(input, output);
 
@@ -308,7 +323,7 @@ bool hkvTextureTransformationRule::queryOutputFileSpecs(const hkvTransformationI
       continue;
     }
 
-    const char* extension = hkvTextureFileFormatExtensions[variant.m_fileFormat];
+    const char* extension = hkvImageFileFormatExtensions[variant.m_fileFormat];
 
     hkStringBuf fileNameAddition(variant.m_filenameAddition, ".", extension);
 
@@ -332,6 +347,7 @@ hkResult hkvTextureTransformationRule::determineOutputs(Context& context) const
   case HKV_TARGET_PLATFORM_XBOX360:
   case HKV_TARGET_PLATFORM_PS3:
   case HKV_TARGET_PLATFORM_PSVITA:
+  case HKV_TARGET_PLATFORM_WINPHONE:
     {
       return determineOutputsDxt(context, false);
     }
@@ -373,16 +389,16 @@ hkResult hkvTextureTransformationRule::determineOutputsAndroid(Context& context)
       if (context.m_sourceHasAlpha && !m_removeAlphaChannel)
       {
       context.m_outputVariants.pushBack(hkvTextureVariant(variantDefault, 
-        HKV_TEXTURE_DATA_FORMAT_A8R8G8B8, HKV_TEXTURE_FILE_FORMAT_RGBA, "", false));
+        HKV_IMAGE_DATA_FORMAT_A8R8G8B8, HKV_IMAGE_FILE_FORMAT_RGBA, "", false));
       context.m_outputVariants.pushBack(hkvTextureVariant(variantPvr,
-        HKV_TEXTURE_DATA_FORMAT_A8R8G8B8, HKV_TEXTURE_FILE_FORMAT_RGBA, "", false));
+        HKV_IMAGE_DATA_FORMAT_A8R8G8B8, HKV_IMAGE_FILE_FORMAT_RGBA, "", false));
       }
       else
       {
         context.m_outputVariants.pushBack(hkvTextureVariant(variantDefault, 
-          HKV_TEXTURE_DATA_FORMAT_X8R8G8B8, HKV_TEXTURE_FILE_FORMAT_RGBA, "", false));
+          HKV_IMAGE_DATA_FORMAT_X8R8G8B8, HKV_IMAGE_FILE_FORMAT_RGBA, "", false));
         context.m_outputVariants.pushBack(hkvTextureVariant(variantPvr,
-          HKV_TEXTURE_DATA_FORMAT_X8R8G8B8, HKV_TEXTURE_FILE_FORMAT_RGBA, "", false));
+          HKV_IMAGE_DATA_FORMAT_X8R8G8B8, HKV_IMAGE_FILE_FORMAT_RGBA, "", false));
       }
       break;
     }
@@ -391,25 +407,25 @@ hkResult hkvTextureTransformationRule::determineOutputsAndroid(Context& context)
       if (context.m_sourceHasAlpha && !m_removeAlphaChannel)
       {
         context.m_outputVariants.pushBack(hkvTextureVariant(variantDefault, 
-          HKV_TEXTURE_DATA_FORMAT_R4G4B4A4_GL, HKV_TEXTURE_FILE_FORMAT_RGBA, "", false));
+          HKV_IMAGE_DATA_FORMAT_R4G4B4A4_GL, HKV_IMAGE_FILE_FORMAT_RGBA, "", false));
         context.m_outputVariants.pushBack(hkvTextureVariant(variantPvr,
-          HKV_TEXTURE_DATA_FORMAT_PVRTC4, HKV_TEXTURE_FILE_FORMAT_PVR, "", false));
+          HKV_IMAGE_DATA_FORMAT_PVRTC4, HKV_IMAGE_FILE_FORMAT_PVR, "", false));
       }
       else
       {
         if (m_usageInstance.getDefinitionId() == HKV_TEXTURE_USAGE_NORMAL_MAP)
         {
           context.m_outputVariants.pushBack(hkvTextureVariant(variantDefault,
-            HKV_TEXTURE_DATA_FORMAT_R5G6B5, HKV_TEXTURE_FILE_FORMAT_RGBA, "", false));
+            HKV_IMAGE_DATA_FORMAT_R5G6B5, HKV_IMAGE_FILE_FORMAT_RGBA, "", false));
         }
         else
         {
           context.m_outputVariants.pushBack(hkvTextureVariant(variantDefault,
-            HKV_TEXTURE_DATA_FORMAT_ETC1, HKV_TEXTURE_FILE_FORMAT_ETC, "", false));
+            HKV_IMAGE_DATA_FORMAT_ETC1, HKV_IMAGE_FILE_FORMAT_ETC, "", false));
         }
 
         context.m_outputVariants.pushBack(hkvTextureVariant(variantPvr,
-          HKV_TEXTURE_DATA_FORMAT_PVRTC4, HKV_TEXTURE_FILE_FORMAT_PVR, "", false));
+          HKV_IMAGE_DATA_FORMAT_PVRTC4, HKV_IMAGE_FILE_FORMAT_PVR, "", false));
       }
       break;
     }
@@ -418,16 +434,16 @@ hkResult hkvTextureTransformationRule::determineOutputsAndroid(Context& context)
   //    if (context.m_sourceHasAlpha && !m_removeAlphaChannel)
   //    {
   //      context.m_outputVariants.pushBack(hkvTextureVariant(variantDefault, 
-  //        HKV_TEXTURE_DATA_FORMAT_A4R4G4B4, HKV_TEXTURE_FILE_FORMAT_RGBA, "", false));
+  //        HKV_IMAGE_DATA_FORMAT_A4R4G4B4, HKV_IMAGE_FILE_FORMAT_RGBA, "", false));
   //      context.m_outputVariants.pushBack(hkvTextureVariant(variantPvr,
-  //        HKV_TEXTURE_DATA_FORMAT_PVRTC2, HKV_TEXTURE_FILE_FORMAT_PVR, "", false));
+  //        HKV_IMAGE_DATA_FORMAT_PVRTC2, HKV_IMAGE_FILE_FORMAT_PVR, "", false));
   //    }
   //    else
   //    {
   //      context.m_outputVariants.pushBack(hkvTextureVariant(variantDefault, 
-  //        HKV_TEXTURE_DATA_FORMAT_ETC1, HKV_TEXTURE_FILE_FORMAT_ETC, "", false));
+  //        HKV_IMAGE_DATA_FORMAT_ETC1, HKV_IMAGE_FILE_FORMAT_ETC, "", false));
   //      context.m_outputVariants.pushBack(hkvTextureVariant(variantPvr,
-  //        HKV_TEXTURE_DATA_FORMAT_PVRTC2, HKV_TEXTURE_FILE_FORMAT_PVR, "", false));
+  //        HKV_IMAGE_DATA_FORMAT_PVRTC2, HKV_IMAGE_FILE_FORMAT_PVR, "", false));
   //    }
   //    break;
   //  }
@@ -446,22 +462,22 @@ hkResult hkvTextureTransformationRule::determineOutputsDxt(Context& context, boo
 {
   hkvTextureCompression compression = (hkvTextureCompression)m_compressionInstance.getDefinitionId();
 
-  hkvTextureDataFormat dataFormat;
+  hkvImageDataFormat dataFormat;
   switch (compression)
   {
   case HKV_TEXTURE_COMPRESSION_NONE:
     {
-      dataFormat = (context.m_sourceHasAlpha && !m_removeAlphaChannel) ? HKV_TEXTURE_DATA_FORMAT_A8R8G8B8 : HKV_TEXTURE_DATA_FORMAT_X8R8G8B8;
+      dataFormat = (context.m_sourceHasAlpha && !m_removeAlphaChannel) ? HKV_IMAGE_DATA_FORMAT_A8R8G8B8 : HKV_IMAGE_DATA_FORMAT_X8R8G8B8;
       break;
     }
   case HKV_TEXTURE_COMPRESSION_QUALITY:
     {
-      dataFormat = (context.m_sourceHasAlpha && !m_removeAlphaChannel) ? HKV_TEXTURE_DATA_FORMAT_DXT5 : HKV_TEXTURE_DATA_FORMAT_DXT1;
+      dataFormat = (context.m_sourceHasAlpha && !m_removeAlphaChannel) ? HKV_IMAGE_DATA_FORMAT_DXT5 : HKV_IMAGE_DATA_FORMAT_DXT1;
       break;
     }
   //case HKV_TEXTURE_COMPRESSION_SIZE:
   //  {
-  //    dataFormat = (context.m_sourceHasAlpha && !m_removeAlphaChannel) ? HKV_TEXTURE_DATA_FORMAT_DXT3 : HKV_TEXTURE_DATA_FORMAT_DXT1;
+  //    dataFormat = (context.m_sourceHasAlpha && !m_removeAlphaChannel) ? HKV_IMAGE_DATA_FORMAT_DXT3 : HKV_IMAGE_DATA_FORMAT_DXT1;
   //    break;
   //  }
   default:
@@ -478,10 +494,11 @@ hkResult hkvTextureTransformationRule::determineOutputsDxt(Context& context, boo
   {
     for (hkArray<hkvTextureVariant>::iterator iter = context.m_outputVariants.begin(); iter != context.m_outputVariants.end(); ++iter)
     {
-      if ((iter->m_dataFormat == dataFormat) && (iter->m_fileFormat == HKV_TEXTURE_FILE_FORMAT_DDS))
+      hkvTextureVariant& variant = *iter;
+      if ((variant.m_dataFormat == dataFormat) && (variant.m_fileFormat == HKV_IMAGE_FILE_FORMAT_DDS))
       {
         context.m_outputVariants.pushBack(hkvTextureVariant(VARIANT_VFORGE, 
-          dataFormat, HKV_TEXTURE_FILE_FORMAT_DDS, "", isEditorPreview));
+          dataFormat, HKV_IMAGE_FILE_FORMAT_DDS, "", isEditorPreview));
         return HK_SUCCESS;
       }
     }
@@ -493,7 +510,7 @@ hkResult hkvTextureTransformationRule::determineOutputsDxt(Context& context, boo
   const char* variantName = isEditorPreview ? VARIANT_VFORGE : "";
   const char* nameAddition = isEditorPreview ? "v" : "";
   context.m_outputVariants.pushBack(hkvTextureVariant(variantName, 
-    dataFormat, HKV_TEXTURE_FILE_FORMAT_DDS, nameAddition, isEditorPreview));
+    dataFormat, HKV_IMAGE_FILE_FORMAT_DDS, nameAddition, isEditorPreview));
 
   return HK_SUCCESS;
 }
@@ -503,26 +520,26 @@ hkResult hkvTextureTransformationRule::determineOutputsIos(Context& context) con
 {
   hkvTextureCompression compression = (hkvTextureCompression)m_compressionInstance.getDefinitionId();
 
-  hkvTextureDataFormat dataFormat;
-  hkvTextureFileFormat fileFormat;
+  hkvImageDataFormat dataFormat;
+  hkvImageFileFormat fileFormat;
   switch (compression)
   {
   case HKV_TEXTURE_COMPRESSION_NONE:
     {
-      dataFormat = (context.m_sourceHasAlpha && !m_removeAlphaChannel) ? HKV_TEXTURE_DATA_FORMAT_A8R8G8B8 : HKV_TEXTURE_DATA_FORMAT_X8R8G8B8;
-      fileFormat = HKV_TEXTURE_FILE_FORMAT_RGBA;
+      dataFormat = (context.m_sourceHasAlpha && !m_removeAlphaChannel) ? HKV_IMAGE_DATA_FORMAT_A8R8G8B8 : HKV_IMAGE_DATA_FORMAT_X8R8G8B8;
+      fileFormat = HKV_IMAGE_FILE_FORMAT_RGBA;
       break;
     }
   case HKV_TEXTURE_COMPRESSION_QUALITY:
     {
-      dataFormat = HKV_TEXTURE_DATA_FORMAT_PVRTC4;
-      fileFormat = HKV_TEXTURE_FILE_FORMAT_PVR;
+      dataFormat = HKV_IMAGE_DATA_FORMAT_PVRTC4;
+      fileFormat = HKV_IMAGE_FILE_FORMAT_PVR;
       break;
     }
   //case HKV_TEXTURE_COMPRESSION_SIZE:
   //  {
-  //    dataFormat = HKV_TEXTURE_DATA_FORMAT_PVRTC2;
-  //    fileFormat = HKV_TEXTURE_FILE_FORMAT_PVR;
+  //    dataFormat = HKV_IMAGE_DATA_FORMAT_PVRTC2;
+  //    fileFormat = HKV_IMAGE_FILE_FORMAT_PVR;
   //    break;
   //  }
   default:
@@ -542,22 +559,22 @@ hkResult hkvTextureTransformationRule::determineOutputsWiiU(Context& context) co
 {
   hkvTextureCompression compression = (hkvTextureCompression)m_compressionInstance.getDefinitionId();
 
-  hkvTextureDataFormat dataFormat;
+  hkvImageDataFormat dataFormat;
   switch (compression)
   {
   case HKV_TEXTURE_COMPRESSION_NONE:
     {
-      dataFormat = (context.m_sourceHasAlpha && !m_removeAlphaChannel) ? HKV_TEXTURE_DATA_FORMAT_A8R8G8B8 : HKV_TEXTURE_DATA_FORMAT_X8R8G8B8;
+      dataFormat = (context.m_sourceHasAlpha && !m_removeAlphaChannel) ? HKV_IMAGE_DATA_FORMAT_A8R8G8B8 : HKV_IMAGE_DATA_FORMAT_X8R8G8B8;
       break;
     }
   case HKV_TEXTURE_COMPRESSION_QUALITY:
     {
-      dataFormat = (context.m_sourceHasAlpha && !m_removeAlphaChannel) ? HKV_TEXTURE_DATA_FORMAT_DXT5 : HKV_TEXTURE_DATA_FORMAT_DXT1;
+      dataFormat = (context.m_sourceHasAlpha && !m_removeAlphaChannel) ? HKV_IMAGE_DATA_FORMAT_DXT5 : HKV_IMAGE_DATA_FORMAT_DXT1;
       break;
     }
   //case HKV_TEXTURE_COMPRESSION_SIZE:
   //  {
-  //    dataFormat = (context.m_sourceHasAlpha && !m_removeAlphaChannel) ? HKV_TEXTURE_DATA_FORMAT_DXT3 : HKV_TEXTURE_DATA_FORMAT_DXT1;
+  //    dataFormat = (context.m_sourceHasAlpha && !m_removeAlphaChannel) ? HKV_IMAGE_DATA_FORMAT_DXT3 : HKV_IMAGE_DATA_FORMAT_DXT1;
   //    break;
   //  }
   default:
@@ -567,7 +584,7 @@ hkResult hkvTextureTransformationRule::determineOutputsWiiU(Context& context) co
     }
   }
 
-  context.m_outputVariants.pushBack(hkvTextureVariant("", dataFormat, HKV_TEXTURE_FILE_FORMAT_GTX, "", false));
+  context.m_outputVariants.pushBack(hkvTextureVariant("", dataFormat, HKV_IMAGE_FILE_FORMAT_GTX, "", false));
 
   // Add a DXT/RAW variant as editor preview
   determineOutputsDxt(context, true);
@@ -625,25 +642,25 @@ hkResult hkvTextureTransformationRule::prepareTransformationSettings(Context& co
   TransformationStepInfo finalStep;
   switch (finalSettings.getTargetFileFormat())
   {
-  case HKV_TEXTURE_FILE_FORMAT_DDS:
-  case HKV_TEXTURE_FILE_FORMAT_RGBA:
+  case HKV_IMAGE_FILE_FORMAT_DDS:
+  case HKV_IMAGE_FILE_FORMAT_RGBA:
     {
       switch (finalSettings.getTargetDataFormat())
       {
-      case HKV_TEXTURE_DATA_FORMAT_DXT1:
-      case HKV_TEXTURE_DATA_FORMAT_DXT3:
-      case HKV_TEXTURE_DATA_FORMAT_DXT5:
-      case HKV_TEXTURE_DATA_FORMAT_A1R5G5B5:
-      case HKV_TEXTURE_DATA_FORMAT_R5G6B5:
-      case HKV_TEXTURE_DATA_FORMAT_A8R8G8B8:
-      case HKV_TEXTURE_DATA_FORMAT_X8R8G8B8:
+      case HKV_IMAGE_DATA_FORMAT_DXT1:
+      case HKV_IMAGE_DATA_FORMAT_DXT3:
+      case HKV_IMAGE_DATA_FORMAT_DXT5:
+      case HKV_IMAGE_DATA_FORMAT_A1R5G5B5:
+      case HKV_IMAGE_DATA_FORMAT_R5G6B5:
+      case HKV_IMAGE_DATA_FORMAT_A8R8G8B8:
+      case HKV_IMAGE_DATA_FORMAT_X8R8G8B8:
         {
           finalStep = TransformationStepInfo(STEP_TYPE_TEXCONV, "dds", finalSettings);
           break;
         }
-      case HKV_TEXTURE_DATA_FORMAT_A4R4G4B4:
-      case HKV_TEXTURE_DATA_FORMAT_R4G4B4A4_GL:
-      case HKV_TEXTURE_DATA_FORMAT_R8G8B8:
+      case HKV_IMAGE_DATA_FORMAT_A4R4G4B4:
+      case HKV_IMAGE_DATA_FORMAT_R4G4B4A4_GL:
+      case HKV_IMAGE_DATA_FORMAT_R8G8B8:
         {
           finalStep = TransformationStepInfo(STEP_TYPE_IMAGE_TO_DDS, "dds", finalSettings);
           break;
@@ -651,19 +668,18 @@ hkResult hkvTextureTransformationRule::prepareTransformationSettings(Context& co
       default:
         {
           VASSERT_MSG(false, "Forgotten uncompressed DDS format?");
-          finalStep = TransformationStepInfo(STEP_TYPE_PVRTEXTOOL, "dds", finalSettings);
-          break;
+          return HK_FAILURE;
         }
       }
       break;
     }
-  case HKV_TEXTURE_FILE_FORMAT_ETC:
-  case HKV_TEXTURE_FILE_FORMAT_PVR:
+  case HKV_IMAGE_FILE_FORMAT_ETC:
+  case HKV_IMAGE_FILE_FORMAT_PVR:
     {
       finalStep = TransformationStepInfo(STEP_TYPE_PVRTEXTOOL, "pvr", finalSettings);
       break;
     }
-  case HKV_TEXTURE_FILE_FORMAT_GTX:
+  case HKV_IMAGE_FILE_FORMAT_GTX:
     {
       finalStep = TransformationStepInfo(STEP_TYPE_WIIU_TEXCONV2, "gtx", finalSettings);
       break;
@@ -682,7 +698,7 @@ hkResult hkvTextureTransformationRule::prepareTransformationSettings(Context& co
   preparationSettings.setSourceProperties(context.m_sourceSrgb, context.m_sourceHasAlpha, context.m_sourceWidth, context.m_sourceHeight);
   preparationSettings.setUsage((hkvTextureUsage)m_usageInstance.getDefinitionId());
   preparationSettings.setExplicitTargetSize(context.m_sourceWidth, context.m_sourceHeight);
-  preparationSettings.setTargetFormat(HKV_TEXTURE_DATA_FORMAT_A8R8G8B8, HKV_TEXTURE_FILE_FORMAT_DDS);
+  preparationSettings.setTargetFormat(HKV_IMAGE_DATA_FORMAT_A8R8G8B8, HKV_IMAGE_FILE_FORMAT_DDS);
   preparationSettings.setCreateMipMaps(false);
   preparationSettings.setDiscardAlpha(false);
   preparationSettings.setDownscaleLevel(0);
@@ -697,7 +713,7 @@ hkResult hkvTextureTransformationRule::prepareTransformationSettings(Context& co
   {
     hkvTextureTransformationSettings cafeSettings(HKV_TARGET_PLATFORM_ANY);
     cafeSettings.assignFrom(finalStep.getSettings(), true);
-    cafeSettings.setTargetFormat(cafeSettings.getTargetDataFormat(), HKV_TEXTURE_FILE_FORMAT_DDS);
+    cafeSettings.setTargetFormat(cafeSettings.getTargetDataFormat(), HKV_IMAGE_FILE_FORMAT_DDS);
     if (cafeSettings.getCreateMipMaps())
     {
       cafeSettings.setCreateMipMaps(false); // Not needed here, as the final step needs to creates them
@@ -712,14 +728,14 @@ hkResult hkvTextureTransformationRule::prepareTransformationSettings(Context& co
   {
     hkvTextureTransformationSettings texconvSettings(HKV_TARGET_PLATFORM_ANY);
     texconvSettings.assignFrom(finalStep.getSettings(), true);
-    texconvSettings.setTargetFormat(HKV_TEXTURE_DATA_FORMAT_A8R8G8B8, HKV_TEXTURE_FILE_FORMAT_DDS);
+    texconvSettings.setTargetFormat(HKV_IMAGE_DATA_FORMAT_A8R8G8B8, HKV_IMAGE_FILE_FORMAT_DDS);
     context.m_transformationSteps.pushBack(TransformationStepInfo(STEP_TYPE_TEXCONV, "dds", texconvSettings));
   }
 
   context.m_transformationSteps.pushBack(finalStep);
 
   // Determine the name of the output file
-  const char* extension = hkvTextureFileFormatExtensions[variant.m_fileFormat];
+  const char* extension = hkvImageFileFormatExtensions[variant.m_fileFormat];
   hkStringBuf nameAdditionBuf(variant.m_filenameAddition, ".", extension);
 
   hkStringBuf filePathBuf;
@@ -771,12 +787,6 @@ hkResult hkvTextureTransformationRule::runConversion(Context& context) const
       {
         step = hkRefPtr<hkvFileTransformationStep>(
           new hkvTransformationStepImageToDds(stepInfo.getSettings(), context.m_stepSourceFile, context.m_stepTargetFile));
-        break;
-      }
-    case STEP_TYPE_NVDXT:
-      {
-        step = hkRefNew<hkvFileTransformationStep>(
-          new hkvExternalToolNvDxt(stepInfo.getSettings(), context.m_stepSourceFile, context.m_stepTargetFile));
         break;
       }
     case STEP_TYPE_PVRTEXTOOL:
@@ -845,13 +855,13 @@ hkResult hkvTextureTransformationRule::runConversion(Context& context) const
 
 hkResult hkvTextureTransformationRule::transferSourceProperties(Context& context) const
 {
-  if (!context.m_input.m_sourceProperties)
+  if (!context.m_input.m_pAsset)
   {
     return HK_FAILURE;
   }
 
   hkvPropertyList sourceProperties;
-  context.m_input.m_sourceProperties->getProperties(sourceProperties, hkvProperty::PURPOSE_SERIALIZATION);
+  context.m_input.m_pAsset->getProperties(sourceProperties, hkvProperty::PURPOSE_SERIALIZATION);
 
   size_t numSourceProperties = sourceProperties.size();
   for (size_t sourcePropertyIdx = 0; sourcePropertyIdx < numSourceProperties; ++sourcePropertyIdx)
@@ -919,7 +929,7 @@ void hkvTextureTransformationRule::Context::cancelTransformation()
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

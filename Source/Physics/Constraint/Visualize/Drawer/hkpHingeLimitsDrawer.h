@@ -15,7 +15,7 @@
 
 
 //
-class hkpHingeLimitsDrawer : public hkpConstraintDrawer
+class HK_EXPORT_PHYSICS hkpHingeLimitsDrawer : public hkpConstraintDrawer
 {
 	public:
 
@@ -34,7 +34,7 @@ class hkpHingeLimitsDrawer : public hkpConstraintDrawer
 #endif	// HKP_HINGE_LIMITS_DRAWER_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

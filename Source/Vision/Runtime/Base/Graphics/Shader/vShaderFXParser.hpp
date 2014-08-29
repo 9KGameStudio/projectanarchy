@@ -14,7 +14,7 @@
 #include <Vision/Runtime/Base/Graphics/Shader/vShaderIncludes.hpp>
 
 
-#ifdef WIN32
+#ifdef _VISION_WIN32
   #if defined (_VR_DX9)
     //TODO: Specific PC DX9 platform
     #define SHADERLIB_REQUIRED_PLATFORM       SHADERLIB_PLATFORM_DX9  
@@ -32,6 +32,7 @@
 #elif defined(_VISION_IOS) || defined(_VISION_ANDROID) || defined(_VISION_TIZEN)
 #elif defined(_VISION_PSP2)
 #elif defined(_VISION_WIIU)
+#elif defined(_VISION_NACL)
 
 #else
  #error Undefined platform!
@@ -41,7 +42,7 @@ class VShaderEffectLib;
 enum VShaderCompileFlags_e;
 
 void RegisterAllShaderEnums();
-#ifdef WIN32
+#ifdef _VISION_WIN32
 bool ParseFXLib (char *text, int numChars, VShaderCompileFlags_e flags, VShaderEffectLib &fxlib);
 
 class IVFileOutStream;
@@ -114,7 +115,7 @@ public:
 #endif //#define _VSHADERFXPARSER_HPP_INCLUDED_
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

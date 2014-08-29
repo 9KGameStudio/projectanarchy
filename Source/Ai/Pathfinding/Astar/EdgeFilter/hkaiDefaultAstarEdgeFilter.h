@@ -12,7 +12,7 @@
 #include <Ai/Pathfinding/NavMesh/hkaiNavMesh.h>
 #include <Ai/Pathfinding/Astar/EdgeFilter/hkaiAstarEdgeFilter.h>
 
-extern const class hkClass hkaiDefaultAstarEdgeFilterClass;
+extern HK_EXPORT_AI const class hkClass hkaiDefaultAstarEdgeFilterClass;
 
 struct hkaiAgentTraversalInfo;
 
@@ -23,7 +23,7 @@ struct hkaiAgentTraversalInfo;
 /// For nav volume searches, the cell is allowed if the bit indexed by the user data is set in m_cellMaskLookupTable.
 ///
 /// See NavMeshEdgeFilterDemo for an example of how to use this.
-class hkaiDefaultAstarEdgeFilter : public hkaiAstarEdgeFilter
+class HK_EXPORT_AI hkaiDefaultAstarEdgeFilter : public hkaiAstarEdgeFilter
 {
 	public:
 		//+version(2)
@@ -118,7 +118,7 @@ class hkaiDefaultAstarEdgeFilter : public hkaiAstarEdgeFilter
 #endif // HK_AI_DEFAULT_NAV_MESH_EDGE_FILTER_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

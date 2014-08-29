@@ -8,29 +8,29 @@
 
 #include <Vision/Runtime/EnginePlugins/Havok/HavokPhysicsEnginePlugin/HavokPhysicsEnginePluginPCH.h>
 #define __vHavokPhysicsModuleIncludes
-#include <Vision/Runtime/EnginePlugins/Havok/HavokPhysicsEnginePlugin/vHavokSync.hpp>
+#include <Vision/Runtime/EnginePlugins/Havok/HavokPhysicsEnginePlugin/vHavokSync.inl>
 #include <Common/Base/Memory/System/Util/hkMemoryInitUtil.h>
 
 #ifdef HAVOK_NEED_SYNC_MACROS
 
 void vHavokPhysicsModuleGetSyncInfo(hkMemoryInitUtil::SyncInfo& s)
 {
-	s.m_memoryRouter = hkMemoryRouter::getInstancePtr();
-	s.m_singletonList = hkSingletonInitList;
-	s.m_memorySystem = hkMemorySystem::getInstancePtr();
-	s.m_monitors = hkMonitorStream::getInstancePtr();
-	s.m_mtCheckSection = hkMultiThreadCheck::m_criticalSection;
+  s.m_memoryRouter = hkMemoryRouter::getInstancePtr();
+  s.m_singletonList = hkSingletonInitList;
+  s.m_memorySystem = hkMemorySystem::getInstancePtr();
+  s.m_monitors = hkMonitorStream::getInstancePtr();
+  s.m_mtCheckSection = hkMultiThreadCheck::m_criticalSection;
 #if (HAVOK_SDK_VERSION_MAJOR >= 2010)
-	s.m_stackTracerImpl = hkStackTracer::getImplementation();
-	s.m_mtCheckStackTree = hkMultiThreadCheck::s_stackTree;
-	s.m_mtRefLockedAllPtr = hkMemoryRouter::getInstance().getRefObjectLocalStore();
+  s.m_stackTracerImpl = hkStackTracer::getImplementation();
+  s.m_mtCheckStackTree = hkMultiThreadCheck::s_stackTree;
+  s.m_mtRefLockedAllPtr = hkMemoryRouter::getInstance().getRefObjectLocalStore();
 #endif
 }
 
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

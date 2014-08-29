@@ -194,7 +194,7 @@ namespace TerrainBase.Shapes
     #region Properties
 
     Vector3F _vBoxSize = new Vector3F(16000,16000,8000);
-    string _heightmapfile = "Textures/heightmap_1.tex";
+    string _heightmapfile = "Textures/heightmap_1.dds";
     Heightmapsize_e _heightmapsize = Heightmapsize_e._513x513_;
     string _basetexturefile = "";
     Lightmapresolution_e _basetextureLightmapresolution = Lightmapresolution_e._512x512_;
@@ -275,7 +275,7 @@ namespace TerrainBase.Shapes
     Description("Heightmap file"),
     PropertyOrder(1),
     EditorAttribute(typeof(FilenameCreator), typeof(UITypeEditor)), 
-    FileDialogFilter(new string[] {".tex"}),
+    FileDialogFilter(new string[] {".dds"}),
     FileCreateDialogAllowOverwrite(true)]
     public string Heightmapfile {get {return _heightmapfile;} set {_heightmapfile=value;}}
 
@@ -305,7 +305,7 @@ namespace TerrainBase.Shapes
     [SortedCategory(CAT_BASETEXTURE, CATORDER_BASETEXTURE),
     Description("Basetexture Filename"),
     PropertyOrder(1),
-    EditorAttribute(typeof(AssetEditor), typeof(UITypeEditor)), AssetDialogFilter(new string[] { "Texture" })]
+    EditorAttribute(typeof(AssetEditor), typeof(UITypeEditor)), AssetDialogFilter(new string[] { "Texture | 2D" })]
     public string Basetexturefile {get {return _basetexturefile;} set {_basetexturefile=value;}}
 
     /// <summary>
@@ -659,7 +659,7 @@ namespace TerrainBase.Shapes
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

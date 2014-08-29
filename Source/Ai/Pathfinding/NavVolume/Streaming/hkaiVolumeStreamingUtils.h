@@ -10,17 +10,18 @@
 
 #include <Ai/Pathfinding/NavVolume/hkaiNavVolume.h>
 #include <Common/Base/Algorithm/Collide/1AxisSweep/hk1AxisSweep.h>
+#include <Ai/Pathfinding/NavMesh/Streaming/hkaiStreamingUtils.h>
 
 class hkAabb;
 
 	/// Miscellaneous utility functions for setting up streaming nav volume sections
-class hkaiVolumeStreamingUtils
+class HK_EXPORT_AI hkaiVolumeStreamingUtils
 {
 public:
 	//+hk.MemoryTracker(ignore=True)
 
 		/// Identifies a pair of adjacent cells between two known nav volumes A and B
-	struct CellPair
+	struct HK_EXPORT_AI CellPair
 	{
 		hkaiNavVolume::CellIndex m_cellIndexA;
 		hkaiNavVolume::CellIndex m_cellIndexB;
@@ -28,7 +29,7 @@ public:
 	typedef hkArray< CellPair >::Temp CellPairs;
 
 		/// Input structure for hkaiVolumeStreamingUtils::findAdjacentCellPairs
-	struct FindAdjacentCellPairsInput
+	struct HK_EXPORT_AI FindAdjacentCellPairsInput
 	{
 		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_AI, FindAdjacentCellPairsInput);
 		FindAdjacentCellPairsInput();
@@ -67,14 +68,15 @@ public:
 		hkVector4 m_translationB;
 	};
 
+	typedef hkaiStreamingUtils::AabbInfo VolumeAabbInfo;
 	
 		/// Finds overlaps between an array of AABBs. This should be used to test for potential dependencies between nav volume sections.
 		/// Once the potential dependencies are known, the individual volume pairs can be tested against each other
-		/// \param[in] aabbs List of nav volume bounding boxes
+		/// \param[in] aabbInfos List of nav volume bounding boxes
 		/// \param[out] pairs Pairs of indices of overlapping AABBs. These indices are indices into the aabbs array
 		/// \param[in] tolerance Fudge factor for detecting adjacency between bounding volumes
-	static void HK_CALL findPotentialDependencies( const hkArrayBase<hkAabb>& aabbs, hkArray<hkKeyPair>::Temp& pairs, hkReal tolerance = .05f );
-
+	static void HK_CALL findPotentialDependencies( const hkArrayBase<VolumeAabbInfo>& aabbInfos, hkArray<hkKeyPair>::Temp& pairs, hkReal tolerance = .05f );
+	
 		/// For a given pair of nav volumes, find all the pairs of cells that are adjacent between them
 	static void HK_CALL findAdjacentCellPairs( const FindAdjacentCellPairsInput& input, CellPairs& cellPairs );
 
@@ -105,7 +107,7 @@ private:
 #endif // HKAI_VOLUME_STREAMING_UTILS_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

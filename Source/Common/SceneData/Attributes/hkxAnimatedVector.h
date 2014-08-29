@@ -11,10 +11,10 @@
 
 #include <Common/SceneData/Attributes/hkxAttribute.h>
 
-extern const hkClass hkxAnimatedVectorClass;
+extern HK_EXPORT_COMMON const hkClass hkxAnimatedVectorClass;
 
 	/// An hkxAnimatedVector stores the values associated with an hkxAttribute of type vector.
-class hkxAnimatedVector : public hkReferencedObject
+class HK_EXPORT_COMMON hkxAnimatedVector : public hkReferencedObject
 {
 	//+vtable(true)
 	//+version(2)
@@ -40,7 +40,7 @@ public:
 #endif // HK_SCENEDATA_HKX_ANIMATED_VECTOR_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

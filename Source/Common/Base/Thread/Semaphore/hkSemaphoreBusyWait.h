@@ -14,7 +14,7 @@
 #if ( defined(HK_PLATFORM_PS3_PPU) || defined(HK_PLATFORM_PS3_SPU)) && (HK_CONFIG_THREAD == HK_CONFIG_MULTI_THREADED)
 
 	/// A wrapper class for a semaphore that can work on both SPU and PPU
-class hkSemaphoreBusyWait
+class HK_EXPORT_COMMON hkSemaphoreBusyWait
 {
 	public:
 
@@ -66,7 +66,7 @@ class hkSemaphoreBusyWait
 
 #elif defined(HK_PLATFORM_PSVITA) || (defined(HK_PLATFORM_IOS) && !defined(HK_PLATFORM_IOS_SIM))
 
-class hkSemaphoreBusyWait
+class HK_EXPORT_COMMON hkSemaphoreBusyWait
 {
 public:
 
@@ -107,7 +107,7 @@ typedef hkSemaphore hkSemaphoreBusyWait;
 #endif // HKBASE_HK_SEMAPHORE_BUSY_WAIT__H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -14,11 +14,11 @@
 
 class hkMemoryMeshTexture;
 
-extern const hkClass hkMemoryMeshMaterialClass;
+extern HK_EXPORT_COMMON const hkClass hkMemoryMeshMaterialClass;
 
 
 /// A memory based implementation of an hkMeshMaterial
-class hkMemoryMeshMaterial: public hkMeshMaterial
+class HK_EXPORT_COMMON hkMemoryMeshMaterial : public hkMeshMaterial
 {
 	//+version(2)
 	public:
@@ -29,6 +29,9 @@ class hkMemoryMeshMaterial: public hkMeshMaterial
         hkMemoryMeshMaterial(const char* name = HK_NULL);
 			/// Serialization Ctor
 		hkMemoryMeshMaterial( hkFinishLoadedObjectFlag flag );
+
+		/// Destructor
+		virtual ~hkMemoryMeshMaterial();
 
 			// Assignment operator
 		hkMemoryMeshMaterial& operator=(const hkMemoryMeshMaterial& other);
@@ -102,7 +105,7 @@ class hkMemoryMeshMaterial: public hkMeshMaterial
 #endif // HK_MEMORY_MESH_MATERIAL_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

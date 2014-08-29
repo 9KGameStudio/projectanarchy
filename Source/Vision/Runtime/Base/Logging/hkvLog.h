@@ -12,6 +12,7 @@
 #define VLOGGER_H_INCLUDED
 
 #include <Vision/Runtime/Base/Container/VArray.hpp>
+#include <Vision/Runtime/Base/Container/VScopedPtr.hpp>
 
 
 // Insert this define into a cpp file to map the VerboseDebugMsg function to some other logging function (e.g. 'Debug' or 'Dev'). Otherwise that logging call will always be ignored.
@@ -26,9 +27,11 @@
 /// \brief Creates a uniquely named instance of hkvLogBlock.\n
 ///   Usage example: HKV_LOG_BLOCK("My Log Block");\n
 ///   Usage example: HKV_LOG_BLOCK("My Log Block", szFileNameForContextInfo);\n
+///   Usage example: HKV_LOG_BLOCK("My Log Block", szFileNameForContextInfo, true);\n
 ///   Usage example: HKV_LOG_BLOCK(pMyOwnLoggingSystem, "My Log Block");\n
+///   Usage example: HKV_LOG_BLOCK(pMyOwnLoggingSystem, "My Log Block", true);\n
 /// \sa hkvLogBlock
-#define HKV_LOG_BLOCK hkvLogBlock Block##__LINE__
+#define HKV_LOG_BLOCK hkvLogBlock V_CAT(Block, __LINE__)
 
 class hkvLogBlock;
 
@@ -82,13 +85,32 @@ public:
   /// \param szTag
   ///   In case of a message this is the message tag. A tag is the sub string in brackets right at the start of a message, ie.
   ///   a message like "[tag]Message Text" will result in szText being "Message Text" and szTag being "tag".
-  ///   This can be used to indicate certain types of messages (e.g. from some sub system.
+  ///   This can be used to indicate certain types of messages (e.g. from some sub system).
   ///   In most cases this can and should be ignored, as it is a way to communicate additional information to a specific kind of sub system.
+  ///   In case of a log block, this is the extra information, that was passed to it. Often this contains a file name or some other information
+  ///   that gives more context to the log block.
   VBASE_IMPEXP virtual void HandleLogMessage(hkvLogMsgType::Enum MsgType, const char* szText, int iIndentation, const char* szTag) = 0;
 
-  /// \brief Specifies the log level for this log interface. All messages below this level will be filtered out by hkvLog already and will not be passed to HandleLogMessage().
+  /// \brief This function can be overridden to filter out certain messages. The filtering is done before any log blocks are written.
   ///
-  /// It is possible to temporarily disable messages of certain severity, using hkvScopedLogLevel.
+  /// The function should return true to let messages through, false to filter a message out. Note that it is more efficient to filter messages by
+  /// log level, however this function can filter by more complicated criteria.
+  ///
+  /// \param MsgType
+  ///   The type of message that is passed to the log interface. See hkvLogMsgType for details.
+  /// \param szText
+  ///   In case of a message (FatalError to Debug) this is the message text.
+  ///   In case of a log block message (BeginBlock / EndBlock), this is the name of the block.
+  /// \param szTag
+  ///   In case of a message this is the message tag. A tag is the sub string in brackets right at the start of a message, ie.
+  ///   a message like "[tag]Message Text" will result in szText being "Message Text" and szTag being "tag".
+  ///   This can be used to indicate certain types of messages (e.g. from some sub system).
+  ///   In most cases this can and should be ignored, as it is a way to communicate additional information to a specific kind of sub system.
+  ///   In case of a log block, this is the extra information, that was passed to it. Often this contains a file name or some other information
+  ///   that gives more context to the log block.
+  VBASE_IMPEXP virtual bool CustomMessageFilter(hkvLogMsgType::Enum MsgType, const char* szText, const char* szTag) { return true; }
+
+  /// \brief Specifies the log level for this log interface. All messages below this level will be filtered out by hkvLog already and will not be passed to HandleLogMessage().
   ///
   /// \param Level
   ///   The new log level used for filtering out messages.
@@ -108,7 +130,8 @@ private:
   hkvLogBlock* m_pCurrentLogBlock;
 
   /// \brief This function can be overridden, such that classes like hkvGlobalLog can implement this in a more thread safe way (e.g. with thread local variables).
-  VBASE_IMPEXP virtual hkvLogBlock*& GetCurrentLogBlock() { return m_pCurrentLogBlock; }
+  VBASE_IMPEXP virtual hkvLogBlock* GetCurrentLogBlock() const { return m_pCurrentLogBlock; }
+  VBASE_IMPEXP virtual void SetCurrentLogBlock(hkvLogBlock* pCurrentLogBlock) { m_pCurrentLogBlock = pCurrentLogBlock; }
 };
 
 
@@ -274,6 +297,8 @@ public:
   HKV_FORCE_INLINE static void VerboseDebugMsg(hkvLogInterface* pTarget, const char* szMessage, ...) { }
 
 private:
+  friend class hkvLogBlock;
+
   static void WriteAllLogBlocks(hkvLogInterface* pInterface, hkvLogBlock* pBlock);
 
   static hkvLogInterface* s_pDefaultLogSystem;
@@ -291,6 +316,9 @@ public:
 
   /// \brief The function signature for log writers.
   typedef void(*LogWriter)(hkvLogMsgType::Enum MsgType, const char* szText, int iIndentation, const char* szTag, void* pPassThrough);
+
+  /// \brief The function signature for message filters.
+  typedef bool(*MessageFilter)(hkvLogMsgType::Enum MsgType, const char* szText, const char* szTag, void* pPassThrough);
 
   /// \brief The function signature for fatal error callbacks.
   typedef void (*ON_FATALERROR_CALLBACK)(const char* szMessage);
@@ -321,8 +349,25 @@ public:
   /// when a non-existing log writer shall be removed.
   VBASE_IMPEXP bool WasLogWriterAdded(LogWriter Handler, void* pPassThrough = NULL);
 
-    /// \brief Overridden function from hkvLogInterface. Will broadcast all incoming messages to the registered log writers.
+  /// \brief Overridden function from hkvLogInterface. Will broadcast all incoming messages to the registered log writers.
   VBASE_IMPEXP virtual void HandleLogMessage(hkvLogMsgType::Enum MsgType, const char* szText, int iIndentation, const char* szTag) HKV_OVERRIDE;
+
+  /// \brief Adds a 'message filter' to the hkvGlobalLog instance. Every time a log message is sent to the global log, all message filters must let it pass (by returning true).
+  ///
+  /// If any filter function returns false, the log message is not output.
+  ///
+  /// \param Handler
+  ///   The function that will be called  when a log message is handled by hkvGlobalLog.
+  /// \param pPassThrough
+  ///   An additional pointer that will be passed unmodified to the LogWriter function.
+  VBASE_IMPEXP void AddCustomMessageFilter(MessageFilter Handler, void* pPassThrough = NULL);
+
+  /// \brief Removes a previously registered message filter. The Handler and pPassThrough parameter need to be identical to what was passed to AddCustomMessageFilter.
+  /// This function will assert when the given message filter cannot be found.
+  VBASE_IMPEXP void RemoveCustomMessageFilter(MessageFilter Handler, void* pPassThrough = NULL);
+
+  /// \brief Overridden function from hkvLogInterface. Will broadcast all incoming messages to the registered log writers.
+  VBASE_IMPEXP virtual bool CustomMessageFilter(hkvLogMsgType::Enum MsgType, const char* szText, const char* szTag) HKV_OVERRIDE;
 
   /// \brief Enables whether a FatalError logged through hkvGlobalLog will trigger an Engine shutdown. On by default.
   ///
@@ -342,17 +387,22 @@ public:
   ///
   /// \param cb
   ///   The function to call when a fatal error is logged.
-  VBASE_IMPEXP void SetOnFatalErrorCallback(ON_FATALERROR_CALLBACK cb) { s_OnFatalErrorCallback = cb; }
+  VBASE_IMPEXP void SetOnFatalErrorCallback(ON_FATALERROR_CALLBACK cb) { m_OnFatalErrorCallback = cb; }
 
 private:
   static VISION_THREADLOCAL_DECL(hkvLogBlock*, s_pCurrentLogBlock);
 
-  VBASE_IMPEXP virtual hkvLogBlock*& GetCurrentLogBlock() HKV_OVERRIDE
+  VBASE_IMPEXP virtual hkvLogBlock* GetCurrentLogBlock() const HKV_OVERRIDE
   {
     return s_pCurrentLogBlock;
   }
 
-  static hkvGlobalLog* g_pInstance;
+  VBASE_IMPEXP virtual void SetCurrentLogBlock(hkvLogBlock* pCurrentLogBlock) HKV_OVERRIDE
+  {
+    s_pCurrentLogBlock = pCurrentLogBlock;
+  }
+
+  static VScopedPtr<hkvGlobalLog> g_spInstance;
 
   struct LogWriterData
   {
@@ -360,9 +410,16 @@ private:
     void* m_pPassThrough;
   };
 
-  ON_FATALERROR_CALLBACK s_OnFatalErrorCallback;
-  int s_iShutdownOnFatalError;
-  VArray<LogWriterData> s_LogWriterArray;
+  struct MessageFilterData
+  {
+    MessageFilter m_Callback;
+    void* m_pPassThrough;
+  };
+
+  ON_FATALERROR_CALLBACK m_OnFatalErrorCallback;
+  int m_iShutdownOnFatalError;
+  VArray<LogWriterData> m_LogWriterArray;
+  VArray<MessageFilterData> m_MessageFilterArray;
 };
 
 
@@ -390,10 +447,14 @@ public:
   ///   Note szExtraInfo must be available throughout the whole lifetime of the log block, as it might only get accessed
   ///   on destruction of the log block. Prefer to pass in strings that are available anyway and do not need to get created only
   ///   for the log block.
-  VBASE_IMPEXP hkvLogBlock(const char* szBlockName, const char* szExtraInfo = "");
+  /// \param bWriteAlways
+  ///   If set to true, the log block text will always be output, regardless of whether any logging message is written while it is active.
+  ///   If set to false (the default), the log block text will only be output, if any logging message follows (and is not filtered out)
+  ///   while the log block is active, thus reducing unnecessary logging output.
+  VBASE_IMPEXP hkvLogBlock(const char* szBlockName, const char* szExtraInfo = "", bool bWriteAlways = false);
 
   /// \brief Same as the other constructor, only that instead of outputting to hkvGlobalLog, one can specify to which log interface to write.
-  VBASE_IMPEXP hkvLogBlock(hkvLogInterface* pLocalLog, const char* szBlockName, const char* szExtraInfo = "");
+  VBASE_IMPEXP hkvLogBlock(hkvLogInterface* pLocalLog, const char* szBlockName, const char* szExtraInfo = "", bool bWriteAlways = false);
 
   /// \brief The destructor will close the log block and, if necessary, send the 'EndBlock' message to the log interface.
   VBASE_IMPEXP ~hkvLogBlock();
@@ -421,51 +482,50 @@ private:
 };
 
 
-/// \brief This is a helper class to temporarily change the log level and reset it afterwards.
-class hkvScopedLogLevel
+/// \brief This is a helper class to temporarily filter out certain log messages
+class hkvScopedLogFilter
 {
 public:
 
-  /// \brief Modifies the log level of the hkvGlobalLog to only let messages of severity \a Allowed or higher through.
-  hkvScopedLogLevel(hkvLogMsgType::Enum Allowed)
+  /// \brief Adds a log filter on hkvGlobalLog, that will filter out all messages that contain the given text.
+  hkvScopedLogFilter(const char* szMessageContains) : m_szMessageContains(szMessageContains)
   {
-    m_pInterface = hkvGlobalLog::GetInstance();
-
-    if (m_pInterface)
-    {
-      m_Prev = m_pInterface->GetLogLevel();
-      m_pInterface->SetLogLevel(Allowed);
-    }
+    m_iFilteredMessages = 0;
+    hkvGlobalLog::GetInstance()->AddCustomMessageFilter(MessageFilter, this);
   }
 
-  /// \brief Modifies the log level of pInterface to only let messages of severity \a Allowed or higher through.
-  hkvScopedLogLevel(hkvLogInterface* pInterface, hkvLogMsgType::Enum Allowed)
+  /// \brief Resets the log filter.
+  ~hkvScopedLogFilter()
   {
-    m_pInterface = pInterface;
-
-    if (m_pInterface)
-    {
-      m_Prev = m_pInterface->GetLogLevel();
-      m_pInterface->SetLogLevel(Allowed);
-    }
+    hkvGlobalLog::GetInstance()->RemoveCustomMessageFilter(MessageFilter, this);
   }
 
-  /// \brief Resets the modified interface to the original log level.
-  ~hkvScopedLogLevel()
-  {
-    if (m_pInterface)
-      m_pInterface->SetLogLevel(m_Prev);
-  }
+  /// \brief Returns the number of messages that were filtered out by this filter.
+  /// Can be used to detect whether an expected error message arrived.
+  int GetNumFilteredMessages() const { return m_iFilteredMessages; }
+  
 
 private:
-  hkvLogInterface* m_pInterface;
-  hkvLogMsgType::Enum m_Prev;
+  static bool MessageFilter(hkvLogMsgType::Enum MsgType, const char* szText, const char* szTag, void* pPassThrough)
+  {
+    hkvScopedLogFilter* pFilter = (hkvScopedLogFilter*)pPassThrough;
+
+    // text not found -> let it pass
+    if (strstr(szText, pFilter->m_szMessageContains) == NULL)
+      return true;
+
+    pFilter->m_iFilteredMessages++;
+    return false;
+  }
+
+  const char* m_szMessageContains;
+  int m_iFilteredMessages;
 };
 
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

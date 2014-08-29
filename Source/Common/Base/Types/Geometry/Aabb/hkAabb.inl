@@ -17,12 +17,12 @@ hkBool32 hkAabb::overlaps( const hkAabb& other ) const
 {
 	HK_ASSERT2(0x3f5578fc,  isValid() || isEmpty(), "Invalid AABB in hkAabb::overlaps." );
 	HK_ASSERT2(0x76dd800a,  other.isValid() || other.isEmpty(), "Invalid AABB in hkAabb::overlaps.");
-	#if HK_CONFIG_SIMD == HK_CONFIG_SIMD_ENABLED
+#if HK_CONFIG_SIMD == HK_CONFIG_SIMD_ENABLED
 	hkVector4Comparison mincomp = m_min.lessEqual(other.m_max);
 	hkVector4Comparison maxcomp = other.m_min.lessEqual(m_max);
 	hkVector4Comparison both; both.setAnd( mincomp, maxcomp );
 	return both.allAreSet<hkVector4ComparisonMask::MASK_XYZ>();
-	#else
+#else
 	if(m_min(0) > other.m_max(0)) return 0;
 	if(m_min(1) > other.m_max(1)) return 0;
 	if(m_min(2) > other.m_max(2)) return 0;
@@ -30,7 +30,7 @@ hkBool32 hkAabb::overlaps( const hkAabb& other ) const
 	if(m_max(1) < other.m_min(1)) return 0;
 	if(m_max(2) < other.m_min(2)) return 0;
 	return 1;
-	#endif
+#endif
 }
 
 
@@ -38,8 +38,8 @@ hkBool32 hkAabb::overlapsUpdateSmallestNonExtraHitAabb( const hkAabb& other, hkA
 {
 	HK_ASSERT2(0x3f5578fc,  isValid(), "Invalid AABB in hkAabb::overlaps." );
 	//HK_ASSERT2(0x76dd800a,  other.isValid(), "Invalid AABB in hkAabb::overlaps.");
-	hkVector4Comparison mincomp = m_min.less(other.m_max);
-	hkVector4Comparison maxcomp = other.m_min.less(m_max);
+	hkVector4Comparison mincomp = m_min.lessEqual(other.m_max);
+	hkVector4Comparison maxcomp = other.m_min.lessEqual(m_max);
 
 	hkVector4 newMax; newMax.setMin( smallestNonHitAabbInOut.m_max, other.m_min );
 	hkVector4 newMin; newMin.setMax( smallestNonHitAabbInOut.m_min, other.m_max );
@@ -79,7 +79,7 @@ hkBool32 hkAabb::containsPoint(const hkVector4& other) const
 
 bool hkAabb::isEmpty() const
 {
-	hkVector4Comparison comp = m_min.greaterEqual(m_max);
+	hkVector4Comparison comp = m_min.greater(m_max);
 	return comp.anyIsSet<hkVector4ComparisonMask::MASK_XYZ>();
 }
 
@@ -97,13 +97,13 @@ void hkAabb::includeAabb (const hkAabb& aabb)
 
 void hkAabb::setFull()
 {
-	m_max = hkVector4::getConstant<HK_QUADREAL_MAX>();
+	m_max.setConstant<HK_QUADREAL_MAX>();
 	m_min.setNeg<4>( m_max );
 }
 
 void hkAabb::setEmpty()
 {
-	m_min = hkVector4::getConstant<HK_QUADREAL_MAX>();
+	m_min.setConstant<HK_QUADREAL_MAX>();
 	m_max.setNeg<4>( m_min );
 }
 
@@ -115,7 +115,7 @@ HK_FORCE_INLINE void hkAabb::setEmptyIfInvalid()
 	const hkVector4Comparison cmpValid	= m_min.greaterEqual(m_max);
 	const hkVector4Comparison cmp		= cmpValid.horizontalOr<3>();
 
-	hkVector4 vMin = hkVector4::getConstant<HK_QUADREAL_MAX>();	
+	hkVector4 vMin; vMin.setConstant<HK_QUADREAL_MAX>();	
 	hkVector4 vMax;	vMax.setNeg<4>(vMin);
 
 	m_min.setSelect(cmp, vMin, m_min);
@@ -147,7 +147,7 @@ void hkAabb::getExtents( hkVector4& e ) const
 void hkAabb::getVertex(int index, hkVector4& vertex) const
 {
 	HK_ASSERT2(0xF7BD00CA, index >= 0 && index <= 7, "Index out-of-range");
-	hkVector4Comparison	comp; comp.set((hkVector4Comparison::Mask)index);
+	hkVector4Comparison	comp; comp.set((hkVector4ComparisonMask::Mask)index);
 	vertex.setSelect(comp, m_max, m_min);
 }
 
@@ -168,7 +168,7 @@ void hkAabb::expandInDirection( hkVector4Parameter exp )
 void hkAabb::scaleBy( hkSimdRealParameter scale )
 {
 	hkVector4	e; e.setSub(m_min, m_max);
-	e.mul(- hkSimdReal::getConstant<HK_QUADREAL_INV_2>() * (scale - hkSimdReal::getConstant<HK_QUADREAL_1>()));
+	e.mul( hkSimdReal_Half - (hkSimdReal_Half * scale) );
 	m_min.sub(e);
 	m_max.add(e);
 }
@@ -249,7 +249,7 @@ void hkAabbUint32::operator=( const hkAabbUint32& other )
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

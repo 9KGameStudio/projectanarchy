@@ -68,16 +68,22 @@ class hkvMsgProcessAsset : public Message
 {
 public:
   const char* m_resourceManager;
+  unsigned int m_resourceSubtype;
+  const char* m_libraryPath;
   const char* m_assetPath;
   const char* m_thumbnailPath;
   bool m_createThumbnail;
   bool m_determineDependencies;
   bool m_getPropertyHint;
 
-  hkvMsgProcessAsset(const char* resourceManager, const char* assetPath, const char* thumbnailPath, 
+  hkvMsgProcessAsset(const char* resourceManager, unsigned int resourceSubtype, 
+    const char* libraryPath, const char* assetPath, const char* thumbnailPath, 
     bool createThumbnail, bool determineDependencies, bool getPropertyHint) 
-  : Message(MSG_PROCESS_ASSET), m_createThumbnail(createThumbnail), 
-    m_determineDependencies(determineDependencies), m_getPropertyHint(getPropertyHint)
+    : Message(MSG_PROCESS_ASSET)
+    , m_resourceSubtype(resourceSubtype)
+    , m_createThumbnail(createThumbnail)
+    , m_determineDependencies(determineDependencies)
+    , m_getPropertyHint(getPropertyHint)
   {
     if (thumbnailPath == NULL)
     {
@@ -85,6 +91,8 @@ public:
     }
 
     m_resourceManager = AddData(resourceManager, (UINT)strlen(resourceManager) + 1);
+    AddData(&m_resourceSubtype, sizeof(unsigned int));
+    m_libraryPath = AddData(libraryPath, (UINT)strlen(libraryPath) + 1);
     m_assetPath = AddData(assetPath, (UINT)strlen(assetPath) + 1);
     m_thumbnailPath = AddData(thumbnailPath, (UINT)strlen(thumbnailPath) + 1);
     AddData(&m_createThumbnail, sizeof(bool));
@@ -97,6 +105,8 @@ public:
   {
     CopyFrom(msg);
     m_resourceManager = GetData<char>();
+    m_resourceSubtype = *GetData<unsigned int>();
+    m_libraryPath = GetData<char>();
     m_assetPath = GetData<char>();
     m_thumbnailPath = GetData<char>();
     m_createThumbnail = *GetData<bool>();
@@ -175,7 +185,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

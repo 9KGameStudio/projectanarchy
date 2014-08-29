@@ -147,8 +147,8 @@ namespace VisionEditorPlugin.Shapes
     /// <param name="name"></param>
     public CustomVolumeShape(string name)
       : this(name,true)
-		{
-		}
+    {
+    }
 
     /// <summary>
     /// Constructor
@@ -457,7 +457,7 @@ namespace VisionEditorPlugin.Shapes
     }
 
     [SortedCategory(CAT_VOLUME, CATORDER_VOLUME), PropertyOrder(4)]
-    [Description("If the volume preview should be rendered always")]
+    [Description("Determines if the volume preview should always be rendered")]
     public bool Preview
     {
       get { return _preview; }
@@ -470,7 +470,7 @@ namespace VisionEditorPlugin.Shapes
     }
 
     [SortedCategory(CAT_VOLUME, CATORDER_VOLUME), PropertyOrder(3)]
-    [Description("If the volume object should be using a custom .vmesh file or not")]
+    [Description("Determines if the volume object should be using a custom .vmesh file")]
     public bool CustomStaticMesh
     {
       get { return _customStaticMesh; }
@@ -479,7 +479,7 @@ namespace VisionEditorPlugin.Shapes
         _customStaticMesh = value;
         if (EngineInstance != null)
           EngineInstance.SetCustomStaticMesh(value);
-        if (ConstructionFinished && value && IsRendering)
+        if (value && IsRendering)
           WantsNativeRenderHookCallback = true;
         if (ConstructionFinished && EngineInstance != null)
         {
@@ -494,7 +494,7 @@ namespace VisionEditorPlugin.Shapes
     }
 
     [SortedCategory(CAT_VOLUME, CATORDER_VOLUME), PropertyOrder(4)]
-    [Description("The static mesh which is used for the volume.")]
+    [Description("The file path to the static mesh which is used for the volume.")]
     [EditorAttribute(typeof(AssetEditor), typeof(UITypeEditor)), AssetDialogFilter(new string[] { "StaticMesh" }), RefreshProperties(System.ComponentModel.RefreshProperties.All)]
     public string StaticMeshPath
     {
@@ -841,7 +841,7 @@ namespace VisionEditorPlugin.Shapes
       if (_engineInstance == null)
       {
         Debug.Assert(Parent != null, "Need a parent to create the engine instance");
-        _engineInstance = new EngineInstanceCustomVolumeVertex((Shape3D)Parent);
+        _engineInstance = new EngineInstanceCustomVolumeVertex((Shape3D)Parent, this);
         _engineInstance.SetPosition(Position.X, Position.Y, Position.Z);
       }
     }
@@ -1172,7 +1172,7 @@ namespace VisionEditorPlugin.Shapes
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

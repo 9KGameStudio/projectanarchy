@@ -42,8 +42,9 @@
       virtual bool GetUserDataPointerFromLocal(const char* szVariable, void** ppUserData, void** ppEnvironment);
 
       virtual bool UpdateLocalVariable(const char* Variable, const char* NewValue);
+
       virtual bool UpdateGlobalVariable(const char* Variable, const char* NewValue);
-      virtual bool UpdateHiddenGlobalVariable(const void* pUserDataParent, const char* Variable, const char* NewValue);
+      virtual bool UpdateDynamicProperty(const void* pUserDataParent, const char* Variable, const char* NewValue);
 
       void ControlDebugHook(bool Enable);
 
@@ -54,6 +55,8 @@
       void ErrorScriptEvent(VRSDScriptEvent* Event);
 
     private:
+
+      bool PushValue(int iLuaType, const char* NewValue);
 
       void AddSymbol(DynArray_cl<VRSDScriptSymbol>& Symbols, unsigned int& SymbolCount, const char* pSymbolName, const char* pSymbolContent, VRSDScriptSymbol::SymbolType SymbolType);
 
@@ -103,7 +106,7 @@
 #endif //_VISION_DOC
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

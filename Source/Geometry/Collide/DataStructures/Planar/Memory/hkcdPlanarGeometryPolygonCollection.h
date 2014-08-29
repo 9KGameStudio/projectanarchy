@@ -5,6 +5,7 @@
  * Product and Trade Secret source code contains trade secrets of Havok. Havok Software (C) Copyright 1999-2014 Telekinesys Research Limited t/a Havok. All Rights Reserved. Use of this software is subject to the terms of an end user license agreement.
  *
  */
+//HK_HAVOK_ASSEMBLY_EXCLUDE_FILE
 
 #ifndef HKCD_PLANAR_GEOMETRY_POLYGON_COLLECTION_H
 #define HKCD_PLANAR_GEOMETRY_POLYGON_COLLECTION_H
@@ -13,14 +14,16 @@
 #include <Geometry/Collide/DataStructures/Planar/Memory/hkcdPlanarGeometryPrimitivesCollection.h>
 
 /// A collection of polygons.
-class hkcdPlanarGeometryPolygonCollection : public hkcdPlanarGeometryPrimitives::Collection<hkcdPlanarGeometryPrimitives::FLIPPED_PLANE_BIT>
+class HK_EXPORT_COMMON hkcdPlanarGeometryPolygonCollection : public hkcdPlanarGeometryPrimitives::Collection<hkcdPlanarGeometryPrimitives::FLIPPED_PLANE_BIT>
 {
 	public:
 
 		HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_GEOMETRY);
+		HK_DECLARE_REFLECTION();
 
 		// Types
 		HK_DECLARE_HANDLE(PolygonId, hkUint32, INVALID_BLOCK_ADDR);
+		HK_DECLARE_HANDLE(VertexId, hkUint32, PAYLOAD_MASK);
 		typedef hkcdPlanarGeometryPrimitives::PlaneId PlaneId;
 
 	public:
@@ -29,6 +32,7 @@ class hkcdPlanarGeometryPolygonCollection : public hkcdPlanarGeometryPrimitives:
 		struct Polygon
 		{
 			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_GEOMETRY, hkcdPlanarGeometryPolygonCollection::Polygon);
+
 			friend class hkcdPlanarGeometryPolygonCollection;	
 
 			enum
@@ -50,12 +54,13 @@ class hkcdPlanarGeometryPolygonCollection : public hkcdPlanarGeometryPrimitives:
 				HK_FORCE_INLINE PlaneId getSupportPlaneId() const;
 				HK_FORCE_INLINE void setSupportPlaneId(PlaneId pid);
 
-				/// Returns a read-only pointer to the boundary planes
-				HK_FORCE_INLINE const PlaneId* getBoundaryPlaneIds() const;
-
 				/// Gets / sets the i-th boundary plane Id
 				HK_FORCE_INLINE PlaneId getBoundaryPlaneId(int i) const;
 				HK_FORCE_INLINE void setBoundaryPlaneId(int i, PlaneId pid);
+
+				/// Gets / sets the i-th vertex id
+				HK_FORCE_INLINE VertexId getVertexId(int i) const;
+				HK_FORCE_INLINE void setVertexId(int i, VertexId vid);
 
 				/// Gets / sets the cell ids
 				HK_FORCE_INLINE hkUint32 getNegCellId() const;
@@ -78,6 +83,9 @@ class hkcdPlanarGeometryPolygonCollection : public hkcdPlanarGeometryPrimitives:
 
 		/// Copy constructor
 		hkcdPlanarGeometryPolygonCollection(const hkcdPlanarGeometryPolygonCollection& other);
+
+		/// Serialization constructor
+		hkcdPlanarGeometryPolygonCollection(class hkFinishLoadedObjectFlag flag);
 
 		/// Compacts the storage
 		void compactStorage();
@@ -121,7 +129,7 @@ class hkcdPlanarGeometryPolygonCollection : public hkcdPlanarGeometryPrimitives:
 #endif	//	HKCD_PLANAR_GEOMETRY_POLYGON_COLLECTION_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

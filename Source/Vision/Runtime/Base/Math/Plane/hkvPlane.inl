@@ -62,6 +62,8 @@ HKV_FORCE_INLINE hkvResult hkvPlane::setFromDirections (const hkvVec3& vTangent1
 
 HKV_FORCE_INLINE void hkvPlane::getPoints (hkvVec3& out_v0, hkvVec3& out_v1, hkvVec3& out_v2) const
 {
+  HKVPLANE_INITIALIZATION_CHECK(this);
+
   out_v0 = m_vNormal * -m_fNegDist;
 
   const hkvVec3 vTangent   = m_vNormal.getOrthogonalVector ();
@@ -265,6 +267,10 @@ HKV_FORCE_INLINE hkvPlanePosition::Enum hkvPlane::getObjectPosition (const hkvBo
 
 HKV_FORCE_INLINE hkvResult hkvPlane::get3PlaneIntersectionPoint (const hkvPlane& p0, const hkvPlane& p1, const hkvPlane& p2, hkvVec3& out_Result)
 {
+  HKVPLANE_INITIALIZATION_CHECK(&p0);
+  HKVPLANE_INITIALIZATION_CHECK(&p1);
+  HKVPLANE_INITIALIZATION_CHECK(&p2);
+
   const hkvVec3 n1 (p0.m_vNormal);
   const hkvVec3 n2 (p1.m_vNormal);
   const hkvVec3 n3 (p2.m_vNormal);
@@ -326,11 +332,15 @@ HKV_FORCE_INLINE bool hkvPlane::isValid () const
 
 HKV_FORCE_INLINE float hkvPlane::getDistanceTo (const hkvVec3& vPoint) const
 {
+  HKVPLANE_INITIALIZATION_CHECK(this);
+
   return m_vNormal.dot (vPoint) + m_fNegDist;
 }
 
 HKV_FORCE_INLINE float hkvPlane::getMinimumDistanceTo (const hkvVec3* pPoints, hkUint32 uiNumPoints, hkUint32 uiStride /* = sizeof (hkvVec3) */) const
 {
+  HKVPLANE_INITIALIZATION_CHECK(this);
+
   VASSERT (pPoints != NULL);
   VASSERT (uiStride >= sizeof (hkvVec3));
   VASSERT (uiNumPoints >= 1);
@@ -351,6 +361,8 @@ HKV_FORCE_INLINE float hkvPlane::getMinimumDistanceTo (const hkvVec3* pPoints, h
 
 HKV_FORCE_INLINE void hkvPlane::getMinMaxDistanceTo (float &out_fMin, float &out_fMax, const hkvVec3* pPoints, hkUint32 uiNumPoints, hkUint32 uiStride /* = sizeof (hkvVec3) */) const
 {
+  HKVPLANE_INITIALIZATION_CHECK(this);
+
   VASSERT (pPoints != NULL);
   VASSERT (uiNumPoints >= 1);
   VASSERT (uiStride >= sizeof (hkvVec3));
@@ -376,6 +388,8 @@ HKV_FORCE_INLINE void hkvPlane::getMinMaxDistanceTo (float &out_fMin, float &out
 
 HKV_FORCE_INLINE void hkvPlane::transform (const hkvMat3& m)
 {
+  HKVPLANE_INITIALIZATION_CHECK(this);
+
   hkvVec3 vPtOnPlane = m.transformDirection (m_vNormal * -m_fNegDist);
   hkvVec3 vNewNormal = m.transformDirection (m_vNormal).getNormalized ();
 
@@ -384,6 +398,8 @@ HKV_FORCE_INLINE void hkvPlane::transform (const hkvMat3& m)
 
 HKV_FORCE_INLINE void hkvPlane::transform (const hkvMat4& m)
 {
+  HKVPLANE_INITIALIZATION_CHECK(this);
+
   hkvVec3 vPtOnPlane = m.transformPosition  (m_vNormal * -m_fNegDist);
   hkvVec3 vNewNormal = m.transformDirection (m_vNormal).getNormalized ();
 
@@ -427,6 +443,8 @@ HKV_FORCE_INLINE void hkvPlane::projectOntoPlane (hkvVec3* inout_vPoints, hkUint
 
 HKV_FORCE_INLINE void hkvPlane::makeDirectionCoplanar (hkvVec3& inout_vDirection) const
 {
+  HKVPLANE_INITIALIZATION_CHECK(this);
+
   const hkvVec3 n = m_vNormal;
   
   inout_vDirection.makeOrthogonalTo (n);
@@ -434,6 +452,8 @@ HKV_FORCE_INLINE void hkvPlane::makeDirectionCoplanar (hkvVec3& inout_vDirection
 
 HKV_FORCE_INLINE void hkvPlane::makeDirectionCoplanar (hkvVec3* inout_vDirections, hkUint32 uiNumPoints, hkUint32 uiStride /* = sizeof (hkvVec3) */) const
 {
+  HKVPLANE_INITIALIZATION_CHECK(this);
+
   const hkvVec3 n = m_vNormal;
 
   hkvVec3* pCurPoint = inout_vDirections;
@@ -447,11 +467,17 @@ HKV_FORCE_INLINE void hkvPlane::makeDirectionCoplanar (hkvVec3* inout_vDirection
 
 HKV_FORCE_INLINE bool hkvPlane::isIdentical (const hkvPlane& rhs) const
 {
+  HKVPLANE_INITIALIZATION_CHECK(this);
+  HKVPLANE_INITIALIZATION_CHECK(&rhs);
+
   return (m_vNormal.isIdentical (rhs.m_vNormal) && (m_fNegDist == rhs.m_fNegDist));
 }
 
 HKV_FORCE_INLINE bool hkvPlane::isEqual (const hkvPlane& rhs, float fEpsilon) const
 {
+  HKVPLANE_INITIALIZATION_CHECK(this);
+  HKVPLANE_INITIALIZATION_CHECK(&rhs);
+
   // should not use a negative epsilon
   VASSERT (fEpsilon >= 0.0f);
 
@@ -470,6 +496,8 @@ HKV_FORCE_INLINE bool operator!= (const hkvPlane& p0, const hkvPlane& p1)
 
 HKV_FORCE_INLINE hkUint32 hkvPlane::GetLeastSignificantComponent () const
 {
+  HKVPLANE_INITIALIZATION_CHECK(this);
+
   const float c0 = hkvMath::Abs (m_vNormal[0]);
   const float c1 = hkvMath::Abs (m_vNormal[1]);
   const float c2 = hkvMath::Abs (m_vNormal[2]);
@@ -496,7 +524,7 @@ HKV_FORCE_INLINE const hkvVec3 hkvPlane::getMirrored (const hkvVec3& v) const
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

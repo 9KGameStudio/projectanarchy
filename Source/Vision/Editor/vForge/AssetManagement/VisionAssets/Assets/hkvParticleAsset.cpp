@@ -10,35 +10,39 @@
 #include <Vision/Editor/vForge/AssetManagement/AssetFramework/hkvAssetManager.hpp>
 #include <Vision/Editor/vForge/AssetManagement/AssetFramework/Assets/hkvAssetTypeManager.hpp>
 
-unsigned int hkvParticleAsset::s_iAssetTypeIndex = HKV_INVALID_INDEX;
+hkvAssetTypeInfo* hkvParticleAsset::s_typeInfo = NULL;
+const hkvAssetTypeInfoHandle* hkvParticleAsset::s_typeInfoHandle = NULL;
 
 /////////////////////////////////////////////////////////////////////////////
 // hkvParticleAssetType static functions
 /////////////////////////////////////////////////////////////////////////////
 
 void hkvParticleAsset::StaticInit()
-{
-  hkvAssetTypeInfo ti;
-  ti.m_name = "Particle";
-  ti.m_createFunc = &CreateAsset;
-  ti.m_supportedFileExtensions.pushBack("vpfx");
-  ti.m_szTypeIconQt = ":/Icons/Icons/ParticleEffectAsset.png";
+{  
+  s_typeInfo = new hkvAssetTypeInfo();
+  s_typeInfo->m_name = "Particle";
+  s_typeInfo->m_createFunc = &CreateAsset;
+  s_typeInfo->m_supportedFileExtensions.pushBack("vpfx");
+  s_typeInfo->m_szTypeIconQt = ":/Icons/Icons/ParticleEffectAsset.png";
 
-  ti.m_resourceManagerName = "Particles";
-  ti.m_useEngineForDependencies = true;
-  ti.m_useEngineForThumbnails = true;
-  ti.m_useEngineForPropertyHint = false;
+  s_typeInfo->m_resourceManagerName = "Particles";
+  s_typeInfo->m_useEngineForDependencies = true;
+  s_typeInfo->m_useEngineForThumbnails = true;
+  s_typeInfo->m_useEngineForPropertyHint = false;
 
-  // register at the hkvAssetTypeManager and store the asset type index in static variable.
-  s_iAssetTypeIndex = hkvAssetTypeManager::getGlobalInstance()->addAssetType(ti);
+  // register at the hkvAssetTypeManager and store the asset type handle in static variable.
+  s_typeInfoHandle = hkvAssetTypeManager::getGlobalInstance()->addAssetType(*s_typeInfo);  
 }
 
 
 void hkvParticleAsset::StaticDeInit()
-{
+{ 
   // de-register at the hkvAssetTypeManager
-  //hkvAssetTypeManager::getGlobalInstance()->removeAssetType(s_iAssetTypeIndex);
-  s_iAssetTypeIndex = HKV_INVALID_INDEX;
+  hkvAssetTypeManager::getGlobalInstance()->removeAssetType(*s_typeInfoHandle);
+  s_typeInfoHandle = NULL;
+
+  delete s_typeInfo;
+  s_typeInfo = NULL;  
 }
 
 
@@ -54,7 +58,7 @@ hkvAsset* hkvParticleAsset::CreateAsset()
 // hkvParticleAssetType public functions
 /////////////////////////////////////////////////////////////////////////////
 
-hkvParticleAsset::hkvParticleAsset()
+hkvParticleAsset::hkvParticleAsset() : hkvAsset(s_typeInfo)
 {
 
 }
@@ -70,30 +74,13 @@ hkvParticleAsset::~hkvParticleAsset()
 // hkvParticleAssetType public override functions
 /////////////////////////////////////////////////////////////////////////////
 
-unsigned int hkvParticleAsset::getTypeIndex() const
+const hkvAssetTypeInfoHandle& hkvParticleAsset::getTypeInfoHandle() const
 {
-  return s_iAssetTypeIndex;
-}
-
-
-const char* hkvParticleAsset::getTypeName() const
-{
-  return "Particle";
-}
-
-
-void hkvParticleAsset::getSpecificProperties(hkvPropertyList& properties, hkvProperty::Purpose purpose) const
-{
-  // TODO
-}
-
-void hkvParticleAsset::setSpecificProperty(const hkvProperty& prop, const hkArray<hkStringPtr>& path, unsigned int iStackIndex, hkvProperty::Purpose purpose)
-{
-  // TODO
+  return *s_typeInfoHandle;
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -25,6 +25,30 @@ class VisParticleEffectFile_cl;
 typedef VSmartPtr<VisParticleEffectFile_cl> VisParticleEffectFilePtr;
 typedef VSmartPtr<ParticleGroupBase_cl> ParticleGroupBasePtr;
 
+///\brief
+///  Interface that can be installed to supply all particle effects in the scene with a dedicated dynamic wind speed. One global instance can be installed via VisParticleGroupManager_cl::GlobalManager().SetWindHandler.
+///
+/// The interface function GetWindVelocityAtPosition is called for every particle effect instance (not every single particle!) in each simulation tick.
+/// Thus the wind velocity can vary over time and over emitter position (e.g. wind fields).
+class IVWindControlHandler
+{
+public:
+  IVWindControlHandler() {}
+  virtual ~IVWindControlHandler() {}
+
+  ///\brief
+  ///  Key function of this interface which is called per simulation tick and per particle effect instance.
+  ///
+  /// Note that this function is called asynchronously from inside the particle update threads, so the implementation must gracefully handle this.
+  ///
+  /// \param vPos
+  ///   The pivot position of the particle effect in world space is passed here.
+  ///
+  /// \return
+  ///   The interface must provide the current wind velocity (a 3-dimensional vector specified in units/sec) for the passed position
+  virtual hkvVec3 GetWindVelocityAtPosition(const hkvVec3 &vPos) = 0;
+};
+
 
 ///\brief
 ///  This class corresponds to the resource side of particle effects, i.e. each instance corresponds to a particle XML file (or its binary vpfx counterpart respectively).
@@ -197,20 +221,8 @@ public:
   PARTICLE_IMPEXP VisParticleEffectFile_cl* LoadFromFile(const char *szFilename, bool bForceUnique = false);
 
   ///\brief
-  ///  Obsolete; wraps around LoadFromFile
-  inline HKV_DEPRECATED_2012_1 VisParticleEffectFile_cl* LoadDescriptionFile(const char *szFilename) {return LoadFromFile(szFilename);}
-
-  ///\brief
   /// Static helper function that returns last error string in case loading failed
   static inline const char *GetLastError() {return g_sLastError;}
-
-  ///\brief
-  /// Deprecated. Loops through all effect resources and tries to find a layer descriptor with specified name
-  HKV_DEPRECATED_2012_1 PARTICLE_IMPEXP VisParticleGroupDescriptor_cl *FindDescriptor(const char *szName) const;
-
-  ///\brief
-  /// Deprecated. Reads from or writes to archive. Uses the global manager to look up if exists.
-  HKV_DEPRECATED_2012_1 PARTICLE_IMPEXP VisParticleGroupDescriptor_cl *DoArchiveExchange(VArchive &ar, VisParticleGroupDescriptor_cl *pSource);
 
   ///\brief
   /// Static function to access the global instance of the particle manager
@@ -254,15 +266,49 @@ public:
   ///   Return the respective vpfx file rather than xml
   PARTICLE_IMPEXP virtual const char *GetStreamingReplacementFilename(VResourceSnapshotEntry &resourceDesc, const char *szResolvedFilename, char *szBuffer) HKV_OVERRIDE;
 
-#ifdef WIN32
+#ifdef _VISION_WIN32
   PARTICLE_IMPEXP static void SetLoopAllEffects(bool bStatus);
   static bool g_bLoopAllEffects; ///< Relevant inside vForge
 #endif
 
+  /// \brief
+  ///   Installs a global wind handler that affects all particle effects in the scene. See IVWindControlHandler. NULL can be passed for no global wind.
+  PARTICLE_IMPEXP void SetGlobalWindHandler(IVWindControlHandler *pWindHandler);
+
+  /// \brief
+  ///   Returns the global wind handler that is currently installed. By default this function returns NULL.
+  inline IVWindControlHandler *GetGlobalWindHandler() const
+  {
+    return m_pWindHandler;
+  }
+
+  /// \brief
+  ///   Enable this to guarantee that all particle effects behave deterministically regardless of their setting. Multichannel applications should enable this.
+  ///
+  /// The particle simulation itself is deterministic when a fixed time stepper is installed for the simulation updates. Still,
+  /// there is a per particle effect layer setting that breaks determinism: If the 'handle only when visible' flag is enabled,
+  /// simulation is only performed when the effect is visible in the view. While this potentially saves some performance, it certainly breaks
+  /// determinism in a multichannel environment. This global flag disables this optimization for all particle effects that are instantiated
+  /// afterwards.
+  /// 
+  /// \param bStatus
+  ///   If true, the 'handle only when visible' flag of all new effect instances is ignored to guarantee deterministic behavior. By default this status is set to false
+  inline void SetForceDeterministicSimulation(bool bStatus)
+  {
+    m_bForceDeterministicSimulation = bStatus;
+  }
+
+  /// \brief
+  ///   Returns the status that has previously been set via SetForceDeterministicSimulation
+  inline bool GetForceDeterministicSimulation() const
+  {
+    return m_bForceDeterministicSimulation;
+  }
+
 protected:
   // overridden IVisCallbackHandler_cl function
   virtual void OnHandleCallback(IVisCallbackDataObject_cl *pData) HKV_OVERRIDE;
-  virtual int GetCallbackSortingKey(VCallback *pCallback) HKV_OVERRIDE
+  virtual int64 GetCallbackSortingKey(VCallback *pCallback) HKV_OVERRIDE
   {
     if (pCallback==&Vision::Callbacks.OnUpdateSceneFinished)
       return 100; // provide a defined order between other listeners (e.g. VSkeletalBoneProxy) [#4116]
@@ -276,15 +322,19 @@ private:
   VisParticleEffectCollection_cl m_Instances; ///< flat list of all instances
 
   VisParticleConstraintList_cl m_GlobalConstraints;
+  IVWindControlHandler *m_pWindHandler;
+
   float m_fGlobalTimeScaling;
   float m_fLastToDUpdate;
+  bool m_bForceDeterministicSimulation;
+
   static float g_fGlobalFadeScaling;
 };
 
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

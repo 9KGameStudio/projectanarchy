@@ -12,6 +12,7 @@
 #include <Vision/Runtime/Base/VBase.hpp>
 #include <Vision/Runtime/Engine/System/Vision.hpp>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Scene/VSceneLoader.hpp>
+#include <Vision/Runtime/Framework/VisionApp/VAppImportExport.hpp>
 
 /// \brief
 ///   Helper class used by the application framework.
@@ -34,7 +35,7 @@ public:
   ///   Helper structure to describe a platform's threading model.
   struct VPlatformThreadingModel
   {
-    VPlatformThreadingModel() : m_iWorkerThreadCount(1) , m_iNumCoresSkipped(0) , m_bFixedWorkerThreadCpuAssignment(false) {}
+    VPlatformThreadingModel() : m_iWorkerThreadCount(-1) , m_iNumCoresSkipped(1) , m_bFixedWorkerThreadCpuAssignment(false) {}
     int   m_iWorkerThreadCount;
     int   m_iNumCoresSkipped;
     bool  m_bFixedWorkerThreadCpuAssignment;
@@ -54,19 +55,19 @@ public:
   ///   When set to true, a new shadow map component will be created and attached to the light if there
   ///   is no shadow map component attached to the light source yet. If set to false and the light 
   ///   has a shadow map component attached, this shadow map component will be detached from the light source.
-  static void SetShadowsForLight(VisLightSource_cl *pLight, bool bStatus);
+  VAPP_IMPEXP static void SetShadowsForLight(VisLightSource_cl *pLight, bool bStatus);
 
   /// \brief
   ///   Static helper function to create a forward rendering system with default parameters.
-  static void CreateForwardRenderer();
+  VAPP_IMPEXP static void CreateForwardRenderer();
 
   /// \brief
   ///   Static helper function to destroy the forward rendering system previously created with CreateForwardRenderer().
-  static void DestroyForwardRenderer();
+  VAPP_IMPEXP static void DestroyForwardRenderer();
 
   /// \brief
   ///   Returns a platform dependent scaling factor for UI.
-  static float GetUIScalingFactor();
+  VAPP_IMPEXP static float GetUIScalingFactor();
 };
 
 typedef const VAppHelper::VApplicationState& VAppStateRef;
@@ -87,7 +88,7 @@ public:
 #endif //__V_APP_BASE_HELPER
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

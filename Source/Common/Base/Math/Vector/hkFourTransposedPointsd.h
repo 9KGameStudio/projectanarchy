@@ -14,7 +14,7 @@
 class hkcdVertex;
 
 	/// Represents 4 3D vertices bundled together. The vertices are transposed, i.e. (xxxx, yyyy, zzzz)
-class hkFourTransposedPointsd
+class HK_EXPORT_COMMON hkFourTransposedPointsd
 {
 	public:
 
@@ -205,7 +205,7 @@ class hkFourTransposedPointsd
 #endif	//	HK_MATH_FOUR_TRANSPOSED_VECTORSd_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

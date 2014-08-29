@@ -50,7 +50,7 @@ struct Helper
     if (!bbox.isValid())
       return;
 
-    VisBaseEntity_cl* pCenterEntity = Vision::Game.CreateEntity("VisBaseEntity_cl", bbox.getCenter());
+    VisBaseEntity_cl* pCenterEntity = Vision::Game.CreateEntity<VisBaseEntity_cl>(bbox.getCenter());
 
     const float fBBRadius = bbox.getBoundingSphere().m_fRadius;
 
@@ -181,7 +181,7 @@ bool MeshLoader::Load(const VSceneListEntry& entry)
     hkvLog::Info("No collision mesh loaded");
 
   // get a instance
-  hkvMat4 mTransform;
+  hkvMat4 mTransform(hkvMat4::IdentityMatrix());
   VisStaticMeshInstance_cl *pInst = pRes->CreateInstance(mTransform);
 
   // create the visibility zone
@@ -306,7 +306,7 @@ VString LitLoader::GetLastError() const
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -8,7 +8,8 @@
 
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/VisionEnginePluginPCH.h>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Components/VTimeOfDayComponent.hpp>
-#include <Vision/Runtime/Base/System/Memory/VMemDbg.hpp>
+#include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/RenderingHelpers/TimeOfDay.hpp>
+
 
 VTimeOfDayComponent::VTimeOfDayComponent(int iDeprecated, int iComponentFlags)
   : IVObjectComponent(0, iComponentFlags)
@@ -49,7 +50,7 @@ void VTimeOfDayComponent::OnHandleCallback(IVisCallbackDataObject_cl *pData)
 
 void VTimeOfDayComponent::UpdateParent()
 {
-  IVTimeOfDay *pTimeOfDayInterface = Vision::Renderer.GetTimeOfDayHandler();
+  VTimeOfDay *pTimeOfDayInterface = (VTimeOfDay*)Vision::Renderer.GetTimeOfDayHandler();
   if (pTimeOfDayInterface == NULL)
     return;
 
@@ -58,8 +59,8 @@ void VTimeOfDayComponent::UpdateParent()
 
   hkvVec3 vDirection(hkvNoInitialization);
   pTimeOfDayInterface->GetSunDirection(vDirection);
-  vDirection.normalizeIfNotZero();
 
+  // The Moon and back light direction is calculated from the Sun direction
   if (AttachmentType == TIMEOFDAY_ATTACHMENT_MOONLIGHTSOURCE)
   {
     vDirection = -vDirection; 
@@ -89,48 +90,61 @@ void VTimeOfDayComponent::UpdateParent()
     pOwnerObject->SetPosition(vCoronaPos);
   }
 
+  // Set the color and intensity of the light
   if (m_bIsLightClass)
   {
     VisLightSource_cl *pLight = (VisLightSource_cl*)m_pOwner;
-    VColorRef sunColor = pTimeOfDayInterface->GetSunColor();
+    VColorRef color;
+    float intensity = 0.0f;
 
-    bool bSwitchable = (AttachmentType == TIMEOFDAY_ATTACHMENT_ENABLEDATNIGHTLIGHTSOURCE);
-    float fBelowHorizonMultiplier = hkvMath::pow (hkvMath::Max(-vDirection.z+0.1f, 0.0f), bSwitchable ? 1.0f : 0.1f);
-    fBelowHorizonMultiplier = hkvMath::Min(1.0f, fBelowHorizonMultiplier);
+    switch (AttachmentType)
+    {
+    case TIMEOFDAY_ATTACHMENT_ENABLEDATNIGHTLIGHTSOURCE:
+      {
+        color = m_iColor;
+        const float fMarginNearHorizon = 0.1f; //10% - Margin above the horizon to switch lights ON/OFF
+        const float fBelowHorizonMultiplier = hkvMath::Max(-vDirection.z + fMarginNearHorizon, 0.0f);
+        intensity = 1.0f - hkvMath::Min(1.0f, fBelowHorizonMultiplier);
+        break;
+      }
+    case TIMEOFDAY_ATTACHMENT_CORONALIGHTSOURCE:
+      {
+        color = pTimeOfDayInterface->GetSunColor();
+        hkvVec3 vSunColorFloat = color.ToFloat();
+        float fLargestComponent = hkvMath::Max(hkvMath::Max(vSunColorFloat.x, vSunColorFloat.y), vSunColorFloat.z);
+        if (fLargestComponent > 0.0f)
+        {
+          color.FromFloat(vSunColorFloat / fLargestComponent);
+        }      
+        intensity = 0.0f;
+        break;
+      }
+    case TIMEOFDAY_ATTACHMENT_SUNLIGHTSOURCE:
+      {
+        color = pTimeOfDayInterface->GetSunColor();
+        intensity = pTimeOfDayInterface->GetSunIntensity();
+        break;
+      }
+    case TIMEOFDAY_ATTACHMENT_SUNBACKLIGHTSOURCE:
+      {
+        color = pTimeOfDayInterface->GetBackLightColor();
+        intensity = pTimeOfDayInterface->GetBackLightIntensity();
+        break;
+      }
+    case TIMEOFDAY_ATTACHMENT_MOONLIGHTSOURCE:
+      {
+        color = pTimeOfDayInterface->GetMoonColor();
+        intensity = pTimeOfDayInterface->GetMoonIntensity();
+        break;
+      }
+    default:
+      VASSERT_MSG(0,"Unknown time of day attachment type");
+    }
 
-    if (bSwitchable && fBelowHorizonMultiplier < 1.0f && fBelowHorizonMultiplier > 0.f)
-    {
-      pLight->SetColor(m_iColor);
-      pLight->SetMultiplier(Intensity * (1.0f - fBelowHorizonMultiplier));
-    }
-    else if (AttachmentType == TIMEOFDAY_ATTACHMENT_SUNLIGHTSOURCE)
-    {
-      pLight->SetColor(sunColor);
-      pLight->SetMultiplier(Intensity * fBelowHorizonMultiplier);
-    }
-    else if ((AttachmentType == TIMEOFDAY_ATTACHMENT_MOONLIGHTSOURCE) ||
-             (AttachmentType == TIMEOFDAY_ATTACHMENT_SUNBACKLIGHTSOURCE))
-    {
-      // TODO
-      VColorRef negativeColor = V_RGBA_WHITE - sunColor;
-      pLight->SetColor(negativeColor);
-      pLight->SetMultiplier(Intensity * fBelowHorizonMultiplier * 0.333f);
-    }  
-    else if (AttachmentType == TIMEOFDAY_ATTACHMENT_CORONALIGHTSOURCE)
-    {
-      hkvVec3 vSunColorFloat = sunColor.ToFloat();
-      float fLargestComponent = hkvMath::Max(hkvMath::Max(vSunColorFloat.x, vSunColorFloat.y), vSunColorFloat.z);
-      if (fLargestComponent <= 0.0f)
-        fLargestComponent = 1.0f;
-      sunColor.FromFloat(vSunColorFloat * (1.0f / fLargestComponent));
-
-      pLight->SetColor(sunColor * fBelowHorizonMultiplier);
-      pLight->SetMultiplier(0.0f);
-    }
+    pLight->SetColor(color);
+    pLight->SetMultiplier(intensity * Intensity);    
   }
 }
-
-
 
 V_IMPLEMENT_SERIAL(VTimeOfDayComponent,IVObjectComponent,0,&g_VisionEngineModule);
 void VTimeOfDayComponent::Serialize( VArchive &ar )
@@ -163,13 +177,13 @@ void VTimeOfDayComponent::Serialize( VArchive &ar )
   }
 }
 
-START_VAR_TABLE(VTimeOfDayComponent, IVObjectComponent, "Time of Day Attachment Component. Can be attached to light sources (and other positional objects) in order to allow the object to obtain its position, direction, color, and intensity values (where applicable) from the global time of day object.", VVARIABLELIST_FLAGS_NONE, "Time of Day Attachment Component" )
-  DEFINE_VAR_ENUM(VTimeOfDayComponent, AttachmentType, "Use as sun light, moon light, corona, sun-backlight or enabled at night light.", "SUNLIGHT", "SUNLIGHT,MOONLIGHT,CORONA,SUNBACKLIGHT,ENABLEDATNIGHT", 0, 0);
+START_VAR_TABLE(VTimeOfDayComponent, IVObjectComponent, "Can be attached to light sources (and other positional objects) in order to allow the object to obtain its position, direction, color, and intensity values (where applicable) from the global time of day object.", VVARIABLELIST_FLAGS_NONE, "Time of Day Attachment" )
+  DEFINE_VAR_ENUM(VTimeOfDayComponent, AttachmentType, "Use as Sun light, Moon light, corona, Sun-backlight, or enabled at night light.", "SUNLIGHT", "SUNLIGHT,MOONLIGHT,CORONA,SUNBACKLIGHT,ENABLEDATNIGHT", 0, 0);
   DEFINE_VAR_FLOAT(VTimeOfDayComponent, Intensity, "Intensity of the light source (lights only)", "1.0", 0,0);
 END_VAR_TABLE
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

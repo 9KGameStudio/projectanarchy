@@ -10,17 +10,19 @@
 
 #include <Ai/Internal/NavMesh/hkaiNavMeshGenerationSettings.h>
 #include <Common/Base/Container/BitField/hkBitField.h>
+#include <Common/Base/Types/Geometry/hkGeometry.h>
 
-extern const hkClass hkaiNavMeshSimplificationSnapshotClass;
+extern HK_EXPORT_AI const hkClass hkaiNavMeshSimplificationSnapshotClass;
 
-struct hkGeometry;
 class hkaiVolume;
+class hkaiCarver;
 
 	/// A simple container class for saving the data necessary to reproduce nav mesh simplification
 	/// without needing to run generation.
-class hkaiNavMeshSimplificationSnapshot
+class HK_EXPORT_AI hkaiNavMeshSimplificationSnapshot
 {
 public:
+	//+version(1)
 	HK_DECLARE_REFLECTION();
 	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_AI_NAVMESH, hkaiNavMeshSimplificationSnapshot);
 
@@ -28,7 +30,7 @@ public:
 	hkaiNavMeshSimplificationSnapshot(hkFinishLoadedObjectFlag f);
 	~hkaiNavMeshSimplificationSnapshot();
 
-	void setRaycasterInformation( const hkGeometry* triMesh, const hkArrayBase< hkRefPtr<const hkaiVolume> >& carvers, const hkBitField& cuttingTriangles);
+	void setRaycasterInformation( const hkGeometry* triMesh, const hkArrayBase< hkRefPtr<const hkaiCarver> >& carvers, const hkBitField& cuttingTriangles);
 	void setMeshAndSettings( const hkaiNavMesh& mesh, const hkaiNavMeshGenerationSettings& settings);
 
 		/// Save this snapshot to the filename specified in the settings.
@@ -38,7 +40,7 @@ public:
 	hkRefPtr< const hkGeometry > m_geometry;
 
 		/// Possibly different from the nav mesh generation settings (one extra for the bounds AABB)
-	hkArray< hkRefPtr<const hkaiVolume> > m_carvers;
+	hkArray< hkRefPtr<const hkaiCarver> > m_carvers;
 
 		/// Bitfield to indicate which triangles are cutting.
 	hkBitField m_cuttingTriangles;
@@ -54,7 +56,7 @@ public:
 #endif // HK_AI_NAV_MESH_SIMP_SNAPSHOT_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

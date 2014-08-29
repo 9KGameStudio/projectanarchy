@@ -46,6 +46,7 @@ namespace VisionManaged
   {
     hkvMat3 rotMat;
     hkvMat4 transform;
+    transform.setIdentity();
     ConversionUtils::CreateRotationMatrix (rotMat, _yaw,_pitch,_roll);
     transform.setRotationalPart(rotMat);
     transform.setTranslation(hkvVec3(_x,_y,_z));
@@ -161,6 +162,7 @@ namespace VisionManaged
     int iCount = m_pInstances ? m_pInstances->Length : 0;
     iCount = hkvMath::Min(iCount,MAX_BILLBOARDS_PER_GROUP);
     hkvAlignedBBox groupBox;
+    groupBox.setInvalid();
     float cx = -1.f + m_fRelCenterX;
     float cy = -1.f + m_fRelCenterY;
     float mx = hkvMath::Max(m_fRelCenterX,-cx);
@@ -384,6 +386,10 @@ namespace VisionManaged
   {
     int iCount = pData->Length;
     hkvVec3* pForces = new hkvVec3[iCount];
+
+    for (int i = 0; i < iCount; ++i)
+      pForces[i].setZero();
+
     float fEps = 0.1f;
     float fInvDistScale = 1.f;
     const float fForceScale = fAverageRadX*m_fBaseSizeX;
@@ -443,7 +449,7 @@ namespace VisionManaged
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140619)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

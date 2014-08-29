@@ -9,10 +9,12 @@
 #ifndef HK_SERIALIZE_UTIL_H
 #define HK_SERIALIZE_UTIL_H
 
+#include <Common/Base/Types/hkHandle.h>
 #include <Common/Serialize/Util/hkStructureLayout.h>
 #include <Common/Serialize/Tagfile/hkTagfileWriter.h>
 #include <Common/Serialize/Packfile/hkPackfileWriter.h>
 #include <Common/Serialize/Resource/hkObjectResource.h>
+#include <Common/Serialize/Serialize/hkContentPredicate.h>
 
 class hkClass;
 class hkDataObject;
@@ -27,7 +29,7 @@ class hkTypeInfoRegistry;
 namespace hkSerializeUtil
 {
 		/// Error details class for loading packfile/tagfile.
-	struct ErrorDetails
+	struct HK_EXPORT_COMMON ErrorDetails
 	{
 		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_SERIALIZE, ErrorDetails );
 
@@ -80,20 +82,18 @@ namespace hkSerializeUtil
 	enum SaveOptionBits
 	{
 		SAVE_DEFAULT					= 0x00,		///< All flags default to OFF; enable whichever are needed
-		SAVE_TEXT_FORMAT				= 0x01,		///< Use text (usually XML) format; default is binary format if available.
+		SAVE_TEXT_FORMAT				= 0x01,		///< Use text (usually XML) format; default is binary format if available. Packfiles are always written as binary.
 		SAVE_SERIALIZE_IGNORED_MEMBERS	= 0x02,		///< Write members which are usually ignored; default is to skip SERIALIZE_IGNORED members.
 		SAVE_WRITE_ATTRIBUTES			= 0x04,		///< Include extended attributes in metadata; default is to write minimum metadata.
 		SAVE_CONCISE					= 0x08,		///< Doesn't provide any extra information which would make the file easier to interpret. E.g. additionally write hex floats as text comments.
-		SAVE_TEXT_NUMBERS				= 0x10,		///< Floating point numbers output as text, not as binary. Makes them easily readable/editable, but values may not be exact.
 	};
 		/// Options for saving.
-	struct SaveOptions : public hkFlags<SaveOptionBits, int>
+	struct HK_EXPORT_COMMON SaveOptions : public hkFlags<SaveOptionBits, int>
 	{
 		SaveOptions(SaveOptionBits b=SAVE_DEFAULT) : hkFlags<SaveOptionBits,int>(b) {}
 		SaveOptions& useText(hkBool32 b) { useBinary(!b); return *this; }
 		inline SaveOptions& useBinary(hkBool32 b);
 		inline SaveOptions& useConcise(hkBool32 b);
-		inline SaveOptions& useTextNumbers(hkBool32 b);
 	};
 
 		/// Option bits for loading.
@@ -104,7 +104,7 @@ namespace hkSerializeUtil
 		LOAD_FORCED = 0x02, ///< Force load.
 	};
 		/// Options for loading.
-	struct LoadOptions : public hkFlags<LoadOptionBits, int>
+	struct HK_EXPORT_COMMON  LoadOptions : public hkFlags<LoadOptionBits, int>
 	{
 		public:
 			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(0,LoadOptions);
@@ -139,17 +139,17 @@ namespace hkSerializeUtil
 		/// Usually you should use hkSerializeUtil::load().
 		///
 		/// See also hkNativePackfileUtils::load* for inplace loading.
-	hkResource* HK_CALL load( hkStreamReader* stream, ErrorDetails* detailsOut=HK_NULL, LoadOptions options=LOAD_DEFAULT );
+	HK_EXPORT_COMMON hkResource* HK_CALL load( hkStreamReader* stream, ErrorDetails* detailsOut=HK_NULL, LoadOptions options=LOAD_DEFAULT );
 
 		/// Load serialized objects from a file using name and return pointer
 		/// to hkResource object.
 		/// See hkSerializeUtil::load( hkStreamReader* sr ) for details.
-	hkResource* HK_CALL load( const char* filename, ErrorDetails* detailsOut=HK_NULL, LoadOptions options=LOAD_DEFAULT );
+	HK_EXPORT_COMMON hkResource* HK_CALL load( const char* filename, ErrorDetails* detailsOut=HK_NULL, LoadOptions options=LOAD_DEFAULT );
 
 		/// Load serialized objects from buffer and return pointer
 		/// to hkResource object. The buffer may be freed after loading.
 		/// See hkSerializeUtil::load( hkStreamReader* sr ) for details.
-	hkResource* HK_CALL load( const void* buf, int buflen, ErrorDetails* detailsOut=HK_NULL, LoadOptions options=LOAD_DEFAULT );
+	HK_EXPORT_COMMON hkResource* HK_CALL load( const void* buf, int buflen, ErrorDetails* detailsOut=HK_NULL, LoadOptions options=LOAD_DEFAULT );
 
 
 		/// Load serialized objects from stream and return pointer
@@ -166,17 +166,17 @@ namespace hkSerializeUtil
 		/// The function does additional check for the stream format, versioning and finishing steps.
 		/// It will return HK_NULL if the checks failed. The error details are
 		/// returned in 'detailsOut'.
-	hkObjectResource* HK_CALL loadOnHeap( hkStreamReader* stream, ErrorDetails* errorOut=HK_NULL, LoadOptions options=LOAD_DEFAULT );
+	HK_EXPORT_COMMON hkObjectResource* HK_CALL loadOnHeap( hkStreamReader* stream, ErrorDetails* errorOut=HK_NULL, LoadOptions options=LOAD_DEFAULT );
 
 		/// Load serialized objects from a file using name and return pointer
 		/// to hkObjectResource object.
 		/// See hkSerializeUtil::load( hkStreamReader* sr ) for details.
-	hkObjectResource* HK_CALL loadOnHeap( const char* filename, ErrorDetails* errorOut=HK_NULL, LoadOptions options=LOAD_DEFAULT );
+	HK_EXPORT_COMMON hkObjectResource* HK_CALL loadOnHeap( const char* filename, ErrorDetails* errorOut=HK_NULL, LoadOptions options=LOAD_DEFAULT );
 
 		/// Load serialized objects from a file using name and return pointer
 		/// to hkObjectResource object.
 		/// See hkSerializeUtil::load( hkStreamReader* sr ) for details.
-	hkObjectResource* HK_CALL loadOnHeap( const void* buf, int buflen, ErrorDetails* errorOut=HK_NULL, LoadOptions options=LOAD_DEFAULT );
+	HK_EXPORT_COMMON hkObjectResource* HK_CALL loadOnHeap( const void* buf, int buflen, ErrorDetails* errorOut=HK_NULL, LoadOptions options=LOAD_DEFAULT );
 
 
 	//
@@ -203,7 +203,7 @@ namespace hkSerializeUtil
 		/// (see hkpHavokSnapshot::ConvertListener class for details).
 		/// If you want these conversions applied you should provide a hkpHavokSnapshot::ConvertListener as
 		/// a value for userListener.
-	hkResult HK_CALL savePackfile( const void* object, const hkClass& klass, hkStreamWriter* writer, const hkPackfileWriter::Options& packFileOptions, hkPackfileWriter::AddObjectListener* userListener=HK_NULL, SaveOptions options=SAVE_DEFAULT );
+	HK_EXPORT_COMMON hkResult HK_CALL savePackfile( const void* object, const hkClass& klass, hkStreamWriter* writer, const hkPackfileWriter::Options& packFileOptions, hkPackfileWriter::AddObjectListener* userListener=HK_NULL, SaveOptions options=SAVE_DEFAULT );
 
 		/// Save a snapshot of a given object in tagfile form using provided writer.
 		/// Returns HK_SUCCESS if successful.
@@ -213,9 +213,9 @@ namespace hkSerializeUtil
 		/// (see hkpHavokSnapshot::ConvertListener class for details).
 		/// If you want these conversions applied you should provide a hkpHavokSnapshot::ConvertListener as
 		/// a value for userListener.
-	hkResult HK_CALL saveTagfile( const void* object, const hkClass& klass, hkStreamWriter* writer, hkPackfileWriter::AddObjectListener* userListener=HK_NULL, SaveOptions options=SAVE_DEFAULT );
+	HK_EXPORT_COMMON hkResult HK_CALL saveTagfile( const void* object, const hkClass& klass, hkStreamWriter* writer, hkPackfileWriter::AddObjectListener* userListener=HK_NULL, SaveOptions options=SAVE_DEFAULT );
 
-	hkResult HK_CALL save( const void* object, const hkClass& klass, hkStreamWriter* writer, SaveOptions options=SAVE_DEFAULT );
+	HK_EXPORT_COMMON hkResult HK_CALL save( const void* object, const hkClass& klass, hkStreamWriter* writer, SaveOptions options=SAVE_DEFAULT );
 
 		/// Shortcut to save an object with out having to specify the hkClass.
 	template<typename T> inline hkResult HK_CALL save( const T* object, hkStreamWriter* writer, SaveOptions options=SAVE_DEFAULT );
@@ -241,10 +241,25 @@ namespace hkSerializeUtil
 	};
 
 		/// Information returned by detectFormat.
-	struct FormatDetails
+	struct HK_EXPORT_COMMON FormatDetails
 	{
 
 		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(0, FormatDetails);
+
+			/// Returns true if the file was serialized after the introduction of predicates
+		bool supportsPredicates() const { return m_maxPredicateId > hkContentPredicate::NO_PREDICATE; }
+
+			/// Returns true if the file was serialized with support for this specific predicate.
+		bool supportsPredicate(hkContentPredicate::PredicateId pred) const { return pred < m_maxPredicateId; }
+
+		typedef hkHandle<int, -1, FormatDetails> PredicateResult;
+
+			/// If the given predicate didn't exist when the file was serialized the returned value is invalid
+			/// (check with PredicateResult::isValid()).
+			/// If the predicate is true for the content of the file the value (PredicateResult::value())
+			/// is 1 (true), otherwise it is 0 (false).
+		PredicateResult verifiesPredicate(hkContentPredicate::PredicateId pred) const;
+
 			/// The type of the file
 		hkEnum<FormatType,hkInt32> m_formatType;
 			/// The version number for the format 
@@ -253,19 +268,24 @@ namespace hkSerializeUtil
 		hkStringPtr m_version;
 			/// For binary packfiles, the binary format.
 		hkStructureLayout::LayoutRules m_layoutRules;
+			/// This is the value of FilePredicate::MAX_PREDICATE_ID when the file was serialized. Any predicate bigger than this
+			/// can't be checked against this file.
+		hkContentPredicate::PredicateId m_maxPredicateId;
+			/// The list of predicates which are true for the data in the file.
+		hkArray<hkUint16> m_truePredicates;
 	};
 
 
 		/// Detect the type of a packfile stream.
-	hkEnum<FormatType,hkInt32> HK_CALL detectFormat( hkStreamReader* reader, ErrorDetails* errorOut=HK_NULL );
+	HK_EXPORT_COMMON hkEnum<FormatType,hkInt32> HK_CALL detectFormat( hkStreamReader* reader, ErrorDetails* errorOut=HK_NULL );
 
 		/// Extract some information from the file header.
 		/// See FormatDetails for the available information.
-	void HK_CALL detectFormat(const char* filename, FormatDetails& detailsOut, ErrorDetails* errorOut=HK_NULL);
-	void HK_CALL detectFormat( hkStreamReader* reader, FormatDetails& detailsOut, ErrorDetails* errorOut=HK_NULL );
+	HK_EXPORT_COMMON void HK_CALL detectFormat(const char* filename, FormatDetails& detailsOut, ErrorDetails* errorOut=HK_NULL );
+	HK_EXPORT_COMMON void HK_CALL detectFormat( hkStreamReader* reader, FormatDetails& detailsOut, ErrorDetails* errorOut=HK_NULL );
 
 		/// Is the stream a tagfile, XML packfile or binary packfile for the current platform?
-	hkBool32 HK_CALL isLoadable(hkStreamReader* sr);
+	HK_EXPORT_COMMON hkBool32 HK_CALL isLoadable(hkStreamReader* sr);
 }
 
 #include <Common/Serialize/Util/hkSerializeUtil.inl>
@@ -273,7 +293,7 @@ namespace hkSerializeUtil
 #endif // HK_SERIALIZE_UTIL_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

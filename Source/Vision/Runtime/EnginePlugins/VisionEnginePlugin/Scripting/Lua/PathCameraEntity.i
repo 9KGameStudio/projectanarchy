@@ -48,12 +48,12 @@ public:
   ///\brief
   ///  Load an XML camera script file from file and start it
   ///
-  ///\param szFilename
+  ///\param filename
   ///  Filename of the XML file
   ///
   ///\returns
   ///  true if loading was successful
-  bool LoadScriptFile(const char *szFilename);
+  boolean LoadScriptFile(string filename);
 
   ///\brief
   ///  Unload the XML file
@@ -61,7 +61,7 @@ public:
 
   ///\brief
   ///  Start the playback (i.e. attach camera and process the camera script)
-  bool Start();
+  boolean Start();
 
   ///\brief
   ///  Stop the playback
@@ -69,27 +69,27 @@ public:
 
   ///\brief
   ///  Pauses or resumes the playback
-  void SetPause(bool bStatus);
+  void SetPause(boolean status);
 
   ///\brief
   ///  Sets the relative playback speed (1.0f = normal speed as defined in the XML, 2.0f is twice the speed)
-  void SetTimeScaling(float fScale);
+  void SetTimeScaling(number scale);
 
   ///\brief
   ///  Return the time scaling of this camera. The default is 1.0
-  float GetTimeScaling() const;
+  number GetTimeScaling();
 
   ///\brief
   ///  Indicates whether playback is running or not
-  bool IsPlaying() const;
+  boolean IsPlaying();
 
   ///\brief
   ///  Indicates whether playback is currently paused
-  bool IsPaused() const;
+  boolean IsPaused();
 
   ///\brief
   ///  Attaches this camera to the renderer node of the given index.
-  void AttachToRendererNode(int iRendererNodeIndex);
+  void AttachToRendererNode(number rendererNodeIndex);
 
   /// @}
 };
@@ -97,7 +97,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

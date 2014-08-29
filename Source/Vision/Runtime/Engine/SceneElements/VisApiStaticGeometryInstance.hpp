@@ -300,7 +300,7 @@ public:
   ///   Overridable to return the owner zone. This default implementation returns NULL. However,
   ///   the VisStaticSubmeshInstance_cl::GetParentZone override returns the parent zone of the
   ///   static mesh instance
-  VISION_APIFUNC virtual VisZoneResource_cl *GetParentZone() 
+  VISION_APIFUNC virtual IVisZone_cl *GetParentZone() 
   {
     return NULL;
   }
@@ -487,7 +487,7 @@ VISION_ELEMENTMANAGER_TEMPLATE_DECL(VisStaticGeometryInstance_cl)
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

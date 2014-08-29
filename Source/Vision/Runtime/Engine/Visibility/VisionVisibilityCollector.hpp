@@ -14,6 +14,7 @@
 #include <Vision/Runtime/Engine/Visibility/VisApiObject3DVis.hpp>
 #include <Vision/Runtime/Engine/Visibility/VisApiPortal.hpp>
 #include <Vision/Runtime/Engine/Visibility/StreamProcessVisibilityJob.hpp>
+#include <Vision/Runtime/Engine/Visibility/VisionTranslucencySorter.hpp>
 
 // Forward declarations
 class VisVisibilityCollectorTask_cl;
@@ -128,7 +129,7 @@ public:
   /// \brief
   ///   Destructor of the visibility collector base class. Triggers the static
   ///   OnVisibilityCollectorDestroyed callback with VisVisibilityCollectorDataObject_cl.
-  VISION_APIFUNC VOVERRIDE ~IVisVisibilityCollector_cl();
+  VISION_APIFUNC virtual ~IVisVisibilityCollector_cl();
 
 
   ///
@@ -282,6 +283,28 @@ public:
   ///   zones. Note that the collection may not contain duplicate entries!
   VISION_APIFUNC virtual const VisVisibilityZoneCollection_cl* GetVisibleVisibilityZones() = 0;
 
+  /// \brief
+  ///   Function to add custom instances to the result of this collector. May only be called inside visibility computation
+  VISION_APIFUNC virtual void AddVisibleStaticGeometryInstances(VisStaticGeometryInstance_cl **pGeomInstanceList, int iElementCount) {}
+
+  /// \brief
+  ///   Function to add custom instances to the result of this collector. May only be called inside visibility computation
+  VISION_APIFUNC virtual void AddVisibleEntities(VisBaseEntity_cl **pEntityList, int iElementCount) {}
+
+  /// \brief
+  ///   Function to add custom instances to the result of this collector. May only be called inside visibility computation
+  VISION_APIFUNC virtual void AddVisibleVisibilityObjects(VisVisibilityObject_cl **pVisObjList, int iElementCount) {}
+
+  /// \brief
+  ///   Sets pointer to the interleaved translucency sorter to use. A value of NULL disables interleaved translucency sorting (=default).
+  ///
+  /// \param pSorter
+  ///   Pointer to the interleaved translucency sorter.
+  VISION_APIFUNC virtual void SetInterleavedTranslucencySorter(IVisTranslucencySorter* pSorter) {}
+
+  /// \brief
+  ///   Returns pointer to current active interleaved translucency sorter or NULL when interleaved sorting is disabled.
+  VISION_APIFUNC virtual IVisTranslucencySorter* GetInterleavedTranslucencySorter() const { return NULL; }
 
   ///
   /// @}
@@ -736,30 +759,52 @@ public:
   ///   collection may not contain duplicate entries!
   VISION_APIFUNC virtual VisVisibilityZoneCollection_cl* GetVisibleVisibilityZones() HKV_OVERRIDE;
 
+  /// \brief
+  ///   Function to add custom instances to the result of this collector. May only be called inside visibility computation
+  VISION_APIFUNC virtual void AddVisibleStaticGeometryInstances(VisStaticGeometryInstance_cl **pGeomInstanceList, int iElementCount) HKV_OVERRIDE;
+
+  /// \brief
+  ///   Function to add custom instances to the result of this collector. May only be called inside visibility computation
+  VISION_APIFUNC virtual void AddVisibleEntities(VisBaseEntity_cl **pEntityList, int iElementCount) HKV_OVERRIDE;
+
+  /// \brief
+  ///   Function to add custom instances to the result of this collector. May only be called inside visibility computation
+  VISION_APIFUNC virtual void AddVisibleVisibilityObjects(VisVisibilityObject_cl **pVisObjList, int iElementCount) HKV_OVERRIDE;
 
   /// \brief
   ///   Returns whether the passed static geometry instance is visible
-  VISION_APIFUNC VOVERRIDE bool IsStaticGeometryInstanceVisible(VisStaticGeometryInstance_cl *pGeomInstance);
+  VISION_APIFUNC virtual bool IsStaticGeometryInstanceVisible(VisStaticGeometryInstance_cl *pGeomInstance) HKV_OVERRIDE;
 
 
   /// \brief
   ///   Returns whether the specified entity is visible.
-  VISION_APIFUNC VOVERRIDE bool IsEntityVisible(const VisBaseEntity_cl *pEntity);
+  VISION_APIFUNC virtual bool IsEntityVisible(const VisBaseEntity_cl *pEntity) HKV_OVERRIDE;
 
 
   /// \brief
   ///   Returns whether the specified visibility object is visible.
-  VISION_APIFUNC VOVERRIDE bool IsVisObjectVisible(const VisVisibilityObject_cl *pVisObject);
+  VISION_APIFUNC virtual bool IsVisObjectVisible(const VisVisibilityObject_cl *pVisObject) HKV_OVERRIDE;
 
 
   /// \brief
   ///   Returns whether the specified light source is visible.
-  VISION_APIFUNC VOVERRIDE bool IsLightVisible(const VisLightSource_cl *pLight);
+  VISION_APIFUNC virtual bool IsLightVisible(const VisLightSource_cl *pLight) HKV_OVERRIDE;
 
 
   /// \brief
   ///   Returns whether the specified visibility zone is visible.
-  VISION_APIFUNC VOVERRIDE bool IsVisibilityZoneVisible(const VisVisibilityZone_cl *pZone);
+  VISION_APIFUNC virtual bool IsVisibilityZoneVisible(const VisVisibilityZone_cl *pZone) HKV_OVERRIDE;
+
+  /// \brief
+  ///   Sets pointer to the interleaved translucency sorter to use. A value of NULL disables interleaved translucency sorting (=default).
+  ///
+  /// \param pSorter
+  ///   Pointer to the interleaved translucency sorter.
+  VISION_APIFUNC virtual void SetInterleavedTranslucencySorter(IVisTranslucencySorter* pSorter) HKV_OVERRIDE;
+
+  /// \brief
+  ///   Returns pointer to current active interleaved translucency sorter or NULL when interleaved sorting is disabled.
+  VISION_APIFUNC virtual IVisTranslucencySorter* GetInterleavedTranslucencySorter() const HKV_OVERRIDE;
 
   ///
   /// @}
@@ -785,7 +830,7 @@ public:
   /// 
   /// \param pContext
   ///   render context from which to obtain the visibility collector properties.
-  VISION_APIFUNC VOVERRIDE void SetPropertiesFromRenderContext(VisRenderContext_cl *pContext);
+  VISION_APIFUNC virtual void SetPropertiesFromRenderContext(VisRenderContext_cl *pContext) HKV_OVERRIDE;
 
 
   /// \brief
@@ -876,12 +921,12 @@ public:
   ///   VisFrustum_cl *: View frustum prior to any portal clipping operations.
   /// 
   /// \sa VisRenderContext_cl::GetViewFrustum
-  VISION_APIFUNC VOVERRIDE const VisFrustum_cl *GetBaseFrustum();
+  VISION_APIFUNC virtual const VisFrustum_cl *GetBaseFrustum() HKV_OVERRIDE;
 
 
   /// \brief
   ///   Overridden function that calls WaitForTask on the m_pTask member
-  VISION_APIFUNC VOVERRIDE void WaitForAllTasks();
+  VISION_APIFUNC virtual void WaitForAllTasks() HKV_OVERRIDE;
 
 
   /// \brief
@@ -1085,6 +1130,7 @@ protected:
   unsigned int m_iTraversalProtocolSize;
 
   VisVisibilityCollectorTask_cl *m_pTask;
+  IVisTranslucencySorterPtr m_spInterleavedTranslucencySorter;
 
   // Relevant for stream processing only:
   VStreamProcessingWorkflow *m_pWorkflow;
@@ -1101,10 +1147,11 @@ protected:
     VLODHysteresisManager* m_pLODHysteresisManager;
   #endif //SUPPORTS_LOD_HYSTERESIS_THRESHOLDING
 
-  #if defined(WIN32)
+  #if defined(_VISION_WIN32)
     // Internal code for dissolve feature in simulation package
     template <typename, typename> friend class DissolveFadingHandler;
     friend class VDissolveCollector;
+    friend class VDissolveEntityRenderer;
 
     /// \brief
     ///   State class that contains the current and last LOD level index next to the current near and far clip plane distance for a single entity.
@@ -1206,7 +1253,7 @@ public:
 
   /// \brief
   ///   Destructor, nothing to de-initialize.
-  VISION_APIFUNC VOVERRIDE ~IVisVisibilityCollectorComponent_cl();
+  VISION_APIFUNC virtual ~IVisVisibilityCollectorComponent_cl();
 
   /// \brief
   ///   Pure virtual overridable that is called by the collector's OnDoVisibilityDetermination
@@ -1237,7 +1284,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

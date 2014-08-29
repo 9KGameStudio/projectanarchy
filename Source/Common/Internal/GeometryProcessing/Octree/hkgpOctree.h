@@ -13,12 +13,12 @@
 #include <Common/Base/Config/hkProductFeatures.h>
 
 /// Octree data-structure and related utilities.
-struct hkgpOctree
+struct HK_EXPORT_COMMON hkgpOctree
 {	
 	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_GEOMETRY, hkgpOctree);
 
 	/// Node
-	struct Node
+	struct HK_EXPORT_COMMON Node
 	{
 		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_GEOMETRY, Node);
 
@@ -32,7 +32,7 @@ struct hkgpOctree
 	};
 
 	/// Structure holding dual information during enumeration.
-	struct Dual
+	struct HK_EXPORT_COMMON Dual
 	{
 		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_GEOMETRY, Dual);
 
@@ -99,7 +99,7 @@ struct hkgpOctree
 #endif // HK_GEOMETRY_PROCESSING_OCTREE_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

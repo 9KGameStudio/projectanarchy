@@ -52,7 +52,7 @@ void VThumbnailManager::DeInit()
 
 void VThumbnailManager::LoadThumbnail(ISceneListDataProvider* pDataProvider, int iEntryIndex)
 {
-  VSceneListEntry& entry = pDataProvider->GetData()[iEntryIndex];
+  VSceneListEntry& entry = pDataProvider->GetAt(iEntryIndex);
   entry.spThumbnail = s_spLoadingThumbnail;
 
   // search for thumbnail, only test the first search path
@@ -93,12 +93,12 @@ void VThumbnailManager::ProcessPendingThumbnails()
   }
   else if (pTask->GetState() == TASKSTATE_FINISHED)
   {
-    VArray<VSceneListEntry>& list = pendingThumbnail.pDataProvider->GetData();
-    int iEntryIndex = list.Find(pendingThumbnail.entry); // entry might have been moved or deleted in the meantime
-    
+    // entry might have been moved or deleted in the meantime
+    int iEntryIndex = pendingThumbnail.pDataProvider->Find(pendingThumbnail.entry);
+         
     if (iEntryIndex >= 0)
     {
-      VSceneListEntry& entry = list[iEntryIndex];
+      VSceneListEntry& entry = pendingThumbnail.pDataProvider->GetAt(iEntryIndex);
 
       if (pTask->IsValid())
       {
@@ -121,7 +121,7 @@ void VThumbnailManager::ProcessPendingThumbnails()
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -16,7 +16,7 @@ class hkBitField;
 struct hkcdRay;
 
 	/// Filter that determines whether or not to ignore a hit face.
-class hkaiEdgeGeometryHitFilter : public hkReferencedObject
+class HK_EXPORT_AI hkaiEdgeGeometryHitFilter : public hkReferencedObject
 {
 public:
 	HK_DECLARE_CLASS_ALLOCATOR( HK_MEMORY_CLASS_AI_NAVMESH );
@@ -27,7 +27,7 @@ public:
 };
 
 	/// Base filter rejects hits based on position.
-class hkaiPositionHitFilter : public hkaiEdgeGeometryHitFilter
+class HK_EXPORT_AI hkaiPositionHitFilter : public hkaiEdgeGeometryHitFilter
 {
 public:
 	HK_DECLARE_CLASS_ALLOCATOR( HK_MEMORY_CLASS_AI_NAVMESH );
@@ -35,6 +35,7 @@ public:
 	hkaiPositionHitFilter( hkReal epsilon );
 	virtual ~hkaiPositionHitFilter() {}
 
+	void setEpsilon(hkReal epsilon);
 	virtual bool ignoreHit( int faceId, hkVector4Parameter start, hkVector4Parameter end, hkSimdRealParameter hitFraction, hkVector4Parameter facePlane ) const HK_OVERRIDE;
 
 	hkSimdReal					m_lowerEpsilon;
@@ -43,7 +44,7 @@ public:
 
 
 	/// More advanced filter for removeUnreachableTriangles; 
-class hkaiRemoveUnreachableHitFilter : public hkaiPositionHitFilter
+class HK_EXPORT_AI hkaiRemoveUnreachableHitFilter : public hkaiPositionHitFilter
 {
 public:
 	HK_DECLARE_CLASS_ALLOCATOR( HK_MEMORY_CLASS_AI_NAVMESH );
@@ -77,7 +78,7 @@ public:
 #endif	// HKAI_EDGE_GEOMETRY_HITFILTER_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

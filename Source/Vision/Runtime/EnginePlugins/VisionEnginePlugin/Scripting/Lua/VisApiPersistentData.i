@@ -6,6 +6,38 @@
  *
  */
 
+#ifndef VLUA_APIDOC
+
+class VisPersistentData_cl
+{
+public:
+
+  bool SetString(const char *category, const char *field, const char *stringVal);
+
+  bool SetNumber(const char *category, const char *field, float numberVal);
+
+  bool SetBoolean(const char *category, const char *field, bool boolVal);
+  
+  const char *GetString(const char *category, const char *field, const char *default);
+  
+  float GetNumber(const char *category, const char *field, float default);
+  
+  bool GetBoolean(const char *category, const char *field, bool default);
+
+  bool Exists(const char* category, const char* field);
+
+  const char* GetType(const char* category, const char* field);
+
+  bool Save(const char* category);
+ 
+  bool Load(const char* category); 
+  
+  bool SaveAll();
+
+};
+
+#else
+
 /// \brief
 ///   Class for the persitent storage of data. The global instance in Lua is called PersistentData
 /// \par Example
@@ -28,7 +60,7 @@ public:
   ///   \code
   ///     PersistentData:SetString("myCategory", "myString", "Hello world!")
   ///   \endcode
-  bool SetString(const char *category, const char *field, const char *stringVal);
+  boolean SetString(string category, string field, string stringVal);
 
   /// \brief Set the value of a numerical field in persistent data
   /// \param category the persistent data category containing this field ('default' if unspecified)
@@ -40,7 +72,7 @@ public:
   ///     PersistentData:SetNumber("myCategory", "myFloat", 4.3)
   ///     PersistentData:SetNumber("myFile", "myInt", 2)
   ///   \endcode
-  bool SetNumber(const char *category, const char *field, float numberVal);
+  boolean SetNumber(string category, string field, number numberVal);
 
   /// \brief Set the value of a boolean field in persistent data
   /// \param category the persistent data category containing this field ('default' if unspecified)
@@ -51,7 +83,7 @@ public:
   ///   \code
   ///     PersistentData:SetBoolean("myCategory", "myFlag", true)
   ///   \endcode
-  bool SetBoolean(const char *category, const char *field, bool boolVal);
+  boolean SetBoolean(string category, string field, boolean boolVal);
   
   /// @}
   /// @name Accessing Data
@@ -66,7 +98,7 @@ public:
   ///   \code
   ///     local myString = PersistentData:GetString("myFile", "myString", "myString could not be found")
   ///   \endcode
-  const char *GetString(const char *category, const char *field, const char *default);
+  string GetString(string category, string field, string default);
   
   /// \brief Gets the current value of the specified persistent data field, or default if it can't be found
   /// \param category the persistent data category containing this field ('default' if unspecified)
@@ -77,7 +109,7 @@ public:
   ///   \code
   ///     local myFloat = PersistentData:GetNumber("myFile", "myFloat", 3.14)
   ///   \endcode
-  float GetNumber(const char *category, const char *field, float default);
+  number GetNumber(string category, string field, number default);
   
   /// \brief Gets the current value of the specified persistent data field, or default if it can't be found
   /// \param category the persistent data category containing this field ('default' if unspecified)
@@ -88,7 +120,7 @@ public:
   ///   \code
   ///     local myFlag = PersistentData:GetBoolean("myFile", "myFlag", true)
   ///   \endcode
-  bool GetBoolean(const char *category, const char *field, bool default);
+  boolean GetBoolean(string category, string field, boolean default);
 
   /// \brief Tests if a specified persistent data field exists
   /// \param category the persistent data category containing this field ('default' if unspecified)
@@ -100,7 +132,7 @@ public:
   ///       ...
   ///     end
   ///   \endcode
-  bool Exists(const char* category, const char* field);
+  boolean Exists(string category, string field);
 
   /// \brief Returns the type of the entry
   /// \param category the persistent data category containing this field ('default' if unspecified)
@@ -114,7 +146,7 @@ public:
   ///       ...
   ///     end
   ///   \endcode
-  const char* GetType(const char* category, const char* field);
+  string GetType(string category, string field);
 
   /// @}
   /// @name Saving/Loading
@@ -123,22 +155,24 @@ public:
   /// \brief save the data in the specified category out to disk as \<output dir\>/Data/\<category\>.data
   /// \param category the category to save ('default' if unspecified)
   /// \return whether the operation succeeded
-  bool Save(const char* category);
+  boolean Save(string category);
   
   /// \brief load the data in the specified category from disk into persistent data
   /// \param category the category to load ('default' if unspecified)
   /// \return whether the operation succeeded
-  bool Load(const char* category); 
+  boolean Load(string category); 
   
   /// \brief save the data from all categories out to disk as \<output dir\>/Data/\<category\>.data files
   /// \return whether the operation succeeded
-  bool SaveAll();
+  boolean SaveAll();
 
   /// @}
 };
 
+#endif
+
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

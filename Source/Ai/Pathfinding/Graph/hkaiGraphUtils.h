@@ -16,7 +16,7 @@ class hkaiDirectedGraphInstance;
 class hkaiStreamingCollection;
 
 /// Utilities for manipulating hkaiDirectedGraphExplicitCost
-class hkaiGraphUtils 
+class HK_EXPORT_AI hkaiGraphUtils 
 {
 public:
 	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE, hkaiGraphUtils);
@@ -38,7 +38,7 @@ public:
 
 		// Remove nodes with no edges. If otherGraphs is specified, the hkaiStreamingSets will be updated
 	static hkResult HK_CALL removeEmptyNodes( hkaiDirectedGraphExplicitCost& graph, hkArray<hkaiDirectedGraphExplicitCost*>* otherGraphs = HK_NULL);
-	static hkResult HK_CALL removeNodes( hkaiDirectedGraphExplicitCost& graph, hkArray<int>::Temp& nodesToRemove, bool invalidateOppEdges=true, hkArray<hkaiDirectedGraphExplicitCost*>* otherGraphs = HK_NULL);
+	static hkResult HK_CALL removeNodes( hkaiDirectedGraphExplicitCost& graph, hkArray<int>::Temp& nodesToRemove, bool invalidateOppEdges=true, hkArray<hkaiDirectedGraphExplicitCost*>* otherGraphs = HK_NULL, hkArray<int>::Temp* remapOut = HK_NULL);
 
 	static void HK_CALL createEdgeToNodeMap(const hkaiDirectedGraphExplicitCost* graph, hkArray<int>& nodeIndices);
 	static void HK_CALL createEdgeToNodeMap(const hkaiDirectedGraphInstance* graph, hkArray<int>& nodeIndices);
@@ -58,7 +58,7 @@ public:
 #endif // HKAI_GRAPH_UTILS_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

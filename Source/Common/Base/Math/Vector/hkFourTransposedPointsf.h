@@ -14,7 +14,7 @@
 class hkcdVertex;
 
 	/// Represents 4 3D vertices bundled together. The vertices are transposed, i.e. (xxxx, yyyy, zzzz)
-class hkFourTransposedPointsf
+class HK_EXPORT_COMMON hkFourTransposedPointsf
 {
 	public:
 
@@ -184,7 +184,7 @@ class hkFourTransposedPointsf
 
 			/// The output array must have space for a multiple of 4 vertices = (numVertices|3) & ~3.
 		#	if defined(HK_REAL_IS_FLOAT)
-		static void getOriginalVertices( const hkFourTransposedPointsf* verts4in, int numVertices, hkcdVertex* verticesOut );
+		static void HK_CALL getOriginalVertices( const hkFourTransposedPointsf* verts4in, int numVertices, hkcdVertex* verticesOut );
 		#endif
 
 			/// Permutes the original vectors, NOT their components!
@@ -205,7 +205,7 @@ class hkFourTransposedPointsf
 #endif	//	HK_MATH_FOUR_TRANSPOSED_VECTORSf_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

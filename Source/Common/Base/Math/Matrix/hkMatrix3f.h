@@ -31,7 +31,7 @@ namespace hkCompileError
 ///
 /// i.e., contiguous memory locations are (x00, x10, x20, pad), (x01, x11,...)
 /// where x10 means row 1, column 0 for example.
-class hkMatrix3f
+class HK_EXPORT_COMMON hkMatrix3f
 {
 	public:
 
@@ -110,6 +110,9 @@ class hkMatrix3f
 			/// Sets the current matrix to be the inverse of the given matrix. Matrix src is assumed to be symmetric non-singular. If the matrix
 			/// is singular (up to machine precision), the inverse will be set to zero.
 		HK_FORCE_INLINE void setInverseSymmetric(const hkMatrix3f& src);
+
+			/// Set the inverse if possible, else produces a zero matrix
+		void setInverse( const hkMatrix3f& src );
 
 			/// Solves the linear system: (this) * v = b, for v. The matrix is assumed non-singular and symmetric
 		HK_FORCE_INLINE void solveSymmetric(hkVector4fParameter b, hkVector4f& v);
@@ -238,14 +241,14 @@ class hkMatrix3f
 extern "C"
 {
 	// implementation of _setMul as out of line function with C-binding
-	void hkMatrix3f_setMulMat3Mat3( hkMatrix3f* thisMatrix, const hkMatrix3f& aTb, const hkMatrix3f& bTc );
-	void hkMatrix3f_invertSymmetric( hkMatrix3f& thisMatrix );
+	void HK_EXPORT_COMMON hkMatrix3f_setMulMat3Mat3( hkMatrix3f* thisMatrix, const hkMatrix3f& aTb, const hkMatrix3f& bTc );
+	void HK_EXPORT_COMMON hkMatrix3f_invertSymmetric( hkMatrix3f& thisMatrix );
 }
 
 #endif //HK_MATH_MATRIX3f_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

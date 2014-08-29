@@ -22,7 +22,7 @@
 #include <Vision/Runtime/Engine/Renderer/Material/VisApiSurface.hpp>
 #include <Vision/Runtime/Engine/Mesh/VisApiDynamicMesh.hpp>
 
-// Flags for entity settings 
+//Flags for entity settings 
 #define VISENTFLAG_UPDATE_ON_ANIM         V_BIT(0)
 #define VISENTFLAG_LOD_COMPONENT_ATTACHED V_BIT(1)
 
@@ -106,14 +106,6 @@ public:
   /// 
   /// \sa VisBaseEntity_cl::Free
   VISION_APIFUNC void Remove();
-
-  /// \brief
-  ///   DEPRECATED - use DisposeObject instead
-  /// 
-  HKV_DEPRECATED_2012_1 inline void Free()
-  {
-    DisposeObject();
-  }
 
   /// \brief
   ///   Overridden VisTypedEngineObject_cl function to remove this instance from the scene. Just
@@ -320,7 +312,7 @@ public:
   {
     SetObjectKey(key);
   }
-
+  
   ///
   /// @}
   ///
@@ -358,9 +350,9 @@ public:
   /// 
   /// \example
   ///   \code
-  ///     pEnt->SetMesh( "scientist.model" );
+  ///   pEnt->SetMesh( "scientist.model" );
   ///   \endcode
-  VISION_APIFUNC virtual BOOL SetMesh(const char *szMeshFile);
+  VISION_APIFUNC virtual BOOL SetMesh( const char *szMeshFile);
 
   /// \brief
   ///   Set the mesh for this entity (by pointer)
@@ -871,7 +863,7 @@ public:
   /// \sa VisBaseEntity_cl::SetCustomTraceBBox
   /// \sa VisBaseEntity_cl::SetTraceAccuracy
   VISION_APIFUNC VisTraceAccuracy_e GetTraceAccuracy() const;
-  
+
   /// \brief
   ///   Sets the custom trace bounding box of the entity.
   /// 
@@ -1031,7 +1023,7 @@ public:
   /// 
   /// \sa VisBaseEntity_cl::SetScaling
   VISION_APIFUNC const hkvVec3& GetScaling() const;
-  
+
   /// \brief
   ///   Computes and returns the matrix transforming this entity to world space.
   /// 
@@ -1054,7 +1046,7 @@ public:
   /// @name Flag-related Functions
   /// @{
   ///
-
+ 
   /// \brief
   ///   Sets the custom flags of the entity
   /// 
@@ -1064,7 +1056,7 @@ public:
   /// \param flags
   ///   new custom flags
   VISION_APIFUNC void SetCustomFlags(int flags);
-
+  
   /// \brief
   ///   Gets the custom flags of the entity
   /// 
@@ -1073,7 +1065,7 @@ public:
   /// \return
   ///   int flags: current custom flags
   VISION_APIFUNC int GetCustomFlags() const;
-
+  
   /// \brief
   ///   Gets the status flags of the entity
   /// 
@@ -1143,6 +1135,12 @@ public:
   ///   pEntity->SetVariablesByString("Radius=\"20.000\", Height=\"160.0000\" ");
   ///   \endcode
   VISION_APIFUNC BOOL SetVariablesByString(const char *szVarString, BOOL bUpdateEngine = TRUE);
+
+
+  /// \brief
+  ///   Special treatment for repositioning
+  VISION_APIFUNC VOVERRIDE void OnReposition(const VisZoneRepositionInfo_t &info, const hkvVec3 &vLocalPos);
+
 
   ///
   /// @}
@@ -1217,7 +1215,7 @@ public:
   /// \sa IVisPhysicsObject_cl
   /// \sa IVisPhysicsModule_cl
   VISION_APIFUNC void SetPhysicsObject(IVisPhysicsObject_cl *pPhysObj);
-  
+
   ///
   /// @}
   ///
@@ -1358,7 +1356,7 @@ public:
   }
 
   /// \brief
-  ///   Returns the current collision bounding box of this entity in world space.
+  ///   Returns the current collision bounding box of this entity in world space. If bTranslated is true, the box will be moved to the world space position of the entity, otherwise it is centered around the origin.
   VISION_APIFUNC bool GetCollisionBoundingBox(hkvAlignedBBox &bBox, bool bTranslated=true);
   
   /// \brief
@@ -1552,7 +1550,7 @@ public:
   inline void SetFarClipDistance(float fClipDistance)
   {
     VVisibilityData::SetFarClipDistance(fClipDistance);
-    SetClipMode((m_fNearClipDistance > 0.f || m_fFarClipDistance > 0.f) ? VIS_LOD_TEST_BOUNDINGBOX : VIS_LOD_TEST_NONE);
+    SetClipMode((m_fNearClipDistance>0.f || m_fFarClipDistance>0.f) ? VIS_LOD_TEST_BOUNDINGBOX : VIS_LOD_TEST_NONE);
   }
 
   /// \brief
@@ -1578,7 +1576,7 @@ public:
   ///   BOOL: If TRUE, the entity is excluded from the visibility test.
   inline BOOL GetExcludeFromVisTest() const
   {
-    return (m_iPerformTestFlags & VIS_EXCLUDED_FROM_VISTEST) != 0 ? TRUE : FALSE;
+    return (m_iPerformTestFlags&VIS_EXCLUDED_FROM_VISTEST)!=0 ? TRUE : FALSE;
   }
 
   /// \brief
@@ -1639,7 +1637,7 @@ public:
   ///   bool: true if there are shaders with the given pass type, false otherwise
   VISION_APIFUNC bool HasShadersForPass(VPassType_e ePassType) const;
 
-  IMPLEMENT_OBJ_CLASS(VisBaseEntity_cl);
+  IMPLEMENT_OBJ_CLASS_IMPEXP(VISION_APIDATA, VisBaseEntity_cl);
 
   ///
   /// @}
@@ -1654,6 +1652,19 @@ public:
   ///   Processes the VisObject3D_cl state flags and calls the ModSysNotifyFunctionHandle functions
   ///   on the children.
   inline void Handle();
+
+  /// \brief
+  ///   This notify function will be called by the parent to send a command to the child.
+  /// 
+  /// \param command
+  ///   Available flags are:
+  ///   \li VIS_MODSYSCMD_RECOMPUTEVISIBILITY: Child has to recompute the visibility
+  ///     (ReComputeVisibility function)
+  ///   \li VIS_MODSYSCMD_FINISHPLAYBACKONDISPOSE: Child sets its VObjectFlag_FinishPlaybackOnDispose flag
+  ///     to true or false depending on the value stored in param. Each class has to handle it in its own
+  ///     implementation of ModSysNotifyFunctionCommand if it is relevant for the (ie. VisParticleEffect_cl).
+  /// \param param Any parameter or parameters used by the specific command. NULL by default. 
+  VISION_APIFUNC virtual void ModSysNotifyFunctionCommand(int command, void *param=NULL);
 
   /// \brief
   ///   Resets the status flags
@@ -1694,7 +1705,7 @@ public:
   ///   m_wpRef->SetVisibleBitmask(0);
   ///   \endcode
   VISION_APIFUNC VWeakRefTarget<VisBaseEntity_cl>* GetWeakReference();
-
+ 
   ///
   /// @}
   ///
@@ -1717,7 +1728,7 @@ public:
   /// \param iO3DFlags
   ///   VisObject3D_cl::VISOBJECT3D_FLAGS flags indicating the modified components
   VISION_APIFUNC virtual void OnObject3DChanged(int iO3DFlags) HKV_OVERRIDE;
-
+  
   ///
   /// @}
   ///
@@ -2246,7 +2257,7 @@ protected:
   /// @name Entity Init / Deinit Functions
   /// @{
   ///
-  
+
   /// \brief
   ///   Initialises the entity variables
   void InitVars(const hkvVec3& origin, const hkvVec3& orientation);
@@ -2258,7 +2269,7 @@ protected:
   /// \brief
   ///   Returns a new and free internal entity number
   int GetNewNumber();
-
+  
   /// \brief
   ///   Update attached children and the entity core status
   void UpdateDependencies();
@@ -2314,7 +2325,7 @@ protected:
   /// @name Currently Disabled Enitity Functions
   /// @{
   ///
-
+  
   /// \brief
   /// 
   /// \return
@@ -2330,7 +2341,7 @@ protected:
   /// 
   /// \sa SetPreThinkFunctionStatus
   BOOL IsPreThinkFunctionEnabled();
- 
+
   /// \brief
   ///   Draw the specified bone bounding boxes
   BOOL RenderCoreBoneBoundingBox(const char *boneName, VColorRef iColor, float lineWidth = 1.0f);
@@ -2430,7 +2441,7 @@ protected:
 VISION_ELEMENTMANAGER_TEMPLATE_DECL(VisBaseEntity_cl)
 
 #include <Vision/Runtime/Engine/SceneElements/VisApiBaseEntity.inl>
-  
+
 /// \brief
 ///   Class containing data used as a template when constructing a new entity instance
 class VisEntityTemplate_cl : public VisObject3DTemplate_cl
@@ -2487,7 +2498,7 @@ typedef VNameValueListParser<',', '=', 1024> VVariableStringParser;
 #endif // VISAPIBASEENTITY_HPP_INCLUDED
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

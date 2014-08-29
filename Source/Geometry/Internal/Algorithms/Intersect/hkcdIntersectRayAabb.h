@@ -12,7 +12,10 @@
 
 #include <Geometry/Internal/Types/hkcdRay.h>
 #include <Common/Base/Types/Geometry/Aabb/hkAabb.h>
+#include <Common/Base/Math/Vector/hkFourTransposedPoints.h>
 
+// Uncomment the next line to enable Ray-AABB false negatives detection. Warning: This is VERY slow.
+//#define HKCD_DETECT_RAY_AABB_FALSE_NEGATIVES
 
 	/// Returns true if the ray intersects the AABB.
 HK_FORCE_INLINE	hkBool32	hkcdIntersectRayAabb(const struct hkcdRay& ray, const hkAabb& aabb, hkSimdReal* HK_RESTRICT fractionInOut);
@@ -41,7 +44,7 @@ HK_FORCE_INLINE int			hkcdIntersectRayBundleAabb(	const hkcdRay& ray,
 #endif // HKCD_INTERSECTIONS_RAY_AABB
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

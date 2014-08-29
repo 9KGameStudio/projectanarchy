@@ -26,11 +26,18 @@ namespace hkCompileError
 
 	template <bool b> struct HK_VECTOR4d_UNSUPPORTED_VECTOR_LENGTH;
 	template <> struct HK_VECTOR4d_UNSUPPORTED_VECTOR_LENGTH<true>{ };
+
+	template <bool b> struct HK_VECTOR4d_UNKNOWN_CONSTANT;
+	template <> struct HK_VECTOR4d_UNKNOWN_CONSTANT<true>{ };
 }
 #define HK_VECTOR4d_SUBINDEX_CHECK           HK_COMPILE_TIME_ASSERT2((I>=0)&&(I<4), HK_VECTOR4d_SUBVECTOR_INDEX_OUT_OF_RANGE)
 #define HK_VECTOR4d_NOT_IMPLEMENTED          HK_COMPILE_TIME_ASSERT2(N==0, HK_VECTOR4d_NOT_IMPLEMENTED_FOR_THIS_VECTOR_LENGTH)
 #define HK_VECTOR4d_UNSUPPORTED_LENGTH_CHECK HK_COMPILE_TIME_ASSERT2((N>0)&&(N<=4), HK_VECTOR4d_UNSUPPORTED_VECTOR_LENGTH)
 #define HK_VECTOR4d_TEMPLATE_CONFIG_NOT_IMPLEMENTED HK_COMPILE_TIME_ASSERT2(A<0, HK_VECTOR4d_TEMPLATE_CONFIGURATION_NOT_IMPLEMENTED)
+#define HK_VECTOR4d_CONSTANT_CHECK           HK_COMPILE_TIME_ASSERT2(((vectorConstant>HK_QUADREAL_BEGIN)&&(vectorConstant<HK_QUADREAL_END)),HK_VECTOR4d_UNKNOWN_CONSTANT)
+
+// Components that aren't loaded during hkVector4d::load() are initialized to this in Debug and Dev configurations.
+#define HK_VECTOR4d_DEBUG_FILL_VALUE (g_vectordConstants[HK_QUADREAL_BEGIN])
 
 /// \class hkVector4d
 ///
@@ -88,7 +95,6 @@ namespace hkCompileError
 /// to a lower precision floating point format.
 ///
 /// \sa hkSimdDouble64 hkVector4dComparison hkHalf hkFloat16 hkMathAccuracyMode hkMathDivByZeroMode hkMathNegSqrtMode hkMathIoMode hkMathRoundingMode
-HK_PASS_IN_REG
 class hkVector4d
 {
 	public:
@@ -306,11 +312,11 @@ class hkVector4d
 		/// Compares the first N components of self to zero and returns true if all the components are zero. ( self == 0 )
 		template <int N> HK_FORCE_INLINE hkBool32 allExactlyEqualZero() const;
 
-		/// Compares the first N components of self to \a v and returns true if all the differences of all components are within \a epsilon range (exclusive). ( self > v-epsilon && self < v+epsilon ).
+		/// Compares the first N components of self to \a v and returns true if all the differences of all components are within \a epsilon range (inclusive). ( self >= v-epsilon && self <= v+epsilon ).
 		/// \remark This is not the Euclidean epsilon distance.
 		template <int N> HK_FORCE_INLINE hkBool32 allEqual(hkVector4dParameter v, hkSimdDouble64Parameter epsilon) const;
 
-		/// Compares the first N components of self to zero and returns true if all the differences of all components are within \a epsilon range (exclusive). ( self > -epsilon && self < +epsilon ).
+		/// Compares the first N components of self to zero and returns true if all the differences of all components are within \a epsilon range (inclusive). ( self >= -epsilon && self <= +epsilon ).
 		/// \remark This is not the Euclidean epsilon distance.
 		template <int N> HK_FORCE_INLINE hkBool32 allEqualZero(hkSimdDouble64Parameter epsilon) const;
 
@@ -363,6 +369,10 @@ class hkVector4d
 		/// Component-wise clamp \a a between \a minVal and \a maxVal and store to self. ( self = min( maxVal, max(a, minVal) ) ).
 		/// Note that if \a a is NaN, the result will be \a maxVal.
 		HK_FORCE_INLINE void setClamped( hkVector4dParameter a, hkVector4dParameter minVal, hkVector4dParameter maxVal );
+
+		/// Component-wise clamp \a a between zero and one and store to self. ( self = min( 1, max(a, 0) ) ).
+		/// Note that if \a a is NAN, the result will be one.
+		HK_FORCE_INLINE void setClampedZeroOne( hkVector4dParameter a );
 
 		/// Sets self to a copy of \a vSrc that is rescaled to have a maximum length of \a maxLen.
 		/// If \a vSrc is shorter than \a maxLen, no rescaling is performed.
@@ -840,6 +850,11 @@ class hkVector4d
 		/// See the documentation at the template values for the requested behavior.
 		template <int N, hkMathAccuracyMode A> HK_FORCE_INLINE const hkSimdDouble64 setNormalizedEnsureUnitLength(hkVector4dParameter v);
 
+		/// Sets self to a copy of \a vSrc that is rescaled to have a maximum length of \a maxLen.
+		/// If \a vSrc is shorter than \a maxLen, no rescaling is performed.
+		template <int N, hkMathAccuracyMode A>
+		HK_FORCE_INLINE void setClampedToMaxLength(hkVector4dParameter vSrc, hkSimdDouble64Parameter maxLen);
+
 		///@}
 
 
@@ -979,7 +994,7 @@ class hkVector4d
 #endif //HK_MATH_VECTOR4d_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

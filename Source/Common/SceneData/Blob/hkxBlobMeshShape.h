@@ -9,13 +9,13 @@
 #ifndef HKSCENEDATA_BLOB_MESH_SHAPE_H
 #define HKSCENEDATA_BLOB_MESH_SHAPE_H
 
-extern const hkClass hkxBlobMeshShapeClass;
+extern HK_EXPORT_COMMON const hkClass hkxBlobMeshShapeClass;
 
 #include <Common/SceneData/Blob/hkxBlob.h>
 #include <Common/GeometryUtilities/Mesh/hkMeshShape.h>
 
 	/// A storage only mesh shape implementation. The stored data is a blob.
-class hkxBlobMeshShape : public hkMeshShape
+class HK_EXPORT_COMMON hkxBlobMeshShape : public hkMeshShape
 {
 	public:
 
@@ -69,7 +69,7 @@ class hkxBlobMeshShape : public hkMeshShape
 #endif	// HKSCENEDATA_BLOB_MESH_SHAPE_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

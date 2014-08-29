@@ -12,7 +12,7 @@
 #include <Common/GeometryUtilities/Mesh/hkMeshShape.h>
 
 	/// Small helper utility to work on triangle indices
-class hkMeshPrimitiveUtil
+class HK_EXPORT_COMMON hkMeshPrimitiveUtil
 {
 	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_SCENE_DATA, hkMeshPrimitiveUtil);
 
@@ -104,7 +104,7 @@ class hkMeshPrimitiveUtil
 };
 
 	/// Utility class to determine the common (most general) mesh primitive type
-class hkMergeMeshPrimitvesCalculator
+class HK_EXPORT_COMMON hkMergeMeshPrimitvesCalculator
 {
 	public:
 
@@ -147,7 +147,7 @@ class hkMergeMeshPrimitvesCalculator
 #endif // HK_MESH_PRIMITIVE_UTIL_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

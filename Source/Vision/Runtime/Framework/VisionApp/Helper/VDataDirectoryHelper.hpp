@@ -10,6 +10,7 @@
 #define __DATA_DIRECTORY_HELPER_HPP
 
 #include <Vision/Runtime/Engine/System/Vision.hpp>
+#include <Vision/Runtime/Framework/VisionApp/VAppImportExport.hpp>
 
 /// \brief
 ///   Data directory helpers used by the VAppImpl.
@@ -17,15 +18,15 @@
 /// \ingroup VisionAppFramework
 class VDataDirectoryHelper
 {
-  public:
-    static void SelectAssetProfile(const char* szScene, bool bAllowFallbackProfile);
-    static void ProcessManifestFile(bool bAddDataDirs, bool bLoadEnginePlugins);
+public:
+  VAPP_IMPEXP static void SelectAssetProfile(const char* szScene, bool bAllowFallbackProfile);
+  VAPP_IMPEXP static void ProcessManifestFile(bool bAddDataDirs, bool bLoadEnginePlugins);
 };
 
 #endif //__DATA_DIRECTORY_HELPER_HPP
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

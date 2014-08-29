@@ -10,7 +10,7 @@
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/ShadowMapping/VMobileShadowMapComponentSpotDirectional.hpp>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/ShadowMapping/VShadowMapGenSpotDir.hpp>
 #include <Vision/Runtime/Engine/Renderer/Shader/VisionMobileShaderProvider.hpp>
-#include <Vision/Runtime/Base/System/Memory/VMemDbg.hpp>
+
 
 V_IMPLEMENT_SERIAL(VMobileShadowMapComponentSpotDirectional, VBaseShadowMapComponentSpotDirectional, 0, &g_VisionEngineModule);
 
@@ -52,12 +52,28 @@ bool VMobileShadowMapComponentSpotDirectional::InitializeRenderer()
     m_spShadowMapGenerator = NULL;
     return false;
   }
-  m_spShadowMapGenerator->SetUpdateEnabled(true);
 
   if (m_pLightSource->GetType() == VIS_LIGHT_DIRECTED)
     m_pLightVolumeMeshBuffer = m_pRendererNode->GetRendererNodeHelper()->GetFrustumMeshBuffer();
   else if (m_pLightSource->GetType() == VIS_LIGHT_SPOTLIGHT)
     m_pLightVolumeMeshBuffer = m_pRendererNode->GetRendererNodeHelper()->GetConeMeshBuffer();
+
+  // Create sampler for shadow texture
+  bool bNeedsComparison = false;
+#if defined(_VR_GLES2)
+  bNeedsComparison = Vision::Video.AreShadowSamplersSupported();
+#endif 
+  unsigned int samplerState = VIS_SAMPLER_CLAMP;
+  samplerState |= bNeedsComparison ? VIS_SAMPLER_FILTERING : VIS_SAMPLER_NEAREST;
+  m_shadowTexSampler = *VisRenderStates_cl::GetSamplerStateGroup((VisSamplerState_e)samplerState);
+  if (bNeedsComparison)
+  {
+    m_shadowTexSampler.m_cFilterMode = FILTER_COMPARISON_MIN_MAG_LINEAR_MIP_POINT;
+    m_shadowTexSampler.m_cComparisonFunc = COMPARISON_LESS;
+  }
+  m_shadowTexSampler.ComputeHash();
+
+  m_spShadowMapGenerator->Update(true);
 
   m_bIsInitialized = true;
   return true;
@@ -70,7 +86,7 @@ void VMobileShadowMapComponentSpotDirectional::Render(bool bUseLightClippingVolu
   ((VShadowMapGenSpotDir*)m_spShadowMapGenerator.GetPtr())->ComputeFadeOutParams(m_fFadeOutStart, m_fFadeOutEnd);
 }
 
-#if defined(WIN32) || defined(_VISION_DOC)
+#if defined(_VISION_WIN32) || defined(_VISION_DOC)
 
 void VMobileShadowMapComponentSpotDirectional::GetVariableAttributes(VisVariable_cl* pVariable, VVariableAttributeInfo& destInfo)
 {
@@ -144,10 +160,6 @@ void VMobileShadowMapComponentSpotDirectional::SetCascadeRange(int iCascade, flo
   CascadeRange[iCascade] = fRange;
   if (m_bIsInitialized)
   {
-    float fNear, fFar;
-    m_pRendererNode->GetViewProperties()->getClipPlanes(fNear, fFar);
-    float fStart = (iCascade == 0) ? fNear : CascadeRange[iCascade - 1] + fNear;
-    m_spShadowMapGenerator->GetCascadeInfo(iCascade).ComputeOffset(fStart, fRange + fNear);
     m_spShadowMapGenerator->Update(true);
   }
 }
@@ -168,14 +180,6 @@ void VMobileShadowMapComponentSpotDirectional::SetCascadeRangePtr(float* range, 
   memcpy(CascadeRange, range, sizeof(float) * size);
   if (m_bIsInitialized)
   {
-    float fNear, fFar;
-    m_pRendererNode->GetViewProperties()->getClipPlanes(fNear, fFar);
-    float start = fNear;
-    for (int i = 0; i < (int)CascadeCount; i++)
-    {
-      m_spShadowMapGenerator->GetCascadeInfo(i).ComputeOffset(start, CascadeRange[i] + fNear);
-      start = CascadeRange[i] + fNear;
-    }
     m_spShadowMapGenerator->Update(true);
   }
 }
@@ -211,7 +215,11 @@ void VMobileShadowMapComponentSpotDirectional::UpdateLightShader(VMobileDynamicL
 
   pPass->SetLightProjection(CascadeCount, m_LightProjection);
   pPass->SetShadowParameters(m_fFadeOutStart, m_fFadeOutEnd);
+  int iWidth, iHeight;
+  GetShadowMapGenerator()->GetTextureSize(iWidth, iHeight);
+  pPass->SetShadowMapSize(iWidth, iHeight);
   pPass->SetShadowTexture(GetShadowTexture());
+  pPass->SetShadowSampler(&m_shadowTexSampler);
   pPass->SetShadowColor(AmbientColor);
   
   int iLightMaskSampler = pPass->GetSamplerIndexByName(VSS_PixelShader, "LightMask");
@@ -231,7 +239,7 @@ START_VAR_TABLE(VMobileShadowMapComponentSpotDirectional, VBaseShadowMapComponen
 END_VAR_TABLE
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

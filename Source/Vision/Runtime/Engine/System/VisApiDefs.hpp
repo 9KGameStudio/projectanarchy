@@ -11,18 +11,13 @@
 #ifndef DEFINE_VISAPIDEFS
 #define DEFINE_VISAPIDEFS
 
-#ifdef _CRTDBG_MAP_ALLOC
-#include <crtdbg.h>
-#endif
-
-#include <Vision/Runtime/Base/Math/BoundingVolume/hkvBoundingSphere.h>
-
 // CLASS AND STRUCTURE DECLARATIONS
 class VisSurface_cl;
 class VisBaseEntity_cl;
 class EntityData_cl;
 class VisLightSource_cl;
 class VisConvexVolume_cl;
+class VLogicGraphNode; // implemented in Simulation plugin, but needed as a pointer in VActivationMessageContext_t
 struct VisParticleCustomData_t;
 struct VisParticleCustomInfo_t;
 struct VisPrimitiveProperty_t;
@@ -49,7 +44,7 @@ typedef unsigned char         UBYTE;  ///< 8 bit unsigned.
   #define IMMEDIATE_CONTEXT_SWITCH
 #endif
 
-#if defined(_VR_DX9) && defined(WIN32)
+#if defined(_VR_DX9) && defined(_VISION_WIN32)
   #define IMMEDIATE_CONTEXT_SWITCH
 #endif
 
@@ -81,7 +76,7 @@ typedef unsigned char         UBYTE;  ///< 8 bit unsigned.
 #define MIN_HWOCCTEST_OBJECT_POLYCOUNT         50
 #define HWOCCTEST_INVALID_INDEX             65535
 
-#if defined(_VR_DX9) && defined(WIN32)
+#if defined(_VR_DX9) && defined(_VISION_WIN32)
   #define HWOCCTEST_NUM_QUERY_QUEUES 1
   #define MAX_HWOCCTEST_OCCLUSIONQUERYHANDLES 16384
 #elif defined(_VR_DX11)
@@ -110,12 +105,12 @@ typedef unsigned char         UBYTE;  ///< 8 bit unsigned.
 #define VIS_MAX_IM_INDEXES 8192
 
 // Render Context Priority Default Values
-#define VIS_RENDERCONTEXTPRIORITY_DISPLAY                     100000000.0f
-#define VIS_RENDERCONTEXTPRIORITY_POSTPROCESSOR_RESOLVED      20000000.0f
-#define VIS_RENDERCONTEXTPRIORITY_POSTPROCESSOR               10000000.0f
-#define VIS_RENDERCONTEXTPRIORITY_SCENE                       1000000.0f
-#define VIS_RENDERCONTEXTPRIORITY_MIRROR                      100000.0f
-#define VIS_RENDERCONTEXTPRIORITY_SHADOWS                     10000.0f
+#define VIS_RENDERCONTEXTPRIORITY_DISPLAY           100000000.0f
+#define VIS_RENDERCONTEXTPRIORITY_POSTPROCESSOR_RESOLVED     20000000.0f
+#define VIS_RENDERCONTEXTPRIORITY_POSTPROCESSOR     10000000.0f
+#define VIS_RENDERCONTEXTPRIORITY_SCENE             1000000.0f
+#define VIS_RENDERCONTEXTPRIORITY_MIRROR            100000.0f
+#define VIS_RENDERCONTEXTPRIORITY_SHADOWS           10000.0f
 
 
 /// \brief Render Context Flags
@@ -261,6 +256,7 @@ enum VRenderHookPriority_e {
 #define VIS_PERFORM_LODTEST_DEPRECATED    8
 #define VIS_PERFORM_LODTEST               (VIS_LOD_TEST_CLIPPOSITION|VIS_LOD_TEST_BOUNDINGBOX)
 #define VIS_EXCLUDED_FROM_OCCLUSIONQUERY  16
+#define VIS_NO_VISZONE_ASSIGNMENT         256
 
 // in debug mode, activate profiling
 #ifdef HK_DEBUG_SLOW
@@ -304,7 +300,7 @@ enum VRenderHookPriority_e {
 
 #endif
 
-#ifdef WIN32
+#ifdef _VISION_WIN32
 
   #if defined(VISIONDLL_LIB) || defined(_VISION_WINRT)
     #define VISION_APIFUNC __declspec()
@@ -317,7 +313,7 @@ enum VRenderHookPriority_e {
   #endif
 
   #ifndef VISION_APIFUNC
-    #define VISION_APIFUNC
+    #define VISION_APIFUNC __declspec(dllimport)
     #define VISION_APIDATA __declspec(dllimport)
   #endif
 
@@ -325,7 +321,7 @@ enum VRenderHookPriority_e {
   #define VISION_APIFUNC __declspec()
   #define VISION_APIDATA __declspec()
 
-#elif defined(_VISION_PS3) || defined(_VISION_IOS) || defined(_VISION_ANDROID) ||  defined(_VISION_PSP2) || defined(_VISION_WIIU) || defined(_VISION_WINRT) || defined(_VISION_TIZEN)
+#elif defined(_VISION_PS3) || defined(_VISION_IOS) || defined(_VISION_ANDROID) ||  defined(_VISION_PSP2) || defined(_VISION_WIIU) || defined(_VISION_WINRT) || defined(_VISION_TIZEN) || defined(_VISION_NACL)
   #define VISION_APIFUNC
   #define VISION_APIDATA
 
@@ -338,8 +334,9 @@ const unsigned int VIS_MSG_INTERNAL = 0xFFFF,                             ///< i
                    VIS_MSG_EVENT    = VIS_MSG_INTERNAL + 1,               ///< event caused by animation system : iParamA contains the event id iParamB the VisAnimControl_cl
                    VIS_MSG_TRIGGER  = VIS_MSG_INTERNAL + 2,               ///< Called by trigger components, see VisTriggerTargetComponent_cl
                    VIS_MSG_DATABLOCK = VIS_MSG_INTERNAL + 3,              ///< Network message that can be used to send data blocks. iParamA is a pointer to a VDataBlockMessageInfo struct and iParamB is not used.
-                   VIS_MSG_ACTIVATE = VIS_MSG_INTERNAL + 4,               ///< Reserved for activation messages. iParamA is a (0/1) flag that defines the activation status and iParamB can be casted to a string that defines the name of the activator
+                   VIS_MSG_ACTIVATE = VIS_MSG_INTERNAL + 4,               ///< Reserved for activation messages. iParamA is a (0/1) flag that defines the activation status and iParamB can be casted to VActivationMessageContext_t which holds additional information about the sender
                    VIS_MSG_VISIBILITY = VIS_MSG_INTERNAL + 5,             ///< Sent to components when the owner object changed its visibility through SetVisibleBitmask. iParamA is the new 32bit value as retrieved via GetVisibleBitmask. 
+                   VIS_MSG_SWITCH = VIS_MSG_INTERNAL + 6,                 ///< Analogue to VIS_MSG_ACTIVATE, but specifically for changing the switch state, e.g. of a logic graph node
                    VIS_MSG_RESOURCE_BEFORE_FILEMODIFIED = VIS_MSG_INTERNAL + 10,  ///< Sent before a resource has been reloaded because its file time stamp has been modified. The resource pointer is passed as iParamA and the manager passed as iParamB. Called by VisResourceSystem_cl::ReloadModifiedResourceFiles
                    VIS_MSG_RESOURCE_AFTER_FILEMODIFIED = VIS_MSG_INTERNAL + 11,   ///< Sent after a resource has been reloaded because its file time stamp has been modified. The resource pointer is passed as iParamA and the manager passed as iParamB. Called by VisResourceSystem_cl::ReloadModifiedResourceFiles
                    VIS_MSG_REQUEST_IR_PARAMS = VIS_MSG_INTERNAL + 12,     ///< Used by external renderers to retrieve material params from IR renderer (internal use)
@@ -838,9 +835,9 @@ enum VisClippingResult_e
 ///   Structure which contains the data for one single particle
 struct Particle_t
 {
-  float      pos[3];                ///< x,y,z position of the particle in world space
-  float      size;                  ///< size of the particle
-  float      normal[3];             ///< normal vector of particle
+  hkvVec3 m_vPosition;                ///< x,y,z position of the particle in world space
+  float   size;                  ///< size of the particle
+  hkvVec3 m_vNormal;             ///< normal vector of particle
   VColorRef  color;                 ///< RGBA color value of the particle (0-255, red, green, blue, alpha)      
   union
   {
@@ -866,7 +863,7 @@ struct Particle_t
   char       valid;                 ///< if TRUE then this particle will be drawn
 #endif
 
-  float      velocity[3];           ///< custom variable for the programmer
+  hkvVec3    m_vVelocity;           ///< custom variable for the programmer
 };
 
 
@@ -1081,6 +1078,22 @@ struct GlobalWorldArrayDimensions_t {
 
 #endif
 
+class VLogicGraphNode;
+class VisTypedEngineObject_cl;
+
+/// \brief
+///   This structure is passed as iParamB to the MessageFunction for the VIS_MSG_ACTIVATE message. It holds information about the sender of the activation trigger
+struct VActivationMessageContext_t
+{
+  VActivationMessageContext_t(VisTypedEngineObject_cl *pSender, VLogicGraphNode *pNode, const char *szName) :
+    m_pSender(pSender), m_pSenderNode(pNode), m_szSenderName(szName)
+  {
+  }
+  VisTypedEngineObject_cl *m_pSender;   ///< The sender object. For instance can be casted to VLogicGraph
+  VLogicGraphNode *m_pSenderNode;       ///< In case the sender is of type logic graph, this points to the node that is the actual sender
+  const char *m_szSenderName;           ///< Name of the sender. In case of logic graph it is the name of the node.
+};
+
 
 
 /// \brief
@@ -1224,7 +1237,7 @@ bool CheckVersion(const char *pszDescr, int iVersion, int iMaxVersion);
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140711)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

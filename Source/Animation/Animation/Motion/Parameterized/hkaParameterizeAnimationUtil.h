@@ -15,7 +15,7 @@ class hkaAnimatedReferenceFrame;
 
 	/// A collection of utility methods that parameterize an animation or 
 	/// animation reference frame.
-class hkaParameterizeAnimationUtil
+class HK_EXPORT_ANIMATION hkaParameterizeAnimationUtil
 {
 	public:
 			/// Samples the reference frame at the specified time in order  to extract the root transform at that time.
@@ -56,7 +56,7 @@ class hkaParameterizeAnimationUtil
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

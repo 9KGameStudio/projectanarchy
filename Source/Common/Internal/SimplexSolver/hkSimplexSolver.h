@@ -10,7 +10,7 @@
 #define HK_SIMPLEX_SOLVER_H
 
 /// This represents a single constraint fed to the simplex solver
-struct hkSurfaceConstraintInfo
+struct HK_EXPORT_COMMON hkSurfaceConstraintInfo
 {
 	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_CONSTRAINT_SOLVER, hkSurfaceConstraintInfo );
 
@@ -43,7 +43,7 @@ struct hkSurfaceConstraintInfo
 };
 
 /// The input structure for the simplex solver
-struct hkSimplexSolverInput
+struct HK_EXPORT_COMMON hkSimplexSolverInput
 {
 	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_CONSTRAINT_SOLVER, hkSimplexSolverInput );
 
@@ -84,7 +84,7 @@ struct hkSimplexSolverInput
 
 
 /// Contains the simplex results for each surface constraint
-struct hkSurfaceConstraintInteraction
+struct HK_EXPORT_COMMON hkSurfaceConstraintInteraction
 {
 	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_CONSTRAINT_SOLVER, hkSurfaceConstraintInteraction );
 
@@ -114,7 +114,7 @@ struct hkSurfaceConstraintInteraction
 };
 
 /// Output structure for the simplex solver.
-struct hkSimplexSolverOutput
+struct HK_EXPORT_COMMON hkSimplexSolverOutput
 {
 	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_CONSTRAINT_SOLVER, hkSimplexSolverOutput );
 
@@ -135,13 +135,13 @@ struct hkSimplexSolverOutput
 extern "C"
 {
 		// Solves for the motion of a particle in a set on dynamic plane constraints
-	void HK_CALL hkSimplexSolverSolve( const hkSimplexSolverInput& input, hkSimplexSolverOutput& output );
+	HK_EXPORT_COMMON void HK_CALL hkSimplexSolverSolve( const hkSimplexSolverInput& input, hkSimplexSolverOutput& output );
 
 }
 
 hkSimplexSolverInput::hkSimplexSolverInput()
 {
-	m_upVector = hkVector4::getConstant<HK_QUADREAL_0100>();
+	m_upVector.setConstant<HK_QUADREAL_0100>();
 	m_maxSurfaceVelocity.setAll( hkSimdReal_Eps );
 	m_position.setZero();
 }
@@ -149,7 +149,7 @@ hkSimplexSolverInput::hkSimplexSolverInput()
 #endif //HK_SIMPLEX_SOLVER_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

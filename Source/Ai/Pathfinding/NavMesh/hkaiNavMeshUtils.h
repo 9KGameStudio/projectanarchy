@@ -9,18 +9,19 @@
 #define HKAI_NAVIGATION_MESH_UTILS_H
 
 #include <Ai/Pathfinding/NavMesh/hkaiNavMesh.h>
-#include <Ai/Pathfinding/NavMesh/Streaming/hkaiStreamingCollection.h>
 #include <Ai/Pathfinding/Graph/hkaiAgentTraversalInfo.h>
+#include <Ai/Pathfinding/Collide/NavMesh/hkaiNavMeshQueryMediator.h>
 
 class hkaiNavMeshQueryMediator;
 class hkPseudoRandomGenerator;
 class hkaiNavMeshInstance;
 class hkaiStreamingCollection;
+struct hkaiStreamingCollectionInstanceInfo;
 struct hkaiAgentTraversalInfo;
 struct hkcdRay;
 
 /// Miscellaneous utility functions for nav meshes
-class hkaiNavMeshUtils
+class HK_EXPORT_AI hkaiNavMeshUtils
 {
 public:
 	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE, hkaiNavMeshUtils);
@@ -90,7 +91,7 @@ public:
 	static bool HK_CALL isPointOnFace( const hkaiNavMeshInstance& meshInstance, int faceIndex, hkVector4Parameter faceNormal, hkVector4Parameter point, hkSimdRealParameter tolerance);
 
 		/// Check if a point is near constrained edges. Useful for positioning a character at a "safe" spot on a nav mesh.
-	static bool HK_CALL isAwayFromBoundaryEdges(const hkaiStreamingCollection* collection, const hkaiNavMeshQueryMediator* mediator, hkVector4Parameter point, hkSimdRealParameter radius);
+	static bool HK_CALL isAwayFromBoundaryEdges(const hkaiStreamingCollection* collection, const hkaiNavMeshQueryMediator* mediator, const hkaiNavMeshQueryMediator::QueryInputBase& queryBase, hkVector4Parameter point, hkSimdRealParameter radius);
 	
 		/// Compute the bounding AABB for a face.
 	template<typename MeshType>
@@ -129,6 +130,9 @@ public:
 	template <typename MeshType>
 	static bool HK_CALL intersectLineFace( const MeshType& mesh, hkaiNavMesh::FaceIndex faceIndex, const hkcdRay& ray, hkSimdReal& hitFractionOut );
 
+	template <typename MeshType>
+	static bool HK_CALL castSphereFace( const MeshType& mesh, hkaiNavMesh::FaceIndex faceIndex, const hkcdRay& ray, hkSimdRealParameter radius, hkSimdReal& hitFractionOut );
+
 		/// Return the next edge index, wrapping around to the first edge if we are at the last
 	static HK_FORCE_INLINE EdgeIndex HK_CALL getNextEdgeIndex    ( const hkaiNavMesh::Face& face, EdgeIndex edgeIndex );
 
@@ -149,7 +153,10 @@ public:
 	static void HK_CALL removeFace( hkaiNavMesh& mesh, FaceIndex faceIndex, bool invalidateOppositeEdges = true );
 
 		/// Removes a set of faces from a nav mesh. Other faces connected to faces being removed have their opposite edges invalidated if invalidateOppositeEdges is true.
-	static hkResult HK_CALL removeFaces( hkaiNavMesh& mesh, hkArray<int>::Temp& facesToRemove, bool invalidateOppositeEdges = true );
+	static hkResult HK_CALL removeFaces( hkaiNavMesh& mesh, hkArrayBase<int> & facesToRemove, bool invalidateOppositeEdges = true );
+
+	static void HK_CALL copyEdgeAndData( hkaiNavMesh& mesh, hkaiNavMesh::EdgeIndex dstIdx, hkaiNavMesh::EdgeIndex srcIdx);
+	static void HK_CALL copyFaceAndData( hkaiNavMesh& mesh, hkaiNavMesh::FaceIndex dstIdx, hkaiNavMesh::FaceIndex srcIdx);
 
 		/// Controls the behavior of hkaiNavMeshUtils::removeOwnedFaces()
 	enum RemoveOwnedFacesMode
@@ -163,7 +170,7 @@ public:
 
 		/// Removes a set of owned faces from an hkaiNavMeshInstance. Other faces connected to faces being removed have their opposite edges invalidated.
 		/// The owned edge array is also compacted, e.g. edges that aren't referenced by faces are removed.
-	static void HK_CALL removeOwnedFaces( hkaiNavMeshInstance& meshInstance, hkaiStreamingCollection* collection, hkArray<int>::Temp& facesToRemove, RemoveOwnedFacesMode mode );
+	static void HK_CALL removeOwnedFaces( hkaiNavMeshInstance& meshInstance, hkaiStreamingCollection* collection, hkArrayBase<hkaiNavMesh::FaceIndex> & facesToRemove, RemoveOwnedFacesMode mode );
 
 		/// Removes redundant vertices from the nav mesh
 	static hkResult HK_CALL compactVertices( hkaiNavMesh& mesh, int edgeStartIdx, int vertexStartIdx );
@@ -187,7 +194,7 @@ public:
 
 		/// Computes a random point inside the AABB and projects it onto the nav mesh.
 		/// The point is guaranteed to be at least radius away from the nearest edge.
-	static hkResult HK_CALL getPointOnMeshInsideAabb( const hkaiStreamingCollection* collection, const hkaiNavMeshQueryMediator* mediator, const hkAabb& aabb, hkVector4Parameter m_up, hkPseudoRandomGenerator& rand, hkSimdRealParameter radius, hkVector4& out, int maxSamples=100 );
+	static hkResult HK_CALL getPointOnMeshInsideAabb( const hkaiStreamingCollection* collection, const hkaiNavMeshQueryMediator* mediator, const hkaiNavMeshQueryMediator::QueryInputBase& queryBase, const hkAabb& aabb, hkVector4Parameter up, hkPseudoRandomGenerator& rand, hkSimdRealParameter radius, hkVector4& out, int maxSamples=100 );
 
 		/// Checks whether the specified edge intersects the AABB
 	static bool HK_CALL isEdgeInsideAabb( const hkaiNavMeshInstance& meshInstance, const hkAabb& aabb, hkaiNavMesh::EdgeIndex eIdx);
@@ -197,16 +204,16 @@ public:
 
 		/// Get uncrossable edges for the given faces and its neighboring faces.
 		/// If an edge filter is provided, it will be used to check traversability.
-	static void HK_CALL getNearbyBoundaries(const hkaiStreamingCollection::InstanceInfo* sectionInfo, hkaiPackedKey currentFaceKey, const hkAabb& aabb, const hkaiAgentTraversalInfo& traversalInfo, const class hkaiAstarEdgeFilter* filter, bool doFloodFill, hkVector4Parameter position, hkVector4Parameter up, hkArrayBase<hkVector4>& boundariesOut);
+	static void HK_CALL getNearbyBoundaries(const hkaiStreamingCollectionInstanceInfo* sectionInfo, hkaiPackedKey currentFaceKey, const hkAabb& aabb, const hkaiAgentTraversalInfo& traversalInfo, const class hkaiAstarEdgeFilter* filter, bool doFloodFill, hkVector4Parameter position, hkVector4Parameter up, hkArrayBase<hkVector4>& boundariesOut);
 	
 		/// getNearbyBoundaries using only the neighboring faces. This is fast but may miss some edges inside the AABB.
-	static void HK_CALL _getNearbyBoundariesNeighbors(const hkaiStreamingCollection::InstanceInfo* sectionInfo, hkaiPackedKey currentFaceKey, const hkAabb& aabb, const hkaiAgentTraversalInfo& traversalInfo, const class hkaiAstarEdgeFilter* filter, hkVector4Parameter position, hkArrayBase<hkVector4>& boundariesOut);
+	static void HK_CALL _getNearbyBoundariesNeighbors(const hkaiStreamingCollectionInstanceInfo* sectionInfo, hkaiPackedKey currentFaceKey, const hkAabb& aabb, const hkaiAgentTraversalInfo& traversalInfo, const class hkaiAstarEdgeFilter* filter, hkVector4Parameter position, hkArrayBase<hkVector4>& boundariesOut);
 	
 		/// getNearbyBoundaries using a floodfill to get all boundaries in the sensor AABB.
-	static void HK_CALL _getNearbyBoundariesFlood(const hkaiStreamingCollection::InstanceInfo* sectionInfo, hkaiPackedKey currentFaceKey, const hkAabb& aabb, const hkaiAgentTraversalInfo& traversalInfo, const class hkaiAstarEdgeFilter* filter, hkVector4Parameter position, hkVector4Parameter up, hkArrayBase<hkVector4>& boundariesOut);
+	static void HK_CALL _getNearbyBoundariesFlood(const hkaiStreamingCollectionInstanceInfo* sectionInfo, hkaiPackedKey currentFaceKey, const hkAabb& aabb, const hkaiAgentTraversalInfo& traversalInfo, const class hkaiAstarEdgeFilter* filter, hkVector4Parameter position, hkVector4Parameter up, hkArrayBase<hkVector4>& boundariesOut);
 
 		/// Input for hkaiNavMeshUtils::getDistanceToClosestBoundary().
-	struct ClosestBoundaryInput
+	struct HK_EXPORT_AI ClosestBoundaryInput
 	{
 		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_AI, ClosestBoundaryInput);
 		ClosestBoundaryInput();
@@ -219,7 +226,7 @@ public:
 	};
 	
 		/// Output for hkaiNavMeshUtils::getDistanceToClosestBoundary().
-	struct ClosestBoundaryOutput
+	struct HK_EXPORT_AI ClosestBoundaryOutput
 	{
 		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_AI, ClosestBoundaryOutput);
 		hkaiPackedKey m_edgeKey;
@@ -244,19 +251,27 @@ public:
 	static void HK_CALL transform( const hkTransform& t, hkaiNavMesh& mesh, AabbMode mode = RECALCULATE_AABB);
 
 		/// Simple pair of a face key and edge key.
-	struct FaceEdgeKeyPair
+	struct HK_EXPORT_AI FaceEdgeKeyPair
 	{
 		hkaiPackedKey m_faceKey;
 		hkaiPackedKey m_edgeKey;
 	};
 
 		/// Gets all the edges contained within the AABB
-	static void HK_CALL getEdgesInsideAabb( const hkaiNavMeshInstance& meshInstance, const hkaiNavMeshQueryMediator* mediator, const hkAabb& aabb, hkArray<FaceEdgeKeyPair>::Temp& edgeHits);
+	static void HK_CALL getEdgesInsideAabb( const hkaiNavMeshInstance& meshInstance, const hkaiNavMeshQueryMediator* mediator, const hkaiNavMeshQueryMediator::QueryInputBase& queryBase, const hkAabb& aabb, hkArray<FaceEdgeKeyPair>::Temp& edgeHits);
+	
 	static void HK_CALL getEdgesInsideAabb( const hkaiStreamingCollection*, const hkaiNavMeshQueryMediator* mediator, const hkAabb& aabb, hkArray<FaceEdgeKeyPair>::Temp& edgeHits);
+	static void HK_CALL getEdgesInsideAabb( const hkaiStreamingCollection*, const hkaiNavMeshQueryMediator* mediator, const hkaiNavMeshQueryMediator::QueryInputBase& queryBase, const hkAabb& aabb, hkArray<FaceEdgeKeyPair>::Temp& edgeHits);
+
 	static void HK_CALL _getEdgesInsideAabb( const hkaiStreamingCollection*, const hkAabb& aabb, const hkArrayBase<hkaiPackedKey>& faceHits, hkArray<FaceEdgeKeyPair>::Temp& edgeHits);
 
 		/// Attempts to reposition the point within its face so that it avoids constrained edges with in a radius
-	static void HK_CALL resolveEdgePenetrations( const hkaiStreamingCollection*, const hkaiNavMeshQueryMediator* mediator, hkVector4Parameter point, hkSimdRealParameter radius, hkVector4& pointOut);
+	static void HK_CALL resolveEdgePenetrations( const hkaiStreamingCollection*, const hkaiNavMeshQueryMediator* mediator, 
+		const hkaiNavMeshQueryMediator::QueryInputBase& queryBase, hkVector4Parameter point, hkSimdRealParameter radius, hkVector4& pointOut);
+
+		/// Attempts to reposition the point within its face so that it avoids constrained edges with in a radius
+	static void HK_CALL resolveEdgePenetrations( const hkaiStreamingCollection*, const hkaiNavMeshQueryMediator* mediator, 
+		const hkaiNavMeshQueryMediator::QueryInputBase& queryBase, hkVector4Parameter point, hkaiPackedKey faceKey, hkSimdRealParameter radius, hkVector4& pointOut);
 	
 		/// Mediator types that can be create by hkaiNavMeshUtils::setupQueryMediator().
 	enum MediatorType
@@ -268,8 +283,8 @@ public:
 		/// Creates a query mediator for the navmesh. Currently only hkaiStaticTreeNavMeshQueryMediator is supported.
 	static hkaiNavMeshQueryMediator* HK_CALL setupQueryMediator( const hkaiNavMesh& mesh, MediatorType mediatorType=MEDIATOR_STATIC_TREE );
 
-	static hkBool32 HK_CALL triangleAabbCheck(const hkAabb& aabb, hkVector4Parameter triA, 
-		hkVector4Parameter triB, hkVector4Parameter triC);
+	static hkBool32 HK_CALL lineTriangleIntersect(const hkcdRay& ray, hkVector4Parameter vA, hkVector4Parameter vB,
+		hkVector4Parameter vC, hkSimdRealParameter tolerance, hkSimdReal& fractionOut);
 
 	static hkBool32 HK_CALL faceAabbCheck(const hkAabb& aabb, const hkArrayBase<hkVector4>& vertices);
 
@@ -288,7 +303,7 @@ public:
 #endif // HKAI_NAVIGATION_MESH_UTILS_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

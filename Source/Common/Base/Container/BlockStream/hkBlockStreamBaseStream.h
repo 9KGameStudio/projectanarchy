@@ -24,7 +24,7 @@ namespace hkBlockStreamBase
 	/// Writers make it grow by allocating more block into the stream as they add more data, while
 	/// Consumers free the blocks as they read it (so the consumed blocks of the stream are
 	/// no longer valid).
-	class Stream
+	class HK_EXPORT_COMMON Stream
 	{
 		public:
 
@@ -33,6 +33,7 @@ namespace hkBlockStreamBase
 
 			/// Iterator classes
 			friend class Consumer;
+			friend class RandomAccessConsumer;
 			friend class Reader;
 			friend class Writer;
 
@@ -62,8 +63,7 @@ namespace hkBlockStreamBase
 
 #if !defined(HK_PLATFORM_SPU)
 			/// Initializes the stream by taking a new block from the given allocator.
-			
-			void initBlockStream( Allocator* tlAllocator, bool zeroNewBlocks = false );
+			void initBlockStream( Allocator* tlAllocator, bool zeroNewBlocks = false );	
 
 			/// Resets the stream : clears it and allocates 1 empty block.
 			void reset( Allocator* HK_RESTRICT tlAllocator );
@@ -195,7 +195,7 @@ namespace hkBlockStreamBase
 #endif //HK_BLOCKSTREAM_STREAM_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

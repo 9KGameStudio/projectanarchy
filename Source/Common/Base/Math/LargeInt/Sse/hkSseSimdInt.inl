@@ -89,7 +89,11 @@ inline void hkSimdInt<256>::setUnsignedMul(const hkSimdInt<256>& origA, int orig
 											);										// [lo(a7531[0]), lo(a20[0]), lo(a31[0]), lo(a0 b)]
 
 
-    a75 = _mm_or_si128(a75, _mm_srli_si128(_mm_slli_si128(a7531, 4), 12));						// [a75[1], lo(a7531[1])]
+    a75 = _mm_castpd_si128	(	_mm_shuffle_pd(	_mm_castsi128_pd(_mm_srli_si128(_mm_slli_si128(a7531, 4), 12)), 
+												_mm_castsi128_pd(a75), _MM_SHUFFLE2(1, 0))
+							);	// [a75[1], lo(a7531[1])]
+
+
     a75 = _mm_add_epi64(a75, _mm_srli_epi64(a67, 32));											// [a75[1] + hi(a67[1]), a75[0] + hi(a67[0]]
     a20 = _mm_add_epi64(_mm_srli_epi64(a75, 32), _mm_srli_si128(_mm_slli_si128(a67, 4), 12));	// [*, hi(a75[0]) + lo(a67[1])]
     a67 = _mm_unpacklo_epi32(a67, a75);															// [*, *, lo(a75[0]), lo(a67[0])]
@@ -104,7 +108,7 @@ inline void hkSimdInt<256>::setUnsignedMul(const hkSimdInt<256>& origA, int orig
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

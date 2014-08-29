@@ -8,16 +8,15 @@
 #ifndef HK_MESH_SHAPE_H
 #define HK_MESH_SHAPE_H
 
+#include <Common/GeometryUtilities/Mesh/IndexedTransformSet/hkIndexedTransformSet.h>
 
-extern const class hkClass hkMeshSectionCinfoClass;
-
-extern const class hkClass hkMeshSectionClass;
+extern HK_EXPORT_COMMON const class hkClass hkMeshSectionCinfoClass;
+extern HK_EXPORT_COMMON const class hkClass hkMeshSectionClass;
+extern HK_EXPORT_COMMON const hkClass hkMeshMaterialClass;
 
 class hkMeshTexture;
 class hkMeshVertexBuffer;
 struct hkVertexFormat;
-
-extern const hkClass hkMeshMaterialClass;
 
 /// A material used with a mesh
 ///
@@ -36,7 +35,7 @@ extern const hkClass hkMeshMaterialClass;
 /// a channel to hold a certain type of noise - the tools could not generate this but the material may be able to.
 ///
 /// \sa hkMeshShape hkMeshMaterialRegistry
-class hkMeshMaterial: public hkReferencedObject
+class HK_EXPORT_COMMON hkMeshMaterial : public hkReferencedObject
 {
 	public:
 		HK_DECLARE_REFLECTION();
@@ -107,9 +106,9 @@ class hkMeshMaterial: public hkReferencedObject
 /// transform of the vertices will the indexed transform followed by the hkMeshBodys transform.
 ///
 /// \sa hkMeshShape hkMeshBody
-struct hkMeshSection
+struct HK_EXPORT_COMMON hkMeshSection
 {
-	//+version(1)
+	//+version(2)
 	HK_DECLARE_REFLECTION();
     HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_SCENE_DATA, hkMeshSection );
 
@@ -149,6 +148,8 @@ struct hkMeshSection
 
     hkMeshMaterial* m_material;             ///< Material used on this mesh section
 
+	const hkMeshBoneIndexMapping* m_boneMatrixMap;	///< Map from vertex buffer bone indices to 'global' bone indices
+
     int m_sectionIndex;                     ///< The index of this mesh section
 };	
 
@@ -173,16 +174,32 @@ struct hkMeshSection
 /// each additional point.
 ///
 /// \sa hkMeshShape
-struct hkMeshSectionCinfo
+struct HK_EXPORT_COMMON hkMeshSectionCinfo
 {
-	//+version(1)
+	//+version(2)
+	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_SCENE_DATA, hkMeshSectionCinfo );
 	HK_DECLARE_REFLECTION();
 
-	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_SCENE_DATA, hkMeshSectionCinfo );
-	HK_DECLARE_POD_TYPE();
+	/// Constructor
+	HK_FORCE_INLINE hkMeshSectionCinfo()
+	:	m_vertexBuffer(HK_NULL)
+	,	m_material(HK_NULL)
+	,	m_numPrimitives(0)
+	,	m_indices(HK_NULL)
+	{}
 
-	hkMeshVertexBuffer* m_vertexBuffer;					///< Vertex buffer that will be used
-	hkMeshMaterial* m_material;							///< Material used on this mesh section
+	/// Serialization constructor
+	hkMeshSectionCinfo(hkFinishLoadedObjectFlag f)
+	:	m_boneMatrixMap(f)
+	{}
+
+	/// Vertex buffer that will be used
+	hkMeshVertexBuffer* m_vertexBuffer;				//+owned(false)
+
+	/// Material used on this mesh section
+	hkMeshMaterial* m_material;						//+owned(false)
+
+	hkMeshBoneIndexMapping m_boneMatrixMap;			///< Map from vertex buffer bone indices to 'global' bone indices
 
 		/// The primitive types
 	hkEnum<hkMeshSection::PrimitiveType, hkUint8> m_primitiveType;
@@ -199,7 +216,7 @@ struct hkMeshSectionCinfo
 };
 
 
-extern const hkClass hkMeshShapeClass;
+extern HK_EXPORT_COMMON const hkClass hkMeshShapeClass;
 
 /// This interface defines geometrically how a graphics entity will appear.
 ///
@@ -224,7 +241,7 @@ extern const hkClass hkMeshShapeClass;
 /// added to the hkMeshSystem.
 ///
 /// \sa hkMeshBody hkMeshMaterial hkMeshSystem
-class hkMeshShape: public hkReferencedObject
+class HK_EXPORT_COMMON hkMeshShape : public hkReferencedObject
 {
 	public:
 		HK_DECLARE_REFLECTION();
@@ -267,7 +284,7 @@ class hkMeshShape: public hkReferencedObject
 #endif // HK_MESH_SHAPE_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

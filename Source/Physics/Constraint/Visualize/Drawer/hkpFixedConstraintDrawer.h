@@ -14,7 +14,7 @@
 
 
 /// Displays information about the fixed constraint.
-class hkpFixedConstraintDrawer : public hkpConstraintDrawer
+class HK_EXPORT_PHYSICS hkpFixedConstraintDrawer : public hkpConstraintDrawer
 {
 	public:
 
@@ -29,7 +29,7 @@ class hkpFixedConstraintDrawer : public hkpConstraintDrawer
 #endif	// HKP_FIXED_CONSTRAINT_DRAWER_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

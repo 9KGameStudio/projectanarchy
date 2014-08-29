@@ -8,7 +8,7 @@
 
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/VisionEnginePluginPCH.h>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Entities/TriggerBoxEntity.hpp>
-#include <Vision/Runtime/Base/System/Memory/VMemDbg.hpp>
+
 
 extern VModule g_VisionEngineModule;
 
@@ -26,6 +26,8 @@ TriggerBoxEntity_cl::TriggerBoxEntity_cl() : m_EntitiesInside(0,64)
   m_iTriggerObserverFlags = 0;
   m_pCurrentEntity = NULL;
   m_bIsSphere = m_bIsOriented = false;
+  m_LocalBoundingBox.setInvalid();
+  m_AbsBoundingBox.setInvalid();
   SetUseEulerAngles(FALSE);
 }
 
@@ -464,7 +466,7 @@ START_VAR_TABLE(TriggerBoxEntity_cl, VisBaseEntity_cl, "Trigger box entity", VFO
 END_VAR_TABLE
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -19,81 +19,6 @@ using CSharpFramework.Helper;
 
 namespace TerrainEditorPlugin.Filter
 {
-  #region ImportHeightmapTEX16bpp
-
-  public class ImportHeightmapTEX16bpp : IHeightmapImporterFromTextureFile
-  {
-    public override string Name
-    {
-      get
-      {
-        return "Import from 16bpp TEX file";
-      }
-    }
-
-    public override string[] SupportedFileExtensions
-    {
-      get
-      {
-        return new string[] { ".TEX" };
-      }
-    }
-
-    private void LoadFromCurrentFile()
-    {
-      // always load with absolute filename
-      if (string.IsNullOrEmpty(FileName) || FileHelper.IsAbsolute(FileName))
-        LoadFromFile(FileName);
-      else
-        LoadFromFile(EditorManager.Project.MakeAbsolute(FileName));
-      ShowLastError();
-    }
-
-    [EditorAttribute(typeof(FilenameEditor), typeof(UITypeEditor)), FileDialogFilter(new string[] { ".tex" })]
-    public override string FileName
-    {
-      get
-      {
-        return base.FileName;
-      }
-      set
-      {
-        base.FileName = value;
-        LoadFromCurrentFile();
-      }
-    }
-
-    public override bool Active
-    {
-      get
-      {
-        return base.Active;
-      }
-      set
-      {
-        base.Active = value;
-        if (Active)
-          LoadFromCurrentFile();
-      }
-    }
-
-    [Description("Defines the vertical scaling factor to map 16 bit source values (0..65535) to world units")]
-    public override float HeightScaling
-    {
-      get
-      {
-        return base.HeightScaling;
-      }
-      set
-      {
-        base.HeightScaling = value;
-      }
-    }
-
-  }
-
-  #endregion
-
   #region ImportHeightmapRAW
 
   public class ImportHeightmapRAW : IHeightmapImporterFromRawFile
@@ -327,7 +252,7 @@ namespace TerrainEditorPlugin.Filter
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

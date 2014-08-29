@@ -15,7 +15,7 @@
   #define VHAVOK_IMPEXP
 #else
 
-  #ifdef WIN32
+  #if defined(_VISION_WIN32)
     #ifdef VHAVOKMODULE_EXPORTS
       #define VHAVOK_IMPEXP __declspec(dllexport)
     #elif defined VHAVOKMODULE_IMPORTS
@@ -23,18 +23,8 @@
     #else
       #define VHAVOK_IMPEXP
     #endif
-  #elif defined (_VISION_XENON)
-    #define VHAVOK_IMPEXP 
-  #elif defined (_VISION_PS3)
-    #define VHAVOK_IMPEXP
-  #elif defined (_VISION_IOS) || defined(_VISION_ANDROID) || defined(_VISION_TIZEN)
-    #define VHAVOK_IMPEXP
-  #elif defined(_VISION_PSP2)
-    #define VHAVOK_IMPEXP 
-  #elif defined(_VISION_WIIU)
-    #define VHAVOK_IMPEXP 
   #else
-    #error Undefined platform!
+    #define VHAVOK_IMPEXP
   #endif
 
 #endif // __HAVOK_PARSER__
@@ -42,7 +32,7 @@
 #endif // VHAVOKPHYSICSIMPORTEXPORT_H_INCLUDED
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

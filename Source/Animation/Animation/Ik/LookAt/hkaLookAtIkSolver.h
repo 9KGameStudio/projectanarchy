@@ -13,14 +13,14 @@
 /// specified target (targetMS). The movement is clamped around a cone specified by m_limitAxisMS and m_limitAngle. Finally, the rotation applied by the IK
 /// can be weighted by a gain value (gain), in the range [0..1]. The solver returns false if the target is over limits. Optionally, the user may specify
 /// individual limits for the up, down, left, and right directions of motion
-class hkaLookAtIkSolver : public hkReferencedObject
+class HK_EXPORT_ANIMATION hkaLookAtIkSolver : public hkReferencedObject
 {
 	public:
 
 		HK_DECLARE_CLASS_ALLOCATOR( HK_MEMORY_CLASS_ANIM_RUNTIME );
 
 		/// Setup information passed to hkaLookAtIkSolver::solve()
-		struct Setup
+		struct HK_EXPORT_ANIMATION Setup
 		{
 			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_ANIM_RUNTIME, hkaLookAtIkSolver::Setup );
 
@@ -47,7 +47,7 @@ class hkaLookAtIkSolver : public hkReferencedObject
 		};
 
 		// Setup information for optionally specifying individual range limits
-		struct RangeLimits
+		struct HK_EXPORT_ANIMATION RangeLimits
 		{
 			/// Limiting angles in the up direction; must be in range [ -pi/2, pi/2 ]
 			hkReal m_limitAngleUp;   // Example:  pi/4  (45deg up)
@@ -85,7 +85,7 @@ class hkaLookAtIkSolver : public hkReferencedObject
 #endif // INC_HK_LOOK_AT_IK_SOLVER_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

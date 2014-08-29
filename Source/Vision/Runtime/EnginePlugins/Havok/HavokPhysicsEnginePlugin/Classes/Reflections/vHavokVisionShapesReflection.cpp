@@ -21,25 +21,100 @@
 #include <Common/Base/Reflection/hkTypeInfo.h>
 #include <Common/Base/Reflection/Attributes/hkAttributes.h>
 #include <Vision/Runtime/EnginePlugins/Havok/HavokPhysicsEnginePlugin/vHavokVisionShapes.h>
+
+// Make VAX ignore symbols from this file
+#if 1 == 0
+_asm {
+#endif
 #define True true
 #define False false
 
 
 // External pointer and enum types
-extern const hkClass VTerrainSectorClass;
-extern const hkClass hkBitFieldClass;
-extern const hkClass hkvMeshMaterialClass;
+extern  const hkClass VTerrainSectorClass;
+extern  const hkClass hkvMeshMaterialClass;
+extern HK_EXPORT_COMMON const hkClass hkBitFieldClass;
+
+//
+// Class hkvBvCompressedMeshShape
+//
+extern HK_EXPORT_PHYSICS const hkClass hkpBvCompressedMeshShapeClass;
+
+const hkInternalClassMember hkvBvCompressedMeshShape::Members[] =
+{
+	{ "iFileTime", HK_NULL, HK_NULL, hkClassMember::TYPE_INT64, hkClassMember::TYPE_VOID, 0, 0, HK_OFFSET_OF(hkvBvCompressedMeshShape,m_iFileTime), HK_NULL },
+	{ "materials", &hkvMeshMaterialClass, HK_NULL, hkClassMember::TYPE_ARRAY, hkClassMember::TYPE_STRUCT, 0, 0, HK_OFFSET_OF(hkvBvCompressedMeshShape,m_materials), HK_NULL }
+};
+extern  const hkClass hkvBvCompressedMeshShapeClass;
+const hkClass hkvBvCompressedMeshShapeClass(
+	"hkvBvCompressedMeshShape",
+	&hkpBvCompressedMeshShapeClass, // parent
+	sizeof(::hkvBvCompressedMeshShape),
+	HK_NULL,
+	0, // interfaces
+	HK_NULL,
+	0, // enums
+	reinterpret_cast<const hkClassMember*>(hkvBvCompressedMeshShape::Members),
+	HK_COUNT_OF(hkvBvCompressedMeshShape::Members),
+	HK_NULL, // defaults
+	HK_NULL, // attributes
+	0, // flags
+	hkUint32(0) // version
+	);
+#ifndef HK_HKCLASS_DEFINITION_ONLY
+const hkClass& HK_CALL hkvBvCompressedMeshShape::staticClass()
+{
+	return hkvBvCompressedMeshShapeClass;
+}
+HK_COMPILE_TIME_ASSERT2( \
+	sizeof(hkIsVirtual(static_cast<hkvBvCompressedMeshShape*>(0))) == sizeof(hkBool::CompileTimeTrueType), \
+	REFLECTION_PARSER_VTABLE_DETECTION_FAILED );
+static void HK_CALL finishLoadedObjecthkvBvCompressedMeshShape(void* p, int finishing = 1)
+{
+	hkFinishLoadedObjectFlag f;
+	f.m_finishing = finishing;
+	new (p) hkvBvCompressedMeshShape(f);
+}
+static void HK_CALL cleanupLoadedObjecthkvBvCompressedMeshShape(void* p)
+{
+	static_cast<hkvBvCompressedMeshShape*>(p)->~hkvBvCompressedMeshShape();
+}
+static const void* HK_CALL getVtablehkvBvCompressedMeshShape()
+{
+	#if HK_LINKONCE_VTABLES==0
+	#if HK_HASHCODE_VTABLE_REGISTRY==1
+	return ((const void*)(typeid(hkvBvCompressedMeshShape).hash_code()));
+	#else
+	return ((const void*)(typeid(hkvBvCompressedMeshShape).name()));
+	#endif
+	#else
+	union { HK_ALIGN16(void* ptr); char buf[sizeof(hkvBvCompressedMeshShape)]; } u;
+	hkFinishLoadedObjectFlag f;
+	new (u.buf) hkvBvCompressedMeshShape(f);
+	return u.ptr;
+	#endif
+}
+extern  const hkTypeInfo hkvBvCompressedMeshShapeTypeInfo;
+const hkTypeInfo hkvBvCompressedMeshShapeTypeInfo(
+	"hkvBvCompressedMeshShape",
+	"!hkvBvCompressedMeshShape",
+	finishLoadedObjecthkvBvCompressedMeshShape,
+	cleanupLoadedObjecthkvBvCompressedMeshShape,
+	getVtablehkvBvCompressedMeshShape(),
+	sizeof(hkvBvCompressedMeshShape)
+	);
+#endif
 
 //
 // Class hkvConvexVerticesShape
 //
-extern const hkClass hkpConvexVerticesShapeClass;
+extern HK_EXPORT_PHYSICS const hkClass hkpConvexVerticesShapeClass;
 
 const hkInternalClassMember hkvConvexVerticesShape::Members[] =
 {
 	{ "iFileTime", HK_NULL, HK_NULL, hkClassMember::TYPE_INT64, hkClassMember::TYPE_VOID, 0, 0, HK_OFFSET_OF(hkvConvexVerticesShape,m_iFileTime), HK_NULL }
 };
-extern const hkClass hkvConvexVerticesShapeClass;
+extern  const hkClass hkvConvexVerticesShapeClass;
 const hkClass hkvConvexVerticesShapeClass(
 	"hkvConvexVerticesShape",
 	&hkpConvexVerticesShapeClass, // parent
@@ -88,7 +163,7 @@ static const void* HK_CALL getVtablehkvConvexVerticesShape()
 	return u.ptr;
 	#endif
 }
-extern const hkTypeInfo hkvConvexVerticesShapeTypeInfo;
+extern  const hkTypeInfo hkvConvexVerticesShapeTypeInfo;
 const hkTypeInfo hkvConvexVerticesShapeTypeInfo(
 	"hkvConvexVerticesShape",
 	"!hkvConvexVerticesShape",
@@ -142,7 +217,7 @@ static void HK_CALL cleanupLoadedObjecthkvMeshMaterial(void* p)
 {
 	static_cast<hkvMeshMaterial*>(p)->~hkvMeshMaterial();
 }
-extern const hkTypeInfo hkvMeshMaterialTypeInfo;
+extern  const hkTypeInfo hkvMeshMaterialTypeInfo;
 const hkTypeInfo hkvMeshMaterialTypeInfo(
 	"hkvMeshMaterial",
 	"!hkvMeshMaterial",
@@ -154,79 +229,9 @@ const hkTypeInfo hkvMeshMaterialTypeInfo(
 #endif
 
 //
-// Class hkvBvCompressedMeshShape
-//
-extern const hkClass hkpBvCompressedMeshShapeClass;
-
-const hkInternalClassMember hkvBvCompressedMeshShape::Members[] =
-{
-	{ "iFileTime", HK_NULL, HK_NULL, hkClassMember::TYPE_INT64, hkClassMember::TYPE_VOID, 0, 0, HK_OFFSET_OF(hkvBvCompressedMeshShape,m_iFileTime), HK_NULL },
-	{ "materials", &hkvMeshMaterialClass, HK_NULL, hkClassMember::TYPE_ARRAY, hkClassMember::TYPE_STRUCT, 0, 0, HK_OFFSET_OF(hkvBvCompressedMeshShape,m_materials), HK_NULL }
-};
-extern const hkClass hkvBvCompressedMeshShapeClass;
-const hkClass hkvBvCompressedMeshShapeClass(
-	"hkvBvCompressedMeshShape",
-	&hkpBvCompressedMeshShapeClass, // parent
-	sizeof(::hkvBvCompressedMeshShape),
-	HK_NULL,
-	0, // interfaces
-	HK_NULL,
-	0, // enums
-	reinterpret_cast<const hkClassMember*>(hkvBvCompressedMeshShape::Members),
-	HK_COUNT_OF(hkvBvCompressedMeshShape::Members),
-	HK_NULL, // defaults
-	HK_NULL, // attributes
-	0, // flags
-	hkUint32(0) // version
-	);
-#ifndef HK_HKCLASS_DEFINITION_ONLY
-const hkClass& HK_CALL hkvBvCompressedMeshShape::staticClass()
-{
-	return hkvBvCompressedMeshShapeClass;
-}
-HK_COMPILE_TIME_ASSERT2( \
-	sizeof(hkIsVirtual(static_cast<hkvBvCompressedMeshShape*>(0))) == sizeof(hkBool::CompileTimeTrueType), \
-	REFLECTION_PARSER_VTABLE_DETECTION_FAILED );
-static void HK_CALL finishLoadedObjecthkvBvCompressedMeshShape(void* p, int finishing = 1)
-{
-	hkFinishLoadedObjectFlag f;
-	f.m_finishing = finishing;
-	new (p) hkvBvCompressedMeshShape(f);
-}
-static void HK_CALL cleanupLoadedObjecthkvBvCompressedMeshShape(void* p)
-{
-	static_cast<hkvBvCompressedMeshShape*>(p)->~hkvBvCompressedMeshShape();
-}
-static const void* HK_CALL getVtablehkvBvCompressedMeshShape()
-{
-	#if HK_LINKONCE_VTABLES==0
-	#if HK_HASHCODE_VTABLE_REGISTRY==1
-	return ((const void*)(typeid(hkvBvCompressedMeshShape).hash_code()));
-	#else
-	return ((const void*)(typeid(hkvBvCompressedMeshShape).name()));
-	#endif
-	#else
-	union { HK_ALIGN16(void* ptr); char buf[sizeof(hkvBvCompressedMeshShape)]; } u;
-	hkFinishLoadedObjectFlag f;
-	new (u.buf) hkvBvCompressedMeshShape(f);
-	return u.ptr;
-	#endif
-}
-extern const hkTypeInfo hkvBvCompressedMeshShapeTypeInfo;
-const hkTypeInfo hkvBvCompressedMeshShapeTypeInfo(
-	"hkvBvCompressedMeshShape",
-	"!hkvBvCompressedMeshShape",
-	finishLoadedObjecthkvBvCompressedMeshShape,
-	cleanupLoadedObjecthkvBvCompressedMeshShape,
-	getVtablehkvBvCompressedMeshShape(),
-	sizeof(hkvBvCompressedMeshShape)
-	);
-#endif
-
-//
 // Class hkvSampledHeightFieldShape
 //
-extern const hkClass hkpSampledHeightFieldShapeClass;
+extern HK_EXPORT_PHYSICS const hkClass hkpSampledHeightFieldShapeClass;
 
 const hkInternalClassMember hkvSampledHeightFieldShape::Members[] =
 {
@@ -235,7 +240,7 @@ const hkInternalClassMember hkvSampledHeightFieldShape::Members[] =
 	{ "iSectorIndexX", HK_NULL, HK_NULL, hkClassMember::TYPE_INT32, hkClassMember::TYPE_VOID, 0, 0, HK_OFFSET_OF(hkvSampledHeightFieldShape,m_iSectorIndexX), HK_NULL },
 	{ "iSectorIndexY", HK_NULL, HK_NULL, hkClassMember::TYPE_INT32, hkClassMember::TYPE_VOID, 0, 0, HK_OFFSET_OF(hkvSampledHeightFieldShape,m_iSectorIndexY), HK_NULL }
 };
-extern const hkClass hkvSampledHeightFieldShapeClass;
+extern  const hkClass hkvSampledHeightFieldShapeClass;
 const hkClass hkvSampledHeightFieldShapeClass(
 	"hkvSampledHeightFieldShape",
 	&hkpSampledHeightFieldShapeClass, // parent
@@ -284,7 +289,7 @@ static const void* HK_CALL getVtablehkvSampledHeightFieldShape()
 	return u.ptr;
 	#endif
 }
-extern const hkTypeInfo hkvSampledHeightFieldShapeTypeInfo;
+extern  const hkTypeInfo hkvSampledHeightFieldShapeTypeInfo;
 const hkTypeInfo hkvSampledHeightFieldShapeTypeInfo(
 	"hkvSampledHeightFieldShape",
 	"!hkvSampledHeightFieldShape",
@@ -296,85 +301,79 @@ const hkTypeInfo hkvSampledHeightFieldShapeTypeInfo(
 #endif
 
 //
-// Class hkvTriSampledHeightFieldCollection
+// Class hkvSampledOffsetHeightFieldShape
 //
-extern const hkClass hkpTriSampledHeightFieldCollectionClass;
 
-const hkInternalClassMember hkvTriSampledHeightFieldCollection::Members[] =
+const hkInternalClassMember hkvSampledOffsetHeightFieldShape::Members[] =
 {
-	{ "iCollide", HK_NULL, HK_NULL, hkClassMember::TYPE_UINT32, hkClassMember::TYPE_VOID, 0, 0, HK_OFFSET_OF(hkvTriSampledHeightFieldCollection,m_iCollide), HK_NULL },
-	{ "iNonCollide", HK_NULL, HK_NULL, hkClassMember::TYPE_UINT32, hkClassMember::TYPE_VOID, 0, 0, HK_OFFSET_OF(hkvTriSampledHeightFieldCollection,m_iNonCollide), HK_NULL },
-	{ "iStrideX", HK_NULL, HK_NULL, hkClassMember::TYPE_INT32, hkClassMember::TYPE_VOID, 0, 0, HK_OFFSET_OF(hkvTriSampledHeightFieldCollection,m_iStrideX), HK_NULL },
-	{ "iTileSamplesX", HK_NULL, HK_NULL, hkClassMember::TYPE_INT32, hkClassMember::TYPE_VOID, 0, 0, HK_OFFSET_OF(hkvTriSampledHeightFieldCollection,m_iTileSamplesX), HK_NULL },
-	{ "iTileSamplesY", HK_NULL, HK_NULL, hkClassMember::TYPE_INT32, hkClassMember::TYPE_VOID, 0, 0, HK_OFFSET_OF(hkvTriSampledHeightFieldCollection,m_iTileSamplesY), HK_NULL },
-	{ "tileHoleMask", &hkBitFieldClass, HK_NULL, hkClassMember::TYPE_STRUCT, hkClassMember::TYPE_VOID, 0, 0, HK_OFFSET_OF(hkvTriSampledHeightFieldCollection,m_tileHoleMask), HK_NULL }
+	{ "fHeightOffset", HK_NULL, HK_NULL, hkClassMember::TYPE_REAL, hkClassMember::TYPE_VOID, 0, 0, HK_OFFSET_OF(hkvSampledOffsetHeightFieldShape,m_fHeightOffset), HK_NULL }
 };
-extern const hkClass hkvTriSampledHeightFieldCollectionClass;
-const hkClass hkvTriSampledHeightFieldCollectionClass(
-	"hkvTriSampledHeightFieldCollection",
-	&hkpTriSampledHeightFieldCollectionClass, // parent
-	sizeof(::hkvTriSampledHeightFieldCollection),
+extern  const hkClass hkvSampledOffsetHeightFieldShapeClass;
+const hkClass hkvSampledOffsetHeightFieldShapeClass(
+	"hkvSampledOffsetHeightFieldShape",
+	&hkvSampledHeightFieldShapeClass, // parent
+	sizeof(::hkvSampledOffsetHeightFieldShape),
 	HK_NULL,
 	0, // interfaces
 	HK_NULL,
 	0, // enums
-	reinterpret_cast<const hkClassMember*>(hkvTriSampledHeightFieldCollection::Members),
-	HK_COUNT_OF(hkvTriSampledHeightFieldCollection::Members),
+	reinterpret_cast<const hkClassMember*>(hkvSampledOffsetHeightFieldShape::Members),
+	HK_COUNT_OF(hkvSampledOffsetHeightFieldShape::Members),
 	HK_NULL, // defaults
 	HK_NULL, // attributes
 	0, // flags
 	hkUint32(0) // version
 	);
 #ifndef HK_HKCLASS_DEFINITION_ONLY
-const hkClass& HK_CALL hkvTriSampledHeightFieldCollection::staticClass()
+const hkClass& HK_CALL hkvSampledOffsetHeightFieldShape::staticClass()
 {
-	return hkvTriSampledHeightFieldCollectionClass;
+	return hkvSampledOffsetHeightFieldShapeClass;
 }
 HK_COMPILE_TIME_ASSERT2( \
-	sizeof(hkIsVirtual(static_cast<hkvTriSampledHeightFieldCollection*>(0))) == sizeof(hkBool::CompileTimeTrueType), \
+	sizeof(hkIsVirtual(static_cast<hkvSampledOffsetHeightFieldShape*>(0))) == sizeof(hkBool::CompileTimeTrueType), \
 	REFLECTION_PARSER_VTABLE_DETECTION_FAILED );
-static void HK_CALL finishLoadedObjecthkvTriSampledHeightFieldCollection(void* p, int finishing = 1)
+static void HK_CALL finishLoadedObjecthkvSampledOffsetHeightFieldShape(void* p, int finishing = 1)
 {
 	hkFinishLoadedObjectFlag f;
 	f.m_finishing = finishing;
-	new (p) hkvTriSampledHeightFieldCollection(f);
+	new (p) hkvSampledOffsetHeightFieldShape(f);
 }
-static void HK_CALL cleanupLoadedObjecthkvTriSampledHeightFieldCollection(void* p)
+static void HK_CALL cleanupLoadedObjecthkvSampledOffsetHeightFieldShape(void* p)
 {
-	static_cast<hkvTriSampledHeightFieldCollection*>(p)->~hkvTriSampledHeightFieldCollection();
+	static_cast<hkvSampledOffsetHeightFieldShape*>(p)->~hkvSampledOffsetHeightFieldShape();
 }
-static const void* HK_CALL getVtablehkvTriSampledHeightFieldCollection()
+static const void* HK_CALL getVtablehkvSampledOffsetHeightFieldShape()
 {
 	#if HK_LINKONCE_VTABLES==0
 	#if HK_HASHCODE_VTABLE_REGISTRY==1
-	return ((const void*)(typeid(hkvTriSampledHeightFieldCollection).hash_code()));
+	return ((const void*)(typeid(hkvSampledOffsetHeightFieldShape).hash_code()));
 	#else
-	return ((const void*)(typeid(hkvTriSampledHeightFieldCollection).name()));
+	return ((const void*)(typeid(hkvSampledOffsetHeightFieldShape).name()));
 	#endif
 	#else
-	union { HK_ALIGN16(void* ptr); char buf[sizeof(hkvTriSampledHeightFieldCollection)]; } u;
+	union { HK_ALIGN16(void* ptr); char buf[sizeof(hkvSampledOffsetHeightFieldShape)]; } u;
 	hkFinishLoadedObjectFlag f;
-	new (u.buf) hkvTriSampledHeightFieldCollection(f);
+	new (u.buf) hkvSampledOffsetHeightFieldShape(f);
 	return u.ptr;
 	#endif
 }
-extern const hkTypeInfo hkvTriSampledHeightFieldCollectionTypeInfo;
-const hkTypeInfo hkvTriSampledHeightFieldCollectionTypeInfo(
-	"hkvTriSampledHeightFieldCollection",
-	"!hkvTriSampledHeightFieldCollection",
-	finishLoadedObjecthkvTriSampledHeightFieldCollection,
-	cleanupLoadedObjecthkvTriSampledHeightFieldCollection,
-	getVtablehkvTriSampledHeightFieldCollection(),
-	sizeof(hkvTriSampledHeightFieldCollection)
+extern  const hkTypeInfo hkvSampledOffsetHeightFieldShapeTypeInfo;
+const hkTypeInfo hkvSampledOffsetHeightFieldShapeTypeInfo(
+	"hkvSampledOffsetHeightFieldShape",
+	"!hkvSampledOffsetHeightFieldShape",
+	finishLoadedObjecthkvSampledOffsetHeightFieldShape,
+	cleanupLoadedObjecthkvSampledOffsetHeightFieldShape,
+	getVtablehkvSampledOffsetHeightFieldShape(),
+	sizeof(hkvSampledOffsetHeightFieldShape)
 	);
 #endif
 
 //
 // Class hkvTriSampledHeightFieldBvTreeShape
 //
-extern const hkClass hkpTriSampledHeightFieldBvTreeShapeClass;
+extern HK_EXPORT_PHYSICS const hkClass hkpTriSampledHeightFieldBvTreeShapeClass;
 
-extern const hkClass hkvTriSampledHeightFieldBvTreeShapeClass;
+extern  const hkClass hkvTriSampledHeightFieldBvTreeShapeClass;
 const hkClass hkvTriSampledHeightFieldBvTreeShapeClass(
 	"hkvTriSampledHeightFieldBvTreeShape",
 	&hkpTriSampledHeightFieldBvTreeShapeClass, // parent
@@ -423,7 +422,7 @@ static const void* HK_CALL getVtablehkvTriSampledHeightFieldBvTreeShape()
 	return u.ptr;
 	#endif
 }
-extern const hkTypeInfo hkvTriSampledHeightFieldBvTreeShapeTypeInfo;
+extern  const hkTypeInfo hkvTriSampledHeightFieldBvTreeShapeTypeInfo;
 const hkTypeInfo hkvTriSampledHeightFieldBvTreeShapeTypeInfo(
 	"hkvTriSampledHeightFieldBvTreeShape",
 	"!hkvTriSampledHeightFieldBvTreeShape",
@@ -434,8 +433,82 @@ const hkTypeInfo hkvTriSampledHeightFieldBvTreeShapeTypeInfo(
 	);
 #endif
 
+//
+// Class hkvTriSampledHeightFieldCollection
+//
+extern HK_EXPORT_PHYSICS const hkClass hkpTriSampledHeightFieldCollectionClass;
+
+const hkInternalClassMember hkvTriSampledHeightFieldCollection::Members[] =
+{
+	{ "iCollide", HK_NULL, HK_NULL, hkClassMember::TYPE_UINT32, hkClassMember::TYPE_VOID, 0, 0, HK_OFFSET_OF(hkvTriSampledHeightFieldCollection,m_iCollide), HK_NULL },
+	{ "iNonCollide", HK_NULL, HK_NULL, hkClassMember::TYPE_UINT32, hkClassMember::TYPE_VOID, 0, 0, HK_OFFSET_OF(hkvTriSampledHeightFieldCollection,m_iNonCollide), HK_NULL },
+	{ "iStrideX", HK_NULL, HK_NULL, hkClassMember::TYPE_INT32, hkClassMember::TYPE_VOID, 0, 0, HK_OFFSET_OF(hkvTriSampledHeightFieldCollection,m_iStrideX), HK_NULL },
+	{ "iTileSamplesX", HK_NULL, HK_NULL, hkClassMember::TYPE_INT32, hkClassMember::TYPE_VOID, 0, 0, HK_OFFSET_OF(hkvTriSampledHeightFieldCollection,m_iTileSamplesX), HK_NULL },
+	{ "iTileSamplesY", HK_NULL, HK_NULL, hkClassMember::TYPE_INT32, hkClassMember::TYPE_VOID, 0, 0, HK_OFFSET_OF(hkvTriSampledHeightFieldCollection,m_iTileSamplesY), HK_NULL },
+	{ "tileHoleMask", &hkBitFieldClass, HK_NULL, hkClassMember::TYPE_STRUCT, hkClassMember::TYPE_VOID, 0, 0, HK_OFFSET_OF(hkvTriSampledHeightFieldCollection,m_tileHoleMask), HK_NULL }
+};
+extern  const hkClass hkvTriSampledHeightFieldCollectionClass;
+const hkClass hkvTriSampledHeightFieldCollectionClass(
+	"hkvTriSampledHeightFieldCollection",
+	&hkpTriSampledHeightFieldCollectionClass, // parent
+	sizeof(::hkvTriSampledHeightFieldCollection),
+	HK_NULL,
+	0, // interfaces
+	HK_NULL,
+	0, // enums
+	reinterpret_cast<const hkClassMember*>(hkvTriSampledHeightFieldCollection::Members),
+	HK_COUNT_OF(hkvTriSampledHeightFieldCollection::Members),
+	HK_NULL, // defaults
+	HK_NULL, // attributes
+	0, // flags
+	hkUint32(0) // version
+	);
+#ifndef HK_HKCLASS_DEFINITION_ONLY
+const hkClass& HK_CALL hkvTriSampledHeightFieldCollection::staticClass()
+{
+	return hkvTriSampledHeightFieldCollectionClass;
+}
+HK_COMPILE_TIME_ASSERT2( \
+	sizeof(hkIsVirtual(static_cast<hkvTriSampledHeightFieldCollection*>(0))) == sizeof(hkBool::CompileTimeTrueType), \
+	REFLECTION_PARSER_VTABLE_DETECTION_FAILED );
+static void HK_CALL finishLoadedObjecthkvTriSampledHeightFieldCollection(void* p, int finishing = 1)
+{
+	hkFinishLoadedObjectFlag f;
+	f.m_finishing = finishing;
+	new (p) hkvTriSampledHeightFieldCollection(f);
+}
+static void HK_CALL cleanupLoadedObjecthkvTriSampledHeightFieldCollection(void* p)
+{
+	static_cast<hkvTriSampledHeightFieldCollection*>(p)->~hkvTriSampledHeightFieldCollection();
+}
+static const void* HK_CALL getVtablehkvTriSampledHeightFieldCollection()
+{
+	#if HK_LINKONCE_VTABLES==0
+	#if HK_HASHCODE_VTABLE_REGISTRY==1
+	return ((const void*)(typeid(hkvTriSampledHeightFieldCollection).hash_code()));
+	#else
+	return ((const void*)(typeid(hkvTriSampledHeightFieldCollection).name()));
+	#endif
+	#else
+	union { HK_ALIGN16(void* ptr); char buf[sizeof(hkvTriSampledHeightFieldCollection)]; } u;
+	hkFinishLoadedObjectFlag f;
+	new (u.buf) hkvTriSampledHeightFieldCollection(f);
+	return u.ptr;
+	#endif
+}
+extern  const hkTypeInfo hkvTriSampledHeightFieldCollectionTypeInfo;
+const hkTypeInfo hkvTriSampledHeightFieldCollectionTypeInfo(
+	"hkvTriSampledHeightFieldCollection",
+	"!hkvTriSampledHeightFieldCollection",
+	finishLoadedObjecthkvTriSampledHeightFieldCollection,
+	cleanupLoadedObjecthkvTriSampledHeightFieldCollection,
+	getVtablehkvTriSampledHeightFieldCollection(),
+	sizeof(hkvTriSampledHeightFieldCollection)
+	);
+#endif
+
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

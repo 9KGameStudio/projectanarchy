@@ -82,10 +82,6 @@ class VMotionInputAndroid : public IVInputDevice
     virtual void Update(float fTimeDiff = 0.0f) HKV_OVERRIDE;
 
     /// \brief
-    ///   Updates the devices rotation
-    void UpdateDisplayRotation();
-
-    /// \brief
     ///   See IVInputDevice::GetControlName(unsigned int device).
     HKV_DEPRECATED_2012_2 virtual const char* GetControlName(unsigned int control) HKV_OVERRIDE;
 
@@ -312,7 +308,7 @@ class VMultiTouchInputAndroid : public IVMultiTouchInput
 ///
 /// \brief  Input device handling the input of the Key buttons available (for example on the Xperia play).
 ///
-class VKeyInputAndroid : public IVInputDevice
+class VKeyInputAndroid : public IVJoypad
 {
   public:
   
@@ -349,7 +345,6 @@ class VKeyInputAndroid : public IVInputDevice
     ///
     VBASE_IMPEXP virtual float GetControlValue(unsigned int control, float fDeadZone, bool bTimeScaled = false) HKV_OVERRIDE;
 
-
     /// \brief
     ///   See IVInputDevice::GetRawControlValue(unsigned int control).
     /// 
@@ -370,12 +365,16 @@ class VKeyInputAndroid : public IVInputDevice
     #ifndef _VISION_DOC
     
     void HandleAndroidKeyEvent(int iKeyCode, bool bIsKeyDownEvent);
+
+    void HandleAnalogStickEvent(const hkvVec2& leftStickState, const hkvVec2& rightStickState);
     
     #endif
+
   private:
-  
     unsigned int m_uiKeyState;
-    
+    hkvVec2 m_leftStickState;
+    hkvVec2 m_rightStickState;
+    float m_fTimeDiff;
 };
 
 /// \class  VInputManagerAndroid
@@ -432,9 +431,12 @@ class VInputManagerAndroid : public VInputManagerBase
 
     static IVSoftKeyboardAdapter& GetSoftkeyboardAdapter();
 
-    static IVInputDevice s_NoInputDevice;
-
-    static int s_iFrameCounter;
+    /// \brief
+    ///   Convenience function.
+    static inline IVJoypad& GetPad(int iIndex)
+    {
+      return GetKeyInput();
+    }
 
   private:
 
@@ -454,7 +456,7 @@ class VInputManagerAndroid : public VInputManagerBase
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140725)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

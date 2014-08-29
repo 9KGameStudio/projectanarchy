@@ -21,14 +21,18 @@ class hkbBufferAssetLoader: public hkbCachingAssetLoader
 	
 		HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BEHAVIOR);
 		
-			// Entry for loaded buffers
+			/// Entry for loaded buffers
 		struct BufferEntry : public hkbCachingAssetLoader::CachedEntry
-		{			
+		{
 			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_SCENE_DATA, hkbBufferAssetLoader::BufferEntry );
 
 			hkArray<char> m_buffer;
 			void* m_contents;
 		};
+
+			/// Create a buffer asset loader.
+			/// Set enableThreadLocking to true if you plan to use this interface from different threads.
+		hkbBufferAssetLoader( bool enableThreadLocking = false );
 
 			/// Returns the list of loaded resources
 		const hkArray<BufferEntry>& getLoadedResources() const;
@@ -48,8 +52,6 @@ class hkbBufferAssetLoader: public hkbCachingAssetLoader
 			char* m_buffer;
 			bool m_userAllocated;
 		};
-
-	protected:
 
 			/// hkbCachingAssetLoader implementation
 		virtual void* loadFile( const hkStringBuf& fullPath, hkStreamReader* stream, void*& storingData ) HK_OVERRIDE;
@@ -84,7 +86,7 @@ class hkbBufferAssetLoader: public hkbCachingAssetLoader
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

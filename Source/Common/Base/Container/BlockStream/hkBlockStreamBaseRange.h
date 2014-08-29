@@ -19,7 +19,7 @@ namespace hkBlockStreamBase
 	/// A range in a stream.
 	/// Ranges are pointing to blocks and not to block streams, so a range will still
 	/// be valid if a block stream gets appended to another one
-	class Range
+	class HK_EXPORT_COMMON Range
 	{
 		public:
 
@@ -77,7 +77,7 @@ namespace hkBlockStreamBase
 			int m_numElements;
 	};
 
-	class LinkedRange : public Range
+	class HK_EXPORT_COMMON LinkedRange : public Range
 	{
 		public:
 
@@ -91,11 +91,10 @@ namespace hkBlockStreamBase
 			/// the appended range (rangeSpu) should be DMA'd by the caller before or after calling this function.
 			HK_ON_SPU( template<typename T> HK_FORCE_INLINE void appendPersistentRangeSpu( T* HK_RESTRICT rangeSPU, T* HK_RESTRICT rangePpu); );
 
-			HK_FORCE_INLINE	void clearRange()
-			{
-				Range::clearRange();
-				m_next = HK_NULL;
-			}
+			HK_FORCE_INLINE	void clearRange();
+
+			/// Get the number of elements of this and all linked ranges.
+			HK_FORCE_INLINE int getLinkedNumElements() const;
 
 		public:
 
@@ -110,7 +109,7 @@ namespace hkBlockStreamBase
 #endif //HK_BLOCKSTREAM_RANGE_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

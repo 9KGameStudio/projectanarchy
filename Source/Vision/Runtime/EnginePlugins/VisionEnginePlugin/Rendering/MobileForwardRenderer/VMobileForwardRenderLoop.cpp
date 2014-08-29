@@ -52,73 +52,12 @@ IVShadowMapComponent* VMobileForwardRenderLoop::GetCompatibleShadowMapComponent(
 #endif
 }
 
-int VMobileForwardRenderLoop::GetLightInfluenceArea(VisLightSource_cl *pLight)
+unsigned int VMobileForwardRenderLoop::GetLightPriority(VisLightSource_cl *pLight)
 {
-  VASSERT(pLight != NULL);
-
-  VisRenderContext_cl *pContext = VisRenderContext_cl::GetCurrentContext();
-  int iScreenWidth,iScreenHeight;
-  pContext->GetSize(iScreenWidth, iScreenHeight);
-  if (pLight->GetType() == VIS_LIGHT_DIRECTED)
-  {
-    // directional lights influence the whole screen
-    return (iScreenWidth*iScreenHeight); 
-  }
-
-  hkvMat4 projMatrix = pContext->GetViewProperties()->getProjectionMatrix(hkvClipSpaceYRange::MinusOneToOne);
-  hkvMat4 viewMatrix = pContext->GetCamera()->GetWorldToCameraTransformation();
-
-  // get position/ radius of bounding sphere
-  hkvVec3 vPosition;
-  float fRadius = 0.0f;
-  if (pLight->GetType() == VIS_LIGHT_POINT)
-  {
-    vPosition = pLight->GetPosition();
-    fRadius = pLight->GetRadius();
-  }
-  else if (pLight->GetType() == VIS_LIGHT_SPOTLIGHT)
-  {
-    hkvAlignedBBox bBox;
-    pLight->GetBoundingBox(bBox);
-    vPosition = bBox.getBoundingSphere().m_vCenter;
-    fRadius = bBox.getBoundingSphere().m_fRadius;
-  }
-  else
-    VASSERT_MSG(false, "Unsupported light type"); 
-  
-  // get corners of bounding rectangle in view space
-  hkvVec4 vPositionVS = viewMatrix*vPosition.getAsVec4(1.0f);
-  hkvVec4 vCorners[4];
-  vCorners[0] = vPositionVS+hkvVec4(-fRadius, -fRadius, 0.0f, 0.0f);
-  vCorners[1] = vPositionVS+hkvVec4(fRadius, -fRadius, 0.0f, 0.0f);
-  vCorners[2] = vPositionVS+hkvVec4(fRadius, fRadius, 0.0f, 0.0f);
-  vCorners[3] = vPositionVS+hkvVec4(-fRadius, fRadius, 0.0f, 0.0f); 
-
-  // get corners of bounding rectangle in normalized device coordinates
-  for (int i=0;i<4;i++)
-  {
-    vCorners[i] = projMatrix*vCorners[i];
-    vCorners[i] /= vCorners[i].w;
-  }
-
-  // clip corners of bounding rectangle
-  hkvVec2 vMin(vCorners[0].x, vCorners[0].y); 
-  vMin.clampTo(hkvVec2(-1.0f, -1.0f), hkvVec2(1.0f, 1.0f));
-  hkvVec2 vMax(vCorners[2].x, vCorners[2].y); 
-  vMax.clampTo(hkvVec2(-1.0f, -1.0f), hkvVec2(1.0f, 1.0f));
-
-  // calculate influence area 
-  int iWidth = (int)((vMax.x-vMin.x)*0.5f*iScreenWidth);
-  int iHeight = (int)((vMax.y-vMin.y)*0.5f*iScreenHeight);
-  return (iWidth*iHeight);
-}
-
-int VMobileForwardRenderLoop::GetLightPriority(VisLightSource_cl *pLight)
-{
-  int iLightPriority = 0;
+  unsigned int iLightPriority = 0;
   if (pLight->IsDynamic())
   {
-    iLightPriority = GetLightInfluenceArea(pLight);
+    iLightPriority = pLight->GetApproximateScreenInfluenceArea();
 
     // lights with attached shadow map component have higher priority
     if (GetCompatibleShadowMapComponent(pLight))
@@ -203,7 +142,7 @@ void VMobileForwardRenderLoop::OnDoRenderLoop(void *pUserData)
 
   m_iFrameCounter++; // just for arbitrary custom purposes
 
-#ifdef WIN32
+#ifdef _VISION_WIN32
   // vForge specific:
   if (Vision::RenderLoopHelper.GetReplacementRenderLoop())
   {
@@ -227,10 +166,8 @@ void VMobileForwardRenderLoop::OnDoRenderLoop(void *pUserData)
 
   const VisStaticGeometryInstanceCollection_cl *pVisibleGeoInstancesPrimaryOpaquePass = pVisCollector->GetVisibleStaticGeometryInstancesForPass(VPT_PrimaryOpaquePass);
   const VisStaticGeometryInstanceCollection_cl *pVisibleGeoInstancesSecondaryOpaquePass = pVisCollector->GetVisibleStaticGeometryInstancesForPass(VPT_SecondaryOpaquePass);
-  const VisStaticGeometryInstanceCollection_cl *pVisibleGeoInstancesTransparentPass = pVisCollector->GetVisibleStaticGeometryInstancesForPass(VPT_TransparentPass);
   const VisEntityCollection_cl *pVisibleEntitiesPrimaryOpaquePass = pVisCollector->GetVisibleEntitiesForPass(VPT_PrimaryOpaquePass);
   const VisEntityCollection_cl *pVisibleEntitiesSecondaryOpaquePass = pVisCollector->GetVisibleEntitiesForPass(VPT_SecondaryOpaquePass);
-  const VisEntityCollection_cl *pVisibleEntitiesTransparentPass = pVisCollector->GetVisibleEntitiesForPass(VPT_TransparentPass);
   const VisEntityCollection_cl *pVisibleForeGroundEntities = pVisCollector->GetVisibleForeGroundEntities();
   HandleVisibleVisibilityObjects();
 
@@ -321,30 +258,47 @@ void VMobileForwardRenderLoop::OnDoRenderLoop(void *pUserData)
   // Draw dynamic light 
   DrawDynamicLight();
 
-  // Render all mesh buffer objects with the render order flag "VRH_PRE_TRANSPARENT_PASS_GEOMETRY".
-  RenderHook(*pVisibleMeshBuffer, pVisibleParticleGroups, VRH_PRE_TRANSPARENT_PASS_GEOMETRY, m_bTriggerCallbacks); 
+  IVisTranslucencySorter* pTransSorter = pVisCollector->GetInterleavedTranslucencySorter();
+  if (pTransSorter == NULL)
+  {
+    // --- Traditional transparency sorting (default)
+    const VisStaticGeometryInstanceCollection_cl *pVisibleGeoInstancesTransparentPass = pVisCollector->GetVisibleStaticGeometryInstancesForPass(VPT_TransparentPass);
+    const VisEntityCollection_cl *pVisibleEntitiesTransparentPass = pVisCollector->GetVisibleEntitiesForPass(VPT_TransparentPass);
+    
+    // Render all mesh buffer objects with the render order flag "VRH_PRE_TRANSPARENT_PASS_GEOMETRY".
+    RenderHook(*pVisibleMeshBuffer, pVisibleParticleGroups, VRH_PRE_TRANSPARENT_PASS_GEOMETRY, m_bTriggerCallbacks); 
   
-  // Render transparent pass surface shaders on translucent lit world primitives
-  Vision::RenderLoopHelper.RenderStaticGeometrySurfaceShaders(*pVisibleGeoInstancesTransparentPass, VPT_TransparentPass, VTF_IGNORE_TAGGED_ENTRIES);
+    // Render transparent pass surface shaders on translucent lit world primitives
+    Vision::RenderLoopHelper.RenderStaticGeometrySurfaceShaders(*pVisibleGeoInstancesTransparentPass, VPT_TransparentPass, VTF_IGNORE_TAGGED_ENTRIES);
 
-  RenderHook(*pVisibleMeshBuffer, pVisibleParticleGroups, VRH_PRE_TRANSPARENT_PASS_ENTITIES, m_bTriggerCallbacks);
+    RenderHook(*pVisibleMeshBuffer, pVisibleParticleGroups, VRH_PRE_TRANSPARENT_PASS_ENTITIES, m_bTriggerCallbacks);
 
-  // Render transparent pass shaders on entities
-  DrawEntitiesShaders(*pVisibleEntitiesTransparentPass, VPT_TransparentPass, VTF_IGNORE_TAGGED_ENTRIES);
+    // Render transparent pass shaders on entities
+    DrawEntitiesShaders(*pVisibleEntitiesTransparentPass, VPT_TransparentPass, VTF_IGNORE_TAGGED_ENTRIES);
 
-  // Render all mesh buffer objects with the render order flag "VRH_POST_TRANSPARENT_PASS_GEOMETRY".
-  RenderHook(*pVisibleMeshBuffer, pVisibleParticleGroups, VRH_POST_TRANSPARENT_PASS_GEOMETRY, m_bTriggerCallbacks);
+    // Render all mesh buffer objects with the render order flag "VRH_POST_TRANSPARENT_PASS_GEOMETRY".
+    RenderHook(*pVisibleMeshBuffer, pVisibleParticleGroups, VRH_POST_TRANSPARENT_PASS_GEOMETRY, m_bTriggerCallbacks);
 
-  // Render all mesh buffer objects and particle systems with the render order flag "VRH_DECALS".
-  RenderHook(*pVisibleMeshBuffer, pVisibleParticleGroups, VRH_DECALS, m_bTriggerCallbacks);
+    // Render all mesh buffer objects and particle systems with the render order flag "VRH_DECALS".
+    RenderHook(*pVisibleMeshBuffer, pVisibleParticleGroups, VRH_DECALS, m_bTriggerCallbacks);
 
-  // Render all mesh buffer objects and particle systems with the render order flag "VRH_PARTICLES".
-  RenderHook(*pVisibleMeshBuffer, pVisibleParticleGroups, VRH_PARTICLES, m_bTriggerCallbacks);
+    // Render all mesh buffer objects and particle systems with the render order flag "VRH_PARTICLES".
+    RenderHook(*pVisibleMeshBuffer, pVisibleParticleGroups, VRH_PARTICLES, m_bTriggerCallbacks);
 
-  // Render all mesh buffer objects with the render order flag "VRH_ADDITIVE_PARTICLES"
-  RenderHook(*pVisibleMeshBuffer, pVisibleParticleGroups, VRH_ADDITIVE_PARTICLES, m_bTriggerCallbacks);
+    // Render all mesh buffer objects with the render order flag "VRH_ADDITIVE_PARTICLES"
+    RenderHook(*pVisibleMeshBuffer, pVisibleParticleGroups, VRH_ADDITIVE_PARTICLES, m_bTriggerCallbacks);
 
-  RenderHook(*pVisibleMeshBuffer, pVisibleParticleGroups, VRH_TRANSLUCENT_VOLUMES, m_bTriggerCallbacks);
+    RenderHook(*pVisibleMeshBuffer, pVisibleParticleGroups, VRH_TRANSLUCENT_VOLUMES, m_bTriggerCallbacks);
+  }
+  else
+  {
+    // --- Interleaved transparency sorting
+    pTransSorter->SetTagFilter(VTF_IGNORE_TAGGED_ENTRIES);
+
+    pTransSorter->OnRender(pVisCollector, m_bTriggerCallbacks);
+
+    pTransSorter->SetTagFilter(VTF_IGNORE_NONE);
+  }
 
   // Render visible foreground entities (see DrawForegroundEntities)
   DrawForegroundEntities(*pVisibleForeGroundEntities);
@@ -405,6 +359,8 @@ void VMobileForwardRenderLoop::RenderLitGeometry(VisLightSource_cl *pLight, IVSh
 {
   if (!pLight)
     return;
+
+  INSERT_PERF_MARKER_SCOPE("VMobileForwardRenderLoop::RenderLitGeometry");
 
   // Some local variables for storing surfaces, shaders, surface shaders, and the like.
   VCompiledTechnique *pTechnique = NULL;
@@ -811,12 +767,8 @@ VCompiledTechnique *VMobileForwardRenderLoop::GetLightShader(VisLightSource_cl *
 
       if (pProjTexture)
       {
-        VDynamicLightShader *pDynamicLightShader = vdynamic_cast<VDynamicLightShader*>(pPass);
-        if (pDynamicLightShader)
-        {
-          pDynamicLightShader->SetProjectedTexture(pProjTexture);
-          pDynamicLightShader->SetProjectionPlanes(plane_x,plane_y,plane_z);
-        }
+        pPass->SetProjectedTexture(pProjTexture);
+        pPass->SetProjectionPlanes(plane_x,plane_y,plane_z);
       }
     }
 
@@ -844,7 +796,7 @@ VCompiledTechnique *VMobileForwardRenderLoop::GetLightShader(VisLightSource_cl *
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -27,7 +27,7 @@
 
 /// hkaiNavMeshGraph serves as the bridge between an hkaiNavMesh and the hkaiAStar system.
 /// The nav mesh edges are treated as nodes in the A* search.
-/// Users don't need to use this directly; instead they should use hkaiPathfindingUtil or hkaiNavMeshAstarJobs.
+/// Users don't need to use this directly; instead they should use hkaiPathfindingUtil or hkaiNavMeshAStarTask.
 /// This particular implementation keeps a local copy of the current face and relevant edges,
 /// which avoids DMA/cache checks on SPU, and cache misses on CPU
 struct hkaiNavMeshSectionGraph
@@ -191,18 +191,16 @@ private:
 	HK_PAD_ON_SPU(hkUint32) m_flags;
 
 	// Just used for asserts/debugging
-#ifdef HK_DEBUG
-	SearchIndex m_cachedIncomingEdgeIndex;
-	SearchIndex m_cachedOutgoingEdgeIndex;
-	SearchIndex m_cachedOppositeEdgeIndex;
-#endif
+	HK_DEBUG_ONLY_MEMBER(SearchIndex, m_cachedIncomingEdgeIndex);
+	HK_DEBUG_ONLY_MEMBER(SearchIndex, m_cachedOutgoingEdgeIndex);
+	HK_DEBUG_ONLY_MEMBER(SearchIndex, m_cachedOppositeEdgeIndex);
 };
 
 #include <Ai/Pathfinding/Graph/hkaiNavMeshSectionGraph.inl>
 #endif // HKAI_NAV_MESH_GRAPH_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

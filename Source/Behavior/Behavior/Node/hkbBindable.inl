@@ -54,11 +54,12 @@ HK_FORCE_INLINE hkBool32 HK_CALL hkbBindable::copyVariablesToMembersInternal(
 	hkbBehaviorGraph& rootBehavior,
 	bool reverse )
 {
-	hkBool32 hasOutputBindings = variableBindingSet.hasOutputBinding();
+	// Need to call this before hasOutputBinding() to initialize that flag.
+	variableBindingSet.initMemberOffsets( bindable );
 
+	hkBool32 hasOutputBindings = variableBindingSet.hasOutputBinding();
 	if ( !reverse || hasOutputBindings )
 	{
-		variableBindingSet.initMemberOffsets( bindable );
 		variableBindingSet.copyVariablesToMembers( syncVariableSetup, reverse, bindable, &rootBehavior );
 	}
 
@@ -79,7 +80,7 @@ HK_FORCE_INLINE void HK_CALL hkbBindable::copyVariableToEnableInternal(
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

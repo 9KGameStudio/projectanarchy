@@ -9,11 +9,11 @@
 #define HKAI_DIRECTED_GRAPH_INSTANCE_H
 
 #include <Ai/Pathfinding/Graph/hkaiDirectedGraphExplicitCost.h>
-extern const hkClass hkaiDirectedGraphInstanceClass;
+extern HK_EXPORT_AI const hkClass hkaiDirectedGraphInstanceClass;
 
 /// A modifiable instance of an hkaiDirectedGraphExplicitCost.
 /// This only supports adding additional edges to a node.
-class hkaiDirectedGraphInstance : public hkReferencedObject
+class HK_EXPORT_AI hkaiDirectedGraphInstance : public hkReferencedObject
 {
 public:
 	//+vtable(true)
@@ -109,7 +109,7 @@ private:
 
 	inline void setOriginalPointers( const hkaiDirectedGraphExplicitCost* graph);
 
-	hkaiDirectedGraphExplicitCost::Edge* addEdgeForNode( NodeIndex n, hkaiDirectedGraphExplicitCost::EdgeData** edgeDataPtrOut = HK_NULL );
+	hkaiDirectedGraphExplicitCost::Edge* addEdgeForNode( NodeIndex n, hkaiDirectedGraphExplicitCost::EdgeData** edgeDataPtrOut = HK_NULL, int** userEdgeCountPtrOut = HK_NULL );
 	void removeOwnedEdgeForNode( NodeIndex n, EdgeIndex e );
 		/// Returns the start index of the new block.
 	hkaiDirectedGraphExplicitCost::EdgeIndex expandEdgesBy(int n );
@@ -167,7 +167,7 @@ public:
 
 		/// A list of "holes" in the m_ownedEdges array that are created when adding new edges.
 		/// Serialization doesn't support hkArrays of hkArrays, so we have to wrap the array in a struct
-	struct FreeBlockList
+	struct HK_EXPORT_AI FreeBlockList
 	{
 		HK_DECLARE_REFLECTION();
 		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_AI, FreeBlockList);
@@ -179,6 +179,8 @@ public:
 		void pushBack(int i) { m_blocks.pushBack(i); } 
 		void popBack() { m_blocks.popBack(); }
 		hkArray<int> m_blocks;
+
+		FreeBlockList& operator=(const FreeBlockList& other) { HK_ASSERT(0x7877dd59, !"Unsupported"); return *this; } /* DLL build does not optimize out code in hkArray for this */
 	};
 
 protected:
@@ -261,7 +263,7 @@ typedef hkaiDirectedGraphInstance hkaiDirectedGraphAccessor;
 #endif // HKAI_DIRECTED_GRAPH_INSTANCE_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

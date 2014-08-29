@@ -14,8 +14,8 @@ hkaiNavMeshSectionGraph::hkaiNavMeshSectionGraph()
 :	m_streamingInfo(HK_NULL),
 	m_startFaceKey(HKAI_INVALID_PACKED_KEY),
 	m_numGoals(0),
-	m_searchSphereRadius(-1.f),
-	m_searchCapsuleRadius(-1.f),
+	m_searchSphereRadius( hkSimdReal_Minus1 ),
+	m_searchCapsuleRadius( hkSimdReal_Minus1 ),
 	m_costModifier(HK_NULL)
 {
 	m_cachedIncomingSectionId = -1;
@@ -29,8 +29,8 @@ hkaiNavMeshSectionGraph::hkaiNavMeshSectionGraph()
 :	m_streamingInfo(HK_NULL),
 	m_startFaceKey(HKAI_INVALID_PACKED_KEY),
 	m_numGoals(0),
-	m_searchSphereRadius(-hkSimdReal_1),
-	m_searchCapsuleRadius(-hkSimdReal_1),
+	m_searchSphereRadius( hkSimdReal_Minus1 ),
+	m_searchCapsuleRadius( hkSimdReal_Minus1 ),
 	m_costModifier(HK_NULL),
 	m_edgeFilter(HK_NULL),
 	m_cachedIncomingNavMesh(HK_NULL),
@@ -51,7 +51,8 @@ inline void hkaiNavMeshSectionGraph::init(
 {
 	m_streamingInfo = streamingInfo;
 	m_up = up;
-	HK_ASSERT(0x5e1ccfa7, m_up.isNormalized<3>() );
+	HK_ON_DEBUG( const hkReal upNormalizedTolerance = 1e-3f );
+	HK_ASSERT(0x5e1ccfa7, m_up.isNormalized<3>(upNormalizedTolerance) );
 	m_costModifier = costModifier;
 	m_edgeFilter = edgeFilter;
 }
@@ -248,6 +249,24 @@ hkaiNavMeshSectionGraph::EdgeCost hkaiNavMeshSectionGraph::getTotalCost( SearchI
 
 	if ( HK_VERY_LIKELY(!incomingIsStart && !incomingIsUserEdge && useGrandparentCalc) )
 	{
+		//	Sketch of the edges:
+		//
+		// 		|		|
+		// 		|		|
+		// 		|		|
+		// 		G  		I
+		// 		|		|		|
+		// 		|		O		|
+		// 		|		|		P
+		// 						|
+		// 						|
+		// 
+		// 		G = grandparent point
+		// 		I = incoming point
+		// 		O = optimal point (intersection of segment GP with incoming edge)
+		// 		P = point we're evaluating (outgoing point)
+		
+
 		// Work out the point incomingOpt on the incoming edge the minimizes
 		//     distance( grandparentMidpoint, incomingOpt ) + distance( incomingOpt, outgoingMidpoint)
 		// This is roughly the closest point on the incoming edge to the segment [grandparentMidpoint, outgoingMidpoint]
@@ -258,9 +277,14 @@ hkaiNavMeshSectionGraph::EdgeCost hkaiNavMeshSectionGraph::getTotalCost( SearchI
 
 		hkSimdReal tEdge, tGp;
 		hkcdClosestPointSegmentSegment( m_cachedIncomingEdgeVertA, dEdge, m_grandparentMidpoint, outgoingToGrandparent, tEdge, tGp);
-
 		hkVector4 incomingOpt; incomingOpt.setAddMul(m_cachedIncomingEdgeVertA, dEdge, tEdge);
-		hkSimdReal grandparentToOpt = m_grandparentMidpoint.distanceTo(incomingOpt);
+
+		// Assume that the cost modifier on the parent face is a constant multiplier on the whole face
+		// Then we need to scale the distance from the grandparent to the optimal point.
+		hkSimdReal parentCostRatio = (incomingCost - m_grandparentCost) / incomingPos.distanceTo(m_grandparentMidpoint);
+		parentCostRatio.setMax( parentCostRatio, hkSimdReal_1);
+
+		hkSimdReal grandparentToOpt = m_grandparentMidpoint.distanceTo(incomingOpt) * parentCostRatio;
 		hkSimdReal optToOutgoing = incomingOpt.distanceTo(outgoingPos);
 		hkSimdReal euclideanCostFromGp = grandparentToOpt + optToOutgoing;
 		
@@ -293,7 +317,7 @@ hkaiNavMeshSectionGraph::EdgeCost hkaiNavMeshSectionGraph::getTotalCost( SearchI
 			m_info,
 			m_cachedEdgePairInfo,
 			queryType,
-			costToParent,
+			incomingCost,
 			euclideanCost
 			);
 		hkSimdReal modifiedCost = m_costModifier->getModifiedCost( callbackContext );
@@ -323,6 +347,13 @@ hkBool32 hkaiNavMeshSectionGraph::isEdgeTraversable( SearchIndex nit, SearchInde
 	const EdgeKey incomingOppositeEdgeKey = m_cachedIncomingEdge.getOppositeEdgeKeyUnchecked();
 	if(incomingOppositeEdgeKey == adj)
 	{
+		return false;
+	}
+
+	// For user edges with both ends in the same face, prevent wrapping
+	if(nit == adj)
+	{
+		HK_ASSERT(0x30aa097e, m_cachedIncomingEdge.isUserEdge() && m_cachedOutgoingEdge.getOppositeFaceKeyUnchecked() == m_cachedFaceKey);
 		return false;
 	}
 
@@ -391,7 +422,7 @@ hkBool32 hkaiNavMeshSectionGraph::isEdgeTraversable( SearchIndex nit, SearchInde
 				}
 				hkVector4 dse; dse.setSub(end, start);
 
-				hkSimdReal distanceSquared = hkcdDistanceSegmentSegment(start, dse, incomingA, dab);
+				hkSimdReal distanceSquared = hkcdSegmentSegmentDistanceSquared(start, dse, incomingA, dab);
 
 				if (distanceSquared <= m_searchCapsuleRadius*m_searchCapsuleRadius)
 				{
@@ -691,7 +722,7 @@ const hkaiNavMesh::Edge& hkaiNavMeshSectionGraph::setCachedIncomingEdge( EdgeKey
 			if ( grandparentNode->isStart() )
 			{
 				m_grandparentMidpoint = m_startPoint;
-				m_grandparentCost = 0.0f;
+				m_grandparentCost.setZero();
 			}
 			else
 			{
@@ -812,7 +843,7 @@ void hkaiNavMeshSectionGraph::setOutgoingAccessor( hkaiPackedKey key )
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

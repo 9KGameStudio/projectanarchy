@@ -14,8 +14,6 @@
 
 #include <Vision/Runtime/Engine/Visibility/VisApiVisibilityLODHysteresis.hpp>
 
-#ifdef WIN32
-
 VSceneExporterFactory VSceneExporterFactory::g_ExporterFactory;
 
 
@@ -168,7 +166,10 @@ VExportShapesArchive* VSceneExporter::StartVSceneExport(IVFileOutStream *pOut, b
   VLODHysteresisManager::SerializeX(*m_pArchive);
 
   // #19: coordinate settings
-  (*m_pArchive) << Vision::World.GetCoordinateSystem()->GetProjection();
+  const IVProjection *pProjection = Vision::World.GetCoordinateSystem()->GetProjection();
+  if (pProjection!=NULL && !pProjection->WantsSerialization())
+    pProjection = NULL;
+  (*m_pArchive) << pProjection;
 
   // #17: time stepping
   if ((m_eExportFlags & VExport_TimeStepping) != 0)
@@ -427,7 +428,7 @@ void VSceneExporter::WriteVSceneFile()
       Vision::Contexts.GetMainRenderContext()->GetFOV(fCameraFovX, fCameraFovY);
       file.WriteFloat(fCameraFovX);
       
-      file.WriteInt(0); // reserved
+      file.WriteFloat(pNode->GetViewProperties()->getLODScaling());
       file.WriteInt(0); // reserved
 
     file.EndChunk();
@@ -535,13 +536,8 @@ void VSceneExporter::WriteVPrefabFile()
   m_spMemStream->CopyToStream(m_pOut); // write everything to file
 }
 
-
-
-
-#endif
-
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

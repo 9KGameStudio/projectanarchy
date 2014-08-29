@@ -88,28 +88,28 @@ class hkpTreeBroadPhase : public hkpBroadPhase
 		int				getMemoryFootPrint() const;
 
 		/// Get the jitter margin.
-		hkReal			getJitterMargin() const { return m_parameters(0); }
-
-		/// Set the jitter margin.
-		void			setJitterMargin(hkReal margin) { m_parameters(0) = margin; }
-
-		/// Get the motion prediction factor.
-		hkReal			getMotionPredictionFactor() const { return m_parameters(2); }
-
-		/// Set the motion prediction factor.
-		void			setMotionPredictionFactor(hkReal factor) { m_parameters(2) = factor; }
+		HK_FORCE_INLINE hkSimdReal		getJitterMargin() const { return m_parameters.getComponent<0>(); }
 
 		/// Get the update optimization quality.
-		hkReal			getUpdateQuality() const { return m_parameters(1); }
+		HK_FORCE_INLINE hkSimdReal		getUpdateQuality() const { return m_parameters.getComponent<1>(); }
 
-		/// Set the update optimization quality.
-		void			setUpdateQuality(hkReal quality) { m_parameters(1) = quality; }
+		/// Get the motion prediction factor.
+		HK_FORCE_INLINE hkSimdReal		getMotionPredictionFactor() const { return m_parameters.getComponent<2>(); }
 
 		/// Get the cache optimization quality.
-		int				getCacheQuality() const { return m_parameters.getInt24W(); }
+		HK_FORCE_INLINE int				getCacheQuality() const { return m_parameters.getInt24W(); }
+
+		/// Set the jitter margin.
+		void			setJitterMargin(hkReal margin);
+
+		/// Set the update optimization quality.
+		void			setUpdateQuality(hkReal quality);
+
+		/// Set the motion prediction factor.
+		void			setMotionPredictionFactor(hkReal factor);
 
 		/// Set the cache optimization quality.
-		void			setCacheQuality(int quality) { m_parameters.setInt24W(quality); }
+		void			setCacheQuality(int quality);
 		
 		/// Fully optimize the acceleration data structure.
 		/// Its is recommended to call this function before the first frame and after most objects have been inserted into the broadphase.
@@ -273,7 +273,7 @@ class hkpTreeBroadPhase : public hkpBroadPhase
 #endif // HK_COLLIDE_TREE_BROADPHASE_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -16,14 +16,15 @@
 #include <Ai/Pathfinding/Utilities/hkaiPathfindingUtil.h>
 #include <Ai/Pathfinding/Utilities/hkaiVolumePathfindingUtil.h>
 #include <Ai/Pathfinding/Dynamic/Silhouette/SilhouetteGenerator/hkaiSilhouetteGenerationParameters.h>
+#include <Ai/Pathfinding/Character/LocalSteering/hkaiAvoidanceSolver.h> // fwd decl not enough for DLL build with hkRefPtr
+#include <Ai/Pathfinding/Dynamic/Partitioning/hkaiOverlapManager.h>
+#include <Ai/Pathfinding/Collide/NavVolume/hkaiDynamicNavVolumeMediator.h>
+#include <Ai/Pathfinding/Collide/NavMesh/hkaiDynamicNavMeshQueryMediator.h>
+#include <Ai/Pathfinding/Character/LocalSteering/Obstacle/hkaiObstacleGenerator.h>
 
 class hkaiNavMeshGeneratorPartitioner;
-class hkaiOverlapManager;
-struct hkaiOverlapManagerSection;
 class hkaiReferenceFrameAndExtrusion;
 class hkaiSilhouetteGenerator;
-class hkaiDynamicNavMeshQueryMediator;
-class hkaiObstacleGenerator;
 class hkaiPathRequestInfoOwner;
 class hkaiDirectedGraphExplicitCost;
 class hkaiNavMeshQueryMediator;
@@ -31,20 +32,21 @@ class hkaiNavVolume;
 class hkaiNavVolumeMediator;
 class hkaiCharacter;
 struct hkaiLocalSteeringInput;
-struct hkaiAvoidancePairProperties;
 class hkBitField;
 
 // Multithreading
-class hkJobQueue;
+class hkTaskQueue;
 class hkThreadPool;
 
-extern const class hkClass hkaiWorldClass;
+struct hkaiAgentInfo;
+
+extern HK_EXPORT_AI const class hkClass hkaiWorldClass;
 
 /// A single requested path in the hkaiWorld.
-class hkaiNavMeshPathRequestInfo : public hkReferencedObject
+class HK_EXPORT_AI hkaiNavMeshPathRequestInfo : public hkReferencedObject
 {
 	friend class hkaiWorld;
-
+	
 public:
 
 	HK_DECLARE_REFLECTION();
@@ -90,17 +92,18 @@ public:
 	/// Sorting predicate for path requests.
 	inline hkBool32 operator<(const hkaiNavMeshPathRequestInfo& other) const;
 
-protected:
 	hkRefPtr<hkaiPathfindingUtil::FindPathInput> m_input;
 	hkRefPtr<hkaiPathfindingUtil::FindPathOutput> m_output;
 
 	int m_priority;
 	hkaiPathRequestInfoOwner* m_owner; //+nosave
+
+protected:
 	hkBool m_markedForDeletion;
 };
 
 /// A single requested path in the hkaiWorld.
-class hkaiNavVolumePathRequestInfo : public hkReferencedObject
+class HK_EXPORT_AI hkaiNavVolumePathRequestInfo : public hkReferencedObject
 {
 	friend class hkaiWorld;
 
@@ -148,26 +151,26 @@ public:
 	/// Sorting predicate for path requests.
 	inline hkBool32 operator<(const hkaiNavVolumePathRequestInfo& other) const;
 
-protected:
 	hkRefPtr<hkaiVolumePathfindingUtil::FindPathInput> m_input;
 	hkRefPtr<hkaiVolumePathfindingUtil::FindPathOutput> m_output;
 
 	int m_priority;
 	hkaiPathRequestInfoOwner* m_owner; //+nosave
+protected:
 	hkBool m_markedForDeletion;
 };
 
 /// This is a container for characters and objects added to the AI world.
-class hkaiWorld : public hkReferencedObject
+class HK_EXPORT_AI hkaiWorld : public hkReferencedObject
 {
-	// +version(32)
+	// +version(34)
 	public:
 
 		HK_DECLARE_REFLECTION();
 		HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_AI);
 
 			/// The construction information for a hkaiWorld.
-		struct Cinfo
+		struct HK_EXPORT_AI Cinfo
 		{
 			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE,hkaiWorld::Cinfo);
 			Cinfo();
@@ -180,7 +183,7 @@ class hkaiWorld : public hkReferencedObject
 
 				/// Whether or not to do nav mesh validation during cutting.
 				/// These are always disabled during release builds, but enabled by default in debug builds.
-				/// The checks are potentially slow, but should be left on initially, 
+				/// The checks are potentially slow, but should be left on initially,
 				/// at least until streaming and cutting are verified to be in your engine.
 			hkBool	m_performValidationChecks; //+default(true)
 
@@ -204,15 +207,15 @@ class hkaiWorld : public hkReferencedObject
 
 				
 				/// The world avoidance properties shared by all character pairs
-			struct hkaiAvoidancePairProperties*	m_avoidancePairProps;
+			hkaiAvoidancePairProperties*	m_avoidancePairProps;
 
 				/// Maximum number of requests per step. This is a "soft" maximum - requests above m_priorityThreshold are always processed.
 			int m_maxRequestsPerStep; //+default(100)
 
 			
-				/// Estimated limit of A* searches per step. This is not a true hard limit, as the limit cannot be 
-				/// arbitrated between multiple jobs executing in parallel. This iteration limit will be distributed
-				/// across all submitted jobs, according to the jobs' estimated costs.
+				/// Estimated limit of A* searches per step. This is not a true hard limit, as the limit cannot be
+				/// arbitrated between multiple tasks executing in parallel. This iteration limit will be distributed
+				/// across all submitted tasks, according to the tasks' estimated costs.
 			int m_maxEstimatedIterationsPerStep; //+default(-1)
 			
 
@@ -221,18 +224,18 @@ class hkaiWorld : public hkReferencedObject
 
 			//
 			// Multithreading parameters
-			// These control the granularity of the multithreaded jobs; setting them too low will cause
+			// These control the granularity of the multithreaded tasks; setting them too low will cause
 			// contention between threads.
 			//
 
-				/// Number of path requests to process per hkaiNavMeshAStarJob.
-			int m_numPathRequestsPerJob; //+default(16)
+				/// Number of path requests to process per hkaiNavMeshPathfindingTask.
+			int m_numPathRequestsPerTask; //+default(16)
 
-				/// Number of character behaviors to update per hkaiBehaviorCalcVelocitiesJob.
-			int m_numBehaviorUpdatesPerJob; //+default(16)
+				/// Number of character behaviors to update per hkaiBehaviorCalcVelocitiesTask.
+			int m_numBehaviorUpdatesPerTask; //+default(16)
 
-				/// Number of characters to solver per hkaiAvoidanceSolverJob.
-			int m_numCharactersPerAvoidanceJob; //+default(16)
+				/// Number of characters to solver per hkaiAvoidanceSolverTask.
+			int m_numCharactersPerAvoidanceTask; //+default(16)
 
 				/// Maximum number of edges that can be output during multithreaded character searches.
 				/// See hkaiNavMeshAstarCommand::m_maxEdgesOut
@@ -244,7 +247,7 @@ class hkaiWorld : public hkReferencedObject
 
 				/// Do not use the new dynamic face cutting algorithm. This is a
 				/// transitional field, and will be removed in a future release. You
-				/// should not change this field without first consulting Havok 
+				/// should not change this field without first consulting Havok
 				/// support.
 			hkBool m_fallbackToOldCutter; // +default(false)
 
@@ -286,7 +289,7 @@ class hkaiWorld : public hkReferencedObject
 		};
 
 			/// Information about the silhouette step that is passed to	hkaiWorld::Listener::dynamicNavMeshModifiedCallback().
-		struct NavMeshModifiedCallbackContext
+		struct HK_EXPORT_AI NavMeshModifiedCallbackContext
 		{
 			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_AI,hkaiWorld::NavMeshModifiedCallbackContext);
 			NavMeshModifiedCallbackContext( class hkaiWorld* world, const hkArrayBase<hkaiPackedKey>& cutFaceKeys, const hkArrayBase<hkaiPackedKey>& uncutFaceKeys );
@@ -295,7 +298,7 @@ class hkaiWorld : public hkReferencedObject
 			const hkArrayBase<hkaiPackedKey>& m_cutFaceKeys;
 			const hkArrayBase<hkaiPackedKey>& m_uncutFaceKeys;
 		};
-		
+
 			/// Chararcter callback type.
 		enum CharacterCallbackType
 		{
@@ -305,7 +308,7 @@ class hkaiWorld : public hkReferencedObject
 
 			/// Information about the characters in the world that is passed to
 			/// hkaiWorld::Listener::preCharacterStepCallback() and postCharacterStepCallback().
-		struct CharacterStepCallbackContext
+		struct HK_EXPORT_AI CharacterStepCallbackContext
 		{
 		public:
 			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_AI, CharacterStepCallbackContext);
@@ -313,16 +316,16 @@ class hkaiWorld : public hkReferencedObject
 			CharacterStepCallbackContext( CharacterCallbackType cbType, class hkaiWorld* world, hkReal timestep, const hkArrayBase<hkaiCharacter*>* characters, const hkArrayBase<hkaiLocalSteeringInput>* localSteeringInputs );
 			~CharacterStepCallbackContext() {}
 
-			class hkaiWorld* m_world; 
+			class hkaiWorld* m_world;
 			hkEnum<CharacterCallbackType, hkUint8> m_callbackType;
 			hkReal m_timestep;
-			const hkArrayBase<hkaiCharacter*>* m_characters; 
-			const hkArrayBase<hkaiLocalSteeringInput>* m_localSteeringInputs; 
+			const hkArrayBase<hkaiCharacter*>* m_characters;
+			const hkArrayBase<hkaiLocalSteeringInput>* m_localSteeringInputs;
 		};
 
 			/// A serializable version of CharacterStepCallbackContext. This adds temporary reference counts to the
 			/// characters, so should be avoided unless needed.
-		class CharacterStepSerializableContext : public hkReferencedObject
+		class HK_EXPORT_AI CharacterStepSerializableContext : public hkReferencedObject
 		{
 		public:
 			//+version(2)
@@ -336,8 +339,8 @@ class hkaiWorld : public hkReferencedObject
 			class hkaiWorld* m_world; //+nosave
 			hkEnum<CharacterCallbackType, hkUint8> m_callbackType;
 			hkReal m_timestep; //+default(1.0f / 30.0f);
-			hkArray< hkRefPtr<const hkaiCharacter> > m_characters; 
-			const hkArray<struct hkaiLocalSteeringInput> m_localSteeringInputs; 
+			hkArray< hkRefPtr<const hkaiCharacter> > m_characters;
+			const hkArray<struct hkaiLocalSteeringInput> m_localSteeringInputs;
 			hkArray<hkRefPtr<hkaiObstacleGenerator> > m_obstacleGenerators;
 		};
 
@@ -347,7 +350,7 @@ class hkaiWorld : public hkReferencedObject
 		//
 
 			/// hkaiWorld callback interface.
-		class Listener
+		class HK_EXPORT_AI Listener
 		{
 			public:
 				HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_AI,hkaiWorld::Listener);
@@ -470,10 +473,17 @@ class hkaiWorld : public hkReferencedObject
 			/// This is useful for profiling, but should not be used for real builds
 		inline void setForceSilhouetteUpdates( bool forceSilhouetteUpdates );
 
-			/// Get all the silhouette generators for the world. You should NOT add or remove silhouettes by modifying this array.
-		inline hkaiWorld::SilhouetteGeneratorArray&	getSilhouetteGenerators(); 
+			/// Get whether or not to do nav mesh validation during cutting.
+		inline bool getPerformValidationChecks() const;
 
-		inline const hkaiWorld::SilhouetteGeneratorArray&	getSilhouetteGenerators() const; 
+			/// Set whether or not to do nav mesh validation during cutting.
+			/// These are always disabled during release builds, but potentially slow in debug builds
+		inline void setPerformValidationChecks( bool performValidationChecks );
+
+			/// Get all the silhouette generators for the world. You should NOT add or remove silhouettes by modifying this array.
+		inline hkaiWorld::SilhouetteGeneratorArray&	getSilhouetteGenerators();
+
+		inline const hkaiWorld::SilhouetteGeneratorArray&	getSilhouetteGenerators() const;
 
 			/// Access to the world's overlap manager
 		inline hkaiOverlapManager* getOverlapManager();
@@ -483,7 +493,7 @@ class hkaiWorld : public hkReferencedObject
 
 			/// Access to the world's silhouette generation parameters.
 		inline hkaiSilhouetteGenerationParameters& getSilhouetteGenerationParams();
-			
+
 			/// Access to the world's silhouette generation parameters.
 		inline const hkaiSilhouetteGenerationParameters& getSilhouetteGenerationParams() const;
 
@@ -516,17 +526,17 @@ class hkaiWorld : public hkReferencedObject
 			
 			/// Access to pair-wise avoidance properties.
 		inline const hkaiAvoidancePairProperties* getAvoidancePairProperties() const;
-			
+
 			/// Sets the pair-wise avoidance properties
 		void setAvoidancePairProperties( hkaiAvoidancePairProperties* props);
 
-			/// Number of character behaviors to update per hkaiBehaviorCalcVelocitiesJob.
-		inline int getNumBehaviorUpdatesPerJob() const;
+			/// Number of character behaviors to update per hkaiBehaviorCalcVelocitiesTask.
+		inline int getNumBehaviorUpdatesPerTask() const;
 
-			/// Set then number of character behaviors to update per hkaiBehaviorCalcVelocitiesJob.
-		inline void setNumBehaviorUpdatesPerJob(int n);
+			/// Set then number of character behaviors to update per hkaiBehaviorCalcVelocitiesTask.
+		inline void setNumBehaviorUpdatesPerTask(int n);
 
-	
+
 
 		//
 		// Character pathfinding
@@ -571,16 +581,16 @@ class hkaiWorld : public hkReferencedObject
 
 		/// Default values for pathfinding
 		hkaiVolumePathfindingUtil::FindPathInput& getDefaultVolumePathfindingInput();
-		
+
 			/// Maximum number of requests per step. This is a "soft" maximum - requests above m_priorityThreshold are always processed.
 		inline int getMaxRequestsPerStep() const;
 
 			/// Set maximum number of requests per step.
 		inline void setMaxRequestsPerStep( int m );
 
-			/// Estimated limit of A* searches per step. This is not a true hard limit, as the limit cannot be 
-			/// arbitrated between multiple jobs executing in parallel. This iteration limit will be distributed
-			/// across all submitted jobs, according to the jobs' estimated costs.
+			/// Estimated limit of A* searches per step. This is not a true hard limit, as the limit cannot be
+			/// arbitrated between multiple tasks executing in parallel. This iteration limit will be distributed
+			/// across all submitted tasks, according to the tasks' estimated costs.
 		inline int getMaxEstimatedIterationsPerStep() const;
 
 			/// Set maximum estimated iterations per step.
@@ -592,17 +602,17 @@ class hkaiWorld : public hkReferencedObject
 			/// Requests with path search priority threshold.
 		inline void setPriorityThreshold( int t );
 
-			/// Number of path requests to process per hkaiNavMeshAStarJob. Only used during stepPathSearchesMT()
-		inline int getNumPathRequestsPerJob() const;
+			/// Number of path requests to process per hkaiNavMeshPathfindingTask. Only used during stepPathSearchesMT()
+		inline int getNumPathRequestsPerTask() const;
 
-			/// Set the number of path requests to process per hkaiNavMeshAStarJob.
-		inline void setNumPathRequestsPerJob(int n);
+			/// Set the number of path requests to process per hkaiNavMeshPathfindingTask.
+		inline void setNumPathRequestsPerTask(int n);
 
-			/// Number of characters to solver per hkaiAvoidanceSolverJob.
-		inline int getNumCharactersPerAvoidanceJob() const;
+			/// Number of characters to solver per hkaiAvoidanceSolverTask.
+		inline int getNumCharactersPerAvoidanceTask() const;
 
-			/// Set the number of characters to solver per hkaiAvoidanceSolverJob.
-		inline void setNumCharactersPerAvoidanceJob(int n) ;
+			/// Set the number of characters to solver per hkaiAvoidanceSolverTask.
+		inline void setNumCharactersPerAvoidanceTask(int n) ;
 
 			/// Maximum number of edges that can be output during character searches.
 		inline int getMaxPathSearchEdgesOut() const;
@@ -616,11 +626,11 @@ class hkaiWorld : public hkReferencedObject
 			/// Set the maximum number of path points that can be output during character searches.
 		inline void setMaxPathSearchPointsOut( int n );
 
-			/// Get the erosion radius
-		inline hkReal getErosionRadius() const;
+			/// Get the erosion radius for a specific face's instance.
+		inline hkReal getErosionRadiusForFace( hkaiPackedKey faceKey ) const;
 
-			/// Get the erosion radius - all subsequent nav meshes added should have the same erosion radius.
-		inline void setErosionRadius(hkReal erosionRadius);
+			/// As above, but for a generic streaming collection
+		static inline hkReal HK_CALL getErosionRadiusForFace( const hkaiStreamingCollection* collection, hkaiPackedKey faceKey );
 
 	protected:
 			/// Deletes the specified request (by order in the array)
@@ -637,7 +647,7 @@ class hkaiWorld : public hkReferencedObject
 		void step(hkReal timestep, hkArrayBase<hkaiBehavior*>& behaviors);
 
 			/// Simple wrapper for multithreaded stepping
-		void stepMultithreaded(hkReal timestep, hkArrayBase<hkaiBehavior*>& behaviors, hkJobQueue* jobQueue, hkJobThreadPool* threadPool);
+		void stepMultithreaded(hkReal timestep, hkArrayBase<hkaiBehavior*>& behaviors, hkTaskQueue* taskQueue, hkThreadPool* threadPool );
 
 		//
 		// Advanced use only: individual stepping functions. These are called by the "simple" wrappers.
@@ -653,21 +663,21 @@ class hkaiWorld : public hkReferencedObject
 		void stepCharacters( hkReal timestep, hkArrayBase<hkaiCharacter*>& characters, hkArrayBase<class hkaiBehavior*>& behaviors );
 
 
-			/// Update the nav mesh based on the silhouettes, using multithreaded jobs.
-		void stepSilhouettesMT( const hkBitField* sectionsToStep, hkJobQueue* jobQueue, hkJobThreadPool* threadPool );
+			/// Update the nav mesh based on the silhouettes, using multithreaded tasks.
+		void stepSilhouettesMT( const hkBitField* sectionsToStep, hkTaskQueue* taskQueue, hkThreadPool* threadPool );
 
-			/// Update path requests, using multithreaded jobs.
-		void stepPathSearchesMT(hkJobQueue* jobQueue, hkJobThreadPool* threadPool );
+			/// Update path requests, using multithreaded tasks.
+		void stepPathSearchesMT( hkTaskQueue* taskQueue, hkThreadPool* threadPool );
 
-			/// Character local steering, using multithreaded jobs.
-		void stepCharactersMT( hkReal timestep, hkArrayBase<hkaiCharacter*>& characters, hkArrayBase<class hkaiBehavior*>& behaviors, hkJobQueue* jobQueue, hkJobThreadPool* threadPool );
-		
+			/// Character local steering, using multithreaded tasks.
+		void stepCharactersMT( hkReal timestep, hkArrayBase<hkaiCharacter*>& characters, hkArrayBase<class hkaiBehavior*>& behaviors, hkTaskQueue* taskQueue, hkThreadPool* threadPool );
+
 			/// Fires all the Listener's postStepCallbacks
 		void firePostStepCallbacks(const hkArrayBase<hkaiBehavior*>& behaviors);
 
 			/// Move the world by the specified amount.
 			/// This will
-			/// * Change the transform in each hkaiNavMeshInstances in the hkaiStreamingCollection 
+			/// * Change the transform in each hkaiNavMeshInstances in the hkaiStreamingCollection
 			/// * Call hkaiSilhouetteGenerators::shiftWorldSpace() for each hkaiSilhouetteGenerator
 			/// * Call hkaiObstacleGenerator::shiftWorldSpace() for each hkaiObstacleGenerator
 			/// * Shift the start points, end points, and output paths of all queued path requests
@@ -696,7 +706,7 @@ class hkaiWorld : public hkReferencedObject
 
 			hkBool32 operator<(const SortedRequest& other) const { return m_priority > other.m_priority; }
 		};
-		
+
 			/// Makes sure the character's current nav mesh face is up to date
 		void updateMeshFaceForCharacter(hkaiCharacter& character);
 
@@ -711,8 +721,11 @@ protected:
 		void prepareRequestArray( hkArray<SortedRequest>& m_sortedRequests );
 
 			/// Calls hkaiBehavior::calcVelocities on the array of hkaiBehaviors, fills in local steering input for each character
-		void calcDesiredVelocities( hkReal timestep, int numCharacters, hkArrayBase<hkaiBehavior*>& behaviors, 
-			hkJobQueue* jobQueue, hkJobThreadPool* threadPool, hkArray<hkaiLocalSteeringInput>::Temp& localSteeringInputs );
+		void calcDesiredVelocities( hkReal timestep, int numCharacters, hkArrayBase<hkaiBehavior*>& behaviors,
+			hkTaskQueue* taskQueue, hkThreadPool* threadPool, hkArray<hkaiLocalSteeringInput>::Temp& localSteeringInputs );
+
+		void calcSteeringVelocities  ( hkReal timestep, hkArrayBase< hkaiLocalSteeringInput >& localSteeringInputs, hkArrayBase<hkaiAgentInfo>& agentInfos );
+		void calcSteeringVelocitiesMT( hkReal timestep, hkArrayBase< hkaiLocalSteeringInput >& localSteeringInputs, hkArrayBase<hkaiAgentInfo>& agentInfos, hkTaskQueue* taskQueue, hkThreadPool* threadPool );
 
 		friend class hkaiWorldViewer;
 
@@ -762,28 +775,28 @@ protected:
 			/// Maximum number of requests per step. This is a "soft" maximum - requests above m_priorityThreshold are always processed.
 		int m_maxRequestsPerStep;
 
-			/// Estimated limit of A* searches per step. This is not a true hard limit, as the limit cannot be 
-			/// arbitrated between multiple jobs executing in parallel. This iteration limit will be distributed
-			/// across all submitted jobs, according to the jobs' estimated costs.
+			/// Estimated limit of A* searches per step. This is not a true hard limit, as the limit cannot be
+			/// arbitrated between multiple tasks executing in parallel. This iteration limit will be distributed
+			/// across all submitted tasks, according to the tasks' estimated costs.
 		int m_maxEstimatedIterationsPerStep;
 
 			/// Requests with priority greater or equal to this value will be processed regardless of m_maxRequestsPerStep.
 		int m_priorityThreshold;
 
-			/// Number of path requests to process per hkaiNavMeshAStarJob.
-		int m_numPathRequestsPerJob;
+			/// Number of path requests to process per hkaiNavMeshPathfindingTask.
+		int m_numPathRequestsPerTask;
 
-			/// Number of character behaviors to update per hkaiBehaviorCalcVelocitiesJob.
-		int m_numBehaviorUpdatesPerJob;
+			/// Number of character behaviors to update per hkaiBehaviorCalcVelocitiesTask.
+		int m_numBehaviorUpdatesPerTask;
 
-			/// Number of characters to solver per hkaiAvoidanceSolverJob.
-		int m_numCharactersPerAvoidanceJob;
+			/// Number of characters to solver per hkaiAvoidanceSolverTask.
+		int m_numCharactersPerAvoidanceTask;
 
 			/// Maximum number of edges that can be output during character searches.
-		int m_maxPathSearchEdgesOut; 
+		int m_maxPathSearchEdgesOut;
 
 			/// Maximum number of path points that can be output during character searches.
-		int m_maxPathSearchPointsOut; 
+		int m_maxPathSearchPointsOut;
 
 			/// Whether to compute the clearance values on loading and after cutting, or on the fly during A*.
 			/// See hkaiWorld::Cinfo::m_precomputeNavMeshClearance for a description of the tradeoffs.
@@ -794,9 +807,6 @@ protected:
 
 			/// Pathfinding input options to use when generating requests.
 		hkaiVolumePathfindingUtil::FindPathInput m_defaultVolumePathfindingInput;
-
-		hkReal m_erosionRadius;
-
 };
 
 #include <Ai/Pathfinding/World/hkaiWorld.inl>
@@ -804,7 +814,7 @@ protected:
 #endif // HK_AI_WORLD_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

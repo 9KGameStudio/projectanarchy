@@ -182,7 +182,7 @@ HK_FORCE_INLINE void hkVector4UtilInternal::computeRayInverseDirection(hkVector4
 {
 	hkVector4 invDir = dir;
 	invDir.zeroComponent<3>();
-	invDirOut.setReciprocal<HK_ACC_23_BIT,HK_DIV_SET_MAX>(invDir);
+	invDirOut.setReciprocal<HK_ACC_MID,HK_DIV_SET_MAX>(invDir);
 }
 #endif
 
@@ -289,7 +289,7 @@ static HK_FORCE_INLINE hkBool32	hkVector4UtilInternal::rayTriangle(hkVector4Para
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

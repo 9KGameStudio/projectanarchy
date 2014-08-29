@@ -393,7 +393,7 @@ public:
   /// \see AddTriggerTarget
   /// \see AddAnimation
   /// \see AddTransitionStateMachine
-  mixed AddComponentOfType(string typeName, string componentName = nil, boolean createDynamicProperty = false);
+  mixed AddComponentOfType(string typeName, string componentName = nil, boolean createDynamicProperty = true);
 
   /// \brief Shortcut for AddComponentOfType("VisTriggerSourceComponent_cl", ...): Creates and adds a trigger source component to the collection of components.
   /// In addition it will create an dynamic property for the owner entity with the specified name.
@@ -424,7 +424,7 @@ public:
   /// \see AddTriggerTarget
   /// \see AddComponentOfType
   /// \see VisTriggerSourceComponent_cl
-  VisTriggerSourceComponent_cl AddTriggerSource(string componentName = nil, boolean createDynamicProperty = false);
+  VisTriggerSourceComponent_cl AddTriggerSource(string componentName = nil, boolean createDynamicProperty = true);
   
   /// \brief Shortcut for AddComponentOfType("VisTriggertTargetComponent_cl", ...): : Creates and adds a trigger target component to the collection of components.
   /// In addition it will create an dynamic property for the owner entity with the specified name.
@@ -446,7 +446,7 @@ public:
   /// \see AddTriggerSource
   /// \see AddComponentOfType
   /// \see VisTriggertTargetComponent_cl
-  VisTriggertTargetComponent_cl AddTriggerTarget(string componentName = nil, boolean createDynamicProperty = false);
+  VisTriggertTargetComponent_cl AddTriggerTarget(string componentName = nil, boolean createDynamicProperty = true);
   
   /// \brief Shortcut for AddComponentOfType("VAnimationComponent", ...): : Creates and adds an animation component to the collection of components.
   /// In addition it will create an dynamic property for the owner entity with the specified name.
@@ -470,7 +470,7 @@ public:
   /// \see vForge Sampe "Scripting/LuaAnimation.scene", Warrior #1.
   /// \see AddComponentOfType
   /// \see VAnimationComponent
-  VAnimationComponent AddAnimation(string componentName = nil, boolean createDynamicProperty = false);
+  VAnimationComponent AddAnimation(string componentName = nil, boolean createDynamicProperty = true);
   
   /// \brief Shortcut for AddComponentOfType("VTransitionStateMachine", ...): : Creates and adds an TransitionStateMachine component to the collection of components.
   /// In addition it will create an dynamic property for the owner entity with the specified name.
@@ -504,7 +504,7 @@ public:
   /// \see vForge Sampe "Scripting/LuaAnimation.scene", Warrior #2.
   /// \see AddComponentOfType
   /// \see VTransitionStateMachine
-  VTransitionStateMachine AddTransitionStateMachine(string componentName = nil, boolean createDynamicProperty = false);
+  VTransitionStateMachine AddTransitionStateMachine(string componentName = nil, boolean createDynamicProperty = true);
   
   /// \brief Removes a single component from the component list of this object
   /// \param component The object component to be removed
@@ -583,7 +583,7 @@ public:
   /// \par Example
   ///   \code
   ///     function OnCreate(self)
-  ///       self.warrior = Game:CreateEntity(Vision.hkvVec3(),"Warrior", "Warrior.model")
+  ///       self.warrior = Game:CreateEntity(Vision.hkvVec3(0),"Warrior", "Warrior.model")
   ///     end
   ///     
   ///     function OnDestroy(self)
@@ -724,7 +724,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

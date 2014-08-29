@@ -6,12 +6,11 @@
  *
  */
 
-
-
 VThread::VThread(VPlatformThreadFunc pStartFunction, void *pArgument, int iStackSize, VThreadPriority ePriority, const char* szThreadName) :
   m_pStartFunc(pStartFunction),
   m_pArgument(pArgument),
   m_sName(szThreadName),
+  m_bStarted(false),
   m_iProcessor(-1),
   m_iStackSize(iStackSize),
   m_ePriority(ePriority)
@@ -21,14 +20,15 @@ VThread::VThread(VPlatformThreadFunc pStartFunction, void *pArgument, int iStack
 VThread::~VThread()
 {
   Join();
-  pthread_detach(m_Thread);
 }
 
 void VThread::Start()
 {
+  m_bStarted = true;
+
   int result = pthread_create(&m_Thread, NULL, m_pStartFunc, m_pArgument);
   
-#if !defined(_VISION_IOS)
+#if !defined(_VISION_IOS) && !defined(_VISION_NACL)
   pthread_setname_np(m_Thread, m_sName);
 #endif
   
@@ -37,9 +37,14 @@ void VThread::Start()
   SetPriority(m_ePriority);
 }
 
-HANDLE VThread::GetHandle() const
+VPlatformThreadHandle VThread::GetHandle() const
 {
-  return (HANDLE)&m_Thread;
+  return m_Thread;
+}
+
+VPlatformThreadHandle VThread::GetCurrentThreadHandle()
+{
+  return pthread_self();
 }
 
 void VThread::SetProcessor(int iProcessor)
@@ -94,11 +99,16 @@ bool VThread::SetPriority(VThreadPriority ePriority)
 
 void VThread::Join()
 {
-  pthread_join(m_Thread, NULL);
+  if(m_bStarted)
+  {
+    // Thread id is invalid after joining.
+    pthread_join(m_Thread, NULL);
+    m_bStarted = false;
+  }
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140625)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

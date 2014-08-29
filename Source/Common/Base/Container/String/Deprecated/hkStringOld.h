@@ -12,7 +12,7 @@
 
 /// Deprecated string object.
 /// Replaced by hkStringBuf and hkStringPtr for temporary and persistent strings.
-class hkStringOld
+class HK_EXPORT_COMMON hkStringOld
 {
 	public:	
 
@@ -183,7 +183,7 @@ class hkStringOld
 #endif // HKBASE_HKSTRING_OLD_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

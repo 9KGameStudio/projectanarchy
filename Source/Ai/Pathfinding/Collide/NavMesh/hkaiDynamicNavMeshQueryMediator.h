@@ -9,10 +9,11 @@
 #define HK_CUT_NAV_MESH_MEDIATOR_H
 
 #include <Ai/Pathfinding/Collide/NavMesh/hkaiNavMeshQueryMediator.h>
+#include <Ai/Pathfinding/NavMesh/Streaming/hkaiStreamingCollection.h>
+#include <Ai/Pathfinding/Dynamic/NavMeshCutter/hkaiNavMeshCutter.h>
 
-extern const class hkClass hkaiDynamicNavMeshQueryMediatorClass;
+extern HK_EXPORT_AI const class hkClass hkaiDynamicNavMeshQueryMediatorClass;
 
-class hkaiNavMeshCutter;
 class hkaiStreamingCollection;
 class hkcdDynamicAabbTree;
 
@@ -21,7 +22,7 @@ class hkcdDynamicAabbTree;
 /// maintained in the nav mesh cutter.
 /// If there are multiple navmeshes loaded, it also uses the AABB tree maintained by the hkaiStreamingCollection to reduce the
 /// number of meshes queried.
-class hkaiDynamicNavMeshQueryMediator : public hkaiNavMeshQueryMediator
+class HK_EXPORT_AI hkaiDynamicNavMeshQueryMediator : public hkaiNavMeshQueryMediator
 {
 	//+version(4)
 	public:
@@ -35,6 +36,7 @@ class hkaiDynamicNavMeshQueryMediator : public hkaiNavMeshQueryMediator
 		virtual hkaiPackedKey getClosestPoint( const GetClosestPointInput& input, hkVector4& closestPointOut ) const HK_OVERRIDE;
 		virtual hkaiPackedKey getClosestBoundaryEdge( const GetClosestBoundaryEdgeInput& input, hkVector4& closestPointOut ) const HK_OVERRIDE;
 		virtual bool castRay( const RaycastInput& input, HitDetails& hitOut ) const HK_OVERRIDE;
+		virtual bool castSphere( const SphereCastInput& input, HitDetails& hitOut ) const HK_OVERRIDE;
 		virtual void queryAabb( const AabbQueryInput& input, hkArray<hkaiPackedKey>::Temp& hits ) const HK_OVERRIDE;
 
 		/// Pointer to the hkaiStreamingCollection
@@ -52,7 +54,7 @@ class hkaiDynamicNavMeshQueryMediator : public hkaiNavMeshQueryMediator
 #endif // HK_CUT_NAV_MESH_MEDIATOR_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

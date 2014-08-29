@@ -11,16 +11,18 @@ HK_FORCE_INLINE /*static*/ const hkSimdDouble64 HK_CALL hkSimdDouble64::convert(
 {
 	hkSimdDouble64 sr;
 	sr.m_real = x;
+	//HK_MATH_ASSERT(0x7c3a4d98, *(hkUint64*)&(x.m128d_f64[0]) == *(hkUint64*)&(x.m128d_f64[1]), "invalid simd scalar" );
 	return sr;
-	//HK_ASSERT(0x7c3a4d98, *(hkUint64*)&(x.m128d_f64[0]) == *(hkUint64*)&(x.m128d_f64[1]) );
 }
 
 template<int vectorConstant>
 HK_FORCE_INLINE /*static*/ const hkSimdDouble64 HK_CALL hkSimdDouble64::getConstant()
 {
 	HK_COMPILE_TIME_ASSERT2( 
+		(vectorConstant>HK_QUADREAL_BEGIN) && (vectorConstant<HK_QUADREAL_END) && 
 		(vectorConstant!=HK_QUADREAL_1000) && (vectorConstant!=HK_QUADREAL_0100) && (vectorConstant!=HK_QUADREAL_0010) && (vectorConstant!=HK_QUADREAL_0001) &&
-		(vectorConstant!=HK_QUADREAL_m11m11) && (vectorConstant!=HK_QUADREAL_1248) && (vectorConstant!=HK_QUADREAL_8421) && (vectorConstant!=HK_QUADREAL_1010)  && (vectorConstant!=HK_QUADREAL_1100)
+		(vectorConstant!=HK_QUADREAL_m11m11) && (vectorConstant!=HK_QUADREAL_1m11m1) && (vectorConstant!=HK_QUADREAL_1248) && (vectorConstant!=HK_QUADREAL_8421) && 
+		(vectorConstant!=HK_QUADREAL_0011) && (vectorConstant!=HK_QUADREAL_1010)  && (vectorConstant!=HK_QUADREAL_1100)
 		, HK_SIMDDOUBLE_ILLEGAL_CONSTANT_REQUEST);
 #if HK_SSE_VERSION >= 0x50
 	return convert(*(const hkSingleDouble64*)(g_vectordConstants + vectorConstant));
@@ -29,16 +31,18 @@ HK_FORCE_INLINE /*static*/ const hkSimdDouble64 HK_CALL hkSimdDouble64::getConst
 #endif
 }
 
-HK_FORCE_INLINE /*static*/ const hkSimdDouble64 HK_CALL hkSimdDouble64::getConstant(hkVectorConstant constant)
+HK_FORCE_INLINE /*static*/ const hkSimdDouble64 HK_CALL hkSimdDouble64::getConstant(hkVectorConstant vectorConstant)
 {
 	HK_MATH_ASSERT( 0x909ff234,
-		(constant!=HK_QUADREAL_1000) && (constant!=HK_QUADREAL_0100) && (constant!=HK_QUADREAL_0010) && (constant!=HK_QUADREAL_0001) &&
-		(constant!=HK_QUADREAL_m11m11) && (constant!=HK_QUADREAL_1248) && (constant!=HK_QUADREAL_8421) && (constant!=HK_QUADREAL_1010)  && (constant!=HK_QUADREAL_1100)
+		(vectorConstant>HK_QUADREAL_BEGIN) && (vectorConstant<HK_QUADREAL_END) && 
+		(vectorConstant!=HK_QUADREAL_1000) && (vectorConstant!=HK_QUADREAL_0100) && (vectorConstant!=HK_QUADREAL_0010) && (vectorConstant!=HK_QUADREAL_0001) &&
+		(vectorConstant!=HK_QUADREAL_m11m11) && (vectorConstant!=HK_QUADREAL_1m11m1) && (vectorConstant!=HK_QUADREAL_1248) && (vectorConstant!=HK_QUADREAL_8421) && 
+		(vectorConstant!=HK_QUADREAL_0011) && (vectorConstant!=HK_QUADREAL_1010)  && (vectorConstant!=HK_QUADREAL_1100)
 		, "not a simdreal constant");
 #if HK_SSE_VERSION >= 0x50
-	return convert(*(const hkSingleDouble64*)(g_vectordConstants + constant));
+	return convert(*(const hkSingleDouble64*)(g_vectordConstants + vectorConstant));
 #else
-	return convert((*(g_vectordConstants + constant)).xy);
+	return convert((*(g_vectordConstants + vectorConstant)).xy);
 #endif
 }
 
@@ -54,17 +58,13 @@ HK_FORCE_INLINE hkSimdDouble64::hkSimdDouble64(const hkDouble64& x)
 
 HK_FORCE_INLINE hkSimdDouble64::operator hkDouble64() const
 {
-	hkDouble64 s;
-	_mm_store_sd(&s, m_real);
-	return s;
+	return _mm_cvtsd_f64(m_real);
 }
 #endif
 
 HK_FORCE_INLINE hkDouble64 hkSimdDouble64::getReal() const
 {
-	hkDouble64 s;
-	_mm_store_sd(&s, m_real);
-	return s;
+	return _mm_cvtsd_f64(m_real);
 }
 
 HK_FORCE_INLINE void hkSimdDouble64::setFromFloat(const hkFloat32& x)
@@ -537,6 +537,27 @@ HK_FORCE_INLINE void hkSimdDouble64::setFlipSign(hkSimdDouble64Parameter v, hkVe
 namespace hkSimdReal_AdvancedInterface
 {
 
+	
+	HK_FORCE_INLINE hkSingleDouble64 singleSelect64( const hkSingleDouble64& mask, const hkSingleDouble64& trueValue, const hkSingleDouble64& falseValue )
+	{
+#if HK_SSE_VERSION >= 0x41
+		return _mm_blendv_pd(falseValue, trueValue, mask);
+#else
+		return _mm_or_pd( _mm_and_pd(mask, trueValue), _mm_andnot_pd(mask, falseValue) );
+#endif
+	}
+
+	template<hkMathAccuracyMode ACC>
+	HK_FORCE_INLINE void avoidDivideByZeroInDebug(const hkSingleDouble64& equalsZero, hkSingleDouble64& x)
+	{
+#if defined(HK_ALLOW_FPU_EXCEPTION_CHECKING) 
+		if(ACC == HK_ACC_FULL)
+		{
+			x = singleSelect64( equalsZero, *(const hkSingleDouble64*)(g_vectordConstants + HK_QUADREAL_1), x );
+		}
+#endif
+	}
+
 template <hkMathAccuracyMode A, hkMathDivByZeroMode D>
 struct unrolld_setReciprocal { HK_FORCE_INLINE static void apply(hkSingleDouble64& self, hkSimdDouble64Parameter a)
 {
@@ -548,20 +569,10 @@ struct unrolld_setReciprocal<A, HK_DIV_IGNORE> { HK_FORCE_INLINE static void app
 	switch (A)
 	{
 		case HK_ACC_23_BIT: 
-			{
-				const __m128 fr = _mm_cvtpd_ps(a.m_real);
-				const __m128 r = _mm_rcp_ps(fr);
-				const hkSingleDouble64 rb = _mm_cvtps_pd(r);
-				// One Newton-Raphson refinement iteration
-				const hkSingleDouble64 rbr = _mm_mul_pd(a.m_real, rb);
-				const hkSingleDouble64 d = _mm_sub_pd(*(const hkSingleDouble64*)(g_vectordConstants + HK_QUADREAL_2), rbr);
-				self = _mm_mul_pd(rb, d);
-			}
-			break;
 		case HK_ACC_12_BIT: 
 			{
-				const __m128 fr = _mm_cvtpd_ps(a.m_real);
-				const __m128 r = _mm_rcp_ps(fr);
+				hkSimdFloat32 fr; fr.m_real = _mm_cvtpd_ps(a.m_real);
+				__m128 r; unrollf_setReciprocal<A,HK_DIV_IGNORE>::apply(r, fr);
 				self = _mm_cvtps_pd(r);
 			}
 			break;
@@ -575,18 +586,56 @@ struct unrolld_setReciprocal<A, HK_DIV_IGNORE> { HK_FORCE_INLINE static void app
 template <hkMathAccuracyMode A>
 struct unrolld_setReciprocal<A, HK_DIV_SET_ZERO> { HK_FORCE_INLINE static void apply(hkSingleDouble64& self, hkSimdDouble64Parameter a)
 {
-	const hkSingleDouble64 equalsZero = _mm_cmpeq_pd(a.m_real, _mm_setzero_pd());
-	hkSingleDouble64 e; unrolld_setReciprocal<A, HK_DIV_IGNORE>::apply(e, a);
-	self = _mm_andnot_pd(equalsZero, e);
+	switch (A)
+	{
+		case HK_ACC_23_BIT: 
+		case HK_ACC_12_BIT: 
+			{
+				hkSimdFloat32 fr; fr.m_real = _mm_cvtpd_ps(a.m_real);
+				__m128 r; unrollf_setReciprocal<A,HK_DIV_SET_ZERO>::apply(r, fr);
+				self = _mm_cvtps_pd(r);
+			}
+			break;
+		default:
+			{
+				const hkSingleDouble64 equalsZero = _mm_cmpeq_pd(a.m_real, _mm_setzero_pd());
+				hkSimdDouble64 aNonZero = a;
+				avoidDivideByZeroInDebug<A>(equalsZero, aNonZero.m_real);
+				hkSingleDouble64 e = _mm_div_pd(*(const hkSingleDouble64*)(g_vectordConstants + HK_QUADREAL_1),aNonZero.m_real);
+				self = _mm_andnot_pd(equalsZero, e);
+			}
+			break; // HK_ACC_FULL
+	}
 } };
 template <hkMathAccuracyMode A>
 struct unrolld_setReciprocal<A, HK_DIV_SET_HIGH> { HK_FORCE_INLINE static void apply(hkSingleDouble64& self, hkSimdDouble64Parameter a)
 {
-	const hkSingleDouble64 equalsZero = _mm_cmpeq_pd(a.m_real, _mm_setzero_pd());
-	hkSingleDouble64 e; unrolld_setReciprocal<A, HK_DIV_IGNORE>::apply(e, a);
+	hkSingleDouble64 e, equalsZero;
+	switch (A)
+	{
+		case HK_ACC_23_BIT: 
+		case HK_ACC_12_BIT: 
+			{
+				hkSimdFloat32 fr; fr.m_real = _mm_cvtpd_ps(a.m_real);
+				equalsZero = _mm_castps_pd(_mm_cmpeq_ps(fr.m_real, _mm_setzero_ps()));
+				equalsZero = _mm_shuffle_pd(equalsZero, equalsZero, _MM_SHUFFLE2(0,0));
+				__m128 r; unrollf_setReciprocal<A,HK_DIV_IGNORE>::apply(r, fr);
+				e = _mm_cvtps_pd(r);
+			}
+			break;
+		default:
+			{
+				equalsZero = _mm_cmpeq_pd(a.m_real, _mm_setzero_pd());
+				hkSimdDouble64 aNonZero = a;
+				avoidDivideByZeroInDebug<A>(equalsZero, aNonZero.m_real);
+				e = _mm_div_pd(*(const hkSingleDouble64*)(g_vectordConstants + HK_QUADREAL_1),aNonZero.m_real);
+			}
+			break; // HK_ACC_FULL
+	}
+
 	hkSingleDouble64 huge = _mm_set1_pd(HK_DOUBLE_HIGH);
 	const __m128i maskS = _mm_slli_epi64(_mm_srli_epi64(_mm_castpd_si128(a.m_real),63),63);
-	huge = _mm_xor_pd(huge, _mm_castsi128_pd(maskS));
+	huge = _mm_or_pd(huge, _mm_castsi128_pd(maskS));
 #if HK_SSE_VERSION >= 0x41
 	self = _mm_blendv_pd(e, huge, equalsZero);
 #else
@@ -596,11 +645,32 @@ struct unrolld_setReciprocal<A, HK_DIV_SET_HIGH> { HK_FORCE_INLINE static void a
 template <hkMathAccuracyMode A>
 struct unrolld_setReciprocal<A, HK_DIV_SET_MAX> { HK_FORCE_INLINE static void apply(hkSingleDouble64& self, hkSimdDouble64Parameter a)
 {
-	const hkSingleDouble64 equalsZero = _mm_cmpeq_pd(a.m_real, _mm_setzero_pd());
-	hkSingleDouble64 e; unrolld_setReciprocal<A, HK_DIV_IGNORE>::apply(e, a);
+	hkSingleDouble64 e, equalsZero;
+	switch (A)
+	{
+	case HK_ACC_23_BIT: 
+	case HK_ACC_12_BIT: 
+		{
+			hkSimdFloat32 fr; fr.m_real = _mm_cvtpd_ps(a.m_real);
+			equalsZero = _mm_castps_pd(_mm_cmpeq_ps(fr.m_real, _mm_setzero_ps()));
+			equalsZero = _mm_shuffle_pd(equalsZero, equalsZero, _MM_SHUFFLE2(0,0));
+			__m128 r; unrollf_setReciprocal<A,HK_DIV_IGNORE>::apply(r, fr);
+			e = _mm_cvtps_pd(r);
+		}
+		break;
+	default:
+		{
+			equalsZero = _mm_cmpeq_pd(a.m_real, _mm_setzero_pd());
+			hkSimdDouble64 aNonZero = a;
+			avoidDivideByZeroInDebug<A>(equalsZero, aNonZero.m_real);
+			e = _mm_div_pd(*(const hkSingleDouble64*)(g_vectordConstants + HK_QUADREAL_1),aNonZero.m_real);
+		}
+		break; // HK_ACC_FULL
+	}
+
 	hkSingleDouble64 huge = _mm_set1_pd(HK_DOUBLE_MAX);
 	const __m128i maskS = _mm_slli_epi64(_mm_srli_epi64(_mm_castpd_si128(a.m_real),63),63);
-	huge = _mm_xor_pd(huge, _mm_castsi128_pd(maskS));
+	huge = _mm_or_pd(huge, _mm_castsi128_pd(maskS));
 #if HK_SSE_VERSION >= 0x41
 	self = _mm_blendv_pd(e, huge, equalsZero);
 #else
@@ -631,7 +701,7 @@ HK_FORCE_INLINE void hkSimdDouble64::setReciprocal(hkSimdDouble64Parameter a)
 
 HK_FORCE_INLINE void hkSimdDouble64::setReciprocal(hkSimdDouble64Parameter a)
 {
-	hkSimdReal_AdvancedInterface::unrolld_setReciprocal<HK_ACC_23_BIT,HK_DIV_IGNORE>::apply(m_real,a);
+	hkSimdReal_AdvancedInterface::unrolld_setReciprocal<HK_ACC_MID,HK_DIV_IGNORE>::apply(m_real,a);
 }
 
 
@@ -647,32 +717,76 @@ struct unrolld_setDiv { HK_FORCE_INLINE static void apply(hkSingleDouble64& self
 template <hkMathAccuracyMode A>
 struct unrolld_setDiv<A, HK_DIV_IGNORE> { HK_FORCE_INLINE static void apply(hkSingleDouble64& self, hkSimdDouble64Parameter a, hkSimdDouble64Parameter b)
 {
-	if (A == HK_ACC_FULL) 
-	{ 
-		self = _mm_div_pd(a.m_real, b.m_real); 
-	}
-	else
+	switch (A)
 	{
-		hkSingleDouble64 t;
-		unrolld_setReciprocal<A,HK_DIV_IGNORE>::apply(t,b);
-		self = _mm_mul_pd(a.m_real,t);
+		case HK_ACC_23_BIT: 
+		case HK_ACC_12_BIT: 
+			{
+				hkSimdFloat32 fr; fr.m_real = _mm_cvtpd_ps(b.m_real);
+				__m128 r; unrollf_setReciprocal<A,HK_DIV_IGNORE>::apply(r, fr);
+				self = _mm_mul_pd(a.m_real, _mm_cvtps_pd(r));
+			}
+			break;
+		default:
+			{
+				self = _mm_div_pd(a.m_real,b.m_real); 
+			}
+			break; // HK_ACC_FULL
 	}
 } };
 template <hkMathAccuracyMode A>
 struct unrolld_setDiv<A, HK_DIV_SET_ZERO> { HK_FORCE_INLINE static void apply(hkSingleDouble64& self, hkSimdDouble64Parameter a, hkSimdDouble64Parameter b)
 {
-	const hkSingleDouble64 equalsZero = _mm_cmpeq_pd(b.m_real, _mm_setzero_pd());
-	hkSingleDouble64 e; unrolld_setDiv<A, HK_DIV_IGNORE>::apply(e, a, b);
-	self = _mm_andnot_pd(equalsZero, e);
+	switch (A)
+	{
+		case HK_ACC_23_BIT: 
+		case HK_ACC_12_BIT: 
+			{
+				hkSimdFloat32 fr; fr.m_real = _mm_cvtpd_ps(b.m_real);
+				__m128 r; unrollf_setReciprocal<A,HK_DIV_SET_ZERO>::apply(r, fr);
+				self = _mm_mul_pd(a.m_real, _mm_cvtps_pd(r));
+			}
+			break;
+		default:
+			{
+				const hkSingleDouble64 equalsZero = _mm_cmpeq_pd(b.m_real, _mm_setzero_pd());
+				hkSimdDouble64 bNonZero = b;
+				avoidDivideByZeroInDebug<A>(equalsZero, bNonZero.m_real);
+				hkSingleDouble64 e = _mm_div_pd(a.m_real,bNonZero.m_real);
+				self = _mm_andnot_pd(equalsZero, e);
+			}
+			break; // HK_ACC_FULL
+	}
 } };
 template <hkMathAccuracyMode A>
 struct unrolld_setDiv<A, HK_DIV_SET_HIGH> { HK_FORCE_INLINE static void apply(hkSingleDouble64& self, hkSimdDouble64Parameter a, hkSimdDouble64Parameter b)
 {
-	const hkSingleDouble64 equalsZero = _mm_cmpeq_pd(b.m_real, _mm_setzero_pd());
-	hkSingleDouble64 e; unrolld_setDiv<A, HK_DIV_IGNORE>::apply(e, a, b);
+	hkSingleDouble64 e, equalsZero;
+	switch (A)
+	{
+		case HK_ACC_23_BIT: 
+		case HK_ACC_12_BIT: 
+			{
+				hkSimdFloat32 fr; fr.m_real = _mm_cvtpd_ps(b.m_real);
+				equalsZero = _mm_castps_pd(_mm_cmpeq_ps(fr.m_real, _mm_setzero_ps()));
+				equalsZero = _mm_shuffle_pd(equalsZero, equalsZero, _MM_SHUFFLE2(0,0));
+				__m128 r; unrollf_setReciprocal<A,HK_DIV_IGNORE>::apply(r, fr);
+				e = _mm_mul_pd(a.m_real, _mm_cvtps_pd(r));
+			}
+			break;
+		default:
+			{
+				equalsZero = _mm_cmpeq_pd(b.m_real, _mm_setzero_pd());
+				hkSimdDouble64 bNonZero = b;
+				avoidDivideByZeroInDebug<A>(equalsZero, bNonZero.m_real);
+				e = _mm_div_pd(a.m_real,bNonZero.m_real);
+			}
+			break; // HK_ACC_FULL
+	}
+
 	hkSingleDouble64 huge = _mm_set1_pd(HK_DOUBLE_HIGH);
 	const __m128i maskS = _mm_slli_epi64(_mm_srli_epi64(_mm_castpd_si128(a.m_real),63),63);
-	huge = _mm_xor_pd(huge, _mm_castsi128_pd(maskS));
+	huge = _mm_or_pd(huge, _mm_castsi128_pd(maskS));
 #if HK_SSE_VERSION >= 0x41
 	self = _mm_blendv_pd(e, huge, equalsZero);
 #else
@@ -682,11 +796,32 @@ struct unrolld_setDiv<A, HK_DIV_SET_HIGH> { HK_FORCE_INLINE static void apply(hk
 template <hkMathAccuracyMode A>
 struct unrolld_setDiv<A, HK_DIV_SET_MAX> { HK_FORCE_INLINE static void apply(hkSingleDouble64& self, hkSimdDouble64Parameter a, hkSimdDouble64Parameter b)
 {
-	const hkSingleDouble64 equalsZero = _mm_cmpeq_pd(b.m_real, _mm_setzero_pd());
-	hkSingleDouble64 e; unrolld_setDiv<A, HK_DIV_IGNORE>::apply(e, a, b);
+	hkSingleDouble64 e, equalsZero;
+	switch (A)
+	{
+		case HK_ACC_23_BIT: 
+		case HK_ACC_12_BIT: 
+			{
+				hkSimdFloat32 fr; fr.m_real = _mm_cvtpd_ps(b.m_real);
+				equalsZero = _mm_castps_pd(_mm_cmpeq_ps(fr.m_real, _mm_setzero_ps()));
+				equalsZero = _mm_shuffle_pd(equalsZero, equalsZero, _MM_SHUFFLE2(0,0));
+				__m128 r; unrollf_setReciprocal<A,HK_DIV_IGNORE>::apply(r, fr);
+				e = _mm_mul_pd(a.m_real, _mm_cvtps_pd(r));
+			}
+			break;
+		default:
+			{
+				equalsZero = _mm_cmpeq_pd(b.m_real, _mm_setzero_pd());
+				hkSimdDouble64 bNonZero = b;
+				avoidDivideByZeroInDebug<A>(equalsZero, bNonZero.m_real);
+				e = _mm_div_pd(a.m_real,bNonZero.m_real);
+			}
+			break; // HK_ACC_FULL
+	}
+
 	hkSingleDouble64 huge = _mm_set1_pd(HK_DOUBLE_MAX);
 	const __m128i maskS = _mm_slli_epi64(_mm_srli_epi64(_mm_castpd_si128(a.m_real),63),63);
-	huge = _mm_xor_pd(huge, _mm_castsi128_pd(maskS));
+	huge = _mm_or_pd(huge, _mm_castsi128_pd(maskS));
 #if HK_SSE_VERSION >= 0x41
 	self = _mm_blendv_pd(e, huge, equalsZero);
 #else
@@ -717,7 +852,7 @@ HK_FORCE_INLINE void hkSimdDouble64::setDiv(hkSimdDouble64Parameter a, hkSimdDou
 
 HK_FORCE_INLINE void hkSimdDouble64::setDiv(hkSimdDouble64Parameter a, hkSimdDouble64Parameter b)
 {
-	hkSimdReal_AdvancedInterface::unrolld_setDiv<HK_ACC_23_BIT,HK_DIV_IGNORE>::apply(m_real,a,b);
+	hkSimdReal_AdvancedInterface::unrolld_setDiv<HK_ACC_MID,HK_DIV_IGNORE>::apply(m_real,a,b);
 }
 
 template <hkMathAccuracyMode A, hkMathDivByZeroMode D> 
@@ -754,23 +889,10 @@ struct unrolld_sqrt<A, HK_SQRT_IGNORE> { HK_FORCE_INLINE static hkSingleDouble64
 	switch (A)
 	{
 		case HK_ACC_23_BIT: 
-			{
-				const __m128 fr = _mm_cvtpd_ps(self.m_real);
-				const __m128 re = _mm_rsqrt_ps(fr);
-				const hkSingleDouble64 e = _mm_cvtps_pd(re);
-				// One Newton-Raphson refinement iteration
-				const hkSingleDouble64 he = _mm_mul_pd(*(const hkSingleDouble64*)(g_vectordConstants + HK_QUADREAL_INV_2),e);
-				const hkSingleDouble64 ree = _mm_mul_pd(_mm_mul_pd(self.m_real,e),e);
-				hkSingleDouble64 refined = _mm_mul_pd(he, _mm_sub_pd(*(const hkSingleDouble64*)(g_vectordConstants + HK_QUADREAL_3), ree) );
-				return _mm_mul_pd(self.m_real, refined);
-			}
-			break;
 		case HK_ACC_12_BIT: 
 			{
-				const __m128 fr = _mm_cvtpd_ps(self.m_real);
-				const __m128 re = _mm_rsqrt_ps(fr);
-				hkSingleDouble64 e = _mm_cvtps_pd(re);
-				return _mm_mul_pd(self.m_real, e);
+				hkSimdFloat32 fr; fr.m_real = _mm_cvtpd_ps(self.m_real);
+				return _mm_cvtps_pd(unrollf_sqrt<A,HK_SQRT_IGNORE>::apply(fr));
 			}
 			break;
 		default:
@@ -783,9 +905,23 @@ struct unrolld_sqrt<A, HK_SQRT_IGNORE> { HK_FORCE_INLINE static hkSingleDouble64
 template <hkMathAccuracyMode A>
 struct unrolld_sqrt<A, HK_SQRT_SET_ZERO> { HK_FORCE_INLINE static hkSingleDouble64 apply(hkSimdDouble64Parameter self)
 {
-	const hkSingleDouble64 equalsZero = _mm_cmple_pd(self.m_real, _mm_setzero_pd());
-	const hkSingleDouble64 e = unrolld_sqrt<A, HK_SQRT_IGNORE>::apply(self);
-	return _mm_andnot_pd(equalsZero, e);
+	switch (A)
+	{
+		case HK_ACC_23_BIT: 
+		case HK_ACC_12_BIT: 
+			{
+				hkSimdFloat32 fr; fr.m_real = _mm_cvtpd_ps(self.m_real);
+				return _mm_cvtps_pd(unrollf_sqrt<A,HK_SQRT_SET_ZERO>::apply(fr));
+			}
+			break;
+		default:
+			{
+				const hkSingleDouble64 equalsZero = _mm_cmple_pd(self.m_real, _mm_setzero_pd());
+				const hkSingleDouble64 e = _mm_sqrt_pd(self.m_real);
+				return _mm_andnot_pd(equalsZero, e);
+			}
+			break; // HK_ACC_FULL
+	}
 } };
 
 } // namespace 
@@ -798,7 +934,7 @@ HK_FORCE_INLINE const hkSimdDouble64 hkSimdDouble64::sqrt() const
 
 HK_FORCE_INLINE const hkSimdDouble64 hkSimdDouble64::sqrt() const
 {
-	return hkSimdDouble64::convert(hkSimdReal_AdvancedInterface::unrolld_sqrt<HK_ACC_23_BIT,HK_SQRT_SET_ZERO>::apply(*this));
+	return hkSimdDouble64::convert(hkSimdReal_AdvancedInterface::unrolld_sqrt<HK_ACC_MID,HK_SQRT_SET_ZERO>::apply(*this));
 }
 
 
@@ -817,21 +953,10 @@ struct unrolld_sqrtInverse<A, HK_SQRT_IGNORE> { HK_FORCE_INLINE static hkSingleD
 	switch (A)
 	{
 		case HK_ACC_23_BIT: 
-			{
-				const __m128 fr = _mm_cvtpd_ps(self.m_real);
-				const __m128 re = _mm_rsqrt_ps(fr);
-				const hkSingleDouble64 e = _mm_cvtps_pd(re);
-				// One Newton-Raphson refinement iteration
-				const hkSingleDouble64 he = _mm_mul_pd(*(const hkSingleDouble64*)(g_vectordConstants + HK_QUADREAL_INV_2),e);
-				const hkSingleDouble64 ree = _mm_mul_pd(_mm_mul_pd(self.m_real,e),e);
-				return _mm_mul_pd(he, _mm_sub_pd(*(const hkSingleDouble64*)(g_vectordConstants + HK_QUADREAL_3), ree) );
-			}
-			break;
 		case HK_ACC_12_BIT: 
 			{
-				const __m128 fr = _mm_cvtpd_ps(self.m_real);
-				const __m128 re = _mm_rsqrt_ps(fr);
-				return _mm_cvtps_pd(re);
+				hkSimdFloat32 fr; fr.m_real = _mm_cvtpd_ps(self.m_real);
+				return _mm_cvtps_pd(unrollf_sqrtInverse<A,HK_SQRT_IGNORE>::apply(fr));
 			}
 			break;
 		default:         
@@ -844,9 +969,25 @@ struct unrolld_sqrtInverse<A, HK_SQRT_IGNORE> { HK_FORCE_INLINE static hkSingleD
 template <hkMathAccuracyMode A>
 struct unrolld_sqrtInverse<A, HK_SQRT_SET_ZERO> { HK_FORCE_INLINE static hkSingleDouble64 apply(hkSimdDouble64Parameter self)
 {
-	const hkSingleDouble64 equalsZero = _mm_cmple_pd(self.m_real, _mm_setzero_pd());
-	const hkSingleDouble64 e = unrolld_sqrtInverse<A, HK_SQRT_IGNORE>::apply(self);
-	return _mm_andnot_pd(equalsZero, e);
+	switch (A)
+	{
+		case HK_ACC_23_BIT: 
+		case HK_ACC_12_BIT: 
+			{
+				hkSimdFloat32 fr; fr.m_real = _mm_cvtpd_ps(self.m_real);
+				return _mm_cvtps_pd(unrollf_sqrtInverse<A,HK_SQRT_SET_ZERO>::apply(fr));
+			}
+			break;
+		default:         
+			{
+				const hkSingleDouble64 equalsZero = _mm_cmple_pd(self.m_real, _mm_setzero_pd());
+				hkSimdDouble64 selfNonZero = self;
+				avoidDivideByZeroInDebug<A>(equalsZero, selfNonZero.m_real);
+				const hkSingleDouble64 e = _mm_div_pd(*(const hkSingleDouble64*)(g_vectordConstants + HK_QUADREAL_1), _mm_sqrt_pd(selfNonZero.m_real));
+				return _mm_andnot_pd(equalsZero, e);
+			}
+			break; // HK_ACC_FULL
+	}
 } };
 } // namespace 
 
@@ -858,7 +999,7 @@ HK_FORCE_INLINE const hkSimdDouble64 hkSimdDouble64::sqrtInverse() const
 
 HK_FORCE_INLINE const hkSimdDouble64 hkSimdDouble64::sqrtInverse() const
 {
-	return hkSimdDouble64::convert(hkSimdReal_AdvancedInterface::unrolld_sqrtInverse<HK_ACC_23_BIT,HK_SQRT_SET_ZERO>::apply(*this));
+	return hkSimdDouble64::convert(hkSimdReal_AdvancedInterface::unrolld_sqrtInverse<HK_ACC_MID,HK_SQRT_SET_ZERO>::apply(*this));
 }
 
 
@@ -902,8 +1043,7 @@ HK_FORCE_INLINE void hkSimdDouble64::load(const hkHalf *p )
 #if defined(HK_HALF_IS_FLOAT)
 	__m128 f = _mm_load_ss((const float*)p);
 #else
-	float x; p[0].store(&x); // do conversion in SSE
-	__m128 f = _mm_load_ss(&x);
+	__m128 f = _mm_castsi128_ps( _mm_cvtsi32_si128(p->getStorage() << 16) );
 #endif
 	__m128d d = _mm_cvtps_pd(f);
 	m_real = _mm_shuffle_pd(d,d,_MM_SHUFFLE2(0,0));
@@ -1100,7 +1240,7 @@ HK_FORCE_INLINE void hkSimdDouble64::store(  hkFloat16 *p ) const
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -470,7 +470,7 @@ template <int N, hkMathAccuracyMode A, hkMathNegSqrtMode S> struct normalizeH<1,
 }
 template <int M> template <int N, hkMathAccuracyMode A, hkMathNegSqrtMode S> HK_FORCE_INLINE void hkMxVectord<M>::normalize() { hkMxVectord_Implementation::normalizeH<M,N,A,S>::apply(m_vec.v); }
 
-template <int M> template <int N> HK_FORCE_INLINE void hkMxVectord<M>::normalize() { hkMxVectord_Implementation::normalizeH<M,N,HK_ACC_23_BIT,HK_SQRT_SET_ZERO>::apply(m_vec.v); }
+template <int M> template <int N> HK_FORCE_INLINE void hkMxVectord<M>::normalize() { hkMxVectord_Implementation::normalizeH<M,N,HK_ACC_MID,HK_SQRT_SET_ZERO>::apply(m_vec.v); }
 
 
 
@@ -488,7 +488,7 @@ template <hkMathAccuracyMode A, hkMathDivByZeroMode D> struct setDivH<1,A,D> { H
 }
 template <int M> template <hkMathAccuracyMode A, hkMathDivByZeroMode D> HK_FORCE_INLINE void hkMxVectord<M>::setDiv(hkMxVectordParameter v0, hkMxVectordParameter v1) { hkMxVectord_Implementation::setDivH<M,A,D>::apply(m_vec.v, v0.m_vec.v, v1.m_vec.v); }
 
-template <int M> HK_FORCE_INLINE void hkMxVectord<M>::setDiv(hkMxVectordParameter v0, hkMxVectordParameter v1) { hkMxVectord_Implementation::setDivH<M,HK_ACC_23_BIT,HK_DIV_IGNORE>::apply(m_vec.v, v0.m_vec.v, v1.m_vec.v); }
+template <int M> HK_FORCE_INLINE void hkMxVectord<M>::setDiv(hkMxVectordParameter v0, hkMxVectordParameter v1) { hkMxVectord_Implementation::setDivH<M,HK_ACC_MID,HK_DIV_IGNORE>::apply(m_vec.v, v0.m_vec.v, v1.m_vec.v); }
 
 namespace hkMxVectord_Implementation
 {
@@ -497,7 +497,7 @@ template <hkMathAccuracyMode A, hkMathNegSqrtMode S> struct setSqrtInverseH<1,A,
 }
 template <int M> template <hkMathAccuracyMode A, hkMathNegSqrtMode S> HK_FORCE_INLINE void hkMxVectord<M>::setSqrtInverse(hkMxVectordParameter v0) { hkMxVectord_Implementation::setSqrtInverseH<M,A,S>::apply(m_vec.v, v0.m_vec.v); }
 
-template <int M> HK_FORCE_INLINE void hkMxVectord<M>::setSqrtInverse(hkMxVectordParameter v0) { hkMxVectord_Implementation::setSqrtInverseH<M,HK_ACC_23_BIT,HK_SQRT_SET_ZERO>::apply(m_vec.v, v0.m_vec.v); }
+template <int M> HK_FORCE_INLINE void hkMxVectord<M>::setSqrtInverse(hkMxVectordParameter v0) { hkMxVectord_Implementation::setSqrtInverseH<M,HK_ACC_MID,HK_SQRT_SET_ZERO>::apply(m_vec.v, v0.m_vec.v); }
 
 MXV_NO_OPERANDS( setZero, setZero )
 
@@ -1267,7 +1267,7 @@ template <int N, hkMathAccuracyMode A, hkMathNegSqrtMode S> struct lengthH<1,N,A
 }
 template <int M> template <int N, hkMathAccuracyMode A, hkMathNegSqrtMode S> HK_FORCE_INLINE void hkMxVectord<M>::length(hkMxReald<M>& lensOut) const { hkMxVectord_Implementation::lengthH<M,N,A,S>::apply(m_vec.v, lensOut.m_real.r); }
 
-template <int M> template <int N> HK_FORCE_INLINE void hkMxVectord<M>::length(hkMxReald<M>& lensOut) const { hkMxVectord_Implementation::lengthH<M,N,HK_ACC_23_BIT,HK_SQRT_SET_ZERO>::apply(m_vec.v, lensOut.m_real.r); }
+template <int M> template <int N> HK_FORCE_INLINE void hkMxVectord<M>::length(hkMxReald<M>& lensOut) const { hkMxVectord_Implementation::lengthH<M,N,HK_ACC_MID,HK_SQRT_SET_ZERO>::apply(m_vec.v, lensOut.m_real.r); }
 
 namespace hkMxVectord_Implementation
 {
@@ -1283,7 +1283,7 @@ template <int N, hkMathAccuracyMode A, hkMathNegSqrtMode S> struct lengthInvH<1,
 }
 template <int M> template <int N, hkMathAccuracyMode A, hkMathNegSqrtMode S> HK_FORCE_INLINE void hkMxVectord<M>::lengthInverse(hkMxReald<M>& lensOut) const { hkMxVectord_Implementation::lengthInvH<M,N,A,S>::apply(m_vec.v, lensOut.m_real.r); }
 
-template <int M> template <int N> HK_FORCE_INLINE void hkMxVectord<M>::lengthInverse(hkMxReald<M>& lensOut) const { hkMxVectord_Implementation::lengthInvH<M,N,HK_ACC_23_BIT,HK_SQRT_SET_ZERO>::apply(m_vec.v, lensOut.m_real.r); }
+template <int M> template <int N> HK_FORCE_INLINE void hkMxVectord<M>::lengthInverse(hkMxReald<M>& lensOut) const { hkMxVectord_Implementation::lengthInvH<M,N,HK_ACC_MID,HK_SQRT_SET_ZERO>::apply(m_vec.v, lensOut.m_real.r); }
 
 
 
@@ -1430,7 +1430,7 @@ HK_FORCE_INLINE void hkMxVectord<M>::setAsBroadcast(hkVector4dParameter v)
 #undef MXV_COMPARE_SINGLE
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

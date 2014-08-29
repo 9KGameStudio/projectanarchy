@@ -13,7 +13,7 @@
 
 /// Nullable and orderable handle.
 /// Use HK_DECLARE_HANDLE( name , type , invalid value ) macro for declarations.
-template <typename TYPE, hkUint32 INVALID_VALUE, typename DISCRIMINANT>
+template <typename TYPE, TYPE INVALID_VALUE, typename DISCRIMINANT>
 struct hkHandle
 {
 		HK_DECLARE_POD_TYPE();
@@ -102,7 +102,7 @@ struct hkHandle
 #endif //HK_BASE_HANDLE_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

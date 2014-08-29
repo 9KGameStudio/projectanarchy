@@ -25,6 +25,7 @@ struct hkpRootCdPoint
 	HK_FORCE_INLINE const hkContactPoint& getContact() const { return m_contact; }
 	HK_FORCE_INLINE void setContact(const hkContactPoint& cp) { m_contact = cp; }
 	HK_FORCE_INLINE void setContact(hkVector4Parameter pos, hkVector4Parameter norm, hkReal d) { m_contact.set(pos,norm,d); }
+	HK_FORCE_INLINE void setContact(hkVector4Parameter pos, hkVector4Parameter norm, hkSimdRealParameter d) { m_contact.setPositionNormalAndDistance(pos,norm,d); }
 	HK_FORCE_INLINE void setContactDistance(hkReal d) { m_contact.setDistance(d); }
 	HK_FORCE_INLINE void setContactDistance(hkSimdRealParameter d) { m_contact.setDistanceSimdReal(d); }
 
@@ -48,7 +49,7 @@ struct hkpRootCdPoint
 	hkpShapeKey m_shapeKeyB;
 
 		/// Comparison operator for sorting RootCdPoints
-	inline hkBool operator<( const hkpRootCdPoint& b ) const;
+	inline hkBool32 operator<( const hkpRootCdPoint& b ) const;
 };
 
 #include <Physics2012/Collide/Query/Collector/PointCollector/hkpRootCdPoint.inl>
@@ -56,7 +57,7 @@ struct hkpRootCdPoint
 #endif //HK_ROOT_CD_POINT_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

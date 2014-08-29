@@ -53,7 +53,7 @@ class hkTrackerTypeLayout: public hkReferencedObject
 		hkBool m_fullScan;					///< If set then do a complete scan of the type
 };
 
-struct hkTrackerLayoutTypeInfo
+struct HK_EXPORT_COMMON hkTrackerLayoutTypeInfo
 {
 	hk_size_t m_size;
 	int m_alignment;						
@@ -61,7 +61,7 @@ struct hkTrackerLayoutTypeInfo
 
 /// Represents a memory block with a type associated with it and the outgoing
 /// references as well.
-struct hkTrackerLayoutBlock
+struct HK_EXPORT_COMMON hkTrackerLayoutBlock
 {
 	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE, hkTrackerLayoutBlock);
 
@@ -83,7 +83,7 @@ struct hkTrackerLayoutBlock
 class hkTrackerLayoutCalculator;
 class hkTrackerSnapshot;
 
-class hkTrackerLayoutHandler: public hkReferencedObject
+class HK_EXPORT_COMMON hkTrackerLayoutHandler : public hkReferencedObject
 {
 	public:
 		//+hk.MemoryTracker(ignore=True)
@@ -100,7 +100,7 @@ class hkTrackerLayoutHandler: public hkReferencedObject
 			hkTrackerLayoutCalculator* layoutCalc ) = 0;
 };
 
-class hkTrackerLayoutCalculator: public hkReferencedObject
+class HK_EXPORT_COMMON hkTrackerLayoutCalculator: public hkReferencedObject
 {
     public:
 		//+hk.MemoryTracker(ignore=True)
@@ -184,7 +184,7 @@ class hkTrackerLayoutCalculator: public hkReferencedObject
 #endif // HKBASE_LAYOUT_CALCULATOR_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -13,7 +13,7 @@ class hkDisplayGeometry;
 #include <Common/Base/Container/Array/hkArray.h>
 
 /// An interface converting objects which can be visualized as display geometries.
-class hkDisplayGeometryBuilder : public hkReferencedObject
+class HK_EXPORT_COMMON hkDisplayGeometryBuilder : public hkReferencedObject
 {
 	public:
 		HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE);
@@ -58,7 +58,7 @@ class hkDisplayGeometryBuilder : public hkReferencedObject
 #endif // HK_DISPLAY_GEOMETRY_BUILDER
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

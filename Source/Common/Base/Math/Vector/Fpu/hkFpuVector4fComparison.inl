@@ -73,13 +73,13 @@ template <hkVector4ComparisonMask::Mask M>
 HK_FORCE_INLINE hkBool32 hkVector4fComparison::allAreSet() const 
 { 
 	HK_VECTORfCOMPARISON_MASK_CHECK;
-	if (M == MASK_NONE)
+	if (M == hkVector4ComparisonMask::MASK_NONE)
 	{
 		return true;
 	}
-	else if (M == MASK_XYZW)
+	else if (M == hkVector4ComparisonMask::MASK_XYZW)
 	{
-		return m_mask == MASK_XYZW;
+		return m_mask == hkVector4ComparisonMask::MASK_XYZW;
 	}
 	else
 	{
@@ -97,11 +97,11 @@ template <hkVector4ComparisonMask::Mask M>
 HK_FORCE_INLINE hkBool32 hkVector4fComparison::anyIsSet() const 
 { 
 	HK_VECTORfCOMPARISON_MASK_CHECK;
-	if (M == MASK_NONE)
+	if (M == hkVector4ComparisonMask::MASK_NONE)
 	{
 		return false;
 	}
-	else if (M == MASK_XYZW)
+	else if (M == hkVector4ComparisonMask::MASK_XYZW)
 	{
 		return m_mask;
 	}
@@ -113,7 +113,7 @@ HK_FORCE_INLINE hkBool32 hkVector4fComparison::anyIsSet() const
 
 HK_FORCE_INLINE hkBool32 hkVector4fComparison::allAreSet() const 
 { 
-	return m_mask == MASK_XYZW;
+	return m_mask == hkVector4ComparisonMask::MASK_XYZW;
 }
 
 HK_FORCE_INLINE hkBool32 hkVector4fComparison::anyIsSet() const 
@@ -150,25 +150,25 @@ HK_FORCE_INLINE /*static*/ hkUint32 HK_CALL hkVector4fComparison::getCombinedMas
 template <>
 HK_FORCE_INLINE const hkVector4fComparison hkVector4fComparison::horizontalOr<1>() const
 {
-	return hkVector4fComparison::convert((hkVector4fMask)((m_mask & MASK_X) ? MASK_XYZW : MASK_NONE));
+	return hkVector4fComparison::convert((hkVector4fMask)((m_mask & hkVector4ComparisonMask::MASK_X) ? hkVector4ComparisonMask::MASK_XYZW : hkVector4ComparisonMask::MASK_NONE));
 }
 
 template <>
 HK_FORCE_INLINE const hkVector4fComparison hkVector4fComparison::horizontalOr<2>() const
 {
-	return hkVector4fComparison::convert((hkVector4fMask)((m_mask & MASK_XY) ? MASK_XYZW : MASK_NONE));
+	return hkVector4fComparison::convert((hkVector4fMask)((m_mask & hkVector4ComparisonMask::MASK_XY) ? hkVector4ComparisonMask::MASK_XYZW : hkVector4ComparisonMask::MASK_NONE));
 }
 
 template <>
 HK_FORCE_INLINE const hkVector4fComparison hkVector4fComparison::horizontalOr<3>() const
 {
-	return hkVector4fComparison::convert((hkVector4fMask)((m_mask & MASK_XYZ) ? MASK_XYZW : MASK_NONE));
+	return hkVector4fComparison::convert((hkVector4fMask)((m_mask & hkVector4ComparisonMask::MASK_XYZ) ? hkVector4ComparisonMask::MASK_XYZW : hkVector4ComparisonMask::MASK_NONE));
 }
 
 template <>
 HK_FORCE_INLINE const hkVector4fComparison hkVector4fComparison::horizontalOr<4>() const
 {
-	return hkVector4fComparison::convert((hkVector4fMask)(m_mask ? MASK_XYZW : MASK_NONE));
+	return hkVector4fComparison::convert((hkVector4fMask)(m_mask ? hkVector4ComparisonMask::MASK_XYZW : hkVector4ComparisonMask::MASK_NONE));
 }
 
 template <int N>
@@ -185,22 +185,22 @@ HK_FORCE_INLINE const hkVector4fComparison hkVector4fComparison::horizontalOr() 
 
 template <> HK_FORCE_INLINE const hkVector4fComparison hkVector4fComparison::horizontalAnd<1>() const
 {
-	return hkVector4fComparison::convert((hkVector4fMask)((m_mask & MASK_X) ? MASK_XYZW : MASK_NONE));
+	return hkVector4fComparison::convert((hkVector4fMask)((m_mask & hkVector4ComparisonMask::MASK_X) ? hkVector4ComparisonMask::MASK_XYZW : hkVector4ComparisonMask::MASK_NONE));
 }
 
 template <> HK_FORCE_INLINE const hkVector4fComparison hkVector4fComparison::horizontalAnd<2>() const
 {
-	return hkVector4fComparison::convert((hkVector4fMask)(((m_mask & MASK_XY) == MASK_XY) ? MASK_XYZW : MASK_NONE));
+	return hkVector4fComparison::convert((hkVector4fMask)(((m_mask & hkVector4ComparisonMask::MASK_XY) == hkVector4ComparisonMask::MASK_XY) ? hkVector4ComparisonMask::MASK_XYZW : hkVector4ComparisonMask::MASK_NONE));
 }
 
 template <> HK_FORCE_INLINE const hkVector4fComparison hkVector4fComparison::horizontalAnd<3>() const
 {
-	return hkVector4fComparison::convert((hkVector4fMask)(((m_mask & MASK_XYZ) == MASK_XYZ) ? MASK_XYZW : MASK_NONE));
+	return hkVector4fComparison::convert((hkVector4fMask)(((m_mask & hkVector4ComparisonMask::MASK_XYZ) == hkVector4ComparisonMask::MASK_XYZ) ? hkVector4ComparisonMask::MASK_XYZW : hkVector4ComparisonMask::MASK_NONE));
 }
 
 template <> HK_FORCE_INLINE const hkVector4fComparison hkVector4fComparison::horizontalAnd<4>() const
 {
-	return hkVector4fComparison::convert((hkVector4fMask)((m_mask == MASK_XYZW) ? MASK_XYZW : MASK_NONE));
+	return hkVector4fComparison::convert((hkVector4fMask)((m_mask == hkVector4ComparisonMask::MASK_XYZW) ? hkVector4ComparisonMask::MASK_XYZW : hkVector4ComparisonMask::MASK_NONE));
 }
 
 template <int N>
@@ -213,7 +213,7 @@ HK_FORCE_INLINE const hkVector4fComparison hkVector4fComparison::horizontalAnd()
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

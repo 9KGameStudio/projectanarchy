@@ -8,16 +8,15 @@
 #ifndef HKANIMATION_ANIMATION_HKANIMATIONTRACK_HKCLASS_H
 #define HKANIMATION_ANIMATION_HKANIMATIONTRACK_HKCLASS_H
 
-
-extern const class hkClass hkaAnnotationTrackAnnotationClass;
-
-extern const class hkClass hkaAnnotationTrackClass;
+#include <Animation/Internal/hkaExport.h>
+extern HK_EXPORT_ANIMATION const class hkClass hkaAnnotationTrackAnnotationClass;
+extern HK_EXPORT_ANIMATION const class hkClass hkaAnnotationTrackClass;
 
 /// hkaAnnotationTrack meta information
-extern const class hkClass hkAnimationTrackClass;
+extern HK_EXPORT_ANIMATION const class hkClass hkanimationTrackClass;
 
 /// Annotation information for an animated bone track.
-class hkaAnnotationTrack
+class HK_EXPORT_ANIMATION hkaAnnotationTrack
 {
 	public:
 
@@ -65,7 +64,7 @@ class hkaAnnotationTrack
 #endif // HKANIMATION_ANIMATION_HKANIMATIONTRACK_HKCLASS_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

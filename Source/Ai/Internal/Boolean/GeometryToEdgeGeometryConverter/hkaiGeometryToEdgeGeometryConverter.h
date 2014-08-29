@@ -24,7 +24,7 @@
 /// i.e., two disjoint islands of locally connected coplanar triangles won't be merged into a single face, even if the islands are coplanar.
 ///
 /// Also note that merging will only take place between triangles with the same value in the 'm_material' member.
-class hkaiGeometryToEdgeGeometryConverter
+class HK_EXPORT_AI hkaiGeometryToEdgeGeometryConverter
 {
 public:
     HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_AI, hkaiGeometryToEdgeGeometryConverter );
@@ -52,7 +52,7 @@ protected:
 
 		
 		/// Triangle information for the conversion process
-	struct Triangle
+	struct HK_EXPORT_AI Triangle
 	{
 		int m_userData;								///< User data - only tris that have same value can be merged
 		int m_face;                                 ///< Index of the face this triangle belongs to. -1 if doesn't belong
@@ -60,7 +60,7 @@ protected:
 	};
     
 		/// Used for sorting the triangles by area
-    struct TriangleArea
+    struct HK_EXPORT_AI TriangleArea
     {
     	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE,hkaiGeometryToEdgeGeometryConverter::TriangleArea);
         Triangle* m_triangle;
@@ -97,7 +97,7 @@ protected:
 #endif // HKAI_GEOMETRY_TO_EDGE_GEOMETRY_CONVERTER_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

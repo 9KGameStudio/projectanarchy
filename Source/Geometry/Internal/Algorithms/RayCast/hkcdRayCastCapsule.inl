@@ -12,7 +12,7 @@
 #include <Geometry/Internal/Algorithms/RayCast/hkcdRayCastSphere.h>
 
 
-HK_FORCE_INLINE hkInt32 hkcdRayCastCapsule(
+HK_FORCE_INLINE hkcdRayCastResult hkcdRayCastCapsule(
 	const hkcdRay& rayIn,
 	hkVector4Parameter vertex0,
 	hkVector4Parameter vertex1,
@@ -20,29 +20,39 @@ HK_FORCE_INLINE hkInt32 hkcdRayCastCapsule(
 	hkSimdReal* HK_RESTRICT fractionInOut,
 	hkVector4* HK_RESTRICT normalOut,
 	hkcdRayCastCapsuleHitType* HK_RESTRICT hitTypeOut,
-	hkcdRayQueryFlags::Enum flags )
+	hkFlags<hkcdRayQueryFlags::Enum,hkUint32> flags )
 {
-	hkVector4Comparison insideHits; hkcdRayQueryFlags::extractFlag(flags, hkcdRayQueryFlags::ENABLE_INSIDE_HITS, insideHits);
+	hkVector4Comparison insideHits; hkcdRayQueryFlags::isFlagSet(flags, hkcdRayQueryFlags::ENABLE_INSIDE_HITS, insideHits);
 	
+	hkcdRay ray = rayIn;
+	const hkVector4& dA = ray.getDirection();
+
+	// Catch the case where the ray has length zero.
+	if (HK_VERY_UNLIKELY(dA.equalZero().allAreSet<hkVector4ComparisonMask::MASK_XYZ>()))
+	{
+		return hkcdRayCastResult::NO_HIT;
+	}
+
 	hkVector4 dB; dB.setSub( vertex1, vertex0 );
 
 	hkSimdReal radiusSq = radius * radius;
-	hkcdRay ray = rayIn;
 	hkSimdReal fraction = *fractionInOut;
 	hkVector4Comparison isInverseRay; isInverseRay.set<hkVector4ComparisonMask::MASK_NONE>();
 	hkSimdReal invScale = hkSimdReal_1;
-	hkVector4Comparison isInside;
-
+	hkVector4Comparison isInsideComparison;
+	hkcdRayCastResult success = hkcdRayCastResult::FRONT_FACE_HIT;
 	{
 		hkSimdReal sToCylDistSq = hkcdPointSegmentDistanceSquared( ray.m_origin, vertex0, vertex1 );
-		isInside = sToCylDistSq.less(radiusSq);
+		isInsideComparison = sToCylDistSq.less(radiusSq);
 
-		if( HK_VERY_UNLIKELY( isInside.allAreSet() ) ) 
+		if( HK_VERY_UNLIKELY( isInsideComparison.allAreSet() ) ) 
 		{
+			success = hkcdRayCastResult(hkcdRayCastResult::BACK_FACE_HIT | hkcdRayCastResult::INSIDE_HIT);
+
 			// origin inside the cylinder
 			if ( HK_VERY_LIKELY(  !insideHits.allAreSet() ) )
 			{
-				return hkcdRayCastResult::createMiss();
+				return hkcdRayCastResult::NO_HIT;
 			}
 			else
 			{
@@ -63,7 +73,7 @@ HK_FORCE_INLINE hkInt32 hkcdRayCastCapsule(
 				
 				hkSimdReal invRayMaxSize = dB.length<3>() + hkSimdReal_4 * radius;	
 				hkSimdReal invRaySize; invRaySize.setMin( invRayMaxSize, inRaySize * ( *fractionInOut ) );
-				invScale.setDiv<HK_ACC_23_BIT, HK_DIV_SET_ZERO>( invRaySize, inRaySize );
+				invScale.setDiv<HK_ACC_RAYCAST, HK_DIV_SET_ZERO>( invRaySize, inRaySize );
 				
 				ray.m_direction.setMul( rayIn.m_direction, invScale );
 				ray.m_direction.setNeg<3>( ray.m_direction );
@@ -76,7 +86,7 @@ HK_FORCE_INLINE hkInt32 hkcdRayCastCapsule(
 				// Also safely catches the case where the ray has zero length.
 				if( HK_VERY_UNLIKELY( sToCylDistSq2 < radiusSq ) ) 
 				{
-					return hkcdRayCastResult::createMiss();
+					return hkcdRayCastResult::NO_HIT;
 				}
 			}
 		}
@@ -86,7 +96,7 @@ HK_FORCE_INLINE hkInt32 hkcdRayCastCapsule(
 	hkSimdReal infInfDistSquared;
 	hkSimdReal t, u;
 
-	const hkVector4 dA = ray.getDirection();
+
 	
 	// Get distance between inf lines + parametric description (t, u) of closest points,
 	{
@@ -101,7 +111,7 @@ HK_FORCE_INLINE hkInt32 hkcdRayCastCapsule(
 
 		if( infInfDistSquared > (radius*radius) )
 		{
-			return hkcdRayCastResult::createMiss(); // Infinite ray is outside radius of infinite cylinder
+			return hkcdRayCastResult::NO_HIT; // Infinite ray is outside radius of infinite cylinder
 		}
 	}
 
@@ -116,7 +126,7 @@ HK_FORCE_INLINE hkInt32 hkcdRayCastCapsule(
 			hkSimdReal axisLengthSqrd = axis.lengthSquared<3>();
 			hkVector4Comparison mask = axisLengthSqrd.greater( hkSimdReal_Eps );
 
-			axisLength = axis.normalizeWithLength<3,HK_ACC_23_BIT,HK_SQRT_IGNORE>();
+			axisLength = axis.normalizeWithLength<3,HK_ACC_RAYCAST,HK_SQRT_IGNORE>();
 			axisLength.zeroIfFalse(mask);
 			axis.zeroIfFalse(mask);
 		}
@@ -141,7 +151,7 @@ HK_FORCE_INLINE hkInt32 hkcdRayCastCapsule(
 	// or is greater than a previous hit fraction
 	if (ipT  >= fraction )
 	{
-		return hkcdRayCastResult::createMiss();
+		return hkcdRayCastResult::NO_HIT;
 	}
 
 	hkSimdReal ptHeight;
@@ -173,7 +183,7 @@ HK_FORCE_INLINE hkInt32 hkcdRayCastCapsule(
 			fractionInOut->setSelect( isInverseRay, invIpT, ipT ); 
 
 			*hitTypeOut = HK_CD_RAY_CAPSULE_BODY;
-			return hkcdRayCastResult::createHit(isInside);
+			return success;
 		}
 	}
 
@@ -192,7 +202,7 @@ HK_FORCE_INLINE hkInt32 hkcdRayCastCapsule(
 		if ( ipT.isLessZero() && axisToRayStart.lengthSquared<3>().isGreater(radius * radius) )
 		{
 			// Ray starts outside infinite cylinder and points away... must be no hit
-			return hkcdRayCastResult::createMiss();
+			return hkcdRayCastResult::NO_HIT;
 		}
 
 		// Ray can only hit 1 cap... Use intersection point
@@ -204,26 +214,25 @@ HK_FORCE_INLINE hkInt32 hkcdRayCastCapsule(
 		capEnd.setSelect( mask, vertex0, vertex1 );
 		capEnd.setW( radius );
 
-		if( hkcdRayCastSphere( ray, capEnd, &fraction, normalOut, hkcdRayQueryFlags::NO_FLAGS) )
+		if( hkcdRayCastSphere( ray, capEnd, &fraction, normalOut, hkcdRayQueryFlags::NO_FLAGS).isHit() )
 		{
 			hkSimdReal invFraction; invFraction.setSub( hkSimdReal_1, fraction );
 			invFraction.setMul( invFraction, invScale );
 			fractionInOut->setSelect( isInverseRay, invFraction, fraction ); 
 
 			*hitTypeOut = mask.anyIsSet() ? HK_CD_RAY_CAPSULE_CAP0 : HK_CD_RAY_CAPSULE_CAP1;
-			return hkcdRayCastResult::createHit(isInside);
+			return success;
 		}
 
-		return hkcdRayCastResult::createMiss();
+		return hkcdRayCastResult::NO_HIT;
 	}
 }
 
 
-
-
-HK_FORCE_INLINE hkVector4Comparison hkcdRayBundleCapsuleIntersect( const hkcdRayBundle& rayBundle,
-																  hkVector4Parameter vertex0, hkVector4Parameter vertex1, hkSimdRealParameter radius, 
-																  hkVector4& fractionsInOut, hkFourTransposedPoints& normalsOut )
+HK_FORCE_INLINE hkVector4Comparison hkcdRayBundleCapsuleIntersect(
+	const hkcdRayBundle& rayBundle,
+	hkVector4Parameter vertex0, hkVector4Parameter vertex1, hkSimdRealParameter radius,
+	hkVector4& fractionsInOut, hkFourTransposedPoints& normalsOut )
 {
 	hkVector4 sToCylDistSq = hkcdPointSegmentDistanceSquared( rayBundle.m_start, vertex0, vertex1 );
 
@@ -276,7 +285,7 @@ HK_FORCE_INLINE hkVector4Comparison hkcdRayBundleCapsuleIntersect( const hkcdRay
 		hkSimdReal axisLengthSqrd = axis.lengthSquared<3>();
 		hkVector4Comparison mask = axisLengthSqrd.greater( hkSimdReal_Eps );
 
-		axisLength = axis.normalizeWithLength<3,HK_ACC_23_BIT,HK_SQRT_IGNORE>();
+		axisLength = axis.normalizeWithLength<3,HK_ACC_RAYCAST,HK_SQRT_IGNORE>();
 		axisLength.zeroIfFalse(mask);
 		axis.zeroIfFalse(mask);
 
@@ -300,7 +309,7 @@ HK_FORCE_INLINE hkVector4Comparison hkcdRayBundleCapsuleIntersect( const hkcdRay
 		d.setSub(t, d);
 
 		mask = flatDirLengthSquared3.equalZero();
-		hkVector4 minusOne = hkVector4::getConstant<HK_QUADREAL_MINUS1>();
+		const hkVector4 minusOne = hkVector4::getConstant<HK_QUADREAL_MINUS1>();
 		ipT.setSelect(mask, minusOne, d);			
 	}
 
@@ -410,7 +419,7 @@ HK_FORCE_INLINE hkVector4Comparison hkcdRayBundleCapsuleIntersect( const hkcdRay
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

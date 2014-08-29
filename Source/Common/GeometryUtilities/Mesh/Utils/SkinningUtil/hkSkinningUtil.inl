@@ -15,7 +15,7 @@ void HK_CALL hkSkinningUtil::computeBoneIndicesAndWeights(	const hkArray<Entry>&
 {
 	const hkSimdReal maxDistance = hkSimdReal::fromFloat(maxD);
 	const hkSimdReal maxDistance2 = (maxDistance * maxDistance);
-	hkSimdReal invMaxDistance2; invMaxDistance2.setReciprocal<HK_ACC_23_BIT,HK_DIV_SET_ZERO>( maxDistance2 );
+	hkSimdReal invMaxDistance2; invMaxDistance2.setReciprocal<HK_ACC_MID,HK_DIV_SET_ZERO>( maxDistance2 );
 	const int numEntries = entries.getSize();
 
 	for (int i = 0; i < numEntries; i += numEntriesPerVertex)
@@ -40,13 +40,17 @@ void HK_CALL hkSkinningUtil::computeBoneIndicesAndWeights(	const hkArray<Entry>&
 			}
 			else
 			{
-				indicesOut[i + j] = (IndexType)(0);
+				indicesOut[i + j] = (IndexType)((j == 0) ? 0 : cur[0].m_index);		// use an already existing bone instead of bone 0 when possible to reduce numerical issues
 				weightsOut[i + j] = WeightType(0);
 			}
 		}
 
 		if ( usedWeights > 0 )
 		{
+			int maxWeightInd = -1;
+			WeightType maxWeight = 0;
+			WeightType weightSum = 0;
+
 			hkSimdReal recipSum; recipSum.setReciprocal(sum);
 			for (int j = 0; j < usedWeights; j++)
 			{
@@ -54,7 +58,21 @@ void HK_CALL hkSkinningUtil::computeBoneIndicesAndWeights(	const hkArray<Entry>&
 				w.load<1>(&weightsOut[i + j]);
 				w.mul(recipSum);
 				w.store<1>(&weightsOut[i + j]);
+
+				// update max weight
+				if  ( weightsOut[i + j] > maxWeight )
+				{
+					maxWeight = weightsOut[i + j];
+					maxWeightInd = j;
+				}
+				weightSum += weightsOut[i + j];
 			}
+
+			// Makes sure the weights exactly sum to 1
+			{
+				const WeightType diff = 1.0f - weightSum;
+				weightsOut[i + maxWeightInd] += diff;
+			}			
 		}
 		else
 		{
@@ -66,7 +84,7 @@ void HK_CALL hkSkinningUtil::computeBoneIndicesAndWeights(	const hkArray<Entry>&
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

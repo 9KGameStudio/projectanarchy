@@ -189,18 +189,7 @@ HK_FORCE_INLINE const hkSimdDouble64 hkQuaterniond::getComponent() const
 
 HK_FORCE_INLINE hkDouble64 hkQuaterniond::getAngle() const
 {
-	hkSimdDouble64 absangle; absangle.setAbs(m_vec.getComponent<3>());
-#if defined(HK_PLATFORM_WIN32) && (HK_CONFIG_SIMD == HK_CONFIG_SIMD_ENABLED) && !defined(HK_ARCH_ARM)
-	hkSimdDouble64 angle;
-
-	angle.m_real = hkMath::twoAcos(absangle.m_real);
-
-	angle.mul(hkSimdDouble64_2);
-	return angle.getReal();
-#else
-	hkDouble64 angle = hkMath::acos(absangle.getReal());
-	return angle * hkDouble64(2);
-#endif
+	return getAngleSr().getReal();
 }
 
 HK_FORCE_INLINE hkBool32 hkQuaterniond::hasValidAxis() const
@@ -241,7 +230,7 @@ HK_FORCE_INLINE void hkQuaterniond::setClosest(hkQuaterniondParameter q, hkQuate
 //
 //	HK_FORCE_INLINEd. Sets/initializes this quaternion from a given rotation matrix.
 //	The rotation r must be orthonormal.
-
+#if 0
 HK_FORCE_INLINE void hkQuaternion_setFromRotationSimd(const hkRotationd& r, hkVector4d& vec)
 {
 	HK_ALIGN_DOUBLE(const hkDouble64 pmmp[4]) = {  1, -1, -1,  1 };
@@ -267,7 +256,7 @@ HK_FORCE_INLINE void hkQuaternion_setFromRotationSimd(const hkRotationd& r, hkVe
 
 	// Calculate quaternion using the traces
 	hkVector4d root;
-	root.setSqrt<HK_ACC_23_BIT,HK_SQRT_SET_ZERO>(trace);
+	root.setSqrt<HK_ACC_MID,HK_SQRT_SET_ZERO>(trace);
 	root.mul(half); 
 
 	// Fix reflections
@@ -279,7 +268,7 @@ HK_FORCE_INLINE void hkQuaternion_setFromRotationSimd(const hkRotationd& r, hkVe
 
 	vec.setFlipSign(root, rotSigns);
 }
-
+#endif
 //
 //	HK_FORCE_INLINEd. Sets/initializes this quaternion from a given rotation matrix.
 //	The rotation r must be orthonormal.
@@ -364,7 +353,7 @@ HK_FORCE_INLINE void hkQuaterniond::setAndNormalize(const hkRotationd& r)
 HK_FORCE_INLINE void hkQuaterniond::setAndNormalize(const hkRotationd& r)
 {
 	_set(r);
-	normalize<HK_ACC_23_BIT,HK_SQRT_IGNORE>();
+	normalize<HK_ACC_MID,HK_SQRT_IGNORE>();
 	HK_MATH_ASSERT(0x70dc41cc, isOk(), "hkRotationd used for hkQuaterniond construction is invalid.");
 }
 
@@ -376,11 +365,11 @@ HK_FORCE_INLINE void hkQuaterniond::normalize()
 
 HK_FORCE_INLINE void hkQuaterniond::normalize()
 {
-	m_vec.normalize<4,HK_ACC_23_BIT,HK_SQRT_IGNORE>();
+	m_vec.normalize<4,HK_ACC_MID,HK_SQRT_IGNORE>();
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

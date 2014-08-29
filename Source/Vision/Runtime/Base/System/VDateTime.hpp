@@ -25,6 +25,14 @@ class VBASE_IMPEXP_CLASS VTimeSpan
   friend class VDateTime;
 
 public:
+  /// \brief Creates an infinitely long time span
+  static VTimeSpan Infinite()
+  {
+    VTimeSpan span;
+    span.m_iTotalNanoSeconds = s_iInfiniteSpan;
+    return span;
+  }
+
   /// \brief Creates a time span from a given number of days.
   static VTimeSpan FromDays(__int64 iDays)
   {
@@ -256,6 +264,8 @@ public:
 
 private:
   __int64 m_iTotalNanoSeconds;
+
+  static const __int64 s_iInfiniteSpan = 0x7fffffffffffffffLL;
 };
 
 /// \brief A class representing a date and time.
@@ -505,7 +515,7 @@ private:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

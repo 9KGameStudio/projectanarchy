@@ -9,11 +9,11 @@
 #define HKAI_NAV_MESH_EDGE_MATCHING_PARAMS_H
 
 
-extern const class hkClass hkaiNavMeshEdgeMatchingParametersClass;
+extern HK_EXPORT_AI const class hkClass hkaiNavMeshEdgeMatchingParametersClass;
 
 
 		/// Tolerances for edge matching. This is used to connect edges then might not be exact, e.g., two stairs
-struct hkaiNavMeshEdgeMatchingParameters
+struct HK_EXPORT_AI hkaiNavMeshEdgeMatchingParameters
 {
 	// +version(9)
 	HK_DECLARE_REFLECTION();
@@ -22,15 +22,18 @@ struct hkaiNavMeshEdgeMatchingParameters
 	hkaiNavMeshEdgeMatchingParameters();
 	hkaiNavMeshEdgeMatchingParameters(hkFinishLoadedObjectFlag f) {}
 
+		// Adjust the settings to be more compatible for nav mesh cutting.
+	void setForNavMeshCutting();
+
 		/// The maximum step height
 	hkReal m_maxStepHeight;	//+default(.5f)
-							//+hk.RangeReal(absmin=0,softmax=10)
+							//+hk.RangeReal(absmin="HK_REAL_MIN",softmax=10)
 							//+hk.Description("The maximum vertical distance allowed between edges.")
 							//+hk.Semantics("DISTANCE")
 
 		/// Maximum allowed separation when considering connecting a pair of edges
 	hkReal m_maxSeparation;		//+default(.1f)
-								//+hk.RangeReal(absmin=0,softmax=10)
+								//+hk.RangeReal(absmin="HK_REAL_MIN",softmax=10)
 								//+hk.Description("The maximum horizontal distance allowed between edges.")
 								//+hk.Semantics("DISTANCE")
 
@@ -60,17 +63,17 @@ struct hkaiNavMeshEdgeMatchingParameters
 
 		/// Minimum overlap required when considering connecting a pair of edges
 	hkReal m_minEdgeOverlap;	//+default(.02f)
-								//+hk.RangeReal(absmin=0,softmin=1)
+								//+hk.RangeReal(absmin=0,softmax=1)
 								//+hk.Description("The minimum overlap required when considering connecting a pair of edges.")
 
 		/// Horizontal epsilon used for edge connection raycasts
 	hkReal m_edgeTraversibilityHorizontalEpsilon;	//+default(.01f)
-													//+hk.RangeReal(absmin=0,softmin=1)
+													//+hk.RangeReal(absmin=0,softmax=1)
 													//+hk.Description("Internal Use. Horizontal traversabilty-test epsilon")
 
 		/// Vertical epsilon used for edge connection raycasts
 	hkReal m_edgeTraversibilityVerticalEpsilon;	//+default(.01f)
-												//+hk.RangeReal(absmin=0,softmin=1)
+												//+hk.RangeReal(absmin=0,softmax=1)
 												//+hk.Description("Internal Use. Vertical traversabilty-test epsilon")
 
 		/// Minimum face normal alignment required when considering connecting a pair of edges (used for wall-climbing only)
@@ -109,7 +112,7 @@ struct hkaiNavMeshEdgeMatchingParameters
 #endif	// HKAI_NAV_MESH_EDGE_MATCHING_PARAMS_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

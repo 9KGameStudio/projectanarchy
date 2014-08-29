@@ -204,6 +204,8 @@ void VPathRendererBase::CommonDeinit()
   Vision::Callbacks.OnRenderHook -= this;
   Vision::Callbacks.OnUpdateSceneBegin -= this;
   VShadowMapGenerator::OnRenderShadowMap -= this;
+  IVisSceneManager_cl::OnReposition -= this;
+
   m_spPathRenderingData = NULL;
   m_bIsInitialized = false;
 }
@@ -244,6 +246,7 @@ bool VPathRendererBase::DoInit()
   Vision::Callbacks.OnRenderHook += this;
   Vision::Callbacks.OnUpdateSceneBegin += this;
   VShadowMapGenerator::OnRenderShadowMap += this;
+  IVisSceneManager_cl::OnReposition += this;
 
   m_bIsInitialized = true;
 
@@ -265,8 +268,16 @@ void VPathRendererBase::OnHandleCallback(IVisCallbackDataObject_cl *pData)
   if (pData->m_pSender == &Vision::Callbacks.OnRenderHook)
   {
     VisRenderHookDataObject_cl* pHookData = static_cast<VisRenderHookDataObject_cl*>(pData);
-    if (pHookData->m_iEntryConst != VRH_PRE_OCCLUSION_TESTS)
-      return;
+    if ((Vision::Contexts.GetCurrentContext()->GetUsageHint() & VIS_CONTEXTUSAGEFLAG_INFRARED) != 0)
+    {
+      if (pHookData->m_iEntryConst != VRH_PRE_OCCLUSION_TESTS && pHookData->m_iEntryConst != VRH_PRE_PRIMARY_OPAQUE_PASS_GEOMETRY)
+        return;
+    }
+    else
+    {
+      if (pHookData->m_iEntryConst != VRH_PRE_OCCLUSION_TESTS)
+        return;
+    }
 
     OnRender(pData);
   }
@@ -284,6 +295,10 @@ void VPathRendererBase::OnHandleCallback(IVisCallbackDataObject_cl *pData)
     }
 
     OnUpdate();
+  }
+  else if (pData->m_pSender == &IVisSceneManager_cl::OnReposition)
+  {
+    this->OnReposition(((VisZoneRepositionDataObject_cl *)pData)->m_Info, hkvVec3::ZeroVector());
   }
 }
 
@@ -328,7 +343,7 @@ START_VAR_TABLE(VPathRendererBase, IVObjectComponent, "Base class for all path r
 END_VAR_TABLE
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

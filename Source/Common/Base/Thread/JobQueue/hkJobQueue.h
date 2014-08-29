@@ -14,7 +14,9 @@
 
 #include <Common/Base/Container/Queue/hkQueue.h>
 
-extern HK_THREAD_LOCAL( int ) hkThreadNumber;
+class hkSpuThreadPool;
+
+extern HK_EXPORT_COMMON HK_THREAD_LOCAL( int ) hkThreadNumber;
 
 #define HK_INVALID_JOB 0xff
 #define HK_BROAD_PHASE_THREAD_AFFINITY 1
@@ -32,11 +34,6 @@ enum hkJobType
 	HK_JOB_TYPE_ANIMATION_MAPPING,
 	HK_JOB_TYPE_BEHAVIOR,
 	HK_JOB_TYPE_CLOTH,
-	HK_JOB_TYPE_AI_PATHFINDING,
-	HK_JOB_TYPE_AI_VOLUME_PATHFINDING,
-	HK_JOB_TYPE_AI_DYNAMIC,
-	HK_JOB_TYPE_AI_LOCAL_STEERING,
-	HK_JOB_TYPE_AI_GENERATION,
 	HK_JOB_TYPE_DESTRUCTION,
 	HK_JOB_TYPE_UNIT_TEST,
 	HK_JOB_TYPE_CHARACTER_PROXY,
@@ -59,7 +56,7 @@ enum hkJobSpuType
 };
 
 	/// Base type for all jobs.
-struct hkJob
+struct HK_EXPORT_COMMON hkJob
 {
 	HK_FORCE_INLINE hkJob( hkJobType jobType, hkUint32 jobSubType, hkUint16 size, hkJobSpuType jobProcessorTypes = HK_JOB_SPU_TYPE_ENABLED );
 	hkJob() {}
@@ -72,7 +69,7 @@ struct hkJob
 
 };
 
-class hkExternalJobProfiler
+class HK_EXPORT_COMMON hkExternalJobProfiler
 {
 	public:
 		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_BASE_CLASS, hkExternalJobProfiler );
@@ -83,7 +80,7 @@ class hkExternalJobProfiler
 
 /// A structure used for specifying the number of threads, shared caches, and additionally for the
 /// PlayStation(R)3, whether the PPU can take SPU tasks
-struct hkJobQueueHwSetup
+struct HK_EXPORT_COMMON hkJobQueueHwSetup
 {
 	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE,hkJobQueueHwSetup);
 	hkJobQueueHwSetup();
@@ -116,7 +113,7 @@ struct hkJobQueueHwSetup
 	hkArray< hkArray<int> > m_threadIdsSharingCaches;
 };
 
-struct hkJobQueueCinfo
+struct HK_EXPORT_COMMON hkJobQueueCinfo
 {
 	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_BASE_CLASS, hkJobQueueCinfo );
 	hkJobQueueCinfo() { m_maxNumJobTypes = HK_JOB_TYPE_MAX; }
@@ -125,10 +122,9 @@ struct hkJobQueueCinfo
 
 };
 
-class hkSpuJobThreadPool;
 
 	/// This class implements a job queue with all necessary locking and waiting
-class hkJobQueue
+class HK_EXPORT_COMMON hkJobQueue
 {
 	public:
 
@@ -190,7 +186,7 @@ class hkJobQueue
 			JobTypeSpuStats(): m_runningTasks(0),
 				m_waitingTasks(0),
 				m_timeSinceLastTask(0)
-			{ 
+			{
 			}
 
 			hkPadSpu<int> m_runningTasks;
@@ -246,7 +242,7 @@ class hkJobQueue
 				/// Set to this if the function is taking the element off the queue
 			POP_QUEUE_ENTRY,
 				/// Set to this if the function has modified the element, and left it on the queue
-			DO_NOT_POP_QUEUE_ENTRY 
+			DO_NOT_POP_QUEUE_ENTRY
 		};
 
 		typedef JobPopFuncResult (HK_CALL *JobPopFunc)( hkJobQueue& queue, hkJobQueue::DynamicData* data, JobQueueEntry& jobIn, JobQueueEntry& jobOut );
@@ -304,7 +300,7 @@ class hkJobQueue
 
 			HK_FORCE_INLINE void registerProcessJobFunc( hkJobSubType jobId, ProcessJobFunc func )
 			{
-				HK_ASSERT2(0x543e432e, (jobId & 0xff) < m_numProcessJobFuncs, " Job ID out of range for registerd function table"); 
+				HK_ASSERT2(0x543e432e, (jobId & 0xff) < m_numProcessJobFuncs, " Job ID out of range for registerd function table");
 				m_processJobFuncs[ (jobId & 0xff) ] = func;
 			}
 		};
@@ -358,7 +354,7 @@ class hkJobQueue
 
 			/// This function will process jobs from the queue until the queue is empty, then return.
 			/// This does not guarantee that any helper threads also processing jobs have completed
-			/// their work (see hkJobThreadPool::waitForCompletion).
+			/// their work (see hkThreadPool::waitForCompletion).
 			/// if addTimers == true the jobQueue will add a timer begin and end around the jobfunction
 		JobStatus processAllJobs( bool addTimers = true);
 
@@ -374,9 +370,9 @@ class hkJobQueue
 		void* getInitialElf();
 
 			/// Retrieve the elf for this registered type
-		void* getRegisteredSpuElf( hkJobType jobType );		
+		void* getRegisteredSpuElf( hkJobType jobType );
 
-#endif // defined(HK_PLATFORM_HAS_SPU)		
+#endif // defined(HK_PLATFORM_HAS_SPU)
 
 #elif defined (HK_PLATFORM_SIM_SPU)
 
@@ -439,7 +435,8 @@ class hkJobQueue
 			/// entire operation in one critical section, rather than two critical sections.
 		JobStatus finishAddAndGetNextJob( hkJobType oldJobType, JobPriority priority, JobQueueEntry& jobInOut, WaitStatus waitStatus = WAIT_FOR_NEXT_JOB );
 
-			/// Locks the queue and sets the number of running SPUs (used when starting up the tasks in hkSpuJobThreadPool::processAllJobs)
+			/// Locks the queue and sets the number of running SPUs (used when starting up the tasks in
+			/// hkSpuThreadPool::processJobQueue)
 		void setNumRunningSpus( int numSpus );
 
 			/// Changes the SPU scheduling policy - this is not advised to be called while the jobs are being processed.
@@ -448,7 +445,7 @@ class hkJobQueue
 
 		//
 		// External profiler support
-		// 
+		//
 
 		void setExternalProfiler(hkExternalJobProfiler* p);
 
@@ -470,7 +467,7 @@ class hkJobQueue
 		HK_FORCE_INLINE QueueIndex findNextJob( JobQueueEntry& jobOut, DynamicData* data );
 
 		QueueIndex getQueueIndexForJob( const hkJob& job );
-		
+
 		HK_FORCE_INLINE hkBool allQueuesEmpty( DynamicData* data );
 
 		DynamicData* lockQueue( char* dynamicDataStorage );
@@ -494,7 +491,7 @@ class hkJobQueue
 			// Static, locally set data
 			//
 
-		JobPopFunc m_popJobFunc; 
+		JobPopFunc m_popJobFunc;
 		FinishJobFunc m_finishJobFunc;
 
 
@@ -521,8 +518,8 @@ class hkJobQueue
 		CustomJobType m_customJobs[CUSTOM_JOB_TYPE_MAX];
 		int m_numCustomJobs;
 
-		int m_cpuSemaphoreBegin; 
-		int m_directMapSemaphoreEnd; 
+		int m_cpuSemaphoreBegin;
+		int m_directMapSemaphoreEnd;
 
 		int m_masterThreadQueue;
 
@@ -539,7 +536,7 @@ class hkJobQueue
 			// Used to decide what semaphore to wait on for CPU threads.
 			// SPU threads have a 1-1 mapping. CPU threads also go from 0-N but need a map to map them to the right semaphore
 			// (depending on shared caches / custom jobs)
-		hkInt8 m_cpuThreadIndexToSemaphoreIndex[ MAX_NUM_CPU_THREADS ]; 
+		hkInt8 m_cpuThreadIndexToSemaphoreIndex[ MAX_NUM_CPU_THREADS ];
 
 		hkJobHandlerFuncs m_jobFuncs[HK_JOB_TYPE_MAX];
 
@@ -553,7 +550,7 @@ class hkJobQueue
 #	endif
 #endif
 		// reference to the SPU thread pool
-		hkSpuJobThreadPool* m_threadPool;
+		hkSpuThreadPool* m_threadPool;
 
 		//
 		// Setup info
@@ -566,7 +563,7 @@ class hkJobQueue
 			int m_threadId;
 		};
 		hkArray<CustomJobTypeSetup> m_customJobSetup;
-        
+
 		hkExternalJobProfiler* m_externalJobProfiler;
 };
 
@@ -575,7 +572,7 @@ class hkJobQueue
 #endif // HK_BASE_THREAD_JOB_QUEUE_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

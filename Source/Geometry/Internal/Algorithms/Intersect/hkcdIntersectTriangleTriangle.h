@@ -12,12 +12,12 @@
 
 	/// Tests the intersection between two triangles. Returns true if the triangles intersect, false otherwise.
 	
-hkBool32 HK_CALL hkcdIntersectTriangleTriangle(const hkVector4 (&triangleA)[3], const hkVector4 (&triangleB)[3]);
+HK_EXPORT_COMMON hkBool32 HK_CALL hkcdIntersectTriangleTriangle(const hkVector4 (&triangleA)[3], const hkVector4 (&triangleB)[3]);
 
 #endif	//	HKCD_TRIANGLE_TRIANGLE_INTERSECTION_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

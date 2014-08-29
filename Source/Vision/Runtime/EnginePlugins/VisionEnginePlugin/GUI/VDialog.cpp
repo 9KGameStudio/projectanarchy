@@ -8,7 +8,7 @@
 
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/VisionEnginePluginPCH.h>         // precompiled header
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/GUI/VMenuIncludes.hpp>
-#include <Vision/Runtime/Base/System/Memory/VMemDbg.hpp>
+
 
 VDialog::VDialog()
 {
@@ -37,6 +37,11 @@ VRectanglef VDialog::GetClientRect() const
 
 VDialog::~VDialog()
 {
+  // necessary to clear these to have a well defined de-init order in case OnControlDisposed is called at the end of this d'tor
+  m_spFocusItem = NULL;
+  for (int i=0;i<VGUIUserInfo_t::GUIMaxUser;i++)
+    m_spMouseOverItem[i] = NULL;
+
   V_SAFE_DELETE(m_pImage);
 }
 
@@ -91,7 +96,7 @@ VDialog* VDialog::LoadFromBinaryFile(const char *szFilename)
   ar >> iArchiveVersion;
   ar.SetLoadingVersion(iArchiveVersion);
 
-  VDialog* pDlg = (VDialog *)ar.ReadObject(V_RUNTIME_CLASS(VDialog));
+  VDialog* pDlg = ar.ReadObject<VDialog>();
   ar.Close();
   pIn->Close();
   return pDlg;
@@ -338,6 +343,14 @@ void VDialog::SetFocusItem(VWindowBase *pNewItem)
   }
 }
 
+void VDialog::OnControlDisposed(VDlgControlBase *pControl)
+{
+  if (pControl==m_spFocusItem)
+    m_spFocusItem = NULL;
+  for (int i=0;i<VGUIUserInfo_t::GUIMaxUser;i++)
+    if (pControl==m_spMouseOverItem[i])
+      m_spMouseOverItem[i] = NULL;
+}
 
 void VDialog::OnItemClicked(VMenuEventDataObject *pEvent)
 {
@@ -611,7 +624,7 @@ VDialog* VDialogCollection::FindDialog(int iID) const
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

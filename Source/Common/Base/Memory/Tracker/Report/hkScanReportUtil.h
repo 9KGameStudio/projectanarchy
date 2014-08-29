@@ -42,7 +42,7 @@ class hkTrackerTypeTreeCache;
 	/// It's often useful to use type allocations as the root blocks for traversal. This makes ownership
 	/// fairly fine grained, but the fine granularity generally avoids problems with sharing, as sharing
 	/// often takes place at the level of objects.
-class hkScanReportUtil
+class HK_EXPORT_COMMON hkScanReportUtil
 {
     public:
     	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE,hkScanReportUtil);
@@ -66,7 +66,7 @@ class hkScanReportUtil
 			/// For example the size 1024 will be displayed as 1 Kb.
 			/// The struct also has flags that can perform more fine grained control on the formatting
 			/// of the display of a size.
-		struct MemorySize
+		struct HK_EXPORT_COMMON MemorySize
 		{
 			// Tail formats
 			// Bytes
@@ -96,7 +96,7 @@ class hkScanReportUtil
 		};
 
 		
-		struct NameTypePair
+		struct HK_EXPORT_COMMON NameTypePair
 		{
 			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE,hkScanReportUtil::NameTypePair);
 			const char* m_name;
@@ -109,7 +109,7 @@ class hkScanReportUtil
 			/// A call to the method should determine with the childBlock should be owned by the block.
 			/// if shouldFollow returns false, then the childBlock won't be owned by Block along the current
 			/// connection.
-		class FollowFilter
+		class HK_EXPORT_COMMON FollowFilter
 		{
 			public:
 			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE,hkScanReportUtil::FollowFilter);
@@ -143,7 +143,7 @@ class hkScanReportUtil
 		static void HK_CALL appendParentAndDontFollowMap(const hkTrackerScanSnapshot* scanSnapshot, const hkArray<const Block*>& rootBlocks, DontFollowMap& dontFollowMap, FollowFilter* filter, ParentMap& parentMap);
 
 			/// For printing memory sizes
-		friend hkOstream& HK_CALL operator<<(hkOstream& stream, const hkScanReportUtil::MemorySize& size);
+		friend HK_EXPORT_COMMON hkOstream& HK_CALL operator<<(hkOstream& stream, const hkScanReportUtil::MemorySize& size);
 			/// Convert size into text
 		static void HK_CALL memorySizeToText(hk_size_t size, int flags, hkStringBuf& string);
 
@@ -224,10 +224,12 @@ class hkScanReportUtil
 
 };
 
+HK_EXPORT_COMMON hkOstream& HK_CALL operator<<(hkOstream& stream, const hkScanReportUtil::MemorySize& size);
+
 #endif // HKBASE_SCAN_REPORT_UTIL_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

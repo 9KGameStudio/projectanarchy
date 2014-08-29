@@ -83,7 +83,7 @@ HK_FORCE_INLINE void hkFreeListArray<VALUE_TYPE, INDEX_TYPE, GROWTH, OPERATIONS>
 }
 
 template < typename VALUE_TYPE, typename INDEX_TYPE, int GROWTH, typename OPERATIONS >
-HK_FORCE_INLINE void hkFreeListArray<VALUE_TYPE, INDEX_TYPE, GROWTH, OPERATIONS>::grow(int growth)
+void hkFreeListArray<VALUE_TYPE, INDEX_TYPE, GROWTH, OPERATIONS>::grow(int growth)
 {
 	const int oldCapacity	= m_elements.getSize();
 	const int newCapacity	= hkMath::max2(oldCapacity + growth, oldCapacity ? (oldCapacity << 1) : 1);	// Double the capacity if negative growth provided!
@@ -145,7 +145,7 @@ HK_FORCE_INLINE void hkFreeListArray<VALUE_TYPE, INDEX_TYPE, GROWTH, OPERATIONS>
 
 // Compact the storage.
 template < typename VALUE_TYPE, typename INDEX_TYPE, int GROWTH, typename OPERATIONS >
-HK_FORCE_INLINE void hkFreeListArray<VALUE_TYPE, INDEX_TYPE, GROWTH, OPERATIONS>::compact()
+void hkFreeListArray<VALUE_TYPE, INDEX_TYPE, GROWTH, OPERATIONS>::compact()
 {
 	m_elements.optimizeCapacity(0, true);
 	m_firstFree = -1;
@@ -200,7 +200,7 @@ HK_FORCE_INLINE hkBool32 hkFreeListArray<VALUE_TYPE, INDEX_TYPE, GROWTH, OPERATI
 	hkInt32 c = m_firstFree;
 	while (c >= 0)
 	{
-		if (c == index.value()) return 0;
+		if (c == (hkInt32)index.value()) return 0;
 		c = OPERATIONS::getNext((VALUE_TYPE&)m_elements[c]);
 	}
 	return 1;
@@ -305,7 +305,7 @@ HK_FORCE_INLINE	const VALUE_TYPE& hkFreeListArray<VALUE_TYPE, INDEX_TYPE, GROWTH
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

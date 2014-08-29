@@ -44,7 +44,7 @@ public:
 	///
 
 	///
-	/// @name One time Initialization / Deinitialization to register callbacks
+	/// @name One time Initialization/Deinitialization to register callbacks
 	/// @{
 	///
 
@@ -77,7 +77,7 @@ public:
 	///   IVisCallbackHandler_cl implementation
 	virtual void OnHandleCallback( IVisCallbackDataObject_cl* pData ) HKV_OVERRIDE;
 
-	virtual int GetCallbackSortingKey(VCallback *pCallback) HKV_OVERRIDE;
+	virtual int64 GetCallbackSortingKey(VCallback *pCallback) HKV_OVERRIDE;
 
 	///
 	/// @}
@@ -107,7 +107,7 @@ public:
 	/// @{
 	///
 
-  /// \brief
+	/// \brief
   ///   Manually sets the physics world to be able to connect to it.
   ///
   /// \sa SetConnectToPhysicsWorld
@@ -129,6 +129,18 @@ public:
 	///
 
 	VHAVOKAI_IMPEXP virtual void Step(float dt) HKV_OVERRIDE;
+
+	/// 
+	/// \brief
+	///   Allow the AI system to be stepped by another module (e.g. Behavior)
+	/// 
+	/// \param steppedExternally
+	///   TRUE if simulation will be stepped externally, FALSE if Vision will step AI.
+	/// 
+	inline void SetSteppedExternally(bool steppedExternally) 
+	{ 
+		m_steppedExternally = steppedExternally; 
+	}
 
 	/// \brief
   ///   Called by the Havok physics module on de-initialization.
@@ -165,7 +177,7 @@ public:
     return m_behaviors;
   }
 
-	/// deprecated interface
+		/// deprecated interface
 	VHAVOKAI_IMPEXP bool LoadNavMeshDeprecated(const char* filename, VArray<vHavokAiNavMeshInstance*>* navMeshInstancesOut = HK_NULL);
 
 	///
@@ -226,9 +238,10 @@ protected:
 	///   Connects to hkpWorld
 	void ConnectToPhysicsWorld();
 
-	/// \brief
 	///   Disconnects from hkpWorld
 	void DisconnectFromPhysicsWorld(bool stepSilhouettesAfterDisconnecting = false);
+
+        void HandleResourceFile(class vHavokResourceCallbackData &data);
 
 	hkaiWorld* m_aiWorld;
 
@@ -239,6 +252,8 @@ protected:
 
 	hkaiViewerContext* m_aiViewerContext;
 
+	bool m_steppedExternally;	///< Determines whether AI is stepped externally
+
 	/// one global instance of our manager
 	static vHavokAiModule g_GlobalManager;
 };
@@ -246,7 +261,7 @@ protected:
 #endif	// __VHAVOK_AI_MODULE_HPP
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -22,7 +22,7 @@
 
 class hkaPose;
 
-class hkaSampleBlendJob : public hkJob
+class HK_EXPORT_ANIMATION hkaSampleBlendJob : public hkJob
 {
 public:
 
@@ -71,13 +71,14 @@ public:
 
 		enum SampleFlags
 		{
-			HAS_BONE_WEIGHTS=1, 
-			HAS_FLOAT_WEIGHTS=2,
-			HAS_BONE_BINDING=4,
-			HAS_FLOAT_BINDING=8,
-			HAS_MAPPER=16,
-			BLENDMODE_ADDITIVE=32,
-			HAS_PARTITIONS = 64,
+			HAS_BONE_WEIGHTS	= (1<<0),
+			HAS_FLOAT_WEIGHTS	= (1<<1),
+			HAS_BONE_BINDING	= (1<<2),
+			HAS_FLOAT_BINDING	= (1<<3),
+			HAS_MAPPER			= (1<<4),
+			BLENDMODE_ADDITIVE	= (1<<5),
+			HAS_PARTITIONS		= (1<<6),
+			DEPRECATED			= (1<<7), // use with above to use deprecated format/functionality, currently only usable with BLENDMODE_ADDITIVE
 		};
 		hkFlags<SampleFlags, hkInt32> m_flags;
 
@@ -261,7 +262,7 @@ void HK_CALL executeSampleBlendJob(const hkaSampleBlendJob& job);
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

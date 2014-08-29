@@ -8,9 +8,8 @@
 
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/VisionEnginePluginPCH.h>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Scripting/VScriptIncludes.hpp>
-#include <Vision/Runtime/Base/System/Memory/VMemDbg.hpp>
+
 #include <Vision/Runtime/Engine/SceneElements/VisApiTriggerComponent.hpp>
-#include <Vision/Runtime/Base/System/Memory/VMemDbg.hpp>
 
 
 enum VSCRIPT_COMPONENT_VERSION {
@@ -26,8 +25,7 @@ enum VSCRIPT_COMPONENT_VERSION {
 // VScriptMember class
 /****************************************************************************/
 
-VScriptMember::VScriptMember() :
-  m_szType(NULL), m_szName(NULL), m_szValue(NULL)
+VScriptMember::VScriptMember()
 {
 }
 
@@ -35,39 +33,24 @@ VScriptMember::VScriptMember(const char * szName, const char * szValue, const ch
 {
   VASSERT_MSG(szName!=NULL, "Please always specify a name for a member!");
 
-  m_szType = szType==NULL ? NULL : vStrDup(szType);
-  m_szName = szName==NULL ? NULL : vStrDup(szName);
-  m_szValue = szValue==NULL ? NULL : vStrDup(szValue);
-}
-
-VScriptMember::~VScriptMember()
-{
-  V_SAFE_DELETE(m_szType);
-  V_SAFE_DELETE(m_szName);
-  V_SAFE_DELETE(m_szValue);
+  m_sType = szType;
+  m_sName = szName;
+  m_sValue = szValue;
 }
 
 void VScriptMember::SetValue(const char * szValue)
 {
-  V_SAFE_DELETE(m_szValue);
-  m_szValue = szValue==NULL ? NULL : vStrDup(szValue);
-}
-
-void VScriptMember::operator=(const VScriptMember &copy)
-{
-  m_szType = copy.m_szType==NULL ? NULL : vStrDup(copy.m_szType);
-  m_szName = copy.m_szName==NULL ? NULL : vStrDup(copy.m_szName);
-  m_szValue = copy.m_szValue==NULL ? NULL : vStrDup(copy.m_szValue);
+  m_sValue = szValue;
 }
 
 bool VScriptMember::operator==(const VScriptMember & other) const
 {
-  return m_szName==other.m_szName||(m_szName!=NULL&&other.m_szName!=NULL&&strcmp(m_szName, other.m_szName)==0);
+  return m_sName == other.m_sName;
 };
 
 bool VScriptMember::operator!=(const VScriptMember & other) const
 {
-  return( (m_szName!=other.m_szName&&(m_szName==NULL||other.m_szName==NULL||strcmp(m_szName, other.m_szName)!=0)) );
+  return m_sName != other.m_sName;
 };
 
 
@@ -98,7 +81,7 @@ VScriptComponent::~VScriptComponent()
     SetScriptInstance(NULL);
   }
 
-  if (m_iScriptRefID>=0)
+  if (m_iScriptRefID >= 0)
   {
     lua_State* L = VScriptResourceManager::GlobalManager().GetMasterState();
     LUA_ResetObjectProxy(L, this);
@@ -197,13 +180,40 @@ void VScriptComponent::TriggerOnExpose()
 
   // collect vars from the OnExpose callback (in order to be 
   // sure to have all defined members initialized)
-  m_spInstance->ExecuteFunctionArg("OnExpose", "*");
+
+  // Collect all existing members of other script components
+  LinkedList_cl<VScriptMember> existingMembers;
+  if (Vision::Editor.IsInEditor())
+  {
+    for (int i = 0; i < m_pOwner->Components().Count(); i++)
+    {
+      if (VScriptComponent* pScriptComponent = vdynamic_cast<VScriptComponent*>(m_pOwner->Components().GetAt(i)))
+      {
+        if (pScriptComponent == this)
+        {
+          continue;
+        }
+
+        for (LinkedList_Element_cl<VScriptMember>* pCurrent = pScriptComponent->m_DefaultExposeVars.first; pCurrent; pCurrent = pCurrent->next)
+        {
+          if (!existingMembers.IsEntry(pCurrent->value))
+          {
+            existingMembers.Add(pCurrent->value);
+          }
+        }
+      }
+    }
+  }
+
+  m_spInstance->TriggerOnExpose(existingMembers);
 
   if (Vision::Editor.IsInEditor())
   {
     //collect those vars
     m_DefaultExposeVars.Clear();
     m_spInstance->GetMembers(m_DefaultExposeVars);
+
+    m_DefaultExposeVars.RemoveAll(existingMembers);
 
     // remove vars that are outdated from the customized list
     if (Vision::Editor.GetMode() == VisEditorManager_cl::EDITORMODE_NONE)
@@ -227,7 +237,7 @@ void VScriptComponent::RegisterCallbacks()
   if (m_iFunctions & VSCRIPT_FUNC_ONUPDATESCENEFINISHED)
       Vision::Callbacks.OnUpdateSceneFinished += this;
   if (m_iFunctions & VSCRIPT_FUNC_ONAFTERSCENELOADED)
-    Vision::Callbacks.OnAfterSceneLoaded += this;
+    Vision::Callbacks.OnAfterSceneLoaded  += this;
   if (m_iFunctions & VSCRIPT_FUNC_ONBEFORESCENEUNLOADED)
     Vision::Callbacks.OnBeforeSceneUnloaded += this;
   if (m_iFunctions & VSCRIPT_FUNC_ONVIDEOCHANGED)
@@ -274,7 +284,6 @@ int VScriptComponent::CheckAvailableFunctions(VScriptInstance* pInstance)
   
   return iRes;
 }
-
 
 //Implement IVisCallbackHandler_cl
 void VScriptComponent::OnHandleCallback(IVisCallbackDataObject_cl *pData)
@@ -327,7 +336,12 @@ void VScriptComponent::OnHandleCallback(IVisCallbackDataObject_cl *pData)
       m_spInstance->ExecuteFunctionArg("OnVideoChanged", "*");
     return;
   }
+}
 
+int64 VScriptComponent::GetCallbackSortingKey(VCallback* pCallback)
+{
+  // Since vForge doesn't assign unique IDs to components, we'll have to use the owner's ID to provide a stable callback order
+  return GetOwner() ? GetOwner()->GetUniqueID() : 0;
 }
 
 
@@ -448,18 +462,18 @@ void VScriptComponent::Serialize( VArchive &ar )
   {
     ar >> iLocalVersion;
     if (iLocalVersion<VERSION_INITIAL||iLocalVersion>VERSION_CURRENT)
-      hkvLog::FatalError("Invalid script serialization version - please re-export map");
+      hkvLog::FatalError("Invalid script serialization version - please re-export scene.");
 
     // This is a workaround for [#21287] : This component must be immediately added to the owner's component list,
     // otherwise script function calls on it create a new script component which results in one object having two script components
     // [8.1: need to serialize it here]
-    VisTypedEngineObject_cl *pOwner = (VisTypedEngineObject_cl *)ar.ReadObject(NULL);
+    VisTypedEngineObject_cl *pOwner = ar.ReadObject<VisTypedEngineObject_cl>();
     if (pOwner != NULL && !pOwner->Components().Contains(this))
       ((VObjectComponentCollection &)pOwner->Components()).Add(this);
     // additionally we have to temporarily pretend the owner is set:
     m_pOwner = pOwner;
 
-    m_iScriptRefID = -1;
+    m_iScriptRefID = LUA_REFNIL;
     VScriptInstance *pInstance = NULL;
     ar >> pInstance;
     // we shouldn't call SetScriptInstance since it calls the Lua OnCreate function, which may try to access the object
@@ -534,7 +548,7 @@ void VScriptComponent::GetCustomDisplayName(VString &sDestName)
   sDestName.Format("Lua Script : %s",VFileHelper::GetFilename(ScriptFile));
 }
 
-#ifdef WIN32
+#ifdef _VISION_WIN32
 
 int VScriptComponent::GetCustomVariableInfo(DynObjArray_cl<VisVariable_cl> &customVarList)
 {
@@ -570,14 +584,14 @@ int VScriptComponent::GetCustomVariableInfo(DynObjArray_cl<VisVariable_cl> &cust
   int iNewEntires = customVarList.GetValidSize()-iCount;
   return iNewEntires;
 }
-#endif // WIN32
+#endif // _VISION_WIN32
 
-START_VAR_TABLE(VScriptComponent,IVObjectComponent,"Lua script component",VCOMPONENT_ALLOW_MULTIPLE, "Lua Script" )
+START_VAR_TABLE(VScriptComponent,IVObjectComponent,"Can be attached to any object to provide it with game logic through a Lua script",VCOMPONENT_ALLOW_MULTIPLE, "Lua Script" )
 DEFINE_VAR_VSTRING(VScriptComponent, ScriptFile, "Filename of the script file", "", 0, 0, "scriptfile");
 END_VAR_TABLE
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

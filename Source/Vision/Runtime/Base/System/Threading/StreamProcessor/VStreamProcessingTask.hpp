@@ -13,6 +13,7 @@
 
 
 #ifdef _VISION_PS3
+  #include <cell/atomic.h>
   #ifdef SPU
     #ifdef SPU
       #include <Vision/Runtime/Base/System/VSpuDefs.hpp>
@@ -20,7 +21,6 @@
 
     #include <cell/spurs/job_chain.h>
     #include <cell/spurs/event_flag.h>
-    #include <cell/atomic.h>
     #include <cell/dma.h>
     #include <spu_printf.h>
 
@@ -34,7 +34,6 @@
     #include <sys/ppu_thread.h>
     #include <sys/process.h>
     #include <cell/spurs.h>
-    #include <cell/atomic.h>
 
   #endif
 
@@ -300,7 +299,7 @@ private:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

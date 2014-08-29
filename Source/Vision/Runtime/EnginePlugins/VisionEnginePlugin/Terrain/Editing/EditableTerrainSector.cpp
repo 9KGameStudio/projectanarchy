@@ -214,7 +214,10 @@ bool VEditableTerrainSector::SaveWeightmapTextures()
       // handle three way mapping
       char channelRemapping[256];
       VASSERT(numUsedChannels < V_ARRAY_SIZE(channelRemapping));
-      memset(channelRemapping, 0, sizeof(channelRemapping));
+      for (unsigned int i = 0; i < sizeof(channelRemapping); i++) // Default to no channel remapping.
+      {
+        channelRemapping[i] = i;
+      }
 
       pPage->m_iNumThreeWayMappingLayer = 0;
       pPage->m_iThreeWayMappingLayerMask = 0;
@@ -1247,8 +1250,12 @@ void VEditableTerrainSector::EndUpdateDecoration(bool bFinalUpdate)
   DynArray_cl<int> overAllRefs(iActualCount*2,0);
   V_SAFE_DELETE_ARRAY(m_piReferencedDecoration);
 
+  hkvAlignedBBox InvalidBBox;
+  InvalidBBox.setInvalid();
+
   // pre-compute bounding boxes
-  DynArray_cl<hkvAlignedBBox> boundingBoxes(iActualCount);
+  DynArray_cl<hkvAlignedBBox> boundingBoxes(iActualCount, InvalidBBox);
+
   for (int i=0;i<iActualCount;i++)
   {
      deco.m_pInstances[i].GetBoundingBox(boundingBoxes[i]);
@@ -1261,6 +1268,7 @@ void VEditableTerrainSector::EndUpdateDecoration(bool bFinalUpdate)
   for (int iTile=0;iTile<m_Config.m_iTilesPerSectorCount;iTile++,pTile++)
   {
     hkvAlignedBBox tileDecoBBox;
+    tileDecoBBox.setInvalid();
     pTile->m_fMaxDecorationFarClip = 0.f;
     pTile->m_iFirstReferencedDecoration = m_iReferencedDecorationCount;
     pTile->m_iReferencedDecorationCount = 0;
@@ -2765,7 +2773,7 @@ bool VEditableTerrainSector::SaveSector(bool bUseTemp)
 }
 
 
-#ifdef WIN32
+#ifdef _VISION_WIN32
 
 
 class VTerrainSectorPreview : public IVResourcePreview
@@ -2920,7 +2928,7 @@ IVResourcePreview *VEditableTerrainSector::CreateResourcePreview()
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

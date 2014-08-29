@@ -21,7 +21,7 @@
 struct hkaiSearchMemoryInfo;
 
 	/// Utility for performing A* searches on a nav mesh.
-	/// This is used by hkaiPathfindingUtility and the multithreaded jobs; it is recommended that you use those instead of
+	/// This is used by hkaiPathfindingUtility and the multithreaded tasks; it is recommended that you use those instead of
 	/// using this directly.
 struct hkaiNavMeshSearch
 {
@@ -63,7 +63,7 @@ struct hkaiNavMeshSearch
 		/// Initialize the search
 	void init(Graph* graph, const hkaiAgentTraversalInfo& agentInfo, const StartGoalInfo& goalInfo, bool isHierarchical);
 	
-	inline hkReal getCost(int nid)
+	inline hkReal getCost(hkaiPackedKey nid)
 	{
 		m_state.nextNode( nid );
 		return m_state.getCost(nid);
@@ -92,7 +92,7 @@ public:
 
 		/// The most recent search node that was processed by A*.
 		/// This will be a nav mesh edge, the start pseudo-node, or a goal-pseudo node
-	SearchIndex m_lastClosedNode;
+	hkaiPackedKey m_lastClosedNode;
 
 		/// On success, index of the goal that was reached. -1 on failure.
 	int m_goalFoundIndex;
@@ -108,7 +108,7 @@ public:
 #endif // HK_AI_NAV_MESH_SEARCH_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

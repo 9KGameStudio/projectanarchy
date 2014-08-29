@@ -11,6 +11,12 @@
 
 #include <Vision/Runtime/Base/Math/hkvMath.h>
 
+#ifdef HKVVEC3_CHECK_FOR_NAN
+  #define HKVVEC3_INITIALIZATION_CHECK(obj) (obj)->isInitializedCheck()
+#else
+  #define HKVVEC3_INITIALIZATION_CHECK(obj) 
+#endif
+
 /// \brief
 ///   Serializes the vector to/from the archive (reads/writes exactly 3 floats).
 VBASE_IMPEXP void SerializeX (VArchive& ar, hkvVec3& obj);
@@ -31,27 +37,36 @@ public:
   /// @{
   ///
 
-  #ifdef HKVMATH_DEFAULTCONSTRUCTORS_INITIALIZEDATA
-    /// \brief
-    ///   DEPRECATED: Initializes the vector to all zero.
-    ///
-    /// Prefer to not initialize the vector by using hkvNoInitialization.
-    /// Note: At some point the Vision Engine will deactivate this old behavior and use the uninitialized version instead.
-    /// At that time you need to make sure that whenever you default construct a vector, you do not rely on it being zero.
-    ///
-    /// You can find all the places where you use the default constructor by defining 
-    /// HKVMATH_DEPRECATE_DEFAULT_CONSTRUCTOR in hkvMathConfig.h and compiling your code for Windows.
-    /// Then the compiler will generate a warning for every location where you use the default constructor.
-    /// Use the macros HKV_DISABLE_DEPRECATION and HKV_ENABLE_DEPRECATION to prevent that warning
-    /// for code that cannot be changed to use a non default constructor (such as for arrays).
-    HKVMATH_DEFAULT_CONSTRUCTOR HKV_FORCE_INLINE hkvVec3 () : x (0.0f), y (0.0f), z (0.0f) {}
+  /// \brief
+  ///   ATTENTION: The object is NOT initialized by the constructor. You MUST initialize it yourself before using it.
+  ///
+  /// \note In Dev and Debug builds the object will be initialized with NaN values. Member functions that read the values will check that they are not NaN.
+  /// If an NaN value is encountered, those functions will trigger an assert. Thus when you run into such an assert, you have not initialized your object
+  /// after construction. Make sure you always initialize objects properly before using them.
+  HKV_FORCE_INLINE hkvVec3 ()
+  {
+#ifdef HKVVEC3_INITIALIZE_TO_NAN
 
-  #else
+    x = hkvMath::generateNaN();
+    y = hkvMath::generateNaN();
+    z = hkvMath::generateNaN();
 
-    /// \brief
-    ///   FUTURE BEHAVIOR: Keeps the vector uninitialized.
-    HKVMATH_DEFAULT_CONSTRUCTOR HKV_FORCE_INLINE hkvVec3 () {}
-  #endif
+#elif defined(HKVVEC3_INITIALIZE_TO_IDENTITY)
+
+    x = 0;
+    y = 0;
+    z = 0;
+
+#endif
+  }
+
+#ifdef HKVVEC3_CHECK_FOR_NAN
+  HKV_FORCE_INLINE void isInitializedCheck() const
+  {
+    VASSERT_MSG(!hkvMath::isNaN (x) && !hkvMath::isNaN (y) && !hkvMath::isNaN (z),
+      "This object has invalid (NaN) members: (%.2f | %.2f | %.2f).\nThis happens when you use this object without properly initializing it first, as the default constructor will set all members to NaN in debug builds.", x, y, z);
+  }
+#endif
 
   /// \brief
   ///   Does not initialize this object. Prefer this constructor over the default constructor.
@@ -595,185 +610,6 @@ public:
     float data[3];
   };
 
-public:
-
-  ///
-  /// @name Compatibility Interface (DEPRECATED)
-  /// @{
-  ///
-
-  /// \brief DEPRECATED: DO NOT USE!
-  HKVMATH_DEPRECATED_STAGE4 typedef float COMPONENT_TYPE;
-
-  /// \brief DEPRECATED: Use hkvNoInitialization instead.
-  HKVMATH_DEPRECATED_STAGE3 HKV_FORCE_INLINE explicit hkvVec3 (bool b) { }
-
-  /// \brief DEPRECATED: Use floats for initialization instead.
-  HKVMATH_DEPRECATED_STAGE4 HKV_FORCE_INLINE explicit hkvVec3 (hkInt32 xyz) { set ((float) xyz); } 
-
-  /// \brief DEPRECATED: Use hkvVec3::set instead.
-  HKVMATH_DEPRECATED_STAGE3 HKV_FORCE_INLINE void Set (float _x, float _y, float _z) { set (_x, _y, _z); }
-
-  /// \brief DEPRECATED: Use hkvVec3::normalizeIfNotZero instead. Be careful to check the result for HKV_SUCCESS instead of TRUE.
-  HKVMATH_DEPRECATED_STAGE2 HKV_FORCE_INLINE VBool Normalize () { return (normalizeIfNotZero () == HKV_SUCCESS) ? TRUE : FALSE; }
-
-  /// \brief DEPRECATED: Use hkvVec3::set instead.
-  HKVMATH_DEPRECATED_STAGE3 HKV_FORCE_INLINE void SetValue (float _x, float _y, float _z) { set (_x, _y, _z); }
-
-  /// \brief DEPRECATED: Instead of 'A.Cross (B)' use 'A = A.cross (B)'.
-  HKVMATH_DEPRECATED_STAGE2 HKV_FORCE_INLINE void Cross (const hkvVec3& rhs) { *this = cross (rhs); }
-
-  /// \brief DEPRECATED: Use hkvVec3::setLength instead. Be careful to check the result for HKV_SUCCESS instead of true.
-  HKVMATH_DEPRECATED_STAGE3 HKV_FORCE_INLINE bool SetLength (float len) { return (setLength (len) == HKV_SUCCESS); }
-
-  /// \brief DEPRECATED: Use hkvVec3::isZero instead.
-  HKVMATH_DEPRECATED_STAGE3 HKV_FORCE_INLINE bool IsZero () const { return isZero (0.0f); }
-
-  /// \brief DEPRECATED: Use hkvVec3::getLength instead.
-  HKVMATH_DEPRECATED_STAGE3 HKV_FORCE_INLINE float GetLength () const { return getLength (); }
-
-  /// \brief DEPRECATED: Use hkvVec3::dot instead.
-  HKVMATH_DEPRECATED_STAGE3 HKV_FORCE_INLINE float Dot (const hkvVec3& rhs) const { return dot (rhs); }
-
-  /// \brief DEPRECATED: Use hkvVec3::getLength instead.
-  HKVMATH_DEPRECATED_STAGE3 HKV_FORCE_INLINE float Length () const { return getLength (); }
-
-  /// \brief DEPRECATED: Use hkvVec3::getLengthSquared instead.
-  HKVMATH_DEPRECATED_STAGE3 HKV_FORCE_INLINE float LengthSqr () const { return getLengthSquared (); }
-
-  /// \brief DEPRECATED: Use hkvVec3::getDistanceTo instead.
-  HKVMATH_DEPRECATED_STAGE3 HKV_FORCE_INLINE float Dist (const hkvVec3& v2) const { return getDistanceTo (v2); }
-
-  /// \brief DEPRECATED: Use hkvVec3::getDistanceToSquared instead.
-  HKVMATH_DEPRECATED_STAGE3 HKV_FORCE_INLINE float DistSqr (const hkvVec3& v2) const { return getDistanceToSquared (v2); }
-
-  /// \brief
-  ///   DEPRECATED: DO NOT USE IN NEW CODE!
-  ///
-  /// Use hkvVec3::makeOrthogonalTo instead.
-  /// However be careful because makeOrthogonalTo is implemented differently than MakeOrthogonal.
-  /// The current inline implementation of MakeOrthogonal is:\n
-  /// void MakeOrthogonal (hkvVec3& v) const { v.makeOrthogonalTo (*this); }\n
-  ///
-  /// \param v
-  ///   DEPRECATED
-  ///
-  /// \sa hkvVec3::makeOrthogonalTo
-  HKVMATH_DEPRECATED_STAGE2 HKV_FORCE_INLINE void MakeOrthogonal (hkvVec3& v) const { v.makeOrthogonalTo (*this); }
-
-  /// \brief DEPRECATED: Use hkvVec3::isIdentical instead.
-  HKVMATH_DEPRECATED_STAGE3 HKV_FORCE_INLINE bool IsEqual (const hkvVec3& rhs) const { return isIdentical (rhs); }
-
-  /// \brief DEPRECATED: Use hkvVec3::isEqual instead.
-  HKVMATH_DEPRECATED_STAGE3 HKV_FORCE_INLINE bool IsEqual (const hkvVec3& rhs, float eps) const { return isEqual (rhs, eps); }
-
-  /// \brief
-  ///   DEPRECATED: DO NOT USE IN NEW CODE!
-  ///
-  /// Replace this function by creating a hkvMat4 from pfMatrixScalars (using row-major data layout)
-  /// and then multiply this vector by that matrix.
-  ///
-  /// \param pfMatrixScalars
-  ///   DEPRECATED
-  ///
-  /// \sa hkvMat4::set4x4RowMajor
-  HKVMATH_DEPRECATED_STAGE2 HKV_FORCE_INLINE void MultiplyWith4x4Matrix (const float* pfMatrixScalars)
-  {
-    float oldX=x, oldY=y, oldZ=z;
-    x = oldX*pfMatrixScalars[0]+oldY*pfMatrixScalars[1]+oldZ*pfMatrixScalars[2]+pfMatrixScalars[3];
-    y = oldX*pfMatrixScalars[4]+oldY*pfMatrixScalars[5]+oldZ*pfMatrixScalars[6]+pfMatrixScalars[7];
-    z = oldX*pfMatrixScalars[8]+oldY*pfMatrixScalars[9]+oldZ*pfMatrixScalars[10]+pfMatrixScalars[11];
-  }
-
-  /// \brief DEPRECATED: Use hkvVec3::getReflected instead.
-  HKVMATH_DEPRECATED_STAGE3 HKV_FORCE_INLINE const hkvVec3 Reflect (const hkvVec3& normal) const { return getReflected (normal); }
-
-  /// \brief DEPRECATED: Use hkvVec3::set instead.
-  HKVMATH_DEPRECATED_STAGE3 HKV_FORCE_INLINE void SetXYZ (float _x, float _y, float _z) { set (_x, _y, _z); }
-
-  /// \brief DEPRECATED: Use hkvVec3::getLength instead.
-  HKVMATH_DEPRECATED_STAGE3 HKV_FORCE_INLINE float GetLen () const { return getLength (); }
-
-  /// \brief DEPRECATED: Use hkvVec3::setZero instead.
-  HKVMATH_DEPRECATED_STAGE3 HKV_FORCE_INLINE void Clear () { setZero (); }
-
-  /// \brief DEPRECATED: Use hkvVec3::setLength instead.
-  HKVMATH_DEPRECATED_STAGE3 HKV_FORCE_INLINE void SetLen (float len) { setLength (len); }
-
-  /// \brief DEPRECATED: Use hkvVec3::setMin instead.
-  HKVMATH_DEPRECATED_STAGE3 HKV_FORCE_INLINE void Min (const hkvVec3& v) { setMin (v); }
-
-  /// \brief DEPRECATED: Use hkvVec3::setMax instead.
-  HKVMATH_DEPRECATED_STAGE3 HKV_FORCE_INLINE void Max (const hkvVec3& v) { setMax (v); }
-
-  /// \brief DEPRECATED: Use hkvVec3::cross instead.
-  HKVMATH_DEPRECATED_STAGE3 HKV_FORCE_INLINE const hkvVec3 GetCrossProduct (const hkvVec3& rhs) const { return cross (rhs); }
-
-  /// \brief DEPRECATED: Use hkvVec3::isIdentical instead.
-  HKVMATH_DEPRECATED_STAGE3 HKV_FORCE_INLINE bool Equals (const hkvVec3& rhs) const { return isIdentical (rhs); }
-
-  /// \brief DEPRECATED: Use hkvVec3::isEqual instead.
-  HKVMATH_DEPRECATED_STAGE3 HKV_FORCE_INLINE bool Equals (const hkvVec3& rhs, float eps) const { return isEqual (rhs, eps); }
-
-  /// \brief DEPRECATED: Use hkvVec3::getLengthSquared instead.
-  HKVMATH_DEPRECATED_STAGE3 HKV_FORCE_INLINE float GetSquaredLen () const { return getLengthSquared (); }
-
-  /// \brief DEPRECATED: Use hkvPlane::getMirrored instead.
-  HKVMATH_DEPRECATED_STAGE2 VBASE_IMPEXP const hkvVec3 Mirror (const hkvPlane& p) const;
-
-  /// \brief
-  ///   DEPRECATED: DO NOT USE IN NEW CODE!
-  ///
-  /// Use hkvMat4::transformDirection instead.\n
-  /// E.g. 'hkvVec3 v1 = m.transformDirection (v2)'\n
-  ///
-  /// \param m
-  ///   DEPRECATED
-  ///
-  /// \sa hkvMat4::transformDirection
-  HKVMATH_DEPRECATED_STAGE2 VBASE_IMPEXP void MultiplyWithRotationalPart (const hkvMat4& m);
-
-  /// \brief
-  ///   DEPRECATED: DO NOT USE IN NEW CODE!
-  ///
-  /// Instead transpose the matrix manually and multiply the vector with that.\n
-  /// The compatibility implementation of MultiplyWithTransposedMatrix is:\n
-  ////  void hkvVec3::MultiplyWithTransposedMatrix (const hkvMat3& m) {\n
-  ///     hkvMat3 mT = m.getTransposed (); \n
-  ///     *this = mT.transformDirection (*this); \n
-  ///   }\n
-  ///
-  /// \param m
-  ///   DEPRECATED
-  ///
-  /// \sa hkvMat3::getTransposed
-  /// \sa hkvMat3::transpose
-  /// \sa hkvMat3::transformDirection
-  HKVMATH_DEPRECATED_STAGE2 VBASE_IMPEXP void MultiplyWithTransposedMatrix (const hkvMat3& m);
-
-  /// \brief DEPRECATED: Use hkvMat3::transformDirection instead.
-  HKVMATH_DEPRECATED_STAGE2 VBASE_IMPEXP void operator*= (const hkvMat3& m);
-
-  /// \brief DEPRECATED: Use hkvMat4::transformPosition instead.
-  HKVMATH_DEPRECATED_STAGE2 VBASE_IMPEXP void operator*= (const hkvMat4& m);
-
-  /// \brief DEPRECATED: Use hkvVec3::setZero instead.
-  HKVMATH_DEPRECATED_STAGE3 VBASE_IMPEXP void Zero () { setZero (); }
-
-  /// \brief DEPRECATED: Use compMul instead.
-  HKVMATH_DEPRECATED_STAGE3 HKV_FORCE_INLINE const hkvVec3 ComponentMul (const hkvVec3& vec) const { return compMul (vec); }
-
-  /// \brief DEPRECATED: Use hkvPlane::getPointPosition instead.
-  HKVMATH_DEPRECATED_STAGE2 VBASE_IMPEXP bool IsOnPlane (const hkvPlane& p) const;
-
-  ///
-  /// @}
-  ///
-
-  // Missing Functions:
-
-  // VDIRECTION GetDirection();
-  // void MultiplyWithRotationalPart(const float *pfMatrixScalars)
 };
 
 ///
@@ -813,11 +649,9 @@ HKV_FORCE_INLINE const hkvVec3 operator/ (const hkvVec3& lhs, float f);
 /// @}
 ///
 
-#ifdef HKVMATH_ENABLE_NEW_SERIALIZATION_OPERATORS
-  // Currently deactivated to force people to use SerializeAsVec3 or SerializeAsVisVector instead.
-  // Will be activated in some later release.
-  V_DECLARE_SERIALX_NONINTRUSIVE (hkvVec3, VBASE_IMPEXP);
-#endif
+// Currently deactivated to force people to use SerializeAsVec3 or SerializeAsVisVector instead.
+// Will be activated in some later release.
+V_DECLARE_SERIALX_NONINTRUSIVE (hkvVec3, VBASE_IMPEXP);
 
 
 #include <Vision/Runtime/Base/Math/Vector/hkvVec3.inl>
@@ -825,7 +659,7 @@ HKV_FORCE_INLINE const hkvVec3 operator/ (const hkvVec3& lhs, float f);
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

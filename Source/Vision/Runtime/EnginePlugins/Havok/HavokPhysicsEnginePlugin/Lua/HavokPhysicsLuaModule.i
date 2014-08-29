@@ -121,21 +121,129 @@ static const int LAYER_COLLIDABLE_CUSTOM4;
 %include <Vision/Runtime/EnginePlugins/Havok/HavokPhysicsEnginePlugin/Lua/vHavokRigidBody.i>;
 %include <Vision/Runtime/EnginePlugins/Havok/HavokPhysicsEnginePlugin/Lua/vHavokRagdoll.i>;
 
-/*
-%native(EnableDebugRendering) int PhysicsLuaModule_EnableDebugRendering(lua_State *L);
+bool EnableError(const char* errorString, bool enableError);
+void SetGravity(hkvVec3 gravity);
+void SetGroupsCollision(int group1, int group2, bool doEnable);
+int CalcFilterInfo(int layer, int group, int subsystem, int subsystemDontCollideWith);
+void PerformRaycast(hkvVec3 vRayStart, hkvVec3 vRayEnd, int iCollisionFilterInfo, VCaptureSwigEnvironment* env);
+
 %{
-  int PhysicsLuaModule_EnableDebugRendering(lua_State *L) {
-    if(lua_isboolean(L,-1))
+  static bool EnableError(const char* errorString, bool enableError)
+  {
+    hkError& error = hkError::getInstance();
+    
+    if(errorString != NULL && errorString[0] != NULL)
     {
-      bool bEnable = lua_toboolean(L,-1)==TRUE;
-      lua_pop(L,1);
-      if(Vision::GetApplication()->GetPhysicsModule())
-        ((vHavokPhysicsModule*)Vision::GetApplication()->GetPhysicsModule())->SetEnabledDebug(bEnable);
-    } 
-    return 0;
+      int errorId;
+      if(sscanf(errorString, "%x", &errorId) == 1)
+      {
+        hkError& error = hkError::getInstance();
+        error.setEnabled(errorId, enableError);
+        return error.isEnabled(errorId) == enableError;
+      }
+      else
+      {
+        return false;
+      }
+    }
+    else
+    {
+      return false;
+    }
+  }
+  
+  static void SetGravity(hkvVec3 gravity)
+  {
+    vHavokPhysicsModule::GetInstance()->SetGravity(gravity);
+  }
+  
+  static void SetGroupsCollision(int group1, int group2, bool doEnable)
+  {
+    vHavokPhysicsModule::GetInstance()->SetGroupsCollision(group1, group2, doEnable);
+  }
+  
+  static int CalcFilterInfo(int layer, int group, int subsystem, int subsystemDontCollideWith)
+  {
+    // Calculate collision filter information
+    return hkpGroupFilter::calcFilterInfo(layer, group, subsystem, subsystemDontCollideWith);
+  }
+  
+  static void PerformRaycast(hkvVec3 vRayStart, hkvVec3 vRayEnd, int iCollisionFilterInfo, VCaptureSwigEnvironment * env)
+  {
+    // Perform raycast
+    VisPhysicsRaycastClosestResult_cl raycastData;
+    raycastData.vRayStart = vRayStart;
+    raycastData.vRayEnd = vRayEnd;
+    raycastData.iCollisionBitmask = iCollisionFilterInfo;
+    vHavokPhysicsModule::GetInstance()->PerformRaycast(&raycastData);
+    
+    // Check hit
+    if(!raycastData.bHit)
+    {
+      env->AddReturnValueBool(false);
+      return;
+    }
+    
+    lua_State* L = env->GetLuaState();
+    
+    lua_pushboolean(L, true);
+    
+    // Create an empty table for returning raycast results
+    lua_newtable(L);
+    
+    // Hit type
+    lua_pushstring(L, "HitType");
+    switch(raycastData.closestHit.eHitType)
+    {
+    case VIS_TRACETYPE_ENTITYPOLY:
+      lua_pushstring(L, "Entity");
+      break;
+      
+    case VIS_TRACETYPE_STATICGEOMETRY:
+      lua_pushstring(L, "Mesh");
+      break;
+      
+    case VIS_TRACETYPE_TERRAIN:
+      lua_pushstring(L, "Terrain");
+      break;
+      
+    default:
+      lua_pushstring(L, "Unknown");
+    }
+    lua_settable(L, -3);
+    
+    // Hit object
+    lua_pushstring(L, "HitObject");
+    LUA_PushObjectProxy(L, raycastData.closestHit.pHitObject);
+    lua_settable(L, -3);
+    
+    // Hit fraction
+    lua_pushstring(L, "HitFraction");
+    lua_pushnumber(L, (lua_Number)raycastData.closestHit.fHitFraction);
+    lua_settable(L, -3);
+    
+    // Impact point and normal
+    lua_pushstring(L, "ImpactPoint");
+    SWIG_Lua_NewPointerObj(L, new hkvVec3(raycastData.closestHit.vImpactPoint), SWIGTYPE_p_hkvVec3, VLUA_MANAGE_MEM_BY_LUA);
+    lua_settable(L, -3);
+    lua_pushstring(L, "ImpactNormal");
+    SWIG_Lua_NewPointerObj(L, new hkvVec3(raycastData.closestHit.vImpactNormal), SWIGTYPE_p_hkvVec3, VLUA_MANAGE_MEM_BY_LUA);
+    lua_settable(L, -3);
+    
+    // Hit material information
+    lua_pushstring(L, "DynamicFriction");
+    lua_pushnumber(L, (lua_Number)raycastData.closestHit.hitMaterial.fDynamicFriction);
+    lua_settable(L, -3);
+    lua_pushstring(L, "Restitution");
+    lua_pushnumber(L, (lua_Number)raycastData.closestHit.hitMaterial.fRestitution);
+    lua_settable(L, -3);
+    lua_pushstring(L, "UserData");
+    lua_pushstring(L, raycastData.closestHit.hitMaterial.szUserData.AsChar());
+    lua_settable(L, -3);
+    
+    env->SetNumReturnValues(2);
   }
 %}
-*/
 
 %native(EnableVisualDebugger) int PhysicsLuaModule_EnableVisualDebugger(lua_State *L);
 %{
@@ -151,38 +259,7 @@ static const int LAYER_COLLIDABLE_CUSTOM4;
   }
 %}
 
-%native(EnableError) float PhysicsLuaModule_EnableError(lua_State *L);
-%{
-  int PhysicsLuaModule_EnableError(lua_State *L) 
-  {
-    DECLARE_ARGS_OK
-	  GET_ARG(1, const char *, errorString);
-    GET_ARG(2, bool, enableError);
-
-    hkError& error = hkError::getInstance();
-
-    if(errorString!=NULL && errorString[0]!=NULL)
-    {
-      int errorId;
-      if(sscanf(errorString, "%x", &errorId)==1)
-      {
-        hkError& error = hkError::getInstance();
-			  error.setEnabled( errorId, enableError );
-        lua_pushboolean(L, error.isEnabled( errorId )==enableError);
-      }
-      else
-      {
-        lua_pushboolean(L, false);
-      }
-    }
-    else
-    {
-      lua_pushboolean(L, false);
-    }
-	  return 1;
-  }
-%}
-
+ 
 %native(GetHavokToVisionScale) float PhysicsLuaModule_GetHavokToVisionScale(lua_State *L);
 %{
   int PhysicsLuaModule_GetHavokToVisionScale(lua_State *L) 
@@ -205,137 +282,6 @@ static const int LAYER_COLLIDABLE_CUSTOM4;
 	}
 	return 0;
   }
-%}
-
-%native(SetGravity) float PhysicsLuaModule_SetGravity(lua_State *L);
-%{
-  int PhysicsLuaModule_SetGravity(lua_State *L) 
-  {
-	DECLARE_ARGS_OK
-	GET_ARG(1, hkvVec3, gravity);
-	vHavokPhysicsModule::GetInstance()->SetGravity( gravity );
-	return 0;
-  }
-%}
-
-%native(SetGroupsCollision) int PhysicsLuaModule_SetGroupsCollision(lua_State *L);
-%{
-  int PhysicsLuaModule_SetGroupsCollision(lua_State *L) 
-  {
-	DECLARE_ARGS_OK
-	
-	// Get arguments
-	GET_ARG(1, int, group1);
-	GET_ARG(2, int, group2);
-	GET_ARG(3, bool, doEnable);
-	
-	vHavokPhysicsModule::GetInstance()->SetGroupsCollision(group1, group2, doEnable);
-	return 0;
-  }
-%}
-
-%native(CalcFilterInfo) int PhysicsLuaModule_CalcFilterInfo(lua_State *L);
-%{
-   int PhysicsLuaModule_CalcFilterInfo(lua_State *L) 
-   {
-     DECLARE_ARGS_OK
-	
-	   // Get arguments
-	   GET_ARG(1, int, layer);
-	   GET_ARG(2, int, group);
-	   GET_ARG(3, int, subsystem);
-	   GET_ARG(3, int, subsystemDontCollideWith);
-
-	   // Calculate collision filter information
-	   int iCollisionFilterInfo = hkpGroupFilter::calcFilterInfo(layer, group, subsystem, subsystemDontCollideWith);
-
-     lua_pushinteger(L, (lua_Integer)iCollisionFilterInfo);
-	   return 1;
-   }
-%}
-
-%native(PerformRaycast) int PhysicsLuaModule_PerformRaycast(lua_State *L);
-%{
-   int PhysicsLuaModule_PerformRaycast(lua_State *L)
-   {
-	   DECLARE_ARGS_OK;
-	
-	   // Get arguments
-	   GET_ARG(1, hkvVec3, vRayStart);
-	   GET_ARG(2, hkvVec3, vRayEnd);
-     GET_ARG(3, int, iCollisionFilterInfo);
-
-	   // Perform raycast
-	   VisPhysicsRaycastClosestResult_cl raycastData;
-	   raycastData.vRayStart = vRayStart;
-	   raycastData.vRayEnd = vRayEnd;
-	   raycastData.iCollisionBitmask = iCollisionFilterInfo;
-	   vHavokPhysicsModule::GetInstance()->PerformRaycast(&raycastData);
-	
-	   // Check hit
-	   if (!raycastData.bHit)
-	   { 
-	     lua_pushboolean(L, false);
-	     return 1;
-	   }
-	
-	   lua_pushboolean(L, true);
-
-     // Create an empty table for returning raycast results
-	   lua_newtable(L); 
-
-	   // Hit type
-	   lua_pushstring(L, "HitType");
-     switch(raycastData.closestHit.eHitType)
-	   {
-	   case VIS_TRACETYPE_ENTITYPOLY:
-	     lua_pushstring(L, "Entity"); 
-	     break;
-
-	   case VIS_TRACETYPE_STATICGEOMETRY:
-	     lua_pushstring(L, "Mesh"); 
-	     break;
-
-     case VIS_TRACETYPE_TERRAIN:
-	     lua_pushstring(L, "Terrain"); 
-	     break;
-
-     default:
-	     lua_pushstring(L, "Unknown"); 
-	   }
-     lua_settable(L, -3);  
-
-	   // Hit object 
-	   lua_pushstring(L, "HitObject");    
-	   LUA_PushObjectProxy(L, raycastData.closestHit.pHitObject);
-	   lua_settable(L, -3);  
-
-	   // Hit fraction
-	   lua_pushstring(L, "HitFraction");         
-     lua_pushnumber(L, (lua_Number)raycastData.closestHit.fHitFraction); 
-	   lua_settable(L, -3);  
-
-	   // Impact point and normal
-	   lua_pushstring(L, "ImpactPoint");          
-	   LUA_PushObjectProxy(L, new hkvVec3(raycastData.closestHit.vImpactPoint));
-     lua_settable(L, -3);            
-	   lua_pushstring(L, "ImpactNormal");          
-	   LUA_PushObjectProxy(L, new hkvVec3(raycastData.closestHit.vImpactNormal));
-     lua_settable(L, -3);   
-
-	   // Hit material information
-	   lua_pushstring(L, "DynamicFriction");         
-     lua_pushnumber(L, (lua_Number)raycastData.closestHit.hitMaterial.fDynamicFriction);    
-	   lua_settable(L, -3); 
-	   lua_pushstring(L, "Restitution");         
-     lua_pushnumber(L, (lua_Number)raycastData.closestHit.hitMaterial.fRestitution);    
-	   lua_settable(L, -3); 
-	   lua_pushstring(L, "UserData");   
-	   lua_pushstring(L, raycastData.closestHit.hitMaterial.szUserData.AsChar());
-	   lua_settable(L, -3);
-   
-	   return 2;
-   }
 %}
 
 #else
@@ -371,7 +317,7 @@ public:
   ///       Physics.EnableError("0x44444444", false)
   ///     end
   ///   \endcode
-  static boolean EnableError(string identifier, boolean enable)
+  boolean EnableError(string identifier, boolean enable)
 
   /// \brief Setup possibility to attach the Havok visual debugger.
   /// \param enable Enable or disabe the visual debugger.
@@ -381,7 +327,7 @@ public:
   ///       Physics.EnableVisualDebugger(true)
   ///     end
   ///   \endcode
-  static void EnableVisualDebugger(boolean enable);
+  void EnableVisualDebugger(boolean enable);
  
   /// note: temporary removed
   /// !brief Hide or show debug wireframe rendering.
@@ -392,7 +338,7 @@ public:
   ///     Physics.EnableDebugRendering(true)
   ///     ...
   ///   !endcode
-  /// static void EnableDebugRendering(boolean enable);
+  /// void EnableDebugRendering(boolean enable);
 
   /// \brief Set the internal scaling from Havok to Vision.
   /// \param scale value to convert from Havok units to Vision units
@@ -402,7 +348,7 @@ public:
   ///       Physics.SetHavokToVisionScale( 0.01 )
   ///     end
   ///   \endcode
-  static void SetHavokToVisionScale(float scale = 1.0f / 50.0f);
+  void SetHavokToVisionScale(number scale = 1.0f / 50.0f);
 
   /// \brief Gets the internal scaling from Havok to Vision.
   /// \par Example
@@ -411,7 +357,7 @@ public:
   ///       scale = Physics.GetHavokToVisionScale()
   ///     end
   ///   \endcode
-  static float GetHavokToVisionScale();
+  number GetHavokToVisionScale();
   
   /// \brief Sets gravity
   /// \param gravity Gravity in Vision units
@@ -421,10 +367,10 @@ public:
   ///       Physics.SetGravity(0,0,-1000)
   ///     end
   ///   \endcode
-  static void SetGravity( hkvVec3 gravity );
+  void SetGravity( hkvVec3 gravity );
   
   /// \brief Enables / disables collisions between the given groups
-  static void SetGroupsCollision(int group1, int group2, bool doEnable);
+  void SetGroupsCollision(number group1, number group2, boolean doEnable);
 
   /// \brief Calculates collision filter information.
   ///
@@ -445,7 +391,7 @@ public:
   /// 
   /// \return
   ///   Collision filter information, used e.g. for PerformRaycast().
-  int CalcFilterInfo(int layer, int group, int subsystem, int subsystemDontCollideWith);
+  number CalcFilterInfo(number layer, number group, number subsystem, number subsystemDontCollideWith);
 
   /// \brief Performs a raycast and returns the closest result.
   ///
@@ -491,105 +437,105 @@ public:
   ///       end
   ///     end
   ///   \endcode
-  static boolean_table PerformRaycast(hkvVec3 rayStart, hkvVec3 rayEnd, int collisionFilterInfo); 
+  multiple PerformRaycast(hkvVec3 rayStart, hkvVec3 rayEnd, number collisionFilterInfo); 
 
   /// @}
   /// @name Motion Type Constants
   /// @{
   
   /// \brief A fully-simulated, movable rigid body.
-  static const int MOTIONTYPE_DYNAMIC;
+  number MOTIONTYPE_DYNAMIC;
   
   /// \brief Simulation is not performed as a normal rigid body, can be moved manually by code.
-  static const int MOTIONTYPE_KEYFRAMED;
+  number MOTIONTYPE_KEYFRAMED;
 
   /// \brief This motion type is used for the static elements of a game scene.
-  static const int MOTIONTYPE_FIXED;
+  number MOTIONTYPE_FIXED;
 
   /// \brief Simulation is performed using a sphere inertia tensor.
-  static const int MOTIONTYPE_SPHERE_INERTIA;
+  number MOTIONTYPE_SPHERE_INERTIA;
 
   /// \brief Simulation is performed using a box inertia tensor.
-  static const int MOTIONTYPE_BOX_INERTIA;
+  number MOTIONTYPE_BOX_INERTIA;
 
   /// \brief A box inertia motion which is optimized for thin boxes and has less stability problems.
-  static const int MOTIONTYPE_THIN_BOX_INERTIA;
+  number MOTIONTYPE_THIN_BOX_INERTIA;
   
   /// \brief A specialized motion used for character controllers.
-  static const int MOTIONTYPE_CHARACTER;
+  number MOTIONTYPE_CHARACTER;
   
   /// @}
   /// @name Quality Constants
   /// @{
   
   /// \brief Use this for fixed bodies.
-  static const number QUALITY_FIXED;
+  number QUALITY_FIXED;
 
   /// \brief Use this for moving objects with infinite mass.
-  static const number QUALITY_KEYFRAMED;
+  number QUALITY_KEYFRAMED;
 
   /// \brief Use this for all your debris objects.
-  static const number QUALITY_DEBRIS;
+  number QUALITY_DEBRIS;
 
   /// \brief Use this for debris objects that should have simplified TOI collisions with fixed/landscape objects.
-  static const number QUALITY_DEBRIS_SIMPLE_TOI;
+  number QUALITY_DEBRIS_SIMPLE_TOI;
 
   /// \brief Use this for moving bodies, which should not leave the world,
   /// but you rather prefer those objects to tunnel through the world than
   /// dropping frames because the engine.
-  static const number QUALITY_MOVING;
+  number QUALITY_MOVING;
 
   /// \brief Use this for all objects, which you cannot afford to tunnel through
   /// the world at all.
-  static const number QUALITY_CRITICAL;
+  number QUALITY_CRITICAL;
 
   /// \brief Use this for very fast objects.
-  static const number QUALITY_BULLET;
+  number QUALITY_BULLET;
 
   /// \brief Use this for rigid body character controllers.
-  static const number QUALITY_CHARACTER;
+  number QUALITY_CHARACTER;
 
   /// \brief Use this for moving objects with infinite mass which should report
   /// contact points and TOI-collisions against all other bodies, including other
   /// fixed and keyframed bodies.
   /// \note Note that only non-TOI contact points are reported in collisions against debris-quality objects.
-	const number QUALITY_KEYFRAMED_REPORTING;
+	number QUALITY_KEYFRAMED_REPORTING;
 
   /// @}
   /// @name Collision Layer Constants
   /// @{
   
-  static const int LAYER_ALL;   
+  number LAYER_ALL;   
 	                  
-  static const int LAYER_COLLIDABLE_DYNAMIC;			
+  number LAYER_COLLIDABLE_DYNAMIC;			
 
-  static const int LAYER_COLLIDABLE_STATIC;				
+  number LAYER_COLLIDABLE_STATIC;				
 
-  static const int LAYER_COLLIDABLE_TERRAIN;			
+  number LAYER_COLLIDABLE_TERRAIN;			
 
-  static const int LAYER_COLLIDABLE_CONTROLLER;		
+  number LAYER_COLLIDABLE_CONTROLLER;		
 
-  static const int LAYER_COLLIDABLE_TERRAIN_HOLE; 
+  number LAYER_COLLIDABLE_TERRAIN_HOLE; 
 
-  static const int LAYER_COLLIDABLE_DISABLED;			
+  number LAYER_COLLIDABLE_DISABLED;			
 
-  static const int LAYER_COLLIDABLE_RAGDOLL;	
+  number LAYER_COLLIDABLE_RAGDOLL;	
 			
-  static const int LAYER_COLLIDABLE_ATTACHMENTS;	
+  number LAYER_COLLIDABLE_ATTACHMENTS;	
 
-  static const int LAYER_COLLIDABLE_FOOT_IK;			
+  number LAYER_COLLIDABLE_FOOT_IK;			
 
-  static const int LAYER_COLLIDABLE_DEBRIS;		
+  number LAYER_COLLIDABLE_DEBRIS;		
 			
-  static const int LAYER_COLLIDABLE_CUSTOM0;		
+  number LAYER_COLLIDABLE_CUSTOM0;		
 		
-  static const int LAYER_COLLIDABLE_CUSTOM1;		
+  number LAYER_COLLIDABLE_CUSTOM1;		
 		
-  static const int LAYER_COLLIDABLE_CUSTOM2;		
+  number LAYER_COLLIDABLE_CUSTOM2;		
 		
-  static const int LAYER_COLLIDABLE_CUSTOM3;		
+  number LAYER_COLLIDABLE_CUSTOM3;		
 		
-  static const int LAYER_COLLIDABLE_CUSTOM4;			
+  number LAYER_COLLIDABLE_CUSTOM4;			
 
   /// @}
 };
@@ -597,7 +543,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -77,7 +77,7 @@ namespace hkCompileError
 ///
 /// \sa hkVector4f hkVector4fComparison hkHalf hkFloat16 hkMathAccuracyMode hkMathDivByZeroMode hkMathNegSqrtMode hkMathIoMode hkMathRoundingMode
 HK_PASS_IN_REG 
-class hkSimdFloat32
+class HK_EXPORT_COMMON hkSimdFloat32
 {
 public:
 
@@ -642,7 +642,7 @@ HK_FORCE_INLINE bool operator>=( hkFloat32 a, hkSimdFloat32Parameter b)
 #endif //HK_MATH_SIMDFLOAT_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

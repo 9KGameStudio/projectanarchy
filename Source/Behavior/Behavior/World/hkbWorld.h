@@ -25,7 +25,7 @@ class hkbWorldCinfo;
 class hkbWorldListener;
 class hkaRaycastInterface;
 class hkCriticalSection;
-class hkJobThreadPool;
+class hkThreadPool;
 
 	/// A serialized class for serializing enums related to the hkbWorld.
 struct hkbWorldEnums
@@ -67,60 +67,58 @@ class hkbWorld : public hkReferencedObject
 		hkbWorld( const hkbWorldCinfo& cinfo );
 			/// Destroys the world
 		~hkbWorld();
-			
+
 			/// Gets the up axis of the world.
 		const hkVector4& getUp() const;
 			/// Sets the up axis of the world.
 		void setUp( const hkVector4& up );
-		
-			/// Adds a character to the world and optionally activates its root behavior.  You cannot add the same 
-			/// character to the world multiple times.  If activateCharacter is true, and the character's behavior graph is 
+
+			/// Adds a character to the world and optionally activates its root behavior.  You cannot add the same
+			/// character to the world multiple times.  If activateCharacter is true, and the character's behavior graph is
 			/// already active it will not be activated again.
 		void addCharacter( hkbCharacter* character, bool activateCharacter = true );
-			/// Removes a character from the world and optionally deactivates its root behavior.  You cannot remove a 
+			/// Removes a character from the world and optionally deactivates its root behavior.  You cannot remove a
 			/// character that is not in the world.  If deactivateCharacter is true, and the character's behavior graph is
 			/// already inactive it will not be deactivated again.
-		void removeCharacter( hkbCharacter* character, bool deactivateCharacter = true );
+			/// Optionally cleanup the characters generator output when deactivating.
+		void removeCharacter( hkbCharacter* character, bool deactivateCharacter = true, bool cleanupCharacterOutput = false );
 			/// Gets an array of all characters in the world.
 		const hkArray<hkbCharacter*>& getCharacters() const;
 			/// Activate all the characters in the world.
 		void activateAllCharacters() const;
 			/// Deactivate all the characters in the world.
 		void deactivateAllCharacters() const;
-		
+
 			/// Adds a listener to the world.
-		void addListener( hkbWorldListener* listener );			
+		void addListener( hkbWorldListener* listener );
 			/// Removes a listener from the world.
 		void removeListener( hkbWorldListener* listener );
-			/// Gets an array of all listeners in the world.			
+			/// Gets an array of all listeners in the world.
 		const hkArray<hkbWorldListener*>& getListeners() const;
 
-			/// Updates and generates the behaviors of all characters in the world.  The output 		
+			/// Updates and generates the behaviors of all characters in the world.  The output
 			/// pose is stored in each hkbCharacter.  This will call stepSingleThreaded() if you don't pass in a jobQueue
-			/// and jobThreadPool, and it will call stepMultithreaded() if you do.
-		void step( hkReal deltaTime, hkJobQueue* jobQueue = HK_NULL, hkJobThreadPool* jobThreadPool = HK_NULL );
-			/// Updates and generates the behaviors of all characters in the world using only the calling thread.  The output 		
+			/// and threadPool, and it will call stepMultithreaded() if you do. This is virtual to allow clients
+			/// to have a custom step while still using hkbWorld code to manage characters, events, variables, etc.
+		virtual void step( hkReal deltaTime, hkJobQueue* jobQueue = HK_NULL, hkThreadPool* threadPool = HK_NULL );
+			/// Updates and generates the behaviors of all characters in the world using only the calling thread.  The output
 			/// pose is stored in each hkbCharacter.
 		void stepSingleThreaded( hkReal deltaTime );
 			/// Do a full multithreaded step of all characters in the world.  For finer-grained control you
 			/// can break down the multithreading step as follows:
-			/// beginStepMultithreaded();
+			/// beginStepMultithreaded( deltaTime );
 			/// while ( getMoreJobsMultithreaded( jobQueue ) )
 			/// {
-			///		// process all jobs
+			///		// process all jobs and
+			///     // custom client actions
 			///	}
-		void stepMultithreaded( hkReal deltaTime, hkJobQueue& jobQueue, hkJobThreadPool& jobThreadPool );
-			/// First updates the behaviors of all characters in the calling thread.  Then creates hkbBehaviorJobs 
+		void stepMultithreaded( hkReal deltaTime, hkJobQueue& jobQueue, hkThreadPool& threadPool );
+			/// First updates the behaviors of all characters in the calling thread.  Then creates hkbBehaviorJobs
 			/// and adds them to jobQueue.  When you process jobQueue the hkbBehaviorJobs will generate the pose for
 			/// each character.  Call hkbWorld::endStepMultiThreaded after the jobQueue is done processing.
 		void beginStepMultithreaded( hkReal deltaTime );
 			/// This should be called iteratively to get more jobs until it returns false, at which point the step has finished.
 		bool getMoreJobsMultithreaded( hkJobQueue& jobQueue );
-
-			/// Utility method that activates, generates and deactivates a character's behavior.  The output pose of 
-			/// will be stored in the character.  If deltatime is non-zero the character's behavior will be updated
-			/// by that amount.
-		void singleStepCharacter( hkbCharacter* character, hkReal deltaTime = 0.0f );
 
 			/// Gets the hkbPhysicsInterface used by the hkbWorld. May be HK_NULL if physics isn't used.
 		hkbPhysicsInterface* getPhysicsInterface() const { return m_physicsInterface; }
@@ -129,7 +127,7 @@ class hkbWorld : public hkReferencedObject
 		void setPhysicsInterface( hkbPhysicsInterface* physicsInterface );
 
 		/// Gets the hkbAttachmentManager used by the hkbWorld
-		hkbAttachmentManager* getAttachmentManager() const;			
+		hkbAttachmentManager* getAttachmentManager() const;
 
 			/// Links the behavior assigned to the character.
 		void link( hkbCharacter* character, hkbBehaviorGraph* templateBehavior );
@@ -139,17 +137,17 @@ class hkbWorld : public hkReferencedObject
 		void unlink( hkbCharacter* character );
 
 			/// Looks up an event's external ID by name from the world's event symbol table.
-		int getEventId( const char* name );
+		int getEventId( const char* name ) const;
 			/// Looks up an event name by external id from the world's event symbol table.
-		const char* getEventName( int externalId );
-		
+		const char* getEventName( int externalId ) const;
+
 			/// Looks up a variable's external ID by name from the world's variable symbol table.
-		int getVariableId( const char* name );
+		int getVariableId( const char* name ) const;
 			/// Looks up a variable name by external id from the world's variable symbol table.
-		const char* getVariableName( int externalId );
+		const char* getVariableName( int externalId ) const;
 
 			/// Returns the linker that is being used to link all of the events in all behavior graphs.
-		const hkbSymbolLinker& getEventLinker();
+		const hkbSymbolLinker& getEventLinker() const;
 			/// Returns the linker that is being used to link all of the events in all behavior graphs.
 		hkbSymbolLinker& accessEventLinker();
 			/// Returns the linker that is being used to link all of the variables in all behavior graphs.
@@ -164,15 +162,19 @@ class hkbWorld : public hkReferencedObject
 
 			/// Returns the shared event queue, if any.  It will only be non-null if you are multithreading update().
 		hkbSharedEventQueue* getSharedEventQueue() const;
-			
+
 			/// Get the script debugger port - used by characters to connect to Havok Script Studio
 		hkInt32 getScriptDebuggerPort() const;
 
             /// Set the clip unloaded animation listener - this is a class that determines the animation to use for hkbClipGenerators if their animation isn't loaded
 		void setUnloadedAnimationListener( hkbUnloadedAnimationListener* unloadedAnimationListener );
-
 			/// Returns the clip unloaded animation listener
 		hkbUnloadedAnimationListener* getUnloadedAnimationListener() const;
+
+			/// Gets the base timestep.  This value is used for adjusting gains.
+		hkReal getBaseTimestep() const;
+			/// Sets the base timestep.  This value is used for adjusting gains.
+		void setBaseTimestep( hkReal baseTimestep );
 
 		//////////////////////////////////////////////////////////////////////////
 		// Deprecated Physics Implementation Specific Functions
@@ -192,13 +194,13 @@ class hkbWorld : public hkReferencedObject
 			/// The scene modifiers to be applied during generate().
 		hkArray< hkRefPtr<hkbSceneModifier> > m_sceneModifiers;
 
-	protected:			
+	protected:
 
 			/// Working data needed during a step.  This is allocated and deallocated every frame when stepping.
 		struct StepWorkingData
-		{	
+		{
 			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BEHAVIOR, StepWorkingData);
-				
+
 				/// Contexts used in hkbBehaviorJobs, one per character
 			hkbContext* m_contexts;
 				/// Generator output used in hkbBehaviorJobs, one per character
@@ -211,12 +213,12 @@ class hkbWorld : public hkReferencedObject
 				/// Delta time of the update
 			hkReal m_deltaTime;
 		};
-	
+
 			/// Allocates and initializes MulithreadedWorkingData for the hkbWorld step
-		void allocateWorkingData( hkReal deltaTime );			
+		void allocateWorkingData( hkReal deltaTime );
 			/// Deallocates and destructs MulithreadedWorkingData for the hkbWorld step
 		void deallocateWorkingData();
-		
+
 			/// Updates the behavior graphs of all characters in the world
 		void updateAllCharacters( hkReal deltaTime );
 			/// Updates the behavior graph of a character.
@@ -247,13 +249,13 @@ class hkbWorld : public hkReferencedObject
 		hkbSymbolLinker m_variableLinker;
 		hkbSymbolLinker m_attributeLinker;
 		hkbSymbolLinker m_characterPropertyLinker;
-		
+
 			/// World space up vector.
-		hkVector4 m_up;	
+		hkVector4 m_up;
 
 			/// Attachment manager for behavior attachments.
 		hkbAttachmentManager* m_attachmentManager;
-		
+
 			/// Optionally physics interface being used (Note: hkbPhysicsInterface inherits from hkaRaycastInterface).
 		hkRefPtr<hkbPhysicsInterface> m_physicsInterface;
 
@@ -288,7 +290,19 @@ class hkbWorld : public hkReferencedObject
 			/// A class that describes what the default reference pose looks like for hkbClipGenerator if an animation does not exist
 		hkRefPtr<hkbUnloadedAnimationListener> m_unloadedAnimationListener;
 
+			/// Timestep used for adjusting gains.
+		hkReal m_baseTimestep;
+
+			/// Previous timestep the world was stepped with.  Internal variable.
+		hkReal m_previousTimestep;
+
 	public:
+
+			/// Utility method that activates, generates and deactivates a character's behavior.  The output pose of 
+			/// will be stored in the character.  If deltatime is non-zero the character's behavior will be updated
+			/// by that amount.  This is only useful for getting a non T-pose character for the purposes of animation
+			/// scrubbing, etc.  It should not be used to step characters in your game.
+		void singleStepCharacter( hkbCharacter* character, hkReal deltaTime = 0.0f );
 
 			/// Whether the simulation is playing, paused, or stepping.
 		hkEnum<hkbWorldEnums::SimulationState, hkUint8> m_simulationState;
@@ -305,7 +319,7 @@ class hkbWorld : public hkReferencedObject
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

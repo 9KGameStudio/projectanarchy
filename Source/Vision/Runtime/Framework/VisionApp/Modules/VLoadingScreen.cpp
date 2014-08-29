@@ -24,8 +24,8 @@ VLoadingScreenBase::Settings::Settings(const char* szImagePath)
   {
 #if defined(HK_ANARCHY)
 
-    m_eAspectRatioAlignment = ALIGN_VERTICAL;
-    m_sImagePath = "Textures/Anarchy_Splash_1024x512.dds";
+    m_eAspectRatioAlignment = ALIGN_FULL;
+    m_sImagePath = "Textures/Anarchy_Splash_512x512.dds";
 
 #else
 
@@ -354,7 +354,7 @@ void VLoadingScreenBase::CleanUpLoadingScreen()
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

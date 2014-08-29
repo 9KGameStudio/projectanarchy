@@ -16,7 +16,7 @@ struct hkGeometry;
 /// There are several subclasses corresponding to different shape types, but all can return
 /// a hkGeometry from their getGeometry() method. The geometry should be combined with
 /// the transform returned by getTransform().
-class hkDisplayGeometry : public hkReferencedObject
+class HK_EXPORT_COMMON hkDisplayGeometry : public hkReferencedObject
 {
 	public:
 		
@@ -75,7 +75,7 @@ class hkDisplayGeometry : public hkReferencedObject
 #endif // HK_GEOMETRY2_DISPLAY_GEOMETRY_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

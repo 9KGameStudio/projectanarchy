@@ -777,7 +777,7 @@ inline void hkInt64Vector4::convertS64ToF64(hkVector4d& vOut) const
 
 template <int I> inline void hkInt64Vector4::countLeadingZeros(hkIntVector& leadingZerosOut) const
 {
-	// We need a custom implementation on Ps4, as the compiler apparently messes-up multiple __lzcnt64 calls
+	// We need a custom implementation on PlayStation(R)4, as the compiler apparently messes-up multiple __lzcnt64 calls
 	const __m128 xy			= _mm_castsi128_ps(_mm_set_epi64x(__lzcnt64(getComponent<1>()), __lzcnt64(getComponent<0>())));	// [0, lzy, 0, lzx]
 	const __m128 zw			= _mm_castsi128_ps(_mm_set_epi64x(__lzcnt64(getComponent<3>()), __lzcnt64(getComponent<2>())));	// [0, lzw, 0, lzz]
 	leadingZerosOut.m_quad	= _mm_castps_si128(_mm_shuffle_ps(xy, zw, _MM_SHUFFLE(2, 0, 2, 0)));							// [lzw, lzz, lzy, lzx]
@@ -785,8 +785,26 @@ template <int I> inline void hkInt64Vector4::countLeadingZeros(hkIntVector& lead
 
 #endif
 
+//
+//	Load values for N components from linear addresses at \a p. Not loaded components are undefined. 
+
+template <> HK_FORCE_INLINE void hkInt64Vector4::load<4, HK_IO_SIMD_ALIGNED>(const hkUint64* p)
+{
+	m_quad.xy = _mm_load_si128((const __m128i*)p);
+	m_quad.zw = _mm_load_si128((const __m128i*)(p+2));
+}
+
+//
+//	Store values of N components to linear addresses at \a p.
+
+template <> HK_FORCE_INLINE void hkInt64Vector4::store<4, HK_IO_SIMD_ALIGNED>(hkUint64* p) const
+{
+	_mm_store_si128((__m128i*)p, m_quad.xy);
+	_mm_store_si128((__m128i*)(p+2), m_quad.zw);
+}
+
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

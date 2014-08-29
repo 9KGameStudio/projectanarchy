@@ -7,10 +7,9 @@
  */
 
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/VisionEnginePluginPCH.h>
-
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/Sky/Sky.hpp>
 
-#if !defined(_VISION_MOBILE) && !defined(HK_ANARCHY)
+#if !defined(_VISION_MOBILE) && !defined(_VISION_NACL) && !defined(HK_ANARCHY)
   #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/Postprocessing/VGlobalFogPostprocess.hpp>
 #endif
 
@@ -20,7 +19,6 @@ extern VProgressStatus g_DiscardProgress;
 #define LOADINGPROGRESS   Vision::GetApplication()->GetLoadingProgress()
 
 VShaderConstantBuffer VSky::g_GlobalConstantBufferSky;
-
 VSkyManager VSkyManager::s_manager;
 
 VSkyManager &VSkyManager::GlobalManager()
@@ -46,7 +44,6 @@ void VSkyManager::OnHandleCallback(IVisCallbackDataObject_cl *pData)
   }
 }
 
-
 float VSkyBase::CalculateFogDepth() const
 {
   //only apply fog to the skyshader if the fog post processor is deactivated
@@ -54,9 +51,8 @@ float VSkyBase::CalculateFogDepth() const
   IVRendererNode* pRenderNode = Vision::Renderer.GetRendererNode(0);
   if (pRenderNode != NULL)
   {
-#if !defined(_VISION_MOBILE) && !defined( HK_ANARCHY )
-    const VPostProcessingBaseComponent* pFogPostProcess = static_cast<VPostProcessingBaseComponent*>(
-      pRenderNode->Components().GetComponentOfType(VGlobalFogPostprocess::GetClassTypeId()));
+#if !defined(_VISION_MOBILE) && !defined(_VISION_NACL) && !defined( HK_ANARCHY )
+    const VPostProcessingBaseComponent* pFogPostProcess = pRenderNode->Components().GetComponentOfType<VGlobalFogPostprocess>();
     if (pFogPostProcess == NULL || !pFogPostProcess->IsActive())
 #endif
     {
@@ -71,13 +67,11 @@ float VSkyBase::CalculateFogDepth() const
   return 0.f;
 }
 
-
 VSky::~VSky()
 {
   V_SAFE_DELETE_ARRAY(m_pLayers);
   Vision::Callbacks.OnReassignShaders -= this;
 }
-
 
 VSky::VSky(int boxSubDivs)
   : VSkyBase()
@@ -94,6 +88,7 @@ VSky::VSky(int boxSubDivs)
   m_iLayerTechniqueCachedMask = 0;
   m_iTrackPSBufferMask = 0;
   m_iRenderLayerCount = 0;
+  RotationZ = 0.0f;
 
   Vision::Callbacks.OnReassignShaders += this;
 }
@@ -112,6 +107,7 @@ VSky::VSky(const char *szPrefixNoon, const char *szPrefixDawn, const char *szPre
   m_iLayerTechniqueCachedMask = 0;
   m_iTrackPSBufferMask = 0;
   m_iRenderLayerCount = 0;
+  RotationZ = 0.0f;
 
   char szFileName[6][FS_MAX_PATH];
   CreateLayers(4);
@@ -171,7 +167,6 @@ VSky::VSky(const char *szPrefixNoon, const char *szPrefixDawn, const char *szPre
   Vision::Callbacks.OnReassignShaders += this;
 }
 
-
 VSky::VSky(const char* pszTextures, int iNumSides)
   : VSkyBase()
 {
@@ -187,6 +182,7 @@ VSky::VSky(const char* pszTextures, int iNumSides)
   m_iLayerTechniqueCachedMask = 0;
   m_iTrackPSBufferMask = 0;
   m_iRenderLayerCount = 0;
+  RotationZ = 0.0f;
 
   CreateLayers(1);
   VSkyLayer &layer = GetLayer(0);
@@ -203,9 +199,8 @@ VSky::VSky(const char* pszTextures, int iNumSides)
   for (int i=0; i<iNumSides; i++)
     sprintf(pszFile[i], pszTextures, pszSide[i]);
 
-  layer.SetCubemapTextureFiles( pszFile[0], pszFile[1],
-                                    pszFile[2], pszFile[3],
-                                    pszFile[4], (iNumSides==6) ? pszFile[5] : NULL );
+  layer.SetCubemapTextureFiles( pszFile[0], pszFile[1], pszFile[2],
+    pszFile[3], pszFile[4], (iNumSides==6) ? pszFile[5] : NULL );
 
   layer.SetMapping(VIS_SKYMAPPING_CUBEMAP);
   Activate();
@@ -215,15 +210,10 @@ VSky::VSky(const char* pszTextures, int iNumSides)
 
 void VSky::DisposeObject()
 {
+  Deactivate();
   VisTypedEngineObject_cl::DisposeObject();
-  if (IsActive())
-    Vision::World.SetActiveSky(NULL);
-  else
-  {
-    REMOVEFROMELEMENTMANAGER_RELEASE();
-  }
+  REMOVEFROMELEMENTMANAGER_RELEASE();
 }
-
 
 void VSky::CreateLayers(int iCount)
 {
@@ -242,20 +232,16 @@ void VSky::CreateLayers(int iCount)
     m_pLayers[i].SetParentSky(this);
 }
 
-
 void VSky::Activate()
 {
   Vision::World.SetActiveSky(this);
 }
-
 
 void VSky::Deactivate()
 {
   if (IsActive())
     Vision::World.SetActiveSky(NULL);
 }
-
-
 
 BOOL VSky::IsActive() const
 {
@@ -267,7 +253,6 @@ BOOL VSky::IsVisible()
   IVSky *pSky = Vision::World.GetActiveSky();
   return (pSky!=NULL) && ((pSky->GetVisibleBitmask()&Vision::Contexts.GetCurrentContext()->GetRenderFilterMask())!=0);
 }
-
 
 void VSky::Tick(float dtime)
 {
@@ -281,34 +266,37 @@ void VSky::Tick(float dtime)
   VASSERT(pTimeOfDayInterface->IsOfType(V_RUNTIME_CLASS(VTimeOfDay)) && "Incompatible time of day handler installed - has to be VTimeOfDay or a subclass of it!");
   VTimeOfDay *pTimeOfDay = (VTimeOfDay *)pTimeOfDayInterface;
 
-  float fDawnWeight, fDuskWeight, fNightWeight;
-  VColorRef vSunColor(false);
-  pTimeOfDay->EvaluateColorValue(1.0f, vSunColor, fDawnWeight, fDuskWeight, fNightWeight);
-
   if (pTimeOfDay->GetControlSky())
   {
+    float fDawnWeight, fDuskWeight, fNightWeight;    
+    pTimeOfDay->EvaluateSkyLayersIntensity(fDawnWeight, fDuskWeight, fNightWeight);
+
     if (GetLayerCount()>1)
       GetLayer(1).SetIntensity(fDawnWeight);
-
     if (GetLayerCount()>2)
       GetLayer(2).SetIntensity(fNightWeight);
-
     if (GetLayerCount()>3)
       GetLayer(3).SetIntensity(fDuskWeight);
   }
 }
 
+#define VSKY_VERSION0 0
+#define VSKY_VERSION1 1
+#define VSKY_VERSION_CURRENT VSKY_VERSION1
 
 void VSky::Serialize( VArchive &ar )
 {
-  int iVersion = 0;
+  int iVersion = VSKY_VERSION_CURRENT;
   VisEffectConfig_cl fxConfig;
   if (ar.IsLoading())
   {
     LOADINGPROGRESS.PushRange(0.f,100.f);
-    ar >> iVersion; VVERIFY(iVersion==0 && "Invalid sky serialization version");
+    ar >> iVersion; VVERIFY(iVersion<=VSKY_VERSION_CURRENT && "Invalid sky serialization version");
     ar >> BoxSubDivisions;
     ar >> m_iVisibleBitmask;
+    if(iVersion >= VSKY_VERSION1)
+      ar >> RotationZ;
+
     int iLayerCount;
     ar >> iLayerCount;
     CreateLayers(iLayerCount);
@@ -330,6 +318,7 @@ void VSky::Serialize( VArchive &ar )
     ar << iVersion;
     ar << BoxSubDivisions;
     ar << m_iVisibleBitmask;
+    ar << RotationZ;
     ar << LayerCount;
     for (int i=0;i<LayerCount;i++)
       ar << m_pLayers[i];
@@ -394,7 +383,7 @@ VSky* VSky::ReadFromStream(IVFileInStream *pIn)
   archive.SetLoadingVersion(iVers);
 
   // simply deserialize sky object
-  VSky *pSky = (VSky *)archive.ReadObject(NULL);
+  VSky *pSky = archive.ReadObject<VSky>();
   archive.Close();
 
   return pSky;
@@ -433,7 +422,7 @@ void VSky::SetEffect(VCompiledEffect *pFX)
 }
 
 
-VISION_APIFUNC VCompiledTechnique* VSky::GetTechnique(int iLayerCount)
+VCompiledTechnique* VSky::GetTechnique(int iLayerCount)
 {
   VASSERT(iLayerCount>=0 && iLayerCount<=MAX_SKY_LAYERS);
   const int iMask = 1<<iLayerCount;
@@ -548,7 +537,7 @@ void VSky::PrepareForRendering()
 void VSky::DetermineVisibleFaces()
 {
   VISION_PROFILE_FUNCTION(VIS_PROFILE_VIS_SKYVIS);
-
+  
   // since the faces are rendered using single draw calls (cubemap textures) it pays off to determine the visible faces
   // accurately:
   m_iVisibleFaces = 0; // none of the faces visible by default
@@ -570,12 +559,17 @@ void VSky::DetermineVisibleFaces()
     // Set near plane to camera origin
     // (clipping planes for water may move them far away from the origin)
     hkvPlane* pNearPlane = frustum.GetNearPlane();
-    pNearPlane->setFromPointAndNormal(camPos, pNearPlane->m_vNormal);
+    if ( pNearPlane )
+      pNearPlane->setFromPointAndNormal(camPos, pNearPlane->m_vNormal);
   } 
 
   // build a simple box around the sky face and test its visibility
   const float r = 100.f;
-  const float d = 10.f;
+
+  hkvMat3 rotMat (hkvNoInitialization);
+  rotMat.setFromEulerAngles (0.0f, 0.0f, RotationZ);
+  hkvMat4 rotMat4 (hkvNoInitialization);
+  rotMat4.setFromEulerAngles (0.0f, 0.0f, RotationZ);
 
   hkvAlignedBBox bbox(hkvNoInitialization);
   for (int iFace = 0; iFace < 6; iFace++)
@@ -583,21 +577,27 @@ void VSky::DetermineVisibleFaces()
     switch (iFace)
     {
       case VTM_CUBEMAPFACE_POS_X: 
-        bbox.set(hkvVec3(-r-d, -r, -r), hkvVec3(-r, r, r)); break;
+        bbox.setWithoutValidityCheck(rotMat.transformDirection(hkvVec3(-r, -r, -r)), rotMat.transformDirection(hkvVec3(-r, r, r))); break;
       case VTM_CUBEMAPFACE_NEG_X: 
-        bbox.set(hkvVec3(r, -r, -r),    hkvVec3(r+d, r, r)); break;
+        bbox.setWithoutValidityCheck(rotMat.transformDirection(hkvVec3(r, -r, -r)),  rotMat.transformDirection(hkvVec3(r, r, r))); break;
       case VTM_CUBEMAPFACE_POS_Y: 
-        bbox.set(hkvVec3(-r, -r-d, -r), hkvVec3(r, -r, r)); break;
+        bbox.setWithoutValidityCheck(rotMat.transformDirection(hkvVec3(-r, -r, -r)), rotMat.transformDirection(hkvVec3(r, -r, r))); break;
       case VTM_CUBEMAPFACE_NEG_Y: 
-        bbox.set(hkvVec3(-r, r, -r),    hkvVec3(r, r+d, r)); break;
+        bbox.setWithoutValidityCheck(rotMat.transformDirection(hkvVec3(-r, r, -r)),  rotMat.transformDirection(hkvVec3(r, r, r))); break;
       case VTM_CUBEMAPFACE_POS_Z: 
-        bbox.set(hkvVec3(-r, -r, r),    hkvVec3(r, r, r+d)); break;
+        bbox.setWithoutValidityCheck(hkvVec3(-r, -r, r), hkvVec3(r, r, r)); 
+        bbox.transformFromCenter(rotMat4);
+        break;
       case VTM_CUBEMAPFACE_NEG_Z: 
-        bbox.set(hkvVec3(-r, -r, -r-d), hkvVec3(r, r, -r)); break;
+        bbox.set(hkvVec3(-r, -r, -r), hkvVec3(r, r, -r)); 
+        bbox.transformFromCenter(rotMat4);
+        break;
       default:
         continue;
     }
+
     bbox.translate(camPos);
+
     //Vision::Game.DrawBoundingBox(bbox);
 
     if (frustum.Overlaps(bbox))
@@ -774,13 +774,21 @@ void VSky::Render()
 
   // setup matrix
   VisRenderContext_cl *pContext = VisRenderContext_cl::GetCurrentContext();
-  hkvMat4 skyMatrix; // identity
+  hkvMat4 skyMatrix;
+  skyMatrix.setIdentity();
+
   hkvVec3 EyePos(hkvNoInitialization);
   float fNear, fFar;
   pContext->GetClipPlanes(fNear, fFar);
   float fClipCenter = (fFar + fNear) * 0.5f;
   pContext->GetCamera()->GetPosition(EyePos);
-  skyMatrix.setDiagonal (hkvVec4 (fClipCenter,fClipCenter,fClipCenter,1.f));
+
+  skyMatrix.setDiagonal (hkvVec4 (fClipCenter, fClipCenter, fClipCenter,1.f));
+
+  hkvMat4 rotMat (hkvNoInitialization);
+  rotMat.setFromEulerAngles (0.0f, 0.0f, RotationZ);
+
+  skyMatrix = skyMatrix.multiply(rotMat);
   skyMatrix.setTranslation(EyePos);
 
   const int iPrimPerFace = BoxSubDivisions*BoxSubDivisions*2;
@@ -908,6 +916,7 @@ V_IMPLEMENT_SERIAL( VSky, VSkyBase, 0, &g_VisionEngineModule );
 START_VAR_TABLE(VSky,VSkyBase, "Sky box", VVARIABLELIST_FLAGS_NONE, "Sky box" )
   DEFINE_VAR_INT(VSky, BoxSubDivisions, "Number of box subdivisions", "12", 0, 0);
   DEFINE_VAR_INT(VSky, LayerCount, "Number of layers", "1", 0, 0);
+  DEFINE_VAR_FLOAT(VSky, RotationZ, "Rotation around Z axis (degrees)", "0.0f", 0, 0);
 END_VAR_TABLE
 
 V_IMPLEMENT_SERIAL( VisSky_cl, VSky, 0, &g_VisionEngineModule );
@@ -916,7 +925,7 @@ START_VAR_TABLE(VisSky_cl,VSky, "Sky box", VVARIABLELIST_FLAGS_NONE, "Sky box" )
 END_VAR_TABLE
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140728)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

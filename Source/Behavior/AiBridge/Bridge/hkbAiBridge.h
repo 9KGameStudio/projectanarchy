@@ -16,6 +16,8 @@ class hkbWorld;
 class hkaiWorld;
 class hkbCharacter;
 class hkbAiControlSceneModifier;
+class hkTaskQueue;
+class hkThreadPool;
 
 /// The main bridge between an hkbWorld and an hkaiWorld. 
 /// 
@@ -30,7 +32,7 @@ class hkbAiBridge : public hkReferencedObject, private hkbWorldListener
 public:
 	HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BEHAVIOR);
 
-	hkbAiBridge(hkbWorld* bWorld, hkaiWorld* aiWorld, hkbAiObjectFactory* aiObjectFactory = HK_NULL);
+	hkbAiBridge(hkbWorld* bWorld, hkaiWorld* aiWorld, hkbAiObjectFactory* aiObjectFactory = HK_NULL, hkTaskQueue* taskQueue = HK_NULL, hkThreadPool* threadPool = HK_NULL);
 	~hkbAiBridge();
 
 	/// If true, step() will be called from hkbWorld::step() by a scene modifier.
@@ -46,6 +48,10 @@ public:
 	/// passed to the constructor.
 	hkbAiObjectFactory* getAiObjectFactory() { return m_aiObjectFactory; }
 
+	hkTaskQueue* getTaskQueue() { return m_taskQueue; }
+
+	hkThreadPool* getThreadPool() { return m_threadPool; }
+
 private:
 	/// hkbWorldListener callbacks
 	virtual void characterAddedCallback(hkbCharacter* character) HK_OVERRIDE;
@@ -58,13 +64,15 @@ private:
 	hkRefPtr<hkaiWorld> m_aiWorld;
 	hkRefPtr<hkbAiControlSceneModifier> m_sceneModifier;
 	hkRefPtr<hkbAiObjectFactory> m_aiObjectFactory;
+	hkTaskQueue* m_taskQueue;
+	hkThreadPool* m_threadPool;
 };
 
 
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

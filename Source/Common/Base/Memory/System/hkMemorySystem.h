@@ -25,7 +25,7 @@ class hkDebugMemorySystem;
 	/// Interface to high level memory operations.
 	/// These operations apply to the system as a whole i.e., initialization
 	/// and shutdown, memory statistics and debugging methods.
-class hkMemorySystem
+class HK_EXPORT_COMMON hkMemorySystem
 {
 	//+hk.MemoryTracker(ignore=True)
 	public:
@@ -33,7 +33,7 @@ class hkMemorySystem
 		HK_DECLARE_PLACEMENT_ALLOCATOR();
 
 			/// Construction info for hkMemorySystem
-		struct FrameInfo
+		struct HK_EXPORT_COMMON FrameInfo
 		{
 			//+hk.MemoryTracker(ignore=True)
 				/// Construct a FrameInfo with the specified physics solver buffer.
@@ -46,7 +46,7 @@ class hkMemorySystem
 		};
 
 		/// An aggregate of all the memory statistics of underlying providers.
-		struct MemoryStatistics
+		struct HK_EXPORT_COMMON MemoryStatistics
 		{
 			HK_DECLARE_PLACEMENT_ALLOCATOR();
 			struct Entry
@@ -184,7 +184,7 @@ class hkMemorySystem
 #endif // HKBASE_hkMemorySystem_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -135,93 +135,100 @@ public:
 
     VSWIG_BITMASK_SETTER_RENAME(SetLightInfluenceBitMask, SetLightInfluenceBitmask);
     VSWIG_BITMASK_GETTER_CONST_RENAME(GetLightInfluenceBitMask, GetLightInfluenceBitmask);
-    
-    bool SetTechnique(VisSurface_cl *pSurface, const char * szShaderLib, const char * szTechnique, const char * szParamString = "")
+
+	bool SetEffectForAllSurfaces(const char* szShaderLib, const char* szEffect, const char* szParamString = "")
+	{
+	  if(!self->HasMesh()) return false;
+	  return VScriptRenderer_wrapper::SetEffectForEntity(self, -1, szShaderLib, szEffect, szParamString);
+	}
+
+	bool SetEffectForAllSurfaces(const char* szShaderLib, const char* szEffect, const VMap<VString,VString>& params)
+	{
+	  if(!self->HasMesh()) return false;
+	  return VScriptRenderer_wrapper::SetEffectForEntity(self, -1, szShaderLib, szEffect, params);
+	}
+
+    bool SetEffect(VisSurface_cl *pSurfaceToChange, const char * szShaderLib, const char * szEffect, const char * szParamString = "")
     {
       if(!self->HasMesh()) return false;
-      return VScriptRenderer_wrapper::SetTechniqueForSurface(self, NULL, pSurface, szShaderLib, szTechnique, szParamString, true);
+	  int iSurfaceToChangeIndex = VScriptRenderer_wrapper::FindSurfaceIndex(self, pSurfaceToChange);
+	  if(iSurfaceToChangeIndex < 0)
+	    return false;
+      return VScriptRenderer_wrapper::SetEffectForEntity(self, iSurfaceToChangeIndex, szShaderLib, szEffect, szParamString);
     }
 
-    bool SetTechnique(int iSurfaceIndex, const char * szShaderLib, const char * szTechnique, const char * szParamString = "")
+    bool SetEffect(int iSurfaceToChangeIndex, const char * szShaderLib, const char * szEffect, const char * szParamString = "")
     {
       if(!self->HasMesh()) return false;
-      if(iSurfaceIndex>=self->GetMesh()->GetSurfaceCount() || iSurfaceIndex<0) return false;
+      if(iSurfaceToChangeIndex >= self->GetMesh()->GetSurfaceCount() || iSurfaceToChangeIndex < 0) return false;
       
-      VisSurface_cl *pSurface = self->GetMesh()->GetSurface(iSurfaceIndex);
-      return VScriptRenderer_wrapper::SetTechniqueForSurface(self, NULL, pSurface, szShaderLib, szTechnique, szParamString, true);
-    }
-
-    bool SetTechnique(const char * szSurfaceName, const char * szShaderLib, const char * szTechnique, const char * szParamString = "")
-    {
-      if(!self->HasMesh()) return false;
-      VisSurface_cl *pSurface = self->GetMesh()->GetSurfaceByName(szSurfaceName);
-      return VScriptRenderer_wrapper::SetTechniqueForSurface(self, NULL, pSurface, szShaderLib, szTechnique, szParamString, true);
-    }
-
-    bool AddTechnique(VisSurface_cl *pSurface, const char * szShaderLib, const char * szTechnique, const char * szParamString = "")
-    {
-      if(!self->HasMesh()) return false;
-      return VScriptRenderer_wrapper::SetTechniqueForSurface(self, NULL, pSurface, szShaderLib, szTechnique, szParamString, false);
-    }
-
-    bool AddTechnique(int iSurfaceIndex, const char * szShaderLib, const char * szTechnique, const char * szParamString = "")
-    {
-      if(!self->HasMesh()) return false;
-      if(iSurfaceIndex>=self->GetMesh()->GetSurfaceCount() || iSurfaceIndex<0) return false;
-      
-      VisSurface_cl *pSurface = self->GetMesh()->GetSurface(iSurfaceIndex);
-      return VScriptRenderer_wrapper::SetTechniqueForSurface(self, NULL, pSurface, szShaderLib, szTechnique, szParamString, false);
-    }
-
-    bool AddTechnique(const char * szSurfaceName, const char * szShaderLib, const char * szTechnique, const char * szParamString = "")
-    {
-      if(!self->HasMesh()) return false;
-      VisSurface_cl *pSurface = self->GetMesh()->GetSurfaceByName(szSurfaceName);
-      return VScriptRenderer_wrapper::SetTechniqueForSurface(self, NULL, pSurface, szShaderLib, szTechnique, szParamString, false);
-    }
-
-    bool SetEffect(VisSurface_cl *pSurface, const char * szShaderLib, const char * szEffect, const char * szParamString = "")
-    {
-      if(!self->HasMesh()) return false;
-      return VScriptRenderer_wrapper::SetEffectForSurface(self, NULL, pSurface, szShaderLib, szEffect, szParamString, true);
-    }
-
-    bool SetEffect(int iSurfaceIndex, const char * szShaderLib, const char * szEffect, const char * szParamString = "")
-    {
-      if(!self->HasMesh()) return false;
-      if(iSurfaceIndex>=self->GetMesh()->GetSurfaceCount() || iSurfaceIndex<0) return false;
-      
-      VisSurface_cl *pSurface = self->GetMesh()->GetSurface(iSurfaceIndex);
-      return VScriptRenderer_wrapper::SetEffectForSurface(self, NULL, pSurface, szShaderLib, szEffect, szParamString, true);
+      return VScriptRenderer_wrapper::SetEffectForEntity(self, iSurfaceToChangeIndex, szShaderLib, szEffect, szParamString);
     }
 
     bool SetEffect(const char * szSurfaceName, const char * szShaderLib, const char * szEffect, const char * szParamString = "")
     {
       if(!self->HasMesh()) return false;
-      VisSurface_cl *pSurface = self->GetMesh()->GetSurfaceByName(szSurfaceName);
-      return VScriptRenderer_wrapper::SetEffectForSurface(self, NULL, pSurface, szShaderLib, szEffect, szParamString, true);
+      VisSurface_cl *pSurfaceToChange = self->GetMesh()->GetSurfaceByName(szSurfaceName);
+	  int iSurfaceToChangeIndex = VScriptRenderer_wrapper::FindSurfaceIndex(self, pSurfaceToChange);
+	  if(iSurfaceToChangeIndex < 0)
+	    return false;
+      return VScriptRenderer_wrapper::SetEffectForEntity(self, iSurfaceToChangeIndex, szShaderLib, szEffect, szParamString);
     }
 
-    bool AddEffect(VisSurface_cl *pSurface, const char * szShaderLib, const char * szEffect, const char * szParamString = "")
+    bool SetEffect(VisSurface_cl *pSurfaceToChange, const char * szShaderLib, const char * szEffect, const VMap<VString,VString>& params)
     {
       if(!self->HasMesh()) return false;
-      return VScriptRenderer_wrapper::SetEffectForSurface(self, NULL, pSurface, szShaderLib, szEffect, szParamString, false);
+	  int iSurfaceToChangeIndex = VScriptRenderer_wrapper::FindSurfaceIndex(self, pSurfaceToChange);
+	  if(iSurfaceToChangeIndex < 0)
+	    return false;
+      return VScriptRenderer_wrapper::SetEffectForEntity(self, iSurfaceToChangeIndex, szShaderLib, szEffect, params);
     }
 
-    bool AddEffect(int iSurfaceIndex, const char * szShaderLib, const char * szEffect, const char * szParamString = "")
+    bool SetEffect(int iSurfaceToChangeIndex, const char * szShaderLib, const char * szEffect, const VMap<VString,VString>& params)
     {
       if(!self->HasMesh()) return false;
-      if(iSurfaceIndex>=self->GetMesh()->GetSurfaceCount() || iSurfaceIndex<0) return false;
-      
+      if(iSurfaceToChangeIndex>=self->GetMesh()->GetSurfaceCount() || iSurfaceToChangeIndex<0) return false;
+      return VScriptRenderer_wrapper::SetEffectForEntity(self, iSurfaceToChangeIndex, szShaderLib, szEffect, params);
+    }
+
+    bool SetEffect(const char * szSurfaceName, const char * szShaderLib, const char * szEffect, const VMap<VString,VString>& params)
+    {
+      if(!self->HasMesh()) return false;
+      VisSurface_cl *pSurfaceToChange = self->GetMesh()->GetSurfaceByName(szSurfaceName);
+	  int iSurfaceToChangeIndex = VScriptRenderer_wrapper::FindSurfaceIndex(self, pSurfaceToChange);
+	  if(iSurfaceToChangeIndex < 0)
+	    return false;
+      return VScriptRenderer_wrapper::SetEffectForEntity(self, iSurfaceToChangeIndex, szShaderLib, szEffect, params);
+    }
+
+	bool RemoveCustomTextureSet()
+	{
+	  if(!self->HasMesh()) return false;
+	  self->SetCustomTextureSet(NULL);
+	  return true;
+	}
+
+    void GetEffectParams(VMap<VString, VString>& OUTPUT, int iSurfaceIndex)
+    {
+      if(!self->HasMesh())
+        return;
+      if(iSurfaceIndex >= self->GetMesh()->GetSurfaceCount() || iSurfaceIndex < 0)
+        return;
       VisSurface_cl *pSurface = self->GetMesh()->GetSurface(iSurfaceIndex);
-      return VScriptRenderer_wrapper::SetEffectForSurface(self, NULL, pSurface, szShaderLib, szEffect, szParamString, false);
+      return VScriptRenderer_wrapper::GetParamsFromSurface(pSurface, OUTPUT);
     }
 
-    bool AddEffect(const char * szSurfaceName, const char * szShaderLib, const char * szEffect, const char * szParamString = "")
+    void GetEffectParams(VMap<VString, VString>& OUTPUT, const char * szSurfaceName)
     {
-      if(!self->HasMesh()) return false;
+      if(!self->HasMesh())
+        return;
       VisSurface_cl *pSurface = self->GetMesh()->GetSurfaceByName(szSurfaceName);
-      return VScriptRenderer_wrapper::SetEffectForSurface(self, NULL, pSurface, szShaderLib, szEffect, szParamString, false);
+      return VScriptRenderer_wrapper::GetParamsFromSurface(pSurface, OUTPUT);
+    }
+
+    void GetEffectParams(VMap<VString, VString>& OUTPUT,  VisSurface_cl *pSurface)
+    {
+      return VScriptRenderer_wrapper::GetParamsFromSurface(pSurface, OUTPUT);
     }
     
     bool SetTextureForSurface(VTextureObject *pTexture, VisSurface_cl *pSurface, int iTextureType = 0)
@@ -499,51 +506,26 @@ public:
   /// @}
   /// @name Shader Assignment
   /// @{
-  
-  /// \brief Apply a technique to a specified surface of the entity
-  /// \details Will remove the current assignment from the specified surface and add your specified technique.
-  /// \note If wou would like to apply the shader to all entites with the same mesh use VDynamicMesh::SetTechnique
-  /// \param surface The surface to assign the technique specified by one of the following types:
-  ///   - \b VisSurface_cl instance (of the mesh)
-  ///   - \b number indicating the index of the surface
-  ///   - \b string containing the name of the surface.
-  /// \param shaderLib The shader lib, where the techinque is defined (the file).
-  /// \param technique The name of the technique to be used.
-  /// \param paramString (\b optional) The parameter string for the used shader.
-  /// \return true if the assignment was successful, otherwise false (invalid surface, technique not found).
+
+  /// \brief Apply an effect to all surfaces of the entity
+  /// \details This function will override the current surfaces of the entity by creating a custom texture set.
+  /// \param shaderLib The shader lib, where the effect is defined (the file).
+  /// \param effect The name of the effect to be used.
+  /// \param params (\b optional) The parameters for the used shader. Either a string or a key/value table.
+  /// \return true if the assignment was successful, otherwise false (invalid surface, effect not found).
   /// \par Example
   ///   \code
   ///     ...
-  ///     local success = self:SetTechnique("SurfaceTexture", "Scripting/LuaDemo", "Color", "Color=0,1,0,0")
+  ///     local success_string = self:SetEffectForAllSurfaces("Scripting/LuaDemo", "Color", "Color=0,1,0,0")
+  ///     local success_table = self:SetEffectForAllSurfaces("Scripting/LuaDemo", "Color", {Color = "0,1,0,0"})
   ///     ...
   ///   \endcode
   /// \see vForge Sampe "Scripting/LuaShader.scene".
-  /// \see VDynamicMesh::SetTechnique
-  boolean SetTechnique(mixed surface, string shaderLib, string technique, string paramString = "");
-  
-  /// \brief Add a technique to a specified surface of the entity
-  /// \details Will add the technique in addition to the current assignment.
-  /// \note If wou would like to add the shader to all entites with the same mesh use VDynamicMesh::AddTechnique
-  /// \param surface The surface to add the technique specified by one of the following types:
-  ///   - \b VisSurface_cl instance (of the mesh)
-  ///   - \b number indicating the index of the surface
-  ///   - \b string containing the name of the surface.
-  /// \param shaderLib The shader lib, where the techinque is defined (the file).
-  /// \param technique The name of the technique to be used.
-  /// \param paramString (\b optional) The parameter string for the used shader.
-  /// \return true if the assignment was successful, otherwise false (invalid surface, technique not found).
-  /// \par Example
-  ///   \code
-  ///     ...
-  ///     local success = self:AddTechnique(0, "Scripting/LuaDemo", "Color", "Color=0,1,0,0")
-  ///     ...
-  ///   \endcode
-  /// \see vForge Sampe "Scripting/LuaShader.scene".
-  /// \see VDynamicMesh::AddTechnique
-  boolean AddTechnique(mixed surface, string shaderLib, string technique, string paramString = "");
+  /// \see VisBaseEntity_cl::SetEffect, VisBaseEntity_cl::GetEffectParams, VisBaseEntity_cl::RemoveCustomTextureSet
+  boolean SetEffectForAllSurfaces(string shaderLib, string effect, mixed params = "");
   
   /// \brief Apply an effect to a specified surface of the entity (the default technique will be applied)
-  /// \details Will remove the current assignment from the specified surface and add your effect.
+  /// \details This function will override the current surface of the entity by creating a custom texture set.
   /// \note If wou would like to apply the shader to all entites with the same mesh use VDynamicMesh::SetEffect
   /// \param surface The surface to assign the effect specified by one of the following types:
   ///   - \b VisSurface_cl instance (of the mesh)
@@ -551,41 +533,42 @@ public:
   ///   - \b string containing the name of the surface.
   /// \param shaderLib The shader lib, where the effect is defined (the file).
   /// \param effect The name of the effect to be used.
-  /// \param paramString (\b optional) The parameter string for the used shader.
+  /// \param params (\b optional) The parameters for the used shader. Either a string or a key/value table.
   /// \return true if the assignment was successful, otherwise false (invalid surface, effect not found).
   /// \par Example
   ///   \code
   ///     ...
-  ///     local success = self:SetEffect("SurfaceTexture", "Scripting/LuaDemo", "Color", "Color=0,1,0,0")
+  ///     local success_string = self:SetEffect("SurfaceTexture", "Scripting/LuaDemo", "Color", "Color=0,1,0,0")
+  ///     local success_table = self:SetEffect(surfaceInstance, "Scripting/LuaDemo", "Color", {Color = "0,1,0,0"})
   ///     ...
   ///   \endcode
   /// \see vForge Sampe "Scripting/LuaShader.scene".
-  /// \see VDynamicMesh::SetEffect
-  boolean SetEffect(mixed surface, string shaderLib, string effect, string paramString = "");
+  /// \see VisBaseEntity_cl::SetEffect, VisBaseEntity_cl::GetEffectParams, VisBaseEntity_cl::RemoveCustomTextureSet
+  boolean SetEffect(mixed surface, string shaderLib, string effect, mixed params = "");
 
-  /// \brief Add an effect to a specified surface of the entity (the default technique will be applied)
-  /// \details Will add the effect in addition to the current assignment.
-  /// \note If wou would like to add the shader to all entites with the same mesh use VDynamicMesh::AddEffect
+  /// \brief Returns the param string of a given surface.
   /// \param surface The surface to add the effect specified by one of the following types:
   ///   - \b VisSurface_cl instance (of the mesh)
   ///   - \b number indicating the index of the surface
   ///   - \b string containing the name of the surface.
-  /// \param shaderLib The shader lib, where the effect is defined (the file).
-  /// \param effect The name of the effect to be used.
-  /// \param paramString (\b optional) The parameter string for the used shader.
-  /// \return true if the assignment was successful, otherwise false (invalid surface, effect not found).
+  /// \return Key/value dictionary of all parameters of the surface's effect.
   /// \par Example
   ///   \code
   ///     ...
-  ///     local success = self:AddEffect(surfaceInstance, "Scripting/LuaDemo", "Color", "Color=0,1,0,0")
+  ///     local effectParams = self:GetEffectParams(0)
+  ///     effectParams["Color"] = "1,1,1,1"
+  ///     self:SetEffect(0, "Shaders/BaseShaders", "BS_TintColor", effectParams)
   ///     ...
   ///   \endcode
-  /// \see vForge Sampe "Scripting/LuaShader.scene".
-  /// \see VDynamicMesh::AddEffect
-  boolean AddEffect(mixed surface, string shaderLib, string effect, string paramString = "");
+  /// \see VisBaseEntity_cl::SetEffect
+  table GetEffectParams(mixed surface);
+
+  /// \brief Remove any custom texture sets of the entity.
+  /// \details After this function call, the original materials of the mesh will be used.
+  boolean RemoveCustomTextureSet();
 
   /// \brief Clear all shader assignments of this entity.
-  /// \details After this function call the shader assignment of the mesh will be used.
+  /// \details After this function call, the shader assignment of the mesh will be used.
   void ClearShaderSet();
   
   /// @}
@@ -595,7 +578,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

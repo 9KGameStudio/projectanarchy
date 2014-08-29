@@ -9,7 +9,7 @@
 #define HKMATH_HEADERENUMS_H
 
 /// Permutations of 4-component vectors hkVector4 and hkIntVector
-struct hkVectorPermutation
+struct HK_EXPORT_COMMON hkVectorPermutation
 {
 	enum Permutation 
 	{
@@ -88,9 +88,12 @@ struct hkVectorPermutation
 
 		XYYX = 0x0110,
 		WZYW = 0x3213,
+		WXYY = 0x3011,
 		ZYXW = 0x2103,
 		XXYZ = 0x0012,
 		YZWW = 0x1233,
+
+		YZXX = 0x1200,
 	};
 };
 
@@ -131,16 +134,25 @@ struct hkVector4ComparisonMask
 	};
 };
 
+/// Helper map which allows you to compact an array of 4 elements based on a hkVector4ComparisonMask
+/// E.g. Say you have an array of 4 elements and a corresponding hkVector4ComparisonMask
+/// Than iterating over the elements like: for (int ii=0..4){ int index = hkVector4ComparisonMask_indexRemap[mask][ii]; 
+/// will iterate over all elements where the mask bit is set followed by the elements where the mask bit is cleared
+extern hkUchar hkVector4ComparisonMask_indexRemap[16][4];
 
-/// Flag for advanced hkSimdReal/hkVector4 interface to control the
-/// floating point accuracy of division and sqrt calculations.
-/// Note that for full precision the returned accuracy depends on the definition
-/// of hkReal.
+/// Flag for advanced hkSimdReal/hkVector4 interface to control the floating point accuracy of division and sqrt
+/// calculations.
+/// Note that for full precision the returned accuracy depends on the definition of hkReal.
+/// When using double-precision values and 23-bit and 12-bit accuracy, inputs will be converted to single-precision.
+/// This means that comparisons with zero (e.g. when using HK_SQRT_SET_ZERO) are done in single-precision, so values
+/// outside of float range may give much different results than the full precision operations.
 enum hkMathAccuracyMode
 {
 	HK_ACC_FULL,    ///< Do calculations using full floating point precision and produce IEEE compliant return values.
 	HK_ACC_23_BIT,  ///< Do calculations such that at least 23 mantissa bits are accurate. Denormals handling is allowed to be different to IEEE if it results in better performance.
-	HK_ACC_12_BIT   ///< Do calculations such that at least 12 mantissa bits are accurate. Denormals handling is allowed to be different to IEEE if it results in better performance.
+	HK_ACC_12_BIT,   ///< Do calculations such that at least 12 mantissa bits are accurate. Denormals handling is allowed to be different to IEEE if it results in better performance.
+
+	HK_ACC_MID = HK_ACC_23_BIT,
 };
 
 /// Flag for advanced hkSimdReal/hkVector4 interface to control the
@@ -184,7 +196,7 @@ enum hkMathRoundingMode
 };
 
 /// Permutations of a hkMxVectord vector
-struct hkMxVectorPermutation
+struct HK_EXPORT_COMMON hkMxVectorPermutation
 {
 	enum Permutation 
 	{
@@ -211,7 +223,7 @@ enum hkMathSortDir
 #endif //HKMATH_HEADERENUMS_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

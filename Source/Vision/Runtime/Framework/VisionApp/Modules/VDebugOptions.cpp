@@ -14,7 +14,7 @@
 
 V_IMPLEMENT_DYNCREATE(VDebugOptions, VAppModule, Vision::GetEngineModule());
 
-#if defined(WIN32)
+#if defined(_VISION_WIN32)
   #define TOGGLE_FPS VAPP_INPUT_CONTROL_LAST_ELEMENT - 9
   #define TOGGLE_WIREFRAME VAPP_INPUT_CONTROL_LAST_ELEMENT - 8
 #endif
@@ -68,7 +68,7 @@ void VDebugOptions::Init()
   m_pTimeStepGraph->Init();
   m_pTimeStepGraph->SetVisible(false);
 
-#if defined(WIN32)
+#if defined(_VISION_WIN32)
   GetParent()->GetInputMap()->MapTrigger(TOGGLE_FPS, VInputManager::GetKeyboard(), CT_KB_F2, VInputOptions::Once(ONCE_ON_RELEASE));
   GetParent()->GetInputMap()->MapTrigger(TOGGLE_WIREFRAME, VInputManager::GetKeyboard(), CT_KB_F3, VInputOptions::Once(ONCE_ON_RELEASE));
 #endif
@@ -110,10 +110,23 @@ void VDebugOptions::Init()
   items.Add(VAppMenuItem("Display Visibility Zones", DEBUGRENDERFLAG_VISIBILITYZONES, 0, true));
   items.Add(VAppMenuItem((Vision::GetScriptManager() != NULL) ? "Scripting Statistics" : "Scripting Statistics (no script man.)", DEBUGRENDERFLAG_SCRIPTSTATISTICS, 0, true));
   items.Add(VAppMenuItem("Display Object Render Order", DEBUGRENDERFLAG_OBJECTRENDERORDER, 0, true));
+  items.Add(VAppMenuItem("Display Overall Triangle Count", DEBUGRENDERFLAG_POLYGONCOUNT, 0, true));
+  items.Add(VAppMenuItem("Display Performance Counters", DEBUGRENDERFLAG_PERFORMANCECOUNTERS, 0, true));
   items.Add(VAppMenuItem("Display Thread Workload", DEBUGRENDERFLAG_THREADWORKLOAD, 0, true));
   items.Add(VAppMenuItem("Display Streaming Zones", DEBUGRENDERFLAG_ZONES, 0, true));
   items.Add(VAppMenuItem("Display Resource Stats", DEBUGRENDERFLAG_RESOURCE_STATISTICS, 0, true));
   items.Add(VAppMenuItem("Display Memory Stats", DEBUGRENDERFLAG_MEMORY_STATISTICS, 0, true));
+
+  // also add the custom ones:
+  const int iMaxFlag = Vision::Profiling.GetHighestDebugRenderFlagIndex();
+  for (int i=0;i<=iMaxFlag;i++)
+  {
+    int iBit = 1<<i;
+    if (iBit<DEBUGRENDERFLAG_FIRST_CUSTOM_BIT)
+      continue;
+    const char *szDesc = Vision::Profiling.GetDebugRenderFlagDescription(i);
+    items.Add(VAppMenuItem(szDesc, iBit, 0, true));
+  }
 
   m_debugInfos = pMainMenu->RegisterGroup("Debug Infos", items, "Debug Options");
   RegisterCallbacks(m_debugInfos);
@@ -135,7 +148,7 @@ void VDebugOptions::OnHandleCallback(IVisCallbackDataObject_cl* pData)
 {
   if (pData->m_pSender == &Vision::Callbacks.OnUpdateSceneBegin)
   {
-#if defined(WIN32)
+#if defined(_VISION_WIN32)
     if (GetParent()->GetInputMap()->GetTrigger(TOGGLE_FPS))
     {
       SetFrameRateVisible(!IsFrameRateVisible());
@@ -297,7 +310,7 @@ void VDebugOptions::SetWireframe(bool bWireframe)
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140621)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

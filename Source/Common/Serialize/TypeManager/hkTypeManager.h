@@ -14,7 +14,7 @@
 #include <Common/Base/Memory/Allocator/FreeList/hkFreeList.h>
 #include <Common/Base/Container/SubString/hkSubString.h>
 
-struct hkLegacyType
+struct HK_EXPORT_COMMON hkLegacyType
 {
 	public:
 		enum Type
@@ -96,7 +96,7 @@ struct hkLegacyType
 };
 
 
-class hkTypeManager : public hkReferencedObject
+class HK_EXPORT_COMMON hkTypeManager : public hkReferencedObject
 {
 	public:
 
@@ -121,7 +121,7 @@ class hkTypeManager : public hkReferencedObject
 			SUB_TYPE_COUNT_OF,
 		};
 
-		struct Type
+		struct HK_EXPORT_COMMON Type
 		{
 			friend class hkTypeManager;
 			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_SERIALIZE, Type);
@@ -309,7 +309,7 @@ class hkTypeManager : public hkReferencedObject
 #endif // LOADER_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

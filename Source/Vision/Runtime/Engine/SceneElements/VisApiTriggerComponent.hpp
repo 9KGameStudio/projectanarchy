@@ -207,15 +207,15 @@ public:
 
   /// \brief
   ///   Destructor
-  VISION_APIFUNC VOVERRIDE ~VisTriggerTargetComponent_cl();
+  VISION_APIFUNC virtual ~VisTriggerTargetComponent_cl();
 
   /// \brief
   ///   Overidden IVObjectComponent function
-  VISION_APIFUNC VOVERRIDE void SetOwner(VisTypedEngineObject_cl *pOwner);
+  VISION_APIFUNC virtual void SetOwner(VisTypedEngineObject_cl *pOwner) HKV_OVERRIDE;
 
   /// \brief
   ///   Overidden IVObjectComponent function
-  VISION_APIFUNC VOVERRIDE bool IsRelevantForSerialization() const ;
+  VISION_APIFUNC virtual bool IsRelevantForSerialization() const  HKV_OVERRIDE;
 
   /// \brief
   ///   This overridable is called when the component is triggered by a source component.
@@ -242,7 +242,7 @@ public:
 
   //serialization
   V_DECLARE_SERIAL_DLLEXP( VisTriggerTargetComponent_cl,  VISION_APIDATA )
-  VISION_APIFUNC VOVERRIDE void Serialize( VArchive &ar );
+  VISION_APIFUNC virtual void Serialize(VArchive &ar) HKV_OVERRIDE;
   V_DECLARE_VARTABLE(VisTriggerTargetComponent_cl, VISION_APIDATA)
 
   VObjectComponentCollection m_Sources; ///< we need references in both directions for proper cleanup
@@ -265,7 +265,7 @@ inline void VisTriggerSourceComponent_cl::TriggerAllTargets()
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

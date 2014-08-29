@@ -187,6 +187,10 @@ public:
   /// \brief
   ///   Returns the item (or NULL) that has currently focus
   inline VWindowBase *GetFocusItem() const {return m_spFocusItem;}
+
+  /// \brief
+  ///   Gets called when a control that is owned by this dialog is disposed
+  GUI_IMPEXP virtual void OnControlDisposed(VDlgControlBase *pControl);
     
   ///
   /// @}
@@ -340,7 +344,7 @@ private:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

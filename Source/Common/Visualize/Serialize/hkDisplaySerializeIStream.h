@@ -19,7 +19,7 @@ class hkDisplayGeometry;
 /// This utility class extends the hkIArchive to provide a endian
 /// safe stream interface for deserializing all of the basic data
 /// types associated with the visual debugger.
-class hkDisplaySerializeIStream : public hkIArchive
+class HK_EXPORT_COMMON hkDisplaySerializeIStream : public hkIArchive
 {
 	//+vtable(true)
 	public:
@@ -59,7 +59,7 @@ class hkDisplaySerializeIStream : public hkIArchive
 #endif //  HK_VISUALIZE_DISPLAY_SERIALIZE_I_STREAM_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

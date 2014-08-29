@@ -233,10 +233,11 @@ public:
   /// \brief
   ///   Overridden from base class.
   EFFECTS_IMPEXP virtual void OnHandleCallback(IVisCallbackDataObject_cl *pData);
+  EFFECTS_IMPEXP virtual int64 GetCallbackSortingKey(VCallback *pCallback);
 
   /// \brief
   ///   Tick function (called once per frame). Internal use only.
-  EFFECTS_IMPEXP virtual void Update(bool force = false) = 0;
+  EFFECTS_IMPEXP virtual void Update(bool force) = 0;
 
   /// \brief
   ///   Update the passed shader with the light's properties. Internal use only.
@@ -368,7 +369,7 @@ public:
       return m_spShadowMap;
     else
       return m_spShadowMapDepthStencil;
-#elif defined(WIN32) && defined(_VR_DX9)
+#elif defined(_VISION_WIN32) && defined(_VR_DX9)
       return m_spShadowMap->GetTextureFormat() != VTextureLoader::NONE ? m_spShadowMap : m_spShadowMapDepthStencil; 
 #else
     return m_spShadowMapDepthStencil;
@@ -547,7 +548,7 @@ protected:
 
   int m_iTextureSize[2];
 
-#if defined(WIN32)
+#if defined(_VISION_WIN32)
   VisRenderableTexturePtr m_spShadowMap;
 #endif
   VisRenderableTexturePtr m_spShadowMapDepthStencil;
@@ -791,7 +792,7 @@ public:
 #endif  // VSHADOWMAPGENERATORBASE_HPP_INCLUDED
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140624)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

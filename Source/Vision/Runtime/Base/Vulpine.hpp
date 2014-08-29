@@ -178,25 +178,10 @@ const SLONG VERR_LINUXMAGIC     = -4711;   ///< Magic linux arbitrary error
   void WiiUSysBreak();
 #endif
 
-#if defined (_WIN64)
-  //64-bit
-/*
-  #include <intrin.h>
-  void __break(int);
-  #pragma intrinsic (__break)
-  #define VDBGBREAK __break(0x80016)
-*/
-  #define VDBGBREAK __debugbreak()
 
-#elif defined (WIN32)
+#if defined (_VISION_WIN32)
   // This produces an debug interrupt on 32-bit Intel/AMD processors
-  #ifndef VDBGBREAK
-    #if (defined(_MANAGED) && (_MSC_VER >= 1400)) || defined(_M_ARM)   ///<MSVC 8.0
-      #define VDBGBREAK { __debugbreak(); }
-    #else
-      #define VDBGBREAK { __asm { int 3 } }
-    #endif
-  #endif
+  #define VDBGBREAK __debugbreak();
 
 #elif defined (_VISION_PS3)
   #define VDBGBREAK { __asm__ volatile("tw 31,0,0"); }
@@ -220,6 +205,13 @@ const SLONG VERR_LINUXMAGIC     = -4711;   ///< Magic linux arbitrary error
 #elif defined(_VISION_TIZEN)
   #include <signal.h>
   #define VDBGBREAK raise(SIGTRAP);
+
+#elif defined(_VISION_NACL)
+  #ifdef _MSC_VER
+    #define VDBGBREAK __debugbreak();
+  #else
+    #define VDBGBREAK __builtin_trap();
+  #endif
 
 #else
   //XBox 360, etc.
@@ -398,7 +390,7 @@ const SLONG VERR_LINUXMAGIC     = -4711;   ///< Magic linux arbitrary error
 
 
 
-#if defined(WIN32) && !defined(_VISION_WINRT) // Win32 Desktop Apps 
+#if defined(_VISION_WIN32) && !defined(_VISION_WINRT) // Win32 Desktop Apps 
 
   #define V_IS_VALID_READ_PTR(ptr)        (!::IsBadReadPtr((void*)(ptr), 4))
   #define V_IS_VALID_WRITE_PTR(ptr)       (!::IsBadWritePtr((void*)(ptr), 4))
@@ -513,7 +505,7 @@ const SLONG VERR_LINUXMAGIC     = -4711;   ///< Magic linux arbitrary error
 #endif // #ifndef VULPINE_H_INCLUDED
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

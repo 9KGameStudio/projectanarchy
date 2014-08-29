@@ -144,13 +144,7 @@ public:
   void transpose();
   const hkvMat3 getTransposed() const;
    
-  %extend 
-  {   
-    bool invert()
-    {
-      return self->invert()==HKV_SUCCESS;
-    }
-  }
+  hkvResult invert();
 
   const hkvMat3 getInverse() const;
 
@@ -172,13 +166,10 @@ public:
 
   hkvVec3 getScalingFactors() const;
 
+  hkvResult normalize(float fEpsilon = HKVMATH_SMALL_EPSILON);
+
   %extend 
   { 
-    bool normalize(float fEpsilon = HKVMATH_SMALL_EPSILON)
-    {
-      return self->normalize(fEpsilon)==HKV_SUCCESS;
-    }
-
     hkvMat3 clone() const
     {
       return *self; //will call the copy constructor
@@ -226,7 +217,7 @@ public:
     hkvVec3 __mul(const hkvVec3* pRhs)
     {
       if (pRhs == NULL) 
-        return hkvVec3();
+        return hkvVec3(0);
       return (*self * (*pRhs));
     }
      
@@ -1019,7 +1010,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

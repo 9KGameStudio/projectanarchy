@@ -14,13 +14,10 @@
 struct hkaiNavMeshGenerationSettings;
 
 /// The hkaiEdgeGeometryUtil provides processing methods for hkaiEdgeGeometry.
-class hkaiEdgeGeometryUtil
+class HK_EXPORT_AI hkaiEdgeGeometryUtil
 {
 	public:
 		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_AI, hkaiEdgeGeometryUtil );
-
-			/// Remove faces smaller than minFaceSize
-		static void HK_CALL removeSmallFaces(hkaiEdgeGeometry& geom, hkSimdRealParameter minFaceSize);
 
 			/// Find all the unwalkable faces. Finds the dot product between the settings' up vector and the face normal,
 			/// if the result is less than walkableFactor (which comes from settings) the face is deemed 'unwalkable'
@@ -36,7 +33,7 @@ class hkaiEdgeGeometryUtil
 #endif // HKAI_GEOMETRY_UTIL_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

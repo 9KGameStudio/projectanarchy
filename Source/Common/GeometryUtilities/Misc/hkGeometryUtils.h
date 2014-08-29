@@ -9,27 +9,50 @@
 #ifndef HK_GEOMETRY_UTILS_H
 #define HK_GEOMETRY_UTILS_H
 
-#include <Common/Base/Algorithm/Sort/hkSort.h>
 #include <Common/Base/Types/Geometry/hkGeometry.h>
 #include <Common/Base/Algorithm/Collide/1AxisSweep/hk1AxisSweep.h>
 
 
 	/// Utility class, contains methods that operate with hkGeometry objects.
-class hkGeometryUtils
+class HK_EXPORT_COMMON hkGeometryUtils
 {
 	public:
-	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE,hkGeometryUtils);
+		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE,hkGeometryUtils);
 
-	/// Virtual interface to access vertices.
-	struct IVertices
-	{
-		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_BASE, IVertices );
+		/// input structure into createGrid
+		struct GridInput
+		{
+			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_GEOMETRY, hkGeometryUtils::GridInput);
+			GridInput( int numVertsX = 16, hkVector4Parameter up = hkVector4::getConstant( HK_QUADREAL_0010 ) );
 
-		virtual			~IVertices() {}
-		virtual int		getNumVertices() const=0;
-		virtual void	getVertex(int index, hkVector4& vertexOut) const=0;
-		virtual bool	isWeldingAllowed(int vertexA, int vertexB) const { return true; }
-	};
+			int m_numVertsX;	///< Number of vertices in X-direction
+			int m_numVertsY;	///< Number of vertices in Y-direction
+
+			hkVector4 m_origin;
+			hkVector4 m_stepX;
+			hkVector4 m_stepY;
+		};
+
+		/// Adds a grid to an existing geometry.
+		static void HK_CALL createGrid(const GridInput& input, hkGeometry* out, int defaultMaterial = 0);
+
+		/// Adds a sphere to an existing geometry.
+		static void HK_CALL createSphere(hkVector4Parameter center, hkReal radius, int numSteps, hkGeometry* geomOut, int material = 0);
+
+		/// Adds a box to an existing geometry
+		static void HK_CALL createBox(hkVector4Parameter center, hkVector4Parameter halfExtents, hkGeometry* geomOut, int material = 0);
+
+
+		/// Virtual interface to access vertices.
+		struct IVertices
+		{
+			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_BASE, IVertices );
+
+			virtual			~IVertices() {}
+			virtual int		getNumVertices() const=0;
+			virtual void	getVertex(int index, hkVector4& vertexOut) const=0;
+			virtual bool	isWeldingAllowed(int vertexA, int vertexB) const { return true; }
+		};
 
 			/// Finds identical vertices and generate the map from original indices to welded ones.
 			/// Note this method virtualize access to vertices.
@@ -95,6 +118,9 @@ class hkGeometryUtils
 			/// The AABB of each triangle is tested against the specified AABB, so some
 			/// triangles that are outside of the AABB may be included.
 		static hkResult HK_CALL getGeometryInsideAabb( const hkGeometry& geomIn, hkGeometry& geomOut, const hkAabb& aabb, GetGeometryInsideAabbMode mode = MODE_COPY_DATA);
+
+			/// As above, but with the vertexRemap array specified
+		static hkResult HK_CALL getGeometryInsideAabb( const hkGeometry& geomIn, hkGeometry& geomOut, const hkAabb& aabb, hkArray<int>& vertexRemap, GetGeometryInsideAabbMode mode = MODE_COPY_DATA);
 
 			/// Computes the volume of the given geometry
 		static void HK_CALL computeVolume (const struct hkGeometry& geometry, hkSimdReal& volume);
@@ -167,7 +193,7 @@ class hkGeometryUtils
 #endif //HK_GEOMETRY_UTILS_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

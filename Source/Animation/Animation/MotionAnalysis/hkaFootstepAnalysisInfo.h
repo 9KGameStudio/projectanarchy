@@ -10,13 +10,13 @@
 #define HK_FOOTSTEP_ANALYSIS_INFO_H
 
 /// hkaAnimationBinding meta information
-extern const class hkClass hkaFootstepAnalysisInfoClass;
-extern const class hkClass hkaFootstepAnalysisInfoContainerClass;
+extern HK_EXPORT_ANIMATION const class hkClass hkaFootstepAnalysisInfoClass;
+extern HK_EXPORT_ANIMATION const class hkClass hkaFootstepAnalysisInfoContainerClass;
 
 /// The hkaFootstepAnalysisInfo class stores visualization
 /// information for footstep analysis. It is intended for use by
 /// the content tool chain.
-class hkaFootstepAnalysisInfo : public hkReferencedObject
+class HK_EXPORT_ANIMATION hkaFootstepAnalysisInfo : public hkReferencedObject
 {
 	public:
 
@@ -66,7 +66,7 @@ class hkaFootstepAnalysisInfo : public hkReferencedObject
 
 
 // Utility class to store hkaFootstepAnalysisInfo objects
-class hkaFootstepAnalysisInfoContainer : public hkReferencedObject
+class HK_EXPORT_ANIMATION hkaFootstepAnalysisInfoContainer : public hkReferencedObject
 {
 	public:
 
@@ -94,7 +94,7 @@ class hkaFootstepAnalysisInfoContainer : public hkReferencedObject
 #endif // HK_FOOTSTEP_ANALYSIS_INFO_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

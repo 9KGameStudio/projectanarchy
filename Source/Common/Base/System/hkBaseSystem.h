@@ -11,14 +11,6 @@
 /// An error report function to be passed to Havok when initializing it subsystems. In particular
 typedef void (HK_CALL *hkErrorReportFunction)(const char* s, void* errorReportObject);
 
-struct hkHardwareInfo
-{
-	int m_numThreads;
-};
-
-// Get information about the hardware configuration
-void HK_CALL hkGetHardwareInfo( hkHardwareInfo& info );
-
 class hkMemoryRouter;
 
 /// This class is used to initialize the Havok subsystems (memory, singleton, etc).
@@ -29,23 +21,23 @@ namespace hkBaseSystem
 		/// On error, the errorReportFunction is called with an error string and the errorReportObject pointer.
 		/// init() sets in internal flag, so it may be called more than once but multiple init() and quit() calls
 		/// do not nest.
-	hkResult HK_CALL init( 
+	HK_EXPORT_COMMON hkResult HK_CALL init( 
 		hkMemoryRouter* memoryRouter, 
 		hkErrorReportFunction errorReportFunction,
 		void* errorReportObject = HK_NULL );
 
 		/// Call for each active thread, sets the thread local router variable.
-	hkResult HK_CALL initThread( hkMemoryRouter* threadAllocator );
+	HK_EXPORT_COMMON hkResult HK_CALL initThread( hkMemoryRouter* threadAllocator );
 		///
-	hkResult HK_CALL quitThread();
+	HK_EXPORT_COMMON hkResult HK_CALL quitThread();
 
 		/// Quit the subsystems. It is safe to call multiple times.
 		/// It cleans up in reverse order to init: default singletons, hkError,
 		/// hkFileSystem and hkMemory
-	hkResult HK_CALL quit();
+	HK_EXPORT_COMMON hkResult HK_CALL quit();
 
 		/// Checks if the system has already been initialized.
-	hkBool HK_CALL isInitialized();
+	HK_EXPORT_COMMON hkBool HK_CALL isInitialized();
 
 		/// Utility function to initialize all singletons, called from init().
 		/// You do not need to call this method unless you have completely replaced
@@ -55,18 +47,18 @@ namespace hkBaseSystem
 		/// singletons and functions to create them into a linked list
 		/// (see hkSingleton.h). At init time, we can then traverse the list,
 		/// setting up singletons which have not been explicitly set up already.
-	void HK_CALL initSingletons();
+	HK_EXPORT_COMMON void HK_CALL initSingletons();
 
 		/// Utility function to quit all singletons, called from quit().
 		/// You do not need to call this method unless you have completely replaced
 		/// the quit method.
-	void HK_CALL quitSingletons();
+	HK_EXPORT_COMMON void HK_CALL quitSingletons();
 }
 
 #endif // HKBASE_HKBASESYSTEM_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -9,7 +9,7 @@
 #ifndef HK_MATH_CONTACT_POINT_H
 #define HK_MATH_CONTACT_POINT_H
 
-extern const class hkClass hkContactPointClass;
+extern HK_EXPORT_COMMON const class hkClass hkContactPointClass;
 
 	/// A type used to store contact point ids
 typedef hkUint16 hkContactPointId;
@@ -44,7 +44,7 @@ typedef hkUint16 hkContactPointId;
 ///
 /// NOTE: When this structure is used in the hkpCdPointCollector callback from the hkpCollisionAgent::linearCast function,
 /// the "distance" value is actually the parameter between 0 and 1 along the linear cast that the hit occurred
-class hkContactPoint
+class HK_EXPORT_COMMON hkContactPoint
 {
 	public:
 
@@ -116,7 +116,7 @@ class hkContactPoint
 #endif // HK_MATH_CONTACT_POINT_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

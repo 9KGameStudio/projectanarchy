@@ -18,7 +18,7 @@ struct HK_SIGNAL_TYPE : hkSignal
 		//+hk.MemoryTracker(ignore=True)
 		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE, Slot);
 		
-		/// Contructor.
+		/// Constructor.
 		template <typename TYPE>
 		HK_FORCE_INLINE Slot(SlotList& _slots, TYPE* object, const char* name) : hkSlot(_slots, object, name) {}
 
@@ -37,7 +37,7 @@ struct HK_SIGNAL_TYPE : hkSignal
 		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE, GlobalSlot);
 		
 		HK_FORCE_INLINE		GlobalSlot(SlotList& _slots, METHOD method, const char* name) : Slot(_slots, (void*)HK_NULL, name), m_method(method) {}
-		virtual void		call(HK_SIGNAL_ARGUMENTS) { m_method(HK_SIGNAL_NAMES); }
+		virtual void		call(HK_SIGNAL_ARGUMENTS) HK_OVERRIDE { m_method(HK_SIGNAL_NAMES); }
 		virtual hkBool32	matchMethod(const void* methodData, int methodLength) const { return methodLength == sizeof(METHOD) && *reinterpret_cast<const METHOD*>(methodData) == m_method; }
 
 		METHOD	m_method;
@@ -49,13 +49,20 @@ struct HK_SIGNAL_TYPE : hkSignal
 	{
 		//+hk.MemoryTracker(ignore=True)
 		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE, MemberSlot);
+
+		enum { SIZE_OF_METHOD = sizeof(METHOD), };
 		
 		HK_FORCE_INLINE		MemberSlot(SlotList& _slots, TYPE* object, METHOD method, const char* name) : Slot(_slots, object, name), m_method(method) {}
 
-		/// Call the signal handler. If you have a compile error here, your functions signiture does not match the signiture of the signal.
-		virtual void		call(HK_SIGNAL_ARGUMENTS) { (reinterpret_cast<TYPE*>(Slot::m_object)->*m_method)(HK_SIGNAL_NAMES); }
+		/// Call the signal handler. If you have a compile error here, your functions signature does not match the signature of the signal.
+		virtual void		call(HK_SIGNAL_ARGUMENTS) HK_OVERRIDE { (reinterpret_cast<TYPE*>(Slot::m_object)->*m_method)(HK_SIGNAL_NAMES); }
 
-		virtual hkBool32	matchMethod(const void* methodData, int methodLength) const { return methodLength == sizeof(METHOD) && *reinterpret_cast<const METHOD*>(methodData) == m_method; }
+		virtual hkBool32	matchMethod(const void* methodData, int methodLength) const 
+		{
+			const bool sizeMatch = methodLength == SIZE_OF_METHOD;
+			const bool addrMatch = *reinterpret_cast<const METHOD*>(methodData) == m_method;
+			return sizeMatch && addrMatch;
+		}
 
 		METHOD	m_method;
 	};
@@ -116,7 +123,7 @@ struct HK_SIGNAL_TYPE : hkSignal
 	HK_FORCE_INLINE	void	_fire(HK_SIGNAL_ARGUMENTS)
 	{
 		// lock the list by setting a flag in m_slots to prevent immediate deletion of the slots in the list
-		// if one of the called slots unsubscribes them
+		// if one of the called slots unsubscribe them
 		m_slots.setInt(1);
 
 		SlotList*	prev = &m_slots;
@@ -155,7 +162,7 @@ struct HK_SIGNAL_TYPE : hkSignal
 };
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

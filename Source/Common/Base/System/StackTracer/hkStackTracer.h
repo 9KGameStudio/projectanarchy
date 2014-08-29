@@ -14,7 +14,7 @@ class hkOstream;
 	/// An object which can generate stack traces.
 	/// Some platforms may also be able to associate addresses to
 	/// function and source file information.
-class hkStackTracer
+class HK_EXPORT_COMMON hkStackTracer 
 {
 	public:
 
@@ -136,7 +136,6 @@ class hkStackTracer
 		/// Replace the singleton implementation with the provided pointer.
 		static void replaceImplementation(void* newInstance);
 		
-		///< COM-2250
 		/// Windows-specific, sets whether hkStackTracer initialization and cleanup must call SymInitialize.
 		/// By default, SymInitialize will be called on the first call to one of the methods of 
 		/// hkStackTracer. setNeedsSymInitialize must be called with enabled = false *before* the first call
@@ -147,7 +146,7 @@ class hkStackTracer
 #endif // HKBASE_STACKTRACER_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

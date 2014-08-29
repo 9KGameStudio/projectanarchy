@@ -83,7 +83,7 @@ public:
   /// VisBitmap_cl::LoadBitmapFromFile function.
   /// 
   /// \param szFilename
-  ///   Filename of the bitmap. If no file extension is added, the .tex extension will be appended
+  ///   Filename of the bitmap.
   /// 
   /// \param iFlags
   ///   flags for loading the bitmap. The following flags are currently supported:
@@ -379,7 +379,7 @@ public:
   /// Both filename and flags have to match to find a bitmap in the resource manager.
   /// 
   /// \param szFilename
-  ///   filename of the texture, If no file extension is specified, a .tex  extension is appended.
+  ///   filename of the texture.
   /// 
   /// \param iFlags
   ///   flags for loading the bitmap. See constructor for valid flag constants.
@@ -398,7 +398,7 @@ public:
   /// If a new bitmap is loaded, it will be added to the resource manager as well.
   /// 
   /// \param szFilename
-  ///   filename of the texture, If no file extension is specified, a .tex  extension is appended.
+  ///   filename of the texture.
   /// 
   /// \param iFlags
   ///   flags for loading the bitmap. See constructor for valid flag constants.
@@ -552,7 +552,7 @@ protected:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

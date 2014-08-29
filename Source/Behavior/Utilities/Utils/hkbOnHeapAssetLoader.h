@@ -23,7 +23,7 @@ class hkbOnHeapAssetLoader: public hkbCachingAssetLoader
 	
 		HK_DECLARE_CLASS_ALLOCATOR( HK_MEMORY_CLASS_BEHAVIOR );
 
-		// Entry for loaded resources
+			/// Entry for loaded resources
 		struct ResourceEntry : public hkbCachingAssetLoader::CachedEntry
 		{			
 			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_SCENE_DATA, hkbOnHeapAssetLoader::ResourceEntry );
@@ -31,10 +31,14 @@ class hkbOnHeapAssetLoader: public hkbCachingAssetLoader
 			hkRefPtr<hkResource> m_resource;
 		};
 
+			/// Create an on heap asset loader.
+			/// Set enableThreadLocking to true if you plan to use this interface from different threads.
+		hkbOnHeapAssetLoader( bool enableThreadLocking = false );
+
 			/// Returns the list of loaded resources
 		const hkArray<ResourceEntry>& getLoadedResources() const;
 
-	public:
+	protected:
 
 			/// hkbCachingAssetLoader implementation
 		virtual void* loadFile( const hkStringBuf& fullPath, hkStreamReader* stream, void*& storingData ) HK_OVERRIDE;
@@ -48,8 +52,6 @@ class hkbOnHeapAssetLoader: public hkbCachingAssetLoader
 			/// hkbCachingAssetLoader implementation
 		virtual void* findFileInCache( const hkStringBuf& fullPath ) const HK_OVERRIDE;
 
-	protected:
-
 			/// hkbCachingAssetLoader implementation
 		virtual bool storeResourceInCache( void* resource, const hkStringBuf& fullPath, const void* storingData ) HK_OVERRIDE;
 
@@ -62,6 +64,7 @@ class hkbOnHeapAssetLoader: public hkbCachingAssetLoader
 			/// hkbCachingAssetLoader implementation
 		virtual void setResourceOwner( hkResource*& owner, void* resource ) HK_OVERRIDE;
 
+			/// hkbCachingAssetLoader implementation
 		virtual void storeUniqueAsset( void* uniqueClassObj, void* resource, bool lookInCache ) HK_OVERRIDE;
 
 			/// Array of resources that have been loaded by the loader.
@@ -71,7 +74,7 @@ class hkbOnHeapAssetLoader: public hkbCachingAssetLoader
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

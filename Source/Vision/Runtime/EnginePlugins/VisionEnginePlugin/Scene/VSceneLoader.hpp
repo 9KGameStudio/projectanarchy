@@ -11,7 +11,7 @@
 #ifndef VSCENELOADER_HPP_INCLUDED
 #define VSCENELOADER_HPP_INCLUDED
 
-#if defined (WIN32) || defined(_VISION_XENON)
+#if defined (_VISION_WIN32) || defined(_VISION_XENON)
 
   #ifdef SCENEMODULE_EXPORTS
     #define SCENE_IMPEXP __declspec(dllexport)
@@ -225,7 +225,7 @@ public:
 	///   Static helper function that returns the filename of the last loaded vscene
   static inline const char *GetLastLoadedSceneFileName() { return s_sLastLoadedScene; }
 
-#ifdef WIN32
+#ifdef _VISION_WIN32
   // saving:
   SCENE_IMPEXP bool EmbedFile(const char *szFilename, CHUNKIDTYPE iID);
 #endif
@@ -354,12 +354,13 @@ private:
 
   float m_fNearClipPlane;
   float m_fFarClipPlane;
-  float m_fFovX;
+  float m_fFovX, m_fLODScale;
 
   bool m_bForceMobileMode;
   bool m_bUsePrewarming;
   bool m_bInterleavedLoading;
   bool m_bLoadTimeStepSettings;
+  bool m_bLoadRendererNode;
   int m_iNextPrewarmIndexStaticGeometry;
   int m_iNextPrewarmIndexEntities;
 
@@ -399,7 +400,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

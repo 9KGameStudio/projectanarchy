@@ -36,16 +36,16 @@ typedef const hkInt128Vector4&	hkInt128Vector4Parameter;
 #		include <Common/Base/Math/LargeInt/Neon/hkNeonSimdInt.inl>
 #		include <Common/Base/Math/LargeInt/Neon/hkNeonInt64Vector4.inl>
 #	else
-#		include <Common/Base/Math/LargeInt/Fpu/hkFpuInt128Vector4.inl>
-#		include <Common/Base/Math/LargeInt/Fpu/hkFpuSimdInt128.inl>
-#		include <Common/Base/Math/LargeInt/Fpu/hkFpuSimdInt.inl>
-#		include <Common/Base/Math/LargeInt/Fpu/hkFpuInt64Vector4.inl>
+#		include <Common/Base/Math/LargeInt/Fpu/hkFpuInt128Vector4.inl> 
+#		include <Common/Base/Math/LargeInt/Fpu/hkFpuSimdInt128.inl> 
+#		include <Common/Base/Math/LargeInt/Fpu/hkFpuSimdInt.inl> 
+#		include <Common/Base/Math/LargeInt/Fpu/hkFpuInt64Vector4.inl> 
 #	endif
 #else
-#	include <Common/Base/Math/LargeInt/Fpu/hkFpuInt128Vector4.inl>
-#	include <Common/Base/Math/LargeInt/Fpu/hkFpuSimdInt128.inl>
-#	include <Common/Base/Math/LargeInt/Fpu/hkFpuSimdInt.inl>
-#	include <Common/Base/Math/LargeInt/Fpu/hkFpuInt64Vector4.inl>
+#	include <Common/Base/Math/LargeInt/Fpu/hkFpuInt128Vector4.inl> 
+#	include <Common/Base/Math/LargeInt/Fpu/hkFpuSimdInt128.inl> 
+#	include <Common/Base/Math/LargeInt/Fpu/hkFpuSimdInt.inl> 
+#	include <Common/Base/Math/LargeInt/Fpu/hkFpuInt64Vector4.inl> 
 #endif
 #endif
 
@@ -57,7 +57,7 @@ typedef const hkInt128Vector4&	hkInt128Vector4Parameter;
 #endif	//	HK_MATH_LARGE_INT_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

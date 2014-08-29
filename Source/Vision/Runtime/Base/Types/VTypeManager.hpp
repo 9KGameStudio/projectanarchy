@@ -11,8 +11,6 @@
 #ifndef _VISION_VTYPEMANAGER_HPP
 #define _VISION_VTYPEMANAGER_HPP
 
-#include <Vision/Runtime/Base/Container/VMapStrToPtr.hpp>
-
 DECLARE_LIST(VModuleList, VModule, VBASE_IMPEXP)
 
 
@@ -191,7 +189,7 @@ public:
   }
 
 protected:
-  VMapStrToPtr m_classNameMap; ///< applications global class type list
+  VMap<VString, VType*> m_classNameMap; ///< applications global class type list
   VModuleList m_moduleList; ///< list of registered plugins
   IVSerializationBinder *m_pBinder;
 };
@@ -199,7 +197,7 @@ protected:
 #endif // _VISION_VTYPEMANAGER_HPP
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -38,7 +38,7 @@
 #endif
 
 
-struct hkCurrentFunctionUtil
+struct HK_EXPORT_COMMON hkCurrentFunctionUtil
 {
 		/// Turns the string returned from a function that takes no parameters and returns HK_METHOD_CLASS_NAME
 		/// into just the class name. The result is stored in className - the buffer must be big enough to hold the
@@ -51,7 +51,7 @@ struct hkCurrentFunctionUtil
 #endif // HKBASE_CURRENT_FUNCTION_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

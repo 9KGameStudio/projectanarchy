@@ -31,7 +31,7 @@ namespace hkCompileError
 ///
 /// i.e., contiguous memory locations are (x00, x10, x20, pad), (x01, x11,...)
 /// where x10 means row 1, column 0 for example.
-class hkMatrix3d
+class HK_EXPORT_COMMON hkMatrix3d
 {
 	public:
 
@@ -106,6 +106,10 @@ class hkMatrix3d
 
 			/// Inverts the matrix. This function returns HK_SUCCESS if the determinant is greater than epsilon^3. Otherwise it returns HK_FAILURE and the matrix values are undefined.
 		hkResult invert(hkDouble64 epsilon); 
+
+			/// Set the inverse if possible, else produces a zero matrix
+		void setInverse( const hkMatrix3d& src );
+
 
 			/// Sets the current matrix to be the inverse of the given matrix. Matrix src is assumed to be symmetric non-singular. If the matrix
 			/// is singular (up to machine precision), the inverse will be set to zero.
@@ -245,7 +249,7 @@ extern "C"
 #endif //HK_MATH_MATRIX3d_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

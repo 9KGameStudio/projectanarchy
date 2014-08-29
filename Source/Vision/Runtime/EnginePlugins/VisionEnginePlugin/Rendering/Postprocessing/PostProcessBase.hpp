@@ -117,6 +117,21 @@ public:
   }
 
   /// \brief
+  ///   This overridable gets called by vForge to determine whether this postprocessor should be active on a new renderer
+  EFFECTS_IMPEXP virtual bool GetDefaultActiveStateForRenderer(VRendererNodeCommon *pRenderer)
+  {
+    return true;
+  }
+
+  /// \brief
+  ///   This overridable gets called by vForge to determine whether this postprocessor should be always active. In that
+  ///   case, the GUI checkbox to deactivate this postprocessor is grayed out.
+  EFFECTS_IMPEXP virtual bool GetForcedActiveStateForRenderer(VRendererNodeCommon *pRenderer)
+  {
+    return false;
+  }
+
+  /// \brief
   ///   Enables/disables this post-processor.
   EFFECTS_IMPEXP virtual void SetActive(bool bStatus);
 
@@ -344,7 +359,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140715)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

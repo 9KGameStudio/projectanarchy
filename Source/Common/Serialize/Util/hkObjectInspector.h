@@ -14,7 +14,7 @@
 namespace hkObjectInspector
 {
 		/// Location of pointer and corresponding reflection information.
-	struct Pointer
+	struct HK_EXPORT_COMMON Pointer
 	{
 			///
 		void** location;
@@ -25,7 +25,7 @@ namespace hkObjectInspector
 	};
 
 		/// Called when an object is found.
-	class ObjectListener
+	class HK_EXPORT_COMMON ObjectListener
 	{
 		public:
 
@@ -60,20 +60,20 @@ namespace hkObjectInspector
 		/// for non-virtual objects and pointer to the base class
 		/// for virtual object. However, in some cases where the base
 		/// class for virtual object is unknown it contains HK_NULL.
-	hkResult HK_CALL getPointers(const void* object, const hkClass& klass, hkArray<Pointer>::Temp& outContainedPointers);
+	HK_EXPORT_COMMON hkResult HK_CALL getPointers(const void* object, const hkClass& klass, hkArray<Pointer>::Temp& outContainedPointers);
 
 		/// Walk through an object and call listener providing list of all found pointers to other objects.
 		/// The listener may hold and update the list of these pointers. The function does not trace/analyse
 		/// duplicated pointers, the listener is responsible to process/ignore such pointers found in objects.
 		/// The function recursively walks through each object referenced by pointer from the list when the
 		/// listener callback is complete.
-	hkResult HK_CALL walkPointers(const void* object, const hkClass& klass, ObjectListener* listener);
+	HK_EXPORT_COMMON hkResult HK_CALL walkPointers(const void* object, const hkClass& klass, ObjectListener* listener);
 }
 
 #endif // HK_OBJECT_INSPECTOR_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

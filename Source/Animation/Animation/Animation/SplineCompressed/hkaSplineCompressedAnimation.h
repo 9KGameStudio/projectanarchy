@@ -15,13 +15,13 @@
 #include <Animation/Internal/Compression/SignedQuaternion/hkaSignedQuaternion.h>
 #include <Animation/Animation/Animation/SplineCompressed/hkaSplineCompressedAnimation_templateMacros.h>
 
-extern const class hkClass hkaSplineCompressedAnimationAnimationCompressionParamsClass;
-extern const class hkClass hkaSplineCompressedAnimationTrackCompressionParamsClass;
-extern const class hkClass hkaSplineCompressedAnimationClass;
+extern HK_EXPORT_ANIMATION const class hkClass hkaSplineCompressedAnimationAnimationCompressionParamsClass;
+extern HK_EXPORT_ANIMATION const class hkClass hkaSplineCompressedAnimationTrackCompressionParamsClass;
+extern HK_EXPORT_ANIMATION const class hkClass hkaSplineCompressedAnimationClass;
 
 /// Compresses animation data using a spline approximation.
 /// See Animation Compression section of the Userguide for details.
-class hkaSplineCompressedAnimation : public hkaAnimation
+class HK_EXPORT_ANIMATION hkaSplineCompressedAnimation : public hkaAnimation
 {
 	public:
 
@@ -32,7 +32,7 @@ class hkaSplineCompressedAnimation : public hkaAnimation
 		static const int MAX_ORDER = MAX_DEGREE + 1;
 
 		/// Compression settings for a single animation track
-		struct TrackCompressionParams
+		struct HK_EXPORT_ANIMATION TrackCompressionParams
 		{
 			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_ANIM_COMPRESSED, hkaSplineCompressedAnimation::TrackCompressionParams );
 			HK_DECLARE_REFLECTION();
@@ -84,7 +84,7 @@ class hkaSplineCompressedAnimation : public hkaAnimation
 			TrackCompressionParams(); ///< Constructor with default parameters
 		};
 
-		struct AnimationCompressionParams
+		struct HK_EXPORT_ANIMATION AnimationCompressionParams
 		{
 			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_ANIM_COMPRESSED, hkaSplineCompressedAnimation::AnimationCompressionParams );
 			HK_DECLARE_REFLECTION();
@@ -99,7 +99,7 @@ class hkaSplineCompressedAnimation : public hkaAnimation
 
 			
 		/// This structure is used when specifying per track compression settings
-		struct PerTrackCompressionParams
+		struct HK_EXPORT_ANIMATION PerTrackCompressionParams
 		{
 			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_ANIM_COMPRESSED,hkaSplineCompressedAnimation::PerTrackCompressionParams);
 			/// Compression settings palette.
@@ -325,7 +325,7 @@ class hkaSplineCompressedAnimation : public hkaAnimation
 #endif // HKANIMATION_ANIMATION_SPLINE_HKSPLINEANIMATION_XML_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -6,26 +6,32 @@
  *
  */
 
-
-//
-HK_FORCE_INLINE	void hkcdRay::setDirection(hkVector4Parameter direction, hkSimdRealParameter fraction)
+/// Set from direction. Does not modify the origin
+HK_FORCE_INLINE	void hkcdRay_setDirection(hkVector4Parameter direction, hkSimdRealParameter fraction, hkcdRay* HK_RESTRICT ray )
 {
-	m_direction.setXYZ_W(direction, fraction);
-	m_invDirection.setReciprocal<HK_ACC_23_BIT,HK_DIV_SET_MAX>(direction);
-	m_invDirection.setInt24W(int(m_direction.greaterEqualZero().getMask()) & hkVector4ComparisonMask::MASK_XYZ);
+	hkVector4 directionV;
+	directionV.setXYZ_W(direction, fraction);
+	directionV.zeroIfTrue( directionV.equalZero() ); // Avoid negative zeros to ensure that the reciprocals of zeros are positive.
+
+	hkVector4 invDirection; invDirection.setReciprocal<HK_ACC_RAYCAST,HK_DIV_SET_MAX>(directionV);
+	invDirection.setInt24W(int(directionV.greaterEqualZero().getMask<hkVector4ComparisonMask::MASK_XYZ>()) );
+	ray->m_direction    = directionV;
+	ray->m_invDirection = invDirection;
 }
 
 //
 HK_FORCE_INLINE	void hkcdRay::setEndPoints(hkVector4Parameter start, hkVector4Parameter end, hkSimdRealParameter fraction)
 {
 	hkVector4	direction; direction.setSub(end, start);
-	setOriginDirection(start, direction, fraction);
+	hkcdRay_setDirection(direction, fraction, this);
+	m_origin  = start;
 }
+
 
 //
 HK_FORCE_INLINE	void hkcdRay::setOriginDirection(hkVector4Parameter origin, hkVector4Parameter direction, hkSimdRealParameter fraction)
 {
-	setDirection(direction, fraction);
+	hkcdRay_setDirection(direction, fraction, this);
 	m_origin	=	origin;
 }
 
@@ -37,65 +43,36 @@ HK_FORCE_INLINE void hkcdRay::getEndPoint(hkVector4& vEndPoint) const
 	vEndPoint.setAddMul(m_origin, m_direction, getFraction());
 }
 
-//
-//	Returns the direction
 
-inline void hkcdRayBundle::getDirection(hkFourTransposedPoints& directionOut) const
+
+/*static*/ HK_FORCE_INLINE void hkcdRayQueryFlags::isFlagSet(hkFlags<hkcdRayQueryFlags::Enum,hkUint32> flags, Enum flag, hkVector4Comparison& out)
 {
-	directionOut.setSub(m_end, m_start);
+	HK_ASSERT( 0xf034fe54, hkUint32(flag) < 16 );
+	out.set(  hkVector4ComparisonMask::Mask(  ( (0- (flags.get()&flag) )>>4 )  & hkVector4ComparisonMask::MASK_XYZW) );
 }
 
+#if !defined(HK_PLATFORM_SPU)
+#define HK_STRINGIFY_CASE(x) case x: do { return stream << #x; }while(0)
 
-/*static*/ HK_FORCE_INLINE void hkcdRayQueryFlags::extractFlag(Enum flags, Enum flag, hkVector4Comparison& out) 
-{ 
-	out.set((flags & flag) ? hkVector4ComparisonMask::MASK_XYZW : hkVector4ComparisonMask::MASK_NONE ); 
-}
-
-	
-/*static*/ HK_FORCE_INLINE hkInt32 hkcdRayCastResult::create(hkVector4ComparisonParameter isHit, hkVector4ComparisonParameter isInsideHit)
+HK_FORCE_INLINE hkOstream& operator<<(hkOstream& stream, const hkcdRayCastResult result)
 {
-	// Make sure we return exactly zero if isHit is zero.
-	int innerBits = isHit.getMask() * isInsideHit.getMask();
-	return (isHit.getMask()) | ((innerBits << 4) | (innerBits & 0xf0));
+	switch(result.m_value)
+	{
+		HK_STRINGIFY_CASE(hkcdRayCastResult::NO_HIT);
+		HK_STRINGIFY_CASE(hkcdRayCastResult::BACK_FACE_HIT);
+		HK_STRINGIFY_CASE(hkcdRayCastResult::FRONT_FACE_HIT);
+		HK_STRINGIFY_CASE(hkcdRayCastResult::INSIDE_HIT);
+	default:
+		HK_ASSERT2(0x7aa47435, false, "Unknown or bad hkcdRayCastResult.");
+		return stream << "Unknown or bad hkcdRayCastResult.";
+	}
 }
 
-/*static*/ HK_FORCE_INLINE hkInt32 hkcdRayCastResult::createHit(hkVector4ComparisonParameter isInsideHit)
-{
-	return 1 | (isInsideHit.getMask() << 4);
-}
-
-/*static*/ HK_FORCE_INLINE hkInt32 hkcdRayCastResult::createInsideHit()
-{
-	return 0xff;
-}
-
-/*static*/ HK_FORCE_INLINE hkInt32 hkcdRayCastResult::createOutsideHit()
-{
-	return 0xf;
-}
-
-/*static*/ HK_FORCE_INLINE hkInt32 hkcdRayCastResult::createMiss()
-{
-	return 0;
-}
-
-/*static*/ HK_FORCE_INLINE hkInt32 hkcdRayCastResult::isHit(hkInt32 result)
-{
-	return result;
-}
-
-/*static*/ HK_FORCE_INLINE hkInt32 hkcdRayCastResult::isInsideHit(hkInt32 result)
-{
-	return (result & 0xf0) * (result & 0xf);
-}
-
-/*static*/ HK_FORCE_INLINE hkInt32 hkcdRayCastResult::isOutsideHit(hkInt32 result)
-{
-	return !isInsideHit(result);
-}
+#undef HK_STRINGIFY_CASE
+#endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

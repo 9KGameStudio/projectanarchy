@@ -13,7 +13,7 @@
 
 
 /// Linear Clearance constraint.
-class hkpLinearClearanceConstraintData : public hkpConstraintData
+class HK_EXPORT_PHYSICS hkpLinearClearanceConstraintData : public hkpConstraintData
 {
 	public:
 
@@ -189,7 +189,7 @@ class hkpLinearClearanceConstraintData : public hkpConstraintData
 #endif // HKP_LINEAR_CLEARANCE_CONSTRAINT_DATA_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -14,14 +14,9 @@
 
 #define HK_MP_PRINT_RATIONAL_AS_DOUBLE
 
-#ifdef min
-#undef min
-#undef max
-#endif
-
 /// Multi-precision unsigned integer.
 /// Adapted from Matt McCutchen's 'C++ Big Integer Library' @ https://mattmccutchen.net/bigint/
-struct hkMpUint
+struct HK_EXPORT_COMMON hkMpUint
 {
 	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_MATH, hkMpUint);
 
@@ -34,15 +29,17 @@ struct hkMpUint
 	{
 		BITS_PER_ATOM		=	sizeof(Atom) * 8,
 		BITS_PER_HALF_ATOM	=	BITS_PER_ATOM >> 1,
-		INITIAL_CAPACITY	=	256 / BITS_PER_ATOM
 	};
 
 	//
-	typedef hkInplaceArray<Atom,INITIAL_CAPACITY>	AtomArray;
+	typedef hkArray<Atom> AtomArray;
 	
 	//
 	HK_FORCE_INLINE				hkMpUint() {}
-	
+
+	//
+	HK_FORCE_INLINE				hkMpUint(const hkMpUint& other) { operator=(other); }
+
 	//
 	HK_FORCE_INLINE int			getSize() const { return m_atoms.getSize(); }
 
@@ -58,6 +55,9 @@ struct hkMpUint
 	//
 	HK_FORCE_INLINE void		setZero() { m_atoms.clear(); }
 
+	//
+	HK_FORCE_INLINE hkMpUint&	operator=(const hkMpUint& other) { if(this != &other) { m_atoms = other.m_atoms; } return *this; }
+	
 	//
 	HK_FORCE_INLINE Atom&		operator[](int index) { return m_atoms[index]; }
 
@@ -109,15 +109,17 @@ struct hkMpUint
 	//
 	friend hkOstream&			operator<<(hkOstream& stream, const hkMpUint& bi) { hkStringBuf s; toString(bi,10,s); stream << s; return stream; }
 	
+	private:
+
 	AtomArray	m_atoms;
 };
 
 ///
 /// Multi-precision rational.
 ///
-struct hkMpRational
+struct HK_EXPORT_COMMON hkMpRational
 {
-	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_MATH, hkMpUint);
+	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_MATH, hkMpRational);
 
 	//
 	HK_FORCE_INLINE					hkMpRational(hkInt32 num = 0, hkInt32 den = 1) { setNumeratorAndDemominator(num, den); }
@@ -277,6 +279,8 @@ struct hkMpRational
 		#endif
 		return stream;
 	}
+
+	private:
 	
 	hkMpUint	m_num;
 	hkMpUint	m_den;
@@ -287,8 +291,10 @@ struct hkMpRational
 /// Multi-precision vector.
 ///
 template <int N>
-struct hkMpVector
+struct HK_EXPORT_COMMON hkMpVector
 {
+	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_MATH, hkMpVector);
+
 	enum { DIMENSIONS = N };
 
 	//
@@ -299,7 +305,7 @@ struct hkMpVector
 
 	//
 	HK_FORCE_INLINE						hkMpVector(hkSimdRealParameter value) { set(*this, value); }
-
+	
 	//
 	HK_FORCE_INLINE						hkMpVector(hkReal value) { set(*this, value); }
 
@@ -364,13 +370,13 @@ struct hkMpVector
 	}
 
 	//
-	friend void							min(const hkMpVector<N>& v0, const hkMpVector<N>& v1, hkMpVector<N>& vOut)
+	friend void							mins(const hkMpVector<N>& v0, const hkMpVector<N>& v1, hkMpVector<N>& vOut)
 	{
 		for(int i=0; i<N; ++i) vOut[i] = compare(v0[i], v1[i]) < 0 ? v0[i] : v1[i];
 	}
 
 	//
-	friend void							max(const hkMpVector<N>& v0, const hkMpVector<N>& v1, hkMpVector<N>& vOut)
+	friend void							maxs(const hkMpVector<N>& v0, const hkMpVector<N>& v1, hkMpVector<N>& vOut)
 	{
 		for(int i=0; i<N; ++i) vOut[i] = compare(v0[i], v1[i]) > 0 ? v0[i] : v1[i];
 	}
@@ -440,6 +446,19 @@ struct hkMpVector
 	}
 
 	//
+	friend void							lengthSquared(const hkMpVector<N>& v, hkMpRational& rOut)
+	{
+		dot(v,v,rOut);
+	}
+
+	//
+	friend void							distanceSquared(const hkMpVector<N>& v0, const hkMpVector<N>& v1, hkMpRational& rOut)
+	{
+		hkMpVector<N> delta; sub(v1,v0,delta);
+		lengthSquared(delta, rOut);
+	}
+
+	//
 	friend void							interpolate(const hkMpVector<N>& v0, const hkMpVector<N>& v1, const hkMpRational& fraction, hkMpVector<N>& vOut)
 	{
 		hkMpVector<N>	dv;
@@ -471,7 +490,7 @@ struct hkMpVector
 	}
 
 	//
-	friend void 						get(hkMpVector<N>& v, hkVector4& value)
+	friend void 						get(const hkMpVector<N>& v, hkVector4& value)
 	{
 		value.setZero();
 		for(int i=0, n = N > 4 ? 4 : N; i<n; ++i)
@@ -507,10 +526,12 @@ struct hkMpVector
 		return stream;
 	}
 
+	private:
+
 	hkMpRational	m_components[N];
 };
 
-// Solve Ax=b using Gauss-Seidel method. Note: No pivoting is performed so the diagnonal of A must be non-zero.
+// Solve Ax=b using Gauss-Seidel method. Note: No pivoting is performed so the diagonal of A must be non-zero.
 // Axb_TYPE must implement the following:
 // int					dims() const;
 // const hkMpRational&	A(int row, int column) const;
@@ -529,7 +550,7 @@ bool	hkMpUnitTests();
 #endif // HK_MP_MATH_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -8,7 +8,6 @@
 
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/VisionEnginePluginPCH.h>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Components/VOrbitCamera.hpp>
-#include <Vision/Runtime/Base/System/Memory/VMemDbg.hpp>
 
 #if !defined( HK_ANARCHY )
   #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/Postprocessing/VPostProcessDepthOfField.hpp>
@@ -103,7 +102,7 @@ VOrbitCamera::VOrbitCamera(int iComponentFlags)
   // Map the same input for all pad-like devices
   IVInputDevice* padDevices[] =
   {
-#if defined (_VISION_XENON) || defined (_VISION_PS3) || defined (_VISION_PSP2) || ( defined(WIN32) && !defined( _VISION_APOLLO ) )
+#if defined (_VISION_XENON) || defined (_VISION_PS3) || defined (_VISION_PSP2) || ( defined(_VISION_WIN32) && !defined( _VISION_APOLLO ) )
     VInputManager::IsInitialized() ? &V_PAD(0) : NULL,
 #elif defined(_VISION_WIIU)
     &VInputManagerWiiU::GetDRC(V_DRC_FIRST),
@@ -153,7 +152,7 @@ void VOrbitCamera::UpdateAttachment()
   {
     if (!m_spCameraProxy)
     {
-      m_spCameraProxy = Vision::Game.CreateEntity("VisBaseEntity_cl", hkvVec3::ZeroVector());
+      m_spCameraProxy = Vision::Game.CreateEntity<VisBaseEntity_cl>(hkvVec3::ZeroVector());
       m_spCameraProxy->SetEntityKey("<VOrbitCamera:CameraProxy>"); 
     }
     
@@ -431,7 +430,7 @@ void VOrbitCamera::UpdateCamera(float fYawStep, float fPitchStep, float fZoomSte
   float fCurrentZoom = sqrt(CameraDistance) + fZoomStep;
   CameraDistance = hkvMath::clamp(fCurrentZoom * fCurrentZoom, MinimalDistance, MaximalDistance);
 
-#if defined(WIN32) && defined(SUPPORTS_MOUSE)
+#if defined(_VISION_WIN32) && defined(SUPPORTS_MOUSE)
   // Smooth zooming on PC.
   const float fZoomWeight = hkvMath::saturate(Vision::GetTimer()->GetTimeDifference() * 15.0f);
   m_fCurrentDistance = hkvMath::interpolate(m_fCurrentDistance, CameraDistance, fZoomWeight);
@@ -590,7 +589,7 @@ void VOrbitCamera::Teleport()
   m_fCurrentDistance = CameraDistance;
 }
 
-START_VAR_TABLE(VOrbitCamera, IVObjectComponent, "Orbit Camera Component. Attach to an entity to use it as the look-at position.", VVARIABLELIST_FLAGS_NONE, "Orbit Camera" )
+START_VAR_TABLE(VOrbitCamera, IVObjectComponent, "Can be attached to entities to use them as the look-at position.", VVARIABLELIST_FLAGS_NONE, "Orbit Camera" )
   DEFINE_VAR_BOOL(VOrbitCamera, Enabled, "If enabled, camera is active when running the game", "TRUE", 0, NULL);
   DEFINE_VAR_BOOL(VOrbitCamera, Collides, "If enabled, camera collides with the geometry", "FALSE", 0, NULL);
   DEFINE_VAR_BOOL(VOrbitCamera, Follow, "If enabled, camera is aligned to the orientation of the parent entity", "FALSE", 0, NULL);
@@ -612,11 +611,11 @@ END_VAR_TABLE
 // VPlayerCamera serialization fall back
 V_IMPLEMENT_SERIAL(VPlayerCamera, VOrbitCamera, 0, &g_VisionEngineModule);
 
-START_VAR_TABLE(VPlayerCamera, VOrbitCamera, "Orbit Camera Component. Attach to an entity to use it as the look-at position.", VFORGE_HIDECLASS, "Player Camera")
+START_VAR_TABLE(VPlayerCamera, VOrbitCamera, "Can be attached to entities to use them as the look-at position.", VFORGE_HIDECLASS, "Player Camera")
 END_VAR_TABLE
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

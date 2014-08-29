@@ -62,6 +62,8 @@ namespace VisionManaged
     virtual bool OnExport(SceneExportInfo ^info) override;
     virtual void OnRenderHook(ShapeBase ^owner, int iConstant) override;
 
+    virtual array<Vector3F>^ GetVertices() override;
+
     // Overriden IEngineInstanceObject3D functions
     virtual void *GetObject3D() override;
 
@@ -91,6 +93,7 @@ namespace VisionManaged
 
     //void SetLightmapGranularity(float fValue) {if (GetEntity()) GetEntity()->SetLightmapGranularity(fValue);}
     bool HasLightmappedMaterials();
+    bool HasLightgridMaterials();
 
     void SetCopySource(EngineInstanceEntity ^pOther); // very specific
     void SynchronizeOwnComponents(ShapeBase ^owner, ShapeComponentCollection ^components);
@@ -145,7 +148,7 @@ namespace VisionManaged
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

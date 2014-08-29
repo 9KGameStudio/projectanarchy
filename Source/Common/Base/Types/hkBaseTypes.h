@@ -121,7 +121,7 @@ HK_FORCE_INLINE hkUint32 hkBitmask(int width)
 	return maskIfNot32 - is32; // the answer in the case width=32 is -1
 }
 
-class hkFinishLoadedObjectFlag
+class HK_EXPORT_COMMON hkFinishLoadedObjectFlag
 {
 	//+hk.MemoryTracker(ignore=True)
 public:
@@ -142,7 +142,7 @@ class hkClass;
 
 /// A generic object with metadata.
 
-struct hkVariant
+struct HK_EXPORT_COMMON hkVariant
 {
 	//+hk.MemoryTracker(ignore=True)
 	void* m_object;
@@ -157,7 +157,7 @@ struct hkVariant
 /// 1 sign bit, 8 exponent bits and 7 mantissa bits. This is basically a 32-bit float
 /// truncated. It supports the same floating point range as 32-bit float,
 /// but only with 6 bit precision (because the last bit is not rounded and renormalized).
-class hkHalf
+class HK_EXPORT_COMMON hkHalf
 {
 	//+hk.MemoryTracker(ignore=True)
 public:
@@ -165,6 +165,7 @@ public:
 #ifndef HK_DISABLE_MATH_CONSTRUCTORS
 	HK_FORCE_INLINE hkHalf() { }
 	HK_FORCE_INLINE explicit hkHalf(const hkFloat32& f);
+	HK_FORCE_INLINE explicit hkHalf(const hkDouble64& f);
 #endif
 
 	HK_FORCE_INLINE hkHalf& operator=(const hkHalf& other)
@@ -197,6 +198,11 @@ public:
 		m_value = f;
 		return *this;
 	}
+	HK_FORCE_INLINE hkHalf& operator=(const double& f)
+	{
+		m_value = float(f);
+		return *this;
+	}
 #endif
 
 	typedef hkFloat32 Storage;
@@ -213,6 +219,8 @@ public:
 		*f = m_value;
 	}
 
+	HK_FORCE_INLINE bool isZero() const { return m_value == 0.0f; } 
+	HK_FORCE_INLINE bool isMax()  { return m_value == HK_FLOAT_MAX; }
 	HK_FORCE_INLINE void setZero() { m_value = 0.0f; } 
 	HK_FORCE_INLINE void setOne()  { m_value = 1.0f; }
 	HK_FORCE_INLINE void setMax()  { m_value = HK_FLOAT_MAX; }
@@ -244,10 +252,15 @@ public:
 #ifndef HK_DISABLE_MATH_CONSTRUCTORS
 	HK_FORCE_INLINE hkHalf& operator=(const float& f)
 	{
-		int t = ((const int*)&f)[0];
-		m_value = hkInt16(t>>16);
+		set<false>(f);
 		return *this;
 	}
+	HK_FORCE_INLINE hkHalf& operator=(const double& f)
+	{
+		set<false>(f);
+		return *this;
+	}
+
 #endif
 
 	typedef hkInt16 Storage;
@@ -264,6 +277,8 @@ public:
 	}
 
 	HK_FORCE_INLINE bool isZero()  const { return 0 == (0x7fff & m_value); } 
+	HK_FORCE_INLINE bool isOne()   const { return 0x3f80 == m_value; } 
+	HK_FORCE_INLINE bool isMax()   const { return m_value == 0x7f7f; }
 	HK_FORCE_INLINE void setZero() { m_value = 0x0000; } 
 	HK_FORCE_INLINE void setOne()  { m_value = 0x3f80; }
 	HK_FORCE_INLINE void setMax()  { m_value = 0x7f7f; }
@@ -404,6 +419,10 @@ HK_FORCE_INLINE hkHalf::hkHalf(const hkFloat32& f)
 {
 	setReal<true>(f);
 }
+HK_FORCE_INLINE hkHalf::hkHalf(const hkDouble64& f)
+{
+	setReal<true>(hkFloat32(f));
+}
 #endif
 
 
@@ -464,8 +483,9 @@ public:
 			exp_offset = exponent + half_bias_offset,
 			bits = (sign << (sign_pos+1)) | ((exp_offset | mantissa) << adjust);
 
-		const hkFloat32* bits_f = (const hkFloat32*)&bits;
-		return exponent ? hkFloat32(*bits_f) : hkFloat32(0);
+		typedef union { hkUint32 i; hkFloat32 f; } i2f;
+		const i2f* bits_f = (const i2f*)&bits;
+		return exponent ? bits_f->f : 0.0f;
 	}
 
 	HK_FORCE_INLINE hkReal getReal() const
@@ -572,8 +592,14 @@ class hkBool32;
 typedef hkUint32 hkBool32;
 #endif
 
+#if defined(HK_ARCH_SUPPORTS_INT64)
+typedef hkUint64 hkBoolLL;
+#else
+typedef hkUint32 hkBoolLL;
+#endif 
+
 	/// A wrapper to store a hkBool in one byte, regardless of compiler options.
-class hkBool
+class HK_EXPORT_COMMON hkBool
 {
 	//+hk.MemoryTracker(ignore=True)
 	public:
@@ -746,6 +772,11 @@ class hkEnum
 			return m_storage != static_cast<STORAGE>(e);
 		}
 
+		HK_FORCE_INLINE STORAGE val() const
+		{
+			return m_storage;
+		}
+
 	private:
 
 		STORAGE m_storage;
@@ -756,6 +787,7 @@ template<typename BITS, typename STORAGE>
 class hkFlags
 {
 	public:
+		typedef STORAGE StorageType;
 
 		HK_FORCE_INLINE hkFlags()					{}
 		HK_FORCE_INLINE hkFlags(STORAGE s)			{	m_storage = s;	}
@@ -801,7 +833,7 @@ class hkFlags
 	template <> struct hkSpuStorage<hkBool> { typedef vec_int4 StorageType; typedef hkBool PromoteType; };
 	template <> struct hkSpuStorage<hkUchar> { typedef vec_uchar16 StorageType; typedef hkUchar PromoteType; };
 	template <> struct hkSpuStorage<hkUint16> { typedef vec_ushort8 StorageType; typedef unsigned short PromoteType; };
-	template <> struct hkSpuStorage<hkInt16> { typedef vec_ushort8 StorageType; typedef signed short PromoteType; };
+	template <> struct hkSpuStorage<hkInt16> { typedef vec_short8 StorageType; typedef signed short PromoteType; };
 	
 #	define HK_PADSPU_PROMOTE(e) spu_promote( (typename hkSpuStorage<TYPE>::PromoteType)(e), 0 )
 #	define HK_PADSPU_EXTRACT(e) (TYPE)spu_extract( e, 0 )	
@@ -928,7 +960,7 @@ enum hkResultEnum
 
 
 /// A return type for functions.
-struct hkResult
+struct HK_EXPORT_COMMON hkResult
 {
 	//+hk.MemoryTracker(ignore=True)
 
@@ -1074,7 +1106,7 @@ namespace hkStructPackingCheck
 
 #endif
 
-struct hkCountOfBadArgCheck
+struct HK_EXPORT_COMMON hkCountOfBadArgCheck
 {
 	//+hk.MemoryTracker(ignore=True)
 	class ArgIsNotAnArray;
@@ -1115,7 +1147,7 @@ struct hkCountOfBadArgCheck
 #endif // HKBASE_HKBASETYPES_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -9,7 +9,7 @@
 #ifndef HKP_MALLEABLE_CONSTRAINT_H
 #define HKP_MALLEABLE_CONSTRAINT_H
 
-#include <Physics/Constraint/Data/hkpConstraintData.h>
+#include <Physics/Constraint/Data/Wrapper/hkpWrappedConstraintData.h>
 #include <Physics/Constraint/Atom/Bridge/hkpBridgeConstraintAtom.h>
 
 extern const hkClass hkpMalleableConstraintDataClass;
@@ -17,8 +17,9 @@ extern const hkClass hkpMalleableConstraintDataClass;
 
 /// This is a wrapper class around constraints intended to allow the user to make a constraint softer.
 /// Important: This malleable constraint does not affect the angular limit and angular motor components of a constraint.
-class hkpMalleableConstraintData : public hkpConstraintData
+class hkpMalleableConstraintData : public hkpWrappedConstraintData 
 {
+	//+version(1)
 	public:
 
 		HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE);
@@ -42,26 +43,15 @@ class hkpMalleableConstraintData : public hkpConstraintData
 			/// Get the strength value for this constraint
 		hkReal getStrength() const;
 		
-			/// Checks consistency of constraint members
-		virtual hkBool isValid() const;
-		
 			// hkpConstraintData interface implementation
 		virtual int getType() const;
 		
 			// hkpConstraintData interface implementation
 		virtual void getConstraintInfo( hkpConstraintData::ConstraintInfo& infoOut ) const;
-	
-			/// Gets the wrapped constraint
-		hkpConstraintData* getWrappedConstraintData();
 
-			/// Gets the wrapped constraint
-		const hkpConstraintData* getWrappedConstraintData() const;
-
-	protected:
-
-			/// The wrapped constraint (referenced, so protected)
-		hkpConstraintData* m_constraintData;
-
+		/// Deep-clones the constraint
+		virtual hkpWrappedConstraintData* deepClone() const HK_OVERRIDE;
+		
 	public:
 
 		struct hkpBridgeAtoms m_atoms;
@@ -70,9 +60,6 @@ class hkpMalleableConstraintData : public hkpConstraintData
 
 			// Internal functions
 		virtual void buildJacobian( const hkpConstraintQueryIn &in, hkpConstraintQueryOut &out );
-
-			// hkpConstraintData interface implementation
-		virtual void getRuntimeInfo( hkBool wantRuntime, hkpConstraintData::RuntimeInfo& infoOut ) const;
 
 	public:
 
@@ -83,7 +70,7 @@ class hkpMalleableConstraintData : public hkpConstraintData
 #endif // HKP_MALLEABLE_CONSTRAINT_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

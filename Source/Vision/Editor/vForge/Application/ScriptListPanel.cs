@@ -11,11 +11,14 @@ using System.Drawing;
 using System.Collections;
 using System.ComponentModel;
 using System.Windows.Forms;
+using System.IO;
+using System.Collections.Generic;
 using CSharpFramework;
 using CSharpFramework.Docking;
 using WeifenLuo.WinFormsUI;
 using CSharpFramework.Shapes;
 using CSharpFramework.Scene;
+using CSharpFramework.Helper;
 using ManagedFramework;
 
 namespace Editor
@@ -27,16 +30,19 @@ namespace Editor
   {
     #region pirvate variables
     
-    private ListView listView1;
+    private ListView scriptsListControl;
     private ImageList imageList1;
-    private ColumnHeader columnHeader1;
+    private ColumnHeader headerDirectory;
     private ContextMenuStrip scriptListContextMenu;
     private ToolStripMenuItem openMenuItem;
-    private ToolStripMenuItem toolStripMenuItem1;
+    private ToolStripMenuItem usedByMenuItem;
     private ToolStrip toolStrip_Shapes;
     private ToolStripDropDownButton toolStripDropDownButton1;
-    private ToolStripMenuItem displayAllToolStripMenuItem;
+    private ToolStripMenuItem selectedLayerOnlyToolStripMenuItem;
     private ToolStripButton refreshButton;
+    private ColumnHeader headerReferenceCount;
+    private ToolStripMenuItem searchProjectDirectoryToolStripMenuItem;
+    private ToolStripMenuItem allLayersStripMenuItem;
     private IContainer components;
 
     #endregion
@@ -50,8 +56,19 @@ namespace Editor
 
       EditorScene.LayerChanged += new LayerChangedEventHandler(EditorScene_LayerChanged);
       EditorManager.SceneChanged += new SceneChangedEventHandler(EditorManager_SceneChanged);
-      listView1.MouseDoubleClick += new MouseEventHandler(_listBox_MouseDoubleClick);
+      EditorManager.SceneEvent += new SceneEventHandler(EditorManager_SceneEvent);
+      scriptsListControl.MouseDoubleClick += new MouseEventHandler(_listBox_MouseDoubleClick);
 		}
+
+
+    /// <summary>
+    /// On scene event
+    /// </summary>
+    void EditorManager_SceneEvent(object sender, SceneEventArgs e)
+    {
+      if (e.action == SceneEventArgs.Action.AfterLoading)
+        FillScriptList();
+    }
 
     /// <summary>
     /// On scene changed
@@ -59,7 +76,9 @@ namespace Editor
     private void EditorManager_SceneChanged(object sender, SceneChangedArgs e)
     {
       if(e.newscene == null)
-        listView1.Items.Clear();
+        scriptsListControl.Items.Clear();
+      else
+        FillScriptList();
     }
 
     /// <summary>
@@ -67,7 +86,7 @@ namespace Editor
     /// </summary>
     private void _listBox_MouseDoubleClick(object sender, MouseEventArgs e)
     {
-      EditorManager.OnScriptSelectionChanged(new ScriptSelectionChangedArgs(listView1.SelectedItems[0].Text));
+      EditorManager.OnScriptSelectionChanged(new ScriptSelectionChangedArgs(scriptsListControl.SelectedItems[0].Text));
     }
 
 		/// <summary>
@@ -81,7 +100,8 @@ namespace Editor
 				{
           EditorScene.LayerChanged -= new LayerChangedEventHandler(EditorScene_LayerChanged);
           EditorManager.SceneChanged -= new SceneChangedEventHandler(EditorManager_SceneChanged);
-          listView1.MouseDoubleClick -= new MouseEventHandler(_listBox_MouseDoubleClick);
+          EditorManager.SceneEvent -= new SceneEventHandler(EditorManager_SceneEvent);
+          scriptsListControl.MouseDoubleClick -= new MouseEventHandler(_listBox_MouseDoubleClick);
 
 					components.Dispose();
 				}
@@ -93,34 +113,42 @@ namespace Editor
     {
       if (e.action == LayerChangedArgs.Action.Selected)
       {
-        if (!displayAllToolStripMenuItem.Checked)
-        {
-          listView1.Items.Clear();
-          AddScriptsRecursively(e.layer.Root.ChildCollection);
-        }
+         FillScriptList();
       }
     }
 
+    static void DirSearch(string sDir, string sFilter, ref List<string> sFilesOut)
+    {
+        try
+        {
+          foreach (string files in Directory.GetFiles(sDir, sFilter))
+          {
+            sFilesOut.Add(files);
+          }
+          foreach (string directory in Directory.GetDirectories(sDir))
+          {
+            if(directory.ToLower().Contains(".shaderbin"))
+              continue;
+            DirSearch(directory, sFilter, ref sFilesOut);
+          }
+        }
+        catch (System.Exception)
+        {
+            // simply ignore the error and exit out...
+        }
+    }
+
     /// <summary>
-    /// Add all the unique scripts from shape list to the lisbtox
+    /// Add all the unique scripts from shape list to the dictionary
     /// </summary>
-    private void AddScriptsRecursively(ShapeCollection shapes)
+    private void AddScriptsRecursively(ShapeCollection shapes, ref Dictionary<string, int> scriptsDictionaryOut)
     {
       ShapeComponentType scriptComponentType = (ShapeComponentType)EditorManager.EngineManager.ComponentClassManager.GetCollectionType("VScriptComponent");
-
-      if (EditorManager.Scene != null && EditorManager.Scene.ActiveLayer == EditorManager.Scene.MainLayer)
-      {
-        string sceneScript = "";
-        bool found = ScriptManager.GetSceneScriptFile(ref sceneScript);
-
-        if (found && listView1.FindItemWithText(sceneScript) == null)
-          listView1.Items.Add(new ListViewItem { ImageIndex = 0, Text = sceneScript });          
-      }
 
       foreach (ShapeBase shape in shapes)
       {
         if (shape.HasChildren())
-          AddScriptsRecursively(shape.ChildCollection);
+          AddScriptsRecursively(shape.ChildCollection, ref scriptsDictionaryOut);
 
         if (shape.Components == null)
           continue;
@@ -134,8 +162,9 @@ namespace Editor
             if (string.IsNullOrEmpty(script))
               continue;
 
-            if (listView1.FindItemWithText(script) == null)
-              listView1.Items.Add(new ListViewItem { ImageIndex = 0, Text = script });          
+            int references = 0;
+            scriptsDictionaryOut.TryGetValue(script, out references);
+            scriptsDictionaryOut[script] = references + 1;
           }
         }  
       }
@@ -151,66 +180,79 @@ namespace Editor
 		{
       this.components = new System.ComponentModel.Container();
       System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(ScriptListPanel));
-      this.listView1 = new System.Windows.Forms.ListView();
-      this.columnHeader1 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+      this.scriptsListControl = new System.Windows.Forms.ListView();
+      this.headerDirectory = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+      this.headerReferenceCount = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
       this.imageList1 = new System.Windows.Forms.ImageList(this.components);
       this.scriptListContextMenu = new System.Windows.Forms.ContextMenuStrip(this.components);
       this.openMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-      this.toolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
+      this.usedByMenuItem = new System.Windows.Forms.ToolStripMenuItem();
       this.toolStrip_Shapes = new System.Windows.Forms.ToolStrip();
       this.toolStripDropDownButton1 = new System.Windows.Forms.ToolStripDropDownButton();
-      this.displayAllToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+      this.allLayersStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+      this.selectedLayerOnlyToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+      this.searchProjectDirectoryToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
       this.refreshButton = new System.Windows.Forms.ToolStripButton();
       this.scriptListContextMenu.SuspendLayout();
       this.toolStrip_Shapes.SuspendLayout();
       this.SuspendLayout();
       // 
-      // listView1
+      // scriptsListControl
       // 
-      this.listView1.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
-            this.columnHeader1});
-      this.listView1.Dock = System.Windows.Forms.DockStyle.Fill;
-      this.listView1.HeaderStyle = System.Windows.Forms.ColumnHeaderStyle.None;
-      this.listView1.Location = new System.Drawing.Point(0, 25);
-      this.listView1.MultiSelect = false;
-      this.listView1.Name = "listView1";
-      this.listView1.Size = new System.Drawing.Size(292, 364);
-      this.listView1.SmallImageList = this.imageList1;
-      this.listView1.TabIndex = 2;
-      this.listView1.UseCompatibleStateImageBehavior = false;
-      this.listView1.View = System.Windows.Forms.View.Details;
-      this.listView1.MouseClick += new System.Windows.Forms.MouseEventHandler(this.OnMouseClick);
+      this.scriptsListControl.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
+            this.headerDirectory,
+            this.headerReferenceCount});
+      this.scriptsListControl.Dock = System.Windows.Forms.DockStyle.Fill;
+      this.scriptsListControl.FullRowSelect = true;
+      this.scriptsListControl.GridLines = true;
+      this.scriptsListControl.HeaderStyle = System.Windows.Forms.ColumnHeaderStyle.Nonclickable;
+      this.scriptsListControl.Location = new System.Drawing.Point(0, 25);
+      this.scriptsListControl.MultiSelect = false;
+      this.scriptsListControl.Name = "scriptsListControl";
+      this.scriptsListControl.Size = new System.Drawing.Size(292, 364);
+      this.scriptsListControl.SmallImageList = this.imageList1;
+      this.scriptsListControl.TabIndex = 2;
+      this.scriptsListControl.UseCompatibleStateImageBehavior = false;
+      this.scriptsListControl.View = System.Windows.Forms.View.Details;
+      this.scriptsListControl.MouseClick += new System.Windows.Forms.MouseEventHandler(this.OnMouseClick);
       // 
-      // columnHeader1
+      // headerDirectory
       // 
-      this.columnHeader1.Width = 286;
+      this.headerDirectory.Text = "Directory";
+      this.headerDirectory.Width = 180;
+      // 
+      // headerReferenceCount
+      // 
+      this.headerReferenceCount.Text = "References";
+      this.headerReferenceCount.Width = 80;
       // 
       // imageList1
       // 
       this.imageList1.ImageStream = ((System.Windows.Forms.ImageListStreamer)(resources.GetObject("imageList1.ImageStream")));
       this.imageList1.TransparentColor = System.Drawing.Color.Transparent;
-      this.imageList1.Images.SetKeyName(0, "scroll.ico");
+      this.imageList1.Images.SetKeyName(0, "scrollList_unused.png");
+      this.imageList1.Images.SetKeyName(1, "scrollList_used.png");
       // 
       // scriptListContextMenu
       // 
       this.scriptListContextMenu.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.openMenuItem,
-            this.toolStripMenuItem1});
+            this.usedByMenuItem});
       this.scriptListContextMenu.Name = "scriptListContextMenu";
-      this.scriptListContextMenu.Size = new System.Drawing.Size(117, 48);
+      this.scriptListContextMenu.Size = new System.Drawing.Size(126, 48);
       // 
       // openMenuItem
       // 
       this.openMenuItem.Name = "openMenuItem";
-      this.openMenuItem.Size = new System.Drawing.Size(116, 22);
+      this.openMenuItem.Size = new System.Drawing.Size(125, 22);
       this.openMenuItem.Text = "Open";
       this.openMenuItem.Click += new System.EventHandler(this.openMenuItem_Click);
       // 
-      // toolStripMenuItem1
+      // usedByMenuItem
       // 
-      this.toolStripMenuItem1.Name = "toolStripMenuItem1";
-      this.toolStripMenuItem1.Size = new System.Drawing.Size(116, 22);
-      this.toolStripMenuItem1.Text = "Used by";
+      this.usedByMenuItem.Name = "usedByMenuItem";
+      this.usedByMenuItem.Size = new System.Drawing.Size(125, 22);
+      this.usedByMenuItem.Text = "Used by...";
       // 
       // toolStrip_Shapes
       // 
@@ -228,23 +270,47 @@ namespace Editor
       // 
       this.toolStripDropDownButton1.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
       this.toolStripDropDownButton1.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.displayAllToolStripMenuItem});
+            this.allLayersStripMenuItem,
+            this.selectedLayerOnlyToolStripMenuItem,
+            this.searchProjectDirectoryToolStripMenuItem});
       this.toolStripDropDownButton1.Image = global::Editor.Properties.Resources.toolbar_list;
       this.toolStripDropDownButton1.ImageTransparentColor = System.Drawing.Color.Magenta;
       this.toolStripDropDownButton1.Name = "toolStripDropDownButton1";
       this.toolStripDropDownButton1.Size = new System.Drawing.Size(29, 22);
       this.toolStripDropDownButton1.Text = "toolStripDropDownButton1";
-      this.toolStripDropDownButton1.ToolTipText = "Display scripts from all layers";
+      this.toolStripDropDownButton1.ToolTipText = "Select which scripts to be filtered out";
       // 
-      // displayAllToolStripMenuItem
+      // allLayersStripMenuItem
       // 
-      this.displayAllToolStripMenuItem.AutoToolTip = true;
-      this.displayAllToolStripMenuItem.CheckOnClick = true;
-      this.displayAllToolStripMenuItem.Name = "displayAllToolStripMenuItem";
-      this.displayAllToolStripMenuItem.Size = new System.Drawing.Size(164, 22);
-      this.displayAllToolStripMenuItem.Text = "Display all scripts";
-      this.displayAllToolStripMenuItem.ToolTipText = "Display all scripts";
-      this.displayAllToolStripMenuItem.CheckedChanged += new System.EventHandler(this.displayAllToolStripMenuItem_CheckedChanged);
+      this.allLayersStripMenuItem.AutoToolTip = true;
+      this.allLayersStripMenuItem.Checked = true;
+      this.allLayersStripMenuItem.CheckOnClick = true;
+      this.allLayersStripMenuItem.CheckState = System.Windows.Forms.CheckState.Checked;
+      this.allLayersStripMenuItem.Name = "allLayersStripMenuItem";
+      this.allLayersStripMenuItem.Size = new System.Drawing.Size(177, 22);
+      this.allLayersStripMenuItem.Text = "All Layers";
+      this.allLayersStripMenuItem.ToolTipText = "Show the scripts used by any layer.";
+      this.allLayersStripMenuItem.Click += new System.EventHandler(this.allLayersStripMenu_Clicked);
+      // 
+      // selectedLayerOnlyToolStripMenuItem
+      // 
+      this.selectedLayerOnlyToolStripMenuItem.AutoToolTip = true;
+      this.selectedLayerOnlyToolStripMenuItem.CheckOnClick = true;
+      this.selectedLayerOnlyToolStripMenuItem.Name = "selectedLayerOnlyToolStripMenuItem";
+      this.selectedLayerOnlyToolStripMenuItem.Size = new System.Drawing.Size(177, 22);
+      this.selectedLayerOnlyToolStripMenuItem.Text = "Selected Layer Only";
+      this.selectedLayerOnlyToolStripMenuItem.ToolTipText = "Show only the scripts used in the selected layer";
+      this.selectedLayerOnlyToolStripMenuItem.Click += new System.EventHandler(this.selectedLayerOnlyMenuItem_Clicked);
+      // 
+      // searchProjectDirectoryToolStripMenuItem
+      // 
+      this.searchProjectDirectoryToolStripMenuItem.AutoToolTip = true;
+      this.searchProjectDirectoryToolStripMenuItem.CheckOnClick = true;
+      this.searchProjectDirectoryToolStripMenuItem.Name = "searchProjectDirectoryToolStripMenuItem";
+      this.searchProjectDirectoryToolStripMenuItem.Size = new System.Drawing.Size(177, 22);
+      this.searchProjectDirectoryToolStripMenuItem.Text = "Project Directory";
+      this.searchProjectDirectoryToolStripMenuItem.ToolTipText = "Search the entire project directory for scripts";
+      this.searchProjectDirectoryToolStripMenuItem.Click += new System.EventHandler(this.searchProjectDirectoryToolStrip_Clicked);
       // 
       // refreshButton
       // 
@@ -261,7 +327,7 @@ namespace Editor
       // 
       this.AutoScaleBaseSize = new System.Drawing.Size(5, 13);
       this.ClientSize = new System.Drawing.Size(292, 389);
-      this.Controls.Add(this.listView1);
+      this.Controls.Add(this.scriptsListControl);
       this.Controls.Add(this.toolStrip_Shapes);
       this.DockableAreas = ((WeifenLuo.WinFormsUI.DockAreas)(((WeifenLuo.WinFormsUI.DockAreas.Float | WeifenLuo.WinFormsUI.DockAreas.DockLeft) 
             | WeifenLuo.WinFormsUI.DockAreas.DockRight)));
@@ -279,6 +345,11 @@ namespace Editor
 		#endregion
 
 
+    private void ScriptListSubmenuItemMainLayer_Click(object sender, EventArgs e)
+    {
+      IScene.SendLayerChangedEvent(new LayerChangedArgs(EditorManager.Scene.MainLayer, null, LayerChangedArgs.Action.PropertyChanged));
+    }
+
     private void ScriptListSubmenuItem_Click(object sender, EventArgs e)
     {
       var item = sender as ToolStripMenuItem;
@@ -289,6 +360,7 @@ namespace Editor
       {
         ShapeCollection shapeColl = new ShapeCollection();
         shapeColl.Add(shape);
+        EditorManager.Scene.ActiveLayer = shape.ParentLayer;
         EditorManager.SelectedShapes = shapeColl;
       }
     }
@@ -300,51 +372,114 @@ namespace Editor
     {
       if (e.Button == System.Windows.Forms.MouseButtons.Right)
       {
-        (scriptListContextMenu.Items[1] as ToolStripMenuItem).DropDownItems.Clear();
+        usedByMenuItem.DropDownItems.Clear();
 
-        ShapeCollection shapes = EditorManager.Scene.GetShapesByScript(listView1.SelectedItems[0].Text);
+        string selectedScript = scriptsListControl.SelectedItems[0].Text;
 
-        foreach (ShapeBase shape in shapes)
+        string sceneScript = "";
+        bool found = ScriptManager.GetSceneScriptFile(ref sceneScript);
+
+        if (found && selectedScript == sceneScript)
         {
-          ToolStripMenuItem item = new ToolStripMenuItem(shape.ShapeName, null, new EventHandler(ScriptListSubmenuItem_Click));
-          item.Tag = shape.UniqueID;
+            ToolStripMenuItem item = new ToolStripMenuItem("Scene Script", null, new EventHandler(ScriptListSubmenuItemMainLayer_Click));
+            usedByMenuItem.DropDownItems.Add(item);
+        }
+        else
+        {
+            ShapeCollection shapes = EditorManager.Scene.GetShapesByScript(selectedScript);
 
-          (scriptListContextMenu.Items[1] as ToolStripMenuItem).DropDownItems.Add(item);
+            foreach (ShapeBase shape in shapes)
+            {
+                ToolStripMenuItem item = new ToolStripMenuItem(shape.ShapeName, null, new EventHandler(ScriptListSubmenuItem_Click));
+                item.Tag = shape.UniqueID;
+
+                usedByMenuItem.DropDownItems.Add(item);
+            }
         }
 
-        scriptListContextMenu.Show(listView1, e.Location);
+        usedByMenuItem.Enabled = (usedByMenuItem.DropDownItems.Count > 0);
+        scriptListContextMenu.Show(scriptsListControl, e.Location);
       }
     }
 
     private void openMenuItem_Click(object sender, EventArgs e)
     {
-      EditorManager.OnScriptSelectionChanged(new ScriptSelectionChangedArgs(listView1.SelectedItems[0].Text));
+      EditorManager.OnScriptSelectionChanged(new ScriptSelectionChangedArgs(scriptsListControl.SelectedItems[0].Text));
     }
 
 
     private void FillScriptList()
     {
-      listView1.Items.Clear();
+      if (EditorManager.Scene == null)
+        return;
 
-      if (displayAllToolStripMenuItem.Checked) // display all scripts
+      scriptsListControl.Items.Clear();
+
+      Dictionary<string, int> scripts = new Dictionary<string, int>();
+
+      if (searchProjectDirectoryToolStripMenuItem.Checked)
+      {
+        List<string> files = new List<string>();
+
+        DirSearch(EditorManager.Project.ProjectDir, "*.lua", ref files);
+        foreach (string file in files)
+        {
+          string path = FileHelper.MakePathRelative(EditorManager.Project.ProjectDir, file);
+          scripts[path] = 0;
+        }
+
+        foreach (var dataDir in EditorManager.Project.CustomDataDirectories)
+        {
+          files.Clear();
+          DirSearch(dataDir.NativePath, "*.lua", ref files);
+          foreach (string file in files)
+          {
+            string path = FileHelper.MakePathRelative(dataDir.NativePath, file);
+            scripts[path] = 0;
+          }
+        }
+      }
+
+      // add scene's script file to the list
+      if ((!selectedLayerOnlyToolStripMenuItem.Checked || EditorManager.Scene.ActiveLayer == EditorManager.Scene.MainLayer))
+      {
+        string sceneScript = "";
+        bool found = ScriptManager.GetSceneScriptFile(ref sceneScript);
+        if (found)
+        {
+          int references = 0;
+          scripts.TryGetValue(sceneScript, out references);
+          scripts[sceneScript] = references + 1;
+        }
+      }
+
+      if (selectedLayerOnlyToolStripMenuItem.Checked) // display scripts for current layer
+      {
+        AddScriptsRecursively(EditorManager.Scene.ActiveLayer.Root.ChildCollection, ref scripts);
+      }
+      else
       {
         foreach (Layer layer in EditorManager.Scene.Layers)
         {
-          AddScriptsRecursively(layer.Root.ChildCollection);
+          AddScriptsRecursively(layer.Root.ChildCollection, ref scripts);
         }
       }
-      else // display scripts for current layer
-      {
-        AddScriptsRecursively(EditorManager.Scene.ActiveLayer.Root.ChildCollection);
-      }
-    }
 
-    /// <summary>
-    /// Handle display mode change for script list (all or per layer)
-    /// </summary>
-    private void displayAllToolStripMenuItem_CheckedChanged(object sender, EventArgs e)
-    {
-      FillScriptList();
+      foreach (KeyValuePair<string, int> pair in scripts)
+      {
+          ListViewItem item = new ListViewItem(pair.Key);
+          
+          item.SubItems.Add(pair.Value.ToString());
+          item.ImageIndex = 0;
+
+          if (pair.Value == 0)
+          { 
+              item.ForeColor = Color.Gray;
+              item.ToolTipText = "unused";
+          }
+
+          scriptsListControl.Items.Add(item);
+      }
     }
 
     private void RefreshButtonClick(object sender, EventArgs e)
@@ -352,11 +487,58 @@ namespace Editor
       FillScriptList();
     }
 
+    /// <summary>
+    /// Handle display mode change for script list (all or per layer)
+    /// </summary>
+    private void selectedLayerOnlyMenuItem_Clicked(object sender, EventArgs e)
+    {
+      ToolStripMenuItem item = sender as ToolStripMenuItem;
+      if (item.Checked == false)
+      { 
+        item.Checked = true;
+        return;
+      }
+
+      allLayersStripMenuItem.Checked = false;
+      searchProjectDirectoryToolStripMenuItem.Checked = false;
+
+      FillScriptList();
+    }
+
+    private void searchProjectDirectoryToolStrip_Clicked(object sender, EventArgs e)
+    {
+      ToolStripMenuItem item = sender as ToolStripMenuItem;
+      if (item.Checked == false)
+      {
+        item.Checked = true;
+        return;
+      }
+
+
+      allLayersStripMenuItem.Checked = false;
+      selectedLayerOnlyToolStripMenuItem.Checked = false;
+      FillScriptList();
+    }
+
+    private void allLayersStripMenu_Clicked(object sender, EventArgs e)
+    {
+      ToolStripMenuItem item = sender as ToolStripMenuItem;
+      if (item.Checked == false)
+      {
+        item.Checked = true;
+        return;
+      }
+
+      selectedLayerOnlyToolStripMenuItem.Checked = false;
+      searchProjectDirectoryToolStripMenuItem.Checked = false;
+      FillScriptList();
+    }
+
 	}
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

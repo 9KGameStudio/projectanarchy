@@ -199,20 +199,12 @@ namespace hkMxVectorUtil
 	template <int M>	HK_FORCE_INLINE void HK_CALL transformPosition( const hkTransformf* mat, hkMxVectorfParameter vIn, hkMxVectorf<M>& vOut);
 };
 
-#if defined(HK_COMPILER_HAS_INTRINSICS_IA32)
-	#if (HK_SSE_VERSION >= 0x50)
-	#include <Common/Base/Math/Vector/Mx/hkMxVectorUtil_AVX.inl>
-	#else
-	#include <Common/Base/Math/Vector/Mx/hkMxVectorfUtil.inl>
-	#endif
-#else
-	#include <Common/Base/Math/Vector/Mx/hkMxVectorfUtil.inl>
-#endif
+#include <Common/Base/Math/Vector/Mx/hkMxVectorfUtil.inl> 
 
 #endif // HK_MXVECTORf_UTIL_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

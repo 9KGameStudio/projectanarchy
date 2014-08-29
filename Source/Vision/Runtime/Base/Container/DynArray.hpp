@@ -59,7 +59,7 @@ template <class TA> class DynArray_cl
 
   /// \brief
   ///   Destructor of the dynamic array; releases the allocated memory
-  virtual ~DynArray_cl();
+  ~DynArray_cl();
 
 
   /// \brief
@@ -212,7 +212,7 @@ template <class TA> class DynArray_cl
   ///  This function returns the logical size of the array, which corresponds to the highest index at which the
   ///  value differs from the default value plus 1. 
   ///  The physical size may be larger than the logical size, as empty elements might exist at the end of the array.
-  /// 
+  ///
   /// \return
   ///   int size: currently used size of the array
   inline unsigned int GetValidSize() const;
@@ -264,6 +264,9 @@ template <class TA> class DynArray_cl
   ///   BOOL valid: if TRUE then the element is valid, otherwise the element is empty.
   inline BOOL IsValid(unsigned int index) const;
 
+  /// \brief Returns whether there is ANY element in the array that is 'valid'.
+  inline bool HasValidElements() const;
+
 
   /// \brief
   ///   Returns whether the dynamic array is currently initialized (i.e., its internal data has been allocated) or not
@@ -297,9 +300,9 @@ template <class TA> class DynArray_cl
 protected:
   static unsigned int GetNewAllocSize(unsigned int iCurrentSize, unsigned int iRequiredSize);
 
-  unsigned int size;   ///< physical size of the array
   TA *data;   ///< pointer to the array data
   TA defaultValue;    ///< default value of the array elements
+  unsigned int size;   ///< physical size of the array
 };
 
 //*****************************************************************************************************
@@ -489,16 +492,26 @@ template<class TA> unsigned int DynArray_cl<TA>::GetSize() const
   return(size);
 }
 
-
-template<class TA> unsigned int DynArray_cl<TA>::GetValidSize() const
+template<class TA> bool DynArray_cl<TA>::HasValidElements() const
 {
-  unsigned int validSize = 0;
   for (unsigned int i = 0; i < size; i++)
   {
     if (data[i] != defaultValue)
-      validSize = i + 1;
+      return true;
   }
-  return(validSize);
+
+  return false;
+}
+
+template<class TA> unsigned int DynArray_cl<TA>::GetValidSize() const
+{
+  for (unsigned int i = size; i > 0; --i)
+  {
+    if (data[i - 1] != defaultValue)
+      return i;
+  }
+
+  return 0;
 }
 
 template<class TA> TA* DynArray_cl<TA>::GetDataPtr() const
@@ -602,104 +615,6 @@ template<class TA> unsigned int DynArray_cl<TA>::Pack()
 
 
 /// \brief
-///   Special version of DynArray_cl with support for serialization
-/// 
-/// Use this class only with pointers (and primitive data types), because it doesn't call the
-/// object constructors/destructors for speed reasons!
-template <class TA> class SerialDynArray_cl : public DynArray_cl<TA>
-{
-public:
-
-  /// \brief
-  ///   Default constructor. Used for deserialization.
-  SerialDynArray_cl() : DynArray_cl<TA>() {}
-
-  /// \brief
-  ///   Constructor which takes the initial size and default value
-  SerialDynArray_cl(int initSize, const TA defaultElementValue) : DynArray_cl<TA>(initSize, defaultElementValue) {}
-
-  /// \brief
-  ///   Constructor which takes the initial size
-  SerialDynArray_cl(int initSize) : DynArray_cl<TA>(initSize) {}
-
-  /// \brief
-  ///   Destructor
-  virtual ~SerialDynArray_cl() {}
-
-  void SerializeX( VArchive &ar );
-  
-  /// \brief
-  ///   Serialization operator
-  template<class C> friend VArchive& operator <<( VArchive &ar, SerialDynArray_cl<C>& v );
-
-  /// \brief
-  ///   Serialization operator
-  template<class C> friend VArchive& operator <<( VArchive &ar, SerialDynArray_cl<C>* v );
-
-  /// \brief
-  ///   Serialization operator
-  template<class C> friend VArchive& operator >>( VArchive &ar, SerialDynArray_cl<C>& v );
-
-  /// \brief
-  ///   Serialization operator
-  template<class C> friend VArchive& operator >>( VArchive &ar, SerialDynArray_cl<C>* v );
-
-};
-
-
-// Notes: Only objects that are valid get serialized. This can cause certain items'
-//        indices to change after loading. Please take special care not to rely on
-//        and serialize fixed indices into a SerialDynArray_cl.
-template<class TA> void SerialDynArray_cl<TA>::SerializeX( VArchive &ar )
-{
-  if ( ar.IsLoading() )
-  {
-    int newSize;
-    ar >> newSize;
-
-    this->Resize(newSize);
-
-    for (int i = 0; i < newSize; i++)
-      ar >> this->data[i];
-  }
-  else
-  {
-    ar << this->GetValidSize();
-    
-    for (unsigned int i = 0; i < this->size; i++)
-    {
-      if (this->data[i] != this->defaultValue)
-        ar << this->data[i];
-    }
-  }
-}
-
-template<class TA> VArchive& operator<<( VArchive &ar, SerialDynArray_cl<TA>& obj)
-{
-  obj.SerializeX( ar );
-  return ar;
-}
-
-template<class TA> VArchive& operator>>( VArchive &ar, SerialDynArray_cl<TA>& obj)
-{
-  obj.SerializeX( ar );
-  return ar;
-}
-
-template<class TA> VArchive& operator<<( VArchive &ar, SerialDynArray_cl<TA>* obj)
-{
-  obj->SerializeX( ar );
-  return ar;
-}
-
-template<class TA> VArchive& operator>>( VArchive &ar, SerialDynArray_cl<TA>* obj)
-{
-  obj->SerializeX( ar );
-  return ar;
-}
-
-
-/// \brief
 ///   This class represents a dynamically-sized array for non-POD types. 
 /// 
 /// \note
@@ -726,7 +641,7 @@ template <class TA> class DynObjArray_cl
 
   /// \brief
   ///   Destructor of the dynamic array; releases the allocated memory
-  virtual ~DynObjArray_cl();
+  ~DynObjArray_cl();
 
 
   /// \brief
@@ -833,6 +748,8 @@ template <class TA> class DynObjArray_cl
   ///   you can use the DynArray_cl::GetValidSize function.
   inline unsigned int GetSize() const;
 
+  /// \brief Returns whether the array contains at least one element that is 'valid' (different from the default value).
+  bool HasValidElements() const;
 
   /// \brief
   ///   Returns the currently used size of the array
@@ -920,9 +837,9 @@ template <class TA> class DynObjArray_cl
 protected:
   static unsigned int GetNewAllocSize(unsigned int iCurrentSize, unsigned int iRequiredSize);
 
-  unsigned int size;   ///< physical size of the array
   TA *data;   ///< pointer to the array data
   TA defaultValue;    ///< default value of the array elements
+  unsigned int size;   ///< physical size of the array
 };
 
 //*****************************************************************************************************
@@ -1099,15 +1016,26 @@ template<class TA> unsigned int DynObjArray_cl<TA>::GetSize() const
 }
 
 
-template<class TA> unsigned int DynObjArray_cl<TA>::GetValidSize() const
+template<class TA> bool DynObjArray_cl<TA>::HasValidElements() const
 {
-  unsigned int validSize = 0;
-  for (unsigned int i = 0; i < size; i++)
+  for (unsigned int i = 0; i < size; ++i)
   {
     if (data[i] != defaultValue)
-      validSize = i + 1;
+      return true;
   }
-  return(validSize);
+
+  return false;
+}
+
+template<class TA> unsigned int DynObjArray_cl<TA>::GetValidSize() const
+{
+  for (unsigned int i = size; i > 0; --i)
+  {
+    if (data[i - 1] != defaultValue)
+      return i;
+  }
+
+  return 0;
 }
 
 template<class TA> TA* DynObjArray_cl<TA>::GetDataPtr() const
@@ -1123,20 +1051,20 @@ template<class TA> TA& DynObjArray_cl<TA>::Get(int i) const
 // increase array size by doubling; start with at least 16 bytes
 template<class TA> unsigned int DynObjArray_cl<TA>::GetNewAllocSize(unsigned int iCurrentSize, unsigned int iRequiredSize)
 {
-  if (iCurrentSize<16)
+  if (iCurrentSize < 16)
     iCurrentSize = 16;
 
-  while (iCurrentSize<iRequiredSize)
-    iCurrentSize*=2;
+  while (iCurrentSize < iRequiredSize)
+    iCurrentSize *= 2;
 
   return iCurrentSize;
 }
 
 template<class TA> TA& DynObjArray_cl<TA>::operator[] (unsigned int index)
 {
-  if (index >= size) {
+  if (index >= size)
     Resize(GetNewAllocSize(size,index+1));
-  }    
+
   return data[index];
 }
 
@@ -1187,7 +1115,7 @@ template<class TA> void DynObjArray_cl<TA>::Randomize(unsigned int startPos, uns
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

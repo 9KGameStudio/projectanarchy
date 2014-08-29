@@ -104,7 +104,7 @@ namespace HavokManaged
     property float Damping
     {
       float get() { return m_fDamping; }
-      void set(float fDamping) { m_fDamping = min(1.f, max(0.f, fDamping)); }
+      void set(float fDamping) { m_fDamping = hkvMath::Min(1.f, hkvMath::Max(0.f, fDamping)); }
     }
 
     [PropertyOrder(8)]
@@ -320,7 +320,7 @@ namespace HavokManaged
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

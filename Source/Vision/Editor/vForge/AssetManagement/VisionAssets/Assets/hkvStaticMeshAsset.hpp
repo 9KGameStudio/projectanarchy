@@ -31,8 +31,7 @@ public: // public functions
   ~hkvStaticMeshAsset();
 
 public: // overrides
-  virtual unsigned int getTypeIndex() const HKV_OVERRIDE;
-  virtual const char* getTypeName() const HKV_OVERRIDE;
+  virtual const hkvAssetTypeInfoHandle& getTypeInfoHandle() const HKV_OVERRIDE;
 
   virtual void processPropertyHint(const char* propertyHint) HKV_OVERRIDE;
 
@@ -41,16 +40,18 @@ public: // overrides
 
 private: // instance members
   hkvProperty::VariantValueList m_lodDistances;
+  bool m_useCustomLodDistances;
 
 private: // static members
-  static unsigned int s_iAssetTypeIndex;
-  static const char* const s_lodDistanceCustomType;
+  static hkvAssetTypeInfo* s_typeInfo;
+  static const hkvAssetTypeInfoHandle* s_typeInfoHandle;
+   static const char* const s_lodDistanceCustomType;
 };
 
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

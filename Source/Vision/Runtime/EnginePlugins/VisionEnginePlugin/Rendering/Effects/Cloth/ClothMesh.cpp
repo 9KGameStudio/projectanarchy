@@ -9,7 +9,7 @@
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/VisionEnginePluginPCH.h>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/Effects/Cloth/ClothMesh.hpp>
 
-#include <Vision/Runtime/Base/System/Memory/VMemDbg.hpp>
+
 
 #pragma warning(push)  
 #pragma warning(disable:4996)   //Disable deprecation warnings
@@ -107,18 +107,15 @@ void VClothMesh::HandleSpringPhysics(float dtime, float fGravity)
   {
     // this way the pos in the vertex delta is one iteration delayed, but we
     // save one copy operation. The constraints work on the particle structure only
-    float *fOldPos = pDelta->delta;
-    float *fNewPos = p->pos;
-    hkvVec3 vOld(fNewPos[0], fNewPos[1], fNewPos[2]);
-    fNewPos[0]=1.999f*fNewPos[0]-0.999f*fOldPos[0] + dtime*p->velocity[0];
-    fNewPos[1]=1.999f*fNewPos[1]-0.999f*fOldPos[1] + dtime*p->velocity[1];
-    fNewPos[2]=1.999f*fNewPos[2]-0.999f*fOldPos[2] + dtime*p->velocity[2];
-    fOldPos[0] = vOld.x;
-    fOldPos[1] = vOld.y;
-    fOldPos[2] = vOld.z;
+    hkvVec3& vOldPos = (hkvVec3&) pDelta->delta;
 
-    p->velocity[0] = p->velocity[1] = 0.f;
-    p->velocity[2] = -fGravity*dtime;
+    const hkvVec3 vOld = p->m_vPosition;
+    p->m_vPosition = 1.999f * p->m_vPosition - 0.999f * vOldPos + dtime * p->m_vVelocity;
+
+    vOldPos = vOld;
+
+    p->m_vVelocity[0] = p->m_vVelocity[1] = 0.f;
+    p->m_vVelocity[2] = -fGravity*dtime;
   }
 
   float fraction = 0.2f;
@@ -127,21 +124,21 @@ void VClothMesh::HandleSpringPhysics(float dtime, float fGravity)
     Spring_t *spr = m_pSpring;
     for (i=0;i<m_iSpringCount;i++,spr++)
     {
-      float *v1 = m_pParticle[spr->iVertexIndex[0]].pos;
-      float *v2 = m_pParticle[spr->iVertexIndex[1]].pos;
-      hkvVec3 diff(v2[0]-v1[0],v2[1]-v1[1],v2[2]-v1[2]);
+      hkvVec3& v1 = m_pParticle[spr->iVertexIndex[0]].m_vPosition;
+      hkvVec3& v2 = m_pParticle[spr->iVertexIndex[1]].m_vPosition;
+
+      hkvVec3 diff = v2 - v1;
+
       float len = diff.getLength();
-      if (len<=0.00001f) continue; 
+
+      if (len <= 0.00001f)
+        continue; 
+
       float scale = fraction*(len-spr->fDefaultLength)/len;
       diff *= scale;
 
-      v1[0] += diff.x;
-      v1[1] += diff.y;
-      v1[2] += diff.z;
-
-      v2[0] -= diff.x;
-      v2[1] -= diff.y;
-      v2[2] -= diff.z;
+      v1 += diff;
+      v2 -= diff;
     }
   }
 }
@@ -163,15 +160,15 @@ void VClothMesh::HandleMeshPhysics(float dtime, float fGravity)
   for (i=0;i<iCount;i++)
   {
     VisParticleConstraintPoint_cl *pPoint = (VisParticleConstraintPoint_cl *)m_PointConstraints.GetConstraint(i);
-    if (!pPoint) continue;
+
+    if (!pPoint)
+      continue;
+
     int iVertex = m_PointConstraints.m_iVertex.GetDataPtr()[i];
     VASSERT(iVertex>=0 && iVertex<m_iVertexCount);
+
     // force cloth position to point position:
-    float *pos = m_pParticle[iVertex].pos;
-    hkvVec3 vPos = pPoint->GetPosition();
-    pos[0] = vPos.x;
-    pos[1] = vPos.y;
-    pos[2] = vPos.z;
+    m_pParticle[iVertex].m_vPosition = pPoint->GetPosition();
   }
 
   ComputeNormals();
@@ -227,7 +224,7 @@ void VClothMesh::Translate(const hkvVec3& vMoveDelta, bool bHandleConstraints)
   for (int i=0;i<m_iVertexCount;i++,pDelta++,p++)
   {
     ((hkvVec3&) pDelta->delta[0]) += vMoveDelta;
-    ((hkvVec3&) p->pos[0]) += vMoveDelta;
+    p->m_vPosition += vMoveDelta;
   }
 
   if (bHandleConstraints)
@@ -248,11 +245,11 @@ void VClothMesh::Rotate(const hkvMat3 &rotMatrix, const hkvVec3& vCenter,bool bH
   // increase both old and new pos
   for (int i=0;i<m_iVertexCount;i++,pLocal++,pDelta++,p++)
   {
-    hkvVec3 vPos = *pLocal;
-    vPos = rotMatrix * vPos;
-    vPos += vCenter;
-    memcpy(p->pos,&vPos,3*sizeof(float));
-    memcpy(pDelta->delta,&vPos,3*sizeof(float));
+    const hkvVec3 vPos = rotMatrix * (*pLocal) + vCenter;
+
+    p->m_vPosition = vPos;
+
+    memcpy(pDelta->delta, &vPos, 3 * sizeof(float));
   }
 
   m_bBoxValid = false;
@@ -269,9 +266,7 @@ void VClothMesh::ResetForces()
   ClothParticle_t *p = m_pParticle;
   for (int i=0;i<m_iVertexCount;i++,pDelta++,p++)
   {
-    hkvVec3* pOldPos = (hkvVec3* )pDelta->delta;
-    hkvVec3* pNewPos = (hkvVec3* )p->pos;
-    *pOldPos = *pNewPos;
+    ((hkvVec3&) pDelta->delta) = p->m_vPosition;
   }
 }
 
@@ -381,15 +376,14 @@ bool VClothMesh::CreateFromEntityModel(VisBaseEntity_cl *pEntity, const hkvVec3&
 
     // transform object space vertex to global space
     hkvVec3 vPos(pSrcVert->pos[0],pSrcVert->pos[1],pSrcVert->pos[2]);
-    vPos.x *= vScaling.x;
-    vPos.y *= vScaling.y;
-    vPos.z *= vScaling.z;
+    vPos = vPos.compMul(vScaling);
 
     vPos = rotMatrix * vPos;
-    //vPos+=vEntityPos;
-    pLocal->x = p->pos[0] = pDelta->delta[0] = vPos.x;
-    pLocal->y = p->pos[1] = pDelta->delta[1] = vPos.y;
-    pLocal->z = p->pos[2] = pDelta->delta[2] = vPos.z;
+
+    pLocal->x = p->m_vPosition[0] = pDelta->delta[0] = vPos.x;
+    pLocal->y = p->m_vPosition[1] = pDelta->delta[1] = vPos.y;
+    pLocal->z = p->m_vPosition[2] = pDelta->delta[2] = vPos.z;
+
     pDelta->normal[0] = (signed char)(127.f*pSrcVert->normal[0]);
     pDelta->normal[1] = (signed char)(127.f*pSrcVert->normal[1]);
     pDelta->normal[2] = (signed char)(127.f*pSrcVert->normal[2]);
@@ -636,7 +630,7 @@ void VClothMesh::SerializeX( VArchive &ar )
 #pragma warning(pop)
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

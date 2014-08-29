@@ -20,7 +20,7 @@ class hkLineNumberStreamReader;
 /// based DOM interface expandNode().
 /// Note that whitespace is compressed to a single space and
 /// nodes containing only whitespace are discarded.
-class hkXmlParser : public hkReferencedObject
+class HK_EXPORT_COMMON hkXmlParser : public hkReferencedObject
 {
 	public:
 
@@ -37,7 +37,7 @@ class hkXmlParser : public hkReferencedObject
 		};
 
 			/// XML name / attribute pair.
-		struct Attribute
+		struct HK_EXPORT_COMMON Attribute
 		{
 			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE, Attribute);
 			hkStringPtr name;
@@ -49,7 +49,7 @@ class hkXmlParser : public hkReferencedObject
 		struct Characters;
 
 			/// Base XML node type.
-		struct Node : public hkReferencedObject
+		struct HK_EXPORT_COMMON Node : public hkReferencedObject
 		{
 			HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE);
 			Node( NodeType t ) : type(t) { }
@@ -65,7 +65,7 @@ class hkXmlParser : public hkReferencedObject
 		};
 
 			/// A start element node.
-		struct StartElement : public Node
+		struct HK_EXPORT_COMMON StartElement : public Node
 		{
 			HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE);
 			StartElement(const char* n) : Node(START_ELEMENT), name(n) { }
@@ -77,7 +77,7 @@ class hkXmlParser : public hkReferencedObject
 		};
 
 			/// An end element node.
-		struct EndElement : public Node
+		struct HK_EXPORT_COMMON EndElement : public Node
 		{
 			HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE);
 			EndElement(const char* n) : Node(END_ELEMENT), name(n) { }
@@ -85,7 +85,7 @@ class hkXmlParser : public hkReferencedObject
 		};
 		
 			/// Character data.
-		struct Characters : public Node
+		struct HK_EXPORT_COMMON Characters : public Node
 		{
 			HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE);
 			Characters(const char* t) : Node(CHARACTERS), text(t) { }
@@ -150,7 +150,7 @@ class hkXmlParser : public hkReferencedObject
 #endif // HK_BASE_XMLPARSER_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

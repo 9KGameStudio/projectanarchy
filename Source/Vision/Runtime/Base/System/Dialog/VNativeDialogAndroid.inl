@@ -19,11 +19,10 @@
 class VNativeDialogAndroid : public IVNativeDialog
 {
 public:
-  VNativeDialogAndroid()
+  VNativeDialogAndroid() : m_dialog(NULL), m_clazz_Dialog(NULL)
   {
     m_eState = WAITING;
     m_iNumButtons = 0;
-    m_dialog = NULL;
   }
 
   virtual ~VNativeDialogAndroid()
@@ -93,7 +92,10 @@ public:
     jstring obj_strClassName = env->NewStringUTF("com.havok.Vision.VNativeDialogAndroid");
     CHECK_SUCCESS( obj_strClassName );
 
-    m_clazz_Dialog = (jclass)env->CallObjectMethod(obj_classLoader, method_classLoader_loadClass, obj_strClassName);
+    m_clazz_Dialog = (jclass) env->CallObjectMethod(obj_classLoader, method_classLoader_loadClass, obj_strClassName);
+    CHECK_SUCCESS( m_clazz_Dialog );
+
+    m_clazz_Dialog = (jclass) env->NewGlobalRef(m_clazz_Dialog);
     CHECK_SUCCESS( m_clazz_Dialog );
 
     if (env->ExceptionOccurred())
@@ -123,13 +125,13 @@ public:
     while(!m_dialog)
     {
       PollAndroidOnce();
-      Sleep(10);
+      VSleep(10);
     }
   }
 
   virtual void Close() HKV_OVERRIDE
   {
-    if(m_dialog)
+    if(m_dialog || m_clazz_Dialog)
     {
       ANativeActivity* activity = AndroidApplication->activity; 
 
@@ -137,17 +139,27 @@ public:
       JavaVM *jvm = activity->vm;
       jvm->AttachCurrentThread(&env, NULL);
 
-      jmethodID method_VNativeMobileDialogAndroid_CloseInstance = env->GetStaticMethodID(m_clazz_Dialog, "CloseInstance",
-        "(Lcom/havok/Vision/VNativeDialogAndroid;)V");
-      CHECK_SUCCESS(method_VNativeMobileDialogAndroid_CloseInstance);
+      if(m_dialog)
+      {
+        jmethodID method_VNativeMobileDialogAndroid_CloseInstance = env->GetStaticMethodID(m_clazz_Dialog, "CloseInstance",
+          "(Lcom/havok/Vision/VNativeDialogAndroid;)V");
+        CHECK_SUCCESS(method_VNativeMobileDialogAndroid_CloseInstance);
 
-      env->CallStaticVoidMethod(m_clazz_Dialog, method_VNativeMobileDialogAndroid_CloseInstance, m_dialog);
+        env->CallStaticVoidMethod(m_clazz_Dialog, method_VNativeMobileDialogAndroid_CloseInstance, m_dialog);
 
-      env->DeleteGlobalRef(m_dialog);
+        env->DeleteGlobalRef(m_dialog);
+
+        m_dialog = NULL;
+      }
+      
+      if(m_clazz_Dialog)
+      {
+        env->DeleteGlobalRef(m_clazz_Dialog);
+
+        m_clazz_Dialog = NULL;
+      }
 
       jvm->DetachCurrentThread();
-
-      m_dialog = NULL;
 
       VVideo::GetVideoConfig()->bRunWhileSleeping = false;
     }
@@ -185,7 +197,7 @@ extern "C" JNIEXPORT void JNICALL Java_com_havok_Vision_VNativeDialogAndroid_Set
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140625)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

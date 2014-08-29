@@ -21,17 +21,48 @@ class hkaiAstarCostModifier;
 	/// For both of these, given a starting point, and edge is traversed depending on the direction of travel.
 	/// This continues until either and edge is uncrossable (i.e. because it is a boundary edge) or the goal is 
 	/// reached (line-of-sight queries only).
-class hkaiLineOfSightUtil
+class HK_EXPORT_AI hkaiLineOfSightUtil
 {
 public:
 	//+serializable(false)	
 	HK_DECLARE_REFLECTION();
 	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_AI_ASTAR,hkaiLineOfSightUtil );
+
+	enum UserEdgeFlagBits
+	{
+			/// Completely ignore user edges.
+		USER_EDGE_IGNORE 					= 0,
+
+			/// Treat untraversable (e.g. one-way or disabled by filter) user edges as boundaries. Others are ignored
+		USER_EDGE_UNTRAVERSABLE_AS_BOUNDARY = 1 << 0,
+			/// Treat all user edges as boundaries.
+		USER_EDGE_ALL_AS_BOUNDARY 			= 1 << 1,
+
+			/// All the query to pass through user edges.
+		USER_EDGE_FOLLOW 					= 1 << 2,
+			/// If there is a traversable user edge and a traversable regular edge in the same face, take the regular edge.
+		USER_EDGE_PRIORITIZE_REGULAR_EDGE 	= 1 << 3,
+			/// Whether the winding on user edges should be considered.
+		USER_EDGE_IGNORE_WINDING 			= 1 << 4,
+			/// When traversing a user edge, whether to avoid checks against nearby boundaries.
+			/// This is generally recommended, since user edges may be placed very close to boundaries for jumps.
+		USER_EDGE_IGNORE_BOUNDARIES_WHEN_TRAVERSING =  1 << 5,
+
+			/// When exiting the user edge, should the ray direction be rotated by the angle between the edges.
+			/// Only used for FindDirectPath queries. For line-of-sight queries, the direction is always change towards to goal.
+		USER_EDGE_ROTATE_DIRECTION 			= 1 << 6,
+
+		//
+		// Presets
+		//
+		USER_EDGE_DISABLED_DEFAULT = USER_EDGE_IGNORE,
+		USER_EDGE_ENABLED_DEFAULT = USER_EDGE_FOLLOW | USER_EDGE_PRIORITIZE_REGULAR_EDGE | USER_EDGE_IGNORE_WINDING | USER_EDGE_IGNORE_BOUNDARIES_WHEN_TRAVERSING | USER_EDGE_ROTATE_DIRECTION
+	};
 	
 		/// Base class for line-of-sight and direct path queries. Don't use this, use LineOfSightInput or DirectPathInput accordingly.
-	struct InputBase
+	struct HK_EXPORT_AI InputBase
 	{
-		//+version(2)
+		//+version(4)
 		HK_DECLARE_REFLECTION();
 		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_AI_ASTAR,InputBase );
 
@@ -80,8 +111,7 @@ public:
 			/// Optional pointer to hkaiAstarCostModifier, which can be used to modify costs based on the hkaiAgentTraversalInfo.
 		HK_PAD_ON_SPU(const hkaiAstarCostModifier*) m_costModifier;
 
-			/// Optional pointer to hkaiAstarEdgeFilter, which can be used to reject nav mesh edges
-			/// or modify costs based on the hkaiAgentTraversalInfo.
+			/// Optional pointer to hkaiAstarEdgeFilter, which can be used to reject nav mesh edges.
 		HK_PAD_ON_SPU(const hkaiAstarEdgeFilter*) m_edgeFilter;
 
 			/// Whether or not to clear the output arrays (if the pointers are non-NULL) if the line-of-sight check fails.
@@ -111,11 +141,19 @@ public:
 
 			/// Whether the query is a line-of-sight check or a direct path check.
 		const hkEnum<QueryMode, hkUint8> m_mode;
+
+			/// How user edges are treated by the query. See the descriptions on UserEdgeFlagBits for more details.
+		hkFlags<UserEdgeFlagBits, hkUint8> m_userEdgeHandling; //+default(hkaiLineOfSightUtil::USER_EDGE_DISABLED_DEFAULT)
+
+			/// Whether or not backfacing boundary edges should be considered as blocking. This typically arises for
+			/// edges which are "behind" the initial position but within the character's radius: this would be considered
+			/// an invalid position, but it may arise in practice due to numerical issues.
+		hkBool m_ignoreBackfacingEdges; //+default(true)
 	};
 
 		/// Input structure for line-of-sight queries. This essentially checks whether the goal point can be reached from 
 		/// the start point without turning.
-	struct LineOfSightInput : InputBase
+	struct HK_EXPORT_AI LineOfSightInput : InputBase
 	{
 		HK_DECLARE_REFLECTION();
 		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_AI_ASTAR,LineOfSightInput );
@@ -130,7 +168,7 @@ public:
 	};
 
 		/// Input structure for direct path queries. These determine the furthest in a specific direction that a character can move.
-	struct DirectPathInput : InputBase
+	struct HK_EXPORT_AI DirectPathInput : InputBase
 	{
 		HK_DECLARE_REFLECTION();
 		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_AI_ASTAR,DirectPathInput );
@@ -178,7 +216,7 @@ public:
 	};
 
 		/// Output information for checkLineOfSight and findDirectPath.
-	struct LineOfSightOutput
+	struct HK_EXPORT_AI LineOfSightOutput
 	{
 		HK_DECLARE_REFLECTION();
 		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_AI_ASTAR,LineOfSightOutput);
@@ -287,7 +325,7 @@ public:
 #endif // HKAI_LIGHT_OF_SIGHT_UTIL_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -17,7 +17,7 @@ class hkaiNavMeshInstance;
 
 namespace hkaiSegmentCastingUtil
 {
-	void HK_CALL makeEdgeToWorldMatrix(
+	HK_EXPORT_AI void HK_CALL makeEdgeToWorldMatrix(
 		hkVector4Parameter edgeLeft,
 		hkVector4Parameter edgeRight,
 		hkVector4Parameter up,
@@ -26,7 +26,7 @@ namespace hkaiSegmentCastingUtil
 		hkSimdReal & edgeLength);
 
 
-	hkBool32 HK_CALL intersectSweptSegmentFace(
+	HK_EXPORT_AI hkBool32 HK_CALL intersectSweptSegmentFace(
 		hkVector4Parameter leftStartIn, 
 		hkVector4Parameter rightStartIn, 
 		hkVector4Parameter displacement, 
@@ -39,7 +39,7 @@ namespace hkaiSegmentCastingUtil
 
 		hkaiIntervalPartition & partition);
 
-	hkBool32 HK_CALL intersectSweptSegmentExtrudedEdge(
+	HK_EXPORT_AI hkBool32 HK_CALL intersectSweptSegmentExtrudedEdge(
 		hkVector4Parameter leftStartIn, 
 		hkVector4Parameter rightStartIn, 
 		hkVector4Parameter displacement, 
@@ -50,7 +50,7 @@ namespace hkaiSegmentCastingUtil
 
 		hkaiIntervalPartition & partition);
 
-	hkBool32 HK_CALL intersectSweptSegmentFace(
+	HK_EXPORT_AI hkBool32 HK_CALL intersectSweptSegmentFace(
 		hkVector4Parameter leftStartIn, 
 		hkVector4Parameter rightStartIn, 
 		hkVector4Parameter displacement, 
@@ -62,7 +62,7 @@ namespace hkaiSegmentCastingUtil
 
 		hkaiIntervalPartition & partition);
 
-	hkBool32 HK_CALL intersectSweptSegmentFace(
+	HK_EXPORT_AI hkBool32 HK_CALL intersectSweptSegmentFace(
 		hkVector4Parameter leftStartIn, 
 		hkVector4Parameter rightStartIn, 
 		hkVector4Parameter displacement, 
@@ -74,7 +74,7 @@ namespace hkaiSegmentCastingUtil
 
 		hkaiIntervalPartition & partition);
 
-	hkBool32 HK_CALL intersectSweptSegmentFace(
+	HK_EXPORT_AI hkBool32 HK_CALL intersectSweptSegmentFace(
 		hkVector4Parameter leftStartIn, 
 		hkVector4Parameter rightStartIn, 
 		hkVector4Parameter displacement, 
@@ -86,7 +86,7 @@ namespace hkaiSegmentCastingUtil
 
 		hkaiIntervalPartition & partition);
 
-	hkBool32 HK_CALL intersectSweptSegmentExtrudedEdge(
+	HK_EXPORT_AI hkBool32 HK_CALL intersectSweptSegmentExtrudedEdge(
 		hkVector4Parameter leftStartIn, 
 		hkVector4Parameter rightStartIn, 
 		hkVector4Parameter displacement, 
@@ -99,7 +99,7 @@ namespace hkaiSegmentCastingUtil
 
 		hkaiIntervalPartition & partition);
 
-	hkBool32 HK_CALL intersectSweptSegmentTriangle(
+	HK_EXPORT_AI hkBool32 HK_CALL intersectSweptSegmentTriangle(
 		hkVector4Parameter leftStart,
 		hkVector4Parameter rightStart,
 		hkVector4Parameter displacement,
@@ -112,7 +112,7 @@ namespace hkaiSegmentCastingUtil
 
 		hkaiIntervalPartition::Interval & result);
 
-	hkBool32 HK_CALL intersectTurnedSegmentFace(
+	HK_EXPORT_AI hkBool32 HK_CALL intersectTurnedSegmentFace(
 		hkVector4Parameter leftStartIn, 
 		hkVector4Parameter rightStartIn, 
 		hkVector4Parameter leftEndIn,
@@ -126,7 +126,7 @@ namespace hkaiSegmentCastingUtil
 
 		hkaiIntervalPartition & partition);
 
-	hkBool32 HK_CALL intersectTurnedSegmentFace(
+	HK_EXPORT_AI hkBool32 HK_CALL intersectTurnedSegmentFace(
 		hkVector4Parameter leftStartIn, 
 		hkVector4Parameter rightStartIn, 
 		hkVector4Parameter leftEndIn,
@@ -139,7 +139,7 @@ namespace hkaiSegmentCastingUtil
 
 		hkaiIntervalPartition & partition);
 
-	hkBool32 HK_CALL intersectTurnedSegmentFace(
+	HK_EXPORT_AI hkBool32 HK_CALL intersectTurnedSegmentFace(
 		hkVector4Parameter leftStartIn, 
 		hkVector4Parameter rightStartIn, 
 		hkVector4Parameter leftEndIn,
@@ -152,7 +152,7 @@ namespace hkaiSegmentCastingUtil
 
 		hkaiIntervalPartition & partition);
 
-	hkBool32 HK_CALL intersectTurnedSegmentExtrudedEdge(
+	HK_EXPORT_AI hkBool32 HK_CALL intersectTurnedSegmentExtrudedEdge(
 		hkVector4Parameter leftStartIn, 
 		hkVector4Parameter rightStartIn, 
 		hkVector4Parameter leftEndIn,
@@ -167,7 +167,7 @@ namespace hkaiSegmentCastingUtil
 		hkaiIntervalPartition & partition);
 
 
-	hkBool32 HK_CALL intersectTurnedSegmentTriangle(
+	HK_EXPORT_AI hkBool32 HK_CALL intersectTurnedSegmentTriangle(
 		hkVector4Parameter leftStartIn, 
 		hkVector4Parameter rightStartIn, 
 		hkVector4Parameter leftEndIn, 
@@ -185,7 +185,7 @@ namespace hkaiSegmentCastingUtil
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

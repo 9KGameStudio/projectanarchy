@@ -127,6 +127,8 @@ namespace VisionManaged
     virtual void OnAttachComponent(ShapeComponent ^component) override {ConversionUtils::OnAttachComponent(GetLOD0(),component);}
     virtual void OnRemoveComponent(ShapeComponent ^component) override {ConversionUtils::OnRemoveComponent(GetLOD0(),component);}
 
+    VOVERRIDE array<Vector3F>^ GetVertices() override;
+
     // special
     void RenderShape(VisionViewBase ^view, ShapeRenderMode mode);
     bool SetMeshFile(String ^filename, String ^filename_lowres, unsigned __int64 iIDLowRes, bool bNotifyPhysics);
@@ -136,6 +138,7 @@ namespace VisionManaged
 
     void DisposeAll();
     VisStaticMeshInstance_cl *GetLOD0() {return m_pFirstValidLOD;}
+    inline void *GetLOD(int iIndex) {return m_spLODList[iIndex].GetPtr();} // unfortunately cannot return VisStaticMeshInstance_cl* here as that does not work across DLL boundaries
 
     void AssignGeometryToVisibiltyZone(VisibilityZoneShape ^pZone);
     void AssignVisibilityObject(EngineInstanceVisibilityObject ^pVisObj);
@@ -192,7 +195,7 @@ namespace VisionManaged
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

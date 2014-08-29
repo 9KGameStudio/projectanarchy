@@ -11,14 +11,14 @@
 
 #include <Common/Base/Math/SweptTransform/hkSweptTransform.h>
 
-extern const class hkClass hkMotionStateClass;
+extern HK_EXPORT_COMMON const class hkClass hkMotionStateClass;
 
 	/// An hkMotionState basically is the dynamic state of
 	/// a rigid body, which is used for collision detection and basic
 	/// integration. It includes basically an hkSweptTransform.
 	/// It also holds a transform which caches the position and orientation
 	/// of the body at time t1.
-class hkMotionState
+class HK_EXPORT_COMMON hkMotionState
 {
 	// +version(3)
 	public:
@@ -89,7 +89,7 @@ class hkMotionState
 #endif // HK_MATH_MOTION_STATE_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

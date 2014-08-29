@@ -25,18 +25,23 @@ public:
    int GetWordVar(const char* variableName);
    bool SetBoolVar(const char* variableName, bool value);
    bool GetBoolVar(const char* variableName) const;
-   void GetBoneTransform( const char* boneName, hkvVec3& outPos, hkvMat3& outRot );
+
    bool TriggerEvent(const char* eventName) const;
    void RegisterEventHandler(const char* eventName);
    bool WasEventTriggered(const char* eventName) const;
-    
-   %extend{  
-   void TempMeth( hkvVec3 center )
-		{
-		}
-		
-	VSWIG_CREATE_CAST(vHavokBehaviorComponent)
+   
+   // Treat HKV_FAILURE by returning nil
+   %exception
+   {
+     hkvResult result = $action
+
+     if(result == HKV_FAILURE)
+     {
+       lua_pushnil(L);
+       return 1;
+     }
    }
+   void GetBoneTransform( const char* boneName, hkvVec3& OUTPUT, hkvMat3& OUTPUT);
 };
 
 #else
@@ -50,10 +55,10 @@ public:
   /// @name Variables management
   /// @{
 
-  /// \brief Gets if the current node is active in the Behavior graph
-  /// \param nodeName The name of the node.
-  /// \returns if the node is active
-  bool IsNodeActive(const char* nodeName);
+  /// \brief Gets if the current node is active in the Behavior graph.
+  /// \param nodeName The name of the behavior node to be checked.
+  /// \returns ture if the node is active, otherwise false.
+  boolean IsNodeActive(string nodeName);
 
   /// \brief Returns whether there is a behavior variable of the specified name
   /// \param variableName the name of the variable
@@ -63,47 +68,90 @@ public:
   /// \brief Sets the value of the selected Behavior float variable
   /// \param variableName  Name of the Behavior variable
   /// \param value  value we want to assign to it
-  void SetFloatVar(const char* variableName, float value);
+  /// \returns true on success otherwise false.
+  boolean SetFloatVar(string variableName, number value);
 
   /// \brief Checks the value of the selected Behavior float variable
   /// \param variableName  Name of the Behavior variable
   float GetFloatVar(const char* variableName) const;
 
+  /// \brief Returns the value of the selected Behavior float variable
+  /// \param variableName  Name of the Behavior variable
+  float GetFloatVar(const char* variableName);
+
   /// \brief Sets the value of the selected Behavior word variable
   /// \param variableName  Name of the Behavior variable
   /// \param value  value we want to assign to it
-  void SetWordVar(const char* variableName, int value);
+  /// \returns true on success otherwise false.
+  boolean SetWordVar(string variableName, number value);
   
   /// \brief Checks the value of the selected Behavior word variable
   /// \param variableName  Name of the Behavior variable
   int GetWordVar(const char* variableName) const;
   
+  /// \brief Returs the value of the selected Behavior word variable
+  /// \param variableName  Name of the Behavior variable
+  int GetWordVar(const char* variableName);
+
   /// \brief Sets the value of the selected Behavior boolean variable
   /// \param variableName  Name of the Behavior variable
   /// \param value  value we want to assign to it
-  void SetBoolVar(const char* variableName, bool value);
+  /// \returns true on success otherwise false.
+  /// \par Example
+  ///   \code
+  ///  function OnThink(self)
+  ///    if Input:IsKeyPressed(Vision.KEY_SPACE) then
+  ///      self.Enabled = not self.Enabled
+  ///      self.BehaviorCmp:SetBoolVar("EnableAttachment", self.Enabled)
+  ///    end
+  ///  end
+  ///  function OnAfterSceneLoaded(self)
+  ///    self.Enabled = false
+  ///    self.BehaviorCmp = self:GetComponentOfType("vHavokBehaviorComponent")
+  ///    Vision.Assert(self.BehaviorCmp~=nil, "behavior component not found")
+  ///    Input:SetKeyAsSingleHit(Vision.KEY_SPACE)
+  ///  end
+  ///   \endcode
+  boolean SetBoolVar(string variableName, boolean value);
   
   /// \brief Checks the value of the selected Behavior bool variable
   /// \param variableName  Name of the Behavior variable
-  bool GetBoolVar(const char* variableName) const;
+  /// \par Example  
+  ///   \code
+  ///  function OnAfterSceneLoaded(self)
+  ///    self.BehaviorCmp = self:GetComponentOfType("vHavokBehaviorComponent")
+  ///    Vision.Assert(self.BehaviorCmp~=nil, "behavior component not found")
+  ///    local enabled = self.BehaviorCmp:GetBoolVar("AttachmentEnabled")
+  ///    Debug:PrintLine("AttachmentEnabled: "..tostring(enabled))
+  ///  end
+  ///   \endcode
+  boolean GetBoolVar(string variableName);
+
+  /// @}
+  /// @name Utilities
+  /// @{
 
   /// \brief Returns world space transform of the selected bone
   /// \param boneName  Name of the selected bone
-  /// \param outPos    Bone's position
-  /// \param outRot    Bone's rotation matrix
-  void GetBoneTransform(const char* boneName, hkvVec3& outPos, hkvMat3& outRot );
+  /// \par Example  
+  ///   \code
+  ///  local position, rotMatrix = GetBoneTransform("BoneName")
+  ///   \endcode
+  /// \returns hkvVec3 outPos, hkvMat3 outRot
+  multiple GetBoneTransform(string boneName);
 
   /// \brief Triggers a Behavior event
   /// \param eventName  Name of the Behavior event
-  void TriggerEvent(const char* eventName) const;
+  /// \returns true on success otherwise false.
+  boolean TriggerEvent(string eventName);
 
   /// \brief Registers a Behavior event handler
   /// \param eventName	Name of the Behavior event
-  void RegisterEventHandler(const char* eventName);
+  void RegisterEventHandler(string eventName);
 
   /// \brief Checks if a given event was triggered
   /// \param eventName	Name of the Behavior event
-  bool WasEventTriggered(const char* eventName) const;
+  boolean WasEventTriggered(string eventName);
 
   /// @}
 
@@ -112,7 +160,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

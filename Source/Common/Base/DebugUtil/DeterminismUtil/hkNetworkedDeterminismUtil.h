@@ -22,14 +22,19 @@
 /// The utility is plugged into the MenuDemo and synchronizes keyboard and gamePad input from the server to all clients.
 /// This utility works in a synchronous way, all clients wait for data from server before processing.
 /// And the server waits for clients to catch up.
-class hkNetworkedDeterminismUtil
+class HK_EXPORT_COMMON hkNetworkedDeterminismUtil
 {
 	public:
 		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_BASE_CLASS, hkNetworkedDeterminismUtil );
 		hkNetworkedDeterminismUtil(const char* hostname, int port);
 		~hkNetworkedDeterminismUtil();
 
+#if defined(HK_PLATFORM_DURANGO)
+		static void HK_CALL create(const char* hostname = "127.0.0.1", int port = 57865);
+#else
 		static void HK_CALL create(const char* hostname = "127.0.0.1", int port = 7865);
+#endif
+		
 		static void HK_CALL destroy();
 
 		struct Command
@@ -136,7 +141,7 @@ class hkNetworkedDeterminismUtil
 #endif // HK_NETWORKED_DETERMINISM_UTIL_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

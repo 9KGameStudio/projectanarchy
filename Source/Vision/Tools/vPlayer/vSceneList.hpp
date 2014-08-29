@@ -18,6 +18,7 @@ struct VSceneListEntry
   inline VSceneListEntry() 
   {
     uiTargetPlatforms = 0;
+    bAnyCached = false;
   }
   
   bool operator==(const VSceneListEntry& other) const;
@@ -31,12 +32,14 @@ struct VSceneListEntry
 
   VString sScenePath;
   VArray<VString> sSearchPaths;
+
   VString sRoot;
 
   VTextureObjectPtr spThumbnail;
+  bool bAnyCached;
 };
 
-class VSceneList : public VArray<VSceneListEntry>
+class VSceneList : public VArray<VSceneListEntry*>
 {
 public:
   VSceneList();
@@ -45,6 +48,7 @@ public:
   hkvResult LoadFromFile(const char* szFilePath, hkUint32 uiTargetPlatformFilterMask);
   hkvResult SaveToFile() const;
 
+  void Reset();
   void Reload();
 
   void Sort();
@@ -100,8 +104,11 @@ public:
 
   ISceneListDataProvider(hkUint32 uiFlags) : IDataProvider(uiFlags) {}
 
-  virtual VArray<VSceneListEntry>& GetData() = 0;
-  virtual const VArray<VSceneListEntry>& GetData() const = 0;
+  virtual int GetSize() const = 0;
+  virtual VSceneListEntry& GetAt(int iIndex) = 0;
+  virtual const VSceneListEntry& GetAt(int iIndex) const = 0;
+
+  virtual int Find(const VSceneListEntry& entry) const = 0;
 
   inline bool IsCacheEnabled() const { return (GetFlags() & SpecificFlags::CACHE_ENABLED) != 0; }
 };
@@ -109,7 +116,7 @@ public:
 #endif // vSceneList_h__
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

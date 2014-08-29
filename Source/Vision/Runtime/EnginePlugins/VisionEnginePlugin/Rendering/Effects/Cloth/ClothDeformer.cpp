@@ -8,7 +8,7 @@
 
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/VisionEnginePluginPCH.h>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/Effects/Cloth/ClothDeformer.hpp>
-#include <Vision/Runtime/Base/System/Memory/VMemDbg.hpp>
+
 
 
 class VClothMesh_cl;
@@ -73,7 +73,7 @@ bool VisClothDeformer_cl::UpdateDeformerResult(VisVertexAnimResult_cl* pVertexAn
 
 
 
-V_IMPLEMENT_SERIAL( VisClothDeformer_cl, VisTypedEngineObject_cl, 0, &g_VisionEngineModule );
+V_IMPLEMENT_SERIAL( VisClothDeformer_cl, IVisVertexDeformer_cl, 0, &g_VisionEngineModule );
 void VisClothDeformer_cl::Serialize( VArchive &ar )
 {
   VisTypedEngineObject_cl::Serialize(ar);
@@ -86,7 +86,7 @@ void VisClothDeformer_cl::Serialize( VArchive &ar )
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

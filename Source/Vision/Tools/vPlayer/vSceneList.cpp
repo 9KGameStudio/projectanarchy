@@ -26,32 +26,32 @@ int LUA_AddScene(lua_State* state)
   if ((uiPlatforms & g_targetPlatformFilterMask) == 0)
     return 0;
 
-  VSceneListEntry entry;
+  VSceneListEntry* pEntry = new VSceneListEntry();
 
-  entry.uiTargetPlatforms = uiPlatforms;
-  entry.sDisplayName = s.getStringParameter(2);
-  entry.sScenePath = s.getStringParameter(3);
+  pEntry->uiTargetPlatforms = uiPlatforms;
+  pEntry->sDisplayName = s.getStringParameter(2);
+  pEntry->sScenePath = s.getStringParameter(3);
   
   const char* szSearchPaths = s.getStringParameter(4);
   VNameValueListParser<';', '='> parser(szSearchPaths, false);
   while (parser.next())
   {
-    entry.sSearchPaths.Append(parser.name());
+    pEntry->sSearchPaths.Append(parser.name());
   }
-  if (entry.sSearchPaths.GetSize() == 0)
-    entry.sSearchPaths.Append("");
+  if (pEntry->sSearchPaths.GetSize() == 0)
+    pEntry->sSearchPaths.Append("");
 
   if (s.getNumberOfFunctionParameters() >= 5)
-    entry.sRoot = s.getStringParameter(5);
+    pEntry->sRoot = s.getStringParameter(5);
 
   if (s.getNumberOfFunctionParameters() >= 6)
   {
     __int64 tmp;
     sscanf(s.getStringParameter(6), "%lld", &tmp);
-    entry.LastUsed = VDateTime::FromSerializable(tmp);
+    pEntry->LastUsed = VDateTime::FromSerializable(tmp);
   }
   
-  g_pCurrentList->Append(entry);
+  g_pCurrentList->Append(pEntry);
 
   return 0;
 }
@@ -87,7 +87,7 @@ VSceneList::VSceneList()
 
 VSceneList::~VSceneList()
 {
-
+  Reset();
 }
 
 hkvResult VSceneList::LoadFromFile(const char* szFilePath, unsigned int uiTargetPlatformFilterMask)
@@ -136,7 +136,7 @@ hkvResult VSceneList::LoadFromFile(const char* szFilePath, unsigned int uiTarget
   bool bResult = s.ExecuteFile(szFilePath, sError);
   if (!bResult)
   {
-    hkvLog::Error("Could not parse scene config file: %s", sError.AsChar());
+    hkvLog::Error("Could not parse scene config file '%s': %s", szFilePath, sError.AsChar());
   }
 
   g_targetPlatformFilterMask = 0;
@@ -155,7 +155,7 @@ hkvResult VSceneList::SaveToFile() const
   
   for (int i = 0; i < GetSize(); ++i)
   {
-    const VSceneListEntry& entry = GetAt(i);
+    const VSceneListEntry& entry = *GetAt(i);
     VString sPlatformMask = PlatformMaskToString(entry.uiTargetPlatforms);
     
     VString sSearchPaths;
@@ -181,6 +181,17 @@ hkvResult VSceneList::SaveToFile() const
   return HKV_SUCCESS;
 }
 
+void VSceneList::Reset()
+{
+  for (int i = 0; i < GetSize(); ++i)
+  {
+    VSceneListEntry* pEntry = GetAt(i);
+    delete pEntry;
+  }
+
+  VArray<VSceneListEntry*>::Reset();
+}
+
 void VSceneList::Reload()
 {
   LoadFromFile(m_sFilePath, m_uiTargetPlatformFilterMask);
@@ -192,14 +203,14 @@ void VSceneList::Sort()
   {
     static int Compare(const void *arg1, const void *arg2)
     {
-      const VSceneListEntry& a = *static_cast<const VSceneListEntry*>(arg1);
-      const VSceneListEntry& b = *static_cast<const VSceneListEntry*>(arg2);
+      const VSceneListEntry& a = **static_cast<const VSceneListEntry* const *>(arg1);
+      const VSceneListEntry& b = **static_cast<const VSceneListEntry* const *>(arg2);
 
       return (a == b) ? 0 : ((a < b) ? -1 : 1);
     }
   };
 
-  qsort(GetData(), GetSize(), sizeof(VSceneListEntry), Helper::Compare);
+  qsort(GetData(), GetSize(), sizeof(VSceneListEntry*), Helper::Compare);
 }
 
 VString VSceneList::PlatformMaskToString(hkUint32 targetPlatformFilterMask) const
@@ -228,7 +239,7 @@ VString VSceneList::PlatformMaskToString(hkUint32 targetPlatformFilterMask) cons
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

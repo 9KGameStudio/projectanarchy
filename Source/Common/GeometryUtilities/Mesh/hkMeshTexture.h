@@ -8,11 +8,16 @@
 #ifndef HK_MESH_TEXTURE_H
 #define HK_MESH_TEXTURE_H
 
+#include <Common/ImageUtilities/Image/hkImage.h>
 
-extern const class hkClass hkMeshTextureClass;
+extern HK_EXPORT_COMMON const class hkClass hkMeshTextureClass;
 
-	/// A texture used by a hkMeshMaterial
-class hkMeshTexture: public hkReferencedObject
+/// A texture used by a hkMeshMaterial
+/// Currently the Havok base framework doesn't provide any interface nor implementation for image loading
+/// Texture are represented by this stateless abstract class
+/// In the future, when the loading capabilities will be available through hkBase, this class should contains the data pointer and descriptor of the texture
+
+class HK_EXPORT_COMMON hkMeshTexture : public hkReferencedObject
 {
 	public:
 		
@@ -22,7 +27,7 @@ class hkMeshTexture: public hkReferencedObject
 	public:
 
 		/// Texture sampler
-		class Sampler : public hkReferencedObject
+		class HK_EXPORT_COMMON Sampler : public hkReferencedObject
 		{
 			public:
 
@@ -31,14 +36,18 @@ class hkMeshTexture: public hkReferencedObject
 				/// Samples the texture at the given texel
 				virtual void sample(hkVector4Parameter uvIn, hkVector4& texelOut) const = 0;
 
+				/// Returns an image at the specified mip level
+				virtual hkImage* getImage(int mipLevel) const = 0;
+
 			protected:
 
 				/// Constructor
 				Sampler();
+
 		};
 
 		/// Header for RAW buffer formats. A RAW buffer must start with this descriptor
-		struct RawBufferDescriptor
+		struct HK_EXPORT_COMMON RawBufferDescriptor
 		{
 			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE, hkMeshTexture::RawBufferDescriptor);
 			HK_DECLARE_REFLECTION();
@@ -107,7 +116,7 @@ class hkMeshTexture: public hkReferencedObject
 			/// Sets the raw data of the texture
 		virtual void setData(hkUint8* data, int size, Format format) = 0;
 
-		/// Creates a sampler for this texture
+			/// Creates a sampler for this texture
 		virtual Sampler* createSampler() const = 0;
 
 			/// Gets the raw data format
@@ -148,7 +157,7 @@ class hkMeshTexture: public hkReferencedObject
 #endif	//HK_MESH_TEXTURE_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -13,7 +13,7 @@
 #include <Common/Base/Types/Geometry/hkGeometry.h>
 #include <Common/Base/Types/Geometry/Aabb/hkAabb.h>
 
-extern const class hkClass hkaiPlaneVolumeClass;
+extern HK_EXPORT_AI const class hkClass hkaiPlaneVolumeClass;
 
 class hkAabb;
 
@@ -23,7 +23,7 @@ class hkAabb;
 ///
 /// In this implementation the geometric representation is just held as a member of the class, and it is a requirement
 /// of the client to ensure that the planes and geometry represent the same volume.
-class hkaiPlaneVolume : public hkaiVolume
+class HK_EXPORT_AI hkaiPlaneVolume : public hkaiVolume
 {
 	//+vtable(true)
 	//+version(2)
@@ -43,6 +43,7 @@ class hkaiPlaneVolume : public hkaiVolume
 		virtual hkBool32 containsTriangle(const hkVector4& a, const hkVector4& b, const hkVector4& c) const HK_OVERRIDE;
 		virtual hkBool32 containsAabb( const hkAabb& aabbIn ) const HK_OVERRIDE;
 		virtual void getAabb( hkAabb& aabbOut ) const HK_OVERRIDE;
+		virtual hkBool32 overlapsAabb( const hkAabb& aabbIn ) const HK_OVERRIDE; 
 
 			/// Set as an AABB.
 		void setFromAabb(const hkAabb& aabb);
@@ -56,9 +57,7 @@ class hkaiPlaneVolume : public hkaiVolume
 		const hkGeometry& getGeometry() const { return m_geometry; }
 
 		void setInverted( bool inv ) { m_isInverted = inv; }
-
 		bool isInverted() const { return m_isInverted; }
-
 
 		//
 		// Static utility methods
@@ -104,7 +103,7 @@ protected:
 #endif // HKAI_PLANE_VOLUME_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

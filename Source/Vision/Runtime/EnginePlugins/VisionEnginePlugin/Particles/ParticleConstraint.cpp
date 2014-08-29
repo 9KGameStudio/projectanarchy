@@ -12,7 +12,7 @@
 #include <Vision/Runtime/Base/ThirdParty/tinyXML/TinyXMLHelper.hpp>
 #include <Vision/Runtime/Base/Graphics/Video/VRenderInterface.hpp>
 #include <Vision/Runtime/Engine/System/VisApiSerialization.hpp>
-#include <Vision/Runtime/Base/System/Memory/VMemDbg.hpp>
+
 
 
 VString VisParticleConstraintList_cl::g_sLastError;
@@ -320,7 +320,7 @@ void VisParticleConstraintList_cl::SerializeX( VArchive &ar )
     ar >> iCount;
     for (i=0;i<iCount;i++)
     {
-      VisParticleConstraint_cl *pConstr = (VisParticleConstraint_cl *)ar.ReadObject(NULL);
+      VisParticleConstraint_cl *pConstr = ar.ReadObject<VisParticleConstraint_cl>();
       ar >> iForceB;
       AddConstraint(pConstr,(VIS_CONSTRAINT_REFLECT_BEHAVIOR_e)iForceB);
     }
@@ -341,37 +341,39 @@ void VisParticleConstraintList_cl::SerializeX( VArchive &ar )
 
 static inline bool HandleConstraintPlane_Min(Particle_t *p, char iPlaneComponent, float fPlaneVal, VIS_CONSTRAINT_REFLECT_BEHAVIOR_e eMode, float fFixedDistFactor, float fPersistance, float fFramePersistance)
 {
-  float fDist = p->pos[iPlaneComponent]-fPlaneVal;
-  if (fDist>=p->size*0.5f) return false;
+  float fDist = p->m_vPosition[iPlaneComponent] - fPlaneVal;
+
+  if (fDist >= p->size * 0.5f)
+    return false;
 
   // remove on touch plane
   if (eMode == CONSTRAINT_REFLECT_REMOVE)
     return true;
 
   // set to fixed distance
-  p->pos[iPlaneComponent] = fPlaneVal + p->size*fFixedDistFactor;
+  p->m_vPosition[iPlaneComponent] = fPlaneVal + p->size*fFixedDistFactor;
 
   if (eMode == CONSTRAINT_REFLECT_BOUNCE)
   {
-    if (p->velocity[iPlaneComponent]>0.f) return false;
-    p->velocity[0] *= fPersistance;
-    p->velocity[1] *= fPersistance;
-    p->velocity[2] *= fPersistance;
-    p->velocity[iPlaneComponent] = hkvMath::Abs (p->velocity[iPlaneComponent]);
+    if (p->m_vVelocity[iPlaneComponent] > 0.f)
+      return false;
+
+    p->m_vVelocity *= fPersistance;
+    p->m_vVelocity[iPlaneComponent] = hkvMath::Abs (p->m_vVelocity[iPlaneComponent]);
   }
   else
   if (eMode == CONSTRAINT_REFLECT_GLIDE)
   {
-    if (p->velocity[iPlaneComponent]>0.f) return false;
-    hkvVec3 speed(p->velocity[0],p->velocity[1],p->velocity[2]);
+    if (p->m_vVelocity[iPlaneComponent] > 0.f)
+      return false;
+
+    hkvVec3 speed = p->m_vVelocity;
     float fOldLen = speed.getLength();
     // remove normal vector component
     speed[iPlaneComponent] = 0.f;
     // maintain same speed
     speed.setLength(fOldLen);
-    p->velocity[0] = speed.x*fFramePersistance;
-    p->velocity[1] = speed.y*fFramePersistance;
-    p->velocity[2] = speed.z*fFramePersistance;
+    p->m_vVelocity = speed * fFramePersistance;
   }
   return false;
 }
@@ -379,7 +381,7 @@ static inline bool HandleConstraintPlane_Min(Particle_t *p, char iPlaneComponent
 
 static inline bool HandleConstraintPlane_Max(Particle_t *p, char iPlaneComponent, float fPlaneVal, VIS_CONSTRAINT_REFLECT_BEHAVIOR_e eMode, float fFixedDistFactor, float fPersistance, float fFramePersistance)
 {
-  float fDist = fPlaneVal - p->pos[iPlaneComponent];
+  float fDist = fPlaneVal - p->m_vPosition[iPlaneComponent];
   if (fDist>=p->size*0.5f) return false;
 
   // remove on touch plane
@@ -387,29 +389,27 @@ static inline bool HandleConstraintPlane_Max(Particle_t *p, char iPlaneComponent
     return true;
 
   // set to fixed distance
-  p->pos[iPlaneComponent] = fPlaneVal - p->size*fFixedDistFactor;
+  p->m_vPosition[iPlaneComponent] = fPlaneVal - p->size*fFixedDistFactor;
 
   if (eMode == CONSTRAINT_REFLECT_BOUNCE)
   {
-    if (p->velocity[iPlaneComponent]<0.f) return false;
-    p->velocity[0] *= fPersistance;
-    p->velocity[1] *= fPersistance;
-    p->velocity[2] *= fPersistance;
-    p->velocity[iPlaneComponent] = -hkvMath::Abs (p->velocity[iPlaneComponent]);
+    if (p->m_vVelocity[iPlaneComponent]<0.f)
+      return false;
+
+    p->m_vVelocity *= fPersistance;
+    p->m_vVelocity[iPlaneComponent] = -hkvMath::Abs (p->m_vVelocity[iPlaneComponent]);
   }
   else
   if (eMode == CONSTRAINT_REFLECT_GLIDE)
   {
-    if (p->velocity[iPlaneComponent]<0.f) return false;
-    hkvVec3 speed(p->velocity[0],p->velocity[1],p->velocity[2]);
+    if (p->m_vVelocity[iPlaneComponent]<0.f) return false;
+    hkvVec3 speed = p->m_vVelocity;
     float fOldLen = speed.getLength();
     // remove normal vector component
     speed[iPlaneComponent] = 0.f;
     // maintain same speed
     speed.setLength(fOldLen);
-    p->velocity[0] = speed.x*fFramePersistance;
-    p->velocity[1] = speed.y*fFramePersistance;
-    p->velocity[2] = speed.z*fFramePersistance;
+    p->m_vVelocity = speed * fFramePersistance;
   }
   return false;
 }
@@ -417,7 +417,7 @@ static inline bool HandleConstraintPlane_Max(Particle_t *p, char iPlaneComponent
 
 static inline bool HandleConstraintPlane(Particle_t *p, const hkvPlane& plane, const hkvVec3& vPlaneNrmlOrig, VIS_CONSTRAINT_REFLECT_BEHAVIOR_e eMode, float fFixedDistFactor, float fPersistance, float fFramePersistance, float fNoiseNormal, const VRandom& randGen)
 {
-  hkvVec3 pos(p->pos[0],p->pos[1],p->pos[2]);
+  hkvVec3 pos = p->m_vPosition;
   float fDist = plane.getDistanceTo(pos);
   if (fDist>=p->size*0.5f) return false;
 
@@ -436,32 +436,26 @@ static inline bool HandleConstraintPlane(Particle_t *p, const hkvPlane& plane, c
 
   // set to fixed distance
   pos += vPlaneNrml*(p->size*fFixedDistFactor-fDist);
-  p->pos[0] = pos.x;
-  p->pos[1] = pos.y;
-  p->pos[2] = pos.z;
+  p->m_vPosition = pos;
 
   if (eMode == CONSTRAINT_REFLECT_BOUNCE)
   {
-    hkvVec3 speed(p->velocity[0],p->velocity[1],p->velocity[2]);
+    hkvVec3 speed = p->m_vVelocity;
     if (speed.dot (vPlaneNrml) > 0.f) return false;
     speed = speed.getReflected(vPlaneNrml) * fPersistance;
-    p->velocity[0] = speed.x;
-    p->velocity[1] = speed.y;
-    p->velocity[2] = speed.z;
+    p->m_vVelocity = speed;
   }
   else
   if (eMode == CONSTRAINT_REFLECT_GLIDE)
   {
-    hkvVec3 speed(p->velocity[0],p->velocity[1],p->velocity[2]);
+    hkvVec3 speed = p->m_vVelocity;
     float fOldLen = speed.getLength();
     // remove normal vector component
     float fComp = speed.dot (vPlaneNrml);
     speed -= vPlaneNrml*fComp;
     // maintain same speed
     speed.setLength(fOldLen);
-    p->velocity[0] = speed.x*fFramePersistance;
-    p->velocity[1] = speed.y*fFramePersistance;
-    p->velocity[2] = speed.z*fFramePersistance;
+    p->m_vVelocity = speed * fFramePersistance;
   }
   return false;
 }
@@ -532,19 +526,13 @@ static inline bool ClampAABox(const hkvAlignedBBox &bbox, const hkvVec3& vBoxCen
 }
 
 
-static inline bool TestCapsuleCollision(
-  Particle_t *p, 
-  const hkvVec3& vPos, 
-  const hkvVec3& vUnitDir, 
-  float fLength, float fRadius, 
-  //VIS_CONSTRAINT_REFLECT_BEHAVIOR_e eMode, 
-  //float fPersistance, float fFramePersistance,
-  bool bComputeTouchPoint,
-  hkvVec3& resPos, hkvVec3& resNormal)
+static inline bool TestCapsuleCollision(Particle_t *p, const hkvVec3& vPos, const hkvVec3& vUnitDir, float fLength, float fRadius, bool bComputeTouchPoint, hkvVec3& resPos, hkvVec3& resNormal)
 {
   fRadius += p->size*0.5f;
-  hkvVec3 vDiff(p->pos[0]-vPos.x, p->pos[1]-vPos.y, p->pos[2]-vPos.z);
+
+  hkvVec3 vDiff = p->m_vPosition - vPos;;
   float fDot = vDiff.dot (vUnitDir);
+
   if (fDot<-fRadius || fDot>fLength+fRadius) // completely outside range
     return false;
 
@@ -585,7 +573,7 @@ static inline bool TestCapsuleCollision(
   // left half sphere
   {
     hkvVec3 vEndPos = vPos+vUnitDir*fLength;
-    hkvVec3 vDiffEnd(p->pos[0]-vEndPos.x, p->pos[1]-vEndPos.y, p->pos[2]-vEndPos.z);
+    hkvVec3 vDiffEnd = p->m_vPosition - vEndPos;
     if (vDiffEnd.getLengthSquared () > fRadiusSqr)
       return false;
     if (bComputeTouchPoint)
@@ -811,7 +799,7 @@ void VisParticleConstraintPlane_cl::HandleParticles(IVPhysicsParticleCollection_
     hkvVec3 vPlaneNrml = GetObjDir_Up();
     for (i=0;i<iCount;i++,NEXT_PARTICLE) if (p->valid)
     {
-      hkvVec3 vDiff(p->pos[0]-vPos.x, p->pos[1]-vPos.y, p->pos[2]-vPos.z);
+      hkvVec3 vDiff = p->m_vPosition - vPos;
       float fDotX = vDiff.dot (vDirX);
 
       float fRadius = p->size*0.5f;
@@ -932,7 +920,7 @@ void VisParticleConstraintSphere_cl::HandleParticles(IVPhysicsParticleCollection
   int i;
   for (i=0;i<iCount;i++,NEXT_PARTICLE) if (p->valid)
   {
-    hkvVec3 pos(p->pos[0],p->pos[1],p->pos[2]);
+    hkvVec3 pos = p->m_vPosition;
     if (m_bInside)
     {
       vDiff = GetPosition()-pos;
@@ -960,32 +948,28 @@ void VisParticleConstraintSphere_cl::HandleParticles(IVPhysicsParticleCollection
 
     // set to fixed distance
     pos += vPlaneNrml*(p->size*fFixedDistFactor-fDist);
-    p->pos[0] = pos.x;
-    p->pos[1] = pos.y;
-    p->pos[2] = pos.z;
+    p->m_vPosition = pos;
 
     if (eForceBehavior == CONSTRAINT_REFLECT_BOUNCE)
     {
-      hkvVec3 speed(p->velocity[0],p->velocity[1],p->velocity[2]);
+      hkvVec3 speed = p->m_vVelocity;
+
       if (speed.dot (vPlaneNrml) > 0.f) continue;
       speed = speed.getReflected(vPlaneNrml) * m_fPersistance;
-      p->velocity[0] = speed.x;
-      p->velocity[1] = speed.y;
-      p->velocity[2] = speed.z;
+      p->m_vVelocity = speed;
     }
     else
     if (eForceBehavior == CONSTRAINT_REFLECT_GLIDE)
     {
-      hkvVec3 speed(p->velocity[0],p->velocity[1],p->velocity[2]);
+      hkvVec3 speed = p->m_vVelocity;
+
       float fOldLen = speed.getLength();
       // remove normal vector component
       float fComp = speed.dot (vPlaneNrml);
       speed -= vPlaneNrml*fComp;
       // maintain same speed
       speed.setLength(fOldLen);
-      p->velocity[0] = speed.x*fFramePersistance;
-      p->velocity[1] = speed.y*fFramePersistance;
-      p->velocity[2] = speed.z*fFramePersistance;
+      p->m_vVelocity = speed * fFramePersistance;
     }
   }
 }
@@ -1109,7 +1093,7 @@ void VisParticleConstraintAABox_cl::HandleParticles(IVPhysicsParticleCollection_
     hkvVec3 vInvBoxSize(1.f/m_Box.getSizeX(),1.f/m_Box.getSizeY(),1.f/m_Box.getSizeZ());
     for (i=0;i<iCount;i++,NEXT_PARTICLE) if (p->valid)
     {
-      hkvVec3 pos(p->pos[0],p->pos[1],p->pos[2]);
+      hkvVec3 pos = p->m_vPosition;
       if (!ClampAABox(m_Box,vBoxCenter,vInvBoxSize, pos,vPlaneNrml,p->size*0.5f))
         continue;
 
@@ -1120,32 +1104,30 @@ void VisParticleConstraintAABox_cl::HandleParticles(IVPhysicsParticleCollection_
         continue;
       }
 
-      p->pos[0] = pos.x;
-      p->pos[1] = pos.y;
-      p->pos[2] = pos.z;
+      p->m_vPosition = pos;
 
       if (eForceBehavior == CONSTRAINT_REFLECT_BOUNCE)
       {
-        hkvVec3 speed(p->velocity[0],p->velocity[1],p->velocity[2]);
-        if (speed.dot (vPlaneNrml) > 0.f) continue;
+        hkvVec3 speed = p->m_vVelocity;
+
+        if (speed.dot (vPlaneNrml) > 0.f)
+          continue;
+
         speed = speed.getReflected(vPlaneNrml) * m_fPersistance;
-        p->velocity[0] = speed.x;
-        p->velocity[1] = speed.y;
-        p->velocity[2] = speed.z;
+
+        p->m_vVelocity = speed;
       }
       else
       if (eForceBehavior == CONSTRAINT_REFLECT_GLIDE)
       {
-        hkvVec3 speed(p->velocity[0],p->velocity[1],p->velocity[2]);
+        hkvVec3 speed = p->m_vVelocity;
         float fOldLen = speed.getLength();
         // remove normal vector component
         float fComp = speed.dot (vPlaneNrml);
         speed -= vPlaneNrml*fComp;
         // maintain same speed
         speed.setLength(fOldLen);
-        p->velocity[0] = speed.x*fFramePersistance;
-        p->velocity[1] = speed.y*fFramePersistance;
-        p->velocity[2] = speed.z*fFramePersistance;
+        p->m_vVelocity = speed * fFramePersistance;
       }
 
     }
@@ -1344,12 +1326,12 @@ void VisParticleConstraintCamBox_cl::HandleParticles(IVPhysicsParticleCollection
   int i;
   for (i=0;i<iCount;i++,NEXT_PARTICLE) if (p->valid)
   {
-    while (p->pos[0]<bbox.m_vMin.x) p->pos[0]+=dx;
-    while (p->pos[0]>bbox.m_vMax.x) p->pos[0]-=dx;
-    while (p->pos[1]<bbox.m_vMin.y) p->pos[1]+=dy;
-    while (p->pos[1]>bbox.m_vMax.y) p->pos[1]-=dy;
-    while (p->pos[2]<bbox.m_vMin.z) p->pos[2]+=dz;
-    while (p->pos[2]>bbox.m_vMax.z) p->pos[2]-=dz;
+    while (p->m_vPosition[0]<bbox.m_vMin.x) p->m_vPosition[0]+=dx;
+    while (p->m_vPosition[0]>bbox.m_vMax.x) p->m_vPosition[0]-=dx;
+    while (p->m_vPosition[1]<bbox.m_vMin.y) p->m_vPosition[1]+=dy;
+    while (p->m_vPosition[1]>bbox.m_vMax.y) p->m_vPosition[1]-=dy;
+    while (p->m_vPosition[2]<bbox.m_vMin.z) p->m_vPosition[2]+=dz;
+    while (p->m_vPosition[2]>bbox.m_vMax.z) p->m_vPosition[2]-=dz;
   }
 }
 
@@ -1450,17 +1432,18 @@ void VisParticleAffectorFan_cl::HandleParticles(IVPhysicsParticleCollection_cl *
 
   for (i=0;i<iCount;i++,NEXT_PARTICLE) if (p->valid)
   {
-    hkvVec3 pos(p->pos[0],p->pos[1],p->pos[2]);
+    hkvVec3 pos = p->m_vPosition;
     hkvVec3 vDiff = pos-vPos;
     float fDist = vDiff.getLength();
     if (fDist<0.1f) continue;
     vDiff.normalizeIfNotZero();
     float fDotProd = vDiff.dot (vDir);
-    if (fDotProd<fCosAngle) continue;
+
+    if (fDotProd<fCosAngle)
+      continue;
+
     float fIntensity = fMult/(fDist+10.f) * fTimeDelta * (fDotProd-fCosAngle);
-    p->velocity[0] += fIntensity*vDiff.x;
-    p->velocity[1] += fIntensity*vDiff.y;
-    p->velocity[2] += fIntensity*vDiff.z;
+    p->m_vVelocity += fIntensity * vDiff;
   }
 }
 
@@ -1545,7 +1528,7 @@ void VisParticleAffectorCyclone_cl::HandleParticles(IVPhysicsParticleCollection_
   for (i=0;i<iCount;i++,NEXT_PARTICLE) if (p->valid)
   {
     if (p->size<=HKVMATH_LARGE_EPSILON) continue;
-    hkvVec3 pos(p->pos[0],p->pos[1],p->pos[2]);
+    hkvVec3 pos = p->m_vPosition;
     hkvVec3 vDiff = pos-vPos;
 
     // outside axis?
@@ -1572,13 +1555,11 @@ void VisParticleAffectorCyclone_cl::HandleParticles(IVPhysicsParticleCollection_
 
 
     // preserve old vertical speed
-    hkvVec3 vSpeed(p->velocity[0],p->velocity[1],p->velocity[2]);
+    hkvVec3 vSpeed = p->m_vVelocity;
     float fVSpeed = vSpeed.dot (vDir);
     vTangent += vDir*fVSpeed;
 
-    p->velocity[0] = vTangent.x;
-    p->velocity[1] = vTangent.y;
-    p->velocity[2] = vTangent.z;
+    p->m_vVelocity = vTangent;
   }
 }
 
@@ -1642,7 +1623,7 @@ void VisParticleAffectorGravityPoint_cl::HandleParticles(IVPhysicsParticleCollec
   int i;
   for (i=0;i<iCount;i++,NEXT_PARTICLE) if (p->valid)
   {
-    hkvVec3 vDiff = vPos - ((hkvVec3&) p->pos);
+    hkvVec3 vDiff = vPos - p->m_vPosition;
     const float fDistSqr = vDiff.getLengthSquared ();
     float fAtt;
     if (fDistSqr<fRadSqr) // linear attenuation inside sphere, 1/r^2 outside
@@ -1651,9 +1632,7 @@ void VisParticleAffectorGravityPoint_cl::HandleParticles(IVPhysicsParticleCollec
       fAtt = fMulOutside/fDistSqr;
 
     vDiff.setLength(fAtt);
-    p->velocity[0] += vDiff.x;
-    p->velocity[1] += vDiff.y;
-    p->velocity[2] += vDiff.z;
+    p->m_vVelocity += vDiff;
   }
 }
 
@@ -1777,40 +1756,28 @@ void VisParticleConstraintBones_cl::HandleParticles(IVPhysicsParticleCollection_
       // remove on touch bone
       if (eForceBehavior == CONSTRAINT_REFLECT_REMOVE)
       {
-        p->pos[0] = resPos.x; 
-        p->pos[1] = resPos.y;
-        p->pos[2] = resPos.z;
+        p->m_vPosition = resPos; 
         pGroup->DestroyParticle(p,fTimeDelta);
         continue;
       }
       if (eForceBehavior == CONSTRAINT_REFLECT_BOUNCE)
       {
-        p->pos[0] = resPos.x; 
-        p->pos[1] = resPos.y;
-        p->pos[2] = resPos.z;
-        hkvVec3 speed(p->velocity[0],p->velocity[1],p->velocity[2]);
-        speed = speed.getReflected(resNormal) * m_fPersistance;
-        p->velocity[0] = speed.x;
-        p->velocity[1] = speed.y;
-        p->velocity[2] = speed.z;
+        p->m_vPosition = resPos; 
+        p->m_vVelocity = p->m_vVelocity.getReflected(resNormal) * m_fPersistance;
         continue;
       }
 
       if (eForceBehavior == CONSTRAINT_REFLECT_GLIDE)
       {
-        p->pos[0] = resPos.x; 
-        p->pos[1] = resPos.y;
-        p->pos[2] = resPos.z;
-        hkvVec3 speed(p->velocity[0],p->velocity[1],p->velocity[2]);
+        p->m_vPosition = resPos;
+        hkvVec3 speed = p->m_vVelocity;
         float fOldLen = speed.getLength();
         // remove normal vector component
         float fComp = speed.dot (resNormal);
         speed -= resNormal*fComp;
         // maintain same speed
         speed.setLength(fOldLen);
-        p->velocity[0] = speed.x*fFramePersistance;
-        p->velocity[1] = speed.y*fFramePersistance;
-        p->velocity[2] = speed.z*fFramePersistance;
+        p->m_vVelocity = speed * fFramePersistance;
       }
 
     }
@@ -1927,8 +1894,8 @@ void VisParticleConstraintTerrain_cl::HandleParticles(IVPhysicsParticleCollectio
 
   for (i=0;i<iCount;i++,NEXT_PARTICLE) if (p->valid)
   {
-    vPos.x = p->pos[0];
-    vPos.y = p->pos[1];
+    vPos.x = p->m_vPosition[0];
+    vPos.y = p->m_vPosition[1];
     VLargePosition vLargePos(config,(hkvVec3& )vPos);
     if (vLargePos.m_iSectorX<0 || vLargePos.m_iSectorY<0 || vLargePos.m_iSectorX>=config.m_iSectorCount[0] || vLargePos.m_iSectorY>=config.m_iSectorCount[1])
       continue;
@@ -1956,7 +1923,7 @@ void VisParticleConstraintTerrain_cl::HandleParticles(IVPhysicsParticleCollectio
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -13,7 +13,7 @@ extern const class hkClass HeaderParserClass;
 
 extern const class hkClass HeaderParser2Class;
 
-class HeaderParser
+class HK_EXPORT_COMMON HeaderParser
 {
 	public:
 		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_SERIALIZE, HeaderParser );
@@ -60,7 +60,7 @@ class HeaderParser2
 #endif // HKSERIALIZE_HEADER_PARSER
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -71,6 +71,14 @@ int vHavokStreamReader::read(void* pBuffer, int iByteCount)
   return m_pInStream ? (int)m_pInStream->Read(pBuffer, iByteCount) : 0;
 }
 
+int vHavokStreamReader::peek(void* pBuffer, int iByteCount)
+{
+	LONG pos = m_pInStream->GetPos();
+	int numBytesRead = (int)m_pInStream->Read(pBuffer, iByteCount);
+	m_pInStream->SetPos(pos, VFS_SETPOS_SET);
+	return numBytesRead;
+}
+
 hkBool vHavokStreamReader::isOk() const
 {
   return (m_pInStream && !m_pInStream->IsEOF());
@@ -79,7 +87,7 @@ hkBool vHavokStreamReader::isOk() const
 //-----------------------------------------------------------------------------------
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

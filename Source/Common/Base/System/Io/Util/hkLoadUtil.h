@@ -8,14 +8,14 @@
 #ifndef HK_hkLoadUtil_H
 #define HK_hkLoadUtil_H
 
-class hkStreamReader;
+#include <Common/Base/System/Io/Reader/hkStreamReader.h>
 class hkMemoryAllocator;
 class hkStringPtr;
 class hkStringBuf;
 class hkIstream;
 
 	/// Utility class to 
-class hkLoadUtil
+class HK_EXPORT_COMMON hkLoadUtil
 {
 	public:
 
@@ -75,7 +75,7 @@ class hkLoadUtil
 #endif // HK_hkLoadUtil_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

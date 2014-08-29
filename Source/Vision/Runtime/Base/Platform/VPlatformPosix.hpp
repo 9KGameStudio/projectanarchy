@@ -83,11 +83,10 @@ inline __time64_t _time64(__time64_t* t)
 #define __cdecl
 
 
-typedef unsigned int HANDLE;
 typedef int INT_PTR;
 typedef unsigned int UINT_PTR;
 #ifndef _VISION_DOC
-typedef union _LARGE_INTEGER { 
+typedef union { 
   struct { 
     unsigned long LowPart; 
     long HighPart; 
@@ -97,13 +96,10 @@ typedef union _LARGE_INTEGER {
     long HighPart; 
   } u; 
   long long QuadPart;
-} LARGE_INTEGER, *PLARGE_INTEGER;
+} V_LARGE_INTEGER;
 #endif //_VISION_DOC
 typedef long LONG;
 typedef unsigned char byte;
-typedef void* HMODULE;
-typedef void* HINSTANCE;
-typedef void* WNDPROC;
 
 //@@@ ADJUST!!!
 const int THREAD_PRIORITY_LOWEST       = -2;
@@ -158,8 +154,8 @@ wchar_t *wcstok(wchar_t *s1, const wchar_t *s2);
 
 #include <Vision/Runtime/Base/String/VSafeStringFunctions.hpp>
 
-inline void Sleep(unsigned int iMilliseconds) { usleep(iMilliseconds * 1000); }
-inline void MicroSleep(unsigned int iMicroSeconds) { usleep(iMicroSeconds); }
+inline void VSleep(unsigned int iMilliseconds) { usleep(iMilliseconds * 1000); }
+inline void VMicroSleep(unsigned int iMicroSeconds) { usleep(iMicroSeconds); }
 
 #define VISION_LIKELY(COND) COND
 #define VISION_UNLIKELY(COND) COND
@@ -216,6 +212,43 @@ T abs(T x)
   extern void SetOverrideCacheDirectory(const char* szOverrideCacheDirectory);
   extern "C" char g_szDeviceModel[256]; // model of the Android device, the application is currently running on
 
+  /// \brief
+  ///   Android Window Flags (see http://developer.android.com/reference/android/view/WindowManager.LayoutParams.html)
+  ///
+  /// Deprecated flags are not listed.
+  enum AndroidWindowFlags 
+  {
+    FLAG_ALLOW_LOCK_WHILE_SCREEN_ON     = 0x00000001,
+    FLAG_DIM_BEHIND                     = 0x00000002,
+    FLAG_NOT_FOCUSABLE                  = 0x00000008,
+    FLAG_NOT_TOUCHABLE                  = 0x00000010,
+    FLAG_NOT_TOUCH_MODAL                = 0x00000020,
+    FLAG_TOUCHABLE_WHEN_WAKING          = 0x00000040,
+    FLAG_KEEP_SCREEN_ON                 = 0x00000080,
+    FLAG_LAYOUT_IN_SCREEN               = 0x00000100,
+    FLAG_LAYOUT_NO_LIMITS               = 0x00000200,
+    FLAG_FULLSCREEN                     = 0x00000400,
+    FLAG_FORCE_NOT_FULLSCREEN           = 0x00000800,
+    FLAG_SECURE                         = 0x00002000,
+    FLAG_SCALED                         = 0x00004000,
+    FLAG_IGNORE_CHEEK_PRESSES           = 0x00008000,
+    FLAG_LAYOUT_INSET_DECOR             = 0x00010000,
+    FLAG_ALT_FOCUSABLE_IM               = 0x00020000,
+    FLAG_WATCH_OUTSIDE_TOUCH            = 0x00040000,
+    FLAG_SHOW_WHEN_LOCKED               = 0x00080000,
+    FLAG_SHOW_WALLPAPER                 = 0x00100000,
+    FLAG_TURN_SCREEN_ON                 = 0x00200000,
+    FLAG_DISMISS_KEYGUARD               = 0x00400000,
+    FLAG_SPLIT_TOUCH                    = 0x00800000,
+    FLAG_HARDWARE_ACCELERATED           = 0x01000000,
+    FLAG_LAYOUT_IN_OVERSCAN             = 0x02000000,
+    FLAG_TRANSLUCENT_STATUS             = 0x04000000,
+    FLAG_TRANSLUCENT_NAVIGATION         = 0x08000000,
+    FLAG_LOCAL_FOCUS_MODE               = 0x10000000
+  };
+
+  extern void AndroidAddWindowFlags(unsigned int uiFlags);
+
   extern void AndroidShowAlert(const char* pTitle, const char* pMessage);
 #endif
 
@@ -238,7 +271,7 @@ T abs(T x)
 #endif //VPLATFORM_POSIX_INCLUDED
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140625)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

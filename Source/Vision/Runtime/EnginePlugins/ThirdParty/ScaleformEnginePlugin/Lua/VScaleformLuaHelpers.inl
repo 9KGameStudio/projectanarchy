@@ -6,25 +6,6 @@
  *
  */
 
-// These helper functions will only be defined for 2014.1, so manually define them here for now.
-SWIGRUNTIME void SWIG_push_fail_arg_info(lua_State* L, const char* func_name, int argnum, const char* expected, const char* actual)
-{
-  lua_Debug ar;
-  lua_getstack(L, 1, &ar);
-  lua_getinfo(L, "nSl", &ar);
-  lua_pushfstring(L,"Error (%s:%d) in %s (arg %d), expected '%s' got '%s'", ar.source,ar.currentline,func_name,argnum,expected,actual);
-}
-
-SWIGRUNTIME void SWIG_push_fail_check_num_args_info(lua_State* L, const char* func_name, int a, int b, int c)
-{
-  lua_Debug ar;
-  lua_getstack(L, 1, &ar);
-  lua_getinfo(L, "nSl", &ar);
-  lua_pushfstring(L,"Error (%s:%d) in %s expected %d..%d args, got %d",ar.source,ar.currentline,func_name,a,b,lua_gettop(L));
-}
-
-//-----------------------------------------------------------------------------------
-
 bool VScaleform_ConvertScaleformValue(lua_State* L, int argnum, VScaleformValue* pArg)
 {
   switch (lua_type(L, argnum))
@@ -64,8 +45,6 @@ bool VScaleform_ConvertScaleformValue(lua_State* L, int argnum, VScaleformValue*
 template<class ObjectType>
 int _VScaleform_Invoke(lua_State *L, swig_type_info* pType, const char* szTypeName)
 {
-  DECLARE_ARGS_OK;
-
   const int iArgCount = lua_gettop(L);
   if (iArgCount < 2)
   {
@@ -88,7 +67,14 @@ int _VScaleform_Invoke(lua_State *L, swig_type_info* pType, const char* szTypeNa
     return 0;
   }
 
-  GET_ARG(2, const char*, szMethodName);
+  const char* szMethodName = lua_tostring(L, 2);
+
+  if(!szMethodName)
+  {
+    SWIG_push_fail_arg_info(L, "Invoke", 2, "string", SWIG_Lua_typename(L, 2));
+    lua_error(L); 
+    return 0;
+  }
 
   const int iMethodArgCount = iArgCount - 2;
   VScaleformValue returnValue;
@@ -120,7 +106,7 @@ int _VScaleform_Invoke(lua_State *L, swig_type_info* pType, const char* szTypeNa
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

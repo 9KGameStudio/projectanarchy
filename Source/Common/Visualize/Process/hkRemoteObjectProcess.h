@@ -17,7 +17,7 @@ class hkRemoteObjectProcess;
 
 	/// Interface to receive a notification when objects are sent to the server from
 	/// a client.
-class hkRemoteObjectServerSideListener
+class HK_EXPORT_COMMON hkRemoteObjectServerSideListener
 {
 	public:
 	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE,hkRemoteObjectServerSideListener);
@@ -29,7 +29,7 @@ class hkRemoteObjectServerSideListener
 
 	/// Interface to receive a notification when objects are sent to a client from the
 	/// server. Also used to send objects to the server from a client.
-class hkRemoteObjectClientSideListener
+class HK_EXPORT_COMMON hkRemoteObjectClientSideListener
 {
 	public:
 	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE,hkRemoteObjectClientSideListener);
@@ -57,7 +57,7 @@ class hkRemoteObjectClientSideListener
 	/// clients. Objects are sent bidirectionally as tagfiles and loaded onto the heap after
 	/// receipt. Notifications of new objects are sent via hkRemoteObjectServerSideListeners
 	/// which are be attached to the process.
-class hkRemoteObjectProcess: public hkReferencedObject, public hkProcess
+class HK_EXPORT_COMMON hkRemoteObjectProcess : public hkReferencedObject, public hkProcess
 {
 	public:
 		
@@ -112,7 +112,7 @@ class hkRemoteObjectProcess: public hkReferencedObject, public hkProcess
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

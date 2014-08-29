@@ -22,21 +22,21 @@
 class VDefaultMenuListControlItem : public VListControlItem
 {
 public:
-  VDefaultMenuListControlItem();
-  VDefaultMenuListControlItem(const char* szText, unsigned int uiSortingKey, bool bCheckable, bool bIsChecked);
-  virtual ~VDefaultMenuListControlItem();
+  VAPP_IMPEXP VDefaultMenuListControlItem();
+  VAPP_IMPEXP VDefaultMenuListControlItem(const char* szText, unsigned int uiSortingKey, bool bCheckable, bool bIsChecked);
+  VAPP_IMPEXP virtual ~VDefaultMenuListControlItem();
 
-  virtual void OnPaint(VGraphicsInfo &Graphics, const VItemRenderInfo &parentState) HKV_OVERRIDE;
+  VAPP_IMPEXP virtual void OnPaint(VGraphicsInfo &Graphics, const VItemRenderInfo &parentState) HKV_OVERRIDE;
 
   /// \brief
   ///   Adds the given item as a child.
-  void AddChild(VDefaultMenuListControlItem* pChild);
+  VAPP_IMPEXP void AddChild(VDefaultMenuListControlItem* pChild);
 
   /// \brief
   ///   Creates the callback which is triggered when the item is activated/clicked.
-  VisCallback_cl* CreateCallback(int iAction);
+  VAPP_IMPEXP VisCallback_cl* CreateCallback(int iAction);
 
-  void TriggerCallback();
+  VAPP_IMPEXP void TriggerCallback();
 
   inline bool HasChildren() const { return m_children.Count() > 0; }
   inline VRefCountedCollection<VDefaultMenuListControlItem>& GetChildren() { return m_children; }
@@ -92,12 +92,12 @@ public:
     STATE_BACK
   };
 
-  VDefaultMenuDialog();
-  virtual ~VDefaultMenuDialog();
+  VAPP_IMPEXP VDefaultMenuDialog();
+  VAPP_IMPEXP virtual ~VDefaultMenuDialog();
 
-  void Update(float fDeltaTime);
+  VAPP_IMPEXP void Update(float fDeltaTime);
 
-  const VDialogState& GetState() const { return m_state; }
+  inline const VDialogState& GetState() const { return m_state; }
 
   /// \brief
   ///   Helper function to add a group to the dialog.
@@ -115,7 +115,7 @@ public:
   ///   Flag indicating whether the group allows multi selection of it's children or not.
   ///
   /// \sa VAppMenu::RegisterGroup
-  VDefaultMenuListControlItem* AddGroup(const char* szGroupName, VDefaultMenuListControlItem* pParent, unsigned int uiSortingKey, bool bMultiSelect);
+  VAPP_IMPEXP VDefaultMenuListControlItem* AddGroup(const char* szGroupName, VDefaultMenuListControlItem* pParent, unsigned int uiSortingKey, bool bMultiSelect);
 
   /// \brief
   ///   Helper function to add an item to the dialog.
@@ -127,21 +127,21 @@ public:
   ///   Parent item.
   ///
   /// \sa VAppMenu::RegisterItem
-  VisCallback_cl* AddItem(const VAppMenuItem& item, VDefaultMenuListControlItem* pParent);
+  VAPP_IMPEXP VisCallback_cl* AddItem(const VAppMenuItem& item, VDefaultMenuListControlItem* pParent);
 
   /// \brief
   ///   Returns the item with the given name (NULL if not found).
-  VDefaultMenuListControlItem* FindItem(const char* szItemName);
+  VAPP_IMPEXP VDefaultMenuListControlItem* FindItem(const char* szItemName);
 
-  virtual void OnItemClicked(VMenuEventDataObject *pEvent) HKV_OVERRIDE;
+  VAPP_IMPEXP virtual void OnItemClicked(VMenuEventDataObject *pEvent) HKV_OVERRIDE;
 
-  void SelectPreviousItem();
-  void SelectNextItem();
-  void TriggerSelectedItem();
-  void BackToParentGroup();
+  VAPP_IMPEXP void SelectPreviousItem();
+  VAPP_IMPEXP void SelectNextItem();
+  VAPP_IMPEXP void TriggerSelectedItem();
+  VAPP_IMPEXP void BackToParentGroup();
   
-  void SwitchToRoot();
-  void SwitchToGroup(VDefaultMenuListControlItem* pItem);
+  VAPP_IMPEXP void SwitchToRoot();
+  VAPP_IMPEXP void SwitchToGroup(VDefaultMenuListControlItem* pItem);
 
   /// \brief
   ///   Returns the root node of the menu.
@@ -157,19 +157,19 @@ public:
 
   /// \brief
   ///   Returns whether the given item is a child of the given parent.
-  bool IsChildOf(const VDefaultMenuListControlItem* pItem, const VDefaultMenuListControlItem* pParent) const;
+  VAPP_IMPEXP bool IsChildOf(const VDefaultMenuListControlItem* pItem, const VDefaultMenuListControlItem* pParent) const;
 
   /// \brief
   ///   Refresh/Rebuild the current layout.
-  void RefreshLayout();
+  VAPP_IMPEXP void RefreshLayout();
 
   /// \brief
   ///   Start fade-in animation.
-  void DoFadeIn();
+  VAPP_IMPEXP void DoFadeIn();
 
   /// \brief
   ///   Start fade-out animation.
-  void DoFadeOut(const VDialogState& followUpState);
+  VAPP_IMPEXP void DoFadeOut(const VDialogState& followUpState);
 
   /// \brief
   ///   Sets the group icon which indicates the possibility of expanding a group (yellow arrow).
@@ -193,11 +193,11 @@ public:
 
   /// \brief
   ///   Resets everything to default.
-  void Reset();
+  VAPP_IMPEXP void Reset();
 
   /// \brief
   ///   Request a refresh of the list control on the next update.
-  void RequestRefresh() { m_bIsDirty = true; }
+  inline void RequestRefresh() { m_bIsDirty = true; }
 
 private:
   void ProcessItemEvent(VDefaultMenuListControlItem* pItem);
@@ -241,35 +241,35 @@ private:
 /// \ingroup VisionAppFramework
 class VDefaultMenu : public VAppMenu
 {
-  V_DECLARE_DYNCREATE(VDefaultMenu);
+  V_DECLARE_DYNCREATE_DLLEXP(VDefaultMenu, VAPP_IMPEXP);
 
 public:
-	VDefaultMenu();
-	virtual ~VDefaultMenu() {}
+	VAPP_IMPEXP VDefaultMenu();
+	VAPP_IMPEXP virtual ~VDefaultMenu() {}
 
-  virtual void Init() HKV_OVERRIDE;
-  virtual void DeInit() HKV_OVERRIDE;
+  VAPP_IMPEXP virtual void Init() HKV_OVERRIDE;
+  VAPP_IMPEXP virtual void DeInit() HKV_OVERRIDE;
 
-  virtual void OnHandleCallback(IVisCallbackDataObject_cl* pData) HKV_OVERRIDE;
+  VAPP_IMPEXP virtual void OnHandleCallback(IVisCallbackDataObject_cl* pData) HKV_OVERRIDE;
 
-  virtual VisCallback_cl* RegisterItem(const VAppMenuItem& item, const char* szParentName = NULL) HKV_OVERRIDE;
-  virtual VArray<VisCallback_cl*> RegisterGroup(const char* szGroupName, const VArray<VAppMenuItem>& items, const char* szParentName = NULL, unsigned int uiSortingKey = 0, bool bMultiSelect = true) HKV_OVERRIDE;
+  VAPP_IMPEXP virtual VisCallback_cl* RegisterItem(const VAppMenuItem& item, const char* szParentName = NULL) HKV_OVERRIDE;
+  VAPP_IMPEXP virtual VArray<VisCallback_cl*> RegisterGroup(const char* szGroupName, const VArray<VAppMenuItem>& items, const char* szParentName = NULL, unsigned int uiSortingKey = 0, bool bMultiSelect = true) HKV_OVERRIDE;
 
-  virtual void RemoveItem(const char* szItemName) HKV_OVERRIDE;
-  virtual void RemoveGroup(const char* szGroupName) HKV_OVERRIDE;
+  VAPP_IMPEXP virtual void RemoveItem(const char* szItemName) HKV_OVERRIDE;
+  VAPP_IMPEXP virtual void RemoveGroup(const char* szGroupName) HKV_OVERRIDE;
 
-  virtual void SetItemCheckState(const char* szItemName, bool bActive) HKV_OVERRIDE;
-  virtual bool GetItemCheckState(const char* szItemName) const HKV_OVERRIDE;
+  VAPP_IMPEXP virtual void SetItemCheckState(const char* szItemName, bool bActive) HKV_OVERRIDE;
+  VAPP_IMPEXP virtual bool GetItemCheckState(const char* szItemName) const HKV_OVERRIDE;
 
-  virtual bool IsVisible() const HKV_OVERRIDE { return m_spDialog->IsVisible(); }
-  virtual void SetVisible(bool bVisible) HKV_OVERRIDE { m_spDialog->SetVisible(bVisible); }
-  virtual void ToggleMainMenu() HKV_OVERRIDE;
+  VAPP_IMPEXP virtual bool IsVisible() const HKV_OVERRIDE { return m_spDialog->IsVisible(); }
+  VAPP_IMPEXP virtual void SetVisible(bool bVisible) HKV_OVERRIDE { m_spDialog->SetVisible(bVisible); }
+  VAPP_IMPEXP virtual void ToggleMainMenu() HKV_OVERRIDE;
 
-  virtual void Reset() HKV_OVERRIDE;
+  VAPP_IMPEXP virtual void Reset() HKV_OVERRIDE;
 
   /// \brief
   ///   Returns the dialog representing the default menu.
-  VSmartPtr<VDefaultMenuDialog> GetDialog() { return m_spDialog; }
+  inline VSmartPtr<VDefaultMenuDialog> GetDialog() { return m_spDialog; }
 
 protected:
   void SetupIcon();
@@ -287,7 +287,7 @@ protected:
 #endif //__V_DEFAULT_MENU
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

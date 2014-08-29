@@ -15,7 +15,7 @@
 
 #include <Common/Serialize/Util/Xml/hkXmlLexAnalyzer.h>
 
-class hkXmlStreamParser : public hkReferencedObject
+class HK_EXPORT_COMMON hkXmlStreamParser : public hkReferencedObject
 {
 	public:
 		HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE);
@@ -53,6 +53,10 @@ class hkXmlStreamParser : public hkReferencedObject
 		hkResult getIntAttribute(const char* key, int& value) const;
 			/// Get the real attribute
 		hkResult getRealAttribute(const char* key, hkReal& value) const;
+			/// Gets an attribute with a list of integers (ie. attr="1,2,3")
+		template<typename IntegerType>
+		hkResult getIntListAttribute(const char* key, hkArray<IntegerType>& out) const;
+
 			/// Returns true if the named attribute has a definition
 		hkBool hasAttribute(const char* key) const;
 
@@ -100,10 +104,12 @@ class hkXmlStreamParser : public hkReferencedObject
 		Token m_token;
 };
 
+#include <Common/Serialize/Util/Xml/hkXmlStreamParser.inl>
+
 #endif // HK_XML_STREAM_PARSER_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

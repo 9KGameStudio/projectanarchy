@@ -28,6 +28,7 @@ class VStateGroupSamplerDX11 : public VStateGroupSamplerBase
     VStateGroupSamplerDX11()
       : VStateGroupSamplerBase()
     {
+      m_fUsedGlobalMipmapBias = -1.f;
     }
 
     /// \brief
@@ -75,14 +76,33 @@ class VStateGroupSamplerDX11 : public VStateGroupSamplerBase
       samplerDesc.AddressU = d3dTextureAddressTable[m_cTextureAddressMode[0]];
       samplerDesc.AddressV = d3dTextureAddressTable[m_cTextureAddressMode[1]];
       samplerDesc.AddressW = d3dTextureAddressTable[m_cTextureAddressMode[2]];
-      samplerDesc.MipLODBias = m_fLodBias;
-      // Hack for old shaders
+      m_fUsedGlobalMipmapBias = g_fGlobalMipmapBias; // memorize the bias that was used at creation time
+      samplerDesc.MipLODBias = g_fGlobalMipmapBias + m_fLodBias;
+      // code for old shaders
       samplerDesc.MaxAnisotropy = (m_iMaxAnisotropy<=1 && samplerDesc.Filter == D3D11_FILTER_ANISOTROPIC) ? 16 : m_iMaxAnisotropy;
       samplerDesc.ComparisonFunc = d3dComparisonTable[m_cComparisonFunc];
       for (int i=0; i<4; i++)
         samplerDesc.BorderColor[i] = m_fBorderColor.data[i];
-      samplerDesc.MinLOD = 0.0f;//FIXME m_fMinLod;
-      samplerDesc.MaxLOD = FLT_MAX;//FIXME m_fMaxLod;
+      samplerDesc.MinLOD = 0.0f;    // should be m_fMinLod ?
+      samplerDesc.MaxLOD = FLT_MAX; // should be m_fMaxLod ?
+    }
+
+    /// \brief
+    ///   DX10/DX11 only: Called internally to guarantee that states are up-to-date with global settings
+    inline void EnsureValid()
+    {
+      if (m_spSamplerState!=NULL && m_fUsedGlobalMipmapBias==g_fGlobalMipmapBias)
+        return;
+      ComputeHash(); // recreate the internal object with current mipmap bias
+    }
+
+    /// \brief
+    ///   DX10/DX11 only: Called internally after global mipmap bias has been changed
+    inline void OnGlobalMipmapBiasChanged()
+    {
+      if (m_spSamplerState==NULL || m_fUsedGlobalMipmapBias==g_fGlobalMipmapBias)
+        return;
+      ComputeHash(); // recreate the internal object with current mipmap bias
     }
 
     static inline void SetDefaultFilterMode(VFilterMode defaultFilterMode)
@@ -102,13 +122,17 @@ class VStateGroupSamplerDX11 : public VStateGroupSamplerBase
       m_iLastTextureHeight = -1;
       m_iLastTextureWidth = -1;
       m_iLastTextureDepth = -1;
+      m_fUsedGlobalMipmapBias = -1.f;
     }
 
     D3DSamplerStatePtr m_spSamplerState;
+    float m_fUsedGlobalMipmapBias;  ///< The actual global bias value that was used at creation time of this instance
+
+    VBASE_IMPEXP static float g_fGlobalMipmapBias; ///< Global bias value. Set internally 
 };
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

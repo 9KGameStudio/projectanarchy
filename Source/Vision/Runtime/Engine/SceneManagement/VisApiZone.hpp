@@ -110,7 +110,7 @@ struct VisZoneRepositionInfo_t
 
   /// \brief
   ///   Helper function to generate render space coordinates out of local position and a zone. The zone pointer can be NULL
-  VISION_APIFUNC void Helper_MakeAbsolute(hkvVec3& dest, const hkvVec3& src, VisZoneResource_cl *pZone) const;
+  VISION_APIFUNC void Helper_MakeAbsolute(hkvVec3& dest, const hkvVec3& src, IVisZone_cl *pZone) const;
 
   float m_fLocalRange, m_fInvLocalRange;
 
@@ -118,8 +118,9 @@ struct VisZoneRepositionInfo_t
   int m_iGlobalSectorY;
   int m_iGlobalSectorZ;
 
-  hkvVec3d m_vGlobalPivotPos;
-  hkvVec3d m_vLastGlobalPivot;
+  hkvVec3d m_vGlobalPivotPos;   // current pivot
+  hkvVec3d m_vLastGlobalPivot;  // pivot at last repositioning
+  hkvVec3 m_vMoveDelta;         // the move delta between m_vGlobalPivotPos and m_vLastGlobalPivot. The orientation is set so that this delta must be added (not subtracted) from an object's position
 
   bool m_bActive;
   bool m_bUpdateCamera;
@@ -141,6 +142,42 @@ public:
 
 
 /// \brief
+///   Lightweight streaming zone interface that engine objects can be attached to. See VisTypedEngineObject_cl::GetParentZone. This base class only has a pivot position
+///   which is only relevant when zone pivoting (repositioning) is used.
+///
+/// The engine implements this in interface through class VisZoneResource_cl which is the class that is exported for each zone in vForge.
+class IVisZone_cl
+{
+public:
+  /// \brief
+  ///   Overridable that is called for every object that changes its zone during runtime via
+  ///   VisTypedEngineObject_cl::SetParentZone
+  VISION_APIFUNC virtual void OnAddEngineObject(VisTypedEngineObject_cl *pObject) = 0;
+
+  /// \brief
+  ///   Overridable that is called for every object that changes its zone during runtime via
+  ///   VisTypedEngineObject_cl::SetParentZone
+  VISION_APIFUNC virtual void OnRemoveEngineObject(VisTypedEngineObject_cl *pObject) = 0;
+
+  /// \brief
+  ///   Overridable that is called for every object that is de-serialized during zone streaming.
+  VISION_APIFUNC virtual void OnEngineObjectCreated(VisTypedEngineObject_cl *pObject) = 0;
+
+  /// \brief
+  ///   Overridable that is called for every object before it is disposed during zone unloading.
+  VISION_APIFUNC virtual void OnEngineObjectDisposing(VisTypedEngineObject_cl *pObject) = 0;
+
+
+  /// \brief
+  ///   For debugging purposes
+  VISION_APIFUNC virtual VColorRef GetZoneDebugColor() const = 0;
+
+public: // members
+  VLightGridPtr m_spZoneLightGrid;
+  hkvVec3d m_vZonePivot; ///< for large coordinate support exported from vForge, usually (0,0,0)
+};
+
+/// \brief
 ///   Base resource class for zones in the application.
 /// 
 /// This zone class is the native counterpart for zones inside vForge.
@@ -156,7 +193,7 @@ public:
 /// Besides objects such as entities, lights etc. a zone can have its own lightgrid which is used
 /// automatically for all objects inside the zone. See
 /// VisTypedEngineObject_cl::GetRelevantLightGrid 
-class VisZoneResource_cl : public VManagedResource, public VUserDataObj
+class VisZoneResource_cl : public VManagedResource, public IVisZone_cl, public VUserDataObj
 {
 public:
   /// \brief Possible values for the loading/unloading state of a zone.
@@ -308,10 +345,6 @@ public:
     return m_ZoneState;
   }
 
-  /// \brief
-  ///   Deprecated, has no effect anymore
-  static HKV_DEPRECATED_2012_1 VISION_APIFUNC void SetObjectCreationSpeed(float fObjectsPerSecond);
-
   ///
   /// @}
   ///
@@ -361,6 +394,11 @@ public:
   ///   Internal function.
   VISION_APIFUNC BOOL EnsureShapesArchiveCreated();
 
+  VISION_APIFUNC virtual VColorRef GetZoneDebugColor() const HKV_OVERRIDE
+  {
+    return m_iDebugColor;
+  }
+
   IVisSceneManager_cl *m_pSceneManager;
   VZoneState_e m_ZoneState;
   VString m_sLightgridFilename;
@@ -378,11 +416,9 @@ public:
   int m_iZoneObjectCount;
   DynArray_cl<VisTypedEngineObject_cl *> m_ZoneObjects;
 
-  hkvVec3d m_vZonePivot; ///< for large coordinate support exported from vForge, usually (0,0,0)
-  VLightGridPtr m_spZoneLightGrid;
   float m_fCreationPos;
   float m_fCameraDistance;
-  int m_iUnloadCounter;
+
 
   ///
   /// @}
@@ -470,7 +506,7 @@ private:
 #endif  // VISAPIZONE_HPP_INCLUDED
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

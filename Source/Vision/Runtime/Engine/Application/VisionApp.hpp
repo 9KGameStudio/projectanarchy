@@ -140,6 +140,10 @@ public:
   /// \sa VisionApp_cl::DeInitEngine
   VISION_APIFUNC virtual bool InitEngine(VisAppConfig_cl *pConfig = NULL);
 
+  /// \brief 
+  ///   Creates the renderer node which should be used by the engine
+  VISION_APIFUNC virtual IVRendererNode* CreateRendererNode() HKV_OVERRIDE;
+
 
   /// \brief
   ///   Deinitializes the engine
@@ -653,7 +657,7 @@ private:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

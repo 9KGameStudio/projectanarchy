@@ -8,45 +8,42 @@
 //HK_REFLECTION_PARSER_EXCLUDE_FILE
 
 // platform specific implementations
-#if defined(HK_PLATFORM_WIIU)
+#if defined(HK_PLATFORM_WIIU) && defined(HK_ENABLE_PAIRED_SINGLE_OPTS)
 #	include <Common/Base/Math/Vector/WiiU/hkWiiuVector4.inl>
-#	include <Common/Base/Math/Vector/Fpu/hkFpuVector4Comparison.inl>
-#	include <Common/Base/Math/Vector/Fpu/hkFpuSimdReal.inl>
-#	include <Common/Base/Math/Vector/Fpu/hkFpuVector4d.inl>
+#	include <Common/Base/Math/Vector/WiiU/hkWiiuVector4Comparison.inl> 
+#	include <Common/Base/Math/Vector/WiiU/hkWiiuSimdReal.inl> 
+#	include <Common/Base/Math/Vector/Fpu/hkFpuSimdReald.inl> 
+#	include <Common/Base/Math/Vector/Fpu/hkFpuVector4d.inl> 
+#	include <Common/Base/Math/Vector/Fpu/hkFpuVector4dComparison.inl> 
 #elif HK_CONFIG_SIMD == HK_CONFIG_SIMD_ENABLED
 #	if defined(HK_COMPILER_HAS_INTRINSICS_IA32)
 #			include <Common/Base/Math/Vector/Sse/hkSseVector4.inl>
 #			include <Common/Base/Math/Vector/Sse/hkSseVector4Comparison.inl>
 #			include <Common/Base/Math/Vector/Sse/hkSseSimdReal.inl>
-#			if HK_SSE_VERSION >= 0x50
-#				include <Common/Base/Math/Vector/Sse/hkSseVector4_D_AVX.inl>
-#				include <Common/Base/Math/Vector/Sse/hkSseVector4Comparison_D_AVX.inl>
-#			else
-#				include <Common/Base/Math/Vector/Sse/hkSseVector4_D.inl>
-#				include <Common/Base/Math/Vector/Sse/hkSseVector4Comparison_D.inl>
-#			endif
+#			include <Common/Base/Math/Vector/Sse/hkSseVector4_D.inl>
+#			include <Common/Base/Math/Vector/Sse/hkSseVector4Comparison_D.inl>
 #			include <Common/Base/Math/Vector/Sse/hkSseSimdReal_D.inl>
 #	elif defined(HK_PLATFORM_XBOX360)
 #		include <Common/Base/Math/Vector/Xbox360/hkXbox360Vector4.inl>
 #		include <Common/Base/Math/Vector/Xbox360/hkXbox360Vector4Comparison.inl>
 #		include <Common/Base/Math/Vector/Xbox360/hkXbox360SimdReal.inl>
-#		include <Common/Base/Math/Vector/Fpu/hkFpuSimdReald.inl>
-#		include <Common/Base/Math/Vector/Fpu/hkFpuVector4d.inl>
-#		include <Common/Base/Math/Vector/Fpu/hkFpuVector4dComparison.inl>
+#		include <Common/Base/Math/Vector/Fpu/hkFpuSimdReald.inl> 
+#		include <Common/Base/Math/Vector/Fpu/hkFpuVector4d.inl> 
+#		include <Common/Base/Math/Vector/Fpu/hkFpuVector4dComparison.inl> 
 #	elif defined(HK_PLATFORM_PS3_PPU) || defined(HK_PLATFORM_PS3_SPU)
 #		include <Common/Base/Math/Vector/Ps3/hkPs3Vector4.inl>
 #		include <Common/Base/Math/Vector/Ps3/hkPs3Vector4Comparison.inl>
 #		include <Common/Base/Math/Vector/Ps3/hkPs3SimdReal.inl>
-#		include <Common/Base/Math/Vector/Fpu/hkFpuSimdReald.inl>
-#		include <Common/Base/Math/Vector/Fpu/hkFpuVector4d.inl>
-#		include <Common/Base/Math/Vector/Fpu/hkFpuVector4dComparison.inl>
+#		include <Common/Base/Math/Vector/Fpu/hkFpuSimdReald.inl> 
+#		include <Common/Base/Math/Vector/Fpu/hkFpuVector4d.inl> 
+#		include <Common/Base/Math/Vector/Fpu/hkFpuVector4dComparison.inl> 
 #	elif defined(HK_COMPILER_HAS_INTRINSICS_NEON)
 #		include <Common/Base/Math/Vector/Neon/hkNeonVector4.inl>
 #		include <Common/Base/Math/Vector/Neon/hkNeonVector4Comparison.inl>
 #		include <Common/Base/Math/Vector/Neon/hkNeonSimdReal.inl>
-#		include <Common/Base/Math/Vector/Fpu/hkFpuSimdReald.inl>
-#		include <Common/Base/Math/Vector/Fpu/hkFpuVector4d.inl>
-#		include <Common/Base/Math/Vector/Fpu/hkFpuVector4dComparison.inl>
+#		include <Common/Base/Math/Vector/Fpu/hkFpuSimdReald.inl> 
+#		include <Common/Base/Math/Vector/Fpu/hkFpuVector4d.inl> 
+#		include <Common/Base/Math/Vector/Fpu/hkFpuVector4dComparison.inl> 
 #	elif defined(HK_PLATFORM_LRB)
 #		include <Common/Base/Math/Vector/Lrb/hkLrbVector4.inl>
 #	else
@@ -55,17 +52,17 @@
 #else // no SIMD
 #	if defined(HK_PLATFORM_RVL) && defined(HK_ENABLE_PAIRED_SINGLE_OPTS)
 #		include <Common/Base/Math/Vector/Gc/hkGcVector4.inl>
-#		include <Common/Base/Math/Vector/Fpu/hkFpuVector4Comparison.inl>
-#		include <Common/Base/Math/Vector/Fpu/hkFpuSimdReal.inl>
+#		include <Common/Base/Math/Vector/Fpu/hkFpuVector4Comparison.inl> 
+#		include <Common/Base/Math/Vector/Fpu/hkFpuSimdReal.inl> 
 #	else
 #		include <Common/Base/Math/Vector/Fpu/hkFpuVector4.inl>
-#		include <Common/Base/Math/Vector/Fpu/hkFpuVector4Comparison.inl>
-#		include <Common/Base/Math/Vector/Fpu/hkFpuSimdReal.inl>
+#		include <Common/Base/Math/Vector/Fpu/hkFpuVector4Comparison.inl> 
+#		include <Common/Base/Math/Vector/Fpu/hkFpuSimdReal.inl> 
 #	endif
 #endif // HK_CONFIG_SIMD
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

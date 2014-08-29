@@ -16,7 +16,7 @@ class hkxSceneUtils
 	public:
 	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE,hkxSceneUtils);
 			/// Options taken by "hkxSceneUtils::transformScene"
-		struct SceneTransformOptions
+		struct HK_EXPORT_COMMON SceneTransformOptions
 		{
 			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_SCENE_DATA, hkxSceneUtils::SceneTransformOptions );
 
@@ -45,7 +45,7 @@ class hkxSceneUtils
 			/// Given a scene and the options specified in the SceneTransformOption struct, it goes
 			/// through nodes, attributes, meshes, etc., applying the specified transform to the scene.
 			/// Useful for scaling scenes as well as for transforming coordinate systems
-		static void HK_CALL transformScene( class hkxScene& scene, const SceneTransformOptions& opts );
+		static HK_EXPORT_COMMON void HK_CALL transformScene( class hkxScene& scene, const SceneTransformOptions& opts );
 
 			/// Extracts environment data from an hkxScene; used mostly for backwards compatibility as previously
 			/// environment information was stored in the hkxScene object. The variables extracted are:
@@ -54,22 +54,22 @@ class hkxSceneUtils
 			/// "assetFolder" (ex: "c:/temp/"),
 			/// "modeller" (ex: "3ds max 8.0.0"),
 			/// "selected" (ex: "chassis")
-		static void HK_CALL fillEnvironmentFromScene (const class hkxScene& scene, class hkxEnvironment& environment);
+		static HK_EXPORT_COMMON void HK_CALL fillEnvironmentFromScene (const class hkxScene& scene, class hkxEnvironment& environment);
 
 			/// Reorders the nodes in an hkxScene by their names. It does so alphabetically, regardless of case.
-		static void HK_CALL reorderNodesAlphabetically ( class hkxScene& scene );
+		static HK_EXPORT_COMMON void HK_CALL reorderNodesAlphabetically ( class hkxScene& scene );
 
 			/// Checks the contents of the node, and if it's a mesh it returns it, or if it's a skin binding, it returns the mesh associated
 			/// with it.
-		static class hkxMesh* HK_CALL getMeshFromNode (const class hkxNode* aNode);
+		static HK_EXPORT_COMMON class hkxMesh* HK_CALL getMeshFromNode (const class hkxNode* aNode);
 
 			// Reverse lookup. Handy to get a name for a mesh
-		static const hkxNode* HK_CALL findFirstNodeUsingMesh(const hkxNode* rootNode, const class hkxMesh* aMesh);
+		static HK_EXPORT_COMMON const hkxNode* HK_CALL findFirstNodeUsingMesh(const hkxNode* rootNode, const class hkxMesh* aMesh);
 
 			/// finds the first mesh in the scene
-		static hkxNode* HK_CALL findFirstMeshNode(hkxScene* scene);
+		static HK_EXPORT_COMMON hkxNode* HK_CALL findFirstMeshNode(hkxScene* scene);
 
-		struct GraphicsNode
+		struct HK_EXPORT_COMMON GraphicsNode
 		{
 			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE,hkxSceneUtils::GraphicsNode);
 			hkxNode* m_node;
@@ -78,26 +78,50 @@ class hkxSceneUtils
 
 			/// finds all nodes under node, which have a mesh attached, which is probably visible in the Havok demos.
 			/// Also if the mesh name can be found in extraNodesToFind, the node will be returned.
-		static void HK_CALL findAllGraphicsNodes(bool collectShapes, bool ignorePShapes, const hkStringMap<int>& extraNodesToFind, hkxNode* node, hkArray<GraphicsNode>& nodesOut);
+		static HK_EXPORT_COMMON void HK_CALL findAllGraphicsNodes(bool collectShapes, bool ignorePShapes, const hkStringMap<int>& extraNodesToFind, hkxNode* node, hkArray<GraphicsNode>& nodesOut);
 
 			/// finds all nodes under node
-		static void HK_CALL findAllNodes(hkxNode* node, hkArray< hkRefPtr<hkxNode> >& nodes );
+		static HK_EXPORT_COMMON void HK_CALL findAllNodes(hkxNode* node, hkArray< hkRefPtr<hkxNode> >& nodes );
 
 			/// Finds all nodes under node, which have a mesh attached and optionally compute its corresponding worldFromLocal transform.
 			/// This function gets called recursively and hence for the root we need to pass in the identity for the rootTransform.
-		static void HK_CALL findAllMeshNodes(	hkxScene* scene, 
+		static HK_EXPORT_COMMON void HK_CALL findAllMeshNodes(	hkxScene* scene, 
 												hkxNode* node, 
 												hkArray< hkRefPtr<hkxNode> >& nodes, 
 												hkMatrix4* rootTransform = HK_NULL,
 												hkArray<hkMatrix4>* worldFromLocalTransforms = HK_NULL);
 
 			// Helper function used by the createskin filter which allows for *translations* as well as rotations
-		static void transformVertexBuffer( const hkTransform& tr, class hkxVertexBuffer& vbuffer);
+		static HK_EXPORT_COMMON void HK_CALL transformVertexBuffer( const hkTransform& tr, class hkxVertexBuffer& vbuffer);
+
+		/// Merges the source scene into the destination scene
+		static HK_EXPORT_COMMON void HK_CALL mergeScenes(hkxScene* dstScene, hkxScene* srcScene);
+
+		/// Removes all unused skin bindings
+		static HK_EXPORT_COMMON void HK_CALL removeUnusedSkinBindings(hkxScene* scene);
+
+		/// Removes all unused meshes
+		static HK_EXPORT_COMMON void HK_CALL removeUnusedMeshes(hkxScene* scene);
+
+		/// Removes all duplicate materials
+		static HK_EXPORT_COMMON void HK_CALL removeDuplicateMaterials(hkxScene* scene);
+
+		/// Removes all unused materials
+		static HK_EXPORT_COMMON void HK_CALL removeUnusedMaterials(hkxScene* scene);
+
+		/// Removes all duplicate textures
+		static HK_EXPORT_COMMON void HK_CALL removeDuplicateTextures(hkxScene* scene);
+
+		/// Removes all unused textures
+		static HK_EXPORT_COMMON void HK_CALL removeUnusedTextures(hkxScene* scene);
+
+		// Flips the winding of the triangles in the index buffer.
+		static HK_EXPORT_COMMON void HK_CALL flipWinding( class hkxIndexBuffer &ibuffer );
 
 	public:
 
 			// Contains useful information about the transform
-		struct TransformInfo
+		struct HK_EXPORT_COMMON TransformInfo
 		{
 			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_SCENE_DATA, hkxSceneUtils::TransformInfo );
 
@@ -117,38 +141,38 @@ class hkxSceneUtils
 	private:
 
 			// Transforms a node and its children. It also transform node attributes
-		static void transformNode( const TransformInfo& transformInfo, class hkxNode& node);
+		static HK_EXPORT_COMMON void HK_CALL transformNode( const TransformInfo& transformInfo, class hkxNode& node);
 
-		static void transformSkinBinding( const TransformInfo& transformInfo, class hkxSkinBinding& skinBinding);
+		static HK_EXPORT_COMMON void HK_CALL transformSkinBinding( const TransformInfo& transformInfo, class hkxSkinBinding& skinBinding);
 
-		static void transformVertexBuffer( const TransformInfo& transformInfo, class hkxVertexBuffer& vbuffer);
+		static HK_EXPORT_COMMON void HK_CALL transformVertexBuffer( const TransformInfo& transformInfo, class hkxVertexBuffer& vbuffer);
 
-		static void transformFloatChannel( const TransformInfo& transformInfo, class hkxVertexFloatDataChannel& floatChannel);
+		static HK_EXPORT_COMMON void HK_CALL transformFloatChannel( const TransformInfo& transformInfo, class hkxVertexFloatDataChannel& floatChannel);
 
-		static void transformLight( const TransformInfo& transformInfo, class hkxLight& light);
+		static HK_EXPORT_COMMON void HK_CALL transformLight( const TransformInfo& transformInfo, class hkxLight& light);
 
-		static void transformCamera( const TransformInfo& transformInfo, class hkxCamera& camera);
+		static HK_EXPORT_COMMON void HK_CALL transformCamera( const TransformInfo& transformInfo, class hkxCamera& camera);
 
-		static void flipWinding( class hkxIndexBuffer &ibuffer );
+		static HK_EXPORT_COMMON void HK_CALL transformSpline( const TransformInfo& transformInfo, class hkxSpline& spline);
 
 			// Called by transformNode
-		static void transformAttributeGroup ( const TransformInfo& transformInfo, struct hkxAttributeGroup& attributeGroup);
+		static HK_EXPORT_COMMON void HK_CALL transformAttributeGroup ( const TransformInfo& transformInfo, struct hkxAttributeGroup& attributeGroup);
 
 			// Called by transformAttributeGroup
-		static void transformAnimatedFloat (const TransformInfo& transformInfo, class hkxAnimatedFloat& animatedFloat);
-		static void transformAnimatedQuaternion (const TransformInfo& transformInfo, class hkxAnimatedQuaternion& animatedQuaternion);
-		static void transformAnimatedMatrix (const TransformInfo& transformInfo, class hkxAnimatedMatrix& animatedMatrix);
-		static void transformAnimatedVector (const TransformInfo& transformInfo, class hkxAnimatedVector& animatedVector);
+		static HK_EXPORT_COMMON void HK_CALL transformAnimatedFloat (const TransformInfo& transformInfo, class hkxAnimatedFloat& animatedFloat);
+		static HK_EXPORT_COMMON void HK_CALL transformAnimatedQuaternion (const TransformInfo& transformInfo, class hkxAnimatedQuaternion& animatedQuaternion);
+		static HK_EXPORT_COMMON void HK_CALL transformAnimatedMatrix (const TransformInfo& transformInfo, class hkxAnimatedMatrix& animatedMatrix);
+		static HK_EXPORT_COMMON void HK_CALL transformAnimatedVector (const TransformInfo& transformInfo, class hkxAnimatedVector& animatedVector);
 
 			// Transforms a fullMatrix4, reused in different places
-		static void transformMatrix4 (const TransformInfo& transformInfo, hkMatrix4& matrix4);
+		static HK_EXPORT_COMMON void HK_CALL transformMatrix4 (const TransformInfo& transformInfo, hkMatrix4& matrix4);
 
 };
 
 #endif // HK_SCENE_UTILS_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

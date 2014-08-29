@@ -22,7 +22,7 @@
 class hkaAnimatedSkeleton;
 class hkaQuantizedAnimation;
 
-class hkaAnimationSampleAndCombineJobBase : public hkJob
+class HK_EXPORT_ANIMATION hkaAnimationSampleAndCombineJobBase : public hkJob
 {
 	public:
 
@@ -57,7 +57,7 @@ class hkaAnimationSampleAndCombineJobBase : public hkJob
 
 /// A job which samples a set of animations.
 /// If more than one animation is specified then DMA cost is hidden through double buffering.
-class hkaAnimationSampleOnlyJob : public hkaAnimationSampleAndCombineJobBase
+class HK_EXPORT_ANIMATION hkaAnimationSampleOnlyJob : public hkaAnimationSampleAndCombineJobBase
 {
 	public:
 
@@ -125,7 +125,7 @@ class hkaAnimationSampleOnlyJob : public hkaAnimationSampleAndCombineJobBase
 
 
 /// A job which does all the decompression and blending for an animated skeleton
-class hkaAnimationSampleAndCombineJob : public hkaAnimationSampleAndCombineJobBase
+class HK_EXPORT_ANIMATION hkaAnimationSampleAndCombineJob : public hkaAnimationSampleAndCombineJobBase
 {
 	public:
 
@@ -220,7 +220,7 @@ class hkaAnimationSampleAndCombineJob : public hkaAnimationSampleAndCombineJobBa
 
 /// A job which samples and blends a set of hkaQuantizedAnimation instances.
 /// The job consists of an array of QuantizedAnimationEntry describing each animation, local sampling time, blend weight, etc.
-class hkaQuantizedSampleAndCombineJob : public hkaAnimationSampleAndCombineJobBase
+class HK_EXPORT_ANIMATION hkaQuantizedSampleAndCombineJob : public hkaAnimationSampleAndCombineJobBase
 {
 	public:
 
@@ -244,10 +244,10 @@ class hkaQuantizedSampleAndCombineJob : public hkaAnimationSampleAndCombineJobBa
 			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_ANIM_RUNTIME,hkaQuantizedSampleAndCombineJob::QuantizedAnimationEntry);
 			enum BlendFlags
 			{
-				ADDITIVE = 1,    ///< If set, this animation is blended additively
-				SUBTRACTIVE = 2, ///< If set, this animation is blended subtractively (cannot be both additive and subtractive)
-				MIRRORED = 4,    ///< If set, this animation is mirrored before blending
-				PARTITIONS = 8	 ///< If set, this animation will be expanded from partition space to full pose before blending
+				ADDITIVE =		(1<<0), ///< If set, this animation is blended additively
+				SUBTRACTIVE =	(1<<1), ///< If set, this animation is blended subtractively (cannot be both additive and subtractive)
+				MIRRORED =		(1<<2), ///< If set, this animation is mirrored before blending
+				PARTITIONS =	(1<<3), ///< If set, this animation will be expanded from partition space to full pose before blending
 			};
 
 			/// Initializes the m_animData and m_numAnimData members from a given hkaQuantizedAnimation
@@ -326,7 +326,7 @@ class hkaQuantizedSampleAndCombineJob : public hkaAnimationSampleAndCombineJobBa
 #endif // HK_ANIMATION_SAMPLE_AND_COMBINE_JOBS_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

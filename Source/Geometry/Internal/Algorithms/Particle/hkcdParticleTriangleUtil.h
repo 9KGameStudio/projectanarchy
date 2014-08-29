@@ -15,10 +15,10 @@
 
 class hkAabb;
 
-class hkcdParticleTriangleUtil
+class HK_EXPORT_COMMON hkcdParticleTriangleUtil
 {
 	public:
-		struct TriangleCollisionInfo
+		struct HK_EXPORT_COMMON TriangleCollisionInfo
 		{
 			hkVector4 m_a;
 			hkVector4 m_b;
@@ -30,7 +30,7 @@ class hkcdParticleTriangleUtil
 
 		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(0,hkcdParticleTriangleUtil);
 
-		struct ParticleInfo
+		struct HK_EXPORT_COMMON ParticleInfo
 		{
 			ParticleInfo(): minDistance(1e10), nearestTriIndex(-1) {}
 
@@ -39,7 +39,7 @@ class hkcdParticleTriangleUtil
 			int nearestTriIndex;
 		};
 
-		struct TriangleCache
+		struct HK_EXPORT_COMMON TriangleCache
 		{
 			hkVector4 e01;
 			hkVector4 e02;
@@ -58,8 +58,6 @@ class hkcdParticleTriangleUtil
 //		static hkReal HK_CALL collideSphereTriangle(const hkVector4& pos, const hkVector4* v);
 		static hkReal HK_CALL collideSphereTriangle(const hkVector4& pos, const hkVector4* v, hkVector4& posAndDistanceOut);
 		static hkReal HK_CALL collideSphereTriangle(const hkVector4& pos, hkVector4Parameter vA, hkVector4Parameter vB, hkVector4Parameter vC, hkVector4& posAndDistanceOut);
-		static hkBool HK_CALL AabbTriangleIntersect(const hkAabb& aabb, const hkVector4* tri);
-		static hkBool HK_CALL AabbTriangleIntersect(const hkAabb& aabb, hkVector4Parameter vA, hkVector4Parameter vB, hkVector4Parameter vC);
 private:
 
 		static void HK_CALL collideSphereTriangle_SomeVectorCode(const hkVector4& pos, const hkVector4* v, const TriangleCache& cache, hkVector4& positionAndDistanceOut);
@@ -72,7 +70,7 @@ private:
 #endif //HKCD_PARTICLE_TRIANGLE_UTIL_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

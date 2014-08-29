@@ -135,7 +135,7 @@ namespace VisionManaged
             // render the grid axes
             hkvVec3 vPos(IX,IY,IZ);
 
-            pGrid->RenderAtPosition (pRenderer, vPos, 0.25f * min (fx, min (fy, fz)), 5.0f);
+            pGrid->RenderAtPosition (pRenderer, vPos, 0.25f * hkvMath::Min(fx, fy, fz), 5.0f);
           }
         }
       }
@@ -159,7 +159,7 @@ namespace VisionManaged
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

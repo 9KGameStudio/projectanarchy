@@ -21,26 +21,6 @@
 #define HARDWAREOCCLUSION_PORTALS       0x00000002
 #define HARDWAREOCCLUSION_ALL           0x0000FFFF
 
-
-// evaluation flags for VisRenderer_cl::EvaluateBrightnessAtPointEx function
-#define EVALUATELIGHTINGFLAG_USE_AFFECTMODELS_FLAG        0x00000001
-#define EVALUATELIGHTINGFLAG_USE_AFFECTWORLD_FLAG         0x00000002
-#define EVALUATELIGHTINGFLAG_STATICLIGHTS                 0x00000004
-#define EVALUATELIGHTINGFLAG_DYNAMICLIGHTS                0x00000008
-#define EVALUATELIGHTINGFLAG_ALL_LIGHTS                   (EVALUATELIGHTINGFLAG_STATICLIGHTS|EVALUATELIGHTINGFLAG_DYNAMICLIGHTS)
-
-#define EVALUATELIGHTINGFLAG_CLAMP_RESULT_COLOR           0x00000100
-#define EVALUATELIGHTINGFLAG_CLAMP_EACH_COLOR             0x00000200
-#define EVALUATELIGHTINGFLAG_NORMALIZECOLOR               0x00000400
-#define EVALUATELIGHTINGFLAG_ADD_AMBIENT                  0x00000800
-
-#define EVALUATELIGHTINGFLAG_TRACELINE_MODELS             0x00010000
-#define EVALUATELIGHTINGFLAG_TRACELINE_WORLD              0x00020000
-#define EVALUATELIGHTINGFLAG_TRACELINES                   0x000f0000
-
-
-
-
 class IVTimeOfDay;
 typedef VSmartPtr<IVTimeOfDay> IVTimeOfDayPtr;
 
@@ -494,7 +474,7 @@ public:
   /// Note that the effect of this setting depends on the platform and graphics chip. Some
   /// implementations may, for instance, truncate the passed float values to integer values.
   ///
-  /// This feature is not supported in DirectX11; calling this function will have no effect.
+  /// On DX11 platform, there is a significant performance overhead associated with this function as all existing state groups need to be re-created.
   /// 
   /// \param lod_bias
   ///   global texture LOD bias, between -8.0f and +8.0f. 
@@ -661,11 +641,11 @@ public:
   /// \brief
   ///   Enables/disables automatic visibility zone creation for empty worlds.
   /// 
-  /// If this feature is enabled (which is also the default setting), calling
+  /// If this feature is enabled (it is disabled by default), calling
   /// Vision::InitWorld() will automatically create a large empty visibility zone. This
   /// effectively emulates the behavior of engine versions 6.3 and below.
   /// 
-  /// This feature should be disabled if you want to create the visibility setup for your scene
+  /// This feature should be only enabled if you don't want to create the visibility setup for your scene
   /// manually.
   /// 
   /// Note that this method has to be called before calling Vision::InitWorld(), or using
@@ -1224,7 +1204,7 @@ public:
 
 
 
-#if defined(WIN32) || defined(_VISION_PS3) || defined(_VISION_XENON) || defined(_VISION_PSP2) || defined(_VISION_WIIU)
+#if defined(_VISION_WIN32) || defined(_VISION_PS3) || defined(_VISION_XENON) || defined(_VISION_PSP2) || defined(_VISION_WIIU)
 
   /// \brief
   ///   Sets the particle ring buffer size on PS3 / PC / PSP2 / Xbox360
@@ -1310,7 +1290,7 @@ public:
   VISION_APIFUNC bool GetUseSingleBufferedStaticMeshes();
 
 
-#if defined(WIN32) && defined(_VR_DX9)
+#if defined(_VISION_WIN32) && defined(_VR_DX9)
 
   /// \brief
   ///   PC DX9 only: Specifies whether vertex and index buffers should preferably reside in the
@@ -1574,15 +1554,13 @@ public:
   inline void BeginRenderLoop() { m_bInRenderLoop = true; }
   inline void EndRenderLoop() { m_bInRenderLoop = false; }
 
-  #if defined(WIN32) && defined(_VR_DX9)
+  #if defined(_VISION_WIN32) && defined(_VR_DX9)
     inline bool IsInRenderingBracket() const { return m_bIsInRenderingBracket; }
   #endif
 
   // old methods - still supported, but will be removed
   VISION_APIFUNC void SetVideoWait(VIS_CFG_OnOff glFinish);
   VISION_APIFUNC const char *Get3DAPIErrorString();
-  VISION_APIFUNC HKV_DEPRECATED_2012_1 void EvaluateBrightnessAtPoint (const hkvVec3& pos, unsigned char &r, unsigned char &g, unsigned char &b);
-  VISION_APIFUNC HKV_DEPRECATED_2012_1 int EvaluateBrightnessAtPointEx (const hkvVec3& pos, float fRadius, hkvVec4 &destColor, int iFlags, hkvVec3* pNormal=NULL);
   VISION_APIFUNC void SetUseHardwareOcclusionFlags(int iFlags = HARDWAREOCCLUSION_ALL); 
 
 
@@ -1622,13 +1600,13 @@ private:
   bool m_bRenderingIsSuspended;
   bool m_bShowBenignRuntimeWarnings;
 
-#if defined(_VR_DX9) && defined(WIN32)
+#if defined(_VR_DX9) && defined(_VISION_WIN32)
   bool m_bSingleBufferedBuffersUnmanaged;
   bool m_bDoubleBufferedBuffersUnmanaged;
   bool m_bIsInRenderingBracket;
 #endif
 
-#if defined(_VR_DX11) && defined(WIN32)
+#if defined(_VR_DX11) && defined(_VISION_WIN32)
   bool m_bUseTypedRenderTargets;
 #endif
 
@@ -1663,7 +1641,7 @@ VISION_APIFUNC VRenderHook_e UpdateRenderHook(unsigned int uiOldValue);
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -63,6 +63,13 @@ HK_FORCE_INLINE void hkVector4f::setZero()
 	m_quad = vcombine_f32(z,z);
 }
 
+template<int vectorConstant>
+HK_FORCE_INLINE void hkVector4f::setConstant()
+{
+	HK_VECTOR4f_CONSTANT_CHECK;
+	m_quad = g_vectorfConstants[vectorConstant];
+}
+
 template <int I> 
 HK_FORCE_INLINE void hkVector4f::zeroComponent()
 {
@@ -285,6 +292,11 @@ HK_FORCE_INLINE void hkVector4f::setSelect( hkVector4fComparisonParameter comp, 
 	m_quad = vbslq_f32( comp.m_mask, trueValue.m_quad, falseValue.m_quad );
 }
 
+HK_FORCE_INLINE void hkVector4f::setClampedZeroOne( hkVector4fParameter a )
+{
+	setClamped(a, getConstant<HK_QUADREAL_0>(), getConstant<HK_QUADREAL_1>());
+}
+
 HK_FORCE_INLINE void hkVector4f::zeroIfFalse( hkVector4fComparisonParameter comp )
 {
 	hkVector4f zero; zero.setZero();
@@ -298,7 +310,7 @@ HK_FORCE_INLINE void hkVector4f::zeroIfTrue( hkVector4fComparisonParameter comp 
 }
 
 
-template<hkVector4fComparison::Mask M> 
+template<hkVector4ComparisonMask::Mask M> 
 HK_FORCE_INLINE void hkVector4f::setSelect( hkVector4fParameter trueValue, hkVector4fParameter falseValue )
 {
 	hkVector4fComparison comp; comp.set(M);
@@ -545,6 +557,12 @@ HK_FORCE_INLINE const hkSimdFloat32 hkVector4f::horizontalMax() const
 }
 
 template <>
+HK_FORCE_INLINE const hkSimdFloat32 hkVector4f::horizontalMin<1>() const
+{
+	return getComponent<0>();
+}
+
+template <>
 HK_FORCE_INLINE const hkSimdFloat32 hkVector4f::horizontalMin<2>() const
 {
 	float32x2_t l = vget_low_f32(m_quad);
@@ -639,13 +657,13 @@ HK_FORCE_INLINE void hkVector4f::setXYZ(hkVector4fParameter xyz)
 HK_FORCE_INLINE void hkVector4f::addXYZ(hkVector4fParameter xyz)
 {
 	m_quad = vaddq_f32( m_quad, xyz.m_quad );
-	HK_ON_DEBUG( reinterpret_cast<hkUint32*>(&m_quad)[3] = 0xffffffff; )
+	HK_ON_DEBUG( reinterpret_cast<hkUint32*>(&m_quad)[3] = reinterpret_cast<const hkUint32*>(&HK_VECTOR4f_DEBUG_FILL_VALUE)[0]; )
 }
 
 HK_FORCE_INLINE void hkVector4f::subXYZ(hkVector4fParameter xyz)
 {
 	m_quad = vsubq_f32( m_quad, xyz.m_quad );
-	HK_ON_DEBUG( reinterpret_cast<hkUint32*>(&m_quad)[3] = 0xffffffff; )
+	HK_ON_DEBUG( reinterpret_cast<hkUint32*>(&m_quad)[3] = reinterpret_cast<const hkUint32*>(&HK_VECTOR4f_DEBUG_FILL_VALUE)[0]; )
 }
 
 HK_FORCE_INLINE void hkVector4f::setXYZ(hkFloat32 v)
@@ -668,7 +686,7 @@ HK_FORCE_INLINE void hkVector4f::setXYZ_0(hkVector4fParameter xyz)
 HK_FORCE_INLINE void hkVector4f::setBroadcastXYZ(const int i, hkVector4fParameter v)
 {
 	setBroadcast(i,v);
-	HK_ON_DEBUG( reinterpret_cast<hkUint32*>(&m_quad)[3] = 0xffffffff; )
+	HK_ON_DEBUG( reinterpret_cast<hkUint32*>(&m_quad)[3] = reinterpret_cast<const hkUint32*>(&HK_VECTOR4f_DEBUG_FILL_VALUE)[0]; )
 }
 
 HK_FORCE_INLINE const hkSimdFloat32 hkVector4f::getComponent(const int i) const
@@ -1183,20 +1201,23 @@ struct unroll_load<N, HK_IO_NATIVE_ALIGNED> { HK_FORCE_INLINE static void apply(
 				hkSingleFloat32 q  = vld1_f32( (float32_t const *)p );
 				hkSingleFloat32 q2 = vld1_dup_f32( (float32_t const *) (p+2));
 				self = vcombine_f32(q,q2);
-				HK_ON_DEBUG(reinterpret_cast<hkUint32*>(&self)[3] = 0xffffffff;)
+				HK_ON_DEBUG( reinterpret_cast<hkUint32*>(&self)[3] = reinterpret_cast<const hkUint32*>(&HK_VECTOR4f_DEBUG_FILL_VALUE)[0]; )
 			}
 			break;
 		case 2:
 			{
 				hkSingleFloat32 q = vld1_f32( (float32_t const *)p );
 				self = vcombine_f32(q,q);
-				HK_ON_DEBUG(reinterpret_cast<hkUint32*>(&self)[2] = 0xffffffff; reinterpret_cast<hkUint32*>(&self)[3] = 0xffffffff;)
+				HK_ON_DEBUG( reinterpret_cast<hkUint32*>(&self)[2] = reinterpret_cast<const hkUint32*>(&HK_VECTOR4f_DEBUG_FILL_VALUE)[0]; )
+				HK_ON_DEBUG( reinterpret_cast<hkUint32*>(&self)[3] = reinterpret_cast<const hkUint32*>(&HK_VECTOR4f_DEBUG_FILL_VALUE)[0]; )
 			}
 			break;
 		default:
 			{
 				self = vld1q_dup_f32( (float32_t const *)p );
-				HK_ON_DEBUG(reinterpret_cast<hkUint32*>(&self)[1] = 0xffffffff; reinterpret_cast<hkUint32*>(&self)[2] = 0xffffffff; reinterpret_cast<hkUint32*>(&self)[3] = 0xffffffff;)
+				HK_ON_DEBUG( reinterpret_cast<hkUint32*>(&self)[1] = reinterpret_cast<const hkUint32*>(&HK_VECTOR4f_DEBUG_FILL_VALUE)[0]; )
+				HK_ON_DEBUG( reinterpret_cast<hkUint32*>(&self)[2] = reinterpret_cast<const hkUint32*>(&HK_VECTOR4f_DEBUG_FILL_VALUE)[0]; )
+				HK_ON_DEBUG( reinterpret_cast<hkUint32*>(&self)[3] = reinterpret_cast<const hkUint32*>(&HK_VECTOR4f_DEBUG_FILL_VALUE)[0]; )
 			}
 			break;
 	}
@@ -1220,7 +1241,7 @@ struct unroll_load_D<N, HK_IO_NATIVE_ALIGNED> { HK_FORCE_INLINE static void appl
 			hkSingleFloat32 q  = vld1_f32( (float32_t const *)a );
 			hkSingleFloat32 q2 = vld1_dup_f32( (float32_t const *) &(a[2]));
 			self = vcombine_f32(q,q2);
-			HK_ON_DEBUG(reinterpret_cast<hkUint32*>(&self)[3] = 0xffffffff;)
+			HK_ON_DEBUG( reinterpret_cast<hkUint32*>(&self)[3] = reinterpret_cast<const hkUint32*>(&HK_VECTOR4f_DEBUG_FILL_VALUE)[0]; )
 		}
 		break;
 	case 2:
@@ -1228,14 +1249,17 @@ struct unroll_load_D<N, HK_IO_NATIVE_ALIGNED> { HK_FORCE_INLINE static void appl
 			a[0] = float(p[0]); a[1] = float(p[1]);
 			hkSingleFloat32 q = vld1_f32( (float32_t const *)a );
 			self = vcombine_f32(q,q);
-			HK_ON_DEBUG(reinterpret_cast<hkUint32*>(&self)[2] = 0xffffffff; reinterpret_cast<hkUint32*>(&self)[3] = 0xffffffff;)
+			HK_ON_DEBUG( reinterpret_cast<hkUint32*>(&self)[2] = reinterpret_cast<const hkUint32*>(&HK_VECTOR4f_DEBUG_FILL_VALUE)[0]; )
+			HK_ON_DEBUG( reinterpret_cast<hkUint32*>(&self)[3] = reinterpret_cast<const hkUint32*>(&HK_VECTOR4f_DEBUG_FILL_VALUE)[0]; )
 		}
 		break;
 	default:
 		{
 			a[0] = float(p[0]);
 			self = vld1q_dup_f32( (float32_t const *)a );
-			HK_ON_DEBUG(reinterpret_cast<hkUint32*>(&self)[1] = 0xffffffff; reinterpret_cast<hkUint32*>(&self)[2] = 0xffffffff; reinterpret_cast<hkUint32*>(&self)[3] = 0xffffffff;)
+			HK_ON_DEBUG( reinterpret_cast<hkUint32*>(&self)[1] = reinterpret_cast<const hkUint32*>(&HK_VECTOR4f_DEBUG_FILL_VALUE)[0]; )
+			HK_ON_DEBUG( reinterpret_cast<hkUint32*>(&self)[2] = reinterpret_cast<const hkUint32*>(&HK_VECTOR4f_DEBUG_FILL_VALUE)[0]; )
+			HK_ON_DEBUG( reinterpret_cast<hkUint32*>(&self)[3] = reinterpret_cast<const hkUint32*>(&HK_VECTOR4f_DEBUG_FILL_VALUE)[0]; )
 		}
 		break;
 	}
@@ -1333,7 +1357,7 @@ struct unroll_loadH<N, HK_IO_NATIVE_ALIGNED> { HK_FORCE_INLINE static void apply
 				halfs = vld1_lane_u16( (hkUint16 const *)(p+2), halfs, 2 );
 				uint32x4_t r = vshll_n_u16(halfs, 16);
 				self = vreinterpretq_f32_u32(r);
-				HK_ON_DEBUG(reinterpret_cast<hkUint32*>(&self)[3] = 0xffffffff;)
+				HK_ON_DEBUG( reinterpret_cast<hkUint32*>(&self)[3] = reinterpret_cast<const hkUint32*>(&HK_VECTOR4f_DEBUG_FILL_VALUE)[0]; )
 			}
 			break;
 		case 2:
@@ -1343,7 +1367,8 @@ struct unroll_loadH<N, HK_IO_NATIVE_ALIGNED> { HK_FORCE_INLINE static void apply
 				halfs = vld1_lane_u16( (hkUint16 const *)(p+1), halfs, 1 );
 				uint32x4_t r = vshll_n_u16(halfs, 16);
 				self = vreinterpretq_f32_u32(r);
-				HK_ON_DEBUG(reinterpret_cast<hkUint32*>(&self)[2] = 0xffffffff; reinterpret_cast<hkUint32*>(&self)[3] = 0xffffffff;)
+				HK_ON_DEBUG( reinterpret_cast<hkUint32*>(&self)[2] = reinterpret_cast<const hkUint32*>(&HK_VECTOR4f_DEBUG_FILL_VALUE)[0]; )
+				HK_ON_DEBUG( reinterpret_cast<hkUint32*>(&self)[3] = reinterpret_cast<const hkUint32*>(&HK_VECTOR4f_DEBUG_FILL_VALUE)[0]; )
 			}
 			break;
 		default:
@@ -1352,7 +1377,9 @@ struct unroll_loadH<N, HK_IO_NATIVE_ALIGNED> { HK_FORCE_INLINE static void apply
 				halfs = vld1_dup_u16( (hkUint16 const *)p );
 				uint32x4_t r = vshll_n_u16(halfs, 16);
 				self = vreinterpretq_f32_u32(r);
-				HK_ON_DEBUG(reinterpret_cast<hkUint32*>(&self)[1] = 0xffffffff; reinterpret_cast<hkUint32*>(&self)[2] = 0xffffffff; reinterpret_cast<hkUint32*>(&self)[3] = 0xffffffff;)
+				HK_ON_DEBUG( reinterpret_cast<hkUint32*>(&self)[1] = reinterpret_cast<const hkUint32*>(&HK_VECTOR4f_DEBUG_FILL_VALUE)[0]; )
+				HK_ON_DEBUG( reinterpret_cast<hkUint32*>(&self)[2] = reinterpret_cast<const hkUint32*>(&HK_VECTOR4f_DEBUG_FILL_VALUE)[0]; )
+				HK_ON_DEBUG( reinterpret_cast<hkUint32*>(&self)[3] = reinterpret_cast<const hkUint32*>(&HK_VECTOR4f_DEBUG_FILL_VALUE)[0]; )
 			}
 			break;
 	}
@@ -1435,7 +1462,7 @@ struct unroll_loadF16<N, HK_IO_NATIVE_ALIGNED>
 #if defined(HK_DEBUG)	
 		for (int i = N; i < 4; ++i) 
 		{
-			reinterpret_cast<hkUint32*>(&self)[i] = 0xffffffff;			
+			reinterpret_cast<hkUint32*>(&self)[i] = reinterpret_cast<const hkUint32*>(&HK_VECTOR4f_DEBUG_FILL_VALUE)[0];
 		}
 #endif
 	}
@@ -1462,7 +1489,7 @@ struct unroll_loadF16<N, HK_IO_NATIVE_ALIGNED> { HK_FORCE_INLINE static void app
 			halfs = vld1_lane_f16( (__fp16 const *)(p+1), halfs, 1 );
 			halfs = vld1_lane_f16( (__fp16 const *)(p+2), halfs, 2 );
 			self = vcvt_f32_f16(halfs);
-			HK_ON_DEBUG(reinterpret_cast<hkUint32*>(&self)[3] = 0xffffffff;)
+			HK_ON_DEBUG( reinterpret_cast<hkUint32*>(&self)[3] = reinterpret_cast<const hkUint32*>(&HK_VECTOR4f_DEBUG_FILL_VALUE)[0]; )
 		}
 		break;
 	case 2:
@@ -1471,7 +1498,8 @@ struct unroll_loadF16<N, HK_IO_NATIVE_ALIGNED> { HK_FORCE_INLINE static void app
 			halfs = vld1_dup_f16( (__fp16 const *)p );
 			halfs = vld1_lane_f16( (__fp16 const *)(p+1), halfs, 1 );
 			self = vcvt_f32_f16(halfs);
-			HK_ON_DEBUG(reinterpret_cast<hkUint32*>(&self)[2] = 0xffffffff; reinterpret_cast<hkUint32*>(&self)[3] = 0xffffffff;)
+			HK_ON_DEBUG( reinterpret_cast<hkUint32*>(&self)[2] = reinterpret_cast<const hkUint32*>(&HK_VECTOR4f_DEBUG_FILL_VALUE)[0]; )
+			HK_ON_DEBUG( reinterpret_cast<hkUint32*>(&self)[3] = reinterpret_cast<const hkUint32*>(&HK_VECTOR4f_DEBUG_FILL_VALUE)[0]; )
 		}
 		break;
 	default:
@@ -1479,7 +1507,9 @@ struct unroll_loadF16<N, HK_IO_NATIVE_ALIGNED> { HK_FORCE_INLINE static void app
 			float16x4_t halfs;
 			halfs = vld1_dup_f16( (__fp16 const *)p );
 			self = vcvt_f32_f16(halfs);
-			HK_ON_DEBUG(reinterpret_cast<hkUint32*>(&self)[1] = 0xffffffff; reinterpret_cast<hkUint32*>(&self)[2] = 0xffffffff; reinterpret_cast<hkUint32*>(&self)[3] = 0xffffffff;)
+			HK_ON_DEBUG( reinterpret_cast<hkUint32*>(&self)[1] = reinterpret_cast<const hkUint32*>(&HK_VECTOR4f_DEBUG_FILL_VALUE)[0]; )
+			HK_ON_DEBUG( reinterpret_cast<hkUint32*>(&self)[2] = reinterpret_cast<const hkUint32*>(&HK_VECTOR4f_DEBUG_FILL_VALUE)[0]; )
+			HK_ON_DEBUG( reinterpret_cast<hkUint32*>(&self)[3] = reinterpret_cast<const hkUint32*>(&HK_VECTOR4f_DEBUG_FILL_VALUE)[0]; )
 		}
 		break;
 	}
@@ -1804,7 +1834,7 @@ HK_FORCE_INLINE void hkVector4f::store(hkFloat16* p) const
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140625)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

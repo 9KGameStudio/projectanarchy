@@ -8,23 +8,23 @@
 #ifndef DEMOS_TEST_UNITTEST_HKSERIALIZE_XML_HKSTRESSTESTCINFO_XML_H
 #define DEMOS_TEST_UNITTEST_HKSERIALIZE_XML_HKSTRESSTESTCINFO_XML_H
 
-extern const class hkClass hkStressTestCinfoStructWithArraysClass;
+extern const class hkClass StressTestCinfoStructWithArraysClass;
 
-extern const class hkClass hkStressTestCinfoStructWithVtableClass;
+extern const class hkClass StressTestCinfoStructWithVtableClass;
 
-extern const class hkClass hkStressTestCinfoStructWithVirtualFunctionsClass;
+extern const class hkClass StressTestCinfoStructWithVirtualFunctionsClass;
 
-extern const class hkClass hkStressTestCinfoSimpleStructClass;
+extern const class hkClass StressTestCinfoSimpleStructClass;
 
 /// hkStressTestCinfo meta information
-extern const class hkClass hkStressTestCinfoClass;
+extern const class hkClass StressTestCinfoClass;
 
 /// A class to test all parts of the serialization infrastructure.
-class hkStressTestCinfo
+class StressTestCinfo
 {
 	public:
 		HK_DECLARE_REFLECTION();
-		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_DEMO, hkStressTestCinfo);
+		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_DEMO, StressTestCinfo);
 
 			///
 		enum AnEnum
@@ -57,7 +57,7 @@ class hkStressTestCinfo
 			///
 		struct AllPodsStruct
 		{
-			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_SERIALIZE, hkStressTestCinfo::AllPodsStruct );
+			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_SERIALIZE, StressTestCinfo::AllPodsStruct );
 
 				///
 			hkBool m_bool;
@@ -125,7 +125,7 @@ class hkStressTestCinfo
 		};
 
 		///
-		struct StructWithVtable : public hkStressTestCinfo::StructWithVirtualFunctions
+		struct StructWithVtable : public StressTestCinfo::StructWithVirtualFunctions
 		{
 			HK_DECLARE_REFLECTION();
 			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_DEMO, StructWithVtable);
@@ -144,7 +144,7 @@ class hkStressTestCinfo
 			///
 		struct StructWithArrays
 		{
-			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_SERIALIZE, hkStressTestCinfo::StructWithArrays );
+			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_SERIALIZE, StressTestCinfo::StructWithArrays );
 			HK_DECLARE_REFLECTION();
 				///
 			hkArray<hkUint32> m_anArray;
@@ -162,7 +162,7 @@ class hkStressTestCinfo
 
 
 			/// Default constructor
-	hkStressTestCinfo() { }
+	StressTestCinfo() { }
 
 		//
 		// Members
@@ -438,12 +438,12 @@ class hkStressTestCinfo
 		//struct StructWithArrays m_cArrayOfStructsWithArrays[5];
 };
 
-hkBool::CompileTimeTrueType hkIsVirtual(hkStressTestCinfo::StructWithVirtualFunctions*);
+hkBool::CompileTimeTrueType hkIsVirtual(StressTestCinfo::StructWithVirtualFunctions*);
 
 #endif // DEMOS_TEST_UNITTEST_HKSERIALIZE_XML_HKSTRESSTESTCINFO_XML_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -17,7 +17,7 @@
 
 /// hkaiNavVolumeGraph serves as the bridge between an hkaiNavVolume and the hkaiAStar system.
 /// The nav volume cells are treated as nodes in the A* search.
-/// Users don't need to use this directly; instead they should use hkaiVolumePathfindingUtil or hkaiNavVolumeAstarJobs.
+/// Users don't need to use this directly; instead they should use hkaiVolumePathfindingUtil or hkaiNavVolumeAstarTask.
 /// This particular implementation keeps a local copy of the current cell and relevant edges,
 /// which avoids DMA/cache checks on SPU, and cache misses on CPU
 struct hkaiNavVolumeGraph
@@ -25,8 +25,8 @@ struct hkaiNavVolumeGraph
 public:
 	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE,hkaiNavVolumeGraph);
 
-	typedef int SearchIndex;
-	typedef int EdgeKey;
+	typedef hkaiPackedKey SearchIndex;
+	typedef hkaiNavVolume::EdgeIndex EdgeKey;
 	typedef hkReal EdgeCost;
 	typedef hkVector4 Position;
 
@@ -91,7 +91,10 @@ public:
 
 	inline void setCurrentAccessor( int sectionId );
 	inline void setAdjacentAccessor( int sectionId );
-	inline void setAdjacentCachedCell( hkUint32 cellKey );
+	inline void setAdjacentCachedCell( hkaiPackedKey cellKey );
+
+		/// Only used to set the cached position for the start cell.
+	inline void setAdjacentCachedPosition( hkVector4Parameter pos);
 
 private:
 	/// Streaming collection which contains volumes
@@ -125,8 +128,8 @@ private:
 	HK_ON_SPU( hkaiSpuNavVolumeAccessor m_currentAccessor; )
 	HK_ON_SPU( hkaiSpuNavVolumeAccessor m_adjacentAccessor; )
 
-	HK_PAD_ON_SPU(int)	m_cachedCurrentSectionId;
-	HK_PAD_ON_SPU(int)	m_cachedAdjacentSectionId;
+	HK_PAD_ON_SPU(hkaiRuntimeIndex)	m_cachedCurrentSectionId;
+	HK_PAD_ON_SPU(hkaiRuntimeIndex)	m_cachedAdjacentSectionId;
 
 	// Updated during nextNode()
 	hkaiNavVolume::Cell m_cachedCurrentCell;
@@ -136,16 +139,16 @@ private:
 	hkaiNavVolume::Edge m_cachedCurrentEdge;
 	hkaiNavVolume::Cell m_cachedAdjacentCell;
 
-	hkAabb m_cachedCurrentAabb;
-	hkAabb m_cachedAdjacentAabb;
+	      hkAabb& getCachedCurrentAabb()        { return m_cachedModifierInfo.m_currentCellInfo.m_aabb; } 
+	const hkAabb& getCachedCurrentAabb()  const { return m_cachedModifierInfo.m_currentCellInfo.m_aabb; } 
+	      hkAabb& getCachedAdjacentAabb()       { return m_cachedModifierInfo.m_adjacentCellInfo.m_aabb; } 
+	const hkAabb& getCachedAdjacentAabb() const { return m_cachedModifierInfo.m_adjacentCellInfo.m_aabb; } 
 
 	hkaiNavVolumeCellPairInfo m_cachedModifierInfo;
 
-#ifdef HK_DEBUG
-	int m_cachedCurrentCellKey;
-	int m_cachedCurrentEdgeIndex;
-	int m_cachedAdjacentCellKey;
-#endif
+	HK_DEBUG_ONLY_MEMBER(hkaiPackedKey, m_cachedCurrentCellKey);
+	HK_DEBUG_ONLY_MEMBER(hkaiNavVolume::EdgeIndex, m_cachedCurrentEdgeIndex);
+	HK_DEBUG_ONLY_MEMBER(hkaiPackedKey, m_cachedAdjacentCellKey);
 };
 
 #include <Ai/Pathfinding/Graph/hkaiNavVolumeGraph.inl>
@@ -153,7 +156,7 @@ private:
 #endif // HKAI_NAV_VOLUME_GRAPH_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

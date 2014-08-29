@@ -20,7 +20,7 @@
 #include <Common/Base/Container/RelArray/hkRelArray.h>
 
 template<typename EnclosingClass>
-class hkRelArrayBuilder
+class HK_EXPORT_COMMON hkRelArrayBuilder
 {
 	//+hk.MemoryTracker(ignore=True)
 public:
@@ -34,7 +34,7 @@ protected:
 	int m_offsetSoFar;
 };
 
-class hkRelArrayUtil
+class HK_EXPORT_COMMON hkRelArrayUtil
 {
 public:
 	enum
@@ -48,7 +48,7 @@ public:
 #endif //HK_RELARRAYUTIL_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

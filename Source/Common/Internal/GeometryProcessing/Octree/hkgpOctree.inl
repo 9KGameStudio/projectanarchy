@@ -153,7 +153,7 @@ inline void	hkgpOctree::enumerateDual(OCTREE& octree)
 						const int*	idx = lut_tetras[i];						
 						const int	vi[4] = { volume[idx[0]], volume[idx[1]], volume[idx[2]], volume[idx[3]]};
 						bool		validTetra = true;
-						for(int j=0; j<4 && valid; ++j)
+						for(int j=0; j<4 && validTetra; ++j)
 						{
 							for(int k=j+1; k<4; ++k)
 							{
@@ -178,7 +178,7 @@ inline void	hkgpOctree::enumerateDual(OCTREE& octree)
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

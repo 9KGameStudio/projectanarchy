@@ -188,13 +188,12 @@ namespace Editor.Contexts
 
     public MeasureToolCamera()
     {
-      //this.AllowShapeSelection = false;
     }
 
     public override bool OnMouseUp(MouseEventArgs e, KeyModifier eKeyMod, int iOldX, int iOldY)
     {
       base.OnMouseUp(e, eKeyMod, iOldX, iOldY);
-      if (e.Button == MouseButtons.Left)// && eKeyMod != KeyModifier.None)
+      if (e.Button == MouseButtons.Left)
         HandleClick();
       return true;
     }
@@ -208,7 +207,7 @@ namespace Editor.Contexts
         case 1: _end = new MeasureToolPickerEnd(_start); break;
         case 2: _result = new MeasureToolPickerViewResult(_start, _end,"Click again to restart or ESC to abort"); break;
         default:
-          iClickCount = 0; // retart
+          iClickCount = 0; // restart
           break;
       }
     }
@@ -246,7 +245,7 @@ namespace Editor.Contexts
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

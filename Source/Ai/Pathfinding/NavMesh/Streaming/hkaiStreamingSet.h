@@ -13,7 +13,7 @@
 	/// A list of connections between two structures (e.g. hkaiNavMesh or hkaiDirectedGraphExplicitCost).
 	/// These connections are used by the streaming system to add edge to the structures' instanced
 	/// counterparts (e.g. hkaiNavMeshInstance or hkaiDirectedGraphInstance) at runtime.
-struct hkaiStreamingSet
+struct HK_EXPORT_AI hkaiStreamingSet
 {
 	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_AI_NAVMESH, hkaiStreamingSet);
 	HK_DECLARE_REFLECTION();
@@ -39,7 +39,7 @@ struct hkaiStreamingSet
 	typedef hkUint32 GraphEdgeData;
 
 		/// Information for a streaming connection between nav meshes.
-	struct NavMeshConnection
+	struct HK_EXPORT_AI NavMeshConnection
 	{
 		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_AI_NAVMESH, hkaiStreamingSet::NavMeshConnection);
 		HK_DECLARE_REFLECTION();
@@ -57,7 +57,7 @@ struct hkaiStreamingSet
 	};
 
 		/// Information for a streaming connection between directed graphs.
-	struct GraphConnection
+	struct HK_EXPORT_AI GraphConnection
 	{
 			//+version(3)
 		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_AI_NAVMESH, hkaiStreamingSet::GraphConnection);
@@ -74,7 +74,7 @@ struct hkaiStreamingSet
 	};
 
 		/// Information for a streaming connection between nav volumes.
-	struct VolumeConnection
+	struct HK_EXPORT_AI VolumeConnection
 	{
 		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_AI_NAVMESH, hkaiStreamingSet::VolumeConnection);
 		HK_DECLARE_REFLECTION();
@@ -116,7 +116,7 @@ struct hkaiStreamingSet
 #endif // HKAI_STREAMING_CONNECTION_SET_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

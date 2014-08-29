@@ -69,12 +69,7 @@ void hkIntSpaceUtil::convertAabb(const hkAabb& aabbF, hkAabb16& aabbOut)const
 	hkIntVector imi; imi.setConvertF32toS32( mi );
 	hkIntVector ima; ima.setConvertF32toS32( ma );
 
-	hkUint16 key0 = aabbOut.m_key;
-	hkUint16 key1 = aabbOut.m_key1;
 	((hkIntVector&)aabbOut).setConvertU32ToU16( imi, ima );
-
-	aabbOut.m_key = key0;
-	aabbOut.m_key1 = key1;
 }
 
 
@@ -168,7 +163,7 @@ HK_FORCE_INLINE void hkIntSpaceUtil::convertIntToWorldSpace( const hkAabb& intSp
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

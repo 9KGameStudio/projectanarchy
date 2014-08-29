@@ -7,58 +7,23 @@
  */
 
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/VisionEnginePluginPCH.h>
+
+#include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/MobileForwardRenderer/VMobileForwardRenderer.hpp>
+
+#include <Vision/Runtime/Engine/Renderer/Lighting/VisApiLightGridManager.hpp>
+#include <Vision/Runtime/Engine/Renderer/Shader/VisionMobileShaderProvider.hpp>
+#include <Vision/Runtime/Engine/Visibility/VisionTranslucencySorter.hpp>
+
+#include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/MobileForwardRenderer/VMobileForwardRenderLoop.hpp>
+#include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/Postprocessing/ToneMapping.hpp> 
+#include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/Postprocessing/VPostProcessScreenMasks.hpp>
+#include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/Postprocessing/VPostProcessUpscale.hpp>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/RenderingHelpers/ScratchTexturePool.hpp>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/RenderingHelpers/RenderingOptimizationHelpers.hpp>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/RenderingHelpers/TimeOfDay.hpp>
-#include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/Postprocessing/ToneMapping.hpp> 
-#include <Vision/Runtime/Engine/Renderer/Shader/VisionMobileShaderProvider.hpp>
-#include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/MobileForwardRenderer/VMobileForwardRenderLoop.hpp>
-#include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/MobileForwardRenderer/VMobileForwardRenderer.hpp>
-#include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/Postprocessing/VPostProcessScreenMasks.hpp>
-#include <Vision/Runtime/Engine/Renderer/Lighting/VisApiLightGridManager.hpp>
+
 
 VCallback VMobileForwardRenderingSystem::OnSetResolution;
-
-/// \brief
-///   Simple render loop class for upscaling the rendering results of the VMobileForwardRenderingSystem to the full display output resolution.
-class VUpscaleRenderLoop : public IVisRenderLoop_cl
-{
-public:
-
-  /// \brief
-  ///   Constructor. Input texture should be the render target of the renderer node's final target context.
-  VUpscaleRenderLoop(VTextureObject *pSourceTexture, bool bFiltering)
-  {
-    m_spSourceTexture = pSourceTexture;
-    m_bFiltering = bFiltering;
-  }
-
-  /// \brief
-  ///   Upscale render loop implementation. Renders the upscaled image and the 2D overlay geometry.
-  virtual void OnDoRenderLoop(void *pUserData)
-  {
-    INSERT_PERF_MARKER_SCOPE("VUpscaleRenderLoop::OnDoRenderLoop");
-
-    int iWidth, iHeight;
-    VisRenderContext_cl *pContext = VisRenderContext_cl::GetCurrentContext();
-    pContext->GetSize(iWidth, iHeight);
-
-    VSimpleRenderState_t iState(VIS_TRANSP_NONE,RENDERSTATEFLAG_FRONTFACE|RENDERSTATEFLAG_ALWAYSVISIBLE|RENDERSTATEFLAG_NOWIREFRAME|RENDERSTATEFLAG_NOMULTISAMPLING);
-    if (m_bFiltering)
-      iState.SetFlag(RENDERSTATEFLAG_FILTERING);
-    IVRender2DInterface *pRI = Vision::RenderLoopHelper.BeginOverlayRendering();
-    pRI->DrawTexturedQuad(hkvVec2(0.f,0.f), hkvVec2((float)iWidth, (float)iHeight), m_spSourceTexture, hkvVec2(0.0f,0.0f), hkvVec2(1.0f,1.0f), V_RGBA_WHITE, iState);
-    Vision::RenderLoopHelper.EndOverlayRendering();
-
-    // Only render 2d overlay geometry. 3d requires a depth buffer, which we don't have at this resolution.
-    VRendererNodeCommon::RenderOverlays(true, false);
-  }
-
-protected:
-  bool m_bFiltering;                        ///< True to enable bilinear filtering, false to use point sampling.
-  VTextureObjectPtr m_spSourceTexture;      ///< Input texture to be upscaled.
-};
-
 
 VMobileForwardRenderingSystem::VMobileForwardRenderingSystem()
 {
@@ -67,10 +32,9 @@ VMobileForwardRenderingSystem::VMobileForwardRenderingSystem()
   DesiredRenderingDpi = 150.f;
   UseUpscaleFiltering = FALSE;
   ResolutionTolerance = 30.f;
+  UseInterleavedTranslucencySorting = FALSE;
   m_bIsInitialized = false;  
-  m_spUpscaleTargetContext = NULL;
-  m_spOriginalSizeTargetContext = NULL;
-  m_spStoreFinalTargetContext = NULL;
+  m_bOffscreenContextRequired = false;
 
   Vision::Callbacks.OnEnterForeground += this;
 }
@@ -82,7 +46,9 @@ VMobileForwardRenderingSystem::VMobileForwardRenderingSystem(VisRenderContext_cl
   DesiredRenderingDpi = 150.f;
   UseUpscaleFiltering = FALSE;
   ResolutionTolerance = 30.f;
+  UseInterleavedTranslucencySorting = FALSE;
   m_bIsInitialized = false;
+  m_bOffscreenContextRequired = false;
 
   Vision::Callbacks.OnEnterForeground += this;
 }
@@ -107,6 +73,17 @@ void VMobileForwardRenderingSystem::SetResolutionMode(VRendererResolutionMode_e 
 
     ReInitializeRenderer();
   }
+}
+
+void VMobileForwardRenderingSystem::SetUseInterleavedTranslucencySorting(bool bUseInterleavedTranslucencySorting)
+{
+  BOOL BUseInterleavedTranslucencySorting = bUseInterleavedTranslucencySorting ? TRUE : FALSE;
+  if (UseInterleavedTranslucencySorting == BUseInterleavedTranslucencySorting)
+    return;
+
+  VASSERT_MSG(!IsInitialized(), "The mobile forward renderer must be explicitly deinitialized before changing the interleaved translucency sorting settings.");
+
+  UseInterleavedTranslucencySorting = BUseInterleavedTranslucencySorting;
 }
 
 
@@ -161,47 +138,38 @@ void VMobileForwardRenderingSystem::DetermineRenderResolution()
   // Retrieve original final target size.
   int iOriginalSize[2] = { -1, -1 };
 
-  if (m_spUpscaleTargetContext != NULL)
-  {
-    m_spUpscaleTargetContext->GetSize(iOriginalSize[0], iOriginalSize[1]);
-  }
-  else if (GetFinalTargetContext() != NULL)
-  {
-    GetFinalTargetContext()->GetSize(iOriginalSize[0], iOriginalSize[1]);
-  }
+  GetFinalTargetContext()->GetSize(iOriginalSize[0], iOriginalSize[1]);
 
   VASSERT_MSG(iOriginalSize[0] >= 0 && iOriginalSize[1] >= 0, "Invalid original size!");
 
   // Determine target size
-  int iTargetSize[2] = { -1, -1 };
-
   switch (RenderingResolutionMode)
   {
   case VRSM_FULL_RESOLUTION:
-    iTargetSize[0] = iOriginalSize[0]; iTargetSize[1] = iOriginalSize[1];
+    m_iOffscreenContextSize[0] = iOriginalSize[0]; m_iOffscreenContextSize[1] = iOriginalSize[1];
     break;
   case VRSM_QUARTER_RESOLUTION:
-    iTargetSize[0] = iOriginalSize[0] >> 1; iTargetSize[1] = iOriginalSize[1] >> 1;
+    m_iOffscreenContextSize[0] = iOriginalSize[0] >> 1; m_iOffscreenContextSize[1] = iOriginalSize[1] >> 1;
     break;
   case VRSM_USE_TARGET_DPI:
-    GetTargetSizeFromDeviceDPI(iOriginalSize, iTargetSize);
+    GetTargetSizeFromDeviceDPI(iOriginalSize, m_iOffscreenContextSize);
     break;
   default:
     VASSERT_MSG(false, "Invalid rendering resolution mode!");
     break;
   };
    
-  VSetResolutionCallbackObject resolutionCallbackObject(&OnSetResolution, iTargetSize, this);
+  VSetResolutionCallbackObject resolutionCallbackObject(&OnSetResolution, m_iOffscreenContextSize, this);
   OnSetResolution.TriggerCallbacks(&resolutionCallbackObject);
 
   // Make sure resolution is still valid after callback handler may have modified it.
   // Size of the render target should never exceed the size of the original target buffer
-  iTargetSize[0] = hkvMath::Min(iOriginalSize[0], resolutionCallbackObject.m_iTargetSize[0]);
-  iTargetSize[1] = hkvMath::Min(iOriginalSize[1], resolutionCallbackObject.m_iTargetSize[1]);
+  m_iOffscreenContextSize[0] = hkvMath::Min(iOriginalSize[0], resolutionCallbackObject.m_iTargetSize[0]);
+  m_iOffscreenContextSize[1] = hkvMath::Min(iOriginalSize[1], resolutionCallbackObject.m_iTargetSize[1]);
 
   // Finally set up upscaling.
-  const bool bUseUpscaling = (iTargetSize[0] != iOriginalSize[0]) || (iTargetSize[1] != iOriginalSize[1]);
-  SetUpscaling(bUseUpscaling, iTargetSize[0], iTargetSize[1]);
+  const bool bUseUpscaling = (m_iOffscreenContextSize[0] != iOriginalSize[0]) || (m_iOffscreenContextSize[1] != iOriginalSize[1]);
+  SetUpscaling(bUseUpscaling);
 }
 
 void VMobileForwardRenderingSystem::InitializeRenderer()
@@ -223,9 +191,22 @@ void VMobileForwardRenderingSystem::InitializeRenderer()
 
   CreateShaderProvider();
 
-#if defined(_VISION_MOBILE) || defined(WIN32)
+  // Since the copy PP will be added later on in InitializePostProcessors(), it can be savely removed at this point.
+  // This is necessary since when the renderer is reinitialized in order to not render into an off-screen context
+  // the simply copy post-processor can be still attached at this point, which would again cause to create an off-
+  // screen context.
+  if (!m_bOffscreenContextRequired)
+  {
+    VSimpleCopyPostprocess *pSimplyCopy = Components().GetComponentOfType<VSimpleCopyPostprocess>();
+    if (pSimplyCopy != NULL)
+    {
+      RemoveComponent(pSimplyCopy);
+    }
+  }
+
+#if defined(_VISION_MOBILE) || defined(_VISION_WIN32) || defined(_VISION_NACL)
   // Only create offscreen context if we have PPs other than the Screen Mask PP
-  m_bUsesDirectRenderToFinalTargetContext = (m_Components.Count() <= 1) && (!IsUsingUpscaling());
+  m_bUsesDirectRenderToFinalTargetContext =  (!m_bOffscreenContextRequired) && (m_Components.Count() <= 1) && (!IsUsingUpscaling());
 #else
   // Direct rendering to final target context isn't implemented/tested on consoles
   m_bUsesDirectRenderToFinalTargetContext = false;
@@ -256,10 +237,29 @@ void VMobileForwardRenderingSystem::DeInitializeRenderer()
     VisRenderContext_cl::ResetMainRenderContext();
   }
 
+  /*-----------------------------------------------------------------------------------------
+  Removal of: Vision::Renderer.SetGlobalAmbientColor(hkvVec4::ZeroVector());
+
+  Setting up a global ambient color to black may overwrite a global ambient setting used by
+  other components such as VAtmosphere. If this call occurs during rendering that may cause
+  incorrect computed values. Furthermore the existence of a global ambient color (whenever it
+  makes sense) seems more appropriates to be included in an upper layer and be common to all 
+  renderers. Another possibility would be that each render context should be able to have its
+  own global ambient color. In this case also the renderer would not be the appropriate place
+  to reset it (but the context).
+
+  Real case scenario that causes an undesired behavior: updatable cubemaps with a renderer 
+  node in combination with VAtmosphere. Cubemap initializes and deinitializes a renderer node
+  when the cubemap faces are renderer. Overwriting the global ambient color causes an incorrect
+  calculation of the cloud layer cloud color, until the correct value is reset by the VAtmosphere
+  object in the next tick.
+  ------------------------------------------------------------------------------------------*/
+  //Vision::Renderer.SetGlobalAmbientColor(hkvVec4::ZeroVector());
+
   m_bIsInitialized = false;
 
   // Needs to be called after de-initializing the renderer; otherwise, it would re-enter DeInitializeRenderer().
-  SetUpscaling(false, 0, 0);
+  SetUpscaling(false);
 
   VRendererNodeCommon::DeInitializeRenderer();
 }
@@ -306,7 +306,7 @@ VType *VMobileForwardRenderingSystem::GetSupportedTimeOfDaySystem()
   return V_RUNTIME_CLASS(VTimeOfDay);
 }
 
-void VMobileForwardRenderingSystem::SetUpscaling(bool bStatus, int iWidth, int iHeight)
+void VMobileForwardRenderingSystem::SetUpscaling(bool bStatus)
 {
   VASSERT(!IsInitialized());
 
@@ -315,68 +315,25 @@ void VMobileForwardRenderingSystem::SetUpscaling(bool bStatus, int iWidth, int i
 
   if (bStatus)
   {
-    // When upscaling is enabled, create a lower-res intermediate render target/render context and set it as the renderer node's final target context.
-    // The final upscale operation happens in a new render context with a VUpscaleRenderLoop, taking the intermediate render target as input.
-
-    // Create intermediate render target (size corresponds to the desired rendering resolution)
-    VisRenderableTextureConfig_t config;
-    GetRenderTargetConfig(config);
-    int iFullWidth = config.m_iWidth;
-    int iFullHeight = config.m_iHeight;
-    config.m_iWidth = iWidth;
-    config.m_iHeight = iHeight;
-    VisRenderableTexture_cl *pIntermediateRenderTarget = ScratchTexturePool_cl::GlobalManager().GetScratchTexture(config);
-    
-    // Create a copy of the final target context. This is going to be our context for upscaling.
-    m_spUpscaleTargetContext = new VisRenderContext_cl();
-    m_spUpscaleTargetContext->SetCamera(GetFinalTargetContext()->GetCamera());
-    m_spUpscaleTargetContext->SetViewProperties(GetFinalTargetContext()->GetViewProperties());
-    m_spUpscaleTargetContext->SetViewport(0, 0, iFullWidth, iFullHeight);
-    m_spUpscaleTargetContext->SetRenderAndDepthStencilTargets(GetFinalTargetContext());
-    m_spUpscaleTargetContext->SetVisibilityCollector(GetFinalTargetContext()->GetVisibilityCollector());
-    m_spUpscaleTargetContext->SetPriority(VIS_RENDERCONTEXTPRIORITY_DISPLAY * 10.f);
-    m_spUpscaleTargetContext->SetName("MobileForwardRenderer_UpscaleTarget");
-    VUpscaleRenderLoop *pUpscaleRenderLoop = new VUpscaleRenderLoop(pIntermediateRenderTarget, UseUpscaleFiltering ? true : false);
-    m_spUpscaleTargetContext->SetRenderLoop(pUpscaleRenderLoop);
-
-    // Create another copy of the final target context. This is going to be our new final target context. We can't repurpose the
-    // main render context directly, as there is some special-case handling code implemented for it.
-    m_spStoreFinalTargetContext = GetFinalTargetContext();
-    m_spOriginalSizeTargetContext = new VisRenderContext_cl();
-    m_spOriginalSizeTargetContext->SetCamera(GetFinalTargetContext()->GetCamera());
-    m_spOriginalSizeTargetContext->SetViewProperties(GetFinalTargetContext()->GetViewProperties());
-    m_spOriginalSizeTargetContext->SetVisibilityCollector(NULL);
-    m_spOriginalSizeTargetContext->SetPriority(VIS_RENDERCONTEXTPRIORITY_DISPLAY);
-    m_spOriginalSizeTargetContext->SetRenderFlags(m_spOriginalSizeTargetContext->GetRenderFlags() | VIS_RENDERCONTEXT_FLAG_SHOW_DEBUGOUTPUT);
-    m_spOriginalSizeTargetContext->SetName("MobileForwardRenderer_UpscaleTarget");
-
     // Disable 2D rendering in screen mask postprocessor. We need to render 2D overlay geometry in the upscale render loop.
     // 3D overlay geometry is rendered in the upscale render loop, as it requires a depth buffer.
-    VPostProcessScreenMasks *pPostProcessScreenMasks = (VPostProcessScreenMasks *)m_Components.GetComponentOfType(V_RUNTIME_CLASS(VPostProcessScreenMasks));
+    VPostProcessScreenMasks *pPostProcessScreenMasks = m_Components.GetComponentOfType<VPostProcessScreenMasks>();
     if (pPostProcessScreenMasks)
       pPostProcessScreenMasks->SetRender2dElements(false);
 
-    // Redirect final target context to output to intermediate render target
-    m_spOriginalSizeTargetContext->SetRenderTarget(0, pIntermediateRenderTarget);
-    SetFinalTargetContext(m_spOriginalSizeTargetContext);
-
-    // Add the upscale render context to our render context list
-    AddContext(m_spUpscaleTargetContext);
+    AddComponent(new VPostProcessUpscale(UseUpscaleFiltering == TRUE));
   }
   else
   {
     // Re-enable 2D rendering in the screen mask postprocessor.
-    VPostProcessScreenMasks *pPostProcessScreenMasks = (VPostProcessScreenMasks *)m_Components.GetComponentOfType(V_RUNTIME_CLASS(VPostProcessScreenMasks));
+    VPostProcessScreenMasks *pPostProcessScreenMasks = m_Components.GetComponentOfType<VPostProcessScreenMasks>();
     if (pPostProcessScreenMasks)
       pPostProcessScreenMasks->SetRender2dElements(true);
 
-    // Undo the changes made when enabling upscaling
-    VASSERT(m_spStoreFinalTargetContext != NULL);
-    SetFinalTargetContext(m_spStoreFinalTargetContext);
-    RemoveContext(m_spUpscaleTargetContext);
-    m_spUpscaleTargetContext = NULL;
-    m_spOriginalSizeTargetContext = NULL;
-    m_spStoreFinalTargetContext = NULL;
+    if(VPostProcessUpscale* pUpscale = m_Components.GetComponentOfType<VPostProcessUpscale>())
+    {
+      RemoveComponent(pUpscale);
+    }
   }
 
 }
@@ -408,6 +365,7 @@ void VMobileForwardRenderingSystem::CreateOffscreenContext()
 
   m_spOffscreenContext->SetCamera(GetFinalTargetContext()->GetCamera());
   m_spOffscreenContext->SetViewProperties(GetFinalTargetContext()->GetViewProperties());
+
   int iViewportPosX, iViewportPosY, iViewportSizeX, iViewportSizeY;
   GetFinalTargetContext()->GetViewport(iViewportPosX, iViewportPosY, iViewportSizeX, iViewportSizeY);
   m_spOffscreenContext->SetViewport(iViewportPosX, iViewportPosY, iViewportSizeX, iViewportSizeY);
@@ -433,6 +391,8 @@ void VMobileForwardRenderingSystem::CreateOffscreenContext()
     static_cast<VisionVisibilityCollector_cl*>(pVisColl)->SetBehaviorFlags(VIS_VISCOLLECTOR_USEPORTALS | VIS_VISCOLLECTOR_USEFOV); 
   }
 
+  pVisColl->SetInterleavedTranslucencySorter(UseInterleavedTranslucencySorting? (new VisionTranslucencySorter()) : NULL);
+
   GetFinalTargetContext()->SetVisibilityCollector(pVisColl, false);
   m_spOffscreenContext->SetVisibilityCollector(pVisColl, true);
   pVisColl->SetOcclusionQueryRenderContext(m_spOffscreenContext);
@@ -449,19 +409,47 @@ void VMobileForwardRenderingSystem::CreateOffscreenContext()
 void VMobileForwardRenderingSystem::RemoveOffscreenContext()
 {
   this->RemoveContext(m_spOffscreenContext);
+  m_spOffscreenContext->SetRenderTarget(0, NULL);
+  m_spOffscreenContext->SetDepthStencilTarget(NULL);
   m_spOffscreenContext = NULL;
   m_spOffscreenRenderTarget = NULL;
   m_spOffscreenDepthStencilTarget = NULL;
 }
 
+void VMobileForwardRenderingSystem::SetRequiresOffscreenContext(void* pObject, bool bStatus) 
+{ 
+  VASSERT(pObject != NULL);
+
+  if (bStatus)
+  {
+    bool bValue;
+    if (m_objectsRequiringOffscreenContext.Lookup(pObject, bValue))
+      return;
+
+    m_objectsRequiringOffscreenContext.SetAt(pObject, bStatus);
+  }
+  else
+  {
+    m_objectsRequiringOffscreenContext.RemoveKey(pObject);
+  }
+
+  bool bOffscreenContextRequired = (m_objectsRequiringOffscreenContext.GetCount() > 0);
+  if (bOffscreenContextRequired != m_bOffscreenContextRequired)
+  {
+    m_bOffscreenContextRequired = bOffscreenContextRequired;
+    ReInitializeRenderer();
+  }
+}
+
+bool VMobileForwardRenderingSystem::GetRequiresOffscreenContext() const
+{ 
+  return m_bOffscreenContextRequired;
+}
+
 void VMobileForwardRenderingSystem::GetRenderTargetConfig(VisRenderableTextureConfig_t &config)
 {
-  VASSERT_MSG(GetFinalTargetContext() != NULL, "The final target context must be set before retrieving render target information.");
-
-  int iWidth, iHeight;
-  GetFinalTargetContext()->GetSize(iWidth, iHeight);
-  config.m_iWidth = iWidth;
-  config.m_iHeight = iHeight;
+  config.m_iWidth = m_iOffscreenContextSize[0];
+  config.m_iHeight = m_iOffscreenContextSize[1];
   config.m_eFormat = VTextureLoader::DEFAULT_RENDERTARGET_FORMAT_32BPP;
   config.m_iMultiSampling = 0;
   config.m_bResolve = true;
@@ -470,10 +458,24 @@ void VMobileForwardRenderingSystem::GetRenderTargetConfig(VisRenderableTextureCo
 void VMobileForwardRenderingSystem::GetDepthStencilConfig(VisRenderableTextureConfig_t &config)
 {
   GetRenderTargetConfig(config);
-  config.m_bRenderTargetOnly = true;
+
+  config.m_eFormat = VTextureObject::GetCompatibleDepthTextureFormat(*Vision::Video.GetCurrentConfig());
+  if (config.m_eFormat == VTextureLoader::UNKNOWN)
+  {
+    config.m_eFormat = VVideo::GetSupportedDepthStencilFormat(VTextureLoader::D24S8, *Vision::Video.GetCurrentConfig());
+    config.m_bRenderTargetOnly = true;
+  }
+  else
+  {
+    config.m_bRenderTargetOnly = false;
+  }
+
+#if defined(_VISION_WIIU)
+  config.m_bResolve = true;
+#else
   config.m_bResolve = false;
-  config.m_bIsDepthStencilTarget = true;
-  config.m_eFormat = VVideo::GetSupportedDepthStencilFormat(VTextureLoader::D24S8, *Vision::Video.GetCurrentConfig());
+#endif
+  config.m_bIsDepthStencilTarget = true; 
 }
 
 void VMobileForwardRenderingSystem::OnHandleCallback(IVisCallbackDataObject_cl *pData)
@@ -492,15 +494,9 @@ void VMobileForwardRenderingSystem::OnHandleCallback(IVisCallbackDataObject_cl *
   }
   else if(pData->m_pSender == &Vision::Callbacks.OnEnterForeground)
   {
-    if (IsUsingUpscaling())
-    {
-      // Update upscaling context, so that it renders into the new back buffer.
-      VASSERT(m_spUpscaleTargetContext != NULL);
-      m_spUpscaleTargetContext->SetRenderAndDepthStencilTargets(m_spStoreFinalTargetContext);
-    }
     if (m_bUsesDirectRenderToFinalTargetContext)
     {
-      // Reassign render targets (in case they're copied from the main render context).
+      // Reassign render targets (in case they're copied from the final target render context).
       if (m_spOffscreenContext != NULL)
         m_spOffscreenContext->SetRenderAndDepthStencilTargets(GetFinalTargetContext());
     }
@@ -594,6 +590,9 @@ void VMobileForwardRenderingSystem::Serialize( VArchive &ar )
 
       if (iLocalVersion >= VMOBILE_FORWARDRENDERER_VERSION_3)
         ar >> ResolutionTolerance;
+
+      if (iLocalVersion >= VMOBILE_FORWARDRENDERER_VERSION_4)
+        ar >> UseInterleavedTranslucencySorting;
     }
 
     if (iLocalVersion >= VMOBILE_FORWARDRENDERER_VERSION_1)
@@ -613,6 +612,7 @@ void VMobileForwardRenderingSystem::Serialize( VArchive &ar )
     ar << DesiredRenderingDpi;
     ar << UseUpscaleFiltering;
     ar << ResolutionTolerance;
+    ar << UseInterleavedTranslucencySorting;
     VRendererNodeCommon::Serialize(ar);
   }
 }
@@ -636,6 +636,12 @@ void VMobileForwardRenderingSystem::SetGammaCorrection(VGammaCorrection_e gammaC
   GammaCorrection = gammaCorrection;
 }
 
+bool VMobileForwardRenderingSystem::IsUsingUpscaling() const
+{
+  return m_Components.GetComponentOfType<VPostProcessUpscale>() != NULL;
+}
+
+
 START_VAR_TABLE(VMobileForwardRenderingSystem, VRendererNodeCommon, "VMobileForwardRenderingSystem", 0, "")  
   // OpenGL ES 2.0 does only support hardware gamma-correction via the GL_EXT_sRGB extension. Since support for this extension seems to be not common among current mobile devices,
   // all related sRGB conversions would have to be done manually in the shader code. Therefore for time being GammaCorrection is not exposed in vForge. 
@@ -644,11 +650,11 @@ START_VAR_TABLE(VMobileForwardRenderingSystem, VRendererNodeCommon, "VMobileForw
   DEFINE_VAR_FLOAT(VMobileForwardRenderingSystem, DesiredRenderingDpi, "If the the resolution mode is set to DPI, you can specify the desired target resolution in DPI with this value.", "150", 0, "Clamp(0,600)"); 
   DEFINE_VAR_FLOAT(VMobileForwardRenderingSystem, ResolutionTolerance, "Defines the maximum tolerance for matching rendering and display resolution. If e.g. set to 10%,  and the resolutions differ by less than 10%, the native display resolution will be used.", "30", 0, "Clamp(1,100)"); 
   DEFINE_VAR_BOOL(VMobileForwardRenderingSystem, UseUpscaleFiltering, "If rendering resolution and display resolution differ, this setting controls whether bilinear filtering should be used for scaling the image.", "TRUE", 0, 0);
-
+  DEFINE_VAR_BOOL(VMobileForwardRenderingSystem, UseInterleavedTranslucencySorting, "Using interleaved sorting of translucent objects increases visual appearance since all kind of translucent objects are sorted instead of each individual type within each self, but may slow down performance.", "FALSE", 0, 0); 
 END_VAR_TABLE
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

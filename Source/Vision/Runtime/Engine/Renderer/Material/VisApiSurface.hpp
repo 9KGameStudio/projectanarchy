@@ -55,11 +55,12 @@ public:
     VSF_None                       = 0x00000000,   ///< No flags.
     VSF_ObjectSpaceCoordinates     = 0x00000001,   ///< Unused.
     VSF_VertexColor                = 0x00000010,   ///< Select a shader that uses vertex colors.
+    VSF_HasLightmapUV              = 0x00000020,   ///< The mesh has UV1 for lightmapping
     VSF_NoDefaultShaders           = 0x00001000,   ///< Don't fall back to default material shaders.
     VSF_NoDynamicLightShaders      = 0x00002000,   ///< Don't select dynamic lighting shaders.
     VSF_TriggerCallback_Internal   = 0x10000000,   ///< Used internally, do not use.
     VSF_HasAdditionalForwardPass   = 0x20000000,   ///< Select a shader that supports additional forward passes.
-    VSF_Default                    = VSF_None
+    VSF_Default                    = VSF_HasLightmapUV ///< Default flags set at construction time (by default we assume UV1 is supported)
   };
 
   /// \brief
@@ -83,6 +84,10 @@ public:
   /// \brief
   ///   Returns true if both surfaces equal each other.
   VISION_APIFUNC bool Equals(VisSurface_cl *pOtherSurface) const;
+
+  /// \brief
+  ///   Returns true if both surfaces would have the same result when rendering (does not compare members irrelevant for rendering)
+  VISION_APIFUNC bool IsSimilar(VisSurface_cl *pOtherSurface) const;
 
   /// \brief
   ///   Sets all smart pointers to NULL so this surface does not hold any references anymore.
@@ -162,22 +167,15 @@ public:
   }
 
   /// \brief
-  ///   Returns whether the surface is light-mapped.
+  ///   Returns whether the surface is light-mapped. First, the lighting method must be set to VIS_LIGHTING_LIGHTMAPPING and secondly a lightmap UV stream must be provided by the owner mesh (VSF_HasLightmapUV flag)
   VISION_APIFUNC bool IsLightMapped() const;
 
   /// \brief
   ///   Determines whether this material satisfies a few properties required to support lightmapping.
   /// 
-  /// This test does not completely test whether lightmapping is supported; e.g. it does not check whether the mesh
-  /// has a required UV1 coordinate channel.
+  /// In case the material is loaded by a mesh, this status includes support for the UV1 stream. In other cases (e.g. when loaded from a material lib) this cannot be considered and the function returns true
   VISION_APIFUNC bool IsLightmappingSupported() const;
 
-
-  /// \brief
-  ///   Deprecated; not used anymore.
-  HKV_DEPRECATED_2012_1 bool AreSurfaceManipsAllowed() const {
-    return true;
-  }
 
   /// \brief
   ///   Returns whether the surface is double-sided.
@@ -199,6 +197,10 @@ public:
   VISION_APIFUNC bool IsDepthWriteEnabled() const {return m_bDepthWrite;}
 
   /// \brief
+  ///   Determines whether the default shader of this material uses texture clamping. The return value is a mask of 2 bits (bit#0 = clamp in U direction, bit#1=v direction)
+  VISION_APIFUNC UBYTE GetTextureClampingMask() const {return m_iClampUV;}
+  
+  /// \brief
   ///   Returns the pass type assigned by the material provider.
   ///
   /// \return
@@ -219,6 +221,13 @@ public:
   /// \brief
   ///   Sets whether the default shader of this material will use depth writing.
   VISION_APIFUNC void SetDepthWriteEnabled (bool b) {m_bDepthWrite = b;}
+
+  /// \brief
+  ///   Sets whether the default shader of this material will use texture clamping.
+  VISION_APIFUNC void SetUseTextureClamping(bool bClampU, bool bClampV) 
+  {
+    m_iClampUV = (bClampU ? V_BIT(0) : 0) | (bClampV ? V_BIT(1) : 0);
+  }
 
   /// \brief
   ///   Returns the z-offset value that is passed to the shader.
@@ -248,7 +257,8 @@ public:
   ///   Returns the topology of the geometry referencing this surface.
   ///
   /// \see VisSurfaceTextures_cl::VGeometryTopology_e
-  VISION_APIFUNC VGeometryTopology_e GetGeometryTopology() const {
+  VISION_APIFUNC VGeometryTopology_e GetGeometryTopology() const 
+  {
     return static_cast<VGeometryTopology_e>(m_uiGeometryTopology);
   }
 
@@ -259,7 +269,8 @@ public:
   ///   Geometry topology of the geometry referencing this surface.
   ///
   /// \see VisSurfaceTextures_cl::VGeometryTopology_e
-  VISION_APIFUNC void SetGeometryTopology(VGeometryTopology_e eType) {
+  VISION_APIFUNC void SetGeometryTopology(VGeometryTopology_e eType) 
+  {
     m_uiGeometryTopology = eType;
   }
 
@@ -270,7 +281,8 @@ public:
   /// 
   /// \return
   ///   bool: true if the surface is fullbright.
-  VISION_APIFUNC bool IsFullbright() const {
+  VISION_APIFUNC bool IsFullbright() const 
+  {
     return m_uiLightingMethod == VIS_LIGHTING_FULLBRIGHT;
   }
 
@@ -580,9 +592,11 @@ public:
   VISION_APIFUNC void GetLightmapInfo (VLightmapPrimitive::MeshMaterial_t &material) const;
 
   /// \brief
-  ///   Returns the lighting mode of this surface.
+  ///   Returns the lighting mode of this surface. To test whether lightmapping should be used as a shader technique, rather use function IsLightmapped.
   VISION_APIFUNC VisLightingMethod_e GetLightingMode () const 
-  { return static_cast<VisLightingMethod_e>(m_uiLightingMethod); }
+  { 
+    return static_cast<VisLightingMethod_e>(m_uiLightingMethod); 
+  }
 
   /// \brief
   ///   Sets the lighting mode of this surface.
@@ -592,7 +606,9 @@ public:
   ///
   /// \sa VisLightingMethod_e
   VISION_APIFUNC void SetLightingMode (VisLightingMethod_e mode) 
-  { m_uiLightingMethod = static_cast<UBYTE>(mode); }
+  { 
+    m_uiLightingMethod = static_cast<UBYTE>(mode); 
+  }
 
   ///
   /// @}
@@ -657,6 +673,23 @@ public:
   VISION_APIDATA static VisCallback_cl OnXMLDataExchange;
 
   VISION_APIFUNC void CopyFrom(const VisSurface_cl &other);
+
+  /// \brief
+  ///   While the regular CopyFrom method just copies the material override along,
+  ///   this version of the copy method either resolves the override (when bResolveOverrides is true)
+  ///   and copies the material that is referenced in the override instead of the one directly passed, 
+  ///   or it ignores the override if bResolveOverrides is false.
+  ///   Currently this method is used as a helper to create material libraries, if you want an identical
+  ///   copy of a material, please use the regular CopyFrom method.
+  ///
+  /// \param other
+  ///    The surface to copy from.
+  ///
+  /// \param bResolveOverrides
+  ///    If true, material overrides will be resolved (the material is copied from the override instead).
+  ///    If false, material overrides will be ignored (will be set to NULL on this material).
+  VISION_APIFUNC void CopyFromAndHandleOverrides(const VisSurface_cl &other, bool bResolveOverrides);
+
   VISION_APIFUNC void CopyLightTechniques(const VisSurface_cl &other);
   VISION_APIFUNC void DeleteSurfaceData();
   VISION_APIFUNC void OnCreated(bool bTriggerCallback=true);
@@ -827,6 +860,9 @@ private:
   /// \brief Decreases the internal counter of how often this surface is referenced by other surfaces.
   VISION_APIFUNC void RemoveReferenceByOtherSurface (void) { --m_iReferencedByOthers; }
 
+  /// \brief Copies the attributes from the passed surface to this (except for the material override properties).
+  void CopyFromInternal(const VisSurface_cl &other);
+
 private:
   VHashString m_sName;           ///< name of this surface
   VBaseMesh *m_pOwnerMesh;       ///< pointer to the base mesh that refers to this surface
@@ -846,6 +882,7 @@ private:
   bool m_bDepthWrite;
   bool m_bSavePathsDataDirectoryRelative;
   UBYTE m_uiGeometryTopology;    ///< casted to VGeometryTopology_e
+  UBYTE m_iClampUV;              ///< V_BIT(0) and/or V_BIT(1) for clamping in u and v direction
 
   float m_fSpecMul;     ///<specular multiplier
   float m_fSpecExp;     ///<specular exponent
@@ -928,13 +965,13 @@ private:
 
 
 public:
-  #if defined (HK_DEBUG) && defined (WIN32)
+  #if defined (HK_DEBUG) && defined (_VISION_WIN32)
     void SetDefaultInclusionTags (const VTechniqueConfig& it) { m_DefaultInclusionTags = it;}
     const VTechniqueConfig& GetDefaultInclusionTags (void) const { return (m_DefaultInclusionTags); }
   #endif
 
 private:
-  #if defined (HK_DEBUG) && defined (WIN32)
+  #if defined (HK_DEBUG) && defined (_VISION_WIN32)
     VTechniqueConfig m_DefaultInclusionTags;
   #endif
 };
@@ -954,7 +991,7 @@ inline VisSurfaceTextures_cl* VisSurfaceTextureSet_cl::GetTextures(int iIndex) c
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140805)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

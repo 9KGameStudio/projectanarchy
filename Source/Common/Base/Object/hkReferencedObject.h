@@ -8,9 +8,10 @@
 #ifndef HKBASE_HKREFERENCEDOBJECT_H
 #define HKBASE_HKREFERENCEDOBJECT_H
 
-extern const hkClass hkReferencedObjectClass;
+extern HK_EXPORT_COMMON const hkClass hkReferencedObjectClass;
 
 #include <Common/Base/Object/hkBaseObject.h>
+#include <Common/Base/Thread/Atomic/hkAtomicPrimitives.h>
 
 class hkCriticalSection;
 class hkVtableClassRegistry;
@@ -19,7 +20,7 @@ class hkVtableClassRegistry;
 /// All core SDK objects that can be owned by multiple owners inherit from this class -
 /// rigid bodies, constraints, and actions are all hkReferencedObjects
 /// and any object that is memory managed by Havok also inherits from it.
-class hkReferencedObject : public hkBaseObject
+class HK_EXPORT_COMMON hkReferencedObject : public hkBaseObject
 {
 		//+hk.ReflectedFile("BaseObject")
 
@@ -53,19 +54,25 @@ class hkReferencedObject : public hkBaseObject
 			/// Returns the current reference count. Used for debugging only.
 		HK_FORCE_INLINE int getReferenceCount() const;
 
+			/// Sets the reference count
+		inline void setReferenceCount(int newRefCount);
+
+			/// Returns the memory size and flags
+		HK_FORCE_INLINE int getMemorySizeAndFlags() const;
+
+			/// Sets the memory size and flags
+		inline void setMemorySizeAndFlags(int newMemSizeAndFlags);
+
+			/// Sets the memory size, flags and reference count
+		inline void setMemorySizeFlagsAndReferenceCount(int newMemSizeAndFlags, int newRefCount);
+
 			/// Adds a reference to the object - this increments the reference count.
 			/// ###ACCESS_CHECKS###( [(&hkReferencedObjectLock::getInstance()),HK_ACCESS_RW] );
-		void addReference() const;
+		inline void addReference() const;
 
 			/// Removes a reference to the object - this decrements the last reference count.
 			/// ###ACCESS_CHECKS###( [(&hkReferencedObjectLock::getInstance()),HK_ACCESS_RW] );
-		void removeReference() const;
-
-			/// Adds a reference to the object - this increments the reference count, but does not check for multithreaded access
-		void addReferenceLockUnchecked() const;
-
-			/// Removes a reference to the object - this decrements the last reference count. This does not check for multithreaded access.
-		void removeReferenceLockUnchecked() const;
+		inline void removeReference() const;
 
 			/// Adds the references of a full array of referenced, this will call lockAll internally.
 		static void HK_CALL addReferences( const hkReferencedObject*const* objects, int numObjects, int pointerStriding );
@@ -143,27 +150,18 @@ class hkReferencedObject : public hkBaseObject
         virtual const hkClass* getClassType() const;
 #endif
 
-	public:
+	protected:
 
-		enum
-		{
-			MASK_MEMSIZE = 0x7fff // limits mem size of a object to 32K.  Leaves the upper bit for a flag (used to have some, none at the moment).
-		};
+		/// Deletes this object (i.e. roughly equivalent to "delete this;")
+		/// Derived objects may customize this behavior, for instance objects may be
+		/// queued for deletion rather than deleted immediately.
+		HK_NOSPU_VIRTUAL void deleteThisReferencedObject() const;
 
-			/// Stores the object's size for use by the memory manager,
-			/// if the size is changed from the normal size for this type.
-			/// A memory size of 0 is a special case and indicates
-			/// that the object should not be freed (as it has
-			/// probably been read in from a packed file for instance).
-			/// 0xffff indicates the object is the normal size, and the
-			/// size to delete is provided by operator delete.
-		hkUint16 m_memSizeAndFlags; //+nosave
+	private:
 
-			/// Reference count. Note that if m_memSizeAndFlags == 0,
-			/// reference counting is disabled for this object.
-		mutable hkInt16 m_referenceCount; //+nosave
-
-
+		/// Memory size, flags, and reference count, packed into a 32-bit integer for atomic access.
+		/// The MemSizeFlagsAndRefCount union is used to access its fields. Do not access directly! Use the provided accessor functions. 
+		hkUint32 m_memSizeAndRefCount;	//+nosave
 };
 
 #include <Common/Base/Object/hkReferencedObject.inl>
@@ -171,7 +169,7 @@ class hkReferencedObject : public hkBaseObject
 #endif // HKBASE_HKREFERENCEDOBJECT_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

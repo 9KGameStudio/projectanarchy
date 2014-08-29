@@ -14,26 +14,26 @@
 // - The corresponding reflection database (reflection.db) is deleted
 // - The --force-output or --force-rebuild option is added to the pre-build generateReflection.py execution
 
-HK_CLASS(hkaiSilhouetteRecorderGraphLoadedEvent)
-HK_CLASS(hkaiSilhouetteRecorderGraphUnloadedEvent)
-HK_CLASS(hkaiSilhouetteRecorderInstanceLoadedEvent)
-HK_CLASS(hkaiSilhouetteRecorderInstanceUnloadedEvent)
-HK_CLASS(hkaiSilhouetteRecorderReplayEvent)
-HK_CLASS(hkaiSilhouetteRecorderSilhouettesSteppedEvent)
-HK_CLASS(hkaiSilhouetteRecorderVolumeLoadedEvent)
-HK_CLASS(hkaiSilhouetteRecorderVolumeUnloadedEvent)
-HK_CLASS(hkaiSilhouetteRecorderWorldConnectedEvent)
-HK_STRUCT(hkaiGraphDebugUtilsDebugInfo)
-HK_STRUCT(hkaiNavMeshDebugUtilsDebugInfo)
-HK_STRUCT(hkaiNavMeshDebugUtilsFaceNormalSettings)
-HK_STRUCT(hkaiNavMeshDebugUtilsNonplanarFacesSettings)
-HK_STRUCT(hkaiNavMeshDebugUtilsSmallEdgeSettings)
-HK_STRUCT(hkaiNavVolumeDebugUtilsDebugInfo)
-HK_STRUCT(hkaiNavVolumeDebugUtilsGeomteryBuildSettings)
-HK_STRUCT(hkaiNavVolumeDebugUtilsGeomteryDisplaySettings)
+HK_CLASS(HK_EXPORT_AI,hkaiSilhouetteRecorderGraphLoadedEvent)
+HK_CLASS(HK_EXPORT_AI,hkaiSilhouetteRecorderGraphUnloadedEvent)
+HK_CLASS(HK_EXPORT_AI,hkaiSilhouetteRecorderInstanceLoadedEvent)
+HK_CLASS(HK_EXPORT_AI,hkaiSilhouetteRecorderInstanceUnloadedEvent)
+HK_CLASS(HK_EXPORT_AI,hkaiSilhouetteRecorderReplayEvent)
+HK_CLASS(HK_EXPORT_AI,hkaiSilhouetteRecorderSilhouettesSteppedEvent)
+HK_CLASS(HK_EXPORT_AI,hkaiSilhouetteRecorderVolumeLoadedEvent)
+HK_CLASS(HK_EXPORT_AI,hkaiSilhouetteRecorderVolumeUnloadedEvent)
+HK_CLASS(HK_EXPORT_AI,hkaiSilhouetteRecorderWorldConnectedEvent)
+HK_STRUCT(HK_EXPORT_AI,hkaiGraphDebugUtilsDebugInfo)
+HK_STRUCT(HK_EXPORT_AI,hkaiNavMeshDebugUtilsDebugInfo)
+HK_STRUCT(HK_EXPORT_AI,hkaiNavMeshDebugUtilsFaceNormalSettings)
+HK_STRUCT(HK_EXPORT_AI,hkaiNavMeshDebugUtilsNonplanarFacesSettings)
+HK_STRUCT(HK_EXPORT_AI,hkaiNavMeshDebugUtilsSmallEdgeSettings)
+HK_STRUCT(HK_EXPORT_AI,hkaiNavVolumeDebugUtilsDebugInfo)
+HK_STRUCT(HK_EXPORT_AI,hkaiNavVolumeDebugUtilsGeomteryBuildSettings)
+HK_STRUCT(HK_EXPORT_AI,hkaiNavVolumeDebugUtilsGeomteryDisplaySettings)
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -8,6 +8,7 @@
 
 #ifndef HKCD_PLANAR_GEOMETRY_PRIMITIVES_H
 #define HKCD_PLANAR_GEOMETRY_PRIMITIVES_H
+//HK_HAVOK_ASSEMBLY_EXCLUDE_FILE
 
 #include <Common/Base/Math/LargeInt/hkLargeIntTypes.h>
 #include <Common/Base/Types/hkHandle.h>
@@ -45,7 +46,13 @@ namespace hkcdPlanarGeometryPrimitives
 	struct NumBitsPlaneCrossOffset			{ enum { NUM_BITS = NumBitsSum<NumBitsPlaneMulOffset, NumBitsPlaneMulOffset>				::NUM_BITS, };};		// 135 bits
 	struct NumBitsPlanesDet4				{ enum { NUM_BITS = NumBitsDot3<NumBitsPlanesIntersectionEdgeDir, NumBitsPlaneCrossOffset>	::NUM_BITS,	};};		// 226 bits
 
-	typedef hkVector4d						ApproxPlaneEqn;
+#if defined (HK_PLATFORM_PS3)
+	typedef hkDouble64		ApproxPlaneEqn[4];	// To 'skip' the alignment to 32 bytes requirement on PS3, going through the aligned placement new, and clashing with the hkArray 16-byte aligned buffers.
+	typedef hkDouble64		ApproxVertex[4];	// To 'skip' the alignment to 32 bytes requirement on PS3, going through the aligned placement new, and clashing with the hkArray 16-byte aligned buffers.
+#else
+	typedef hkVector4d		ApproxPlaneEqn;
+	typedef hkVector4d		ApproxVertex;
+#endif
 
 	/// Plane. Stores both the real world (i.e. floating point) and exact (integer) plane equations.
 	struct Plane
@@ -53,9 +60,15 @@ namespace hkcdPlanarGeometryPrimitives
 		public:
 
 			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_GEOMETRY, hkcdPlanarGeometryPrimitives::Plane);
-			HK_DECLARE_POD_TYPE();
-
+			HK_DECLARE_REFLECTION();
+			
 		public:
+
+			// Default constructor
+			HK_FORCE_INLINE Plane() {}
+
+			// Serialization constructor
+			Plane(class hkFinishLoadedObjectFlag flag);
 
 			// Gets the fixed-precision normal
 			HK_FORCE_INLINE void getExactNormal(hkInt64Vector4& iNormalOut) const;
@@ -64,7 +77,7 @@ namespace hkcdPlanarGeometryPrimitives
 			HK_FORCE_INLINE void getExactOffset(hkSimdInt<128>& iOffsetOut) const;
 
 			// Gets the floating-point equation
-			HK_FORCE_INLINE const ApproxPlaneEqn& getApproxEquation() const;
+			HK_FORCE_INLINE const hkVector4d& getApproxEquation() const;
 			
 			// Sets the exact plane equation
 			HK_FORCE_INLINE void setExactEquation(hkInt64Vector4Parameter iNormalIn, const hkSimdInt<128>& iOffsetIn, bool simplifyEquation = true);
@@ -75,8 +88,14 @@ namespace hkcdPlanarGeometryPrimitives
 			// Compares two planes for equality
 			HK_FORCE_INLINE hkBool32 isEqual(const Plane& other) const;
 
+			// Recomputes the floating-point equation to match the fixed-precision one within a known eps
+			HK_FORCE_INLINE void computeApproxEquation();
+
 		protected:
-	
+
+			// Accesses the floating-point equation
+			HK_FORCE_INLINE hkVector4d& accessApproxEquation();
+
 			// Sets the exact normal. Does not preserve offset
 			HK_FORCE_INLINE void setExactNormal(hkInt64Vector4Parameter iNormalIn);
 
@@ -86,13 +105,13 @@ namespace hkcdPlanarGeometryPrimitives
 			// Simplifies the fixed-precision equation so that gcd(nx, ny, nz, offset) = 1
 			HK_FORCE_INLINE void simplify();
 
-			// Recomputes the floating-point equation to match the fixed-precision one within a known eps
-			HK_FORCE_INLINE void computeApproxEquation();
-
 		protected:
 
-			hkInt64Vector4 m_iEqn;		///< Plane equation, fixed precision
-			ApproxPlaneEqn m_dEqn;		///< Plane equation, double precision
+			/// Plane equation, fixed precision
+			hkInt64Vector4 m_iEqn;		//+overridetype(hkInt64[4])
+
+			/// Plane equation, double precision
+			ApproxPlaneEqn m_dEqn;		//+nosave +overridetype(hkInt64[4])
 	};
 
 	/// Vertex. Stores both a floating point and fixed precision representation
@@ -115,8 +134,13 @@ namespace hkcdPlanarGeometryPrimitives
 
 		protected:
 
+			/// Returns the approximate floating-point precision
+			HK_FORCE_INLINE hkVector4d& accessApproxPosition();
+
+		protected:
+
 			hkIntVector m_iPos;		///< Vertex position, fixed precision
-			hkVector4d m_dPos;		///< Vertex position, double precision
+			ApproxVertex m_dPos;		///< Vertex position, double precision
 	};
 
 	// Plane Id constants
@@ -152,7 +176,7 @@ namespace hkcdPlanarGeometryPrimitives
 #endif	//	HKCD_PLANAR_GEOMETRY_PRIMITIVES_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

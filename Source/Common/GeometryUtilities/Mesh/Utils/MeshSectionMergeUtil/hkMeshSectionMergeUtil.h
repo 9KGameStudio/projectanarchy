@@ -16,7 +16,7 @@ class hkMeshSystem;
 ///
 /// Mesh sections can only be merged if they have the same vertex buffer format (or better vertex buffer)
 /// and their primitives are compatible.
-class hkMeshSectionMergeUtil
+class HK_EXPORT_COMMON hkMeshSectionMergeUtil
 {
     public:
 			/// Produce a new mesh shape made up of a merge of the sections with the same material
@@ -32,7 +32,7 @@ class hkMeshSectionMergeUtil
 #endif // HK_MESH_SECTION_MERGE_UTIL_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -498,14 +498,14 @@ void vHavokChainAnimation::UpdateBones()
 }
 
 // ----------------------------------------------------------------------------
-START_VAR_TABLE(vHavokChainAnimation, IVObjectComponent, "Animates the bones of a model according to a Havok constraint chain", VVARIABLELIST_FLAGS_NONE, "Havok Constraint Chain Animation" )
+START_VAR_TABLE(vHavokChainAnimation, IVObjectComponent, "Can be attached to entities to animate the bones of their model according to a Havok constraint chain.", VVARIABLELIST_FLAGS_NONE, "Havok Constraint Chain Animation" )
   DEFINE_VAR_VSTRING(vHavokChainAnimation, ConstraintChainKey, "The object key of the constraint chain to drive the animation", "", 0,0, NULL);
   DEFINE_VAR_FLOAT(vHavokChainAnimation, BoneRoll, "The roll in degrees to apply to each bone in addition to the link transformation", "0", 0, "Clamp(-360,360)");
   DEFINE_VAR_BOOL(vHavokChainAnimation, ReverseBoneOrder, "Whether to reverse the bone order before applying the transformations", "FALSE", 0, NULL);
 END_VAR_TABLE
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

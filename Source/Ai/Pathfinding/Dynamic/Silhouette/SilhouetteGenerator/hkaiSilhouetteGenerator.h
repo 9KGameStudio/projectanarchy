@@ -11,17 +11,17 @@
 
 #include <Common/Base/Types/Geometry/Aabb/hkAabb.h>
 
+#include <Ai/Pathfinding/hkaiBaseTypes.h>
 #include <Ai/Pathfinding/Dynamic/Silhouette/hkaiConvexSilhouette.h>
-#include <Ai/Pathfinding/NavMesh/hkaiNavMeshInstance.h>
 
 struct hkaiSilhouetteGenerationParameters;
 
 /// Abstract base class for something which generates silhouettes. Also hold pointer to the (possibly shared) compound silhouette it is part of.
-class hkaiSilhouetteGenerator : public hkReferencedObject
+class HK_EXPORT_AI hkaiSilhouetteGenerator : public hkReferencedObject
 {
 	public:
 
-		// +version(2)
+		// +version(4)
 		HK_DECLARE_REFLECTION();
 		HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_AI);
 
@@ -29,8 +29,8 @@ class hkaiSilhouetteGenerator : public hkReferencedObject
 			/// This is used to fix up the vtable on SPU, otherwise it is unused.
 		enum GeneratorType
 		{
-				/// Previously used by hkaiPhysics2012BodySilhouetteGenerator, but now this inherits from hkaiPointCloudSilhouetteGenerator.
-			GENERATOR_PHYSICS_2012_BODY_REMOVED = 0, 
+				/// hkaiPhysics2012BodySilhouetteGenerator
+			GENERATOR_PHYSICS_2012_BODY = 0, 
 
 				/// Used by hkaiPointCloudSilhouetteGenerator
 			GENERATOR_POINT_CLOUD, 
@@ -38,8 +38,18 @@ class hkaiSilhouetteGenerator : public hkReferencedObject
 				/// Previously used by hkaiStoragePointCloudSilhouetteGenerator, but this class was removed.
 			GENERATOR_STORAGE_POINT_CLOUD_REMOVED,
 
+				/// hkaiPhysicsBodySilhouetteGeneratorBase.
+				/// Nothing in the Havok SDK uses this directly, but a user implementation would have this as the type enum.
+			GENERATOR_PHYSICS_BODY_BASE,
+
+				/// hkaiPhysicsBodySilhouetteGenerator
+			GENERATOR_PHYSICS_BODY,
+
 				/// Reserved for user silhouette generator types.
-			GENERATOR_USER,
+			GENERATOR_USER_0,
+			GENERATOR_USER_1,
+			GENERATOR_USER_2,
+			GENERATOR_USER_3,
 
 				/// Invalid for silhouette generator types.
 			GENERATOR_MAX,
@@ -228,7 +238,7 @@ typedef void (HK_CALL *hkaiGetAabbFunc)(const hkaiSilhouetteGenerator* gen, cons
 #endif // HK_SILHOUETTE_GENERATOR_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -26,7 +26,7 @@ inline hkSimdReal hkaiHierarchicalGraphHeuristic::getMinDistanceToGoals( hkVecto
 	return minDistance;
 }
 
-inline hkaiHierarchicalGraphHeuristic::ClusterKey hkaiHierarchicalGraphHeuristic::getClusterForNode( NodeKey nodeKey ) const
+inline hkaiHierarchicalGraphHeuristic::ClusterKey hkaiHierarchicalGraphHeuristic::getClusterKeyForNode( NodeKey nodeKey ) const
 {	
 	hkaiRuntimeIndex sectionIndex = hkaiGetRuntimeIdFromPacked(nodeKey);
 	hkaiDirectedGraphExplicitCost::NodeIndex nodeIndex = hkaiGetIndexFromPacked(nodeKey);
@@ -35,11 +35,14 @@ inline hkaiHierarchicalGraphHeuristic::ClusterKey hkaiHierarchicalGraphHeuristic
 	const hkaiDirectedGraphExplicitCost::NodeData* nodeDataPtr = m_originalGraph->getGeneralAccessor()->getNodeDataPtr( nodeIndex );
 
 	HK_ASSERT(0x13e90f6b, nodeDataPtr);
-	return nodeDataPtr ? hkaiGetPackedKey(sectionIndex, nodeDataPtr[0]) : HKAI_INVALID_PACKED_KEY;
+	if (nodeDataPtr)
+		return hkaiGetPackedKey(sectionIndex, nodeDataPtr[0]);
+	else
+		return HKAI_INVALID_PACKED_KEY;
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

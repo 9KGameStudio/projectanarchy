@@ -17,6 +17,11 @@
 #define CURRENT_VMESH_VERSION     VMESH_VERSION_1
 #define VMESH_VERSION_UNDEFINED   -1
 
+#define VBASEMESH_EXPR_CHUNK_VERSION_0         0                               // initial version
+#define VBASEMESH_EXPR_CHUNK_VERSION_1         1                               // introduced Xform
+#define VBASEMESH_EXPR_CHUNK_VERSION_2         2                               // introduced file time
+#define VBASEMESH_EXPR_CHUNK_CURRENT_VERSION   VBASEMESH_EXPR_CHUNK_VERSION_2
+
 class VBaseSubmesh;
 
 /// \brief
@@ -38,6 +43,9 @@ enum VMeshType_e
 #define VMAT_FLAG_DISABLE_CAST_STATIC_SHADOWS V_BIT(6)
 #define VMAT_FLAG_DISABLE_DEPTH_WRITE         V_BIT(7)
 #define VMAT_FLAG_DATA_DIR_RELATIVE_PATHS     V_BIT(8)
+#define VMAT_FLAG_TEXTURE_CLAMP_U             V_BIT(9)
+#define VMAT_FLAG_TEXTURE_CLAMP_V             V_BIT(10)
+#define VMAT_FLAG_TEXTURE_CLAMP               (VMAT_FLAG_TEXTURE_CLAMP_U|VMAT_FLAG_TEXTURE_CLAMP_V)
 
 //Geometry Info flags
 #define VGIF_CAST_DYNAMIC_SHADOWS 1
@@ -507,6 +515,10 @@ public:
 
   VISION_APIFUNC virtual void GetAssetPropertyHint(VString& hint) const HKV_OVERRIDE;
 
+  /// \brief
+  ///   Gets the file time that corresponds to the system time at which mesh had been exported.
+  inline __int64 GetFileTime() const { return m_iFileTime; }
+
 protected:
   /// \brief
   ///   Applies any information contained in the passed asset metadata that can be applied after
@@ -688,7 +700,6 @@ public:
   /// \return
   ///   IVCollisionMesh *: The collision mesh.
   VISION_APIFUNC IVCollisionMesh *GetCollisionMesh(bool bForceCreate = true, bool bUseTraceMeshIfLoadingFailed = false);
-
 
   /// \brief
   ///   Sets the collision mesh of the mesh manually.
@@ -928,6 +939,8 @@ protected:
   VBaseGeometryInfo m_DefaultGeometryInfo;  //local data instance for models that don't have geometry info (or submeshes with index -1)
   
   VMeshType_e m_eMeshType;
+
+  __int64 m_iFileTime; // system time at which mesh had been exported
 };
 
 
@@ -1212,7 +1225,7 @@ protected:
 #endif // DEFINE_VISAPIBASEMESH
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

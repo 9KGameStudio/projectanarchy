@@ -43,7 +43,9 @@ HK_FORCE_INLINE void HK_CALL hkcdSupportingVertexPoints(const hkcdVertex* HK_RES
 #endif
 }
 
-HK_FORCE_INLINE void HK_CALL hkcdSupportingVertexPoints(const hkFourTransposedPoints* HK_RESTRICT transposedVertices, int numVertexBatches, hkVector4Parameter direction, hkcdVertex* HK_RESTRICT vertexOut)
+
+
+HK_FORCE_INLINE void HK_CALL hkcdSupportingVertexPointsTranposed(const hkFourTransposedPoints* HK_RESTRICT transposedVertices, int numVertexBatches, hkVector4Parameter direction, hkcdVertex* HK_RESTRICT vertexOut)
 {
 	HK_ASSERT( 0x4c5c7d57, numVertexBatches > 0 ); // must have some elements or bestIndices is uninitialized
 	const hkSimdReal d0 = direction.getComponent<0>();
@@ -183,7 +185,7 @@ HK_RESTORE_OPTIMIZATION_VS2008_X64
 #endif
 #endif
 
-inline void HK_CALL hkcdSupportingVertexPoints(const hkFourTransposedPoints* HK_RESTRICT transposedVertices, int numTransposedVertices, hkVector4Parameter direction, hkcdVertex* HK_RESTRICT vertexOut)
+inline void HK_CALL hkcdSupportingVertexPointsTranposed(const hkFourTransposedPoints* HK_RESTRICT transposedVertices, int numTransposedVertices, hkVector4Parameter direction, hkcdVertex* HK_RESTRICT vertexOut)
 {
 	HK_ASSERT2(0x6c61af08, numTransposedVertices > 0, "At least one vertex required");
 	hkIntVector currentIdx = hkIntVector::getConstant<HK_QUADINT_0123>();
@@ -249,6 +251,61 @@ inline void HK_CALL hkcdSupportingVertexPoints(const hkFourTransposedPoints* HK_
 #endif
 
 #endif
+
+
+HK_FORCE_INLINE int HK_CALL hkcdSupportingVertexPointsTransposeInplace(const hkcdVertex* HK_RESTRICT vertices, int numVertices, hkVector4Parameter direction, hkcdVertex* HK_RESTRICT vertexOut)
+{
+	HK_ASSERT( 0xf03dfd45, numVertices >=4);	 // needs a minimum of 4 verts
+	const hkSimdReal d0 = direction.getComponent<0>();
+	const hkSimdReal d1 = direction.getComponent<1>();
+	const hkSimdReal d2 = direction.getComponent<2>();
+
+	hkVector4 bestDot;
+	hkIntVector offsetV;
+	{
+		int offset = numVertices-4;
+		offsetV.setAll(offset);
+		hkVector4 t0 = vertices[offset+0];
+		hkVector4 t1 = vertices[offset+1];
+		hkVector4 t2 = vertices[offset+2];
+		hkVector4 t3 = vertices[offset+3];
+		HK_TRANSPOSE4( t0,t1,t2,t3);
+
+		bestDot.setMul( d0, t0 );
+		bestDot.addMul( d1, t1 );
+		hkVector4 z; z.setMul( d2, t2 );
+		bestDot.add( z );
+	}
+	hkIntVector curIndices = hkIntVector::getConstant<HK_QUADINT_0123>();
+	hkIntVector bestIndices; bestIndices.setAddS32( curIndices, offsetV );
+
+	// get max dots four at a time
+	for ( int i = 0; i < numVertices-4; i+=4 )
+	{
+
+		hkVector4 t0 = vertices[i+0];
+		hkVector4 t1 = vertices[i+1];
+		hkVector4 t2 = vertices[i+2];
+		hkVector4 t3 = vertices[i+3];
+		HK_TRANSPOSE4( t0,t1,t2,t3);
+
+		// calculate the dot product for four vertices
+		hkVector4 curDot;
+		curDot.setMul( d0, t0 );
+		curDot.addMul( d1, t1 );
+		hkVector4 z; z.setMul( d2, t2 );
+		curDot.add( z );
+
+		const hkVector4Comparison comp = curDot.greater( bestDot );
+		bestDot.setSelect(comp, curDot, bestDot);
+		bestIndices.setSelect(comp, curIndices, bestIndices);
+		curIndices.setAddS32( curIndices, hkIntVector::getConstant<HK_QUADINT_4>() );
+	}
+	// find the best of the 4 we have, break ties to lower indices
+	int vertexId = bestIndices.getFirstComponentAtVectorMax(bestDot);
+	vertexOut[0] = vertices[vertexId];
+	return vertexId;
+}
 
 
 HK_DISABLE_OPTIMIZATION_VS2008_X64
@@ -374,7 +431,7 @@ HK_FORCE_INLINE void HK_CALL hkcdSupportingVertexPoints2(
 HK_RESTORE_OPTIMIZATION_VS2008_X64
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

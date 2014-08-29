@@ -19,30 +19,30 @@ class hkFourTransposedPoints;
 namespace hkcdGsk
 {
 		/// Get closest point with penetration.
-	GetClosestPointStatus HK_CALL getClosestPoint(
+	HK_EXPORT_COMMON GetClosestPointStatus HK_CALL getClosestPoint(
 		const hkcdVertex* vertsA, int numVertsA,
 		const hkcdVertex* vertsB, int numVertsB,
 		const GetClosestPointInput& input, Cache* HK_RESTRICT cache, GetClosestPointOutput& output );
 
 		/// Get closest point with penetration.
-	GetClosestPointStatus HK_CALL getClosestPoint(
+	HK_EXPORT_COMMON GetClosestPointStatus HK_CALL getClosestPoint(
 		const void* shapeA, const hkcdVertex* vertsA, int numVertsA,
 		const void* shapeB, const hkcdVertex* vertsB, int numVertsB,
 		const GetClosestPointInput& input, Cache* HK_RESTRICT cache, GetClosestPointOutput& output );
 
 		/// Linear cast.
-	hkBool HK_CALL linearCast(
+	HK_EXPORT_COMMON bool HK_CALL linearCast(
 		const hkcdVertex* vertsShape, int numVertsShape,
 		const hkcdVertex* vertsCast, int numVertsCast,
 		const LinearCastInput& input, Cache* HK_RESTRICT cache, LinearCastOutput& output );
 
 		/// Ray cast.
-	hkBool HK_CALL rayCast(
+	HK_EXPORT_COMMON bool HK_CALL rayCast(
 		const hkcdVertex* verts, int numVerts,
 		const RayCastInput& input, RayCastOutput& output );
 
 		/// Ray cast transposed points.
-	hkBool HK_CALL rayCast(
+	HK_EXPORT_COMMON bool HK_CALL rayCast(
 		const hkFourTransposedPoints* verts, int numUnTransposed,
 		const RayCastInput& input, RayCastOutput& output );
 }
@@ -50,7 +50,7 @@ namespace hkcdGsk
 #endif // HKCD_INTERNAL_GSK_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

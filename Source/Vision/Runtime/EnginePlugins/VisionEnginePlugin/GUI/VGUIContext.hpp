@@ -131,11 +131,19 @@ public:
   inline bool IsActive() const { return m_bActive; }
 
   /// \brief
-  ///   Shows or hides the mouse cursor for this context
+  ///   De-/activates the cursor for this context.
+  inline void SetCursorActive(bool bStatus) { m_bCursorActive = bStatus; }
+
+  /// \brief
+  ///   Returns if the cursor is active for this context.
+  inline bool IsCursorActive() const { return m_bCursorActive; }
+
+  /// \brief
+  ///   Shows or hides the mouse cursor for this context.
   inline void SetShowCursor(bool bStatus) { m_bShowCursor = bStatus; }
 
   /// \brief
-  ///   Shows or hides the mouse cursor for this context
+  ///   Returns if the cursor is shown for this context.
   inline bool GetShowCursor() const { return m_bShowCursor; }
 
   /// \brief
@@ -267,30 +275,12 @@ public:
   ///   Sets the dialog that has the focus
   GUI_IMPEXP void SetFocus(VDialog *pDialog);
 
-  /// \brief
-  ///   Shows a dialog in modal mode. It calls the Run function of the passed application until the
-  ///   dialog returns a dialog result.
-  ///
-  /// The dialog will run as long as GetDialogResult() returns zero.
-  /// 
-  /// \param pParent
-  ///   Parent dialog, can be NULL
-  /// 
-  /// \param szDialogResource
-  ///   Resource filename (.xml) used to create the dialog
-  /// 
-  /// \param vPos
-  ///   Start position on scren, added to the StartPosition of the dialog
-  /// 
-  /// \param pRunApp
-  ///   Application used to run this dialog in modal mode. Can be NULL to use the current
-  ///   application.
-  ///
-  /// \sa SetDialogResult
+  /// \brief Deprecated.
+  ///   Use ShowDialog(...) and SetDialogFlags(DIALOGFLAGS_MODAL) instead. Result must be asynchronously fetched via GetDialogResult().
   HKV_DEPRECATED_2013_3 GUI_IMPEXP virtual int ShowDialogModal(VDialog *pParent, const char *szDialogResource, const hkvVec2 &vPos, IVisApp_cl *pRunApp=NULL);
 
-  /// \brief
-  ///   This version of ShowDialogModal uses a dialog instance directly
+  /// \brief Deprecated.
+  ///   Use ShowDialog(...) and SetDialogFlags(DIALOGFLAGS_MODAL) instead. Result must be asynchronously fetched via GetDialogResult().
   HKV_DEPRECATED_2013_3 GUI_IMPEXP virtual int ShowDialogModal(VDialog *pDialog, IVisApp_cl *pRunApp=NULL);
 
   /// \brief
@@ -427,7 +417,7 @@ protected:
 #ifdef SUPPORTS_KEYBOARD
   bool m_bKeyPressed[256]; ///< keyboard status
 #endif
-  bool m_bActive, m_bShowCursor, m_bHandleKeyboard, m_bMouseOverOnInputOnly, m_bSmoothScroll, m_bSwipeToScroll;
+  bool m_bActive, m_bCursorActive, m_bShowCursor, m_bHandleKeyboard, m_bMouseOverOnInputOnly, m_bSmoothScroll, m_bSwipeToScroll;
 
   VCursorPtr m_spOverrideCursor;
   int m_iRenderHookConstant;
@@ -443,7 +433,6 @@ protected:
 #endif
 
   float m_fDragThreshold;
-  float m_fAccumulatedMoveDistance;
 
   VDialogCollection m_openDialogs;
 };
@@ -500,7 +489,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

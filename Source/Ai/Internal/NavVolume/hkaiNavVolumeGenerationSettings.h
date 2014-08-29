@@ -14,16 +14,25 @@
 
 class hkaiMaterialPainter;
 class hkaiVolume;
+class hkaiCarver;
 
 class hkaiNavVolumeChunkDomainOverrideCallback;
 
+extern HK_EXPORT_AI const class hkClass hkaiNavVolumeGenerationSettingsClass;
+
+extern HK_EXPORT_AI const class hkClass hkaiNavVolumeGenerationSettingsMaterialConstructionInfoClass;
+
+extern HK_EXPORT_AI const class hkClass hkaiNavVolumeGenerationSettingsChunkSettingsClass;
+
+extern HK_EXPORT_AI const class hkClass hkaiNavVolumeGenerationSettingsMergingSettingsClass;
+
 
 /// This input structure controls all of the major settings for automatic nav volume generation
-struct hkaiNavVolumeGenerationSettings
+struct HK_EXPORT_AI hkaiNavVolumeGenerationSettings : public hkReferencedObject
 {
-	// +version(9)
+	// +version(11)
 	HK_DECLARE_REFLECTION();
-	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_AI_NAVMESH, hkaiNavVolumeGenerationSettings);
+	HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_AI_NAVMESH);
 
 	/// Flags to determine whether the triangles for a material are walkable, extruded, etc.
 	enum MaterialFlagsBits
@@ -41,7 +50,7 @@ struct hkaiNavVolumeGenerationSettings
 	typedef hkFlags<MaterialFlagsBits, hkUint32> ConstructionFlags;
 
 		/// Storage for material properties. All triangles with the specified index will be treated with the specified flags.
-	struct MaterialConstructionInfo
+	struct HK_EXPORT_AI MaterialConstructionInfo
 	{
 		//+version(2)
 		MaterialConstructionInfo();
@@ -64,9 +73,9 @@ struct hkaiNavVolumeGenerationSettings
 
 
 		/// Settings to control how the volume domain is divided into chunks, for memory-efficient voxelization and merging
-	struct ChunkSettings
+	struct HK_EXPORT_AI ChunkSettings
 	{
-		// +version(0)
+		// +version(1)
 		HK_DECLARE_REFLECTION();
 		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_AI_NAVMESH, ChunkSettings);
 
@@ -84,10 +93,13 @@ struct hkaiNavVolumeGenerationSettings
 		hkUint16 m_maxChunkSizeY;	//+default(hkaiNavVolumeGenerationSettings::ChunkSettings::DEFAULT_MAX_CHUNK_SIZE) +hk.RangeInt32(absmin=0,absmax=0xffff)
 			/// Maximum size of a chunk (in cells) along the Z axis. If zero, the domain will not be divided into chunks.
 		hkUint16 m_maxChunkSizeZ;	//+default(hkaiNavVolumeGenerationSettings::ChunkSettings::DEFAULT_MAX_CHUNK_SIZE) +hk.RangeInt32(absmin=0,absmax=0xffff)
+
+			/// Whether or not to do a greed merge pass after recombining chunks (recommended).
+		hkBool m_doGreedyMergeAfterCombine; //+default(true)
 	};
 
 		/// Advanced settings to control how initial cells are merged and split.
-	struct MergingSettings
+	struct HK_EXPORT_AI MergingSettings
 	{
 		// +version(3)
 		HK_DECLARE_REFLECTION();
@@ -162,7 +174,7 @@ struct hkaiNavVolumeGenerationSettings
 
 	/// The depth of the character used to extrude the geometry when generating the nav volume.
 	hkReal m_characterDepth;		//+default(0.0f)
-									//+hk.RangeReal(softmin=-10,absmax=0)
+									//+hk.RangeReal(absmin=0,softmax=10)
 									//+hk.Description("The character depth used to extrude the input geometry.")
 
 	/// The width of the character used to extrude the geometry when generating the nav volume.
@@ -223,8 +235,15 @@ struct hkaiNavVolumeGenerationSettings
 	/// If the material index is not found in the map, then m_defaultConstructionProperties is used
 	hkArray<hkaiNavVolumeGenerationSettings::MaterialConstructionInfo> m_materialMap;
 
+	//
+	// Carvers and painters
+	//
+
+	void addCarver( hkaiVolume* vol );
+	void addMaterialPainter( int material, const hkaiVolume* volume );
+
 	/// Carver volumes used to remove sections of the input volume - see hkaiVolume for more details
-	hkArray< hkRefPtr<const hkaiVolume> > m_carvers;
+	hkArray< hkRefPtr<const hkaiCarver> > m_carvers;
 
 	/// Painters used to paint sections of the input volume with materials - see hkaiVolume for more details
 	hkArray< hkRefPtr<const hkaiMaterialPainter> > m_painters;
@@ -243,7 +262,7 @@ struct hkaiNavVolumeGenerationSettings
 #endif	// HKAI_NAV_VOLUME_GENERATION_SETTINGS_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

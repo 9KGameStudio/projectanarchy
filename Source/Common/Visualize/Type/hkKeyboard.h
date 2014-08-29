@@ -102,7 +102,7 @@ typedef unsigned char HK_KEYBOARD_VKEY;
 #define HK_KEYBOARD_NUM_CHARS  0xFF // 255 possible char values 
 
 /// A simple keyboard state wrapper for the visual debugger
-struct hkKeyboard
+struct HK_EXPORT_COMMON hkKeyboard
 {
 	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_TOOLS, hkKeyboard );
 
@@ -118,7 +118,7 @@ struct hkKeyboard
 #endif // HK_VISUALIZE_VIRTUAL_KEYBOARD
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

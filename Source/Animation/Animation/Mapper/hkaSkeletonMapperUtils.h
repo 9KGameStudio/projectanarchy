@@ -19,14 +19,14 @@ class hkaSkeleton;
 /// and, through the "createMapping" static method, creates the mapping data that can be used at run-time (by an hkaSkeletonMapper) to
 /// map poses from A into B, and vice-versa.
 /// One-to-one mappings and chains are autodetected, but can also be specified by the user
-class hkaSkeletonMapperUtils
+class HK_EXPORT_ANIMATION hkaSkeletonMapperUtils
 {
 	public:
 		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_ANIM_RUNTIME,hkaSkeletonMapperUtils);
 
 			/// A chain, specified by the names of the start and end bones - used in Params::m_userChains.
 			/// These names will be matched with the bone names (after filtering the names) of both skeletons.
-		struct UserChain
+		struct HK_EXPORT_ANIMATION UserChain
 		{
 			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_ANIM_RUNTIME, hkaSkeletonMapperUtils::UserChain );
 
@@ -39,7 +39,7 @@ class hkaSkeletonMapperUtils
 			/// A explicit mapping (one-way only) - used in Params::m_userMappingsAtoB and Params::m_userMappingsBtoA.
 			/// The names will be matched with the bones names (after filtering the names) of the skeleton (A or B).
 			/// These correspond to partition names when computing partition mapping.
-		struct UserMapping
+		struct HK_EXPORT_ANIMATION UserMapping
 		{
 			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_ANIM_RUNTIME, hkaSkeletonMapperUtils::UserMapping );
 
@@ -50,7 +50,7 @@ class hkaSkeletonMapperUtils
 		};
 
 			/// This struct contains extracted motion parameters for animation mapping
-		class ExtractedMotionParams
+		class HK_EXPORT_ANIMATION ExtractedMotionParams
 		{
 
 		public:
@@ -99,7 +99,7 @@ class hkaSkeletonMapperUtils
 		};
 
 			/// These struct contains all the information used by "createMapping" in order to construct mapping data
-		struct Params
+		struct HK_EXPORT_ANIMATION Params
 		{
 			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_ANIM_RUNTIME, hkaSkeletonMapperUtils::Params );
 
@@ -243,7 +243,7 @@ class hkaSkeletonMapperUtils
 #endif // HK_SKELETON_MAPPER_UTILS_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -81,6 +81,9 @@ public:
 
   bool isRunning() const;
 
+  bool isAutomaticAssetTransformEnabled() const;
+  void setAutomaticAssetTransformEnabled(bool enabled);
+
   void queueScan(hkvAssetLibrary& library, const char* relativePath = NULL);
   void queryScanProgress(hkUint32& out_scansRemaining, hkUint32& out_changesRemaining);
 
@@ -99,12 +102,13 @@ private:
 
   bool m_scanAllFoldersOnStart;
   bool m_wasKeepingCurrentWork;
+  bool m_backgroundProcessingEnabled;
 };
 
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140624)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

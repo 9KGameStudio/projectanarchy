@@ -550,6 +550,14 @@ public:
   ///   Clears the scene
   void                         Reset();
 
+  /// \brief
+  ///   Sets the material remapping table (for internal use only)
+  inline void                         SetMaterialRemapping(const VArray<int, int>& materialRemapping) { m_materialRemapping = materialRemapping; }
+
+  /// \brief
+  ///   Returns the material remapping table ( old index -> new index )
+  inline const VArray<int, int>&      GetMaterialRemapping() const { return m_materialRemapping; }
+
 
 
   /// \brief
@@ -577,12 +585,13 @@ private:
   VArray<VGPortal*,       VGPortal*      > m_visPortals;
   VArray<VGLightGrid*,    VGLightGrid*   > m_lightGrids;
   VArray<VGPath*,         VGPath*        > m_paths;
+  VArray<int,             int            > m_materialRemapping;
 
   VGSkeleton m_skeleton;
 };
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

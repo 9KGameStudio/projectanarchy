@@ -28,11 +28,6 @@ public:
     m_jobTypeStrings[HK_JOB_TYPE_ANIMATION_MAPPING]             =  Vision::Profiling.GetFreeElementID();
     m_jobTypeStrings[HK_JOB_TYPE_BEHAVIOR]                      =  Vision::Profiling.GetFreeElementID();
     m_jobTypeStrings[HK_JOB_TYPE_CLOTH]                         =  Vision::Profiling.GetFreeElementID();
-    m_jobTypeStrings[HK_JOB_TYPE_AI_PATHFINDING]                =  Vision::Profiling.GetFreeElementID();
-    m_jobTypeStrings[HK_JOB_TYPE_AI_VOLUME_PATHFINDING]         =  Vision::Profiling.GetFreeElementID();
-    m_jobTypeStrings[HK_JOB_TYPE_AI_DYNAMIC]                    =  Vision::Profiling.GetFreeElementID();
-    m_jobTypeStrings[HK_JOB_TYPE_AI_LOCAL_STEERING]             =  Vision::Profiling.GetFreeElementID();
-    m_jobTypeStrings[HK_JOB_TYPE_AI_GENERATION]                 =  Vision::Profiling.GetFreeElementID();
     m_jobTypeStrings[HK_JOB_TYPE_DESTRUCTION]                   =  Vision::Profiling.GetFreeElementID();
     m_jobTypeStrings[HK_JOB_TYPE_UNIT_TEST]                     =  Vision::Profiling.GetFreeElementID();
     m_jobTypeStrings[HK_JOB_TYPE_CHARACTER_PROXY]               =  Vision::Profiling.GetFreeElementID();
@@ -49,11 +44,6 @@ public:
     Vision::Profiling.AddElement(m_jobTypeStrings[HK_JOB_TYPE_ANIMATION_MAPPING]             , "AnimMapping", TRUE, pGroup);
     Vision::Profiling.AddElement(m_jobTypeStrings[HK_JOB_TYPE_BEHAVIOR]                      , "Behavior", TRUE, pGroup);
     Vision::Profiling.AddElement(m_jobTypeStrings[HK_JOB_TYPE_CLOTH]                         , "Cloth", TRUE, pGroup);
-    Vision::Profiling.AddElement(m_jobTypeStrings[HK_JOB_TYPE_AI_PATHFINDING]                , "AiPathfinding", TRUE, pGroup);
-    Vision::Profiling.AddElement(m_jobTypeStrings[HK_JOB_TYPE_AI_VOLUME_PATHFINDING]         , "AiVolumePathfinding", TRUE, pGroup);
-    Vision::Profiling.AddElement(m_jobTypeStrings[HK_JOB_TYPE_AI_DYNAMIC]                    , "AiDynamic", TRUE, pGroup);
-    Vision::Profiling.AddElement(m_jobTypeStrings[HK_JOB_TYPE_AI_LOCAL_STEERING]             , "AiLocalSteering", TRUE, pGroup);
-    Vision::Profiling.AddElement(m_jobTypeStrings[HK_JOB_TYPE_AI_GENERATION]                 , "AiGeneration", TRUE, pGroup);
     Vision::Profiling.AddElement(m_jobTypeStrings[HK_JOB_TYPE_DESTRUCTION]                   , "Destruction", TRUE, pGroup);
     Vision::Profiling.AddElement(m_jobTypeStrings[HK_JOB_TYPE_UNIT_TEST]                     , "UnitTest", TRUE, pGroup);
     Vision::Profiling.AddElement(m_jobTypeStrings[HK_JOB_TYPE_CHARACTER_PROXY]               , "CharacterProxy", TRUE, pGroup);
@@ -90,12 +80,12 @@ public:
 #endif // !_VISION_DOC
 
 HK_COMPILE_TIME_ASSERT(HK_JOB_TYPE_DYNAMICS == 0);
-HK_COMPILE_TIME_ASSERT(HK_JOB_TYPE_HAVOK_MAX == 19); // If this fails then there are new job types to add to the above table
+HK_COMPILE_TIME_ASSERT(HK_JOB_TYPE_HAVOK_MAX == 14); // If this fails then there are new job types to add to the above table
 
 #endif // vHavokProfiler_h__
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -11,11 +11,11 @@
 
 #include <Physics/ConstraintSolver/Solve/hkpSolverResults.h>
 
-extern const hkClass hkpConstraintMotorClass;
+extern HK_EXPORT_PHYSICS const hkClass hkpConstraintMotorClass;
 
 
 /// Takes 1DOF state as input, and calculates the data, which goes into the constraint solver.
-class hkpConstraintMotor : public hkReferencedObject
+class HK_EXPORT_PHYSICS hkpConstraintMotor : public hkReferencedObject
 {
 	public:
 
@@ -54,7 +54,7 @@ class hkpConstraintMotor : public hkReferencedObject
 
 
 //
-class hkpMaxSizeConstraintMotor : public hkpConstraintMotor
+class HK_EXPORT_PHYSICS hkpMaxSizeConstraintMotor : public hkpConstraintMotor
 {
 	public:
 
@@ -82,7 +82,7 @@ class hkpMaxSizeConstraintMotor : public hkpConstraintMotor
 #endif // HKP_CONSTRAINT_MOTOR_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

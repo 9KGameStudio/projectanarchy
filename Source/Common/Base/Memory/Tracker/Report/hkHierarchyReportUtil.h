@@ -26,7 +26,7 @@ class hkRttiTypeCache;
 	/// The report summarizes the memory usage along a particular path from the root.
 	/// The size is the size of all blocks at that path. The total is the total memory for blocks at that depth, and any at a lower depth
 	/// along the path.
-class hkHierarchyReportUtil
+class HK_EXPORT_COMMON hkHierarchyReportUtil
 {
     public:
 		typedef hkScanReportUtil::Block Block;
@@ -42,7 +42,7 @@ class hkHierarchyReportUtil
 #endif // HKBASE_HIERARCHY_REPORT_UTIL_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

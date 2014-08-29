@@ -11,7 +11,7 @@
 #include <Common/Base/DebugUtil/Logger/hkLogger.h>
 
 /// Logger which writes to an hkOstream
-class hkOstreamLogger : public hkLogger
+class HK_EXPORT_COMMON hkOstreamLogger : public hkLogger
 {
 	public:
 		HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE);
@@ -135,7 +135,7 @@ class hkOstreamLogger : public hkLogger
 #endif //HK_BASE_OSTREAM_LOGGER_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

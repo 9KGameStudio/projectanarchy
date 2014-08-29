@@ -12,25 +12,25 @@ class hkVector2f;
 
 namespace hkVector2Util
 {
-	hkBool HK_CALL edgesIntersect( const hkVector2f& a1, const hkVector2f& a2, const hkVector2f& b1, const hkVector2f& b2);
-	void HK_CALL convexHullSimplePolyline( const hkArrayBase<hkVector2f>& polyline, hkArray<int>& indicesOut );
-	void HK_CALL convexHullVertices( const hkArrayBase<hkVector2f>& points, hkArray<hkVector2f>& hullOut );
-	hkResult HK_CALL convexHullIndices( const hkArrayBase<hkVector2f>& points, hkArrayBase<int>& indicesOut );
+	HK_EXPORT_COMMON hkBool HK_CALL edgesIntersect( const hkVector2f& a1, const hkVector2f& a2, const hkVector2f& b1, const hkVector2f& b2);
+	HK_EXPORT_COMMON void HK_CALL convexHullSimplePolyline( const hkArrayBase<hkVector2f>& polyline, hkArray<int>& indicesOut );
+	HK_EXPORT_COMMON void HK_CALL convexHullVertices( const hkArrayBase<hkVector2f>& points, hkArray<hkVector2f>& hullOut );
+	HK_EXPORT_COMMON hkResult HK_CALL convexHullIndices( const hkArrayBase<hkVector2f>& points, hkArrayBase<int>& indicesOut );
 
 		/// Computes the center and axes of the OBB of the points, and returns the area.
 		/// The hkResult is used to indicate that all memory allocations succeeded.
-	hkFloat32 HK_CALL computeObb(const hkArrayBase<hkVector2f>& points, hkVector2f& centerOut, hkVector2f& e0Out, hkVector2f& e1Out, hkResult& resOut);
+	HK_EXPORT_COMMON hkFloat32 HK_CALL computeObb(const hkArrayBase<hkVector2f>& points, hkVector2f& centerOut, hkVector2f& e0Out, hkVector2f& e1Out, hkResult& resOut);
 
 #ifdef HK_REAL_IS_FLOAT
 	/// Helper to get the number of bytes allocated on stack for hull generation
-	int  HK_CALL getStackSizeInBytesRequiredForConvexHullIndices(int inputPointsSize);
+	HK_EXPORT_COMMON int  HK_CALL getStackSizeInBytesRequiredForConvexHullIndices(int inputPointsSize);
 #endif
 }
 
 #endif //HKMATH_VECTOR2f_UTIL_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

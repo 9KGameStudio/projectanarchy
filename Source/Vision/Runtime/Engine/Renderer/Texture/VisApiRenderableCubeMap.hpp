@@ -205,7 +205,7 @@ public:
     return &m_DepthStencilSurface[iCubeMapFace];
   }
 
-#elif defined(_VR_OPENGL)
+#elif defined(_VR_OPENGL) || defined(_VR_GLES2)
   VISION_APIFUNC unsigned int GetRenderTarget() const;
   unsigned int m_iBufferHandle;
   GLenum m_BufferFormat;
@@ -253,7 +253,7 @@ protected:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

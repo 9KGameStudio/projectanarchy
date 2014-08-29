@@ -16,11 +16,6 @@
 #include <sys/synchronization.h>
 #endif
 
-#ifdef _VISION_POSIX
-#include <pthread.h>
-#include <semaphore.h>
-#endif
-
 /// \brief
 ///   enum used to specify the priority of a VThread object
 #if defined(_VISION_WINRT)
@@ -34,8 +29,9 @@ enum VThreadPriority
 };
 
 typedef DWORD (__stdcall *VPlatformThreadFunc)(LPVOID);
+typedef HANDLE VPlatformThreadHandle;
 
-#elif defined(WIN32)  || defined(_VISION_XENON) 
+#elif defined(_VISION_WIN32)  || defined(_VISION_XENON) 
 enum VThreadPriority
 {
   THREADPRIORITY_VERYLOW  =  THREAD_PRIORITY_LOWEST,
@@ -46,6 +42,7 @@ enum VThreadPriority
 };
 
 typedef DWORD (__stdcall *VPlatformThreadFunc)(LPVOID);
+typedef DWORD VPlatformThreadHandle;
 
 #elif defined(_VISION_PS3)
 enum VThreadPriority
@@ -58,6 +55,7 @@ enum VThreadPriority
 };
 
 typedef void (*VPlatformThreadFunc)(uint64_t);
+typedef unsigned int VPlatformThreadHandle;
 
 #elif defined(_VISION_POSIX)
 enum VThreadPriority  ///< POSIX is user defined - we use 1 for lowest and 5 for highest
@@ -70,6 +68,7 @@ enum VThreadPriority  ///< POSIX is user defined - we use 1 for lowest and 5 for
 };
 
 typedef void* (*VPlatformThreadFunc)(void*);
+typedef pthread_t VPlatformThreadHandle;
 
 #elif defined(_VISION_PSP2)
 enum VThreadPriority
@@ -82,7 +81,7 @@ enum VThreadPriority
 };
 
 typedef SceInt32 (*VPlatformThreadFunc)(SceSize, void*);
-
+typedef unsigned int VPlatformThreadHandle;
 
 #elif defined(_VISION_WIIU)
 enum VThreadPriority
@@ -93,7 +92,9 @@ enum VThreadPriority
   THREADPRIORITY_HIGH     =  OS_PRIORITY_APP_DEFAULT + (OS_PRIORITY_MAX - OS_PRIORITY_APP_DEFAULT) / 2, 
   THREADPRIORITY_VERYHIGH =  OS_PRIORITY_MAX // 31
 };
+
 typedef int (*VPlatformThreadFunc)(int intArg, void *ptrArg);
+typedef OSThread* VPlatformThreadHandle;
 
 #else
 #error "Missing Platform!"
@@ -127,7 +128,11 @@ public:
 
   /// \brief
   ///   Returns the thread handle
-  inline HANDLE GetHandle() const;
+  inline VPlatformThreadHandle GetHandle() const;
+
+  /// \brief
+  ///  Returns the handle belonging to the current thread
+  static inline VPlatformThreadHandle GetCurrentThreadHandle();
 
   /// \brief
   ///   Sets the thread processor
@@ -170,8 +175,9 @@ private:
     Windows::System::Threading::Core::PreallocatedWorkItem^ m_startItem;
 	Windows::Foundation::IAsyncAction^ m_thread;
 
-  #elif defined(WIN32) || defined(_VISION_XENON)  
+  #elif defined(_VISION_WIN32) || defined(_VISION_XENON)  
     volatile HANDLE m_hHandle;
+    DWORD m_threadId;
   
   #elif defined(_VISION_PS3)
     sys_ppu_thread_t m_Thread;
@@ -201,6 +207,10 @@ private:
     #error "Missing Platform!"
   #endif
 
+  #if defined(_VISION_WIN32) || defined(_VISION_POSIX) || defined(_VISION_WIIU)
+    bool m_bStarted; 
+  #endif
+
   volatile int m_iProcessor;
   volatile int m_iStackSize;
   volatile VThreadPriority m_ePriority;
@@ -209,7 +219,7 @@ private:
 
 #if defined(_VISION_WINRT)
   #include <Vision/Runtime/Base/System/Threading/Thread/VThreadWinRT.inl>
-#elif defined(WIN32)
+#elif defined(_VISION_WIN32)
   #include <Vision/Runtime/Base/System/Threading/Thread/VThreadPC.inl>
 #elif defined(_VISION_XENON)
   #include <Vision/Runtime/Base/System/Threading/Thread/VThreadXenon.inl>
@@ -229,7 +239,7 @@ private:
 #endif  // VTHREAD_HPP_INCLUDED
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

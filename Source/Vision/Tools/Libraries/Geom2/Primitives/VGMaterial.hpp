@@ -63,14 +63,18 @@ public:
   {
     VGMF_NOTHING                   = 0,
     VGMF_DOUBLESIDED               = V_BIT(0),
-    VGMF_CLAMP_U                   = V_BIT(1),
-    VGMF_CLAMP_V                   = V_BIT(2),
+    VGMF_INTERNAL_LM_LIGHTGRID     = V_BIT(1), // internal, do not use - use lighting method instead
+    VGMF_INTERNAL_LM_LIGHTMAP      = V_BIT(2), // internal, do not use - use lighting method instead
     VGMF_FORCE_PRIMARYOPAQUEPASS   = V_BIT(3),
     VGMF_FORCE_TRANSPARENTPASS     = V_BIT(4),
     VGMF_FORCE_SECONDARYOPAQUEPASS   = V_BIT(5),
     VGMF_DISABLE_CAST_STATIC_SHADOWS = V_BIT(6),
     VGMF_DISABLE_DEPTH_WRITE         = V_BIT(7),
-    VGMF_DATA_DIR_RELATIVE_PATHS     = V_BIT(8)
+    VGMF_DATA_DIR_RELATIVE_PATHS     = V_BIT(8),
+    VGMF_TEXTURE_CLAMP_U             = V_BIT(9),
+    VGMF_TEXTURE_CLAMP_V             = V_BIT(10),
+    VGMF_TEXTURE_CLAMP               = VGMF_TEXTURE_CLAMP_U|VGMF_TEXTURE_CLAMP_V,
+    VGMF_INTERNAL_FLAGS              = VGMF_INTERNAL_LM_LIGHTGRID | VGMF_INTERNAL_LM_LIGHTMAP,
   };
 
   /// \brief
@@ -357,17 +361,17 @@ public:
 
 
   /// \brief
-  ///   Gets this material's lightning type
+  ///   Gets this material's lighting type
   ///
   /// \return
-  ///   Material's lightning type
+  ///   Material's lighting type
   inline MaterialLighting          GetMaterialLighting() const throw()                        { return m_lighting; }
 
   /// \brief
-  ///   Sets this material's lightning type
+  ///   Sets this material's lighting type
   ///
   /// \param l
-  ///   Material lightning type to set
+  ///   Material lighting type to set
   inline void                      SetMaterialLighting(MaterialLighting l) throw()            { m_lighting = l; }
 
 
@@ -614,7 +618,7 @@ private:
 };
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

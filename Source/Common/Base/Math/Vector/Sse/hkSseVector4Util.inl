@@ -6,27 +6,27 @@
  *
  */
 
-#define HK_VECTOR4UTIL_exitMmx
-template <typename FT>
-HK_FORCE_INLINE void HK_CALL hkVector4UtilImpl<FT>::exitMmx()
-{
-#	ifndef HK_ARCH_X64
-	_mm_empty();
-#	endif
-}
-
-#define HK_VECTOR4fUTIL_atan2Approximation
+#define HK_VECTOR4fUTIL_atan2
 template <>
-HK_FORCE_INLINE hkSimdFloat32 HK_CALL hkVector4UtilImpl<hkFloat32>::atan2Approximation(hkSimdFloat32Parameter y, hkSimdFloat32Parameter x)
+HK_FORCE_INLINE hkSimdFloat32 HK_CALL hkVector4UtilImpl<hkFloat32>::atan2(hkSimdFloat32Parameter y, hkSimdFloat32Parameter x)
 {
 	hkSimdFloat32 result;
 	result.m_real = hkMath::quadAtan2(y.m_real,x.m_real);
 	return result;
 }
 template <>
-HK_FORCE_INLINE void HK_CALL hkVector4UtilImpl<hkFloat32>::atan2Approximation(hkVector4fParameter y, hkVector4fParameter x, hkVector4f& result)
+HK_FORCE_INLINE void HK_CALL hkVector4UtilImpl<hkFloat32>::atan2(hkVector4fParameter y, hkVector4fParameter x, hkVector4f& result)
 {
 	result.m_quad = hkMath::quadAtan2(y.m_quad, x.m_quad);
+}
+template <>
+HK_FORCE_INLINE hkSimdFloat32 HK_CALL hkVector4UtilImpl<hkFloat32>::atan2(hkVector4fParameter v)
+{
+	hkSimdFloat32 result;
+	__m128 x = _mm_shuffle_ps(v.m_quad, v.m_quad, _MM_SHUFFLE(0,0,0,0));
+	__m128 y = _mm_shuffle_ps(v.m_quad, v.m_quad, _MM_SHUFFLE(1,1,1,1));
+	result.m_real = hkMath::quadAtan2(y,x);
+	return result;
 }
 
 #define HK_VECTOR4fUTIL_logApproximation
@@ -38,23 +38,28 @@ HK_FORCE_INLINE void HK_CALL hkVector4UtilImpl<hkFloat32>::logApproximation(hkVe
 
 #define HK_VECTOR4fUTIL_sinCos
 template <>
+HK_FORCE_INLINE void HK_CALL hkVector4UtilImpl<hkFloat32>::sinCos(hkVector4fParameter r, hkVector4f& sines, hkVector4f& cosines)
+{
+	hkMath::quadSinCos(r.m_quad,sines.m_quad,cosines.m_quad);
+}
+template <>
 HK_FORCE_INLINE void HK_CALL hkVector4UtilImpl<hkFloat32>::sinCos(hkVector4fParameter r, hkVector4f& sc)
 {
-	sc.m_quad = hkMath::quadSinCos(r.m_quad);
+	hkVector4f s,c;
+	hkMath::quadSinCos(r.m_quad,s.m_quad,c.m_quad);
+	sc.setSelect<hkVector4ComparisonMask::MASK_XZ>(s,c);
 }
 template <>
 HK_FORCE_INLINE void HK_CALL hkVector4UtilImpl<hkFloat32>::sinCos(hkSimdFloat32Parameter r, hkVector4f& sc)
 {
-	hkVector4f rr; rr.setAll(r);
-	sc.m_quad = hkMath::quadSinCos(rr.m_quad);
+	hkVector4f s,c;
+	hkMath::quadSinCos(r.m_real,s.m_quad,c.m_quad);
+	sc.setSelect<hkVector4ComparisonMask::MASK_XZ>(s,c);
 }
 template <>
 HK_FORCE_INLINE void HK_CALL hkVector4UtilImpl<hkFloat32>::sinCos(hkSimdFloat32Parameter r, hkSimdFloat32& s, hkSimdFloat32& c)
 {
-	hkVector4f rr; rr.setAll(r);
-	hkVector4f sc; sc.m_quad = hkMath::quadSinCos(rr.m_quad);
-	s = sc.getComponent<0>();
-	c = sc.getComponent<1>();
+	hkMath::quadSinCos(r.m_real,s.m_real,c.m_real);
 }
 
 #define HK_VECTOR4fUTIL_sinCosApproximation
@@ -88,6 +93,20 @@ template <>
 HK_FORCE_INLINE void HK_CALL hkVector4UtilImpl<hkFloat32>::aCos(hkVector4fParameter r, hkVector4f& sc)
 {
 	sc.m_quad = hkMath::quadAcos(r.m_quad);
+}
+template <>
+HK_FORCE_INLINE hkSimdFloat32 HK_CALL hkVector4UtilImpl<hkFloat32>::aSin(hkSimdFloat32Parameter r)
+{
+	hkSimdFloat32 result;
+	result.m_real = hkMath::quadAsin(r.m_real);
+	return result;
+}
+template <>
+HK_FORCE_INLINE hkSimdFloat32 HK_CALL hkVector4UtilImpl<hkFloat32>::aCos(hkSimdFloat32Parameter r)
+{
+	hkSimdFloat32 result;
+	result.m_real = hkMath::quadAcos(r.m_real);
+	return result;
 }
 template <>
 HK_FORCE_INLINE void HK_CALL hkVector4UtilImpl<hkFloat32>::aSinAcos(hkVector4fParameter r, hkVector4f& sc)
@@ -224,9 +243,12 @@ HK_FORCE_INLINE void HK_CALL hkVector4UtilImpl<hkFloat32>::dot3_2vs2( hkVector4f
 	const hkQuadFloat32 dp21 = _mm_dp_ps(a2.m_quad, b1.m_quad, 0x78);
 	dotsOut.m_quad = _mm_or_ps(_mm_or_ps(dp00, dp01), _mm_or_ps(dp20, dp21));
 }
+#endif // sse version >= 4.2
 
-#elif HK_SSE_VERSION >= 0x30
 
+#if HK_SSE_VERSION >= 0x30
+
+#if !defined(HK_VECTOR4fUTIL_dot4_4vs4)
 #define HK_VECTOR4fUTIL_dot4_4vs4
 template <>
 HK_FORCE_INLINE void HK_CALL hkVector4UtilImpl<hkFloat32>::dot4_4vs4( hkVector4fParameter a0, hkVector4fParameter b0, hkVector4fParameter a1, hkVector4fParameter b1, hkVector4fParameter a2, hkVector4fParameter b2, hkVector4fParameter a3, hkVector4fParameter b3, hkVector4f& dotsOut)
@@ -236,27 +258,13 @@ HK_FORCE_INLINE void HK_CALL hkVector4UtilImpl<hkFloat32>::dot4_4vs4( hkVector4f
 	const hkQuadFloat32 m2 = _mm_mul_ps(b2.m_quad, a2.m_quad);
 	const hkQuadFloat32 m3 = _mm_mul_ps(b3.m_quad, a3.m_quad);
 
-	const hkQuadFloat32 hsum0 = _mm_hadd_ps(m0, m0);
-	const hkQuadFloat32 hsum1 = _mm_hadd_ps(m1, m1);
-	const hkQuadFloat32 hsum2 = _mm_hadd_ps(m2, m2);
-	const hkQuadFloat32 hsum3 = _mm_hadd_ps(m3, m3);
-
-	const hkQuadFloat32 dp0 = _mm_hadd_ps(hsum0, hsum0);
-	const hkQuadFloat32 dp1 = _mm_hadd_ps(hsum1, hsum1);
-	const hkQuadFloat32 dp2 = _mm_hadd_ps(hsum2, hsum2);
-	const hkQuadFloat32 dp3 = _mm_hadd_ps(hsum3, hsum3);
-
-	const hkQuadFloat32 zero = _mm_setzero_ps();
-
-	const hkQuadFloat32 dp0z = _mm_shuffle_ps(dp0,zero,_MM_SHUFFLE(0,0,0,0));
-	const hkQuadFloat32 dp1z = _mm_shuffle_ps(dp1,zero,_MM_SHUFFLE(1,1,0,0));
-	const hkQuadFloat32 dp2z = _mm_shuffle_ps(dp2,zero,_MM_SHUFFLE(2,2,0,0));
-	const hkQuadFloat32 dp3z = _mm_shuffle_ps(dp3,zero,_MM_SHUFFLE(3,3,0,0));
-
-	dotsOut.m_quad =                           _mm_shuffle_ps(dp0z,dp2z,_MM_SHUFFLE(3,0,3,0));
-	dotsOut.m_quad = _mm_or_ps(dotsOut.m_quad, _mm_shuffle_ps(dp1z,dp3z,_MM_SHUFFLE(0,3,0,3)));
+	const hkQuadFloat32 hsum01 = _mm_hadd_ps(m0, m1);
+	const hkQuadFloat32 hsum23 = _mm_hadd_ps(m2, m3);
+	dotsOut.m_quad = _mm_hadd_ps(hsum01, hsum23);
 }
+#endif
 
+#if !defined(HK_VECTOR4fUTIL_dot4_1vs4)
 #define HK_VECTOR4fUTIL_dot4_1vs4
 template <>
 HK_FORCE_INLINE void HK_CALL hkVector4UtilImpl<hkFloat32>::dot4_1vs4( hkVector4fParameter vectorIn, hkVector4fParameter a0, hkVector4fParameter a1, hkVector4fParameter a2, hkVector4fParameter a3, hkVector4f& dotsOut)
@@ -266,27 +274,13 @@ HK_FORCE_INLINE void HK_CALL hkVector4UtilImpl<hkFloat32>::dot4_1vs4( hkVector4f
 	const hkQuadFloat32 m2 = _mm_mul_ps(vectorIn.m_quad, a2.m_quad);
 	const hkQuadFloat32 m3 = _mm_mul_ps(vectorIn.m_quad, a3.m_quad);
 
-	const hkQuadFloat32 hsum0 = _mm_hadd_ps(m0, m0);
-	const hkQuadFloat32 hsum1 = _mm_hadd_ps(m1, m1);
-	const hkQuadFloat32 hsum2 = _mm_hadd_ps(m2, m2);
-	const hkQuadFloat32 hsum3 = _mm_hadd_ps(m3, m3);
-
-	const hkQuadFloat32 dp0 = _mm_hadd_ps(hsum0, hsum0);
-	const hkQuadFloat32 dp1 = _mm_hadd_ps(hsum1, hsum1);
-	const hkQuadFloat32 dp2 = _mm_hadd_ps(hsum2, hsum2);
-	const hkQuadFloat32 dp3 = _mm_hadd_ps(hsum3, hsum3);
-
-	const hkQuadFloat32 zero = _mm_setzero_ps();
-
-	const hkQuadFloat32 dp0z = _mm_shuffle_ps(dp0,zero,_MM_SHUFFLE(0,0,0,0));
-	const hkQuadFloat32 dp1z = _mm_shuffle_ps(dp1,zero,_MM_SHUFFLE(1,1,0,0));
-	const hkQuadFloat32 dp2z = _mm_shuffle_ps(dp2,zero,_MM_SHUFFLE(2,2,0,0));
-	const hkQuadFloat32 dp3z = _mm_shuffle_ps(dp3,zero,_MM_SHUFFLE(3,3,0,0));
-
-	dotsOut.m_quad =                           _mm_shuffle_ps(dp0z,dp2z,_MM_SHUFFLE(3,0,3,0));
-	dotsOut.m_quad = _mm_or_ps(dotsOut.m_quad, _mm_shuffle_ps(dp1z,dp3z,_MM_SHUFFLE(0,3,0,3)));
+	const hkQuadFloat32 hsum01 = _mm_hadd_ps(m0, m1);
+	const hkQuadFloat32 hsum23 = _mm_hadd_ps(m2, m3);
+	dotsOut.m_quad = _mm_hadd_ps(hsum01, hsum23);
 }
+#endif
 
+#if !defined(HK_VECTOR4fUTIL_dot4_1vs3)
 #define HK_VECTOR4fUTIL_dot4_1vs3
 template <>
 HK_FORCE_INLINE void HK_CALL hkVector4UtilImpl<hkFloat32>::dot4_1vs3( hkVector4fParameter vectorIn, hkVector4fParameter a0, hkVector4fParameter a1, hkVector4fParameter a2, hkVector4f& dotsOut)
@@ -294,24 +288,13 @@ HK_FORCE_INLINE void HK_CALL hkVector4UtilImpl<hkFloat32>::dot4_1vs3( hkVector4f
 	const hkQuadFloat32 m0 = _mm_mul_ps(vectorIn.m_quad, a0.m_quad);
 	const hkQuadFloat32 m1 = _mm_mul_ps(vectorIn.m_quad, a1.m_quad);
 	const hkQuadFloat32 m2 = _mm_mul_ps(vectorIn.m_quad, a2.m_quad);
-
-	const hkQuadFloat32 hsum0 = _mm_hadd_ps(m0, m0);
-	const hkQuadFloat32 hsum1 = _mm_hadd_ps(m1, m1);
-	const hkQuadFloat32 hsum2 = _mm_hadd_ps(m2, m2);
-
-	const hkQuadFloat32 dp0 = _mm_hadd_ps(hsum0, hsum0);
-	const hkQuadFloat32 dp1 = _mm_hadd_ps(hsum1, hsum1);
-	const hkQuadFloat32 dp2 = _mm_hadd_ps(hsum2, hsum2);
-
 	const hkQuadFloat32 zero = _mm_setzero_ps();
 
-	const hkQuadFloat32 dp0z = _mm_shuffle_ps(dp0,zero,_MM_SHUFFLE(0,0,0,0));
-	const hkQuadFloat32 dp1z = _mm_shuffle_ps(dp1,zero,_MM_SHUFFLE(1,1,0,0));
-	const hkQuadFloat32 dp2z = _mm_shuffle_ps(dp2,zero,_MM_SHUFFLE(2,2,0,0));
-
-	dotsOut.m_quad =                           _mm_shuffle_ps(dp0z,dp2z,_MM_SHUFFLE(3,0,3,0));
-	dotsOut.m_quad = _mm_or_ps(dotsOut.m_quad, _mm_shuffle_ps(dp1z,zero,_MM_SHUFFLE(0,3,0,3)));
+	const hkQuadFloat32 hsum01 = _mm_hadd_ps(m0, m1);
+	const hkQuadFloat32 hsum23 = _mm_hadd_ps(m2, zero);
+	dotsOut.m_quad = _mm_hadd_ps(hsum01, hsum23);
 }
+#endif
 
 #endif // sse specials
 
@@ -410,12 +393,22 @@ template<unsigned int i, unsigned int j, unsigned int k, unsigned int l>
 HK_FORCE_INLINE void HK_CALL hkVector4UtilImpl<FT>::setPermutation2(hkVector4fParameter a, hkVector4fParameter b, hkVector4f & out)
 {
 	HK_COMPILE_TIME_ASSERT(i<8 && j<8 && k<8 && l<8);
-	HK_COMPILE_TIME_ASSERT(i>=0 && j>=0 && k>=0 && l>=0);
 
-	hkQuadFloat32 tmp1 = _mm_shuffle_ps(a.m_quad, b.m_quad, _MM_SHUFFLE(j&3, i&3, j&3, i&3));
-	hkQuadFloat32 tmp2 = _mm_shuffle_ps(a.m_quad, b.m_quad, _MM_SHUFFLE(l&3, k&3, l&3, k&3));
+	if(i<4 && j<4 && k>=4 && l>=4)
+	{
+		out.m_quad = _mm_shuffle_ps(a.m_quad, b.m_quad, _MM_SHUFFLE(l&3, k&3, j&3, i&3));
+	}
+	else if(i>=4 && j>=4 && k<4 && l<4)
+	{
+		out.m_quad = _mm_shuffle_ps(b.m_quad, a.m_quad, _MM_SHUFFLE(l&3, k&3, j&3, i&3));
+	}
+	else
+	{
+		hkQuadFloat32 tmp1 = _mm_shuffle_ps(a.m_quad, b.m_quad, _MM_SHUFFLE(j&3, i&3, j&3, i&3));
+		hkQuadFloat32 tmp2 = _mm_shuffle_ps(a.m_quad, b.m_quad, _MM_SHUFFLE(l&3, k&3, l&3, k&3));
 
-	out.m_quad = _mm_shuffle_ps(tmp1, tmp2, _MM_SHUFFLE((l&4)?3:1, (k&4)?2:0, (j&4)?3:1, (i&4)?2:0));
+		out.m_quad = _mm_shuffle_ps(tmp1, tmp2, _MM_SHUFFLE((l&4)?3:1, (k&4)?2:0, (j&4)?3:1, (i&4)?2:0));
+	}
 }
 
 #define HK_VECTOR4fUTIL_convertComparison
@@ -431,8 +424,21 @@ HK_FORCE_INLINE void HK_CALL hkVector4UtilImpl<hkFloat32>::convertComparison(hkV
 	cout.m_mask = cin.m_mask;
 }
 
+#define HK_VECTOR4fUTIL_convertVector
+template <>
+HK_FORCE_INLINE void HK_CALL hkVector4UtilImpl<hkFloat32>::convertVector(hkVector4fParameter vin, hkVector4d& vout)
+{
+	vout.m_quad.xy = _mm_cvtps_pd(vin.m_quad);
+	vout.m_quad.zw = _mm_cvtps_pd(_mm_shuffle_ps(vin.m_quad,vin.m_quad,_MM_SHUFFLE(3,2,3,2)));
+}
+template <>
+HK_FORCE_INLINE void HK_CALL hkVector4UtilImpl<hkFloat32>::convertVector(hkVector4fParameter vin, hkVector4f& vout)
+{
+	vout = vin;
+}
+
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

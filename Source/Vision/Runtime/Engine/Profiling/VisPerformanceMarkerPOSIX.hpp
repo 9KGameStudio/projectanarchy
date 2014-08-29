@@ -16,26 +16,37 @@
 
 #if defined(_VISION_IOS)
 
-  #define INSERT_PERF_MARKER(_markerString_) glInsertEventMarkerEXT(0, _markerString_);
-  #define INSERT_PERF_MARKER_SCOPE(_markerString_) VisPerformanceMarker_cl ___visPerfMarker___(_markerString_);
-  #define START_PERF_MARKER_BRACKET(_markerString_) glPushGroupMarkerEXT(0, _markerString_);
-  #define STOP_PERF_MARKER_BRACKET(_markerString_) glPopGroupMarkerEXT();
+inline void SetPerfMarkerString(const char* pszString)
+{
+  glInsertEventMarkerEXT(0, pszString);
+}
 
-#elif defined(_VISION_ANDROID) || defined(_VISION_TIZEN)
+inline void StartPerfMarkerBracket(const char *pszString)
+{
+  glPushGroupMarkerEXT(0, pszString);
+}
 
-  #define INSERT_PERF_MARKER(_markerString_)
-  #define INSERT_PERF_MARKER_SCOPE(_markerString_)
-  #define START_PERF_MARKER_BRACKET(_markerString_)
-  #define STOP_PERF_MARKER_BRACKET(_markerString_)
+inline void StopPerfMarkerBracket(const char *pszString)
+{
+  glPopGroupMarkerEXT();
+}
+
+#define INSERT_PERF_MARKER(_markerString_) SetPerfMarkerString(_markerString_);
+#define INSERT_PERF_MARKER_SCOPE(_markerString_) VisPerformanceMarker_cl ___visPerfMarker___(_markerString_);
+#define START_PERF_MARKER_BRACKET(_markerString_) StartPerfMarkerBracket(_markerString_);
+#define STOP_PERF_MARKER_BRACKET(_markerString_) StopPerfMarkerBracket(_markerString_);
 
 #else
 
-  #error Unknown posix platform
+#define INSERT_PERF_MARKER(_markerString_)
+#define INSERT_PERF_MARKER_SCOPE(_markerString_)
+#define START_PERF_MARKER_BRACKET(_markerString_)
+#define STOP_PERF_MARKER_BRACKET(_markerString_)
 
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140625)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

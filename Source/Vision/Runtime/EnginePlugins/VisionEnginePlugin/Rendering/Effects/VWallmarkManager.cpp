@@ -8,7 +8,7 @@
 
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/VisionEnginePluginPCH.h>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/Effects/VWallmarkManager.hpp>
-#include <Vision/Runtime/Base/System/Memory/VMemDbg.hpp>
+
 
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -17,8 +17,8 @@
 
 void VParticleWallmark::TickFunction(float dtime)
 {
-  float& fLifeTime(velocity[0]);
-  float& fFadeOutTime(velocity[1]);
+  float& fLifeTime(m_vVelocity[0]);
+  float& fFadeOutTime(m_vVelocity[1]);
   if (fLifeTime>0.f) // otherwise infinite lifetime...
   {
     fLifeTime -= dtime;
@@ -31,7 +31,7 @@ void VParticleWallmark::TickFunction(float dtime)
     if (fLifeTime<fFadeOutTime)
     {
       float fBlend = fLifeTime/fFadeOutTime;
-      float& fOriginalAlpha(velocity[2]);
+      float& fOriginalAlpha(m_vVelocity[2]);
       color.a = (UBYTE)(fOriginalAlpha*fBlend);
     }
   }
@@ -49,7 +49,7 @@ void VParticleWallmark::InflateBoundingBox(hkvAlignedBBox &bbox)
   hkvVec3 vDist(distortion[0],distortion[1],distortion[2]);
   float fRadius = vDist.getLength();
   fRadius = hkvMath::Max(fRadius,size);
-  hkvAlignedBBox thisBox(hkvVec3 (pos[0]-fRadius,pos[1]-fRadius,pos[2]-fRadius), hkvVec3 (pos[0]+fRadius,pos[1]+fRadius,pos[2]+fRadius));
+  hkvAlignedBBox thisBox(m_vPosition - hkvVec3(fRadius), m_vPosition + hkvVec3(fRadius));
   bbox.expandToInclude(thisBox);
 }
 
@@ -66,6 +66,9 @@ VParticleWallmarkGroup::VParticleWallmarkGroup(int iCount, VTextureObject *pText
 
   m_bApplyDeferredLighting = bApplyDeferredLighting;
   m_bHasFreeParticles = true;
+
+  // it's a paradox !
+  m_BoundingBox.setInvalid();
   m_bBBoxValid = true;
 
   SetParticleStride(sizeof(VParticleWallmark),0);
@@ -157,10 +160,6 @@ void VParticleWallmarkGroup::TickFunction(float dtime)
   m_iHighWaterMark = iHighWater+1;
   if (!m_bBBoxValid)
     RecomputeBoundingBox();
-/* DEBUG rendering:
-  if (m_BoundingBox.IsValid())
-    Vision::Game.DrawBoundingBox(m_BoundingBox, VColorRef(100,200,255,255));
-    */
 }
 
 void VParticleWallmarkGroup::RecomputeBoundingBox()
@@ -200,6 +199,24 @@ void VParticleWallmarkGroup::RecomputeBoundingBox()
   }
   m_bBBoxValid = true;
 }
+
+
+void VParticleWallmarkGroup::Reposition(const VisZoneRepositionInfo_t &info)
+{
+  VParticleWallmark* p = (VParticleWallmark *)GetParticles();
+  for (int i=0;i<m_iHighWaterMark;i++,p++)
+    if (p->valid)
+    {
+      p->m_vPosition += info.m_vMoveDelta;
+    }
+
+  if (m_BoundingBox.isValid())
+  {
+    m_BoundingBox.translate(info.m_vMoveDelta);
+    m_spVisObj->SetWorldSpaceBoundingBox(m_BoundingBox);
+  }
+}
+
 
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -246,6 +263,8 @@ void VWallmarkManager::OneTimeInit()
 
   // vForge and application lifetime management
   Vision::Callbacks.OnReassignShaders += this;
+  Vision::Callbacks.OnAfterSceneUnloaded += this;
+  IVisSceneManager_cl::OnReposition += this;
 }
 
 void VWallmarkManager::OneTimeDeInit()
@@ -263,6 +282,8 @@ void VWallmarkManager::OneTimeDeInit()
   m_bSimulationCallbackRegistered = m_bRenderCallbackRegistered = m_bUnloadWorldCallbackRegistered = false;
 
   Vision::Callbacks.OnReassignShaders -= this;
+  Vision::Callbacks.OnAfterSceneUnloaded -= this;
+  IVisSceneManager_cl::OnReposition -= this;
 }
 
 
@@ -320,6 +341,31 @@ void VWallmarkManager::OnStaticGeometryDeleted(VisStaticGeometryInstance_cl *pGe
 }
 
 
+void VWallmarkManager::RepositionWallmarks(const VisZoneRepositionInfo_t &info)
+{
+  {
+    // particle wm
+    int iCount = m_AllWallmarkGroups.Count();
+    for (int i=0;i<iCount;i++)
+      m_AllWallmarkGroups.GetAt(i)->Reposition(info);
+  }
+  {
+    // projected wm
+    hkvVec3 vNewPos(hkvNoInitialization);
+    const int iCount = m_AllProjectedWallmarks.Count();
+    for (int i = 0; i < iCount; i++)
+    {
+      VProjectedWallmark *pProjWallmark = m_AllProjectedWallmarks.GetAt(i);
+      if (pProjWallmark->GetParentZone()==NULL) // wm in zones are repositioned already
+      {
+        pProjWallmark->m_vOrigin += info.m_vMoveDelta;
+        pProjWallmark->m_vDestPos += info.m_vMoveDelta;
+        pProjWallmark->m_BoundingBox.translate(info.m_vMoveDelta);
+      }
+    }
+  }
+}
+
 
 void VWallmarkManager::OnHandleCallback(IVisCallbackDataObject_cl *pData)
 {
@@ -334,6 +380,11 @@ void VWallmarkManager::OnHandleCallback(IVisCallbackDataObject_cl *pData)
       RenderProjectedWallmarks(VPT_SecondaryOpaquePass);
     else if (iEntry == m_iTransparentPassRenderOrder && ((m_eProjectedWMPassTypes & VPT_TransparentPass)!=0))
       RenderProjectedWallmarks(VPT_TransparentPass);
+    return;
+  }
+  if (pData->m_pSender==&IVisSceneManager_cl::OnReposition)
+  {
+    RepositionWallmarks(((VisZoneRepositionDataObject_cl *)pData)->m_Info);
     return;
   }
   if (pData->m_pSender==&Vision::Callbacks.OnUpdateSceneFinished)
@@ -412,6 +463,11 @@ void VWallmarkManager::OnHandleCallback(IVisCallbackDataObject_cl *pData)
     m_eProjectedWMPassTypes = VPT_Undefined;
     return;
   }
+  if (pData->m_pSender == &Vision::Callbacks.OnAfterSceneUnloaded)
+  {
+	  DeleteAllUnRef();
+	  return;
+  }
 }
 
 
@@ -469,9 +525,7 @@ VParticleWallmark* VWallmarkManager::CreateWallmark(
 {
   VISION_PROFILE_FUNCTION(PROFILING_WALLMARK_CREATION);
   VParticleWallmark* p = CreateParticle(pTexture,eBlending,bApplyDeferredLighting,vCenter,true);
-  p->pos[0] = vCenter.x;
-  p->pos[1] = vCenter.y;
-  p->pos[2] = vCenter.z;
+  p->m_vPosition = vCenter;
   p->color = color;
   
   hkvVec3 normal = alignment.getAxis(0);
@@ -479,16 +533,15 @@ VParticleWallmark* VWallmarkManager::CreateWallmark(
   hkvVec3 up = alignment.getAxis(2);
   p->size = up.getLength()*2.f;
   normal.normalizeIfNotZero();
-  p->normal[0] = normal.x;
-  p->normal[1] = normal.y;
-  p->normal[2] = normal.z;
+  p->m_vNormal = normal;
+
   p->distortion[0] = right.x*2.f;
   p->distortion[1] = right.y*2.f;
   p->distortion[2] = right.z*2.f;
 
-  p->velocity[0] = fLifetime + fFadeOutTime;
-  p->velocity[1] = fFadeOutTime;
-  p->velocity[2] = (float)color.a; // original alpha (255 based)
+  p->m_vVelocity[0] = fLifetime + fFadeOutTime;
+  p->m_vVelocity[1] = fFadeOutTime;
+  p->m_vVelocity[2] = (float)color.a; // original alpha (255 based)
   return p;
 }
 
@@ -801,8 +854,30 @@ VRefCountedCollection<VProjectedWallmark>& VWallmarkManager::ProjectedWallmarkIn
   return m_AllProjectedWallmarks;
 }
 
+void VWallmarkManager::DeleteAllUnRef()
+{
+	for (int i = m_FadingProjectedWallmarks.Count() - 1; i >= 0; i--) 
+	{
+		VProjectedWallmark * pElem = m_FadingProjectedWallmarks.GetAt(i);
+		if (!pElem || pElem->GetRefCount() > 2)  // 2, cause holds by m_AllProjectedWallmarks
+		{
+			continue;
+		}
+		pElem->DisposeObject();
+	}
+	for (int i = m_AllProjectedWallmarks.Count() - 1; i >= 0; i--) 
+	{
+		VProjectedWallmark * pElem = m_AllProjectedWallmarks.GetAt(i);
+		if (!pElem || pElem->GetRefCount() > 1)
+		{
+			continue;
+		}
+		pElem->DisposeObject();
+	}
+}
+
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

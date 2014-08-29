@@ -20,7 +20,7 @@ namespace hkVersionCheckingUtils
 		/// Write a human readable description of the difference between these 2 versions.
 		/// For this to be useful the classes should be different versions of the same hkClass.
 		/// If detailed is true then this reports member offset and class size changes too.
-	void HK_CALL summarizeChanges(hkOstream& output, const hkClass& oldVersion, const hkClass& newVersion, bool detailed = false);
+	HK_EXPORT_COMMON void HK_CALL summarizeChanges(hkOstream& output, const hkClass& oldVersion, const hkClass& newVersion, bool detailed = false);
 
 	enum Flags
 	{
@@ -29,13 +29,13 @@ namespace hkVersionCheckingUtils
 		IGNORE_REMOVED	= 2
 	};
 
-	hkResult HK_CALL verifyClassPatches(hkOstream& report, const hkDataWorld& world, const hkClassNameRegistry& classReg, const hkVersionPatchManager& patchManager, Flags flags = NONE);
+	HK_EXPORT_COMMON hkResult HK_CALL verifyClassPatches(hkOstream& report, const hkDataWorld& world, const hkClassNameRegistry& classReg, const hkVersionPatchManager& patchManager, Flags flags = NONE);
 }
 
 #endif // HKSERIALZE_VERSION_CHECKING_UTILS_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

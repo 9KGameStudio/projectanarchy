@@ -518,6 +518,7 @@ public:
   // variables
   int BoxSubDivisions;          ///< number of box subdivisions (detail of the sky)
   int LayerCount;               ///< number of layers
+  float RotationZ;              ///< rotation around Z axis
 
 protected:
   friend class VisRenderLoopHelper_cl;
@@ -583,7 +584,7 @@ class VisSky_cl : public VSky
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -39,20 +39,20 @@ namespace VisionManaged
   {
   public:
     EngineInstanceParticleGroup();
-    VOVERRIDE void DisposeObject() override;
+    virtual void DisposeObject() override;
 
     // overridden IEngineShapeInstance functions
-    VOVERRIDE void SetVisible(bool bStatus) override {m_bVisible=bStatus;UpdateVisibleStatus();}
-    VOVERRIDE void SetScaling(float x,float y, float z) override;
+    virtual void SetVisible(bool bStatus) override {m_bVisible=bStatus;UpdateVisibleStatus();}
+    virtual void SetScaling(float x,float y, float z) override;
 
-    // Overriden IEngineInstanceObject3D functions
-    VOVERRIDE void *GetObject3D() override;
-    VOVERRIDE void SetPosition(float x,float y,float z) override;
-    VOVERRIDE void SetOrientation(float yaw,float pitch,float roll) override;
+    // Overridden IEngineInstanceObject3D functions
+    virtual void* GetObject3D() override;
+    virtual void SetPosition(float x,float y,float z) override;
+    virtual void SetOrientation(float yaw,float pitch,float roll) override;
 
-    VOVERRIDE void TraceShape(Shape3D ^ownerShape, Vector3F rayStart,Vector3F rayEnd, ShapeTraceResult ^%result) override;
-    VOVERRIDE bool GetLocalBoundingBox(BoundingBox ^%bbox) override;
-    VOVERRIDE bool OnExport(SceneExportInfo ^info) override;
+    virtual void TraceShape(Shape3D ^ownerShape, Vector3F rayStart,Vector3F rayEnd, ShapeTraceResult ^%result) override;
+    virtual bool GetLocalBoundingBox(BoundingBox ^%bbox) override;
+    virtual bool OnExport(SceneExportInfo ^info) override;
 
     // misc:
     bool GetLocalBoundingBox(hkvAlignedBBox &bbox);
@@ -75,7 +75,7 @@ namespace VisionManaged
     }
 
     void UpdateParticleColors();
-
+    void OnLinksChanged(); 
 
     bool SetEffectFile(String ^effect); // loads the xml file
     bool IsHalted() {return !Vision::Editor.IsAnimatingOrPlaying();}
@@ -90,8 +90,11 @@ namespace VisionManaged
     void Restart();
     void SetApplyTimeOfDayLight(bool bApply) {if (m_pGroup) m_pGroup->SetApplyTimeOfDayLight (bApply);}
     bool GetApplyTimeOfDayLight(void) {if (m_pGroup) return (m_pGroup->GetApplyTimeOfDayLight ()); return (false);}
-    void SetRandomBaseSeed(unsigned int uiBaseSeed) { m_uiRandomBaseSeed = uiBaseSeed; }
+    void SetRandomBaseSeed(unsigned int uiBaseSeed);
     void SetMeshEmitterEntity(EngineInstanceEntity ^entityInst);
+    void SetPreferredDirLightKey(String ^dirLightKey);
+    void SetLightSamplingOffset(Vector3F lightSamplingOffset);
+    void SetLightInfluenceBitmask(unsigned int uiMask) {if (m_pGroup) m_pGroup->SetLightInfluenceBitMask(uiMask); }
 
     // constraint functions:
     void AddConstraint(EngineInstanceConstraint ^pConstraint);
@@ -123,6 +126,7 @@ namespace VisionManaged
     float m_fPosX,m_fPosY,m_fPosZ;
     unsigned int m_iVisibleBitmask;
     bool m_bVisible;
+    bool m_bRemoveWhenFinished;         ///< Keep copy of this parameter since we might override it on the engine side.
     unsigned int m_uiRandomBaseSeed;
 
     static ParticlePreviewType_e g_CurrentPreviewType = ParticlePreviewType_e::None;
@@ -207,7 +211,7 @@ namespace VisionManaged
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

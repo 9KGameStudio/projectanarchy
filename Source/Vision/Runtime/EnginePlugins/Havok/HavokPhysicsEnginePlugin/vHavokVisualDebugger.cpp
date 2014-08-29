@@ -11,13 +11,13 @@
 #include <Vision/Runtime/EnginePlugins/Havok/HavokPhysicsEnginePlugin/vHavokPhysicsIncludes.hpp>
 #include <Vision/Runtime/EnginePlugins/Havok/HavokPhysicsEnginePlugin/vHavokConversionUtils.hpp>
 #include <Vision/Runtime/EnginePlugins/Havok/HavokPhysicsEnginePlugin/vHavokPhysicsModule.hpp>
-#include <Common/Base/Thread/Job/ThreadPool/hkJobThreadPool.h>
+#include <Common/Base/Thread/Pool/hkThreadPool.h>
 
 #pragma managed(push, off)
 
-#include <Common/Visualize/hkProcessRegisterUtil.h>	
+#include <Common/Visualize/hkProcessRegisterUtil.h>
 #include <Physics2012/Dynamics/World/hkpWorld.h>
-	
+
 #pragma managed(pop)
 
 
@@ -28,7 +28,7 @@ V_IMPLEMENT_ACTION("HavokVisualDebugger",vHavokVisualDebuggerAction,VAction,&g_v
 
 VBool vHavokVisualDebuggerAction::Do(const class VArgList &argList)
 {
-  if (argList.GetArgCount()==1 && argList.IsString(1)) 
+  if (argList.GetArgCount()==1 && argList.IsString(1))
   {
     vHavokPhysicsModule *pMod = vHavokPhysicsModule::GetInstance();
     if (!pMod)
@@ -55,7 +55,7 @@ VBool vHavokVisualDebuggerAction::Do(const class VArgList &argList)
 
     return FALSE;
   }
-   
+
   PrintWarning("Invalid argument. Valid arguments are: [on] for enabling and [off] for disabling.");
   return FALSE;
 }
@@ -105,7 +105,7 @@ vHavokVisualDebugger::vHavokVisualDebugger(hkpWorld* pPhysicsWorld, int iPort)
   // Allocate memory for internal profiling information
   // You can discard this if you do not want Havok profiling information
   hkMonitorStream& stream = hkMonitorStream::getInstance();
-  stream.resize( HKVIS_MONITOR_STREAM_BYTES_PER_THREAD );  
+  stream.resize( HKVIS_MONITOR_STREAM_BYTES_PER_THREAD );
   stream.reset();
 }
 
@@ -114,7 +114,7 @@ vHavokVisualDebugger::~vHavokVisualDebugger()
     // Delete the context after you have finished using the VDB
   hkpWorld* world = (m_physicsContext->getNumWorlds() > 0) ? m_physicsContext->getWorld(0) : HK_NULL;
   if (world) world->markForWrite();
-  
+
   // Clean up Havok Visual Debugger
   m_pVisualDebugger->shutdown();
   m_pVisualDebugger->removeReference();
@@ -140,9 +140,9 @@ void vHavokVisualDebugger::Step()
   m_pVisualDebugger->step(dt*hkReal(1000));
 
   // Update camera
-  hkVector4 pos; 
+  hkVector4 pos;
   vHavokConversionUtils::VisVecToPhysVecWorld(Vision::Camera.GetMainCamera()->GetPosition(),pos);
-  hkVector4 dir; 
+  hkVector4 dir;
   vHavokConversionUtils::VisVecToPhysVec_noscale(Vision::Camera.GetMainCamera()->GetDirection(),dir);
   hkVector4 up;
   vHavokConversionUtils::VisVecToPhysVec_noscale(Vision::Camera.GetMainCamera()->GetObjDir_Up(), up);
@@ -178,7 +178,7 @@ void vHavokVisualDebugger::SetPort(int iPort)
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

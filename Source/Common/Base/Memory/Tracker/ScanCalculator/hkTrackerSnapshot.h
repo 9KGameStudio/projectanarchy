@@ -10,7 +10,6 @@
 #define HKBASE_TRACKER_SNAPSHOT_H
 
 #include <Common/Base/Memory/Tracker/Default/hkDefaultMemoryTracker.h>
-#include <Common/Base/Algorithm/Sort/hkSort.h>
 #include <Common/Base/System/StackTracer/hkStackTracer.h>
 #include <Common/Base/Memory/System/Util/hkMemorySnapshot.h>
 
@@ -22,7 +21,7 @@ class hkMemorySystem;
     /// While this class has dynamically allocated members (arrays), we cannot use
     /// the default allocators to allocate them since allocating and deallocating them
     /// will perturb the status of the memory system which we are trying to capture.
-class hkTrackerSnapshot  
+class HK_EXPORT_COMMON hkTrackerSnapshot  
 {
     public:
 
@@ -70,7 +69,7 @@ class hkTrackerSnapshot
 		const char* getMemorySystemStatistics() const;
 
 			/// ==
-		hkBool operator==(const hkTrackerSnapshot& rhs) const;
+		hkBool operator==(const hkTrackerSnapshot& rhs) const { HK_ASSERT(0x698b9033, !"not impl"); return false; }
 			/// !=
 		hkBool operator!=(const hkTrackerSnapshot& rhs) const;
 
@@ -102,7 +101,7 @@ class hkTrackerSnapshot
 #endif // HKBASE_TRACKER_SNAPSHOT_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -29,7 +29,7 @@ enum VFilePositionMode
 
 /// \brief
 ///   Low-level file handle for use with VFileAccess functions.
-#if defined(WIN32)  || defined(_VISION_XENON) 
+#if defined(_VISION_WIN32)  || defined(_VISION_XENON) 
 
 struct VFileHandle
 {
@@ -38,11 +38,17 @@ struct VFileHandle
     hFile = INVALID_HANDLE_VALUE;
     bUseReadCache = true;
     bEOF = false;
+#ifdef _VISION_WIN32
+    bAppend = false;
+#endif
   }
   
   HANDLE hFile;
   bool bUseReadCache;
   bool bEOF;
+#ifdef _VISION_WIN32
+  bool bAppend;
+#endif
 };
 
 
@@ -120,14 +126,49 @@ struct VFileHandle
 
 };
 
+#elif defined(_VISION_NACL)
 
+struct VFileHandle
+{
+  VFileHandle() 
+  { 
+    size = 0;
+    offset = 0;
+    lastError = PP_ERROR_FAILED;
+    bUseReadCache = true; 
+  }
+
+  pp::FileIO file;
+  int64_t size;
+  int64_t offset;
+  int32_t lastError;
+  bool bUseReadCache;
+};
 
 #elif defined(_VISION_POSIX) // Standard fopen(), fread() etc.
 
 struct VFileHandle
 {
-  VFileHandle() { file = NULL; bUseReadCache = true; }
+  enum VFileHandleState_e
+  {
+    invalid, // invalid file handle
+    opened,  // last operation was a open
+    read,    // last operation was a read
+    written, // last operation was a write
+    pos,     // last operation was a file pointer positioning
+    flushed, // last operation was a flush
+    closed   // last operation was a close
+  };
+
+  VFileHandle():
+    file(NULL),
+    eState(invalid),
+    bUseReadCache(true)
+  {
+  }
+
   FILE* file;
+  VFileHandleState_e eState;
   bool bUseReadCache;
 };
 
@@ -152,15 +193,20 @@ private:  ///< Not instantiable.
 public:
   /// \brief
   ///   Flags which can be passed to the Open function specifying the mode in which the file should
-  ///   be opened
+  ///   be opened.
+  ///  
+  ///   Possible combinations:
+  ///   - read                   : opens an existing file for read
+  ///   - write                  : creates always a new file for write, existing files are overwritten
+  ///   - read + write           : opens an existing file for read and write
+  ///   - append                 : opens existing file for append, creates file if it does not exists
+  ///   - append + read          : opens existing file for append and read, creates file if it does not exists
+  ///   - append + write         : opens existing file for append, creates file if it does not exists
+  ///   - append + read + write  : opens existing file for append and read, creates file if it does not exists
   enum OpenFlags {
     read   = V_BIT(0),  ///< file should be opened in read mode
     write  = V_BIT(1),  ///< file should be opened in write mode
     append = V_BIT(2),  ///< file should be opened in append (write) mode
-
-
-//    modeCreate    =     0x1000,   // file should be created new, otherwise the data would be appended to an existing file (only combinable with modeWrite)
-//    modeCreateIfNotExist = 0x2000 // creates the file if it does not exits, opens an existing file
   };
 
 
@@ -203,7 +249,11 @@ public:
   /// \brief
   ///   Callback function that gets called after an error occurred. Returns true if the failed
   ///   operation must be repeated or false if the application must be terminated
-  typedef bool(*ErrorHandlerFunc)(FileErrorState errorState);
+  ///
+  /// \param errorState   The error state that occurred.
+  /// \param pFileHandle  The file handle for which the error occurred.
+  /// \param iRepetition  The number of times the error handler has been called so far for the current action.
+  typedef bool(*ErrorHandlerFunc)(FileErrorState errorState, VFileHandle* pFileHandle, int iRepetition);
 
 
 #if defined(_VISION_WIIU)
@@ -275,7 +325,7 @@ public:
 
   /// \brief
   ///   Default error handler.
-  VBASE_IMPEXP static bool HandleError(FileErrorState errorState);
+  VBASE_IMPEXP static bool HandleError(FileErrorState errorState, VFileHandle* pFileHandle, int iRepetition);
 
   /// \brief
   ///   On PS3, this can be used to ensure that no file operations are executed from the
@@ -329,7 +379,6 @@ public:
   VBASE_IMPEXP static bool UnmountSD();
   #endif
 
-
 private:
 
   static bool Open_Internal(VFileHandle* pFileHandle, const char* szFileName, unsigned int uiOpenFlags, unsigned int uiShareFlags);
@@ -353,8 +402,8 @@ private:
   static void Flush_Internal(VFileHandle* pFileHandle);
 
   // Internal error check helper
-  #if defined(WIN32)  || defined(_VISION_XENON) || defined(_VISION_PSP2) || defined(_VISION_POSIX) || defined(_VISION_WIIU)
-    static bool CheckForError(VFileHandle* handle);
+  #if defined(_VISION_WIN32)  || defined(_VISION_XENON) || defined(_VISION_PSP2) || defined(_VISION_POSIX) || defined(_VISION_WIIU)
+    static bool CheckForError(VFileHandle* handle, int iRepetition);
   
   #elif defined(_VISION_PS3)
     static int s_iCellFsMemContainerRefs;
@@ -391,14 +440,13 @@ private:
   #if defined(_VISION_PS3)
     static sys_ppu_thread_t s_mainThread;
   #endif
-  
 };
 
 
 #endif  // VFILEACCESS_HPP
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140805)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

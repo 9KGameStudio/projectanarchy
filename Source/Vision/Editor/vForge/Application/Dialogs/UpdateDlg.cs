@@ -101,11 +101,13 @@ namespace Editor.Dialogs
           var anarchyVersionInfo = serializer.Deserialize<AnarchyVersionInfo>(json);
           Version versionOnServer = new Version(anarchyVersionInfo.currentVersion);
 
-          Version lastKnownVersion;
+          Version lastKnownVersion = Assembly.GetEntryAssembly().GetName().Version;
           if (File.Exists(lastKnownVersionToken))
-            lastKnownVersion = new Version(File.ReadAllText(lastKnownVersionToken));
-          else
-            lastKnownVersion = Assembly.GetEntryAssembly().GetName().Version;
+          {
+            Version tmp = new Version(File.ReadAllText(lastKnownVersionToken));
+            if (tmp > lastKnownVersion)
+              lastKnownVersion = tmp;
+          }
 
           if (lastKnownVersion < versionOnServer)
           {
@@ -147,7 +149,7 @@ namespace Editor.Dialogs
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

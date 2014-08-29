@@ -29,8 +29,8 @@ HK_FORCE_INLINE const typename hkRealTypes<FT>::Scalar HK_CALL hkSymmetricMatrix
 
 	typename hkRealTypes<FT>::Vector diag;		diag.setMul(d.m_diag, d.m_diag);				// [m_xx * d_xx, m_yy * d_yy, m_zz * d_zz]
 	typename hkRealTypes<FT>::Vector offDiag;	offDiag.setMul(d.m_offDiag, d.m_offDiag);		// [m_xy * d_xy, m_yz * d_yz, m_zx * d_zx]
-
-	diag.addMul(hkRealTypes<FT>::Scalar::template getConstant<HK_QUADREAL_2>(), offDiag);	// [m_xx * d_xx + 2 * m_xy * d_xy, m_yy * d_yy + 2 * m_yz * d_yz, m_zz * d_zz + 2 * m_zx * d_zx]
+												offDiag.add(offDiag);							// 2x [m_xy * d_xy, m_yz * d_yz, m_zx * d_zx]
+	diag.add(offDiag);																		// [m_xx * d_xx + 2 * m_xy * d_xy, m_yy * d_yy + 2 * m_yz * d_yz, m_zz * d_zz + 2 * m_zx * d_zx]
 	return diag.template horizontalAdd<3>();												// [m_xx * d_xx + 2 * m_xy * d_xy + m_yy * d_yy + 2 * m_yz * d_yz + m_zz * d_zz + 2 * m_zx * d_zx]
 }
 
@@ -89,7 +89,8 @@ HK_FORCE_INLINE void HK_CALL hkSymmetricMatrixUtilImpl<FT>::_computeInverse(cons
 
 	typename hkRealTypes<FT>::Vector offDiag;		offDiag.setMul(od_yzx, od_zxy);				// [m12 * m20, m20 * m01, m01 * m12]
 	typename hkRealTypes<FT>::Vector offDiagProd;	offDiagProd.setMul(od_xyz, offDiag);		// [m01 * m12 * m20, *]
-	det.addMul(hkRealTypes<FT>::Scalar::template getConstant<HK_QUADREAL_2>(), offDiagProd);	// [m00 * m11 * m22 + 2 * m01 * m12 * m20, *]
+													offDiagProd.add(offDiagProd);				// 2x [m01 * m12 * m20, *]
+	det.add(offDiagProd);																		// [m00 * m11 * m22 + 2 * m01 * m12 * m20, *]
 	offDiag.subMul(d_zxy, od_xyz);																// [m12 * m20 - m22 * m01, m20 * m01 - m00 * m12, m01 * m12 - m11 * m20]
 
 	// Compute and invert determinant
@@ -147,7 +148,7 @@ HK_FORCE_INLINE void HK_CALL hkSymmetricMatrixUtilImpl<FT>::_solve(const typenam
 
 	// Applying the limit makes the problem a LCP. Run a few Jacobi iterations
 	// to compute an approximate solution that obeys the limits.
-	typename hkRealTypes<FT>::Vector invD;	invD.template setReciprocal<HK_ACC_23_BIT, HK_DIV_SET_ZERO>(mtx.m_diag);
+	typename hkRealTypes<FT>::Vector invD;	invD.template setReciprocal<HK_ACC_FULL, HK_DIV_SET_ZERO>(mtx.m_diag);
 	for (int iter = NIter - 1; iter >= 0; iter--)
 	{
 		// Compute new solution
@@ -384,7 +385,8 @@ HK_FORCE_INLINE void HK_CALL hkSymmetricMatrixUtilImpl<FT>::_computeCharacterist
 		sumD.template setNeg<4>(sumD);								// -(m00 + m11 + m22) = c2
 
 		dots.sub(prodD);									// [*, *, m00 Sqr(m12) + m11 Sqr(m02) + m22 Sqr(m01) - m00 m11 m22]
-		dots.subMul(hkRealTypes<FT>::Scalar::template getConstant<HK_QUADREAL_2>(), prodOd);					// [*, *, m00 Sqr(m12) + m11 Sqr(m02) + m22 Sqr(m01) - m00 m11 m22 - 2 m01 m02 m12] = c0
+		prodOd.add(prodOd);									// 2x [m01 m12, m12 m02, m02 m01]
+		dots.sub(prodOd);									// [*, *, m00 Sqr(m12) + m11 Sqr(m02) + m22 Sqr(m01) - m00 m11 m22 - 2 m01 m02 m12] = c0
 
 		dots.template setSelect<hkVector4ComparisonMask::MASK_Y>(sumD, dots);	// [*, c2, c0, *]
 		dots.template setComponent<0>(hkRealTypes<FT>::Scalar::template getConstant<HK_QUADREAL_1>());							// [1, c2, c0, *]
@@ -393,17 +395,6 @@ HK_FORCE_INLINE void HK_CALL hkSymmetricMatrixUtilImpl<FT>::_computeCharacterist
 
 	coeffsOut.template setPermutation<hkVectorPermutation::XYWZ>(dots);		// [1, c2, c1, c0]
 }
-
-#if defined(HK_PLATFORM_WIN32) && (HK_CONFIG_SIMD == HK_CONFIG_SIMD_ENABLED) && !defined(HK_ARCH_ARM)
-static HK_FORCE_INLINE hkSingleFloat32 __atan2(const hkSingleFloat32& y, const hkSingleFloat32& x)
-{
-	return hkMath::quadAtan2(y,x);
-}
-static HK_FORCE_INLINE hkSingleDouble64 __atan2(const hkSingleDouble64& y, const hkSingleDouble64& x)
-{
-	return hkMath::twoAtan2(y,x);
-}
-#endif
 
 //
 //	Computes the eigenvalues using the characteristic polynomial
@@ -443,18 +434,13 @@ HK_FORCE_INLINE hkResult HK_CALL hkSymmetricMatrixUtilImpl<FT>::_computeEigenVal
 			// Compute angle
 			deltaSq.setAbs(deltaSq);
 			const typename hkRealTypes<FT>::Scalar delta	= deltaSq.sqrt();
-			typename hkRealTypes<FT>::Scalar sA;
-#if defined(HK_PLATFORM_WIN32) && (HK_CONFIG_SIMD == HK_CONFIG_SIMD_ENABLED) && !defined(HK_ARCH_ARM)
-			sA.m_real = __atan2(delta.m_real, R.m_real);
-#else
-			sA.setFromFloat(hkMath::atan2(delta.getReal(), R.getReal()));
-#endif
+			typename hkRealTypes<FT>::Scalar sA = hkVector4UtilImpl<FT>::atan2(delta, R);
 			typename hkRealTypes<FT>::Scalar angle;		angle.setMul( inv3, sA );	// t1
 
 			// Compute solutions
 			typename hkRealTypes<FT>::Vector sinA;
 			typename hkRealTypes<FT>::Vector cosA;
-			hkVector4UtilImpl<FT>::sinCos(angle, sinA);								// [sinA, cosA, sinA, cosA]
+			hkVector4UtilImpl<FT>::sinCos(angle, sinA);						// [sinA, cosA, sinA, cosA]
 			cosA.template setPermutation<hkVectorPermutation::YYWW>(sinA);	// [cosA, cosA, cosA, cosA]
 			sinA.template setPermutation<hkVectorPermutation::XXZZ>(sinA);	// [sinA, sinA, sinA, sinA]
 			sinA.template zeroComponent<0>();								// [   0, sinA, sinA, sinA]
@@ -463,7 +449,7 @@ HK_FORCE_INLINE hkResult HK_CALL hkSymmetricMatrixUtilImpl<FT>::_computeEigenVal
 			sinA.setFlipSign(sinA, cmpSin);									// [0, sinA, -sinA]
 
 			typename hkRealTypes<FT>::Vector sol;
-			sol.setAddMul(cosA, sinA, hkRealTypes<FT>::Scalar::fromFloat(typename hkRealTypes<FT>::Pod(1.7320508075688772935274463415059f)));	// [cosA, cosA + sinA * Sqrt[3], cosA - sinA * Sqrt[3]]
+			sol.setAddMul(cosA, sinA, hkRealTypes<FT>::Scalar::fromFloat(typename hkRealTypes<FT>::Pod(1.7320508075688772935274463415059)));	// [cosA, cosA + sinA * Sqrt[3], cosA - sinA * Sqrt[3]]
 			sol.mul(inv2);																						// [cosA / 2, (cosA + sinA * Sqrt[3]) / 2, (cosA - sinA * Sqrt[3]) / 2]
 			cosA.template setNeg<4>(cosA);
 			sol.template setSelect<hkVector4ComparisonMask::MASK_X>(cosA, sol);									// [-cosA, (cosA + sinA * Sqrt[3]) / 2, (cosA - sinA * Sqrt[3]) / 2]
@@ -571,7 +557,7 @@ HK_FORCE_INLINE void HK_CALL hkSymmetricMatrixUtilImpl<FT>::_computeEigenVector(
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -10,7 +10,7 @@
 #include <Vision/Runtime/EnginePlugins/ThirdParty/FmodEnginePlugin/VFmodManager.hpp>
 #include <Vision/Runtime/EnginePlugins/ThirdParty/FmodEnginePlugin/VFmodEventGroup.hpp>
 
-#include <Vision/Runtime/Base/System/Memory/VMemDbg.hpp>
+
 
 
 VManagedResource* VFmodEventGroupManager::CreateResource(const char *szFilename, VResourceSnapshotEntry *pExtraInfo)
@@ -96,7 +96,7 @@ void VFmodEventGroup::GetDependencies(VResourceSnapshot &snapshot)
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140625)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

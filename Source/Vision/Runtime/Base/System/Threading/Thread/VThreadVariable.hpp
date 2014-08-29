@@ -25,16 +25,8 @@ template <class TYPE > class VThreadVariable
 {
 public:
   /// \brief
-  ///   Helper typedef, for easy access to contained type in other wrappers
-  typedef TYPE ITEM;
-
-  /// \brief
-  ///   Default constructor not accepting a default
+  ///   Default constructor
   VThreadVariable ();
-
-  /// \brief
-  ///   Constructor accepting a default value for all new threads
-  VThreadVariable ( const TYPE& from );
 
   /// \brief
   /// Destructor
@@ -42,39 +34,23 @@ public:
   
   /// \brief
   /// Operator for getting contained type
-  operator TYPE&();
+  operator TYPE();
 
   /// \brief
   /// Operator for getting contained type
-  operator TYPE*() const;
-
-  /// \brief
-  /// Operator for getting contained type
-  TYPE operator->() const;
+  TYPE operator->();
 
   /// \brief
   /// Operator for setting contained type
-  const TYPE& operator = ( const TYPE& from );
+  void operator = ( const TYPE& from );
 
-  bool operator == (const TYPE& other);
+  bool operator == (const TYPE& other) const;
 
-  bool operator != (const TYPE& other);
-
-  bool operator == (const TYPE* other);
-
-  bool operator != (const TYPE* other);
-
-  /// \brief
-  /// Frees allocated buffer for current thread. Call this for each variable from DLLMain on thread detach
-  void FreeThreadData();
+  bool operator != (const TYPE& other) const;
 
 protected:
-  // Check if current thread already has an allocation object
-  // If not allocate it
-  inline TYPE* CheckForAllocation () const;
-
-  // Default value, to assign to every new thread instance
-  TYPE    m_default_value;
+  TYPE GetValue() const;
+  void SetValue(const TYPE& value);
 
 #ifdef _VISION_POSIX
   pthread_key_t m_key;
@@ -90,22 +66,8 @@ protected:
 template <class TYPE>
 VThreadVariable<TYPE>::VThreadVariable ()
 {
-#ifdef _VISION_POSIX
-  if (pthread_key_create(&m_key, NULL))
-    exit(1);
-#elif defined(_VISION_WIIU)
-  m_uiTLSIndex = 0xCDCDCDCD;
-  if(!VWiiUTLSAlloc(m_uiTLSIndex))
-    OSPanic(__FILE__, __LINE__, "Ran out of tls indices!");
-#else
-  if ((m_TLSindex = TlsAlloc()) == TLS_OUT_OF_INDEXES) 
-      exit(1);
-#endif
-}
+  V_COMPILE_ASSERT(sizeof(TYPE) <= sizeof(void*));
 
-template <class TYPE>
-VThreadVariable<TYPE>::VThreadVariable ( const TYPE& from )
-{
 #ifdef _VISION_POSIX
   if (pthread_key_create(&m_key, NULL))
     exit(1);
@@ -117,13 +79,11 @@ VThreadVariable<TYPE>::VThreadVariable ( const TYPE& from )
   if ((m_TLSindex = TlsAlloc()) == TLS_OUT_OF_INDEXES) 
       exit(1);
 #endif
-  m_default_value = from;
 }
 
 template <class TYPE>
 VThreadVariable<TYPE>::~VThreadVariable ()
 {
-  FreeThreadData();
 #ifdef _VISION_POSIX
   pthread_key_delete(m_key);
 #elif defined(_VISION_WIIU)
@@ -135,122 +95,60 @@ VThreadVariable<TYPE>::~VThreadVariable ()
 }
 
 template <class TYPE>
-TYPE* VThreadVariable<TYPE>::CheckForAllocation () const
+TYPE VThreadVariable<TYPE>::GetValue() const
 {
   // Retrieve a data pointer for the current thread
 #ifdef _VISION_POSIX
-  TYPE* lpvData = (TYPE*)pthread_getspecific(m_key);
+  void* lpvData = pthread_getspecific(m_key);
 #elif defined(_VISION_WIIU)
-  TYPE* lpvData = (TYPE*)VWiiUTLSGet(m_uiTLSIndex);
+  void* lpvData = VWiiUTLSGet(m_uiTLSIndex);
 #else
-  TYPE* lpvData = (TYPE*)TlsGetValue(m_TLSindex); 
+  void* lpvData = TlsGetValue(m_TLSindex); 
 #endif
-  // If NULL, allocate memory for the TLS slot for this thread
-  if (lpvData == NULL)
-  {
-    lpvData = new TYPE; 
-    if (lpvData == NULL)
-      return NULL;
+
+  return *reinterpret_cast<TYPE*>(&lpvData);
+}
+
+template <class TYPE>
+void VThreadVariable<TYPE>::SetValue(const TYPE& value)
+{
+  void* lpvData = reinterpret_cast<void*>(value);
+
 #ifdef _VISION_POSIX
-    int result = pthread_setspecific(m_key, lpvData);
-    if (result != 0)
-      return NULL;
+  pthread_setspecific(m_key, lpvData);
 #elif defined(_VISION_WIIU)
-    VWiiUTLSSet(m_uiTLSIndex, lpvData);
+  VWiiUTLSSet(m_uiTLSIndex, lpvData);
 #else
-
-#pragma warning(push)
-#pragma warning(disable : 6001) // Using uninitialized data (TlsGetValue apparently triggers the static code analysis here, but our code does everything right much earlier)
-    if (!TlsSetValue(m_TLSindex, lpvData))
-      return NULL;
-#pragma warning(pop)
+  TlsSetValue(m_TLSindex, lpvData);
 #endif
-
-    // Set the initialisation value (not a 'criticalsection locked' action) 
-    *lpvData = m_default_value;
-  }
-
-  return lpvData;
 }
 
 template <class TYPE>
-void VThreadVariable<TYPE>::FreeThreadData ()
+inline VThreadVariable<TYPE>::operator TYPE()
 {
-  // Retrieve a data pointer for the current thread
-#ifdef _VISION_POSIX
-  TYPE* lpvData = (TYPE*)pthread_getspecific(m_key);
-#elif defined(_VISION_WIIU)
-  TYPE* lpvData = (TYPE*)VWiiUTLSGet(m_uiTLSIndex);
-#else
-  TYPE* lpvData = (TYPE*)TlsGetValue(m_TLSindex); 
-#endif
-
-  // If NULL, allocate memory for the TLS slot for this thread
-  if (lpvData)
-  {
-    delete lpvData; 
-    lpvData = NULL;
-#ifdef _VISION_POSIX
-    pthread_setspecific(m_key, lpvData);
-#elif defined(_VISION_WIIU)
-    VWiiUTLSSet(m_uiTLSIndex, NULL);
-#else
-    TlsSetValue(m_TLSindex, lpvData);
-#endif
-  }
+  return GetValue();
 }
 
 template <class TYPE>
-VThreadVariable<TYPE>::operator TYPE& ()
+inline TYPE VThreadVariable<TYPE>::operator->()
 {
-  TYPE* pThisThreadsData = CheckForAllocation();
-  return *pThisThreadsData;
+  return GetValue();
 }
 
 template <class TYPE>
-VThreadVariable<TYPE>::operator TYPE*() const
+inline void VThreadVariable<TYPE>::operator = ( const TYPE& from )
 {
-  TYPE* pThisThreadsData = CheckForAllocation();
-  return pThisThreadsData;
+  SetValue(from);
 }
 
 template <class TYPE>
-TYPE VThreadVariable<TYPE>::operator->() const
+inline bool VThreadVariable<TYPE>::operator == (const TYPE& other) const
 {
-  TYPE* pThisThreadsData = CheckForAllocation();
-  return *pThisThreadsData;
+  return other == GetValue();
 }
 
 template <class TYPE>
-const TYPE& VThreadVariable<TYPE>::operator = ( const TYPE& from )
-{
-  TYPE* pThisThreadsData = CheckForAllocation();
-
-  return *pThisThreadsData = from;
-}
-
-template <class TYPE>
-bool VThreadVariable<TYPE>::operator == (const TYPE& other)
-{
-  TYPE* pThisThreadsData = CheckForAllocation();
-  return &other == pThisThreadsData;
-}
-
-template <class TYPE>
-bool VThreadVariable<TYPE>::operator == (const TYPE* other)
-{
-  TYPE* pThisThreadsData = CheckForAllocation();
-  return other == pThisThreadsData;
-}
-
-template <class TYPE>
-bool VThreadVariable<TYPE>::operator != (const TYPE& other)
-{
-  return !operator == (other);
-}
-
-template <class TYPE>
-bool VThreadVariable<TYPE>::operator != (const TYPE* other)
+inline bool VThreadVariable<TYPE>::operator != (const TYPE& other) const
 {
   return !operator == (other);
 }
@@ -341,7 +239,7 @@ protected:
 };
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

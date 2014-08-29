@@ -14,23 +14,23 @@
 // - The corresponding reflection database (reflection.db) is deleted
 // - The --force-output or --force-rebuild option is added to the pre-build generateReflection.py execution
 
-HK_CLASS(hkpBvCompressedMeshShape)
-HK_CLASS(hkpConvexPieceStreamData)
-HK_CLASS(hkpMoppCode)
-HK_CLASS(hkpStaticCompoundShape)
-HK_STRUCT(hkpMoppCodeCodeInfo)
-HK_STRUCT(hkpMoppCodeReindexedTerminal)
-HK_STRUCT(hkpShapeKeyTable)
-HK_STRUCT(hkpShapeKeyTableBlock)
-HK_STRUCT(hkpSimpleContactConstraintDataInfo)
-HK_STRUCT(hkpStaticCompoundShapeInstance)
-HK_STRUCT(hkcdStaticMeshTreeBasePrimitiveDataRunBaseunsignedint)
-HK_STRUCT(hkcdStaticMeshTreehkcdStaticMeshTreeCommonConfigunsignedintunsignedlonglong1121hkpBvCompressedMeshShapeTreeDataRun)
-HK_STRUCT(hkpBvCompressedMeshShapeTree)
-HK_STRUCT(hkpBvCompressedMeshShapeTreeDataRun)
+HK_CLASS(HK_EXPORT_PHYSICS,hkpBvCompressedMeshShape)
+HK_CLASS(HK_EXPORT_PHYSICS,hkpConvexPieceStreamData)
+HK_CLASS(HK_EXPORT_PHYSICS,hkpMoppCode)
+HK_CLASS(HK_EXPORT_PHYSICS,hkpStaticCompoundShape)
+HK_STRUCT(HK_EXPORT_PHYSICS,hkpMoppCodeCodeInfo)
+HK_STRUCT(HK_EXPORT_PHYSICS,hkpMoppCodeReindexedTerminal)
+HK_STRUCT(HK_EXPORT_PHYSICS,hkpShapeKeyTable)
+HK_STRUCT(HK_EXPORT_PHYSICS,hkpShapeKeyTableBlock)
+HK_STRUCT(HK_EXPORT_PHYSICS,hkpSimpleContactConstraintDataInfo)
+HK_STRUCT(HK_EXPORT_PHYSICS,hkpStaticCompoundShapeInstance)
+HK_STRUCT(HK_EXPORT_COMMON,hkcdStaticMeshTreeBasePrimitiveDataRunBaseunsignedint)
+HK_STRUCT(HK_EXPORT_PHYSICS,hkcdStaticMeshTreehkcdStaticMeshTreeCommonConfigunsignedintunsignedlonglong1121hkpBvCompressedMeshShapeTreeDataRun)
+HK_STRUCT(HK_EXPORT_PHYSICS,hkpBvCompressedMeshShapeTree)
+HK_STRUCT(HK_EXPORT_PHYSICS,hkpBvCompressedMeshShapeTreeDataRun)
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

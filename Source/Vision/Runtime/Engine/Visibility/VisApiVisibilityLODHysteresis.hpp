@@ -298,7 +298,7 @@ public:
     bool bClipped = ((fNearPlane > 0.0f) && (fDistSqr < (fNearPlane * fNearPlane))) ||
                     ((fFarPlane > 0.0f) && (fDistSqr >= (fFarPlane * fFarPlane)));
 
-    #ifdef WIN32
+    #ifdef _VISION_WIN32
       // Move current frame's visibility state to last frame's one
       // Note this is only required for LOD dissolve feature of simulation package, so no need to support it on other platforms than PC
       const StateValue mask = V_BIT(VIS_CURR_FRAME_SHIFT) | V_BIT(VIS_LAST_FRAME_SHIFT);
@@ -310,7 +310,7 @@ public:
       int iLastLODLevel = (stateValue >> LOD_LEVEL_SHIFT) & LOD_LEVEL_MASK;
       if (iLastLODLevel != iLODLevel)
         stateValue |= V_BIT(VIS_LAST_FRAME_SHIFT);
-    #endif //WIN32
+    #endif //_VISION_WIN32
 
     stateValue = (stateValue & ~(LOD_LEVEL_MASK << LOD_LEVEL_SHIFT)) | (iLODLevel << LOD_LEVEL_SHIFT);
 
@@ -329,7 +329,7 @@ public:
     return 0;
   }
 
-  #ifdef WIN32
+  #ifdef _VISION_WIN32
     /// \brief
     ///   Checks whether the object with the given element ID and type was near/far clipped last frame, but is visible in current frame
     inline bool CheckGetsVisible(VLODHysteresisType_e eType, int iElementID)
@@ -344,7 +344,7 @@ public:
     {
       return (stateValue & V_BIT(VIS_LAST_FRAME_SHIFT)) != 0;
     }
-  #endif //WIN32
+  #endif //_VISION_WIN32
 
 protected:
   /// \brief
@@ -359,7 +359,7 @@ protected:
 #endif //_VISAPIVISIBILITYLODHYSTERESIS_HPP_INCLUDED_
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

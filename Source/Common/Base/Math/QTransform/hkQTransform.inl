@@ -9,8 +9,35 @@
 #include <Common/Base/Math/QTransform/hkQTransformf.inl>
 #include <Common/Base/Math/QTransform/hkQTransformd.inl>
 
+HK_FORCE_INLINE hkQTransform::hkQTransform()
+:	hkQTransformType()
+{}
+
+#if defined(HK_REAL_IS_DOUBLE)
+HK_FORCE_INLINE hkQTransform::hkQTransform(hkQuaterniondParameter q, hkVector4dParameter t)
+#else
+HK_FORCE_INLINE hkQTransform::hkQTransform(hkQuaternionfParameter q, hkVector4fParameter t)
+#endif
+:	hkQTransformType(q, t)
+{}
+
+HK_FORCE_INLINE hkQTransform::hkQTransform(const hkQTransformType& qt)
+:	hkQTransformType(qt)
+{}
+
+HK_FORCE_INLINE hkQTransform::hkQTransform(hkFinishLoadedObjectFlag f)
+:	hkQTransformType(f)
+{}
+
+HK_FORCE_INLINE const hkQTransform& HK_CALL hkQTransform::getIdentity()
+{
+	// This is to prevent the copy constructor of hkQTransform to be called
+	// every time hkQTransform::getIdentity is called
+	return reinterpret_cast<const hkQTransform&>(hkQTransformType::getIdentity());
+}
+
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -530,8 +530,16 @@ void VDefaultMenuDialog::Reset()
   m_state = STATE_NONE;
   m_followUpState = STATE_NONE;
 
-  if (GetContext()->GetOpenDialogs().Contains(this))
-    GetContext()->CloseDialog(this);
+  IVGUIContext *pContext = GetContext();
+  if (pContext->GetOpenDialogs().Contains(this))
+  {
+    pContext->CloseDialog(this);
+
+#ifdef _VISION_WIIU
+    pContext->SetCursorActive(true);
+    pContext->SetShowCursor(true);
+#endif
+  }
   SetVisible(false);
 
   if (VInputMap::AreInputMapsLocked())
@@ -611,7 +619,7 @@ void VDefaultMenu::Init()
 
   SetupIcon();
 
-  Vision::Callbacks.OnUpdateSceneBegin += this;
+  Vision::Callbacks.OnFrameUpdatePreRender += this;
 }
 
 void VDefaultMenu::DeInit()
@@ -620,7 +628,7 @@ void VDefaultMenu::DeInit()
   m_spOpenMenuShortcutOverlay = NULL;
   m_spDialog = NULL;
 
-  Vision::Callbacks.OnUpdateSceneBegin -= this;
+  Vision::Callbacks.OnFrameUpdatePreRender -= this;
 }
 
 void VDefaultMenu::OnHandleCallback(IVisCallbackDataObject_cl* pData)
@@ -628,7 +636,7 @@ void VDefaultMenu::OnHandleCallback(IVisCallbackDataObject_cl* pData)
   if (!m_bEnabled)
     return;
 
-  if (pData->m_pSender == &Vision::Callbacks.OnUpdateSceneBegin)
+  if (pData->m_pSender == &Vision::Callbacks.OnFrameUpdatePreRender)
   {
     // Only display icons if dialog is not visible. Use same visible mask as gui context.
     unsigned int guiContextVisibleBitmask = GetParent()->GetContext()->GetVisibleBitmask();
@@ -656,7 +664,7 @@ void VDefaultMenu::OnHandleCallback(IVisCallbackDataObject_cl* pData)
       m_spDialog->DoFadeOut(VDefaultMenuDialog::STATE_BACK);
 
     m_spDialog->BringToFront();
-    m_spDialog->Update(Vision::GetTimer()->GetTimeDifference());
+    m_spDialog->Update(Vision::GetUITimer()->GetTimeDifference());
   }
 }
 
@@ -756,7 +764,13 @@ void VDefaultMenu::ToggleMainMenu()
     m_spDialog->SetVisible(true);
 
     VAppMenuContextPtr spContext = GetParent()->GetContext();
+
+#ifdef _VISION_WIIU
+    spContext->SetCursorActive(false);
+    spContext->SetShowCursor(false);
+#endif
     spContext->ShowDialog(m_spDialog);
+
     m_spDialog->DoFadeIn();
 
     UnmapOpenMenuTouchArea();
@@ -789,7 +803,7 @@ void VDefaultMenu::SetupIcon()
   m_spOpenMenuIcon->GetTargetSize(size.x, size.y);
   m_spOpenMenuIcon->SetVisibleBitmask(GetParent()->GetContext()->GetVisibleBitmask());
 
-#if defined(WIN32)
+#if defined(_VISION_WIN32) || defined(_VISION_NACL)
   pos.x += size.x * 0.5f;
 
   m_spOpenMenuShortcutOverlay = new VisScreenMask_cl("Textures/vapp_shortcut_pc.tga", VTM_FLAG_DEFAULT_NON_MIPMAPPED);
@@ -802,6 +816,9 @@ void VDefaultMenu::SetupIcon()
 #endif
 
   MapOpenMenuTouchArea();
+
+  // render debug info below the gear icon.
+  Vision::Profiling.SetRenderOffset(10, 20 + (int)size.y);
 }
 
 void VDefaultMenu::MapOpenMenuTouchArea()
@@ -831,7 +848,7 @@ void VDefaultMenu::UnmapOpenMenuTouchArea()
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

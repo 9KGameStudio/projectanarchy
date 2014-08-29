@@ -19,6 +19,7 @@
 #include "hkvJsonStreamReadHandler.hpp"
 
 #include <vector>
+#include <map>
 
 class hkStreamWriter;
 class hkvJsonWriter;
@@ -53,14 +54,14 @@ public:
 public:
   Type getType() const { return m_type; }
 
-  hkBool isBool() const { return m_type == TYPE_BOOL; }
-  hkBool isDouble() const { return m_type == TYPE_DOUBLE; }
-  hkBool isInt64() const { return m_type == TYPE_INT64; }
-  hkBool isNumber() const { return isDouble() || isInt64(); }
-  hkBool isNull() const { return m_type == TYPE_NULL; }
-  hkBool isString() const { return m_type == TYPE_STRING; }
+  bool isBool() const { return m_type == TYPE_BOOL; }
+  bool isDouble() const { return m_type == TYPE_DOUBLE; }
+  bool isInt64() const { return m_type == TYPE_INT64; }
+  bool isNumber() const { return isDouble() || isInt64(); }
+  bool isNull() const { return m_type == TYPE_NULL; }
+  bool isString() const { return m_type == TYPE_STRING || m_type == TYPE_CONST_STRING; }
 
-  hkBool getBool() const { return isBool() ? m_value.b : false; }
+  bool getBool() const { return isBool() ? m_value.b : false; }
   double getDouble() const { return isDouble() ? m_value.d : (isInt64() ? (double)m_value.i64 : 0); }
   hkInt64 getInt64() const { return isInt64() ? m_value.i64 : (isDouble() ? (hkInt64)m_value.d : 0); }
   const char* getString() const { return (isString() && m_value.str != NULL) ? m_value.str : ""; }
@@ -93,6 +94,7 @@ class hkvProperty
 {
 public:
   typedef std::vector<hkvVariantValue> VariantValueList;
+  typedef std::map<hkUint32, hkvVariantValue> hkvMetaInfoMap;
 
 public:
   enum Type
@@ -106,6 +108,7 @@ public:
     TYPE_DOUBLE,
     TYPE_STRING,
     TYPE_FILE,
+    TYPE_FOLDER,
     TYPE_TIMESTAMP,
     TYPE_ENUM,
     TYPE_CUSTOM,
@@ -115,6 +118,28 @@ public:
     TYPE_GROUP_END,
 
     TYPE_MAX = 0xffffffff
+  };
+
+  enum EnumTypeMetaInfo
+  {
+    ENUM_META_VALUES,
+    ENUM_META_CONFIRMATION_MESSAGE,
+    ENUM_META_COUNT
+  };
+
+  enum FileTypeMetaInfo
+  {
+    FILE_META_DIALOG_CAPTION,
+    FILE_META_RESTRICT_TO_ASSETS,
+    FILE_META_FILTER,
+    FILE_META_COUNT
+  };
+
+  enum FolderTypeMetaInfo
+  {
+    FOLDER_META_DIALOG_CAPTION,
+    FOLDER_META_RESTRICT_TO_FOLDER,
+    FOLDER_META_COUNT
   };
 
   enum Purpose
@@ -131,81 +156,87 @@ public:
     FLAG_INFORMATION_ONLY = 1 << 2, ///< Denotes a property whose value serves only informational purposes.
   };
 
-  inline hkvProperty() : m_type(TYPE_INVALID), m_flags(0), m_description(NULL), m_icon(NULL)
+  inline hkvProperty() : m_type(TYPE_INVALID), m_flags(0), m_description(NULL), m_metaInfo(NULL), m_icon(NULL)
+  {
+  }
+
+  inline hkvProperty(const char* name, Type eType) :
+    m_name(name), m_type(eType), m_flags(0), m_metaInfo(NULL), m_description(NULL), m_icon(NULL)
   {
   }
 
   inline hkvProperty(const char* name, bool value, hkUint32 flags = 0, const char* szDescription = NULL) : 
-    m_name(name), m_type(TYPE_BOOL), m_flags(flags), m_description(szDescription), m_icon(NULL)
+    m_name(name), m_type(TYPE_BOOL), m_flags(flags), m_metaInfo(NULL), m_description(szDescription), m_icon(NULL)
   {
     m_value.setBool(value);
     m_defaultValue.setBool(false);
   }
 
   inline hkvProperty(const char* name, int value, hkUint32 flags = 0, const char* szDescription = NULL) : 
-    m_name(name), m_type(TYPE_INT), m_flags(flags), m_description(szDescription), m_icon(NULL)
+    m_name(name), m_type(TYPE_INT), m_flags(flags), m_metaInfo(NULL), m_description(szDescription), m_icon(NULL)
   {
     m_value.setInt64(value);
     m_defaultValue.setInt64(0);
   }
 
   inline hkvProperty(const char* name, unsigned int value, hkUint32 flags = 0, const char* szDescription = NULL) : 
-    m_name(name), m_type(TYPE_UINT), m_flags(flags), m_description(szDescription), m_icon(NULL)
+    m_name(name), m_type(TYPE_UINT), m_flags(flags), m_metaInfo(NULL), m_description(szDescription), m_icon(NULL)
   {
     m_value.setInt64(value);
     m_defaultValue.setInt64(0);
   }
 
   inline hkvProperty(const char* name, hkInt64 value, Type type = TYPE_INT64, hkUint32 flags = 0, const char* szDescription = NULL) : 
-    m_name(name), m_type(type), m_flags(flags), m_description(szDescription), m_icon(NULL)
+    m_name(name), m_type(type), m_flags(flags), m_metaInfo(NULL), m_description(szDescription), m_icon(NULL)
   {
     m_value.setInt64(value);
     m_defaultValue.setInt64(0);
   }
 
   inline hkvProperty(const char* name, float value, hkUint32 flags = 0, const char* szDescription = NULL) : 
-    m_name(name), m_type(TYPE_FLOAT), m_flags(flags), m_description(szDescription), m_icon(NULL)
+    m_name(name), m_type(TYPE_FLOAT), m_flags(flags), m_metaInfo(NULL), m_description(szDescription), m_icon(NULL)
   {
     m_value.setDouble(value);
     m_defaultValue.setDouble(0);
   }
 
   inline hkvProperty(const char* name, double value, hkUint32 flags = 0, const char* szDescription = NULL) : 
-    m_name(name), m_type(TYPE_DOUBLE), m_flags(flags), m_description(szDescription), m_icon(NULL)
+    m_name(name), m_type(TYPE_DOUBLE), m_flags(flags), m_metaInfo(NULL), m_description(szDescription), m_icon(NULL)
   {
     m_value.setDouble(value);
     m_defaultValue.setDouble(0);
   }
 
   inline hkvProperty(const char* name, const char* value, Type type = TYPE_STRING, hkUint32 flags = 0, const char* szDescription = NULL)
-    : m_name(name), m_type(type), m_flags(flags), m_description(szDescription), m_icon(NULL)
+    : m_name(name), m_type(type), m_flags(flags), m_metaInfo(NULL), m_description(szDescription), m_icon(NULL)
   {
     m_value.setString(value);
     m_defaultValue.setString(NULL);
   }
 
   inline hkvProperty(const char* name, hkUint32 enumValue, const char* enumValues, hkUint32 flags = 0, const char* szDescription = NULL)
-    : m_name(name), m_type(TYPE_ENUM), m_customType(enumValues), m_flags(flags), m_description(szDescription), m_icon(NULL)
+    : m_name(name), m_type(TYPE_ENUM), m_flags(flags), m_metaInfo(NULL), m_description(szDescription), m_icon(NULL)
   {
     m_value.setInt64(enumValue);
     m_defaultValue.setInt64(0);
+    getMetaInfo()[ENUM_META_VALUES] = hkvVariantValue(enumValues);
   }
 
   inline hkvProperty(const char* name, const char* customType, const char* value, hkUint32 flags = 0, const char* szDescription = NULL)
-    : m_name(name), m_type(TYPE_CUSTOM), m_customType(customType), m_flags(flags), m_description(szDescription), m_icon(NULL)
+    : m_name(name), m_type(TYPE_CUSTOM), m_customType(customType), m_flags(flags), m_metaInfo(NULL), m_description(szDescription), m_icon(NULL)
   {
     m_value.setString(value);
     m_defaultValue.setString(NULL);
   }
 
   inline hkvProperty(const char* name, const VariantValueList& value, const char* customType = NULL, hkUint32 flags = 0, const char* szDescription = NULL)
-    : m_name(name), m_type(TYPE_ARRAY), m_customType(customType), m_flags(flags), m_description(szDescription), m_icon(NULL)
+    : m_name(name), m_type(TYPE_ARRAY), m_customType(customType), m_flags(flags), m_metaInfo(NULL), m_description(szDescription), m_icon(NULL)
   {
     m_array = value;
   }
 
   inline hkvProperty(const char* name, const std::vector<hkStringPtr>& value, const char* customType = NULL, hkUint32 flags = 0, const char* szDescription = NULL)
-    : m_name(name), m_type(TYPE_ARRAY), m_customType(customType), m_flags(flags), m_description(szDescription), m_icon(NULL)
+    : m_name(name), m_type(TYPE_ARRAY), m_customType(customType), m_flags(flags), m_metaInfo(NULL), m_description(szDescription), m_icon(NULL)
   {
     size_t numValues = value.size();
     m_array.reserve(numValues);
@@ -220,7 +251,11 @@ public:
     *this = rhs;
   }
 
-  inline ~hkvProperty() {}
+  inline ~hkvProperty()
+  {
+    if (m_metaInfo != NULL)
+      delete m_metaInfo;
+  }
 
   inline void operator=(const hkvProperty& rhs)
   {
@@ -230,6 +265,10 @@ public:
     m_value = rhs.m_value;
     m_defaultValue = rhs.m_defaultValue;
     m_array = rhs.m_array;
+    if (rhs.m_metaInfo != NULL)
+      m_metaInfo = new hkvMetaInfoMap(*rhs.m_metaInfo);
+    else
+      m_metaInfo = NULL;
     m_flags = rhs.m_flags;
     m_description = rhs.m_description;
     m_icon = rhs.m_icon;
@@ -252,17 +291,12 @@ public:
 
   inline static hkvProperty groupStart(const char* groupName)
   {
-    hkvProperty group;
-    group.m_name = groupName;
-    group.m_type = TYPE_GROUP_START;
-    return group;
+    return hkvProperty(groupName, TYPE_GROUP_START);
   }
 
   inline static hkvProperty groupEnd()
   {
-    hkvProperty group;
-    group.m_type = TYPE_GROUP_END;
-    return group;
+    return hkvProperty(NULL, TYPE_GROUP_END);
   }
 
   ASSETFRAMEWORK_IMPEXP bool isDefaultValue() const;
@@ -275,6 +309,9 @@ public:
 
   inline hkBool getBool() const { VASSERT(m_type == TYPE_BOOL); return m_value.getBool(); }
 
+  inline hkvMetaInfoMap& getMetaInfo() { if (m_metaInfo == NULL) m_metaInfo = new hkvMetaInfoMap(); return *m_metaInfo; }
+  inline const hkvMetaInfoMap& getMetaInfo() const { if (m_metaInfo == NULL) m_metaInfo = new hkvMetaInfoMap(); return *m_metaInfo; }
+
   ASSETFRAMEWORK_IMPEXP hkInt32 getInt() const;
   ASSETFRAMEWORK_IMPEXP hkUint32 getUint() const;
   ASSETFRAMEWORK_IMPEXP hkInt64 getInt64() const;
@@ -285,8 +322,6 @@ public:
   ASSETFRAMEWORK_IMPEXP double getDouble() const;
 
   ASSETFRAMEWORK_IMPEXP const char* getString() const;
-  ASSETFRAMEWORK_IMPEXP const char* getFile() const;
-  ASSETFRAMEWORK_IMPEXP const char* getCustom() const;
   ASSETFRAMEWORK_IMPEXP const VariantValueList& getArray() const;
   ASSETFRAMEWORK_IMPEXP void getStringArray(bool includeEmptyEntries, std::vector<hkStringPtr>& out_strings) const;
   ASSETFRAMEWORK_IMPEXP const char* getEnumMapping() const;
@@ -311,18 +346,19 @@ private:
   hkStringPtr m_name;
   Type m_type;
   hkStringPtr m_customType;
+
   hkvVariantValue m_value;
   hkvVariantValue m_defaultValue;
   VariantValueList m_array;
+
+  mutable hkvMetaInfoMap* m_metaInfo;
   const char* m_description; // a string embedded in the application that can be used as a tooltip or description
   const char* m_icon; // a string embedded in the application that defines which icon to use
-
   hkUint32 m_flags;
 };
 
 
 typedef std::vector<hkvProperty> hkvPropertyList;
-
 
 class hkvIProperties
 {
@@ -416,7 +452,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140725)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -12,18 +12,18 @@
 enum MOBILE_WATER_VERSION
 {
   MOBILE_WATER_VERSION_1 = 1,
-  MOBILE_WATER_VERSION_CURRENT = MOBILE_WATER_VERSION_1
+  MOBILE_WATER_VERSION_2 = 2,
+  MOBILE_WATER_VERSION_CURRENT = MOBILE_WATER_VERSION_2,
 };
 
-VMobileWater::VMobileWater(Deserialize_e deserialize /* = DeserializeNo */) :
-  m_size(100.0f, 100.0f),
+VMobileWater::VMobileWater(Deserialize_e deserialize) :
+  m_gridCellSize(10.0f, 10.0f),
   m_bUseRadialGrid(false),
   m_bUseStaticLighting(true),
-  m_eRenderHook(VRH_PRE_TRANSPARENT_PASS_ENTITIES),
-  m_textureTiling(1.0f, 1.0f)
+  m_textureTiling(100.0f, 100.0f),
+  m_size(100.0f, 100.0f),
+  m_eRenderHook(VRH_PRE_TRANSPARENT_PASS_ENTITIES)
 {
-  m_iNumGridSubdivisions[0] = 10;
-  m_iNumGridSubdivisions[1] = 10;
   if(deserialize == DeserializeNo)
   {
     CommonInit();
@@ -61,10 +61,19 @@ void VMobileWater::Serialize( VArchive &ar )
   {
     int version;
     ar >> version;
-    VASSERT(version > 0 && version == MOBILE_WATER_VERSION_1);
+    VASSERT(version > 0 && version <= MOBILE_WATER_VERSION_CURRENT);
 
-    ar >> m_iNumGridSubdivisions[0];
-    ar >> m_iNumGridSubdivisions[1];
+    int m_iGridSubdivisionsX, m_iGridSubdivisionsY;
+    if(version == MOBILE_WATER_VERSION_1)
+    {
+      ar >> m_iGridSubdivisionsX;
+      ar >> m_iGridSubdivisionsY;
+    }
+    else
+    {
+      ar >> m_gridCellSize;
+    }
+
     ar >> m_bUseRadialGrid;
     ar >> m_size;
     ar >> *reinterpret_cast<unsigned int*>(&m_eRenderHook);
@@ -72,12 +81,18 @@ void VMobileWater::Serialize( VArchive &ar )
     ar >> m_uiVisibilityBitMask;
     ar >> m_textureTiling;
     ar >> m_bUseStaticLighting;
+
+    if(version == MOBILE_WATER_VERSION_1)
+    {
+      m_gridCellSize = hkvVec2(m_size.x / (float)m_iGridSubdivisionsX, m_size.y / (float)m_iGridSubdivisionsY);
+      // Texture tiling was in object space now its in world space
+      m_textureTiling = m_size.compDiv(m_textureTiling);
+    }
   }
   else
   {
     ar << static_cast<int>(MOBILE_WATER_VERSION_CURRENT);
-    ar << m_iNumGridSubdivisions[0];
-    ar << m_iNumGridSubdivisions[1];
+    ar << m_gridCellSize;
     ar << m_bUseRadialGrid;
     ar << m_size;
     ar << static_cast<unsigned int>(m_eRenderHook);
@@ -104,16 +119,30 @@ VBool VMobileWater::WantsDeserializationCallback(const VSerializationContext &co
 void VMobileWater::CreateMesh()
 {
   VisMeshBuffer_cl *pMesh = NULL;
+  hkvVec2 numGridSubdivisions = m_size.compDiv(m_gridCellSize);
+  int iNumGridSubdivisions[2] = { hkvMath::Max(static_cast<int>(hkvMath::round(numGridSubdivisions.x)), 1),
+                                  hkvMath::Max(static_cast<int>(hkvMath::round(numGridSubdivisions.y)), (m_bUseRadialGrid) ? 3 : 1) };
+  // ensure that the indices will fit into an 16-bit index buffer (mobile limitation)
+  if((iNumGridSubdivisions[0] + 1) * (iNumGridSubdivisions[1] + 1) > 65535)
+  {
+    float fAspectRatio = m_gridCellSize.x / m_gridCellSize.y;
+    float newSubdivX = hkvMath::sqrt(fAspectRatio * 65535.0f);
+    float newSubdivY = newSubdivX / fAspectRatio;
+    iNumGridSubdivisions[0] = static_cast<int>(hkvMath::floor(newSubdivX) - 1.0f);
+    iNumGridSubdivisions[1] = static_cast<int>(hkvMath::floor(newSubdivY) - 1.0f);
+    VASSERT((iNumGridSubdivisions[0] + 1) * (iNumGridSubdivisions[1] + 1) <= 65535);
+  }
+  hkvVec2 textureTiling = m_size.compDiv(m_textureTiling);
   if(m_bUseStaticLighting)
   {
     VWaterPlaneGeneratorLightgrid generator(GetPosition(), GetRotationMatrix(), 
       hkvVec3(m_size.x, m_size.y, 1.0f), GetRelevantLightGrid());
-    pMesh = generator.Generate(m_bUseRadialGrid, m_iNumGridSubdivisions, m_localPlaneCorners, m_textureTiling);
+    pMesh = generator.Generate(m_bUseRadialGrid, iNumGridSubdivisions, m_localPlaneCorners, textureTiling);
   }
   else
   {
     VWaterPlaneGenerator generator;
-    pMesh = generator.Generate<VWaterPlaneGenerator::VertexLayout>(m_bUseRadialGrid, m_iNumGridSubdivisions, m_localPlaneCorners, m_textureTiling);
+    pMesh = generator.Generate<VWaterPlaneGenerator::VertexLayout>(m_bUseRadialGrid, iNumGridSubdivisions, m_localPlaneCorners, textureTiling);
   }
 
 #ifdef HK_DEBUG
@@ -173,6 +202,11 @@ void VMobileWater::SetEffect(VCompiledEffect *pEffect)
   {
     SetTechnique(NULL);
   }
+}
+
+VCompiledEffect* VMobileWater::GetEffect()
+{
+  return m_EffectConfig.GetEffect();
 }
 
 void VMobileWater::GetWorldSpaceVertices(hkvVec3 (&vertices)[4]) const
@@ -311,13 +345,21 @@ void VMobileWater::SetUseRadialGrid(bool bValue)
   }
 }
 
-void VMobileWater::SetNumGridSubdivisions(int x, int y)
-{
-  VASSERT(x >= 1 && y >= 1);
-  if(m_iNumGridSubdivisions[0] != x || m_iNumGridSubdivisions[1] != y)
+void VMobileWater::SetSize(hkvVec2 size)
+{ 
+  if(m_size != size)
   {
-    m_iNumGridSubdivisions[0] = x;
-    m_iNumGridSubdivisions[1] = y;
+    m_size = size; 
+    ReInitMeshBuffer();
+  }
+}
+
+void VMobileWater::SetGridCellSize(float x, float y)
+{
+  VASSERT(x >= 0 && y >= 0);
+  if(m_gridCellSize.x != x || m_gridCellSize.y != y)
+  {
+    m_gridCellSize.set(x, y);
 
     ReInitMeshBuffer();
   }
@@ -332,18 +374,6 @@ void VMobileWater::SetTextureTiling(hkvVec2 tiling)
     ReInitMeshBuffer();
   }
 }
-
-void VMobileWater::SetSize( hkvVec2 size )
-{
-  if(m_size != size)
-  {
-    m_size = size;
-
-    UpdateMeshTransformation();
-    UpdateStaticLighting();
-  }
-}
-
 
 void VMobileWater::ReassignEffect()
 {  
@@ -389,7 +419,8 @@ void VMobileWaterManager::OnHandleCallback(IVisCallbackDataObject_cl *pData)
 
   // We only need to respond to this callback outside the editor, because vForge has its own re-assignment callback.
   // also note that Vision::Callbacks.OnReassignShaders is not triggered during runtime
-  if ( pData->m_pSender == &Vision::Callbacks.OnGlobalRenderSettingsChanged || 
+  if ((pData->m_pSender == &Vision::Callbacks.OnGlobalRenderSettingsChanged && 
+        (static_cast<VisGlobalRendererSettingsDataObject_cl*>(pData)->m_eChangedFlags & VGRP_FOG_TOGGLE) != 0 ) || 
       (pData->m_pSender == &Vision::Callbacks.OnReassignShaders && !Vision::Editor.IsInEditor()))
   {
     const int iCount = m_Instances.Count();
@@ -460,7 +491,11 @@ VCallbackRetVal_e VISION_FASTCALL UpdateMobileWaterShaderProperties(VCallbackGeo
 
 bool VMobileWaterShader::NeedsUpdate(IVRendererNode* pRendererNode) const
 {
+#if defined(_VR_GLES2)
+  return true;
+#else
   return m_uiLastUpdate != VisRenderContext_cl::GetGlobalTickCount() || pRendererNode != m_pLastRendererNode;
+#endif
 }
 
 void VMobileWaterShader::UpdateConstants(IVRendererNode* pRendererNode)
@@ -468,8 +503,17 @@ void VMobileWaterShader::UpdateConstants(IVRendererNode* pRendererNode)
   m_uiLastUpdate = VisRenderContext_cl::GetGlobalTickCount();
   m_pLastRendererNode = pRendererNode;
 
-  hkvVec3 vTopLeft, vRightDir, vDownDir;
-  VisRenderLoopHelper_cl::ComputeFrustumFarCorners (pRendererNode, &vTopLeft, NULL, NULL, NULL, &vRightDir, &vDownDir);
+  hkvVec3 vTopLeft, vBottomLeft, vRightDir, vDownDir;
+  VisRenderLoopHelper_cl::ComputeFrustumFarCorners (pRendererNode, &vTopLeft, &vBottomLeft, NULL, NULL, &vRightDir, &vDownDir);
+
+#if defined(_VR_GLES2)
+  // Flip down vector if not rendering to the back buffer.
+  if (!VisRenderContext_cl::GetCurrentContext()->RendersIntoBackBuffer())
+  {
+    vDownDir *= -1.0f;
+    vTopLeft = vBottomLeft;
+  }
+#endif
   
   hkvVec4 v4TopLeft(vTopLeft.getAsVec4(1.0f));
   hkvVec4 v4RightDir(vRightDir.getAsVec4(1.0f));
@@ -713,7 +757,7 @@ void VWaterPlaneGeneratorLightgrid::FillCustomData(void* pVertexData, unsigned i
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140710)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

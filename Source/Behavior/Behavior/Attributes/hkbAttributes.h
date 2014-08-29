@@ -47,7 +47,7 @@ struct hkbRoleAttribute
 				/// The property is a behavior attribute index (hkInt32). HAT will allow you to choose an attribute by name.
 			ROLE_ATTRIBUTE_INDEX,
 
-				/// The property is a time in seconds (hkReal).
+				/// The property is a time in seconds (hkReal) (currently unused).
 			ROLE_TIME,
 				
 				/// The property is a script
@@ -73,7 +73,7 @@ struct hkbRoleAttribute
 				/// Use this in conjunction with ROLE_BONE_INDEX, hkbBoneIndexArrays, or hkbBoneWeightArrays.
 			FLAG_RAGDOLL = 1,
 
-				/// The property should be normalized (apply this to hkVector4).
+				/// The property should be normalized (apply this to hkVector4) (currently unused).
 			FLAG_NORMALIZED = 1<<1,
 
 				/// HAT will not allow the property to be bound to a variable.
@@ -108,7 +108,7 @@ struct hkbRoleAttribute
 #endif // HKB_ATTRIBUTE_CLASS_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

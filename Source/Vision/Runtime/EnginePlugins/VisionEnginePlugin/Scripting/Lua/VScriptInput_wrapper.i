@@ -207,13 +207,15 @@ public:
   
   bool IsMouseButtonPressed(int iButton);
 
-  float GetMouseWheelDelta(bool bApplyTimeDiff=true);
+  float GetMouseWheelDelta();
   
-  VStringInputMap * CreateMap(const char * szMapName, int iNumTriggers=32, int iNumAlternatives=4);
+  VStringInputMap* CreateMap(int iNumTriggers=32, int iNumAlternatives=4);
 
-  VStringInputMap * GetMap(const char * szMapName);
+  VStringInputMap* GetMap(unsigned int iIndex);
 
-  void DestroyMap(VStringInputMap * pMap);
+  void DestroyMap(unsigned int iIndex);
+
+  void DestroyMap(VStringInputMap *pMap);
 
   void CreateVirtualThumbStick();
 
@@ -228,11 +230,11 @@ public:
   {
     IS_MEMBER_OF(VScriptInput_wrapper) //this will move this function to the method table of the specified class
         
-    #if defined(WIN32) && defined(SUPPORTS_MOUSE)
+    #if defined(_VISION_WIN32) && defined(SUPPORTS_MOUSE)
       int x, y, w, h;
       Vision::Contexts.GetMainRenderContext()->GetViewport(x, y, w, h);
-      int iMouseX = VInputManager::GetMouse().GetRawControlValue(CT_MOUSE_RAW_CURSOR_X);
-      int iMouseY = VInputManager::GetMouse().GetRawControlValue(CT_MOUSE_RAW_CURSOR_Y);
+      int iMouseX = VInputManager::GetMouse().GetRawControlValue(CT_MOUSE_ABS_X);
+      int iMouseY = VInputManager::GetMouse().GetRawControlValue(CT_MOUSE_ABS_Y);
       
       if(iMouseX<0)
         lua_pushnumber(L, (lua_Number)0);
@@ -264,27 +266,8 @@ public:
     IS_MEMBER_OF(VScriptInput_wrapper) //this will move this function to the method table of the specified class
     
     #ifdef SUPPORTS_MOUSE
-      DECLARE_ARGS_OK
-    
-      GET_OPT_ARG(2, bool, bApllyTimeDiff, true)
-    
-      if(ARGS_OK && bApllyTimeDiff)
-      {
-        VScriptResourceManager* pMan = (VScriptResourceManager*) Vision::GetScriptManager();
-        VASSERT(pMan);
-
-        // script thinking delta or simulation tick delta
-        float fTimeDiff = pMan->GetThinkInterval();
-        if(fTimeDiff<=0) fTimeDiff = Vision::GetTimer()->GetTimeDifference();
-
-        lua_pushnumber(L, (lua_Number)(Vision::Mouse.GetDeltaX()*fTimeDiff));
-        lua_pushnumber(L, (lua_Number)(Vision::Mouse.GetDeltaY()*fTimeDiff));
-      }
-      else
-      {
-        lua_pushnumber(L, (lua_Number)Vision::Mouse.GetDeltaX());
-        lua_pushnumber(L, (lua_Number)Vision::Mouse.GetDeltaY());
-      }
+      lua_pushnumber(L, (lua_Number)VInputManager::GetMouse().GetControlValue(CT_MOUSE_ABS_DELTA_X, 0.0f));
+      lua_pushnumber(L, (lua_Number)VInputManager::GetMouse().GetControlValue(CT_MOUSE_ABS_DELTA_Y, 0.0f));
     #else
       lua_pushnumber(L, (lua_Number)0);
       lua_pushnumber(L, (lua_Number)0);
@@ -319,8 +302,7 @@ public:
   /// @name Input Map Functions
   /// @{
   
-  /// \brief Create a named input map with named triggers. If a map with your selected name already exists it will
-  ///        be deleted! You can use Input:GetMap to access an existing map.
+  /// \brief Create an input map with named triggers. You can use Input:GetMap to access an existing map.
   /// 			 
   /// \note If you are also using integer based trigger indices for the same map (e.g. C++ code), please setup
   /// 			their mapping before string based triggers.
@@ -328,11 +310,10 @@ public:
   /// 			your C++ code and the named trigger in your script binding. By doing that you will not lose any
   /// 			performance in C++ and can still access all triggers without additional code in your scripts as well.
   /// 
-  /// \note Named input maps created via VScriptInput_wrapper::CreateMap will not automatically be destroyed when
+  /// \note Input maps created via VScriptInput_wrapper::CreateMap will not automatically be destroyed when
   ///       the current scene is unloaded. Use VScriptInput_wrapper::DestroyMap to delete such a map if restoring 
   ///       the application's initial input behavior is desired.
   ///
-  /// \param mapName         The unique name of the string input map.
   /// \param numTriggers     [\b optional] The number of mappable trigger, adjust this value to your needs, default
   /// 												value is 32, VStringInputMap::MapTrigger will return -1 if you exceed this limit.
   /// \param numAlternatives [\b optional] The number of mappable alternatives, adjust this value to your needs,
@@ -342,7 +323,7 @@ public:
   ///   \code
   ///     function OnAfterSceneLoaded(self)
   ///
-  ///       self.playerInputMap = Input:CreateMap("PlayerInputMap")
+  ///       self.playerInputMap = Input:CreateMap()
   ///
   ///       self.playerInputMap:MapTrigger("Jump", "KEYBOARD", "CT_KB_SPACE",           { once = true })
   ///       self.playerInputMap:MapTrigger("Jump", "MOUSE",    "CT_MOUSE_RIGHT_BUTTON", { once = true })
@@ -351,19 +332,22 @@ public:
   /// \see GetMap
   /// \see VStringInputMap::MapTrigger
   /// \see VStringInputMap::GetTrigger
-  VStringInputMap CreateMap(string mapName, number numTriggers = 32, number numAlternatives = 4);
+  VStringInputMap CreateMap(number numTriggers = 32, number numAlternatives = 4);
   
-  /// \brief          Get an already existing map (created in C++ or Lua script)
-  /// \param mapName  The name of the map to find.
-  /// \returns        The map or nil if it does not exist.
+  /// \brief        Get an already existing map (created in C++ or Lua script)
+  /// \param index  Index of VStringInputMap into its manager. 
+  /// \returns      The map or nil if it does not exist.
   /// \par Example
   ///   \code
   ///     function OnAfterSceneLoaded(self)
-  ///       self.playerInputMap = Input:GetMap("PlayerInputMap")
-  ///     end  
+  ///       local inputMap = Input:CreateMap()
+  ///       self.inputMapIndex = inputMap:GetIndex()
+  ///     end 
   ///
   ///     function OnThink(self)
-  ///       if self.map:GetTrigger("Jump")>0 then
+  ///       local inputMap = Input:GetMap(self.inputMapIndex)
+  ///
+  ///       if inputMap:GetTrigger("Jump")>0 then
   ///         self:Jump()
   ///       end
   ///     end
@@ -372,11 +356,33 @@ public:
   /// \see GetMap
   /// \see VStringInputMap::MapTrigger
   /// \see VStringInputMap::GetTrigger
-  VStringInputMap GetMap(string mapName);
+  VStringInputMap GetMap(number index);
+
+  /// \brief Deletes the given input map.
+  /// 			 
+  /// \note Input maps created via VScriptInput_wrapper::CreateMap will not automatically be destroyed when
+  ///       the current scene is unloaded. Use VScriptInput_wrapper::DestroyMap to delete such a map if restoring 
+  ///       the application's initial input behavior is desired.
+  ///
+  /// \param index Index of VStringInputMap into its manager. 
+  /// \par Example
+  ///   \code
+  ///     function OnAfterSceneLoaded(self)
+  ///       local inputMap = Input:CreateMap()
+  ///       self.inputMapIndex = inputMap:GetIndex()
+  ///     end 
+  ///
+  ///     function OnBeforeSceneUnloaded(self)
+  ///       Input:DestroyMap(self.inputMapIndex)
+  ///     end  
+  ///   \endcode
+  ///
+  /// \see CreateMap
+  void DestroyMap(number index);
  
   /// \brief Deletes the given input map.
   /// 			 
-  /// \note Named input maps created via VScriptInput_wrapper::CreateMap will not automatically be destroyed when
+  /// \note Input maps created via VScriptInput_wrapper::CreateMap will not automatically be destroyed when
   ///       the current scene is unloaded. Use VScriptInput_wrapper::DestroyMap to delete such a map if restoring 
   ///       the application's initial input behavior is desired.
   ///
@@ -384,11 +390,10 @@ public:
   /// \par Example
   ///   \code
   ///     function OnBeforeSceneUnloaded(self)
-  ///
   ///       Input:DestroyMap(self.playerInputMap)
-  ///
   ///     end  
   ///   \endcode
+  ///
   /// \see CreateMap
   void DestroyMap(VStringInputMap inputMap);
 
@@ -465,7 +470,6 @@ public:
   boolean IsMouseButtonPressed(number button);
 
   /// \brief Get the increment of the mouse wheel between the last frame and this frame.
-  /// \param applyTimeDiff (\b optional) Set to true to multiply the delta value with the time difference, otherwise to false.
   /// \return The change of the mouse wheel as number.
   /// \par Example
   ///   \code
@@ -476,7 +480,7 @@ public:
   ///       end
   ///     end
   ///   \endcode
-  number GetMouseWheelDelta(boolean applyTimeDiff = true);
+  number GetMouseWheelDelta();
 
   /// \brief Get the absolute mouse position.
   /// \return Two values representing the x and y mouse position.
@@ -492,7 +496,6 @@ public:
   multiple GetMousePosition();
 
   /// \brief Get the change of the mouse position.
-  /// \param applyTimeDiff (\b optional) Set to true to multiply the delta values with the time difference, otherwise to false.
   /// \return Two values representing the difference in the x and y mouse position.
   /// \par Example
   ///   \code
@@ -502,7 +505,7 @@ public:
   ///       self:IncPosition(dx,dy,0)
   ///     end
   ///   \endcode
-  multiple GetMouseDelta(boolean applyTimeDiff = true);
+  multiple GetMouseDelta();
 
   /// @}
 
@@ -511,7 +514,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

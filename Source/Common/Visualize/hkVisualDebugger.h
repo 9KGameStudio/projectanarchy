@@ -16,10 +16,14 @@
 class hkStreamReader;
 class hkStreamWriter;
 
+#if defined(HK_PLATFORM_DURANGO)
+static const hkUint32 HK_VISUAL_DEBUGGER_DEFAULT_PORT = 65001;
+#else
 static const hkUint32 HK_VISUAL_DEBUGGER_DEFAULT_PORT = 25001;
+#endif
 
 	/// Information about connected Vdb clients.
-struct hkVisualDebuggerClient
+struct HK_EXPORT_COMMON hkVisualDebuggerClient
 {
 	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_UTILITIES, hkVisualDebuggerClient );
 
@@ -32,7 +36,7 @@ struct hkVisualDebuggerClient
 
 	/// Object tracking (objects that can be inspected with the hkInspectProcess, which must have a hkClass).
 	/// These tracked objects show up in the Vdb under Remote Object Inspection
-struct hkVisualDebuggerTrackedObject
+struct HK_EXPORT_COMMON hkVisualDebuggerTrackedObject
 {
 	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_UTILITIES, hkVisualDebuggerTrackedObject );
 
@@ -42,7 +46,7 @@ struct hkVisualDebuggerTrackedObject
 };
 
 	/// This stores a chunk of Vdb data
-struct hkVdbChunk
+struct HK_EXPORT_COMMON hkVdbChunk
 {
 	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_UTILITIES, hkVdbChunk );
 
@@ -62,7 +66,7 @@ private:
 typedef void (HK_CALL* hkVisualDebuggerTrackedObjectCallback)( void* ptr, const hkClass* klass, hkBool wasAdded, hkUlong tagId, void* userCallbackHandle );
 
 	/// Visual Debugger server interface.
-class hkVisualDebugger : public hkReferencedObject
+class HK_EXPORT_COMMON hkVisualDebugger : public hkReferencedObject
 {
 	public:
 
@@ -200,7 +204,7 @@ class hkVisualDebugger : public hkReferencedObject
 #endif // HK_VISUALIZE__VISUAL_DEBUGGER
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

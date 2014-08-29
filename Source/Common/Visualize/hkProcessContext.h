@@ -16,7 +16,7 @@ class hkThreadPool;
 	/// non physics-specific way. Note that the hkProcessContext itself is not Havok memory managed. It is just
 	/// an interface so that you can use your own container classes for whatever data you want to expose to
 	/// processes you create and use with the Visual Debugger.
-class hkProcessContext
+class HK_EXPORT_COMMON hkProcessContext
 {
 	public:
 
@@ -56,7 +56,7 @@ class hkProcessContext
 #endif // HK_VISUALIZE_PROCESS_CONTEXT_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

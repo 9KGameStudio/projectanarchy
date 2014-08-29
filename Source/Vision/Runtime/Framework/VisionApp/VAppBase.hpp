@@ -21,6 +21,7 @@
 #include <Vision/Runtime/Engine/Application/VisionApp.hpp>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Scene/VSceneLoader.hpp>
 
+#include <Vision/Runtime/Framework/VisionApp/VAppImportExport.hpp>
 #include <Vision/Runtime/Framework/VisionApp/Helper/VAppHelper.hpp>
 
 #ifdef HK_DEBUG_SLOW
@@ -75,11 +76,11 @@ public:
   ///
   /// \return
   ///   Pointer to the VAppBase instance.
-  static VAppBase* Get() { return s_instance; }
+  VAPP_IMPEXP static VAppBase* Get();
 
   /// \brief
   ///   Callbacks
-  static VisCallback_cl OnAppStateChanged;
+  VAPP_IMPEXP static VisCallback_cl OnAppStateChanged;
 
   /// \brief
   ///   Registers a Startup Module which is executed before Vision is initialized.
@@ -96,10 +97,10 @@ public:
   ///
   /// \return
   ///   Pointer to the VAppBase instance.
-  static bool RegisterStartupModule(VStartupModule* pModule, int iPriority);
+  VAPP_IMPEXP static bool RegisterStartupModule(VStartupModule* pModule, int iPriority);
 
   /// \brief
-  static void ProcessStartupModules();
+  VAPP_IMPEXP static void ProcessStartupModules();
 
   ///
   /// @}
@@ -112,11 +113,11 @@ public:
 
   /// \brief
   ///   Constructor. Initializes the basic variables for an application, but does not initialize the engine.
-  VAppBase();
+  VAPP_IMPEXP VAppBase();
 
   /// \brief
   ///   Destructor of the VAppBase class
-  ~VAppBase();
+  VAPP_IMPEXP ~VAppBase();
 
   ///
   /// @}
@@ -135,7 +136,7 @@ public:
   /// \param pImpl
   ///   VAppImpe instance.
   /// \sa VAppImpl
-  virtual void Execute(VAppImpl* pImpl);
+  VAPP_IMPEXP virtual void Execute(VAppImpl* pImpl);
 
   /// \brief
   ///   Returns whether the platform is callback based or not.
@@ -151,47 +152,47 @@ public:
   ///
   /// \return
   ///   Returns whether initialization was successful or not.
-  virtual bool AppInit();
+  VAPP_IMPEXP virtual bool AppInit();
 
   /// \brief
   ///   Initializes the base application.
   ///
   /// \return
   ///   Returns whether initialization was successful or not.
-  virtual bool AppRun();
-  virtual bool AppDeInit();
+  VAPP_IMPEXP virtual bool AppRun();
+  VAPP_IMPEXP virtual bool AppDeInit();
 
   /// \brief
   ///   Initializes the thread manager.
-  virtual void AppInitThreadManager();
+  VAPP_IMPEXP virtual void AppInitThreadManager();
 
   /// \brief
   ///   Called when initialization has failed.
-  virtual void AppInitFailed();
+  VAPP_IMPEXP virtual void AppInitFailed();
 
   /// \brief
   ///   Called after the engine has been initialized.
-  virtual void AppAfterEngineInit();
+  VAPP_IMPEXP virtual void AppAfterEngineInit();
 
   /// \brief
   ///   Platform specific initialization.
-  virtual void PlatformInit();
+  VAPP_IMPEXP virtual void PlatformInit();
 
   /// \brief
   ///   Platform specific settings initialization.
-  virtual void PlatformInitSettings();
+  VAPP_IMPEXP virtual void PlatformInitSettings();
 
   /// \brief
   ///   Platform specific input initialization.
-  virtual void PlatformMapInput() {}
+  VAPP_IMPEXP virtual void PlatformMapInput() {}
 
   /// \brief
   ///   Platform specific run function.
-  virtual bool PlatformRun() { return true; }
+  VAPP_IMPEXP virtual bool PlatformRun() { return true; }
 
   /// \brief
   ///   Platform specific de-initialization.
-  virtual void PlatformDeInit();
+  VAPP_IMPEXP virtual void PlatformDeInit();
 
   ///
   /// @}
@@ -204,11 +205,11 @@ public:
 
   /// \brief
   ///   Returns platform specific threading model parameters.
-  virtual VAppHelper::VPlatformThreadingModel GetThreadingModel() { return VAppHelper::VPlatformThreadingModel(); }
+  VAPP_IMPEXP virtual VAppHelper::VPlatformThreadingModel GetThreadingModel() { return VAppHelper::VPlatformThreadingModel(); }
 
   /// \brief
   ///   Returns platform specific prefix.
-  virtual void SetupPlatformRootFileSystem();
+  VAPP_IMPEXP virtual void SetupPlatformRootFileSystem();
 
   /// \brief
   ///   Returns the directory where the application can store private data that won't get 
@@ -224,35 +225,61 @@ public:
   virtual VString GetPlatformCacheDirectory() = 0;
 
   /// \brief
+  ///   Returns the number of command-line arguments specified when the application 
+  ///   was started (if supported by the underlying platform). 
+  ///
+  /// The path and name of the executable is not included; i.e., the queryable
+  /// list of arguments starts with the first actual argument.
+  ///
+  /// \return
+  ///   The number of command-line arguments
+  virtual unsigned int GetNumCommandLineArguments() const { return 0; }
+
+  /// \brief
+  ///   Returns a specific command-line arguments.
+  ///
+  /// The path and name of the executable is not included; i.e., the queryable
+  /// list of arguments starts with the first actual argument.
+  ///
+  /// \param index
+  ///   the index of the argument to return
+  /// \return
+  ///   the requested argument as an UTF-8 encoded string, or \c NULL if no argument 
+  ///   with the specified index exists
+  virtual const char* GetCommandLineArgument(unsigned int index) const { return NULL; }
+
+  /// \brief
   ///   Setup data directories which includes the base data directory and all data directories
   ///   given by the application implementation.
-  virtual void SetupBaseDataDirectories();
+  VAPP_IMPEXP virtual void SetupBaseDataDirectories();
 
-  virtual void OnHandleCallback(IVisCallbackDataObject_cl* pData) HKV_OVERRIDE;
+  VAPP_IMPEXP virtual void OnHandleCallback(IVisCallbackDataObject_cl* pData) HKV_OVERRIDE;
 
-  virtual int GetCallbackSortingKey(VCallback *pCallback) HKV_OVERRIDE;
+  VAPP_IMPEXP virtual int64 GetCallbackSortingKey(VCallback *pCallback) HKV_OVERRIDE;
 
-  virtual void OnLoadSceneStatus(int iStatus, float fPercentage) HKV_OVERRIDE;
+  VAPP_IMPEXP virtual void OnLoadSceneStatus(int iStatus, float fPercentage) HKV_OVERRIDE;
+
+  VAPP_IMPEXP virtual IVRendererNode* CreateRendererNode() HKV_OVERRIDE;
 
   /// \brief
   ///   Application status update.
-  virtual void UpdateApplicationState();
+  VAPP_IMPEXP virtual void UpdateApplicationState();
 
   /// \brief
   ///   Returns the application status.
-  VAppStateRef GetAppState() const { return m_eAppState; }
+  inline VAppStateRef GetAppState() const { return m_eAppState; }
 
   /// \brief
   ///   Sets the application status.
-  void SetAppState(VAppHelper::VApplicationState eAppState);
+  VAPP_IMPEXP void SetAppState(VAppHelper::VApplicationState eAppState);
 
   /// \brief
   ///   Returns the application implementation.
-  VAppImpl* GetAppImpl() { return m_pAppImpl; }
+  inline VAppImpl* GetAppImpl() { return m_pAppImpl; }
 
   /// \brief
   ///   Returns the path the application was started from.
-  const char* GetStartupPath() const { return m_sStartupPath; }
+  inline const char* GetStartupPath() const { return m_sStartupPath; }
 
   ///
   /// @}
@@ -282,7 +309,7 @@ private:
 #endif //__V_APP_BASE_HPP
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -16,37 +16,17 @@ class VScriptFileSystem_wrapper
 public:
   
   bool Exists(const char * szFilename, const char * szOptionalPath = NULL);
-};
-
-//use the native implmentation to handle the string properly
-%native(GetAbsDir) int VScriptFileSystem_wrapper_GetAbsDir(lua_State *L);
-%{
-  SWIGINTERN int VScriptFileSystem_wrapper_GetAbsDir(lua_State *L)
+  
+  %extend
   {
-    IS_MEMBER_OF(VScriptFileSystem_wrapper) //this will move this function to the method table of the specified class
-
-    DECLARE_ARGS_OK;
-
-    //we can ignore arg1 because it is a static function
-
-    GET_ARG(2, const char *, szFileName);
-    
-    bool bSuccess = false;
-    
-    if (ARGS_OK)
+    void GetAbsDir(const char* szFileName, VCaptureSwigEnvironment* env)
     {
-      char pBuffer[1024]; //create a buffer on the stack
+      char pBuffer[FS_MAX_PATH];
       Vision::File.GetAbsoluteDirectory(pBuffer, szFileName);
-      lua_pushstring(L, pBuffer);
+      env->AddReturnValueString(pBuffer);
     }
-    else
-    {
-      lua_pushnil(L);
-    }
-    
-    return 1;
   }
-%}
+};
 
 //Implement GetDataDirs native because it returns a list of strings
 %native(GetDataDirs) int VScriptFileSystem_wrapper_GetDataDirs(lua_State *L);
@@ -127,7 +107,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

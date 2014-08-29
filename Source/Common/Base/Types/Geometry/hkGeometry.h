@@ -10,12 +10,13 @@
 #define HK_MATH_GEOMETRY_H
 
 
-extern const class hkClass hkGeometryTriangleClass;
+extern HK_EXPORT_COMMON const class hkClass hkGeometryTriangleClass;
 
-extern const hkClass hkGeometryClass;
+extern HK_EXPORT_COMMON const hkClass hkGeometryClass;
 
 ///	Stores a triangle based mesh.
-struct hkGeometry : public hkReferencedObject
+/// Check out #include <Common/GeometryUtilities/Misc/hkGeometryUtils.h>
+struct HK_EXPORT_COMMON hkGeometry : public hkReferencedObject
 {
 	public:
 
@@ -37,6 +38,7 @@ struct hkGeometry : public hkReferencedObject
 			HK_DECLARE_POD_TYPE();
 
 			void set( int a, int b, int c, int material = -1){	m_a = a; m_b = b; m_c = c;	m_material = material;	}
+			int getVertex(int i) const { return (&m_a)[i]; }
 
 			int m_a;
 			int m_b;
@@ -90,7 +92,7 @@ struct hkGeometry : public hkReferencedObject
 #endif // HK_MATH_GEOMETRY_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -157,23 +157,11 @@ public:
   void transpose();
   const hkvMat4 getTransposed() const;
 
-  %extend 
-  {   
-    bool invert()
-    {
-      return self->invert()==HKV_SUCCESS;
-    }
-  }
+  hkvResult invert();
 
   const hkvMat4 getInverse() const;
 
-  %extend 
-  {   
-    bool invertOrthogonal()
-    {
-      return self->invertOrthogonal()==HKV_SUCCESS;
-    }
-  }
+  hkvResult invertOrthogonal();
 
   const hkvVec3 transformPosition(const hkvVec3& v) const;
   const hkvVec3 transformDirection(const hkvVec3& v) const;
@@ -188,12 +176,9 @@ public:
     {
       self->setScalingFactors(hkvVec3(x, y, z));
     }
-  
-    bool normalize(float fEpsilon = HKVMATH_SMALL_EPSILON)
-    {
-      return self->normalize(fEpsilon)==HKV_SUCCESS;
-    }
   }
+
+  hkvResult normalize(float fEpsilon = HKVMATH_SMALL_EPSILON);
 
   const hkvVec3 getTranslation() const;
   void setTranslation(const hkvVec3& vTranslation);
@@ -284,14 +269,14 @@ public:
     hkvVec3 __mul(const hkvVec3* pRhs)
     {
       if (pRhs == NULL) 
-        return hkvVec3();
+        return hkvVec3(0);
       return (*self * (*pRhs));
     }
     
     hkvVec4 __mul(const hkvVec4* pRhs)
     {
       if (pRhs == NULL) 
-        return hkvVec4();
+        return hkvVec4(0);
       return (*self * (*pRhs));
     }
 
@@ -1286,7 +1271,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

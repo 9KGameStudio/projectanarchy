@@ -68,13 +68,12 @@ struct VisRenderableTextureConfig_t
       m_bResolveTargetUseXDRMemory = false;
     #endif
     
-    #if defined (WIN32) || defined (_VISION_PS3) 
+    #if defined (_VISION_XENON)
+      m_bResolve = true;                ///< On Xbox360, we always need resolve (due to EDRAM) 
+    #else
       m_bResolve = false;
-    
-    #elif defined (_VISION_XENON)
-      m_bResolve = true;                ///< On Xbox360, we always need resolve (due to EDRAM)
-     
     #endif
+
 
     #if defined(_VR_DX11)
       m_bUnorderedAccessView = false;
@@ -626,6 +625,11 @@ public:
   ///
   VISION_APIFUNC void SetDownScale(int iAmount);
 
+  /// \brief
+  ///   Registers specified texture as animated texture and returns a pointer to it. When specified texture is not 
+  ///   animated, then NULL will be returned.
+  VISION_APIFUNC VisTextureAnimInstance_cl* RegisterTextureAnimation(VTextureObject* pTexture);
+
 #if defined(_VR_DX11)
  
   /// \brief
@@ -679,7 +683,7 @@ private:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

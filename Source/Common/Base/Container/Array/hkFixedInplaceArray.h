@@ -47,11 +47,17 @@ class hkFixedInplaceArray
 			/// Sets the size (i.e. number of used elements).
 		HK_FORCE_INLINE void		setSize(int size) { m_size = size; HK_ASSERT2(0x48488B10, m_size <= N, "Fixed inplace array capacity overflow"); }
 
+			/// Sets the size (i.e. number of used elements).
+		HK_FORCE_INLINE void		setSizeUnchecked(int size) { setSize(size); }
+
 			/// Checks if the size is zero.
 		HK_FORCE_INLINE hkBool		isEmpty() const { return m_size == 0; }
 
 			/// Increments the size by 1 and returns a reference to the first element created.			
 		HK_FORCE_INLINE T&			expandOne() { HK_ASSERT2(0x48488B11, m_size < N, "Fixed inplace array capacity overflow"); return m_data[m_size++]; }
+
+		/// Increments the size by 1 and returns a reference to the first element created.			
+		HK_FORCE_INLINE T*			expandBy(int n) { HK_ASSERT2(0x48488B11, m_size+n <= N, "Fixed inplace array capacity overflow"); T* res = m_data+m_size; m_size += n; return res; }
 
 			/// Read/write access to the i'th element.
 		HK_FORCE_INLINE T&			operator[] (int i) { HK_ASSERT2(0x48488B12, i >= 0 && i < m_size, "Index out of range"); return m_data[i]; }
@@ -62,12 +68,26 @@ class hkFixedInplaceArray
 			/// Adds an element to the end.
 		HK_FORCE_INLINE void		pushBack(const T& e) { expandOne() = e; }
 
+			/// Adds an element to the end.
+		HK_FORCE_INLINE void		pushBackUnchecked(const T& e) { pushBack(e); }
+
 			/// Remove the last element.
 		HK_FORCE_INLINE void		popBack() { HK_ASSERT2(0x48488B14, m_size > 0, "Empty array"); m_size--; }
 
 			/// Remove the i'th element and replace its location with the last element of the array.
 		HK_FORCE_INLINE void		removeAt(int i) { operator[](i) = back(); popBack(); }
 
+			/// Inserts t at index i. Elements from i to the end are copied up one place.
+		HK_FORCE_INLINE void		insertAt(int i, const T& t) 
+		{
+			HK_ASSERT2(0x48488B11, m_size < N, "Fixed inplace array capacity overflow"); 
+			for(int j=m_size; j>i; j--) 
+			{ 
+				m_data[j] = m_data[j-1];
+			}
+			m_data[i] = t;
+			m_size++;
+		}
 			/// Read/write access to the last element.
 		HK_FORCE_INLINE T&			back() { return operator[](m_size-1); }
 
@@ -90,7 +110,7 @@ class hkFixedInplaceArray
 #endif // HKBASE_HK_FIXED_INPLACE_ARRAY_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -9,7 +9,7 @@
 #include <Vision/Runtime/EnginePlugins/ThirdParty/FmodEnginePlugin/FmodEnginePlugin.hpp>
 #include <Vision/Runtime/EnginePlugins/ThirdParty/FmodEnginePlugin/VFmodManager.hpp>
 
-#include <Vision/Runtime/Base/System/Memory/VMemDbg.hpp>
+
 
 // -------------------------------------------------------------------------- //
 // Constructor/ Destructor                                                 
@@ -22,6 +22,7 @@ VFmodSoundObject::VFmodSoundObject() :
   m_iPriority(0),
   m_fVolume(1.0f),
   m_fPan(0.0f),
+  m_fDopplerLevel(1.0f),
   m_fConeOutside(-1.0f), // no cone
   m_fConeInside(-1.0f),  // no cone
   m_fFadeMin(1.0f),
@@ -37,6 +38,7 @@ VFmodSoundObject::VFmodSoundObject() :
   m_bUnpause(false)
 {
   m_pOwner = NULL;
+  GetPosition(m_vLastPosition);
   m_pChannel = (FMOD::Channel*)0;
 }
 
@@ -46,6 +48,7 @@ VFmodSoundObject::VFmodSoundObject(VFmodSoundObjectCollection* pOwner, VFmodSoun
   m_iPriority(iPriority),
   m_fVolume(1.0f),
   m_fPan(0.0f),
+  m_fDopplerLevel(1.0f),
   m_fConeOutside(-1.0f), // no cone
   m_fConeInside(-1.0f),  // no cone
   m_fFadeMin(1.0f),
@@ -67,6 +70,8 @@ VFmodSoundObject::VFmodSoundObject(VFmodSoundObjectCollection* pOwner, VFmodSoun
   m_pOwner = pOwner;
   if(pOwner)
     pOwner->Add(this);
+
+  GetPosition(m_vLastPosition);
 
   if(Vision::Editor.IsAnimatingOrPlaying() && (iFlags & VFMOD_FLAG_PAUSED) == 0)
     Play();
@@ -252,13 +257,12 @@ int VFmodSoundObject::GetChannelIndex() const
 // -------------------------------------------------------------------------- //
 // Overridden functions                                                 
 // -------------------------------------------------------------------------- //
-void VFmodSoundObject::OnDisposeObject()
+void VFmodSoundObject::OnHandleCallback(IVisCallbackDataObject_cl *pData)
 {
 }
 
-void VFmodSoundObject::OnObject3DChanged(int iO3DFlags)
+void VFmodSoundObject::OnDisposeObject()
 {
-  VisObject3D_cl::OnObject3DChanged(iO3DFlags);
 }
 
 void VFmodSoundObject::MessageFunction(int iID, INT_PTR iParamA, INT_PTR iParamB)
@@ -313,6 +317,10 @@ void VFmodSoundObject::Serialize( VArchive &ar )
     {
       ar >> m_bPlayedOnce;
     }
+    if (iVersion >= VFMOD_SOUNDOBJECT_VERSION_2)
+    {
+      ar >> m_fDopplerLevel;
+    }
 
     // add to global list
     m_pOwner = &VFmodManager::GlobalManager().SoundInstances();
@@ -336,18 +344,18 @@ void VFmodSoundObject::OnDeserializationCallback(const VSerializationContext &co
 // -------------------------------------------------------------------------- //
 // Internal functions                                                
 // -------------------------------------------------------------------------- //
-void VFmodSoundObject::Update()
+void VFmodSoundObject::Update(float fTimeDelta)
 {
 }
 
 
-void VFmodSoundObjectCollection::Update()
+void VFmodSoundObjectCollection::Update(float fTimeDelta)
 {
    int iCount = Count();
    for (int i=0;i<iCount;i++)
    {
       VFmodSoundObject* pInst = GetAt(i);
-      pInst->Update();
+      pInst->Update(fTimeDelta);
    }
 }
 
@@ -406,7 +414,7 @@ VFmodSoundObject* VFmodSoundObjectCollection::SearchObject(const char* szName) c
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140625)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -53,7 +53,7 @@ public:
     Texture2D      = 1,  ///< Standard 2D texture
     Texture3D      = 2,  ///< Volume texture
     Cubemap        = 3,  ///< Cubemap texture
-    Heightmap16bpp = 4,  ///< Not used
+    Unused1        = 4,  ///< Not used
     Texture2DArray = 5,  ///< DX10 (and up): 2D texture array
     CubemapArray   = 6   ///< DX11 (and up): Cubemap Array (currently unsupported)
   };
@@ -477,14 +477,12 @@ protected:
   
   // specific loading
   bool ReadDDS();
-  bool ReadTEX();
   bool ReadTGA();
   bool ReadBMP();
   bool ReadJPG();
   bool ReadPNG();
   bool ReadTexAnim();
   bool ReadPVR();
-  bool ReadGXT();
 
   // helper functions on unpack and flip color buffers
   bool ReadIntoBuffer(bool bRLECompressed=false, int iRowStride=-1, bool bFlipV=false, bool bFlipH=false);
@@ -513,7 +511,7 @@ protected:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

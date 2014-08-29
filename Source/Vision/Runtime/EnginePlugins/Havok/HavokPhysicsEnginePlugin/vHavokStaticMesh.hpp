@@ -48,10 +48,7 @@ public:
   /// The constructor does not add the object to the Havok simulation. Use one of the 
   /// Init functions to add the object to the physics simulation.
   ///
-  /// \param module
-  ///   Reference of the Havok Physics Module.
-  /// 
-  VHAVOK_IMPEXP vHavokStaticMesh(vHavokPhysicsModule &module);
+  VHAVOK_IMPEXP vHavokStaticMesh();
 
   ///
   /// \brief
@@ -63,7 +60,7 @@ public:
   /// \brief
   ///   Removes the static mesh from the simulation without necessarily deleting this instance.
   ///
-  VHAVOK_IMPEXP virtual void DisposeObject();
+  VHAVOK_IMPEXP void DisposeObject();
 
   ///
   /// @}
@@ -82,7 +79,7 @@ public:
   /// \param meshInstance
   ///   Vision mesh instance that shall be part of the Havok Physics simulation.
   ///
-  VHAVOK_IMPEXP virtual void Init(VisStaticMeshInstance_cl &meshInstance);
+  VHAVOK_IMPEXP void Init(VisStaticMeshInstance_cl &meshInstance);
 
   ///
   /// \brief
@@ -92,7 +89,7 @@ public:
   /// \param meshInstances
   ///   Vision mesh instance collection that shall be part of the Havok Physics simulation.
   ///
-  VHAVOK_IMPEXP virtual void Init(VisStaticMeshInstCollection &meshInstances);
+  VHAVOK_IMPEXP void Init(VisStaticMeshInstCollection &meshInstances);
 
   ///
   /// @}
@@ -132,16 +129,6 @@ public:
   /// @name Synchronization
   /// @{
   ///
-
-  ///
-  /// \brief
-  ///   Retrieves the transformation of the static mesh(es) from Havok Physics and 
-  ///   applies them to the Vision instances.
-  ///
-  /// The physics module takes care of updating the transformation during the physics simulation. You
-  /// will usually not have to call this function manually.
-  ///
-  VHAVOK_IMPEXP void UpdateHavok2Vision();
 
   ///
   /// \brief
@@ -238,25 +225,28 @@ protected:
 
   ///
   /// \brief
+  ///   Creates a Havok Physics shape for the static mesh instances.
+  ///
+  hkRefNew<hkpShape> CreateHkShape();
+
+  ///
+  /// \brief
   ///   Common deinitialisation code that is used both for DisposeObject and on destruction.
   ///
   void CommonDeinit();
   
-  hkpRigidBody *m_pRigidBody;                   ///< Pointer to the internal Havok Physics rigid body instance
-  bool m_bInitialized;                          ///< Indicates whether object has been initialized with one of the Init functions.
-
+private:
+  hkpRigidBody* m_pRigidBody;                   ///< Pointer to the internal Havok Physics rigid body instance
   VisStaticMeshInstCollection m_staticMeshes;   ///< List of Vision static mesh instances represented by this class. 
                                                 ///< Not reference-counted in order to avoid cyclic dependencies and resource cleanup warnings.
-  vHavokPhysicsModule &m_module;                ///< Reference to the physics module this object belongs to.
   int m_iNumValidStaticMeshes;                  ///< Number of valid static mesh instances managed by this instance.
-  hkvVec3 m_vScale;								              ///< The scale this static mesh was created with.
-  const char *m_szShapeCacheId;                 ///< ID of shape of the rigid body in runtime cache table (points to memory in cache table). 
+  hkvVec3 m_vScale;                             ///< The scale this static mesh was created with.
 };
 
 #endif // VHAVOKSTATICMESH_HPP_INCLUDED
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

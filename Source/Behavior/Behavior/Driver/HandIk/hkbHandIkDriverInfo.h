@@ -69,10 +69,10 @@ class hkbHandIkDriverInfo : public hkReferencedObject
 										//+hk.Description("The shoulder bone.")
 										//+hk.Ui(group="Hand IK Bones")
 
-				/// Index of the sibling of the shoulder bone. If the bone is specified then the hand IK modifier applies the same rotation to the sibling bone as it does to the shoulder bone.
+				/// Index of the sibling of the shoulder bone. If the bone is specified then the hand IK driver applies the same rotation to the sibling bone as it does to the shoulder bone.
 			hkInt16 m_shoulderSiblingIndex; //+default(-1)
 											//+hkb.RoleAttribute("ROLE_BONE_INDEX","FLAG_NONE")
-											//+hk.Description("The sibling of the shoulder bone. If the bone is specified then the hand IK modifier applies the same rotation to the sibling bone as it does to the shoulder bone.")
+											//+hk.Description("The sibling of the shoulder bone. If the bone is specified then the hand IK driver applies the same rotation to the sibling bone as it does to the shoulder bone.")
 											//+hk.Ui(group="Hand IK Sibling Bones")
 
 				/// Index of the elbow bone.  If this is not -1, it overrides the character boneInfo.
@@ -81,10 +81,10 @@ class hkbHandIkDriverInfo : public hkReferencedObject
 									//+hk.Description("The elbow bone.")
 									//+hk.Ui(group="Hand IK Bones")
 
-				/// Index of the sibling of the elbow bone. If the bone is specified then the hand IK modifier applies the same rotation to the sibling bone as it does to the elbow bone.
+				/// Index of the sibling of the elbow bone. If the bone is specified then the hand IK driver applies the same rotation to the sibling bone as it does to the elbow bone.
 			hkInt16 m_elbowSiblingIndex;	//+default(-1)
 											//+hkb.RoleAttribute("ROLE_BONE_INDEX","FLAG_NONE")
-											//+hk.Description("The sibling of the elbow bone. If the bone is specified then the hand IK modifier applies the same rotation to the sibling bone as it does to the elbow bone.")
+											//+hk.Description("The sibling of the elbow bone. If the bone is specified then the hand IK driver applies the same rotation to the sibling bone as it does to the elbow bone.")
 											//+hk.Ui(group="Hand IK Sibling Bones")
 
 				/// Index of the wrist bone.  If this is not -1, it overrides the character boneInfo.
@@ -126,7 +126,7 @@ class hkbHandIkDriverInfo : public hkReferencedObject
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

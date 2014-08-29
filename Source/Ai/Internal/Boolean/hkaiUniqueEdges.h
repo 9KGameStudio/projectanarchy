@@ -9,6 +9,7 @@
 #define HKAI_UNIQUE_EDGES_H
 
 #include <Ai/Internal/Boolean/hkaiEdgeGeometry.h>
+#include <Common/Base/Algorithm/Sort/hkRadixSort.h>
 
 /// The hkaiUnique edges class provides a way to find all of the edges that index the same vertices. The vertex indices
 /// can be in either order, for example an edge going from vertex 1 to vertex 2 is considered to match another edge which
@@ -43,6 +44,9 @@ class hkaiUniqueEdges
 protected:
         hkArray<const hkaiEdgeGeometry::Edge*> m_edges;
         hkArray<const hkaiEdgeGeometry::Edge*const*> m_startUniqueEdge;
+
+		hkArray<hkRadixSort::SortData32> m_radixData;
+		hkArray<hkRadixSort::SortData32> m_buffer;
 };
 
 #include <Ai/Internal/Boolean/hkaiUniqueEdges.inl>
@@ -50,7 +54,7 @@ protected:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

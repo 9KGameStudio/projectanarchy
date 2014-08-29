@@ -26,10 +26,11 @@ class hkaiAbstractFaceCutter
 #else
 		typedef hkaiNavMeshInstance MeshType;
 #endif
+		void forceDomainQuantum(hkReal domainSize);
 
 		void reset(hkaiPackedKey faceKey);
 
-		void setFace(const MeshType& origMesh, hkVector4Parameter worldUp, bool isWallClimbing, hkUint32 faceKey,
+		hkBool32 setFace(const MeshType& origMesh, hkVector4Parameter worldUp, bool isWallClimbing, hkaiPackedKey faceKey,
 			hkSimdRealParameter regionExpansion, hkArrayBase<hkVector4>& faceVertsOut, hkArrayBase<int>& indexRemap);
 
 		hkBool32 addSilhouette( const hkVector4* points, int loopSize, int materialId );
@@ -50,7 +51,7 @@ class hkaiAbstractFaceCutter
 #endif // HK_ABSTRACT_FACE_CUTTER_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

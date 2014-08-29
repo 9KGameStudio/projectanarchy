@@ -21,7 +21,7 @@ typedef void (HK_CALL *hkpConstraintAtomBuildJacobianFunc) ( hkpConstraintData* 
 
 /// Special atom used to implement a custom atomic constraint that generates its Jacobians calling the buildJacobian()
 /// function in the hkpConstraintData member.
-struct hkpBridgeConstraintAtom : public hkpConstraintAtom
+struct HK_EXPORT_PHYSICS hkpBridgeConstraintAtom : public hkpConstraintAtom
 {
 	public:
 
@@ -64,7 +64,7 @@ struct hkpBridgeConstraintAtom : public hkpConstraintAtom
 
 
 //
-struct hkpBridgeAtoms
+struct HK_EXPORT_PHYSICS hkpBridgeAtoms
 {
 	public:
 
@@ -90,7 +90,7 @@ struct hkpBridgeAtoms
 #endif // HKP_BRIDGE_CONSTRAINT_ATOM_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

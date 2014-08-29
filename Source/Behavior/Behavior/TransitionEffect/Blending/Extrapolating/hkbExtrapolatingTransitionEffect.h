@@ -101,9 +101,6 @@ class hkbExtrapolatingTransitionEffect : public hkbBlendingTransitionEffect
 			// Get the duration of the transition.
 		virtual hkReal getTransitionDuration() const HK_OVERRIDE;
 
-			// Is this the first frame of the transition.
-		virtual bool isFirstFrame() const HK_OVERRIDE;
-
 	private:
 
 		HKB_BEGIN_INTERNAL_STATE(1);
@@ -154,7 +151,7 @@ class hkbExtrapolatingTransitionEffect : public hkbBlendingTransitionEffect
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -40,8 +40,6 @@ namespace Editor.Actions
     {
       v3dLayer.Modified = true;
       v3dLayer.TimeOfDay = newConfig; // make active
-      // Apply to engine
-      EditorManager.RendererNodeManager.UpdateTimeOfDay(v3dLayer.TimeOfDay);
 
       // Send layer change event to force refresh the shown property grid values
       IScene.SendLayerChangedEvent(new LayerChangedArgs(v3dLayer, null, LayerChangedArgs.Action.PropertyChanged));
@@ -54,8 +52,6 @@ namespace Editor.Actions
     {
       v3dLayer.Modified = true;
       v3dLayer.TimeOfDay = oldConfig; // make active
-      // Apply to engine
-      EditorManager.RendererNodeManager.UpdateTimeOfDay(v3dLayer.TimeOfDay);
 
       // Send layer change event to force refresh the shown property grid values
       IScene.SendLayerChangedEvent(new LayerChangedArgs(v3dLayer, null, LayerChangedArgs.Action.PropertyChanged));
@@ -107,7 +103,7 @@ namespace Editor.Actions
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140728)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

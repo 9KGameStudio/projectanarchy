@@ -20,17 +20,27 @@ void HK_CALL hkString::memCpy4( void* dst, const void* src, int numWords)
 
 void HK_CALL hkString::memCpy16( void* dst, const void* src, int numQuads)
 {
-#if defined (HK_PLATFORM_PS3_PPU) || defined (HK_PLATFORM_PS3_SPU) || defined( HK_PLATFORM_XBOX360 ) || defined( HK_PLATFORM_PS4 )
+#if defined(HK_PLATFORM_WIIU)
+	if(dst != src) { OSBlockMove(dst, src, numQuads * 16, false); }
+#elif defined (HK_PLATFORM_PS3_PPU) || defined (HK_PLATFORM_PS3_SPU) || defined( HK_PLATFORM_XBOX360 ) || defined( HK_PLATFORM_PS4 ) || defined(HK_PLATFORM_WIN32) || defined(HK_PLATFORM_X64)
 	HK_ASSERT2( 0xf021d445, (hkUlong(dst) & HK_NATIVE_ALIGN_CHECK ) == 0, "Unaligned address" );
 	HK_ASSERT2( 0xf021d446, (hkUlong(src) & HK_NATIVE_ALIGN_CHECK ) == 0, "Unaligned address" );
 	
-	const hkQuadReal* srcQuad = reinterpret_cast<const hkQuadReal*>(src);
-	hkQuadReal* dstQuad = reinterpret_cast<hkQuadReal*>(dst);
+	const hkQuadFloat32* srcQuad = reinterpret_cast<const hkQuadFloat32*>(src);
+	hkQuadFloat32* dstQuad = reinterpret_cast<hkQuadFloat32*>(dst);
 	{
-		for (int i = numQuads-1; i>=0; i--)
+		if ( numQuads )
 		{
-			*(dstQuad++) = *(srcQuad++);
+			do
+			{
+				*(dstQuad++) = *(srcQuad++);
+			}
+			while(--numQuads);
 		}
+// 		for (int i = numQuads-1; i>=0; i--)	// this loop will be detected by the compiler and replaced by a slow ooo call to ::memcpy
+// 		{
+// 			*(dstQuad++) = *(srcQuad++);
+// 		}
 	}
 #else
 
@@ -65,8 +75,9 @@ void HK_CALL hkString::memCpy16( void* dst, const void* src, int numQuads)
 void HK_CALL hkString::memCpy16NonEmpty( void* dst, const void* src, int numQuads)
 {
 	HK_ASSERT2( 0xf022d444, numQuads > 0, "Size 0 not allowed" );
-
-#if ( HK_CONFIG_SIMD == HK_CONFIG_SIMD_ENABLED) && ( defined(HK_PLATFORM_WIN32) || defined(HK_PLATFORM_X64) || defined (HK_PLATFORM_PS3_PPU) || defined (HK_PLATFORM_PS3_SPU) || defined( HK_PLATFORM_XBOX360 ) || defined( HK_PLATFORM_PS4 ) )
+#if defined(HK_PLATFORM_WIIU)
+	if(dst != src) { OSBlockMove(dst, src, numQuads * 16, false); }
+#elif ( HK_CONFIG_SIMD == HK_CONFIG_SIMD_ENABLED) && ( defined(HK_PLATFORM_WIN32) || defined(HK_PLATFORM_X64) || defined (HK_PLATFORM_PS3_PPU) || defined (HK_PLATFORM_PS3_SPU) || defined( HK_PLATFORM_XBOX360 ) || defined( HK_PLATFORM_PS4 ) )
 	
 	HK_ASSERT2( 0xf022d445, (hkUlong(dst) & HK_NATIVE_ALIGN_CHECK) == 0, "Unaligned address" );
 	HK_ASSERT2( 0xf022d446, (hkUlong(src) & HK_NATIVE_ALIGN_CHECK) == 0, "Unaligned address" );
@@ -114,43 +125,59 @@ template<int size>
 void HK_CALL hkString::memCpy16(void* dst, const void* src)
 {
 	HK_ASSERT( 0xf0dedf34, ((size & 0xf) == 0) && (size <= 192) && (size > 0));
+#if defined(HK_PLATFORM_WIIU)
+	if(dst != src) { OSBlockMove(dst, src, size, false); }
+	return;
+#elif HK_CONFIG_SIMD == HK_CONFIG_SIMD_ENABLED
 
-#if defined(HK_PLATFORM_PS3_SPU) || defined(HK_PLATFORM_PS3_PPU) || defined( HK_PLATFORM_XBOX360 ) || defined( HK_PLATFORM_PS4 )
-	const hkQuadReal* srcQuad = reinterpret_cast<const hkQuadReal*>(src);
-	hkQuadReal*       dstQuad = reinterpret_cast<hkQuadReal*>(dst);
-	hkQuadReal a,b,c,d;
-	if ( size >  0) a = srcQuad[0];
-	if ( size > 16) b = srcQuad[1];
-	if ( size > 32) c = srcQuad[2];
-	if ( size > 48) d = srcQuad[3];
-	if ( size >  0) dstQuad[0] = a;
-	if ( size > 64) a = srcQuad[4];
-	if ( size > 16) dstQuad[1] = b;
-	if ( size > 80) b = srcQuad[5];
-	if ( size > 32) dstQuad[2] = c;
-	if ( size > 96) c = srcQuad[6];
-	if ( size > 48) dstQuad[3] = d;
-	if ( size > 112) d = srcQuad[7];
-	if ( size > 64) dstQuad[4] = a;
-	if ( size > 128) a = srcQuad[8];
-	if ( size > 80) dstQuad[5] = b;
-	if ( size > 144) b = srcQuad[9];
-	if ( size > 96) dstQuad[6] = c;
-	if ( size > 160) c = srcQuad[10];
-	if ( size > 112) dstQuad[7] = d;
-	if ( size > 176) d = srcQuad[11];
-	if ( size > 128) dstQuad[8] = a;
-	if ( size > 144) dstQuad[9] = b;
-	if ( size > 160) dstQuad[10] = c;
-	if ( size > 176) dstQuad[11] = d;
-#else
-	hkString::memCpy16NonEmpty(dst, src, size/16);
-#endif
+#	if defined(HK_PLATFORM_PS3_SPU) || defined(HK_PLATFORM_PS3_PPU) || defined( HK_PLATFORM_XBOX360 ) || defined( HK_PLATFORM_PS4 )
+	const int maxSize = 192;
+#	else
+	const int maxSize = 64;
+#	endif
+	
+	if ( size <= maxSize )
+	{
+		const hkQuadFloat32* srcQuad = reinterpret_cast<const hkQuadFloat32*>(src);
+		hkQuadFloat32*       dstQuad = reinterpret_cast<hkQuadFloat32*>(dst);
+		hkQuadFloat32 a,b,c,d;
+		if ( size >  0) a = srcQuad[0];
+		if ( size > 16) b = srcQuad[1];
+		if ( size > 32) c = srcQuad[2];
+		if ( size > 48) d = srcQuad[3];
+		if ( size >  0) dstQuad[0] = a;
+		if ( size > 64) a = srcQuad[4];
+		if ( size > 16) dstQuad[1] = b;
+		if ( size > 80) b = srcQuad[5];
+		if ( size > 32) dstQuad[2] = c;
+		if ( size > 96) c = srcQuad[6];
+		if ( size > 48) dstQuad[3] = d;
+		if ( size > 112) d = srcQuad[7];
+		if ( size > 64) dstQuad[4] = a;
+		if ( size > 128) a = srcQuad[8];
+		if ( size > 80) dstQuad[5] = b;
+		if ( size > 144) b = srcQuad[9];
+		if ( size > 96) dstQuad[6] = c;
+		if ( size > 160) c = srcQuad[10];
+		if ( size > 112) dstQuad[7] = d;
+		if ( size > 176) d = srcQuad[11];
+		if ( size > 128) dstQuad[8] = a;
+		if ( size > 144) dstQuad[9] = b;
+		if ( size > 160) dstQuad[10] = c;
+		if ( size > 176) dstQuad[11] = d;
+	}
+	else
+#endif // config simd
+	{
+		hkString::memCpy16NonEmpty(dst, src, size/16);
+	}
 }
 
 void HK_CALL hkString::memCpy256(void* dst, const void* src)
 {
-#if defined(HK_PLATFORM_PS3_SPU) || defined(HK_PLATFORM_PS3_PPU) || defined( HK_PLATFORM_XBOX360 ) || defined( HK_PLATFORM_PS4 )
+#if defined(HK_PLATFORM_WIIU)
+	if(dst != src) { OSBlockMove(dst, src, 256, false); }
+#elif defined(HK_PLATFORM_PS3_SPU) || defined(HK_PLATFORM_PS3_PPU) || defined( HK_PLATFORM_XBOX360 ) || defined( HK_PLATFORM_PS4 )
 	const hkQuadReal* srcQuad = reinterpret_cast<const hkQuadReal*>(src);
 	hkQuadReal*       dstQuad = reinterpret_cast<hkQuadReal*>(dst);
 
@@ -181,6 +208,13 @@ void HK_CALL hkString::memCpy256(void* dst, const void* src)
 
 void HK_CALL hkString::memSet4(void* dst, const int value, int numWords)
 {
+#if defined(HK_PLATFORM_WIIU)
+	const int clearSize = OSRoundDown32B(dst + numWords * 4) - OSRoundUp32B(dst);
+	if(clearSize > 0)
+	{
+		DCZeroRange(reinterpret_cast<void*>( OSRoundUp32B(dst)), clearSize);
+	}
+#endif
 	hkUint32* dst32 = reinterpret_cast<      hkUint32*>(dst);
 	for (int i = numWords-1; i>=0; i--)
 	{
@@ -191,10 +225,30 @@ void HK_CALL hkString::memSet4(void* dst, const int value, int numWords)
 
 void HK_CALL hkString::memClear16(void* dst, int numQuads)
 {
-#if (HK_CONFIG_SIMD == HK_CONFIG_SIMD_ENABLED) && !defined(HK_REAL_IS_DOUBLE)
+#if defined(HK_PLATFORM_WIIU)
+	hkUint32* actualStart = reinterpret_cast<hkUint32*>(dst);
+	hkUint32* roundedUpStart = reinterpret_cast<hkUint32*>(OSRoundUp32B(dst));
+	hkUint32* actualEnd = reinterpret_cast<hkUint32*>(dst + numQuads * 16);
+	hkUint32* roundedDownEnd = reinterpret_cast<hkUint32*>(OSRoundDown32B(actualEnd));
+	const int clearSize = reinterpret_cast<char*>(roundedDownEnd) - reinterpret_cast<char*>(roundedUpStart);
+	if(clearSize > 0)
+	{
+		DCZeroRange(reinterpret_cast<void*>(roundedUpStart), clearSize);
+	}
+	// Fill in the ends
+	for(hkUint32* dst32 = actualStart; dst32 < roundedUpStart; dst32++)
+	{
+		*dst32 = 0;
+	}
+	for(hkUint32* dstEnd32 = roundedDownEnd; dstEnd32 < actualEnd; dstEnd32++)
+	{
+		*dstEnd32 = 0;
+	}
+#elif (HK_CONFIG_SIMD == HK_CONFIG_SIMD_ENABLED)
 	HK_ASSERT2( 0xf021d445, (hkUlong(dst) & HK_NATIVE_ALIGN_CHECK ) == 0, "Unaligned address" );
-	hkVector4 zero; zero.setZero();
-	hkVector4* dstQuad = (hkVector4*)dst;
+	hkVector4f zero;
+	zero = hkVector4f::getZero();	// using zero.setZero(); does not work, as the compiler will replace this loop with on out of line call to memset
+	hkVector4f* dstQuad = (hkVector4f*)dst;
 	for (int i = numQuads-1; i>=0; i--)
 	{
 		*(dstQuad++) = zero;
@@ -261,11 +315,18 @@ void HK_CALL hkString::memSet16(void* dst, const void* HK_RESTRICT src)
 
 void HK_CALL hkString::memSet16(void* dst, const void* value, int numQuads)
 {
-#if defined (HK_PLATFORM_PS3_PPU) || defined (HK_PLATFORM_PS3_SPU) || defined( HK_PLATFORM_XBOX360 ) || defined( HK_PLATFORM_PS4 )
-	const hkQuadReal* valueQuad = reinterpret_cast<const hkQuadReal*>(value);
-	hkQuadReal* dstQuad = reinterpret_cast<hkQuadReal*>(dst);
+#if defined(HK_PLATFORM_WIIU)
+	const int clearSize = OSRoundDown32B(dst + numQuads * 16) - OSRoundUp32B(dst);
+	if(clearSize > 0)
 	{
-		hkQuadReal v = *(valueQuad);
+		DCZeroRange(reinterpret_cast<void*>(OSRoundUp32B(dst)), clearSize);
+	}
+#endif
+#if defined (HK_PLATFORM_PS3_PPU) || defined (HK_PLATFORM_PS3_SPU) || defined( HK_PLATFORM_XBOX360 ) || defined( HK_PLATFORM_PS4 ) || defined(HK_PLATFORM_WIN32) || defined(HK_PLATFORM_X64)
+	const hkQuadFloat32* valueQuad = reinterpret_cast<const hkQuadFloat32*>(value);
+	hkQuadFloat32* dstQuad = reinterpret_cast<hkQuadFloat32*>(dst);
+	{
+		hkQuadFloat32 v = *(valueQuad);
 		for (int i = numQuads-1; i>=0; i--)
 		{
 			*(dstQuad++) = v;
@@ -308,7 +369,7 @@ HK_FORCE_INLINE int HK_CALL hkString::memCmpUint32(const hkUint32* buf1, const h
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

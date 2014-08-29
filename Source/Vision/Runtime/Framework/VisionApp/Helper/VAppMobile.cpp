@@ -81,14 +81,14 @@ void VAppMobile::OnHandleCallback(IVisCallbackDataObject_cl* pData)
   {
     VAppMenuContextPtr pContext = m_pAppImpl->GetContext();
     // 96 DPI is our default (see Vision::Video.GetDeviceDpi())
-    pContext->SetDragThreshold(Vision::Video.GetDeviceDpi() / 96.0f * 2.0f);
+    pContext->SetDragThreshold(Vision::Video.GetDeviceDpi() / 96.0f * 5.0f);
   }
 
   VAppBase::OnHandleCallback(pData);
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140625)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -12,7 +12,7 @@
 V_IMPLEMENT_DYNCREATE(VLogoOverlay, VAppModule, Vision::GetEngineModule());
 
 // The windows anarchy build already has a watermark, so no logo needed.
-#if !(defined(HK_ANARCHY) && defined(WIN32))
+#if !(defined(HK_ANARCHY) && defined(_VISION_WIN32)) || defined(HK_ANARCHY_PC_EXPORTER)
   #define SHOW_LOGO
 #endif
 
@@ -104,7 +104,7 @@ void VLogoOverlay::SetAlignment(Alignment eAlignment)
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140708)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

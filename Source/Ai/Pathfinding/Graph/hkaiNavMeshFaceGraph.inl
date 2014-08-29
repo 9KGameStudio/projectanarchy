@@ -19,7 +19,29 @@ hkaiNavMeshFaceGraph::hkaiNavMeshFaceGraph()
 {
 }
 
-inline hkBool32 hkaiNavMeshFaceGraph::isGoal( SearchIndex nit ) const
+void hkaiNavMeshFaceGraph::setCollection( const hkaiStreamingCollection* collection )
+{
+	HK_ASSERT(0x73370915, collection->getNumInstances() == 1);
+
+	HK_TIME_CODE_BLOCK("setCollection", HK_NULL);
+	m_collection = collection;
+
+	const hkaiNavMesh* mesh = collection->getInstanceAt(0)->getOriginalMesh();
+	const int numFaces = mesh->getNumFaces();
+	m_cachedCentroids.setSize( numFaces );
+	m_cachedNormals.setSize( numFaces );
+
+	for (int f=0; f<numFaces; f++)
+	{
+		hkaiNavMeshUtils::calcFaceCentroid( *mesh, f, m_cachedCentroids[f] );
+		hkaiNavMeshUtils::calcFaceNormal( *mesh, f, m_cachedNormals[f] );
+	}
+
+	m_navMesh = mesh;
+}
+
+
+inline hkBool32 hkaiNavMeshFaceGraph::isGoal( hkaiPackedKey nit ) const
 {
 	
 	return false;
@@ -28,45 +50,45 @@ inline hkBool32 hkaiNavMeshFaceGraph::isGoal( SearchIndex nit ) const
 int hkaiNavMeshFaceGraph::getNumNodes() const
 {
 	
-	HK_ASSERT(0x73370915, m_collection->getNumInstances() == 1);
-	return m_collection->getInstanceAt(0)->getNumFaces();
+	return m_navMesh->getNumFaces();
 }
 
 // Get an upper bound on the number of nodes adjacent to a given node.
-int hkaiNavMeshFaceGraph::getMaxNeighborCount( SearchIndex nit ) const
+int hkaiNavMeshFaceGraph::getMaxNeighborCount( hkaiPackedKey nit ) const
 {
-	const hkaiNavMesh::Face& face = m_collection->getFaceFromPacked(nit);
+	hkaiNavMesh::FaceIndex faceIndex = hkaiGetIndexFromPacked( nit );
+	const hkaiNavMesh::Face& face = m_navMesh->getFace(faceIndex);
 	const int numRealEdges = (face.m_numEdges);
 	return numRealEdges;
 }
 
-void hkaiNavMeshFaceGraph::getNeighbors( SearchIndex nit, hkArrayBase< EdgeKey >& neighbors ) const
+void hkaiNavMeshFaceGraph::getNeighbors( hkaiPackedKey nit, hkArrayBase< hkaiPackedKey >& neighbors ) const
 {
-	const hkaiNavMesh::Face& face = m_collection->getFaceFromPacked(nit);
-
+	hkaiNavMesh::FaceIndex faceIndex = hkaiGetIndexFromPacked( nit );
+	const hkaiNavMesh::Face& face = m_navMesh->getFace(faceIndex);
 	const int numRealEdges = (face.m_numEdges);
 
 	HK_ASSERT(0x66c7197b, neighbors.isEmpty());
 	HK_ASSERT2(0x79b7d4c0, neighbors.getCapacity() >= numRealEdges, 
 		"For performance, neighbors array should be pre-allocated to contain all possible neighbors.");
 	neighbors.setSizeUnchecked(numRealEdges);
-	EdgeKey* HK_RESTRICT neighborPtr = neighbors.begin();
+	hkaiPackedKey* HK_RESTRICT neighborPtr = neighbors.begin();
 
 	const hkaiRuntimeIndex sectionId = hkaiGetRuntimeIdFromPacked(nit);
 	for ( int e=0; e < numRealEdges; e++ )
 	{
-		const EdgeKey edgeKey = hkaiGetPackedKey( sectionId, face.m_startEdgeIndex + e);
+		const hkaiPackedKey edgeKey = hkaiGetPackedKey( sectionId, face.m_startEdgeIndex + e);
 		*neighborPtr++ = edgeKey;
 	}
 }
 
-hkaiNavMeshFaceGraph::SearchIndex hkaiNavMeshFaceGraph::edgeTarget( SearchIndex nit, EdgeKey edgeKey ) const
+hkaiPackedKey hkaiNavMeshFaceGraph::edgeTarget( hkaiPackedKey nit, hkaiPackedKey edgeKey ) const
 {
-	const hkaiNavMeshInstance* instance = m_collection->getInstanceAt( hkaiGetRuntimeIdFromPacked(edgeKey) );
-	return instance->getOppositeFaceKeyForEdge( hkaiGetIndexFromPacked(edgeKey) );
+	hkaiNavMesh::EdgeIndex edgeIndex = hkaiGetIndexFromPacked(edgeKey);
+	return m_navMesh->getEdge(edgeIndex).m_oppositeFace;
 }
 
-hkaiNavMeshFaceGraph::EdgeCost hkaiNavMeshFaceGraph::getTotalCost( SearchIndex nit, SearchIndex adj, EdgeKey eit, const EdgeCost costToParent ) const
+hkaiNavMeshFaceGraph::EdgeCost hkaiNavMeshFaceGraph::getTotalCost( hkaiPackedKey nit, hkaiPackedKey adj, hkaiPackedKey eit, const EdgeCost costToParent ) const
 {
 	Position centroidA; getPosition(nit, centroidA);
 	Position centroidB; getPosition(adj, centroidB);
@@ -87,14 +109,13 @@ hkaiNavMeshFaceGraph::EdgeCost hkaiNavMeshFaceGraph::getTotalCost( SearchIndex n
 	//	centroidA->edge  + edge->centroidB
 
 	HK_ASSERT(0x6886c84f, hkaiGetRuntimeIdFromPacked(nit) == hkaiGetRuntimeIdFromPacked(eit) );
-	const hkaiNavMeshInstance* meshInstance = m_collection->getInstanceAt( hkaiGetRuntimeIdFromPacked(eit) );
 	const hkaiNavMesh::EdgeIndex edgeIndex = hkaiGetIndexFromPacked(eit);
 	const hkaiNavMesh::FaceIndex faceIndex = hkaiGetIndexFromPacked(nit);
 	
 	hkVector4 edgeA, edgeB;
-	meshInstance->getEdgePoints( edgeIndex, edgeA, edgeB );
+	m_navMesh->getEdgePoints( edgeIndex, edgeA, edgeB );
 
-	hkVector4 faceNormal; hkaiNavMeshUtils::calcFaceNormal(*meshInstance, faceIndex, faceNormal);
+	hkVector4 faceNormal = m_cachedNormals[faceIndex];
 
 	hkVector4 dir; dir.setSub(centroidB, centroidA);
 	hkVector4 plane; plane.setCross(faceNormal, dir);
@@ -125,23 +146,26 @@ hkaiNavMeshFaceGraph::EdgeCost hkaiNavMeshFaceGraph::getTotalCost( SearchIndex n
 	}
 	else
 	{
+		const hkaiNavMeshInstance* meshInstance = m_collection->getInstanceAt( hkaiGetRuntimeIdFromPacked(eit) );
+
 		hkaiNavMeshEdgePairInfo edgeInfo;
 		edgeInfo.setFace( nit, &meshInstance->getFace( faceIndex ), meshInstance->getFaceDataPtr(faceIndex) );
 		edgeInfo.m_outgoingEdgeInfo.setEdge( eit, &meshInstance->getEdge(edgeIndex), meshInstance->getEdgeDataPtr(edgeIndex), pointOnEdge );
 
+		hkSimdReal costToParentSimd = hkSimdReal::fromFloat(costToParent);
 		hkaiAstarCostModifier::NavMeshGetModifiedCostCallbackContext callbackContext( meshInstance,
 			m_info,
 			edgeInfo,
 			(hkaiNavMeshEdgePairInfo::QUERY_TYPE_ASTAR | hkaiNavMeshEdgePairInfo::QUERY_INTERMEDIATE_POINT),
-			costToParent,
-			euclideanDistance.getReal()
+			costToParentSimd,
+			euclideanDistance
 			);
-		return costToParent + m_costModifier->getModifiedCost( callbackContext );
+		return (costToParentSimd + m_costModifier->getModifiedCost( callbackContext )).getReal();
 	}
 
 }
 
-hkBool32 hkaiNavMeshFaceGraph::isEdgeTraversable( SearchIndex nit, SearchIndex adj, EdgeKey eit )
+hkBool32 hkaiNavMeshFaceGraph::isEdgeTraversable( hkaiPackedKey nit, hkaiPackedKey adj, hkaiPackedKey eit )
 {
 	const hkaiNavMesh::Edge& edge = m_collection->getEdgeFromPacked(eit);
 	if (!edge.isTraversable())
@@ -152,10 +176,9 @@ hkBool32 hkaiNavMeshFaceGraph::isEdgeTraversable( SearchIndex nit, SearchIndex a
 	hkVector4 edgeA, edgeB;
 
 	// NB - this is the instance for nit and eit, but not necessarily adj
-	const hkaiNavMeshInstance* meshInstance = m_collection->getInstanceAt( hkaiGetRuntimeIdFromPacked(eit) );
 	const hkaiNavMesh::EdgeIndex edgeIndex = hkaiGetIndexFromPacked(eit);
 	const hkaiNavMesh::FaceIndex faceIndex = hkaiGetIndexFromPacked(nit);
-	meshInstance->getEdgePoints(edgeIndex, edgeA, edgeB);
+	m_navMesh->getEdgePoints(edgeIndex, edgeA, edgeB);
 
 	// Sphere check
 	if (m_searchSphereRadius.isGreaterEqualZero())
@@ -183,7 +206,7 @@ hkBool32 hkaiNavMeshFaceGraph::isEdgeTraversable( SearchIndex nit, SearchIndex a
 		{
 			hkVector4 dse; dse.setSub(m_endPoints[i], m_startPoint);
 
-			hkSimdReal distanceSquared = hkcdDistanceSegmentSegment(m_startPoint, dse, edgeA, dab);
+			hkSimdReal distanceSquared = hkcdSegmentSegmentDistanceSquared(m_startPoint, dse, edgeA, dab);
 
 			if (distanceSquared <= m_searchCapsuleRadius*m_searchCapsuleRadius)
 			{
@@ -202,6 +225,9 @@ hkBool32 hkaiNavMeshFaceGraph::isEdgeTraversable( SearchIndex nit, SearchIndex a
 		return true;
 	}
 
+	const hkaiNavMeshInstance* meshInstance = m_collection->getInstanceAt( hkaiGetRuntimeIdFromPacked(eit) );
+
+
 	// We don't fill out the "incoming" edge edgeInfo.
 	// The face edgeInfo that is specified is for the current (nit) face.
 	hkaiNavMeshEdgePairInfo edgeInfo;
@@ -218,23 +244,32 @@ hkBool32 hkaiNavMeshFaceGraph::isEdgeTraversable( SearchIndex nit, SearchIndex a
 	return m_edgeFilter->isEnabled(callbackContext);
 }
 
-hkBool32 hkaiNavMeshFaceGraph::isValidEdgeTarget( SearchIndex eit ) const
+hkBool32 hkaiNavMeshFaceGraph::isValidEdgeTarget( hkaiPackedKey eit ) const
 {
 	return (eit != HKAI_INVALID_PACKED_KEY);
 }
 
-void hkaiNavMeshFaceGraph::getPositionForHeuristic( SearchIndex a, hkVector4& vecOut ) const
+void hkaiNavMeshFaceGraph::getPositionForHeuristic( hkaiPackedKey a, hkVector4& vecOut ) const
 {
 	getPosition(a, vecOut);
 }
 
-void hkaiNavMeshFaceGraph::getPosition( SearchIndex a, hkVector4& vecOut ) const
+void hkaiNavMeshFaceGraph::getPosition( hkaiPackedKey a, hkVector4& vecOut ) const
 {
-	const hkaiNavMeshInstance* meshInstance = m_collection->getInstanceAt( hkaiGetRuntimeIdFromPacked(a) );
-	hkaiNavMeshUtils::calcFaceCentroid( *meshInstance, hkaiGetIndexFromPacked(a) , vecOut );
+	vecOut = m_cachedCentroids[ hkaiGetIndexFromPacked(a) ];
 }
 
-hkSimdReal hkaiNavMeshFaceGraph::distance( SearchIndex A, SearchIndex B ) const
+void hkaiNavMeshFaceGraph::getFaceCentroid( hkaiNavMesh::FaceIndex faceIndex, hkVector4& vecOut ) const
+{
+	vecOut = m_cachedCentroids[ faceIndex ];
+}
+
+void hkaiNavMeshFaceGraph::getFaceNormal( hkaiNavMesh::FaceIndex faceIndex, hkVector4& vecOut ) const
+{
+	vecOut = m_cachedNormals[ faceIndex ];
+}
+
+hkSimdReal hkaiNavMeshFaceGraph::distance( hkaiPackedKey A, hkaiPackedKey B ) const
 {
 	hkVector4 posA; getPosition(A, posA);
 	hkVector4 posB; getPosition(B, posB);
@@ -246,18 +281,18 @@ hkSimdReal hkaiNavMeshFaceGraph::distanceFromPosition( hkVector4Parameter posA, 
 	return posA.distanceTo( posB );
 }
 
-void hkaiNavMeshFaceGraph::nextNode( SearchIndex nid )
+void hkaiNavMeshFaceGraph::nextNode( hkaiPackedKey nid )
 {
 	m_searchState->nextNode( nid );
 }
 
-void hkaiNavMeshFaceGraph::nextEdge( SearchIndex nid, EdgeKey ekey )
+void hkaiNavMeshFaceGraph::nextEdge( hkaiPackedKey nid, hkaiPackedKey ekey )
 {
 	m_searchState->nextEdge( edgeTarget(nid, ekey) );
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

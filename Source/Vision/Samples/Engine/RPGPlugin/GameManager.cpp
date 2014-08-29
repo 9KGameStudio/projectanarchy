@@ -101,7 +101,7 @@ VisBaseEntity_cl* RPG_GameManager::SpawnPlayer(const VString& prefabName, hkvVec
   if(playerEntity)
   {
     RPG_PlayerControllerComponent *const playerController = static_cast<RPG_PlayerControllerComponent*>
-      (playerEntity->Components().GetComponentOfBaseType(V_RUNTIME_CLASS(RPG_PlayerControllerComponent)));
+      (playerEntity->Components().GetComponentOfBaseType<RPG_PlayerControllerComponent>());
 
     VASSERT(playerController);
     if(playerController)
@@ -241,14 +241,14 @@ void RPG_GameManager::SetBossEntity(VisBaseEntity_cl *const bossEntity)
 
 RPG_Effect* RPG_GameManager::CreateEffect(RPG_EffectDefinition const& effectDefinition, VisBaseEntity_cl* parentEntity)
 {
-  RPG_Effect* effect = static_cast<RPG_Effect*>(CreateEntity("RPG_Effect", hkvVec3()));
+  RPG_Effect* effect = static_cast<RPG_Effect*>(CreateEntity("RPG_Effect", hkvVec3::ZeroVector()));
   effect->Create(effectDefinition, parentEntity);
   return effect;
 }
 
 RPG_Effect* RPG_GameManager::CreateEffect(RPG_EffectDefinition const& effectDefinition, const hkvVec3& position)
 {
-  RPG_Effect* effect = static_cast<RPG_Effect*>(CreateEntity("RPG_Effect", hkvVec3()));
+  RPG_Effect* effect = static_cast<RPG_Effect*>(CreateEntity("RPG_Effect", hkvVec3::ZeroVector()));
   effect->Create(effectDefinition, position);
   return effect;
 }
@@ -358,7 +358,7 @@ void RPG_GameManager::OnHandleCallback(IVisCallbackDataObject_cl *callbackData)
 RPG_GameManager RPG_GameManager::s_instance;
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

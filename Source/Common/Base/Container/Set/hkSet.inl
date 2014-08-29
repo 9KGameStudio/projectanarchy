@@ -310,7 +310,7 @@ void hkSet<T,Allocator,OPS>::clear()
 }
 
 template <typename T, typename Allocator, typename OPS >
-void hkSet<T,Allocator,OPS>::reserve( int numElements )
+hkResult hkSet<T,Allocator,OPS>::reserve( int numElements )
 {
 	// Make sure that the actual table size is not going to be less than twice the current number of elements
 	HK_ASSERT(0x4d0c5314, numElements >= 0 && (m_numElems & static_cast<int>(NUM_ELEMS_MASK)) * 2 <= numElements * 3 );
@@ -318,7 +318,8 @@ void hkSet<T,Allocator,OPS>::reserve( int numElements )
 	int cap = s_minimumCapacity;
 	while (cap < minCap) { cap *= 2; }
 
-	resizeTable( cap );
+	hkResult res = resizeTable( cap );
+	return res;
 }
 
 template <typename T, typename Allocator, typename OPS >
@@ -371,7 +372,7 @@ bool hkSet<T,Allocator,OPS>::shouldResize( ) const
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

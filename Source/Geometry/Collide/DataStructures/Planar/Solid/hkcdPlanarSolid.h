@@ -5,6 +5,7 @@
  * Product and Trade Secret source code contains trade secrets of Havok. Havok Software (C) Copyright 1999-2014 Telekinesys Research Limited t/a Havok. All Rights Reserved. Use of this software is subject to the terms of an end user license agreement.
  *
  */
+//HK_HAVOK_ASSEMBLY_EXCLUDE_FILE
 
 #ifndef HKCD_SOLID_PLANAR_GEOMETRY_H
 #define HKCD_SOLID_PLANAR_GEOMETRY_H
@@ -17,23 +18,67 @@
 #include <Geometry/Collide/DataStructures/Planar/Geometry/hkcdPlanarGeometry.h>
 
 /// A solid geometry, represented as a Bsp tree. The actual geometry is managed by a hkcdPlanarGeometry
-class hkcdPlanarSolid : public hkcdPlanarEntity
+class HK_EXPORT_COMMON hkcdPlanarSolid : public hkcdPlanarEntity
 {
 	public:
 
 		HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_GEOMETRY);
+		HK_DECLARE_REFLECTION();
 
 	public:
 
 		// Types
 		struct Node;
 		HK_DECLARE_HANDLE(NodeId, hkUint32, 0xFFFFFFFFU);
-		struct NodeStorage : public hkReferencedObject, public hkFreeListArray<Node, NodeId, -1, Node>
+		struct NodeStorage : public hkReferencedObject
 		{
 			HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_DESTRUCTION);
+			HK_DECLARE_REFLECTION();
+
+			/// Constructor
+			NodeStorage()
+			:	hkReferencedObject()
+			,	m_firstFreeNodeId(NodeId::invalid())
+			{}
+
+			/// Copy constructor
+			NodeStorage(const NodeStorage& other)
+			:	hkReferencedObject()
+			,	m_firstFreeNodeId(other.m_firstFreeNodeId)
+			{
+				m_storage.append(other.m_storage);
+			}
+
+			/// Serialization constructor
+			NodeStorage(class hkFinishLoadedObjectFlag flag)
+			:	hkReferencedObject(flag)
+			,	m_storage(flag)
+			,	m_firstFreeNodeId(flag)
+			{}
 
 			virtual ~NodeStorage()
 			{}
+
+		public:
+
+			/// Accessors
+			HK_FORCE_INLINE const Node& getNode(NodeId nodeId) const;
+			HK_FORCE_INLINE Node& accessNode(NodeId nodeId);
+
+			/// Allocation
+			HK_FORCE_INLINE NodeId allocate();
+			HK_FORCE_INLINE void clear();
+			HK_FORCE_INLINE int getCapacity() const;
+			HK_FORCE_INLINE void release(NodeId nodeId);
+			
+			/// Other
+			HK_FORCE_INLINE void swapStorage(hkArray<Node>& storage);
+			HK_FORCE_INLINE void compact();
+
+		protected:
+
+			hkArray<Node> m_storage;
+			NodeId m_firstFreeNodeId;			//+overridetype(hkUint32)
 		};
 
 	public:
@@ -53,12 +98,16 @@ class hkcdPlanarSolid : public hkcdPlanarEntity
 		struct Node
 		{
 			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_GEOMETRY, hkcdPlanarSolid::Node);
-			HK_DECLARE_POD_TYPE();
+			HK_DECLARE_REFLECTION();
 
 			/// Constructor
 			HK_FORCE_INLINE Node()
 			:	m_parent(NodeId::invalid())
 			,	m_typeAndFlags(NODE_TYPE_FREE)
+			{}
+
+			/// Serialization constructor
+			HK_FORCE_INLINE Node(class hkFinishLoadedObjectFlag flag)
 			{}
 
 			/// Returns true if the triangle is allocated
@@ -76,12 +125,26 @@ class hkcdPlanarSolid : public hkcdPlanarEntity
 			/// Sets the given child id
 			HK_FORCE_INLINE void setChildId(int childIdx, NodeId childNodeId);
 			
-			NodeId	m_parent;			///< Parent node.
-			NodeId	m_left;				///< Left child, contains the space behind the splitting plane (inside)
-			NodeId	m_right;			///< Right child, contains the space in front of the splitting plane (outside)
-			PlaneId m_planeId;			///< Splitting plane
-			hkUint32 m_data;			///< User data, typically used to store a spatial CellId
-			hkUint32 m_typeAndFlags;	///< Type and flags, a combination of values in NodeTypes
+			/// Parent node
+			NodeId	m_parent;			//+overridetype(hkUint32) 
+
+			/// Left child, contains the space behind the splitting plane (inside)
+			NodeId	m_left;				//+overridetype(hkUint32) 
+
+			/// Right child, contains the space in front of the splitting plane (outside)
+			NodeId	m_right;			//+overridetype(hkUint32) 
+
+			/// Address of the next free node
+			NodeId	m_nextFreeNodeId;	//+overridetype(hkUint32) 
+
+			/// Splitting plane
+			PlaneId m_planeId;			//+overridetype(hkUint32) 
+
+			/// User data, typically used to store a spatial CellId
+			hkUint32 m_data;
+
+			///< Type and flags, a combination of values in NodeTypes
+			hkUint32 m_typeAndFlags;
 		};
 
 		/// Array slot. Basically an offset + length into a common, shared memory buffer
@@ -147,6 +210,9 @@ class hkcdPlanarSolid : public hkcdPlanarEntity
 
 		/// Copy constructor
 		hkcdPlanarSolid(const hkcdPlanarSolid& other);
+
+		/// Serialization constructor
+		hkcdPlanarSolid(class hkFinishLoadedObjectFlag flag);
 
 		/// Destructor
 		virtual ~hkcdPlanarSolid();
@@ -273,7 +339,7 @@ class hkcdPlanarSolid : public hkcdPlanarEntity
 		hkRefPtr<const PlanesCollection> m_planes;	
 
 		/// The root node
-		NodeId m_rootNodeId;
+		NodeId m_rootNodeId;			//+overridetype(hkUint32) 
 };
 
 #include <Geometry/Collide/DataStructures/Planar/Solid/hkcdPlanarSolid.inl>
@@ -281,7 +347,7 @@ class hkcdPlanarSolid : public hkcdPlanarEntity
 #endif	//	HKCD_SOLID_PLANAR_GEOMETRY_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

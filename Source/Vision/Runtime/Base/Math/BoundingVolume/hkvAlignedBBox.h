@@ -17,6 +17,11 @@
 ///   Serializes the bbox to/from the archive (reads/writes exactly 6 floats).
 VBASE_IMPEXP void SerializeX (VArchive& ar, hkvAlignedBBox& obj);
 
+#ifdef HKVBBOX_CHECK_FOR_NAN
+  #define HKVBBOX_INITIALIZATION_CHECK(obj) (obj)->isInitializedCheck()
+#else
+  #define HKVBBOX_INITIALIZATION_CHECK(obj) 
+#endif
 
 /// \brief
 ///   An axis aligned bounding box class.
@@ -29,29 +34,34 @@ public:
   /// @{
   ///
 
-  #ifdef HKVMATH_DEFAULTCONSTRUCTORS_INITIALIZEDATA
-    /// \brief
-    ///   DEPRECATED: The default constructor will currently initialize the bbox to an 'invalid' state.
-    ///
-    /// For compatibility reasons the default constructor will set m_vMin to the maximum positive 
-    /// float value, and m_vMax to the maximum negative float value (min > max), making it an invalid bbox.
-    ///
-    /// At some point the Vision Engine will switch behavior such that all math classes
-    /// are default constructed to uninitialized values. Therefore wherever possible
-    /// please prefer the constructor that explicitly initializes the box to hkvNoInitialization.
-    ///
-    /// You can find all the places where you use the default constructor by defining 
-    /// HKVMATH_DEPRECATE_DEFAULT_CONSTRUCTOR in hkvMathConfig.h and compiling your code for Windows.
-    /// Then the compiler will generate a warning for every location where you use the default constructor.
-    /// Use the macros HKV_DISABLE_DEPRECATION and HKV_ENABLE_DEPRECATION to prevent that warning
-    /// for code that cannot be changed to use a non default constructor (such as for arrays).
-    HKVMATH_DEFAULT_CONSTRUCTOR HKV_FORCE_INLINE hkvAlignedBBox () { setInvalid (); }
+  /// \brief
+  ///   ATTENTION: The object is NOT initialized by the constructor. You MUST initialize it yourself before using it.
+  ///
+  /// \note In Dev and Debug builds the object will be initialized with NaN values. Member functions that read the values will check that they are not NaN.
+  /// If an NaN value is encountered, those functions will trigger an assert. Thus when you run into such an assert, you have not initialized your object
+  /// after construction. Make sure you always initialize objects properly before using them.
+  HKV_FORCE_INLINE hkvAlignedBBox()
+  {
+    #ifdef HKVBBOX_INITIALIZE_TO_NAN
 
-  #else
+      m_vMin.set(hkvMath::generateNaN());
+      m_vMax.set(hkvMath::generateNaN());
 
-    /// \brief 
-    ///   FUTURE BEHAVIOR: The data is not initialized.
-    HKVMATH_DEFAULT_CONSTRUCTOR HKV_FORCE_INLINE hkvAlignedBBox () {}
+    #elif defined(HKVBBOX_INITIALIZE_TO_IDENTITY)
+
+      setInvalid();
+
+    #endif
+    }
+
+  #ifdef HKVBBOX_CHECK_FOR_NAN
+    HKV_FORCE_INLINE void isInitializedCheck() const
+    {
+      VASSERT_MSG(!hkvMath::isNaN(m_vMin.x) && !hkvMath::isNaN (m_vMin.y) && !hkvMath::isNaN (m_vMin.z) &&
+                  !hkvMath::isNaN(m_vMax.x) && !hkvMath::isNaN (m_vMax.y) && !hkvMath::isNaN (m_vMax.z),
+        "This object has invalid (NaN) members: Min = (%.2f | %.2f | %.2f) Max = (%.2f | %.2f | %.2f).\nThis happens when you use this object without properly initializing it first, as the default constructor will set all members to NaN in debug builds.", 
+        m_vMin.x, m_vMin.y, m_vMin.z, m_vMax.x, m_vMax.y, m_vMax.z);
+    }
   #endif
 
   /// \brief
@@ -129,6 +139,17 @@ public:
   /// \brief
   ///   Returns true if m_vMin <= m_vMax.
   HKV_FORCE_INLINE bool isValid (void) const;
+
+  /// \brief
+  ///   Reduces the box such that only the intersection with the given box remains.
+  /// 
+  /// Box is invalid afterwards if the two boxes have no overlapping region.
+  /// 
+  /// \param rhs
+  ///   Box to intersect with the callee.
+  ///
+  /// \sa hkvAlignedBBox::isValid
+  HKV_FORCE_INLINE void reduceToIntersection (const hkvAlignedBBox& rhs);
 
   /// \brief
   ///   Enlarges the box such that v is contained in it (if necessary).
@@ -534,233 +555,28 @@ public:
 
 public:
 
-
   ///
-  /// @name Compatibility Interface (DEPRECATED)
+  /// @name Deprecated Functions
   /// @{
   ///
 
-  /// \brief DEPRECATED: Use hkvNoInitialization instead.
-  HKVMATH_DEPRECATED_STAGE3 HKV_FORCE_INLINE explicit hkvAlignedBBox (bool b) { }
-
-  /// \brief DEPRECATED: Use hkvAlignedBBox::hkvAlignedBBox (hkvVec3 vMin, hkvVec3 vMax) instead.
-  HKVMATH_DEPRECATED_STAGE2 HKV_FORCE_INLINE hkvAlignedBBox (float minx, float miny, float minz, float maxx, float maxy, float maxz)
-  {
-    setWithoutValidityCheck (hkvVec3 (minx, miny, minz), hkvVec3 (maxx, maxy, maxz));
-  }
-
-  /// \brief DEPRECATED: Use hkvAlignedBBox::getCenter instead.
-  HKVMATH_DEPRECATED_STAGE3 HKV_FORCE_INLINE const hkvVec3 GetCenter () const { return getCenter (); }
-
-  /// \brief DEPRECATED: Use hkvAlignedBBox::overlaps instead.
-  HKVMATH_DEPRECATED_STAGE2 HKV_FORCE_INLINE VBool Touches (const hkvAlignedBBox& rhs) const { return overlaps (rhs) ? TRUE : FALSE; } 
-
-  /// \brief DEPRECATED: Use hkvAlignedBBox::setInvalid instead.
-  HKVMATH_DEPRECATED_STAGE3 HKV_FORCE_INLINE void Reset () { setInvalid (); }
-
-  /// \brief DEPRECATED: Use hkvAlignedBBox::getCorners instead.
-  HKVMATH_DEPRECATED_STAGE3 HKV_FORCE_INLINE void GetCorners (hkvVec3 v[8]) const { getCorners (v); }
-
-  /// \brief DEPRECATED: Use hkvAlignedBBox::isValid instead.
-  HKVMATH_DEPRECATED_STAGE3 HKV_FORCE_INLINE bool IsValid() const { return isValid (); }
-
-  /// \brief DEPRECATED: Use hkvAlignedBBox::getSizeX instead.
-  HKVMATH_DEPRECATED_STAGE3 HKV_FORCE_INLINE float GetSizeX () const { return getSizeX (); }
-
-  /// \brief DEPRECATED: Use hkvAlignedBBox::getSizeY instead.
-  HKVMATH_DEPRECATED_STAGE3 HKV_FORCE_INLINE float GetSizeY () const { return getSizeY (); }
-
-  /// \brief DEPRECATED: Use hkvAlignedBBox::getSizeZ instead.
-  HKVMATH_DEPRECATED_STAGE3 HKV_FORCE_INLINE float GetSizeZ () const { return getSizeZ (); }
-
-  /// \brief DEPRECATED: Use hkvAlignedBBox::addBoundary instead.
-  HKVMATH_DEPRECATED_STAGE3 HKV_FORCE_INLINE void Expand (float f) { addBoundary (hkvVec3 (f)); }
-
-  /// \brief DEPRECATED: Access m_vMin and m_vMax directly instead.
-  HKVMATH_DEPRECATED_STAGE2 HKV_FORCE_INLINE void GetBounds (hkvVec3& vMin, hkvVec3& vMax) const { vMin = m_vMin; vMax = m_vMax; }
-
-  /// \brief DEPRECATED: Use hkvAlignedBBox::set or hkvAlignedBBox::setWithoutValidityCheck instead.
-  HKVMATH_DEPRECATED_STAGE3 HKV_FORCE_INLINE void Set (const hkvVec3& vMin, const hkvVec3& vMax) { setWithoutValidityCheck (vMin, vMax); }
-
-  /// \brief DEPRECATED: Use hkvAlignedBBox::set or hkvAlignedBBox::setWithoutValidityCheck instead.
-  HKVMATH_DEPRECATED_STAGE3 HKV_FORCE_INLINE void Set (float fMinX, float fMinY, float fMinZ, float fMaxX, float fMaxY, float fMaxZ) 
-  { 
-    setWithoutValidityCheck (hkvVec3 (fMinX, fMinY, fMinZ), hkvVec3 (fMaxX, fMaxY, fMaxZ)); 
-  }
-
-  /// \brief DEPRECATED: Use hkvAlignedBBox::contains instead.
-  HKVMATH_DEPRECATED_STAGE3 HKV_FORCE_INLINE VBool Contains (const hkvAlignedBBox& rhs) const { return contains (rhs); }
-
-  /// \brief DEPRECATED: Use hkvAlignedBBox::addBoundary instead.
-  HKVMATH_DEPRECATED_STAGE2 HKV_FORCE_INLINE void Add (float border) {addBoundary (hkvVec3 (border)); }
-
-  /// \brief DEPRECATED: Use hkvAlignedBBox::expandToInclude instead.
-  HKVMATH_DEPRECATED_STAGE2 HKV_FORCE_INLINE void Add (const hkvVec3& v) { expandToInclude (v); }
-
-  /// \brief DEPRECATED: Use hkvAlignedBBox::expandToInclude instead.
-  HKVMATH_DEPRECATED_STAGE2 HKV_FORCE_INLINE void Add (float x, float y, float z) { expandToInclude (hkvVec3 (x, y, z)); }
-
-  /// \brief DEPRECATED: Use hkvAlignedBBox::expandToInclude instead.
-  HKVMATH_DEPRECATED_STAGE2 HKV_FORCE_INLINE void Add (const hkvAlignedBBox& rhs) { expandToInclude (rhs); }
-
-  /// \brief DEPRECATED: Use hkvAlignedBBox::getBoundingSphere or compute (m_vMin.getDistanceTo (m_vMax) * 0.5f) directly.
-  HKVMATH_DEPRECATED_STAGE2 HKV_FORCE_INLINE float GetRadius () const { return (m_vMin.getDistanceTo (m_vMax) * 0.5f); }
-
-  /// \brief
-  ///   DEPRECATED
-  ///
-  /// Use hkvAlignedBBox::getLineSegmentIntersection or hkvAlignedBBox::getRayIntersection instead.
-  /// See the inline implementation of this function for more details about how to convert old code.
-  ///
-  /// \param rayStart
-  ///   DEPRECATED
-  ///
-  /// \param rayDir
-  ///   DEPRECATED
-  ///
-  /// \param farT
-  ///   DEPRECATED
-  ///
-  /// \param pT
-  ///   DEPRECATED
-  ///
-  /// \param pTouchPoint
-  ///   DEPRECATED
-  ///
-  /// \sa hkvAlignedBBox::getLineSegmentIntersection
-  /// \sa hkvAlignedBBox::getRayIntersection
-  HKVMATH_DEPRECATED_STAGE2 HKV_FORCE_INLINE VBool Intersect (const hkvVec3& rayStart, const hkvVec3& rayDir, float farT = -1, float *pT = NULL, hkvVec3* pTouchPoint = NULL) const
-  {
-    if (farT > 0)
-    {
-      float fFraction;
-      hkvVec3 vHit;
-      if (!getLineSegmentIntersection (rayStart, rayStart + rayDir * farT, &fFraction, &vHit))
-        return FALSE;
-
-      if (pTouchPoint)
-        *pTouchPoint = vHit;
-
-      if (pT)
-        *pT = fFraction * farT;
-
-      return TRUE;
-    }
-    else
-      return (getRayIntersection (rayStart, rayDir, pT, pTouchPoint) ? TRUE : FALSE);
-  }
-
-  /// \brief DEPRECATED: Use hkvAlignedBBox::contains instead.
-  HKVMATH_DEPRECATED_STAGE3 HKV_FORCE_INLINE VBool PointInBox (const hkvVec3& point) const { return contains (point) ? TRUE : FALSE; }
-
-  /// \brief DEPRECATED: Use hkvAlignedBBox::expandToCube instead.
-  HKVMATH_DEPRECATED_STAGE3 HKV_FORCE_INLINE void MakeCubic () { expandToCube (); }
-
-  /// \brief DEPRECATED: Use hkvAlignedBBox::isValid instead.
-  HKVMATH_DEPRECATED_STAGE3 HKV_FORCE_INLINE VBool IsEmpty () const { return (!isValid ()) ? TRUE : FALSE; }
-
-  /// \brief DEPRECATED: Access the members m_vMin and m_vMax directly instead.
-  HKVMATH_DEPRECATED_STAGE3 HKV_FORCE_INLINE void GetBounds (float &minX, float &minY, float &minZ, float &maxX, float &maxY, float &maxZ) const { minX = m_vMin.x; minY = m_vMin.y; minZ = m_vMin.z;  maxX = m_vMax.x; maxY = m_vMax.y; maxZ = m_vMax.z; }
-
-  /// \brief DEPRECATED: Use 'hkvAlignedBBox::operator=' instead.
-  HKVMATH_DEPRECATED_STAGE2 HKV_FORCE_INLINE void Set (const hkvAlignedBBox& rhs) { *this = rhs; }
-
-  /// \brief DEPRECATED: Use 'hkvAlignedBBox::expandToInclude' instead.
-  HKVMATH_DEPRECATED_STAGE3 HKV_FORCE_INLINE void Inflate (const hkvAlignedBBox& rhs) { expandToInclude (rhs); }
-
-  /// \brief DEPRECATED: Use 'hkvAlignedBBox::expandToInclude' instead.
-  HKVMATH_DEPRECATED_STAGE3 HKV_FORCE_INLINE void Inflate (const hkvVec3& pos) { expandToInclude (pos); }
-
-  /// \brief DEPRECATED: Use 'hkvAlignedBBox::addBoundary' instead.
-  HKVMATH_DEPRECATED_STAGE3 HKV_FORCE_INLINE void Inflate (float fDist) { addBoundary (hkvVec3 (fDist)); }
-
-  /// \brief DEPRECATED: Use hkvAlignedBBox::expandToInclude instead.
-  HKVMATH_DEPRECATED_STAGE3 HKV_FORCE_INLINE void Inflate (hkvAlignedBBox bbox, const hkvMat4& mTransform)
-  {
-    bbox.transformFromOrigin (mTransform);
-    expandToInclude (bbox);
-  }
-
-  /// \brief DEPRECATED: Use hkvAlignedBBox::expandToInclude instead.
-  HKVMATH_DEPRECATED_STAGE3 HKV_FORCE_INLINE void Inflate (hkvAlignedBBox bbox, const hkvMat3& mOrientation, const hkvVec3& vBoxCenter)
-  {
-    hkvAlignedBBox temp = bbox;
-    hkvMat4 mTransform (mOrientation, vBoxCenter);
-    temp.transformFromOrigin (mTransform);
-    this->expandToInclude (temp);
-  }
-
-  /// \brief DEPRECATED: Use hkvAlignedBBox::contains instead.
-  HKVMATH_DEPRECATED_STAGE3 HKV_FORCE_INLINE BOOL IsInside(const hkvVec3& pos) const { return (contains (pos) ? TRUE : FALSE); }
-
-  /// \brief DEPRECATED: Use hkvAlignedBBox::contains instead.
-  HKVMATH_DEPRECATED_STAGE3 HKV_FORCE_INLINE BOOL IsCompletelyInside (const hkvAlignedBBox& bbox) const { return (contains (bbox) ? TRUE : FALSE); }
-
-  /// \brief DEPRECATED: Use hkvAlignedBBox::contains instead.
-  HKVMATH_DEPRECATED_STAGE3 HKV_FORCE_INLINE BOOL IsCompletelyInside (const hkvBoundingSphere& sphere) const { return (contains (sphere) ? TRUE : FALSE); }
-
-  /// \brief DEPRECATED: Use hkvAlignedBBox::translate instead.
-  HKVMATH_DEPRECATED_STAGE2 HKV_FORCE_INLINE void operator+= (const hkvVec3& v) { translate (v); }
-
-  /// \brief DEPRECATED: Use hkvAlignedBBox::translate instead.
-  HKVMATH_DEPRECATED_STAGE2 HKV_FORCE_INLINE void operator-= (const hkvVec3& v) { translate (-v); }
-
-  /// \brief DEPRECATED: Use hkvAlignedBBox::getDistanceTo instead.
-  HKVMATH_DEPRECATED_STAGE3 HKV_FORCE_INLINE float GetDistance (const hkvVec3& v) const { return getDistanceTo (v); }
-
-  /// \brief DEPRECATED: Use hkvAlignedBBox::getDistanceToSquared instead.
-  HKVMATH_DEPRECATED_STAGE3 HKV_FORCE_INLINE float GetDistanceSqr (const hkvVec3& v) const { return getDistanceToSquared (v); }
-
-  /// \brief DEPRECATED: Use hkvAlignedBBox::getMinExtent instead.
-  HKVMATH_DEPRECATED_STAGE2 HKV_FORCE_INLINE float GetMinExtent () const { return getMinExtent (); }
-
-  /// \brief DEPRECATED: Use hkvAlignedBBox::getMaxExtent instead.
-  HKVMATH_DEPRECATED_STAGE2 HKV_FORCE_INLINE float GetMaxExtent () const { return getMaxExtent (); }
-
-  /// \brief DEPRECATED: Use hkvPlane::getMinimumDistanceTo instead.
-  VBASE_IMPEXP float DetermineMinDistanceFromPlane(const hkvPlane& planeDist) const;
+    /// \brief DEPRECATED: Use hkvPlane::getMinimumDistanceTo instead.
+  HKVMATH_DEPRECATED_STAGE4 VBASE_IMPEXP float DetermineMinDistanceFromPlane(const hkvPlane& planeDist) const;
 
   /// \brief DEPRECATED: Use hkvPlane::getMinMaxDistanceTo instead.
-  VBASE_IMPEXP float DetermineMaxDistanceFromPlane(const hkvPlane& planeDist) const;
-
-  /// \brief DEPRECATED: Use hkvAlignedBBox::overlaps instead.
-  HKVMATH_DEPRECATED_STAGE2 HKV_FORCE_INLINE BOOL IntersectsWith (const hkvAlignedBBox& bbox) const { return overlaps (bbox); }
-
-  /// \brief DEPRECATED: Use hkvAlignedBBox::overlaps instead.
-  HKVMATH_DEPRECATED_STAGE2 HKV_FORCE_INLINE BOOL IntersectsWith (const hkvBoundingSphere& sphere) const { return overlaps (sphere); }
+  HKVMATH_DEPRECATED_STAGE4 VBASE_IMPEXP float DetermineMaxDistanceFromPlane(const hkvPlane& planeDist) const;
 
   /// \brief DEPRECATED: Use hkvAlignedBBox::getRayIntersection instead.
-  VBASE_IMPEXP bool IntersectsLine (const hkvVec3& startPos, const hkvVec3& endPos) const;
+  HKVMATH_DEPRECATED_STAGE4 VBASE_IMPEXP bool IntersectsLine (const hkvVec3& startPos, const hkvVec3& endPos) const;
 
   /// \brief DEPRECATED: Use hkvAlignedBBox::getLineSegmentIntersection instead.
-  VBASE_IMPEXP bool IntersectsRay (const hkvVec3& startPos, const hkvVec3& endPos, hkvVec3& intersectionPos) const;
-
-  /// \brief DEPRECATED: Use hkvAlignedBBox::getCorners and hkvMat4::transformPositions instead.
-  HKVMATH_DEPRECATED_STAGE2 HKV_FORCE_INLINE void GetCorners (hkvVec3 v[8], const hkvMat4& mTransformation) const
+  HKVMATH_DEPRECATED_STAGE4 VBASE_IMPEXP bool IntersectsRay (const hkvVec3& startPos, const hkvVec3& endPos, hkvVec3& intersectionPos) const;
+  
+  /// \brief DEPRECATED: Use the code below instead (see hkvAlignedBBox.h)
+  HKVMATH_DEPRECATED_STAGE4 HKV_FORCE_INLINE float GetDistanceSqrXY (const hkvVec3& pos) const
   {
-    getCorners (v);
-    mTransformation.transformPositions (v, 8);
-  }
+    HKVBBOX_INITIALIZATION_CHECK(this);
 
-  /// \brief DEPRECATED: Use hkvAlignedBBox::getCorners and hkvMat4::transformPositions instead.
-  HKVMATH_DEPRECATED_STAGE2 HKV_FORCE_INLINE void GetCorners (hkvVec3 v[8], const hkvMat3& mOrientation, const hkvVec3& vTranslation) const
-  {
-    hkvMat4 mTransformation (mOrientation, vTranslation);
-    getCorners (v);
-    mTransformation.transformPositions (v, 8);
-  }
-
-  /// \brief DEPRECATED: Use hkvAlignedBBox::getMaxExtent instead.
-  HKVMATH_DEPRECATED_STAGE3 HKV_FORCE_INLINE int GetLargestExtentAxis () const 
-  {
-    hkUint32 iAxis = 0;
-    getMaxExtent (&iAxis);
-    return (int) iAxis;
-  }
-
-  /// \brief DEPRECATED
-  HKV_FORCE_INLINE float GetDistanceSqrXY (const hkvVec3& pos) const
-  {
     hkvVec2 clamped (hkvMath::Min (pos.x,m_vMax.x), hkvMath::Min (pos.y,m_vMax.y));
     clamped.x = hkvMath::Max (clamped.x, m_vMin.x) - pos.x;
     clamped.y = hkvMath::Max (clamped.y, m_vMin.y) - pos.y;
@@ -768,53 +584,31 @@ public:
 
   }
 
-  /// \brief DEPRECATED
-  HKV_FORCE_INLINE float GetDistanceXY (const hkvVec3& pos) const {return hkvMath::sqrt (GetDistanceSqrXY (pos));}
+  /// \brief DEPRECATED: Use the code below instead (see hkvAlignedBBox.h)
+  HKVMATH_DEPRECATED_STAGE4 HKV_FORCE_INLINE float GetDistanceXY (const hkvVec3& pos) const
+  {
+    HKVBBOX_INITIALIZATION_CHECK(this);
+
+    hkvVec2 clamped (hkvMath::Min (pos.x,m_vMax.x), hkvMath::Min (pos.y,m_vMax.y));
+    clamped.x = hkvMath::Max (clamped.x, m_vMin.x) - pos.x;
+    clamped.y = hkvMath::Max (clamped.y, m_vMin.y) - pos.y;
+    const float fSqr = clamped.x*clamped.x + clamped.y*clamped.y;
+
+    return hkvMath::sqrt (fSqr);
+  }
 
   /// \brief DEPRECATED: Use expandToInclude instead.
-  VBASE_IMPEXP void Inflate (const hkvVec3& vOrigin, const hkvVec3& vDir, const hkvVec3& vRight, const hkvVec3& vUp, float fFOVX, float fFOVY, float fNearClip, float fFarClip);
-
-  /// \brief DEPRECATED: Use getBoundingSphere instead.
-  HKVMATH_DEPRECATED_STAGE2 HKV_FORCE_INLINE float GetLocalRadius() const { return (m_vMax-m_vMin).getLength () * 0.5f; }
-
-  /// \brief DEPRECATED: Use setZero instead.
-  HKVMATH_DEPRECATED_STAGE3 HKV_FORCE_INLINE void Clear() { setZero (); }
-
-  /// \brief DEPRECATED: Use getClampedPosition instead.
-  HKVMATH_DEPRECATED_STAGE3 HKV_FORCE_INLINE void Clamp (hkvVec3& v) const { v = getClampedPosition (v); }
-
-  /// \brief DEPRECATED: Use getDistanceTo instead.
-  HKVMATH_DEPRECATED_STAGE3 HKV_FORCE_INLINE float MinDist(const hkvVec3& v) const { return getDistanceTo (v); }
-
-  /// \brief DEPRECATED: Use getDistanceTo instead.
-  HKVMATH_DEPRECATED_STAGE3 HKV_FORCE_INLINE float MinDist(const hkvAlignedBBox& b) const { return getDistanceTo (b); }
-
-  /// \brief DEPRECATED: Use getClampedPosition instead.
-  HKVMATH_DEPRECATED_STAGE3 HKV_FORCE_INLINE void ClampPosition (hkvVec3& pos) const { pos = getClampedPosition (pos); }
-
-  /// \brief DEPRECATED: Use expandToInclude instead.
-  HKVMATH_DEPRECATED_STAGE3 HKV_FORCE_INLINE void Add (const hkvVec3* pVertList, int iCount) { expandToInclude (pVertList, iCount); }
-
-  /// \brief DEPRECATED: Use getDistanceTo instead.
-  HKVMATH_DEPRECATED_STAGE3 HKV_FORCE_INLINE float GetMinDist (const hkvAlignedBBox& b) const { return getDistanceTo (b); }
-
+  HKVMATH_DEPRECATED_STAGE4 VBASE_IMPEXP void Inflate (const hkvVec3& vOrigin, const hkvVec3& vDir, const hkvVec3& vRight, const hkvVec3& vUp, float fFOVX, float fFOVY, float fNearClip, float fFarClip);
+  
   ///
   /// @}
   ///
-
-  // Missing Functions:
-
-  // void Add(const VBBoxf &bb, const M &m)
-  // float GetMaxAbsExtent() const
-
-
+  
 };
 
-#ifdef HKVMATH_ENABLE_NEW_SERIALIZATION_OPERATORS
-  // Currently deactivated to force people to use SerializeAs_VBBoxf or SerializeAs_VisBoundingBox instead.
-  // Will be activated in some later release.
-  V_DECLARE_SERIALX_NONINTRUSIVE (hkvAlignedBBox, VBASE_IMPEXP);
-#endif
+// Currently deactivated to force people to use SerializeAs_VBBoxf or SerializeAs_VisBoundingBox instead.
+// Will be activated in some later release.
+V_DECLARE_SERIALX_NONINTRUSIVE (hkvAlignedBBox, VBASE_IMPEXP);
 
 /// \brief
 ///   Checks whether the two boxes are identical.
@@ -831,7 +625,7 @@ HKV_FORCE_INLINE bool operator!= (const hkvAlignedBBox& lhs, const hkvAlignedBBo
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

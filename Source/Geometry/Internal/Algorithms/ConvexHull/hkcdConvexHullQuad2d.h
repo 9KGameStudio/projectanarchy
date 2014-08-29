@@ -10,6 +10,8 @@
 #ifndef	HKCD_CONVEX_HULL_QUAD_2D_H
 #define HKCD_CONVEX_HULL_QUAD_2D_H
 
+#include <Common/Base/Math/Vector/hkFourTransposedPoints.h>
+
 /// Computes the 2D convex hull of the 4 given vertices. The vertices are assumed to lie into the same plane. Returns the indices of the vertices on the convex hull
 /// in remapOut.
 HK_FORCE_INLINE void HK_CALL hkcdConvexHullQuad2d(const hkVector4* HK_RESTRICT srcVertsIn, int remapOut[4]);
@@ -19,7 +21,7 @@ HK_FORCE_INLINE void HK_CALL hkcdConvexHullQuad2d(const hkVector4* HK_RESTRICT s
 #endif	//	HKCD_CONVEX_HULL_QUAD_2D_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

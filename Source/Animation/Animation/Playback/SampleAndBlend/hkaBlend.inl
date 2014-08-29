@@ -124,7 +124,6 @@ void HK_CALL hkaBlend::blendAddMul(	Type* base, hkReal* baseW,
 			doBlendSetMul4(base, sample, sampleWeights);
 		}
 
-
 		if (useBase)
 		{
 			baseWV->setAdd(*baseWV, sampleWeights);
@@ -141,7 +140,7 @@ void HK_CALL hkaBlend::blendAddMul(	Type* base, hkReal* baseW,
 	}
 }
 
-static HK_FORCE_INLINE void doBlendAdditive4(hkQsTransform* base, const hkQsTransform* sample, const hkVector4& sampleWeights)
+static HK_FORCE_INLINE void doBlendAdditive4(hkQsTransform* base, const hkQsTransform* sample, const hkVector4& sampleWeights, hkaAnimationBinding::BlendHint blendHint )
 {
 	// Additive transforms are multiplied in, so they need to be attenuated toward identity.
 	// Therefore, we use the additive weight as an interpolant between the original bone and
@@ -163,10 +162,20 @@ static HK_FORCE_INLINE void doBlendAdditive4(hkQsTransform* base, const hkQsTran
 
 	// the original bone combined with the additive transform with a weight of 1
 	hkQsTransform a0, a1, a2, a3;
-	a0.setMul( s0, b0 );
-	a1.setMul( s1, b1 );
-	a2.setMul( s2, b2 );
-	a3.setMul( s3, b3 );
+	if (HK_VERY_UNLIKELY(blendHint == hkaAnimationBinding::ADDITIVE_DEPRECATED))
+	{
+		hkaAdditiveAnimationUtility::applyAdditiveTransform<hkaAnimationBinding::ADDITIVE_DEPRECATED>( b0, s0, a0);
+		hkaAdditiveAnimationUtility::applyAdditiveTransform<hkaAnimationBinding::ADDITIVE_DEPRECATED>( b1, s1, a1);
+		hkaAdditiveAnimationUtility::applyAdditiveTransform<hkaAnimationBinding::ADDITIVE_DEPRECATED>( b2, s2, a2);
+		hkaAdditiveAnimationUtility::applyAdditiveTransform<hkaAnimationBinding::ADDITIVE_DEPRECATED>( b3, s3, a3);
+	}
+	else
+	{
+		hkaAdditiveAnimationUtility::applyAdditiveTransform<hkaAnimationBinding::ADDITIVE>( b0, s0, a0);
+		hkaAdditiveAnimationUtility::applyAdditiveTransform<hkaAnimationBinding::ADDITIVE>( b1, s1, a1);
+		hkaAdditiveAnimationUtility::applyAdditiveTransform<hkaAnimationBinding::ADDITIVE>( b2, s2, a2);
+		hkaAdditiveAnimationUtility::applyAdditiveTransform<hkaAnimationBinding::ADDITIVE>( b3, s3, a3);
+	}
 
 	// interpolate between the original bones and the combined bones
 	b0.setInterpolate4(b0, a0, sampleWeights.getComponent<0>());
@@ -180,7 +189,7 @@ static HK_FORCE_INLINE void doBlendAdditive4(hkQsTransform* base, const hkQsTran
 	base[3] = b3;
 }
 
-static HK_FORCE_INLINE void doBlendAdditive4(hkReal* base, const hkReal* sample, const hkVector4& sampleWeights)
+static HK_FORCE_INLINE void doBlendAdditive4(hkReal* base, const hkReal* sample, const hkVector4& sampleWeights, hkaAnimationBinding::BlendHint blendHint )
 {
 	doBlendAddMul4( base, sample, sampleWeights );
 }
@@ -188,7 +197,8 @@ static HK_FORCE_INLINE void doBlendAdditive4(hkReal* base, const hkReal* sample,
 template <class Type, int flags>
 void HK_CALL hkaBlend::blendAdditive(	Type* base,
 										const Type* sample, const hkReal* sampleW, hkSimdRealParameter sampleAlpha, // new pose
-										int n)
+										int n, // length
+										hkaAnimationBinding::BlendHint blendHint ) // to support deprecated additive animation format
 {
 	enum
 	{
@@ -233,7 +243,7 @@ void HK_CALL hkaBlend::blendAdditive(	Type* base,
 			sampleWeights = *sampleWV;
 		}
 
-		doBlendAdditive4(base, sample, sampleWeights);
+		doBlendAdditive4(base, sample, sampleWeights, blendHint);
 
 		if (useSampleW)
 		{
@@ -274,7 +284,7 @@ namespace hkaBlend
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

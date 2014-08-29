@@ -12,7 +12,7 @@
 
 /// This structure describes the memory layout and format of a vertex buffer.
 /// Perhaps we should switch this for a hkClass and use the serialization framework?
-class hkxVertexUtil
+class HK_EXPORT_COMMON hkxVertexUtil
 {
 	public:
 			/// Returns the byte alignment of a particular element.
@@ -27,7 +27,7 @@ class hkxVertexUtil
 #endif // HKANIMATION_VERTEXUTIL_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

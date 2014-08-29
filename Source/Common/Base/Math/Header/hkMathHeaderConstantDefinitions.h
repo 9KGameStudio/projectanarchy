@@ -9,6 +9,8 @@
 #define HKMATH_HEADERCONSTANTDEFINITIONS_H
 
 // hkSimdReal_
+// Note : do not  use these constants to initialize static variables, as they are themselves static and can be 
+// initialized in the wrong order. 
 #define hkSimdReal_Minus1 (hkSimdReal::getConstant<HK_QUADREAL_MINUS1>())
 #define hkSimdReal_0 (hkSimdReal::getConstant<HK_QUADREAL_0>())
 #define hkSimdReal_1 (hkSimdReal::getConstant<HK_QUADREAL_1>())
@@ -107,6 +109,9 @@
 #define hkSimdFloat32_TwoPi (hkSimdFloat32::getConstant<HK_QUADREAL_TWO_PI>())
 #define hkSimdFloat32_FourPi (hkSimdFloat32::getConstant<HK_QUADREAL_FOUR_PI>())
 
+#define hkSimdFloat32_Deg2Rad (hkSimdFloat32::getConstant<HK_QUADREAL_DEG2RAD>())
+#define hkSimdFloat32_Rad2Deg (hkSimdFloat32::getConstant<HK_QUADREAL_RAD2DEG>())
+
 //duplicate of hkSimdFloat32_Inv2 
 #define hkSimdFloat32_Half (hkSimdFloat32::getConstant<HK_QUADREAL_INV_2>())
 
@@ -158,6 +163,9 @@
 #define hkSimdDouble64_TwoPi (hkSimdDouble64::getConstant<HK_QUADREAL_TWO_PI>())
 #define hkSimdDouble64_FourPi (hkSimdDouble64::getConstant<HK_QUADREAL_FOUR_PI>())
 
+#define hkSimdDouble64_Deg2Rad (hkSimdDouble64::getConstant<HK_QUADREAL_DEG2RAD>())
+#define hkSimdDouble64_Rad2Deg (hkSimdDouble64::getConstant<HK_QUADREAL_RAD2DEG>())
+
 //duplicate of hkSimdDouble64_Inv2 
 #define hkSimdDouble64_Half (hkSimdDouble64::getConstant<HK_QUADREAL_INV_2>())
 
@@ -165,6 +173,8 @@
 	/// \warning Do not change the order of the following constants and keep synchronized with value array: g_vectorConstants[] because algorithms rely on this order.
 enum hkVectorConstant
 {
+	HK_QUADREAL_BEGIN, ///< Start marker, do not use
+
 	HK_QUADREAL_MINUS1,
 	HK_QUADREAL_0,
 	HK_QUADREAL_1,
@@ -221,14 +231,18 @@ enum hkVectorConstant
 	HK_QUADREAL_FOUR_PI_THIRD,
 	HK_QUADREAL_TWO_PI,
 	HK_QUADREAL_FOUR_PI,
+	HK_QUADREAL_DEG2RAD,
+	HK_QUADREAL_RAD2DEG,
 
-	HK_QUADREAL_END
+	HK_QUADREAL_END ///< End marker, do not use
 };
 
 	/// A list of constants.
 	/// \warning Do not change the order of the following constants and keep synchronized with value array: g_intVectorConstants[] because algorithms rely on this order.
 enum hkIntVectorConstant
 {
+	HK_QUADINT_BEGIN, ///< Start marker, do not use
+
 	HK_QUADINT_0,
 	HK_QUADINT_1,
 	HK_QUADINT_2,
@@ -236,6 +250,7 @@ enum hkIntVectorConstant
 	HK_QUADINT_0123,
 	HK_QUADINT_0123_INT24W,	///< lower bits hold 0123, upper bits are set, so that reinterpreting this value as float will give a valid floating point number
 	HK_QUADINT_3,
+	HK_QUADINT_FFFF,		///< mask used for selecting the lower 16 bit
 
 	// Permutation constants, for Xbox broadcast(i), do not change order!
 	HK_QUADINT_PERM_XXXX,
@@ -243,13 +258,25 @@ enum hkIntVectorConstant
 	HK_QUADINT_PERM_ZZZZ,
 	HK_QUADINT_PERM_WWWW,
 
-	HK_QUADINT_END
+	HK_QUADINT_END ///< End marker, do not use
 };
+
+// create a custom static constant in code (strict aliasing safe)
+
+#define HK_DEFINE_VECTOR4f_HEX_CONSTANT(name,c0,c1,c2,c3) \
+	static HK_ALIGN_FLOAT(const hkUint32 name##Cst[4]) = { c0, c1, c2, c3 }; \
+	typedef union { hkUint32 i32[4]; hkFloat32 f32[4]; } name##i2f ; \
+	const name##i2f* name = (const name##i2f*)name##Cst;
+
+#define HK_DEFINE_VECTOR4d_HEX_CONSTANT(name,c0,c1,c2,c3) \
+	static HK_ALIGN_DOUBLE(const hkUint64 name##Cst[4]) = { c0, c1, c2, c3 }; \
+	typedef union { hkUint64 i64[4]; hkDouble64 d64[4]; } name##i2d ; \
+	const name##i2d* name = (const name##i2d*)name##Cst;
 
 #endif //HKMATH_HEADERCONSTANTDEFINITIONS_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

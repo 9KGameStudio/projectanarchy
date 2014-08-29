@@ -75,6 +75,9 @@ public:
   void Display_SetZScale(float fZScale);
   void Display_SetFOV(float fFov);
 
+  bool Display_GotoFrame(unsigned int uiFrameIndex, bool bPlay = false);
+  bool Display_GotoLabeledFrame(const char* szLabel, bool bPlay = false);
+
   unsigned int GetArraySize() const;
   void SetArraySize(unsigned int uiSize);
   const VScaleformValue GetArrayElement(unsigned int uiIndex) const;
@@ -266,6 +269,34 @@ public:
   /// \param fov The field of view angle.
   void Display_SetFOV(number fov);
 
+  ///
+  /// \brief
+  ///   Moves the display object to the specified frame.
+  ///
+  /// \param frameIndex
+  ///   The 1-based frame index.
+  /// \param play
+  ///   Specifies if the playback should start after moving to the frame independent of the previous play state.
+  ///
+  /// \return
+  ///   true if the display object was moved to the frame.
+  ///
+  boolean Display_GotoFrame(number frameIndex, boolean play = false);
+
+  ///
+  /// \brief
+  ///   Moves the display object to the frame with the specified label.
+  ///
+  /// \param label
+  ///   The label of the frame.
+  /// \param play
+  ///   Specifies if the playback should start after moving to the frame independent of the previous play state.
+  ///
+  /// \return
+  ///   true if the display object was moved to the frame.
+  ///
+  boolean Display_GotoLabeledFrame(string label, boolean play = false);
+
   /// @}
 
   /// @name Arrays
@@ -385,7 +416,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

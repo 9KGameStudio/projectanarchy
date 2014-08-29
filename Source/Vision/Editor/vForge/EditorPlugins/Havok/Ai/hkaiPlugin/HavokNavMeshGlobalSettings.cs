@@ -57,6 +57,13 @@ namespace HavokAiEditorPlugin.Shapes
     Medium = 2,
     Low = 3
   }
+
+  public enum eVertexSelectionMethod
+  {
+      [NonEditableFlag]
+      PROPORTIONAL_TO_AREA = 0,
+      PROPORTIONAL_TO_VERTICES = 1
+  }
   #endregion
 
   #region class HavokNavMeshGlobalSettings
@@ -135,6 +142,12 @@ namespace HavokAiEditorPlugin.Shapes
       m_maxNumEdgesPerFace = info.GetInt32("MaxNumEdgesPerFace");
       m_weldInputVertices = info.GetBoolean("WeldInputVertices");
       m_weldThreshold = info.GetSingle("WeldThreshold");
+      if (SerializationHelper.HasElement(info, "VertexSelectionMethod"))
+          m_vertexSelectionMethod = (eVertexSelectionMethod)info.GetValue("VertexSelectionMethod", typeof(eVertexSelectionMethod));
+      if (SerializationHelper.HasElement(info, "AreaFraction"))
+          m_areaFraction = info.GetSingle("AreaFraction");
+      if (SerializationHelper.HasElement(info, "VertexFraction"))
+          m_vertexFraction = info.GetSingle("VertexFraction");
 
       // Nav Mesh Edge Matching Settings
       m_edgeConnectionIterations = info.GetInt32("EdgeConnectionIterations");
@@ -228,6 +241,9 @@ namespace HavokAiEditorPlugin.Shapes
       info.AddValue("MaxNumEdgesPerFace", m_maxNumEdgesPerFace);
       info.AddValue("WeldInputVertices", m_weldInputVertices);
       info.AddValue("WeldThreshold", m_weldThreshold);
+      info.AddValue("VertexSelectionMethod", m_vertexSelectionMethod);
+      info.AddValue("AreaFraction", m_areaFraction);
+      info.AddValue("VertexFraction", m_vertexFraction);
 
       // Nav Mesh Edge Matching Settings
       info.AddValue("EdgeConnectionIterations", m_edgeConnectionIterations);
@@ -390,6 +406,9 @@ namespace HavokAiEditorPlugin.Shapes
     float m_maxBoundaryVertexHorizontalError = 1.0f;
     float m_maxBoundaryVertexVerticalError = 1.0f;
     bool m_mergeLongestEdgesFirst = true;
+    eVertexSelectionMethod m_vertexSelectionMethod = eVertexSelectionMethod.PROPORTIONAL_TO_AREA;
+    float m_vertexFraction = 0.025f;
+    float m_areaFraction = 0.000125f;
 
     // Nav Mesh Split Generation Settings
     int m_numTilesX = 1;
@@ -888,11 +907,39 @@ namespace HavokAiEditorPlugin.Shapes
       set { m_mergeLongestEdgesFirst = value; }
     }
 
+    [PropertyOrder(49)]
+    [Description("Determines how the number of extra vertices is chosen.")]
+    [SortedCategory(CAT_NAVMESHSIMPADV, CATORDER_NAVMESHSIMPADV)]
+    [Editor(typeof(EnumEditor), typeof(System.Drawing.Design.UITypeEditor))]
+    public eVertexSelectionMethod VertexSelectionMethod
+    {
+        get { return m_vertexSelectionMethod; }
+        set { m_vertexSelectionMethod = value; }
+    }
+
+    [PropertyOrder(50)]
+    [Description("Controls how many additional vertices will be inserted to the mesh when using the VertexSelectionMethod PROPORTIONAL_TO_AREA. To disable additional vertices, set this value to 0. ")]
+    [SortedCategory(CAT_NAVMESHSIMPADV, CATORDER_NAVMESHSIMPADV)]
+    public float AreaFraction
+    {
+        get { return m_areaFraction; }
+        set { m_areaFraction = value; }
+    }
+
+    [PropertyOrder(51)]
+    [Description("Controls how many additional vertices will be inserted to the mesh when using the VertexSelectionMethod PROPORTIONAL_TO_VERTICES. To disable additional vertices, set this value to 0.")]
+    [SortedCategory(CAT_NAVMESHSIMPADV, CATORDER_NAVMESHSIMPADV)]
+    public float VertexFraction
+    {
+        get { return m_vertexFraction; }
+        set { m_vertexFraction = value; }
+    }
+
     #endregion Properties: NAVMESHSIMPADV
 
     #region Properties: NAVMESHSPLITGEN
 
-    [PropertyOrder(49)]
+    [PropertyOrder(52)]
     [Description("Number of desired input geometry tiles in the X direction.  Helpful to reduce peak memory usage during navmesh generation.  A single Havok AI navmesh is still generated for each navmesh shape in the scene.")]
     [SortedCategory(CAT_NAVMESHSPLITGEN, CATORDER_NAVMESHSPLITGEN)]
     public int NumTilesX
@@ -907,7 +954,7 @@ namespace HavokAiEditorPlugin.Shapes
       }
     }
 
-    [PropertyOrder(50)]
+    [PropertyOrder(53)]
     [Description("Number of desired input geometry tiles in the Y direction.  Helpful to reduce peak memory usage during navmesh generation.  A single Havok AI navmesh is still generated for each navmesh shape in the scene.")]
     [SortedCategory(CAT_NAVMESHSPLITGEN, CATORDER_NAVMESHSPLITGEN)]
     public int NumTilesY
@@ -922,7 +969,7 @@ namespace HavokAiEditorPlugin.Shapes
       }
     }
 
-    [PropertyOrder(51)]
+    [PropertyOrder(54)]
     [Description("Describes whether simplification is done separately per intermediate navmesh tile or all at once.")]
     [SortedCategory(CAT_NAVMESHSPLITGEN, CATORDER_NAVMESHSPLITGEN)]
     [Editor(typeof(EnumEditor), typeof(System.Drawing.Design.UITypeEditor))]
@@ -932,7 +979,7 @@ namespace HavokAiEditorPlugin.Shapes
       set { m_splitGenerationMethod = value; }
     }
 
-    [PropertyOrder(52)]
+    [PropertyOrder(55)]
     [Description("Describes how tiles should be \"shelved\", either by keeping them in memory (for greatest speed) or by serializing them out to disk (to conserve memory).")]
     [SortedCategory(CAT_NAVMESHSPLITGEN, CATORDER_NAVMESHSPLITGEN)]
     [Editor(typeof(EnumEditor), typeof(System.Drawing.Design.UITypeEditor))]
@@ -1301,7 +1348,7 @@ namespace HavokAiEditorPlugin.Shapes
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -8,7 +8,7 @@
 #ifndef HKX_SPLINE_H
 #define HKX_SPLINE_H
 
-class hkxSpline : public hkReferencedObject
+class HK_EXPORT_COMMON hkxSpline : public hkReferencedObject
 {
 	public:
 
@@ -62,7 +62,7 @@ class hkxSpline : public hkReferencedObject
 #endif // HKX_SPLINE_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

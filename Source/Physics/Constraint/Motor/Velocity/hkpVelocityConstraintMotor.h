@@ -11,11 +11,11 @@
 
 #include <Physics/Constraint/Motor/LimitedForce/hkpLimitedForceConstraintMotor.h>
 
-extern const hkClass hkpVelocityConstraintMotorClass;
+extern HK_EXPORT_PHYSICS const hkClass hkpVelocityConstraintMotorClass;
 
 
 /// This motor simply tries to reach and keep a desired target velocity.
-class hkpVelocityConstraintMotor : public hkpLimitedForceConstraintMotor
+class HK_EXPORT_PHYSICS hkpVelocityConstraintMotor : public hkpLimitedForceConstraintMotor
 {
 	public:
 
@@ -54,7 +54,7 @@ class hkpVelocityConstraintMotor : public hkpLimitedForceConstraintMotor
 #endif // HKP_VELOCITY_CONSTRAINT_MOTOR_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -33,7 +33,7 @@
 #endif
 
 /// Abstract slot.
-struct hkSlot
+struct HK_EXPORT_COMMON hkSlot
 {
 	//+hk.MemoryTracker(ignore=True)
 	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE, hkSlot);
@@ -59,7 +59,7 @@ struct hkSlot
 };
 
 /// Abstract signal.
-struct hkSignal
+struct HK_EXPORT_COMMON hkSignal
 {	
 	//+hk.MemoryTracker(ignore=True)
 	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE, hkSlot);
@@ -115,6 +115,7 @@ private:
 	{ \
 		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE, _name_); \
 		HK_FORCE_INLINE _name_() : __VA_ARGS__(HK_QUOTE_SIGNAL_NAME(_name_)) {} \
+		_name_(const _name_&)  : __VA_ARGS__() { }\
 		template <typename CLASS_TYPE> \
 		HK_FORCE_INLINE hkSlot* implicitSubscribe(CLASS_TYPE* instance, const char* slotname) \
 		{ \
@@ -134,7 +135,7 @@ private:
 #define HK_SIGNAL_PARAMETERS
 #define HK_SIGNAL_ARGUMENTS
 #define HK_SIGNAL_NAMES
-	#include <Common/Base/Types/hkSignalSlots.hxx>
+	#include <Common/Base/Types/hkSignalSlots.hxx> 
 #undef HK_SIGNAL_PARAMETERS
 #undef HK_SIGNAL_ARGUMENTS
 #undef HK_SIGNAL_NAMES
@@ -145,7 +146,7 @@ private:
 #define HK_SIGNAL_PARAMETERS	template <typename P0>
 #define HK_SIGNAL_ARGUMENTS		P0 p0
 #define HK_SIGNAL_NAMES			p0
-	#include <Common/Base/Types/hkSignalSlots.hxx>
+	#include <Common/Base/Types/hkSignalSlots.hxx> 
 #undef HK_SIGNAL_PARAMETERS
 #undef HK_SIGNAL_ARGUMENTS
 #undef HK_SIGNAL_NAMES
@@ -156,7 +157,7 @@ private:
 #define HK_SIGNAL_PARAMETERS	template <typename P0,typename P1>
 #define HK_SIGNAL_ARGUMENTS		P0 p0, P1 p1
 #define HK_SIGNAL_NAMES			p0, p1
-	#include <Common/Base/Types/hkSignalSlots.hxx>
+	#include <Common/Base/Types/hkSignalSlots.hxx> 
 #undef HK_SIGNAL_PARAMETERS
 #undef HK_SIGNAL_ARGUMENTS
 #undef HK_SIGNAL_NAMES
@@ -167,7 +168,7 @@ private:
 #define HK_SIGNAL_PARAMETERS	template <typename P0,typename P1,typename P2>
 #define HK_SIGNAL_ARGUMENTS		P0 p0, P1 p1, P2 p2
 #define HK_SIGNAL_NAMES			p0, p1, p2
-	#include <Common/Base/Types/hkSignalSlots.hxx>
+	#include <Common/Base/Types/hkSignalSlots.hxx> 
 #undef HK_SIGNAL_PARAMETERS
 #undef HK_SIGNAL_ARGUMENTS
 #undef HK_SIGNAL_NAMES
@@ -178,7 +179,7 @@ private:
 #define HK_SIGNAL_PARAMETERS	template <typename P0,typename P1,typename P2,typename P3>
 #define HK_SIGNAL_ARGUMENTS		P0 p0, P1 p1, P2 p2, P3 p3
 #define HK_SIGNAL_NAMES			p0, p1, p2, p3
-	#include <Common/Base/Types/hkSignalSlots.hxx>
+	#include <Common/Base/Types/hkSignalSlots.hxx> 
 #undef HK_SIGNAL_PARAMETERS
 #undef HK_SIGNAL_ARGUMENTS
 #undef HK_SIGNAL_NAMES
@@ -189,44 +190,48 @@ private:
 #define HK_SIGNAL_PARAMETERS	template <typename P0,typename P1,typename P2,typename P3,typename P4>
 #define HK_SIGNAL_ARGUMENTS		P0 p0, P1 p1, P2 p2, P3 p3, P4 p4
 #define HK_SIGNAL_NAMES			p0, p1, p2, p3, p4
-	#include <Common/Base/Types/hkSignalSlots.hxx>
+	#include <Common/Base/Types/hkSignalSlots.hxx> 
 #undef HK_SIGNAL_PARAMETERS
 #undef HK_SIGNAL_ARGUMENTS
 #undef HK_SIGNAL_NAMES
 #undef HK_SIGNAL_TYPE
-// 
-// // 6
-// #define HK_SIGNAL_TYPE			hkSignal6
-// #define HK_SIGNAL_PARAMETERS	template <typename P0,typename P1,typename P2,typename P3,typename P4,typename P5>
-// #define HK_SIGNAL_ARGUMENTS		P0 p0, P1 p1, P2 p2, P3 p3, P4 p4, P5 p5
-// #define HK_SIGNAL_NAMES			p0, p1, p2, p3, p4, p5
-// 	#include <Common/Base/Types/hkSignalSlots.hxx>
-// #undef HK_SIGNAL_PARAMETERS
-// #undef HK_SIGNAL_ARGUMENTS
-// #undef HK_SIGNAL_NAMES
-// #undef HK_SIGNAL_TYPE
-// 
-// // 7
-// #define HK_SIGNAL_TYPE			hkSignal7
-// #define HK_SIGNAL_PARAMETERS	template <typename P0,typename P1,typename P2,typename P3,typename P4,typename P5, typename P6>
-// #define HK_SIGNAL_ARGUMENTS		P0 p0, P1 p1, P2 p2, P3 p3, P4 p4, P5 p5, P6 p6
-// #define HK_SIGNAL_NAMES			p0, p1, p2, p3, p4, p5, p6
-// 	#include <Common/Base/Types/hkSignalSlots.hxx>
-// #undef HK_SIGNAL_PARAMETERS
-// #undef HK_SIGNAL_ARGUMENTS
-// #undef HK_SIGNAL_NAMES
-// #undef HK_SIGNAL_TYPE
-// 
-// // 8
-// #define HK_SIGNAL_TYPE			hkSignal8
-// #define HK_SIGNAL_PARAMETERS	template <typename P0,typename P1,typename P2,typename P3,typename P4,typename P5, typename P6, typename P7>
-// #define HK_SIGNAL_ARGUMENTS		P0 p0, P1 p1, P2 p2, P3 p3, P4 p4, P5 p5, P6 p6, P7 p7
-// #define HK_SIGNAL_NAMES			p0, p1, p2, p3, p4, p5, p6, p7
-// 	#include <Common/Base/Types/hkSignalSlots.hxx>
-// #undef HK_SIGNAL_PARAMETERS
-// #undef HK_SIGNAL_ARGUMENTS
-// #undef HK_SIGNAL_NAMES
-// #undef HK_SIGNAL_TYPE
+
+#if 0	// No use case for more than 5 parameters for the moment.
+
+// 6
+#define HK_SIGNAL_TYPE			hkSignal6
+#define HK_SIGNAL_PARAMETERS	template <typename P0,typename P1,typename P2,typename P3,typename P4,typename P5>
+#define HK_SIGNAL_ARGUMENTS		P0 p0, P1 p1, P2 p2, P3 p3, P4 p4, P5 p5
+#define HK_SIGNAL_NAMES			p0, p1, p2, p3, p4, p5
+	#include <Common/Base/Types/hkSignalSlots.hxx> 
+#undef HK_SIGNAL_PARAMETERS
+#undef HK_SIGNAL_ARGUMENTS
+#undef HK_SIGNAL_NAMES
+#undef HK_SIGNAL_TYPE
+
+// 7
+#define HK_SIGNAL_TYPE			hkSignal7
+#define HK_SIGNAL_PARAMETERS	template <typename P0,typename P1,typename P2,typename P3,typename P4,typename P5, typename P6>
+#define HK_SIGNAL_ARGUMENTS		P0 p0, P1 p1, P2 p2, P3 p3, P4 p4, P5 p5, P6 p6
+#define HK_SIGNAL_NAMES			p0, p1, p2, p3, p4, p5, p6
+	#include <Common/Base/Types/hkSignalSlots.hxx> 
+#undef HK_SIGNAL_PARAMETERS
+#undef HK_SIGNAL_ARGUMENTS
+#undef HK_SIGNAL_NAMES
+#undef HK_SIGNAL_TYPE
+
+// 8
+#define HK_SIGNAL_TYPE			hkSignal8
+#define HK_SIGNAL_PARAMETERS	template <typename P0,typename P1,typename P2,typename P3,typename P4,typename P5, typename P6, typename P7>
+#define HK_SIGNAL_ARGUMENTS		P0 p0, P1 p1, P2 p2, P3 p3, P4 p4, P5 p5, P6 p6, P7 p7
+#define HK_SIGNAL_NAMES			p0, p1, p2, p3, p4, p5, p6, p7
+	#include <Common/Base/Types/hkSignalSlots.hxx> 
+#undef HK_SIGNAL_PARAMETERS
+#undef HK_SIGNAL_ARGUMENTS
+#undef HK_SIGNAL_NAMES
+#undef HK_SIGNAL_TYPE
+
+#endif
 
 // Cleanup PP.
 
@@ -237,7 +242,7 @@ private:
 #endif // HK_SIGNAL_SLOTS_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

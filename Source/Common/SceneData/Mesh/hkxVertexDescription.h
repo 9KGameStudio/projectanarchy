@@ -9,10 +9,10 @@
 #define HKSCENEDATA_MESH_HKXVERTEXDESCRIPTION__H
 
 
-extern const class hkClass hkxVertexDescriptionElementDeclClass;
+extern HK_EXPORT_COMMON const class hkClass hkxVertexDescriptionElementDeclClass;
 
 /// hkxVertexDescription meta information
-extern const class hkClass hkxVertexDescriptionClass;
+extern HK_EXPORT_COMMON const class hkClass hkxVertexDescriptionClass;
 
 /// This structure describes the memory layout and format of a vertex buffer.
 class hkxVertexDescription
@@ -51,28 +51,40 @@ class hkxVertexDescription
 			HKX_DU_USERDATA = 256,
 		};
 
-		enum DataHint
-		{
-			HKX_DH_NONE = 0,
-			HKX_DH_LIGHTMAP = 1
-		};
-
 		struct ElementDecl
 		{
-			//+version(3)
+			//+version(4)
 
 			HK_DECLARE_REFLECTION();
 			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_SCENE_DATA, hkxVertexDescription::ElementDecl );
 
-			ElementDecl() : m_byteOffset(0), m_type(HKX_DT_NONE), m_usage(HKX_DU_NONE), m_byteStride(0), m_hint(HKX_DH_NONE) { }
-			ElementDecl(DataUsage u, DataType t, hkUint8 numElements, DataHint h = HKX_DH_NONE) : m_byteOffset(0), m_type(t), m_usage(u), m_byteStride(0), m_numElements(numElements), m_hint(h) { }
+			ElementDecl()
+			:	m_byteOffset(0)
+			,	m_type(HKX_DT_NONE)
+			,	m_usage(HKX_DU_NONE)
+			,	m_byteStride(0)
+			,	m_channelID("")
+			{}
+
+			ElementDecl(DataUsage u, DataType t, hkUint8 numElements, const char* channelID = NULL)
+			:	m_byteOffset(0)
+			,	m_type(t)
+			,	m_usage(u)
+			,	m_byteStride(0)
+			,	m_numElements(numElements)
+			,	m_channelID(channelID)
+			{}
+
+			ElementDecl(hkFinishLoadedObjectFlag f)
+			:	m_channelID(f)
+			{}
 
 			hkUint32					m_byteOffset; // from start of the buffer, set by the hkxVertexBuffer 
 			hkEnum<DataType,  hkUint16>	m_type;
 			hkEnum<DataUsage, hkUint16>	m_usage;
 			hkUint32					m_byteStride; // between each vert, set by the hkxVertexBuffer 
 			hkUint8						m_numElements; // between each vert, set by the hkxVertexBuffer 
-			hkEnum<DataHint, hkUint16>	m_hint; // extra information
+			hkStringPtr				m_channelID; // Name used by the CC tool to identify a uv channel.
 		};
 
 
@@ -103,7 +115,7 @@ class hkxVertexDescription
 #endif // HKSCENEDATA_MESH_HKXVERTEXDESCRIPTION__H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

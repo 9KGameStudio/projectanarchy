@@ -11,7 +11,7 @@
 
 #include <Ai/Pathfinding/Dynamic/Silhouette/hkaiCompoundSilhouette.h>
 
-extern const class hkClass hkaiSilhouetteMergerUtilsClass;
+extern HK_EXPORT_AI const class hkClass hkaiSilhouetteMergerUtilsClass;
 
 struct hkaiSilhouetteGenerationParameters;
 struct hkaiSilhouetteGeneratorSectionContext;
@@ -32,7 +32,7 @@ class hkaiSilhouetteMergerUtils
 #endif // HK_SILLOUETTE_MERGER_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

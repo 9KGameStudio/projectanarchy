@@ -25,14 +25,18 @@ namespace hkCompileError
 
 	template <bool b> struct HK_INT_VECTOR_ILLEGAL_VALUE_FOR_IMM_SPLAT;
 	template <> struct HK_INT_VECTOR_ILLEGAL_VALUE_FOR_IMM_SPLAT<true>{ };
+
+	template <bool b> struct HK_INT_VECTOR_UNKNOWN_CONSTANT;
+	template <> struct HK_INT_VECTOR_UNKNOWN_CONSTANT<true>{ };
 }
 #define HK_INT_VECTOR_SUBINDEX_CHECK HK_COMPILE_TIME_ASSERT2((I>=0)&&(I<4), HK_INT_VECTOR_SUBVECTOR_INDEX_OUT_OF_RANGE)
 #define HK_INT_VECTOR_NOT_IMPLEMENTED HK_COMPILE_TIME_ASSERT2(N==0, HK_INT_VECTOR_NOT_IMPLEMENTED_FOR_THIS_VECTOR_LENGTH)
 #define HK_INT_VECTOR_UNSUPPORTED_LENGTH_CHECK HK_COMPILE_TIME_ASSERT2((N>0)&&(N<=4), HK_INT_VECTOR_UNSUPPORTED_VECTOR_LENGTH)
 #define HK_INT_VECTOR_IMM_SPLAT_VALUE_CHECK HK_COMPILE_TIME_ASSERT2((VALUE>=-16)&&(VALUE<=15), HK_INT_VECTOR_ILLEGAL_VALUE_FOR_IMM_SPLAT)
+#define HK_INT_VECTOR_CONSTANT_CHECK           HK_COMPILE_TIME_ASSERT2(((vectorConstant>HK_QUADINT_BEGIN)&&(vectorConstant<HK_QUADINT_END)),HK_INT_VECTOR_UNKNOWN_CONSTANT)
 
 // Components that aren't loaded during hkIntVector::load() are initialized to this in Debug and Dev configurations.
-#define HK_INT_VECTOR_DEBUG_FILL_VALUE (0xDEADBEEF)
+#define HK_INT_VECTOR_DEBUG_FILL_VALUE (g_intVectorConstants[HK_QUADINT_BEGIN][0])
 
 /*	Endianness, and words such as "left", "right", "head", "tail":
 
@@ -64,7 +68,7 @@ namespace hkCompileError
 
 /// Stores four hkUint32 in a SIMD friendly format.
 HK_PASS_IN_REG
-class hkIntVector
+class HK_EXPORT_COMMON hkIntVector
 {
 	public:
 
@@ -73,6 +77,7 @@ class hkIntVector
 
 		/// Clear
 		HK_FORCE_INLINE void setZero();
+		template <int I> HK_FORCE_INLINE void zeroComponent32();
 
 		// U32
 		HK_FORCE_INLINE void setAll(const int& i);
@@ -171,6 +176,8 @@ class hkIntVector
 		//HK_FORCE_INLINE void setCompareGreaterThan(S/U)(32/16/8)( hkIntVectorParameter a, hkIntVectorParameter b );
 		//HK_FORCE_INLINE void setCompareGreaterThanEqual(S/U)(32/16/8)( hkIntVectorParameter a, hkIntVectorParameter b );
 
+		HK_FORCE_INLINE void setCompareGreaterS16(hkIntVectorParameter a, hkIntVectorParameter b);
+
 			// Integer arithmetic
 		HK_FORCE_INLINE void setSubU16( hkIntVectorParameter a, hkIntVectorParameter b );
 		HK_FORCE_INLINE void setAddU16( hkIntVectorParameter a, hkIntVectorParameter b );
@@ -178,7 +185,7 @@ class hkIntVector
 		HK_FORCE_INLINE void setAddU32( hkIntVectorParameter a, hkIntVectorParameter b );
 		HK_FORCE_INLINE void setSubU32( hkIntVectorParameter a, hkIntVectorParameter b );
 
-		/// you need to check HK_INT_VECTOR_ADD64_AVAILABLE if there is a fast version of this available
+		/// you need to check HK_INT_VECTOR_NATIVE_ADD64 if there is a fast version of this available
 		HK_FORCE_INLINE void setAddU64( hkIntVectorParameter a, hkIntVectorParameter b );
 		HK_FORCE_INLINE void setSubU64( hkIntVectorParameter a, hkIntVectorParameter b );
 
@@ -322,18 +329,23 @@ class hkIntVector
 
 		// U32
 		template <hkVectorPermutation::Permutation P> HK_FORCE_INLINE void setPermutation(hkIntVectorParameter v);
+		/// Fill each component of self from components of 'a' and 'b'. i, j, k, and l are used as 0-based indices into 
+		/// the 8-element concatenated vector [ax, ay, az, aw, bx, by, bz, bw].
+		template<unsigned int i, unsigned int j, unsigned int k, unsigned int l>
+		HK_FORCE_INLINE void setPermutation2(hkIntVectorParameter a, hkIntVectorParameter b);
 
 		// U32
 		HK_FORCE_INLINE void setSelect( hkVector4fComparisonParameter select, hkIntVectorParameter trueValue, hkIntVectorParameter falseValue ); 
 		HK_FORCE_INLINE void setSelect( hkVector4dComparisonParameter select, hkIntVectorParameter trueValue, hkIntVectorParameter falseValue ); 
 		template<hkVector4ComparisonMask::Mask M> HK_FORCE_INLINE void setSelect( hkIntVectorParameter trueValue, hkIntVectorParameter falseValue );
 
-		// this is only used by Destruction currently
-		// mask lower 4 bits = index
-		// mask upper 4 bits must be 0
+		/// permute a vector, only fast if HK_INT_VECTOR_NATIVE_PERMUTE8 is defined
+		/// mask lower 4 bits = index
+		/// mask upper 4 bits must be 0
 		HK_FORCE_INLINE void setPermuteU8(hkIntVectorParameter a, hkIntVectorParameter mask);
-		// mask lower 4 bits = index
-		// mask upper 4 bits: 0=a other=b
+
+		/// mask lower 4 bits = index
+		/// mask upper 4 bits: 0=a other=b
 		HK_FORCE_INLINE void setPermuteU8(hkIntVectorParameter a, hkIntVectorParameter b, hkIntVectorParameter mask);
 
 			// Convert to from fixed point
@@ -390,8 +402,12 @@ class hkIntVector
 		/// Returns the minimum value occurring in N components. ( return min(x,y,z,w) )
 		template <int N> HK_FORCE_INLINE int horizontalMinS32() const;
 
-		/// Returns the minimum value occurring in N components. ( return max(x,y,z,w) )
+		/// Returns the maximum value occurring in N components. ( return max(x,y,z,w) )
 		template <int N> HK_FORCE_INLINE int horizontalMaxS32() const;
+
+		/// Sets every component to the maximum value occurring in N components. ( return x,y,z,w = max(x,y,z,w) )
+		/// Currently only implemented for ARCH_INTEL 
+		template <int N> HK_FORCE_INLINE void setHorizontalMaxS32(hkIntVectorParameter v);
 
 		/// Returns the index of the component with the smallest signed value among the first N components.
 		/// In case of equality, returns the first component index given X,Y,Z,W ordering.
@@ -412,6 +428,10 @@ class hkIntVector
 		/// Returns the xor of the first N components
 		template <int N>
 		HK_FORCE_INLINE int horizontalXorS32() const;
+
+		/// Returns the or of the first N components
+		template <int N>
+		HK_FORCE_INLINE int horizontalOrS32() const;
 
 		/// Sets this = va * vb
 		HK_FORCE_INLINE void setMul(hkIntVectorParameter vA, hkIntVectorParameter vB);
@@ -463,7 +483,7 @@ typedef const hkIntVectorConstantU8_ hkIntVectorConstantU8;
 ///    myvec.setPermuteU8(myvec, myperm.v); // splats element 1 to all positions in vector
 /// \endcode
 /// There is no HK_INT_VECTOR_PERMUTATION_U32, use setShuffle instead.
-/// This will not be fast on platforms not defining HK_INT_VECTOR_NATIVE_PERMUTE
+/// This will not be fast on platforms not defining HK_INT_VECTOR_NATIVE_PERMUTE8
 typedef hkIntVectorConstantU8 hkIntVectorPermutation;
 
 #define HK_INT_VECTOR_PERMUTATION_U8(p0,p1,p2,p3,p4,p5,p6,p7,p8,p9,p10,p11,p12,p13,p14,p15)\
@@ -480,29 +500,40 @@ typedef hkIntVectorConstantU8 hkIntVectorPermutation;
 							  (p2)*4, (p2)*4+1, (p2)*4+2, (p2)*4+3,\
 							  (p3)*4, (p3)*4+1, (p3)*4+2, (p3)*4+3)
 
-#if HK_CONFIG_SIMD == HK_CONFIG_SIMD_ENABLED
-#	if defined(HK_COMPILER_HAS_INTRINSICS_IA32)
-#		include <Common/Base/Math/Vector/Sse/hkSseIntVector.inl>
-#	elif defined(HK_COMPILER_HAS_INTRINSICS_NEON)
-#		include <Common/Base/Math/Vector/Neon/hkNeonIntVector.inl>
-#	elif defined(HK_PLATFORM_PS3_PPU) || defined(HK_PLATFORM_PS3_SPU)
-#		include <Common/Base/Math/Vector/Ps3/hkPs3IntVector.inl>
-#	elif defined(HK_PLATFORM_XBOX360)
-#		include <Common/Base/Math/Vector/Xbox360/hkXbox360IntVector.inl>
+
+#if defined(HK_PLATFORM_WIIU)
+#	if defined(HK_ENABLE_PAIRED_SINGLE_OPTS)
+#		include <Common/Base/Math/Vector/WiiU/hkWiiuIntVector.inl>
+#		include <Common/Base/Math/Vector/hkIntVector.inl>
+#		define HK_USING_GENERIC_INT_VECTOR_IMPLEMENTATION
+#	else
+#		define HK_USING_GENERIC_INT_VECTOR_IMPLEMENTATION
+#		include <Common/Base/Math/Vector/hkIntVector.inl>
+#	endif
+#else
+#	if HK_CONFIG_SIMD == HK_CONFIG_SIMD_ENABLED
+#		if defined(HK_COMPILER_HAS_INTRINSICS_IA32)
+#			include <Common/Base/Math/Vector/Sse/hkSseIntVector.inl>
+#		elif defined(HK_COMPILER_HAS_INTRINSICS_NEON)
+#			include <Common/Base/Math/Vector/Neon/hkNeonIntVector.inl>
+#		elif defined(HK_PLATFORM_PS3_PPU) || defined(HK_PLATFORM_PS3_SPU)
+#			include <Common/Base/Math/Vector/Ps3/hkPs3IntVector.inl>
+#		elif defined(HK_PLATFORM_XBOX360)
+#			include <Common/Base/Math/Vector/Xbox360/hkXbox360IntVector.inl>
+#		else
+#			define HK_USING_GENERIC_INT_VECTOR_IMPLEMENTATION
+#		endif
 #	else
 #		define HK_USING_GENERIC_INT_VECTOR_IMPLEMENTATION
 #	endif
-#else
-#	define HK_USING_GENERIC_INT_VECTOR_IMPLEMENTATION
+#	include <Common/Base/Math/Vector/hkIntVector.inl>
 #endif
-
-#include <Common/Base/Math/Vector/hkIntVector.inl>
 
 
 #endif //HK_MATH_INTVECTOR_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

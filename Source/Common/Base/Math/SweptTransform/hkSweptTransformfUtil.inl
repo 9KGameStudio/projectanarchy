@@ -20,26 +20,25 @@ HK_FORCE_INLINE void HK_CALL _lerp2( const hkSweptTransformf& sweptTrans, hkSimd
 {
 	hkVector4f rot0 = sweptTrans.m_rotation0.m_vec;
 	hkVector4f rot1 = sweptTrans.m_rotation1.m_vec;
-	const hkSimdFloat32 half = hkSimdFloat32_Inv2;
-	const hkSimdFloat32 two = hkSimdFloat32_2;
+	const hkSimdFloat32 half = hkSimdFloat32_Half;
 	const hkSimdFloat32 one = hkSimdFloat32_1;
 	{
 		quatOut.m_vec.setAdd( rot0, rot1 );
 		const hkSimdFloat32 len2 = quatOut.m_vec.lengthSquared<4>();
 		hkSimdFloat32 threequarter; threequarter.setFromFloat(0.75f);
-		hkSimdFloat32 oneeighth; oneeighth.setFromFloat(0.125f);
-		hkSimdFloat32 r = threequarter - oneeighth * len2;
+		hkSimdFloat32 r = threequarter - hkSimdFloat32_Inv8 * len2;
 		r = r * ((one + half) - half * len2 * r * r);
 		quatOut.m_vec.mul(r);
 	}
 
-	if ( st < half )
+	hkSimdFloat32 two_st = st + st;
+	if ( st.isLess(half) )
 	{
-		quatOut.m_vec.setInterpolate( rot0, quatOut.m_vec, st * two);
+		quatOut.m_vec.setInterpolate( rot0, quatOut.m_vec, two_st);
 	}
 	else
 	{
-		quatOut.m_vec.setInterpolate( quatOut.m_vec, rot1, (two * st) - one);
+		quatOut.m_vec.setInterpolate( quatOut.m_vec, rot1, two_st - one);
 	}
 	quatOut.normalize();
 }
@@ -167,7 +166,7 @@ HK_FORCE_INLINE void HK_CALL _stepMotionState( const hkStepInfo& info,
 		if ( linVelSq > stateMaxLin * stateMaxLin )
 		{
 			//HK_WARN_ONCE(0xf0327683, "Object exceeding maximum velocity, velocity clipped" );
-			const hkSimdFloat32 f = stateMaxLin * linVelSq.sqrtInverse<HK_ACC_23_BIT,HK_SQRT_IGNORE>();
+			const hkSimdFloat32 f = stateMaxLin * linVelSq.sqrtInverse<HK_ACC_MID,HK_SQRT_IGNORE>();
 			linearVelocity.mul( f );
 		}
 	}
@@ -319,7 +318,7 @@ HK_FORCE_INLINE void HK_CALL getVelocity( const hkMotionState& ms, hkVector4f& l
 } // namespace hkSweptTransformUtil
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

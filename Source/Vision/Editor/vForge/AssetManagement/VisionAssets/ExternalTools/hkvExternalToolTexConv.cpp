@@ -14,27 +14,6 @@
 
 #include <Common/Base/Container/String/hkUtf8.h>
 
-const hkvConversionToolFormatString hkvTexConvFormatStrings[] =
-{
-  {HKV_TEXTURE_DATA_FORMAT_PVRTC2, ""},
-  {HKV_TEXTURE_DATA_FORMAT_PVRTC4, ""},
-
-  {HKV_TEXTURE_DATA_FORMAT_ETC1, ""},
-
-  {HKV_TEXTURE_DATA_FORMAT_DXT1, "BC1_UNORM"},
-  {HKV_TEXTURE_DATA_FORMAT_DXT3, "BC2_UNORM"},
-  {HKV_TEXTURE_DATA_FORMAT_DXT5, "BC3_UNORM"},
-
-  {HKV_TEXTURE_DATA_FORMAT_A4R4G4B4, ""},
-  {HKV_TEXTURE_DATA_FORMAT_R4G4B4A4_GL, ""},
-  {HKV_TEXTURE_DATA_FORMAT_A1R5G5B5, "B5G5R5A1_UNORM"},
-  {HKV_TEXTURE_DATA_FORMAT_R5G6B5, "B5G6R5_UNORM"},
-  {HKV_TEXTURE_DATA_FORMAT_A8R8G8B8, "B8G8R8A8_UNORM"},
-  {HKV_TEXTURE_DATA_FORMAT_X8R8G8B8, "B8G8R8X8_UNORM"},
-  {HKV_TEXTURE_DATA_FORMAT_R8G8B8, ""},
-};
-HK_COMPILE_TIME_ASSERT(sizeof(hkvTexConvFormatStrings) / sizeof(hkvConversionToolFormatString) == HKV_TEXTURE_DATA_FORMAT_COUNT);
-
 
 hkvExternalToolTexConv::hkvExternalToolTexConv(const hkvTextureTransformationSettings& settings, 
   const char* sourceFile, const char* targetFile, bool forceDxt10)
@@ -56,7 +35,7 @@ void hkvExternalToolTexConv::determineExecutablePath()
   hkStringBuf pathBuf;
   if (hkvFileHelper::getMainModuleBasePath(pathBuf) == HK_SUCCESS)
   {
-    pathBuf.pathAppend("../../../Tools/texconv.exe");
+    pathBuf.pathAppend("texconv.exe");
     m_executable = pathBuf;
   }
 }
@@ -109,9 +88,40 @@ void hkvExternalToolTexConv::determineCommandLineParameters(
 
   paramBuf.append(" -sepalpha");
 
-  hkvTextureDataFormat dataFormat = settings.getTargetDataFormat();
-  VASSERT_MSG(hkvTexConvFormatStrings[dataFormat].m_format == dataFormat, "TexConv format string lookup is inconsistent with defined texture formats!");
-  paramBuf.appendJoin(" -f ", hkvTexConvFormatStrings[dataFormat].m_string);
+  const char* dataFormatStr = NULL;
+  switch (settings.getTargetDataFormat())
+  {
+  case HKV_IMAGE_DATA_FORMAT_DXT1:
+    dataFormatStr = "BC1_UNORM";
+    break;
+  case HKV_IMAGE_DATA_FORMAT_DXT3:
+    dataFormatStr = "BC2_UNORM";
+    break;
+  case HKV_IMAGE_DATA_FORMAT_DXT5:
+    dataFormatStr = "BC3_UNORM";
+    break;
+  case HKV_IMAGE_DATA_FORMAT_A1R5G5B5:
+    dataFormatStr = "B5G5R5A1_UNORM";
+    break;
+  case HKV_IMAGE_DATA_FORMAT_R5G6B5:
+    dataFormatStr = "B5G6R5_UNORM";
+    break;
+  case HKV_IMAGE_DATA_FORMAT_A8R8G8B8:
+    dataFormatStr = "B8G8R8A8_UNORM";
+    break;
+  case HKV_IMAGE_DATA_FORMAT_X8R8G8B8:
+    dataFormatStr = "B8G8R8X8_UNORM";
+    break;
+  }
+
+  if (dataFormatStr != NULL)
+  {
+    paramBuf.appendJoin(" -f ", dataFormatStr);
+  }
+  else
+  {
+    VASSERT_MSG(dataFormatStr != NULL, "Unsupported data format specified!");
+  }
 
   paramBuf.append(" -if CUBIC");
 
@@ -127,7 +137,7 @@ void hkvExternalToolTexConv::determineCommandLineParameters(
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -113,39 +113,6 @@ HK_FORCE_INLINE hkBool32 hkVector4d::allExactlyEqualZero() const
 }
 
 template <>
-HK_FORCE_INLINE hkBool32 hkVector4d::allComponentsEqual<4>() const
-{
-	hkVector4d yxwz; yxwz.setPermutation<hkVectorPermutation::YXWZ>(*this);
-	const hkVector4dComparison xz_eq_yw = equal(yxwz);
-
-	hkVector4d zwxy; zwxy.setPermutation<hkVectorPermutation::ZWXY>(*this);
-	const hkVector4dComparison xy_eq_zw = equal(zwxy);
-
-	hkVector4dComparison all_eq; all_eq.setAnd(xz_eq_yw, xy_eq_zw);
-	return all_eq.allAreSet();
-}
-
-template <>
-HK_FORCE_INLINE hkBool32 hkVector4d::allComponentsEqual<3>() const
-{
-	hkVector4d yxzw; yxzw.setPermutation<hkVectorPermutation::YXZW>(*this);
-	const hkVector4dComparison x_eq_y = equal(yxzw);
-
-	hkVector4d zwxy; zwxy.setPermutation<hkVectorPermutation::ZWXY>(*this);
-	const hkVector4dComparison x_eq_z = equal(zwxy);
-
-	hkVector4dComparison x_eq_y_eq_z; x_eq_y_eq_z.setAnd(x_eq_y, x_eq_z);
-	return x_eq_y_eq_z.allAreSet<hkVector4ComparisonMask::MASK_X>();
-}
-
-template <>
-HK_FORCE_INLINE hkBool32 hkVector4d::allComponentsEqual<2>() const
-{
-	hkVector4d yx; yx.setPermutation<hkVectorPermutation::YXZW>(*this);
-	return allExactlyEqual<2>(yx);
-}
-
-template <>
 HK_FORCE_INLINE hkBool32 hkVector4d::allComponentsEqual<1>() const
 {
 	return true;
@@ -154,8 +121,9 @@ HK_FORCE_INLINE hkBool32 hkVector4d::allComponentsEqual<1>() const
 template <int N>
 HK_FORCE_INLINE hkBool32 hkVector4d::allComponentsEqual() const
 {
-	HK_VECTOR4d_NOT_IMPLEMENTED;
-	return false;
+	HK_VECTOR4d_UNSUPPORTED_LENGTH_CHECK;
+	hkVector4d x; x.setAll(getComponent<0>());
+	return allExactlyEqual<N>(x);
 }
 
 template <>
@@ -163,7 +131,7 @@ HK_FORCE_INLINE hkBool32 hkVector4d::allEqual<1>(hkVector4dParameter v, hkSimdDo
 {
 	hkSimdDouble64 t = getComponent<0>() - v.getComponent<0>();
 	t.setAbs( t );
-	return t.isLess(epsilon);
+	return t.isLessEqual(epsilon);
 }
 
 template <>
@@ -175,7 +143,7 @@ HK_FORCE_INLINE hkBool32 hkVector4d::allEqual<2>(hkVector4dParameter v, hkSimdDo
 	t.setAbs( t );
 	hkVector4d epsilon_v;
 	epsilon_v.setAll(epsilon);
-	return t.less( epsilon_v ).allAreSet<hkVector4ComparisonMask::MASK_XY>();
+	return t.lessEqual( epsilon_v ).allAreSet<hkVector4ComparisonMask::MASK_XY>();
 }
 
 template <>
@@ -187,7 +155,7 @@ HK_FORCE_INLINE hkBool32 hkVector4d::allEqual<3>(hkVector4dParameter v, hkSimdDo
 	t.setAbs( t );
 	hkVector4d epsilon_v;
 	epsilon_v.setAll(epsilon);
-	return t.less( epsilon_v ).allAreSet<hkVector4ComparisonMask::MASK_XYZ>();
+	return t.lessEqual( epsilon_v ).allAreSet<hkVector4ComparisonMask::MASK_XYZ>();
 }
 
 template <>
@@ -199,7 +167,7 @@ HK_FORCE_INLINE hkBool32 hkVector4d::allEqual<4>(hkVector4dParameter v, hkSimdDo
 	t.setAbs( t );
 	hkVector4d epsilon_v;
 	epsilon_v.setAll(epsilon);
-	return t.less( epsilon_v ).allAreSet();
+	return t.lessEqual( epsilon_v ).allAreSet();
 }
 
 template <int N>
@@ -214,7 +182,7 @@ HK_FORCE_INLINE hkBool32 hkVector4d::allEqualZero<1>(hkSimdDouble64Parameter eps
 {
 	hkSimdDouble64 t = getComponent<0>();
 	t.setAbs( t );
-	return t.isLess(epsilon);
+	return t.isLessEqual(epsilon);
 }
 
 template <>
@@ -225,7 +193,7 @@ HK_FORCE_INLINE hkBool32 hkVector4d::allEqualZero<2>(hkSimdDouble64Parameter eps
 	t.setAbs( *this );
 	hkVector4d epsilon_v;
 	epsilon_v.setAll(epsilon);
-	return t.less( epsilon_v ).allAreSet<hkVector4ComparisonMask::MASK_XY>();
+	return t.lessEqual( epsilon_v ).allAreSet<hkVector4ComparisonMask::MASK_XY>();
 }
 
 template <>
@@ -236,7 +204,7 @@ HK_FORCE_INLINE hkBool32 hkVector4d::allEqualZero<3>(hkSimdDouble64Parameter eps
 	t.setAbs( *this );
 	hkVector4d epsilon_v;
 	epsilon_v.setAll(epsilon);
-	return t.less( epsilon_v ).allAreSet<hkVector4ComparisonMask::MASK_XYZ>();
+	return t.lessEqual( epsilon_v ).allAreSet<hkVector4ComparisonMask::MASK_XYZ>();
 }
 
 template <>
@@ -247,7 +215,7 @@ HK_FORCE_INLINE hkBool32 hkVector4d::allEqualZero<4>(hkSimdDouble64Parameter eps
 	t.setAbs( *this );
 	hkVector4d epsilon_v;
 	epsilon_v.setAll(epsilon);
-	return t.less( epsilon_v ).allAreSet();
+	return t.lessEqual( epsilon_v ).allAreSet();
 }
 
 template <int N>
@@ -383,7 +351,7 @@ HK_FORCE_INLINE int hkVector4d::getIndexOfMaxComponent<4>() const
 	HK_MATH_ASSERT(0x2842fb1, mask > 0, "inconsistent max value of self");
 	return isMax.getIndexOfLastComponentSet();
 #else
-	const hkDouble64* HK_RESTRICT tmp = (const hkDouble64* HK_RESTRICT)this;
+	const hkDouble64* HK_RESTRICT tmp = (const hkDouble64*)this;
 
 	int		xyIndex = 0;
 	hkDouble64	xyValue = tmp[0];
@@ -421,7 +389,7 @@ HK_FORCE_INLINE int hkVector4d::getIndexOfMaxComponent<3>() const
 	HK_MATH_ASSERT(0x2842fb2, (mask & hkVector4ComparisonMask::MASK_W) == 0, "selective compare failed");
 	return isMax.getIndexOfLastComponentSet();
 #else
-	const hkDouble64* HK_RESTRICT tmp = (const hkDouble64* HK_RESTRICT)this;
+	const hkDouble64* HK_RESTRICT tmp = (const hkDouble64*)this;
 
 	int		xyIndex = 0;
 	hkDouble64	xyValue = tmp[0];
@@ -475,7 +443,7 @@ HK_FORCE_INLINE int hkVector4d::getIndexOfMinComponent<4>() const
 	HK_MATH_ASSERT(0x2842fb1, mask > 0, "inconsistent min value of self");
 	return isMin.getIndexOfFirstComponentSet();
 #else
-	const hkDouble64* HK_RESTRICT tmp = (const hkDouble64* HK_RESTRICT)this;
+	const hkDouble64* HK_RESTRICT tmp = (const hkDouble64*)this;
 
 	int		xyIndex = 0;
 	hkDouble64	xyValue = tmp[0];
@@ -513,7 +481,7 @@ HK_FORCE_INLINE int hkVector4d::getIndexOfMinComponent<3>() const
 	HK_MATH_ASSERT(0x2842fb2, (mask & hkVector4ComparisonMask::MASK_W) == 0, "selective compare failed");
 	return isMin.getIndexOfFirstComponentSet();
 #else
-	const hkDouble64* HK_RESTRICT tmp = (const hkDouble64* HK_RESTRICT)this;
+	const hkDouble64* HK_RESTRICT tmp = (const hkDouble64*)this;
 
 	int		xyIndex = 0;
 	hkDouble64	xyValue = tmp[0];
@@ -558,18 +526,14 @@ HK_FORCE_INLINE /*static*/ const hkVector4d& HK_CALL hkVector4d::getZero()
 template<int vectorConstant>
 HK_FORCE_INLINE /*static*/ const hkVector4d& HK_CALL hkVector4d::getConstant()
 {
+	HK_VECTOR4d_CONSTANT_CHECK;
 	return *(const hkVector4d*) (g_vectordConstants + vectorConstant);
 }
 
 HK_FORCE_INLINE /*static*/ const hkVector4d& HK_CALL hkVector4d::getConstant(hkVectorConstant vectorConstant)
 {
+	HK_MATH_ASSERT(0x2771faa0,((vectorConstant>HK_QUADREAL_BEGIN)&&(vectorConstant<HK_QUADREAL_END)),"unknown vector constant");
 	return *(const hkVector4d*) (g_vectordConstants + vectorConstant);
-}
-
-template<int vectorConstant>
-HK_FORCE_INLINE void hkVector4d::setConstant()
-{
-	*this = getConstant<vectorConstant>();
 }
 
 
@@ -731,7 +695,7 @@ HK_FORCE_INLINE void hkVector4d::_setTransformedInversePos(const hkQsTransformd&
 	temp.sub(a.getTranslation());
 	temp._setRotatedInverseDir(a.getRotation(), temp);
 
-	hkVector4d invScale; invScale.setReciprocal<HK_ACC_23_BIT,HK_DIV_IGNORE>(a.getScale());
+	hkVector4d invScale; invScale.setReciprocal<HK_ACC_MID,HK_DIV_IGNORE>(a.getScale());
 	setMul(temp, invScale);
 }
 
@@ -772,21 +736,23 @@ HK_FORCE_INLINE void hkVector4d::setClamped( hkVector4dParameter a, hkVector4dPa
 	setMax(minVal, clamped);
 }
 
+
+template <int N, hkMathAccuracyMode A>
+HK_FORCE_INLINE void hkVector4d::setClampedToMaxLength(hkVector4dParameter vSrc, hkSimdDouble64Parameter maxLen)
+{
+	HK_ASSERT( 0xf045fcfe, maxLen >= hkSimdDouble64_0 );
+	hkSimdDouble64 lenSqrd = vSrc.lengthSquared<N>();
+	hkSimdDouble64 invLen = lenSqrd.sqrtInverse<A, HK_SQRT_SET_ZERO>();
+
+	hkVector4dComparison	maxExceeded = (invLen * lenSqrd).greater( maxLen );
+	hkVector4d rescaledSrc;	rescaledSrc.setMul( maxLen * invLen, vSrc);
+
+	setSelect(maxExceeded, rescaledSrc, vSrc );
+}
+
 HK_FORCE_INLINE void hkVector4d::setClampedToMaxLength(hkVector4dParameter vSrc, hkSimdDouble64Parameter constMaxLen)
 {
-	// Make sure maxLen is > 0
-	hkSimdDouble64 maxLen; maxLen.setMax(constMaxLen, hkSimdDouble64_Eps);
-
-	// maxLen can be big, i.e. HK_DOUBLE_MAX, so we can't square it
-	hkSimdDouble64 len = vSrc.length<3>();
-	hkSimdDouble64 invLen; invLen.setReciprocal(len);
-
-	// calc rescaled
-	hkVector4d rescaledSrc;
-	rescaledSrc.setMul(maxLen * invLen, vSrc);
-
-	// choose
-	setSelect(len.lessEqual(maxLen), vSrc, rescaledSrc);
+	setClampedToMaxLength<3, HK_ACC_MID>( vSrc, constMaxLen );
 }
 
 HK_FORCE_INLINE void hkVector4d::setInt24W( int value )
@@ -819,8 +785,8 @@ HK_FORCE_INLINE int hkVector4d::findComponent<4>(hkSimdDouble64Parameter value) 
 	if (isEqual.anyIsSet())
 		return isEqual.getIndexOfFirstComponentSet();
 #else
-	const hkDouble64* HK_RESTRICT tmp = (const hkDouble64* HK_RESTRICT)this;
-	const hkDouble64* HK_RESTRICT v   = (const hkDouble64* HK_RESTRICT)&value;
+	const hkDouble64* HK_RESTRICT tmp = (const hkDouble64*)this;
+	const hkDouble64* HK_RESTRICT v   = (const hkDouble64*)&value;
 
 	if (v[0] == tmp[0]) return 0;
 	if (v[0] == tmp[1]) return 1;
@@ -839,8 +805,8 @@ HK_FORCE_INLINE int hkVector4d::findComponent<3>(hkSimdDouble64Parameter value) 
 	if (isEqual.anyIsSet<hkVector4ComparisonMask::MASK_XYZ>())
 		return isEqual.getIndexOfFirstComponentSet();
 #else
-	const hkDouble64* HK_RESTRICT tmp = (const hkDouble64* HK_RESTRICT)this;
-	const hkDouble64* HK_RESTRICT v   = (const hkDouble64* HK_RESTRICT)&value;
+	const hkDouble64* HK_RESTRICT tmp = (const hkDouble64*)this;
+	const hkDouble64* HK_RESTRICT v   = (const hkDouble64*)&value;
 
 	if (v[0] == tmp[0]) return 0;
 	if (v[0] == tmp[1]) return 1;
@@ -858,8 +824,8 @@ HK_FORCE_INLINE int hkVector4d::findComponent<2>(hkSimdDouble64Parameter value) 
 	if (isEqual.anyIsSet<hkVector4ComparisonMask::MASK_XY>())
 		return isEqual.getIndexOfFirstComponentSet();
 #else
-	const hkDouble64* HK_RESTRICT tmp = (const hkDouble64* HK_RESTRICT)this;
-	const hkDouble64* HK_RESTRICT v   = (const hkDouble64* HK_RESTRICT)&value;
+	const hkDouble64* HK_RESTRICT tmp = (const hkDouble64*)this;
+	const hkDouble64* HK_RESTRICT v   = (const hkDouble64*)&value;
 
 	if (v[0] == tmp[0]) return 0;
 	if (v[0] == tmp[1]) return 1;
@@ -895,7 +861,7 @@ HK_FORCE_INLINE void hkVector4d::sub4(hkVector4dParameter v) { sub(v); }
 HK_FORCE_INLINE void hkVector4d::mul4(hkVector4dParameter a) { mul(a); }
 HK_FORCE_INLINE void hkVector4d::mul4(hkSimdDouble64Parameter a) { mul(a); }
 HK_FORCE_INLINE void hkVector4d::div4(hkVector4dParameter a) { div<HK_ACC_FULL,HK_DIV_IGNORE>(a); }
-HK_FORCE_INLINE void hkVector4d::div4fast(hkVector4dParameter a) { div<HK_ACC_23_BIT,HK_DIV_IGNORE>(a); }
+HK_FORCE_INLINE void hkVector4d::div4fast(hkVector4dParameter a) { div<HK_ACC_MID,HK_DIV_IGNORE>(a); }
 HK_FORCE_INLINE hkSimdDouble64 hkVector4d::dot3(hkVector4dParameter v) const { return dot<3>(v); }
 HK_FORCE_INLINE hkSimdDouble64 hkVector4d::dot4(hkVector4dParameter a) const { return dot<4>(a); }
 HK_FORCE_INLINE hkDouble64 hkVector4d::dot3fpu(hkVector4dParameter a) const { const hkVector4d& t = *this; return (t(0) * a(0)) + ( t(1) * a(1)) + ( t(2) * a(2) ); }
@@ -926,27 +892,27 @@ HK_FORCE_INLINE void hkVector4d::setNegMask4(hkVector4dParameter v, int mask) { 
 HK_FORCE_INLINE void hkVector4d::setDiv4(hkVector4dParameter a, hkVector4dParameter b) { setDiv<HK_ACC_FULL,HK_DIV_IGNORE>(a,b); }
 HK_FORCE_INLINE void hkVector4d::setDiv4fast(hkVector4dParameter a, hkVector4dParameter b) { setDiv<HK_ACC_12_BIT,HK_DIV_IGNORE>(a,b); }
 HK_FORCE_INLINE hkSimdDouble64 hkVector4d::getSimdAt(int i) const { return getComponent(i); }
-HK_FORCE_INLINE void hkVector4d::normalize3() { normalize<3,HK_ACC_23_BIT,HK_SQRT_SET_ZERO>(); }
-HK_FORCE_INLINE void hkVector4d::normalize4() { normalize<4,HK_ACC_23_BIT,HK_SQRT_SET_ZERO>(); }
+HK_FORCE_INLINE void hkVector4d::normalize3() { normalize<3,HK_ACC_MID,HK_SQRT_SET_ZERO>(); }
+HK_FORCE_INLINE void hkVector4d::normalize4() { normalize<4,HK_ACC_MID,HK_SQRT_SET_ZERO>(); }
 HK_FORCE_INLINE void hkVector4d::fastNormalize3() { normalize<3,HK_ACC_12_BIT,HK_SQRT_SET_ZERO>(); }
 HK_FORCE_INLINE void hkVector4d::fastNormalize3NonZero() { normalize<3,HK_ACC_12_BIT,HK_SQRT_IGNORE>(); }
 HK_FORCE_INLINE void hkVector4d::setFastNormalize3NonZero(hkVector4dParameter a) { *this = a; normalize<3,HK_ACC_12_BIT,HK_SQRT_IGNORE>(); }
-HK_FORCE_INLINE hkSimdDouble64 hkVector4d::normalizeWithLength3() { return normalizeWithLength<3,HK_ACC_23_BIT,HK_SQRT_SET_ZERO>(); }
-HK_FORCE_INLINE hkSimdDouble64 hkVector4d::normalizeWithLength4() { return normalizeWithLength<4,HK_ACC_23_BIT,HK_SQRT_SET_ZERO>(); }
+HK_FORCE_INLINE hkSimdDouble64 hkVector4d::normalizeWithLength3() { return normalizeWithLength<3,HK_ACC_MID,HK_SQRT_SET_ZERO>(); }
+HK_FORCE_INLINE hkSimdDouble64 hkVector4d::normalizeWithLength4() { return normalizeWithLength<4,HK_ACC_MID,HK_SQRT_SET_ZERO>(); }
 HK_FORCE_INLINE hkSimdDouble64 hkVector4d::fastNormalizeWithLength3() { return normalizeWithLength<3,HK_ACC_12_BIT,HK_SQRT_SET_ZERO>(); }
 HK_FORCE_INLINE hkResult hkVector4d::normalize3IfNotZero () { return (normalizeIfNotZero<3>() ? HK_SUCCESS : HK_FAILURE); }
 HK_FORCE_INLINE hkSimdDouble64 hkVector4d::length3() const { return length<3>(); }
 HK_FORCE_INLINE hkSimdDouble64 hkVector4d::length4() const { return length<4>(); }
 HK_FORCE_INLINE hkSimdDouble64 hkVector4d::lengthSquared3() const { return lengthSquared<3>(); }
 HK_FORCE_INLINE hkSimdDouble64 hkVector4d::lengthSquared4() const { return lengthSquared<4>(); }
-HK_FORCE_INLINE hkSimdDouble64 hkVector4d::lengthInverse3() const { return lengthInverse<3,HK_ACC_23_BIT,HK_SQRT_SET_ZERO>(); }
-HK_FORCE_INLINE hkSimdDouble64 hkVector4d::lengthInverse4() const { return lengthInverse<4,HK_ACC_23_BIT,HK_SQRT_SET_ZERO>(); }
+HK_FORCE_INLINE hkSimdDouble64 hkVector4d::lengthInverse3() const { return lengthInverse<3,HK_ACC_MID,HK_SQRT_SET_ZERO>(); }
+HK_FORCE_INLINE hkSimdDouble64 hkVector4d::lengthInverse4() const { return lengthInverse<4,HK_ACC_MID,HK_SQRT_SET_ZERO>(); }
 HK_FORCE_INLINE void hkVector4d::setAdd4(hkVector4dParameter a, hkVector4dParameter b) { setAdd(a,b); }
 HK_FORCE_INLINE void hkVector4d::setSub4(hkVector4dParameter a, hkVector4dParameter b) { setSub(a,b); }
-HK_FORCE_INLINE void hkVector4d::setSqrtInverse4(hkVector4dParameter v) { setSqrtInverse<HK_ACC_23_BIT,HK_SQRT_IGNORE>(v); }
+HK_FORCE_INLINE void hkVector4d::setSqrtInverse4(hkVector4dParameter v) { setSqrtInverse<HK_ACC_MID,HK_SQRT_IGNORE>(v); }
 HK_FORCE_INLINE void hkVector4d::setSqrtInverse4_7BitAccuracy(hkVector4dParameter v) { setSqrtInverse<HK_ACC_12_BIT,HK_SQRT_IGNORE>(v); }
-HK_FORCE_INLINE void hkVector4d::setReciprocal3(hkVector4dParameter v) { setReciprocal<HK_ACC_23_BIT,HK_DIV_IGNORE>(v); setComponent<3>(hkSimdDouble64::getConstant(HK_QUADREAL_1)); }
-HK_FORCE_INLINE void hkVector4d::setReciprocal4(hkVector4dParameter v) { setReciprocal<HK_ACC_23_BIT,HK_DIV_IGNORE>(v); }
+HK_FORCE_INLINE void hkVector4d::setReciprocal3(hkVector4dParameter v) { setReciprocal<HK_ACC_MID,HK_DIV_IGNORE>(v); setComponent<3>(hkSimdDouble64::getConstant(HK_QUADREAL_1)); }
+HK_FORCE_INLINE void hkVector4d::setReciprocal4(hkVector4dParameter v) { setReciprocal<HK_ACC_MID,HK_DIV_IGNORE>(v); }
 HK_FORCE_INLINE void hkVector4d::setAddMul4(hkVector4dParameter a, hkVector4dParameter x, hkVector4dParameter y) { setAddMul(a,x,y); }
 HK_FORCE_INLINE void hkVector4d::setAddMul4(hkVector4dParameter a, hkVector4dParameter b, hkSimdDouble64Parameter r) { setAddMul(a,b,r); }
 HK_FORCE_INLINE void hkVector4d::setAbs4(hkVector4dParameter v) { setAbs(v); }
@@ -1037,7 +1003,7 @@ HK_FORCE_INLINE const hkSimdDouble64 hkVector4d::length() const
 template <int N>
 HK_FORCE_INLINE const hkSimdDouble64 hkVector4d::length() const
 {
-	return length<N,HK_ACC_23_BIT,HK_SQRT_SET_ZERO>();
+	return length<N,HK_ACC_MID,HK_SQRT_SET_ZERO>();
 }
 
 template <int N, hkMathAccuracyMode A, hkMathNegSqrtMode S> 
@@ -1050,7 +1016,7 @@ HK_FORCE_INLINE const hkSimdDouble64 hkVector4d::lengthInverse() const
 template <int N>
 HK_FORCE_INLINE const hkSimdDouble64 hkVector4d::lengthInverse() const
 {
-	return lengthInverse<N,HK_ACC_23_BIT,HK_SQRT_SET_ZERO>();
+	return lengthInverse<N,HK_ACC_MID,HK_SQRT_SET_ZERO>();
 }
 
 template <int N, hkMathAccuracyMode A, hkMathNegSqrtMode S>
@@ -1062,7 +1028,7 @@ HK_FORCE_INLINE void hkVector4d::normalize()
 template <int N>
 HK_FORCE_INLINE void hkVector4d::normalize()
 {
-	normalize<N,HK_ACC_23_BIT,HK_SQRT_SET_ZERO>();
+	normalize<N,HK_ACC_MID,HK_SQRT_SET_ZERO>();
 }
 
 template <int N, hkMathAccuracyMode A, hkMathNegSqrtMode S>
@@ -1077,7 +1043,7 @@ HK_FORCE_INLINE const hkSimdDouble64 hkVector4d::normalizeWithLength()
 template <int N>
 HK_FORCE_INLINE const hkSimdDouble64 hkVector4d::normalizeWithLength()
 {
-	return normalizeWithLength<N,HK_ACC_23_BIT,HK_SQRT_SET_ZERO>();
+	return normalizeWithLength<N,HK_ACC_MID,HK_SQRT_SET_ZERO>();
 }
 
 template <int N, hkMathAccuracyMode A, hkMathNegSqrtMode S>
@@ -1104,7 +1070,7 @@ HK_FORCE_INLINE hkBool32 hkVector4d::normalizeIfNotZero()
 template <int N>
 HK_FORCE_INLINE hkBool32 hkVector4d::normalizeIfNotZero()
 {
-	return normalizeIfNotZero<N,HK_ACC_23_BIT,HK_SQRT_SET_ZERO>();
+	return normalizeIfNotZero<N,HK_ACC_MID,HK_SQRT_SET_ZERO>();
 }
 
 template <hkMathAccuracyMode A, hkMathNegSqrtMode S>
@@ -1117,7 +1083,7 @@ HK_FORCE_INLINE const hkSimdDouble64 hkVector4d::distanceTo(hkVector4dParameter 
 
 HK_FORCE_INLINE const hkSimdDouble64 hkVector4d::distanceTo(hkVector4dParameter p) const
 {
-	return distanceToSquared(p).sqrt<HK_ACC_23_BIT,HK_SQRT_SET_ZERO>();
+	return distanceToSquared(p).sqrt<HK_ACC_MID,HK_SQRT_SET_ZERO>();
 }
 
 
@@ -1144,9 +1110,17 @@ HK_FORCE_INLINE const hkSimdDouble64 hkVector4d::setNormalizedEnsureUnitLength(h
 	oldLength.zeroIfTrue(lengthLessEps);
 	return oldLength;
 #else
-	if (length2.isGreaterEqual(hkSimdDouble64::getConstant<HK_QUADREAL_EPS_SQRD>()))
+	if (length2.isGreaterEqual(hkSimdDouble64_EpsSqrd))
 	{
-		const hkSimdDouble64 invLength = length2.sqrtInverse<A,HK_SQRT_IGNORE>();
+		hkSimdDouble64 invLength;
+		if ( A == HK_ACC_FULL )
+		{
+			invLength = length2.sqrtInverse<A,HK_SQRT_SET_ZERO>();
+		}
+		else
+		{
+			invLength = length2.sqrtInverse<A,HK_SQRT_IGNORE>();
+		}
 		setMul(v,invLength);
 		return (length2 * invLength);
 	}
@@ -1158,11 +1132,11 @@ HK_FORCE_INLINE const hkSimdDouble64 hkVector4d::setNormalizedEnsureUnitLength(h
 template <int N>
 HK_FORCE_INLINE const hkSimdDouble64 hkVector4d::setNormalizedEnsureUnitLength(hkVector4dParameter v)
 {
-	return setNormalizedEnsureUnitLength<N,HK_ACC_23_BIT>(v);
+	return setNormalizedEnsureUnitLength<N,HK_ACC_MID>(v);
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

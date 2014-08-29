@@ -85,7 +85,11 @@ namespace TerrainEditorPlugin.Editing
       if (iSelIndex>=0)
         _comboBox.EnsureVisible(iSelIndex);
 
-      frmsvr.DropDownControl(_comboBox);
+      using (EditorManager.ActiveView.AcquireModal())
+      {
+        frmsvr.DropDownControl(_comboBox);
+      }
+
       if (_comboBox.SelectedItems.Count == 1)
         return _comboBox.SelectedItems[0].Tag as DetailTextureResource;
       return null;
@@ -130,7 +134,7 @@ namespace TerrainEditorPlugin.Editing
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -9,8 +9,6 @@
 #ifndef HK_MIN_HEAP_H
 #define HK_MIN_HEAP_H
 
-// Include for swap
-#include <Common/Base/Algorithm/Sort/hkSort.h>
 
 template <typename T>
 struct hkMinHeapDefaultOperations
@@ -20,7 +18,7 @@ struct hkMinHeapDefaultOperations
 			/// Set index
 		HK_FORCE_INLINE static void setIndex(const T& a, int index ) {}
 			/// Swap
-		HK_FORCE_INLINE static void swap(T& a, T& b) { hkAlgorithm::swap(a, b);}
+		HK_FORCE_INLINE static void swap(T& a, T& b) { hkMath::swap(a, b);}
 			/// Returns true if the index is correct.
 		HK_FORCE_INLINE static hkBool32 hasIndex(const T& a, int i) { return true; }
 };
@@ -95,7 +93,7 @@ class hkMinHeap
 #endif // HK_MIN_HEAP_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

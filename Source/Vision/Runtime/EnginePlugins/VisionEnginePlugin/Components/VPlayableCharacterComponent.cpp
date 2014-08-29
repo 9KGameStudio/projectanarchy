@@ -10,7 +10,7 @@
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Components/VPlayableCharacterComponent.hpp>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Animation/Transition/VTransitionStateMachine.hpp>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Input/VVirtualThumbStick.hpp>
-#include <Vision/Runtime/Base/System/Memory/VMemDbg.hpp>
+
 
 ///////////////////////////////////////////////////////////////////////////////
 // Input Map
@@ -63,7 +63,7 @@ VPlayableCharacterComponent::VPlayableCharacterComponent()
   m_pInputMap->MapTrigger(INPUTMAP_CHARACTER_ROTATE_RIGHT,  V_KEYBOARD, CT_KB_D);
 #endif
 
-#if defined (WIN32)
+#if defined (_VISION_WIN32)
 
 #elif defined (_VISION_XENON)
   m_pInputMap->MapTrigger(INPUTMAP_CHARACTER_WALK_FORWARD,  V_XENON_PAD(0), CT_PAD_LEFT_THUMB_STICK_UP,    VInputOptions::DeadZone(0.4f));
@@ -219,11 +219,6 @@ void VPlayableCharacterComponent::PerFrameUpdate()
   if (!pStateMachine)
     return;
 
-  // Warn the user if he 
-  if (!pOwnerEntity->GetPhysicsObject() && !m_bNoPhysicsWarningShown)
-  {
-  }
-
   // Set character to idle and return if pause is enabled
   if (m_bIsPaused)
   {
@@ -310,7 +305,7 @@ void VPlayableCharacterComponent::SetState(VString &sNewState)
 
 
 
-START_VAR_TABLE(VPlayableCharacterComponent,IVObjectComponent,"Playable character component. Can be attached to entities to enable simple keyboard based character control for rapid prototyping. Requires the entity to have a transition state machine component! (Control keys are W,A,S,D)",VVARIABLELIST_FLAGS_NONE, "Playable Character" )
+START_VAR_TABLE(VPlayableCharacterComponent,IVObjectComponent,"Can be attached to entities to enable simple keyboard character control for rapid prototyping. Requires the entity to have a transition state machine component. Control keys are W,A,S,D",VVARIABLELIST_FLAGS_NONE, "Playable Character" )
   DEFINE_VAR_VSTRING(VPlayableCharacterComponent, IdleAnimation, "Name of the idle animation", "", 0, 0, "dropdownlist(Animation)");
   DEFINE_VAR_VSTRING(VPlayableCharacterComponent, WalkForwardAnim, "Name of the walk forward animation", "", 0, 0, "dropdownlist(Animation)");
   DEFINE_VAR_VSTRING(VPlayableCharacterComponent, WalkBackwardAnim, "Name of the walk backward animation", "", 0, 0, "dropdownlist(Animation)");
@@ -319,7 +314,7 @@ START_VAR_TABLE(VPlayableCharacterComponent,IVObjectComponent,"Playable characte
 END_VAR_TABLE
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

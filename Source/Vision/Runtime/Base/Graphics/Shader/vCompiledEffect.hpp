@@ -91,7 +91,7 @@ public:
   ///   Returns the number of shader passes in this technique
   /// 
   /// This number can be used to iterate over the shader passes using GetShader(i)
-  inline int GetShaderCount() const {return m_Shaders.Count();}
+  inline unsigned int GetShaderCount() const {return m_Shaders.Count();}
 
   /// \brief
   ///   Returns a pointer to a list of pointers to all shader pass objects in this technique.
@@ -321,7 +321,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

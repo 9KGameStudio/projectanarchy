@@ -10,10 +10,10 @@
 
 #include <Common/Base/Container/BlockStream/Allocator/hkBlockStreamAllocator.h>
 
-/// A block steam allocator which dynamically allocates more blocks when its initial capacity is exceeded.
+/// A block stream allocator which dynamically allocates more blocks when its initial capacity is exceeded.
 /// It "shrinks" (i.e. returns the blocks to the base allocator) only when it is destroyed or when you call
 /// releaseUnusedBlocks().
-class hkDynamicBlockStreamAllocator : public hkBlockStreamAllocator
+class HK_EXPORT_COMMON hkDynamicBlockStreamAllocator : public hkBlockStreamAllocator
 {
 	public:
 
@@ -73,7 +73,7 @@ class hkDynamicBlockStreamAllocator : public hkBlockStreamAllocator
 #endif	// !HK_DYNAMIC_BLOCK_STREAM_ALLOCATOR_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

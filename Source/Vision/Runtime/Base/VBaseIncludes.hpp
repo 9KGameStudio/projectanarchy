@@ -51,7 +51,6 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <stdarg.h>
-#include <stdlib.h>
 #include <float.h>
 #include <ctype.h>
 #include <wchar.h>
@@ -83,7 +82,7 @@
 #if defined(_VISION_WINRT)
   #include <Vision/Runtime/Base/Platform/VPlatformWinRT.hpp>
 
-#elif defined(WIN32)
+#elif defined(_VISION_WIN32)
   #include <Vision/Runtime/Base/Platform/VPlatformWin32.hpp>
 
 #elif defined(_VISION_XENON)
@@ -91,6 +90,9 @@
 
 #elif defined(_VISION_PS3)
   #include <Vision/Runtime/Base/Platform/VPlatformPS3.hpp>
+
+#elif defined(_VISION_NACL)
+ #include <Vision/Runtime/Base/Platform/VPlatformNaCl.hpp>
 
 #elif defined(_VISION_POSIX)
   #include <Vision/Runtime/Base/Platform/VPlatformPosix.hpp>
@@ -108,7 +110,7 @@
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

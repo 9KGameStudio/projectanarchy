@@ -11,12 +11,12 @@
 
 #include <Physics/Constraint/Data/hkpConstraintData.h>
 
-extern const class hkClass hkpPrismaticConstraintDataAtomsClass;
-extern const hkClass hkpPrismaticConstraintDataClass;
+extern HK_EXPORT_PHYSICS const class hkClass hkpPrismaticConstraintDataAtomsClass;
+extern HK_EXPORT_PHYSICS const hkClass hkpPrismaticConstraintDataClass;
 
 
 /// Prismatic constraint. Free to move along an axis.
-class hkpPrismaticConstraintData : public hkpConstraintData
+class HK_EXPORT_PHYSICS hkpPrismaticConstraintData : public hkpConstraintData
 {
 	public:
 
@@ -185,7 +185,7 @@ class hkpPrismaticConstraintData : public hkpConstraintData
 #endif // HKP_PRISMATIC_CONSTRAINT_DATA_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

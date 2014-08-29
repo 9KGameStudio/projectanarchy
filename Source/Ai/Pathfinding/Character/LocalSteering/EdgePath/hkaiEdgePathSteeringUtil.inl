@@ -91,7 +91,7 @@ inline void hkaiEdgePathSteeringUtil::calcTangentDirs(
 	// earlier AND if we do it later we might throw up a floating point 
 	// exception when we do that sqrt down there.
 
-	static const hkQuadReal insideLenFactorsQuad = HK_QUADREAL_CONSTANT(1.0e-4f,1.0e-4f,0.0f,0.0f);
+	hkQuadReal insideLenFactorsQuad = HK_QUADREAL_CONSTANT(1.0e-4f,1.0e-4f,0.0f,0.0f);
 	hkVector4 insideLenFactors; insideLenFactors.m_quad = insideLenFactorsQuad;
 
 	hkVector4Comparison insideCircle = pt1LenSq_pt2LenSq_pt1LenSq_pt2LenSq.lessEqualZero();
@@ -226,7 +226,7 @@ hkBool32 hkaiEdgePathSteeringUtil::inCapsule( hkVector4 const& p, hkVector4 cons
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

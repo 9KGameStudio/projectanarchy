@@ -34,25 +34,31 @@ HK_FORCE_INLINE void hkcdPlanarGeometryPolygonCollection::Polygon::setSupportPla
 }
 
 //
-//	Returns a read-only pointer to the boundary planes
-
-HK_FORCE_INLINE const hkcdPlanarGeometryPolygonCollection::PlaneId* hkcdPlanarGeometryPolygonCollection::Polygon::getBoundaryPlaneIds() const
-{
-	return reinterpret_cast<const PlaneId*>((&m_supportId) + 1);
-}
-
-//
 //	Returns the i-th boundary plane Id
 
 HK_FORCE_INLINE hkcdPlanarGeometryPolygonCollection::PlaneId hkcdPlanarGeometryPolygonCollection::Polygon::getBoundaryPlaneId(int i) const
 {
-	return PlaneId((&m_supportId)[1 + i] & PAYLOAD_MASK);
+	return PlaneId((&m_supportId)[1 + (i << 1)] & PAYLOAD_MASK);
 }
 
 HK_FORCE_INLINE void hkcdPlanarGeometryPolygonCollection::Polygon::setBoundaryPlaneId(int i, PlaneId pid)
 {
-	hkUint32& p = (&m_supportId)[1 + i];
+	hkUint32& p = (&m_supportId)[1 + (i << 1)];
 	p = (p & BLOCK_FLAGS_MASK) | (pid.valueUnchecked() & PAYLOAD_MASK);
+}
+
+//
+// Returns the i-th vertex
+
+HK_FORCE_INLINE hkcdPlanarGeometryPolygonCollection::VertexId hkcdPlanarGeometryPolygonCollection::Polygon::getVertexId(int i) const
+{
+	return VertexId((&m_supportId)[2 + (i << 1)] & PAYLOAD_MASK);
+}
+
+HK_FORCE_INLINE void hkcdPlanarGeometryPolygonCollection::Polygon::setVertexId(int i, VertexId vid)
+{
+	hkUint32& v = (&m_supportId)[2 + (i << 1)];
+	v = (v & BLOCK_FLAGS_MASK) | (vid.valueUnchecked() & PAYLOAD_MASK);
 }
 
 //
@@ -97,7 +103,8 @@ HK_FORCE_INLINE hkcdPlanarGeometryPolygonCollection::Polygon& hkcdPlanarGeometry
 HK_FORCE_INLINE hkcdPlanarGeometryPolygonCollection::PolygonId hkcdPlanarGeometryPolygonCollection::alloc(PlaneId supportPlaneId, hkUint32 materialId, int numBoundaryPlanes)
 {
 	// Allocate polygon storage
-	hkUint32 allocSize = hkMath::max2<hkUint32>(MIN_BLOCK_SIZE, (sizeof(Polygon) / sizeof(int)) + numBoundaryPlanes);
+	const int numDataElem	= numBoundaryPlanes << 1;
+	hkUint32 allocSize		= hkMath::max2<hkUint32>(MIN_BLOCK_SIZE, (sizeof(Polygon) / sizeof(int)) + numDataElem);
 	const PolygonId polyId(blockAlloc(allocSize));
 
 	// Set it up
@@ -107,13 +114,13 @@ HK_FORCE_INLINE hkcdPlanarGeometryPolygonCollection::PolygonId hkcdPlanarGeometr
 
 	// Get planes and mark the last one
 	hkUint32* planes = reinterpret_cast<hkUint32*>(&poly.m_supportId);
-	planes[numBoundaryPlanes] |= END_PAYLOAD_FLAG;
+	planes[numDataElem] |= END_PAYLOAD_FLAG;
 
 	// Sanity checks
 #ifdef HK_DEBUG
 	{
 		// There should be just one plane marked as the end plane
-		for (int k = 0; k < numBoundaryPlanes; k++)
+		for (int k = 0; k < numDataElem; k++)
 		{
 			HK_ASSERT(0x5e96e8a3, !(planes[k] & END_PAYLOAD_FLAG));
 		}
@@ -148,8 +155,11 @@ HK_FORCE_INLINE int hkcdPlanarGeometryPolygonCollection::getNumBoundaryPlanes(Po
 	const int* planes = &m_storage[polyId.value() + Polygon::SUPPORT_PLANE_ID_OFFSET];
 
 	int count = 0;
-	while ( !(planes[count++] & END_PAYLOAD_FLAG) ) {}
-	return count - 1;
+	while ( !(planes[count] & END_PAYLOAD_FLAG) )
+	{
+		count += 2;
+	}
+	return (count >> 1);
 }
 
 //
@@ -206,18 +216,24 @@ HK_FORCE_INLINE void hkcdPlanarGeometryPolygonCollection::flipWinding(PolygonId 
 	Polygon& poly	= accessPolygon(polyId);
 	for (int i = 0; (i << 1) < n; i++)
 	{
+		// swap plane ids
 		const PlaneId boundI	= poly.getBoundaryPlaneId(i);
 		const PlaneId boundNI	= poly.getBoundaryPlaneId(n - i);
-
 		poly.setBoundaryPlaneId(i, boundNI);
 		poly.setBoundaryPlaneId(n - i, boundI);
+
+		// swap vertex ids
+		const VertexId vI		= poly.getVertexId(i);
+		const VertexId vNI		= poly.getVertexId(n - i);
+		poly.setVertexId(i, vI);
+		poly.setVertexId(n - i, vNI);
 	}
 
 	poly.setSupportPlaneId(hkcdPlanarGeometryPrimitives::getOppositePlaneId(poly.getSupportPlaneId()));
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

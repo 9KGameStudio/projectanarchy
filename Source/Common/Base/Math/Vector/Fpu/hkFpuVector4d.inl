@@ -74,6 +74,13 @@ HK_FORCE_INLINE void hkVector4d::setZero()
 	m_quad.v[3] = hkDouble64(0);
 }
 
+template<int vectorConstant>
+HK_FORCE_INLINE void hkVector4d::setConstant()
+{
+	HK_VECTOR4d_CONSTANT_CHECK;
+	m_quad = g_vectordConstants[vectorConstant];
+}
+
 template <int I> 
 HK_FORCE_INLINE void hkVector4d::zeroComponent()
 {
@@ -329,6 +336,10 @@ HK_FORCE_INLINE void hkVector4d::setSelect( hkVector4dParameter trueValue, hkVec
 	m_quad.v[3] = (M & hkVector4ComparisonMask::MASK_W) ? trueValue.m_quad.v[3] : falseValue.m_quad.v[3];
 }
 
+HK_FORCE_INLINE void hkVector4d::setClampedZeroOne( hkVector4dParameter a )
+{
+	setClamped(a, getConstant<HK_QUADREAL_0>(), getConstant<HK_QUADREAL_1>());
+}
 
 HK_FORCE_INLINE void hkVector4d::zeroIfFalse( hkVector4dComparisonParameter comp )
 {
@@ -557,11 +568,7 @@ HK_FORCE_INLINE void hkVector4d::addXYZ(hkVector4dParameter xyz)
 	m_quad.v[0] += xyz.m_quad.v[0];
 	m_quad.v[1] += xyz.m_quad.v[1];
 	m_quad.v[2] += xyz.m_quad.v[2];
-#if defined(HK_REAL_IS_DOUBLE)
-	HK_ON_DEBUG( *((hkUint64*)&(m_quad.v[3])) = 0xffffffffffffffffull; )
-#else
-	HK_ON_DEBUG( *((hkUint32*)&(m_quad.v[3])) = 0xffffffff; )
-#endif
+	HK_ON_DEBUG( m_quad.v[3] = HK_VECTOR4d_DEBUG_FILL_VALUE.v[0]; )
 }
 
 HK_FORCE_INLINE void hkVector4d::subXYZ(hkVector4dParameter xyz)
@@ -569,11 +576,7 @@ HK_FORCE_INLINE void hkVector4d::subXYZ(hkVector4dParameter xyz)
 	m_quad.v[0] -= xyz.m_quad.v[0];
 	m_quad.v[1] -= xyz.m_quad.v[1];
 	m_quad.v[2] -= xyz.m_quad.v[2];
-#if defined(HK_REAL_IS_DOUBLE)
-	HK_ON_DEBUG( *((hkUint64*)&(m_quad.v[3])) = 0xffffffffffffffffull; )
-#else
-	HK_ON_DEBUG( *((hkUint32*)&(m_quad.v[3])) = 0xffffffff; )
-#endif
+	HK_ON_DEBUG( m_quad.v[3] = HK_VECTOR4d_DEBUG_FILL_VALUE.v[0]; )
 }
 
 HK_FORCE_INLINE void hkVector4d::setXYZ(hkDouble64 v)
@@ -598,11 +601,7 @@ HK_FORCE_INLINE void hkVector4d::setBroadcastXYZ(const int i, hkVector4dParamete
 {
 	HK_MATH_ASSERT(0x6d0c31d7, i>=0 && i<4, "index out of bounds for component access");
 	setXYZ( v.m_quad.v[i] );
-#if defined(HK_REAL_IS_DOUBLE)
-	HK_ON_DEBUG( *((hkUint64*)&(m_quad.v[3])) = 0xffffffffffffffffull; )
-#else
-	HK_ON_DEBUG( *((hkUint32*)&(m_quad.v[3])) = 0xffffffff; )
-#endif
+	HK_ON_DEBUG( m_quad.v[3] = HK_VECTOR4d_DEBUG_FILL_VALUE.v[0]; )
 }
 
 HK_FORCE_INLINE const hkSimdDouble64 hkVector4d::getComponent(const int i) const
@@ -633,43 +632,28 @@ HK_FORCE_INLINE void hkVector4d::setComponent(hkSimdDouble64Parameter val)
 
 HK_FORCE_INLINE void hkVector4d::reduceToHalfPrecision()
 {
+	typedef union { hkUint32 i; hkFloat32 f; } i2f;
+
+	i2f v0; v0.f = hkFloat32(m_quad.v[0]);
+	i2f v1; v1.f = hkFloat32(m_quad.v[1]);
+	i2f v2; v2.f = hkFloat32(m_quad.v[2]);
+	i2f v3; v3.f = hkFloat32(m_quad.v[3]);
+
 #if defined(HK_HALF_IS_FLOAT)
-	#if defined(HK_REAL_IS_DOUBLE)
-		static const hkUint64 precisionMask = 0xffffffff00000000ull;
-		const hkUint64* src = reinterpret_cast<const hkUint64*>( &m_quad );
-		hkUint64* dest = reinterpret_cast<hkUint64*>( &m_quad );
-		dest[0] = src[0] & precisionMask;
-		dest[1] = src[1] & precisionMask;
-		dest[2] = src[2] & precisionMask;
-		dest[3] = src[3] & precisionMask;
-	#endif
+	// we are done
 #else
-		static const hkUint32 precisionMask = 0xffff0000;
-	#if defined(HK_REAL_IS_DOUBLE)
-		hkFloat32 fsrc[4];
-		fsrc[0] = hkFloat32(m_quad.v[0]);
-		fsrc[1] = hkFloat32(m_quad.v[1]);
-		fsrc[2] = hkFloat32(m_quad.v[2]);
-		fsrc[3] = hkFloat32(m_quad.v[3]);
-		const hkUint32* src = reinterpret_cast<const hkUint32*>( fsrc );
-		hkUint32* dest = reinterpret_cast<hkUint32*>( fsrc );
-		dest[0] = src[0] & precisionMask;
-		dest[1] = src[1] & precisionMask;
-		dest[2] = src[2] & precisionMask;
-		dest[3] = src[3] & precisionMask;
-		m_quad.v[0] = hkDouble64(fsrc[0]);
-		m_quad.v[1] = hkDouble64(fsrc[1]);
-		m_quad.v[2] = hkDouble64(fsrc[2]);
-		m_quad.v[3] = hkDouble64(fsrc[3]);
-	#else
-		const hkUint32* src = reinterpret_cast<const hkUint32*>( &m_quad );
-		hkUint32* dest = reinterpret_cast<hkUint32*>( &m_quad );
-		dest[0] = src[0] & precisionMask;
-		dest[1] = src[1] & precisionMask;
-		dest[2] = src[2] & precisionMask;
-		dest[3] = src[3] & precisionMask;
-	#endif
+	static const hkUint32 precisionMask = 0xffff0000;
+
+	v0.i &= precisionMask;
+	v1.i &= precisionMask;
+	v2.i &= precisionMask;
+	v3.i &= precisionMask;
 #endif
+
+	m_quad.v[0] = hkDouble64(v0.f);
+	m_quad.v[1] = hkDouble64(v1.f);
+	m_quad.v[2] = hkDouble64(v2.f);
+	m_quad.v[3] = hkDouble64(v3.f);
 }
 
 template <int N> 
@@ -813,18 +797,18 @@ struct unrolld_setReciprocal<A, HK_DIV_SET_ZERO> { HK_FORCE_INLINE static void a
 	{
 		case HK_ACC_23_BIT: 
 			{
-				self.v[0] = ((a.m_quad.v[0] == hkDouble64(0)) ? hkDouble64(0) : hkDouble64(hkMath::rcpF32Approx23Bit(hkFloat32(a.m_quad.v[0]))));
-				self.v[1] = ((a.m_quad.v[1] == hkDouble64(0)) ? hkDouble64(0) : hkDouble64(hkMath::rcpF32Approx23Bit(hkFloat32(a.m_quad.v[1]))));
-				self.v[2] = ((a.m_quad.v[2] == hkDouble64(0)) ? hkDouble64(0) : hkDouble64(hkMath::rcpF32Approx23Bit(hkFloat32(a.m_quad.v[2]))));
-				self.v[3] = ((a.m_quad.v[3] == hkDouble64(0)) ? hkDouble64(0) : hkDouble64(hkMath::rcpF32Approx23Bit(hkFloat32(a.m_quad.v[3]))));
+				hkFloat32 f0 = hkFloat32(a.m_quad.v[0]); self.v[0] = ((f0 == hkFloat32(0)) ? hkDouble64(0) : hkDouble64(hkMath::rcpF32Approx23Bit(f0)));
+				hkFloat32 f1 = hkFloat32(a.m_quad.v[1]); self.v[1] = ((f1 == hkFloat32(0)) ? hkDouble64(0) : hkDouble64(hkMath::rcpF32Approx23Bit(f1)));
+				hkFloat32 f2 = hkFloat32(a.m_quad.v[2]); self.v[2] = ((f2 == hkFloat32(0)) ? hkDouble64(0) : hkDouble64(hkMath::rcpF32Approx23Bit(f2)));
+				hkFloat32 f3 = hkFloat32(a.m_quad.v[3]); self.v[3] = ((f3 == hkFloat32(0)) ? hkDouble64(0) : hkDouble64(hkMath::rcpF32Approx23Bit(f3)));
 			}
 			break;
 		case HK_ACC_12_BIT: 
 			{
-				self.v[0] = ((a.m_quad.v[0] == hkDouble64(0)) ? hkDouble64(0) : hkDouble64(hkMath::rcpF32Approx12Bit(hkFloat32(a.m_quad.v[0]))));
-				self.v[1] = ((a.m_quad.v[1] == hkDouble64(0)) ? hkDouble64(0) : hkDouble64(hkMath::rcpF32Approx12Bit(hkFloat32(a.m_quad.v[1]))));
-				self.v[2] = ((a.m_quad.v[2] == hkDouble64(0)) ? hkDouble64(0) : hkDouble64(hkMath::rcpF32Approx12Bit(hkFloat32(a.m_quad.v[2]))));
-				self.v[3] = ((a.m_quad.v[3] == hkDouble64(0)) ? hkDouble64(0) : hkDouble64(hkMath::rcpF32Approx12Bit(hkFloat32(a.m_quad.v[3]))));
+				hkFloat32 f0 = hkFloat32(a.m_quad.v[0]); self.v[0] = ((f0 == hkFloat32(0)) ? hkDouble64(0) : hkDouble64(hkMath::rcpF32Approx12Bit(f0)));
+				hkFloat32 f1 = hkFloat32(a.m_quad.v[1]); self.v[1] = ((f1 == hkFloat32(0)) ? hkDouble64(0) : hkDouble64(hkMath::rcpF32Approx12Bit(f1)));
+				hkFloat32 f2 = hkFloat32(a.m_quad.v[2]); self.v[2] = ((f2 == hkFloat32(0)) ? hkDouble64(0) : hkDouble64(hkMath::rcpF32Approx12Bit(f2)));
+				hkFloat32 f3 = hkFloat32(a.m_quad.v[3]); self.v[3] = ((f3 == hkFloat32(0)) ? hkDouble64(0) : hkDouble64(hkMath::rcpF32Approx12Bit(f3)));
 			}
 			break;
 		default:         
@@ -848,18 +832,18 @@ struct unrolld_setReciprocal<A, HK_DIV_SET_HIGH> { HK_FORCE_INLINE static void a
 	{
 	case HK_ACC_23_BIT: 
 		{
-			self.v[0] = ((a.m_quad.v[0] == hkDouble64(0)) ? high0 : hkDouble64(hkMath::rcpF32Approx23Bit(hkFloat32(a.m_quad.v[0]))));
-			self.v[1] = ((a.m_quad.v[1] == hkDouble64(0)) ? high1 : hkDouble64(hkMath::rcpF32Approx23Bit(hkFloat32(a.m_quad.v[1]))));
-			self.v[2] = ((a.m_quad.v[2] == hkDouble64(0)) ? high2 : hkDouble64(hkMath::rcpF32Approx23Bit(hkFloat32(a.m_quad.v[2]))));
-			self.v[3] = ((a.m_quad.v[3] == hkDouble64(0)) ? high3 : hkDouble64(hkMath::rcpF32Approx23Bit(hkFloat32(a.m_quad.v[3]))));
+			hkFloat32 f0 = hkFloat32(a.m_quad.v[0]); self.v[0] = ((f0 == hkFloat32(0)) ? high0 : hkDouble64(hkMath::rcpF32Approx23Bit(f0)));
+			hkFloat32 f1 = hkFloat32(a.m_quad.v[1]); self.v[1] = ((f1 == hkFloat32(0)) ? high1 : hkDouble64(hkMath::rcpF32Approx23Bit(f1)));
+			hkFloat32 f2 = hkFloat32(a.m_quad.v[2]); self.v[2] = ((f2 == hkFloat32(0)) ? high2 : hkDouble64(hkMath::rcpF32Approx23Bit(f2)));
+			hkFloat32 f3 = hkFloat32(a.m_quad.v[3]); self.v[3] = ((f3 == hkFloat32(0)) ? high3 : hkDouble64(hkMath::rcpF32Approx23Bit(f3)));
 		}
 		break;
 	case HK_ACC_12_BIT: 
 		{
-			self.v[0] = ((a.m_quad.v[0] == hkDouble64(0)) ? high0 : hkDouble64(hkMath::rcpF32Approx12Bit(hkFloat32(a.m_quad.v[0]))));
-			self.v[1] = ((a.m_quad.v[1] == hkDouble64(0)) ? high1 : hkDouble64(hkMath::rcpF32Approx12Bit(hkFloat32(a.m_quad.v[1]))));
-			self.v[2] = ((a.m_quad.v[2] == hkDouble64(0)) ? high2 : hkDouble64(hkMath::rcpF32Approx12Bit(hkFloat32(a.m_quad.v[2]))));
-			self.v[3] = ((a.m_quad.v[3] == hkDouble64(0)) ? high3 : hkDouble64(hkMath::rcpF32Approx12Bit(hkFloat32(a.m_quad.v[3]))));
+			hkFloat32 f0 = hkFloat32(a.m_quad.v[0]); self.v[0] = ((f0 == hkFloat32(0)) ? high0 : hkDouble64(hkMath::rcpF32Approx12Bit(f0)));
+			hkFloat32 f1 = hkFloat32(a.m_quad.v[1]); self.v[1] = ((f1 == hkFloat32(0)) ? high1 : hkDouble64(hkMath::rcpF32Approx12Bit(f1)));
+			hkFloat32 f2 = hkFloat32(a.m_quad.v[2]); self.v[2] = ((f2 == hkFloat32(0)) ? high2 : hkDouble64(hkMath::rcpF32Approx12Bit(f2)));
+			hkFloat32 f3 = hkFloat32(a.m_quad.v[3]); self.v[3] = ((f3 == hkFloat32(0)) ? high3 : hkDouble64(hkMath::rcpF32Approx12Bit(f3)));
 		}
 		break;
 	default:         
@@ -883,18 +867,18 @@ struct unrolld_setReciprocal<A, HK_DIV_SET_MAX> { HK_FORCE_INLINE static void ap
 	{
 	case HK_ACC_23_BIT: 
 		{
-			self.v[0] = ((a.m_quad.v[0] == hkDouble64(0)) ? max0 : hkDouble64(hkMath::rcpF32Approx23Bit(hkFloat32(a.m_quad.v[0]))));
-			self.v[1] = ((a.m_quad.v[1] == hkDouble64(0)) ? max1 : hkDouble64(hkMath::rcpF32Approx23Bit(hkFloat32(a.m_quad.v[1]))));
-			self.v[2] = ((a.m_quad.v[2] == hkDouble64(0)) ? max2 : hkDouble64(hkMath::rcpF32Approx23Bit(hkFloat32(a.m_quad.v[2]))));
-			self.v[3] = ((a.m_quad.v[3] == hkDouble64(0)) ? max3 : hkDouble64(hkMath::rcpF32Approx23Bit(hkFloat32(a.m_quad.v[3]))));
+			hkFloat32 f0 = hkFloat32(a.m_quad.v[0]); self.v[0] = ((f0 == hkFloat32(0)) ? max0 : hkDouble64(hkMath::rcpF32Approx23Bit(f0)));
+			hkFloat32 f1 = hkFloat32(a.m_quad.v[1]); self.v[1] = ((f1 == hkFloat32(0)) ? max1 : hkDouble64(hkMath::rcpF32Approx23Bit(f1)));
+			hkFloat32 f2 = hkFloat32(a.m_quad.v[2]); self.v[2] = ((f2 == hkFloat32(0)) ? max2 : hkDouble64(hkMath::rcpF32Approx23Bit(f2)));
+			hkFloat32 f3 = hkFloat32(a.m_quad.v[3]); self.v[3] = ((f3 == hkFloat32(0)) ? max3 : hkDouble64(hkMath::rcpF32Approx23Bit(f3)));
 		}
 		break;
 	case HK_ACC_12_BIT: 
 		{
-			self.v[0] = ((a.m_quad.v[0] == hkDouble64(0)) ? max0 : hkDouble64(hkMath::rcpF32Approx12Bit(hkFloat32(a.m_quad.v[0]))));
-			self.v[1] = ((a.m_quad.v[1] == hkDouble64(0)) ? max1 : hkDouble64(hkMath::rcpF32Approx12Bit(hkFloat32(a.m_quad.v[1]))));
-			self.v[2] = ((a.m_quad.v[2] == hkDouble64(0)) ? max2 : hkDouble64(hkMath::rcpF32Approx12Bit(hkFloat32(a.m_quad.v[2]))));
-			self.v[3] = ((a.m_quad.v[3] == hkDouble64(0)) ? max3 : hkDouble64(hkMath::rcpF32Approx12Bit(hkFloat32(a.m_quad.v[3]))));
+			hkFloat32 f0 = hkFloat32(a.m_quad.v[0]); self.v[0] = ((f0 == hkFloat32(0)) ? max0 : hkDouble64(hkMath::rcpF32Approx12Bit(f0)));
+			hkFloat32 f1 = hkFloat32(a.m_quad.v[1]); self.v[1] = ((f1 == hkFloat32(0)) ? max1 : hkDouble64(hkMath::rcpF32Approx12Bit(f1)));
+			hkFloat32 f2 = hkFloat32(a.m_quad.v[2]); self.v[2] = ((f2 == hkFloat32(0)) ? max2 : hkDouble64(hkMath::rcpF32Approx12Bit(f2)));
+			hkFloat32 f3 = hkFloat32(a.m_quad.v[3]); self.v[3] = ((f3 == hkFloat32(0)) ? max3 : hkDouble64(hkMath::rcpF32Approx12Bit(f3)));
 		}
 		break;
 	default:         
@@ -934,7 +918,7 @@ HK_FORCE_INLINE void hkVector4d::setReciprocal(hkVector4dParameter v)
 
 HK_FORCE_INLINE void hkVector4d::setReciprocal(hkVector4dParameter v)
 {
-	hkVector4_AdvancedInterface::unrolld_setReciprocal<HK_ACC_23_BIT,HK_DIV_IGNORE>::apply(m_quad,v);
+	hkVector4_AdvancedInterface::unrolld_setReciprocal<HK_ACC_MID,HK_DIV_IGNORE>::apply(m_quad,v);
 }
 
 
@@ -984,18 +968,18 @@ struct unrolld_setDiv<A, HK_DIV_SET_ZERO> { HK_FORCE_INLINE static void apply(hk
 	{
 	case HK_ACC_23_BIT: 
 		{
-			self.v[0] = ((b.m_quad.v[0] == hkDouble64(0)) ? hkDouble64(0) : (a.m_quad.v[0] * hkDouble64(hkMath::rcpF32Approx23Bit(hkFloat32(b.m_quad.v[0])))));
-			self.v[1] = ((b.m_quad.v[1] == hkDouble64(0)) ? hkDouble64(0) : (a.m_quad.v[1] * hkDouble64(hkMath::rcpF32Approx23Bit(hkFloat32(b.m_quad.v[1])))));
-			self.v[2] = ((b.m_quad.v[2] == hkDouble64(0)) ? hkDouble64(0) : (a.m_quad.v[2] * hkDouble64(hkMath::rcpF32Approx23Bit(hkFloat32(b.m_quad.v[2])))));
-			self.v[3] = ((b.m_quad.v[3] == hkDouble64(0)) ? hkDouble64(0) : (a.m_quad.v[3] * hkDouble64(hkMath::rcpF32Approx23Bit(hkFloat32(b.m_quad.v[3])))));
+			hkFloat32 f0 = hkFloat32(b.m_quad.v[0]); self.v[0] = ((f0 == hkFloat32(0)) ? hkDouble64(0) : (a.m_quad.v[0] * hkDouble64(hkMath::rcpF32Approx23Bit(f0))));
+			hkFloat32 f1 = hkFloat32(b.m_quad.v[1]); self.v[1] = ((f1 == hkFloat32(0)) ? hkDouble64(0) : (a.m_quad.v[1] * hkDouble64(hkMath::rcpF32Approx23Bit(f1))));
+			hkFloat32 f2 = hkFloat32(b.m_quad.v[2]); self.v[2] = ((f2 == hkFloat32(0)) ? hkDouble64(0) : (a.m_quad.v[2] * hkDouble64(hkMath::rcpF32Approx23Bit(f2))));
+			hkFloat32 f3 = hkFloat32(b.m_quad.v[3]); self.v[3] = ((f3 == hkFloat32(0)) ? hkDouble64(0) : (a.m_quad.v[3] * hkDouble64(hkMath::rcpF32Approx23Bit(f3))));
 		}
 		break;
 	case HK_ACC_12_BIT: 
 		{
-			self.v[0] = ((b.m_quad.v[0] == hkDouble64(0)) ? hkDouble64(0) : (a.m_quad.v[0] * hkDouble64(hkMath::rcpF32Approx12Bit(hkFloat32(b.m_quad.v[0])))));
-			self.v[1] = ((b.m_quad.v[1] == hkDouble64(0)) ? hkDouble64(0) : (a.m_quad.v[1] * hkDouble64(hkMath::rcpF32Approx12Bit(hkFloat32(b.m_quad.v[1])))));
-			self.v[2] = ((b.m_quad.v[2] == hkDouble64(0)) ? hkDouble64(0) : (a.m_quad.v[2] * hkDouble64(hkMath::rcpF32Approx12Bit(hkFloat32(b.m_quad.v[2])))));
-			self.v[3] = ((b.m_quad.v[3] == hkDouble64(0)) ? hkDouble64(0) : (a.m_quad.v[3] * hkDouble64(hkMath::rcpF32Approx12Bit(hkFloat32(b.m_quad.v[3])))));
+			hkFloat32 f0 = hkFloat32(b.m_quad.v[0]); self.v[0] = ((f0 == hkFloat32(0)) ? hkDouble64(0) : (a.m_quad.v[0] * hkDouble64(hkMath::rcpF32Approx12Bit(f0))));
+			hkFloat32 f1 = hkFloat32(b.m_quad.v[1]); self.v[1] = ((f1 == hkFloat32(0)) ? hkDouble64(0) : (a.m_quad.v[1] * hkDouble64(hkMath::rcpF32Approx12Bit(f1))));
+			hkFloat32 f2 = hkFloat32(b.m_quad.v[2]); self.v[2] = ((f2 == hkFloat32(0)) ? hkDouble64(0) : (a.m_quad.v[2] * hkDouble64(hkMath::rcpF32Approx12Bit(f2))));
+			hkFloat32 f3 = hkFloat32(b.m_quad.v[3]); self.v[3] = ((f3 == hkFloat32(0)) ? hkDouble64(0) : (a.m_quad.v[3] * hkDouble64(hkMath::rcpF32Approx12Bit(f3))));
 		}
 		break;
 	default:         
@@ -1015,18 +999,18 @@ struct unrolld_setDiv<A, HK_DIV_SET_HIGH> { HK_FORCE_INLINE static void apply(hk
 	{
 	case HK_ACC_23_BIT: 
 		{
-			self.v[0] = ((b.m_quad.v[0] == hkDouble64(0)) ? ((a.m_quad.v[0] < hkDouble64(0)) ? -HK_DOUBLE_HIGH : HK_DOUBLE_HIGH) : (a.m_quad.v[0] * hkDouble64(hkMath::rcpF32Approx23Bit(hkFloat32(b.m_quad.v[0])))));
-			self.v[1] = ((b.m_quad.v[1] == hkDouble64(0)) ? ((a.m_quad.v[1] < hkDouble64(0)) ? -HK_DOUBLE_HIGH : HK_DOUBLE_HIGH) : (a.m_quad.v[1] * hkDouble64(hkMath::rcpF32Approx23Bit(hkFloat32(b.m_quad.v[1])))));
-			self.v[2] = ((b.m_quad.v[2] == hkDouble64(0)) ? ((a.m_quad.v[2] < hkDouble64(0)) ? -HK_DOUBLE_HIGH : HK_DOUBLE_HIGH) : (a.m_quad.v[2] * hkDouble64(hkMath::rcpF32Approx23Bit(hkFloat32(b.m_quad.v[2])))));
-			self.v[3] = ((b.m_quad.v[3] == hkDouble64(0)) ? ((a.m_quad.v[3] < hkDouble64(0)) ? -HK_DOUBLE_HIGH : HK_DOUBLE_HIGH) : (a.m_quad.v[3] * hkDouble64(hkMath::rcpF32Approx23Bit(hkFloat32(b.m_quad.v[3])))));
+			hkFloat32 f0 = hkFloat32(b.m_quad.v[0]); self.v[0] = ((f0 == hkFloat32(0)) ? ((a.m_quad.v[0] < hkDouble64(0)) ? -HK_DOUBLE_HIGH : HK_DOUBLE_HIGH) : (a.m_quad.v[0] * hkDouble64(hkMath::rcpF32Approx23Bit(f0))));
+			hkFloat32 f1 = hkFloat32(b.m_quad.v[1]); self.v[1] = ((f1 == hkFloat32(0)) ? ((a.m_quad.v[1] < hkDouble64(0)) ? -HK_DOUBLE_HIGH : HK_DOUBLE_HIGH) : (a.m_quad.v[1] * hkDouble64(hkMath::rcpF32Approx23Bit(f1))));
+			hkFloat32 f2 = hkFloat32(b.m_quad.v[2]); self.v[2] = ((f2 == hkFloat32(0)) ? ((a.m_quad.v[2] < hkDouble64(0)) ? -HK_DOUBLE_HIGH : HK_DOUBLE_HIGH) : (a.m_quad.v[2] * hkDouble64(hkMath::rcpF32Approx23Bit(f2))));
+			hkFloat32 f3 = hkFloat32(b.m_quad.v[3]); self.v[3] = ((f3 == hkFloat32(0)) ? ((a.m_quad.v[3] < hkDouble64(0)) ? -HK_DOUBLE_HIGH : HK_DOUBLE_HIGH) : (a.m_quad.v[3] * hkDouble64(hkMath::rcpF32Approx23Bit(f3))));
 		}
 		break;
 	case HK_ACC_12_BIT: 
 		{
-			self.v[0] = ((b.m_quad.v[0] == hkDouble64(0)) ? ((a.m_quad.v[0] < hkDouble64(0)) ? -HK_DOUBLE_HIGH : HK_DOUBLE_HIGH) : (a.m_quad.v[0] * hkDouble64(hkMath::rcpF32Approx12Bit(hkFloat32(b.m_quad.v[0])))));
-			self.v[1] = ((b.m_quad.v[1] == hkDouble64(0)) ? ((a.m_quad.v[1] < hkDouble64(0)) ? -HK_DOUBLE_HIGH : HK_DOUBLE_HIGH) : (a.m_quad.v[1] * hkDouble64(hkMath::rcpF32Approx12Bit(hkFloat32(b.m_quad.v[1])))));
-			self.v[2] = ((b.m_quad.v[2] == hkDouble64(0)) ? ((a.m_quad.v[2] < hkDouble64(0)) ? -HK_DOUBLE_HIGH : HK_DOUBLE_HIGH) : (a.m_quad.v[2] * hkDouble64(hkMath::rcpF32Approx12Bit(hkFloat32(b.m_quad.v[2])))));
-			self.v[3] = ((b.m_quad.v[3] == hkDouble64(0)) ? ((a.m_quad.v[3] < hkDouble64(0)) ? -HK_DOUBLE_HIGH : HK_DOUBLE_HIGH) : (a.m_quad.v[3] * hkDouble64(hkMath::rcpF32Approx12Bit(hkFloat32(b.m_quad.v[3])))));
+			hkFloat32 f0 = hkFloat32(b.m_quad.v[0]); self.v[0] = ((f0 == hkFloat32(0)) ? ((a.m_quad.v[0] < hkDouble64(0)) ? -HK_DOUBLE_HIGH : HK_DOUBLE_HIGH) : (a.m_quad.v[0] * hkDouble64(hkMath::rcpF32Approx12Bit(f0))));
+			hkFloat32 f1 = hkFloat32(b.m_quad.v[1]); self.v[1] = ((f1 == hkFloat32(0)) ? ((a.m_quad.v[1] < hkDouble64(0)) ? -HK_DOUBLE_HIGH : HK_DOUBLE_HIGH) : (a.m_quad.v[1] * hkDouble64(hkMath::rcpF32Approx12Bit(f1))));
+			hkFloat32 f2 = hkFloat32(b.m_quad.v[2]); self.v[2] = ((f2 == hkFloat32(0)) ? ((a.m_quad.v[2] < hkDouble64(0)) ? -HK_DOUBLE_HIGH : HK_DOUBLE_HIGH) : (a.m_quad.v[2] * hkDouble64(hkMath::rcpF32Approx12Bit(f2))));
+			hkFloat32 f3 = hkFloat32(b.m_quad.v[3]); self.v[3] = ((f3 == hkFloat32(0)) ? ((a.m_quad.v[3] < hkDouble64(0)) ? -HK_DOUBLE_HIGH : HK_DOUBLE_HIGH) : (a.m_quad.v[3] * hkDouble64(hkMath::rcpF32Approx12Bit(f3))));
 		}
 		break;
 	default:         
@@ -1046,18 +1030,18 @@ struct unrolld_setDiv<A, HK_DIV_SET_MAX> { HK_FORCE_INLINE static void apply(hkQ
 	{
 	case HK_ACC_23_BIT: 
 		{
-			self.v[0] = ((b.m_quad.v[0] == hkDouble64(0)) ? ((a.m_quad.v[0] < hkDouble64(0)) ? -HK_DOUBLE_MAX : HK_DOUBLE_MAX) : (a.m_quad.v[0] * hkDouble64(hkMath::rcpF32Approx23Bit(hkFloat32(b.m_quad.v[0])))));
-			self.v[1] = ((b.m_quad.v[1] == hkDouble64(0)) ? ((a.m_quad.v[1] < hkDouble64(0)) ? -HK_DOUBLE_MAX : HK_DOUBLE_MAX) : (a.m_quad.v[1] * hkDouble64(hkMath::rcpF32Approx23Bit(hkFloat32(b.m_quad.v[1])))));
-			self.v[2] = ((b.m_quad.v[2] == hkDouble64(0)) ? ((a.m_quad.v[2] < hkDouble64(0)) ? -HK_DOUBLE_MAX : HK_DOUBLE_MAX) : (a.m_quad.v[2] * hkDouble64(hkMath::rcpF32Approx23Bit(hkFloat32(b.m_quad.v[2])))));
-			self.v[3] = ((b.m_quad.v[3] == hkDouble64(0)) ? ((a.m_quad.v[3] < hkDouble64(0)) ? -HK_DOUBLE_MAX : HK_DOUBLE_MAX) : (a.m_quad.v[3] * hkDouble64(hkMath::rcpF32Approx23Bit(hkFloat32(b.m_quad.v[3])))));
+			hkFloat32 f0 = hkFloat32(b.m_quad.v[0]); self.v[0] = ((f0 == hkFloat32(0)) ? ((a.m_quad.v[0] < hkDouble64(0)) ? -HK_DOUBLE_MAX : HK_DOUBLE_MAX) : (a.m_quad.v[0] * hkDouble64(hkMath::rcpF32Approx23Bit(f0))));
+			hkFloat32 f1 = hkFloat32(b.m_quad.v[1]); self.v[1] = ((f1 == hkFloat32(0)) ? ((a.m_quad.v[1] < hkDouble64(0)) ? -HK_DOUBLE_MAX : HK_DOUBLE_MAX) : (a.m_quad.v[1] * hkDouble64(hkMath::rcpF32Approx23Bit(f1))));
+			hkFloat32 f2 = hkFloat32(b.m_quad.v[2]); self.v[2] = ((f2 == hkFloat32(0)) ? ((a.m_quad.v[2] < hkDouble64(0)) ? -HK_DOUBLE_MAX : HK_DOUBLE_MAX) : (a.m_quad.v[2] * hkDouble64(hkMath::rcpF32Approx23Bit(f2))));
+			hkFloat32 f3 = hkFloat32(b.m_quad.v[3]); self.v[3] = ((f3 == hkFloat32(0)) ? ((a.m_quad.v[3] < hkDouble64(0)) ? -HK_DOUBLE_MAX : HK_DOUBLE_MAX) : (a.m_quad.v[3] * hkDouble64(hkMath::rcpF32Approx23Bit(f3))));
 		}
 		break;
 	case HK_ACC_12_BIT: 
 		{
-			self.v[0] = ((b.m_quad.v[0] == hkDouble64(0)) ? ((a.m_quad.v[0] < hkDouble64(0)) ? -HK_DOUBLE_MAX : HK_DOUBLE_MAX) : (a.m_quad.v[0] * hkDouble64(hkMath::rcpF32Approx12Bit(hkFloat32(b.m_quad.v[0])))));
-			self.v[1] = ((b.m_quad.v[1] == hkDouble64(0)) ? ((a.m_quad.v[1] < hkDouble64(0)) ? -HK_DOUBLE_MAX : HK_DOUBLE_MAX) : (a.m_quad.v[1] * hkDouble64(hkMath::rcpF32Approx12Bit(hkFloat32(b.m_quad.v[1])))));
-			self.v[2] = ((b.m_quad.v[2] == hkDouble64(0)) ? ((a.m_quad.v[2] < hkDouble64(0)) ? -HK_DOUBLE_MAX : HK_DOUBLE_MAX) : (a.m_quad.v[2] * hkDouble64(hkMath::rcpF32Approx12Bit(hkFloat32(b.m_quad.v[2])))));
-			self.v[3] = ((b.m_quad.v[3] == hkDouble64(0)) ? ((a.m_quad.v[3] < hkDouble64(0)) ? -HK_DOUBLE_MAX : HK_DOUBLE_MAX) : (a.m_quad.v[3] * hkDouble64(hkMath::rcpF32Approx12Bit(hkFloat32(b.m_quad.v[3])))));
+			hkFloat32 f0 = hkFloat32(b.m_quad.v[0]); self.v[0] = ((f0 == hkFloat32(0)) ? ((a.m_quad.v[0] < hkDouble64(0)) ? -HK_DOUBLE_MAX : HK_DOUBLE_MAX) : (a.m_quad.v[0] * hkDouble64(hkMath::rcpF32Approx12Bit(f0))));
+			hkFloat32 f1 = hkFloat32(b.m_quad.v[1]); self.v[1] = ((f1 == hkFloat32(0)) ? ((a.m_quad.v[1] < hkDouble64(0)) ? -HK_DOUBLE_MAX : HK_DOUBLE_MAX) : (a.m_quad.v[1] * hkDouble64(hkMath::rcpF32Approx12Bit(f1))));
+			hkFloat32 f2 = hkFloat32(b.m_quad.v[2]); self.v[2] = ((f2 == hkFloat32(0)) ? ((a.m_quad.v[2] < hkDouble64(0)) ? -HK_DOUBLE_MAX : HK_DOUBLE_MAX) : (a.m_quad.v[2] * hkDouble64(hkMath::rcpF32Approx12Bit(f2))));
+			hkFloat32 f3 = hkFloat32(b.m_quad.v[3]); self.v[3] = ((f3 == hkFloat32(0)) ? ((a.m_quad.v[3] < hkDouble64(0)) ? -HK_DOUBLE_MAX : HK_DOUBLE_MAX) : (a.m_quad.v[3] * hkDouble64(hkMath::rcpF32Approx12Bit(f3))));
 		}
 		break;
 	default:         
@@ -1097,7 +1081,7 @@ HK_FORCE_INLINE void hkVector4d::setDiv(hkVector4dParameter v0, hkVector4dParame
 
 HK_FORCE_INLINE void hkVector4d::setDiv(hkVector4dParameter v0, hkVector4dParameter v1)
 {
-	hkVector4_AdvancedInterface::unrolld_setDiv<HK_ACC_23_BIT,HK_DIV_IGNORE>::apply(m_quad,v0,v1);
+	hkVector4_AdvancedInterface::unrolld_setDiv<HK_ACC_MID,HK_DIV_IGNORE>::apply(m_quad,v0,v1);
 }
 
 template <hkMathAccuracyMode A, hkMathDivByZeroMode D>
@@ -1159,18 +1143,18 @@ struct unrolld_setSqrt<A, HK_SQRT_SET_ZERO> { HK_FORCE_INLINE static void apply(
 	{
 	case HK_ACC_23_BIT: 
 		{
-			self.v[0] = ((a.m_quad.v[0] <= hkDouble64(0)) ? hkDouble64(0) : hkDouble64(hkMath::rcpF32Approx23Bit(hkMath::invSqrtF32Approx23Bit(hkFloat32(a.m_quad.v[0])))));
-			self.v[1] = ((a.m_quad.v[1] <= hkDouble64(0)) ? hkDouble64(0) : hkDouble64(hkMath::rcpF32Approx23Bit(hkMath::invSqrtF32Approx23Bit(hkFloat32(a.m_quad.v[1])))));
-			self.v[2] = ((a.m_quad.v[2] <= hkDouble64(0)) ? hkDouble64(0) : hkDouble64(hkMath::rcpF32Approx23Bit(hkMath::invSqrtF32Approx23Bit(hkFloat32(a.m_quad.v[2])))));
-			self.v[3] = ((a.m_quad.v[3] <= hkDouble64(0)) ? hkDouble64(0) : hkDouble64(hkMath::rcpF32Approx23Bit(hkMath::invSqrtF32Approx23Bit(hkFloat32(a.m_quad.v[3])))));
+			hkFloat32 f0 = hkFloat32(a.m_quad.v[0]); self.v[0] = ((f0 <= hkFloat32(0)) ? hkDouble64(0) : hkDouble64(hkMath::rcpF32Approx23Bit(hkMath::invSqrtF32Approx23Bit(f0))));
+			hkFloat32 f1 = hkFloat32(a.m_quad.v[1]); self.v[1] = ((f1 <= hkFloat32(0)) ? hkDouble64(0) : hkDouble64(hkMath::rcpF32Approx23Bit(hkMath::invSqrtF32Approx23Bit(f1))));
+			hkFloat32 f2 = hkFloat32(a.m_quad.v[2]); self.v[2] = ((f2 <= hkFloat32(0)) ? hkDouble64(0) : hkDouble64(hkMath::rcpF32Approx23Bit(hkMath::invSqrtF32Approx23Bit(f2))));
+			hkFloat32 f3 = hkFloat32(a.m_quad.v[3]); self.v[3] = ((f3 <= hkFloat32(0)) ? hkDouble64(0) : hkDouble64(hkMath::rcpF32Approx23Bit(hkMath::invSqrtF32Approx23Bit(f3))));
 		}
 		break;
 	case HK_ACC_12_BIT: 
 		{
-			self.v[0] = ((a.m_quad.v[0] <= hkDouble64(0)) ? hkDouble64(0) : hkDouble64(hkMath::rcpF32Approx12Bit(hkMath::invSqrtF32Approx12Bit(hkFloat32(a.m_quad.v[0])))));
-			self.v[1] = ((a.m_quad.v[1] <= hkDouble64(0)) ? hkDouble64(0) : hkDouble64(hkMath::rcpF32Approx12Bit(hkMath::invSqrtF32Approx12Bit(hkFloat32(a.m_quad.v[1])))));
-			self.v[2] = ((a.m_quad.v[2] <= hkDouble64(0)) ? hkDouble64(0) : hkDouble64(hkMath::rcpF32Approx12Bit(hkMath::invSqrtF32Approx12Bit(hkFloat32(a.m_quad.v[2])))));
-			self.v[3] = ((a.m_quad.v[3] <= hkDouble64(0)) ? hkDouble64(0) : hkDouble64(hkMath::rcpF32Approx12Bit(hkMath::invSqrtF32Approx12Bit(hkFloat32(a.m_quad.v[3])))));
+			hkFloat32 f0 = hkFloat32(a.m_quad.v[0]); self.v[0] = ((f0 <= hkFloat32(0)) ? hkDouble64(0) : hkDouble64(hkMath::rcpF32Approx12Bit(hkMath::invSqrtF32Approx12Bit(f0))));
+			hkFloat32 f1 = hkFloat32(a.m_quad.v[1]); self.v[1] = ((f1 <= hkFloat32(0)) ? hkDouble64(0) : hkDouble64(hkMath::rcpF32Approx12Bit(hkMath::invSqrtF32Approx12Bit(f1))));
+			hkFloat32 f2 = hkFloat32(a.m_quad.v[2]); self.v[2] = ((f2 <= hkFloat32(0)) ? hkDouble64(0) : hkDouble64(hkMath::rcpF32Approx12Bit(hkMath::invSqrtF32Approx12Bit(f2))));
+			hkFloat32 f3 = hkFloat32(a.m_quad.v[3]); self.v[3] = ((f3 <= hkFloat32(0)) ? hkDouble64(0) : hkDouble64(hkMath::rcpF32Approx12Bit(hkMath::invSqrtF32Approx12Bit(f3))));
 		}
 		break;
 	default:         
@@ -1194,7 +1178,7 @@ HK_FORCE_INLINE void hkVector4d::setSqrt(hkVector4dParameter a)
 
 HK_FORCE_INLINE void hkVector4d::setSqrt(hkVector4dParameter a)
 {
-	hkVector4_AdvancedInterface::unrolld_setSqrt<HK_ACC_23_BIT,HK_SQRT_SET_ZERO>::apply(m_quad, a);
+	hkVector4_AdvancedInterface::unrolld_setSqrt<HK_ACC_MID,HK_SQRT_SET_ZERO>::apply(m_quad, a);
 }
 
 
@@ -1246,18 +1230,18 @@ struct unrolld_setSqrtInverse<A, HK_SQRT_SET_ZERO> { HK_FORCE_INLINE static void
 	{
 	case HK_ACC_23_BIT: 
 		{
-			self.v[0] = ((a.m_quad.v[0] <= hkDouble64(0)) ? hkDouble64(0) : hkDouble64(hkMath::invSqrtF32Approx23Bit(hkFloat32(a.m_quad.v[0]))));
-			self.v[1] = ((a.m_quad.v[1] <= hkDouble64(0)) ? hkDouble64(0) : hkDouble64(hkMath::invSqrtF32Approx23Bit(hkFloat32(a.m_quad.v[1]))));
-			self.v[2] = ((a.m_quad.v[2] <= hkDouble64(0)) ? hkDouble64(0) : hkDouble64(hkMath::invSqrtF32Approx23Bit(hkFloat32(a.m_quad.v[2]))));
-			self.v[3] = ((a.m_quad.v[3] <= hkDouble64(0)) ? hkDouble64(0) : hkDouble64(hkMath::invSqrtF32Approx23Bit(hkFloat32(a.m_quad.v[3]))));
+			hkFloat32 f0 = hkFloat32(a.m_quad.v[0]); self.v[0] = ((f0 <= hkFloat32(0)) ? hkDouble64(0) : hkDouble64(hkMath::invSqrtF32Approx23Bit(f0)));
+			hkFloat32 f1 = hkFloat32(a.m_quad.v[1]); self.v[1] = ((f1 <= hkFloat32(0)) ? hkDouble64(0) : hkDouble64(hkMath::invSqrtF32Approx23Bit(f1)));
+			hkFloat32 f2 = hkFloat32(a.m_quad.v[2]); self.v[2] = ((f2 <= hkFloat32(0)) ? hkDouble64(0) : hkDouble64(hkMath::invSqrtF32Approx23Bit(f2)));
+			hkFloat32 f3 = hkFloat32(a.m_quad.v[3]); self.v[3] = ((f3 <= hkFloat32(0)) ? hkDouble64(0) : hkDouble64(hkMath::invSqrtF32Approx23Bit(f3)));
 		}
 		break;
 	case HK_ACC_12_BIT: 
 		{
-			self.v[0] = ((a.m_quad.v[0] <= hkDouble64(0)) ? hkDouble64(0) : hkDouble64(hkMath::invSqrtF32Approx12Bit(hkFloat32(a.m_quad.v[0]))));
-			self.v[1] = ((a.m_quad.v[1] <= hkDouble64(0)) ? hkDouble64(0) : hkDouble64(hkMath::invSqrtF32Approx12Bit(hkFloat32(a.m_quad.v[1]))));
-			self.v[2] = ((a.m_quad.v[2] <= hkDouble64(0)) ? hkDouble64(0) : hkDouble64(hkMath::invSqrtF32Approx12Bit(hkFloat32(a.m_quad.v[2]))));
-			self.v[3] = ((a.m_quad.v[3] <= hkDouble64(0)) ? hkDouble64(0) : hkDouble64(hkMath::invSqrtF32Approx12Bit(hkFloat32(a.m_quad.v[3]))));
+			hkFloat32 f0 = hkFloat32(a.m_quad.v[0]); self.v[0] = ((f0 <= hkFloat32(0)) ? hkDouble64(0) : hkDouble64(hkMath::invSqrtF32Approx12Bit(f0)));
+			hkFloat32 f1 = hkFloat32(a.m_quad.v[1]); self.v[1] = ((f1 <= hkFloat32(0)) ? hkDouble64(0) : hkDouble64(hkMath::invSqrtF32Approx12Bit(f1)));
+			hkFloat32 f2 = hkFloat32(a.m_quad.v[2]); self.v[2] = ((f2 <= hkFloat32(0)) ? hkDouble64(0) : hkDouble64(hkMath::invSqrtF32Approx12Bit(f2)));
+			hkFloat32 f3 = hkFloat32(a.m_quad.v[3]); self.v[3] = ((f3 <= hkFloat32(0)) ? hkDouble64(0) : hkDouble64(hkMath::invSqrtF32Approx12Bit(f3)));
 		}
 		break;
 	default:         
@@ -1280,7 +1264,7 @@ HK_FORCE_INLINE void hkVector4d::setSqrtInverse(hkVector4dParameter a)
 
 HK_FORCE_INLINE void hkVector4d::setSqrtInverse(hkVector4dParameter a)
 {
-	hkVector4_AdvancedInterface::unrolld_setSqrtInverse<HK_ACC_23_BIT,HK_SQRT_SET_ZERO>::apply(m_quad, a);
+	hkVector4_AdvancedInterface::unrolld_setSqrtInverse<HK_ACC_MID,HK_SQRT_SET_ZERO>::apply(m_quad, a);
 }
 
 
@@ -1309,11 +1293,7 @@ struct unrolld_load<N, HK_IO_BYTE_ALIGNED> { HK_FORCE_INLINE static void apply(h
 	if ( N >= 4){ self.v[3] = hkDouble64(p[3]);	}
 
 #if defined(HK_DEBUG)
-#if defined(HK_REAL_IS_DOUBLE)
-	for(int i=N; i<4; ++i) *((hkUint64*)&(self.v[i])) = 0xffffffffffffffffull;
-#else
-	for(int i=N; i<4; ++i) *((hkUint32*)&(self.v[i])) = 0xffffffff;
-#endif
+	for(int i=N; i<4; ++i) self.v[i] = HK_VECTOR4d_DEBUG_FILL_VALUE.v[0];
 #endif
 } };
 template <int N>
@@ -1328,11 +1308,7 @@ struct unrolld_load_D<N, HK_IO_BYTE_ALIGNED> { HK_FORCE_INLINE static void apply
 	if ( N >= 4){ self.v[3] = hkDouble64(p[3]);	}
 
 #if defined(HK_DEBUG)
-#if defined(HK_REAL_IS_DOUBLE)
-	for(int i=N; i<4; ++i) *((hkUint64*)&(self.v[i])) = 0xffffffffffffffffull;
-#else
-	for(int i=N; i<4; ++i) *((hkUint32*)&(self.v[i])) = 0xffffffff;
-#endif
+	for(int i=N; i<4; ++i) self.v[i] = HK_VECTOR4d_DEBUG_FILL_VALUE.v[0];
 #endif
 } };
 
@@ -1425,10 +1401,8 @@ struct unrolld_loadH<N, HK_IO_BYTE_ALIGNED> { HK_FORCE_INLINE static void apply(
 		case 2:  self.v[1] = p[1].getReal();
 		default: self.v[0] = p[0].getReal(); break;
 	}
-#if defined(HK_REAL_IS_DOUBLE)
-	for(int i=N; i<4; ++i) *((hkUint64*)&(self.v[i])) = 0xffffffffffffffffull;
-#else
-	for(int i=N; i<4; ++i) *((hkUint32*)&(self.v[i])) = 0xffffffff;
+#if defined(HK_DEBUG)
+	for(int i=N; i<4; ++i) self.v[i] = HK_VECTOR4d_DEBUG_FILL_VALUE.v[0];
 #endif
 } };
 
@@ -1490,11 +1464,7 @@ namespace hkVector4_AdvancedInterface
 		default: self.v[0] = p[0].getReal(); break;
 		}
 #if defined(HK_DEBUG)
-#if defined(HK_REAL_IS_DOUBLE)
-		for(int i=N; i<4; ++i) *((hkUint64*)&(self.v[i])) = 0xffffffffffffffffull;
-#else
-		for(int i=N; i<4; ++i) *((hkUint32*)&(self.v[i])) = 0xffffffff;
-#endif
+		for(int i=N; i<4; ++i) self.v[i] = HK_VECTOR4d_DEBUG_FILL_VALUE.v[0];
 #endif
 	} };
 
@@ -1787,7 +1757,7 @@ HK_FORCE_INLINE void hkVector4d::store(hkFloat16* p) const
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

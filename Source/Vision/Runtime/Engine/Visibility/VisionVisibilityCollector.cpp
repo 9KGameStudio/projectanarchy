@@ -74,7 +74,7 @@ VisionVisibilityCollector_cl::VisionVisibilityCollector_cl(VisSceneElementTypes_
   : IVisVisibilityCollector_cl(), m_VisibleVisibilityZones(64,256), m_EntityFlags(256, 0), m_VisObjectFlags(256, 0), m_LightFlags(64, 0), m_VisibilityZoneVisitedFlags(32,0), m_VisibilityZoneFlags(32,0),
   m_TraversalProtocol(64, 128), m_iTraversalProtocolSize(0),
   m_StreamConfigs(1, defaultVisStreamConfig), targetPortal((hkvVec3*) &tempMem1[0],(hkvPlane*) &tempMem2[0], sizeof(tempMem1)/sizeof(hkvPlane))
-#if defined(WIN32)
+#if defined(_VISION_WIN32)
   ,m_EntityLODStates(2048, VLODState()), m_iEntityPlaneFlagsMask(-1)
 #endif
 {
@@ -245,6 +245,9 @@ void VisionVisibilityCollector_cl::OnDoVisibilityDetermination(int iFilterBitmas
   m_iFrustumStackDepth = 0;
   ClearVisibilityData();
 
+  if (m_spInterleavedTranslucencySorter != NULL)
+    m_spInterleavedTranslucencySorter->OnDoVisibilityDetermination();
+
   { // trigger callbacks on all attached components: 
     VisVisibilityCollectorDataObject_cl cbdata(&Vision::Callbacks.OnStartVisibilityDetermination,this);
     cbdata.m_pSender->TriggerCallbacks(&cbdata);
@@ -360,6 +363,9 @@ void VisionVisibilityCollector_cl::PerformVisibilityDetermination(int iFilterBit
 
 
   }
+  
+  if (m_spInterleavedTranslucencySorter != NULL)
+    m_spInterleavedTranslucencySorter->OnPerformVisibilityDetermination(this);
 
   // Get the visibility zone the origin of our source object is currently in (note that we always
   // need a source object, since otherwise, we would have to dynamically determine the starting
@@ -851,7 +857,7 @@ void VisionVisibilityCollector_cl::PostProcessVisibilityResults()
       }
     }
   }
-  else
+  else if (m_bUsedWorkflow)
   {
     //NOTE: this the same loop as above, needs to be executed even without hw occlusion
     iNumVisObjects = m_pVisibleVisObjects->GetNumEntries();
@@ -865,7 +871,7 @@ void VisionVisibilityCollector_cl::PostProcessVisibilityResults()
       const int iFlags = (*pVisObjects)->GetVisTestFlags();
 
       // this test has not been performed in the workflow version
-      if (m_bUsedWorkflow && !(iFlags&VISTESTFLAGS_TESTVISIBLE_NOT_OVERRIDDEN))
+      if (!(iFlags&VISTESTFLAGS_TESTVISIBLE_NOT_OVERRIDDEN))
       {
         if (!(*pVisObjects)->OnTestVisible(this, GetBaseFrustum()))
         {
@@ -1033,6 +1039,9 @@ void VisionVisibilityCollector_cl::PostProcessVisibilityResults()
       }
     }
   }
+
+  if (m_spInterleavedTranslucencySorter != NULL)
+    m_spInterleavedTranslucencySorter->OnPostProcessVisibilityResults(this);
 
   m_eStatus = VIS_VISIBILITYSTATUS_READY;
 }
@@ -1580,7 +1589,7 @@ void VisionVisibilityCollector_cl::CollectEntities(VisVisibilityZone_cl* pZone, 
   m_pVisibleEntities->EnsureSize(m_pVisibleEntities->GetNumEntries() + iNumEntitiesInNode);
   VisBaseEntity_cl **pDataInNode = pZone->GetEntities()->GetDataPtr();
 
-  #if defined(WIN32)
+  #if defined(_VISION_WIN32)
     // needed for dissolve feature in simulation package (so only needed in windows version)
     iPlaneFlags &= m_iEntityPlaneFlagsMask;
   #endif
@@ -1589,7 +1598,7 @@ void VisionVisibilityCollector_cl::CollectEntities(VisVisibilityZone_cl* pZone, 
   {
     VisBaseEntity_cl *pEntity = *pDataInNode;
 
-    #if defined(WIN32)
+    #if defined(_VISION_WIN32)
       // needed for dissolve feature in simulation package (so only needed in windows version)
       VLODState& lodState(GetLODState(pEntity->GetNumber()));
     
@@ -1644,7 +1653,7 @@ void VisionVisibilityCollector_cl::CollectVisElements(VisVisibilityZone_cl* pZon
         continue;
     }
 
-    m_pVisibleVisObjects->AppendEntryFast(pVisObject);
+    m_pVisibleVisObjects->AppendEntry(pVisObject); // can't use AppendEntryFast here, since OnTestVisible might add more objects
   }
 }
 
@@ -1711,7 +1720,7 @@ void VisionVisibilityCollector_cl::CollectEntities_LODHysteresis(VisVisibilityZo
   m_pVisibleEntities->EnsureSize(m_pVisibleEntities->GetNumEntries() + iNumEntitiesInNode);
   VisBaseEntity_cl **pDataInNode = pZone->GetEntities()->GetDataPtr();
 
-  #if defined(WIN32)
+  #if defined(_VISION_WIN32)
     // needed for dissolve feature in simulation package (so only needed in windows version)
     iPlaneFlags &= m_iEntityPlaneFlagsMask;
   #endif
@@ -1720,7 +1729,7 @@ void VisionVisibilityCollector_cl::CollectEntities_LODHysteresis(VisVisibilityZo
   {
     VisBaseEntity_cl *pEntity = *pDataInNode;
 
-    #if defined(WIN32)
+    #if defined(_VISION_WIN32)
       // needed for dissolve feature in simulation package (so only needed in windows version)
       VLODState& lodState(GetLODState(pEntity->GetNumber()));
 
@@ -1849,14 +1858,14 @@ recheck:
           if (!bFound)
           {
             m_pLODHysteresisManager->SetStateValue(VLHT_ENTITIES, pEntity->GetNumber(), VLHS_UNINITIALIZED);
-#if defined(WIN32)
+#if defined(_VISION_WIN32)
             if (m_iEntityPlaneFlagsMask != -1)
             {
-              // hack to allow LOD far clip fading when dissolve feature is enabled
+              // allow LOD far clip fading when dissolve feature is enabled
               m_pVisibleEntities->AppendEntryFast((VisBaseEntity_cl *)pEntity);
             }
 #endif
-            continue;
+      continue;
           }
 
           m_pLODHysteresisManager->SetStateValue(VLHT_ENTITIES, pEntity->GetNumber(),
@@ -1870,11 +1879,11 @@ recheck:
     }
     else if ((pEntity->m_iEntityFlags & VISENTFLAG_LOD_COMPONENT_ATTACHED) != 0)
     {
-      IVLODHysteresisComponent* pComp = (IVLODHysteresisComponent*)pEntity->Components().GetComponentOfBaseType(IVLODHysteresisComponent::GetClassTypeId());
+      IVLODHysteresisComponent* pComp = pEntity->Components().GetComponentOfBaseType<IVLODHysteresisComponent>();
       int iLODLevel = (pComp != NULL)? pComp->GetLODLevel() : 0;
 
-      if (m_pLODHysteresisManager->IsClipped(VLHT_ENTITIES, pEntity->GetNumber(), iLODLevel, pEntity, m_iFilterBitmask, vCameraPos, fLODScaleSqr))
-        continue;
+    if (m_pLODHysteresisManager->IsClipped(VLHT_ENTITIES, pEntity->GetNumber(), iLODLevel, pEntity, m_iFilterBitmask, vCameraPos, fLODScaleSqr))
+      continue;
     }
     else
     {
@@ -1929,6 +1938,35 @@ void VisionVisibilityCollector_cl::ClearSceneElementFlags()
   memset(m_StaticGeometryInstanceFlags.GetDataPtr(), 0, iRequiredSize); 
 }
 
+void VisionVisibilityCollector_cl::AddVisibleStaticGeometryInstances(VisStaticGeometryInstance_cl **pGeomInstanceList, int iElementCount)
+{
+  m_pVisibleStaticGeometryInstances->AppendEntries((void **)pGeomInstanceList, iElementCount);
+}
+
+void VisionVisibilityCollector_cl::AddVisibleEntities(VisBaseEntity_cl **pEntityList, int iElementCount)
+{
+  m_pVisibleEntities->AppendEntries((void **)pEntityList, iElementCount);
+}
+
+
+void VisionVisibilityCollector_cl::AddVisibleVisibilityObjects(VisVisibilityObject_cl **pVisObjList, int iElementCount)
+{
+  m_pVisibleVisObjects->AppendEntries((void **)pVisObjList, iElementCount);
+}
+
+void VisionVisibilityCollector_cl::SetInterleavedTranslucencySorter(IVisTranslucencySorter* pSorter)
+{
+  if (m_spInterleavedTranslucencySorter == pSorter)
+    return;
+
+  m_spInterleavedTranslucencySorter = pSorter;
+}
+
+IVisTranslucencySorter* VisionVisibilityCollector_cl::GetInterleavedTranslucencySorter() const
+{
+  return m_spInterleavedTranslucencySorter;
+}
+
 bool VisionVisibilityCollector_cl::IsStaticGeometryInstanceVisible(VisStaticGeometryInstance_cl *pGeomInstance)
 {
   int iNum = pGeomInstance->GetNumber();
@@ -1964,6 +2002,8 @@ void VisionVisibilityCollector_cl::SetPropertiesFromRenderContext(VisRenderConte
 {
   if (m_eStatus != VIS_VISIBILITYSTATUS_READY)
     return;
+
+  VASSERT_MSG(pContext != NULL, "RenderContext is NULL!");
 
   int iRenderFlags = pContext->GetRenderFlags();
   m_iContextRenderFlags = iRenderFlags;
@@ -2028,7 +2068,7 @@ IVisVisibilityCollectorComponent_cl::~IVisVisibilityCollectorComponent_cl()
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

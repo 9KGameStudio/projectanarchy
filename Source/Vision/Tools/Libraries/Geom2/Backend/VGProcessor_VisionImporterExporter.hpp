@@ -78,7 +78,7 @@ public:
   ///
   /// \return
   ///   False if writing data failed
-  bool  Write(const VGScene& scene, const class VGProcessor_VisionExporter* ve, IVFileOutStream& stream) const;
+  bool  Write(VGScene& scene, const class VGProcessor_VisionExporter* ve, IVFileOutStream& stream) const;
 
   /// \brief
   ///   Reads scene data from a stream and _adds_ it to passed-in scene
@@ -129,16 +129,16 @@ private:
   hkvLogInterface* m_log;
 
   // Writer functions.
-  bool (VGVisionImporterExporter::*GetWriter(DataFormat df) const)(const VGScene& scene, const VGProcessor_VisionExporter* ve, IVFileOutStream& stream) const;
-  bool WriteVMesh         (const VGScene& scene, const VGProcessor_VisionExporter* ve, IVFileOutStream& stream) const;
-  bool WriteModel         (const VGScene& scene, const VGProcessor_VisionExporter* ve, IVFileOutStream& stream) const;
-  bool WriteVColMesh      (const VGScene& scene, const VGProcessor_VisionExporter* ve, IVFileOutStream& stream) const;
-  bool WriteAnim          (const VGScene& scene, const VGProcessor_VisionExporter* ve, IVFileOutStream& stream) const;
-  bool WritePrefab        (const VGScene& scene, const VGProcessor_VisionExporter* ve, IVFileOutStream& stream) const;
-  bool WritePrefabLayer   (const VGScene& scene, const VGProcessor_VisionExporter* ve, IVFileOutStream& stream) const;
-  bool WriteVisibilityInfo(const VGScene& scene, const VGProcessor_VisionExporter* ve, IVFileOutStream& stream) const;
-  bool WriteMaterial      (const VGScene& scene, const VGProcessor_VisionExporter* ve, IVFileOutStream& stream) const;
-  bool WriteMaterialLib   (const VGScene& scene, const VGProcessor_VisionExporter* ve, IVFileOutStream& stream) const;
+  bool (VGVisionImporterExporter::*GetWriter(DataFormat df) const)(VGScene& scene, const VGProcessor_VisionExporter* ve, IVFileOutStream& stream) const;
+  bool WriteVMesh         (VGScene& scene, const VGProcessor_VisionExporter* ve, IVFileOutStream& stream) const;
+  bool WriteModel         (VGScene& scene, const VGProcessor_VisionExporter* ve, IVFileOutStream& stream) const;
+  bool WriteVColMesh      (VGScene& scene, const VGProcessor_VisionExporter* ve, IVFileOutStream& stream) const;
+  bool WriteAnim          (VGScene& scene, const VGProcessor_VisionExporter* ve, IVFileOutStream& stream) const;
+  bool WritePrefab        (VGScene& scene, const VGProcessor_VisionExporter* ve, IVFileOutStream& stream) const;
+  bool WritePrefabLayer   (VGScene& scene, const VGProcessor_VisionExporter* ve, IVFileOutStream& stream) const;
+  bool WriteVisibilityInfo(VGScene& scene, const VGProcessor_VisionExporter* ve, IVFileOutStream& stream) const;
+  bool WriteMaterial      (VGScene& scene, const VGProcessor_VisionExporter* ve, IVFileOutStream& stream) const;
+  bool WriteMaterialLib   (VGScene& scene, const VGProcessor_VisionExporter* ve, IVFileOutStream& stream) const;
 
   // Reader functions.
   bool (VGVisionImporterExporter::*GetReader(DataFormat df) const)(VGScene& scene, const VGProcessor_VisionImporter* vi, IVFileInStream& stream);
@@ -427,7 +427,7 @@ public:
   ///
   /// \param rdtaAxis
   ///   Axis for rotation delta extraction (engine allows only one) - 0=none, 1=x, 2=y, 3=z
-  inline void                                     SetMotionDeltaExtraction(const VString& n, bool b, int odtaAxes=07, int rdtaAxis=0)     { m_mdtaInfo[n] = (void*)(((b?1:0)<<5)|((rdtaAxis&3)<<3)|(odtaAxes&7)); }//@@@ test
+  inline void                                     SetMotionDeltaExtraction(const VString& n, bool b, int odtaAxes=07, int rdtaAxis=0)     { m_mdtaInfo[n] = (((b?1:0)<<5)|((rdtaAxis&3)<<3)|(odtaAxes&7)); }//@@@ test
 
   /// \brief
   ///   Gets options set for motion delta extraction
@@ -443,7 +443,7 @@ public:
   ///
   /// \param rdtaAxis
   ///   Axis for rotation delta extraction (engine allows only one) - 0=none, 1=x, 2=y, 3=z
-  inline void                                     GetMotionDeltaExtraction(const VString& n, bool& b, int& odtaAxes, int& rdtaAxis) const { intptr_t p=0; m_mdtaInfo.Lookup(n, (void*&)p); b = !!(p&(1<<5)); rdtaAxis = (p>>3)&3; odtaAxes = p&7; }//@@@ test
+  inline void                                     GetMotionDeltaExtraction(const VString& n, bool& b, int& odtaAxes, int& rdtaAxis) const { int p=0; m_mdtaInfo.Lookup(n, p); b = !!(p&(1<<5)); rdtaAxis = (p>>3)&3; odtaAxes = p&7; }//@@@ test
 
 
 
@@ -585,14 +585,14 @@ private:
   VGVertex::VertexMask                    m_vertexMask;
 
   // Motion delta.
-  VMapStrToPtr/*used as str->int*/        m_mdtaInfo;
+  VMap<VString, int>                      m_mdtaInfo;
   
   //File settings
   bool                                    m_prefabRelativeFilenames;
 };
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

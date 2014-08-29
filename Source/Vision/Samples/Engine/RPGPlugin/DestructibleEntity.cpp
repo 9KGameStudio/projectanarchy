@@ -108,14 +108,14 @@ void RPG_DestructibleEntity::DisposeObject()
 void RPG_DestructibleEntity::AddComponents()
 {
   // Add an attackable component if none was added in the editor
-  if (!Components().GetComponentOfType(V_RUNTIME_CLASS(RPG_AttackableComponent)))
+  if (!Components().GetComponentOfType<RPG_AttackableComponent>())
   {
     RPG_AttackableComponent* attackableComponent = new RPG_AttackableComponent;
     AddComponent(attackableComponent);
   }
 
   // Add a rigid body component if none already exists
-  if (!Components().GetComponentOfType(V_RUNTIME_CLASS(vHavokRigidBody)))
+  if (!Components().GetComponentOfType<vHavokRigidBody>())
   {
     // Rigid Body
     vHavokRigidBody* rigidBody = new vHavokRigidBody;
@@ -155,13 +155,13 @@ void RPG_DestructibleEntity::SetDestroyed()
   m_isDestroyed = true;
 
   // remove the attackable component
-  RPG_AttackableComponent* attackableComponent = static_cast<RPG_AttackableComponent*>(Components().GetComponentOfType(V_RUNTIME_CLASS(RPG_AttackableComponent)));
+  RPG_AttackableComponent* attackableComponent = Components().GetComponentOfType<RPG_AttackableComponent>();
   if (attackableComponent)
   {
     RemoveComponent(attackableComponent);
   }
 
-  vHavokRigidBody* rigidBodyComponent = static_cast<vHavokRigidBody*>(Components().GetComponentOfType(V_RUNTIME_CLASS(vHavokRigidBody)));
+  vHavokRigidBody* rigidBodyComponent = Components().GetComponentOfType<vHavokRigidBody>();
   if (rigidBodyComponent)
   {
     RemoveComponent(rigidBodyComponent);
@@ -242,7 +242,7 @@ void RPG_DestructibleEntity::AddObstacle()
   if(m_aiObstacle)
     return;
 
-  vHavokRigidBody *rigidBody = vstatic_cast<vHavokRigidBody*>(Components().GetComponentOfType(V_RUNTIME_CLASS(vHavokRigidBody)));
+  vHavokRigidBody *rigidBody = Components().GetComponentOfType<vHavokRigidBody>();
   VASSERT(rigidBody);
   if(!rigidBody)
     return;
@@ -274,7 +274,7 @@ void RPG_DestructibleEntity::RemoveObstacle()
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

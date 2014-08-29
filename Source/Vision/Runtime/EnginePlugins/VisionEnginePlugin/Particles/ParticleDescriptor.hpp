@@ -67,6 +67,7 @@ enum VIS_PARTICLE_TOPOLOGY_e
   PARTICLE_TOPOLOGY_MESH              = 4,
   PARTICLE_TOPOLOGY_TRAIL             = 5,
 
+  PARTICLE_TOPOLOGY_CUSTOM            = 98,
   // just for backwards compatibility
   PARTICLE_TOPOLOGY_UNKNOWN           = 99,
 };
@@ -375,7 +376,7 @@ public:
 
   VisParticleEffectFile_cl *m_pOwner; ///< Owner effect
   bool m_bActive; ///< Only active descriptors will be used for creating particle groups. Particle types that are used for destroyed particles are flagged as inactive.
-  char m_eTopology; ///< casted to VIS_PARTICLE_TOPOLOGY_e
+  VIS_PARTICLE_TOPOLOGY_e m_eTopology;
   VString m_sName;///< name of the layer
   VString m_sDescription;  ///< description of the layer
 
@@ -392,6 +393,8 @@ public:
   bool m_bUseSmoothAnimation;       ///< smooth interpolation between animation frames
   bool m_bStartRandomAnimFrame;     ///< start with a random animation frame
   bool m_bAlwaysInForeground;       ///< z-buffer test?
+  bool m_bUseOcclusionCulling;      ///< Use occlusion culling
+  bool m_bAlwaysVisible;            ///< Whether the group is always visible (nether frustom nor occlusion culling is performed)
   bool m_bHandleWhenVisible;        ///< if enabled, simulation of the group will only be performed if group is visible
   float m_fSizeAspect;              ///< texture size aspect
   int m_iFlags;                     ///< group flags
@@ -402,16 +405,26 @@ public:
   hkvVec2 m_vParticleCenter;      ///< e.g. 0.5,0.5
 
 // visibility 
-  hkvAlignedBBox m_BoundingBox;  ///< particle group's local bounding box
+  hkvAlignedBBox m_BoundingBox;     ///< particle group's local bounding box
   float m_fDynamicInflateInterval;  ///< time interval to recalc the bounding box from all particles
   float m_fDepthOffset;             ///< z-offset value
   VColorRef m_ModColor;             ///< additional modulation color
   float m_fApplySceneBrightness;    ///< if true, the scene brightness will be considered at particle group emitter position
+  int m_iVisibleBitmask;            ///< per layer filtering bitmask
   bool m_bSortParticles;            ///< sort particles
   bool m_bRepeatLifetime;           ///< if true, it has infinite lifetime
   bool m_bSoftParticles;            ///< if enabled, a shader is applied that renders soft particles
-  int m_iVisibleBitmask;            ///< per layer filtering bitmask
 
+// Lighting
+  bool m_bLightingStatic;           ///< if enabled, a shader is applied that performs static lighting using the lightgrid
+  bool m_bLightingDynamic;          ///< if enabled, a shader is applied that performs dynamic lighting
+  bool m_bDomainFreqSamplingEnabled;///< if enabled, most dynamic lighting calculations will be performed in the domain shader (instead of vertex shader)  
+  bool m_bShadowReceive;            ///< if enabled, a shader is applied that samples a single shadow map for receiving shadow from a directional light
+  bool m_bUseNormalFromDiffAlpha;   ///< if enabled, a shader is applied that will compute normals on the fly interpreting the diffuse texture's alpha as a curvature value instead of using the normal map.
+  float m_fDomainFreqSamplingPixelPerVertex; ///< controls tessellation factors if m_bDomainFreqSamplingEnabled is enabled.
+  float m_fBacklightingScale;       ///< scale factor for backlighting applied if using static or dynamic lighting
+
+// Fade
   VisParticleGroup_cl::FadeMode_e m_eFadeMode;   ///< maps to VisParticleGroup_cl member
   float m_fFadeStart;               ///< maps to VisParticleGroup_cl member
   float m_fFadeEnd;                 ///< maps to VisParticleGroup_cl member
@@ -459,9 +472,7 @@ public:
   VisParticleGroupDescriptorPtr m_spDestroyCreateDesc; ///< the pointer to the descriptor (set from m_sDestroyCreateGroup at loading time)
 
 // distortion
-  bool m_bDistorted;          ///< Indicates whether distortion is used
-  bool m_bDistortionSizeMode; ///< Size distortion mode
-  bool m_bDistortionPlaneAligned;   ///< planar aligned
+  bool m_bDistortionPlaneAligned;   ///< planar aligned  
   bool m_bHasCustomCenter;          ///< indicates whether m_vParticleCenter should be used
   float m_fTrailOverlap;            ///< for trail particles this defines how much the segments overlap (1.0 = no)
 
@@ -470,7 +481,6 @@ public:
   hkvVec4 m_vSizeMultiplier;   ///< If m_bDistortionSizeMode is defined then this is the ratio between size and distortion vector
 
 // normal
-  bool m_bUseNormal;      ///< A custom normal vector is provided
   hkvVec3 m_vNormal; ///< Custom normal vector 
   float m_fRotationAxisRandomness; ///< randomness of rotation axis
   hkvVec3 m_vRelativePosition;     ///< local space position of this layer in the effect
@@ -540,7 +550,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

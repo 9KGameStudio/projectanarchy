@@ -25,8 +25,8 @@
 #define HK_BASE_CONFIGVERSION_H
 
 #define HAVOK_SDK_VERSION_MAJOR 2014
-#define HAVOK_SDK_VERSION_MINOR 0
-#define HAVOK_SDK_VERSION_POINT 5
+#define HAVOK_SDK_VERSION_MINOR 1
+#define HAVOK_SDK_VERSION_POINT 0
 
 // Release id must be less than 3 chars to fit in binary packfile header.
 // Use the following ids:
@@ -51,18 +51,17 @@
 #define HK_STRING2012 "2012"
 #define HK_STRING2013 "2013"
 #define HK_STRING2014 "2014"
+
 #define HK_NUM_TO_STR(NUM) HK_STRING##NUM
 #define HAVOK_SDK_VERSION_STRING_SPEC(MAJOR,MINOR,POINT,RELEASE) HK_NUM_TO_STR(MAJOR) "." HK_NUM_TO_STR(MINOR) "." HK_NUM_TO_STR(POINT) "-" RELEASE
 
 #define HAVOK_SDK_VERSION_NUM_STRING  HAVOK_SDK_VERSION_STRING_SPEC(HAVOK_SDK_VERSION_MAJOR, HAVOK_SDK_VERSION_MINOR, HAVOK_SDK_VERSION_POINT, HAVOK_SDK_VERSION_RELEASE) // e.g. "2010.1.0-r1"
 #define HAVOK_SDK_VERSION_STRING      "hk_" HAVOK_SDK_VERSION_NUM_STRING // e.g. "hk_2010.1.0-r1"
 
-#define HAVOK_BUILD_NUMBER 0
-
 #endif // HK_BASE_CONFIGVERSION_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

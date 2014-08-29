@@ -28,6 +28,8 @@
 #undef HK_FEATURE_PRODUCT_DESTRUCTION_2012
 #undef HK_FEATURE_PRODUCT_BEHAVIOR
 #undef HK_FEATURE_PRODUCT_PHYSICS_2012
+#undef HK_FEATURE_PRODUCT_PHYSICS
+#undef HK_FEATURE_PRODUCT_DESTRUCTION
 
 // Also we're not using any serialization/versioning so we don't need any of these.
 #define HK_EXCLUDE_FEATURE_SerializeDeprecatedPre700
@@ -44,7 +46,7 @@
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -513,7 +513,7 @@ namespace TerrainBase.Config
 
       [SortedCategory("Texturing", 3), PropertyOrder(70)]
       [RefreshProperties(System.ComponentModel.RefreshProperties.All)]
-      [EditorAttribute(typeof(AssetEditor), typeof(UITypeEditor)), AssetDialogFilter(new string[] { "Texture" })]
+      [EditorAttribute(typeof(AssetEditor), typeof(UITypeEditor)), AssetDialogFilter(new string[] { "Texture | 2D" })]
       [Description("Specifies the base texture. This texture can be changed later.")]
       public string BaseTextureFile
       {
@@ -1232,8 +1232,8 @@ namespace TerrainBase.Config
 
     [SortedCategory("Base Texture", 1), PropertyOrder(1)]
     [RefreshProperties(System.ComponentModel.RefreshProperties.All)]
-    [EditorAttribute(typeof(AssetEditor), typeof(UITypeEditor)), AssetDialogFilter(new string[] { "Texture" })]
-    [Description("Specifies the base texture. This texture can be changed later.")]
+    [EditorAttribute(typeof(AssetEditor), typeof(UITypeEditor)), AssetDialogFilter(new string[] { "Texture | 2D" })]
+    [Description("Specifies the base texture. This texture can be changed later in the \"Texturing\" tab of the Terrain Editor panel.")]
     public string BaseTextureFile
     {
       get { return _config.BaseTextureFile; }
@@ -1401,7 +1401,7 @@ namespace TerrainBase.Config
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

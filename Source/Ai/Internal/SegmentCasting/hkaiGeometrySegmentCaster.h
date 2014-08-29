@@ -17,7 +17,7 @@ class hkaiFaceEdges;
 struct hkGeometry;
 class hkBitField;
 
-class hkaiGeometrySegmentCaster : public hkReferencedObject
+class HK_EXPORT_AI hkaiGeometrySegmentCaster : public hkReferencedObject
 {
 public:
 	HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_AI);
@@ -26,7 +26,7 @@ public:
 
 	static AccelerationData* HK_CALL buildAccelerationData(
 		hkGeometry const& geometry,
-		hkBitField const* mask,
+		hkBitField const& mask,
 		hkBool supportExtrusion);
 
 	hkaiGeometrySegmentCaster();
@@ -134,7 +134,7 @@ struct hkMapOperations<hkaiGeometrySegmentCaster::ExtrudedEdge>;
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

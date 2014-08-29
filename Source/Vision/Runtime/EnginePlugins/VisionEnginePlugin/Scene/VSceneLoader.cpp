@@ -66,12 +66,12 @@ protected:
     unsigned int uiObjectStartPos = GetPos();
 #endif
     unsigned int uiObjectSize = 0;
-#ifdef WIN32
+#ifdef _VISION_WIN32
     try
     {
 #endif
       pObject = (T*)ReadObject(pClassRefRequested,&uiObjectSize);
-#ifdef WIN32
+#ifdef _VISION_WIN32
     }
     catch (VArchiveException& ex)
     {
@@ -128,7 +128,9 @@ VisCallback_cl VSceneLoader::OnCustomChunkBeforeShapesSerialization;
 VString VSceneLoader::s_sLastLoadedScene;
 
 VSceneLoader::VSceneLoader() 
-  : m_bUsePrewarming(false)
+  : m_vDefaultCamPos(0)
+  , m_DefaultCamRot(hkvMat3::IdentityMatrix())
+  , m_bUsePrewarming(false)
   , m_bInterleavedLoading(false)
   , m_bLoadTimeStepSettings(true)
   , m_iNextPrewarmIndexStaticGeometry(0)
@@ -146,6 +148,7 @@ VSceneLoader::VSceneLoader()
   m_fNearClipPlane = 5.0f;
   m_fFarClipPlane = 32000.0f;
   m_fFovX	= 90.f;
+  m_fLODScale = 1.f;
   
 #ifdef _VR_GLES2
   memset( m_aLightSources, 0, PREWARM_LIGHT_SOURCE_COUNT * sizeof( VisLightSource_cl * ) );
@@ -156,7 +159,7 @@ VSceneLoader::~VSceneLoader()
 {
 }
 
-#ifdef WIN32
+#ifdef _VISION_WIN32
 
 bool VSceneLoader::EmbedFile(const char *szFilename, CHUNKIDTYPE iID)
 {
@@ -216,6 +219,7 @@ bool VSceneLoader::LoadScene(const char *szFilename, unsigned int uiLoadingFlags
   m_bUsePrewarming = (uiLoadingFlags & VisAppLoadSettings::LF_UsePrewarming) != 0;
   m_bInterleavedLoading = (uiLoadingFlags & VisAppLoadSettings::LF_UseInterleavedLoading) != 0;
   m_bLoadTimeStepSettings = (uiLoadingFlags & VisAppLoadSettings::LF_LoadTimeStepSettings) != 0;
+  m_bLoadRendererNode = (uiLoadingFlags & VisAppLoadSettings::LF_LoadRendererNode) != 0;
 
   if (uiLoadingFlags & VisAppLoadSettings::LF_UseStreamingIfExists)
   {
@@ -229,11 +233,11 @@ bool VSceneLoader::LoadScene(const char *szFilename, unsigned int uiLoadingFlags
       hkvLog::Success("Resource file found: %s", resourceName.AsChar());
     else
       hkvLog::Warning("Resource file %s not found, this may affect scene loading performance.", resourceName.AsChar());
-  }
+    }
 
   m_iSceneVersion = -1;
   if (!Open(szFileNameFinal))
-  {
+    {
     hkvLog::Warning("File could not be opened: '%s'", szFileNameFinal);
     m_bIsFinished = true;
     return false;
@@ -242,7 +246,7 @@ bool VSceneLoader::LoadScene(const char *szFilename, unsigned int uiLoadingFlags
   if (Vision::World.IsWorldInitialized())
     Vision::DeInitWorld();
   Vision::InitWorld();
-
+  
   { // Trigger callback OnBeforeSceneLoaded
     VisSceneLoadedDataObject_cl data(&Vision::Callbacks.OnBeforeSceneLoaded, szFileNameFinal);
     Vision::Callbacks.OnBeforeSceneLoaded.TriggerCallbacks(&data);
@@ -366,7 +370,7 @@ bool VSceneLoader::PrewarmResources()
 {
   if (!m_bUsePrewarming)
     return true;
-
+  
   HKV_LOG_BLOCK("VSceneLoader::PrewarmResources");
   
   if (!PrewarmingStarted())
@@ -796,31 +800,40 @@ bool VSceneLoader::ReadShapeChunk()
       Vision::World.SetActiveSky(pSky);
   }
    
+  if(m_bLoadRendererNode)
+  {
   // remove renderer node so that no renderer node is set during de-serialization
   Vision::Renderer.SetRendererNode(0, NULL);
+  }
 
-  IVRendererNode *pRenderer = NULL;
+  IVRendererNodePtr spRenderer = NULL;
   if (m_iSceneVersion>=SCENE_FILE_VERSION10)
   {
     // #4 : renderer node
-    ar.ReadObjectByType(pRenderer);
+    IVRendererNode* pTemp = NULL;
+    ar.ReadObjectByType(pTemp);
+    spRenderer = pTemp;
   }
 
-  if ((m_eExportFlags & VExport_RendererNode) == 0 || pRenderer == NULL)
+  if(m_bLoadRendererNode)
   {
-    pRenderer = new VSimpleRendererNode();
+    if ((m_eExportFlags & VExport_RendererNode) == 0 || spRenderer == NULL)
+  {
+      spRenderer = new VSimpleRendererNode();
   }
 
   // set renderer node properties like near and far clip plane and initialize renderer node
   {
-    pRenderer->SetFinalTargetContext(Vision::Contexts.GetMainRenderContext());
+      spRenderer->SetFinalTargetContext(Vision::Contexts.GetMainRenderContext());
 
-    pRenderer->GetViewProperties()->setClipPlanes(m_fNearClipPlane, m_fFarClipPlane);
-    pRenderer->GetViewProperties()->setFov(m_fFovX, 0.0f);
-    pRenderer->OnViewPropertiesChanged();
+      spRenderer->GetViewProperties()->setClipPlanes(m_fNearClipPlane, m_fFarClipPlane);
+      spRenderer->GetViewProperties()->setFov(m_fFovX, 0.0f);
+      spRenderer->GetViewProperties()->setLODScaling(m_fLODScale);
+      spRenderer->OnViewPropertiesChanged();
     
-    pRenderer->InitializeRenderer();
-      Vision::Renderer.SetRendererNode(0, pRenderer);
+      spRenderer->InitializeRenderer();
+      Vision::Renderer.SetRendererNode(0, spRenderer);
+    }  
   }  
 
   if (m_iSceneVersion>=SCENE_FILE_VERSION10)
@@ -1072,6 +1085,10 @@ bool VSceneLoader::ReadViewChunk()
       return false;	
     if (m_fFovX<=0.f) 
       m_fFovX=90.f; // default
+    if (!ReadFloat(m_fLODScale)) 
+      return false;	
+    if (m_fLODScale<=0.f) // used to be reserved with default = 0
+      m_fLODScale = 1.0f;
   }
   return true;
 }
@@ -1200,8 +1217,10 @@ bool VSceneLoader::ReadV3DChunk()
     eSRGBMode = (VSRGBMode)iMode;
   }
 
-  // load world + lightgrid only makes the first 20%
+  // load world+lightgrid only makes the first 20%
   LOADINGPROGRESS.PushRange(0.f,20.f);
+
+  Vision::Renderer.SetDefaultLightingColor(iDefaultColor);
 
   // load lightgrid file ref.
   char szLGFilename[FS_MAX_PATH];
@@ -1214,7 +1233,6 @@ bool VSceneLoader::ReadV3DChunk()
   }
 
   Vision::RenderLoopHelper.SetLightGrid(pGrid);
-  Vision::Renderer.SetDefaultLightingColor(iDefaultColor);
   Vision::Renderer.SetLightingMode((VIS_CFG_LightingMode)iLightmapEquation); // this sets the HasLightmaps() properties as well
   Vision::Renderer.SetSRGBMode(eSRGBMode);
 
@@ -1226,6 +1244,8 @@ bool VSceneLoader::ReadV3DChunk()
   {    
     char szShaderProvider[256];
     ReadString(szShaderProvider, 256);
+    if(m_bLoadRendererNode)
+    {
     VType *pType = Vision::GetTypeManager()->GetType(szShaderProvider);
     if (pType != NULL && !pType->IsAbstract())
     {
@@ -1233,6 +1253,7 @@ bool VSceneLoader::ReadV3DChunk()
       if (pShaderProvider != NULL)
         Vision::GetApplication()->SetShaderProvider(pShaderProvider);
     }  
+  }
   }
 
   LOADINGPROGRESS.PopRange();
@@ -1478,7 +1499,7 @@ close_and_return:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140624)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

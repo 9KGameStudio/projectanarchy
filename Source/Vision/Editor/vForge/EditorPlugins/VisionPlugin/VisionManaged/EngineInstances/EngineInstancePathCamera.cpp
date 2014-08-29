@@ -25,7 +25,7 @@ namespace VisionManaged
 
   EngineInstancePathCamera::EngineInstancePathCamera()
   {
-    VisBaseEntity_cl *pEntity = Vision::Game.CreateEntity("PathCameraEntity",hkvVec3(0,0,0));
+    VisBaseEntity_cl *pEntity = Vision::Game.CreateEntity<PathCameraEntity>(hkvVec3(0,0,0));
     Debug::Assert(pEntity!=nullptr,"Could not create Cloth entity!");
 
     // reference the entity with a weak pointer. This will make sure that we correctly get a null pointer
@@ -119,7 +119,7 @@ namespace VisionManaged
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -34,6 +34,8 @@ class hkCollidable;
 class hkpVehicleLinearCastWheelCollide : public hkpVehicleWheelCollide
 {
 	public:
+		//+version(1)
+
 		HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_VEHICLE);
 		HK_DECLARE_REFLECTION();
 
@@ -183,7 +185,7 @@ class hkpVehicleLinearCastWheelCollide : public hkpVehicleWheelCollide
 			/// This is initialized to 0 by the constructor. If a different value is needed,
 			/// it should be assigned after construction but before calling init.
 			/// After init, use setCollisionFilterInfo to modify its value.
-		hkUint32 m_wheelCollisionFilterInfo;
+		hkUint32 m_wheelCollisionFilterInfo; //+default(0)
 
 			/// The per wheel information.
 		hkArray<struct WheelState> m_wheelStates;
@@ -192,8 +194,9 @@ class hkpVehicleLinearCastWheelCollide : public hkpVehicleWheelCollide
 		class hkpRejectChassisListener m_rejectChassisListener;
 
 			/// Parameters used when linear casting.
-		hkReal m_maxExtraPenetration;
-		hkReal m_startPointTolerance;
+		hkReal m_maxExtraPenetration;   //+default(HK_REAL_EPSILON)
+		hkReal m_startPointTolerance;   //+default(HK_REAL_EPSILON)
+		hkBool m_collectStartPointHits; //+default(false)
 
 	public:
 		hkpVehicleLinearCastWheelCollide(hkFinishLoadedObjectFlag f) :
@@ -209,7 +212,7 @@ class hkpVehicleLinearCastWheelCollide : public hkpVehicleWheelCollide
 #endif // HK_VEHICLE_LINEAR_CAST_WHEEL_COLLIDE_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

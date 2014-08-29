@@ -13,7 +13,7 @@
 
 extern const class hkClass hkpVehicleCastBatchingManagerClass;
 
-class hkJobThreadPool;
+class hkThreadPool;
 class hkJobQueue;
 
 /// An abstract class which provides a common interface to vehicle managers which support multithreaded
@@ -46,7 +46,7 @@ class hkpVehicleCastBatchingManager : public hkpVehicleManager
 			/// \param numJobs the number of jobs to build.
 			/// \param threadPool the threadPool.
 			/// \param jobQueue the jobQueue.
-		virtual void stepVehiclesSynchronously( hkpWorld* world, const hkStepInfo& updatedStepInfo, hkJobThreadPool* threadPool, hkJobQueue* jobQueue, int numJobs, hkArray< hkpVehicleInstance* >& activeVehicles );
+		virtual void stepVehiclesSynchronously( hkpWorld* world, const hkStepInfo& updatedStepInfo, hkThreadPool* threadPool, hkJobQueue* jobQueue, int numJobs, hkArray< hkpVehicleInstance* >& activeVehicles );
 
 		//
 		// Interface for asynchronous multithreading.
@@ -92,7 +92,7 @@ class hkpVehicleCastBatchingManager : public hkpVehicleManager
 #endif // HK_VEHICLE_CAST_BATCHING_MANAGER_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

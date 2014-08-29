@@ -11,7 +11,7 @@
 
 #include <Physics/Constraint/Motor/LimitedForce/hkpLimitedForceConstraintMotor.h>
 
-extern const hkClass hkpSpringDamperConstraintMotorClass;
+extern HK_EXPORT_PHYSICS const hkClass hkpSpringDamperConstraintMotorClass;
 
 
 /// This motor works like a spring. It tries to reach a given target position
@@ -19,7 +19,7 @@ extern const hkClass hkpSpringDamperConstraintMotorClass;
 /// Due to the implementation, the maximum spring constant is limited and
 /// will be clipped. Its stiffness can never exceed 1/numberOfSolverSteps
 /// of the stiffness of the hkpPositionConstraintMotor (when using a tau of 1).
-class hkpSpringDamperConstraintMotor : public hkpLimitedForceConstraintMotor
+class HK_EXPORT_PHYSICS hkpSpringDamperConstraintMotor : public hkpLimitedForceConstraintMotor
 {
 	public:
 
@@ -51,7 +51,7 @@ class hkpSpringDamperConstraintMotor : public hkpLimitedForceConstraintMotor
 #endif // HKP_SPRING_DAMPER_CONSTRAINT_MOTOR_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -9,6 +9,7 @@
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/VisionEnginePluginPCH.h>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Terrain/Geometry/TerrainDecorationGroup.hpp>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/ShadowMapping/VShadowMapGenerator.hpp>
+#include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/ShadowMapping/VShadowMapGenSpotDir.hpp>
 
 #if !defined( HK_ANARCHY )
   #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/ShadowMapping/VShadowMapReceiverRenderer.hpp>
@@ -16,11 +17,10 @@
 
 #include <Vision/Runtime/Base/Graphics/VLightmapHelper.hpp>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Terrain/Application/Terrain.hpp>
-#include <Vision/Runtime/Base/System/Memory/VMemDbg.hpp>
+
 
 
 DynArray_cl<VTerrainDecorationInstance *> VTerrainDecorationGroup::g_VisibleInstances(0,NULL); // only needed while rendering
-hkvVec3 VTerrainDecorationGroup::g_vGlobalRenderOffset; // for repositioning
 
 
 VTerrainDecorationGroup::VTerrainDecorationGroup(bool bRegister)
@@ -37,7 +37,9 @@ VTerrainDecorationGroup::VTerrainDecorationGroup(bool bRegister)
   m_bUseLightgrid = true;
   m_fMax3DDistance = m_fUnscaledMaxDist = -1;
   m_pDecoOfTerrain = NULL;
-  m_bUseCollisions = m_bCastLightmapShadows = true;
+  m_bUseCollisions = m_bCastLightmapShadows = m_bCastDynamicShadows = true;
+  m_bPerInstanceVisibility = true;
+  m_iInstanceStreamMask = 0;
 }
 
 
@@ -101,11 +103,14 @@ VTerrainDecorationGroup::VCollectorVisibleState* VTerrainDecorationGroup::FindVi
 VTerrainDecorationGroup::VCollectorVisibleState* VTerrainDecorationGroup::CreateVisStateForCollector(
   IVisVisibilityCollector_cl* pColl)
 {
+  m_VisibilityMutex.Lock();
+
   VCollectorVisibleState *pNewState = FindVisStateForCollector(pColl);
   if (pNewState != NULL)
+  {
+    m_VisibilityMutex.Unlock();
     return pNewState;
-
-  m_VisibilityMutex.Lock();
+  }
 
   int iIntCount = (m_Instances.m_iCount+31)/32;
   int iSize = offsetof(VCollectorVisibleState,m_iFirstMask) + iIntCount*sizeof(unsigned int); // structure + bitmask
@@ -131,7 +136,7 @@ VTerrainDecorationGroup::VCollectorVisibleState* VTerrainDecorationGroup::Create
 BOOL VTerrainDecorationGroup::OnTestVisible(IVisVisibilityCollector_cl *pCollector, const VisFrustum_cl *pFrustum)
 {
   // VISION_PROFILE_FUNCTION(VSpeedTreeManager::PROFILING_VISIBILITY);
-  if (m_Instances.m_iCount==0)
+  if (m_Instances.m_iCount==0 || !m_bPerInstanceVisibility)
     return TRUE;
 
   // the bounding box has been determined visible already so perform some per-instance tests
@@ -205,57 +210,77 @@ BOOL VTerrainDecorationGroup::OnTestVisible(IVisVisibilityCollector_cl *pCollect
 }
 
 
+void VTerrainDecorationGroup::RenderAllInstancing(bool bShadowmap, IVTerrainDecorationModel::RenderMode_e eRenderMode)
+{
+  VASSERT(m_spAllInstances!=NULL);
+
+  if (this->m_Instances.m_iCount>0)
+  {
+    const hkvVec3 vTranslate = GetPosition() - m_vPositionBackup;
+    m_Instances.m_pInstances[0].m_spModel->RenderBatch(m_spAllInstances, m_Instances.m_iCount, m_iInstanceStreamMask, vTranslate, eRenderMode);
+  }
+
+}
+
+
 void VTerrainDecorationGroup::RenderVisibleInstancesToShadowMap(IVisVisibilityCollector_cl *pCollector, 
   VShadowMapGenerator *pShadowMapGenerator, float *pfLightFrustumDistances)
 {
 //  VISION_PROFILE_FUNCTION(VSpeedTreeManager::PROFILING_RENDERGROUPINSTANCES);
-  VCollectorVisibleState *pState = FindVisStateForCollector(pCollector);
-  if (pState == NULL || !pState->IsAnyInstanceVisible())
-    return;
-
-  // build batch
-  const hkvVec3 vTranslate = GetPosition() - m_vPositionBackup;
-  g_VisibleInstances.EnsureSize(pState->m_iLastRelevantBit - pState->m_iFirstRelevantBit + 1);
-  int iInstCount = 0;
-  const unsigned int* pMask = &pState->m_iFirstMask;
-
-  // loop through all relevant integers
-  const int iFirstRelevantInt = pState->m_iFirstRelevantBit / 32;
-  const int iLastRelevantInt = pState->m_iLastRelevantBit / 32;
-
-  for (int i = iFirstRelevantInt; i <= iLastRelevantInt; i++)
+  if (!m_bPerInstanceVisibility && m_spAllInstances!=NULL)
   {
-    const unsigned int iMask32 = pMask[i];
-
-    // No bits set for this integer? -> Move to the next integer.
-    if (iMask32 == 0) 
-      continue;
-
-    // loop through all bits of the integer value
-    const int iFirstBit = hkvMath::Max(i*32, pState->m_iFirstRelevantBit);
-    const int iLastBit = hkvMath::Min(i*32 + 31, pState->m_iLastRelevantBit);
-
-    for (int b = iFirstBit; b <= iLastBit; b++)
-    {
-      if ((iMask32 & (1 << (b & 31))) == 0)
-        continue;
-
-      hkvAlignedBBox instanceBox(hkvNoInitialization);
-      m_Instances.m_pInstances[b].GetRenderBoundingBox(instanceBox, vTranslate);
-      if (!Vision::RenderLoopHelper.CompareLightFrustumDistances(instanceBox, 
-        pShadowMapGenerator->GetMainFrustum(), pfLightFrustumDistances))
-      {
-        continue;
-      }
-      
-      g_VisibleInstances.GetDataPtr()[iInstCount++] = &m_Instances.m_pInstances[b];
-    }
+    RenderAllInstancing(true);
   }
+  else
+  {
+    VCollectorVisibleState *pState = FindVisStateForCollector(pCollector);
+    if (pState == NULL || !pState->IsAnyInstanceVisible())
+      return;
 
-  if (iInstCount == 0)
-    return;
+    // build batch
+    const hkvVec3 vTranslate = GetPosition() - m_vPositionBackup;
+    g_VisibleInstances.EnsureSize(pState->m_iLastRelevantBit - pState->m_iFirstRelevantBit + 1);
+    int iInstCount = 0;
+    const unsigned int* pMask = &pState->m_iFirstMask;
 
-  m_Instances.m_pInstances[0].m_spModel->RenderBatch(NULL, g_VisibleInstances.GetDataPtr(), iInstCount);
+    // loop through all relevant integers
+    const int iFirstRelevantInt = pState->m_iFirstRelevantBit / 32;
+    const int iLastRelevantInt = pState->m_iLastRelevantBit / 32;
+
+    for (int i = iFirstRelevantInt; i <= iLastRelevantInt; i++)
+    {
+      const unsigned int iMask32 = pMask[i];
+
+      // No bits set for this integer? -> Move to the next integer.
+      if (iMask32 == 0) 
+        continue;
+
+      // loop through all bits of the integer value
+      const int iFirstBit = hkvMath::Max(i*32, pState->m_iFirstRelevantBit);
+      const int iLastBit = hkvMath::Min(i*32 + 31, pState->m_iLastRelevantBit);
+
+      for (int b = iFirstBit; b <= iLastBit; b++)
+      {
+        if ((iMask32 & (1 << (b & 31))) == 0)
+          continue;
+
+        hkvAlignedBBox instanceBox(hkvNoInitialization);
+        m_Instances.m_pInstances[b].GetRenderBoundingBox(instanceBox, vTranslate);
+        if (!Vision::RenderLoopHelper.CompareLightFrustumDistances(instanceBox, 
+          pShadowMapGenerator->GetMainFrustum(), pfLightFrustumDistances))
+        {
+          continue;
+        }
+      
+        g_VisibleInstances.GetDataPtr()[iInstCount++] = &m_Instances.m_pInstances[b];
+      }
+    }
+
+    if (iInstCount == 0)
+      return;
+
+    m_Instances.m_pInstances[0].m_spModel->RenderBatch(NULL, g_VisibleInstances.GetDataPtr(), iInstCount, vTranslate);
+  }
 
 #if defined(_VR_DX11)
   VisRenderStates_cl::SetVSConstantBuffer(VTERRAIN_CB_DECOMODEL, NULL);
@@ -263,51 +288,57 @@ void VTerrainDecorationGroup::RenderVisibleInstancesToShadowMap(IVisVisibilityCo
 }
 
 
-void VTerrainDecorationGroup::RenderVisibleInstances(IVisVisibilityCollector_cl *pCollector)
+void VTerrainDecorationGroup::RenderVisibleInstances(IVisVisibilityCollector_cl *pCollector, IVTerrainDecorationModel::RenderMode_e eRenderMode)
 {
 //  VISION_PROFILE_FUNCTION(VSpeedTreeManager::PROFILING_RENDERGROUPINSTANCES);
-  VCollectorVisibleState *pState = FindVisStateForCollector(pCollector);
-
-  if (pState==NULL || !pState->IsAnyInstanceVisible())
-    return;
-
-  // build batch
-  g_VisibleInstances.EnsureSize(pState->m_iLastRelevantBit - pState->m_iFirstRelevantBit + 1);
-  int iInstCount = 0;
-  const unsigned int* pMask = &pState->m_iFirstMask;
-
-  // loop through all relevant integers
-  const int iFirstRelevantInt = pState->m_iFirstRelevantBit / 32;
-  const int iLastRelevantInt = pState->m_iLastRelevantBit / 32;
-
-  for (int i = iFirstRelevantInt; i <= iLastRelevantInt; i++)
+  if (!m_bPerInstanceVisibility && m_spAllInstances!=NULL)
   {
-    const unsigned int iMask32 = pMask[i];
+    RenderAllInstancing(false, eRenderMode);
+  } 
+  else
+  {
+    VCollectorVisibleState *pState = FindVisStateForCollector(pCollector);
+    if (pState==NULL || !pState->IsAnyInstanceVisible())
+      return;
 
-    // No bits set for this integer? -> Move to the next integer.
-    if (iMask32 == 0) 
-      continue;
+    // build batch
+    g_VisibleInstances.EnsureSize(pState->m_iLastRelevantBit - pState->m_iFirstRelevantBit + 1);
+    int iInstCount = 0;
+    const unsigned int* pMask = &pState->m_iFirstMask;
+    const hkvVec3 vTranslate = GetPosition() - m_vPositionBackup;
 
-    // loop through all bits of the integer value
-    const int iFirstBit = hkvMath::Max(i*32, pState->m_iFirstRelevantBit);
-    const int iLastBit = hkvMath::Min(i*32 + 31, pState->m_iLastRelevantBit);
+    // loop through all relevant integers
+    const int iFirstRelevantInt = pState->m_iFirstRelevantBit / 32;
+    const int iLastRelevantInt = pState->m_iLastRelevantBit / 32;
 
-    for (int b = iFirstBit; b <= iLastBit; b++)
+    for (int i = iFirstRelevantInt; i <= iLastRelevantInt; i++)
     {
-      if ((iMask32 & (1 << (b & 31))) != 0)
-        g_VisibleInstances.GetDataPtr()[iInstCount++] = &m_Instances.m_pInstances[b];
+      const unsigned int iMask32 = pMask[i];
+
+      // No bits set for this integer? -> Move to the next integer.
+      if (iMask32 == 0) 
+        continue;
+
+      // loop through all bits of the integer value
+      const int iFirstBit = hkvMath::Max(i*32, pState->m_iFirstRelevantBit);
+      const int iLastBit = hkvMath::Min(i*32 + 31, pState->m_iLastRelevantBit);
+
+      for (int b = iFirstBit; b <= iLastBit; b++)
+      {
+        if ((iMask32 & (1 << (b & 31))) != 0)
+          g_VisibleInstances.GetDataPtr()[iInstCount++] = &m_Instances.m_pInstances[b];
+      }
     }
+
+    if (iInstCount == 0)
+      return;
+
+    // track light grid colors (global for the group):
+    TrackLightgridColors();
+
+    // render
+    m_Instances.m_pInstances[0].m_spModel->RenderBatch(NULL, g_VisibleInstances.GetDataPtr(), iInstCount, vTranslate, eRenderMode);
   }
-
-  if (iInstCount == 0)
-    return;
-
-  // track light grid colors (global for the group):
-  TrackLightgridColors();
-
-  // render
-//  VSpeedTreeManager::GlobalManager().UpdateGlobals(GetPosition() - m_vPositionBackup);
-  m_Instances.m_pInstances[0].m_spModel->RenderBatch(NULL, g_VisibleInstances.GetDataPtr(), iInstCount);
 
 #ifdef PROFILING
   if (Vision::Profiling.GetDebugRenderFlags()&DEBUGRENDERFLAG_OBJECT_VISBBOX)
@@ -337,6 +368,7 @@ void VTerrainDecorationGroup::EndUpdateInstances()
 {
   VTerrainDecorationInstance *pInst = m_Instances.m_pInstances;
   hkvAlignedBBox bbox;
+  bbox.setInvalid();
   IVTerrainDecorationModel *pModel = (m_Instances.m_iCount>0) ? pInst[0].m_spModel : NULL;
   m_spModel = pModel;
 
@@ -374,7 +406,34 @@ void VTerrainDecorationGroup::EndUpdateInstances()
   {
     pPM->OnDecorationCreated(m_Instances);
   }
+
+  // create one vertex buffer for all instances
+  if (!m_bPerInstanceVisibility)
+  {
+    CreateInstanceBuffer();
+  }
 }
+
+void VTerrainDecorationGroup::CreateInstanceBuffer()
+{
+  if (m_Instances.m_iCount==0)
+    return;
+  VisMBVertexDescriptor_t desc;
+  VModelInstanceData_t::GetDesc(desc);
+  m_spAllInstances = new VisMeshBuffer_cl(desc, m_Instances.m_iCount, VisMeshBuffer_cl::MB_PRIMTYPE_TRILIST, 0, -1, VIS_MEMUSAGE_STATIC, true, false);
+  m_spAllInstances->SetResourceFlag(VRESOURCEFLAG_AUTODELETE);
+  #ifdef HK_DEBUG
+  m_spAllInstances->SetFilename("<DecorationGroupInstanceBuffer>");
+  #endif
+  // copy instance data:
+  VModelInstanceData_t *pV = (VModelInstanceData_t *)m_spAllInstances->LockVertices(VIS_LOCKFLAG_DISCARDABLE);
+  for (int i=0;i<m_Instances.m_iCount;i++)
+    pV[i].Set(m_Instances.m_pInstances[i]);
+  m_spAllInstances->UnLockVertices();
+  m_iInstanceStreamMask = m_spAllInstances->GetStreamMask();
+}
+
+
 
 
 void VTerrainDecorationGroup::ClearInstances()
@@ -395,20 +454,22 @@ void VTerrainDecorationGroup::GetDependencies(VResourceSnapshot &snapshot)
 }
 
 
-V_IMPLEMENT_SERIAL( VTerrainDecorationGroup, VisObject3D_cl, 0, &g_VisionEngineModule );
+V_IMPLEMENT_SERIAL( VTerrainDecorationGroup, VisVisibilityObjectAABox_cl, 0, &g_VisionEngineModule );
 void VTerrainDecorationGroup::Serialize( VArchive &ar )
 {
   VisVisibilityObjectAABox_cl::Serialize(ar);
-  char iLocalVersion = 11;
+  char iLocalVersion = 13;
   char iDecoVersion = DECORATIONINSTANCE_CURRENT_VERSION;
   if (ar.IsLoading())
   {
-    ar >> iLocalVersion; VASSERT(iLocalVersion>=10 && iLocalVersion<=11);
+    ar >> iLocalVersion; VASSERT(iLocalVersion>=10 && iLocalVersion<=13);
 
     // source model
     IVTerrainDecorationModel *pModel = (IVTerrainDecorationModel *)ar.ReadProxyObject();
     m_spModel = pModel;
     ar >> m_fMax3DDistance;
+    if (iLocalVersion>=13)
+      ar >> m_bPerInstanceVisibility; // version 13
 
     // instances
     int iCount;
@@ -427,6 +488,9 @@ void VTerrainDecorationGroup::Serialize( VArchive &ar )
       pInst->m_spModel = m_spModel;
       pInst->ComputeSortingKey(0);
     }
+    // create one vertex buffer for all instances
+    if (!m_bPerInstanceVisibility)
+      CreateInstanceBuffer();
 
     // When there are no instances, assume this group is just the billboard group of painted terrain vegetation. In that case we need a
     // back reference to the terrain:
@@ -437,6 +501,8 @@ void VTerrainDecorationGroup::Serialize( VArchive &ar )
     ar >> m_bUseLightgrid;
     ar >> m_bUseCollisions;
     ar >> m_bCastLightmapShadows;
+    if (iLocalVersion>=12)
+      ar >> m_bCastDynamicShadows;
     m_vLightgridSamplePosition.SerializeAsVec3(ar);
     ar >> m_AmbientColor;
     for (int i=0;i<6;i++)
@@ -469,9 +535,10 @@ void VTerrainDecorationGroup::Serialize( VArchive &ar )
     // source model:
     ar.WriteProxyObject(m_spModel);
     ar << m_fMax3DDistance;
+    ar << m_bPerInstanceVisibility; // version 13
 
     // serialize instances
-    ar << iDecoVersion; // vers 11
+    ar << iDecoVersion; // vers 21
     ar << m_Instances.m_iCount;
     for (int i=0;i<m_Instances.m_iCount;i++)
       m_Instances.m_pInstances[i].SerializeX(ar,iDecoVersion,false); // version 7 serializes without per-instance model pointer (Serialization time!)
@@ -479,7 +546,7 @@ void VTerrainDecorationGroup::Serialize( VArchive &ar )
     // light grid colors
     ar << m_bUseLightgrid;
     ar << m_bUseCollisions;
-    ar << m_bCastLightmapShadows;
+    ar << m_bCastLightmapShadows << m_bCastDynamicShadows;
     m_vLightgridSamplePosition.SerializeAsVec3 (ar);
     ar << m_AmbientColor;
     for (int i=0;i<6;i++)
@@ -643,8 +710,24 @@ void VTerrainDecorationGroupManager::OnHandleCallback(IVisCallbackDataObject_cl 
 
   if (bIsRenderHookCallback || bIsShadowMapCallback)
   {
-    if ( bIsRenderHookCallback && ((VisRenderHookDataObject_cl *)pData)->m_iEntryConst!=VRH_PRE_OCCLUSION_TESTS)
-      return;
+    IVTerrainDecorationModel::RenderMode_e eRenderMode = IVTerrainDecorationModel::RENDER_MODE_OTW;
+
+    if (bIsRenderHookCallback)
+    {
+      const unsigned int iEntryConst = ((VisRenderHookDataObject_cl *)pData)->m_iEntryConst;
+      if ((Vision::Contexts.GetCurrentContext()->GetUsageHint() & VIS_CONTEXTUSAGEFLAG_INFRARED) != 0)
+      {
+        if (iEntryConst==VRH_PRE_PRIMARY_OPAQUE_PASS_GEOMETRY)
+          eRenderMode = IVTerrainDecorationModel::RENDER_MODE_IR_PREPASS;
+        else if (iEntryConst==VRH_PRE_OCCLUSION_TESTS)
+          eRenderMode = IVTerrainDecorationModel::RENDER_MODE_IR_MAINPASS;
+        else
+          return;
+      }
+      else if ( iEntryConst!=VRH_PRE_OCCLUSION_TESTS)
+        return;
+    }
+
     IVisVisibilityCollector_cl *pCollector = Vision::Contexts.GetCurrentContext()->GetVisibilityCollector();
     const int iCount = this->Count();
     if (pCollector==NULL || iCount==0)
@@ -660,14 +743,30 @@ void VTerrainDecorationGroupManager::OnHandleCallback(IVisCallbackDataObject_cl 
     if (bIsShadowMapCallback)
     {
       // For shadow maps, additionally filter by light / view frustum distances
-      Vision::RenderLoopHelper.ComputeLightFrustumDistances(pShadowData->m_pGenerator->GetCascadeLightPosition(pShadowData->m_iCascadeIndex), pShadowData->m_pGenerator->GetMainFrustum(), fLightToViewFrustumDistances);
+      const VisFrustum_cl *pShadowFrustum  = pShadowData->m_pGenerator->GetMainFrustum();
+      VisFrustum_cl clippedFrustum;
+      const int iCascadeIndex = pShadowData->m_iCascadeIndex;
       
+      // see similar code in VShadowMapRenderLoop::PostFilterByViewFrustum 
+      if (pShadowData->m_pGenerator->GetLightSource()->GetType() == VIS_LIGHT_DIRECTED)
+      {
+        VisRenderContext_cl *pMainContext = pShadowData->m_pGenerator->GetRendererNode()->GetReferenceContext();
+        hkvVec3 vMainCameraPos = pMainContext->GetCamera()->GetPosition();
+        hkvVec3 vMainCameraDir = pMainContext->GetCamera()->GetDirection();
+        float fRangeFar = static_cast<VShadowMapGenSpotDir*>(pShadowData->m_pGenerator)->GetCascadeCullDistance(iCascadeIndex);
+        clippedFrustum.CopyFrom(*pShadowFrustum);
+        hkvPlane* pFarPlane = clippedFrustum.GetFarPlane();
+        pFarPlane->setFromPointAndNormal(vMainCameraPos + vMainCameraDir * fRangeFar, vMainCameraDir);
+        pShadowFrustum = &clippedFrustum;
+      }
+      Vision::RenderLoopHelper.ComputeLightFrustumDistances(pShadowData->m_pGenerator->GetCascadeLightPosition(iCascadeIndex), pShadowFrustum, fLightToViewFrustumDistances);
+
       for (int i=0;i<iCount;i++)
       {
         VTerrainDecorationGroup *pTreeGroup = GetAt(i);
-        if (pCollector->IsVisObjectVisible(pTreeGroup)) // tree groups are derived from visibility objects
+        if (pTreeGroup->m_bCastDynamicShadows && pCollector->IsVisObjectVisible(pTreeGroup)) // tree groups are derived from visibility objects
         {
-          if (!Vision::RenderLoopHelper.CompareLightFrustumDistances(pTreeGroup->GetWorldSpaceBoundingBox(), pShadowData->m_pGenerator->GetMainFrustum(), fLightToViewFrustumDistances))
+          if (!Vision::RenderLoopHelper.CompareLightFrustumDistances(pTreeGroup->GetWorldSpaceBoundingBox(), pShadowFrustum, fLightToViewFrustumDistances))
             continue;
           m_VisibleGroups[m_iVisibleGroupCount++] = pTreeGroup;
         }
@@ -699,7 +798,7 @@ void VTerrainDecorationGroupManager::OnHandleCallback(IVisCallbackDataObject_cl 
       {
         INSERT_PERF_MARKER_SCOPE("Decoration groups : Render");
         for (int i=0;i<m_iVisibleGroupCount;i++)
-          m_VisibleGroups.GetDataPtr()[i]->RenderVisibleInstances(pCollector);
+          m_VisibleGroups.GetDataPtr()[i]->RenderVisibleInstances(pCollector, eRenderMode);
       }
     }
     return;
@@ -751,7 +850,7 @@ void VTerrainDecorationGroupManager::OnHandleCallback(IVisCallbackDataObject_cl 
     return;
   }
 /*
-#ifdef WIN32
+#ifdef _VISION_WIN32
   if (pData->m_pSender==&Vision::Callbacks.OnGatherLightmapInfo)
   {
     VLightmapInfoDataObject_cl *pLMData = (VLightmapInfoDataObject_cl *)pData;
@@ -769,7 +868,7 @@ void VTerrainDecorationGroupManager::OnHandleCallback(IVisCallbackDataObject_cl 
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140711)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

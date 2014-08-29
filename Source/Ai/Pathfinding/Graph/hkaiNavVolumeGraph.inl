@@ -30,17 +30,18 @@ inline hkaiNavVolumeGraph::hkaiNavVolumeGraph()
 	m_startCellKey(HKAI_INVALID_PACKED_KEY),
 	m_numGoals(0),
 	m_searchState(HK_NULL),
-	m_cachedCurrentSectionId(-1),
-	m_cachedAdjacentSectionId(-1)
+	m_cachedCurrentSectionId(HKAI_INVALID_RUNTIME_INDEX),
+	m_cachedAdjacentSectionId(HKAI_INVALID_RUNTIME_INDEX)
 #ifdef HK_DEBUG
-	,m_cachedCurrentCellKey(-1)
-	,m_cachedCurrentEdgeIndex(-1)
-	,m_cachedAdjacentCellKey(-1)
+	,m_cachedCurrentCellKey(HKAI_INVALID_PACKED_KEY)
+	,m_cachedCurrentEdgeIndex(hkaiNavVolume::INVALID_EDGE_INDEX)
+	,m_cachedAdjacentCellKey(HKAI_INVALID_PACKED_KEY)
 #endif
 {
 #ifdef HK_DEBUG
-	m_cachedCurrentAabb.setEmpty();
-	m_cachedAdjacentAabb.setEmpty();
+	getCachedCurrentAabb().setEmpty();
+	getCachedAdjacentAabb().setEmpty();
+	m_cachedModifierInfo.m_portalAabb.setEmpty();
 #endif
 }
 
@@ -99,21 +100,21 @@ inline const hkaiAgentTraversalInfo& hkaiNavVolumeGraph::getTraversalInfo() cons
 }
 
 
-inline hkBool32 hkaiNavVolumeGraph::isGoal( SearchIndex nit ) const
+inline hkBool32 hkaiNavVolumeGraph::isGoal( hkaiPackedKey nit ) const
 {
 	
 	return false;
 }
 
 // Get an upper bound on the number of nodes adjacent to a given node.
-int hkaiNavVolumeGraph::getMaxNeighborCount( SearchIndex nit ) const
+int hkaiNavVolumeGraph::getMaxNeighborCount( hkaiPackedKey nit ) const
 {
 	HK_ASSERT(0x73cc9e07, hkaiGetRuntimeIdFromPacked(nit) == m_cachedCurrentSectionId );
 	HK_ASSERT(0x7a72201d, nit == m_cachedCurrentCellKey);
 	return m_cachedCurrentCell.m_numEdges + m_cachedCurrentCellInstance.m_numEdges;
 }
 
-void hkaiNavVolumeGraph::getNeighbors( SearchIndex nit, hkArrayBase< EdgeKey >& neighbors ) const
+void hkaiNavVolumeGraph::getNeighbors( hkaiPackedKey nit, hkArrayBase< hkaiNavVolume::EdgeIndex >& neighbors ) const
 {
 	HK_ASSERT(0x73cc9e07, hkaiGetRuntimeIdFromPacked(nit) == m_cachedCurrentSectionId );
 	HK_ASSERT(0x7a72201d, nit == m_cachedCurrentCellKey);
@@ -126,7 +127,7 @@ void hkaiNavVolumeGraph::getNeighbors( SearchIndex nit, hkArrayBase< EdgeKey >& 
 			"For performance, neighbors array should be pre-allocated to contain all possible neighbors.");
 		neighbors.setSizeUnchecked(numEdges);
 	}
-	EdgeKey* HK_RESTRICT neighborPtr = neighbors.begin();
+	hkaiNavVolume::EdgeIndex* HK_RESTRICT neighborPtr = neighbors.begin();
 
 	// Original edges
 	{
@@ -134,7 +135,7 @@ void hkaiNavVolumeGraph::getNeighbors( SearchIndex nit, hkArrayBase< EdgeKey >& 
 		const int startEdgeIndex   = m_cachedCurrentCell.m_startEdgeIndex;
 		for ( int e=0; e < numOriginalEdges; e++ )
 		{
-			const EdgeKey edgeIndex = (startEdgeIndex + e);
+			const hkaiNavVolume::EdgeIndex edgeIndex = (startEdgeIndex + e);
 			*neighborPtr++ = edgeIndex;
 		}
 	}
@@ -145,7 +146,7 @@ void hkaiNavVolumeGraph::getNeighbors( SearchIndex nit, hkArrayBase< EdgeKey >& 
 		const int startEdgeIndex = m_cachedCurrentCellInstance.m_startEdgeIndex;
 		for ( int e=0; e < numOwnedEdges; e++ )
 		{
-			const EdgeKey edgeIndex = (startEdgeIndex + e);
+			const hkaiNavVolume::EdgeIndex edgeIndex = (startEdgeIndex + e);
 			*neighborPtr++ = edgeIndex;
 		}
 	}
@@ -153,7 +154,7 @@ void hkaiNavVolumeGraph::getNeighbors( SearchIndex nit, hkArrayBase< EdgeKey >& 
 }
 
 
-inline hkaiNavVolumeGraph::SearchIndex hkaiNavVolumeGraph::edgeTarget( SearchIndex nit, EdgeKey eit ) const
+inline hkaiPackedKey hkaiNavVolumeGraph::edgeTarget( hkaiPackedKey nit, hkaiNavVolume::EdgeIndex eit ) const
 {
 	HK_ASSERT(0x73cc9e07, hkaiGetRuntimeIdFromPacked(nit) == m_cachedCurrentSectionId );
 	HK_ASSERT(0x5411bfef, m_cachedCurrentEdgeIndex == eit );
@@ -161,7 +162,7 @@ inline hkaiNavVolumeGraph::SearchIndex hkaiNavVolumeGraph::edgeTarget( SearchInd
 }
 
 
-inline hkaiNavVolumeGraph::EdgeCost hkaiNavVolumeGraph::getTotalCost( SearchIndex nit, SearchIndex adj, EdgeKey eit, const EdgeCost costToParent_float ) const
+inline hkaiNavVolumeGraph::EdgeCost hkaiNavVolumeGraph::getTotalCost( hkaiPackedKey nit, hkaiPackedKey adj, hkaiNavVolume::EdgeIndex eit, const EdgeCost costToParent_float ) const
 {
 	HK_ASSERT(0x73cc9e06, hkaiGetRuntimeIdFromPacked(nit) == m_cachedCurrentSectionId );
 	HK_ASSERT(0x73cc9e08, hkaiGetRuntimeIdFromPacked(adj) == m_cachedAdjacentSectionId );
@@ -174,12 +175,12 @@ inline hkaiNavVolumeGraph::EdgeCost hkaiNavVolumeGraph::getTotalCost( SearchInde
 	
 	MY_TIME_CODE_BLOCK("edgeCost", HK_NULL);
 
-	HK_ASSERT(0x1f3b1c58, m_cachedCurrentAabb.isValid()  && !m_cachedCurrentAabb.isEmpty()  );
-	HK_ASSERT(0x1f3b1c59, m_cachedAdjacentAabb.isValid() && !m_cachedAdjacentAabb.isEmpty() );
+	HK_ASSERT(0x1f3b1c58, getCachedCurrentAabb().isValid()  && !getCachedCurrentAabb().isEmpty()  );
+	HK_ASSERT(0x1f3b1c59, getCachedAdjacentAabb().isValid() && !getCachedAdjacentAabb().isEmpty() );
 	
 	hkSimdReal costToParent = hkSimdReal::fromFloat(costToParent_float);
 	
-	hkAabb portal; hkaiNavVolumeUtils::getPortalBetweenCellAabbs(m_cachedCurrentAabb, m_cachedAdjacentAabb, portal);
+	const hkAabb& portal = m_cachedModifierInfo.m_portalAabb;
 	
 	hkVector4 currentCenter  = m_cachedModifierInfo.m_currentCellInfo.m_position;
 	hkVector4 adjacentCenter = m_cachedModifierInfo.m_adjacentCellInfo.m_position;
@@ -197,9 +198,9 @@ inline hkaiNavVolumeGraph::EdgeCost hkaiNavVolumeGraph::getTotalCost( SearchInde
 	}
 	else
 	{
-		HK_ASSERT(0x6cbeea2d, m_cachedModifierInfo.m_edgeKey == hkaiGetPackedKey( hkaiGetRuntimeIdFromPacked(nit), (hkUint32) eit) );
-		HK_ASSERT(0x6cbeea2e, m_cachedModifierInfo.m_currentCellInfo.m_cellKey == (hkUint32) nit);
-		HK_ASSERT(0x6cbeea2f, m_cachedModifierInfo.m_adjacentCellInfo.m_cellKey == (hkUint32) adj);
+		HK_ASSERT(0x6cbeea2d, m_cachedModifierInfo.m_edgeKey == hkaiGetPackedKey( hkaiGetRuntimeIdFromPacked(nit), eit) );
+		HK_ASSERT(0x6cbeea2e, m_cachedModifierInfo.m_currentCellInfo.m_cellKey == nit);
+		HK_ASSERT(0x6cbeea2f, m_cachedModifierInfo.m_adjacentCellInfo.m_cellKey == adj);
 
 		hkaiAstarCostModifier::NavVolumeGetModifiedCostCallbackContext callbackContext( getCurrentAccessor(),
 			m_info, 
@@ -216,7 +217,7 @@ inline hkaiNavVolumeGraph::EdgeCost hkaiNavVolumeGraph::getTotalCost( SearchInde
 	}
 }
 
-inline hkBool32 hkaiNavVolumeGraph::isEdgeTraversable( SearchIndex nit, SearchIndex adj, EdgeKey eit )
+inline hkBool32 hkaiNavVolumeGraph::isEdgeTraversable( hkaiPackedKey nit, hkaiPackedKey adj, hkaiNavVolume::EdgeIndex eit )
 {
 
 	HK_ASSERT(0x146f612c, eit == m_cachedCurrentEdgeIndex );
@@ -262,22 +263,22 @@ inline hkBool32 hkaiNavVolumeGraph::isEdgeTraversable( SearchIndex nit, SearchIn
 }
 
 
-inline hkBool32 hkaiNavVolumeGraph::isValidEdgeTarget( SearchIndex adj ) const
+inline hkBool32 hkaiNavVolumeGraph::isValidEdgeTarget( hkaiPackedKey adj ) const
 {
 	// We have the target node, not the actual edge here. So we can't make a judgement here.
 	return true;
 }
 
-inline void hkaiNavVolumeGraph::getPositionForHeuristic( SearchIndex a, hkVector4& vecOut ) const
+inline void hkaiNavVolumeGraph::getPositionForHeuristic( hkaiPackedKey a, hkVector4& vecOut ) const
 {
 	HK_ASSERT(0x269d778d, hkaiGetRuntimeIdFromPacked(a) == m_cachedAdjacentSectionId );
 	HK_ASSERT(0x63362e34, m_cachedAdjacentCellKey == a);
-	HK_ASSERT(0x1f3b1c59, m_cachedAdjacentAabb.isValid() && !m_cachedAdjacentAabb.isEmpty() );
+	HK_ASSERT(0x1f3b1c59, getCachedAdjacentAabb().isValid() && !getCachedAdjacentAabb().isEmpty() );
 	
-	m_cachedAdjacentAabb.getCenter(vecOut);
+	vecOut = m_cachedModifierInfo.m_adjacentCellInfo.m_position;
 }
 
-inline void hkaiNavVolumeGraph::getPosition( SearchIndex a, hkVector4& vecOut ) const
+inline void hkaiNavVolumeGraph::getPosition( hkaiPackedKey a, hkVector4& vecOut ) const
 {
 	getPositionForHeuristic(a, vecOut);
 }
@@ -288,7 +289,7 @@ inline hkSimdReal hkaiNavVolumeGraph::distanceFromPosition( hkVector4Parameter p
 	return posA.distanceTo( posB );
 }
 
-inline void hkaiNavVolumeGraph::nextNode( SearchIndex nid )
+inline void hkaiNavVolumeGraph::nextNode( hkaiPackedKey nid )
 {
 	setCurrentAccessor( hkaiGetRuntimeIdFromPacked( nid) );
 	hkaiNavVolume::CellIndex cellIndex = hkaiGetIndexFromPacked(nid);
@@ -300,13 +301,20 @@ inline void hkaiNavVolumeGraph::nextNode( SearchIndex nid )
 	m_cachedModifierInfo.m_currentCellInfo.m_cell = &m_cachedCurrentCell;
 	m_cachedModifierInfo.m_currentCellInfo.m_cellKey = nid;
 	
-	hkaiNavVolumeUtils::getCellWorldAabb( *getCurrentAccessor() , m_cachedCurrentCell , m_cachedCurrentAabb );
-	m_cachedCurrentAabb.getCenter(m_cachedModifierInfo.m_currentCellInfo.m_position);
+	hkaiNavVolumeUtils::getCellWorldAabb( *getCurrentAccessor() , m_cachedCurrentCell , getCachedCurrentAabb() );
+	if( HK_VERY_UNLIKELY((hkaiPackedKey) nid == m_startCellKey) )
+	{
+		m_cachedModifierInfo.m_currentCellInfo.m_position = m_startPoint;
+	}
+	else
+	{
+		getCachedCurrentAabb().getCenter(m_cachedModifierInfo.m_currentCellInfo.m_position);
+	}
 
 	m_searchState->nextNode( nid );
 }
 
-inline void hkaiNavVolumeGraph::nextEdge( SearchIndex nid, EdgeKey eIdx )
+inline void hkaiNavVolumeGraph::nextEdge( hkaiPackedKey nid, hkaiNavVolume::EdgeIndex eIdx )
 {
 	m_cachedCurrentEdge = getCurrentAccessor()->getEdge(eIdx);
 	// Overwrite the opposite cell key, so that we can use getOppositeCellKeyUnchecked() later
@@ -318,7 +326,8 @@ inline void hkaiNavVolumeGraph::nextEdge( SearchIndex nid, EdgeKey eIdx )
 	m_cachedModifierInfo.m_edge = &m_cachedCurrentEdge;
 
 #ifdef HK_DEBUG
-	m_cachedAdjacentAabb.setEmpty();
+	getCachedAdjacentAabb().setEmpty();
+	m_cachedModifierInfo.m_portalAabb.setEmpty();
 #endif
 }
 
@@ -369,22 +378,40 @@ inline void hkaiNavVolumeGraph::setAdjacentAccessor( int sectionId )
 	}
 }
 
-inline void hkaiNavVolumeGraph::setAdjacentCachedCell( hkUint32 cellKey )
+inline void hkaiNavVolumeGraph::setAdjacentCachedCell( hkaiPackedKey cellKey )
 {
 	HK_ASSERT(0x44582b93, hkaiGetRuntimeIdFromPacked(cellKey) == m_cachedAdjacentSectionId);
 	m_cachedAdjacentCell = getAdjacentAccessor()->getCell( hkaiGetIndexFromPacked(cellKey) );
 	HK_ON_DEBUG( m_cachedAdjacentCellKey = cellKey );
 
-	hkaiNavVolumeUtils::getCellWorldAabb( *getAdjacentAccessor() , m_cachedAdjacentCell , m_cachedAdjacentAabb );
+	hkaiNavVolumeUtils::getCellWorldAabb( *getAdjacentAccessor() , m_cachedAdjacentCell , getCachedAdjacentAabb() );
+	
+	hkVector4 adjacentPos;
+	HK_ASSERT(0x362cac0f, m_numGoals == 1); // Fix this when we support multiple goals
+	if( HK_VERY_UNLIKELY(cellKey == m_endCellKeys[0]) )
+	{
+		adjacentPos = m_endPoints[0];
+	}
+	else
+	{
+		getCachedAdjacentAabb().getCenter(adjacentPos);
+	}
 	
 	// Set up cost modifier info
-	m_cachedAdjacentAabb.getCenter(m_cachedModifierInfo.m_adjacentCellInfo.m_position);
+	m_cachedModifierInfo.m_adjacentCellInfo.m_position = adjacentPos;
 	m_cachedModifierInfo.m_adjacentCellInfo.m_cellKey = cellKey;
 	m_cachedModifierInfo.m_adjacentCellInfo.m_cell = &m_cachedAdjacentCell;
+
+	hkaiNavVolumeUtils::getPortalBetweenCellAabbs(getCachedCurrentAabb(), getCachedAdjacentAabb(), m_cachedModifierInfo.m_portalAabb);
+}
+
+void hkaiNavVolumeGraph::setAdjacentCachedPosition( hkVector4Parameter pos )
+{
+	m_cachedModifierInfo.m_adjacentCellInfo.m_position = pos;
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

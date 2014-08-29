@@ -10,11 +10,11 @@
 #define HK_VISUALIZE_COLOR
 
 
-extern const class hkClass hkColorClass;
+extern HK_EXPORT_COMMON const class hkClass hkColorClass;
 
 	/// Colors are represented as unsigned ints [0xAARRGGBB] and there are helper
 	/// functions to create them from floats or chars
-class hkColor
+class HK_EXPORT_COMMON hkColor
 {
 		HK_DECLARE_REFLECTION();
 		
@@ -262,7 +262,7 @@ class hkColor
 #endif // HK_VISUALIZE_COLOR
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

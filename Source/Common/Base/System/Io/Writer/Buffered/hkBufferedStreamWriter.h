@@ -19,7 +19,7 @@ extern const hkClass hkBufferedStreamWriterClass;
 #endif
 
 	/// Wraps and buffers an existing unbuffered stream.
-class hkBufferedStreamWriter : public hkStreamWriter
+class HK_EXPORT_COMMON hkBufferedStreamWriter : public hkStreamWriter
 {
 	public:
 		HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE);
@@ -49,6 +49,8 @@ class hkBufferedStreamWriter : public hkStreamWriter
 
 		virtual int tell() const;
 
+		virtual hkBool isBuffered() const HK_OVERRIDE;
+
 #ifndef HK_PLATFORM_SPU
 		virtual const hkClass* getClassType() const { return &hkBufferedStreamWriterClass; }
 #endif
@@ -69,7 +71,7 @@ class hkBufferedStreamWriter : public hkStreamWriter
 #endif // HKBASE_BUFFERED_STREAMWRITER_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

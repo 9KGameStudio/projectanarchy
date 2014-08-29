@@ -12,10 +12,10 @@
 #include <Common/Base/Reflection/hkClassEnum.h>
 #include <Common/Base/Math/hkMath.h>
 
-extern const hkClass hkRangeRealAttributeClass;
+extern HK_EXPORT_COMMON const hkClass hkRangeRealAttributeClass;
 
 	/// An attribute for specifying the range of possible values for an hkReal.
-struct hkRangeRealAttribute
+struct HK_EXPORT_COMMON hkRangeRealAttribute
 {
 	//+defineattribute(true)
 	public:
@@ -46,7 +46,7 @@ struct hkRangeRealAttribute
 		hkReal m_softmax;
 };
 
-extern const hkClass hkRangeInt32AttributeClass;
+extern HK_EXPORT_COMMON const hkClass hkRangeInt32AttributeClass;
 
 	/// An attribute for specifying the range of possible values for an hkInt32.
 struct hkRangeInt32Attribute
@@ -79,31 +79,37 @@ struct hkRangeInt32Attribute
 		hkInt32 m_softmax;
 };
 
-extern const hkClass hkUiAttributeClass;
+extern HK_EXPORT_COMMON const hkClass hkUiAttributeClass;
 
 	/// An attribute for specifying editor specific information (visibility, editability, ...)
-struct hkUiAttribute
+struct HK_EXPORT_COMMON hkUiAttribute
 {
 	//+defineattribute(true)
-	//+version(2)
+	//+version(4)
 	public:
 		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_HKCLASS, hkUiAttribute );
 		HK_DECLARE_REFLECTION();
 
 		// This is a bitfield(!) used to filter out certain modelers from displaying selected GUI elements.
-		enum HideInModeler
+		enum HideCriteria
 		{
 			NONE = 0,
 
-			MAX  = 1,			///< This member will not be displayed in 3ds Max's GUI.
-			MAYA = 2,			///< This member will not be displayed in Maya's GUI.
+			MODELER_IS_MAX  = (1 << 0),			///< This member will not be displayed in 3ds Max's GUI.
+			MODELER_IS_MAYA = (1 << 1),			///< This member will not be displayed in Maya's GUI.
+
+			UI_SCHEME_IS_DESTRUCTION		= (1 << 2),	///< The UI is set to show 'New Destruction' controls
+			UI_SCHEME_IS_DESTRUCTION_2012	= (1 << 3),	///< The UI is set to show Destruction 2012 contros
 		};
 
 			/// Defines whether the member is visible in an editor
 		hkBool m_visible;
 
+			/// Defines whether the member is editable
+		hkBool m_editable;
+
 			/// Can be used to explicitly hide GUI elements in certain modelers.
-		hkEnum<HideInModeler,hkInt8> m_hideInModeler;
+		hkEnum<HideCriteria,hkInt8> m_hideCriteria;
 
 			/// An alternative label for the GUI element.
 		const char* m_label;
@@ -125,10 +131,10 @@ struct hkUiAttribute
 		hkBool m_advanced;
 };
 
-extern const hkClass hkGizmoAttributeClass;
+extern HK_EXPORT_COMMON const hkClass hkGizmoAttributeClass;
 
 	/// An attribute for specifying visual editing aids ('Gizmos') to be displayed in the modeler
-struct hkGizmoAttribute
+struct HK_EXPORT_COMMON hkGizmoAttribute
 {
 	//+defineattribute(true)
 	public:
@@ -153,10 +159,10 @@ struct hkGizmoAttribute
 		hkEnum<GizmoType,hkInt8> m_type;
 };
 
-extern const hkClass hkModelerNodeTypeAttributeClass;
+extern HK_EXPORT_COMMON const hkClass hkModelerNodeTypeAttributeClass;
 
 	/// An attribute for specifying the type of base modeler node this class needs
-struct hkModelerNodeTypeAttribute
+struct HK_EXPORT_COMMON hkModelerNodeTypeAttribute
 {
 	//+defineattribute(true)
 	HK_DECLARE_REFLECTION();
@@ -173,10 +179,10 @@ struct hkModelerNodeTypeAttribute
 	hkEnum<ModelerType,hkInt8> m_type;
 };
 
-extern const hkClass hkLinkAttributeClass;
+extern HK_EXPORT_COMMON const hkClass hkLinkAttributeClass;
 
 /// An attribute for specifying the type of link for a class member (only appropriate for a pointer or string)
-struct hkLinkAttribute
+struct HK_EXPORT_COMMON hkLinkAttribute
 {
 	//+defineattribute(true)
 	HK_DECLARE_REFLECTION();
@@ -190,16 +196,17 @@ struct hkLinkAttribute
 		CHILD,			///< This member represents a link to an object which must child off the current object.
 		MESH,			///< This member represents a link to a mesh (as defined by the relevant external modeler/editor.
 		PARENT_NAME,	///< This member represents a link to the name of the object (effectively will store the name of the object in the string)
+		IMGSELECT,		///< This member represents the full path name to an image
 	};
 
 		/// Can be used to define the link type
 	hkEnum<Link,hkInt8> m_type;
 };
 
-extern const hkClass hkSemanticsAttributeClass;
+extern HK_EXPORT_COMMON const hkClass hkSemanticsAttributeClass;
 
 	/// An attribute for specifying more details about a class member
-struct hkSemanticsAttribute
+struct HK_EXPORT_COMMON hkSemanticsAttribute
 {
 	//+defineattribute(true)
 	HK_DECLARE_REFLECTION();
@@ -219,10 +226,10 @@ struct hkSemanticsAttribute
 	hkEnum<Semantics,hkInt8> m_type;
 };
 
-extern const hkClass hkDescriptionAttributeClass;
+extern HK_EXPORT_COMMON const hkClass hkDescriptionAttributeClass;
 
 	/// An attribute giving a string description to a class member.
-struct hkDescriptionAttribute
+struct HK_EXPORT_COMMON hkDescriptionAttribute
 {
 	//+defineattribute(true)
 	HK_DECLARE_REFLECTION();
@@ -232,10 +239,10 @@ struct hkDescriptionAttribute
 	const char* m_string;
 };
 
-extern const hkClass hkArrayTypeAttributeClass;
+extern HK_EXPORT_COMMON const hkClass hkArrayTypeAttributeClass;
 
 	/// An attribute for specifying the type of an hkArray
-struct hkArrayTypeAttribute
+struct HK_EXPORT_COMMON hkArrayTypeAttribute
 {
 	//+defineattribute(true)
 	HK_DECLARE_REFLECTION();
@@ -252,10 +259,10 @@ struct hkArrayTypeAttribute
 	hkEnum<ArrayType,hkInt8> m_type;
 };
 
-extern const hkClass hkDataObjectTypeAttributeClass;
+extern HK_EXPORT_COMMON const hkClass hkDataObjectTypeAttributeClass;
 
 	/// An attribute overriding reflected member type for hkDataObject.
-struct hkDataObjectTypeAttribute
+struct HK_EXPORT_COMMON hkDataObjectTypeAttribute
 {
 	//+defineattribute(true)
 	HK_DECLARE_REFLECTION();
@@ -265,10 +272,10 @@ struct hkDataObjectTypeAttribute
 	const char* m_typeName;
 };
 
-extern const hkClass hkDocumentationAttributeClass;
+extern HK_EXPORT_COMMON const hkClass hkDocumentationAttributeClass;
 
 /// An attribute linking a class to the corresponding section in the documentation.
-struct hkDocumentationAttribute
+struct HK_EXPORT_COMMON hkDocumentationAttribute
 {
 	//+defineattribute(true)
 	HK_DECLARE_REFLECTION();
@@ -277,12 +284,12 @@ struct hkDocumentationAttribute
 		/// The XML tag linking to the section (SECT1) that holds the documentation.
 	const char* m_docsSectionTag;
 };
-extern const hkClass hkPostFinishAttributeClass;
+extern HK_EXPORT_COMMON const hkClass hkPostFinishAttributeClass;
 
 /// An attribute specifying a post-finish step after loading from a tagfile. This should be a global
 /// function or static member, it is called after all objects are loaded and finished, with a void*
 /// argument pointing to the loaded object
-struct hkPostFinishAttribute
+struct HK_EXPORT_COMMON hkPostFinishAttribute
 {
 	//+defineattribute(true)
 	HK_DECLARE_REFLECTION();
@@ -292,10 +299,10 @@ struct hkPostFinishAttribute
 };
 
 
-extern const hkClass hkScriptableAttributeClass;
+extern HK_EXPORT_COMMON const hkClass hkScriptableAttributeClass;
 
 /// An attribute for specifying script wrapper generation
-struct hkScriptableAttribute
+struct HK_EXPORT_COMMON hkScriptableAttribute
 {
 	//+defineattribute(true)
 	HK_DECLARE_REFLECTION();
@@ -305,7 +312,7 @@ struct hkScriptableAttribute
 #endif // HK_ATTRIBUTE_CLASS_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

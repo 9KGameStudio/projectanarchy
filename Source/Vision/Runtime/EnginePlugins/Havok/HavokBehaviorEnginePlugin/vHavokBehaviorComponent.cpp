@@ -19,6 +19,8 @@
 #include <Behavior/Behavior/Event/hkbEvent.h>
 #include <Behavior/Behavior/Character/hkbCharacterData.h>
 #include <Behavior/Behavior/Event/hkbEventQueue.h>
+#include <Behavior/Utilities/Utils/hkbProjectAssetManager.h>
+#include <Behavior/Utilities/Physics/Interface/hkbRagdollInterface.h>
 
 #include <Animation/Animation/Rig/hkaSkeletonUtils.h>
 #include <Animation/Physics2012Bridge/Instance/hkaRagdollInstance.h>
@@ -143,7 +145,7 @@ bool vHavokBehaviorComponent::SetVariable(const char * name, const char * value)
 
 		m_projectName = projectPath;
 		m_projectPath = "";
-#if defined (WIN32)
+#if defined (_VISION_WIN32)
 		Vision::Editor.SetVariableInEditor( this, "m_projectPath", "", false, false );
 		Vision::Editor.SetVariableInEditor( this, "Project", m_projectName, false, false );
 #endif
@@ -182,7 +184,7 @@ void vHavokBehaviorComponent::OnVariableValueChanged(VisVariable_cl *pVar, const
 	if(!entityOwner)
 		return;
 
-#if defined (WIN32)
+#if defined (_VISION_WIN32)
 	if ( hkString::strCmp( pVar->name, "m_projectName" ) == 0 )
 	{
 		// reset the previous setting of the Character and the Behavior properties
@@ -235,7 +237,7 @@ void vHavokBehaviorComponent::OnVariableValueChanged(VisVariable_cl *pVar, const
 	}
 }
 
-#if defined(WIN32) || defined(_VISION_DOC)
+#if defined(_VISION_WIN32) || defined(_VISION_DOC)
 
 void vHavokBehaviorComponent::GetVariableAttributes(VisVariable_cl *pVariable, VVariableAttributeInfo &destInfo)
 {
@@ -329,6 +331,24 @@ void vHavokBehaviorComponent::InitVisionCharacter( VisBaseEntity_cl* entityOwner
 
 			// Update the Physics
 			UpdateBehaviorPhysics();
+
+			// Tag ragdoll rigid bodies to be ignored by nav mesh cutting
+			hkbRagdollDriver* ragdollDriver = m_character->getRagdollDriver();
+			if (ragdollDriver)
+			{
+				hkbRagdollInterface* ragdollInterface = ragdollDriver->getRagdollInterface();
+				if (ragdollInterface)
+				{
+					for (int i = 0; i < ragdollInterface->getNumBones(); i++)
+					{
+						hkpRigidBody* rigidBody = static_cast<hkpRigidBody*>(ragdollInterface->getRigidBodyOfBone(i));
+						if (rigidBody)
+						{
+							rigidBody->addProperty(VHAVOK_PROPERTY_DO_NO_CUT_NAV_MESH, 1);
+						}
+					}
+				}
+			}
 		}
 	}
 }
@@ -340,11 +360,14 @@ void vHavokBehaviorComponent::UpdateAnimationAndBoneIndexList()
 	if( mesh != HK_NULL && mesh->GetSkeleton() != HK_NULL )
 	{
 		// create an anim config, if one is not present
-		if ( m_entityOwner->GetAnimConfig() == HK_NULL )
+		VisAnimConfig_cl* pConfig = m_entityOwner->GetAnimConfig();
+		if ( pConfig == HK_NULL )
 		{
-			VisAnimConfig_cl* pConfig = VisAnimConfig_cl::CreateSkeletalConfig(mesh);
+			pConfig = VisAnimConfig_cl::CreateSkeletalConfig(mesh);
 			m_entityOwner->SetAnimConfig( pConfig );
 		}
+
+		pConfig->SetFlags(pConfig->GetFlags() | MULTITHREADED_ANIMATION);
 
 		// Create mapping
 		VisSkeleton_cl* visionSkeleton = mesh->GetSkeleton();
@@ -428,7 +451,34 @@ void vHavokBehaviorComponent::OnFrameStart()
 
 void vHavokBehaviorComponent::OnAfterHavokUpdate()
 {
-	if( m_character == HK_NULL || m_entityOwner == HK_NULL || m_entityOwner->GetMesh() == HK_NULL || m_entityOwner->GetMesh()->GetSkeleton() == HK_NULL )
+	if( m_character == HK_NULL || m_entityOwner == HK_NULL )
+	{
+		return;
+	}
+
+	// Update WFM of skin or override it
+	if ( m_useBehaviorWorldFromModel )
+	{
+		const hkQsTransform& worldFromModel = m_character->getWorldFromModel();
+
+		// Copy the Behavior result into vision
+		hkvMat3 visionRotation;
+		hkvVec3 visionTranslation;
+		vHavokConversionUtils::HkQuatToVisMatrix( worldFromModel.getRotation(), visionRotation );
+		vHavokConversionUtils::PhysVecToVisVecWorld( worldFromModel.getTranslation(), visionTranslation );
+		m_entityOwner->SetPosition( visionTranslation );
+		m_entityOwner->SetRotationMatrix( visionRotation );
+	}
+	else
+	{
+		// Override Behavior results.
+		// This will currently cause Behavior data being sent to HBT during remote debug to be one frame off.
+		// However, the only other solution with the current APIs is to disable motion accumulation on *all*
+		// Characters.  A slight delay/offset in the special case of remote debugging in HBT isn't worth that change.
+		UpdateHavokTransformFromVision();
+	}
+
+	if( m_entityOwner->GetMesh() == HK_NULL || m_entityOwner->GetMesh()->GetSkeleton() == HK_NULL )
 	{
 		return;
 	}
@@ -482,6 +532,7 @@ void vHavokBehaviorComponent::OnAfterHavokUpdate()
 
 			// Convert Havok pose to Vision pose
 			hkvQuat quat;
+			quat.setIdentity();
 			vHavokConversionUtils::HkQuatToVisQuat( transform.getRotation(), quat );
 			hkvVec3 scale; vHavokConversionUtils::PhysVecToVisVec_noscale( transform.getScale(), scale );
 			hkvVec3 translation; vHavokConversionUtils::PhysVecToVisVecWorld( transform.getTranslation(), translation );
@@ -494,28 +545,6 @@ void vHavokBehaviorComponent::OnAfterHavokUpdate()
 			skeletalResult->SetCustomBoneRotation( visionBoneIndex, quat, VIS_REPLACE_BONE | VIS_OBJECT_SPACE );
 			skeletalResult->SetCustomBoneTranslation( visionBoneIndex, translation, VIS_REPLACE_BONE | VIS_OBJECT_SPACE );
 		}
-	}
-
-	// Update WFM of skin or override it
-	if ( m_useBehaviorWorldFromModel )
-	{
-		const hkQsTransform& worldFromModel = m_character->getWorldFromModel();
-
-		// Copy the Behavior result into vision
-		hkvMat3 visionRotation;
-		hkvVec3 visionTranslation;
-		vHavokConversionUtils::HkQuatToVisMatrix( worldFromModel.getRotation(), visionRotation );
-		vHavokConversionUtils::PhysVecToVisVecWorld( worldFromModel.getTranslation(), visionTranslation );
-		m_entityOwner->SetPosition( visionTranslation );
-		m_entityOwner->SetRotationMatrix( visionRotation );
-	}
-	else
-	{
-		// Override Behavior results.
-		// This will currently cause Behavior data being sent to HBT during remote debug to be one frame off.
-		// However, the only other solution with the current APIs is to disable motion accumulation on *all*
-		// Characters.  A slight delay/offset in the special case of remote debugging in HBT isn't worth that change.
-		UpdateHavokTransformFromVision();
 	}
 
 #if 0
@@ -579,8 +608,7 @@ void vHavokBehaviorComponent::SetResource( vHavokBehaviorResource* resource )
 
 void vHavokBehaviorComponent::AssertValid()
 {
-	VASSERT(m_resource);
-	VASSERT(m_resource->IsLoaded());
+	VASSERT_MSG(m_resource && m_resource->IsLoaded(), "The resource must be available and valid");
 }
 
 static unsigned int s_iSerialVersion = 2; // need to increment this everytime Serialize function is modified.
@@ -624,6 +652,7 @@ void vHavokBehaviorComponent::Serialize(VArchive &ar)
 		hkStringBuf fullProjectPath;
 		GetProjectPath( fullProjectPath );
 		m_resource = (vHavokBehaviorResource*)(vHavokBehaviorResourceManager::GetInstance()->LoadResource( fullProjectPath.cString() ));
+		AssertValid();
 	}
 	else
 	{
@@ -655,14 +684,14 @@ void vHavokBehaviorComponent::GetDependencies(VResourceSnapshot &snapshot)
 
 void vHavokBehaviorComponent::GetProjectPath(hkStringBuf& projectPath) const
 {
-  VFileAccessManager::AbsolutePathResult projectAbsRes;
-  if (VFileAccessManager::GetInstance()->MakePathAbsolute(m_projectName, projectAbsRes, VFileSystemAccessMode::READ_NO_REDIRECT, VFileSystemElementType::FILE) == HKV_SUCCESS)
+	VFileAccessManager::AbsolutePathResult projectAbsRes;
+	if (VFileAccessManager::GetInstance()->MakePathAbsolute(m_projectName, projectAbsRes, VFileSystemAccessMode::READ_NO_REDIRECT, VFileSystemElementType::FILE) == HKV_SUCCESS)
 	{
-    projectPath = projectAbsRes.m_sAbsolutePath;
-  }
-  else
-				{
-    projectPath = m_projectName;
+		projectPath = projectAbsRes.m_sAbsolutePath;
+	}
+	else
+	{
+		projectPath = m_projectName;
 	}
 
 	projectPath.pathNormalize();
@@ -742,7 +771,24 @@ float vHavokBehaviorComponent::GetFloatVar(const char* variableName)
 	return 0.0f;
 }
 
-int vHavokBehaviorComponent::GetWordVar(const char* variableName)
+bool vHavokBehaviorComponent::SetVectorVar(const char* variableName, hkvVec3 value)
+{
+	if ( m_character != HK_NULL )
+	{
+		hkbWorld* world = m_character->getWorld();
+		hkbBehaviorGraph* behavior = m_character->getBehavior();
+		int idx = world->getVariableId(variableName);
+
+		if ( idx >= 0 && behavior->hasVariable( idx )  )
+		{
+			behavior->setVariableValueQuad( idx, value );
+			return true;
+		}
+	}
+	return false;
+}
+
+hkvVec3 vHavokBehaviorComponent::GetVectorVar(const char* variableName)
 {
 	if ( m_character != HK_NULL )
 	{
@@ -752,12 +798,12 @@ int vHavokBehaviorComponent::GetWordVar(const char* variableName)
 
 		if ( idx >= 0 && behavior->hasVariable( idx ) )
 		{
-			int value = behavior->getVariableValueWord<int>( idx );
+			hkvVec3 value = behavior->getVariableValueQuad<hkvVec3>( idx );
 			return value;
 		}
 	}
 
-	return 0;
+	return hkvVec3();
 }
 
 bool vHavokBehaviorComponent::SetWordVar(const char* variableName, int value)
@@ -775,6 +821,24 @@ bool vHavokBehaviorComponent::SetWordVar(const char* variableName, int value)
 		}
 	}
 	return false;
+}
+
+int vHavokBehaviorComponent::GetWordVar(const char* variableName)
+{
+	if ( m_character != HK_NULL )
+	{
+		hkbWorld* world = m_character->getWorld();
+		hkbBehaviorGraph* behavior = m_character->getBehavior();
+		int idx = world->getVariableId(variableName);
+
+		if ( idx >= 0 && behavior->hasVariable( idx ) )
+		{
+			int value = behavior->getVariableValueWord<int>( idx );
+			return value;
+		}
+	}
+
+	return 0;
 }
 
 bool vHavokBehaviorComponent::SetBoolVar(const char* variableName, bool value)
@@ -829,7 +893,7 @@ bool vHavokBehaviorComponent::TriggerEvent(const char* eventName) const
 			return true;
 		}
 	}
-  return false;
+	return false;
 }
 
 void vHavokBehaviorComponent::RegisterEventHandler(const char* eventName)
@@ -873,7 +937,7 @@ bool vHavokBehaviorComponent::WasEventTriggered(const char* eventName) const
 	hkbBehaviorGraph* behavior = m_character->getBehavior();
 
 	int eventId = world->getEventId(eventName);
-	if ( eventId >=0 && behavior->getInternalEventId( eventId ) >= 0 )
+	if ( eventId >=0 && eventId < m_triggeredEvents.getSize() && behavior->getInternalEventId( eventId ) >= 0 )
 	{
 		return m_triggeredEvents[eventId];
 	}
@@ -895,25 +959,25 @@ void vHavokBehaviorComponent::eventRaisedCallback( hkbCharacter* character, cons
 	}
 }
 
-void vHavokBehaviorComponent::GetBoneTransform( const char* boneName, hkvVec3& outPos, hkvMat3& outRot ) const
+hkvResult vHavokBehaviorComponent::GetBoneTransform( const char* boneName, hkvVec3& outPos, hkvMat3& outRot ) const
 {
 	VDynamicMesh* mesh = m_entityOwner->GetMesh();
 	VisAnimConfig_cl* animConfig = m_entityOwner->GetAnimConfig();
 	if ( !mesh || !animConfig )
 	{
-		return;
+		return HKV_FAILURE;
 	}
 
 	VisSkeleton_cl* skeleton = mesh->GetSkeleton();
 	if ( !skeleton )
 	{
-		return;
+		return HKV_FAILURE;
 	}
 
 	int boneIdx = skeleton->GetBoneIndexByName( boneName );
 	if ( boneIdx < 0 )
 	{
-		return;
+		return HKV_FAILURE;
 	}
 
 	VisAnimFinalSkeletalResult_cl* poseCache = animConfig->GetFinalResult();
@@ -930,20 +994,58 @@ void vHavokBehaviorComponent::GetBoneTransform( const char* boneName, hkvVec3& o
 
 	outPos = objectToWorldRot.transform( localToObjectPos );
 	outPos += objectToWorldPos;
+
+	return HKV_SUCCESS;
 }
 
-START_VAR_TABLE(vHavokBehaviorComponent, IVObjectComponent, "Havok Behavior Character", VVARIABLELIST_FLAGS_NONE, "Havok Behavior Character" )
+#include <Behavior/Physics2012Bridge/CharacterController/RigidBody/hkbpCharacterRigidBodyController.h>
+
+class hkbpMutableCharacterController : public hkbpCharacterRigidBodyController
+{
+
+public:
+
+	void overrideTransform( const hkTransform& t )
+	{
+		m_characterRigidBody->getRigidBody()->getWorld()->lock();
+		m_characterRigidBody->getRigidBody()->markForWrite();
+		m_characterRigidBody->getRigidBody()->setTransform( t );
+		m_characterRigidBody->getRigidBody()->unmarkForWrite();
+		m_characterRigidBody->getRigidBody()->getWorld()->unlock();
+	}
+};
+
+void vHavokBehaviorComponent::SetTransform(const hkvVec3& pos, const hkvMat3& rot)
+{
+	hkTransform worldT;
+	vHavokConversionUtils::VisMatVecToPhysTransformWorld( rot, pos,worldT);
+
+	hkQsTransform qt; qt.setFromTransformNoScale( worldT );
+	m_character->setWorldFromModel(qt);
+
+	if ( m_character->getCharacterControllerDriver() != HK_NULL )
+	{
+		hkbpMutableCharacterController* controller = (hkbpMutableCharacterController*)m_character->getCharacterControllerDriver()->getController();
+		if (controller)
+		{
+			controller->overrideTransform( worldT );
+		}
+	}
+}
+
+
+START_VAR_TABLE(vHavokBehaviorComponent, IVObjectComponent, "Can be attached to entities to enable Havok Behavior animations", VVARIABLELIST_FLAGS_NONE, "Havok Behavior Character" )
 	// TODO remove m_projectPath once character data has caught up
-	DEFINE_VAR_VSTRING      (vHavokBehaviorComponent, m_projectPath, "Defines the path of Havok Behavior project created in HBT.", "", 1024, 0, 0);
-	DEFINE_VAR_VSTRING_AND_NAME(vHavokBehaviorComponent, m_projectName, "Project", "Animation project to use", "", 0, 0, "filepicker(.hkt)");
+	DEFINE_VAR_VSTRING      (vHavokBehaviorComponent, m_projectPath, "Defines the path of Havok Behavior project created in HBT (eg: 'Exported/Project/').", "", 1024, 0, 0);
+	DEFINE_VAR_VSTRING_AND_NAME(vHavokBehaviorComponent, m_projectName, "Project", "Animation project to use (eg: 'Exported/Project/Project01.hkt')", "", 0, 0, "filepicker(.hkt)");
 	DEFINE_VAR_VSTRING_AND_NAME(vHavokBehaviorComponent, m_characterName, "Character", "The name of the character file from HBT.", "", 0, 0, "dropdown(Character)");
 	DEFINE_VAR_VSTRING_AND_NAME(vHavokBehaviorComponent, m_behaviorName, "Behavior", "The name of the behavior file from HBT.", "", 0, 0, "dropdown(Behavior)");
 	DEFINE_VAR_BOOL_AND_NAME(vHavokBehaviorComponent, m_enableRagdoll, "Enable Ragdoll", "With this and m_useBehaviorWorldFromModel set to true, Ragdolls which are present in Behavior characters will be simulated.", "TRUE", 0, 0);
-	DEFINE_VAR_BOOL_AND_NAME(vHavokBehaviorComponent, m_useBehaviorWorldFromModel, "Use Behavior World From Model", "With this set to true, Behaviors will affect the characters worldFromModel. If set to false, a Behavior's ragdoll, character controller, and worldFromModel will be disabled.", "TRUE", 0, 0);
+	DEFINE_VAR_BOOL_AND_NAME(vHavokBehaviorComponent, m_useBehaviorWorldFromModel, "Modify entity's worldFromModel", "Whether to allow Behavior to modify the entity's transformation. If set to false, the ragdoll and character controller will also be disabled.", "TRUE", 0, 0);
 END_VAR_TABLE
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

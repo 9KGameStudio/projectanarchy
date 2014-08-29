@@ -105,11 +105,11 @@ public:
 
   /// \brief
   ///   Overridden function to respond to owner changes.
-  EFFECTS_IMPEXP virtual void SetOwner(VisTypedEngineObject_cl *pOwner);
+  EFFECTS_IMPEXP virtual void SetOwner(VisTypedEngineObject_cl *pOwner) HKV_OVERRIDE;
 
   /// \brief
   ///   Overridden function. Time of day components can be attached to VisLightSource_cl instances.
-  EFFECTS_IMPEXP virtual BOOL CanAttachToObject(VisTypedEngineObject_cl *pObject, VString &sErrorMsgOut);
+  EFFECTS_IMPEXP virtual BOOL CanAttachToObject(VisTypedEngineObject_cl *pObject, VString &sErrorMsgOut) HKV_OVERRIDE;
 
   ///
   /// @}
@@ -133,7 +133,7 @@ public:
   ///
   /// \param ar
   ///   binary archive
-  EFFECTS_IMPEXP virtual void Serialize( VArchive &ar );
+  EFFECTS_IMPEXP virtual void Serialize( VArchive &ar ) HKV_OVERRIDE;
 
   ///
   /// @}
@@ -154,7 +154,16 @@ public:
   /// \see
   ///   IVisCallbackHandler_cl
   /// 
-  EFFECTS_IMPEXP virtual void OnHandleCallback(IVisCallbackDataObject_cl *pData);
+  EFFECTS_IMPEXP virtual void OnHandleCallback(IVisCallbackDataObject_cl *pData) HKV_OVERRIDE;
+
+  /// 
+  /// \brief
+  ///   Sets the sorting key something small so that the time of day values are applied 
+  ///   before other components like shadowmaps are updated.
+  virtual int64 GetCallbackSortingKey(VCallback* pCallback) HKV_OVERRIDE
+  {
+    return -1000;
+  }
 
   ///
   /// @}
@@ -162,7 +171,7 @@ public:
 
 protected:  
 
-  virtual void UpdateParent();
+  EFFECTS_IMPEXP virtual void UpdateParent();
 
   bool m_bIsLightClass; // true if attached to VisLightSource_cl
   VColorRef m_iColor;   // original light color in case we modify it during the time of day
@@ -179,7 +188,7 @@ public:
 #endif // VTIMEOFDAYCOMPONENT_HPP_INCLUDED
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

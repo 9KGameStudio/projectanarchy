@@ -8,9 +8,9 @@
 #ifndef HKSCENEDATA_MATERIAL_HKXMATERIALEFFECT_HKCLASS_H
 #define HKSCENEDATA_MATERIAL_HKXMATERIALEFFECT_HKCLASS_H
 
-extern const class hkClass hkxMaterialEffectClass;
+extern HK_EXPORT_COMMON const class hkClass hkxMaterialEffectClass;
 
-class hkxMaterialEffect : public hkReferencedObject
+class HK_EXPORT_COMMON hkxMaterialEffect : public hkReferencedObject
 {
 	//+vtable(true)
 	//+version(1)
@@ -52,7 +52,7 @@ class hkxMaterialEffect : public hkReferencedObject
 #endif // HKSCENEDATA_MATERIAL_HKXMATERIALEFFECT_HKCLASS_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

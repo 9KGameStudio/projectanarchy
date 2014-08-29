@@ -48,6 +48,17 @@ public:
      
      VSWIG_CONVERT_BOOL_SETTER(SetClosed);
      VSWIG_CONVERT_BOOL_GETTER_CONST(IsClosed);
+
+
+     %apply hkvVec3* OUTPUT { hkvVec3 * pos };
+     %apply hkvVec3* OUTPUT { hkvVec3 * ori };
+     void Evaluate(hkvVec3* pos, hkvVec3* ori, float fPositionInPath, bool bSmooth = false)
+     {
+       if(bSmooth)
+         self->EvalPointSmooth(fPositionInPath, *pos, ori);
+       else
+         self->EvalPoint(fPositionInPath, *pos, ori);
+     }
   }
 
   float GetLen();
@@ -56,47 +67,6 @@ public:
 //add lua tostring and concat operators
 VSWIG_CREATE_CONCAT(VisPath_cl, 128, "[%s : %1.2f,%1.2f,%1.2f]", self->IsClosed()?"C":"-", self->GetPosition().x, self->GetPosition().y, self->GetPosition().z)
 VSWIG_CREATE_TOSTRING(VisPath_cl, "VisPath_cl '%s' [%s : %1.2f,%1.2f,%1.2f]", self->GetObjectKey(), self->IsClosed()?"C":"-", self->GetPosition().x, self->GetPosition().y, self->GetPosition().z)
-
-
-//Implement evaluate native because it returns 2 vectors
-%native(Evaluate) int VisPath_cl_Evaluate(lua_State *L);
-%{
-  SWIGINTERN int VisPath_cl_Evaluate(lua_State *L)
-  {
-    IS_MEMBER_OF(VisPath_cl) //this will move this function to the method table of the specified class
-    
-    DECLARE_ARGS_OK;
-    
-    SWIG_CONVERT_POINTER(L, 1, VisPath_cl, pPath)
-    
-    GET_ARG(2, float, fPositionInPath); // from 0 to 1
-
-    GET_OPT_ARG(3, bool, bSmooth, false);
-   
-    // for safer floats
-    VALIDATE_LUA_NUMBERS( (float*)&fPositionInPath, 1);
-
-    hkvVec3 pos, ori;
-    if (ARGS_OK)
-    {
-      hkvVec3 pos;
-      hkvVec3 ori;
-      if(bSmooth)
-        pPath->EvalPointSmooth(fPositionInPath, pos, &ori);
-      else
-        pPath->EvalPoint(fPositionInPath, pos, &ori);
-      
-      SWIG_Lua_NewPointerObj(L,new hkvVec3(pos),SWIGTYPE_p_hkvVec3, VLUA_MANAGE_MEM_BY_LUA);
-      SWIG_Lua_NewPointerObj(L,new hkvVec3(ori),SWIGTYPE_p_hkvVec3, VLUA_MANAGE_MEM_BY_LUA);
-    }
-    else
-    {
-      lua_pushnil(L);
-      lua_pushnil(L);
-    }
-    return 2; 
-  }
-%}
 
 
 #else
@@ -164,7 +134,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

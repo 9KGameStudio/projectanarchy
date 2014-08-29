@@ -13,7 +13,7 @@
 
 /// Thread local allocator, acts as a cache over a Block Stream allocator.
 /// There is one for each thread, which caches a number of blocks.
-class hkThreadLocalBlockStreamAllocator
+class HK_EXPORT_COMMON hkThreadLocalBlockStreamAllocator
 {
 	public:
 
@@ -62,7 +62,7 @@ class hkThreadLocalBlockStreamAllocator
 
 	public:
 
-		HK_ON_CPU( int m_threadId );	///< For debugging
+		HK_ON_CPU( int m_threadId );	///< For debugging. Set to -1 to skip debug checks.
 		hkPadSpu<hkBlockStreamAllocator*> m_blockStreamAllocator;
 
 		hkPadSpu<int> m_numFreeBlocks;
@@ -72,7 +72,7 @@ class hkThreadLocalBlockStreamAllocator
 #endif	// HK_THREAD_LOCAL_BLOCK_STREAM_ALLOCATOR_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

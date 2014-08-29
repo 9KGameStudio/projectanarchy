@@ -9,6 +9,10 @@
 #ifndef hkbPhysicsConfig_H
 #define hkbPhysicsConfig_H
 
+//////////////////////////////////////////////////////////////////////////
+// Character Control
+//////////////////////////////////////////////////////////////////////////
+
 // By default hkbCharacterControllers will use the CharacterMovementUtil.
 // This util takes into account any moving surfaces the character is on. Additionally, it applies the desired
 // velocity along the surface normal (see hkpCharacterMovementUtil or hknpCharacterMovementUtil).
@@ -18,21 +22,35 @@
 // This could cause artifacts when the character is on a fast moving platform. Uncomment
 // HKB_CHARACTER_PROXY_FRAME_ACCURATE_VELOCITY to perform an extra checkSupport before applyVelocityModifiers.
 // This is only used if HKB_USE_CHARACTER_MOVEMENT_UTIL is defined.
-// #define HKB_CHARACTER_PROXY_FRAME_ACCURATE_VELOCITY
+//#define HKB_CHARACTER_PROXY_FRAME_ACCURATE_VELOCITY
 
 // By default Rigid-Body-based hkbCharacterControllers will use the previous frame's checkSupport results in applyVelocityModifiers.
 // This could cause artifacts when the character is on a fast moving platform. Uncomment
 // HKB_CHARACTER_RIGID_BODY_FRAME_ACCURATE_VELOCITY to perform an extra checkSupport before applyVelocityModifiers.
 // This is only used if HKB_USE_CHARACTER_MOVEMENT_UTIL is defined.
-// #define HKB_CHARACTER_RIGID_BODY_FRAME_ACCURATE_VELOCITY
+//#define HKB_CHARACTER_RIGID_BODY_FRAME_ACCURATE_VELOCITY
 
 // Uncomment to do a more extensive searching for ragdoll data during ragdoll loading.
 //#define HKB_EXTENDED_RAGDOLL_DATA_SEARCH
 
+//////////////////////////////////////////////////////////////////////////
+// Debugging
+//////////////////////////////////////////////////////////////////////////
+
+// Most of these rely on Debug Display functionality, so the debug display
+// viewer must be enabled to see results
+
+// Uncomment to draw some information about the character controller velocity
+// To see supporting planes and more, refer to #defines in the .cpp of the corresponding physics controller (Eg. hknpCharacterRigidBody.cpp)
+//#define HKB_DEBUG_CHARACTER_CONTROLLER_VELOCITIES
+
+// Uncomment to draw raycasts
+//#define HKB_DEBUG_RAYCASTS
+
 #endif // hkbPhysicsConfig_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

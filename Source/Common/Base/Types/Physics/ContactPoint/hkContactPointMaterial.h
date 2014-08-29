@@ -9,13 +9,13 @@
 #ifndef HK_MATH_CONTACT_POINT_MATERIAL_H
 #define HK_MATH_CONTACT_POINT_MATERIAL_H
 
-extern const class hkClass hkContactPointMaterialClass;
+extern HK_EXPORT_COMMON const class hkClass hkContactPointMaterialClass;
 
 
 	/// This class is used to get and set the friction for a contact point. You can also use it to attach your own user data
 	/// to a contact point. This can be used for example to set a friction map value in when a contact point is added
 	/// so that the same data can be used when the contact point is being updated (from a processContactCallback() for example)
-class hkContactPointMaterial
+class HK_EXPORT_COMMON hkContactPointMaterial
 {
 	//+version(1)
 	public:
@@ -118,7 +118,7 @@ class hkContactPointMaterial
 #endif // HK_MATH_CONTACT_POINT_MATERIAL_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

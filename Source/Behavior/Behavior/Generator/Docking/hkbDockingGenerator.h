@@ -17,6 +17,7 @@ class hkbDockingGenerator : public hkbGenerator
 {
 	public:
 
+		//+version(1)
 		HK_DECLARE_CLASS_ALLOCATOR( HK_MEMORY_CLASS_BEHAVIOR );
 		HK_DECLARE_REFLECTION();
 
@@ -146,13 +147,13 @@ class hkbDockingGenerator : public hkbGenerator
 		hkReal m_localTime; //+nosave
 
 		// The previous local time of the generator.
-		hkReal m_previousLocalTime; 
+		hkReal m_previousLocalTime; //+nosave
 
 		// The local time of the start of the docking interval. 
-		hkReal m_intervalStartLocalTime; 
+		hkReal m_intervalStartLocalTime; //+nosave
 
 		// The local time of the end of the docking interval.
-		hkReal m_intervalEndLocalTime; 
+		hkReal m_intervalEndLocalTime; //+nosave
 
 		HKB_END_INTERNAL_STATE();
 
@@ -165,7 +166,7 @@ class hkbDockingGenerator : public hkbGenerator
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

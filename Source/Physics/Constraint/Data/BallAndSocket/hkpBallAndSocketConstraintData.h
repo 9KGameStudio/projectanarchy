@@ -11,12 +11,12 @@
 
 #include <Physics/Constraint/Data/hkpConstraintData.h>
 
-extern const class hkClass hkpBallAndSocketConstraintDataAtomsClass;
-extern const hkClass hkpBallAndSocketConstraintDataClass;
+extern HK_EXPORT_PHYSICS const class hkClass hkpBallAndSocketConstraintDataAtomsClass;
+extern HK_EXPORT_PHYSICS const hkClass hkpBallAndSocketConstraintDataClass;
 
 
 /// The ball-and-socket or point-to-point constraint.
-class hkpBallAndSocketConstraintData : public hkpConstraintData
+class HK_EXPORT_PHYSICS hkpBallAndSocketConstraintData : public hkpConstraintData
 {
 	public:
 
@@ -138,7 +138,7 @@ class hkpBallAndSocketConstraintData : public hkpConstraintData
 #endif // HKP_BALL_AND_SOCKET_CONSTRAINT_DATA_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

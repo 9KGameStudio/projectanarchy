@@ -10,13 +10,13 @@
 #include <Vision/Runtime/EnginePlugins/Havok/HavokPhysicsEnginePlugin/vHavokStaticMesh.hpp>
 #include <Vision/Runtime/EnginePlugins/Havok/HavokPhysicsEnginePlugin/vHavokUserData.hpp>
 #include <Vision/Runtime/EnginePlugins/Havok/HavokPhysicsEnginePlugin/vHavokShapeFactory.hpp>
+#include <Vision/Runtime/EnginePlugins/Havok/HavokPhysicsEnginePlugin/vHavokShapeCache.hpp>
 #include <Vision/Runtime/EnginePlugins/Havok/HavokPhysicsEnginePlugin/vHavokConversionUtils.hpp>
 
 #include <Common/Base/Reflection/Registry/hkVtableClassRegistry.h>
 
-
 // --------------------------------------------------------------------------
-// Constructor/Destructor
+// Constructor / Destructor
 // --------------------------------------------------------------------------
 
 void vHavokStaticMesh::SetDebugRendering (bool bEnable)
@@ -51,8 +51,11 @@ void vHavokStaticMesh::SetDebugRendering (bool bEnable)
 }
 
 
-vHavokStaticMesh::vHavokStaticMesh(vHavokPhysicsModule &module)
-  : m_pRigidBody(NULL), m_bInitialized(FALSE), m_module(module), m_iNumValidStaticMeshes(0), m_szShapeCacheId(NULL)
+vHavokStaticMesh::vHavokStaticMesh()
+  : m_pRigidBody(NULL)
+  , m_staticMeshes()
+  , m_iNumValidStaticMeshes(0)
+  , m_vScale()
 {
 }
 
@@ -81,21 +84,19 @@ void vHavokStaticMesh::CommonDeinit()
   m_iNumValidStaticMeshes = 0;
 }
 
-
 // --------------------------------------------------------------------------
-// Initialisation
+// Initialization
 // --------------------------------------------------------------------------
 
 void vHavokStaticMesh::Init(VisStaticMeshInstance_cl &meshInstance)
 {
-  // Init may only be called once
-  VVERIFY_OR_RET(m_bInitialized == false);
+  if (m_pRigidBody != HK_NULL)
+    return;
 
   // Add the static mesh instance
   m_staticMeshes.Append(&meshInstance);
   meshInstance.SetPhysicsObject(this);
   m_iNumValidStaticMeshes = 1;
-  m_bInitialized = true;
 
   // Build the Havok shape
   CreateHkRigidBody();
@@ -103,8 +104,8 @@ void vHavokStaticMesh::Init(VisStaticMeshInstance_cl &meshInstance)
 
 void vHavokStaticMesh::Init(VisStaticMeshInstCollection &meshInstances)
 {
-  // Init may only be called once
-  VVERIFY_OR_RET(m_bInitialized == false);
+  if (m_pRigidBody != HK_NULL)
+    return;
 
   // Add the static mesh instances
   int iCount = meshInstances.GetLength();
@@ -114,8 +115,6 @@ void vHavokStaticMesh::Init(VisStaticMeshInstCollection &meshInstances)
     meshInstances[i]->SetPhysicsObject(this);
     m_iNumValidStaticMeshes++;
   }
-
-  m_bInitialized = true;
 
   CreateHkRigidBody();
 }
@@ -164,39 +163,27 @@ void vHavokStaticMesh::RemoveStaticMesh(VisStaticMeshInstance_cl *pMesh)
 
 void vHavokStaticMesh::CreateHkRigidBody()
 {
+  VASSERT(m_pRigidBody == HK_NULL);
+
+  vHavokPhysicsModule* pModule = vHavokPhysicsModule::GetInstance();
+  VASSERT(pModule != NULL);
+
   // Create the Havok shape
   hkpRigidBodyCinfo cInfo;
   cInfo.m_motionType = hkpMotion::MOTION_FIXED;
-  
+
   // We use the first static mesh instance as origin reference
+  VASSERT(!m_staticMeshes.IsEmpty());
   VisStaticMeshInstance_cl *pMeshInstance = m_staticMeshes[0];
-  
+
   cInfo.m_collisionFilterInfo = pMeshInstance->GetCollisionBitmask();
   if (cInfo.m_collisionFilterInfo & (1<<15))
   {
     cInfo.m_collisionFilterInfo &= ~(1<<15);
     hkvLog::Warning("vHavok: Static mesh [%s] has outdated collision information. Please reexport scene.", pMeshInstance->GetMesh()->GetFilename());
   }
-
-  // Get the scaling of the first static mesh which is used as a reference
-  {
-	  hkMatrix4 mTransform;
-	  vHavokConversionUtils::VisMatrixToHkMatrix(m_staticMeshes[0]->GetTransform(), mTransform, false, false, true);
-	  hkVector4 vScale;
-	  vScale.set(	mTransform.getColumn<0>().lengthSquared<3>(),
-					mTransform.getColumn<1>().lengthSquared<3>(),
-					mTransform.getColumn<2>().lengthSquared<3>(),
-					hkSimdReal_1);
-	  vScale.setSqrt(vScale);
-	  vHavokConversionUtils::PhysVecToVisVec_noscale(vScale,m_vScale);
-  }
-
-  // Create the shape. 
-  // We can either create the shape from mem, or serialize it in (if cached).
-  // Do not set vHavokShapeFactory::VShapeCreationFlags_SHRINK, so back compat. Better to have as an option.
-  const int iCreationFlags = (pMeshInstance->GetCollisionBehavior()==VisStaticMeshInstance_cl::VIS_COLLISION_BEHAVIOR_FROMFILE) ? 
-                             vHavokShapeFactory::VShapeCreationFlags_ALLOW_PERTRICOLINFO : 0;
-  hkRefPtr<hkpShape> spShape = vHavokShapeFactory::CreateShapeFromStaticMeshInstances(m_staticMeshes, iCreationFlags, &m_szShapeCacheId);
+  
+  hkRefPtr<hkpShape> spShape = CreateHkShape();
   if (spShape == NULL)
     return;
 
@@ -206,18 +193,19 @@ void vHavokStaticMesh::CreateHkRigidBody()
   // a default collisionFilterInfo will be used.
   if (cInfo.m_collisionFilterInfo==0)
   {
-    bool bHasMaterialCacheData = false;
+    bool bHasPerPrimitiveCollisionFilter = false;
     const hkpShape *pShape = (hkpShape*)spShape.val();
     const hkClass *pClass = pShape->getClassType();
     if (pClass == &hkvBvCompressedMeshShapeClass)
     {
       const hkvBvCompressedMeshShape *pMeshShape = (hkvBvCompressedMeshShape*)(pShape);
-      bHasMaterialCacheData = pMeshShape->m_userData != HK_NULL;
+      bHasPerPrimitiveCollisionFilter = (pMeshShape->getCollisionFilterInfoMode() != hkvBvCompressedMeshShape::PER_PRIMITIVE_DATA_NONE);
     }
-    if (!bHasMaterialCacheData)
-      cInfo.m_collisionFilterInfo = vHavokPhysicsModule::HK_LAYER_COLLIDABLE_STATIC;
+    if (!bHasPerPrimitiveCollisionFilter)
+      cInfo.m_collisionFilterInfo = hkpGroupFilter::calcFilterInfo(vHavokPhysicsModule::HK_LAYER_COLLIDABLE_STATIC, 0, 0, 0);
   }
-  cInfo.m_numShapeKeysInContactPointProperties = -1; 	// Ensure shape keys are stored.
+  cInfo.m_numShapeKeysInContactPointProperties = -1;  // Ensure shape keys are stored.
+
   m_pRigidBody = new hkpRigidBody(cInfo);
 
   // Set user data to identify this static mesh during collision detection
@@ -225,7 +213,7 @@ void vHavokStaticMesh::CreateHkRigidBody()
 
   // Add our instance to the module
   UpdateVision2Havok();
-  m_module.AddStaticMesh(this);
+  pModule->AddStaticMesh(this);
 }
 
 void vHavokStaticMesh::RemoveHkRigidBody()
@@ -233,45 +221,52 @@ void vHavokStaticMesh::RemoveHkRigidBody()
   if(m_pRigidBody == NULL)
     return;
 
+  vHavokPhysicsModule* pModule = vHavokPhysicsModule::GetInstance();
+  VASSERT(pModule != NULL);
+
   // Keep our object alive
   VSmartPtr<vHavokStaticMesh> keepAlive = this;
 
   // If we still have an owner, then remove the rigid body from the Havok world
-  m_module.RemoveStaticMesh(this); 
+  pModule->RemoveStaticMesh(this); 
   
   // Free the rigid body 
+  m_pRigidBody->markForRead();
+  const hkpShape* pShape = m_pRigidBody->getCollidable()->getShape();
+  m_pRigidBody->unmarkForRead();
+
   m_pRigidBody->removeReference();
   m_pRigidBody = NULL;
-  
-  // Remove shape from cache 
-  vHavokShapeFactory::RemoveShape(m_szShapeCacheId);
-  m_szShapeCacheId = NULL;
+
+  // Remove shape from cache.
+  vHavokShapeCache::RemoveShape(pShape);
 }
 
+hkRefNew<hkpShape> vHavokStaticMesh::CreateHkShape()
+{
+  VASSERT(!m_staticMeshes.IsEmpty());
+  VisStaticMeshInstance_cl *pMeshInstance = m_staticMeshes[0];
 
+  // Get the scaling of the first static mesh which is used as a reference
+  {
+    hkMatrix4 mTransform;
+    vHavokConversionUtils::VisMatrixToHkMatrix(pMeshInstance->GetTransform(), mTransform, false, false, true);
+    hkVector4 vScale;
+    vScale.set(mTransform.getColumn<0>().lengthSquared<3>(),
+      mTransform.getColumn<1>().lengthSquared<3>(),
+      mTransform.getColumn<2>().lengthSquared<3>(),
+      hkSimdReal_1);
+    vScale.setSqrt(vScale);
+    vHavokConversionUtils::PhysVecToVisVec_noscale(vScale, m_vScale);
+  }
+
+  return vHavokShapeFactory::CreateShapeFromStaticMeshInstances(m_staticMeshes, 
+    vHavokShapeFactory::VShapeCreationFlags_CACHE_SHAPE | vHavokShapeFactory::VShapeCreationFlags_USE_VCOLMESH);
+}
 
 // --------------------------------------------------------------------------
 // Synchronization
 // --------------------------------------------------------------------------
-
-void vHavokStaticMesh::UpdateHavok2Vision()
-{
-  /// \todo: implement
-  /*
-  VisObject3D_cl *pOwner3d = GetOwner3d();
-  VVERIFY_OR_RET(m_pRigidBody && GetOwner());
-
-  // Update position
-  hkvVec3 newPos = HK2VIS(m_pRigidBody->getPosition());
-  pOwner3d->SetPosition(newPos);
-
-  // Update rotation
-  const hkQuaternion &hkRot = m_pRigidBody->getRotation();	
-  hkvMat3	rotMatrix;
-  vHavokConversionUtils::HkQuatToVisMatrix(hkRot, rotMatrix);  
-  pOwner3d->SetRotationMatrix(rotMatrix);
-  */
-}
 
 void vHavokStaticMesh::UpdateVision2Havok()
 {
@@ -289,15 +284,14 @@ void vHavokStaticMesh::UpdateVision2Havok()
   mRotation.setCols(mTransform.getColumn<0>(),mTransform.getColumn<1>(),mTransform.getColumn<2>());
   hkVector4 vScale;
   vScale.set(mRotation.getColumn<0>().normalizeWithLength<3>(),
-			       mRotation.getColumn<1>().normalizeWithLength<3>(),
-			       mRotation.getColumn<2>().normalizeWithLength<3>(),
-			       hkSimdReal_1);
+           mRotation.getColumn<1>().normalizeWithLength<3>(),
+           mRotation.getColumn<2>().normalizeWithLength<3>(),
+           hkSimdReal_1);
   
   bool bUpdateDebugRendering = false;
 
   // Check here if we need to recalculate the precomputed collision mesh
-  // should only happen inside the editor
-  // if((vScale.x != m_vScale.x || vScale.y != m_vScale.y || vScale.z != m_vScale.z))
+  // should only happen inside the editor.
   hkVector4 mvScale; vHavokConversionUtils::VisVecToPhysVec_noscale(m_vScale, mvScale);
   if (!vScale.allEqual<3>(mvScale, hkSimdReal::fromFloat(HKVMATH_LARGE_EPSILON)))
   {
@@ -312,7 +306,7 @@ void vHavokStaticMesh::UpdateVision2Havok()
     if (m_pRigidBody == NULL)
       return;
 
-	  vHavokConversionUtils::PhysVecToVisVec_noscale(vScale, m_vScale);
+    vHavokConversionUtils::PhysVecToVisVec_noscale(vScale, m_vScale);
 
     bUpdateDebugRendering = true;
   }
@@ -332,9 +326,6 @@ void vHavokStaticMesh::UpdateVision2Havok()
   }
 }
 
-
-
-
 // --------------------------------------------------------------------------
 // Accessing Havok Instances
 // --------------------------------------------------------------------------
@@ -348,7 +339,7 @@ const hkpShape *vHavokStaticMesh::GetHkShape() const
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -16,7 +16,7 @@ extern VModule g_sampleModule; ///< implemented in main using the DECLARE_THIS_M
 #elif defined SAMPLEPLUGIN_IMPORTS
   #define SAMPLEPLUGIN_IMPEXP __declspec(dllimport)
 #else
-  #if (defined (WIN32) || defined(_VISION_XENON)) && !defined(_VISION_WINRT)
+  #if (defined (_VISION_WIN32) || defined(_VISION_XENON)) && !defined(_VISION_WINRT)
     #define SAMPLEPLUGIN_IMPEXP __declspec()
   #else
     #define SAMPLEPLUGIN_IMPEXP    
@@ -24,7 +24,7 @@ extern VModule g_sampleModule; ///< implemented in main using the DECLARE_THIS_M
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

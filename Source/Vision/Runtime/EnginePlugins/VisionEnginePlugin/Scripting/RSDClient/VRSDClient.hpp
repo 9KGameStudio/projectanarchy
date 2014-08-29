@@ -459,11 +459,11 @@
       }
 
       /// \fn 
-      ///   virtual bool UpdateHiddenGlobalVariable(const void* pUserDataParent, const char* Variable, 
+      ///   virtual bool UpdateDynamicProperty(const void* pUserDataParent, const char* Variable, 
       ///   const char* NewValue)
       ///
       /// \brief
-      ///   Updates a hidden global variable (= member added to user data variable at runtime)
+      ///   Updates a dynamic property (= member added to user data variable at runtime)
       ///
       /// \param [in] pUserDataParent
       ///   The user data pointer to the parent containing the variable as a member.
@@ -471,7 +471,7 @@
       ///   If non-null, the variable.
       /// \param [in] NewValue
       ///   If non-null, the new value.
-      virtual bool UpdateHiddenGlobalVariable(const void* pUserDataParent, const char* Variable, 
+      virtual bool UpdateDynamicProperty(const void* pUserDataParent, const char* Variable, 
         const char* NewValue)
       {
         return false;
@@ -847,6 +847,12 @@
       ///
       SCRIPT_IMPEXP bool StopProfiling(unsigned int* puiProfilingResultCount = NULL);
 
+      /// \brief  Stops the current editor playing mode. (Internally used)
+      ///
+      /// \return HKV_SUCCESS if it succeeds, HKV_FAILURE if it fails. 
+      ///
+      SCRIPT_IMPEXP hkvResult StopTheGame();
+
     private:
 
       /// \fn SCRIPT_IMPEXP virtual void OnHandleCallback(IVisCallbackDataObject_cl *pData)
@@ -973,7 +979,7 @@
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

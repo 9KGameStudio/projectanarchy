@@ -229,13 +229,19 @@ public:
   /// \brief
   ///   Returns the owner of this trigger volume as a VisObject3d_cl.
   ///
-  VHAVOK_IMPEXP VisObject3D_cl *GetOwner3D();
+  inline VisObject3D_cl* GetOwner3D()
+  {
+    return vstatic_cast<VisObject3D_cl*>(GetOwner());
+  }
 
   ///
   /// \brief
-  ///   Gets the owner custom volume object of this trigger volume as a VCustomVolumeObject.
+  ///   Returns the owner custom volume object of this trigger volume as a VCustomVolumeObject.
   ///
-  VHAVOK_IMPEXP VCustomVolumeObject *GetOwnerCustomVolume();
+  inline VCustomVolumeObject* GetOwnerCustomVolume()
+  {
+    return vstatic_cast<VCustomVolumeObject*>(GetOwner());
+  }
 
   ///
   /// \brief
@@ -438,7 +444,7 @@ private:
   ///
   /// \brief
   ///   Creates the actual Havok Physics trigger volume and adds it to the simulation.
-  bool CreateHkTriggerVolume(VisStaticMesh_cl* pMesh, const hkvVec3& vScale, int iCreationFlags);
+  bool CreateHkTriggerVolume(VisStaticMesh_cl* pMesh, const hkvVec3& vScale, unsigned int uiCreationFlags);
 
   ///
   /// \brief
@@ -449,11 +455,8 @@ private:
   ///   Retrieves the transformation of the owner object from Vision and applies them to the Havok Physics representation.
   void UpdateVision2Havok();
 
- 
-  vHavokPhysicsModule *m_pModule;                               ///< Reference to Havok Physics Module.
   vHavokTriggerVolumeInternal *m_pTriggerVolume;                ///< The actual Havok Physics Trigger Volume.
-  const char *m_szShapeCacheId;                                 ///< ID of collision shape in runtime cache table (points to memory in cache table).
-
+  
   VSmartPtr<VisTriggerSourceComponent_cl> m_spOnObjectEnter;    ///< Component that triggers the OnObjectEnter event
   VSmartPtr<VisTriggerSourceComponent_cl> m_spOnObjectLeave;    ///< Component that triggers the OnObjectLeave event
   VSmartPtr<VisTriggerSourceComponent_cl> m_spOnCharacterEnter; ///< Component that triggers the OnCharacterEnter event
@@ -472,13 +475,12 @@ private:
 
   BOOL Debug_Render;                                            ///< Indicates whether debug rendering is active or not.
   VColorRef Debug_Color;                                        ///< Color for debug rendering
-
 };
 
 #endif // VHAVOKTRIGGERVOLUME_HPP_INCLUDED
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

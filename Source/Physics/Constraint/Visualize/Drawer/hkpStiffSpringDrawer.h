@@ -14,7 +14,7 @@
 
 
 /// Displays information about the ballSocket constraint.
-class hkpStiffSpringDrawer : public hkpConstraintDrawer
+class HK_EXPORT_PHYSICS hkpStiffSpringDrawer : public hkpConstraintDrawer
 {
 	public:
 
@@ -29,7 +29,7 @@ class hkpStiffSpringDrawer : public hkpConstraintDrawer
 #endif	// HKP_STIFFSPRINGDRAWER_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

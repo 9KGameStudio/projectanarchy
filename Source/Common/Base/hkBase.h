@@ -28,17 +28,21 @@
 	//		disable warning if we're using HK_OVERRIDE
 #	pragma warning(push)
 #	pragma warning(disable: 4100 4127 4324 4505 4510 4511 4512 4514)
+#	ifdef HK_DYNAMIC_DLL
+#		pragma warning(disable: 4251) // Templated types not exported
+#		pragma warning(disable: 4231) // extern used bvefore templated type
+#	endif
 //#	pragma warning(disable: 1684 981 1419 1418 271 1572 128 ) // Intel compiler warnings
 #	if defined(HK_DEBUG)
-#		pragma warning(disable: 4714) 
+#		pragma warning(disable: 4714)
 #	endif
 #if (_MSC_VER >= 1400)
-#		pragma warning(disable: 4481) 
-#	if (_MSC_VER >= 1700) 
+#		pragma warning(disable: 4481)
+#	if (_MSC_VER >= 1700)
 #		pragma warning(disable: 6326) // hkMath: constant comapred against constant: happens all the time wth our tenmplated opts
 #	endif
 #endif
-#if (_MSC_VER >= 1700) 
+#if (_MSC_VER >= 1700)
 #		pragma warning(disable: 6326) // hkMath: constant comapred against constant: happens all the time wth our tenmplated opts
 #endif
 #	ifndef _CRT_SECURE_NO_DEPRECATE
@@ -57,9 +61,9 @@
 #	pragma ghs nowarning 1795  // __ in name may be not debuggable
 #	pragma ghs nowarning 111  // unreachable statement
 #	pragma ghs nowarning 177  // func declared but never referenced
-#	pragma ghs nowarning 1518  // ansi alaising rules being turned off.. 
+#	pragma ghs nowarning 1518  // ansi alaising rules being turned off..
 #	pragma ghs nowarning 1586  // force noinline on what the compiler thinks is inline warns a lot (on templated classes it seems)
-
+#	pragma ghs nowarning 1424 // offsetof applied to non-POD types is nonstandard
 
 #elif defined HK_COMPILER_ARMCC
 	// By default ARMCC is very picky with its warnings
@@ -74,7 +78,7 @@
 	// 2523 : use of inline assembler is deprecated (from nn headers, not Havoks)
 #	pragma push
 #	pragma diag_suppress 826,1297,1298,1301,253,2530,399,831,2525,401,340,2523
-#	ifndef HK_DEBUG 
+#	ifndef HK_DEBUG
 		// 2814 : empty else statement. Should be cleaned up, but all from HK_ASSERT(0x5545d218) style else blocks
 #		pragma diag_suppress 2814
 #	endif
@@ -137,9 +141,25 @@
 struct hkPlacementNewArg;
 inline void* operator new(hk_size_t, hkPlacementNewArg* p) { return p; }
 inline void* operator new[](hk_size_t, hkPlacementNewArg* p) { return p; }
-#if !defined(HK_COMPILER_MWERKS) && ( !defined(HK_COMPILER_SNC) || defined(__EXCEPTIONS) ) 
+
+#if !defined(HK_COMPILER_MWERKS) && ( !defined(HK_COMPILER_SNC) || defined(__EXCEPTIONS) )
 inline void operator delete(void* /*unused*/, hkPlacementNewArg* /*unused*/) { HK_ASSERT(0x5c4071a3, false); }
 inline void operator delete[](void* /*unused*/, hkPlacementNewArg* /*unused*/) { HK_ASSERT(0x7ca45d11, false); }
+#endif
+
+#if defined(HK_PLATFORM_PS3)
+// Special versions of operator new that receive an extra parameter with the type alignment. Used by the compiler
+// only when the type alignment is over 16 bytes (see https://ps3.scedev.net/technotes/view/890).
+inline void* operator new(hk_size_t size, hk_size_t alignment, hkPlacementNewArg* p)
+{
+	HK_ASSERT(0x3BAB5FED, (hkUlong(p) & (alignment - 1)) == 0);
+	return p;
+}
+inline void* operator new[](hk_size_t size, hk_size_t alignment, hkPlacementNewArg* p)
+{
+	HK_ASSERT(0x3BAB5FEE, (hkUlong(p) & (alignment - 1)) == 0);
+	return p;
+}
 #endif
 
 #include <Common/Base/Types/hkTrait.h>
@@ -158,7 +178,7 @@ inline void operator delete[](void* /*unused*/, hkPlacementNewArg* /*unused*/) {
 #endif // HKBASE_HKBASE_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

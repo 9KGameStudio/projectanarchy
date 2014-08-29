@@ -11,7 +11,7 @@
 class hkClassEnum;
 class hkClass;
 
-struct hkInternalCustomAttributes
+struct HK_EXPORT_COMMON hkInternalCustomAttributes
 {
 	struct Attribute
 	{
@@ -33,7 +33,7 @@ struct hkInternalCustomAttributes
 // section, whereas the use of hkMember objects force huge number of
 // calls to hkMember::hkMember not to mention code bloat from the global 
 // constructor chain.
-struct hkInternalClassMember
+struct HK_EXPORT_COMMON hkInternalClassMember
 {
 	// None of these classes have havok allocators since they are
 	// only used to define static const data and should never be new-ed
@@ -51,7 +51,7 @@ struct hkInternalClassMember
 	HK_DECLARE_PLACEMENT_ALLOCATOR();
 };
 
-struct hkInternalClassEnumItem
+struct HK_EXPORT_COMMON hkInternalClassEnumItem
 {
 	int m_value;
 	const char* m_name;
@@ -59,7 +59,7 @@ struct hkInternalClassEnumItem
 	HK_DECLARE_PLACEMENT_ALLOCATOR();
 };
 
-struct hkInternalClassEnum
+struct HK_EXPORT_COMMON hkInternalClassEnum
 {
 	const char* m_name;
 	const hkInternalClassEnumItem* m_items;
@@ -70,7 +70,7 @@ struct hkInternalClassEnum
 	HK_DECLARE_PLACEMENT_ALLOCATOR();
 };
 
-struct hkInternalClass
+struct HK_EXPORT_COMMON hkInternalClass
 {
 	HK_DECLARE_PLACEMENT_ALLOCATOR();
 	const char* m_name;
@@ -91,7 +91,7 @@ struct hkInternalClass
 #endif // HK_BASE_INTERNALCLASSMEMBER_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

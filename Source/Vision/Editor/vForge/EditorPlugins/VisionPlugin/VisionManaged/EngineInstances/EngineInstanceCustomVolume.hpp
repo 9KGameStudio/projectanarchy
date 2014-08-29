@@ -36,10 +36,10 @@ namespace VisionManaged
   public:
     EarClippingToVMeshFile(VString filename);
 
-    VOVERRIDE void Init(int numNeededVertices);
-    VOVERRIDE void AddVertex(float x, float y, float z);
-    VOVERRIDE void AddTriangle(int iIndex1, int iIndex2, int iIndex3);
-    VOVERRIDE void Finish();
+    virtual void Init(int numNeededVertices) override;
+    virtual void AddVertex(float x, float y, float z) override;
+    virtual void AddTriangle(int iIndex1, int iIndex2, int iIndex3) override;
+    virtual void Finish() override;
 
   private:
     VGScene m_scene;
@@ -52,10 +52,10 @@ namespace VisionManaged
   public:
     EarClippingToStaticMesh(VisStaticMesh_cl& staticMesh);
 
-    VOVERRIDE void Init(int numNeededVertices);
-    VOVERRIDE void AddVertex(float x, float y, float z);
-    VOVERRIDE void AddTriangle(int iIndex1, int iIndex2, int iIndex3);
-    VOVERRIDE void Finish();    
+    virtual void Init(int numNeededVertices) override;
+    virtual void AddVertex(float x, float y, float z) override;
+    virtual void AddTriangle(int iIndex1, int iIndex2, int iIndex3) override;
+    virtual void Finish() override;
   private:
     struct Triangle 
     {
@@ -89,28 +89,27 @@ namespace VisionManaged
   {
   public:     
 
-    enum class VUpdateType_e {
-      VUT_UPDATE_POSITION,
+    enum class VUpdateType_e 
+    {
+      VUT_UPDATE_LOCAL_VERTEX_POSITIONS,
       VUT_UPDATE_RETRIANGULATE
     };
 
     EngineInstanceCustomVolumeObject(Shape3D ^ownerShape);
-    VOVERRIDE void DisposeObject() override;
+    virtual void DisposeObject() override;
 
     // overridden IEngineShapeInstance functions
-    VOVERRIDE void TraceShape(Shape3D ^ownerShape, Vector3F rayStart,Vector3F rayEnd, ShapeTraceResult ^%result) override;
-    VOVERRIDE bool GetLocalBoundingBox(BoundingBox ^%bbox) override;
-    VOVERRIDE void OnBeforeExport(SceneExportInfo ^info) override; 
-    VOVERRIDE bool OnExport(SceneExportInfo ^info) override;
-    VOVERRIDE void *GetObject3D() override { return m_pCustomVolumeEntity; }
-    VOVERRIDE void OnRenderHook(ShapeBase ^owner, int iConstant) override;
+    virtual void TraceShape(Shape3D ^ownerShape, Vector3F rayStart,Vector3F rayEnd, ShapeTraceResult ^%result) override;
+    virtual bool GetLocalBoundingBox(BoundingBox ^%bbox) override;
+    virtual void OnBeforeExport(SceneExportInfo ^info) override; 
+    virtual bool OnExport(SceneExportInfo ^info) override;
+    virtual void *GetObject3D() override { return m_pCustomVolumeEntity; }
+    virtual void OnRenderHook(ShapeBase ^owner, int iConstant) override;
 
-	VOVERRIDE void SetPosition(float x, float y, float z) override;
-	VOVERRIDE void SetOrientation(float yaw, float pitch, float roll) override;
-    VOVERRIDE void SetScaling(float x, float y, float z) override;
-    VOVERRIDE void SetVisible(bool value) override {}
+    virtual void SetScaling(float x, float y, float z) override;
+    virtual void SetVisible(bool value) override {}
 
-    //Setter getter for native class
+    // Setter getter for native class
     void SetCustomStaticMesh(bool bValue);
     void SetStaticMeshPath(String^ path);
 
@@ -124,62 +123,66 @@ namespace VisionManaged
     String^ CheckIsStaticMeshValid();
 
     inline float GetHeight() { return m_fHeight; }
-    inline void SetHeight(float fValue) { m_fHeight = fValue; UpdateStaticMesh(VUpdateType_e::VUT_UPDATE_POSITION); }
+    inline void SetHeight(float fValue) { m_fHeight = fValue; UpdateStaticMesh(VUpdateType_e::VUT_UPDATE_LOCAL_VERTEX_POSITIONS); }
 
   private:
-
-    //Helper initializing the runtime created static mesh
+    // Helper initializing the runtime created static mesh
     void InitStaticMesh();
 
     float m_fHeight;
     Shape3D ^m_pOwnerShape;
+
     VCustomVolumeObject* m_pCustomVolumeEntity;
-    bool m_bCreationFinished;
+    VisStaticMeshPtr* m_pspEditorStaticMesh; // Holds the runtime created static mesh.
+    bool m_bHasCustomMesh;  // This flag is needed because the m_pspEditorStaticMesh can only be created 
+                            // after the creation of the shape has finished. We thus need to store this setting.
+
     bool m_bReverseWinding;
     bool m_bValid;
+
     VCompiledTechniquePtr* m_pspLightClippingVolumeDisplayMesh;
   };
 
   public ref class EngineInstanceCustomVolumeVertex : public IEngineInstanceObject3D
   {
   public:
-    EngineInstanceCustomVolumeVertex(Shape3D ^owner);
-    VOVERRIDE void DisposeObject() override;
+    EngineInstanceCustomVolumeVertex(Shape3D ^owner, Shape3D ^shape);
+    virtual void DisposeObject() override;
 
     // vertex should not return a value here as it does not inherit from VisTypedEngineObject_cl
-    VOVERRIDE IntPtr GetNativeObject() override  {return System::IntPtr::Zero;}
-    VOVERRIDE void OnPostEngineInstanceCreation() override;
+    virtual IntPtr GetNativeObject() override  {return System::IntPtr::Zero;}
+    virtual void OnPostEngineInstanceCreation() override;
 
     // overridden IEngineShapeInstance functions
-    VOVERRIDE void SetVisible(bool bStatus) override  {}
-    VOVERRIDE void SetOrientation(float yaw,float pitch,float roll) override  {}
-    VOVERRIDE void SetScaling(float x,float y, float z) override  {}
-    VOVERRIDE void SetObjectKey(String ^key) override {}
-    VOVERRIDE void TraceShape(Shape3D ^ownerShape, Vector3F rayStart,Vector3F rayEnd, ShapeTraceResult ^%result) override;
-    VOVERRIDE bool GetLocalBoundingBox(BoundingBox ^%bbox) override;
-    VOVERRIDE bool OnExport(SceneExportInfo ^info) override { return true; }
-    VOVERRIDE void *GetObject3D() override  {return nullptr;}
+    virtual void SetVisible(bool bStatus) override  {}
+    virtual void SetOrientation(float yaw,float pitch,float roll) override  {}
+    virtual void SetScaling(float x,float y, float z) override  {}
+    virtual void SetObjectKey(String ^key) override {}
+    virtual void TraceShape(Shape3D ^ownerShape, Vector3F rayStart,Vector3F rayEnd, ShapeTraceResult ^%result) override;
+    virtual bool GetLocalBoundingBox(BoundingBox ^%bbox) override;
+    virtual bool OnExport(SceneExportInfo ^info) override { return true; }
+    virtual void *GetObject3D() override  {return nullptr;}
 
-    VOVERRIDE void SetPosition(float x,float y,float z) override;
-    VOVERRIDE bool GetPosition(Vector3F %enginePosition) override;
+    virtual void SetPosition(float x, float y, float z) override;
+    virtual bool GetPosition(Vector3F %enginePosition) override;
 
-    VOVERRIDE bool GetOrientation(Vector3F %engineOrientation) override;
+    virtual bool GetOrientation(Vector3F %engineOrientation) override;
 
     // special
     void RenderShape(VisionViewBase ^view, ShapeRenderMode mode);
     void OnRemoveFromScene();
-    Vector3F localPosition;
 
   private:
     VTextureObject* m_pIcon;
     Shape3D ^m_pOwner;
-    VisStaticMesh_cl* m_pMesh;
+    Shape3D ^m_pShape;
+    Vector3F m_previousLocalPosition;
   };
 
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -18,34 +18,18 @@
 // Import/export
 //
 
-#ifdef WIN32
+#ifdef _VISION_WIN32
   #ifdef VHAVOKAIMODULE_EXPORTS
-	#define VHAVOKAI_IMPEXP __declspec(dllexport)
+	  #define VHAVOKAI_IMPEXP __declspec(dllexport)
   #elif defined VHAVOKAIMODULE_IMPORTS
-	#define VHAVOKAI_IMPEXP __declspec(dllimport)
+	  #define VHAVOKAI_IMPEXP __declspec(dllimport)
   #else
-	#define VHAVOKAI_IMPEXP
+	  #define VHAVOKAI_IMPEXP
   #endif
   
-#elif defined (_VISION_XENON)
-	#define VHAVOKAI_IMPEXP   
-
-#elif defined (_VISION_PS3)
-	#define VHAVOKAI_IMPEXP
-    
-#elif defined (_VISION_IOS) || defined(_VISION_ANDROID) || defined (_VISION_TIZEN)
-	#define VHAVOKAI_IMPEXP
-
-#elif defined(_VISION_PSP2)
-	#define VHAVOKAI_IMPEXP 
-
-#elif defined(_VISION_WIIU)
-	#define VHAVOKAI_IMPEXP 
-
 #else
-	#error Undefined platform!
+	#define VHAVOKAI_IMPEXP
 #endif
-
 
 //
 // Globals
@@ -80,7 +64,7 @@ extern VModule g_vHavokAiModule;
 #endif //__VHAVOK_AI_INCLUDES_HPP
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

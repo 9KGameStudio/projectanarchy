@@ -108,10 +108,19 @@ inline void hkaiNavVolumeInstance::getAabb( hkAabb& aabbOut ) const
 	aabbOut.m_min.setAdd(localAabb.m_min, m_translation);
 	aabbOut.m_max.setAdd(localAabb.m_max, m_translation);
 }
+
+
+inline void hkaiNavVolumeInstance::setLayer( hkaiLayer layer )
+{
+	HK_ASSERT2(0x799e5e19, hkMath::countBitsSet(layer) == 1, "Instance must belong to exactly one layer.");
+	HK_WARN_ONCE_ON_DEBUG_IF( m_runtimeId != HKAI_INVALID_RUNTIME_INDEX, 0x38bf6446, "Changing the layer of a loaded instance is a very bad idea." );
+	m_layer = layer;
+}
+
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

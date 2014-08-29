@@ -8,11 +8,12 @@
 #ifndef HKAI_EDGE_GEOMETRY_H
 #define HKAI_EDGE_GEOMETRY_H
 
-extern const class hkClass hkaiEdgeGeometryFaceClass;
+#include <Ai/Internal/hkaiExport.h>
+extern HK_EXPORT_AI const class hkClass hkaiEdgeGeometryFaceClass;
 
-extern const class hkClass hkaiEdgeGeometryEdgeClass;
+extern HK_EXPORT_AI const class hkClass hkaiEdgeGeometryEdgeClass;
 
-extern const class hkClass hkaiEdgeGeometryClass;
+extern HK_EXPORT_AI const class hkClass hkaiEdgeGeometryClass;
 
 class hkAabb;
 struct hkGeometry;
@@ -35,8 +36,6 @@ class hkaiEdgeGeometryValidator;
 /// faces, edges and vertices
 ///
 /// hkaiFaceEdges - determines all the edges associated with each face.
-/// hkaiVertexEdges - determines all of the edges leaving each vertex.
-/// hkaiFaceVertices - determines all of the vertices indexed by each face
 ///
 /// All of these classes determine the data for all of geometry, as doing so makes the cost of the determination for each
 /// primitive low. If the information is only needed for a single primitive, it may be more efficient to do a linear search
@@ -48,7 +47,7 @@ class hkaiEdgeGeometryValidator;
 ///
 /// The m_faces array holds per face information. As it stands this is only per face user data. For a hkaiEdgeGeometry
 /// to be valid every face indexed in an edge must exist in the m_faces array, even if it only holds zero in the m_userData.
-class hkaiEdgeGeometry : public hkReferencedObject
+class HK_EXPORT_AI hkaiEdgeGeometry : public hkReferencedObject
 {
 	public:
 
@@ -65,7 +64,7 @@ class hkaiEdgeGeometry : public hkReferencedObject
 
 			/// A half edge.
 			/// Should be kept as a power of 2
-        struct Edge
+        struct HK_EXPORT_AI Edge
         {
 			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_AI, hkaiEdgeGeometry::Edge);
 			HK_DECLARE_REFLECTION();
@@ -114,7 +113,7 @@ class hkaiEdgeGeometry : public hkReferencedObject
 		typedef hkFlags<FaceFlagBits, hkUint8> FaceFlags;
 
 			/// Data associated with a face.
-        struct Face
+        struct HK_EXPORT_AI Face
         {
 			// +version(1)
             HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_AI, hkaiEdgeGeometry::Face);
@@ -190,7 +189,7 @@ class hkaiEdgeGeometry : public hkReferencedObject
 		hkResult checkConsistency( hkaiEdgeGeometryValidator& checker ) const;
 
             /// Returns the index of the first edge found that has the start and end vertex indices specified. If no edge is found will return -1.
-            /// Searches for the edge via a linear search - using a hkaiVertexEdges may be more suitable if looking for lots of edge pairs on a static piece of geometry.
+            /// Searches for the edge via a linear search.
 		int findEdgeIndex(int startVertexIndex, int endVertexIndex) const;
 
 			/// Returns the indices of the loop starting on start. NOTE its common for faces have multiple loops - this only extracts _any_ loop
@@ -216,7 +215,7 @@ class hkaiEdgeGeometry : public hkReferencedObject
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

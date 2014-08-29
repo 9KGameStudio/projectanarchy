@@ -326,22 +326,6 @@ private:
   {
     return m_spSystemMemoryBuffer!=NULL && m_spSystemMemoryBuffer->IsLoaded();
   }
-
-
-  /*
-  /// \brief
-  ///   Indicates whether there is a collision buffer and whether it is valid.
-  /// 
-  /// For internal use only!
-  /// 
-  /// \return
-  ///   bool bValid: True if collision buffer is valid.
-  inline bool IsCollisionBufferValid() const
-  {
-    return(m_spCollisionBuffer.m_pPtr&&m_spCollisionBuffer->IsLoaded());
-  }
-  */
- 
   
   /// \brief
   ///   For internal use only!
@@ -355,21 +339,6 @@ private:
     if (m_spSystemMemoryBuffer != NULL)
       m_spSystemMemoryBuffer->EnsureLoaded();
   }
-  
-  /*
-  /// \brief
-  ///   For internal use only!
-  /// 
-  /// TouchCollisionBuffer is used by the engine to update the resources time to the current frame.
-  /// 
-  /// \return
-  ///   Nothing.
-  VISION_APIFUNC void TouchCollisionBuffer() const
-  {
-    if(m_spCollisionBuffer.m_pPtr)
-      m_spCollisionBuffer->EnsureLoaded();
-  }
-  */
 
   VISION_APIFUNC bool UsesExtraSystemBuffer_Check() const;
   VISION_APIFUNC bool UsesCollisionSystemBuffer_Check() const;
@@ -401,7 +370,7 @@ public:
 #endif //VIS_ANIM_RESULT_HPP_INCLUDED
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

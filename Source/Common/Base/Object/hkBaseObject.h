@@ -8,7 +8,7 @@
 #ifndef HKBASE_HKBASEOBJECT_H
 #define HKBASE_HKBASEOBJECT_H
 
-extern const hkClass hkBaseObjectClass;
+extern const hkClass HK_EXPORT_COMMON hkBaseObjectClass;
 
 /// Base class for all Havok classes that have virtual functions.
 /// In gcc2 for instance, if the virtual base class has data in it the vtable
@@ -17,7 +17,7 @@ extern const hkClass hkBaseObjectClass;
 /// to always be at the start of the derived objects.
 /// All Havok managed objects inherit from a sub class of this, hkReferencedObject
 /// that stores the memory size and the reference count info (if used).
-class hkBaseObject
+class HK_EXPORT_COMMON hkBaseObject
 {
 		//+hk.ReflectedFile("BaseObject")
 		//+hk.MemoryTracker(ignore=True)
@@ -49,7 +49,7 @@ hkBool::CompileTimeTrueType hkIsVirtual(hkBaseObject*);
 #endif // HKBASE_HKBASEOBJECT_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

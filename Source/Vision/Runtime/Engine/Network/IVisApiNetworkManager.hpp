@@ -12,6 +12,10 @@
 #define VISAPINETWORKMANAGER_HPP_INCLUDED
 
 #include <Vision/Runtime/Engine/Network/VisApiDataHistory.hpp>
+#include <Vision/Runtime/Base/System/IO/Stream/VMemoryStream.hpp>
+
+typedef VMemBlockWrapperStream VNetworkStreamReader;
+#define VNetworkStreamWriter VMemoryTempBufferOutStream
 
 // forward:
 struct VNetworkViewContext;
@@ -20,12 +24,25 @@ class IVNetworkViewComponent;
 
 typedef __int64 VSystemGUID; ///< Unique system identifier used in network related functions.
 
+/// \brief
+///   Packet IDs.
+///
+/// Everything before VPackageID_FirstUserID is reserved by Vision
+enum VPacketID_e
+{
+  VPackageID_Callback = 196,
+  VPackageID_Messages = 197,
+  VPackageID_DataBlockMessages = 198,
+  VPackageID_Sync = 199,
+  VPackageID_FirstUserID = 200, // rather use a large hardcoded value here to not break compatibility
+};
+
 #if defined(__SNC__)
 #pragma diag_push
 #pragma diag_suppress=178
 #endif
 
-static const int iNUMBER_OF_ORDERING_CHANNELS = 32; ///< The number of ordering channels useable for sending messages on
+static const int iNUMBER_OF_ORDERING_CHANNELS = 32; ///< The number of ordering channels usable for sending messages on
 
 #if defined(__SNC__)
 #pragma diag_pop
@@ -350,7 +367,7 @@ struct VNetworkSynchronizationGroupInstanceInfo_t
   ///   Destructor
   ~VNetworkSynchronizationGroupInstanceInfo_t()
   {
-    V_SAFE_FREE(m_pCustomData);
+    V_SAFE_DELETE(m_pCustomData);
   }
 
   /// \brief
@@ -430,7 +447,7 @@ public:
   /// \brief
   ///   Constructor that takes the owner network manager
   inline IVNetworkViewComponent(IVNetworkManager *pOwnerManager=NULL)
-    : m_pManager(pOwnerManager), m_iGroupCount(0), m_iNetworkOwnerID(0)
+    : m_pManager(pOwnerManager), m_iGroupCount(0), m_iNetworkOwnerID(0), m_iObservedObjCount(0), m_ObservedObj(0)
   {
     m_iGroupsEnabledMask = 0;
     m_iGroupsTickFunctionMask = 0;
@@ -443,7 +460,7 @@ public:
 
   VISION_APIFUNC virtual void DisposeObject() HKV_OVERRIDE;
 
-#ifdef WIN32
+#ifdef _VISION_WIN32
   ///
   /// @name Internal Editor functions
   /// @{
@@ -564,6 +581,10 @@ public:
   }
 
   /// \brief
+  ///   Returns the NetworkID that you can use to refer to this object over the network.
+  VISION_APIFUNC virtual VSystemGUID GetNetworkObjectID() const = 0;
+
+  /// \brief
   ///   Sets/removes the flag for a specific group that defines whether the virtual TickFunction is called
   VISION_APIFUNC void SetTickFunctionState(VNetworkSynchronizationGroupInstanceInfo_t &instanceInfo, bool bStatus);
 
@@ -575,6 +596,22 @@ public:
   ///   Called every frame by the manager
   VISION_APIFUNC void TickFunction(const VNetworkViewContext &context, float fTimeDelta);
  
+  /// \brief
+  ///   Adds a child object that should be under observation along with this component
+  ///
+  /// This is the only way to synchronize hierarchies of objects properly (as opposed to adding a network component both to parent and child object).
+  /// From the passed object, the relevant synchronization groups will be added to the list of groups of this component so they are simply synchronized alongside with this
+  /// object. An exception are transformation related groups as it is assumed that transformation is propagated through the parent/child relationship.
+  /// This function must be called before the component is added to the object through AddComponent
+  ///
+  /// \param pObject
+  ///   The object to synchronize as part of this component. Usually this is a child or grand-child of the component's owner, however this is not a requirement.
+  ///
+  VISION_APIFUNC void AddObservedObject(VisTypedEngineObject_cl *pObject);
+
+  /// \brief
+  ///   Removes an object that has been added through AddObservedObject. Unlike AddObservedObject this can also be called when the component is attached already. A child object that has a shorter lifetime should call this function
+  VISION_APIFUNC void RemoveObservedObject(VisTypedEngineObject_cl *pObject);
 
   ///
   /// @}
@@ -584,13 +621,26 @@ public:
 
   unsigned int m_iGroupsEnabledMask; ///< bitmask that stores which groups are enabled for synchronization
   unsigned int m_iGroupsTickFunctionMask; ///< bitmask that stores which groups use a tick function
-#ifdef WIN32
+#ifdef _VISION_WIN32
   VString m_sGroupBitmaskString; ///< only required inside vForge to temporarily store the string value of the control
 #endif
   // current list of groups:
   int m_iGroupCount;
   VNetworkSynchronizationGroupInstanceInfo_t m_AllGroupList[16];
   VSystemGUID m_iNetworkOwnerID;
+
+  /// \brief
+  /// internal data structure
+  struct VObservedObjectEntry_t
+  {
+    VObservedObjectEntry_t() {m_pObject=NULL;m_iFirstGroup=0;m_iGroupCount=0;}
+    VisTypedEngineObject_cl *m_pObject;
+    short m_iFirstGroup, m_iGroupCount; // the range in the parent component's list
+  };
+
+  int m_iObservedObjCount;
+  DynObjArray_cl<VObservedObjectEntry_t> m_ObservedObj;
+
 };
 
 /// \brief
@@ -676,6 +726,44 @@ public:
 
 
 /// \brief
+///   Interface for a custom packet listener.
+///
+/// Derive from this class and implement OnReceive. Attach the packet listener via IVNetworkManager::SetPacketListener.
+/// Every message the network manager receives will pass through the OnReceive function, including internal messages,
+/// Vision's messages and any user defined messages.
+class IVPacketListener
+{
+public:
+  /// \brief
+  ///   Destructor
+  virtual ~IVPacketListener() {}
+
+  /// \brief
+  ///   The packet listener's receive function.
+  ///
+  /// \param iID
+  ///   ID of the packet, see VPacketID_e.
+  ///
+  /// \param iTimeMS
+  ///   If the packet was timestamped, the local time will be saved in here.
+  ///
+  /// \param pDataBlock
+  ///   A pointer to the start of the packet's data.
+  ///
+  /// \param iDataLength
+  ///   The length of the packet's data.
+  ///
+  /// \param iSenderID
+  ///   The GUID of the sender.
+  ///
+  /// \return
+  ///   Returns whether the packet was processed by this function, processed messages will not be further handled by the network plugin.
+  VISION_APIFUNC virtual bool OnReceive(UBYTE iID, __int64 iTimeMS, const unsigned char *pDataBlock, int iDataLength, VSystemGUID iSenderID) = 0;
+};
+
+
+
+/// \brief
 ///   base class of the network manager
 class IVNetworkManager
 {
@@ -695,6 +783,89 @@ public:
   }
 
   /// \brief
+  ///   Attaches a custom packet listener to the packet receive loop. Must be implemented by any derived network manager.
+  ///
+  /// \param pListener
+  ///   Pointer to the custom packet listener, derived from IVPacketListener
+  ///
+  /// \sa IVPacketListener
+  VISION_APIFUNC virtual void SetPacketListener(IVPacketListener* pListener) = 0;
+
+  /// \brief
+  ///   Returns the currently attached custom packet listener. Must be implemented by any derived network manager.
+  VISION_APIFUNC virtual IVPacketListener* GetPacketListener() const = 0;
+
+  /// \brief
+  ///   Sends a message to pDest's MessageFunction on the system iReceiverUserID. 
+  ///
+  /// \param pDest
+  ///   Target entity to send the message to.
+  ///
+  /// \param iID
+  ///   Message ID, see also: include\Engine\VisApiDefs.hpp
+  ///
+  /// \param iParamA
+  ///   First parameter to VisBaseEntity_cl::MessageFunction
+  ///
+  /// \param iParamB
+  ///   Second parameter to VisBaseEntity_cl::MessageFunction
+  ///
+  /// \param iReceiverUserID
+  ///   Unique system identifier of the Receiver system. Set to 0 to broadcast to all connections.
+  ///
+  /// \param bSendLocal
+  ///   On true, send to the local copy of pDest. on false, sends the message over the network to iReceiverUserID.
+  ///
+  /// \param pSettings
+  ///   Pointer to the settings used to send the message.
+  VISION_APIFUNC virtual void SendMessage(VisTypedEngineObject_cl* pDest, int iID, INT_PTR iParamA = 0, INT_PTR iParamB = 0, VSystemGUID iReceiverUserID = 0, bool bSendLocal=false, VMessageSettings* pSettings = NULL) = 0;
+
+  /// \brief
+  ///   Sends a message to pDest's MessageFunction on the system iReceiverUserID. 
+  ///
+  /// \param pDest
+  ///   Target entity to send the message to.
+  ///
+  /// \param iDataBlockMessageID
+  ///   Message ID of the DataBlockMessage to differentiate different DataBlockMessages from each other
+  ///
+  /// \param pDataBlock
+  ///   Pointer to the start of the data block in memory
+  ///
+  /// \param iLength
+  ///   Length of pDataBlock
+  ///
+  /// \param iReceiverUserID
+  ///   Unique system identifier of the Receiver system. Set to 0 to broadcast to all connections.
+  ///
+  /// \param bSendLocal
+  ///   On true, send to the local copy of pDest. on false, sends the message over the network to iReceiverUserID.
+  ///
+  /// \param pSettings
+  ///   Pointer to the settings used to send the message.
+  VISION_APIFUNC virtual void SendDataBlockMessage(VisTypedEngineObject_cl* pDest, unsigned int iDataBlockMessageID, const void* pDataBlock, unsigned int iLength, VSystemGUID iReceiverUserID = 0, bool bSendLocal=false, VMessageSettings* pSettings = NULL) = 0;
+
+  /// \brief
+  ///   Sends a custom message to the system iReceiverUserID which can be read by a package listener derived from IVPacketListener.
+  ///
+  /// \param iUserMessageID
+  ///   Message ID of the custom message to differentiate different custom messages from each other.
+  ///   Must be greater or equal to VPackageID_FirstUserID defined in VPacketID_e.
+  ///
+  /// \param pDataBlock
+  ///   Pointer to the start of the data block in memory.
+  ///
+  /// \param iLength
+  ///   Length of pDataBlock.
+  ///
+  /// \param iReceiverUserID
+  ///   Unique system identifier of the Receiver system. Set to 0 to broadcast to all connections.
+  ///
+  /// \param pSettings
+  ///   Pointer to the settings used to send the message.
+  VISION_APIFUNC virtual void SendUserMessage(UBYTE iUserMessageID, const void* pDataBlock, unsigned int iLength, VSystemGUID iReceiverUserID = 0, VMessageSettings* pSettings = NULL) = 0;
+
+  /// \brief
   ///   Pure virtual function that must be implemented to create a new network component.
   ///
   /// This is a key function of this interface. Synchronized objects are provided with network components which are implementation specific.
@@ -702,6 +873,32 @@ public:
   /// \return
   ///   A new component instance
   VISION_APIFUNC virtual IVNetworkViewComponent* CreateNetworkViewComponent() = 0;
+
+  /// \brief
+  ///   Resolves a IVNetworkViewComponent by its unique NetworkID on this system.
+  ///
+  /// Each replica is uniquely identified in a network by its VSystemGUID. On each connected system the
+  /// local corresponding IVNetworkViewComponent can be resolved via this function.
+  ///
+  /// \param iNetworkID
+  ///   Unique identifier of a IVNetworkViewComponent in the network
+  ///
+  /// \return
+  ///   Pointer to the IVNetworkViewComponent corresponding to iNetworkID. Returns NULL if none is present.
+  VISION_APIFUNC virtual IVNetworkViewComponent* GetComponentByNetworkID (VSystemGUID iNetworkID) = 0;
+
+  /// \brief
+  ///   Resolves a VisTypedEngineObject_cl by the unique NetworkID of its attached IVNetworkViewComponent.
+  ///
+  /// Same as GetComponentByNetworkID, but returns the result of GetOwner on the component.
+  ///
+  /// \param iNetworkID
+  ///   Unique identifier of a IVNetworkViewComponent in the network
+  ///
+  /// \return
+  ///   Pointer to the owner of the IVNetworkViewComponent corresponding to iNetworkID. Returns NULL if none is present or if the component has no owner.
+  VISION_APIFUNC VisTypedEngineObject_cl* GetObjectByNetworkID (VSystemGUID iNetworkID);
+
 
   VISION_APIFUNC void TriggerCallback(IVisCallbackDataObject_cl &data, bool bSendLocal=true)
   {
@@ -718,6 +915,115 @@ public:
   /// \return
   ///   Reference to the global VNetworkViewContext instance.
   inline const VNetworkViewContext &GetContext() const {return m_context;} 
+
+  /// \brief
+  ///   Sets the type of the machine in the network.
+  ///
+  /// - VNT_None: default if no connection is present
+  /// - VNT_Server: this machine should act as a server. It will send replication data to its connected clients but will not accept any replication data
+  ///   send to it. The server is the only system in the network that can create replicas.
+  /// - VNT_Client: this machine will act as a client. It will receive replication data but cannot send any. Also the client cannot create any replicas.
+  /// - VNT_Peer: this machine will act as a peer in a p2p network. It can create replicas and will act as a server for these. For all replicas created by
+  ///   other peers in the network it will act like a client.
+  /// .
+  /// Notice that this value does not change any configurations in the connected network. It is merely used to decide which code path to take.
+  /// Also, changing the net type from client to server will not give a user any advantage, as the real server will reject replication data sent by this system.
+  /// This value is part of the network context and can be retrieved via IVNetworkManager::GetContext.
+  ///
+  /// \param eNetType
+  ///   The role this machine will play in the network.
+  ///
+  /// \sa IVNetworkManager::GetContext
+  VISION_APIFUNC virtual void SetNetType(VNetType_e eNetType)
+  {
+    VASSERT (eNetType >= VNT_None || eNetType <= VNT_Peer);
+    m_context.m_eNetType = eNetType;
+  }
+
+  /// \brief
+  ///   Returns the NetType of the system. Same as IVNetworkManager::GetContext().m_eNetType
+  inline VNetType_e GetNetType() const
+  {
+    return m_context.m_eNetType;
+  }
+
+  /// \brief
+  ///   Sets the unique VSystemGUID of the connected server.
+  ///
+  /// To skip going through the list of connected systems each time a packet to the server should be sent,
+  /// the unique VSystemGUID of the server is saved here and can be retrieved via GetServerID.
+  ///
+  /// \param iSystemID
+  ///   Unique identifier of the server system in the network connected to this machine
+  ///
+  /// \sa GetServerID
+  VISION_APIFUNC virtual void SetServerID(VSystemGUID iSystemID)
+  {
+    m_iServerID = iSystemID;
+  }
+
+  /// \brief
+  ///   Returns the unique VSystemGUID of the connected server.
+  ///
+  /// To skip going through the list of connected systems each time a packet to the server should be sent,
+  /// the unique VSystemGUID of the server is retrieved via this function and can be set by calling SetServerID.
+  ///
+  /// \return
+  ///   Unique identifier of the server system in the network connected to this machine
+  ///
+  /// \sa SetServerID
+  inline VSystemGUID GetServerID() const
+  {
+    return m_iServerID;
+  }
+
+  /// \brief
+  ///   Sets the time interval in milliseconds between updates to other connected systems.
+  ///
+  /// This value is part of the network context and can be retrieved via IVNetworkManager::GetContext.
+  ///
+  /// \param iUpdateIntervalMS
+  ///   Milliseconds between updates
+  ///
+  /// \sa IVNetworkManager::GetContext
+  VISION_APIFUNC virtual void SetUpdateIntervalMS (unsigned short iUpdateIntervalMS)
+  {
+    m_context.m_iUpdateIntervalMS = iUpdateIntervalMS;
+  }
+
+  /// \brief
+  ///   Sets the time delay in milliseconds that rendering on the client side lags behind the current server time.
+  ///
+  /// By adding a certain lag to the rendering, one can interpolate between the already received updates from the server.
+  /// If the delay is too small, there is not enough data present for the current frame and the current state on the client side has to be extrapolated.
+  /// This may lead to artifacts once the next update arrives. If the delay is too large, it will be noticeable by the user which leads to a
+  /// suboptimal experience. A good value is twice the update interval as this will allow continuous interpolation of the current state even if one packet
+  /// gets dropped.
+  /// This value is part of the network context and can be retrieved via IVNetworkManager::GetContext.
+  ///
+  /// \param iInterpolationDelayMS
+  ///   Rendering delay in milliseconds
+  ///
+  /// \sa IVNetworkManager::GetContext
+  VISION_APIFUNC virtual void SetInterpolationDelayMS (unsigned short iInterpolationDelayMS)
+  {
+    m_context.m_iInterpolationDelayMS = iInterpolationDelayMS;
+  }
+
+  /// \brief
+  ///   Sets how far the current state should be extrapolated, if no new data from the server arrives.
+  ///
+  /// This value is part of the network context and can be retrieved via IVNetworkManager::GetContext.
+  ///
+  /// \param iExtrapolationMS
+  ///   Extrapolation length in milliseconds
+  ///
+  /// \sa IVNetworkManager::GetContext
+  VISION_APIFUNC virtual void SetExtrapolationMS (unsigned short iExtrapolationMS)
+  {
+    m_context.m_iExtrapolationMS = iExtrapolationMS;
+  }
+
 
   /// \brief
   ///   Installs an optional synchronization group provider which allows for hooking into the process which attaches synchronization groups to single network instances
@@ -746,6 +1052,7 @@ protected:
   VCallbackSenderQueue m_CallbackQueue;
   VNetworkComponentCollection m_ComponentsWithTickFunction;
   IVSynchronizationGroupProvider *m_pCustomGroupProvider;
+  VSystemGUID m_iServerID; ///< Unique system ID of the server provided for convenience
 };
 
 
@@ -853,7 +1160,7 @@ public:
 #endif // VISAPINETWORKMANAGER_HPP_INCLUDED
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140624)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

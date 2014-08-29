@@ -26,10 +26,10 @@ namespace hkMemUtil
 	template <unsigned int ELEMENTALIGN>
 	HK_FORCE_INLINE void memCpy(void* dst, const void* src, int nbytes);
 
-	void HK_CALL memCpy(void* dst, const void* src, int nbytes);
-	void HK_CALL memCpyBackwards(void* dst, const void* src, int nbytes);
-	void HK_CALL memMove(void* dst, const void* src, int nbytes);
-	void HK_CALL memSet(void* dst, const int c, int n);
+	HK_EXPORT_COMMON void HK_CALL memCpy(void* dst, const void* src, int nbytes);
+	HK_EXPORT_COMMON void HK_CALL memCpyBackwards(void* dst, const void* src, int nbytes);
+	HK_EXPORT_COMMON void HK_CALL memMove(void* dst, const void* src, int nbytes);
+	HK_EXPORT_COMMON void HK_CALL memSet(void* dst, const int c, int n);
 }
 
 #include <Common/Base/Memory/Util/hkMemUtil.inl>
@@ -37,7 +37,7 @@ namespace hkMemUtil
 #endif // HKBASE_HKMEMUTIL_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

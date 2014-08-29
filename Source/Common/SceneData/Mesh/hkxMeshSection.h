@@ -9,19 +9,20 @@
 #define HKSCENEDATA_MESH_HKXMESHSECTION_HKCLASS_H
 
 /// hkxMeshSection meta information
-extern const class hkClass hkxMeshSectionClass;
+extern HK_EXPORT_COMMON const class hkClass hkxMeshSectionClass;
 
 #include <Common/SceneData/Mesh/hkxIndexBuffer.h>
 #include <Common/SceneData/Mesh/hkxVertexBuffer.h>
 #include <Common/SceneData/Mesh/hkxVertexAnimation.h>
 #include <Common/SceneData/Material/hkxMaterial.h>
+#include <Common/GeometryUtilities/Mesh/IndexedTransformSet/hkIndexedTransformSet.h>
 
 /// A serialization wrapper for the relationship between a Vertex buffer and a set
 /// of primitives.
-class hkxMeshSection : public hkReferencedObject
+class HK_EXPORT_COMMON hkxMeshSection : public hkReferencedObject
 {
 	//+vtable(true)
-	//+version(4)
+	//+version(5)
 	public:
 
 		HK_DECLARE_CLASS_ALLOCATOR( HK_MEMORY_CLASS_SCENE_DATA );
@@ -29,7 +30,16 @@ class hkxMeshSection : public hkReferencedObject
 	
 		hkxMeshSection() { }
 		hkxMeshSection(const hkxMeshSection& other);
-		hkxMeshSection(hkFinishLoadedObjectFlag f ) : hkReferencedObject(f), m_vertexBuffer(f), m_indexBuffers(f), m_material(f), m_userChannels(f), m_vertexAnimations(f), m_linearKeyFrameHints(f) { }
+		hkxMeshSection(hkFinishLoadedObjectFlag f )
+		:	hkReferencedObject(f)
+		,	m_vertexBuffer(f)
+		,	m_indexBuffers(f)
+		,	m_material(f)
+		,	m_userChannels(f)
+		,	m_vertexAnimations(f)
+		,	m_linearKeyFrameHints(f)
+		,	m_boneMatrixMap(f)
+		{}
 
 		//
 		// Members
@@ -56,6 +66,9 @@ class hkxMeshSection : public hkReferencedObject
 
 			/// The points in time that there were keyframes in seconds.
 		hkArray< float > m_linearKeyFrameHints;
+
+			/// Output mappings from computeLimitedBoneSection.
+		hkArray<hkMeshBoneIndexMapping> m_boneMatrixMap;
 		
 	public:
 
@@ -79,7 +92,7 @@ class hkxMeshSection : public hkReferencedObject
 #endif // HKSCENEDATA_MESH_HKXMESHSECTION_HKCLASS_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

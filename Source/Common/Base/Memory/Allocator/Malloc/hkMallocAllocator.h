@@ -12,11 +12,18 @@
 #include <Common/Base/Thread/CriticalSection/hkCriticalSection.h>
 
 	/// Simple manager which forwards all calls to malloc and free.
-class hkMallocAllocator : public hkMemoryAllocator
+class HK_EXPORT_COMMON hkMallocAllocator : public hkMemoryAllocator
 {
 	//+hk.MemoryTracker(ignore=True)
 	public:
-		hkMallocAllocator(int align=HK_REAL_ALIGNMENT) : m_align(align), m_currentUsed(0), m_peakUse(0)  { }
+		hkMallocAllocator(int align=HK_REAL_ALIGNMENT) :
+#if defined(HK_PLATFORM_PS4)
+			m_align((align < 32) ? 32 : align),
+#else
+			m_align(align),
+#endif
+			m_currentUsed(0), m_peakUse(0)
+		{}
 
 		virtual void* blockAlloc( int numBytes ) HK_OVERRIDE;
 		virtual void blockFree( void* p, int numBytes ) HK_OVERRIDE;
@@ -38,7 +45,7 @@ class hkMallocAllocator : public hkMemoryAllocator
 #endif // HK_MALLOC_ALLOCATOR_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

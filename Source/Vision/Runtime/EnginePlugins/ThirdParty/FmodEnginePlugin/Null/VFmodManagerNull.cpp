@@ -11,7 +11,7 @@
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Scripting/VScriptManager.hpp>
 #include <Vision/Runtime/EnginePlugins/ThirdParty/FmodEnginePlugin/VFmodManager.hpp>
 
-#include <Vision/Runtime/Base/System/Memory/VMemDbg.hpp>
+
 
 
 // static variables
@@ -29,21 +29,32 @@ extern "C" int luaopen_FireLight(lua_State *);
 // -------------------------------------------------------------------------- //
 // Constructor/ Destructor                                                 
 // -------------------------------------------------------------------------- //
-VFmodManager::VFmodManager() 
+VFmodManager::VFmodManager() :
+  m_pSoundResourceManager(NULL)
+  , m_pEventGroupManager(NULL)
+  , m_config()
+  , m_soundInstances()
+  , m_events()
+  , m_collisionMeshes()
+  , m_reverbs()
+  , m_pListenerObject(NULL)
+  , m_bOutputDevicePresent(true) //here we pretend that there is a device
+  , m_bAnyStopped(false)
+  , m_pEventSystem(NULL)
+  , m_pSystem(NULL)
+  , pMemoryPool(NULL)
+  , m_pMasterGroup(NULL)
+  , m_pMusicGroup(NULL)
+#if defined(_VISION_MOBILE)
+  , m_bMasterGroupPausedInForeground(false)
+  , m_bMusicGroupPausedInForeground(false)
+  , m_bMasterEventCategoryPausedInForeground(false)
+#endif
+  , m_vLastListenerPosition(0)
+  , m_bLastListenerPositionValid(false)
+  , m_iFrameOfLastUpdate(0)
+  , m_fTimeLeftOver(0.0f)
 {
-  m_bAnyStopped = false;
-  m_pListenerObject = NULL;
-
-  m_pSoundResourceManager = NULL;
-  m_pEventGroupManager = NULL;
-
-  m_pEventSystem = NULL;
-  m_pSystem = NULL;
-  pMemoryPool = NULL;
-  m_pMasterGroup = NULL;
-  m_pMusicGroup = NULL;
-
-  m_fTimeLeftOver = 0.0f;
 }
 
 VFmodManager::~VFmodManager()
@@ -87,7 +98,6 @@ void VFmodManager::OneTimeInit()
   Vision::Callbacks.OnUpdateSceneFinished += this;
  
   IVScriptManager::OnRegisterScriptFunctions += this;
-  IVScriptManager::OnScriptProxyCreation += this;
 
   // give the application a chance to modify the m_config
   VFmodConfigCallbackData config(&OnBeforeInitializeFmod, m_config);
@@ -110,7 +120,6 @@ void VFmodManager::OneTimeDeInit()
   Vision::Callbacks.OnUpdateSceneFinished -= this;
 
   IVScriptManager::OnRegisterScriptFunctions -= this;
-  IVScriptManager::OnScriptProxyCreation -= this;
 }
 
 bool VFmodManager::IsInitialized() const
@@ -123,6 +132,17 @@ void VFmodManager::InitFmodSystem()
   IVisCallbackDataObject_cl dataAfter(&OnAfterDeinitializeFmod);
   OnAfterDeinitializeFmod.TriggerCallbacks(&dataAfter);
 }
+
+bool VFmodManager::ResetDriver()
+{
+  return true;
+}
+
+VFmodManager::VFmodSoundInit_e VFmodManager::InitDevice()
+{
+  return VFMODSOUNDINIT_OK;
+}
+
 
 // -------------------------------------------------------------------------- //
 // Resources                                                
@@ -241,30 +261,6 @@ void VFmodManager::OnHandleCallback(IVisCallbackDataObject_cl *pData)
     return;
   }
 
-  if (pData->m_pSender==&IVScriptManager::OnScriptProxyCreation)
-  {
-    VScriptCreateStackProxyObject * pScriptData = (VScriptCreateStackProxyObject *)pData;
-
-    //process data only as far as not handled until now
-    if (!pScriptData->m_bProcessed)
-    {
-      int iRetParams = 0;
-      if (pScriptData->m_pInstance->IsOfType(V_RUNTIME_CLASS(VFmodSoundObject)))
-        iRetParams = LUA_CallStaticFunction(pScriptData->m_pLuaState,"FireLight","VFmodSoundObject","Cast","O>O",pScriptData->m_pInstance);
-      else if (pScriptData->m_pInstance->IsOfType(V_RUNTIME_CLASS(VFmodEvent)))
-        iRetParams = LUA_CallStaticFunction(pScriptData->m_pLuaState,"FireLight","VFmodEvent","Cast","O>O",pScriptData->m_pInstance);
-
-      if (iRetParams>0)
-      {
-        if(lua_isnil(pScriptData->m_pLuaState, -1))   
-          lua_pop(pScriptData->m_pLuaState, iRetParams);
-        else                                         
-          pScriptData->m_bProcessed = true;
-      }
-    }
-    return;
-  }
-
   if(pData->m_pSender==&IVScriptManager::OnRegisterScriptFunctions)
   {
     IVScriptManager* pSM = Vision::GetScriptManager();
@@ -337,6 +333,12 @@ bool VFmodManager::GetMemoryStats(int *pCurrentMemSize, int *pMaxMemSize, bool b
   return true;
 }
 
+void VFmodManager::SetListenerObject(VisObject3D_cl *pListener)
+{
+  m_pListenerObject = pListener;
+  m_bLastListenerPositionValid = false;
+}
+
 bool VFmodManager::SetAmbientReverbProperties(VFmodReverbProps &properties)
 {
   return true;
@@ -353,7 +355,7 @@ int VFmodManager::GetExistingSourceVoiceCount() const
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140625)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

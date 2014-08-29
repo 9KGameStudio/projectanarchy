@@ -26,14 +26,18 @@ namespace VisionManaged
 {
   EngineInstanceCustomVolumeObject::EngineInstanceCustomVolumeObject(Shape3D ^ownerShape)
   {
-    m_pOwnerShape = ownerShape;
     m_fHeight = 10.0f;
-    m_bCreationFinished = false;
-    m_bReverseWinding = false;
-    m_bValid = true;
+    m_pOwnerShape = ownerShape;
+    
     m_pCustomVolumeEntity = new VCustomVolumeObject();
     m_pCustomVolumeEntity->SetCreatedFromEditor();
     m_pCustomVolumeEntity->AddRef();
+    m_pspEditorStaticMesh = new VisStaticMeshPtr();
+
+    m_bHasCustomMesh = false;
+    m_bReverseWinding = false;
+    m_bValid = true;
+
     m_pspLightClippingVolumeDisplayMesh = new VCompiledTechniquePtr();
 
     if (!Vision::Shaders.LoadShaderLibrary("\\Shaders/LightClippingVolumes.ShaderLib", SHADERLIBFLAG_HIDDEN))
@@ -42,144 +46,132 @@ namespace VisionManaged
       return;
     }
 
-    VCompiledEffectPtr effect = Vision::Shaders.CreateEffect("LightClippingVolumesDisplayMesh", NULL);
-    if(effect)
-      *m_pspLightClippingVolumeDisplayMesh = effect->GetDefaultTechnique();
+    VCompiledEffectPtr spEffect = Vision::Shaders.CreateEffect("LightClippingVolumesDisplayMesh", NULL);
+    if (spEffect != NULL)
+      *m_pspLightClippingVolumeDisplayMesh = spEffect->GetDefaultTechnique();
   }
 
   void EngineInstanceCustomVolumeObject::DisposeObject()
   {
     V_SAFE_DISPOSEANDRELEASE(m_pCustomVolumeEntity);
+    V_SAFE_DELETE(m_pspEditorStaticMesh);
     V_SAFE_DELETE(m_pspLightClippingVolumeDisplayMesh);
   }
 
   void EngineInstanceCustomVolumeObject::OnRenderHook(ShapeBase ^owner, int iConstant)
   {
     VASSERT(m_pCustomVolumeEntity != NULL);
-    if(m_pCustomVolumeEntity->GetCustomStaticMesh())
+
+    // Display custom static meshes.
+    if (!m_bHasCustomMesh)
+      return;
+    
+    VisStaticMesh_cl* pStaticMesh = m_pCustomVolumeEntity->GetStaticMesh();
+
+    if (pStaticMesh != NULL)
     {
-      VisStaticMesh_cl* pStaticMesh = m_pCustomVolumeEntity->GetStaticMesh();
+      VisMeshBuffer_cl* pMeshBuffer = pStaticMesh->GetMeshBuffer();
+      VASSERT(pMeshBuffer != NULL);
+      if(pMeshBuffer->GetIndexCount() <= 0)
+        return;
 
-      if(pStaticMesh != NULL)
-      {
-        VisMeshBuffer_cl* pMeshBuffer = pStaticMesh->GetMeshBuffer();
-        VASSERT(pMeshBuffer != NULL);
-        if(pMeshBuffer->GetIndexCount() <= 0)
-          return;
+      Vision::RenderLoopHelper.BeginMeshRendering();
+      Vision::RenderLoopHelper.ResetMeshStreams();
+      Vision::RenderLoopHelper.AddMeshStreams(pMeshBuffer, (*m_pspLightClippingVolumeDisplayMesh)->GetShader(0)->GetStreamMask() | VERTEX_STREAM_INDEXBUFFER);
 
-        Vision::RenderLoopHelper.BeginMeshRendering();
-        Vision::RenderLoopHelper.ResetMeshStreams();
-        Vision::RenderLoopHelper.AddMeshStreams(pMeshBuffer, (*m_pspLightClippingVolumeDisplayMesh)->GetShader(0)->GetStreamMask() | VERTEX_STREAM_INDEXBUFFER);
+      hkvMat4 transform (hkvNoInitialization);
+      transform.setIdentity ();
+      transform.setRotationalPart(m_pCustomVolumeEntity->GetRotationMatrix());
+      transform.setTranslation(m_pCustomVolumeEntity->GetPosition());
+      transform.setScalingFactors( m_pCustomVolumeEntity->GetScale() );
 
-        hkvMat4 transform (hkvNoInitialization);
-        transform.setIdentity ();
-        transform.setRotationalPart(m_pCustomVolumeEntity->GetRotationMatrix());
-        transform.setTranslation(m_pCustomVolumeEntity->GetPosition());
-        transform.setScalingFactors( m_pCustomVolumeEntity->GetScale() );
+      Vision::RenderLoopHelper.SetMeshTransformationMatrix(transform);
 
-        Vision::RenderLoopHelper.SetMeshTransformationMatrix(transform);
-
-        Vision::RenderLoopHelper.RenderMeshes((*m_pspLightClippingVolumeDisplayMesh)->GetShader(0), pMeshBuffer->GetPrimitiveType(), 0, pMeshBuffer->GetIndexCount() / 3, pMeshBuffer->GetVertexCount());
-        Vision::RenderLoopHelper.EndMeshRendering();
-      }
+      Vision::RenderLoopHelper.RenderMeshes((*m_pspLightClippingVolumeDisplayMesh)->GetShader(0), pMeshBuffer->GetPrimitiveType(), 0, pMeshBuffer->GetIndexCount() / 3, pMeshBuffer->GetVertexCount());
+      Vision::RenderLoopHelper.EndMeshRendering();
     }
-  }
-
-  void EngineInstanceCustomVolumeObject::SetPosition(float x, float y, float z)
-  {
-    IEngineInstanceObject3D::SetPosition(x, y, z);
-
-    // inform owner object and its components, that position has changed
-    if (GetO3DPtr())
-      GetO3DPtr()->SendMsg(GetO3DPtr(), VIS_MSG_EDITOR_PROPERTYCHANGED, (INT_PTR) "Position", 0 );
-  }
-
-  void EngineInstanceCustomVolumeObject::SetOrientation(float yaw,float pitch,float roll)
-  {
-    IEngineInstanceObject3D::SetOrientation(yaw, pitch, roll);
-
-    // inform owner object and its components, that orientation has changed
-    if (GetO3DPtr())
-      GetO3DPtr()->SendMsg(GetO3DPtr(), VIS_MSG_EDITOR_PROPERTYCHANGED, (INT_PTR) "Orientation", 0 );
   }
 
   void EngineInstanceCustomVolumeObject::SetScaling(float x, float y, float z)
   {
-    if(m_pCustomVolumeEntity != NULL)
-      m_pCustomVolumeEntity->SetScale( hkvVec3(x, y, z) );
+    if (m_pCustomVolumeEntity == NULL)
+      return;
 
-    // inform owner object and its com ponents, that scaling has changed
+    m_pCustomVolumeEntity->SetScale(hkvVec3(x, y, z));
+
+    // inform owner object and its components, that scaling has changed
     if (GetO3DPtr())
-      GetO3DPtr()->SendMsg(GetO3DPtr(), VIS_MSG_EDITOR_PROPERTYCHANGED, (INT_PTR) "Scaling", 0 );
+      GetO3DPtr()->SendMsg(GetO3DPtr(), VIS_MSG_EDITOR_PROPERTYCHANGED, (INT_PTR) "Scaling", 0);
   }
 
   void EngineInstanceCustomVolumeObject::RenderShape(VisionViewBase ^view, ShapeRenderMode mode)
   {
-    if(!m_pCustomVolumeEntity->GetCustomStaticMesh())
+    // Render mesh that has been created within the editor.
+    if (m_bHasCustomMesh)
+      return;
+    
+    // Compute the offset vector
+    Vector3F topOffset;
     {
-      //Compute the offset vector
-      Vector3F topOffset;
-      {
-        hkvVec3 vOffset(0.f, 0.f, m_fHeight * m_pCustomVolumeEntity->GetScale().z);
+      hkvVec3 vOffset(0.f, 0.f, m_fHeight * m_pCustomVolumeEntity->GetScale().z);
 
-        Vector3F thisOrientation;
-        GetOrientation(thisOrientation);
-        hkvMat3 rot(hkvNoInitialization);
-        rot.setFromEulerAngles (thisOrientation.Z, thisOrientation.Y, thisOrientation.X);
+      Vector3F thisOrientation;
+      GetOrientation(thisOrientation);
+      hkvMat3 rot(hkvNoInitialization);
+      rot.setFromEulerAngles (thisOrientation.Z, thisOrientation.Y, thisOrientation.X);
 
-        vOffset = rot.transformDirection(vOffset);
+      vOffset = rot.transformDirection(vOffset);
 
-        topOffset.X = vOffset.x; topOffset.Y = vOffset.y; topOffset.Z = vOffset.z;
-      }
+      topOffset.X = vOffset.x; topOffset.Y = vOffset.y; topOffset.Z = vOffset.z;
+    }
 
-      //Draw all the vertices
-      VColorRef color;
-      if (m_bValid)
-        color.SetRGB(0, 200, 0);
-      else
-        color.SetRGB(255, 0, 0);
+    //Draw all the vertices
+    VColorRef color;
+    if (m_bValid)
+      color.SetRGB(0, 200, 0);
+    else
+      color.SetRGB(255, 0, 0);
 
-      ShapeCollection ^vertices = m_pOwnerShape->ChildCollection;
-      System::Collections::Generic::IEnumerator<ShapeBase^> ^it = vertices->GetEnumerator();
+    ShapeCollection ^vertices = m_pOwnerShape->ChildCollection;
+    System::Collections::Generic::IEnumerator<ShapeBase^> ^it = vertices->GetEnumerator();
 
-      it->MoveNext();
-      ShapeBase ^lastVertex = it->Current;
-      ShapeBase ^firstVertex = lastVertex;
-      for(; it->MoveNext();)
-      {
-        ShapeBase ^vertex = it->Current;
-        Vector3F from,to;
-        Vector3F fromTop,toTop;
-        lastVertex->_engineInstance->GetPosition(from);
-        vertex->_engineInstance->GetPosition(to);
-        fromTop = from + topOffset;
-        toTop = to + topOffset;
-        lastVertex = vertex;
+    it->MoveNext();
+    ShapeBase ^lastVertex = it->Current;
+    ShapeBase ^firstVertex = lastVertex;
+    for(; it->MoveNext();)
+    {
+      ShapeBase ^vertex = it->Current;
+      Vector3F from,to;
+      Vector3F fromTop,toTop;
+      lastVertex->_engineInstance->GetPosition(from);
+      vertex->_engineInstance->GetPosition(to);
+      fromTop = from + topOffset;
+      toTop = to + topOffset;
+      lastVertex = vertex;
 
-        Vision::Game.DrawSingleLine(from.X,from.Y,from.Z,to.X,to.Y,to.Z,color);
-        Vision::Game.DrawSingleLine(fromTop.X,fromTop.Y,fromTop.Z,toTop.X,toTop.Y,toTop.Z,color);
-        Vision::Game.DrawSingleLine(from.X,from.Y,from.Z,fromTop.X,fromTop.Y,fromTop.Z,color);
-      }
+      Vision::Game.DrawSingleLine(from.X,from.Y,from.Z,to.X,to.Y,to.Z,color);
+      Vision::Game.DrawSingleLine(fromTop.X,fromTop.Y,fromTop.Z,toTop.X,toTop.Y,toTop.Z,color);
+      Vision::Game.DrawSingleLine(from.X,from.Y,from.Z,fromTop.X,fromTop.Y,fromTop.Z,color);
+    }
 
-      if(lastVertex != firstVertex)
-      {
-        Vector3F from,to;
-        Vector3F fromTop,toTop;
-        lastVertex->_engineInstance->GetPosition(from);
-        firstVertex->_engineInstance->GetPosition(to);
-        fromTop = from + topOffset;
-        toTop = to + topOffset;
+    if(lastVertex != firstVertex)
+    {
+      Vector3F from,to;
+      Vector3F fromTop,toTop;
+      lastVertex->_engineInstance->GetPosition(from);
+      firstVertex->_engineInstance->GetPosition(to);
+      fromTop = from + topOffset;
+      toTop = to + topOffset;
 
-        Vision::Game.DrawSingleLine(from.X,from.Y,from.Z,to.X,to.Y,to.Z,color);
-        Vision::Game.DrawSingleLine(fromTop.X,fromTop.Y,fromTop.Z,toTop.X,toTop.Y,toTop.Z,color);
-        Vision::Game.DrawSingleLine(from.X,from.Y,from.Z,fromTop.X,fromTop.Y,fromTop.Z,color);
-      }
+      Vision::Game.DrawSingleLine(from.X,from.Y,from.Z,to.X,to.Y,to.Z,color);
+      Vision::Game.DrawSingleLine(fromTop.X,fromTop.Y,fromTop.Z,toTop.X,toTop.Y,toTop.Z,color);
+      Vision::Game.DrawSingleLine(from.X,from.Y,from.Z,fromTop.X,fromTop.Y,fromTop.Z,color);
     }
   }
 
   bool EngineInstanceCustomVolumeObject::GetLocalBoundingBox(BoundingBox ^%bbox)
   {
-    if(m_pCustomVolumeEntity->GetCustomStaticMesh())
+    if (m_bHasCustomMesh)
     {
       if(m_pCustomVolumeEntity->GetStaticMesh() == NULL)
         return false;
@@ -205,7 +197,7 @@ namespace VisionManaged
 
       ShapeBase ^vertex = it->Current;
 
-      Vector3F vertexPos = ((EngineInstanceCustomVolumeVertex^)vertex->_engineInstance)->localPosition;
+      Vector3F vertexPos = ((Shape3D^)vertex)->LocalSpacePosition;
       bbox->vMin = vertexPos;
       bbox->vMax = vertexPos;
       bbox->AddPoint(vertexPos+topOffset);
@@ -213,7 +205,7 @@ namespace VisionManaged
       for(; it->MoveNext();)
       {
         vertex = it->Current;
-        vertexPos = ((EngineInstanceCustomVolumeVertex^)vertex->_engineInstance)->localPosition;
+        vertexPos = ((Shape3D^)vertex)->LocalSpacePosition;
         bbox->AddPoint(vertexPos);
         bbox->AddPoint(vertexPos+topOffset);
       }
@@ -233,7 +225,7 @@ namespace VisionManaged
   void EngineInstanceCustomVolumeObject::TraceShape(Shape3D ^ownerShape, Vector3F rayStart,Vector3F rayEnd, ShapeTraceResult ^%result)
   {
     bool hit = false;
-    if(! m_pCustomVolumeEntity->GetCustomStaticMesh())
+    if (!m_bHasCustomMesh)
     {
       ShapeCollection ^vertices = m_pOwnerShape->ChildCollection;
       System::Collections::Generic::IEnumerator<ShapeBase^> ^it = vertices->GetEnumerator();
@@ -291,42 +283,54 @@ namespace VisionManaged
   {
     IEngineInstanceObject3D::OnBeforeExport(info);
 
-    if( !m_pCustomVolumeEntity->GetCustomStaticMesh() )
+    if (*m_pspEditorStaticMesh == NULL)
+      return;
+
+    String^ path = System::IO::Path::GetDirectoryName(info->AbsoluteFilename);
+    path += String::Format("\\CustomVolumes\\Volume_{0:x8}_{1:x8}.vmesh", m_pOwnerShape->ParentLayer->LayerID, m_pOwnerShape->LocalID);
+    VString destPath;
+    ConversionUtils::StringToVString(path, destPath);
+
+    bool alreadyExists = false;
+    if(System::IO::File::Exists(path))
     {
-      //String^ path = info->AbsoluteExportDataFolder;
-      String^ path = System::IO::Path::GetDirectoryName(info->AbsoluteFilename);
-      path += String::Format("\\Volume_{0:x8}_{1:x8}.vmesh", m_pOwnerShape->ParentLayer->LayerID, m_pOwnerShape->LocalID);
-      VString destPath;
-      ConversionUtils::StringToVString(path,destPath);
-
-      bool alreadyExists = false;
-      if(System::IO::File::Exists(path))
-      {
-        ManagedBase::RCS::GetProvider()->EditFile(path);
-        alreadyExists = true;
-      }
-
-      // Do we have anything to export?
-      ShapeCollection ^childVertices = m_pOwnerShape->ChildCollection;
-      if (childVertices->Count != 0)
-      {
-        EarClippingToVMeshFile earClipping(destPath);
-        RunEarClipping(earClipping);
-
-        /// Set the relative path to the static mesh
-        char relativePath[FS_MAX_PATH];
-        VString projectPath;
-        ConversionUtils::StringToVString( EditorManager::Project->ProjectDir, projectPath );
-        VPathHelper::MakePathRelative(relativePath,projectPath,destPath);
-        m_pCustomVolumeEntity->SetStaticMeshPath(relativePath);
-
-        // Set filename
-        m_pCustomVolumeEntity->GetStaticMesh()->SetFilename(relativePath);
-
-        if(!alreadyExists)
-          ManagedBase::RCS::GetProvider()->AddFile(path, true /* Binary file */);
-      } 
+      ManagedBase::RCS::GetProvider()->EditFile(path);
+      alreadyExists = true;
     }
+
+    // Do we have anything to export?
+    ShapeCollection ^childVertices = m_pOwnerShape->ChildCollection;
+    if (childVertices->Count != 0)
+    {
+      EarClippingToVMeshFile earClipping(destPath);
+      RunEarClipping(earClipping);
+
+      /// Set the relative path to the static mesh
+      char relativePath[FS_MAX_PATH];
+      VString projectPath;
+      ConversionUtils::StringToVString(EditorManager::Project->ProjectDir, projectPath );
+      VPathHelper::MakePathRelative(relativePath, projectPath, destPath);
+
+      // Reload the mesh so that data like the file time stamp gets updated.
+      VisStaticMesh_cl* pNewStaticMesh = static_cast<VisStaticMesh_cl*>(
+        VisStaticMesh_cl::GetResourceManager().FindMeshFile(relativePath, VMESH_STATICMESH));
+      if (pNewStaticMesh != NULL)
+      {
+        pNewStaticMesh->EnsureUnloaded();
+        pNewStaticMesh->EnsureLoaded();
+      }
+      else
+      {
+        pNewStaticMesh = VisStaticMesh_cl::GetResourceManager().LoadStaticMeshFile(relativePath);
+      }
+      m_pCustomVolumeEntity->SetStaticMesh(pNewStaticMesh);
+
+      if (GetO3DPtr())
+        GetO3DPtr()->SendMsg(GetO3DPtr(), VIS_MSG_EDITOR_PROPERTYCHANGED, (INT_PTR) "VolumeGeometry", 0);
+
+      if(!alreadyExists)
+        ManagedBase::RCS::GetProvider()->AddFile(path, true /* Binary file */);
+    } 
   }
 
   bool EngineInstanceCustomVolumeObject::OnExport(SceneExportInfo ^info) 
@@ -403,7 +407,7 @@ namespace VisionManaged
     it = childVertices->GetEnumerator();
     for(; it->MoveNext();)
     {
-      Vector3F pos = ((EngineInstanceCustomVolumeVertex^)it->Current->_engineInstance)->localPosition;
+      Vector3F pos = ((Shape3D^)it->Current)->LocalSpacePosition;
       tmp[iNumVertices] = hkvVec3(pos.X,pos.Y,pos.Z);
       iNumVertices++;
     }
@@ -607,27 +611,31 @@ namespace VisionManaged
 
   void EngineInstanceCustomVolumeObject::OnCreationFinished()
   {
-    m_pCustomVolumeEntity->Init();
-    if(!m_pCustomVolumeEntity->GetCustomStaticMesh())
+    if (!m_bHasCustomMesh)
      InitStaticMesh();
   }
 
   void EngineInstanceCustomVolumeObject::InitStaticMesh()
   {
-    VisStaticMesh_cl* pStaticMesh = m_pCustomVolumeEntity->GetStaticMesh();
-    VASSERT(pStaticMesh != NULL);
+    VisStaticMeshPtr& spEditorStaticMesh = *m_pspEditorStaticMesh;
 
-    pStaticMesh->EnsureMeshCreated();
-    pStaticMesh->AllocateSubmeshes(1);
-    pStaticMesh->AllocateSurfaces(1);
+    spEditorStaticMesh = new VisStaticMesh_cl();
+    VASSERT(spEditorStaticMesh != NULL);
+
+    spEditorStaticMesh->SetSupportMaterialEditing(false);
+    spEditorStaticMesh->SetResourceFlag(VRESOURCEFLAG_AUTODELETE);
+
+    spEditorStaticMesh->EnsureMeshCreated();
+    spEditorStaticMesh->AllocateSubmeshes(1);
+    spEditorStaticMesh->AllocateSurfaces(1);
 
     {
-      VisStaticSubmesh_cl& submesh = *pStaticMesh->GetSubmesh(0);
-      VisSurface_cl& surface = *pStaticMesh->GetSurface(0);
+      VisStaticSubmesh_cl& submesh = *spEditorStaticMesh->GetSubmesh(0);
+      VisSurface_cl& surface = *spEditorStaticMesh->GetSurface(0);
 
       surface.m_spDiffuseTexture = Vision::TextureManager.GetPlainWhiteTexture();
       surface.SetTransparencyType(VIS_TRANSP_NONE);
-      surface.SetAmbientColor(VColorRef(255,255,255));
+      surface.SetAmbientColor(VColorRef(255, 255, 255));
       //surface.SetDoubleSided(true);
       surface.SetLightingMode(VIS_LIGHTING_FULLBRIGHT);
       surface.SetShaderMode(VisSurface_cl::VSM_Auto);
@@ -635,10 +643,9 @@ namespace VisionManaged
       submesh.SetSurface(&surface,0);
     }
 
-    m_bCreationFinished = true;
     UpdateStaticMesh(VUpdateType_e::VUT_UPDATE_RETRIANGULATE);
-    pStaticMesh->RemoveResourceFlag(VRESOURCEFLAG_ALLOWUNLOAD); // the mesh is generated in code and should not be reloaded from disk
-    pStaticMesh->FlagAsLoaded();
+    spEditorStaticMesh->RemoveResourceFlag(VRESOURCEFLAG_ALLOWUNLOAD); // the mesh is generated in code and should not be reloaded from disk
+    spEditorStaticMesh->FlagAsLoaded();
   }
 
   String^ EngineInstanceCustomVolumeObject::CheckIsStaticMeshValid()
@@ -663,22 +670,25 @@ namespace VisionManaged
 
   void EngineInstanceCustomVolumeObject::UpdateStaticMesh(VUpdateType_e updateType)
   {
-    VisStaticMesh_cl* pStaticMesh = m_pCustomVolumeEntity->GetStaticMesh();
+
     // Only update the static mesh if the custom volume has been completely created, and if
     // there is no custom static mesh set. The latter is important, otherwise we'd overwrite
     // the custom mesh with the mesh generated from our vertices.
-    if(!m_bCreationFinished || pStaticMesh == NULL || m_pCustomVolumeEntity->GetCustomStaticMesh())
+    if (*m_pspEditorStaticMesh == NULL)
       return;
+
+    VASSERT(!m_bHasCustomMesh);
+    VisStaticMeshPtr& spEditorStaticMesh = *m_pspEditorStaticMesh;
 
     switch(updateType)
     {
-    case VUpdateType_e::VUT_UPDATE_POSITION:
+    case VUpdateType_e::VUT_UPDATE_LOCAL_VERTEX_POSITIONS:
       {
-        if(pStaticMesh && m_pOwnerShape)
+        if (m_pOwnerShape != nullptr)
         {
           ShapeCollection ^childVertices = m_pOwnerShape->ChildCollection;
           int iStart,iNumVertices;
-          pStaticMesh->GetSubmesh(0)->GetRenderVertexRange(iStart, iNumVertices);
+          spEditorStaticMesh->GetSubmesh(0)->GetRenderVertexRange(iStart, iNumVertices);
 
           if(iNumVertices == 0) //nothing to update
             return;
@@ -686,10 +696,10 @@ namespace VisionManaged
           if(childVertices->Count * 2 != iNumVertices)
           {
             UpdateStaticMesh(VUpdateType_e::VUT_UPDATE_RETRIANGULATE);
-            break;
+            return;
           }
 
-          VisMeshBuffer_cl* pMeshBuffer = pStaticMesh->GetMeshBuffer();
+          VisMeshBuffer_cl* pMeshBuffer = spEditorStaticMesh->GetMeshBuffer();
           VASSERT(pMeshBuffer != NULL);
 
           hkvVec3 *posData = (hkvVec3*)pMeshBuffer->LockVertices(VIS_LOCKFLAG_DISCARDABLE);
@@ -701,7 +711,7 @@ namespace VisionManaged
           {
             for(int i = iHalfNumVerts-1; it->MoveNext(); i--)
             {
-              Vector3F pos = ((EngineInstanceCustomVolumeVertex^)it->Current->_engineInstance)->localPosition;
+              Vector3F pos = ((Shape3D^)it->Current)->LocalSpacePosition;
               posData[i] = hkvVec3(pos.X, pos.Y, pos.Z);
               posData[i+iHalfNumVerts] = hkvVec3(pos.X, pos.Y, pos.Z + m_fHeight);
             }
@@ -710,7 +720,7 @@ namespace VisionManaged
           {
             for(int i = 0; it->MoveNext(); i++)
             {
-              Vector3F pos = ((EngineInstanceCustomVolumeVertex^)it->Current->_engineInstance)->localPosition;
+              Vector3F pos = ((Shape3D^)it->Current)->LocalSpacePosition;
               posData[i] = hkvVec3(pos.X, pos.Y, pos.Z);
               posData[i+iHalfNumVerts] = hkvVec3(pos.X, pos.Y, pos.Z + m_fHeight);
             }
@@ -721,19 +731,28 @@ namespace VisionManaged
         }
       }
       break;
+
     case VUpdateType_e::VUT_UPDATE_RETRIANGULATE:
       {
-        EarClippingToStaticMesh earClipping(*pStaticMesh);
+        EarClippingToStaticMesh earClipping(*spEditorStaticMesh);
         RunEarClipping(earClipping);
       }
       break;
-      default:
-        VASSERT_MSG(false,"missing implementation");
+
+    default:
+      VASSERT_MSG(false,"missing implementation");
     }
 
     // Clear trace and collision mesh to force their regeneration
-    pStaticMesh->SetTraceMesh(NULL);
-    pStaticMesh->SetCollisionMesh(NULL);
+    spEditorStaticMesh->SetTraceMesh(NULL);
+    spEditorStaticMesh->SetCollisionMesh(NULL);
+
+    if (m_pCustomVolumeEntity->GetStaticMesh() != spEditorStaticMesh)
+    {
+      // Set back the mesh to our mesh that is created within the editor.
+      // The mesh might have gotten overridden in the export process.
+      m_pCustomVolumeEntity->SetStaticMesh(spEditorStaticMesh);
+    }
 
     // inform owner object and its components, that volume geometry has changed
     if (GetO3DPtr())
@@ -742,40 +761,54 @@ namespace VisionManaged
 
   void EngineInstanceCustomVolumeObject::SetCustomStaticMesh(bool bValue)
   {
-    m_pCustomVolumeEntity->SetCustomStaticMesh(bValue);
+    if (m_bHasCustomMesh == bValue)
+      return;
+    m_bHasCustomMesh = bValue;
 
-    //Check if a new empty static mesh was created and if we need to triangulate
-    if(!bValue && m_pCustomVolumeEntity->GetStaticMesh() && m_pCustomVolumeEntity->GetStaticMesh()->GetSubmeshCount() == 0)
+    if (bValue)
+    {
+      m_pCustomVolumeEntity->SetStaticMesh(NULL);
+      *m_pspEditorStaticMesh = NULL;
+    }
+    // Check if a new empty static mesh was created and if we need to triangulate.
+    else if (*m_pspEditorStaticMesh == NULL)
     {
       InitStaticMesh();
     }
 
-    // inform owner object and its components, that using custom static mesh state has changed
+    // Inform owner object and its components, that using custom static mesh state has changed.
     if (GetO3DPtr())
       GetO3DPtr()->SendMsg(GetO3DPtr(), VIS_MSG_EDITOR_PROPERTYCHANGED, (INT_PTR) "CustomStaticMesh", 0 );
   }
 
   void EngineInstanceCustomVolumeObject::SetStaticMeshPath(String^ path)
   {
+    if (!m_bHasCustomMesh)
+      return;
+
     VString temp;
-    ConversionUtils::StringToVString(path,temp);
+    ConversionUtils::StringToVString(path, temp);
     m_pCustomVolumeEntity->SetStaticMeshPath(temp);
 
     // inform owner object and its components, that static mesh path has changed
     if (GetO3DPtr())
-      GetO3DPtr()->SendMsg(GetO3DPtr(), VIS_MSG_EDITOR_PROPERTYCHANGED, (INT_PTR) "StaticMeshPath", 0 );
+      GetO3DPtr()->SendMsg(GetO3DPtr(), VIS_MSG_EDITOR_PROPERTYCHANGED, (INT_PTR) "StaticMeshPath", 0);
   }
 
   //////////////////////////////////////
   // Vertex
   //////////////////////////////////////
 
-  EngineInstanceCustomVolumeVertex::EngineInstanceCustomVolumeVertex(Shape3D ^owner)
+  EngineInstanceCustomVolumeVertex::EngineInstanceCustomVolumeVertex(Shape3D ^owner, Shape3D ^shape)
   {
-    m_pIcon = Vision::TextureManager.Load2DTexture("textures\\pin_green32.dds",VTM_FLAG_DEFAULT_NON_MIPMAPPED);
+    m_pIcon = Vision::TextureManager.Load2DTexture("textures\\pin_green32.dds", VTM_FLAG_DEFAULT_NON_MIPMAPPED);
     if(m_pIcon != NULL)
      m_pIcon->AddRef();
+
     m_pOwner = owner;
+    m_pShape = shape;
+
+    m_previousLocalPosition = m_pShape->LocalSpacePosition;
   }
 
   void EngineInstanceCustomVolumeVertex::DisposeObject()
@@ -825,33 +858,20 @@ namespace VisionManaged
 
   bool EngineInstanceCustomVolumeVertex::GetPosition(Vector3F %enginePosition)
   {
-    hkvMat3 rot(hkvNoInitialization);
-    rot.setFromEulerAngles (m_pOwner->Orientation.Z, m_pOwner->Orientation.Y, m_pOwner->Orientation.X);
-    hkvMat4 transform (hkvNoInitialization);
-    transform.setIdentity ();
-    transform.setRotationalPart(rot);
-    transform.setTranslation(hkvVec3(m_pOwner->Position.X, m_pOwner->Position.Y, m_pOwner->Position.Z));
-    transform.setScalingFactors(hkvVec3(m_pOwner->ScaleX,m_pOwner->ScaleY,m_pOwner->ScaleZ));
-    hkvVec3 pos = transform.transformPosition(hkvVec3(localPosition.X,localPosition.Y,localPosition.Z));
-    enginePosition.X = pos.x; enginePosition.Y = pos.y; enginePosition.Z = pos.z;
+    enginePosition = m_pShape->Position;
     return true;
   }
 
   void EngineInstanceCustomVolumeVertex::SetPosition(float x, float y, float z)
   {
-    hkvMat3 rot(hkvNoInitialization);
-    rot.setFromEulerAngles (m_pOwner->Orientation.Z, m_pOwner->Orientation.Y, m_pOwner->Orientation.X);
+    // Make sure to only update the mesh if the local vertex position changes.
+    if (m_previousLocalPosition == m_pShape->LocalSpacePosition)
+      return;
 
-    hkvMat4 transform (hkvNoInitialization);
-    transform.setIdentity ();
-    transform.setRotationalPart(rot);
-    transform.setTranslation(hkvVec3(m_pOwner->Position.X, m_pOwner->Position.Y, m_pOwner->Position.Z));
-    transform.setScalingFactors(hkvVec3(m_pOwner->ScaleX,m_pOwner->ScaleY,m_pOwner->ScaleZ));
-    transform.invert();
-    hkvVec3 pos = transform.transformPosition(hkvVec3(x,y,z));
-    localPosition.X = pos.x; localPosition.Y = pos.y; localPosition.Z = pos.z;
-    if(m_pOwner->_engineInstance != nullptr)
-      ((EngineInstanceCustomVolumeObject^)m_pOwner->_engineInstance)->UpdateStaticMesh(EngineInstanceCustomVolumeObject::VUpdateType_e::VUT_UPDATE_RETRIANGULATE);
+    m_previousLocalPosition = m_pShape->LocalSpacePosition;
+
+    if (m_pOwner->_engineInstance != nullptr)
+      ((EngineInstanceCustomVolumeObject^)m_pOwner->_engineInstance)->UpdateStaticMesh(EngineInstanceCustomVolumeObject::VUpdateType_e::VUT_UPDATE_LOCAL_VERTEX_POSITIONS);
   }
 
   bool EngineInstanceCustomVolumeVertex::GetOrientation(Vector3F %engineOrientation)
@@ -910,6 +930,11 @@ namespace VisionManaged
     VGBackend backend;
     VGProcessor_VisionExporter exportProcessor;
     IVFileOutStream* pOutStream = VFileAccessManager::GetInstance()->Create(m_sFilename);
+    if (pOutStream==NULL)
+    {
+      hkvLog::Warning("failed to save custom clipping volume mesh to file '%s'. Write protection?", m_sFilename);
+      return;
+    }
     exportProcessor.SetOutStream(pOutStream);
     backend.AddProcessor(&exportProcessor);
     backend.RunProcessors(m_scene);
@@ -993,7 +1018,7 @@ namespace VisionManaged
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

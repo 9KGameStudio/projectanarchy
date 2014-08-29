@@ -29,7 +29,7 @@
 #undef HAVOK_PHYSICS_2012_KEYCODE
 #undef HK_FEATURE_PRODUCT_PHYSICS_2012
 #undef HAVOK_SIMULATION_KEYCODE
-#undef HK_FEATURE_PRODUCT_MILSIM
+#undef HK_FEATURE_PRODUCT_SIMULATION
 #undef HAVOK_PHYSICS_KEYCODE
 #undef HK_FEATURE_PRODUCT_PHYSICS
 #undef HAVOK_DESTRUCTION_KEYCODE
@@ -47,7 +47,7 @@
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

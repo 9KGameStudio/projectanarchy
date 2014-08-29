@@ -37,11 +37,14 @@ class hkBlockStream: public hkBlockStreamBase::Stream
 		/// Constructor. You need to manually call initBlockStream() before you can use this class.
 		HK_FORCE_INLINE hkBlockStream();
 
+		/// Copy constructor.
+		HK_FORCE_INLINE hkBlockStream( const hkBlockStream& other );
+
 		/// Destructor.
 		HK_FORCE_INLINE ~hkBlockStream();
 
 		/// Append block stream to this stream and delete inStream.
-		void clearAndSteal( Allocator* tlAllocator, hkBlockStream<T>* inStream );
+		void inline clearAndSteal( Allocator* tlAllocator, hkBlockStream<T>* inStream );
 
 #endif // !HK_PLATFORM_SPU
 
@@ -68,34 +71,36 @@ class hkBlockStream: public hkBlockStreamBase::Stream
 				/// Write \a data to a stream if \a data has getSizeInBytes() implemented and its size is NOT a
 				/// multiple of 16.
 				HK_FORCE_INLINE T*	write( const T* HK_RESTRICT data );
-			
+
 				/// Advance by \a currentNumBytes in the stream and return a pointer to storage space where
 				/// \a reservedNumBytes can be written to.
-				HK_FORCE_INLINE	T* advanceAndReserveNext( int currentNumBytes, int reservedNumBytes );
+				HK_FORCE_INLINE T* advanceAndReserveNext( int currentNumBytes, int reservedNumBytes );
 
 				/// Reserve \a numBytes in the stream. Returns a pointer where data can be written to.
 				/// This method does not advance the stream automatically, you have to call advance() manually
 				/// afterwards.
-
 				/// Reserve in the stream a number of bytes equal to the sizeof of the function's template parameter. 
 				/// Returns a pointer where data can be written to.
 				/// This method does not advance the stream automatically, you have to call advance() manually
 				/// afterwards.
 				template<typename T2>
-				HK_FORCE_INLINE	T2* reserve();
+				HK_FORCE_INLINE T2* reserve();
 
 				/// Reserve numBytes in the stream. Returns a pointer where data can be written to.
 				/// This method does not advance the stream automatically, you have to call advance() manually
 				/// afterwards.
 				template<typename T2>
-				HK_FORCE_INLINE	T2* reserve( int numBytes );
-			
-				HK_FORCE_INLINE	T* reserve( int numBytes );
+				HK_FORCE_INLINE T2* reserve( int numBytes );
+
+				HK_FORCE_INLINE T* reserve( int numBytes );
+
+				/// Returns the number of bytes left in the current block
+				HK_FORCE_INLINE int getBlockBytesLeft() const;
 
 				/// Returns true if the writer is attached to a stream.
 				HK_FORCE_INLINE bool isValid();
 		};
-		
+
 		/// Reads from a stream.
 		class Reader: public hkBlockStreamBase::Reader
 		{
@@ -106,42 +111,46 @@ class hkBlockStream: public hkBlockStreamBase::Stream
 				HK_FORCE_INLINE const T2* advanceAndAccessNext( int thisElemSize );
 
 				/// Advance and access the next element, assumes the current entry is valid
-				HK_FORCE_INLINE	const T* advanceAndAccessNext( int thisElemSize );
+				HK_FORCE_INLINE const T* advanceAndAccessNext( int thisElemSize );
 
 				/// Advance and access the next element if data has getSizeInBytes() implemented
 				HK_FORCE_INLINE const T* advanceAndAccessNext( const T* HK_RESTRICT data );
 
 				/// Advance and access the next element, assumes the current entry is valid
 				template <typename T2>
-				HK_FORCE_INLINE	const T2* advanceAndAccessNext();
+				HK_FORCE_INLINE const T2* advanceAndAccessNext();
 
 				/// Access the current element;
 				template <typename T2>
-				HK_FORCE_INLINE	const T2* access();
+				HK_FORCE_INLINE const T2* access();
 
 				/// Access the current element;
-				HK_FORCE_INLINE	const T* access();
+				HK_FORCE_INLINE const T* access();
 		};
 
 		/// A reader which allows you to modify the data while reading
 		class Modifier: public hkBlockStreamBase::Modifier
 		{
 			public:
-				template <typename T2>
-				HK_FORCE_INLINE	T2* advanceAndAccessNext( int thisElemSize );
-
-				HK_FORCE_INLINE	T* advanceAndAccessNext( int thisElemSize );
 
 				template <typename T2>
-				HK_FORCE_INLINE	T2* access();
+				HK_FORCE_INLINE T2* advanceAndAccessNext( int thisElemSize );
 
-				HK_FORCE_INLINE	T* access();
+				template <typename T2>
+				HK_FORCE_INLINE T2* batchAdvanceAndAccessNext( unsigned int count, int thisElemSize );
+
+				HK_FORCE_INLINE T* advanceAndAccessNext( int thisElemSize );
+
+				template <typename T2>
+				HK_FORCE_INLINE T2* access();
+
+				HK_FORCE_INLINE T* access();
 		};
 
 		/// A reader, which frees the memory once it is fully read.
 		/// You can run different Consumers using different ranges of the same block stream,
-		/// even in multitple threads.
-		/// Be default the block stream becomes useless as soon as one consumer worked on it.
+		/// even in multiple threads.
+		/// By default the block stream becomes useless as soon as one consumer worked on it.
 		/// If you want to continue to use the block stream you have to:
 		///    - finalize with a call to hkBlockStream::fixupConsumedBlocks(). This will free completely unused blocks
 		class Consumer: public hkBlockStreamBase::Consumer
@@ -155,10 +164,10 @@ class hkBlockStream: public hkBlockStreamBase::Stream
 				HK_FORCE_INLINE void setToRange( Allocator* allocator, hkBlockStream<T>* stream, hkBlockStream<T>* streamPpu, const hkBlockStreamBase::Range* range );
 
 				/// Get the current element.
-				HK_FORCE_INLINE	const T* access();
+				HK_FORCE_INLINE const T* access();
 
 				/// advance and access the next element, assumes the current entry is valid
-				HK_FORCE_INLINE	const T* consumeAndAccessNext( int thisElemSize );
+				HK_FORCE_INLINE const T* consumeAndAccessNext( int thisElemSize );
 
 				/// Read from a stream if data has getSizeInBytes() implemented
 				HK_FORCE_INLINE const T* consumeAndAccessNext( const T* HK_RESTRICT data );
@@ -166,10 +175,11 @@ class hkBlockStream: public hkBlockStreamBase::Stream
 };
 
 #include <Common/Base/Container/BlockStream/hkBlockStream.inl>
-#endif
+
+#endif	// HK_BLOCKSTREAM_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

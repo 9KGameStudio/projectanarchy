@@ -15,24 +15,25 @@ VColorRef VAppMenuColors::m_colors[] =
   VColorRef( 32,  32,  32, 255), // COLOR_LIST_CONTROL_BG
   VColorRef( 52,  52,  52, 255), // COLOR_LIST_ITEM_BG
   VColorRef( 42,  42,  42, 255), // COLOR_LIST_GROUP_BG
+  VColorRef(100, 100, 100, 255), // COLOR_LIST_ITEM_TEXT_DISABLED
   VColorRef(200, 200, 200, 255), // COLOR_LIST_ITEM_TEXT_NORMAL
   VColorRef(255, 255, 255, 255), // COLOR_LIST_ITEM_TEXT_OVER
   VColorRef(253, 178,   0, 255)  // COLOR_LIST_ITEM_TEXT_SELECTED
 };
 
+void VAppMenuColors::SetColor(VDialogColors item, const VColorRef& color)
+{ 
+  VASSERT(item < COLOR_COUNT); 
+  m_colors[item] = color; 
+}
+
+const VColorRef& VAppMenuColors::GetColor(VDialogColors item) 
+{ 
+  VASSERT(item < COLOR_COUNT); 
+  return m_colors[item]; 
+}
+
 //////////////////////////////////////////////////////////////////////////
-
-int VAppMenuContext::ShowDialogModal(VDialog *pParent, const char *szDialogResource, const hkvVec2 &vPos, IVisApp_cl *pRunApp)
-{
-  VASSERT_ALWAYS_MSG(false, "Not supported! Use ShowDialog(...) and pDialog->SetDialogFlags(DIALOGFLAGS_MODAL).");
-  return 0;
-}
-
-int VAppMenuContext::ShowDialogModal(VDialog *pDialog, IVisApp_cl *pRunApp)
-{
-  VASSERT_ALWAYS_MSG(false, "Not supported! Use ShowDialog(...) and pDialog->SetDialogFlags(DIALOGFLAGS_MODAL).");
-  return 0;
-}
 
 VDialog* VAppMenuContext::ShowDialog(const char *szDialogResource)
 {
@@ -140,6 +141,7 @@ VStyledButton::VStyledButton(const char* szText, bool bUseGradient, VisFontPtr s
 {
   SetText(szText);
   m_TextCfg.SetFont(spFont);
+  m_TextCfg.m_States[VWindowBase::DISABLED].SetColor(VAppMenuColors::GetColor(VAppMenuColors::COLOR_LIST_ITEM_TEXT_DISABLED));
   m_TextCfg.m_States[VWindowBase::NORMAL].SetColor(VAppMenuColors::GetColor(VAppMenuColors::COLOR_LIST_ITEM_TEXT_NORMAL));
   m_TextCfg.m_States[VWindowBase::MOUSEOVER].SetColor(VAppMenuColors::GetColor(VAppMenuColors::COLOR_LIST_ITEM_TEXT_OVER));
   m_TextCfg.m_States[VWindowBase::SELECTED].SetColor(VAppMenuColors::GetColor(VAppMenuColors::COLOR_LIST_ITEM_TEXT_SELECTED));
@@ -175,7 +177,7 @@ void VStyledButton::OnPaint(VGraphicsInfo& Graphics, const VItemRenderInfo& pare
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

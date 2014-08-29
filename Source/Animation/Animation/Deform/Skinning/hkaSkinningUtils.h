@@ -11,9 +11,9 @@
 class hkaSkeleton;
 class hkaMeshBinding;
 class hkxSkinBinding;
-
+#include <Animation/Internal/hkaExport.h>
 	/// Utility methods for skinned meshes.
-class hkaSkinningUtils
+class HK_EXPORT_ANIMATION hkaSkinningUtils
 {
 	public:			
 			/// Changes binding so that no section in the binding's mesh requires more
@@ -34,7 +34,7 @@ class hkaSkinningUtils
 #endif // HKANIMATION_SKINNING_UTILS_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

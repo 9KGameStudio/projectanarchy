@@ -15,11 +15,9 @@
 #		include <Common/Base/Math/Functions/Sse/hkSseMathFuncs.inl>
 #	elif defined(HK_PLATFORM_XBOX360)
 #		include <Common/Base/Math/Functions/Xbox360/hkXbox360MathFuncs.inl>
-#	elif defined(HK_ARCH_PS3) || defined(HK_ARCH_PS3SPU)
-#		define HK_PLATFORM_SUPPORTS_MANY_SIMD_REGISTERS
+#	elif defined(HK_PLATFORM_PS3) || defined(HK_PLATFORM_PS3_SPU)
 #		include <Common/Base/Math/Functions/Ps3/hkPs3MathFuncs.inl>
 #	elif defined(HK_COMPILER_HAS_INTRINSICS_NEON)
-#		define HK_PLATFORM_SUPPORTS_MANY_SIMD_REGISTERS
 #		include <Common/Base/Math/Functions/Neon/hkNeonMathFuncs.inl>
 #	else // simd
 #		error Unknown platform for SIMD
@@ -36,7 +34,7 @@
 #include <Common/Base/Math/Functions/hkMathFuncs.h>
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

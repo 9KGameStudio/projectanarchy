@@ -16,6 +16,8 @@ extern const class hkClass hkbFootIkGainsClass;
 /// These gains control how much smoothing occurs in the foot IK process.
 struct hkbFootIkGains
 {
+	//+version(1)
+
 	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_BEHAVIOR, hkbFootIkGains );
 	HK_DECLARE_REFLECTION();
 
@@ -25,7 +27,7 @@ struct hkbFootIkGains
 		m_groundDescendingGain(1.0f),
 		m_footPlantedGain(1.0f),
 		m_footRaisedGain(1.0f),
-		m_footUnlockGain(1.0f),
+		m_footLockingGain(1.0f),
 		m_worldFromModelFeedbackGain(0.0f),
 		m_errorUpDownBias(1.0f),
 		m_alignWorldFromModelGain(0.0f),
@@ -63,14 +65,14 @@ struct hkbFootIkGains
 								//+hk.RangeReal(absmin=0.0,absmax=1.0)
 								//+hk.Description("Gain used when the foot is fully raised. Depending on the height of the ankle, a value is interpolated between m_footPlantedGain and m_footRaisedGain and then multiplied by the ascending/descending gain to give the final gain used." )
 
-		/// Gain used when the foot becomes unlocked.  When the foot goes from being locked to unlocked,
-		/// there can be a gap between the previously locked foot position and the desired position.
-		/// This gain is used to smoothly transition to the new foot position.  This gain only affects 
-		/// the horizontal component of the position, since the other gains take care of vertical 
-		/// smoothing.  Default value is 1.0.
-	hkReal m_footUnlockGain;	//+default(1.0f)
+		/// Gain used when the foot becomes unlocked or locked.  When the foot changes between
+		/// locked and unlocked states, there can be a gap between the previous foot position and
+		/// the desired position. This gain is used to smoothly transition to the new foot position.
+		/// This gain only affects the horizontal component of the position, since the other gains
+		/// take care of vertical smoothing.
+	hkReal m_footLockingGain;	//+default(1.0f)
 								//+hk.RangeReal(absmin=0.0,absmax=1.0)
-								//+hk.Description("Gain used when the foot becomes unlocked. When the foot goes from being locked to unlocked, there can be a gap between the previously locked foot position and the desired position. This gain is used to smoothly transition to the new foot position. This gain only affects the horizontal component of the position, since the other gains take care of vertical smoothing." )
+								//+hk.Description("Gain used when the foot becomes unlocked or locked.  When the foot changes between locked and unlocked states, there can be a gap between the previous foot position and the desired position. This gain is used to smoothly transition to the new foot position.  This gain only affects the horizontal component of the position, since the other gains take care of vertical smoothing." )
 
 		/// Gain used to move the world-from-model transform up or down in order to reduce the amount that the foot IK system needs to move the feet.
 		/// Default value is 0.
@@ -104,7 +106,7 @@ struct hkbFootIkGains
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

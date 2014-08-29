@@ -13,7 +13,7 @@ class hkaiDirectedGraphInstance;
 class hkaiStreamingCollection;
 
 /// Utilities for attaching/detaching edges at load/unload time.
-class hkaiStreamingManager : public hkReferencedObject
+class HK_EXPORT_AI hkaiStreamingManager : public hkReferencedObject
 {
 	public:
 		HK_DECLARE_CLASS_ALLOCATOR( HK_MEMORY_CLASS_AI_NAVMESH );
@@ -30,7 +30,7 @@ class hkaiStreamingManager : public hkReferencedObject
 #endif // HKAI_NAVMESH_STREAMING_MANAGER_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

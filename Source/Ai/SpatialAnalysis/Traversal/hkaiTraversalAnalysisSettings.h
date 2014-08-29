@@ -11,7 +11,7 @@
 
 #include <Ai/Pathfinding/NavMesh/hkaiNavMesh.h>
 
-struct hkaiTraversalAnalysisSettings : public hkReferencedObject
+struct HK_EXPORT_AI hkaiTraversalAnalysisSettings : public hkReferencedObject
 {
 public:
 	//+version(0)
@@ -42,7 +42,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

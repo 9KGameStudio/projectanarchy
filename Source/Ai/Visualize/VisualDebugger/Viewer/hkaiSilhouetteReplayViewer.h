@@ -16,27 +16,28 @@
 
 #include <Ai/Pathfinding/Dynamic/Silhouette/SilhouetteGenerator/hkaiSilhouetteGenerator.h>
 #include <Ai/Pathfinding/Dynamic/Partitioning/hkaiOverlapManager.h>
+#include <Ai/Pathfinding/Graph/hkaiDirectedGraphInstance.h>
 
 class hkProcessContext;
-extern const class hkClass hkaiSilhouetteRecorderReplayEventClass;
-extern const class hkClass hkaiSilhouetteRecorderWorldConnectedEventClass;
-extern const class hkClass hkaiSilhouetteRecorderInstanceLoadedEventClass;
-extern const class hkClass hkaiSilhouetteRecorderSilhouettesSteppedEventClass;
-extern const class hkClass hkaiSilhouetteRecorderInstanceUnloadedEventClass;
-extern const class hkClass hkaiSilhouetteRecorderVolumeLoadedEventClass;
-extern const class hkClass hkaiSilhouetteRecorderVolumeUnloadedEventClass;
-extern const class hkClass hkaiSilhouetteRecorderGraphLoadedEventClass;
-extern const class hkClass hkaiSilhouetteRecorderGraphUnloadedEventClass;
+extern HK_EXPORT_AI const hkClass hkaiSilhouetteRecorderReplayEventClass;
+extern HK_EXPORT_AI const hkClass hkaiSilhouetteRecorderWorldConnectedEventClass;
+extern HK_EXPORT_AI const hkClass hkaiSilhouetteRecorderInstanceLoadedEventClass;
+extern HK_EXPORT_AI const hkClass hkaiSilhouetteRecorderSilhouettesSteppedEventClass;
+extern HK_EXPORT_AI const hkClass hkaiSilhouetteRecorderInstanceUnloadedEventClass;
+extern HK_EXPORT_AI const hkClass hkaiSilhouetteRecorderVolumeLoadedEventClass;
+extern HK_EXPORT_AI const hkClass hkaiSilhouetteRecorderVolumeUnloadedEventClass;
+extern HK_EXPORT_AI const hkClass hkaiSilhouetteRecorderGraphLoadedEventClass;
+extern HK_EXPORT_AI const hkClass hkaiSilhouetteRecorderGraphUnloadedEventClass;
 
 
 	/// General interface for creating and sending replay events
-class hkaiSilhouetteRecorder : public hkaiWorld::Listener
+class HK_EXPORT_AI hkaiSilhouetteRecorder : public hkaiWorld::Listener
 {
 public:
 	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_AI, hkaiSilhouetteRecorder);
 
 		/// Base replay event, only contains the type so that it can be cast to the appropriate subclass.
-	class ReplayEvent : public hkReferencedObject
+	class HK_EXPORT_AI ReplayEvent : public hkReferencedObject
 	{
 	public:
 
@@ -76,15 +77,15 @@ public:
 		{}
 
 		virtual ~ReplayEvent() {}
-		
+
 			/// Serialization constructor.
 		ReplayEvent( hkFinishLoadedObjectFlag f) : hkReferencedObject(f) {}
-		
+
 		const hkEnum<ReplayEventType, hkUint8> m_eventType;
 	};
 
 		/// Triggered when a world is first connected with the viewer.
-	class WorldConnectedEvent : public ReplayEvent
+	class HK_EXPORT_AI WorldConnectedEvent : public ReplayEvent
 	{
 	public:
 
@@ -93,17 +94,17 @@ public:
 		HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_AI);
 
 		WorldConnectedEvent();
-		
+
 		WorldConnectedEvent( hkFinishLoadedObjectFlag f );
-		
+
 		~WorldConnectedEvent();
-		
+
 			/// The hkaiWorld that's being set
 		hkRefPtr<hkaiWorld> m_world;
 	};
 
 		/// Triggered when an hkaiNavMeshInstance is loaded.
-	class InstanceLoadedEvent : public ReplayEvent
+	class HK_EXPORT_AI InstanceLoadedEvent : public ReplayEvent
 	{
 	public:
 
@@ -128,7 +129,7 @@ public:
 	};
 
 		/// Triggered before silhouettes are stepped by the hkaiWorld.
-	class SilhouettesSteppedEvent : public ReplayEvent
+	class HK_EXPORT_AI SilhouettesSteppedEvent : public ReplayEvent
 	{
 	public:
 		// +version(3)
@@ -138,12 +139,12 @@ public:
 		SilhouettesSteppedEvent();
 
 		SilhouettesSteppedEvent(hkFinishLoadedObjectFlag f);
-		
+
 		~SilhouettesSteppedEvent();
 
-			/// How the world was stepped (single or multithreaded). 
+			/// How the world was stepped (single or multithreaded).
 		hkEnum<hkaiWorld::StepThreading, hkUint32> m_stepThreading; //+default( hkaiWorld::STEP_SINGLE_THREADED )
-		
+
 			/// Generators being stepped this frame.
 		hkArray< hkRefPtr<hkaiSilhouetteGenerator> > m_generators;
 
@@ -158,18 +159,18 @@ public:
 	};
 
 		/// Triggered when an hkaiNavMeshInstance is unloaded.
-	class InstanceUnloadedEvent : public ReplayEvent
+	class HK_EXPORT_AI InstanceUnloadedEvent : public ReplayEvent
 	{
 	public:
 		HK_DECLARE_REFLECTION();
 		HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_AI);
-		
-		InstanceUnloadedEvent() 
-		:	ReplayEvent(EVENT_INSTANCE_UNLOADED) 
+
+		InstanceUnloadedEvent()
+		:	ReplayEvent(EVENT_INSTANCE_UNLOADED)
 		{}
-		
-		InstanceUnloadedEvent(hkFinishLoadedObjectFlag f) 
-		:	ReplayEvent(f) 
+
+		InstanceUnloadedEvent(hkFinishLoadedObjectFlag f)
+		:	ReplayEvent(f)
 		{}
 
 			/// UID of the instance being unloaded.
@@ -177,37 +178,37 @@ public:
 	};
 
 		/// Triggered when an hkaiNavVolume is loaded.
-	class VolumeLoadedEvent : public ReplayEvent
+	class HK_EXPORT_AI VolumeLoadedEvent : public ReplayEvent
 	{
 	public:
 		//+version(1)
 		HK_DECLARE_REFLECTION();
 		HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_AI);
-		
+
 		VolumeLoadedEvent();
-		
+
 		VolumeLoadedEvent(hkFinishLoadedObjectFlag f);
 
 		~VolumeLoadedEvent();
-		
+
 			/// hkaiNavVolume being loaded
 		hkRefPtr<hkaiNavVolumeInstance> m_volume;
-		
+
 			/// Corresponding mediator for the nav volume
 		hkRefPtr<hkaiNavVolumeMediator> m_mediator;
 	};
 
 		/// Triggered when an hkaiNavVolume is unloaded.
-	class VolumeUnloadedEvent : public ReplayEvent
+	class HK_EXPORT_AI VolumeUnloadedEvent : public ReplayEvent
 	{
 	public:
 		HK_DECLARE_REFLECTION();
 		HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_AI);
-		
+
 		VolumeUnloadedEvent()
 		:	ReplayEvent(EVENT_VOLUME_UNLOADED)
 		{}
-		
+
 		VolumeUnloadedEvent(hkFinishLoadedObjectFlag f)
 		:	ReplayEvent(f)
 		{}
@@ -217,34 +218,34 @@ public:
 	};
 
 		/// Triggered when an hkaiDirectedGraphExplicitCost is loaded.
-	class GraphLoadedEvent : public ReplayEvent
+	class HK_EXPORT_AI GraphLoadedEvent : public ReplayEvent
 	{
 	public:
 		//+version(1)
 		HK_DECLARE_REFLECTION();
 		HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_AI);
-		
+
 		GraphLoadedEvent();
-		
+
 		GraphLoadedEvent(hkFinishLoadedObjectFlag f);
 
 		~GraphLoadedEvent();
-		
+
 			/// Graph being loaded
 		hkRefPtr<hkaiDirectedGraphInstance> m_graph;
 	};
 
 		/// Triggered when an hkaiDirectedGraphExplicitCost is unloaded.
-	class GraphUnloadedEvent : public ReplayEvent
+	class HK_EXPORT_AI GraphUnloadedEvent : public ReplayEvent
 	{
 	public:
 		HK_DECLARE_REFLECTION();
 		HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_AI);
-		
+
 		GraphUnloadedEvent()
 		:	ReplayEvent(EVENT_GRAPH_UNLOADED)
 		{}
-		
+
 		GraphUnloadedEvent(hkFinishLoadedObjectFlag f)
 		:	ReplayEvent(f)
 		{}
@@ -256,11 +257,11 @@ public:
 		/// Applies the replay event to the given hkaiWorld.
 		/// These pointers should initiall be HK_NULL and will be set if a WorldConnectedEvent is received.
 		/// It is up to the user to remove the final reference from these when all events are finished.
-		/// The hkJobQueue and hkJobThreadPool are used to step the silhouettes in multithreaded mode if the original step was also multithreaded.
-	static void HK_CALL applyEventToWorld( hkaiSilhouetteRecorder::ReplayEvent& e, hkRefPtr<hkaiWorld>& world, hkJobQueue* jobQueue, hkJobThreadPool* threadPool );
+		/// The hkTaskQueue and hkThreadPool are used to step the silhouettes in multithreaded mode if the original step was also multithreaded.
+	static void HK_CALL applyEventToWorld( hkaiSilhouetteRecorder::ReplayEvent& e, hkRefPtr<hkaiWorld>& world, hkTaskQueue* taskQueue, hkThreadPool* threadPool );
 
 public: // interface
-	
+
 		/// Whether or not the world information has been sent already.
 	virtual bool isWorldInfoSent( const hkaiWorld* world ) const = 0;
 
@@ -292,7 +293,7 @@ protected:
 
 
 	/// VDB viewer that records events to the movie stream.
-class hkaiSilhouetteReplayViewer :	public hkaiViewerBase, 
+class HK_EXPORT_AI hkaiSilhouetteReplayViewer : public hkaiViewerBase,
 									public hkaiSilhouetteRecorder
 {
 public:
@@ -345,7 +346,7 @@ protected:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

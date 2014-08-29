@@ -11,14 +11,14 @@
 
 #include <Physics/Constraint/Data/hkpConstraintData.h>
 
-extern const class hkClass hkpLimitedHingeConstraintDataAtomsClass;
-extern const hkClass hkpLimitedHingeConstraintDataClass;
+extern HK_EXPORT_PHYSICS const class hkClass hkpLimitedHingeConstraintDataAtomsClass;
+extern HK_EXPORT_PHYSICS const hkClass hkpLimitedHingeConstraintDataClass;
 
 
 /// Full hinge constraint with limits and motor.
 ///
 /// By default the motor is disabled. When the motor is enabled friction is automatically disabled.
-class hkpLimitedHingeConstraintData : public hkpConstraintData
+class HK_EXPORT_PHYSICS hkpLimitedHingeConstraintData : public hkpConstraintData
 {
 	public:
 
@@ -232,7 +232,7 @@ class hkpLimitedHingeConstraintData : public hkpConstraintData
 #endif // HKP_LIMITED_HINGE_CONSTRAINT_DATA_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

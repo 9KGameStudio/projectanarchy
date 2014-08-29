@@ -34,14 +34,13 @@
 #undef HAVOK_DESTRUCTION_KEYCODE
 #undef HK_FEATURE_PRODUCT_DESTRUCTION
 #undef HAVOK_SIMULATION_KEYCODE
-#undef HK_FEATURE_PRODUCT_MILSIM
+#undef HK_FEATURE_PRODUCT_SIMULATION
 
 #include <Common/Base/Config/hkProductFeatures.cxx>
 
 #else // 7.1 etc
 
 // Register Havok classes that are appropriate for the current keycode strings
-#include <Common/Base/KeyCode.h>
 #define HK_CLASSES_FILE <Common/Serialize/Classlist/hkKeyCodeClasses.h>
 #include <Common/Serialize/Util/hkBuiltinTypeRegistry.cxx>
 
@@ -52,7 +51,7 @@
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -10,17 +10,17 @@
 #define HK_BASE_LOCAL_FRAME_H
 
 
-extern const class hkClass hkLocalFrameGroupClass;
+extern HK_EXPORT_COMMON const class hkClass hkLocalFrameGroupClass;
 
-extern const class hkClass hkLocalFrameClass;
+extern HK_EXPORT_COMMON const class hkClass hkLocalFrameClass;
 
-extern const class hkClass hkSimpleLocalFrameClass;
+extern HK_EXPORT_COMMON const class hkClass hkSimpleLocalFrameClass;
 
 class hkLocalFrameCollector;
 class hkLocalFrameGroup;
 
 	/// An abstract local frame that can be part of a hierarchy of local frames.
-class hkLocalFrame : public hkReferencedObject
+class HK_EXPORT_COMMON hkLocalFrame : public hkReferencedObject
 {
 	public:
 
@@ -88,7 +88,7 @@ class hkLocalFrame : public hkReferencedObject
 };
 
 	/// An abstract class for collecting local frames.
-class hkLocalFrameCollector : public hkReferencedObject
+class HK_EXPORT_COMMON hkLocalFrameCollector : public hkReferencedObject
 {
 	public:
 	
@@ -99,7 +99,7 @@ class hkLocalFrameCollector : public hkReferencedObject
 };
 
 	/// All the local frames with the same group name share a hkLocalFrameGroup.
-class hkLocalFrameGroup : public hkReferencedObject
+class HK_EXPORT_COMMON hkLocalFrameGroup : public hkReferencedObject
 {
 	//+vtable(true)
 	public:
@@ -124,7 +124,7 @@ class hkLocalFrameGroup : public hkReferencedObject
 
 
 	/// A local frame that stores a transform, name, and parent and children pointers.
-class hkSimpleLocalFrame : public hkLocalFrame
+class HK_EXPORT_COMMON hkSimpleLocalFrame : public hkLocalFrame
 {
 	public:
 		// +version(1)
@@ -195,7 +195,7 @@ class hkSimpleLocalFrame : public hkLocalFrame
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

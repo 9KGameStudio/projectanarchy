@@ -15,13 +15,13 @@
 #include <Common/Serialize/Data/hkDataObjectImpl.h>
 
 	/// This class wraps and handles data values stored in hkDataObject.
-class hkDataObject_Value
+class HK_EXPORT_COMMON hkDataObject_Value
 {
 	public:
 		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_SERIALIZE, hkDataObject_Value);
 		typedef hkDataObject_MemberHandle MemberHandle;
 		typedef hkDataObject_Type Type;
-
+		
 			/// Assign 'l' to value.
 		void operator=(const hkDataObject_Value& l);
 			/// Assign 32-bit integer to value.
@@ -99,7 +99,7 @@ class hkDataObject_Value
 	/// managed by the private hkDataObjectImpl class.
 	/// It may only contain data defined by hkDataClass.
 	/// The class implements the Python-alike object data access.
-class hkDataObject
+class HK_EXPORT_COMMON hkDataObject
 {
 	public:
 		typedef hkDataObject_Type Type;
@@ -165,6 +165,7 @@ class hkDataObject
 		void getAllMemberHandles(hkArrayBase<MemberHandle>& handles) const;
 
 		void destroy();
+		void destroyMember(const char* name);
 
 	private:
 
@@ -175,12 +176,11 @@ struct hkStridedBasicArray;
 
 
 	/// This class wraps and handles data value of hkDataArray items.
-class hkDataArray_Value
+class HK_EXPORT_COMMON hkDataArray_Value
 {
 	public:
 
 		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_SERIALIZE, hkDataArray_Value);
-
 		typedef hkDataObject_Type Type;
 
 			/// Assign object value 'l' to value.
@@ -255,7 +255,7 @@ class hkDataArray_Value
 
 
 	/// The hkDataArray is a public accessor to a reflected array of data.
-class hkDataArray
+class HK_EXPORT_COMMON hkDataArray
 {
 	public:
 
@@ -340,7 +340,7 @@ class hkDataArray
 
 	/// This class defines reflection information for any reflected type.
 	/// Unlike hkClass it defines reflection for class data members only.
-class hkDataClass
+class HK_EXPORT_COMMON hkDataClass
 {
 	public:
 		
@@ -429,7 +429,7 @@ class hkDataClass
 	/// This is an abstract class which defines interfaces to implement a container,
 	/// and to store and manage reflected data defined by hkDataClass and represented
 	/// by hkDataObject and hkDataArray.
-class hkDataWorld : public hkReferencedObject
+class HK_EXPORT_COMMON hkDataWorld : public hkReferencedObject
 {
 	public:
 
@@ -512,7 +512,7 @@ class hkDataWorld : public hkReferencedObject
 };
 
 template <>
-struct hkMapOperations<hkDataObject::Handle>
+struct HK_EXPORT_COMMON hkMapOperations<hkDataObject::Handle>
 {
 	inline static unsigned hash( const hkDataObject::Handle& key, unsigned mod )
 	{
@@ -537,7 +537,7 @@ struct hkMapOperations<hkDataObject::Handle>
 #endif // HK_DATA_OBJECT_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

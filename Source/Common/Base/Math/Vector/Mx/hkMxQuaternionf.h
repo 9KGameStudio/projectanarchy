@@ -26,7 +26,7 @@
 ///
 /// \sa hkMxVectorf
 template <int M>
-class hkMxQuaternionf : public hkMxVectorf<M>
+class HK_EXPORT_COMMON hkMxQuaternionf : public hkMxVectorf<M>
 {
 public:
 
@@ -57,15 +57,7 @@ public:
 	template <hkUint32 byteAddressIncrement> HK_FORCE_INLINE void convertAndScatter(hkRotationf* base) const;
 };
 
-#if defined(HK_COMPILER_HAS_INTRINSICS_IA32)
-	#if (HK_SSE_VERSION >= 0x50)
-	#include <Common/Base/Math/Vector/Mx/hkMxQuaternion_AVX.inl>
-	#else
-	#include <Common/Base/Math/Vector/Mx/hkMxQuaternionf.inl>
-	#endif
-#else
-	#include <Common/Base/Math/Vector/Mx/hkMxQuaternionf.inl>
-#endif
+#include <Common/Base/Math/Vector/Mx/hkMxQuaternionf.inl> 
 
 // convenient shortcut
 typedef hkMxQuaternionf<4>	  hk4xQuaternionf;
@@ -73,7 +65,7 @@ typedef hkMxQuaternionf<4>	  hk4xQuaternionf;
 #endif // HK_MXQUATERNIONf_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

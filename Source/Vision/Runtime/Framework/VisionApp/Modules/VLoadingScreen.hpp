@@ -19,7 +19,7 @@
 /// \ingroup VisionAppFramework
 class VLoadingScreenBase : public VAppModule
 {
-  V_DECLARE_DYNCREATE(VLoadingScreenBase);
+  V_DECLARE_DYNCREATE_DLLEXP(VLoadingScreenBase, VAPP_IMPEXP);
 
 public:
   /// \brief
@@ -47,7 +47,7 @@ public:
   ///   Structure for specifying the loading screen settings.
   struct Settings
   {
-    Settings(const char* szImagePath = "");
+    VAPP_IMPEXP Settings(const char* szImagePath = "");
 
     VString m_sImagePath;                         ///< Path to the background image to be displayed on the loading screen. 
     VColorRef m_backgroundColor;                  ///< Color used to clear the background.
@@ -59,40 +59,40 @@ public:
     unsigned int m_uiFlags;                       ///< Additional flags of type LoadingScreenFlags.
   };
 
-  virtual void Init() HKV_OVERRIDE;
-  virtual void DeInit() HKV_OVERRIDE;
+  VAPP_IMPEXP virtual void Init() HKV_OVERRIDE;
+  VAPP_IMPEXP virtual void DeInit() HKV_OVERRIDE;
 
-  void SetSettings(const Settings& settings);
+  VAPP_IMPEXP void SetSettings(const Settings& settings);
   inline const Settings& GetSettings() const { return m_settings; }
 
-  virtual void OnHandleCallback(IVisCallbackDataObject_cl* pData) HKV_OVERRIDE;
+  VAPP_IMPEXP virtual void OnHandleCallback(IVisCallbackDataObject_cl* pData) HKV_OVERRIDE;
 
 protected:
   /// \brief
   ///   Objects of VLoadingScreenBase can not be instantiated, use VLoadingScreen instead.
-  VLoadingScreenBase(const Settings& settings = Settings());
+  VAPP_IMPEXP VLoadingScreenBase(const Settings& settings = Settings());
   virtual ~VLoadingScreenBase() {}
 
-  virtual void LoadingStarted();
-  virtual void LoadingFinished();
-  virtual void LoadingInProgress(float fPercentage);
+  VAPP_IMPEXP virtual void LoadingStarted();
+  VAPP_IMPEXP virtual void LoadingFinished();
+  VAPP_IMPEXP virtual void LoadingInProgress(float fPercentage);
 
-  const VisPerformanceTimer_cl& GetTimer() const { return m_timer; }
+  inline const VisPerformanceTimer_cl& GetTimer() const { return m_timer; }
 
   /// \brief
   ///   Override to use custom background image loading.
-  virtual VTextureObject* CreateBackgroundImage();
+  VAPP_IMPEXP virtual VTextureObject* CreateBackgroundImage();
 
-  virtual const VRectanglef GetLoadingScreenExtents() const;
-  virtual const VRectanglef GetBackgroundImageExtents() const;
-  virtual const VRectanglef GetProgressBarExtents() const;
+  VAPP_IMPEXP virtual const VRectanglef GetLoadingScreenExtents() const;
+  VAPP_IMPEXP virtual const VRectanglef GetBackgroundImageExtents() const;
+  VAPP_IMPEXP virtual const VRectanglef GetProgressBarExtents() const;
 
-  virtual void OnDraw() const;
+  VAPP_IMPEXP virtual void OnDraw() const;
 
   /// \brief
   ///   Draws a rectangle with the loading screen's fade out applied.
-  void DrawRectFaded(IVRender2DInterface* pRenderInterface, const VColorRef& color, const VRectanglef& rect) const;
-  void DrawRectFaded(IVRender2DInterface* pRenderInterface, VTextureObject* pTexture, const VColorRef& ref, const VRectanglef& rect) const;
+  VAPP_IMPEXP void DrawRectFaded(IVRender2DInterface* pRenderInterface, const VColorRef& color, const VRectanglef& rect) const;
+  VAPP_IMPEXP void DrawRectFaded(IVRender2DInterface* pRenderInterface, VTextureObject* pTexture, const VColorRef& ref, const VRectanglef& rect) const;
 
 private:
   void UpdateLayout();
@@ -126,14 +126,14 @@ private:
 /// \ingroup VisionAppFramework
 class VLoadingScreen : public VLoadingScreenBase
 {
-  V_DECLARE_DYNCREATE(VLoadingScreen);
+  V_DECLARE_DYNCREATE_DLLEXP(VLoadingScreen, VAPP_IMPEXP);
 
 public:
-  VLoadingScreen(const Settings& settings = Settings())
+  inline VLoadingScreen(const Settings& settings = Settings())
     : VLoadingScreenBase(settings)
   {}
 
-  virtual void OnHandleCallback(IVisCallbackDataObject_cl* pData) HKV_OVERRIDE
+  VAPP_IMPEXP virtual void OnHandleCallback(IVisCallbackDataObject_cl* pData) HKV_OVERRIDE
   {
     if (pData->m_pSender == &Vision::Callbacks.OnProgress)
     {
@@ -150,7 +150,7 @@ public:
 #endif //__V_LOADING_SCREEN
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

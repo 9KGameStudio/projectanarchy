@@ -14,7 +14,7 @@ class hkaDefaultAnimationControl;
 /// Override this class to get callbacks for default control events.
 /// These events are : overflow, underflow and end of ease in/out.
 /// You need to call hkaDefaultAnimationControl::addDefaultControlListener() to add a new listener to a default control
-class hkaDefaultAnimationControlListener
+class HK_EXPORT_ANIMATION hkaDefaultAnimationControlListener
 {
 	//+hk.MemoryTracker(ignore=True)
 	public:
@@ -39,7 +39,7 @@ class hkaDefaultAnimationControlListener
 #endif // HK_DEFAULT_CONTROL_LISTENER_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

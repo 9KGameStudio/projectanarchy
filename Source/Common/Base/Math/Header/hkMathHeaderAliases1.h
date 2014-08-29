@@ -26,7 +26,6 @@
 	typedef hkMatrix4d hkMatrix4;
 	typedef hkRotationd hkRotation;
 	typedef hkTransformd hkTransform;
-	typedef hkQTransformd hkQTransform;
 	typedef hkQsTransformd hkQsTransform;
 	typedef hkSymmetricMatrix3d hkSymmetricMatrix3;
 	#define g_vectorConstants g_vectordConstants
@@ -50,7 +49,6 @@
 	typedef hkMatrix4f hkMatrix4;
 	typedef hkRotationf hkRotation;
 	typedef hkTransformf hkTransform;
-	typedef hkQTransformf hkQTransform;
 	typedef hkQsTransformf hkQsTransform;
 	typedef hkSymmetricMatrix3f hkSymmetricMatrix3;
 	#define g_vectorConstants g_vectorfConstants
@@ -58,7 +56,7 @@
 # endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

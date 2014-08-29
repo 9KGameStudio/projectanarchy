@@ -65,7 +65,7 @@ BOOL RPG_HighlightableComponent::CanAttachToObject(VisTypedEngineObject_cl *obje
     return FALSE;
   }
 
-  bool const hasHighlightable = (object->Components().GetComponentOfBaseType(V_RUNTIME_CLASS(RPG_HighlightableComponent)) != NULL);
+  bool const hasHighlightable = (object->Components().GetComponentOfBaseType<RPG_HighlightableComponent>() != NULL);
   if(hasHighlightable)
   {
     errorOut = "RPG_HighlightableComponent (or derived) already attached";
@@ -98,7 +98,7 @@ START_VAR_TABLE(RPG_HighlightableComponent, RPG_BaseComponent, "(RPG) Highlighta
 END_VAR_TABLE
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -22,7 +22,7 @@ class hkStreamWriter;
 	/// to the filesystem singleton to actually open a stream. To handle I/O errors
 	/// gracefully you will generally have to implement this interface or bypass it
 	/// completely by using methods which accept streams or in memory buffers directly.
-class hkFileSystem : public hkReferencedObject, public hkSingleton<hkFileSystem>
+class HK_EXPORT_COMMON hkFileSystem : public hkReferencedObject, public hkSingleton<hkFileSystem>
 {
 	public:
 
@@ -60,7 +60,7 @@ class hkFileSystem : public hkReferencedObject, public hkSingleton<hkFileSystem>
 			/// Stores timestamp in nanoseconds that have passed since
 			/// 1970-01-01T00:00:00.000 UTC (Unix time in nanoseconds).
 			/// Can represent valid ranges in (1970-01-01T00:00:00.000 UTC, 2554-07-21T23:34:33 UTC].
-		struct TimeStamp
+		struct HK_EXPORT_COMMON TimeStamp
 		{
 			public:
 
@@ -89,7 +89,7 @@ class hkFileSystem : public hkReferencedObject, public hkSingleton<hkFileSystem>
 		};
 
 			/// Represents a file or directory in a filesystem.
-		struct Entry
+		struct HK_EXPORT_COMMON Entry
 		{
 			public:
 
@@ -148,7 +148,7 @@ class hkFileSystem : public hkReferencedObject, public hkSingleton<hkFileSystem>
 		virtual Result stat( const char* path, Entry& entryOut ) = 0;
 
 			/// Interface to iterate over the entries in a filesystem tree.
-		class Iterator
+		class HK_EXPORT_COMMON Iterator
 		{
 			public:
 
@@ -195,7 +195,7 @@ class hkFileSystem : public hkReferencedObject, public hkSingleton<hkFileSystem>
 
 	public:
 
-		struct DirectoryListing
+		struct HK_EXPORT_COMMON DirectoryListing
 		{
 			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE, hkFileSystem::DirectoryListing);
 
@@ -263,7 +263,7 @@ HK_SINGLETON_SPECIALIZATION_DECL(hkFileSystem);
 #endif //HK_FILESYSTEM
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

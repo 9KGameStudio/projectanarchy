@@ -26,7 +26,7 @@ class hkRttiTypeCache;
 	/// In the actual report - all blocks are determined to belong to a category
 	/// and then type summary system of hkScanReportUtil is used to report all of the types/blocks
 	/// that belong to a specific category.
-class hkCategoryReportUtil
+class HK_EXPORT_COMMON hkCategoryReportUtil
 {
 	public:
 
@@ -95,7 +95,7 @@ class hkCategoryReportUtil
 #endif // HKBASE_CATEGORY_REPORT_UTIL_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

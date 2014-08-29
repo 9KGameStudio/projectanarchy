@@ -48,6 +48,7 @@ VTerrainSector::VTerrainSector(VTerrainSectorManager *pManager, const VTerrainCo
   m_pMeshPage = NULL;
   m_pFirstDecoVisInfo = NULL;
   m_ePhysicsType = VPHYSICSTYPE_PRECISE;
+  m_bPhysicsTightFit = false;
 
   m_iSampleStrideX = config.m_iHeightSamplesPerSector[0]+2;
 
@@ -276,6 +277,9 @@ void VTerrainSector::ComputeLODDistanceTable()
       }
 }
 
+//-----------------------------------------------------------------------------------
+// Serialization
+
 #define LOAD_TEXTURE(_ptr)\
 {\
   if (iLocalVersion>=SECTOR_FILE_VERSION_19)\
@@ -311,7 +315,7 @@ bool VTerrainSector::LoadSectorInformation()
   ar >> iArchiveVersion;
   ar.SetLoadingVersion(iArchiveVersion);
   ar >> iLocalVersion; // local version
-  VASSERT(iLocalVersion<=SECTOR_CURRENT_FILE_VERSION);
+  VASSERT(iLocalVersion <= SECTOR_CURRENT_FILE_VERSION);
   VASSERT_ALWAYS_MSG(iLocalVersion >= SECTOR_FILE_VERSION_8, "This terrain version isn't supported anymore. Please re-export the terrain with a current version.");
 
   ar >> iTileX >> iTileY; // sanity check
@@ -328,7 +332,7 @@ bool VTerrainSector::LoadSectorInformation()
     ar >> m_fMaxTileHandlingDistance;
 
     // decoration objects
-    char iDecoVersion = iLocalVersion>=SECTOR_FILE_VERSION_17 ? DECORATIONINSTANCE_VERSION_20 : iLocalVersion;
+    char iDecoVersion = iLocalVersion >= SECTOR_FILE_VERSION_17 ? DECORATIONINSTANCE_VERSION_20 : iLocalVersion;
     if (iLocalVersion>=SECTOR_FILE_VERSION_22)
       ar >> iDecoVersion;
 
@@ -548,7 +552,7 @@ bool VTerrainSector::LoadSectorInformation()
     m_PerSectorObjects.EnsureSize(iCount);
     for (int i=0;i<iCount;i++)
     {
-      VisTypedEngineObject_cl *pObj = (VisTypedEngineObject_cl *)ar.ReadObject(NULL);
+      VisTypedEngineObject_cl *pObj = ar.ReadObject<VisTypedEngineObject_cl>();
       if (pObj!=NULL)
         m_PerSectorObjects.GetDataPtr()[m_iPerSectorObjectCount++] = pObj;
     }
@@ -612,6 +616,15 @@ bool VTerrainSector::LoadSectorInformation()
     m_ePhysicsType = (VPhysicsType_e)iTemp;
   }
 
+  // version 23: physics tight-fit
+  if (iLocalVersion >= SECTOR_FILE_VERSION_23)
+  {
+    // Need temporary bool variable because the parameter is stored in a bit field.
+    bool bTemp; 
+    ar >> bTemp;
+    m_bPhysicsTightFit = bTemp;
+  }
+
   ar.Close();
   pIn->Close();
 
@@ -627,7 +640,6 @@ bool VTerrainSector::LoadSectorInformation()
   else\
   VTextureObject::DoArchiveExchange(ar, NULL);\
 }
-
 
 bool VTerrainSector::SaveSectorInformation()
 {
@@ -708,6 +720,9 @@ bool VTerrainSector::SaveSectorInformation()
 
   // version 20: physics type
   ar << (int)m_ePhysicsType;
+
+  // version 23: physics tight-fit
+  ar << m_bPhysicsTightFit;
 
   ar.Close();
   pOut->Close();
@@ -934,7 +949,7 @@ BOOL VTerrainSector::Reload()
     for (x=0;x<m_Config.m_iSectorMeshesPerSector[0];x++,pPage++)
     {
       VCompiledTechnique* pTech = pPage->GetSurfaceSafe().GetTechnique();
-      for (int i=0;i<pTech->GetShaderCount();i++)
+      for (unsigned int i=0;i<pTech->GetShaderCount();i++)
       {
         const unsigned int iActiveSamplerCount = pTech->GetShader(i)->GetActiveSamplerCount(VSS_PixelShader);
         for (unsigned int j=0;j<iActiveSamplerCount;j++)
@@ -1218,7 +1233,7 @@ BOOL VTerrainSector::Unload()
   return TRUE;
 }
 
-#if ( defined(_VR_DX9) && defined(WIN32) )
+#if ( defined(_VR_DX9) && defined(_VISION_WIN32) )
 
 void VTerrainSector::OnEnterBackground()
 {
@@ -1855,7 +1870,7 @@ void VTerrainSector::PerformVisibility(VTerrainVisibilityCollectorComponent &inf
     }
 
     // in editor mode, there might be additional decoration to render, i.e. while painting:
-#ifdef WIN32
+#ifdef _VISION_WIN32
     if (m_bHasAdditionalDecoration)
     {
       int iAdditionalCount;
@@ -2259,6 +2274,10 @@ int VTerrainSector::TraceTest(const hkvVec3& startOfLine, const hkvVec3& endOfLi
     pStoreInfo->pCollisionMesh = NULL;
     pStoreInfo->distance = hitInfo.m_fDistance;
     pStoreInfo->touchPoint = hitInfo.m_vTouchPoint;
+    // base UV: per sector [0..1] range
+    pStoreInfo->baseUV.x = (hitInfo.m_vTouchPoint.x - this->m_vSectorOrigin.x) * m_Config.m_vInvSectorSize.x;
+    pStoreInfo->baseUV.y = (hitInfo.m_vTouchPoint.y - this->m_vSectorOrigin.y) * m_Config.m_vInvSectorSize.y;
+
 #ifdef TERRAIN_COLLISIONMESHES_SECTORLOCALSPACE
     pStoreInfo->touchPoint += m_vSectorOrigin; // local space collision mesh
 #endif
@@ -2341,7 +2360,7 @@ bool VTerrainSector::SaveSectorFinal(bool bSaveSnapshot)
 }
 
 
-VisZoneResource_cl *VTerrainSector::GetParentZone()
+IVisZone_cl *VTerrainSector::GetParentZone()
 {
   return GetSectorManager()->m_pTerrain->GetParentZone();
 }
@@ -2414,7 +2433,7 @@ VCompiledTechnique* VTerrainSector::GetReplacementTechnique()
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

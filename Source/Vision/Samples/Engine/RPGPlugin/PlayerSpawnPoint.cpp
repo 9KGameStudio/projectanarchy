@@ -33,7 +33,7 @@ void RPG_PlayerSpawnPoint::Initialize()
 
   if(Vision::Editor.IsInEditor())
   {
-#if !defined(_VISION_MOBILE)
+#if defined(_VISION_WIN32)
     Vision::Editor.SetVariableInEditor(this, "ShapeName", s_playerSpawnKey, false, false);
     Vision::Editor.SetVariableInEditor(this, "ObjectKey", s_playerSpawnKey, false, false);
 #endif	
@@ -54,7 +54,7 @@ void RPG_PlayerSpawnPoint::PostInitialize()
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

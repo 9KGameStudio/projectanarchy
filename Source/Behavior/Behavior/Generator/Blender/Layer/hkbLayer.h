@@ -87,7 +87,7 @@ class hkbLayer : public hkbBindable
 			/// When enabled, forces the entire duration of the fade to play even when interrupting a currently active fade.  Otherwise, the fade
 			/// will have its duration set to the active fade's elapsed time.
 		hkBool m_forceFullFadeDurations;	//+default(false)
-											//+hk.Description("When enabled, forces the entire duration of the fade to play even when interrupting a currently active fade.  Otherwise, the fade will have its duration set to the active fade's elapsed time.")
+											//+hk.Description("When enabled, forces the entire duration of the fade to play even when interrupting a currently active fade.  Otherwise, it will start the new fade from the point where the currently active fade left off.")
 
 	public:
 
@@ -101,7 +101,7 @@ class hkbLayer : public hkbBindable
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

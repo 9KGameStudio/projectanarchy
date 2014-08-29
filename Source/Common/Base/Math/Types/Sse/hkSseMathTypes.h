@@ -42,8 +42,6 @@
 
 #ifdef HK_PLATFORM_PS4
 #	include <x86intrin.h>
-#elif defined(HK_ARCH_X64) && defined(HK_COMPILER_MSVC) && ( HK_COMPILER_MSVC_VERSION >= 1600)
-#	include <intrin.h>
 #endif
 
 #if HK_SSE_VERSION >= 0x50
@@ -165,7 +163,7 @@ typedef __m128i hkSingleInt128;
 #define HK_QUADINT_CONSTANT(a, b, c, d)		{a, b, c, d}
 
 // this causes problems for the optimizer, use for debug checks only
-struct hkQuadUlong
+struct HK_EXPORT_COMMON hkQuadUlong
 {
 	__m128i xy;
 	__m128i zw;
@@ -258,7 +256,7 @@ typedef const hkIntVector& hkIntVectorParameter;
 #endif // HK_MATH2_SSE_MATH_TYPES_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

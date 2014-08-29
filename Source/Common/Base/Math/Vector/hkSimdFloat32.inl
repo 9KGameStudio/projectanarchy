@@ -37,7 +37,12 @@
 /*static*/ HK_FORCE_INLINE hkSimdFloat32 HK_CALL hkSimdFloat32::fromInt32(const hkInt32& x)
 { 
 	hkSimdFloat32 r; 
+#if defined(HK_COMPILER_GCC_VERSION) && (HK_COMPILER_GCC_VERSION == 40800)	
+	const int i = x;
+	r.setFromInt32(i); 
+#else
 	r.setFromInt32(x); 
+#endif
 	return r; 
 }
 
@@ -149,7 +154,7 @@ HK_FORCE_INLINE hkVector4fComparison hkSimdFloat32::compareGreaterThanEqual(hkSi
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

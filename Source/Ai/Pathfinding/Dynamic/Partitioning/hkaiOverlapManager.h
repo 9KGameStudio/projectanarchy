@@ -12,19 +12,19 @@
 #include <Ai/Pathfinding/Dynamic/Partitioning/hkaiReferenceFrameAndExtrusion.h>
 #include <Ai/Pathfinding/Dynamic/Partitioning/hkaiSilhouetteGeneratorSectionContext.h>
 #include <Ai/Pathfinding/Dynamic/NavMeshCutter/hkaiNavMeshSilhouetteSelector.h>
+#include <Ai/Pathfinding/Dynamic/Partitioning/hkaiSilhouettePriorityController.h>
+#include <Ai/Pathfinding/Collide/hkaiSpatialQueryHitFilter.h>
+#include <Ai/Pathfinding/NavMesh/Streaming/hkaiStreamingCollection.h>
 
 #include <Common/Base/Container/Set/hkSet.h>
 
 // Uncomment the following line to enable debug display code
 //#define HKAI_DEBUG_DISPLAY_OVERLAP_MANAGER
 
-class hkaiStreamingCollection;
-class hkaiSpatialQueryHitFilter;
-class hkaiSilhouettePriorityController;
 class hkBitField;
 
 /// Mapping information for one hkaiNavMeshInstance
-struct hkaiOverlapManagerSection
+struct HK_EXPORT_AI hkaiOverlapManagerSection
 {
 	//+version(1)
 	HK_DECLARE_REFLECTION();
@@ -43,7 +43,7 @@ struct hkaiOverlapManagerSection
 	~hkaiOverlapManagerSection();
 
 	/// Data for a particular active silhouette generator, with respect to this nav mesh section.
-	class GeneratorData : public hkReferencedObject
+	class HK_EXPORT_AI GeneratorData : public hkReferencedObject
 	{
 	public:
 		HK_DECLARE_REFLECTION();
@@ -57,26 +57,33 @@ struct hkaiOverlapManagerSection
 		{
 		}
 
+			/// If possible, reduce amount of memory owned by members
 		void optimizeCapacity();
 
-		/// Context data (used in multithreaded jobs)
+			/// Context data (used in multithreaded tasks)
 		hkaiSilhouetteGeneratorSectionContext m_context;
 
-		/// List of all faces (in this section) currently overlapped by the generator
+			/// List of all faces (in this section) currently overlapped by the generator
 		hkArray< hkaiNavMesh::FaceIndex > m_overlappedFaces;
 	};
 
+		/// Prepare the section information to use the specified instance.
 	void init( const hkaiNavMeshInstance* instance );
+
+		/// Deletes all data for the section. Uses when unloading a section or shutting down.
 	void clearGeneratorData();
 	
 		/// If possible, reduce amount of memory owned by members
 	void optimizeCapacity();
 
-	// Returns the index of the first non-cutting generator context if some painting silhouettes need to be 
-	// treated as cutting. If no special handling no special handling is needed, returns -1.
+		/// Returns the index of the first non-cutting generator context if some painting silhouettes need to be 
+		/// treated as cutting. If no special handling no special handling is needed, returns -1.
 	int sortGeneratorsForFace(const hkaiSilhouettePriorityController* controller, hkaiNavMesh::FaceIndex f);
 
+		/// Get the generator data (e.g. list of overlapped faces) for the specified generator.
 	inline GeneratorData* getGeneratorData( const hkaiSilhouetteGenerator* gen);
+
+		/// Get the generator data (e.g. list of overlapped faces) for the specified generator.
 	inline const GeneratorData* getGeneratorData( const hkaiSilhouetteGenerator* gen) const;
 
 		/// Set the face dirty if it isn't already.
@@ -85,21 +92,30 @@ struct hkaiOverlapManagerSection
 
 		/// Set the face to be clean (and implicitly set its priority to zero)
 	inline void setFaceClean( hkaiNavMesh::FaceIndex f );
+
+		/// Returns true if the face is dirty.
 	inline bool isFaceDirty( hkaiNavMesh::FaceIndex f) const;
 
-		/// Mark all faces as dirty. Not recommeneded as it will trigger a recut of all the faces (and is slow on its own)
+		/// Mark all faces as dirty. Not recommended as it will trigger a recut of all the faces (and is slow on its own)
 	void dirtyAllFaces();
 
+		/// Returns true if the section is empty (i.e. the corresponding hkaiNavMeshInstance was unloaded)
 	inline bool isEmpty() const;
+
+		/// Returns the number of faces in the section.
 	inline int getNumFaces() const;
 
+		/// Set up the GeneratorData for the generator (called when adding a generator or loading an instance).
 	GeneratorData* addDataForGenerator( const hkaiSilhouetteGenerator*, const hkQTransform& initialTransform );
+
+		/// Remove the GeneratorData for the generator (called when removing a generator or unloading an instance).
+		/// Overlapping facse are dirtied and their priority is increased by generatorPriority.
 	void removeDataForGenerator( const hkaiSilhouetteGenerator*, hkReal generatorPriority );
 
-
+		/// Consistency check.
 	bool isOk() const;
 
-	/// Called after serialization to rebuild generator->face map
+		/// Called after serialization to rebuild generator->face map
 	void rebuildMap(bool updateContexts = true);
 
 public:
@@ -120,7 +136,7 @@ public:
 };
 
 	/// An AI "broadphase" that tracks overlaps between nav mesh faces and silhouette generators.
-class hkaiOverlapManager : public hkReferencedObject,  public hkaiNavMeshSilhouetteSelector
+class HK_EXPORT_AI hkaiOverlapManager : public hkReferencedObject,  public hkaiNavMeshSilhouetteSelector
 {
 public:
 	//+version(1)
@@ -208,31 +224,37 @@ public:
 		/// Return a list of face keys which have changed since the last cut.
 	virtual void getUpdatedFaces( const class hkaiNavMeshCutter* cutter, hkArray<hkaiPackedKey>::Temp& cutFaceKeysOut, hkArray<hkaiPackedKey>::Temp& uncutFaceKeysOut, const hkBitField* sectionsToUpdate ) HK_OVERRIDE;
 		/// For a given face, return a list of silhouettes which are relevant to this face.
-	virtual void gatherSilhouettesForFace( hkaiPackedKey faceKey, const struct hkaiSilhouetteGenerationParameters& genParams, hkArray<hkaiCompoundSilhouette>::Temp& silsOut, hkArray<int>::Temp& silMaterialIds ) HK_OVERRIDE;
-		/// Sets up the job
-	virtual void setupJobForFace( hkaiPackedKey faceKey, struct hkaiNavMeshCutFaceJob& job ) HK_OVERRIDE;
+	virtual void gatherSilhouettesForFace( const class hkaiNavMeshCutter* cutter, hkaiPackedKey faceKey, const struct hkaiSilhouetteGenerationParameters& genParams, hkArray<hkaiCompoundSilhouette>::Temp& silsOut, hkArray<int>::Temp& silMaterialIds ) HK_OVERRIDE;
+		/// Sets up the task
+	virtual void setupTaskForFace( const class hkaiNavMeshCutter* cutter, hkaiPackedKey faceKey, class hkaiNavMeshCutFaceTask& task ) HK_OVERRIDE;
 
 #ifdef HKAI_DEBUG_DISPLAY_OVERLAP_MANAGER
 	void debugDraw(hkVector4Parameter offset) const;
 #endif
 
+		/// Set the hkaiReferenceFrameAndExtrusion used for silhouette generation
 	void setReferenceFrameAndExtrusion( const hkaiReferenceFrameAndExtrusion& refFrame );
 
+		/// Get the array of section data.
 	const inline hkArray<hkaiOverlapManager::Section>& getSectionData() const;
 
 protected:
+
+		/// Does an AABB query on the section's mediator for the generator, and calls updateSectionFacesForGenerator
+		/// on the query hits.
+	void queryAndUpdateFacesForGenerator( hkaiRuntimeIndex sectionIdx, Section::GeneratorData* generatorData, 
+		const hkaiSilhouetteGenerator* gen, const hkQTransform& silhouetteRelativeTransform );
+
+		/// Udpates the list of overlapping faces for the generator. Dirties the faces of new and removed overlaps.
 	void updateSectionFacesForGenerator( hkaiRuntimeIndex sectionIdx, Section::GeneratorData* generatorData, 
 		const hkaiSilhouetteGenerator* gen, const hkQTransform& silhouetteRelativeTransform, const hkAabb& genAabb, 
 		const hkArrayBase<hkaiPackedKey>& faceKeys );
 
-	void queryAndUpdateFacesForGenerator( hkaiRuntimeIndex sectionIdx, Section::GeneratorData* generatorData, 
-		const hkaiSilhouetteGenerator* gen, const hkQTransform& silhouetteRelativeTransform );
-
-	void setAabbExpansion(hkVector4Parameter up, hkReal extrusion);
+		/// Gets the AABB for the generator, expanded as specified by the hkaiReferenceFrameAndExtrusion.
 	void getExtrudedAabbForGenerator(const hkaiSilhouetteGenerator* gen, const hkaiReferenceFrameAndExtrusion& refFrame, const hkQTransform& localTransform, const hkaiNavMeshInstance* instance, hkAabb& aabb) const;
 
-	/// Extrude a (local-space) AABB and find out if the mesh face overlaps it.
-	
+		/// Extrude a (local-space) AABB and find out if the mesh face overlaps it.
+		
 	static hkBool32 HK_CALL testLocalAabbAgainstFace(const hkAabb& aabbLocal, const hkaiNavMeshInstance* meshInstance, hkaiNavMesh::FaceIndex faceIndex);
 
 		/// Called after serialization to rebuild generator->face maps
@@ -267,7 +289,7 @@ protected:
 #endif // HK_AI_OVERLAP_MANAGER
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

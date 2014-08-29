@@ -10,44 +10,7 @@
 #define HKV_TEXTURE_DEFINITIONS_HPP_INCLUDED
 
 #include <Vision/Editor/vForge/AssetManagement/AssetFramework/hkvAssetStructs.hpp>
-
-enum hkvTextureDataFormat
-{
-  HKV_TEXTURE_DATA_FORMAT_PVRTC2,
-  HKV_TEXTURE_DATA_FORMAT_PVRTC4,
-
-  HKV_TEXTURE_DATA_FORMAT_ETC1,
-
-  HKV_TEXTURE_DATA_FORMAT_DXT1,
-  HKV_TEXTURE_DATA_FORMAT_DXT3,
-  HKV_TEXTURE_DATA_FORMAT_DXT5,
-
-  HKV_TEXTURE_DATA_FORMAT_A4R4G4B4,
-  HKV_TEXTURE_DATA_FORMAT_R4G4B4A4_GL,
-  HKV_TEXTURE_DATA_FORMAT_A1R5G5B5,
-  HKV_TEXTURE_DATA_FORMAT_R5G6B5,
-  HKV_TEXTURE_DATA_FORMAT_A8R8G8B8,
-  HKV_TEXTURE_DATA_FORMAT_X8R8G8B8,
-  HKV_TEXTURE_DATA_FORMAT_R8G8B8,
-
-  HKV_TEXTURE_DATA_FORMAT_COUNT
-};
-
-extern const char* hkvTextureDataFormatNames[];
-
-enum hkvTextureFileFormat
-{
-  HKV_TEXTURE_FILE_FORMAT_DDS,
-  HKV_TEXTURE_FILE_FORMAT_RGBA,
-  HKV_TEXTURE_FILE_FORMAT_ETC,
-  HKV_TEXTURE_FILE_FORMAT_PVR,
-  HKV_TEXTURE_FILE_FORMAT_GTX,
-  HKV_TEXTURE_FILE_FORMAT_COUNT
-};
-
-extern const char* hkvTextureFileFormatNames[];
-extern const char* hkvTextureFileFormatExtensions[];
-
+#include <Vision/Editor/vForge/AssetManagement/VisionAssets/ImageFile/hkvImageFile.hpp>
 
 enum hkvTextureUsage
 {
@@ -72,12 +35,12 @@ extern const char* hkvTextureCompressionNames[];
 
 struct hkvConversionToolFormatString
 {
-  hkvTextureDataFormat m_format;
+  hkvImageDataFormat m_format;
   const char* m_string;
 };
 
 
-typedef hkvEnumMapping<hkvTargetPlatform, HKV_TARGET_PLATFORM_COUNT, hkvTextureDataFormat, HKV_TEXTURE_DATA_FORMAT_COUNT> hkvPlatformToTextureDataFormatMappingBase;
+typedef hkvEnumMapping<hkvTargetPlatform, HKV_TARGET_PLATFORM_COUNT, hkvImageDataFormat, HKV_IMAGE_DATA_FORMAT_COUNT> hkvPlatformToTextureDataFormatMappingBase;
 class hkvPlatformToTextureDataFormatMapping
 : public hkReferencedObject,
   public hkSingleton<hkvPlatformToTextureDataFormatMapping>,
@@ -94,7 +57,7 @@ private:
 };
 
 
-typedef hkvEnumMapping<hkvTargetPlatform, HKV_TARGET_PLATFORM_COUNT, hkvTextureFileFormat, HKV_TEXTURE_FILE_FORMAT_COUNT> hkvPlatformToTextureFileFormatMappingBase;
+typedef hkvEnumMapping<hkvTargetPlatform, HKV_TARGET_PLATFORM_COUNT, hkvImageFileFormat, HKV_IMAGE_FILE_FORMAT_COUNT> hkvPlatformToTextureFileFormatMappingBase;
 class hkvPlatformToTextureFileFormatMapping
 : public hkReferencedObject,
   public hkSingleton<hkvPlatformToTextureFileFormatMapping>,
@@ -111,7 +74,7 @@ private:
 };
 
 
-typedef hkvEnumMapping<hkvTextureFileFormat, HKV_TEXTURE_FILE_FORMAT_COUNT, hkvTextureDataFormat, HKV_TEXTURE_DATA_FORMAT_COUNT> hkvTextureFileToDataFormatMappingBase;
+typedef hkvEnumMapping<hkvImageFileFormat, HKV_IMAGE_FILE_FORMAT_COUNT, hkvImageDataFormat, HKV_IMAGE_DATA_FORMAT_COUNT> hkvTextureFileToDataFormatMappingBase;
 class hkvTextureFileToDataFormatMapping
 : public hkReferencedObject,
   public hkSingleton<hkvTextureFileToDataFormatMapping>,
@@ -129,7 +92,7 @@ private:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

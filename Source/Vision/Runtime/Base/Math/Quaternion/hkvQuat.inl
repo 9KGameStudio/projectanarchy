@@ -11,6 +11,33 @@
 
 #include <Vision/Runtime/Base/Math/Helper/hkvEulerUtil.h>
 
+HKV_FORCE_INLINE float hkvQuat::getX () const
+{
+  HKVQUAT_INITIALIZATION_CHECK(this);
+
+  return x;
+}
+
+HKV_FORCE_INLINE float hkvQuat::getY () const
+{
+  HKVQUAT_INITIALIZATION_CHECK(this);
+
+  return y;
+}
+
+HKV_FORCE_INLINE float hkvQuat::getZ () const
+{
+  HKVQUAT_INITIALIZATION_CHECK(this);
+
+  return z;
+}
+
+HKV_FORCE_INLINE float hkvQuat::getW () const
+{
+  HKVQUAT_INITIALIZATION_CHECK(this);
+
+  return w;
+}
 
 HKV_FORCE_INLINE const hkvQuat hkvQuat::IdentityQuaternion () 
 { 
@@ -120,6 +147,10 @@ HKV_FORCE_INLINE float hkvQuat::getLengthSquared () const
 
 HKV_FORCE_INLINE float hkvQuat::dot (const hkvQuat& rhs) const
 {
+  HKVQUAT_INITIALIZATION_CHECK(this);
+
+  HKVQUAT_INITIALIZATION_CHECK(&rhs);
+
   return (x * rhs.x + y * rhs.y + z * rhs.z + w * rhs.w);
 }
 
@@ -168,11 +199,15 @@ HKV_FORCE_INLINE void hkvQuat::setFromEulerAngles (float fRollDeg, float fPitchD
 
 HKV_FORCE_INLINE void hkvQuat::getAsEulerAngles (float& out_fRollDeg, float& out_fPitchDeg, float& out_fYawDeg) const
 {
+  HKVQUAT_INITIALIZATION_CHECK(this);
+
   hkvEulerUtil::ConvertQuaternionToEuler_Deg (*this, out_fRollDeg, out_fPitchDeg, out_fYawDeg, hkvEulerMode::VisionDefault);
 }
 
 HKV_FORCE_INLINE void hkvQuat::getAxisAndAngle (hkvVec3& out_vAxis, float& out_fAngleDeg) const
 {
+  HKVQUAT_INITIALIZATION_CHECK(this);
+
   // axis
   {
     if (x * x + y * y + z * z <= HKVMATH_EPSILON)
@@ -201,6 +236,9 @@ HKV_FORCE_INLINE void hkvQuat::getAxisAndAngle (hkvVec3& out_vAxis, float& out_f
 
 HKV_FORCE_INLINE const hkvQuat hkvQuat::multiply (const hkvQuat& rhs) const
 {
+  HKVQUAT_INITIALIZATION_CHECK(this);
+  HKVQUAT_INITIALIZATION_CHECK(&rhs);
+
   const hkvVec3 lhs_img (x, y, z);
   const hkvVec3 rhs_img (rhs.x, rhs.y, rhs.z);
   const float lhs_real = w;
@@ -229,6 +267,8 @@ HKV_FORCE_INLINE const hkvQuat hkvQuat::multiplyReverse (const hkvQuat& rhs) con
 
 HKV_FORCE_INLINE const hkvVec3 hkvQuat::transform (const hkvVec3& rhs) const
 {
+  HKVQUAT_INITIALIZATION_CHECK(this);
+
   const hkvVec3 QuatImg (x, y, z);
 
   float qreal = w;
@@ -248,6 +288,8 @@ HKV_FORCE_INLINE const hkvVec3 hkvQuat::transform (const hkvVec3& rhs) const
 
 HKV_FORCE_INLINE const hkvVec3 hkvQuat::transformReverse (const hkvVec3& rhs) const
 {
+  HKVQUAT_INITIALIZATION_CHECK(this);
+
   const hkvVec3 QuatImg (x, y, z);
 
   float qreal = -w;
@@ -270,14 +312,10 @@ HKV_FORCE_INLINE const hkvVec3 operator* (const hkvQuat& lhs, const hkvVec3& rhs
   return lhs.transform (rhs);
 }
 
-#ifdef HKVMATH_ENABLE_NEW_OPERATORS
-
-  HKV_FORCE_INLINE const hkvQuat operator* (const hkvQuat& lhs, const hkvQuat& rhs)
-  {
-    return lhs.multiply (rhs);
-  }
-
-#endif
+HKV_FORCE_INLINE const hkvQuat operator* (const hkvQuat& lhs, const hkvQuat& rhs)
+{
+  return lhs.multiply (rhs);
+}
 
 HKV_FORCE_INLINE bool operator== (const hkvQuat& lhs, const hkvQuat& rhs)
 {
@@ -291,6 +329,8 @@ HKV_FORCE_INLINE bool operator!= (const hkvQuat& lhs, const hkvQuat& rhs)
 
 HKV_FORCE_INLINE const hkvMat3 hkvQuat::getAsMat3 () const
 {
+  HKVQUAT_INITIALIZATION_CHECK(this);
+
   const float xx =  x * x * 2.0f;
   const float yy =  y * y * 2.0f;
   const float zz =  z * z * 2.0f;
@@ -328,6 +368,8 @@ HKV_FORCE_INLINE const hkvMat4 hkvQuat::getAsMat4 () const
 
 HKV_FORCE_INLINE bool hkvQuat::isIdentity (float fEpsilon) const
 {
+  HKVQUAT_INITIALIZATION_CHECK(this);
+
   return hkvMath::isFloatEqual (x, 0, fEpsilon) && 
          hkvMath::isFloatEqual (y, 0, fEpsilon) &&
          hkvMath::isFloatEqual (z, 0, fEpsilon) &&
@@ -350,6 +392,17 @@ HKV_FORCE_INLINE bool hkvQuat::isValid () const
           hkvMath::isFiniteNumber (w));
 }
 
+HKV_FORCE_INLINE const float* hkvQuat::getDataPointer () const
+{
+  HKVQUAT_INITIALIZATION_CHECK(this);
+
+  return &x;
+}
+
+HKV_FORCE_INLINE float* hkvQuat::getDataPointer ()
+{
+  return &x;
+}
 
 HKV_FORCE_INLINE void hkvMat4::setFromQuaternion (const hkvQuat& q)
 {
@@ -361,10 +414,11 @@ HKV_FORCE_INLINE hkvQuat hkvMat4::getAsQuaternion () const
   return getRotationalPart ().getAsQuaternion ();
 }
 
+
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

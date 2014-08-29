@@ -70,14 +70,14 @@ class VScriptMember;
 }
 
 #define SWIG_CONVERT_POINTER(L, stack_pos, type, pointer_to_instance) \
-  type * pointer_to_instance; \
+  type * pointer_to_instance = NULL; \
 { \
   if(!SWIG_isptrtype(L, stack_pos)) luaL_error(L, "Expected %s* as parameter %d", #type, stack_pos); \
   if(!SWIG_IsOK(SWIG_ConvertPtr(L, stack_pos,(void**)&pointer_to_instance,SWIGTYPE_p_##type,0))) luaL_error(L, "Unable to convert self to %s*", #type); \
 }
 
 #define VSWIG_CONVERT_POINTER(L, stack_pos, type, pointer_to_instance) \
-  type * pointer_to_instance; \
+  type * pointer_to_instance = NULL; \
 { \
   if(!(lua_isuserdata(L,stack_pos) || lua_isnil(L,stack_pos))) luaL_error(L, "Expected %s* as parameter %d", #type, stack_pos); \
   if(VSWIG_Lua_ConvertPtr(L, stack_pos,(void**)&pointer_to_instance,SWIGTYPE_p_##type,0)<0) luaL_error(L, "Unable to convert self to %s*", #type); \
@@ -125,12 +125,20 @@ SCRIPT_IMPEXP void LUA_PushBitmask(lua_State* L, unsigned int iMask);
 //Create an object proxy on the stack, specify an intended owner if you would like to perform a one time initialization of the object
 SCRIPT_IMPEXP void LUA_PushObjectProxy(lua_State* L, VTypedObject* pObject, VisTypedEngineObject_cl* pIntendedOwner = NULL);
 
+//Pushes an existing object proxy on the stack, or nil if none has been created yet
+SCRIPT_IMPEXP void LUA_LookupObjectProxy(lua_State* L, VTypedObject* pObject);
+
+//Retrieves the typed object contained in the userdata object
+SCRIPT_IMPEXP VTypedObject* LUA_ExtractFromUserData(lua_State* L, const void* pUserData);
+
+//Pushes a table containing the dynamic properties of the top stack object onto the stack
+SCRIPT_IMPEXP void LUA_FetchDynPropertyTable(lua_State* L);
+
 //Create a new wrapper on the stack, specify an intended owner if you would like to perform a one time initialization of the object
 SCRIPT_IMPEXP void LUA_CreateNewWrapper(lua_State* L, VTypedObject* pObject, VisTypedEngineObject_cl* pIntendedOwner = NULL);
 
 //Compatiblity method
 SCRIPT_IMPEXP VisTypedEngineObject_cl * LUA_GetObject(lua_State* L, int iStackIndex);
-
 
 //Push the scripting proxy for an object on the stack
 SCRIPT_IMPEXP void LUA_PushObjectProxy(lua_State* L, VScriptComponent *pObj);
@@ -163,17 +171,17 @@ SCRIPT_IMPEXP bool LUA_PushEnum(lua_State* L, const VLUAEnumInfo *pInfo, int iEn
 //Links the new table to the master state's global table so scripts can find the global functions
 SCRIPT_IMPEXP void LUA_CreateLocalsTable(lua_State* L);
 
-//reset the pointer-to-wrapper lookup table in the Lua registry
-SCRIPT_IMPEXP void LUA_ResetWrapperLookupTable(lua_State* L);
+// Removes the wrapper created for the typed object from the global lookup table.
+SCRIPT_IMPEXP void LUA_RemoveWrapperFromLookupTable(lua_State* L, VTypedObject* pObject);
 
 //Registers an object in the LUA registry
 SCRIPT_IMPEXP int LUA_RegisterObject(lua_State* L);
 
 //De registers an object from the LUA registry
-SCRIPT_IMPEXP void LUA_DeregisterObject(lua_State* L, int id);
+SCRIPT_IMPEXP void LUA_DeregisterObject(lua_State* L, int stackIndex);
 
 // Helper function to test if a Lua object is of a specified userdata type (taken from beta 5.2 branch)
-SCRIPT_IMPEXP void* LUA_TestUserData(lua_State* L, int ud, const char* tname);
+SCRIPT_IMPEXP void* LUA_TestUserData(lua_State* L, int stackIndex, const char* tname);
 
 // Helper to retrieve swig data types
 SCRIPT_IMPEXP void LUA_GetSwigTypes(lua_State *L, VStrList *pTypes);
@@ -218,133 +226,140 @@ SCRIPT_IMPEXP int LUA_CallStaticFunction(lua_State* L, const char * szModuleName
 #  define LUA_STACK_DUMP(L)  
 #endif
 
-
-/////////////////////////////////////////////////////////////////////////////
-// Helper functions and macros for accessing arguments from wrapper functions
-/////////////////////////////////////////////////////////////////////////////
-
-
-#ifdef _VISION_PS3
-#pragma diag_push
-#pragma diag_suppress=178
-#endif
-
-
-
-// VerfiyValidFloats checks in debug mode the floats for nan and infinite values
-static void VerifyValidNumbers(const float *pBlock, int iCount, lua_Number fMax=1000000.0)
+/// \brief Helper class to capture the lua state in a Lua wrapper function without having to resort to implementing the function natively.
+///
+/// See the SWIG binding documentation for information on how to use this class.
+class VCaptureSwigEnvironment
 {
-  for (int i=0;i<iCount;i++)
+public:
+  /// \brief Constructor. Internal, do not use.
+  VCaptureSwigEnvironment(lua_State* L, int& swigArg) : L(L), m_swigArg(swigArg), m_bFailed(false) {}
+
+  /// \brief Returns the Lua state of the current function
+  lua_State* GetLuaState()
   {
-    VASSERT_MSG (hkvMath::isValidFloat (pBlock[i]), "value is not a valid float");
-    VASSERT_MSG (hkvMath::isInRange (pBlock[i], -fMax, fMax), "value is out of range");
+    return L;
   }
-}
 
-// VerfiyValidFloats checks in debug mode the floats for nan and infinite values
-static void VerifyValidNumbers(const double *pBlock, int iCount, lua_Number fMax=1000000.0)
-{
-  for (int i=0;i<iCount;i++)
+  /// \brief Sets the number of return values this function has pushed onto the stack.
+  void SetNumReturnValues(int iReturnValues)
   {
-    VASSERT_MSG (hkvMath::isValidFloat ((float) pBlock[i]), "value is not a valid float");
-    VASSERT_MSG (hkvMath::isInRange ((float) pBlock[i], -fMax, fMax), "value is out of range");
+    m_swigArg = iReturnValues;
   }
-}
+
+  /// \brief Pushes a nil value onto the Lua stack and increases the return value counter.
+  void AddReturnValueNil()
+  {
+    lua_pushnil(L);
+    m_swigArg++;
+  }
+
+  /// \brief Pushes a string onto the Lua stack and increases the return value counter.
+  void AddReturnValueString(const char* pString)
+  {
+    lua_pushstring(L, pString);
+    m_swigArg++;
+  }
+
+  /// \brief Pushes a number onto the Lua stack and increases the return value counter.
+  void AddReturnValueNumber(lua_Number number)
+  {
+    lua_pushnumber(L, number);
+    m_swigArg++;
+  }
+
+  /// \brief Pushes a boolean onto the Lua stack and increases the return value counter.
+  void AddReturnValueBool(bool bBoolean)
+  {
+    lua_pushboolean(L, bBoolean ? 1 : 0);
+    m_swigArg++;
+  }
+
+  /// \brief Pushes a failure message onto the Lua stack and redirects to SWIG's error handler after the function returns.
+  void Fail(const char* pszError, ...)
+  {
+    m_bFailed = true;
+
+    va_list args;
+    va_start(args, pszError);
+    m_sError.FormatArgList(pszError, args);
+    va_end(args);
+  }
+
+  /// \brief Indicates whether Fail() was called.
+  bool HasFailed()
+  {
+    return m_bFailed;
+  }
+
+  /// \brief Returns the formatted error message produced by calling Fail().
+  const char* GetErrorMessage()
+  {
+    return m_sError.AsChar();
+  }
 
 
-#ifdef _VISION_PS3
-#pragma diag_pop
-#endif
+private:
+  VString m_sError;
+  lua_State* L;
+  int& m_swigArg;
+  bool m_bFailed;
+};
 
+//helper function to get a value from the Lua stack by provding the type and the wrpper type (swig_type_info *)
+template <typename T>
+SCRIPT_IMPEXP bool LUA_GetValueFast(lua_State* L, int stackIndex, void * pSwigType, T& value);
 
-#ifdef HK_DEBUG_SLOW
-#define VALIDATE_LUA_NUMBERS_RANGE( Numbers, Count, Range ) VerifyValidNumbers( Numbers, Count, Range )
-#else
-#define VALIDATE_LUA_NUMBERS_RANGE( Numbers, Count, Range ) { }
-#endif
+SCRIPT_IMPEXP bool LUA_GetValue(lua_State* L, int stackIndex, bool &value);
 
-#ifdef HK_DEBUG_SLOW
-#define VALIDATE_LUA_NUMBERS( Numbers, Count ) VerifyValidNumbers( Numbers, Count )
-#else
-#define VALIDATE_LUA_NUMBERS( Numbers, Count ) { }
-#endif
+SCRIPT_IMPEXP bool LUA_GetValue(lua_State* L, int stackIndex, int &value);
 
+SCRIPT_IMPEXP bool LUA_GetValue(lua_State* L, int stackIndex, float &value);
 
-//Defines and initializes the ARGS_OK variable.
-//The ARGS_OK variable is used to keep track of erros encountered during
-//GET_OBJECT_AT and GET_ARG calls.
-#define DECLARE_ARGS_OK bool ARGS_OK = true;
+SCRIPT_IMPEXP bool LUA_GetValue(lua_State* L, int stackIndex, double &value);
 
-//Retrieves an argument if possible, sets an error if not available
-// _id   : argument index number
-// _type : class type
-// _var  : variable name
-#define GET_ARG(_id, _type, _var)   \
-    _type _var;                     \
-    if (!LUA_GetValue(L, _id, _var)) \
-    {\
-      luaL_argerror (L, _id+1, "Expected " #_type);\
-      ARGS_OK = false;\
-    }\
-
-//Retrieves an optional argument if possible, but doesn't set an error if not available
-// _def : default value to use
-#define GET_OPT_ARG(_id, _type, _var, _def)   \
-    _type _var = _def;                     \
-    LUA_GetValue(L, _id, _var);
-
-extern lua_Number dummyVector[3];
-
-SCRIPT_IMPEXP bool LUA_GetValue(lua_State* L, int id, bool &value);
-
-SCRIPT_IMPEXP bool LUA_GetValue(lua_State* L, int id, int &value);
-
-SCRIPT_IMPEXP bool LUA_GetValue(lua_State* L, int id, float &value);
-
-SCRIPT_IMPEXP bool LUA_GetValue(lua_State* L, int id, double &value);
-
-SCRIPT_IMPEXP bool LUA_GetValue(lua_State* L, int id, VString &value);
+SCRIPT_IMPEXP bool LUA_GetValue(lua_State* L, int stackIndex, VString &value);
 
 //NB. The string pointers only valid while the object is still on the stack
-SCRIPT_IMPEXP bool LUA_GetValue(lua_State* L, int id, const char* &value);
+SCRIPT_IMPEXP bool LUA_GetValue(lua_State* L, int stackIndex, const char* &value);
 
-SCRIPT_IMPEXP bool LUA_GetValue(lua_State* L, int id, VisTypedEngineObject_cl* &pObj);
+SCRIPT_IMPEXP bool LUA_GetValue(lua_State* L, int stackIndex, VisTypedEngineObject_cl* &pObj);
 
-SCRIPT_IMPEXP bool LUA_GetValue(lua_State* L, int id, VTypedObject* &value);
+SCRIPT_IMPEXP bool LUA_GetValue(lua_State* L, int stackIndex, VTypedObject* &value);
 
-SCRIPT_IMPEXP bool LUA_GetValue(lua_State* L, int id, IVObjectComponent* &pObj);
+SCRIPT_IMPEXP bool LUA_GetValue(lua_State* L, int stackIndex, IVObjectComponent* &pObj);
 
-SCRIPT_IMPEXP bool LUA_GetFloatField(lua_State* L, int id, const char *pszField, float &value);
+SCRIPT_IMPEXP bool LUA_GetFloatField(lua_State* L, int stackIndex, const char *pszField, float &value);
 
-SCRIPT_IMPEXP bool LUA_GetValue(lua_State* L, int id, hkvVec2& value);
+SCRIPT_IMPEXP bool LUA_GetValue(lua_State* L, int stackIndex, hkvVec2& value);
 
-SCRIPT_IMPEXP bool LUA_GetValue(lua_State* L, int id, hkvVec3& value);
+SCRIPT_IMPEXP bool LUA_GetValue(lua_State* L, int stackIndex, hkvVec3& value);
 
-SCRIPT_IMPEXP bool LUA_GetValue(lua_State* L, int id, hkvVec4& value);
+SCRIPT_IMPEXP bool LUA_GetValue(lua_State* L, int stackIndex, hkvVec4& value);
 
-SCRIPT_IMPEXP bool LUA_GetValue(lua_State* L, int id, hkvMat3& value);
+SCRIPT_IMPEXP bool LUA_GetValue(lua_State* L, int stackIndex, hkvMat3& value);
 
-SCRIPT_IMPEXP bool LUA_GetValue(lua_State* L, int id, hkvMat4& value);
+SCRIPT_IMPEXP bool LUA_GetValue(lua_State* L, int stackIndex, hkvMat4& value);
 
-SCRIPT_IMPEXP bool LUA_GetValue(lua_State* L, int id, hkvPlane& value);
+SCRIPT_IMPEXP bool LUA_GetValue(lua_State* L, int stackIndex, hkvPlane& value);
 
-SCRIPT_IMPEXP bool LUA_GetValue(lua_State* L, int id, hkvQuat& value);
+SCRIPT_IMPEXP bool LUA_GetValue(lua_State* L, int stackIndex, hkvQuat& value);
 
-SCRIPT_IMPEXP bool LUA_GetValue(lua_State* L, int id, hkvAlignedBBox &value);
+SCRIPT_IMPEXP bool LUA_GetValue(lua_State* L, int stackIndex, hkvAlignedBBox &value);
 
-SCRIPT_IMPEXP bool LUA_GetValue(lua_State* L, int id, hkvBoundingSphere &value);
+SCRIPT_IMPEXP bool LUA_GetValue(lua_State* L, int stackIndex, hkvBoundingSphere &value);
 
-SCRIPT_IMPEXP bool LUA_GetValue(lua_State* L, int id, VColorRef &value);
+SCRIPT_IMPEXP bool LUA_GetValue(lua_State* L, int stackIndex, VColorRef &value);
 
 //bitmask access
-SCRIPT_IMPEXP bool LUA_GetValue(lua_State* L, int id, int*& bitmask);
+SCRIPT_IMPEXP bool LUA_GetValue(lua_State* L, int stackIndex, int*& bitmask);
 
 //Gets a Vision enum from the LUA stack and return a pointer to the correct value
-SCRIPT_IMPEXP const int* LUA_GetEnum(lua_State* L, int id);
+SCRIPT_IMPEXP const int* LUA_GetEnum(lua_State* L, int stackIndex);
 
-SCRIPT_IMPEXP bool LUA_GetValue(lua_State* L, int id, VisLightSourceType_e &value);
+SCRIPT_IMPEXP bool LUA_GetValue(lua_State* L, int stackIndex, VisLightSourceType_e &value);
 
-SCRIPT_IMPEXP bool LUA_GetValue(lua_State* L, int id, VisTraceAccuracy_e &value);
+SCRIPT_IMPEXP bool LUA_GetValue(lua_State* L, int stackIndex, VisTraceAccuracy_e &value);
 
 #if defined(__SNC__)
 #pragma diag_push
@@ -545,7 +560,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

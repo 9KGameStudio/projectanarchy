@@ -67,12 +67,13 @@ public:
   class UiQueryEditorStatusData : public hkvCallbackData
   {
   public:
-    ASSETFRAMEWORK_IMPEXP UiQueryEditorStatusData(const hkvCallback* sender) : hkvCallbackData(sender), m_silentMode(false), m_isDevelopmentMachine(false)
+    ASSETFRAMEWORK_IMPEXP UiQueryEditorStatusData(const hkvCallback* sender) : hkvCallbackData(sender), m_silentMode(false), m_isDevelopmentMachine(false), m_isPushResourceChangesEnabled(false)
     {
     }
 
     bool m_silentMode;
     bool m_isDevelopmentMachine;
+    bool m_isPushResourceChangesEnabled;
     hkStringPtr m_projectDir;
     hkStringPtr m_projectSearchPath;
   };
@@ -109,6 +110,7 @@ public: // Data
 public:
   ASSETFRAMEWORK_IMPEXP static bool isSilentModeEnabled();
   ASSETFRAMEWORK_IMPEXP static bool isDevelopmentMachine();
+  ASSETFRAMEWORK_IMPEXP static bool isPushResourceChangesEnabled();
   ASSETFRAMEWORK_IMPEXP static const char* getProjectDir(hkStringBuf& out_buffer);
   ASSETFRAMEWORK_IMPEXP static const char* getProjectSearchPath(hkStringBuf& out_buffer);
   ASSETFRAMEWORK_IMPEXP static MessageBoxButton showMessageBox(const char* title, const char* text, hkFlags<MessageBoxButton, hkUint8> availableButtons = Ok, MessageBoxButton defaultButton = Ok, MessageBoxIcon icon = Information);
@@ -120,7 +122,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

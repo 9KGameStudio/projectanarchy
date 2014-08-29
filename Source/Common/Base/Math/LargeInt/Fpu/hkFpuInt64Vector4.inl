@@ -383,21 +383,21 @@ inline void hkInt64Vector4::setMul(hkIntVectorParameter origA, hkIntVectorParame
 //
 //	Returns the I-th component
 
-template <> inline hkInt64 hkInt64Vector4::getComponent<0>()	const	
-{	
-	return m_quad.xy.getS64<0>();	
+template <> inline hkInt64 hkInt64Vector4::getComponent<0>()	const
+{
+	return m_quad.xy.getS64<0>();
 }
-template <> inline hkInt64 hkInt64Vector4::getComponent<1>()	const	
-{	
-	return m_quad.xy.getS64<1>();	
+template <> inline hkInt64 hkInt64Vector4::getComponent<1>()	const
+{
+	return m_quad.xy.getS64<1>();
 }
-template <> inline hkInt64 hkInt64Vector4::getComponent<2>()	const	
-{	
-	return m_quad.zw.getS64<0>();	
+template <> inline hkInt64 hkInt64Vector4::getComponent<2>()	const
+{
+	return m_quad.zw.getS64<0>();
 }
-template <> inline hkInt64 hkInt64Vector4::getComponent<3>()	const	
-{	
-	return m_quad.zw.getS64<1>();	
+template <> inline hkInt64 hkInt64Vector4::getComponent<3>()	const
+{
+	return m_quad.zw.getS64<1>();
 }
 inline hkInt64 hkInt64Vector4::getComponent(int I) const
 {
@@ -416,20 +416,20 @@ inline hkInt64 hkInt64Vector4::horizontalMax<3>() const
 //
 //	Sets the I-th component to zero.
 
-template <> inline void hkInt64Vector4::zeroComponent<0>()		
-{	
+template <> inline void hkInt64Vector4::zeroComponent<0>()
+{
 	m_quad.xy.setS64<0>(0);
 }
-template <> inline void hkInt64Vector4::zeroComponent<1>()		
-{	
+template <> inline void hkInt64Vector4::zeroComponent<1>()
+{
 	m_quad.xy.setS64<1>(0);
 }
-template <> inline void hkInt64Vector4::zeroComponent<2>()		
+template <> inline void hkInt64Vector4::zeroComponent<2>()
 {
 	m_quad.zw.setS64<0>(0);
 }
-template <> inline void hkInt64Vector4::zeroComponent<3>()		
-{	
+template <> inline void hkInt64Vector4::zeroComponent<3>()
+{
 	m_quad.zw.setS64<1>(0);
 }
 
@@ -488,8 +488,44 @@ inline void hkInt64Vector4::convertS64ToF64(hkVector4d& vOut) const
 	vOut.set((double)m_quad.xy.getS64<0>(), (double)m_quad.xy.getS64<1>(), (double)m_quad.zw.getS64<0>(), (double)m_quad.zw.getS64<1>());
 }
 
+
+//
+//	Load values for N components from linear addresses at \a p. Not loaded components are undefined.
+
+template <int N, hkMathIoMode A>
+HK_FORCE_INLINE void hkInt64Vector4::load(const hkUint64* p)
+{
+	HK_ERROR(0x733fb66c, "Not implemented");
+}
+
+template <> HK_FORCE_INLINE void hkInt64Vector4::load<4, HK_IO_SIMD_ALIGNED>(const hkUint64* p)
+{
+	m_quad.xy.setU64<0>(*p);
+	m_quad.xy.setU64<1>(*(p + 1));
+	m_quad.zw.setU64<0>(*(p + 2));
+	m_quad.zw.setU64<1>(*(p + 3));
+}
+
+//
+//	Store values of N components to linear addresses at \a p.
+
+template <int N, hkMathIoMode A>
+HK_FORCE_INLINE void hkInt64Vector4::store(hkUint64* p) const
+{
+	HK_ERROR(0x733fb66d, "Not implemented");
+}
+
+template <>
+HK_FORCE_INLINE void hkInt64Vector4::store<4, HK_IO_SIMD_ALIGNED>(hkUint64* p) const
+{
+	*p = m_quad.xy.getU64<0>();
+	*(p + 1) = m_quad.xy.getU64<1>();
+	*(p + 2) = m_quad.zw.getU64<0>();
+	*(p + 3) = m_quad.zw.getU64<1>();
+}
+
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

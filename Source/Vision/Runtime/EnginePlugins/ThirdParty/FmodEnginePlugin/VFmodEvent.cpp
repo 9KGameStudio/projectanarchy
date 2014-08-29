@@ -9,7 +9,7 @@
 #include <Vision/Runtime/EnginePlugins/ThirdParty/FmodEnginePlugin/FmodEnginePlugin.hpp>
 #include <Vision/Runtime/EnginePlugins/ThirdParty/FmodEnginePlugin/VFmodManager.hpp>
 
-#include <Vision/Runtime/Base/System/Memory/VMemDbg.hpp>
+
 
 
 // forward declaration of Fmod event callback
@@ -32,6 +32,10 @@ VFmodEvent::VFmodEvent() :
   m_bStartPlayback(false)
 {
   m_pOwner = NULL;
+
+  GetPosition(m_vLastPosition);
+
+  VFmodManager::GlobalManager().OnAfterInitializeFmod += this;
 }
 
 VFmodEvent::VFmodEvent(const char *szEventName, VFmodEventCollection* pOwner, VFmodEventGroup* pEventGroup, const hkvVec3 &vPos, int iFlags) :
@@ -54,6 +58,10 @@ VFmodEvent::VFmodEvent(const char *szEventName, VFmodEventCollection* pOwner, VF
   m_pOwner = pOwner;
   pOwner->Add(this);
 
+  GetPosition(m_vLastPosition);
+
+  VFmodManager::GlobalManager().OnAfterInitializeFmod += this;
+
   if(Vision::Editor.IsAnimatingOrPlaying() && (iFlags & VFMOD_FLAG_PAUSED) == 0)
     Start();
 }
@@ -61,6 +69,25 @@ VFmodEvent::VFmodEvent(const char *szEventName, VFmodEventCollection* pOwner, VF
 VFmodEvent::~VFmodEvent()
 {
   OnDisposeObject();
+  VFmodManager::GlobalManager().OnAfterInitializeFmod -= this;
+}
+
+void VFmodEvent::OnHandleCallback(IVisCallbackDataObject_cl *pData)
+{
+  if(pData->m_pSender == &VFmodManager::GlobalManager().OnAfterInitializeFmod)
+  {
+    if(m_spEventGroup!=NULL && !m_spEventGroup->IsLoaded())
+    {      
+      m_spEventGroup->EnsureLoaded();
+      Init();
+
+      if(m_bIsPlaying)
+      {
+        m_bIsPlaying = false;
+        Start();
+      }
+    }
+  }
 }
 
 void VFmodEvent::DisposeObject()
@@ -89,6 +116,15 @@ void VFmodEvent::Start(bool bAlsoInEditor)
   if (!bAlsoInEditor && !Vision::Editor.IsAnimatingOrPlaying())
     return;
 
+  // Initially the event is not started, then within the first RunTick this is done. This is required since 
+  // the 3D listener attributes has to be set prior to playing an event. Otherwise Fmod would perform 
+  // occlusion-raycasts without having initialized listener-attributes, which potentially results in a
+  // wrong occlusion-behavior.
+  m_bStartPlayback = true;
+
+  m_bIsPlaying = true;
+  m_bPlayedOnce = true;
+
   VFmodManager &manager = VFmodManager::GlobalManager();
   if (manager.IsInitialized() && m_pEvent)
   {
@@ -97,21 +133,12 @@ void VFmodEvent::Start(bool bAlsoInEditor)
 
     const hkvVec3 &vPos = GetPosition();
     const hkvVec3 &vDir = GetDirection();
-    m_pEvent->set3DAttributes((FMOD_VECTOR *)&vPos, NULL, (FMOD_VECTOR *)&vDir); // no speed (yet)
+    m_pEvent->set3DAttributes((FMOD_VECTOR *)&vPos, NULL, (FMOD_VECTOR *)&vDir); // no speed when starting; will be supplied with each update.
  
 
     VFmodEventGroup* pEventGroup = GetEventGroup();
     if (!pEventGroup->m_pEventGroup) // event group not loaded successfully
       return;
-
-    // Initially the event is not started, then within the first RunTick this is done. This is required since 
-    // the 3D listener attributes has to be set prior to playing an event. Otherwise Fmod would perform 
-    // occlusion-raycasts without having initialized listener-attributes, which potentially results in a
-    // wrong occlusion-behavior.
-    m_bStartPlayback = true;
-
-    m_bIsPlaying = true;
-    m_bPlayedOnce = true;
   }
 
   Helper_SetFlag(VFMOD_FLAG_PAUSED, !IsPlaying());
@@ -260,21 +287,6 @@ void VFmodEvent::OnDisposeObject()
 {
   if (m_pEvent)
     m_pEvent->setUserData(NULL);
-}
-
-void VFmodEvent::OnObject3DChanged(int iO3DFlags)
-{
-  VisObject3D_cl::OnObject3DChanged(iO3DFlags);
-
-  if (iO3DFlags & VisObject3D_cl::VIS_OBJECT3D_POSCHANGED)
-  {
-    if (m_pEvent && !m_bInfoOnly)
-    {
-      const hkvVec3& vPos = GetPosition();
-      const hkvVec3& vDir = GetDirection();
-      m_pEvent->set3DAttributes((FMOD_VECTOR *)&vPos, NULL, (FMOD_VECTOR *)&vDir); // no speed (yet)
-    }
-  }
 }
 
 static int VFMOD_TRIGGER_ID_PAUSE = -1;
@@ -482,7 +494,7 @@ void VFmodEvent::Reset()
   // Instead these instances will be purged in the next RunTick() of the VFmodManager. However, within vForge in 
   // editing mode these event instances are flagged as info-only, in order to allow starting the playback by the 
   // corresponding hotspot button.
-  if (iOneshot==1 && (m_iFlags & VFMOD_FLAG_NODISPOSE)!=0 && Vision::Editor.IsAnimatingOrPlaying())
+  if (iOneshot==1 && IsAutoDisposed() && Vision::Editor.IsAnimatingOrPlaying())
   {
     manager.SetAnyStopped(true);
     return;
@@ -496,7 +508,7 @@ void VFmodEvent::Reset()
   m_bInfoOnly = true;
 }
 
-void VFmodEvent::Update(bool bForceUpdate)
+void VFmodEvent::Update(float fTimeDelta, bool bForceUpdate)
 {
   if (m_pEvent && m_bInfoOnly && (m_bStartPlayback || bForceUpdate))
   { 
@@ -505,7 +517,7 @@ void VFmodEvent::Update(bool bForceUpdate)
     // update volume-affecting properties of info-only-event
     const hkvVec3 &vPos = GetPosition();
     const hkvVec3 &vDir = GetDirection();
-    m_pEvent->set3DAttributes((FMOD_VECTOR *)&vPos, NULL, (FMOD_VECTOR *)&vDir); // no speed (yet)
+    m_pEvent->set3DAttributes((FMOD_VECTOR *)&vPos, NULL, (FMOD_VECTOR *)&vDir); // no speed, as long as the event is info only
 
     // Now try to get an event instance, which might will fail depend upon the "Max playbacks behavior" of this event. 
     // In case of failure m_pEvent will be set to NULL, therefore save the info-only-event pointer, in order to restore
@@ -531,6 +543,16 @@ void VFmodEvent::Update(bool bForceUpdate)
       m_pEvent = pInfoOnlyEvent;
     }
   }
+  else if (m_pEvent && !m_bInfoOnly)
+  {
+    // If this is a real event, update its position/direction/velocity data.
+    const hkvVec3 &vPos = GetPosition();
+    const hkvVec3 &vDir = GetDirection();
+    hkvVec3 vVelocity(fTimeDelta > 0.f ?  (vPos - m_vLastPosition) * (1.f / fTimeDelta) : hkvVec3::ZeroVector());
+    m_pEvent->set3DAttributes((FMOD_VECTOR *)&vPos, (FMOD_VECTOR *)&vVelocity, (FMOD_VECTOR *)&vDir);
+  }
+
+  GetPosition(m_vLastPosition);
 
   // start playback
   if (m_bStartPlayback && !m_bInfoOnly)
@@ -588,13 +610,13 @@ FMOD_RESULT F_CALLBACK EventCallback(FMOD_EVENT *event, FMOD_EVENT_CALLBACKTYPE 
   return FMOD_OK;
 }
 
-void VFmodEventCollection::Update()
+void VFmodEventCollection::Update(float fTimeDelta)
 {
   int iCount = Count();
   for (int i=0;i<iCount;i++)
   {
     VFmodEvent* pEvent = GetAt(i);
-    pEvent->Update();
+    pEvent->Update(fTimeDelta);
   }
 }
 
@@ -651,7 +673,7 @@ VFmodEvent* VFmodEventCollection::SearchEvent(const char* szName) const
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140624)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -100,19 +100,27 @@ class hkpTriggerVolume : public hkReferencedObject, public hkpContactListener, p
 		virtual void entityRemovedCallback( hkpEntity* entity );
 
 		/// When setting a new shape, there are two cases to evaluate:
-		/// Case 1: The User called 'hkpRigidBody::setShape()'. In this case, we'll remove the entity from the overlapping bodies in the
-		/// following callback, firing 'triggerEventCallback()' directly with 'ENTERED_EVENT' and with with 'LEFT_EVENT in the next step through
-		/// 'hkpTriggerVolume::collisionAddedCallback()' and 'hkpTriggerVolume::postSimulationCallback()'.
-		/// Case 2: The User called 'hkpRigidBody::updateShape()'. In this case, we will not remove the entity ftom the overlapping bodies and both
-		///         Removed and Added (if the collidable with the updated shape still collides with the TriggerVolume) events will be processed at
-		///         the same time in the next step. Note that this means that the user will only receive a 'hkpTriggerVolume::collisionAddedCallback()'
-		///         callback if the collidable with the updated shape does not collide with the TriggerVolume anymore.
+		///	Case 1: The user called 'hkpRigidBody::setShape()'. In this case, we'll remove the entity from the
+		///			overlapping bodies in this callback, firing 'triggerEventCallback()' directly with
+		///			'LEFT_EVENT' ( or 'TRIGGER_BODY_LEFT_EVENT' if the shape being set belongs to the triggerBody) and
+		///			then possibly issue an 'ENTERED_EVENT' in the next world step through
+		///			'hkpTriggerVolume::postSimulationCallback(..);'.
+		///	Case 2: The user called 'hkpRigidBody::updateShape()'. In this case, we will not remove the entity from the
+		///			overlapping bodies and both 'LEFT_EVENT' and 'ENTERED_EVENT' (if the collidable with the updated
+		///			shape still collides with the TriggerVolume) events will be processed in the next call to
+		///			'hkpTriggerVolume::postSimulationCallback()'.
+		///			Note that this means that the user will only receive a 'hkpTriggerVolume::collisionAddedCallback()'
+		///			callback if the collidable with the updated shape does not collide with the TriggerVolume anymore.
 		virtual void entityShapeSetCallback( hkpEntity* entity); 
 
 			/// Called when the triggerBody has been added to the world.
 		void triggerBodyEnteredWorld( hkpWorld* );
 			/// Called when the triggerBody has been removed from the world or deleted.
 		void triggerBodyLeftWorld();
+			/// Called when the triggerBody has been removed from a broadphase.
+			/// Note that it only reset all the overlapping information without removing its world (which it is still
+			/// attached to) callbacks.
+		void triggerBodyLeftBroadphase();
 
 			/// The array of bodies in contact with the triggerBody after callbacks have been
 			/// fired. It is kept in deterministic order. It is not updated until after the
@@ -185,7 +193,7 @@ class hkpTriggerVolume : public hkReferencedObject, public hkpContactListener, p
 #endif // HK_TRIGGER_VOLUME_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

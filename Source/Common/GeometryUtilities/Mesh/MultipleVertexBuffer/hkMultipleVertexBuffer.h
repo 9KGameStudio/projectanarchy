@@ -10,18 +10,18 @@
 #define HK_MULTIPLE_VERTEX_BUFFER_H
 
 
-extern const class hkClass hkMultipleVertexBufferLockedElementClass;
+extern HK_EXPORT_COMMON const class hkClass hkMultipleVertexBufferLockedElementClass;
 
-extern const class hkClass hkMultipleVertexBufferElementInfoClass;
+extern HK_EXPORT_COMMON const class hkClass hkMultipleVertexBufferElementInfoClass;
 
-extern const class hkClass hkMultipleVertexBufferVertexBufferInfoClass;
+extern HK_EXPORT_COMMON const class hkClass hkMultipleVertexBufferVertexBufferInfoClass;
 
 class hkMemoryMeshVertexBuffer;
 
 #include <Common/GeometryUtilities/Mesh/hkMeshVertexBuffer.h>
 #include <Common/GeometryUtilities/Mesh/Memory/hkMemoryMeshVertexBuffer.h>
 
-extern const hkClass hkMultipleVertexBufferClass;
+extern HK_EXPORT_COMMON const hkClass hkMultipleVertexBufferClass;
 
 
 /// The hkMultipleVertexBuffer class allows multiple contained vertex buffers to appear as a single vertex buffer
@@ -53,7 +53,7 @@ extern const hkClass hkMultipleVertexBufferClass;
 /// automatically by the hkMultipleVertexBuffer implementation.
 ///
 /// \sa hkMeshVertexBuffer
-class hkMultipleVertexBuffer: public hkMeshVertexBuffer
+class HK_EXPORT_COMMON hkMultipleVertexBuffer : public hkMeshVertexBuffer
 {
     public:
 		HK_DECLARE_REFLECTION();
@@ -210,7 +210,7 @@ class hkMultipleVertexBuffer: public hkMeshVertexBuffer
 #endif // HK_MULTIPLE_VERTEX_BUFFER_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

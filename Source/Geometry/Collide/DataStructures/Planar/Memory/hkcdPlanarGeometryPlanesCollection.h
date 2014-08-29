@@ -5,6 +5,7 @@
  * Product and Trade Secret source code contains trade secrets of Havok. Havok Software (C) Copyright 1999-2014 Telekinesys Research Limited t/a Havok. All Rights Reserved. Use of this software is subject to the terms of an end user license agreement.
  *
  */
+//HK_HAVOK_ASSEMBLY_EXCLUDE_FILE
 
 #ifndef HKCD_PLANE_COLLECTION_H
 #define HKCD_PLANE_COLLECTION_H
@@ -17,11 +18,12 @@
 #include <Geometry/Collide/DataStructures/Planar/Predicates/hkcdPlanarGeometryPredicates.h>
 
 /// Set of plane that can be shared amongst the geometries
-class hkcdPlanarGeometryPlanesCollection : public hkReferencedObject
+class HK_EXPORT_COMMON hkcdPlanarGeometryPlanesCollection : public hkReferencedObject
 {
 	public:
 
 		HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_GEOMETRY);
+		HK_DECLARE_REFLECTION();
 
 		typedef hkcdPlanarGeometryPrimitives::Plane			Plane;
 		typedef hkcdPlanarGeometryPrimitives::PlaneId		PlaneId;
@@ -55,6 +57,9 @@ class hkcdPlanarGeometryPlanesCollection : public hkReferencedObject
 
 		/// Copy constructor
 		hkcdPlanarGeometryPlanesCollection(const hkcdPlanarGeometryPlanesCollection& other);
+
+		/// Serialization constructor
+		hkcdPlanarGeometryPlanesCollection(class hkFinishLoadedObjectFlag flag);
 
 		/// Destructor
 		virtual ~hkcdPlanarGeometryPlanesCollection();
@@ -91,8 +96,14 @@ class hkcdPlanarGeometryPlanesCollection : public hkReferencedObject
 		/// Returns the given plane
 		HK_FORCE_INLINE void getPlane(PlaneId planeId, Plane& planeOut) const;
 
+		/// Advanced use. Accesses the plane having the given Id.
+		HK_FORCE_INLINE Plane& accessPlane(PlaneId planeId);
+
 		/// Adds a new plane
 		HK_FORCE_INLINE PlaneId addPlane(const Plane& plane);
+
+		/// Allocates a new plane
+		HK_FORCE_INLINE PlaneId allocPlane();
 
 		/// Returns the number of planes stored in the collection
 		HK_FORCE_INLINE int getNumPlanes() const;
@@ -140,10 +151,17 @@ class hkcdPlanarGeometryPlanesCollection : public hkReferencedObject
 
 	protected:
 
-		hkVector4 m_offsetAndScale;					///< Offset that needs to be added to all points stored in the mesh. The scale is encoded in the .w component.
-		hkArray<Plane> m_planes;					///< The planes
-		mutable OrientationCache* m_cache;			///< The orientation cache
-		mutable hkCriticalSection m_criticalAccess;	///< For multithreaded accesses
+		/// Offset that needs to be added to all points stored in the mesh. The scale is encoded in the .w component.
+		hkVector4 m_offsetAndScale;
+
+		/// The planes
+		hkArray<Plane> m_planes;
+
+		/// The orientation cache
+		mutable OrientationCache* m_cache;				//+nosave
+
+		/// For multithreaded accesses
+		mutable hkCriticalSection* m_criticalAccess;	//+nosave
 };
 
 #include <Geometry/Collide/DataStructures/Planar/Memory/hkcdPlanarGeometryPlanesCollection.inl>
@@ -151,7 +169,7 @@ class hkcdPlanarGeometryPlanesCollection : public hkReferencedObject
 #endif	//	HKCD_PLANE_COLLECTION_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

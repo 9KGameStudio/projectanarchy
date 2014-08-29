@@ -10,15 +10,15 @@
 
 #include <Common/SceneData/Mesh/hkxVertexDescription.h>
 
-extern const class hkClass hkxVertexBufferVertexDataClass;
+extern HK_EXPORT_COMMON const class hkClass hkxVertexBufferVertexDataClass;
 
 class hkxVertexDescription;
 
-extern const class hkClass hkxVertexBufferClass;
+extern HK_EXPORT_COMMON const class hkClass hkxVertexBufferClass;
 
 /// The information needed to construct a vertex buffer. This structure binds a
 /// chunk of memory to a vertex format
-class hkxVertexBuffer : public hkReferencedObject
+class HK_EXPORT_COMMON hkxVertexBuffer : public hkReferencedObject
 {
 	//+vtable(true)
 	//+version(1)
@@ -55,7 +55,7 @@ class hkxVertexBuffer : public hkReferencedObject
 		struct VertexData
 		{
 		public:
-			//+version(1)
+			//+version(2)
 			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_SCENE_DATA, hkxVertexBuffer::VertexData );
 			HK_DECLARE_REFLECTION();
 
@@ -67,8 +67,11 @@ class hkxVertexBuffer : public hkReferencedObject
 			void setSize(int numVerts); // make sure strides are set first
 			void expandBy(int numVerts);
 
-			hkArray<hkFloat32> m_vectorData; // just aligned floats, so could be in m_floatData. Vector data though is normally mutable data at runtime for skinning etc so handy to keep separate too if runtime supports loading as is.
-			hkArray<hkFloat32> m_floatData; //32 bit, like hkUint32, but handy to keep as float for read-ability in XML dumps etc
+			// just aligned floats, so could be in m_floatData. Vector data though is normally mutable data at runtime for skinning etc so handy to keep separate too if runtime supports loading as is.
+			hkArray<hkFloat32> m_vectorData;	//+overridetype(hkArray<hkUint32>)
+
+			//32 bit, like hkUint32, but handy to keep as float for read-ability in XML dumps etc
+			hkArray<hkFloat32> m_floatData;		//+overridetype(hkArray<hkUint32>)
 			hkArray<hkUint32> m_uint32Data;
 			hkArray<hkUint16> m_uint16Data;
 			hkArray<hkUint8> m_uint8Data;
@@ -95,7 +98,7 @@ class hkxVertexBuffer : public hkReferencedObject
 #endif // HKSCENEDATA_MESH_HKXVERTEXBUFFER_HKCLASS_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

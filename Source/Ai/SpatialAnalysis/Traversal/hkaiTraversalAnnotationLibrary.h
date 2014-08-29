@@ -17,7 +17,7 @@
 
 /// Encapsulates a set of traversal annotations, and their associated interval
 /// partitions.
-class hkaiTraversalAnnotationLibrary : public hkReferencedObject
+class HK_EXPORT_AI hkaiTraversalAnnotationLibrary : public hkReferencedObject
 {
 public:	
 	//+version(0)
@@ -42,7 +42,7 @@ public:
 	/// \name Userdata/index mapping
 	/// These members may be modified if desired, as long as the constraints
 	/// described in their comments are maintained.
-	///@{
+	/// @{
 
 	/// The maximum number of annotations which can be contained in a library.
 	/// This gives the index/userdata mapping some room for flag bits.
@@ -82,7 +82,7 @@ public:
 		return userdata & 0x000FFFFFu;
 	}
 
-	///@}
+	/// @}
 
 	/// Add an annotation to the library.
 	/// 
@@ -191,7 +191,7 @@ private:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

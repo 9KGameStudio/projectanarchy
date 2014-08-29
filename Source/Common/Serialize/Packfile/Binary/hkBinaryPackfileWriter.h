@@ -16,7 +16,7 @@
 /// a call to read() and some pointer fixups.
 /// This class can write objects for a platform which has
 /// different structure layouts from the host platform.
-class hkBinaryPackfileWriter : public hkPackfileWriter
+class HK_EXPORT_COMMON hkBinaryPackfileWriter : public hkPackfileWriter
 {
 	public:
 		HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE);
@@ -52,7 +52,7 @@ class hkBinaryPackfileWriter : public hkPackfileWriter
 #endif // HK_SERIALIZE_BINARY_PACKFILE_WRITER_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

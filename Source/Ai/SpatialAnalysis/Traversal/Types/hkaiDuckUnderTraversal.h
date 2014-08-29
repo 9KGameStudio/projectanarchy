@@ -15,32 +15,37 @@
 struct hkaiTraversalAnalysisContext;
 class hkaiTraversalAnnotationLibrary;
 
-class hkaiDuckUnderAnalyzer : public hkaiTraversalAnalyzer
+class HK_EXPORT_AI hkaiDuckUnderAnalyzer : public hkaiTraversalAnalyzer
 {
 public:
-	//+version(0)
+	//+version(1)
 	HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_AI_SPATIAL);
 	HK_DECLARE_REFLECTION();
 
-	hkaiDuckUnderAnalyzer() { }
+	hkaiDuckUnderAnalyzer() 
+		: m_maxHorizontalDistance(0.5f)
+		, m_minClearance(0.5f)
+		, m_maxClearance(3.0f)
+		, m_maxHeightDifference(0.25f)
+	{ }
 	hkaiDuckUnderAnalyzer(hkFinishLoadedObjectFlag f)
 		: hkaiTraversalAnalyzer(f)
 	{ }
 
 	/// The minimum horizontal distance between the two surfaces. Must be 
 	/// greater than 0.
-	hkReal m_maxHorizontalDistance;
+	hkReal m_maxHorizontalDistance; //+default(0.5f)
 	
 	/// The minimum vertical clearance above the ground connecting the two
 	/// surfaces. Must be greater than 0.
-	hkReal m_minClearance;
+	hkReal m_minClearance; //+default(0.5f)
 
 	/// The maximum vertical clearance above the ground connecting the two
 	/// surfaces. Must be greater than m_minClearance.
-	hkReal m_maxClearance;
+	hkReal m_maxClearance; //+default(3.0f)
 
 	/// The maximum vertical height difference between the two surfaces.
-	hkReal m_maxHeightDifference;
+	hkReal m_maxHeightDifference; //+default(0.5f)
 
 	virtual void analyze(hkaiTraversalAnalysisContext & context) const HK_OVERRIDE;
 };
@@ -74,7 +79,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

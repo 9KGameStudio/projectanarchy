@@ -106,71 +106,101 @@ class VTriangle;
 //#define HKVMATH_ENABLE_STRICT_VALIDATION
 
 
-// If defined all the default constructors of the math classes are deprecated.
-// That means people must use constructors that specify exactly with what value
-// the class should be initialized.
-// This should be used to convert between old and new initialization methods.
-// Also see the macros HKV_DISABLE_DEPRECATION and HKV_ENABLE_DEPRECATION.
-//#define HKVMATH_DEPRECATE_DEFAULT_CONSTRUCTOR
-
-// Setting this flag will deprecate all functions from the old interface that are
-// very critical to get rid of (because they are interacting with classes that are not supported anymore)
-// Also see the macros HKV_DISABLE_DEPRECATION and HKV_ENABLE_DEPRECATION.
-#define HKVMATH_DEPRECATE_OLD_INTERFACE_STAGE_1
-
-// Setting this flag will deprecate all functions from the old interface that are
-// critical to get rid of (because they are really bad)
-// Also see the macros HKV_DISABLE_DEPRECATION and HKV_ENABLE_DEPRECATION.
-#define HKVMATH_DEPRECATE_OLD_INTERFACE_STAGE_2
-
-// Setting this flag will deprecate all functions from the old interface that are
-// less critical to get rid of (because they are usually just a different name for some function)
-// Also see the macros HKV_DISABLE_DEPRECATION and HKV_ENABLE_DEPRECATION.
-#define HKVMATH_DEPRECATE_OLD_INTERFACE_STAGE_3
-
 // Setting this flag will deprecate all functions from the old interface that are still in 'use' by some legacy code.
-//#define HKVMATH_DEPRECATE_OLD_INTERFACE_STAGE_4
+#define HKVMATH_DEPRECATE_OLD_INTERFACE_STAGE_4
 
-
-// the old behavior is that all math classes initialize their data in the constructor
-// this is performance wise not very good, but for compatibility it is currently still enabled
-// this setting is deprecated and in the future all constructors will leave their data uninitialized
-#define HKVMATH_DEFAULTCONSTRUCTORS_INITIALIZEDATA
-
-//#define HKVMATH_ENABLE_OLD_OPERATORS
-
-// enables operator* (Matrix, Matrix) with the new (consistent) conventions
-// without this one has to use 'multiply' for matrix multiplications
-// this should not be enabled too soon, otherwise customers might port code that still uses the old convention
-// and it will compile (but not work)
-//#define HKVMATH_ENABLE_NEW_OPERATORS
-
-//#define HKVMATH_ENABLE_NEW_SERIALIZATION_OPERATORS
-
-
-#ifdef HKVMATH_DEPRECATE_DEFAULT_CONSTRUCTOR
-  #define HKVMATH_DEFAULT_CONSTRUCTOR HKV_DEPRECATED
+// hkvQuat
+#ifdef HK_DEBUG
+  // In debug and dev builds, initialize to NaN (and do validity checks)
+  #define HKVQUAT_INITIALIZE_TO_NAN
+  //#define HKVQUAT_INITIALIZE_TO_IDENTITY
+  #define HKVQUAT_CHECK_FOR_NAN
 #else
-  #define HKVMATH_DEFAULT_CONSTRUCTOR
+  // In release builds, initialize to identity and do no checks
+  #define HKVQUAT_INITIALIZE_TO_IDENTITY
 #endif
 
-#ifdef HKVMATH_DEPRECATE_OLD_INTERFACE_STAGE_1
-  #define HKVMATH_DEPRECATED_STAGE1 HKV_DEPRECATED
+
+
+// hkvPlane
+#ifdef HK_DEBUG
+  // In debug and dev builds, initialize to NaN (and do validity checks)
+  #define HKVPLANE_INITIALIZE_TO_NAN
+  //#define HKVPLANE_INITIALIZE_TO_IDENTITY
+  #define HKVPLANE_CHECK_FOR_NAN
 #else
-  #define HKVMATH_DEPRECATED_STAGE1
+  // In release builds, initialize to identity and do no checks
+  #define HKVPLANE_INITIALIZE_TO_IDENTITY
 #endif
 
-#ifdef HKVMATH_DEPRECATE_OLD_INTERFACE_STAGE_2
-  #define HKVMATH_DEPRECATED_STAGE2 HKV_DEPRECATED
+
+// hkvAlignedBBox
+#ifdef HK_DEBUG
+  // In debug and dev builds, initialize to NaN (and do validity checks)
+  #define HKVBBOX_INITIALIZE_TO_NAN
+  //#define HKVBBOX_INITIALIZE_TO_IDENTITY
+  #define HKVBBOX_CHECK_FOR_NAN
 #else
-  #define HKVMATH_DEPRECATED_STAGE2
+  // In release builds, initialize to identity and do no checks
+  #define HKVBBOX_INITIALIZE_TO_IDENTITY
 #endif
 
-#ifdef HKVMATH_DEPRECATE_OLD_INTERFACE_STAGE_3
-  #define HKVMATH_DEPRECATED_STAGE3 HKV_DEPRECATED
+// hkvMat3
+#ifdef HK_DEBUG
+  // In debug and dev builds, initialize to NaN (and do validity checks)
+  #define HKVMAT3_INITIALIZE_TO_NAN
+  //#define HKVMAT3_INITIALIZE_TO_IDENTITY
+  #define HKVMAT3_CHECK_FOR_NAN
 #else
-  #define HKVMATH_DEPRECATED_STAGE3
+  // In release builds, initialize to identity and do no checks
+  #define HKVMAT3_INITIALIZE_TO_IDENTITY
 #endif
+
+// hkvMat4
+#ifdef HK_DEBUG
+  // In debug and dev builds, initialize to NaN (and do validity checks)
+  #define HKVMAT4_INITIALIZE_TO_NAN
+  //#define HKVMAT4_INITIALIZE_TO_IDENTITY
+  #define HKVMAT4_CHECK_FOR_NAN
+#else
+  // In release builds, initialize to identity and do no checks
+  #define HKVMAT4_INITIALIZE_TO_IDENTITY
+#endif
+
+// hkvVec2
+#ifdef HK_DEBUG
+  // In debug and dev builds, initialize to NaN (and do validity checks)
+  #define HKVVEC2_INITIALIZE_TO_NAN
+  //#define HKVVEC2_INITIALIZE_TO_IDENTITY
+  #define HKVVEC2_CHECK_FOR_NAN
+#else
+  // In release builds, initialize to identity and do no checks
+  #define HKVVEC2_INITIALIZE_TO_IDENTITY
+#endif
+
+// hkvVec3
+#ifdef HK_DEBUG
+  // In debug and dev builds, initialize to NaN (and do validity checks)
+  #define HKVVEC3_INITIALIZE_TO_NAN
+  //#define HKVVEC3_INITIALIZE_TO_IDENTITY
+  #define HKVVEC3_CHECK_FOR_NAN
+#else
+  // In release builds, initialize to identity and do no checks
+  #define HKVVEC3_INITIALIZE_TO_IDENTITY
+#endif
+
+// hkvVec4
+#ifdef HK_DEBUG
+  // In debug and dev builds, initialize to NaN (and do validity checks)
+  #define HKVVEC4_INITIALIZE_TO_NAN
+  //#define HKVVEC4_INITIALIZE_TO_IDENTITY
+  #define HKVVEC4_CHECK_FOR_NAN
+#else
+  // In release builds, initialize to identity and do no checks
+  #define HKVVEC4_INITIALIZE_TO_IDENTITY
+#endif
+
+
 
 #ifdef HKVMATH_DEPRECATE_OLD_INTERFACE_STAGE_4
   #define HKVMATH_DEPRECATED_STAGE4 HKV_DEPRECATED
@@ -187,7 +217,7 @@ class VTriangle;
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -105,7 +105,7 @@ typedef VSmartPtr<D3DShaderResourceView>   D3DShaderResourcePtr;
 #define V_TEXTURE_LOCKFLAG_NOCOMPONENTSWIZZLE   0x100
 #define V_TEXTURE_LOCKFLAG_NATIVEDATA           0x200
 
-#ifdef WIN32
+#ifdef _VISION_WIN32
   #ifdef _VR_DX9
     #define VIS_TEX_DEFAULTPOOLTYPE   D3DPOOL_MANAGED
     #define VIS_TEX_RTPOOLTYPE        D3DPOOL_DEFAULT
@@ -222,6 +222,13 @@ public:
   ///   bool: true if the texture is renderable.
   VBASE_IMPEXP virtual bool IsRenderable() const;
 
+ /// \brief
+  ///   Returns whether this texture has been created "from memory" using custom data rather than from file.
+  inline bool IsCreatedFromMemory() const
+  { 
+    return m_bIsCreatedFromMemory; 
+  }
+
   /// \brief
   ///   Returns the width of the texture
   inline int GetTextureWidth() const {return m_iSizeX;}
@@ -255,10 +262,6 @@ public:
   /// \brief
   ///   Gets the texture format of the texture
   inline VTextureLoader::VTextureFormat_e GetTextureFormat() const;
-
-  /// \brief
-  ///   Indicates whether texture is a heightmap. Heightmaps are special 16bpp image formats used by the Vision Terrain System.
-  inline bool IsHeightMap() const;
 
   /// \brief
   ///   Indicates whether the texture is a 2D texture
@@ -652,13 +655,12 @@ public:
 
   VBASE_IMPEXP static int CountMipLevels(int iWidth, int iHeight);
   VBASE_IMPEXP static int CountMipLevelsTill4x4(int iWidth, int iHeight);
-  VBASE_IMPEXP bool GetReplacementTexture(char *pszFileName, bool &bIsNativeFormat);
 
   // Custom texture loading which is used on different platforms to directly load
   // platform specific file formats which can't be loaded by the texture loader.
   VBASE_IMPEXP bool LoadCustomTexture(const char* pszFileName);
   
-  #if defined(WIN32) && defined(_VR_DX9)
+  #if defined(_VISION_WIN32) && defined(_VR_DX9)
     bool CopyRectWithSysmemProxy(int iMipLevel, int x1, int y1, int iWidth, int iHeight, const char *pSourceData, int iSrcStride, int iFace);
     inline D3DPOOL GetPoolType() const
     {
@@ -742,10 +744,6 @@ public:
   VBASE_IMPEXP static const char* GetGLES2TextureExtensionString(VTextureLoader::VTextureFormat_e eFormat);
 
   VBASE_IMPEXP static const char* GetGLES2DepthStencilExtensionString(VTextureLoader::VTextureFormat_e eFormat);
- 
-  VBASE_IMPEXP static bool GetPlatformSpecificTextureFileName(const char* pszOriginalFilename, char* pszOutFilename, 
-    bool &bIsNativeFormat);
-
 
 #elif defined(_VR_GX2)
   VBASE_IMPEXP static GX2SurfaceFormat ToGX2Format(VTextureLoader::VTextureFormat_e eFormat, bool bsRGB);
@@ -786,12 +784,6 @@ protected:
     m_bIsCreatedFromMemory = bStatus; 
   }
 
-  /// \brief
-  ///   Returns whether this texture has been created "from memory" using custom data rather than from file.
-  inline bool IsCreatedFromMemory() const
-  { 
-    return m_bIsCreatedFromMemory; 
-  }
 
   VBASE_IMPEXP void EnableDestroyHandleOnLostDevice();
 
@@ -826,7 +818,7 @@ protected:
   VBASE_IMPEXP void SetPathname(const char *szName, bool convert=true);
   void Init(const VTextureLoader &loader);
 
-#if defined(_VR_DX9) && defined(WIN32)
+#if defined(_VR_DX9) && defined(_VISION_WIN32)
   VBASE_IMPEXP virtual void OnEnterBackground() HKV_OVERRIDE;
   VBASE_IMPEXP virtual void OnLeaveBackground() HKV_OVERRIDE;
 #endif
@@ -1113,7 +1105,7 @@ typedef VSmartPtr<VTexture3DObject> VTexture3DObjectPtr;
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -27,7 +27,8 @@ class hkbFootIkDriver : public hkReferencedObject
 		~hkbFootIkDriver();
 
 			/// Do the foot ik.
-		void doFootIk( hkbContext& context, hkbGeneratorOutput& inOut );
+			/// If baseTimestep > 0, it is used to adjust the footik gains when slowing or speeding up playback.
+		void doFootIk( hkbContext& context, hkReal timestep, hkReal baseTimestep, hkbGeneratorOutput& inOut );
 
 			/// Get world from model feedback.
 		hkReal getWorldFromModelFeedback() const;
@@ -65,6 +66,7 @@ class hkbFootIkDriver : public hkReferencedObject
 				// Construct with defaults.
 			InternalLegData()
 			:	m_groundPosition( hkVector4::getZero() ),
+				m_groundNormal( hkVector4::getZero() ),
 				m_footIkSolver(HK_NULL),
 				m_verticalError(0.0f),
 				m_hitSomething(false),
@@ -137,7 +139,7 @@ class hkbFootIkDriver : public hkReferencedObject
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

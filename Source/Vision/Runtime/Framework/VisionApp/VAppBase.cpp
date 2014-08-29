@@ -18,14 +18,16 @@
 #include <Vision/Runtime/Engine/System/Resource/IVisApiBackgroundResourceRestorer.hpp>
 #include <Vision/Runtime/EnginePlugins/EnginePluginsImport.hpp>
 
-// Define the memory manager.
-DEFINE_MEMORYMANAGER(GetDefaultVMemoryManager());
-
 VAppBase* VAppBase::s_instance = NULL;
 
 VisCallback_cl VAppBase::OnAppStateChanged;
 
 VArray<VAppBase::VStartupElement>* VAppBase::s_pStartupModules = NULL;
+
+VAppBase* VAppBase::Get() 
+{ 
+  return s_instance;
+}
 
 bool VAppBase::RegisterStartupModule(VStartupModule* pModule, int iPriority)
 {
@@ -196,6 +198,10 @@ bool VAppBase::AppDeInit()
   // Note that the application implementation gets deleted when Vision::Callbacks.OnEngineDeInit is triggered
   m_pAppImpl->DeInit();
 
+  // since we changed the thread count manually after the engine was initialized we need to 
+  // de-initialize it here before the engine deinit so modules can clean up their thread local storage before they get unloaded.
+  Vision::GetThreadManager()->DeInitialize();
+
   DeInitEngine();
 
   Vision::SetApplication(NULL);
@@ -272,6 +278,7 @@ void VAppBase::PlatformDeInit()
 {
   Vision::SetApplication(NULL);
   Vision::Shutdown();
+  VBaseDeInit();
 }
 
 void VAppBase::SetupPlatformRootFileSystem()
@@ -297,6 +304,13 @@ void VAppBase::SetupBaseDataDirectories()
   VFileAccessManager::GetInstance()->AddSearchPath(sRoot);
   VFileAccessManager::GetInstance()->AddSearchPath(sRoot + "/Data/Vision/Base");
   VFileAccessManager::GetInstance()->AddSearchPath(":app_data", VSearchPathFlags::WRITABLE);
+
+  // Add Simulation data path if it exists (It will not be present in Vision / Anarchy installs)
+  VString sSimDataPath = sRoot + "/Data/Vision/Simulation";
+  if ( VFileAccessManager::GetInstance()->DirectoryExists( sSimDataPath ) )
+  {
+    VFileAccessManager::GetInstance()->AddSearchPath( sSimDataPath );
+  }
 }
 
 void VAppBase::OnHandleCallback(IVisCallbackDataObject_cl* pData)
@@ -309,8 +323,8 @@ void VAppBase::OnHandleCallback(IVisCallbackDataObject_cl* pData)
   {
     if (m_eAppState == VAppHelper::AS_RUNNING)
     {
-      // On WIN32 this event is already triggered inside Run().
-#if !defined(WIN32)
+      // On _VISION_WIN32 this event is already triggered inside Run().
+#if !defined(_VISION_WIN32)
       // Draw frame to enable application modules to grab frame buffer
       // content via Vision::Callbacks.OnBeforeSwapBuffers
       Run();
@@ -331,7 +345,7 @@ void VAppBase::OnHandleCallback(IVisCallbackDataObject_cl* pData)
   }
 }
 
-int VAppBase::GetCallbackSortingKey(VCallback* pCallback)
+int64 VAppBase::GetCallbackSortingKey(VCallback* pCallback)
 {
   // Modify the priority of the OnLeaveForeground callback to ensure that
   // all application modules also listening to that callback get informed
@@ -382,6 +396,14 @@ void VAppBase::OnLoadSceneStatus(int iStatus, float fPercentage)
   }
 }
 
+IVRendererNode* VAppBase::CreateRendererNode()
+{
+  IVRendererNode* pResult = m_pAppImpl->CreateRendererNode();
+  if(pResult != NULL)
+    return pResult;
+  return VisionApp_cl::CreateRendererNode();
+}
+
 void VAppBase::UpdateApplicationState()
 {
   // Scene loading can be triggered via lua script
@@ -399,12 +421,24 @@ void VAppBase::UpdateApplicationState()
   if (m_pResourceRestorer != NULL)
   {
     VASSERT(m_eAppState == VAppHelper::AS_SCENE_LOADING);
-    m_pResourceRestorer->Tick();
+    // Tick until we are roughly at 10 fps to not waste time in a vsync
+    uint64 uiTarget = VGLGetTimerResolution() / 10;
+    uint64 uiStartTime = VGLGetTimer();
+    do {
+      m_pResourceRestorer->Tick();
+    }
+    while(m_pResourceRestorer && !m_pResourceRestorer->IsFinished() && VGLGetTimer() - uiStartTime < uiTarget);
   }
   // Check scene loading state
   else if (!m_pAppImpl->GetSceneLoader().IsFinished() && !m_pAppImpl->GetSceneLoader().IsInErrorState())
   {
-    m_pAppImpl->GetSceneLoader().Tick();
+    // Tick until we are roughly at 10 fps to not waste time in a vsync
+    uint64 uiTarget = VGLGetTimerResolution() / 10;
+    uint64 uiStartTime = VGLGetTimer();
+    do {
+      m_pAppImpl->GetSceneLoader().Tick();
+    }
+    while(!m_pAppImpl->GetSceneLoader().IsFinished() && VGLGetTimer() - uiStartTime < uiTarget);
     m_eAppState = VAppHelper::AS_SCENE_LOADING;
   }
   else if (m_eAppState == VAppHelper::AS_SCENE_LOADING)
@@ -441,7 +475,7 @@ void VAppBase::SetAppState(VAppHelper::VApplicationState eAppState)
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

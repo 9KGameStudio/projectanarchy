@@ -200,6 +200,10 @@ public:
   EFFECTS_IMPEXP void SetClipDistances(float fNear, float fFar);
 
   /// \brief
+  ///   Use this function to set near and far clip distance. This function actually updates both the mesh clipping and the shader parameter for individual clipping. Pass <=0.0 for no clipping.
+  EFFECTS_IMPEXP void SetWindParameters(float dirX, float dirY, float strength);
+
+  /// \brief
   ///   Assign a custom shader effect to this instance
   inline void SetCustomEffect(VCompiledEffect *pBillboardFX);
 
@@ -239,6 +243,7 @@ public:
   V_DECLARE_SERIAL_DLLEXP( VBillboardGroupInstance,  EFFECTS_IMPEXP )
   EFFECTS_IMPEXP virtual void Serialize( VArchive &ar );
   hkvVec2 m_vClipDist; // near, far
+  hkvVec4 m_vWindParams;
 };
 
 
@@ -310,7 +315,7 @@ inline void VBillboardGroupInstance::SetCustomEffect(VCompiledEffect *pBillboard
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

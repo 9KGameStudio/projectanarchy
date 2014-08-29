@@ -263,6 +263,10 @@ public:
   virtual BOOL ValidateScript(const char *szText, int iLen, hkvLogInterface* pLog) HKV_OVERRIDE;
 
   /// \brief
+  ///   Overridden IVScriptManager function
+  virtual bool ValidateScriptNoRun(const char* szText, VMemoryTempBuffer<512>* pErrorBuffer) HKV_OVERRIDE;
+
+  /// \brief
   ///   Overridden IVScriptManager function. Returns the script instance of an object if it exists.
   SCRIPT_IMPEXP virtual IVScriptInstance* GetScriptInstance( VisTypedEngineObject_cl *pObj);
 
@@ -330,7 +334,7 @@ public:
   /// \brief
   ///   Sets the global instance of the scene script. For more information about the scene script,
   ///   please refer to the documentation.
-  VISION_APIFUNC virtual void SetSceneScript(IVScriptInstance* pScriptObj) 
+  SCRIPT_IMPEXP virtual void SetSceneScript(IVScriptInstance* pScriptObj) 
   {
     IVScriptManager::SetSceneScript(pScriptObj);
 
@@ -378,6 +382,10 @@ public:
   ///   Helper function to forward LUA error to log
   SCRIPT_IMPEXP static bool LuaErrorCheck(lua_State *L, int status, hkvLogInterface* pLog = NULL);
   
+  /// \brief
+  ///   Helper function to retrieve LUA error as a string
+  SCRIPT_IMPEXP static bool LuaErrorCheckGetError(lua_State *L, int iStatus, VMemoryTempBuffer<512>* pErrorBuffer);
+
   ///
   /// @}
   ///
@@ -392,10 +400,22 @@ public:
   //! Callback to listen to userdata serialize events. 
   SCRIPT_IMPEXP static VisCallback_cl OnUserDataSerialize;
 
-private:
-  SCRIPT_IMPEXP virtual void OnHandleCallback(IVisCallbackDataObject_cl *pData);
+  /// \brief Used internally to suppress all events for one editor run.
+  static void SetIgnoreEventsThisRun(bool bIgnore)
+  {
+    s_bIgnoreEventsThisRun = bIgnore;
+  }
 
-  int DumpVisionGlobals(lua_State *L) const;
+  /// \brief Used internally to suppress all events for one editor run.
+  static bool GetIgnoreEventsThisRun()
+  {
+    return s_bIgnoreEventsThisRun;
+  }
+
+private:
+  SCRIPT_IMPEXP virtual void OnHandleCallback(IVisCallbackDataObject_cl *pData) HKV_OVERRIDE;
+
+  virtual int64 GetCallbackSortingKey(VCallback *pCallback) HKV_OVERRIDE;
 
   static VScriptResourceManager g_GlobalManager;
   
@@ -405,13 +425,16 @@ private:
 
   int m_iGameScriptFunctions;
   int m_iSceneScriptFunctions;
+
+  static bool s_bIgnoreErrors;
+  static bool s_bIgnoreEventsThisRun;
 };
 
 
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

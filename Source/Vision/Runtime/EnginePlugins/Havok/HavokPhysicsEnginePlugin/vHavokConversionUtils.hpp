@@ -13,6 +13,9 @@
 
 #include <Vision/Runtime/EnginePlugins/Havok/HavokPhysicsEnginePlugin/vHavokPhysicsIncludes.hpp>
 
+/*! Work around, see [SIM-41] */
+/*  all load/store must be byte aligned to be able to attach double precision Physics to single precision Vision */
+
 /// \brief
 ///   Macro: Scale a float from Vision to Havok space.
 #define VIS2HK_FLOAT_SCALED(v) (v * vHavokConversionUtils::GetVision2HavokScale())
@@ -28,26 +31,6 @@
 class vHavokConversionUtils
 {
 public:
-
-	/*! [SIM-41] work around. */
-	struct AlignedArray
-	{
-		AlignedArray(hkvVec3d const& data)
-		{
-			m_array[0] = data.x; m_array[1] = data.y; m_array[2] = data.z;
-		}
-
-		AlignedArray()
-		{}
-
-		HK_ALIGN32(double m_array[3]);
-	};
-  
-public:
-
-  VHAVOK_IMPEXP static void InitializeVectorCache();
-
-  VHAVOK_IMPEXP static void DeinitializeVectorCache();
 
   ///
   /// \brief
@@ -95,12 +78,21 @@ public:
   /// \brief
   ///   Get a Havok Physics object space/scalar vector from a Vision vector; taking Vision scaling into account.
   ///
+  VHAVOK_IMPEXP static HK_FORCE_INLINE void VisVecToPhysVecLocal(const hkvVec3& visV, hkVector4d& physV)
+  {
+	  physV.load<3, HK_IO_NATIVE_ALIGNED>(&visV.data[0]);
+	  physV.zeroComponent<3>();
+	  physV.mul(m_cachedVis2PhysScaleD);
+	  HK_ASSERT(0xdee883, physV.isOk<4>());
+  }
+
+  ///
+  /// \brief
+  ///   Get a Havok Physics object space/scalar vector from a Vision vector; taking Vision scaling into account.
+  ///
   VHAVOK_IMPEXP static HK_FORCE_INLINE void VisVecToPhysVecLocal(const hkvVec3d& visV, hkVector4& physV)
   {
-	  /*! Work around, see [SIM-41] */
-	  AlignedArray array(visV);
-
-	  physV.load<3, HK_IO_NATIVE_ALIGNED>(array.m_array);
+	  physV.load<3, HK_IO_NATIVE_ALIGNED>(&visV.data[0]);
 	  physV.zeroComponent<3>();
 	  physV.mul(m_cachedVis2PhysScale);
 	  HK_ASSERT(0xdee883, physV.isOk<4>());
@@ -115,7 +107,20 @@ public:
 	  physV.load<3, HK_IO_NATIVE_ALIGNED>(&visV.data[0]);
 	  physV.zeroComponent<3>();
 	  physV.mul(m_cachedVis2PhysScale);
-      physV.add(*m_cachedWorldPivot);
+      physV.add(m_cachedWorldPivot);
+	  HK_ASSERT(0xdee883, physV.isOk<4>());
+  }
+
+  ///
+  /// \brief
+  ///   Get a Physics world space vector from a Vision render space vector; taking Vision scaling into account.
+  ///
+  VHAVOK_IMPEXP static HK_FORCE_INLINE void VisVecToPhysVecWorld(const hkvVec3& visV, hkVector4d& physV)
+  {
+	  physV.load<3, HK_IO_NATIVE_ALIGNED>(&visV.data[0]);
+	  physV.zeroComponent<3>();
+	  physV.mul(m_cachedVis2PhysScaleD);
+	  physV.add(m_cachedWorldPivotD);
 	  HK_ASSERT(0xdee883, physV.isOk<4>());
   }
 
@@ -138,7 +143,7 @@ public:
   {
 	  physV.load<4, HK_IO_NATIVE_ALIGNED>(&visV.data[0]);
 	  physV.mul(m_cachedVis2PhysScale);
-	  physV.add(*m_cachedWorldPivot);
+	  physV.add(m_cachedWorldPivot);
 	  HK_ASSERT(0xdee884, physV.isOk<4>());
   }
 
@@ -159,11 +164,7 @@ public:
   VHAVOK_IMPEXP static HK_FORCE_INLINE void PhysVecToVisVecLocal(hkVector4Parameter physV, hkvVec3d& visV)
   {
 	  hkVector4 p; p.setMul(physV, m_cachedPhys2VisScale);
-
-	  /*! Work around, see [SIM-41] */
-	  AlignedArray aligned;
-	  p.store<3, HK_IO_NATIVE_ALIGNED>(aligned.m_array);
-	  visV.x = aligned.m_array[0]; visV.y = aligned.m_array[1]; visV.z = aligned.m_array[2];
+	  p.store<3, HK_IO_NATIVE_ALIGNED>(&visV.data[0]);
   }
 
   ///
@@ -172,7 +173,7 @@ public:
   ///
   VHAVOK_IMPEXP static HK_FORCE_INLINE void PhysVecToVisVecWorld(hkVector4Parameter physV, hkvVec3& visV)
   {
-	  hkVector4 p; p.setSub(physV, *m_cachedWorldPivot); p.mul(m_cachedPhys2VisScale);
+	  hkVector4 p; p.setSub(physV, m_cachedWorldPivot); p.mul(m_cachedPhys2VisScale);
 	  p.store<3, HK_IO_NATIVE_ALIGNED>(&visV.data[0]);
   }
 
@@ -192,7 +193,7 @@ public:
   ///
   VHAVOK_IMPEXP static HK_FORCE_INLINE void PhysVecToVisVecWorld(hkVector4Parameter physV, hkvVec4& visV)
   {
-	  hkVector4 p; p.setSub(physV, *m_cachedWorldPivot); p.mul(m_cachedPhys2VisScale);
+	  hkVector4 p; p.setSub(physV, m_cachedWorldPivot); p.mul(m_cachedPhys2VisScale);
 	  p.store<4, HK_IO_NATIVE_ALIGNED>(&visV.data[0]);
   }
 
@@ -459,24 +460,27 @@ public:
   /// \brief
   ///   Update the current world pivot.
   ///
-  VHAVOK_IMPEXP static hkVector4Parameter GetVisionWorldPivot();
+  VHAVOK_IMPEXP static const hkVector4& GetVisionWorldPivot();
 
   /// \brief
   ///   Converts Vision welding type to Havok welding type.
-  VHAVOK_IMPEXP static hkpWeldingUtility::WeldingType VisToHkWeldingType(VisWeldingType_e eWeldingType);
+  VHAVOK_IMPEXP static hkpWeldingUtility::WeldingType VisToHkWeldingType(enum VisWeldingType_e eWeldingType);
 
 protected:
   VHAVOK_IMPEXP static hkReal m_cachedHavok2VisionScale;  ///< Cached value of the Havok2Vision scale factor (original value is stored in physics module)
   VHAVOK_IMPEXP static hkReal m_cachedVision2HavokScale;  ///< Cached value of the Vision2Havok scale factor (original value is stored in physics module)
   VHAVOK_IMPEXP static hkSimdReal m_cachedVis2PhysScale;  ///< Cached value of the Havok2Vision scale factor for SIMD (original value is stored in physics module)
   VHAVOK_IMPEXP static hkSimdReal m_cachedPhys2VisScale;  ///< Cached value of the Vision2Havok scale factor for SIMD (original value is stored in physics module)
-  VHAVOK_IMPEXP static hkVector4* m_cachedWorldPivot;			///< Cached value of the world pivot. If using the single precision Havok Physics build, this can suffer from precision loss.
+  VHAVOK_IMPEXP static hkSimdDouble64 m_cachedVis2PhysScaleD;  ///< Cached value of the Havok2Vision scale factor for SIMD (original value is stored in physics module)
+  VHAVOK_IMPEXP static hkSimdDouble64 m_cachedPhys2VisScaleD;  ///< Cached value of the Vision2Havok scale factor for SIMD (original value is stored in physics module)
+  VHAVOK_IMPEXP static hkVector4 m_cachedWorldPivot;			///< Cached value of the world pivot. If using the single precision Havok Physics build, this can suffer from precision loss.
+  VHAVOK_IMPEXP static hkVector4d m_cachedWorldPivotD;			///< Cached value of the world pivot in double precision.
 };
 
 #endif // VHAVOKCONVERSIONUTILS_HPP_INCLUDED
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

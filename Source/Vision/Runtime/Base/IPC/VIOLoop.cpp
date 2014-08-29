@@ -143,7 +143,7 @@ void IOLoop::Run()
       msg.SetSenderId(1);
       OnMessageReceived(msg);
 
-      VMutexLocker lock(m_processesMutex);
+      VScopedLock lock(m_processesMutex);
       CloseHandle(processHandle);
       m_processes.Remove(processHandle);
     }
@@ -171,7 +171,7 @@ void IOLoop::Stop()
   m_shouldRun = false;
 
   {
-    VMutexLocker lock(m_channelsMutex);
+    VScopedLock lock(m_channelsMutex);
     for (int i = 0; i < m_channels.GetLength(); ++i)
     {
       m_channels[i]->CancelIO();
@@ -190,13 +190,13 @@ void IOLoop::Stop()
 
 void IOLoop::AddChannel(Channel* channel)
 {
-  VMutexLocker lock(m_channelsMutex);
+  VScopedLock lock(m_channelsMutex);
   m_channels.Append(channel);
 }
 
 void IOLoop::RemoveChannel(Channel* channel)
 {
-  VMutexLocker lock(m_removeChannelsMutex);
+  VScopedLock lock(m_removeChannelsMutex);
   m_removeChannels.Append(channel);
 }
 
@@ -207,7 +207,7 @@ Channel* IOLoop::GetChannel(int index) const
 
 void IOLoop::AddProcess(HANDLE process)
 {
-  VMutexLocker lock(m_processesMutex);
+  VScopedLock lock(m_processesMutex);
   m_processes.Append(process);
 }
 
@@ -220,7 +220,7 @@ void IOLoop::TerminateAllProcesses()
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

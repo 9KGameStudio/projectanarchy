@@ -22,7 +22,7 @@ class hkaiReferenceFrame;
 /// A utility class to encapsulate accumulating obstacles for a character.
 /// The maximum number of obstacles are fixed -
 /// if obstacles are added when the arrays at this limit, the furthest obstacle will be dropped
-class hkaiObstacleCollector
+class HK_EXPORT_AI hkaiObstacleCollector
 {
 public:
 	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_AI_STEERING, hkaiObstacleCollector );
@@ -36,6 +36,11 @@ public:
 	};
 
 	hkaiObstacleCollector(int numAgents, hkVector4Parameter position, hkVector4Parameter up);
+
+#ifndef HK_PLATFORM_SPU
+	hkaiObstacleCollector();
+	void init(int numAgents, hkVector4Parameter position, hkVector4Parameter up);
+#endif
 
 	void addBoundary( hkVector4Parameter A, hkVector4Parameter B );
 	void addSphereObstacle( const hkaiAvoidanceSolver::SphereObstacle& sphere);
@@ -79,7 +84,7 @@ protected:
 #endif // HK_AI_OBSTACLE_COLLECTOR_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

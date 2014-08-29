@@ -125,7 +125,7 @@ public:
   /// \par Example
   ///   \code
   ///     -- access the Fmod manager
-  ///     local sound = Fmod:CreateSound(Vision.hkvVec3(), "detonation.wav")
+  ///     local sound = Fmod:CreateSound(Vision.hkvVec3(0), "detonation.wav")
   ///     Vision.Assert(sound~=nil, "Sound is not present")
   ///     sound:Play()
   ///   \endcode
@@ -137,10 +137,10 @@ public:
   /// \param pos 
   ///   The position, where to create the event.
   ///
-  /// \param szEventProjectPath 
+  /// \param eventProjectPath 
   ///   Path of a working event project (.fdp), which had been created in the Fmod Designer tool.
   ///
-  /// \param szEventName 
+  /// \param eventName 
   ///   Name of the event, relative to the event project.
   ///
   /// \param looped (\b optional) 
@@ -155,11 +155,11 @@ public:
   /// \par Example
   ///   \code
   ///     -- access the Fmod manager
-  ///     local event = Fmod:CreateEvent(Vision.hkvVec3(), "Sound/examples","effects/detonation")
+  ///     local event = Fmod:CreateEvent(Vision.hkvVec3(0), "Sound/examples","effects/detonation")
   ///     Vision.Assert(event~=nil, "Event is not present")
   ///     event:Start() 
   ///   \endcode
-  VFmodEvent CreateEvent(hkvVec3 pos, string szEventProjectPath, string szEventName, boolean looped=false, string key=nil);
+  VFmodEvent CreateEvent(hkvVec3 pos, string eventProjectPath, string eventName, boolean looped=false, string key=nil);
  
   /// \brief 
   ///   Search for a sound object via the object key.
@@ -242,7 +242,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

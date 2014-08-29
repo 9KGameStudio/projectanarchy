@@ -10,8 +10,6 @@
 #define HK_SPU_DMA_UTILS_H
 
 
-#include <Common/Base/hkBase.h>
-
 enum
 {
 	HK_SPU_DMA_GROUP_STALL				= 14,
@@ -25,7 +23,7 @@ enum
 };
 
 	/// this utility allows simple access to variables in main memory and can be used either from the SPU, PPU or CPU
-struct hkSpuDmaUtils
+struct HK_EXPORT_COMMON hkSpuDmaUtils
 {
 		/// Convenient and slow function to increment a value, returns the new value
 	static hkInt32 HK_CALL incrementInt32InMainMemory( HK_CPU_PTR(hkInt32*) variable, int increment, int dmaGroupId = HK_SPU_DMA_GROUP_STALL );
@@ -51,6 +49,9 @@ struct hkSpuDmaUtils
 	/// put a char to main memory & wait for completion
 	static void HK_CALL setChar8InMainMemory( HK_CPU_PTR(hkChar*) dstInMainMemory, hkChar c, int dmaGroupId = HK_SPU_DMA_GROUP_STALL );
 
+	/// Put an unsigned 8 bit value to main memory & wait for completion.
+	static void setUint8InMainMemory( HK_CPU_PTR(hkUint8*) dstInMainMemory, hkUint8 value, int dmaGroupId );
+
 	/// put a 16 bit to main memory & wait for completion
 	static void setUint16InMainMemory( HK_CPU_PTR(hkUint16*) dstInMainMemory, hkUint16 value, int dmaGroupId = HK_SPU_DMA_GROUP_STALL  );
 
@@ -72,7 +73,7 @@ struct hkSpuDmaUtils
 #endif // HK_SPU_DMA_UTILS_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

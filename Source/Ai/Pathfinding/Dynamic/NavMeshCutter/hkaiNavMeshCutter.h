@@ -16,13 +16,17 @@
 #include <Common/Base/Container/Set/hkSet.h>
 
 
-extern const class hkClass hkaiNavMeshCutterMeshInfoClass;
+extern HK_EXPORT_AI const class hkClass hkaiNavMeshCutterMeshInfoClass;
 
-extern const class hkClass hkaiNavMeshCutterSavedConnectivityClass;
+extern HK_EXPORT_AI const class hkClass hkaiNavMeshCutterSavedConnectivityClass;
 
-extern const class hkClass hkaiNavMeshCutterOriginalEdgeInfoClass;
+extern HK_EXPORT_AI const class hkClass hkaiNavMeshCutterOriginalEdgeInfoClass;
 
-extern const class hkClass hkaiNavMeshCutterClass;
+extern HK_EXPORT_AI const class hkClass hkaiNavMeshCutterClass;
+
+extern HK_EXPORT_AI const class hkClass hkSetUint32Class;
+
+extern HK_EXPORT_AI const class hkClass hkSetUint64Class;
 
 class hkaiStreamingCollection;
 class hkaiGeneralAccessor;
@@ -44,19 +48,6 @@ class hkaiGeneralAccessor;
 
 // Uncomment this to add extra validation checks to the nav mesh cutter
 //#define HKAI_CUTTER_EXTRA_CHECKS
-
-const int EDGE_CONNECTIVITY_INTERNAL = 0xffffff;
-const int EDGE_CONNECTIVITY_SILHOUETTE = 0xfffffe;
-
-
-/// hkaiMap operations
-struct hkaiCutterOperations
-{
-	inline static unsigned hash( hkaiPackedKey key, unsigned mod ) { return (unsigned(key) * 2654435761U) & mod; }
-	inline static void invalidate( hkaiPackedKey& key ) { key = HKAI_INVALID_PACKED_KEY; }
-	inline static hkBool32 isValid( hkaiPackedKey key ) { return key != HKAI_INVALID_PACKED_KEY; }
-	inline static hkBool32 equal( hkaiPackedKey key0, hkaiPackedKey key1 ) { return key0 == key1; }
-};
 
 struct hkaiFaceCutResults;
 
@@ -136,12 +127,12 @@ struct hkaiPersistentEdgeKey
 	/// Original faces, edges and vertices remain at their original indices.
 	/// Faces which have been cut and therefore not logically part of the nav mesh
 	/// have hkaiNavMesh::FLAG_HIDDEN set.
-class hkaiNavMeshCutter : public hkReferencedObject
+class HK_EXPORT_AI hkaiNavMeshCutter : public hkReferencedObject
 {
 public:
 
 	//+vtable(true)
-	//+version(13)
+	//+version(15)
 	HK_DECLARE_REFLECTION();
 	HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_AI_NAVMESH);
 
@@ -150,7 +141,7 @@ public:
 	{
 			/// Always reset all clearance values. This is fast, but will increase path search costs.
 		CLEARANCE_RESET_ALL,
-			
+
 			/// Selectively reset clearance values by querying the mediator for nearby faces.
 		CLEARANCE_RESET_MEDIATOR,
 
@@ -158,8 +149,8 @@ public:
 		CLEARANCE_RESET_FLOODFILL,
 	};
 
-		/// List of OriginalEdgeInfos
-	struct SavedConnectivity
+		/// List of original edge keys that have been instanced and overwritten due to cutting.
+	struct HK_EXPORT_AI SavedConnectivity
 	{
 		//+version(1)
 		HK_DECLARE_REFLECTION();
@@ -176,7 +167,11 @@ public:
 		void restore( hkaiStreamingCollection* collection, hkaiPackedKey edgeKey );
 		void append( const SavedConnectivity& other);
 
+#ifdef HKAI_64BIT_PACKED_KEYS
+		typedef hkSetUint64 StorageMap;
+#else
 		typedef hkSetUint32 StorageMap;
+#endif
 		StorageMap m_storage;
 	};
 
@@ -192,7 +187,7 @@ public:
 	typedef hkaiNavMeshSilhouetteSelector SilhouetteSelector;
 
 	/// Map an original edge to an array of new edges
-	struct FaceEdgePair
+	struct HK_EXPORT_AI FaceEdgePair
 	{
 		HK_DECLARE_POD_TYPE();
 		hkaiPackedKey m_edgeKey;
@@ -214,7 +209,6 @@ public:
 
 	typedef hkArray<hkaiPackedKey> FaceList;
 	typedef hkPointerMap< hkaiPackedKey, FaceList*, hkContainerTempAllocator > EdgeMap;
-	typedef hkSet< hkaiPackedKey, hkContainerTempAllocator> EdgeSet;
 
 	//
 	// Methods
@@ -222,6 +216,9 @@ public:
 
 		/// Default
 	hkaiNavMeshCutter();
+	hkaiNavMeshCutter(hkFinishLoadedObjectFlag f);
+	~hkaiNavMeshCutter();
+
 
 		/// Use the supplied mesh manager as the base mesh.
 	void init( hkVector4Parameter up, class hkaiStreamingCollection* collection );
@@ -229,15 +226,12 @@ public:
 		/// Only set up one section
 	void initSection( hkaiRuntimeIndex sectionIdx, class hkaiNavMeshInstance* meshInstance, bool doChecks = true );
 
-	void setClearanceResetMethod( ClearanceResetMethod crt ) { m_clearanceResetMethod = crt; }
-	ClearanceResetMethod getClearanceResetMethod( ) const { return m_clearanceResetMethod; }
-
 		/// Cut faces returned by the selector.
 		/// Note that cut (but not original) face, edge and vertex indices will be invalid after this call.
-		/// If the job queue and job thread pool are specified, the cutting will be performed multithreaded.
-	hkBool32 cutSilhouettesIncremental( SilhouetteSelector* selector, const struct hkaiSilhouetteGenerationParameters& genParams, 
-		hkArray<hkaiPackedKey>::Temp& cutFacesKeys, hkArray<hkaiPackedKey>::Temp& uncutFacesKeys, const hkBitField* sectionsToStep, class hkJobQueue* jobQueue = HK_NULL, 
-		class hkJobThreadPool* threadPool = HK_NULL );
+		/// If the task queue and thread pool are specified, the cutting will be performed multithreaded.
+	hkBool32 cutSilhouettesIncremental( SilhouetteSelector* selector, const struct hkaiSilhouetteGenerationParameters& genParams,
+		hkArray<hkaiPackedKey>::Temp& cutFacesKeys, hkArray<hkaiPackedKey>::Temp& uncutFacesKeys, const hkBitField* sectionsToStep,
+		class hkTaskQueue* taskQueue = HK_NULL, class hkThreadPool* threadPool = HK_NULL );
 
 		/// Get the lowest-numbered cut face corresponding to the given original face, or HKAI_INVALID_PACKED_KEY
 		/// if the face is not cut or is copmpletely cut.
@@ -260,11 +254,11 @@ public:
 
 		/// Get the original key of the face from a cut face.
 		/// If the face isn't cut, returns HKAI_INVALID_FACE_KEY
-	int getOriginalFromCutKey( hkaiPackedKey cutFaceKey) const;
+	hkaiPackedKey getOriginalFromCutKey( hkaiPackedKey cutFaceKey) const;
 
 		/// Get the original number of faces for a mesh section
 	int getOriginalNumberOfFaces( hkaiRuntimeIndex sectionIdx ) const;
-	
+
 		/// Gets the closest point on the specified face. If the face is hidden, its corresponding hit faces are checked.
 	hkaiPackedKey getClosestPointOnFaceLocal( hkVector4Parameter position, hkaiPackedKey faceKey, hkVector4& closestPointOut ) const;
 
@@ -276,12 +270,14 @@ public:
 	void uncutSection( hkaiRuntimeIndex sectionIndex, bool doChecks = true );
 
 		/// Access the mesh being cut.
-	const hkaiStreamingCollection& getManager() const { return *m_streamingCollection; }
+	const hkaiStreamingCollection& getManager() const { return *(m_streamingCollection.val()); }
 
-	hkaiNavMeshCutter(hkFinishLoadedObjectFlag f);
-
+		/// Performs edge matching between sets of new (cut edges)
+		/// All edges in pairsA came from the same original edge, and all the edges in pairB came from the original edge
+		/// which was opposite it.
 	void matchNewEdgesFromOriginalEdge( hkaiStreamingCollection* collection, hkArrayBase<FaceEdgePair>& pairsA, hkArrayBase<FaceEdgePair>& pairsB );
 
+		/// Get the array that maps between original and cut edges.
 	const hkArray<int>& getMappingForSection( hkaiRuntimeIndex secIdx ) const { return m_meshInfos[secIdx].m_magic; }
 
 		/// Whether gatherCutEdges() should get all edges or just boundary edges.
@@ -291,15 +287,30 @@ public:
 		GATHER_BOUNDARY_EDGES
 	};
 
+		/// Collects the cut edges corresponding to the originalEdgeKey. If GATHER_BOUNDARY_EDGES is used, only boundary
+		/// edges are returned.
 	void gatherCutEdges( hkaiPackedKey originalEdgeKey, hkaiPackedKey originalFaceKey, hkArray<hkaiNavMeshCutter::FaceEdgePair>::Temp& cutPairs, GatherCutEdgesMode gatherMode = GATHER_ALL_EDGES) const;
+
+		/// Collects the cut edges corresponding to the originalEdgeKey that are in the cut faces give by cutfaceKeys.
+		/// The cut faces must have come from the original face that contained originalEdgeKey.
+	void gatherCutEdgesFromCutFaces( hkaiPackedKey originalEdgeKey, const hkArrayBase<hkaiPackedKey>& cutfaceKeys,  hkArray<hkaiNavMeshCutter::FaceEdgePair>::Temp& cutPairs ) const;
 
 		/// Merge contiguous boundary edges on the cut face that came from the same original edge
 	void mergeCutBoundaryEdges( hkaiPackedKey originalFaceKey, hkaiPackedKey originalEdgeKey );
 
-	void gatherCutEdgesFromCutFaces( hkaiPackedKey originalEdgeKey, const hkArrayBase<hkaiPackedKey>& cutfaceKeys,  hkArray<hkaiNavMeshCutter::FaceEdgePair>::Temp& cutPairs ) const;
+	//
+	// Clearance methods
+	//
 
-	void resetClearanceForCutFaces( const hkArrayBase<hkaiRuntimeIndex>& updatedSections, const hkArrayBase<hkaiPackedKey>& cutFaceKeys  );
-	
+		/// Set the clearance reset method.
+	void setClearanceResetMethod( ClearanceResetMethod crt ) { m_clearanceResetMethod = crt; }
+
+		/// Get the clearance reset method.
+	ClearanceResetMethod getClearanceResetMethod( ) const { return m_clearanceResetMethod; }
+
+		/// Resets the clearance values for the faces in cutFaceKeys, according to the clearance reset method.
+	void resetClearanceForCutFaces( const hkArrayBase<hkaiRuntimeIndex>& updatedSections, const hkSet<hkaiRuntimeIndex>& userEdgeModifiedSections, const hkArrayBase<hkaiPackedKey>& cutFaceKeys  );
+
 		/// Recomputes all dirty global clearance values for the instance.
 		/// A value is considered dirty if it is greater than the maxGlobalClearance for the instance.
 	void recomputeDirtyGlobalClearances( hkaiNavMeshInstance& instance );
@@ -307,96 +318,125 @@ public:
 		/// Resets edge clearances and recomputes global clearances for the faces in the set.
 	void recomputeGlobalClearancesForFaces( const hkSet<hkaiPackedKey>& facesToReset );
 
+	//
+	// Persistent edge keys
+	//
 
 		/// Make a persistent record to the given (possibly cut) face, which can be resolved to the equivalent face
 		/// even after face re-cuts move it to a different place, as long as the original face is not itself re-cut.
 	void makePersistentFaceKey(hkaiPackedKey key, hkaiPersistentFaceKey & persistentFaceKeyOut) const;
-	
-	/// Make a persistent record to the given edge (which may belong to a cut face), which can be resolved to the 
-	/// equivalent edge even after face re-cuts move it to a different place, as long as neither face of the edge
-	/// is itself re-cut.
+
+		/// Make a persistent record to the given edge (which may belong to a cut face), which can be resolved to the
+		/// equivalent edge even after face re-cuts move it to a different place, as long as neither face of the edge
+		/// is itself re-cut.
 	void makePersistentEdgeKey(hkaiPackedKey edgeKey, hkaiPackedKey faceKey, hkaiPersistentEdgeKey & persistentEdgeKeyOut) const;
 
 		/// Resolve a previously created persistent face key to its current face key. This face key is valid until
 		/// the next cutting operation.
 	hkaiPackedKey resolvePersistentFaceKey(hkaiPersistentFaceKey const& persistentFaceKey) const;
 
-	/// Resolve a previously created persistent edge key to its current edge key. This edge key is valid until
-	/// the next cutting operation.
+		/// Resolve a previously created persistent edge key to its current edge key. This edge key is valid until
+		/// the next cutting operation.
 	hkaiPackedKey resolvePersistentEdgeKey(hkaiPersistentEdgeKey const& persistentEdgeKey) const;
 
 		/// Static version of makePersistentFaceKey which allows the cutter to be NULL. If the cutter is NULL, the
 		/// key is assumed to be un-cut.
 	static void makePersistentFaceKey(hkaiNavMeshCutter const* cutter, hkaiPackedKey key, hkaiPersistentFaceKey & persistentFaceKeyOut);
 
-	/// Static version of makePersistentEdgeKey which allows the cutter to be NULL. If the cutter is NULL, the
-	/// key is assumed to be un-cut.
+		/// Static version of makePersistentEdgeKey which allows the cutter to be NULL. If the cutter is NULL, the
+		/// key is assumed to be un-cut.
 	static void makePersistentEdgeKey(hkaiNavMeshCutter const* cutter, hkaiGeneralAccessor const& accessor, hkaiPackedKey edgeKey, hkaiPackedKey faceKey, hkaiPersistentEdgeKey & persistentEdgeKeyOut);
 
 		/// Static version of resolvePersistentFaceKey which allows the cutter to be NULL. If the cutter is NULL, the
 		/// key must be un-cut.
 	static hkaiPackedKey resolvePersistentFaceKey(hkaiNavMeshCutter const* cutter, hkaiPersistentFaceKey const& persistentFaceKey);
 
-	/// Static version of resolvePersistentEdgeKey which allows the cutter to be NULL. If the cutter is NULL, the
-	/// key must be un-cut.
+		/// Static version of resolvePersistentEdgeKey which allows the cutter to be NULL. If the cutter is NULL, the
+		/// key must be un-cut.
 	static hkaiPackedKey resolvePersistentEdgeKey(hkaiNavMeshCutter const* cutter, hkaiGeneralAccessor const& accessor, hkaiPersistentEdgeKey const& persistentEdgeKey);
 
-	/// Static version of resolvePersistentEdgeKey which allows the cutter to be NULL. If the cutter is NULL, the
-	/// key must be un-cut. Additionally, returns the face key.
+		/// Static version of resolvePersistentEdgeKey which allows the cutter to be NULL. If the cutter is NULL, the
+		/// key must be un-cut. Additionally, returns the face key.
 	static hkaiPackedKey resolvePersistentEdgeKey(hkaiNavMeshCutter const* cutter, hkaiGeneralAccessor const& accessor, hkaiPersistentEdgeKey const& persistentEdgeKey, hkaiPackedKey & faceKeyOut);
 
 protected:
 
+		/// Validate mapping information and nav mesh instance flags.
 	hkBool32 isValid() const;
-	void removeCutFacesFromOriginals( const hkArrayBase<hkaiRuntimeIndex>& sections, const hkArrayBase<hkaiPackedKey>& updatedFaceKeys, hkaiNavMeshUtils::RemoveOwnedFacesMode rofMode );
-	void removeUnusedCutEdges( const hkArrayBase<hkaiRuntimeIndex>& cutSections );
-	void applyCutResults( const hkArrayBase<hkaiRuntimeIndex>& cutSections, hkArray<hkaiFaceCutResults>::Temp& results, hkArray<hkaiPackedKey>::Temp& cutFaces );
-	void matchStreamingFaces( const hkArrayBase<hkaiRuntimeIndex>& cutSections, const hkSet<hkaiPackedKey>::Temp& cutFaces );
-	void intersectMeshWithSilhouettes( const hkArrayBase<hkaiPackedKey>& faceKeys, hkaiNavMeshCutter::SilhouetteSelector* selector, const struct hkaiSilhouetteGenerationParameters& genParams, hkArrayBase<hkaiFaceCutResults>& results);
-	void intersectMeshWithSilhouettesMT( const hkArrayBase<hkaiPackedKey>& faceKeys, hkaiNavMeshCutter::SilhouetteSelector* selector, const struct hkaiSilhouetteGenerationParameters& genParams, class hkJobQueue* jobQueue, class hkJobThreadPool* threadPool, hkArrayBase<hkaiFaceCutResults>& results );
-	hkBool32 doEdgesMatch( hkaiPackedKey keyA, hkaiPackedKey keyB ) const;
 
-	void calcNewConnectivity( const hkArrayBase<hkaiPackedKey>& uncutFaceKeys, const hkArrayBase<hkaiPackedKey>& cutFaceKeys, SavedConnectivity& tempConnectivity, hkArray<hkaiPackedKey>::Temp& forceRecutFaceKeys );
+		/// Runs the face cutter on the specified face keys (single threaded). Outputs are saved in the results array.
+	void intersectMeshWithSilhouettes( const hkArrayBase<hkaiPackedKey>& faceKeys, hkaiNavMeshCutter::SilhouetteSelector* selector, const struct hkaiSilhouetteGenerationParameters& genParams, hkArrayBase<hkaiFaceCutResults>& results);
+
+		/// Runs the face cutter on the specified face keys (multi threaded). Outputs are saved in the results array.
+	void intersectMeshWithSilhouettesMT( const hkArrayBase<hkaiPackedKey>& faceKeys, hkaiNavMeshCutter::SilhouetteSelector* selector, const struct hkaiSilhouetteGenerationParameters& genParams, class hkTaskQueue* taskQueue, class hkThreadPool* threadPool, hkArrayBase<hkaiFaceCutResults>& results );
+
+	/// Apply the hkaiFaceCutResults from intersectMeshWithSilhouettes (or intersectMeshWithSilhouettesMT) to the streaming collection.
+	void applyCutResults( const hkArrayBase<hkaiRuntimeIndex>& cutSections, hkArray<hkaiFaceCutResults>::Temp& results, hkArray<hkaiPackedKey>::Temp& cutFaces );
+
+		/// Finds all cut faces corresponding to the original faces in updatedFaceKeys, and removes them from their hkaiNavMeshInstance.
+	void removeCutFacesFromOriginals( const hkArrayBase<hkaiRuntimeIndex>& sections, const hkArrayBase<hkaiPackedKey>& updatedFaceKeys, hkaiNavMeshUtils::RemoveOwnedFacesMode rofMode );
 	
-		/// Removes and restores OriginalEdgeInfo's for faces in the updatedFaceKeys array
+		/// Calls compactInstancedEdges on all sections specified in cutSections.
+	void removeUnusedCutEdges( const hkArrayBase<hkaiRuntimeIndex>& cutSections );
+
+		/// Do edge matching between faces that are marked for streaming.
+		
+	void matchStreamingFaces( const hkArrayBase<hkaiRuntimeIndex>& cutSections, const hkSet<hkaiPackedKey>::Temp& cutFaces );
+	
+		/// Checks whether the edges "match", i.e. is hkaiNavMeshCutterHelper::edgeEndpointDistance() < m_cutEdgeTolerance.
+	hkBool32 doEdgesMatch( hkaiPackedKey edgeKeyA, hkaiPackedKey edgeKeyB ) const;
+
+		/// Get new connectivity informatoin when uncutting faces.
+	void calcNewConnectivity( const hkArrayBase<hkaiPackedKey>& uncutFaceKeys, const hkArrayBase<hkaiPackedKey>& cutFaceKeys, SavedConnectivity& tempConnectivity, hkArray<hkaiPackedKey>::Temp& forceRecutFaceKeys );
+
+		/// Roll back modifications to the instanced edges for faces in the updatedFaceKeys array
 	static void HK_CALL restoreConnectivity( hkaiStreamingCollection* collection, const hkArrayBase<hkaiPackedKey>& updatedFaceKeys, SavedConnectivity& connectivity);
 
-		/// Figure out faces which to reset, using the dynamic mediator
-	void getFacesForResetByMediator ( hkSet<hkaiPackedKey>& facesToReset, const hkArrayBase<hkAabb>& faceAabbs ) const;
-	void getFacesForResetByFloodFill( hkSet<hkaiPackedKey>& facesToReset, const hkArrayBase<hkaiPackedKey>& cutFaceKeys, const hkArrayBase<hkAabb>& faceAabbs ) const;
+		/// Determine which faces to reset, using the dynamic mediator.
+	void getFacesForResetByMediator ( hkSet< hkaiPackedKey >& facesToReset, const hkArrayBase< struct AabbAndLayer >& faceAabbs ) const;
 
-		// Called during loading to set the face flags and force-cut the face.
+		/// Determine which faces to reset, floodfilling from the faces.
+	void getFacesForResetByFloodFill( hkSet< hkaiPackedKey >& facesToReset, const hkArrayBase<hkaiPackedKey>& cutFaceKeys, const hkArrayBase< struct AabbAndLayer >& faceAabbs ) const;
+
+		/// Set the face flags and force-cut the face (called during loading).
 	void setFaceAsStreaming( hkaiPackedKey faceKey );
 
 
 public:
-		/// Cutting information for a nav mesh. One MeshInfo is created for each nav mesh that's loaded in the hkaiNavMeshManager.
-	struct MeshInfo
+		/// Cutting information for a nav mesh. One MeshInfo is created for each nav mesh instance that is loaded in the hkaiStreamingCollection.
+	struct HK_EXPORT_AI MeshInfo
 	{
 		HK_DECLARE_REFLECTION();
 		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_AI_NAVMESH, MeshInfo);
 
 		MeshInfo() {}
 
+			/// Number of original faces in the mesh
 		int m_originalNumFaces;
+
+			/// Number of original edges in the mesh
 		int m_originalNumEdges;
+
+			/// Number of original vertices in the mesh
+			
 		int m_originalNumVertices; 
 
-		/// A bidirectional mapping between original faces and cut faces.
-		/// 
-		/// For indices between 0 and m_originalNumFaces, each element i
-		/// either -1, indicating the face has not been cut, or the index of
-		/// the first cut face corresponding to this original face.
-		/// 
-		/// For indices greater than or equal to m_originalNumFaces, each
-		/// element holds the index of the original face corresponding to the
-		/// cut face.
+			/// A bidirectional mapping between original faces and cut faces.
+			///
+			/// For indices between 0 and m_originalNumFaces, each element i
+			/// either -1, indicating the face has not been cut, or the index of
+			/// the first cut face corresponding to this original face.
+			///
+			/// For indices greater than or equal to m_originalNumFaces, each
+			/// element holds the index of the original face corresponding to the
+			/// cut face.
 		hkArray<int> m_magic;
 
 		MeshInfo(hkFinishLoadedObjectFlag f)
 			: m_magic(f)
 		{
 		}
+			/// Intialize the MeshInfo from the hkaiNavMeshInstance.
 		void init(const hkaiNavMeshInstance* meshInstance);
 
 			/// Get the number of faces before any cuts.
@@ -408,37 +448,52 @@ public:
 			/// Get the number of vertices before any cuts.
 		int getOriginalNumVertices() const { return m_originalNumVertices; }
 
+			/// Validate mapping information and nav mesh instance flags.
 		hkBool32 isValid(const hkaiNavMeshInstance*, const SavedConnectivity& connectivityInfo) const;
+
+		private:
+			MeshInfo& operator=( const MeshInfo& other);
 	};
 
 protected:
 
 
 	hkArray<struct MeshInfo> m_meshInfos;
-	
- 		/// saved version of modified edges
-	struct SavedConnectivity m_connectivityInfo; 
+
+ 		/// List of original edge keys that have been instanced and overwritten due to cutting.
+	struct SavedConnectivity m_connectivityInfo;
+
+		/// World's streaming collection.
 	hkRefPtr<hkaiStreamingCollection> m_streamingCollection;
 
 		/// List of faces which have to be recut next frame
 	hkArray<hkaiPackedKey> m_forceRecutFaceKeys;
 
-		/// List of faces who need their clearnance reset
+		/// List of faces who need their clearance reset
 	hkArray<hkaiPackedKey> m_forceClearanceCalcFaceKeys;
 
 public:
 		/// Used during edge matching
-	hkVector4 m_up; 
+	hkVector4 m_up;
 
 		/// Edge matching parameters. They should be set as least as large as the ones used in nav mesh generation.
 	hkaiNavMeshEdgeMatchingParameters m_edgeMatchParams;
+
+		// Optional pointer to hkaiNavMeshGenerationSettings, used during erosion and paged generation for edge matching.
+		// If non-null, m_edgeMatchParams will be ignored.
+	hkRefPtr< const struct hkaiNavMeshGenerationSettings > m_generationSettings; //+nosave
 
 		/// Tolerance used to determine when a pair of edges can be easily matched with each other.
 	hkReal m_cutEdgeTolerance; //+default(1e-4f)
 
 		/// Cut edges below this length will not be considered for matching (and thus left blocked).
-		/// You can safely set this to the minimum character width.
-	hkReal m_minEdgeMatchingLength; //+default(.01f)
+		/// Setting this to non-zero can decrease cutting time, but may leave some small boundary edges in the cut mesh.
+	hkReal m_minEdgeMatchingLength; //+default(0.0f)
+
+		/// When edge matching, interval start and end points that are within this tolerance of 0 or 1 respectively will
+		/// be snapped to that value. Also, adjacent intervals whose start and endpoints are within this tolerance of
+		/// each other will have the start and end value replaced with the average, eliminating small boundaries.
+	hkReal m_smallGapFixupTolerance; //+default(.001f)
 
 		/// Whether or not to do nav mesh validation during cutting.
 		/// These are always disabled during release builds, but potentially slow in debug builds
@@ -447,12 +502,16 @@ public:
 		/// How to reset the clearance cache after cutting.
 	hkEnum<ClearanceResetMethod, hkUint8> m_clearanceResetMethod; //+default(hkaiNavMeshCutter::CLEARANCE_RESET_ALL)
 
-		/// Whether or not to use the new sweep-line based cutter, or the deprecated triangulator-based cutter.
-	hkBool m_useNewCutter; //+default(true)
-
 		/// Whether to compute the clearance values after cutting, or on the fly during A*
 		/// See hkaiWorld::m_precomputeNavMeshClearance for a description of the tradeoffs.
 	hkBool m_recomputeClearanceAfterCutting; //+default(false)
+
+		/// Whether or not to use the new sweep-line based cutter, or the deprecated triangulator-based cutter.
+	hkBool m_useNewCutter; //+default(true)
+
+		/// A forced domain quantum for the face cutter. This is used internally by
+		/// nav mesh erosion, and should not be used otherwise.
+	hkReal m_domainQuantum; //+default(0)
 };
 
 	/// Utility methods for hkaiNavMeshCutter.
@@ -479,7 +538,7 @@ public:
 #endif // HK_NAVMESH_CUTTER_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

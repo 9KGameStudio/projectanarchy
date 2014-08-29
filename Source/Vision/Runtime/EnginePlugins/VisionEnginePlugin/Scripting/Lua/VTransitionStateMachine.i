@@ -37,27 +37,37 @@ public:
 
 	  VSWIG_CONVERT_BOOL_SETTER(SetEnabled);
   
-    bool LoadFromFile(const char * szTransitionFile, const char * szInitialAnimation)
+    bool LoadFromFile(const char* szTransitionFile, const char* szInitialAnimation)
     {
-      VisBaseEntity_cl *pOwner = (VisBaseEntity_cl *)self->GetOwner(); //we know that the owner has to be an entity
-      VDynamicMesh * pMesh = (pOwner != NULL) ? pOwner->GetMesh() : NULL;
-      if(!pMesh) return false;
+      VisBaseEntity_cl *pOwner = vstatic_cast<VisBaseEntity_cl*>(self->GetOwner()); //we know that the owner has to be an entity
+      VDynamicMesh* pMesh = (pOwner != NULL) ? pOwner->GetMesh() : NULL;
+      if(pMesh == NULL)
+      {
+        hkvLog::Warning("VTransitionStateMachine:LoadFromFile: No mesh set on owner entity.");
+        return false;
+      }
       
       VTransitionTable *pTable = new VTransitionTable(&VTransitionManager::GlobalManager(), pMesh);
-      if(!pTable->LoadFromFile(szTransitionFile)) return false;
+      if(!pTable->LoadFromFile(szTransitionFile))
+      {
+        hkvLog::Warning("VTransitionStateMachine:LoadFromFile: Could not load Transition Table file '%s'.", szTransitionFile);
+        return false;
+      }
       
-      //prevent double initialization
+      // prevent double initialization
       self->DeInit();
       self->SetInitialAnimation(szInitialAnimation);
-      self->Init(pTable, true);
+      self->SetTransitionTable(pTable);
+      self->Init();
       
-      //get the scripting component...
-      VScriptComponent *pComponent = (VScriptComponent *)pOwner->Components().GetComponentOfBaseType(V_RUNTIME_CLASS(VScriptComponent));
+      // get the scripting component...
+      VScriptComponent *pComponent = pOwner->Components().GetComponentOfBaseType<VScriptComponent>();
       
-      if(!pComponent) return false;
-
-      //always receive events...      
-      self->AddEventListener(pComponent);
+      if(pComponent != NULL)
+      {
+        // always receive events...      
+        self->AddEventListener(pComponent);
+      }
       
       return true;
     }
@@ -82,8 +92,6 @@ public:
     {
       return self->GetInitialAnimation().AsChar();
     }
-
-    VSWIG_CREATE_CAST(VTransitionStateMachine)
   }
 };
 
@@ -203,7 +211,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

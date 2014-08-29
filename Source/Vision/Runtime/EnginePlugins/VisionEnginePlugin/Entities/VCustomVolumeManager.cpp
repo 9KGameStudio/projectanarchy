@@ -12,8 +12,8 @@
 
 VCustomVolumeManager VCustomVolumeManager::g_GlobalManager;
 
-VCustomVolumeManager::VCustomVolumeManager() :
-m_bAllowDeletion(true)
+VCustomVolumeManager::VCustomVolumeManager() 
+  : m_bAllowDeletion(true)
 {
   m_instances.Reserve(32);
   m_instances.SetGrowBy(32);
@@ -21,7 +21,6 @@ m_bAllowDeletion(true)
 
 VCustomVolumeManager::~VCustomVolumeManager()
 {
-
 }
 
 void VCustomVolumeManager::OneTimeInit()
@@ -100,7 +99,7 @@ VCustomVolumeManager& VCustomVolumeManager::GlobalManager()
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -11,6 +11,7 @@
 
 #include <Common/Base/Config/hkProductFeatures.h>
 #include <Common/Base/Types/Geometry/hkStridedVertices.h>
+#include <Common/Base/Types/Geometry/Sphere/hkSphere.h>
 
 class hkAabb;
 class hkPseudoRandomGenerator;
@@ -41,12 +42,12 @@ class hkPseudoRandomGenerator;
 ///
 ///		  - Sources are never modified, including the 'W' component.
 ///
-class hkgpConvexHull : public hkReferencedObject
+class HK_EXPORT_COMMON hkgpConvexHull : public hkReferencedObject
 {
 	public:
 
 		/// Build configuration structure.
-		struct BuildConfig
+		struct HK_EXPORT_COMMON BuildConfig
 		{
 			BuildConfig();
 
@@ -67,7 +68,7 @@ class hkgpConvexHull : public hkReferencedObject
 		};
 
 		/// Simplification configuration structure.
-		struct SimplifyConfig
+		struct HK_EXPORT_COMMON SimplifyConfig
 		{
 			SimplifyConfig();
 
@@ -80,7 +81,7 @@ class hkgpConvexHull : public hkReferencedObject
 		};
 
 		/// Absolute scale configuration structure.
-		struct AbsoluteScaleConfig 
+		struct HK_EXPORT_COMMON AbsoluteScaleConfig 
 		{
 			enum Method
 			{
@@ -103,14 +104,14 @@ class hkgpConvexHull : public hkReferencedObject
 		};
 
 		/// Input coordinates to use.
-		enum Inputs
+		enum  Inputs
 		{
 			SOURCE_VERTICES,	///< Use source coordinates.
 			INTERNAL_VERTICES,	///< Use internal coordinates.
 		};
 
 		/// Result of classify() and splitByPlane().
-		enum Side
+		enum  Side
 		{
 			ZERO,		///< Collapsed to the plane.
 			POSITIVE,	///< All on the positive side of the plane.
@@ -120,7 +121,7 @@ class hkgpConvexHull : public hkReferencedObject
 		};
 
 		/// User object interface.
-		struct IUserObject
+		struct HK_EXPORT_COMMON IUserObject
 		{
 			//+hk.MemoryTracker(ignore=True)
 			virtual ~IUserObject() {}
@@ -130,7 +131,7 @@ class hkgpConvexHull : public hkReferencedObject
 		};
 
 		/// Boolean function of convex hulls.
-		struct IBooleanFunction
+		struct HK_EXPORT_COMMON IBooleanFunction
 		{
 			//+hk.MemoryTracker(ignore=True)
 			virtual ~IBooleanFunction() {}
@@ -138,12 +139,12 @@ class hkgpConvexHull : public hkReferencedObject
 			virtual hkBool operator()( const hkgpConvexHull*const* hulls, int numHulls ) const = 0;
 		};
 
-		struct Vertex
+		struct HK_EXPORT_COMMON Vertex
 		{
 			//+hk.MemoryTracker(ignore=True)
 		};
 
-		struct Triangle
+		struct HK_EXPORT_COMMON Triangle
 		{
 			//+hk.MemoryTracker(ignore=True)
 		};
@@ -194,6 +195,11 @@ class hkgpConvexHull : public hkReferencedObject
 		/// Builds a convex hull given a planes set, return the resulting convex hull dimension or -1 if failed.
 		int					buildFromPlanes(const hkVector4* planes, int numPlanes, const BuildConfig& config=BuildConfig());
 
+		/// Builds a convex hull given a set of planes set and a corresponding set of bounding spheres that should enclose all resulting face vertices.
+		/// This is faster than buildFromPlanes(), but some prior knowledge of the resulting convex hull is required.
+		/// Returns the resulting convex hull dimension or -1 if failed.
+		int					buildFromDiscs(const hkVector4* planes, hkSphere* boundingSpheres, int numPlanes, const BuildConfig& config=BuildConfig());
+
 		/// Builds a convex hull given a planes set and a projection plane, return the resulting convex hull dimension or -1 if failed.
 		int					buildFromPlanes(const hkVector4* planes, int numPlanes, const hkVector4& projectionPlane, const BuildConfig& config=BuildConfig());
 
@@ -203,12 +209,28 @@ class hkgpConvexHull : public hkReferencedObject
 		/// Expand the convex hull to ensure that it contains \a points.
 		hkBool				ensureContainment(const hkArray<hkVector4>& points);
 
+		/// DEPRECATED! Please use collapseEdges unless specific behavior is desired with this method
 		/// Decimate vertices of a convex hull.
 		/// If \a ensureContainment is true, ensureContainment() is called automatically.
 		/// If \a useCgo is true, hkgpCgo will be use as a decimation back-end (recommended).
 		hkBool				decimateVertices(int numVerticesToKeep, hkBool ensureContainment, hkBool useCgo = false);
 
-		/// Expand convex hull with margin using face normal. 
+		/// Collapses the edges of the convex hull down the the given number using quadric error metrics (QEM).
+		/// - tolerance is the maximum distance between the final surface and the original surface
+		/// - numVerticesToKeep is maximum number of vertices of the resultant convex hull
+		/// The method collapses all the edges until either the error becomes greater than tolerance or the number of
+		/// vertices is fewer than numberVerticesToKeep.
+		/// Returns the final error tolerance used for simplification, which may be smaller if degeneracy occurred.
+		/// Note: this approach always reduces the volume of the hull.
+		hkReal				collapseEdges( const hkReal tolerance, int numVerticesToKeep = 65535 );
+
+		/// Merges the planes of the convex hull, using projections of their faces onto other faces.
+		/// If the maximum distance of the projection is less than tolerance, then the two planes containing the faces will be merged.
+		/// Returns the final error tolerance used for simplification, which may be smaller if degeneracy occurred.
+		/// Note: this approach always increases the volume of the hull.
+		hkReal				mergePlanes( const hkReal tolerance );
+
+		/// Expands convex hull with margin using face normal. 
 		/// This will extrude all the triangles in the direction of the face normal. As a side effect, vertices at the corners will be duplicated.
 		hkBool				expandByPlanarMargin(const hkReal margin);
 
@@ -221,16 +243,16 @@ class hkgpConvexHull : public hkReferencedObject
 		/// Note: this is automatically called by build if BuildConfig.m_buildIndices is set (default).
 		void				buildIndices(hkReal	minCosAngle = HKGPCONVEXHULL_DEFAULT_MIN_COS_ANGLE, hkBool forceRebuild=false);
 
-		/// Return true is the convex hull has indices.
+		/// Returns true if the convex hull has indices.
 		hkBool				hasIndices() const;
 
 		/// Calculates and stores mass properties. See getVolume(), getLocalInertia().
 		hkResult			buildMassProperties();		
 
-		/// Return true is the convex hull has mass properties.
+		/// Returns true if the convex hull has mass properties.
 		hkBool				hasMassProperties() const;
 
-		/// Return true is the convex hull has non-degenerated mass properties.
+		/// Returns true if the convex hull has non-degenerated mass properties.
 		/// For speed reason, degenerated is only computed when Config::m_checkForDegeneratedMassProperties is true.
 		hkBool				hasValidMassProperties() const;
 
@@ -523,7 +545,7 @@ class hkgpConvexHull : public hkReferencedObject
 #endif // HKGP_CONVEX_HULL_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

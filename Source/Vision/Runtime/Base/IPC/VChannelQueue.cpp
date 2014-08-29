@@ -93,7 +93,7 @@ bool ChannelQueue::TryDequeue(Message& msg)
   VPListT<Message>* queue = m_mode == MODE_SERVER ? 
     m_client2ServerQueue : m_server2ClientQueue;
   VMutex* mutex = m_mode == MODE_SERVER ? m_c2sMutex : m_s2cMutex;
-  VMutexLocker lock(mutex);
+  VScopedLock lock(mutex);
 
   if (queue->IsEmpty())
   {
@@ -126,7 +126,7 @@ bool ChannelQueue::IsValid()
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

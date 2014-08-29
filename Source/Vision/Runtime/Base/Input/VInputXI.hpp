@@ -11,7 +11,7 @@
 #ifndef VINPUTXI_HPP_INCLUDED
 #define VINPUTXI_HPP_INCLUDED
 
-#if defined(WIN32) && !defined(_VISION_WINRT)
+#if defined(_VISION_WIN32) && !defined(_VISION_WINRT)
 
   #ifndef _VISION_DOC
 
@@ -327,7 +327,7 @@ private:
 #endif //VINPUTXI_HPP_INCLUDED
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

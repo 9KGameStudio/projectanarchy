@@ -10,13 +10,13 @@
 #define HK_INDEXED_TRANSFORM_SET_H
 
 
-extern const class hkClass hkMeshBoneIndexMappingClass;
+extern HK_EXPORT_COMMON const class hkClass hkMeshBoneIndexMappingClass;
 
-extern const class hkClass hkIndexedTransformSetClass;
+extern HK_EXPORT_COMMON const class hkClass hkIndexedTransformSetClass;
 
 /// Array of index mappings that specify how the bones in a skeleton are bound to a skin. This is used in the
 /// same way as hkaMeshBinding::Mapping
-struct hkMeshBoneIndexMapping
+struct HK_EXPORT_COMMON hkMeshBoneIndexMapping
 {
 	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_SCENE_DATA, hkMeshBoneIndexMapping );			
 	HK_DECLARE_REFLECTION();
@@ -25,6 +25,9 @@ struct hkMeshBoneIndexMapping
 	hkMeshBoneIndexMapping(){}
 	hkMeshBoneIndexMapping(hkFinishLoadedObjectFlag f) : m_mapping(f) {}
 	hkMeshBoneIndexMapping(const hkMeshBoneIndexMapping& other) { m_mapping = other.m_mapping; }	
+
+	/// Assignment operator
+	void operator=(const hkMeshBoneIndexMapping& other)	{	m_mapping.clear();	m_mapping.append(other.m_mapping);	}
 };
 
 /// hkIndexedTransformSetCinfo describes transforms needed by a hkMeshBody that has multiple transforms (over and
@@ -54,7 +57,7 @@ struct hkMeshBoneIndexMapping
 /// will indicate that inverse transforms are not needed, and may provide a significant speed improvement.
 ///
 /// \sa hkMeshBody
-struct hkIndexedTransformSetCinfo
+struct HK_EXPORT_COMMON hkIndexedTransformSetCinfo
 {
 	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_SCENE_DATA, hkIndexedTransformSetCinfo );
 
@@ -84,7 +87,7 @@ struct hkIndexedTransformSetCinfo
 /// using the hkIndexedTransformSetCinfo value passed into the createBody method. Finding transforms used for rendering
 /// is straight forward using the calculateMatrixes/calculateMatrix method. The class also has optimizations to stop
 /// unneeded calculations if for example the inverse transforms are all the identity.
-class hkIndexedTransformSet: public hkReferencedObject
+class HK_EXPORT_COMMON hkIndexedTransformSet : public hkReferencedObject
 {
     public:        
         //+version(2)
@@ -155,7 +158,7 @@ class hkIndexedTransformSet: public hkReferencedObject
 #endif // HK_INDEXED_TRANSFORM_SET_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

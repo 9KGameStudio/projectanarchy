@@ -12,6 +12,9 @@
 #define VSCRIPTCOMPONENT_HPP_INCLUDED
 
 #include <Vision/Runtime/Engine/SceneElements/VisApiObjectComponent.hpp>
+
+#include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Scripting/VScriptIncludes.hpp>
+
 class VScriptInstance;
 
 /// \class  VScriptMember
@@ -26,23 +29,16 @@ public:
   /// \brief  Constructor.
   VScriptMember(const char * szName, const char * szValue = NULL, const char * szType = NULL);
 
-  /// \brief  Destructor.
-  ~VScriptMember();
-
   /// \brief  Sets a new value for this member.
   /// \param  szValue The new value regardless of the current type.
   void SetValue(const char * szValue);
 
-  /// \brief  Gets the type as const char* (could be NULL)
-  inline const char * GetType() { return m_szType; }
+  /// \brief  Gets the type as const char*
+  inline const char * GetType() { return m_sType; }
   /// \brief  Gets the name as const char*
-  inline const char * GetName() { return m_szName; }
-  /// \brief  Gets the value as const char* (could be NULL)
-  inline const char * GetValue()  { return m_szValue; }
-
-  /// \brief  Assignment operator.
-  /// \param  copy  The script member to copy.
-  void operator=(const VScriptMember &copy);
+  inline const char * GetName() { return m_sName; }
+  /// \brief  Gets the value as const char*
+  inline const char * GetValue()  { return m_sValue; }
 
   /// \brief  Equality operator. Checks just the name!
   /// \param  other  The variable used for comparison.
@@ -55,9 +51,9 @@ public:
   bool operator!=(const VScriptMember & other) const;
 
 protected:
-  const char *m_szType;
-  const char *m_szName;
-  const char *m_szValue;
+  VString m_sType;
+  VString m_sName;
+  VString m_sValue;
 };
 
 /// \brief
@@ -97,7 +93,7 @@ public:
 
   /// \brief
   ///   Overridden IVObjectComponent::SetOwner function
-  SCRIPT_IMPEXP virtual void SetOwner(VisTypedEngineObject_cl *pOwner);
+  SCRIPT_IMPEXP virtual void SetOwner(VisTypedEngineObject_cl *pOwner) HKV_OVERRIDE;
 
   /// \brief
   ///   Retrieve a display name that shows the filename
@@ -130,19 +126,23 @@ public:
 
   /// \brief
   ///   Implements IVisCallbackHandler_cl::OnHandleCallback
-  SCRIPT_IMPEXP virtual void OnHandleCallback(IVisCallbackDataObject_cl *pData);
+  SCRIPT_IMPEXP virtual void OnHandleCallback(IVisCallbackDataObject_cl *pData) HKV_OVERRIDE;
+
+  /// \brief
+  ///   Implements IVisCallbackHandler_cl::GetCallbackSortingKey
+  SCRIPT_IMPEXP virtual int64 GetCallbackSortingKey(VCallback* pCallback) HKV_OVERRIDE;
 
   /// \brief
   ///   Implements VisTypedEngineObject_cl::MessageFunction
-  SCRIPT_IMPEXP virtual void MessageFunction(int iID, INT_PTR iParamA, INT_PTR iParamB);
+  SCRIPT_IMPEXP virtual void MessageFunction(int iID, INT_PTR iParamA, INT_PTR iParamB) HKV_OVERRIDE;
 
   /// \brief
   ///   Respond to variable changes in the editor
-  SCRIPT_IMPEXP virtual void OnVariableValueChanged(VisVariable_cl *pVar, const char * value);
+  SCRIPT_IMPEXP virtual void OnVariableValueChanged(VisVariable_cl *pVar, const char * value) HKV_OVERRIDE;
 
   /// \brief
   ///   Serializes this component
-  SCRIPT_IMPEXP virtual void Serialize( VArchive &ar );
+  SCRIPT_IMPEXP virtual void Serialize(VArchive &ar) HKV_OVERRIDE;
 
   /// \brief
   ///   Internal use: Registers the component with callbacks depending on m_iFunctions flags (i.e.
@@ -182,15 +182,15 @@ public:
   /// \param  name  The name of the member.
   /// \param  value The value of the member (the type is evaluated by the value!).
   /// \return true if it succeeds, false if it fails.
-  SCRIPT_IMPEXP virtual bool SetVariable(const char * name, const char * value);
+  SCRIPT_IMPEXP virtual bool SetVariable(const char * name, const char * value) HKV_OVERRIDE;
 
-#ifdef WIN32
+#ifdef _VISION_WIN32
 
   /// \brief Collecta all (member) variables defined in the OnExpose callback
   /// \param  customVarList The collection to store the found members.
   /// \return The number of collected variables
-  SCRIPT_IMPEXP virtual int GetCustomVariableInfo(DynObjArray_cl<VisVariable_cl> &customVarList);
-#endif // WIN32
+  SCRIPT_IMPEXP virtual int GetCustomVariableInfo(DynObjArray_cl<VisVariable_cl> &customVarList) HKV_OVERRIDE;
+#endif // _VISION_WIN32
 
 private:
   void TriggerOnExpose();
@@ -211,7 +211,7 @@ protected:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

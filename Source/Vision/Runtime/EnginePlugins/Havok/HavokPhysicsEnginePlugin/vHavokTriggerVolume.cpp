@@ -10,7 +10,7 @@
 #include <Vision/Runtime/EnginePlugins/Havok/HavokPhysicsEnginePlugin/vHavokTriggerVolume.hpp>
 #include <Vision/Runtime/EnginePlugins/Havok/HavokPhysicsEnginePlugin/vHavokConversionUtils.hpp>
 #include <Vision/Runtime/EnginePlugins/Havok/HavokPhysicsEnginePlugin/vHavokShapeFactory.hpp>
-#include <Vision/Runtime/EnginePlugins/Havok/HavokPhysicsEnginePlugin/vHavokCachedShape.hpp>
+#include <Vision/Runtime/EnginePlugins/Havok/HavokPhysicsEnginePlugin/vHavokShapeCache.hpp>
 
 #include <Physics2012/Utilities/CharacterControl/CharacterProxy/hkpCharacterProxy.h>
 #include <Physics2012/Utilities/Collide/TriggerVolume/hkpTriggerVolume.h>
@@ -76,7 +76,6 @@ private:
   vHavokTriggerVolume *m_pOwner;
 };
 
-
 // -------------------------------------------------------------------------- //
 // Constructor / Destructor                                                   //
 // -------------------------------------------------------------------------- //
@@ -86,8 +85,6 @@ V_IMPLEMENT_SERIAL(vHavokTriggerVolume, IVObjectComponent, 0, &g_vHavokModule);
 vHavokTriggerVolume::vHavokTriggerVolume(VHavokTriggerVolumeShapeType_e eShapeType)
 {
   m_pTriggerVolume = NULL;
-  m_pModule = vHavokPhysicsModule::GetInstance();
-  m_szShapeCacheId = NULL;
 
   m_spOnObjectEnter = NULL;
   m_spOnObjectLeave = NULL;
@@ -117,7 +114,6 @@ void vHavokTriggerVolume::DisposeObject()
   IVObjectComponent::DisposeObject();
 }
 
-
 // -------------------------------------------------------------------------- //
 // Common Init/ Deint                                                         //
 // -------------------------------------------------------------------------- //
@@ -125,7 +121,8 @@ void vHavokTriggerVolume::DisposeObject()
 void vHavokTriggerVolume::CommonInit()
 {
   // Do not initialize the component in case our module is not active
-  if (!m_pModule)
+  vHavokPhysicsModule* pModule = vHavokPhysicsModule::GetInstance();
+  if (pModule == NULL)
   {
     hkvLog::Warning("Failed to initialize vHavokTriggerVolume since a non Havok physics module is currently active");
     return;
@@ -166,15 +163,10 @@ void vHavokTriggerVolume::CommonInit()
       szMeshFilename, bbox_extent(0), bbox_extent(1), bbox_extent(2));
     return;
   }
-
-  // Create shape, thereby the shape is not cached to file. It would not be a good idea, to cache the shape every time, when the user has modified 
-  // the custom volume or has switched the custom static mesh. Instead the final shape will be cached at serialization. Only try using a collision 
-  // mesh for creation if custom static mesh is used, since otherwise the static mesh is not physically present on disk.
-  int iCreationFlags = (!Vision::Editor.IsInEditor()) ? vHavokShapeFactory::VShapeCreationFlags_CACHE_SHAPE : 0;
-  iCreationFlags |= pCustomVolume->GetCustomStaticMesh() ? vHavokShapeFactory::VShapeCreationFlags_USE_VCOLMESH : 0;
   
   // Create Havok trigger volume 
-  bool bResult = CreateHkTriggerVolume(pMesh, vScale, iCreationFlags);
+  const unsigned int uiCreationFlags = vHavokShapeFactory::VShapeCreationFlags_CACHE_SHAPE | vHavokShapeFactory::VShapeCreationFlags_USE_VCOLMESH;
+  bool bResult = CreateHkTriggerVolume(pMesh, vScale, uiCreationFlags);
   VASSERT_MSG(bResult, "Failed to create Havok Trigger Volume");
 
   // Set debug visibility 
@@ -212,12 +204,13 @@ void vHavokTriggerVolume::CommonDeinit()
   m_spOnCharacterLeave = NULL;
 }
 
-bool vHavokTriggerVolume::CreateHkTriggerVolume(VisStaticMesh_cl* pMesh, const hkvVec3& vScale, int iCreationFlags)
+bool vHavokTriggerVolume::CreateHkTriggerVolume(VisStaticMesh_cl* pMesh, const hkvVec3& vScale, unsigned int uiCreationFlags)
 {
-  VVERIFY_OR_RET_VAL(m_pModule != NULL  && pMesh != NULL, false);
+  vHavokPhysicsModule* pModule = vHavokPhysicsModule::GetInstance();
+  VVERIFY_OR_RET_VAL(pModule != NULL  && pMesh != NULL, false);
 
   // Remove the old instance, if available
-  if (m_pTriggerVolume)
+  if (m_pTriggerVolume != NULL)
   {
     ASSERT(m_pOwner); /// If there's no owner then the refcount will get 0 => crash
     RemoveHkTriggerVolume();
@@ -277,28 +270,8 @@ bool vHavokTriggerVolume::CreateHkTriggerVolume(VisStaticMesh_cl* pMesh, const h
     }
   }
 
-  hkRefPtr<hkpShape> spShape; 
-  switch (Havok_ShapeType)
-  {
-  case VHavokTriggerVolumeShapeType_CONVEX:
-    {
-      spShape = vHavokShapeFactory::CreateConvexHullShapeFromMesh(pMesh, vScale, &m_szShapeCacheId, iCreationFlags);
-    }
-    break;
-
-  case VHavokTriggerVolumeShapeType_MESH:
-    {
-      spShape = vHavokShapeFactory::CreateShapeFromMesh(pMesh, vScale, &m_szShapeCacheId, iCreationFlags);
-    }
-    break;
-
-  default: 
-    {
-      VASSERT_MSG(false, "Unsupported shape type!");
-      return false;
-    }
-  }
-
+  hkRefPtr<hkpShape> spShape = vHavokShapeFactory::CreateShapeFromMesh(pMesh, vScale, 
+    uiCreationFlags | ((Havok_ShapeType == VHavokTriggerVolumeShapeType_CONVEX) ? vHavokShapeFactory::VShapeCreationFlags_CONVEX : vHavokShapeFactory::VShapeCreationFlags_MESH));
   cInfo.m_shape = spShape;
   VASSERT_MSG(cInfo.m_shape != NULL, "Failed to create shape for Havok Trigger Volume");
 
@@ -319,33 +292,39 @@ bool vHavokTriggerVolume::CreateHkTriggerVolume(VisStaticMesh_cl* pMesh, const h
   if (GetOwner() != NULL)
   {
     UpdateVision2Havok();
-    m_pModule->AddTriggerVolume(this);
+    pModule->AddTriggerVolume(this);
   }
   return true;
 }
 
 void vHavokTriggerVolume::RemoveHkTriggerVolume()
 {
-  if (!m_pTriggerVolume)
+  if (m_pTriggerVolume == NULL)
     return;
 
-  // If we still have an owner, then remove the trigger volume from the Havok world
-  if (GetOwner() != NULL)
-    m_pModule->RemoveTriggerVolume(this);  
+  vHavokPhysicsModule* pModule = vHavokPhysicsModule::GetInstance();
 
-  m_pTriggerVolume->removeReference();
-  m_pTriggerVolume->getTriggerBody()->removeReference();
-  m_pTriggerVolume = NULL;
+  // If we still have an owner, then remove the trigger volume from the Havok world.
+  if (GetOwner() != NULL)
+    pModule->RemoveTriggerVolume(this);
 
   // Remove shape from cache
-  vHavokShapeFactory::RemoveShape(m_szShapeCacheId);
-  m_szShapeCacheId = NULL;
+  m_pTriggerVolume->getTriggerBody()->markForRead();
+  const hkpShape* pShape = m_pTriggerVolume->getTriggerBody()->getCollidable()->getShape();
+  m_pTriggerVolume->getTriggerBody()->unmarkForRead();
+
+  m_pTriggerVolume->getTriggerBody()->removeReference();
+  m_pTriggerVolume->removeReference();
+  m_pTriggerVolume = NULL;
+
+  vHavokShapeCache::RemoveShape(pShape);
 }
 
 void vHavokTriggerVolume::UpdateVision2Havok()
 {
   VisObject3D_cl *pOwner3d = GetOwner3D();
-  VVERIFY_OR_RET(m_pTriggerVolume && pOwner3d);
+  vHavokPhysicsModule* pModule = vHavokPhysicsModule::GetInstance();
+  VVERIFY_OR_RET(m_pTriggerVolume != NULL && pOwner3d != NULL && pModule != NULL);
 
   // Get the transformation from Vision
   const hkvVec3& vPos = pOwner3d->GetPosition();
@@ -355,85 +334,70 @@ void vHavokTriggerVolume::UpdateVision2Havok()
   hkTransform hkTfOut;
   vHavokConversionUtils::VisMatVecToPhysTransformWorld(vRot, vPos, hkTfOut);
 
-  m_pModule->MarkForWrite();
+  pModule->MarkForWrite();
   m_pTriggerVolume->getTriggerBody()->setTransform(hkTfOut); 
-  m_pModule->UnmarkForWrite();
+  pModule->UnmarkForWrite();
 }
-
 
 // -------------------------------------------------------------------------- //
 // Property Functions                                                         //
 // -------------------------------------------------------------------------- //
 
-VisObject3D_cl *vHavokTriggerVolume::GetOwner3D()
-{
-  VisTypedEngineObject_cl *pOwner = GetOwner();
-  if (pOwner == NULL)
-    return NULL;
-
-  VASSERT(pOwner->IsOfType(V_RUNTIME_CLASS(VisObject3D_cl)));
-  return (VisObject3D_cl*)pOwner; 
-}
-
-VCustomVolumeObject *vHavokTriggerVolume::GetOwnerCustomVolume()
-{
-  VisTypedEngineObject_cl *pOwner = GetOwner();
-  if (!pOwner || !pOwner->IsOfType(V_RUNTIME_CLASS(VCustomVolumeObject)))
-    return NULL;
-
-  return static_cast<VCustomVolumeObject*>(pOwner); 
-}
-
 void vHavokTriggerVolume::SetPosition(const hkvVec3& value)
 {
-  VVERIFY_OR_RET(m_pTriggerVolume);
+  vHavokPhysicsModule* pModule = vHavokPhysicsModule::GetInstance();
+  VVERIFY_OR_RET(pModule != NULL && m_pTriggerVolume != NULL);
 
   hkVector4 pos; vHavokConversionUtils::VisVecToPhysVecWorld(value,pos);
-  m_pModule->MarkForWrite();
+  pModule->MarkForWrite();
   m_pTriggerVolume->getTriggerBody()->setPosition(pos);
-  m_pModule->UnmarkForWrite();
+  pModule->UnmarkForWrite();
 }
 
 hkvVec3 vHavokTriggerVolume::GetPosition() const
 {
-  VVERIFY_OR_RET_VAL(m_pTriggerVolume, hkvVec3(hkvNoInitialization));
+  vHavokPhysicsModule* pModule = vHavokPhysicsModule::GetInstance();
+  VVERIFY_OR_RET_VAL(pModule != NULL && m_pTriggerVolume != NULL, hkvVec3(hkvNoInitialization));
 
   hkvVec3 v; 
-  m_pModule->MarkForRead();
+  pModule->MarkForRead();
   const hkVector4& pos = m_pTriggerVolume->getTriggerBody()->getPosition();   
   vHavokConversionUtils::PhysVecToVisVecWorld(pos,v);
-  m_pModule->UnmarkForRead();
+  pModule->UnmarkForRead();
   return v;
 }
 
 void vHavokTriggerVolume::SetRotation(const hkvMat3& value)
 {
-  VVERIFY_OR_RET(m_pTriggerVolume);
+  vHavokPhysicsModule* pModule = vHavokPhysicsModule::GetInstance();
+  VVERIFY_OR_RET(pModule != NULL && m_pTriggerVolume != NULL);
 
   hkQuaternion hkQuatOut;
   vHavokConversionUtils::VisMatrixToHkQuat(value, hkQuatOut);
 
-  m_pModule->MarkForWrite();
+  pModule->MarkForWrite();
   m_pTriggerVolume->getTriggerBody()->setRotation(hkQuatOut);
-  m_pModule->UnmarkForWrite();
+  pModule->UnmarkForWrite();
 }
 
 hkvMat3 vHavokTriggerVolume::GetRotation() const 
 {
-  VVERIFY_OR_RET_VAL(m_pTriggerVolume, hkvMat3 ());
+  vHavokPhysicsModule* pModule = vHavokPhysicsModule::GetInstance();
+  VVERIFY_OR_RET_VAL(pModule != NULL && m_pTriggerVolume != NULL, hkvMat3::IdentityMatrix());
 
   hkvMat3 visMatrixOut;
-  m_pModule->MarkForRead();
+  pModule->MarkForRead();
   const hkQuaternion& rot = m_pTriggerVolume->getTriggerBody()->getRotation();
   vHavokConversionUtils::HkQuatToVisMatrix(rot, visMatrixOut);
-  m_pModule->UnmarkForRead();
+  pModule->UnmarkForRead();
 
   return visMatrixOut;
 }
 
 void vHavokTriggerVolume::SetMotionType(VHavokTriggerVolumeMotionType_e eMotionType)
 {
-  VVERIFY_OR_RET(m_pTriggerVolume);
+  vHavokPhysicsModule* pModule = vHavokPhysicsModule::GetInstance();
+  VVERIFY_OR_RET(pModule != NULL && m_pTriggerVolume != NULL);
 
   //initialize with default value
   hkpMotion::MotionType eHKMotionType = hkpMotion::MOTION_FIXED; 
@@ -453,16 +417,17 @@ void vHavokTriggerVolume::SetMotionType(VHavokTriggerVolumeMotionType_e eMotionT
     return; 
   }
 
-  m_pModule->MarkForWrite();   
+  pModule->MarkForWrite();   
   m_pTriggerVolume->getTriggerBody()->setMotionType(eHKMotionType);
-  m_pModule->UnmarkForWrite();
+  pModule->UnmarkForWrite();
   
   Havok_MotionType = eMotionType;
 }
 
 void vHavokTriggerVolume::SetQualityType(VHavokTriggerVolumeQualityType_e eQualityType)
 {
-  VVERIFY_OR_RET(m_pTriggerVolume);
+  vHavokPhysicsModule* pModule = vHavokPhysicsModule::GetInstance();
+  VVERIFY_OR_RET(pModule != NULL && m_pTriggerVolume != NULL);
 
   //initialize with default value
   hkpCollidableQualityType eHKQualityType = HK_COLLIDABLE_QUALITY_FIXED;
@@ -493,33 +458,33 @@ void vHavokTriggerVolume::SetQualityType(VHavokTriggerVolumeQualityType_e eQuali
     return; 
   }
 
-  m_pModule->MarkForWrite();   
+  pModule->MarkForWrite();   
   m_pTriggerVolume->getTriggerBody()->setQualityType(eHKQualityType);
-  m_pModule->UnmarkForWrite();
+  pModule->UnmarkForWrite();
 
   Havok_QualityType = eQualityType;
 }
 
 void vHavokTriggerVolume::SetCollisionInfo(int iLayer, int iGroup, int iSubsystem, int iSubsystemDontCollideWith)
 {
-  VVERIFY_OR_RET(m_pTriggerVolume);
+  vHavokPhysicsModule* pModule = vHavokPhysicsModule::GetInstance();
+  VVERIFY_OR_RET(pModule != NULL && m_pTriggerVolume != NULL);
 
   int iFilterInfo = hkpGroupFilter::calcFilterInfo(iLayer, iGroup, iSubsystem, iSubsystemDontCollideWith);
 
-  m_pModule->MarkForWrite();
+  pModule->MarkForWrite();
   hkpRigidBody *pRigidBody = m_pTriggerVolume->getTriggerBody();
   pRigidBody->setCollisionFilterInfo(iFilterInfo);
   hkpWorld* world = pRigidBody->getWorld();
   if (world)
     world->updateCollisionFilterOnEntity(pRigidBody, HK_UPDATE_FILTER_ON_ENTITY_FULL_CHECK, HK_UPDATE_COLLECTION_FILTER_IGNORE_SHAPE_COLLECTIONS);
-  m_pModule->UnmarkForWrite();
+  pModule->UnmarkForWrite();
 
   Havok_CollisionLayer = iLayer;
   Havok_CollisionGroup = iGroup;
   Havok_SubSystemId = iSubsystem;
   Havok_SubSystemDontCollideWith = iSubsystemDontCollideWith;
 }
-
 
 // -------------------------------------------------------------------------- //
 // Access to Havok Internals                                                  //
@@ -530,7 +495,6 @@ hkpRigidBody* vHavokTriggerVolume::GetHkTriggerBody()const
   VASSERT(m_pTriggerVolume != NULL);
   return m_pTriggerVolume->getTriggerBody(); 
 } 
-
 
 // -------------------------------------------------------------------------- //
 // Debug Rendering                                                            //
@@ -596,7 +560,6 @@ void vHavokTriggerVolume::SetDebugColor(VColorRef color)
   pDisplay->SetColor(id, Debug_Color);
 }
 
-
 // -------------------------------------------------------------------------- //
 // IVObjectComponent Virtual Overrides                                        //
 // -------------------------------------------------------------------------- //
@@ -607,7 +570,7 @@ BOOL vHavokTriggerVolume::CanAttachToObject(VisTypedEngineObject_cl *pObject, VS
     return FALSE;
 
   // Object has to be derived from VCustomVolumeObject 
-  if ( pObject->IsOfType(V_RUNTIME_CLASS(VCustomVolumeObject)) != TRUE)
+  if (vdynamic_cast<VCustomVolumeObject*>(pObject) == NULL)
   {
     sErrorMsgOut = "Component can only be added to instances of VCustomVolumeObject or derived classes.";
     return FALSE;
@@ -619,7 +582,8 @@ BOOL vHavokTriggerVolume::CanAttachToObject(VisTypedEngineObject_cl *pObject, VS
 void vHavokTriggerVolume::SetOwner(VisTypedEngineObject_cl *pOwner)
 {
   // Do not initialize the component in case our module is not active
-  if (!m_pModule)
+  vHavokPhysicsModule* pModule = vHavokPhysicsModule::GetInstance();
+  if (pModule == NULL)
   {
     hkvLog::Warning("Failed to initialize vHavokTriggerVolume since a non Havok physics module is currently active");
     return;
@@ -642,7 +606,7 @@ void vHavokTriggerVolume::SetOwner(VisTypedEngineObject_cl *pOwner)
       // Set initial object position in Havok
       UpdateVision2Havok();
 
-      m_pModule->AddTriggerVolume(this);
+      pModule->AddTriggerVolume(this);
     }
     else
     {
@@ -653,11 +617,7 @@ void vHavokTriggerVolume::SetOwner(VisTypedEngineObject_cl *pOwner)
   {
     // Remove the trigger volume from the Havok physics world
     if (m_pTriggerVolume)
-      m_pModule->RemoveTriggerVolume(this);
-
-    // Remove shape from cache
-    vHavokShapeFactory::RemoveShape(m_szShapeCacheId);
-    m_szShapeCacheId = NULL;
+      pModule->RemoveTriggerVolume(this);
 
     IVObjectComponent::SetOwner(NULL);
   }
@@ -666,10 +626,11 @@ void vHavokTriggerVolume::SetOwner(VisTypedEngineObject_cl *pOwner)
 void vHavokTriggerVolume::OnVariableValueChanged(VisVariable_cl *pVar, const char * value)
 {
   // Do not touch the trigger volume in case our module is not active
-  if (!m_pModule)
+  vHavokPhysicsModule* pModule = vHavokPhysicsModule::GetInstance();
+  if (pModule == NULL)
     return;
 
-  if (!m_pTriggerVolume)
+  if (m_pTriggerVolume == NULL)
     return;
 
   CommonInit();
@@ -680,7 +641,8 @@ void vHavokTriggerVolume::MessageFunction(int iID, INT_PTR iParamA, INT_PTR iPar
   IVObjectComponent::MessageFunction(iID,iParamA,iParamB);
 
   // Do not touch the trigger volume in case our module is not active
-  if (!m_pModule)
+  vHavokPhysicsModule* pModule = vHavokPhysicsModule::GetInstance();
+  if (pModule == NULL)
     return;
 
   if (iID == VIS_MSG_EDITOR_PROPERTYCHANGED)
@@ -688,14 +650,16 @@ void vHavokTriggerVolume::MessageFunction(int iID, INT_PTR iParamA, INT_PTR iPar
     const char *szPropertyName = (const char *) iParamA;
 
     // Recreate the trigger volume in case the mesh gets changed within vForge
-    if (_stricmp(szPropertyName, "Scaling")==0 ||  _stricmp(szPropertyName, "VolumeGeometry")==0 ||
-        _stricmp(szPropertyName, "CustomStaticMesh")==0 ||  _stricmp(szPropertyName, "StaticMeshPath")==0)
+    if (_stricmp(szPropertyName, "Scaling") == 0 ||  _stricmp(szPropertyName, "VolumeGeometry") == 0 ||
+        _stricmp(szPropertyName, "CustomStaticMesh") == 0 ||  _stricmp(szPropertyName, "StaticMeshPath") == 0)
+    {
       CommonInit();
+    }
 
     // Reposition the trigger volume in case the mesh gets positioned/ orientated within vForge
     if (m_pTriggerVolume)
     {
-      if (_stricmp(szPropertyName, "Position")==0 || _stricmp(szPropertyName, "Orientation")==0)
+      if (_stricmp(szPropertyName, "Position") == 0 || _stricmp(szPropertyName, "Orientation") == 0)
         UpdateVision2Havok();
     }
   
@@ -749,42 +713,6 @@ void vHavokTriggerVolume::Serialize( VArchive &ar )
     ar << m_spOnObjectLeave;
     ar << m_spOnCharacterEnter;
     ar << m_spOnCharacterLeave;
-
-    // Only cache shape to HKT file when inside vForge.
-    if (Vision::Editor.IsInEditor() && vHavokPhysicsModule_GetDefaultWorldRuntimeSettings().m_bEnableShapeCaching==TRUE)
-    {
-      // Get owner custom volume object 
-      VCustomVolumeObject *pCustomVolume = GetOwnerCustomVolume();
-      VASSERT(pCustomVolume != NULL);
-
-      // Get the static mesh from the custom volume object
-      VisStaticMesh_cl *pMesh = pCustomVolume->GetStaticMesh();
-      VASSERT((pMesh != NULL)&&(pMesh->IsLoaded())) 
-
-      // Get shape
-      if (m_pTriggerVolume == NULL)
-      {
-        hkvLog::Warning("vHavokTriggerVolume: Internal trigger volume missing on export.");
-      }
-      else
-      {
-        m_pModule->MarkForRead();  
-        const hkpShape *pShape = m_pTriggerVolume->getTriggerBody()->getCollidable()->getShape();
-        m_pModule->UnmarkForRead();
-
-        // Cache shape to HKT file
-        if (pShape->getClassType() == &hkvConvexVerticesShapeClass)
-        {
-          bool shrinkToFit = false; // would be better if true, but for back compat leave false
-          vHavokCachedShape::SaveConvexShape(pMesh, pCustomVolume->GetScale(), shrinkToFit, (hkvConvexVerticesShape*)pShape);
-        }
-        else
-        {
-          vHavokCachedShape::SaveMeshShape(pMesh, pCustomVolume->GetScale(), 
-            VisStaticMeshInstance_cl::VIS_COLLISION_BEHAVIOR_CUSTOM, VIS_WELDING_TYPE_NONE, (hkvBvCompressedMeshShape*)pShape);
-        }
-      }
-    }
   }
 }
 
@@ -794,7 +722,6 @@ void vHavokTriggerVolume::OnDeserializationCallback(const VSerializationContext 
   if (!m_pTriggerVolume)
     CommonInit();
 }
-
 
 // -------------------------------------------------------------------------- //
 // Variable Attributes                                                        //
@@ -819,7 +746,7 @@ START_VAR_TABLE(vHavokTriggerVolume, IVObjectComponent, "Havok Trigger Volume Co
 END_VAR_TABLE
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

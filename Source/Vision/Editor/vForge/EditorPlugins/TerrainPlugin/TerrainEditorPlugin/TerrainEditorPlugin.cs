@@ -66,7 +66,6 @@ namespace TerrainEditorPlugin
 			EditorManager.ShapeCreatorPlugins.Add(_heightFieldCreator);
 
       // add default filter:
-      TerrainEditor.HeightmapImporterList.Add(new ImportHeightmapTEX16bpp());
       TerrainEditor.HeightmapImporterList.Add(new ImportHeightmapRAW());
       TerrainEditor.HeightmapImporterList.Add(new ImportHeightmapDDS());
 
@@ -116,7 +115,7 @@ namespace TerrainEditorPlugin
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -19,7 +19,7 @@ class hkaiAstarEdgeFilter;
 /// This input data may apply to a batch of path requests.
 struct hkaiNavMeshPathSearchParameters
 {
-	// +version(10)
+	// +version(11)
 	HK_DECLARE_REFLECTION();
 	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_AI_ASTAR, hkaiNavMeshPathSearchParameters );
 
@@ -55,10 +55,11 @@ struct hkaiNavMeshPathSearchParameters
 	hkBool32 operator ==( const hkaiNavMeshPathSearchParameters& o ) const;
 
 	//
-	// Simplfied accessors
+	// Simplified accessors
 	//
 
 	inline hkBool32 shouldPerformLineOfSightCheck() const;
+	inline hkBool32 canEarlyOutFromLineOfSight() const;
 	inline hkBool32 shouldSmoothPath() const;
 	inline hkBool32 shouldProjectPath() const;
 	inline hkBool32 shouldComputePathNormals() const;
@@ -66,7 +67,7 @@ struct hkaiNavMeshPathSearchParameters
 	inline void setUp( hkVector4Parameter up );
 
 		/// World up vector.
-	hkPackedUnitVector<3> m_up; //+overridetype(hkInt16[3])
+	hkVector4 m_up;
 
 		/// Optional pointer to hkaiAstarCostModifier, which can be used to modify costs based on the hkaiAgentTraversalInfo
 	const hkaiAstarCostModifier* m_costModifier; //+nosave
@@ -89,25 +90,31 @@ struct hkaiNavMeshPathSearchParameters
 		NO_LINE_OF_SIGHT_CHECK = 0,
 			
 			/// Perform a line-of-sight check in order to try to avoid a full A* search.
-			/// If the line-of-sight check between the start and end points succeeds, this is returned as the shortest path.
-			/// If this flag is set, a line-of-sight check will be performed if no cost modifier is specified.
-		CHECK_LINE_OF_SIGHT_IF_NO_COST_MODIFIER = 1,
+			/// If the line-of-sight check between the start and end points succeeds and there is no cost modifier,
+			/// this is returned as the shortest path.
+			/// If the check succeeds and there is a cost modifier, the cost-modified path length is used as an upper
+			/// limit for the A* search.
+		EARLY_OUT_IF_NO_COST_MODIFIER = 1,
 
 			/// Enable the optional internal vertex-handling code during the line-of-sight check.
 			/// This increases the cost of the line-of-sight check, but means that it will succeed in more cases,
 			/// thus reducing the need for a full A* check in some cases.
-			/// This has no effect if the CHECK_LINE_OF_SIGHT_IF_NO_COST_MODIFIER or CHECK_LINE_OF_SIGHT_ALWAYS bits aren't set.
+			/// This has no effect if the EARLY_OUT_IF_NO_COST_MODIFIER or EARLY_OUT_ALWAYS bits aren't set.
 		HANDLE_INTERNAL_VERTICES = 2,
 
-			/// Always do a line-of-sight checked, regardless of whether or not a cost modifier is specified.
-			/// This check should be disabled when using a cost modifier to increase the cost of certain path edges, 
-			/// as it will find any straight-line path, even if a non-LOS path is actually preferred due to modified edge costs.
-		CHECK_LINE_OF_SIGHT_ALWAYS = 4
+			/// Always do a line-of-sight check and early-out if it succeeds, regardless of whether or not a cost
+			/// modifier is specified.
+			/// In general, this flag should not be enabled when using a cost modifier to increase the cost of certain
+			/// path edges, as it will find any straight-line path, even if a non-LOS path is actually preferred due to
+			/// modified edge costs.
+			/// This may be useful when checking for whether or not a path exists between two points, without actually
+			/// needing to compute the path itself.
+		EARLY_OUT_ALWAYS = 4
 	};
 
 		/// Controls whether a line-of-sight check is performed before A*, and how the check is configured.
 		/// See LineOfSightFlags for more details.
-	hkFlags<LineOfSightFlags, hkUint8> m_lineOfSightFlags; //+default(hkaiNavMeshPathSearchParameters::CHECK_LINE_OF_SIGHT_IF_NO_COST_MODIFIER)
+	hkFlags<LineOfSightFlags, hkUint8> m_lineOfSightFlags; //+default(hkaiNavMeshPathSearchParameters::EARLY_OUT_IF_NO_COST_MODIFIER)
 
 		/// Whether or not the search should use hierarchical A*
 	hkBool m_useHierarchicalHeuristic; //+default(false)
@@ -156,7 +163,7 @@ struct hkaiNavMeshPathSearchParameters
 	hkaiSearchParameters::BufferSizes m_hierarchyBufferSizes;
 
 		/// Internal determinism checks
-	inline void checkDeterminism() const;
+	void checkDeterminism() const;
 };
 
 #include <Ai/Pathfinding/NavMesh/hkaiNavMeshPathSearchParameters.inl>
@@ -164,7 +171,7 @@ struct hkaiNavMeshPathSearchParameters
 #endif // HK_AI_PATHFINDING_NAVMESH_PATH_SEARCH_PARAMETERS_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -41,34 +41,49 @@ VBASE_IMPEXP void   VBaseAlignedDealloc(void* ptr);
 
 #ifndef NO_NEW_OVERRIDE
 
+#if defined(_VISION_IOS)
+// Warning: "Replacement function 'operator new' cannot be declared 'inline'"
+# define REPLACEMENT_INLINE
+#else
+# define REPLACEMENT_INLINE inline
+#endif
+
 #if !defined(SPU) && !defined(_VISION_WIIU)
 #pragma warning(push)
   #pragma warning(disable: 4290  28251)  // Ignoring exception specification,  mismatching static analysis annotations.
 #endif
 
-// Global overloads of operator new and operator delete and their array versions.
+// Global replacements of operator new and operator delete and their array versions.
 #if !defined(_VISION_ANDROID)
-  inline void* VISION_CDECL operator new  (size_t iSize) throw (std::bad_alloc)                 { return VBaseAlloc(iSize); }
-  inline void* VISION_CDECL operator new[](size_t iSize) throw (std::bad_alloc)                 { return VBaseAlloc(iSize); }
-  inline void* VISION_CDECL operator new  (size_t iSize, size_t iAlign) throw (std::bad_alloc)  { return VBaseAlignedAlloc(iSize,(int)iAlign); }
-  inline void* VISION_CDECL operator new[](size_t iSize, size_t iAlign) throw (std::bad_alloc)  { return VBaseAlignedAlloc(iSize,(int)iAlign); }
+  REPLACEMENT_INLINE void* VISION_CDECL operator new  (size_t iSize) throw (std::bad_alloc)
+{ return VBaseAlloc(iSize); }
+  REPLACEMENT_INLINE void* VISION_CDECL operator new[](size_t iSize) throw (std::bad_alloc)
+  { return VBaseAlloc(iSize); }
+  REPLACEMENT_INLINE void* VISION_CDECL operator new  (size_t iSize, size_t iAlign) throw (std::bad_alloc)
+  { return VBaseAlignedAlloc(iSize,(int)iAlign); }
+  REPLACEMENT_INLINE void* VISION_CDECL operator new[](size_t iSize, size_t iAlign) throw (std::bad_alloc)
+  { return VBaseAlignedAlloc(iSize,(int)iAlign); }
 #endif
 
-  inline void  VISION_CDECL operator delete  (void *ptr) throw()                                { VBaseDealloc(ptr); }
-  inline void  VISION_CDECL operator delete[](void *ptr) throw()                                { VBaseDealloc(ptr); }
-  inline void  VISION_CDECL operator delete  (void *ptr, size_t iAlign) throw()                 { VBaseAlignedDealloc(ptr); }
-  inline void  VISION_CDECL operator delete[](void *ptr, size_t iAlign) throw()                 { VBaseAlignedDealloc(ptr); }
+  REPLACEMENT_INLINE void  VISION_CDECL operator delete  (void *ptr) throw()
+  { VBaseDealloc(ptr); }
+  REPLACEMENT_INLINE void  VISION_CDECL operator delete[](void *ptr) throw()
+  { VBaseDealloc(ptr); }
+  REPLACEMENT_INLINE void  VISION_CDECL operator delete  (void *ptr, size_t iAlign) throw()
+  { VBaseAlignedDealloc(ptr); }
+  REPLACEMENT_INLINE void  VISION_CDECL operator delete[](void *ptr, size_t iAlign) throw()
+  { VBaseAlignedDealloc(ptr); }
 
 #if defined(_CPPUNWIND)
-// Nothrow versions which catch exceptions and convert them to return NULL
-  inline void* VISION_CDECL operator new  (size_t iSize, const std::nothrow_t&) throw() try { return VBaseAlloc(iSize); } catch(std::bad_alloc) { return NULL; }
-  inline void* VISION_CDECL operator new[](size_t iSize, const std::nothrow_t&) throw() try { return VBaseAlloc(iSize); } catch(std::bad_alloc) { return NULL; }
-  inline void* VISION_CDECL operator new  (size_t iSize, size_t iAlign, const std::nothrow_t&) throw () try { return VBaseAlignedAlloc(iSize,(int)iAlign); } catch(std::bad_alloc) { return NULL; }
-  inline void* VISION_CDECL operator new[](size_t iSize, size_t iAlign, const std::nothrow_t&) throw () try { return VBaseAlignedAlloc(iSize,(int)iAlign); } catch(std::bad_alloc) { return NULL; }
-  inline void  VISION_CDECL operator delete  (void* ptr, const std::nothrow_t&) throw() try { VBaseDealloc(ptr);        } catch(...)            { }
-  inline void  VISION_CDECL operator delete[](void* ptr, const std::nothrow_t&) throw() try { VBaseDealloc(ptr);        } catch(...)            { }
-  inline void  VISION_CDECL operator delete  (void* ptr, size_t iAlign, const std::nothrow_t&) throw() try { VBaseAlignedDealloc(ptr);        } catch(...)            { }
-  inline void  VISION_CDECL operator delete[](void* ptr, size_t iAlign, const std::nothrow_t&) throw() try { VBaseAlignedDealloc(ptr);        } catch(...)            { }
+  // Nothrow versions which catch exceptions and convert them to return NULL
+  REPLACEMENT_INLINE void* VISION_CDECL operator new  (size_t iSize, const std::nothrow_t&) throw() try { return VBaseAlloc(iSize); } catch(std::bad_alloc) { return NULL; }
+  REPLACEMENT_INLINE void* VISION_CDECL operator new[](size_t iSize, const std::nothrow_t&) throw() try { return VBaseAlloc(iSize); } catch(std::bad_alloc) { return NULL; }
+  REPLACEMENT_INLINE void* VISION_CDECL operator new  (size_t iSize, size_t iAlign, const std::nothrow_t&) throw () try { return VBaseAlignedAlloc(iSize,(int)iAlign); } catch(std::bad_alloc) { return NULL; }
+  REPLACEMENT_INLINE void* VISION_CDECL operator new[](size_t iSize, size_t iAlign, const std::nothrow_t&) throw () try { return VBaseAlignedAlloc(iSize,(int)iAlign); } catch(std::bad_alloc) { return NULL; }
+  REPLACEMENT_INLINE void  VISION_CDECL operator delete  (void* ptr, const std::nothrow_t&) throw() try { VBaseDealloc(ptr);        } catch(...)            { }
+  REPLACEMENT_INLINE void  VISION_CDECL operator delete[](void* ptr, const std::nothrow_t&) throw() try { VBaseDealloc(ptr);        } catch(...)            { }
+  REPLACEMENT_INLINE void  VISION_CDECL operator delete  (void* ptr, size_t iAlign, const std::nothrow_t&) throw() try { VBaseAlignedDealloc(ptr);        } catch(...)            { }
+  REPLACEMENT_INLINE void  VISION_CDECL operator delete[](void* ptr, size_t iAlign, const std::nothrow_t&) throw() try { VBaseAlignedDealloc(ptr);        } catch(...)            { }
 #endif
 
 #if !defined(SPU) && !defined(_VISION_WIIU)
@@ -84,7 +99,7 @@ VBASE_IMPEXP void   VBaseAlignedDealloc(void* ptr);
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

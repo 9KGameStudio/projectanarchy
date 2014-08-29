@@ -9,7 +9,7 @@
 #include <Vision/Runtime/EnginePlugins/ThirdParty/FmodEnginePlugin/FmodEnginePlugin.hpp>
 #include <Vision/Runtime/EnginePlugins/ThirdParty/FmodEnginePlugin/VFmodManager.hpp>
 
-#include <Vision/Runtime/Base/System/Memory/VMemDbg.hpp>
+
 
 
 // forward declaration of Fmod channel callback
@@ -27,6 +27,7 @@ VFmodSoundObject::VFmodSoundObject() :
   m_iPriority(0),
   m_fVolume(1.0f),
   m_fPan(0.0f),
+  m_fDopplerLevel(1.0f),
   m_fConeOutside(-1.0f), // no cone
   m_fConeInside(-1.0f),  // no cone
   m_fFadeMin(1.0f),
@@ -42,6 +43,10 @@ VFmodSoundObject::VFmodSoundObject() :
   m_bUnpause(false)
 {
   m_pOwner = NULL;
+
+  GetPosition(m_vLastPosition);
+
+  VFmodManager::GlobalManager().OnAfterInitializeFmod += this;
 }
 
 VFmodSoundObject::VFmodSoundObject(VFmodSoundObjectCollection* pOwner, VFmodSoundResource* pResource, const hkvVec3 &vPos, int iFlags, int iPriority) :
@@ -50,6 +55,7 @@ VFmodSoundObject::VFmodSoundObject(VFmodSoundObjectCollection* pOwner, VFmodSoun
   m_iPriority(iPriority),
   m_fVolume(1.0f),
   m_fPan(0.0f),
+  m_fDopplerLevel(1.0f),
   m_fConeOutside(-1.0f), // no cone
   m_fConeInside(-1.0f),  // no cone
   m_fFadeMin(1.0f),
@@ -73,6 +79,10 @@ VFmodSoundObject::VFmodSoundObject(VFmodSoundObjectCollection* pOwner, VFmodSoun
   m_pOwner = pOwner;
   pOwner->Add(this);
 
+  GetPosition(m_vLastPosition);
+
+  VFmodManager::GlobalManager().OnAfterInitializeFmod += this;
+
   if(Vision::Editor.IsAnimatingOrPlaying() && (iFlags & VFMOD_FLAG_PAUSED) == 0)
     Play();
 }
@@ -80,6 +90,7 @@ VFmodSoundObject::VFmodSoundObject(VFmodSoundObjectCollection* pOwner, VFmodSoun
 VFmodSoundObject::~VFmodSoundObject()
 {
   OnDisposeObject();
+  VFmodManager::GlobalManager().OnAfterInitializeFmod -= this;
 }
 
 void VFmodSoundObject::DisposeObject()
@@ -96,19 +107,43 @@ void VFmodSoundObject::DisposeObject()
   m_pOwner = NULL;
 }
 
+void VFmodSoundObject::OnHandleCallback(IVisCallbackDataObject_cl *pData)
+{
+  if(pData->m_pSender == &VFmodManager::GlobalManager().OnAfterInitializeFmod)
+  {
+    if(m_spResource!=NULL&&!m_spResource->IsLoaded())
+    {      
+      m_spResource->EnsureLoaded();
+      if(m_bIsPlaying)
+      {
+        m_bIsPlaying = false;
+        Play();
+      }
+    }
+  }
+}
 
 // -------------------------------------------------------------------------- //
 // Sound property functions                                               
 // -------------------------------------------------------------------------- //
 void VFmodSoundObject::Play(float fStartTime, bool bAlsoInEditor)
 {
-  if (m_spResource == NULL || IsPlaying())
+  if (IsPlaying())
     return;
 
-  if (!bAlsoInEditor && !Vision::Editor.IsAnimatingOrPlaying())
-    return; 
-  
-  m_fStartTime = fStartTime;  
+  // Initially the sound is left paused, then within the first RunTick it is unpaused. This is required since 
+  // the 3D listener attributes has to be set prior to playing a sound. Otherwise Fmod would perform 
+  // occlusion-raycasts without having initialized listener-attributes, which potentially results in a
+  // wrong occlusion-behavior.
+  m_bUnpause = true;
+
+  m_bIsPlaying = true;
+  m_bPlayedOnce = true;
+
+  if (m_spResource == NULL || (!bAlsoInEditor && !Vision::Editor.IsAnimatingOrPlaying()))
+    return;
+
+  m_fStartTime = fStartTime;
   
   VFmodManager &manager = VFmodManager::GlobalManager();
   if (manager.IsInitialized())
@@ -142,18 +177,10 @@ void VFmodSoundObject::Play(float fStartTime, bool bAlsoInEditor)
     m_pChannel->set3DAttributes((FMOD_VECTOR *)&vPos, NULL); // no speed (yet)
     m_pChannel->setVolume(GetVolume());
     m_pChannel->setPan(GetPan());
+    m_pChannel->set3DDopplerLevel(Get3DDopplerLevel());
 
     SetPitch(GetPitch());
     SetConeAngles(GetConeAngleInside(), GetConeAngleOutside());
-
-    // Initially the sound is left paused, then within the first RunTick it is unpaused. This is required since 
-    // the 3D listener attributes has to be set prior to playing a sound. Otherwise Fmod would perform 
-    // occlusion-raycasts without having initialized listener-attributes, which potentially results in a
-    // wrong occlusion-behavior.
-    m_bUnpause = true;
-
-    m_bIsPlaying = true;
-    m_bPlayedOnce = true;
 
     unsigned int ims = (int)(fStartTime*1000.f); // milliseconds
     m_pChannel->setPosition(ims,FMOD_TIMEUNIT_MS);
@@ -278,6 +305,15 @@ void VFmodSoundObject::SetPan(float fPan)
 
   if (m_pChannel)
     m_pChannel->setPan(fPan);
+}
+
+void VFmodSoundObject::Set3DDopplerLevel(float fDopplerLevel)
+{
+  VASSERT(GetResource()->Is3D());
+  m_fDopplerLevel = hkvMath::clamp(fDopplerLevel, 0.f, 5.f);
+
+  if (m_pChannel)
+    m_pChannel->set3DDopplerLevel(m_fDopplerLevel);
 }
 
 void VFmodSoundObject::Set3DFadeDistance(float fMin, float fMax)
@@ -438,20 +474,6 @@ void VFmodSoundObject::OnDisposeObject()
     m_pChannel->setUserData(NULL);
 }
 
-void VFmodSoundObject::OnObject3DChanged(int iO3DFlags)
-{
-  VisObject3D_cl::OnObject3DChanged(iO3DFlags);
-
-  if (iO3DFlags & VisObject3D_cl::VIS_OBJECT3D_POSCHANGED)
-  {
-    if (m_pChannel)
-    {
-      const hkvVec3 &vPos = GetPosition();
-      m_pChannel->set3DAttributes((FMOD_VECTOR *)&vPos, NULL); // no speed (yet)
-      SetConeAngles(GetConeAngleInside(), GetConeAngleOutside()); // also updates direction
-    }
-  }
-}
 
 static int VFMOD_TRIGGER_ID_PAUSE = -1;
 static int VFMOD_TRIGGER_ID_RESUME = -1;
@@ -534,6 +556,10 @@ void VFmodSoundObject::Serialize( VArchive &ar )
     {
       ar >> m_bPlayedOnce;
     }
+    if (iVersion >= VFMOD_SOUNDOBJECT_VERSION_2)
+    {
+      ar >> m_fDopplerLevel;
+    }
 
     // @@@ Force sound objects to be non-looping
     //m_iFlags &= ~VFMOD_FLAG_LOOPED;
@@ -571,6 +597,7 @@ void VFmodSoundObject::Serialize( VArchive &ar )
     ar << m_fVolumeFadeStart << m_fVolumeFadeTarget;
     ar << m_fPitch;
     ar << m_bPlayedOnce;
+    ar << m_fDopplerLevel;
   }
 }
 
@@ -586,7 +613,7 @@ void VFmodSoundObject::OnDeserializationCallback(const VSerializationContext &co
 // -------------------------------------------------------------------------- //
 // Misc                                                
 // -------------------------------------------------------------------------- //
-float VFmodSoundObject::UpdateFading(bool bApplyVol)
+float VFmodSoundObject::UpdateFading(float fTimeDelta, bool bApplyVol)
 {
   if (!m_bFading)
   {
@@ -606,7 +633,7 @@ float VFmodSoundObject::UpdateFading(bool bApplyVol)
     SetVolume(fNewVolume);
 
   // Update timer
-  m_fVolumeFadeTime += Vision::GetTimer()->GetTimeDifference();
+  m_fVolumeFadeTime += fTimeDelta;
 
   return fNewVolume;
 }
@@ -645,9 +672,9 @@ void VFmodSoundObject::DebugRender(IVRenderInterface* pRI)
 // -------------------------------------------------------------------------- //
 // Internal functions                                                
 // -------------------------------------------------------------------------- //
-void VFmodSoundObject::Update()
+void VFmodSoundObject::Update(float fTimeDelta)
 {
-  UpdateFading();
+  UpdateFading(fTimeDelta);
 
   // unpause playback of sound
   if (m_bUnpause)
@@ -657,9 +684,18 @@ void VFmodSoundObject::Update()
     m_bUnpause = false;
   }
 
+  hkvVec3 vPosition(GetPosition());
+  if (m_pChannel)
+  {
+    hkvVec3 vVelocity(fTimeDelta > 0.f ? (vPosition - m_vLastPosition) * (1.f / fTimeDelta) : hkvVec3::ZeroVector());
+    m_pChannel->set3DAttributes(reinterpret_cast<const FMOD_VECTOR*>(&vPosition), reinterpret_cast<const FMOD_VECTOR*>(&vVelocity));
+    SetConeAngles(GetConeAngleInside(), GetConeAngleOutside()); // also updates direction
+  }
+  m_vLastPosition = vPosition;
+
   // update last time used when playing sound 
   if (IsPlaying())
-    GetResource()->UpdateTimeStamp();  
+    GetResource()->UpdateTimeStamp();
 }
 
 
@@ -714,13 +750,13 @@ FMOD_RESULT F_CALLBACK ChannelCallback(FMOD_CHANNEL *channel, FMOD_CHANNEL_CALLB
 }
 
 
-void VFmodSoundObjectCollection::Update()
+void VFmodSoundObjectCollection::Update(float fTimeDelta)
 {
   int iCount = Count();
   for (int i=0;i<iCount;i++)
   {
     VFmodSoundObject* pInst = GetAt(i);
-    pInst->Update();
+    pInst->Update(fTimeDelta);
   }
 }
 
@@ -779,7 +815,7 @@ VFmodSoundObject* VFmodSoundObjectCollection::SearchObject(const char* szName) c
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

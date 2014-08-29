@@ -11,7 +11,7 @@
 #include <Common/Serialize/Data/hkDataObject.h>
 
 	// Private utility class used by hkDataObjectUtil
-class hkDataWorldCloner
+class HK_EXPORT_COMMON hkDataWorldCloner
 {
 	public:
 	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE,hkDataWorldCloner);
@@ -44,7 +44,7 @@ class hkDataWorldCloner
 #endif // HK_DATA_WORLD_CLONER_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

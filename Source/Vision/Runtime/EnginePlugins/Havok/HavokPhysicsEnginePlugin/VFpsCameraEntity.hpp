@@ -22,6 +22,11 @@ class VInputMap;
 class VFpsCameraEntity : public VFreeCamera
 {
 public:
+  enum FpsControl
+  {
+    CONTROL_JUMP = CONTROL_LAST_ELEMENT + 1
+  };
+
   V_DECLARE_SERIAL_DLLEXP(VFpsCameraEntity, VHAVOK_IMPEXP)
   V_DECLARE_VARTABLE(VFpsCameraEntity, VHAVOK_IMPEXP)
 
@@ -40,10 +45,33 @@ public:
     return Vision::Editor.IsInEditor() ? FALSE : TRUE;
   }
 
-protected:
-  VHAVOK_IMPEXP virtual void GetCurrentMoveAxes(hkvVec3& vForward, hkvVec3& vRight, hkvVec3& vUp) const HKV_OVERRIDE;
+  VHAVOK_IMPEXP void SetHeight(float fHeight);
 
-  VHAVOK_IMPEXP virtual void OnThinkFunctionStatusChanged() HKV_OVERRIDE;
+  inline float GetStandHeight() const
+  {
+    return m_fHeight;
+  }
+
+  VHAVOK_IMPEXP void SetEyeHeight(float fHeight);
+
+  inline float GetEyeHeight() const
+  {
+    return m_fEyeHeight;
+  }
+
+  VHAVOK_IMPEXP void SetRadius(float fRadius);
+
+  inline float GetRadius() const
+  {
+    return m_fRadius;
+  }
+
+  VHAVOK_IMPEXP virtual void OnVariableValueChanged(VisVariable_cl* pVar, const char* value) HKV_OVERRIDE;
+
+protected:
+  // VFreeCamera overrides
+  VHAVOK_IMPEXP virtual void GetCurrentMoveAxes(hkvVec3& vForward, hkvVec3& vRight, hkvVec3& vUp) const HKV_OVERRIDE;
+  VHAVOK_IMPEXP virtual void OnActiveStateChanged(bool bActive) HKV_OVERRIDE;
 
 private:
   // private functions
@@ -52,14 +80,19 @@ private:
   void SetupPhysics();            // Sets up physics and collision behavior.
   bool TouchesGround();           // Returns true if player touches the ground.
 
+  void UpdateCharacterController();
+
   vHavokCharacterController* m_pCharacterController;
-  hkvAlignedBBox m_bbStand;       // bounding box for standing mode
+
+  float m_fHeight;
+  float m_fEyeHeight;
+  float m_fRadius;
 };
 
 #endif // VFPSCAMERAENTITY_HPP_INCLUDED
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140726)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

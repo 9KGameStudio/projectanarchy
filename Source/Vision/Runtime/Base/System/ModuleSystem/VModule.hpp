@@ -77,7 +77,7 @@ VModule variable = {V_SDK_VERSION, moduleVersion, moduleName, moduleVendor, desc
                     NULL/*ParamBroadcaster*/, sourceplugin };\
 VModuleCleanup variable##cleanup(&variable);
 
-#ifdef WIN32
+#ifdef _VISION_WIN32
   #define MAX_VMODULE_PLUGINNAME_CHARS  63
 #else
   // all other platforms do not support this
@@ -187,7 +187,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

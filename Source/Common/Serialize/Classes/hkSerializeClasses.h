@@ -14,19 +14,19 @@
 // - The corresponding reflection database (reflection.db) is deleted
 // - The --force-output or --force-rebuild option is added to the pre-build generateReflection.py execution
 
-HK_ABSTRACT_CLASS(hkResourceBase)
-HK_ABSTRACT_CLASS(hkResourceContainer)
-HK_ABSTRACT_CLASS(hkResourceHandle)
-HK_CLASS(hkMemoryResourceContainer)
-HK_CLASS(hkMemoryResourceHandle)
-HK_STRUCT(hkMemoryResourceHandleExternalLink)
-HK_STRUCT(hkPackfileHeader)
-HK_STRUCT(hkPackfileSectionHeader)
-HK_STRUCT(hkRootLevelContainer)
-HK_STRUCT(hkRootLevelContainerNamedVariant)
+HK_ABSTRACT_CLASS(HK_EXPORT_COMMON,hkResourceBase)
+HK_ABSTRACT_CLASS(HK_EXPORT_COMMON,hkResourceContainer)
+HK_ABSTRACT_CLASS(HK_EXPORT_COMMON,hkResourceHandle)
+HK_CLASS(HK_EXPORT_COMMON,hkMemoryResourceContainer)
+HK_CLASS(HK_EXPORT_COMMON,hkMemoryResourceHandle)
+HK_STRUCT(HK_EXPORT_COMMON,hkMemoryResourceHandleExternalLink)
+HK_STRUCT(HK_EXPORT_COMMON,hkPackfileHeader)
+HK_STRUCT(HK_EXPORT_COMMON,hkPackfileSectionHeader)
+HK_STRUCT(HK_EXPORT_COMMON,hkRootLevelContainer)
+HK_STRUCT(HK_EXPORT_COMMON,hkRootLevelContainerNamedVariant)
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

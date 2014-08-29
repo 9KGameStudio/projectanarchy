@@ -22,6 +22,24 @@ class hkbCachingAssetLoader: public hkbAssetLoader
 	public:
 	
 		HK_DECLARE_CLASS_ALLOCATOR( HK_MEMORY_CLASS_BEHAVIOR );
+		
+			// Entry for loaded resources
+		struct CachedEntry
+		{			
+			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_SCENE_DATA, hkbCachingAssetLoader::CachedEntry );
+
+			/// Filename for the entry being cached
+			hkStringPtr m_filename;
+
+			// Store the asset here if it was loaded using loadUniqueAsset(), otherwise HK_NULL
+			void* m_assetIfUnique;
+		};
+		
+			/// Optionally construct with threadLocking.
+		hkbCachingAssetLoader( bool enableThreadLocking = false );
+
+			// Dtor.
+		virtual ~hkbCachingAssetLoader();
 
 		//////////////////////////
 		// hkbAssetLoader interface
@@ -46,6 +64,15 @@ class hkbCachingAssetLoader: public hkbAssetLoader
 			// hkbAssetLoader interface implementation.
 		virtual void* loadAssetFromStream( const char* rootPath, const char* filename, hkStreamReader* stream, const hkClass& refClass ) HK_OVERRIDE;
 
+		//////////////////////////
+		// Additional functionality
+		//////////////////////////
+
+			/// Loads an asset on the heap and returns the top level object and the resource that contains the object.  
+			/// If the file could not be loaded or the top level object was not of type refClass HK_NULL is returned.
+			/// This is used internally and also in the HavokAssembly.  It's for advanced use only.
+		void* loadAsset( const char* rootPath, const char* filename, const hkClass& refClass, hkResource*& owner, bool lookInCache, hkStreamReader* stream );
+
 			/// Adds a path that will be searched if an asset is not found under the root path provided to
 			/// loadAsset.  Behavior assets are exported from the Animation Tool relative to the exported project 
 			/// file.  There are cases however where assets are specified relative to another source.  One example 
@@ -54,30 +81,28 @@ class hkbCachingAssetLoader: public hkbAssetLoader
 			/// this case you can specify the project path with this method.			
 		void addAlternateRoot( const char* rootPath );
 
-			/// Loads an asset on the heap and returns the top level object and the resource that contains the object.  
-			/// If the file could not be loaded or the top level object was not of type refClass HK_NULL is returned.
-		void* loadAsset( const char* rootPath, const char* filename, const hkClass& refClass, hkResource*& owner, bool lookInCache, hkStreamReader* stream );
+			/// If enableThreadLocking was true during construction, this will acquire the same lock this asset loader uses
+		void acquireLoadLock() const;
 
-		// Entry for loaded resources
-		struct CachedEntry
-		{			
-			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_SCENE_DATA, hkbCachingAssetLoader::CachedEntry );
+			/// If enableThreadLocking was true during construction, this will release the same lock this asset loader uses
+		void releaseLoadLock() const;
 
-				/// Filename for the entry being cached
-			hkStringPtr m_filename;
+	protected:
 
-				// Store the asset here if it was loaded using loadUniqueAsset(), otherwise HK_NULL
-			void* m_assetIfUnique;
-		};
-
-	protected:		
-
-			/// Internal version of loadAsset
-		virtual void* loadAssetInternal( const char* rootPath, const char* filename, const hkClass& refClass, hkResource*& owner, bool lookInCache, hkStreamReader* stream );
+		//////////////////////////
+		// Internal helper functions
+		//////////////////////////
 
 			/// If the animation requires a skeleton (e.g. predictive, quantized) this function tries
 			/// to set the skeleton on the animation from the given animation container.
 		void setSkeletonOnAnimation( hkaAnimationContainer& animationContainer, hkaAnimationBinding& animationBinding );
+
+		//////////////////////////
+		// Interface for subclasses
+		//////////////////////////
+
+			/// Internal version of loadAsset
+		virtual void* loadAssetInternal( const char* rootPath, const char* filename, const hkClass& refClass, hkResource*& owner, bool lookInCache, hkStreamReader* stream );
 
 			// Get the top level object from the resource.
 			// This default implementation will try and use a root level container returned by getRootLevelContainer.
@@ -108,14 +133,21 @@ class hkbCachingAssetLoader: public hkbAssetLoader
 			/// Store specific unique asset
 		virtual void storeUniqueAsset( void* uniqueClassObj, void* resource, bool lookInCache ) = 0;
 
+		//////////////////////////
+		// Properties
+		//////////////////////////
+
 			/// Array of root paths where assets might be found.
 		hkArray<hkStringPtr> m_alternateRootPaths;
+
+			/// Optional critical section for locks
+		mutable hkCriticalSection* m_criticalSection;
 };
 
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

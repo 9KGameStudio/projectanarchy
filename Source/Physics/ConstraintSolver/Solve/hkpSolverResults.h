@@ -9,10 +9,11 @@
 #ifndef HKP_SOLVER_RESULTS_H
 #define HKP_SOLVER_RESULTS_H
 
+#include <Physics/Constraint/hkpConstraintExport.h>
 
 /// Constraint solver results. This class is used internally by the system, however it may be used to query the results
 /// of the constraint solver for this constraint on the last solve() call.
-class hkpSolverResults
+class HK_EXPORT_PHYSICS hkpSolverResults
 {
 	public:
 
@@ -43,7 +44,7 @@ class hkpSolverResults
 #endif // HKP_SOLVER_RESULTS_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

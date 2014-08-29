@@ -31,7 +31,7 @@
 /// building to be potentially reused.
 ///
 /// \sa hkMeshMaterial hkMeshShape
-class hkMeshSectionBuilder
+class HK_EXPORT_COMMON hkMeshSectionBuilder
 {
     public:
         HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_SCENE_DATA, hkMeshSectionBuilder );
@@ -69,7 +69,7 @@ class hkMeshSectionBuilder
             /// Get the number of primitives
         HK_FORCE_INLINE int getNumSections() const { return m_sections.getSize(); }
 
-		static bool canConcatPrimitives(hkMeshSection::PrimitiveType b, hkMeshSection::PrimitiveType a);
+		static bool HK_CALL canConcatPrimitives(hkMeshSection::PrimitiveType b, hkMeshSection::PrimitiveType a);
 
     protected:
 
@@ -98,7 +98,7 @@ class hkMeshSectionBuilder
 #endif // HK_MESH_SECTION_BUILDER_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

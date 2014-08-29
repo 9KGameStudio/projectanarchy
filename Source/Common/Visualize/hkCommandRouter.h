@@ -15,7 +15,7 @@ class hkProcess;
 
 /// A class to deserialize chunks of data that have come from the client to the server.
 /// For example the creation and deletion of viewers.
-class hkCommandRouter : public hkReferencedObject
+class HK_EXPORT_COMMON hkCommandRouter : public hkReferencedObject
 {
 	public:
 		HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_VDB);
@@ -41,7 +41,7 @@ class hkCommandRouter : public hkReferencedObject
 #endif // HK_VISUALIZE_COMMAND_ROUTER
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

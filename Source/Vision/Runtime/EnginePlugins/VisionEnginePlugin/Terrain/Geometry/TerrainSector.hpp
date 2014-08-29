@@ -63,18 +63,18 @@ public:
 #define SECTOR_FILE_VERSION_20      20
 // version 21: texture limits per page instead of per sector
 #define SECTOR_FILE_VERSION_21      21
-// version 21: added decoration version number
+// version 21: decoration version number
 #define SECTOR_FILE_VERSION_22      22
+// version 22: physics tight-fit parameter
+#define SECTOR_FILE_VERSION_23      23
 
-#define SECTOR_CURRENT_FILE_VERSION SECTOR_FILE_VERSION_22
+#define SECTOR_CURRENT_FILE_VERSION SECTOR_FILE_VERSION_23
 
 #define SECTOR_TEXTURETYPE_NULL  0
 #define SECTOR_TEXTURETYPE_WHITE 1
 #define SECTOR_TEXTURETYPE_BLACK 2
 #define SECTOR_TEXTURETYPE_FILE  3
 #define SECTOR_TEXTURETYPE_NEUTRALNORMAL  4
-
-
 
 /// \brief
 ///   Represents a large sector inside the terrain. It keeps its own copy of the relevant heightmap data, decoration objects etc.
@@ -145,7 +145,7 @@ public:
 
   /// \brief
   ///   Returns the world space position of the sector's origin
-  inline const hkvVec3& GetSectorOrigin() const {return m_vSectorOrigin;}
+  inline const hkvVec3& GetSectorOrigin() const { return m_vSectorOrigin; }
 
   /// \brief
   ///   Get sector physics representation type
@@ -154,6 +154,14 @@ public:
   /// \brief
   ///   Set sector physics representation type
   inline void SetPhysicsType(VPhysicsType_e ePhysicsType) { m_ePhysicsType = ePhysicsType; }
+
+  /// \brief
+  ///   Returns whether the rigid body shape fits tightly around the object.
+  inline bool GetPhysicsTightFit() const { return m_bPhysicsTightFit; }
+
+  /// \brief
+  ///   Sets whether tight-fit is enabled.
+  inline void SetPhysicsTightFit(bool bEnabled) { m_bPhysicsTightFit = bEnabled; }
 
   /// \brief
   ///   Returns the default bounding box of the sector (z-extents might not be accurate)
@@ -268,7 +276,7 @@ public:
   // resource functions
   TERRAIN_IMPEXP virtual BOOL Reload();
   TERRAIN_IMPEXP virtual BOOL Unload();
-#if ( defined(_VR_DX9) && defined(WIN32) )
+#if ( defined(_VR_DX9) && defined(_VISION_WIN32) )
   TERRAIN_IMPEXP virtual void OnEnterBackground();
   TERRAIN_IMPEXP virtual void OnLeaveBackground();
 #endif
@@ -350,7 +358,7 @@ public:
   TERRAIN_IMPEXP virtual void RenderTerrainMesh(VTerrainSectorMeshPageInfo* pPage, const VTerrainVisibilityCollectorComponent &visInfoComp);
   TERRAIN_IMPEXP float ComputeMaxErrorForLOD(int iLod, int x1,int y1,int x2,int y2);
   TERRAIN_IMPEXP void ComputeLODDistanceTable();
-  TERRAIN_IMPEXP virtual VisZoneResource_cl *GetParentZone(); 
+  TERRAIN_IMPEXP virtual IVisZone_cl *GetParentZone() HKV_OVERRIDE; 
 
   TERRAIN_IMPEXP void AssignVisibility(bool bStatus);
   void ConnectNeighborZones(bool bStatus);
@@ -406,10 +414,11 @@ public:
   VLuminanceChannelPtr m_spMaterialIDMap;
 
   // flags:
-  bool m_bPrepared;  ///< loaded and updated
-  bool m_bSectorFileLoaded;
-  bool m_bHasAdditionalDecoration; ///< only relevant inside editor
-  bool m_bFailedLoadingReplacementMesh;
+  bool m_bPrepared                      : 1; ///< loaded and updated
+  bool m_bSectorFileLoaded              : 1;
+  bool m_bHasAdditionalDecoration       : 1; ///< only relevant inside editor
+  bool m_bFailedLoadingReplacementMesh  : 1;
+  bool m_bPhysicsTightFit               : 1;
 
   // shader:
   VCompiledTechniquePtr m_spTerrainReplacementTechnique;
@@ -422,7 +431,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

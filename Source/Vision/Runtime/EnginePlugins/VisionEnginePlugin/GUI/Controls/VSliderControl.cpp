@@ -8,7 +8,7 @@
 
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/VisionEnginePluginPCH.h>         // precompiled header
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/GUI/VMenuIncludes.hpp>
-#include <Vision/Runtime/Base/System/Memory/VMemDbg.hpp>
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 // VSliderControl
@@ -41,8 +41,9 @@ void VSliderControl::Serialize( VArchive &ar )
     ar >> m_iTickCount >> m_bVertical >> m_fSliderRelWidth;
     ar >> m_BorderSize;
     ar >> m_Frame;
-    m_spSlider = (VSlider *)ar.ReadObject(V_RUNTIME_CLASS(VSlider));
-  } else
+    m_spSlider = ar.ReadObject<VSlider>();
+  } 
+  else
   {
     ar << iLocalVersion;
     ar << m_fRangeMin << m_fRangeMax << m_fCurrentValue;
@@ -390,7 +391,7 @@ void VSlider::OnTick(float dtime)
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

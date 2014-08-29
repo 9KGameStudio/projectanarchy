@@ -22,7 +22,7 @@ hkvTransformationStepImageToDds::hkvTransformationStepImageToDds(const hkvTextur
 {
   switch (settings.getTargetDataFormat())
   {
-  case HKV_TEXTURE_DATA_FORMAT_A4R4G4B4:
+  case HKV_IMAGE_DATA_FORMAT_A4R4G4B4:
     {
       m_rgbaBits = 16;
       m_rWidth = m_gWidth = m_bWidth = m_aWidth = 4;
@@ -32,7 +32,7 @@ hkvTransformationStepImageToDds::hkvTransformationStepImageToDds(const hkvTextur
       m_aShift = 12;
       break;
     }
-  case HKV_TEXTURE_DATA_FORMAT_R4G4B4A4_GL:
+  case HKV_IMAGE_DATA_FORMAT_R4G4B4A4_GL:
     {
       m_rgbaBits = 16;
       m_rWidth = m_gWidth = m_bWidth = m_aWidth = 4;
@@ -42,7 +42,7 @@ hkvTransformationStepImageToDds::hkvTransformationStepImageToDds(const hkvTextur
       m_aShift = 0;
       break;
     }
-  case HKV_TEXTURE_DATA_FORMAT_A1R5G5B5:
+  case HKV_IMAGE_DATA_FORMAT_A1R5G5B5:
     {
       m_rgbaBits = 16;
       m_rWidth = 5;
@@ -55,7 +55,7 @@ hkvTransformationStepImageToDds::hkvTransformationStepImageToDds(const hkvTextur
       m_aShift = 15;
       break;
     }
-  case HKV_TEXTURE_DATA_FORMAT_R5G6B5:
+  case HKV_IMAGE_DATA_FORMAT_R5G6B5:
     {
       m_rgbaBits = 16;
       m_rWidth = 5;
@@ -68,7 +68,7 @@ hkvTransformationStepImageToDds::hkvTransformationStepImageToDds(const hkvTextur
       m_aShift = 0;
       break;
     }
-  case HKV_TEXTURE_DATA_FORMAT_A8R8G8B8:
+  case HKV_IMAGE_DATA_FORMAT_A8R8G8B8:
     {
       m_rgbaBits = 32;
       m_rWidth = m_gWidth = m_bWidth = m_aWidth = 8;
@@ -78,7 +78,7 @@ hkvTransformationStepImageToDds::hkvTransformationStepImageToDds(const hkvTextur
       m_aShift = 24;
       break;
     }
-  case HKV_TEXTURE_DATA_FORMAT_X8R8G8B8:
+  case HKV_IMAGE_DATA_FORMAT_X8R8G8B8:
     {
       m_rgbaBits = 32;
       m_rWidth = m_gWidth = m_bWidth = 8;
@@ -89,7 +89,7 @@ hkvTransformationStepImageToDds::hkvTransformationStepImageToDds(const hkvTextur
       m_aShift = 0;
       break;
     }
-  case HKV_TEXTURE_DATA_FORMAT_R8G8B8:
+  case HKV_IMAGE_DATA_FORMAT_R8G8B8:
     {
       m_rgbaBits = 24;
       m_rWidth = m_gWidth = m_bWidth = 8;
@@ -258,7 +258,7 @@ void hkvTransformationStepImageToDds::cancel()
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

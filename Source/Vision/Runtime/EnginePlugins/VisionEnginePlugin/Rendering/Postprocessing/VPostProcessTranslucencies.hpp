@@ -11,7 +11,9 @@
 #ifndef POSTPROCESS_TRANSLUCENCIES_HPP_INCLUDED
 #define POSTPROCESS_TRANSLUCENCIES_HPP_INCLUDED
 
+// Forward declarations
 class VRendererNodeCommon;
+
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/Effects/EffectsModule.hpp>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/Postprocessing/PostProcessBase.hpp>
 
@@ -28,27 +30,26 @@ class VPostProcessTranslucencies : public VPostProcessingBaseComponent
 public:
 
   /// \brief
-	/// Constructor of the translucency post processor.
-	/// 
-	/// \param bQuarterSizeParticles
+  ///   Constructor of the translucency post processor.
+  ///
+  /// \param bQuarterSizeParticles
   /// If true, certain particle and mesh buffer effects (e.g. volumetric cones) will be rendered into a
   /// quarter-size render target, thus improving up performance. The down sampled render target will be upscaled
   /// and blended with the full-size accumulation buffer.
   /// This only works on PS3 and Xbox360, not on PC.
-	/// 
-	VPostProcessTranslucencies(bool bQuarterSizeParticles);
+  /// 
+  VPostProcessTranslucencies(bool bQuarterSizeParticles);
 
   /// \brief
-	/// Destructor of the translucency post-processor.
+  ///   Destructor of the translucency post-processor.
   ~VPostProcessTranslucencies();
 
   /// \brief
-	/// Overridden Execute function
-	EFFECTS_IMPEXP virtual void Execute() HKV_OVERRIDE;
+  ///   Overridden Execute function
+  EFFECTS_IMPEXP virtual void Execute() HKV_OVERRIDE;
 
   /// \brief
-  /// Returns if particles are rendered quarter size
-  ///
+  ///   Returns if particles are rendered quarter size
   EFFECTS_IMPEXP bool IsQuarterSizeParticles() const { return m_bQuarterSizeParticles; }
 
 protected:
@@ -91,7 +92,6 @@ protected:
   VisParticleGroupCollection_cl *m_TempParticleGroupCollection;
   VisMeshBufferObjectCollection_cl *m_TempMeshBufferObjectCollection;
 
-
 public:
   // VTypedObject
   V_DECLARE_DYNAMIC_DLLEXP(VPostProcessTranslucencies,EFFECTS_IMPEXP)
@@ -102,7 +102,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

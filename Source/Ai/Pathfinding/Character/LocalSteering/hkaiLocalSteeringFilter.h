@@ -12,7 +12,7 @@ class hkaiCharacter;
 class hkaiObstacleGenerator;
 
 	/// A class used to enable/disable interactions between hkaiCharacters and hkaiObstacleGenerators during local steering
-class hkaiLocalSteeringFilter : public hkReferencedObject
+class HK_EXPORT_AI hkaiLocalSteeringFilter : public hkReferencedObject
 {
 public:
 	HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_AI);
@@ -29,7 +29,7 @@ public:
 #endif // HK_AI_LOCAL_STEERING_FILTER_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

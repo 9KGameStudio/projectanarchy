@@ -204,9 +204,19 @@ namespace VisionEditorPlugin.Shapes
     protected const int CATORDER_WIND = Shape3D.LAST_CATEGORY_ORDER_ID + 2;
 
     /// <summary>
+    /// Category string
+    /// </summary>
+    protected const string CAT_LIGHTING = "Light & Color";
+
+    /// <summary>
+    /// Category ID
+    /// </summary>
+    protected const int CATORDER_LIGHTING = Shape3D.LAST_CATEGORY_ORDER_ID + 3;
+
+    /// <summary>
     /// last used category ID
     /// </summary>
-    public new const int LAST_CATEGORY_ORDER_ID = CATORDER_WIND;
+    public new const int LAST_CATEGORY_ORDER_ID = CATORDER_LIGHTING;
 
     #endregion
 
@@ -298,6 +308,9 @@ namespace VisionEditorPlugin.Shapes
       EnginePGroup.SetEffectFile(_effectFile); // first set the effect...
       base.SetEngineInstanceBaseProperties(); // ...then position etc.
       EnginePGroup.SetVisibleBitmask((uint)_iVisibleBitmask);
+      EnginePGroup.SetLightInfluenceBitmask((uint)_iLightInfluenceBitmask);
+      EnginePGroup.SetPreferredDirLightKey(_preferredDynamicDirLightKey);
+      EnginePGroup.SetLightSamplingOffset(_lightSamplingOffset);
       EnginePGroup.SetAmbientColor(VisionColors.Get(_ambientColor));
       EnginePGroup.SetPaused(_bPaused);
       EnginePGroup.SetHalted(_bHalted);
@@ -305,6 +318,7 @@ namespace VisionEditorPlugin.Shapes
       EnginePGroup.UpdateParticleColors();
       EnginePGroup.SetIntensity(_fIntensity);
       EnginePGroup.SetApplyTimeOfDayLight(_bApplyTimeOfDayLighting);
+      EnginePGroup.SetRemoveWhenFinished(_removeWhenFinished);
       UpdateMeshEmitterEntity();
 
       EnginePGroup.EndUpdateParams();
@@ -318,7 +332,11 @@ namespace VisionEditorPlugin.Shapes
     public override void ReassignAllLinks()
     {
       base.ReassignAllLinks();
+
       UpdateMeshEmitterEntity();
+
+      if (HasEngineInstance())
+        EnginePGroup.OnLinksChanged();
     }
 
     public override void OnAddedToScene()
@@ -369,6 +387,8 @@ namespace VisionEditorPlugin.Shapes
     {
       ParticleGroupShape copy = (ParticleGroupShape)base.Clone();
       copy._hotSpotWindSpeed = null;
+      copy._hotSpotLightSamplingOffset = null;
+
       if (_emitterMeshEntity != null)
         copy._emitterMeshEntity = _emitterMeshEntity.Clone() as ShapeReference;
       return copy;
@@ -475,8 +495,11 @@ namespace VisionEditorPlugin.Shapes
     {
       base.OnLink (src, target); // adds to collections
 
+      if (HasEngineInstance())
+        EnginePGroup.OnLinksChanged();
+
       // perform the linking on the engine objects
-      if (target.OwnerShape==this)
+      if (target.OwnerShape == this)
       {
         ConstraintShape constraint = src.OwnerShape as ConstraintShape;
         if (constraint != null && HasEngineInstance() && constraint.HasEngineInstance()) // at least the engine instance of the constraint can be null
@@ -492,8 +515,12 @@ namespace VisionEditorPlugin.Shapes
     public override void OnUnlink(ShapeLink src, ShapeLink target)
     {
       base.OnUnlink (src, target);
+
+      if (HasEngineInstance())
+        EnginePGroup.OnLinksChanged();
+
       // perform the unlinking on the engine objects
-      if (target.OwnerShape==this)
+      if (target.OwnerShape == this)
       {
         ConstraintShape constraint = src.OwnerShape as ConstraintShape;
         if (constraint != null && HasEngineInstance() && constraint.HasEngineInstance()) // at least the engine instance of the constraint can be null
@@ -508,16 +535,22 @@ namespace VisionEditorPlugin.Shapes
     string _effectFile = "";
     //string _effectKey = null;
     FlagsInt32_e _iVisibleBitmask = FlagsInt32_e.All;
+    FlagsInt32_e _iLightInfluenceBitmask = FlagsInt32_e.Bit0;
+    string _preferredDynamicDirLightKey = "";
     Color _ambientColor = Color.Black;
     bool _bPaused = false;
     bool _bHalted = false;
+    bool _removeWhenFinished = true;
     private Vector3F _windSpeed = Vector3F.Zero;
+    private Vector3F _lightSamplingOffset = Vector3F.Zero;
     bool _bLocalSpaceWind = false;
     float _fIntensity = 1.0f;
     bool _bApplyTimeOfDayLighting = false;
     uint _uiRandomBaseSeed = 0;
     ShapeReference _emitterMeshEntity = null;
 
+    static bool _bShowWindSpeedWidget = false;
+    static bool _bShowLightSamplingOffsetWidget = false;
 
     /// <summary>
     /// get or set particle effect XML file
@@ -563,6 +596,24 @@ namespace VisionEditorPlugin.Shapes
       get { return _effectFile != null && _effectFile != ""; }
     }
 
+    [SortedCategory(CAT_PROPERTIES, CATORDER_PROPERTIES), PropertyOrder(1)]
+    [Description("When this flag is enabled then this instance is deleted as soon as it is dead (all layers finished). " +
+                 "In order to be able to restart the effect you have to set it to false"), DefaultValue(true)]
+    public bool RemoveWhenFinished
+    {
+      set
+      {
+        _removeWhenFinished = value;
+        if (HasEngineInstance())
+          EnginePGroup.SetRemoveWhenFinished(value);
+      }
+      get
+      {
+        return _removeWhenFinished;
+      }
+    }
+
+    
 
     /// <summary>
     /// Effect visibility bitmask that determines the visible status in the rendering contexts
@@ -599,24 +650,6 @@ namespace VisionEditorPlugin.Shapes
       }
     }
     */
-
-    /// <summary>
-    /// Defines the individual effect ambient lighting color
-    /// </summary>
-    [SortedCategory(CAT_PROPERTIES, CATORDER_PROPERTIES), PropertyOrder(4)]
-    [Description("Defines the individual effect instance ambient color. The ambient color is added to the particle's colors")]
-    [EditorAttribute(typeof(StandardColorDropDownEditor), typeof(UITypeEditor))]
-    [PropertyLiveUpdate("AmbientColorLiveUpdate"), DefaultValue(typeof(Color), "0,0,0")]
-    public Color AmbientColor
-    {
-      get { return _ambientColor; }
-      set
-      {
-        _ambientColor = value;
-        if (HasEngineInstance())
-          EnginePGroup.SetAmbientColor(VisionColors.Get(_ambientColor));
-      }
-    }
 
 
     /// <summary>
@@ -669,9 +702,26 @@ namespace VisionEditorPlugin.Shapes
       }
     }
 
+    /// <summary>
+    /// Defines the individual effect ambient lighting color
+    /// </summary>
+    [SortedCategory(CAT_LIGHTING, CATORDER_LIGHTING), PropertyOrder(0)]
+    [Description("Defines the individual effect instance ambient color. The ambient color is added to the particle's colors")]
+    [EditorAttribute(typeof(StandardColorDropDownEditor), typeof(UITypeEditor))]
+    [PropertyLiveUpdate("AmbientColorLiveUpdate"), DefaultValue(typeof(Color), "0,0,0")]
+    public Color AmbientColor
+    {
+      get { return _ambientColor; }
+      set
+      {
+        _ambientColor = value;
+        if (HasEngineInstance())
+          EnginePGroup.SetAmbientColor(VisionColors.Get(_ambientColor));
+      }
+    }
 
-    [Description("If enabled, the Time-of-Day Light is added to the Particle Color. The used particle-effect needs to have the 'Apply Brightness' state checked.")]
-    [SortedCategory(CAT_PROPERTIES, CATORDER_PROPERTIES), PropertyOrder(7), DefaultValue(false)]
+    [Description("If enabled, the Time-of-Day Light is added to the Particle Color. The used particle-effect needs to have the 'Color Tint' static lighting state checked.")]
+    [SortedCategory(CAT_LIGHTING, CATORDER_LIGHTING), PropertyOrder(1), DefaultValue(false)]
     public bool ApplyTimeOfDayLighting
     {
       get
@@ -683,6 +733,61 @@ namespace VisionEditorPlugin.Shapes
         _bApplyTimeOfDayLighting = value;
         if (HasEngineInstance())
           EnginePGroup.SetApplyTimeOfDayLight(_bApplyTimeOfDayLighting);
+      }
+    }
+
+    /// <summary>
+    /// Bitflag filter mask that determines which dynamic lights influence this particle effect. Only relevant if at least one particle layer uses dynamic lighting. See also dynamic light's ObjectInfluenceMask property.
+    /// </summary>
+    [Description("Bitflag filter mask that determines which dynamic lights influence this particle group. Only relevant for particle effects with layers that use dynamic lighting. " +
+                  "See also dynamic light's ObjectInfluenceMask property")]
+    [SortedCategory(CAT_LIGHTING, CATORDER_LIGHTING), PropertyOrder(2), DefaultValue(FlagsInt32_e.Bit0)]
+    public FlagsInt32_e LightInfluenceBitmask
+    {
+      get { return _iLightInfluenceBitmask; }
+      set
+      {
+        _iLightInfluenceBitmask = value;
+        if (_engineInstance != null)
+          EnginePGroup.SetLightInfluenceBitmask((uint)_iLightInfluenceBitmask);
+      }
+    }
+
+    [PrefabRelevant(false)]
+    [Description("Key of a directional light instance that should be preferred for dynamic lighting and shadow receiving.")]
+    [SortedCategory(CAT_LIGHTING, CATORDER_LIGHTING), PropertyOrder(3)]
+    public string PreferredDynamicDirLightKey
+    {
+      get
+      {
+        return _preferredDynamicDirLightKey;
+      }
+      set
+      {
+        _preferredDynamicDirLightKey = value;
+        if (_engineInstance != null)
+          EnginePGroup.SetPreferredDirLightKey(_preferredDynamicDirLightKey);
+      }
+    }
+
+    [SortedCategory(CAT_LIGHTING, CATORDER_LIGHTING), PropertyOrder(4)]
+    [Description("If enabled, a 3D widget will be rendered that allows to modify the light sampling offset."), DefaultValue(false)]
+    public bool ShowLightSamplingOffsetWidget
+    {
+      get { return _bShowLightSamplingOffsetWidget; }
+      set { _bShowLightSamplingOffsetWidget = value; }
+    }
+
+    [SortedCategory(CAT_LIGHTING, CATORDER_LIGHTING), PropertyOrder(5)]
+    [Description("Changes where lightgrid or mobile dynamic lighting is sampled.")]
+    public Vector3F LightSamplingOffset
+    {
+      get { return _lightSamplingOffset; }
+      set
+      {
+        _lightSamplingOffset = value;
+        if (HasEngineInstance())
+          EnginePGroup.SetLightSamplingOffset(_lightSamplingOffset);
       }
     }
 
@@ -738,8 +843,16 @@ namespace VisionEditorPlugin.Shapes
       }
     }
 
-    [Browsable(false)]
-    [PrefabRelevant(true)]
+    [SortedCategory(CAT_WIND, CATORDER_WIND), PropertyOrder(1)]
+    [Description("If enabled, a 3D widget will be rendered that allows to modify the wind speed."), DefaultValue(false)]
+    public bool ShowWindSpeedWidget
+    {
+      get { return _bShowWindSpeedWidget; }
+      set { _bShowWindSpeedWidget = value; }
+    }
+
+    [SortedCategory(CAT_WIND, CATORDER_WIND), PropertyOrder(2)]
+    [Description("Wind speed applied to particle speed.")]
     public Vector3F WindSpeed
     {
       get { return _windSpeed; }
@@ -750,52 +863,6 @@ namespace VisionEditorPlugin.Shapes
           EnginePGroup.SetWindSpeed(_windSpeed, _bLocalSpaceWind);
         //if (_hotSpotWindSpeed != null && !_hotSpotWindSpeed.IsDragging)
         //  _hotSpotWindSpeed.CurrentPosition = _windSpeed;
-      }
-    }
-
-
-    [Description("Sets the x-component of the individual per instance wind speed")]
-    [PrefabRelevant(false)]
-    [SortedCategory(CAT_WIND, CATORDER_WIND), PropertyOrder(1), DefaultValue(0f)]
-    public float WindSpeedX
-    {
-      get
-      {
-        return _windSpeed.X;
-      }
-      set
-      {
-        WindSpeed = new Vector3F(value, _windSpeed.Y, _windSpeed.Z);
-      }
-    }
-
-    [Description("Sets the y-component of the individual per instance wind speed")]
-    [PrefabRelevant(false)]
-    [SortedCategory(CAT_WIND, CATORDER_WIND), PropertyOrder(2), DefaultValue(0f)]
-    public float WindSpeedY
-    {
-      get
-      {
-        return _windSpeed.Y;
-      }
-      set
-      {
-        WindSpeed = new Vector3F(_windSpeed.X, value, _windSpeed.Z);
-      }
-    }
-
-    [Description("Sets the z-component of the individual per instance wind speed")]
-    [PrefabRelevant(false)]
-    [SortedCategory(CAT_WIND, CATORDER_WIND), PropertyOrder(3), DefaultValue(0f)]
-    public float WindSpeedZ
-    {
-      get
-      {
-        return _windSpeed.Z;
-      }
-      set
-      {
-        WindSpeed = new Vector3F(_windSpeed.X, _windSpeed.Y, value);
       }
     }
 
@@ -826,6 +893,7 @@ namespace VisionEditorPlugin.Shapes
     #region Hotspots
 
     HotSpot3D _hotSpotWindSpeed = null;
+    HotSpot3D _hotSpotLightSamplingOffset = null;
 
     public override void OnSelected()
     {
@@ -836,6 +904,12 @@ namespace VisionEditorPlugin.Shapes
       _hotSpotWindSpeed.ToolTipText = "Wind speed vector";
       _hotSpotWindSpeed.StartPosition = WindSpeed;
       EditorManager.ActiveView.HotSpots.Add(_hotSpotWindSpeed);
+
+      Debug.Assert(_hotSpotLightSamplingOffset == null);
+      _hotSpotLightSamplingOffset = new HotSpot3D(this, 16.0f);
+      _hotSpotLightSamplingOffset.ToolTipText = "Light Sampling Offset";
+      _hotSpotLightSamplingOffset.StartPosition = LightSamplingOffset;
+      EditorManager.ActiveView.HotSpots.Add(_hotSpotLightSamplingOffset);
     }
 
     public override void OnUnSelected()
@@ -845,6 +919,10 @@ namespace VisionEditorPlugin.Shapes
       Debug.Assert(_hotSpotWindSpeed != null);
       EditorManager.ActiveView.HotSpots.Remove(_hotSpotWindSpeed);
       _hotSpotWindSpeed = null;
+
+      Debug.Assert(_hotSpotLightSamplingOffset != null);
+      EditorManager.ActiveView.HotSpots.Remove(_hotSpotLightSamplingOffset);
+      _hotSpotLightSamplingOffset = null;
     }
 
 
@@ -862,24 +940,37 @@ namespace VisionEditorPlugin.Shapes
       base.OnHotSpotEvaluatePosition(hotSpot);
       if (hotSpot == _hotSpotWindSpeed)
       {
+        hotSpot.Visible = ShowWindSpeedWidget;
         if (!_hotSpotWindSpeed.IsDragging)
         {
           if (WindInLocalSpace)
             _hotSpotWindSpeed.StartPosition = RotationMatrix * _windSpeed;
           else
-          _hotSpotWindSpeed.StartPosition = _windSpeed;
+            _hotSpotWindSpeed.StartPosition = _windSpeed;
+        }
       }
-    }
+      else if (hotSpot == _hotSpotLightSamplingOffset)
+      {
+        hotSpot.Visible = ShowLightSamplingOffsetWidget;
+        if (!_hotSpotLightSamplingOffset.IsDragging)
+          _hotSpotLightSamplingOffset.StartPosition = _lightSamplingOffset;
+      }
     }
 
     public override void OnHotSpotDrag(HotSpotBase hotSpot, VisionViewBase view, float fDeltaX, float fDeltaY)
     {
       base.OnHotSpotDrag(hotSpot, view, fDeltaX, fDeltaY);
+
+      // set on engine instance while dragging to see the effect
       if (hotSpot == _hotSpotWindSpeed)
       {
-        // set on engine instance while dragging to see the effect
         if (HasEngineInstance())
           EnginePGroup.SetWindSpeed(_hotSpotWindSpeed.CurrentPosition, _bLocalSpaceWind);
+      }
+      else if (hotSpot == _hotSpotLightSamplingOffset)
+      {
+        if (HasEngineInstance())
+          EnginePGroup.SetLightSamplingOffset(_hotSpotLightSamplingOffset.CurrentPosition);
       }
     }
 
@@ -900,6 +991,14 @@ namespace VisionEditorPlugin.Shapes
         WindSpeed = vOldSpeed; // set old value for the action
         EditorManager.Actions.Add(SetPropertyAction.CreateSetPropertyAction(this, "WindSpeed", vNewSpeed)); // send an action which sets the property from old value to new one
       }
+      else if (hotSpot == _hotSpotLightSamplingOffset)
+      {
+        Vector3F vNewOffset = _hotSpotLightSamplingOffset.CurrentPosition;
+        Vector3F vOldOffset = _hotSpotLightSamplingOffset.StartPosition;
+
+        LightSamplingOffset = vOldOffset; // set old value for the action
+        EditorManager.Actions.Add(SetPropertyAction.CreateSetPropertyAction(this, "LightSamplingOffset", vNewOffset)); // send an action which sets the property from old value to new one
+      }
     }
 
 
@@ -918,6 +1017,12 @@ namespace VisionEditorPlugin.Shapes
       _effectFile = info.GetString( "_effectFile" );
       if (SerializationHelper.HasElement(info,"_iVisibleBitmask"))
         _iVisibleBitmask = (FlagsInt32_e)info.GetValue("_iVisibleBitmask", typeof(FlagsInt32_e));
+      if (SerializationHelper.HasElement(info, "_iLightInfluenceBitmask"))
+        _iLightInfluenceBitmask = (FlagsInt32_e)info.GetValue("_iLightInfluenceBitmask", typeof(FlagsInt32_e));
+      if (SerializationHelper.HasElement(info, "_preferredDynamicDirLightKey"))
+        _preferredDynamicDirLightKey = info.GetString("_preferredDynamicDirLightKey");
+      if (SerializationHelper.HasElement(info, "_lightSamplingOffset"))
+        _lightSamplingOffset = (Vector3F)info.GetValue("_lightSamplingOffset", typeof(Vector3F));
       if (SerializationHelper.HasElement(info,"_effectKey"))
         _objectKey = info.GetString("_effectKey"); // assign to new object key
       if (SerializationHelper.HasElement(info, "_ambientColor"))
@@ -953,6 +1058,9 @@ namespace VisionEditorPlugin.Shapes
 
       info.AddValue("_effectFile", _effectFile);
       info.AddValue("_iVisibleBitmask",_iVisibleBitmask);
+      info.AddValue("_iLightInfluenceBitmask", _iLightInfluenceBitmask);
+      info.AddValue("_lightSamplingOffset", _lightSamplingOffset);
+      info.AddValue("_preferredDynamicDirLightKey", _preferredDynamicDirLightKey);
       //info.AddValue("_effectKey",_effectKey);
       info.AddValue("_ambientColor", _ambientColor);
       info.AddValue("_bPaused", _bPaused);
@@ -963,6 +1071,7 @@ namespace VisionEditorPlugin.Shapes
       info.AddValue("_fIntensity", _fIntensity);
       info.AddValue("_uiRandomBaseSeed", _uiRandomBaseSeed);
       info.AddValue("_emitterMeshEntity", _emitterMeshEntity);
+      info.AddValue("_removeWhenFinished", _removeWhenFinished);
     }
 
     #endregion
@@ -1016,8 +1125,6 @@ namespace VisionEditorPlugin.Shapes
       }
     }
 
-    
-
     /// <summary>
     /// Static instance of user-installable string editor. This string editor is used to edit the description of the layer
     /// </summary>
@@ -1040,12 +1147,6 @@ namespace VisionEditorPlugin.Shapes
 
     #region internal setter
 
-    public void SetRemoveWhenFinished(bool value)
-    {
-      if (HasEngineInstance())
-        EnginePGroup.SetRemoveWhenFinished(value);
-    }
-
     public void Restart()
     {
       if (HasEngineInstance())
@@ -1058,6 +1159,7 @@ namespace VisionEditorPlugin.Shapes
 
     public void OnTargetReferenceRemoved(ShapeReference shaperef)
     {
+      // Check if we need to update the mesh emitter entity.
       if (!object.ReferenceEquals(shaperef, _emitterMeshEntity))
         return;
       shaperef.CachedShape = null; // make sure the shape is not set anymore
@@ -1066,6 +1168,7 @@ namespace VisionEditorPlugin.Shapes
 
     public void OnTargetReferenceReadded(ShapeReference shaperef)
     {
+      // Check if we need to update the mesh emitter entity.
       if (!object.ReferenceEquals(shaperef, _emitterMeshEntity))
         return;
       UpdateMeshEmitterEntity();
@@ -1124,7 +1227,7 @@ namespace VisionEditorPlugin.Shapes
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

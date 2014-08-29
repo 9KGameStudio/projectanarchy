@@ -14,6 +14,14 @@ HK_FORCE_INLINE hkRelArray<T>::hkRelArray(hkUint16 size, const void* ptr) : m_si
 }
 
 template <typename T>
+HK_FORCE_INLINE void hkRelArray<T>::set(hkUint16 size, const void* ptr) 
+{
+	HK_ASSERT2(0x5259899b, (reinterpret_cast<hkUlong>(ptr) & hkUlong(0x0f)) == 0, "Incorrect alignment for hkRelArray member");
+	m_size = size;
+	m_offset = hkUint16(reinterpret_cast<const char*>(ptr) - reinterpret_cast<const char*>(this));
+}
+
+template <typename T>
 HK_FORCE_INLINE const T& hkRelArray<T>::operator [](int index) const
 {
 	HK_ASSERT2(0x46e01b1d, (index >= 0) && (index < m_size), "Invalid index in hkRelArray");
@@ -75,7 +83,7 @@ HK_FORCE_INLINE void* hkRelArray<T>::operator new(hk_size_t size, hkRelArray<T>*
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

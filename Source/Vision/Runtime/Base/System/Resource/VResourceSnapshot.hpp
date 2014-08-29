@@ -133,7 +133,7 @@ public:
 
   /// \brief
   ///   Copies the data from \a other into this object.
-  inline void CopyFrom(const VResourceSnapshotEntry &other, IVFilePathResolver* pResolver = NULL)
+  inline void CopyFrom(const VResourceSnapshotEntry &other, IVFilePathResolver *pResolver=NULL)
   {
     char szBuffer[1024];
     m_pOwner = other.m_pOwner;
@@ -430,7 +430,7 @@ public:
     VASSERT(iIndex>=0 && iIndex<m_iEntryCount);
     if (m_pRetailEntries)
       return m_pRetailEntries[iIndex];
-    return m_Entries.GetDataPtr()[iIndex];
+    return m_pEntries->GetDataPtr()[iIndex];
   }
 
 
@@ -451,10 +451,12 @@ public:
   VBASE_IMPEXP bool SaveToFile(const char *szFilename, IVFilePathResolver *pResolver=NULL);
 
   /// \brief
-  ///   Saves the list to binary file using the filename and the passed file stream manager (which
-  ///   can be NULL)
+  ///   Saves the list to binary file using the filename and the passed file stream manager (which can be NULL)
   VBASE_IMPEXP bool SaveToBinaryFile(const char *szFilename, IVFilePathResolver *pResolver=NULL);
 
+  /// \brief
+  ///   This variant saves to the passed output stream
+  VBASE_IMPEXP bool SaveToBinaryFile(IVFileOutStream *pOut, bool bCloseFile=false, IVFilePathResolver *pResolver=NULL);
   
   /// \brief
   ///   Merges all resources from the passed snapshot into this one
@@ -482,7 +484,7 @@ public:
   /// \brief
   ///   Loads the list from a binary file. The loading resolves the filenames using the public
   ///   m_sPath member.
-  VBASE_IMPEXP bool LoadFromBinaryFile(IVFileInStream* pIn);
+  VBASE_IMPEXP bool LoadFromBinaryFile(IVFileInStream* pIn, bool bCloseFile=false);
 
   /// \brief
   ///   Returns the raw data block that may contain additional binary data
@@ -518,6 +520,10 @@ public:
   /// \brief
   ///   Simple loop that finishes loading of all resources in this snapshot in the main thread. ScheduleResources needs to be called to start the process.
   VBASE_IMPEXP void ProcessRemainingResources();
+
+  /// \brief
+  ///   Resets all resource pointers and flags this snapshot so that IsFinished returns false
+  VBASE_IMPEXP void DereferenceResources();
 
   /// \brief
   ///   Determines whether the snapshot has been loaded
@@ -650,7 +656,7 @@ protected:
   bool m_bForceNextRes, m_bOverallMemSizeValid;
   int m_iOverallMemSize, m_iLoadedMemSize;
   int m_iEntryCount;
-  DynObjArray_cl<VResourceSnapshotEntryXML>m_Entries;
+  DynObjArray_cl<VResourceSnapshotEntryXML> *m_pEntries;
   VResourceSnapshotEntryRetail *m_pRetailEntries;
 
   VRawDataBlock m_RawDataBlock;
@@ -825,7 +831,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

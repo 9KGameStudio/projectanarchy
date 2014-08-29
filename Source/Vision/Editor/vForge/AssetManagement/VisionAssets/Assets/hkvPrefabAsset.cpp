@@ -15,7 +15,8 @@
 #include <Common/Serialize/Serialize/Xml/hkXmlObjectReader.h>
 
 
-unsigned int hkvPrefabAsset::s_iAssetTypeIndex = HKV_INVALID_INDEX;
+hkvAssetTypeInfo* hkvPrefabAsset::s_typeInfo = NULL;
+const hkvAssetTypeInfoHandle* hkvPrefabAsset::s_typeInfoHandle = NULL;
 
 /////////////////////////////////////////////////////////////////////////////
 // hkvPrefabAsset static functions
@@ -23,24 +24,27 @@ unsigned int hkvPrefabAsset::s_iAssetTypeIndex = HKV_INVALID_INDEX;
 
 void hkvPrefabAsset::StaticInit()
 {
-  hkvAssetTypeInfo ti;
-  ti.m_name = "Prefab";
-  ti.m_createFunc = &CreateAsset;
-  ti.m_generateThumbnailFunc = &GenerateThumbnail;
-  ti.m_supportedFileExtensions.pushBack("prefab");
-  ti.m_useEngineForThumbnails = false;
-  ti.m_szTypeIconQt = ":/Icons/Icons/PrefabAsset.png";
+  s_typeInfo = new hkvAssetTypeInfo();
+  s_typeInfo->m_name = "Prefab";
+  s_typeInfo->m_createFunc = &CreateAsset;
+  s_typeInfo->m_generateThumbnailFunc = &GenerateThumbnail;
+  s_typeInfo->m_supportedFileExtensions.pushBack("prefab");
+  s_typeInfo->m_useEngineForThumbnails = false;
+  s_typeInfo->m_szTypeIconQt = ":/Icons/Icons/PrefabAsset.png";
 
-  // register at the hkvAssetTypeManager and store the asset type index in static variable.
-  s_iAssetTypeIndex = hkvAssetTypeManager::getGlobalInstance()->addAssetType(ti);
+  // register at the hkvAssetTypeManager and store the asset type handle in static variable.
+  s_typeInfoHandle = hkvAssetTypeManager::getGlobalInstance()->addAssetType(*s_typeInfo);
 }
 
 
 void hkvPrefabAsset::StaticDeInit()
 {
   // de-register at the hkvAssetTypeManager
-  hkvAssetTypeManager::getGlobalInstance()->removeAssetType(s_iAssetTypeIndex);
-  s_iAssetTypeIndex = HKV_INVALID_INDEX;
+  hkvAssetTypeManager::getGlobalInstance()->removeAssetType(*s_typeInfoHandle);
+  s_typeInfoHandle = NULL;
+
+  delete s_typeInfo;
+  s_typeInfo = NULL;
 }
 
 
@@ -97,7 +101,7 @@ bool hkvPrefabAsset::GenerateThumbnail(const char* libraryPath, const char* asse
 // hkvPrefabAsset public functions
 /////////////////////////////////////////////////////////////////////////////
 
-hkvPrefabAsset::hkvPrefabAsset()
+hkvPrefabAsset::hkvPrefabAsset() : hkvAsset(s_typeInfo)
 {
 
 }
@@ -113,30 +117,13 @@ hkvPrefabAsset::~hkvPrefabAsset()
 // hkvPrefabAsset public override functions
 /////////////////////////////////////////////////////////////////////////////
 
-unsigned int hkvPrefabAsset::getTypeIndex() const
+const hkvAssetTypeInfoHandle& hkvPrefabAsset::getTypeInfoHandle() const
 {
-  return s_iAssetTypeIndex;
-}
-
-
-const char* hkvPrefabAsset::getTypeName() const
-{
-  return "Prefab";
-}
-
-
-void hkvPrefabAsset::getSpecificProperties(hkvPropertyList& properties, hkvProperty::Purpose purpose) const
-{
-  // TODO
-}
-
-void hkvPrefabAsset::setSpecificProperty(const hkvProperty& prop, const hkArray<hkStringPtr>& path, unsigned int iStackIndex, hkvProperty::Purpose purpose)
-{
-  // TODO
+  return *s_typeInfoHandle;
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

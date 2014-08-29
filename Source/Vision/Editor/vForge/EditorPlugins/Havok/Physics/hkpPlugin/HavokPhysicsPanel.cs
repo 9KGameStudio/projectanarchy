@@ -21,6 +21,9 @@ using CSharpFramework.Docking;
 using CSharpFramework.Serialization;
 using CSharpFramework.Math;
 using CSharpFramework.Controls;
+using CSharpFramework.UndoRedo;
+using CSharpFramework.Scene;
+using CSharpFramework.Actions;
 
 namespace HavokEditorPlugin
 {
@@ -29,6 +32,7 @@ namespace HavokEditorPlugin
     #region Class - HavokPhysicsPanelSettings
 
     [Serializable]
+    [YamlFormatter.SerializeInline]
     public class HavokPhysicsPanelSettings : ISerializable
     {
       public HavokPhysicsPanelSettings() { }
@@ -58,8 +62,11 @@ namespace HavokEditorPlugin
           wr.m_gravityX = (float)info.GetValue("HavokGravityX", typeof(float));
           wr.m_gravityY = (float)info.GetValue("HavokGravityY", typeof(float));
           wr.m_gravityZ = (float)info.GetValue("HavokGravityZ", typeof(float));
-          if (SerializationHelper.HasElement(info, "HavokStaticMeshCaching"))
-            wr.m_shapeCaching = (bool)info.GetValue("HavokStaticMeshCaching", typeof(bool));
+
+          if (SerializationHelper.HasElement(info, "HavokDiskShapeCaching"))
+            wr.m_diskShapeCaching = (bool)info.GetValue("HavokDiskShapeCaching", typeof(bool));
+          else if (SerializationHelper.HasElement(info, "HavokStaticMeshCaching")) // old serialization name
+            wr.m_diskShapeCaching = (bool)info.GetValue("HavokStaticMeshCaching", typeof(bool));
 
           if (SerializationHelper.HasElement(info, "HavokDisableConstrainedBodiesCollisions"))
           {
@@ -109,7 +116,7 @@ namespace HavokEditorPlugin
           info.AddValue("HavokGravityX", wr.m_gravityX);
           info.AddValue("HavokGravityY", wr.m_gravityY);
           info.AddValue("HavokGravityZ", wr.m_gravityZ);
-          info.AddValue("HavokStaticMeshCaching", wr.m_shapeCaching);
+          info.AddValue("HavokDiskShapeCaching", wr.m_diskShapeCaching);
           info.AddValue("HavokDisableConstrainedBodiesCollisions", wr.m_disableConstrainedBodiesCollisions);
           info.AddValue("HavokEnableLegacyCompoundShapes", wr.m_enableLegacyCompoundShapes);
           foreach (HavokCollisionGroups_e value in Enum.GetValues(typeof(HavokCollisionGroups_e)))
@@ -159,6 +166,7 @@ namespace HavokEditorPlugin
       EditorManager.SceneChanged += new SceneChangedEventHandler(EditorManager_SceneChanged);
       IScene.LayerChanged += new LayerChangedEventHandler(IScene_LayerChanged);
       EditorManager.EditorSettingsChanged += EditorManager_EditorSettingsChanged;
+      IScene.PropertyChanged += IScene_PropertyChanged;
     }
 
     #endregion
@@ -172,6 +180,7 @@ namespace HavokEditorPlugin
       EditorManager.CustomSceneSerialization -= new CustomSceneSerializationEventHandler(EditorManager_CustomSceneSerialization);
       EditorManager.SceneChanged -= new SceneChangedEventHandler(EditorManager_SceneChanged);
       IScene.LayerChanged -= new LayerChangedEventHandler(IScene_LayerChanged);
+      IScene.PropertyChanged -= IScene_PropertyChanged;
 
       if (disposing && (components != null))
       {
@@ -183,7 +192,6 @@ namespace HavokEditorPlugin
     #endregion
 
     #region Get/SetPhysicsParameter
-
 
     protected HavokPhysicsSettingsWrapper.SolverType_e getSolverType( int iters, int hardness )
     {
@@ -234,7 +242,7 @@ namespace HavokEditorPlugin
       _settings.Gravity = new Vector3F(wr.m_gravityX, wr.m_gravityY, wr.m_gravityZ);
       _settings.ConstrainedBodyCollision = !wr.m_disableConstrainedBodiesCollisions;
       _settings.LegacyCompoundShapes = wr.m_enableLegacyCompoundShapes;
-      _settings.ShapeCaching = wr.m_shapeCaching;
+      _settings.DiskShapeCaching = wr.m_diskShapeCaching;
       _settings.SolverType = getSolverType(wr.m_solverIterations, wr.m_solverHardness);
       
       // Update property grid
@@ -258,7 +266,7 @@ namespace HavokEditorPlugin
       wr.m_gravityZ = _settings.Gravity.Z;
       wr.m_disableConstrainedBodiesCollisions = !_settings.ConstrainedBodyCollision;
       wr.m_enableLegacyCompoundShapes = _settings.LegacyCompoundShapes;
-      wr.m_shapeCaching = _settings.ShapeCaching;
+      wr.m_diskShapeCaching = _settings.DiskShapeCaching;
       getSolverIterations(_settings.SolverType, ref wr.m_solverIterations, ref wr.m_solverHardness);
      
       HavokManaged.ManagedModule.SetWorldSetupSettings(ws, false);
@@ -275,8 +283,10 @@ namespace HavokEditorPlugin
       EditorManager.ActiveView.UpdateView(false);
       PropertyGrid.Refresh();
       toolStripButton_VisDynamics.Checked = _settings.VisualizeDynamicObjects;
+      toolStripButton_VisRagdolls.Checked = _settings.VisualizeRagdolls;
       toolStripButton_VisController.Checked = _settings.VisualizeCharacterControllers;
       toolStripButton_VisTrigger.Checked = _settings.VisualizeTriggerVolumes;
+      toolStripButton_VisBlocker.Checked = _settings.VisualizeBlockerVolumes;
       toolStripButton_VisStatic.Checked = _settings.VisualizeStaticObjects;
     }
 
@@ -439,18 +449,63 @@ namespace HavokEditorPlugin
       }
     }
 
+    void IScene_PropertyChanged(object sender, PropertyChangedArgs e)
+    {
+      if (e != null && _settings == e._component)
+        SetHavokPhysicsParams();
+    }
+
 
     #endregion
 
     #region UI Events
 
+    delegate void setValue<T>(T value);
+
+    private class UpdatePhysicsPropertyAction<T> : IAction
+    {
+        public UpdatePhysicsPropertyAction(T newValue, T oldValue, setValue<T> setter)
+        {
+            _oldValue = oldValue;
+            _newValue = newValue;
+            _setter = setter;
+        }
+
+        public override string ShortName
+        {
+            get { return "Physics Collision Layer Changed"; }
+        }
+
+        public override void Do()
+        {
+            _setter(_newValue);
+        }
+
+        public override void Undo()
+        {
+            _setter(_oldValue);
+        }
+
+        T _newValue;
+        T _oldValue;
+        setValue<T> _setter;
+    }
+
     private void CollisionDataGridView_CellContentClicked(object sender, DataGridViewCellEventArgs e)
     {
+      object oldValue = null;
+      if (e.ColumnIndex >= 0 && e.RowIndex >= 0)
+      {
+          oldValue = collisionDataGridView.Rows[e.RowIndex].Cells[e.ColumnIndex].Value;
+      }
       collisionDataGridView.EndEdit();
       if (e.ColumnIndex >= 0 && e.RowIndex >= 0)
       {
-        // toggle corresponding counterpart, since collision has to be dis-/enabled in both collision group bitmasks
-        collisionDataGridView.Rows[e.ColumnIndex].Cells[e.RowIndex].Value = collisionDataGridView.Rows[e.RowIndex].Cells[e.ColumnIndex].Value;
+          // toggle corresponding counterpart, since collision has to be dis-/enabled in both collision group bitmasks
+          EditorManager.Actions.Add(
+              new UpdatePhysicsPropertyAction<object>(collisionDataGridView.Rows[e.RowIndex].Cells[e.ColumnIndex].Value, oldValue,
+              value => { collisionDataGridView.Rows[e.ColumnIndex].Cells[e.RowIndex].Value = collisionDataGridView.Rows[e.RowIndex].Cells[e.ColumnIndex].Value = value; }
+              ));
 
         SetWorldRuntimeCollisionParams();
       }
@@ -473,47 +528,44 @@ namespace HavokEditorPlugin
 
     private void PropertyGrid_PropertyValueChanged(object s, PropertyValueChangedEventArgs e)
     {
+      PendingActionsManager.Execute();
       SetHavokPhysicsParams();
     }
   
     private void toolStripButton_VisDynamics_Click(object sender, EventArgs e)
     {
-      _settings.VisualizeDynamicObjects = toolStripButton_VisDynamics.Checked;
-      PropertyGrid.SelectedObject = _settings;
-      HavokManaged.ManagedModule.EnableDebugRendering(_settings.VisualizeDynamicObjects, _settings.VisualizeRagdolls,
-        _settings.VisualizeCharacterControllers, _settings.VisualizeTriggerVolumes, _settings.VisualizeBlockerVolumes,
-        _settings.VisualizeStaticObjects);
-      EditorManager.ActiveView.UpdateView(false);
+      EditorManager.Actions.Add(SetPropertyAction.CreateSetPropertyAction(_settings, "VisualizeDynamicObjects", !_settings.VisualizeDynamicObjects));
+      SetHavokPhysicsParams();
+    }
+
+    private void toolStripButton_VisRagdolls_Click(object sender, EventArgs e)
+    {
+      EditorManager.Actions.Add(SetPropertyAction.CreateSetPropertyAction(_settings, "VisualizeRagdolls", !_settings.VisualizeRagdolls));
+      SetHavokPhysicsParams();
     }
 
     private void toolStripButton_VisStatic_Click(object sender, EventArgs e)
     {
-      _settings.VisualizeStaticObjects = toolStripButton_VisStatic.Checked;
-      PropertyGrid.SelectedObject = _settings;
-      HavokManaged.ManagedModule.EnableDebugRendering(_settings.VisualizeDynamicObjects, _settings.VisualizeRagdolls,
-        _settings.VisualizeCharacterControllers, _settings.VisualizeTriggerVolumes, _settings.VisualizeBlockerVolumes, 
-        _settings.VisualizeStaticObjects);
-      EditorManager.ActiveView.UpdateView(false);
+      EditorManager.Actions.Add(SetPropertyAction.CreateSetPropertyAction(_settings, "VisualizeStaticObjects", !_settings.VisualizeStaticObjects));
+      SetHavokPhysicsParams();
     }
 
     private void toolStripButton_VisController_Click(object sender, EventArgs e)
     {
-      _settings.VisualizeCharacterControllers = toolStripButton_VisController.Checked;
-      PropertyGrid.SelectedObject = _settings;
-      HavokManaged.ManagedModule.EnableDebugRendering(_settings.VisualizeDynamicObjects, _settings.VisualizeRagdolls,
-        _settings.VisualizeCharacterControllers, _settings.VisualizeTriggerVolumes, _settings.VisualizeBlockerVolumes, 
-        _settings.VisualizeStaticObjects);
-      EditorManager.ActiveView.UpdateView(false);
+      EditorManager.Actions.Add(SetPropertyAction.CreateSetPropertyAction(_settings, "VisualizeCharacterControllers", !_settings.VisualizeCharacterControllers));
+      SetHavokPhysicsParams();
     }
 
     private void toolStripButton_VisTrigger_Click(object sender, EventArgs e)
     {
-      _settings.VisualizeTriggerVolumes = toolStripButton_VisTrigger.Checked;
-      PropertyGrid.SelectedObject = _settings;
-      HavokManaged.ManagedModule.EnableDebugRendering(_settings.VisualizeDynamicObjects, _settings.VisualizeRagdolls,
-        _settings.VisualizeCharacterControllers, _settings.VisualizeTriggerVolumes, _settings.VisualizeBlockerVolumes,
-        _settings.VisualizeStaticObjects);
-      EditorManager.ActiveView.UpdateView(false);
+      EditorManager.Actions.Add(SetPropertyAction.CreateSetPropertyAction(_settings, "VisualizeTriggerVolumes", !_settings.VisualizeTriggerVolumes));
+      SetHavokPhysicsParams();
+    }
+
+    private void toolStripButton_VisBlocker_Click(object sender, EventArgs e)
+    {
+      EditorManager.Actions.Add(SetPropertyAction.CreateSetPropertyAction(_settings, "VisualizeBlockerVolumes", !_settings.VisualizeBlockerVolumes));
+      SetHavokPhysicsParams();
     }
 
     private void toolStripButton_Play_Click(object sender, EventArgs e)
@@ -523,9 +575,10 @@ namespace HavokEditorPlugin
     }
 
     #endregion
-   
+
   }
 
+  [TypeConverter(typeof(UndoableObjectConverter))]
   public class HavokPhysicsSettingsWrapper : ICustomTypeDescriptor
   {
     #region Enums 
@@ -749,11 +802,11 @@ namespace HavokEditorPlugin
     }
 
     [SortedCategory(CAT_WORLDRUNTIME, CATORDER_WORLDRUNTIME), PropertyOrder(5)]
-    [DisplayName("Shape Caching"), Description("Enable caching of Physics shapes to file. When disabled, Physics shapes will have to be recreated from the collision mesh geometry on every scene load.")]
-    public bool ShapeCaching
+    [DisplayName("Disk Shape Caching"), Description("Enable caching of Physics shapes to disk at export time and using them when loading the exported scene. When disabled, Physics shapes will have to be recreated from the collision mesh geometry on every scene load.")]
+    public bool DiskShapeCaching
     {
-      get { return _shapeCaching; }
-      set { _shapeCaching = value; }
+      get { return _diskShapeCaching; }
+      set { _diskShapeCaching = value; }
     }
 
     [SortedCategory(CAT_WORLDRUNTIME, CATORDER_WORLDRUNTIME), PropertyOrder(6)]
@@ -785,7 +838,7 @@ namespace HavokEditorPlugin
     private float _broadphaseSizeManual = 0.0f;
     private bool _constrainedBodyCollision = false;
     private bool _legacyCompoundShapes = false;
-    private bool _shapeCaching = true;
+    private bool _diskShapeCaching = true;
     private Vector3F _gravity = new Vector3F();
     private SolverType_e _solverType = SolverType_e.Four_Iterations_Medium;
    
@@ -870,7 +923,7 @@ namespace HavokEditorPlugin
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

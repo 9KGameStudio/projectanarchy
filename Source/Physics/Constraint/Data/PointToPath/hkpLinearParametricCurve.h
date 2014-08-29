@@ -11,10 +11,10 @@
 
 #include <Physics/Constraint/Data/PointToPath/hkpParametricCurve.h>
 
-extern const hkClass hkpLinearParametricCurveClass;
+extern HK_EXPORT_PHYSICS const hkClass hkpLinearParametricCurveClass;
 
 /// Piecewise linear curve class
-class hkpLinearParametricCurve : public hkpParametricCurve
+class HK_EXPORT_PHYSICS hkpLinearParametricCurve : public hkpParametricCurve
 {
 	public:
 
@@ -106,7 +106,7 @@ class hkpLinearParametricCurve : public hkpParametricCurve
 #endif  // HKP_LINEAR_PARAMETRIC_CURVE_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

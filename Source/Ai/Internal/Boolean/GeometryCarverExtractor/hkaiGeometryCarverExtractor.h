@@ -10,9 +10,11 @@
 #define HKAI_GEOMETRY_CARVER_EXTRACTOR_H
 
 #include <Ai/Internal/Boolean/hkaiEdgeGeometry.h>
+#include <Common/Base/Types/Geometry/hkGeometry.h>
 
 class hkaiEdgeGeometry;
 class hkaiVolume;
+class hkaiCarver;
 class hkaiMaterialPainter;
 
 /// The hkaiGeometryCarverExtractor can be used to apply a number of carvers (defined by hkaiVolume objects) to geometry.
@@ -31,24 +33,32 @@ class hkaiGeometryCarverExtractor
 		/// the centroid of the triangle is inside carvers.
 		/// Returns HK_SUCCESS if all memory allocations succeeded, HK_FAILURE otherwise.
 		static hkResult HK_CALL addCarvers(hkaiEdgeGeometry& extrudeGeom, 
-			const hkArrayBase< hkRefPtr<const hkaiVolume> >& carvers,
+			const hkArrayBase< hkRefPtr<const hkaiCarver> >& carvers,
 			const hkArrayBase< hkRefPtr<const hkaiMaterialPainter> >& painters);
 
 
 		/// Computes the carver geometry in a specified AABB.
-		static hkResult HK_CALL addCarversInRegion(hkaiEdgeGeometry& extrudeGeom, 
+		hkResult addCarversInRegion(hkaiEdgeGeometry& extrudeGeom, 
 			const class hkaiCarverTree* tree,
-			const class hkAabb& aabb);
+			const class hkAabb& aabb,
+			struct hkaiExtractCarversTimers& timers);
 
 	private:
 
-		static hkResult HK_CALL addVolume(hkaiEdgeGeometry& extrudeGeom, const hkaiVolume& carver, hkaiEdgeGeometry::FaceFlags flags);
+		static hkResult HK_CALL addVolumeGeometry(hkaiEdgeGeometry& extrudeGeom, const hkaiVolume& volume, hkaiEdgeGeometry::FaceFlags flags);
+		hkResult addVolumeGeometryInRegion(hkaiEdgeGeometry& extrudeGeom, const hkaiVolume& volume, const hkAabb& aabb, hkaiEdgeGeometry::FaceFlags flags, hkaiEdgeGeometry::FaceData faceData, struct hkaiExtractCarversTimers& timers);
+
+		// Temporary data for addVolumeGeometryInRegion
+		hkGeometry m_fullGeometry;
+		hkGeometry m_prunedGeometry;
+		hkArray<int> m_vertexRemap;
+		hkaiEdgeGeometry m_edgeGeom;
 };
 
 #endif // HKAI_GEOMETRY_CARVER_EXTRACTOR_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

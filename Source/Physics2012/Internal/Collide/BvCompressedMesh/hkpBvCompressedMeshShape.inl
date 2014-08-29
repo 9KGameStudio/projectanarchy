@@ -14,9 +14,22 @@ HK_FORCE_INLINE hkReal hkpBvCompressedMeshShape::getConvexRadius() const
 
 HK_FORCE_INLINE hkpBvCompressedMeshShape::PerPrimitiveDataMode hkpBvCompressedMeshShape::getUserDataMode() const
 {
-	return m_hasPerPrimitiveUserData ? 
-		   (m_userDataPalette.getSize() ? PER_PRIMITIVE_DATA_PALETTE : PER_PRIMITIVE_DATA_8_BIT) : 
-		   PER_PRIMITIVE_DATA_NONE;
+	if (m_hasPerPrimitiveUserData)
+	{
+		if (m_userDataPalette.getSize() > 0)
+		{
+			return PER_PRIMITIVE_DATA_PALETTE;
+		}
+		else if (m_userStringPalette.getSize() > 0)
+		{
+			return PER_PRIMITIVE_DATA_STRING_PALETTE;
+		}
+		else
+		{
+			return PER_PRIMITIVE_DATA_8_BIT;
+		}
+	}
+	return  PER_PRIMITIVE_DATA_NONE;
 }
 
 HK_FORCE_INLINE hkpBvCompressedMeshShape::PerPrimitiveDataMode hkpBvCompressedMeshShape::getCollisionFilterInfoMode() const
@@ -42,7 +55,7 @@ HK_FORCE_INLINE hkArray<hkStringPtr>& hkpBvCompressedMeshShape::accessUserString
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

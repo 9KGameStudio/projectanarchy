@@ -26,7 +26,7 @@ class hkMeshMaterial;
 class hkMeshSectionBuilder;
 
 /// A converter from the Havok HKX scene data formats into more generic hkMeshShape interfaces
-class hkSceneDataToMeshConverter
+class HK_EXPORT_COMMON hkSceneDataToMeshConverter
 {
     public:
 			/// defines which transform to apply
@@ -72,7 +72,7 @@ class hkSceneDataToMeshConverter
 #endif // HK_SCENE_DATA_TO_MESH_CONVERTER_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

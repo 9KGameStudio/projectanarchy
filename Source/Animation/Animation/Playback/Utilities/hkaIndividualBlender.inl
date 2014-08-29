@@ -468,7 +468,7 @@ void hkaBlender::blend( hkQsTransform* HK_RESTRICT dst, hkReal* weightsOut,const
 			for( int i = 0; i < n; i++, srcLPtr++, srcRPtr++, dstPtr++, weightsLPtr++, weightsRPtr++, weightsOutPtr++ )
 			{
 				hkQsTransform comp;
-				comp.setMul( *srcLPtr, *srcRPtr );
+				hkaAdditiveAnimationUtility::applyAdditiveTransform<hkaAnimationBinding::ADDITIVE>( *srcLPtr, *srcRPtr, comp );
 				hkaIndividualBlenderUtilities::computeBlendFactorAndWeightsAdditive1( alpha, *weightsOutPtr, alphaIn.getReal(), *weightsLPtr, *weightsRPtr );
 				hkSimdReal a; a.setFromFloat(alpha);
 				dstPtr->m_translation.setInterpolate(srcLPtr->m_translation, comp.m_translation, a);
@@ -511,7 +511,7 @@ void hkaBlender::blend( hkQsTransform* HK_RESTRICT dst, hkReal* weightsOut,const
 			for( int i = 0; i < n; i++, srcLPtr++, srcRPtr++, dstPtr++, weightsLPtr++, weightsRPtr++, weightsOutPtr++ )
 			{
 				hkQsTransform comp;
-				comp.setMul( *srcLPtr, *srcRPtr );
+				hkaAdditiveAnimationUtility::applyAdditiveTransform<hkaAnimationBinding::ADDITIVE>( *srcLPtr, *srcRPtr, comp );
 				hkaIndividualBlenderUtilities::computeBlendFactorAndWeightsAdditive1( alpha, *weightsOutPtr, alphaIn.getReal(), *weightsLPtr, *weightsRPtr );
 				hkSimdReal a; a.setFromFloat(alpha);
 				dstPtr->m_translation.setInterpolate(srcLPtr->m_translation, comp.m_translation, a);
@@ -662,7 +662,7 @@ void HK_CALL hkaBlender::modelFromLocal( hkQsTransform* poseModelOut, hkQsTransf
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -16,6 +16,7 @@ class hkbGeneratorOutput;
 class hkaDefaultAnimationControlMapperData;
 
 #include <Animation/Animation/Rig/hkaSkeleton.h>
+#include <Animation/Animation/Animation/hkaAnimationBinding.h>
 #include <Behavior/Behavior/Generator/hkbGeneratorPartitionInfo.h>
 
 #if defined(HK_PLATFORM_SPU)
@@ -73,7 +74,7 @@ class hkbClipGeneratorUtils
 												const hkaSkeleton* animationSkeleton,
 												int numTransformTracks,
 												int numFloatTracks,
-												bool isAdditive,
+												hkaAnimationBinding::BlendHint blendHint,
 												hkbGeneratorOutput& output );
 
 
@@ -107,7 +108,7 @@ class hkbClipGeneratorUtils
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

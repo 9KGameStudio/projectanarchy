@@ -13,10 +13,10 @@
 #include "GFx/GFx_Loader.h"
 #include "GFx/GFx_Log.h"
 
-#if defined (WIN32) && defined(_VR_DX9)
+#if defined(_VISION_WIN32) && defined(_VR_DX9)
   #include "GFx_Renderer_D3D9.h"
   #include "GFx_FontProvider_Win32.h"
-#elif defined(WIN32) && defined(_VR_DX11)
+#elif defined(_VISION_WIN32) && defined(_VR_DX11)
   #include "GFx_Renderer_D3D1x.h"
   #include "GFx_FontProvider_Win32.h"
 #elif defined (_VISION_XENON)
@@ -48,7 +48,7 @@
 #include <Vision/Runtime/EnginePlugins/ThirdParty/ScaleformEnginePlugin/vScaleformManager.hpp>
 #include <Vision/Runtime/EnginePlugins/ThirdParty/ScaleformEnginePlugin/VScaleformMovie.hpp>
 #include <Vision/Runtime/EnginePlugins/ThirdParty/ScaleformEnginePlugin/VScaleformVariableManager.hpp>
-#include <Vision/Runtime/EnginePlugins/ThirdParty/ScaleformEnginePlugin/vScaleformInternal.hpp>
+#include <Vision/Runtime/EnginePlugins/ThirdParty/ScaleformEnginePlugin/VScaleformInternal.hpp>
 #include <Vision/Runtime/EnginePlugins/ThirdParty/ScaleformEnginePlugin/VScaleformTexture.hpp>
 #include <Vision/Runtime/EnginePlugins/ThirdParty/ScaleformUtils/vScaleformUtils.hpp>
 
@@ -73,6 +73,51 @@ using namespace Scaleform::GFx;
   const int VScaleformManager::s_iMaxTouchPoints = hkvMath::Min(SF_MAX_CURSOR_NUM, V_ANDROID_MAX_TOUCH_POINTS);
 #elif defined(_VISION_TIZEN)
   const int VScaleformManager::s_iMaxTouchPoints = hkvMath::Min(SF_MAX_CURSOR_NUM, V_TIZEN_MAX_TOUCH_POINTS);
+#endif
+
+#if defined(_VISION_ANDROID)
+  // Custom implementation of GL::HAL, that separates DeInit and ReInit for the ResetContext() function.
+  // This is a workaround for Scaleform 4.3.26, and should not be necessary anymore for higher versions, which
+  // will include the split versions of ResetContext();
+  class VisionGLHAL : public GL::HAL
+  {
+  public:
+    VisionGLHAL(ThreadCommandQueue* commandQueue)
+      : HAL(commandQueue)
+    {}
+
+    void PrepareResetContext()
+    {
+      notifyHandlers(HAL_PrepareForReset);
+      pTextureManager->NotifyLostContext();
+      Cache.Reset(true);
+      SManager.Reset();
+      ShaderData.ResetContext();
+    }
+
+    bool RestoreAfterResetContext()
+    {
+#ifdef SF_GL_RUNTIME_LINK
+      Extensions::Init();
+#endif
+
+      pTextureManager->Initialize(this);
+
+      if (!SManager.Initialize(this, VMCFlags))
+        return false;
+
+      if (!Cache.Initialize(this))
+        return false;
+
+      if (pRenderBufferManager)
+        pRenderBufferManager->Reset();
+
+      notifyHandlers(HAL_RestoreAfterReset);
+      return true;
+    }
+  };
+#elif defined(_VISION_MOBILE)
+  typedef GL::HAL VisionGLHAL;
 #endif
 
 /// \brief
@@ -181,7 +226,6 @@ bool VScaleformManager::IsMultithreadedAdvanceEnabled()
   return m_bMultithreadedAdvance;
 }
 
-
 void VScaleformManager::WaitForAllTasks()
 {
   int iCount = m_Instances.Count();
@@ -205,20 +249,23 @@ VScaleformManager::VScaleformManager()
 #elif defined(_VR_DX11)
   , m_pd3dDevice(NULL)
   , m_pd3dContext(NULL)
-#elif defined(_VISION_MOBILE)
+#endif
+  , m_pLastUsedColorRenderTarget(NULL)
+  , m_pLastUsedDepthStencilTarget(NULL)
+#if defined(_VISION_MOBILE)
   , m_iPrimaryTouchPoint(0)
   , m_bSimulateMouseEvents(true)
 #endif
   , m_pCommandQueue(NULL)
   , m_pCursorInputMap(NULL)
-  , m_iLastActiveCursor(0)
-#ifdef WIN32
+#if defined(_VISION_WIN32)
   , m_pFontConfigSet(NULL)
 #endif
   , m_bHandleInput(true)
   , m_bHandlesWindowsInput(false)
   , m_bUseAbsoluteCursorPosition(false)
   , m_bMultithreadedAdvance(MULTITHREADED_ADVANCE)
+  , m_iLastActiveCursor(0)
   , m_iTriggerCount(0)
   , m_pTriggerID()
   , m_pGfXKeyMap()
@@ -281,7 +328,7 @@ void VScaleformManager::Init()
   // initialize input
   m_pCursorInputMap = new VInputMap(SF_CONTROLS_LENGTH, 2);
   
-  #if defined(WIN32)
+  #if defined(_VISION_WIN32)
     m_pCursorInputMap->MapTrigger(CURSOR_0_CLICK_LEFT,   V_PC_MOUSE, CT_MOUSE_LEFT_BUTTON);
     m_pCursorInputMap->MapTrigger(CURSOR_0_CLICK_MIDDLE, V_PC_MOUSE, CT_MOUSE_MIDDLE_BUTTON);
     m_pCursorInputMap->MapTrigger(CURSOR_0_CLICK_RIGHT,  V_PC_MOUSE, CT_MOUSE_RIGHT_BUTTON);
@@ -291,7 +338,7 @@ void VScaleformManager::Init()
     
     m_pCursorInputMap->MapTriggerAxis(CURSOR_0_SCROLL,   V_PC_MOUSE, CT_MOUSE_WHEEL_DOWN, CT_MOUSE_WHEEL_UP);
 
-  #elif defined _VISION_XENON
+  #elif defined(_VISION_XENON)
     m_pCursorInputMap->MapTrigger(CURSOR_0_CLICK_LEFT,   V_XENON_PAD(0), CT_PAD_X);
     m_pCursorInputMap->MapTrigger(CURSOR_0_CLICK_MIDDLE, V_XENON_PAD(0), CT_PAD_A);
     m_pCursorInputMap->MapTrigger(CURSOR_0_CLICK_RIGHT,  V_XENON_PAD(0), CT_PAD_B);
@@ -301,7 +348,7 @@ void VScaleformManager::Init()
 
     m_pCursorInputMap->MapTriggerAxis(CURSOR_0_SCROLL,   V_XENON_PAD(0), CT_PAD_RIGHT_THUMB_STICK_DOWN, CT_PAD_RIGHT_THUMB_STICK_UP,  VInputOptions::DeadZone(0.25f, true));
   
-  #elif defined _VISION_PS3
+  #elif defined(_VISION_PS3)
     m_pCursorInputMap->MapTrigger(CURSOR_0_CLICK_LEFT,   V_PS3_PAD(0), CT_PAD_CROSS);
     m_pCursorInputMap->MapTrigger(CURSOR_0_CLICK_MIDDLE, V_PS3_PAD(0), CT_PAD_TRIANGLE);
     m_pCursorInputMap->MapTrigger(CURSOR_0_CLICK_RIGHT,  V_PS3_PAD(0), CT_PAD_SQUARE);
@@ -346,10 +393,10 @@ void VScaleformManager::Init()
 #endif
 
   bool bSuccess;
-#if defined (WIN32) && defined(_VR_DX9)
+#if defined(_VISION_WIN32) && defined(_VR_DX9)
   m_pRenderHal = new D3D9::HAL(m_pCommandQueue);
   bSuccess = m_pRenderHal->InitHAL(D3D9::HALInitParams(m_pd3dDevice, d3dpp, D3D9::HALConfig_NoSceneCalls));
-#elif defined (WIN32) && defined(_VR_DX11)
+#elif defined(_VISION_WIN32) && defined(_VR_DX11)
   m_pRenderHal = new D3D1x::HAL(m_pCommandQueue);
   bSuccess = m_pRenderHal->InitHAL(D3D1x::HALInitParams(m_pd3dDevice, D3D11(m_pd3dContext)));
 #elif defined (_VISION_XENON)
@@ -360,13 +407,16 @@ void VScaleformManager::Init()
   m_pRenderHal = new PS3::HAL(m_pCommandQueue);
   bSuccess = m_pRenderHal->InitHAL(PS3::HALInitParams(gCellGcmCurrentContext, &g_MemManager));
 #elif defined(_VISION_MOBILE)
-  m_pRenderHal = new GL::HAL(m_pCommandQueue);
+  m_pRenderHal = new VisionGLHAL(m_pCommandQueue);
   bSuccess = m_pRenderHal->InitHAL(GL::HALInitParams());
 
   // TODO: remove this as soon as SF provides proper solution (used to clean error stack - temp solution)
   glGetError();
 #endif
   VASSERT_MSG(bSuccess, "Unable to initialize Scaleform HAL");
+
+  m_pLastUsedColorRenderTarget = NULL;
+  m_pLastUsedDepthStencilTarget = NULL;
 
   m_pRenderer = new Renderer2D(m_pRenderHal);
 
@@ -392,9 +442,10 @@ void VScaleformManager::Init()
   Vision::Callbacks.OnRenderHook += this;
   Vision::Callbacks.OnVideoChanged += this;
   Vision::Callbacks.OnBeforeVideoChanged += this;
-  Vision::Callbacks.OnEnterBackground += this;
-  Vision::Callbacks.OnEnterForeground += this;
   Vision::Callbacks.OnLeaveForeground += this;
+  Vision::Callbacks.OnEnterForeground += this;
+  Vision::Callbacks.OnEnterBackground += this;
+  Vision::Callbacks.OnLeaveBackground += this;
   Vision::Callbacks.OnEngineDeInit += this;
 
   // Start / Stop the movie when switching the PlayTheGame modes in vForge.
@@ -420,9 +471,10 @@ void VScaleformManager::DeInit()
   Vision::Callbacks.OnRenderHook -= this;
   Vision::Callbacks.OnVideoChanged -= this;
   Vision::Callbacks.OnBeforeVideoChanged -= this;
-  Vision::Callbacks.OnEnterBackground -= this;
-  Vision::Callbacks.OnEnterForeground -= this;
   Vision::Callbacks.OnLeaveForeground -= this;
+  Vision::Callbacks.OnEnterForeground -= this;
+  Vision::Callbacks.OnEnterBackground -= this;
+  Vision::Callbacks.OnLeaveBackground -= this;
   Vision::Callbacks.OnEngineDeInit -= this;
   Vision::Callbacks.OnVideoInitialized -= this;
 
@@ -464,12 +516,15 @@ void VScaleformManager::DeInit()
   V_SAFE_RELEASE(m_pRenderer);
   V_SAFE_RELEASE(m_pRenderHal);
 
-#if defined(WIN32)
+#if defined(_VISION_WIN32)
   SetHandleWindowsInput(false);
   V_SAFE_DELETE(m_pFontConfigSet);
 #endif
   V_SAFE_DELETE(m_pCursorInputMap);
   V_SAFE_DELETE(m_pCommandQueue);
+
+  m_pLastUsedColorRenderTarget = NULL;
+  m_pLastUsedDepthStencilTarget = NULL;
 
   m_bInitialized = false;
 }
@@ -561,7 +616,7 @@ Scaleform::GFx::Loader* VScaleformManager::CreateLoader()
     return m_pLoader;
   }
 
-  if(!m_bInitialized)
+  if (!m_bInitialized)
   {
     Init(); //will care about loader creation
     VASSERT_MSG(m_pLoader, "No loader after initialization present!");
@@ -602,8 +657,7 @@ Scaleform::GFx::Loader* VScaleformManager::CreateLoader()
   Scaleform::Ptr<ExternalInterface> spExternalInterface = *new VScaleformExternalInterfaceHandler;
   m_pLoader->SetExternalInterface(spExternalInterface);
 
-
-#if defined (WIN32)
+#if defined (_VISION_WIN32)
   // win32 specific: add default font loader
   Scaleform::Ptr<FontProviderWin32> fontProvider = *new FontProviderWin32(::GetDC(0));
   m_pLoader->SetFontProvider(fontProvider);
@@ -623,14 +677,12 @@ Scaleform::GFx::Loader* VScaleformManager::CreateLoader()
   Scaleform::Ptr<ImageCreator> spImageCreator = *new ImageCreator(pTextureManager);
   m_pLoader->SetImageCreator(spImageCreator);
 
-
 #if defined(GFX_USE_VIDEO) && defined(GFX_VIDEO_SDK_INSTALLED)
   Scaleform::Ptr<Video::Video> pVideo = *new Video::VideoPC(Video::VideoVMSupportAll());
   m_pLoader->SetVideo(pVideo);
 
   pVideo->SetTextureManager(pTextureManager);
 #endif
-
 
 #if defined(GFX_ENABLE_SOUND)
   FMOD::System* pSoundManager =  VFmodManager::GlobalManager().GetFmodSystem();
@@ -655,7 +707,7 @@ Scaleform::GFx::Loader* VScaleformManager::CreateLoader()
   return m_pLoader;
 }
 
-#ifdef WIN32
+#if defined(_VISION_WIN32)
 
 SCALEFORM_IMPEXP bool VScaleformManager::ApplyFontToTheLoader(const char *szFontFilename, const char *szConfigName)
 {
@@ -721,25 +773,18 @@ int VScaleformManager::GetFontConfigIndexByName(const char *szConfigName)
 
 void VScaleformManager::OnHandleCallback(IVisCallbackDataObject_cl *pData)
 {
-
-  //count the number of instances since we need it in every following callback
-  const bool bShutdownInProgress = 
-    (pData->m_pSender == &Vision::Callbacks.OnEngineDeInit || 
-    pData->m_pSender == &VFmodManager::GlobalManager().OnBeforeDeinitializeFmod);
-  
-  //shutdown immediately on consoles
-  #if !(defined (WIN32) && (defined(_VR_DX9) || defined(_VR_DX11)))
-    if(bShutdownInProgress)
-    {
-      DeInit();
-      return;
-    }
-  #endif
+  // De-Initialization
+  if ((pData->m_pSender == &Vision::Callbacks.OnEngineDeInit || 
+    pData->m_pSender == &VFmodManager::GlobalManager().OnBeforeDeinitializeFmod))
+  {
+    DeInit();
+    return;
+  }
   
   const int iCount = m_Instances.Count();
   VScaleformMovieInstance** ppInstances = m_Instances.GetPtrs();
 
-  // perform the rendering
+  // Perform rendering
   if (pData->m_pSender == &Vision::Callbacks.OnRenderHook)
   {
     if (((VisRenderHookDataObject_cl *)pData)->m_iEntryConst != m_RenderOrder)
@@ -752,12 +797,7 @@ void VScaleformManager::OnHandleCallback(IVisCallbackDataObject_cl *pData)
   }
 
   // Tick function: Advance the movie and handle input.
-#if defined (WIN32) && (defined(_VR_DX9) || defined(_VR_DX11))
-  // Let all movies process input and so on. Otherwise SF could crash on shutdown.
-  if (pData->m_pSender == &Vision::Callbacks.OnUpdateSceneBegin || bShutdownInProgress)
-#else
   if (pData->m_pSender == &Vision::Callbacks.OnUpdateSceneBegin)
-#endif
   {
     if (Vision::Editor.IsAnimatingOrPlaying()) 
     {
@@ -780,12 +820,6 @@ void VScaleformManager::OnHandleCallback(IVisCallbackDataObject_cl *pData)
         AMP::Server::GetInstance().AdvanceFrame();
       #endif
     }
-
-    #if defined (WIN32) && (defined(_VR_DX9) || defined(_VR_DX11))
-      //shutdown Scaleform manager on OnEngineDeInit or OnBeforeDeinitializeFmod
-      if(bShutdownInProgress)
-        DeInit();
-    #endif
 
     return;
   }
@@ -810,7 +844,7 @@ void VScaleformManager::OnHandleCallback(IVisCallbackDataObject_cl *pData)
   // Prepare for video mode change
   if (pData->m_pSender == &Vision::Callbacks.OnBeforeVideoChanged)
   {
-#if defined (WIN32) && (defined(_VR_DX9) || defined(_VR_DX11))
+#if defined(_VISION_WIN32) && (defined(_VR_DX9) || defined(_VR_DX11))
     WaitForAllTasks();
 
     if(m_pRenderHal != NULL)
@@ -823,71 +857,116 @@ void VScaleformManager::OnHandleCallback(IVisCallbackDataObject_cl *pData)
   // Update the viewport
   if (pData->m_pSender == &Vision::Callbacks.OnVideoChanged)
   {
-#if defined (WIN32) && (defined(_VR_DX9) || defined(_VR_DX11))
-
     WaitForAllTasks();
+
+#if defined(_VISION_WIN32) && (defined(_VR_DX9) || defined(_VR_DX11))
 
     if(m_pRenderHal != NULL)
       m_pRenderHal->RestoreAfterReset();
+
+#endif
 
     for (int i = 0; i < iCount; i++)
     {
       ppInstances[i]->m_pLastRenderContext = NULL;
     }
 
-#endif
+    m_pLastUsedColorRenderTarget = NULL;
+    m_pLastUsedDepthStencilTarget = NULL;
+
     return;
   }
 
   // Leave foreground (= sleep mode on Android)
-  if (pData->m_pSender == &Vision::Callbacks.OnEnterBackground)
+  if (pData->m_pSender == &Vision::Callbacks.OnLeaveForeground)
   {
-#if defined (WIN32) && defined(_VR_DX9)
+
+#if defined(_VISION_ANDROID)
+
     WaitForAllTasks();
 
-    if(m_pRenderHal!=NULL)
-      m_pRenderHal->PrepareForReset();
+    Scaleform::GFx::AppLifecycleEvent lifecycleEvent(Scaleform::GFx::AppLifecycleEvent::OnPause);
+    HandleEvent(&lifecycleEvent);
 
 #endif
-
     return;
   }
 
   if (pData->m_pSender == &Vision::Callbacks.OnEnterForeground)
   {
-#if defined (WIN32) && defined(_VR_DX9) 
+
+#if defined(_VISION_ANDROID)
+
     WaitForAllTasks();
 
-    if(m_pRenderHal != NULL)
-      m_pRenderHal->RestoreAfterReset();
-
-#elif defined(_VISION_ANDROID)
-    WaitForAllTasks();
 
     Scaleform::GFx::AppLifecycleEvent lifecycleEvent(Scaleform::GFx::AppLifecycleEvent::OnResume);
-    HandleEvent((Scaleform::GFx::Event*)(&lifecycleEvent));
-
-    if (m_pRenderHal)
-      m_pRenderHal->ResetContext();
-
-    // Clear GL error because Scaleform does some scary stuff during reset context
-    glGetError();
+    HandleEvent(&lifecycleEvent);
 
 #endif
 
     return;
   }
 
-  if (pData->m_pSender == &Vision::Callbacks.OnLeaveForeground)
+  // Enter Background / Device lost
+  if (pData->m_pSender == &Vision::Callbacks.OnEnterBackground)
   {
-#if defined(_VISION_ANDROID)
+
+#if defined(_VISION_WIN32) && defined(_VR_DX9)
+
     WaitForAllTasks();
 
-    Scaleform::GFx::AppLifecycleEvent lifecycleEvent(Scaleform::GFx::AppLifecycleEvent::OnPause);
-    HandleEvent((Scaleform::GFx::Event*)(&lifecycleEvent));
+    if(m_pRenderHal != NULL)
+      m_pRenderHal->PrepareForReset();
+
+#elif defined(_VISION_ANDROID)
+
+    // OpenGLES context will soon be lost. Notify Scaleform.
+    if (m_pRenderHal != NULL)
+    {
+      static_cast<VisionGLHAL*>(m_pRenderHal)->PrepareResetContext();
+
+      VASSERT_MSG(glGetError() == GL_NO_ERROR, "OpenGLES error detected after deinitializing Scaleform HAL.");
+    }
 
 #endif
 
+    return;
+  }
+
+  // Leave Background / Device recreated
+  if (pData->m_pSender == &Vision::Callbacks.OnLeaveBackground)
+  {
+    WaitForAllTasks();
+
+#if defined(_VISION_WIN32) && defined(_VR_DX9) 
+
+    if(m_pRenderHal != NULL)
+      m_pRenderHal->RestoreAfterReset();
+
+#elif defined(_VISION_ANDROID)
+
+    // Reinitialize HAL with new OpenGLES context.
+    if (m_pRenderHal != NULL)
+    {
+      const bool bResult = static_cast<VisionGLHAL*>(m_pRenderHal)->RestoreAfterResetContext();
+
+      VASSERT_MSG(bResult, "ScaleformEnginePlugin: RestoreAfterResetContext() failed.");
+      VASSERT_MSG(glGetError() == GL_NO_ERROR, "OpenGLES error detected after reinitializing Scaleform HAL.");
+
+      Vision::Renderer.ResetAllStates();
+    }
+
+#endif
+
+    for (int i = 0; i < iCount; i++)
+    {
+      ppInstances[i]->m_pLastRenderContext = NULL;
+    }
+
+    m_pLastUsedColorRenderTarget = NULL;
+    m_pLastUsedDepthStencilTarget = NULL;
+  
     return;
   }
 
@@ -924,7 +1003,7 @@ void VScaleformManager::OnHandleCallback(IVisCallbackDataObject_cl *pData)
     return;
   }
 
-#if defined(WIN32)
+#if defined(_VISION_WIN32)
   #if defined(USE_SF_IME)
     if (pData->m_pSender == &VInputCallbacks::OnPreTranslateMessage)
     {
@@ -982,7 +1061,7 @@ void VScaleformManager::OnHandleCallback(IVisCallbackDataObject_cl *pData)
 
 // Input Handling
 //=================
-#ifdef WIN32
+#if defined(_VISION_WIN32)
 
 void VScaleformManager::SetHandleWindowsInput(bool bEnable)
 {
@@ -1009,10 +1088,64 @@ void VScaleformManager::SetRenderOrder(VRenderHook_e eRenderHook)
   m_RenderOrder = eRenderHook;
 }
 
+void VScaleformManager::UpdateRenderTargetToScaleform()
+{
+  VisRenderContext_cl *pCurrentContext = Vision::Contexts.GetCurrentContext();  
+
+  VTextureObject* pColorRenderTarget = pCurrentContext->GetRenderTarget();
+  VTextureObject* pDepthStencilTarget = pCurrentContext->GetDepthStencilTarget();
+
+  // If render target hasn't changed, we don't need to do anything
+  if(pColorRenderTarget == m_pLastUsedColorRenderTarget && pDepthStencilTarget == m_pLastUsedDepthStencilTarget)
+  {
+    return;
+  }
+
+  // If render target has changed from previous time Scaleform has rendered, we also need to
+  // tell Scaleform about the changed render target.
+#if defined (_VR_DX9)
+
+  D3DSurface* pDepthStencilSurface = NULL;
+  D3DSurface* pRenderTargetSurface = NULL;
+  pCurrentContext->GetDepthStencilSurface(pDepthStencilSurface);
+  pCurrentContext->GetRenderSurface(0, pRenderTargetSurface);
+
+  RenderTarget* pScaleformRenderTarget = m_pRenderHal->CreateRenderTarget(pRenderTargetSurface, pDepthStencilSurface);
+  m_pRenderHal->SetRenderTarget(pScaleformRenderTarget);
+  pScaleformRenderTarget->Release();
+
+#elif defined(_VR_DX11)
+
+  D3DDepthStencilView* pDepthStencilView = NULL;
+  D3DRenderTargetView* pRenderTargetView = NULL;
+  pCurrentContext->GetDepthStencilView(pDepthStencilView);
+  pCurrentContext->GetRenderTargetView(0, pRenderTargetView);
+
+  RenderTarget* pScaleformRenderTarget = m_pRenderHal->CreateRenderTarget(pRenderTargetView, pDepthStencilView);
+  m_pRenderHal->SetRenderTarget(pScaleformRenderTarget);
+  pScaleformRenderTarget->Release();
+
+#elif defined(_VR_GLES2)
+
+  unsigned int iFrameBufferHandle = 0;
+  pCurrentContext->GetFrameBufferObject(iFrameBufferHandle);
+
+  RenderTarget* pScaleformRenderTarget = m_pRenderHal->CreateRenderTarget(iFrameBufferHandle);
+  m_pRenderHal->SetRenderTarget(pScaleformRenderTarget);
+  pScaleformRenderTarget->Release();
+
+#endif
+
+  m_pLastUsedColorRenderTarget = pColorRenderTarget;
+  m_pLastUsedDepthStencilTarget = pDepthStencilTarget;
+}
+
 void VScaleformManager::RenderMovies(VScaleformMovieInstance** ppInstances, unsigned int iCount)
 {
-  VisRenderContext_cl *pCurrentContext = Vision::Contexts.GetCurrentContext();
+  // We need to check if we have switched render targets and if so, notify Scaleform about it
+  UpdateRenderTargetToScaleform();
 
+  VisRenderContext_cl *pCurrentContext = Vision::Contexts.GetCurrentContext();  
   // Scaleform relies on these depth stencil state values
   VStateGroupDepthStencil defaultDepthStencilState;
   defaultDepthStencilState.m_bStencilTestEnabled = true;
@@ -1259,7 +1392,7 @@ void VScaleformManager::SetKeyMapping(VInputMap *pInputMap, int iTriggerCount, c
   memset(m_bTriggerIDOldState.GetDataPtr(), 0, m_iTriggerCount*sizeof(bool));
 }
 
-#ifdef WIN32
+#if defined(_VISION_WIN32)
   void VScaleformManager::SetAbsoluteCursorPositioning(bool bAbsolute)
   {
     m_bUseAbsoluteCursorPosition = bAbsolute;
@@ -1370,34 +1503,28 @@ void VScaleformManager::HandleInput()
   HandleInputMap();
 }
 
-#elif defined(WIN32)
+#elif defined(_VISION_WIN32)
 
 void VScaleformManager::HandleInput()
 {
-  float fX;
-  float fY;
-  
-  //get input control values
-  if(m_bUseAbsoluteCursorPosition||Vision::Editor.IsInEditor())
-  {
-    fX = (float)V_MOUSE.GetRawControlValue(CT_MOUSE_RAW_CURSOR_X);
-    fY = (float)V_MOUSE.GetRawControlValue(CT_MOUSE_RAW_CURSOR_Y);
-  }
-  else
-  {
-    fX = m_pCursorInputMap->GetTrigger(CURSOR_0_DELTA_X) * SF_CURSOR_SENSITIVITY;
-    fY = m_pCursorInputMap->GetTrigger(CURSOR_0_DELTA_Y) * SF_CURSOR_SENSITIVITY;
-  }
-  
-  float fScroll = m_pCursorInputMap->GetTrigger(CURSOR_0_SCROLL) * SF_WHEEL_SENSITIVITY;
-  bool bLeftBtn = m_pCursorInputMap->GetTrigger(CURSOR_0_CLICK_LEFT) > 0.5f;
-  bool bRightBtn = m_pCursorInputMap->GetTrigger(CURSOR_0_CLICK_RIGHT) > 0.5f;
-  bool bMiddleBtn = m_pCursorInputMap->GetTrigger(CURSOR_0_CLICK_MIDDLE) > 0.5f;
+  // Get input control values.
+  const float fScroll = m_pCursorInputMap->GetTrigger(CURSOR_0_SCROLL) * SF_WHEEL_SENSITIVITY;
+  const bool bLeftBtn = m_pCursorInputMap->GetTrigger(CURSOR_0_CLICK_LEFT) > 0.5f;
+  const bool bRightBtn = m_pCursorInputMap->GetTrigger(CURSOR_0_CLICK_RIGHT) > 0.5f;
+  const bool bMiddleBtn = m_pCursorInputMap->GetTrigger(CURSOR_0_CLICK_MIDDLE) > 0.5f;
 
-  if(m_bUseAbsoluteCursorPosition||Vision::Editor.IsInEditor())
+  if (m_bUseAbsoluteCursorPosition || Vision::Editor.IsInEditor())
+  {
+    const float fX = static_cast<float>(V_MOUSE.GetRawControlValue(CT_MOUSE_ABS_X));
+    const float fY = static_cast<float>(V_MOUSE.GetRawControlValue(CT_MOUSE_ABS_Y));
     SetCursorPos(fX, fY, fScroll, bLeftBtn, bMiddleBtn, bRightBtn);
+  }
   else
+  {
+    const float fX = m_pCursorInputMap->GetTrigger(CURSOR_0_DELTA_X) * SF_CURSOR_SENSITIVITY;
+    const float fY = m_pCursorInputMap->GetTrigger(CURSOR_0_DELTA_Y) * SF_CURSOR_SENSITIVITY;
     IncCursorPos(fX, fY, fScroll, bLeftBtn, bMiddleBtn, bRightBtn);
+  }
   
   HandleInputMap();
 }
@@ -1426,7 +1553,7 @@ void VScaleformManager::HandleInput()
 //==================
 
 //conversion from vision texture to scaleform texture (required for render to texture)
-#if defined(WIN32)
+#if defined(_VISION_WIN32)
   #if defined(_VR_DX9)
     Scaleform::Render::TextureImage * VScaleformManager::ConvertTexture(VTextureObject *pTexture)
     {
@@ -1517,6 +1644,24 @@ void VScaleformManager::HandleInput()
     return SF_NEW TextureImage(Image_R8G8B8, pSfTexture->GetSize(), 0, pSfTexture);
   }
 
+#elif defined(_VR_GLES2)
+  Scaleform::Render::TextureImage * VScaleformManager::ConvertTexture(VTextureObject *pTexture)
+  {
+    VASSERT_MSG(pTexture, "You have to provide a valid texture!");
+    ImageSize imageSize(pTexture->GetTextureWidth(), pTexture->GetTextureHeight());
+
+    //access the texture manager
+    GL::TextureManager* pManager = static_cast<GL::TextureManager*>(m_pRenderHal->GetTextureManager());
+    VASSERT_MSG(pManager!=NULL, "No texture manager present!");
+
+    GLuint uiHandle = pTexture->m_GLHandle;
+    VASSERT_MSG(uiHandle != 0, "Texture does not have a GL handle!");
+
+    //create a scaleform representation
+    bool bDeleteTexture = false;
+    Scaleform::Ptr<GL::Texture> pSfTexture = *static_cast<GL::Texture *>(pManager->CreateTexture(uiHandle, bDeleteTexture, imageSize));
+    return SF_NEW TextureImage(Image_R8G8B8, pSfTexture->GetSize(), 0, pSfTexture);
+  }
 #endif
 
 VScaleformMovieExclusiveRenderLoop::VScaleformMovieExclusiveRenderLoop(VScaleformMovieInstance* pMovieInstance) :
@@ -1542,7 +1687,7 @@ void VScaleformMovieExclusiveRenderLoop::OnDoRenderLoop(void *pUserData)
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

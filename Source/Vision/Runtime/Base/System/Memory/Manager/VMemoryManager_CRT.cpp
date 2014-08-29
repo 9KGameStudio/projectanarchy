@@ -15,12 +15,8 @@
 #include <malloc.h>	// Usually this is done via stdlib.h, but VS 2003 doesn't seem to get this right.
 #endif
 
-#if defined(_VISION_IOS) || defined(_VISION_ANDROID)
-#include <stdlib.h>
-#endif
-
 #if defined(_DEBUG)                      &&  \
-  (defined(WIN32)  || defined (_VISION_XENON) )
+  (defined(_VISION_WIN32)  || defined (_VISION_XENON) )
 #define VBASE_USE_CRT_DEBUG
 #include <crtdbg.h>
 #endif
@@ -40,7 +36,7 @@ void* VMemoryManager_CRT::Alloc(size_t iSize)
 
 void* VMemoryManager_CRT::AlignedAlloc(size_t iSize, int iAlignment)
 {
-#if defined(WIN32)  || defined (_VISION_XENON) 
+#if defined(_MSC_VER)  || defined (_VISION_XENON)
 #if defined(VBASE_USE_CRT_DEBUG)
   return _aligned_malloc_dbg(iSize, iAlignment, 0, 0);
 #else
@@ -51,15 +47,14 @@ void* VMemoryManager_CRT::AlignedAlloc(size_t iSize, int iAlignment)
 #elif defined (_VISION_PS3)
   return memalign(iAlignment, iSize);
 
+#elif defined(_VISION_ANDROID) || defined(_VISION_NACL)
+  return memalign(iAlignment, iSize);
 
-#elif defined (_VISION_POSIX) && !defined(_VISION_ANDROID)
+#elif defined (_VISION_POSIX)
   void* pMemPointer = NULL;
   posix_memalign(&pMemPointer, iAlignment, iSize);
   return pMemPointer;
 #elif defined(_VISION_PSP2)
-  return memalign(iAlignment, iSize);
-#elif defined(_VISION_ANDROID)
-
   return memalign(iAlignment, iSize);
 
 #elif defined(_VISION_WIIU)
@@ -85,7 +80,7 @@ void VMemoryManager_CRT::Free(void* ptr)
 
 void VMemoryManager_CRT::AlignedFree(void* ptr)
 {
-#if defined(WIN32)  || defined (_VISION_XENON) 
+#if defined(_MSC_VER)  || defined (_VISION_XENON)
 #if defined(VBASE_USE_CRT_DEBUG)
   _aligned_free_dbg(ptr);
 #else
@@ -116,7 +111,7 @@ size_t VMemoryManager_CRT::MemSize(void* ptr)
   if(ptr == NULL)
     return 0;
 
-#if defined(WIN32)  || defined (_VISION_XENON) 
+#if defined(_VISION_WIN32)  || defined (_VISION_XENON) 
 #if defined(VBASE_USE_CRT_DEBUG)
   return _msize_dbg(ptr, _NORMAL_BLOCK);
 #else
@@ -148,7 +143,7 @@ size_t VMemoryManager_CRT::AlignedMemSize(void* ptr, int iAlignment)
   if(ptr == NULL)
     return 0;
 
-#if defined(WIN32)  || defined (_VISION_XENON) 
+#if defined(_VISION_WIN32)  || defined (_VISION_XENON) 
 #if defined(VBASE_USE_CRT_DEBUG)
 #if defined(_MSC_VER) && (_MSC_VER >= 1400)
   return _aligned_msize_dbg(ptr, iAlignment, 0);
@@ -184,7 +179,7 @@ size_t VMemoryManager_CRT::AlignedMemSize(void* ptr, int iAlignment)
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

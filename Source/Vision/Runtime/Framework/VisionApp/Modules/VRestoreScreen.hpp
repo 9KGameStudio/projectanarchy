@@ -24,10 +24,10 @@
 /// \ingroup VisionAppFramework
 class VRestoreScreen : public VLoadingScreenBase
 {
-  V_DECLARE_DYNCREATE(VRestoreScreen);
+  V_DECLARE_DYNCREATE_DLLEXP(VRestoreScreen, VAPP_IMPEXP);
 
 public:
-  VRestoreScreen();
+  VAPP_IMPEXP VRestoreScreen();
 
   /// \brief
   ///   Non-Default Constructor.
@@ -37,31 +37,31 @@ public:
   ///
   /// \param fSaturation
   ///   Saturation of the background texture.
-	VRestoreScreen(float fBrightness, float fSaturation);
+	VAPP_IMPEXP VRestoreScreen(float fBrightness, float fSaturation);
 
 	virtual ~VRestoreScreen() {}
 
-  virtual void Init() HKV_OVERRIDE;
-  virtual void DeInit() HKV_OVERRIDE;
+  VAPP_IMPEXP virtual void Init() HKV_OVERRIDE;
+  VAPP_IMPEXP virtual void DeInit() HKV_OVERRIDE;
 
-  virtual void OnHandleCallback(IVisCallbackDataObject_cl* pData) HKV_OVERRIDE;
+  VAPP_IMPEXP virtual void OnHandleCallback(IVisCallbackDataObject_cl* pData) HKV_OVERRIDE;
 
 protected:
   /// \brief
   ///   Writes the screen to a memory buffer.
-  void GrabBackgroundScreenshot();
+  VAPP_IMPEXP void GrabBackgroundScreenshot();
 
   /// \brief
   ///   Saves the screenshot, previously grabbed by GraphBackgroundScreenshot(), to the disk and applies the color correction.
-  void SaveBackgroundScreenshot();
+  VAPP_IMPEXP void SaveBackgroundScreenshot();
 
   /// \brief
   ///   Override default background texture.
-  virtual VTextureObject* CreateBackgroundImage() HKV_OVERRIDE;
+  VAPP_IMPEXP virtual VTextureObject* CreateBackgroundImage() HKV_OVERRIDE;
 
   /// \brief
   ///   Applies the given brightness and saturation to the given buffer.
-  static void ColorCorrect(unsigned char* pBuffer, int iWidth, int iHeight, float fBrightness, float fSaturation);
+  VAPP_IMPEXP static void ColorCorrect(unsigned char* pBuffer, int iWidth, int iHeight, float fBrightness, float fSaturation);
 
 private:
   bool m_bGrab;
@@ -74,7 +74,7 @@ private:
 #endif //__V_RESTORE_SCREEN
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

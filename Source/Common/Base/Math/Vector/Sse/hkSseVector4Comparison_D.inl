@@ -91,45 +91,30 @@ template <hkVector4ComparisonMask::Mask M>
 HK_FORCE_INLINE void hkVector4dComparison::set() 
 { 
 	HK_VECTORdCOMPARISON_MASK_CHECK;
-	if (M == MASK_NONE)
-	{
-		m_mask.xy = _mm_setzero_pd();
-		m_mask.zw = _mm_setzero_pd();
-	}
-	else
-	{
+	const hkSingleDouble64 zeros = _mm_setzero_pd();
+	const hkSingleDouble64 ones = _mm_castsi128_pd(_mm_cmpeq_epi32(_mm_setzero_si128(),_mm_setzero_si128()));
+	
 #if HK_SSE_VERSION >= 0x41
-		const hkSingleDouble64 zeros = _mm_setzero_pd();
-		const hkSingleDouble64 ones = _mm_castsi128_pd(_mm_cmpeq_epi32(_mm_setzero_si128(),_mm_setzero_si128()));
-		if (M == MASK_XYZW)
-		{
-			m_mask.xy = ones;
-			m_mask.zw = ones;
-		}
-		else
-		{
-			if (M & 0x3)      m_mask.xy = _mm_blend_pd(zeros,ones, M & 0x3);      else m_mask.xy = zeros;
-			if ((M>>2) & 0x3) m_mask.zw = _mm_blend_pd(zeros,ones, (M>>2) & 0x3); else m_mask.zw = zeros;
-		}
+	if (( M     & 0x3) == 0x3) m_mask.xy = ones; else if ( M     & 0x3) m_mask.xy = _mm_blend_pd(zeros,ones, M & 0x3);      else m_mask.xy = zeros;
+	if (((M>>2) & 0x3) == 0x3) m_mask.zw = ones; else if ((M>>2) & 0x3) m_mask.zw = _mm_blend_pd(zeros,ones, (M>>2) & 0x3); else m_mask.zw = zeros;
 #else
-		m_mask.xy = _mm_load_pd( (const hkDouble64*)&(hkVector4dComparison_maskToComparison[(M&0x3)*2]) );
-		m_mask.zw = _mm_load_pd( (const hkDouble64*)&(hkVector4dComparison_maskToComparison[(M>>2)*2])  );
+	if (( M     & 0x3) == 0x3) m_mask.xy = ones; else if ( M     & 0x3) m_mask.xy = _mm_load_pd( (const hkDouble64*)&(hkVector4dComparison_maskToComparison[(M&0x3)*2]) ); else m_mask.xy = zeros;
+	if (((M>>2) & 0x3) == 0x3) m_mask.zw = ones; else if ((M>>2) & 0x3) m_mask.zw = _mm_load_pd( (const hkDouble64*)&(hkVector4dComparison_maskToComparison[(M>>2)*2])  ); else m_mask.zw = zeros;
 #endif
-	}
 }
 
 template <hkVector4ComparisonMask::Mask M>
 HK_FORCE_INLINE hkBool32 hkVector4dComparison::allAreSet() const 
 { 
 	HK_VECTORdCOMPARISON_MASK_CHECK;
-	if (M == MASK_NONE)
+	if (M == hkVector4ComparisonMask::MASK_NONE)
 	{
 		return true;
 	}
 	else
 	{
 #if HK_SSE_VERSION >= 0x41
-		if (M == MASK_XYZW)
+		if (M == hkVector4ComparisonMask::MASK_XYZW)
 		{
 			return _mm_test_all_ones(_mm_castpd_si128(m_mask.xy)) & _mm_test_all_ones(_mm_castpd_si128(m_mask.zw));
 		}
@@ -139,8 +124,8 @@ HK_FORCE_INLINE hkBool32 hkVector4dComparison::allAreSet() const
 			__m128i comp_zw;
 			const hkSingleDouble64 zeros = _mm_setzero_pd();
 			const hkSingleDouble64 ones = _mm_castsi128_pd(_mm_cmpeq_epi32(_mm_setzero_si128(),_mm_setzero_si128()));
-			if (M & 0x3)      comp_xy = _mm_castpd_si128(_mm_blend_pd(zeros,ones, M & 0x3));      else comp_xy = _mm_castpd_si128(zeros);
-			if ((M>>2) & 0x3) comp_zw = _mm_castpd_si128(_mm_blend_pd(zeros,ones, (M>>2) & 0x3)); else comp_zw = _mm_castpd_si128(zeros);
+			if (( M     & 0x3) == 0x3) comp_xy = _mm_castpd_si128(ones); else if (M & 0x3)      comp_xy = _mm_castpd_si128(_mm_blend_pd(zeros,ones, M & 0x3));      else comp_xy = _mm_castpd_si128(zeros);
+			if (((M>>2) & 0x3) == 0x3) comp_zw = _mm_castpd_si128(ones); else if ((M>>2) & 0x3) comp_zw = _mm_castpd_si128(_mm_blend_pd(zeros,ones, (M>>2) & 0x3)); else comp_zw = _mm_castpd_si128(zeros);
 			__m128i m_xy = _mm_and_si128(_mm_castpd_si128(m_mask.xy), comp_xy);
 			__m128i m_zw = _mm_and_si128(_mm_castpd_si128(m_mask.zw), comp_zw);
 			return _mm_testc_si128(m_xy, comp_xy) & _mm_testc_si128(m_zw, comp_zw);
@@ -158,11 +143,11 @@ template <hkVector4ComparisonMask::Mask M>
 HK_FORCE_INLINE hkBool32 hkVector4dComparison::anyIsSet() const 
 { 
 	HK_VECTORdCOMPARISON_MASK_CHECK;
-	if (M == MASK_NONE)
+	if (M == hkVector4ComparisonMask::MASK_NONE)
 	{
 		return false;
 	}
-	else if (M == MASK_XYZW)
+	else if (M == hkVector4ComparisonMask::MASK_XYZW)
 	{
 		int yx = _mm_movemask_pd(m_mask.xy); 
 		int wz = _mm_movemask_pd(m_mask.zw); 
@@ -211,7 +196,7 @@ HK_FORCE_INLINE hkBool32 hkVector4dComparison::allAreSet() const
 	int yx = _mm_movemask_pd(m_mask.xy); 
 	int wz = _mm_movemask_pd(m_mask.zw); 
 	int xyzw = calcMask(yx, wz);
-	return (xyzw == MASK_XYZW);
+	return (xyzw == hkVector4ComparisonMask::MASK_XYZW);
 #endif
 }
 
@@ -243,10 +228,17 @@ template <hkVector4ComparisonMask::Mask M>
 HK_FORCE_INLINE hkVector4ComparisonMask::Mask hkVector4dComparison::getMask() const 
 { 
 	HK_VECTORdCOMPARISON_MASK_CHECK;
-	int yx = _mm_movemask_pd(m_mask.xy); 
-	int wz = _mm_movemask_pd(m_mask.zw); 
-	int xyzw = calcMask(yx, wz);
-	return (hkVector4ComparisonMask::Mask)( xyzw & M );
+	if (M == hkVector4ComparisonMask::MASK_NONE)
+	{
+		return hkVector4ComparisonMask::MASK_NONE;
+	}
+	else
+	{
+		int yx = _mm_movemask_pd(m_mask.xy); 
+		int wz = _mm_movemask_pd(m_mask.zw); 
+		int xyzw = calcMask(yx, wz);
+		return (hkVector4ComparisonMask::Mask)( xyzw & M );
+	}
 }
 
 HK_FORCE_INLINE /*static*/ hkUint32 HK_CALL hkVector4dComparison::getCombinedMask(hkVector4dComparisonParameter ca, hkVector4dComparisonParameter cb, hkVector4dComparisonParameter cc )
@@ -371,7 +363,7 @@ HK_FORCE_INLINE const hkVector4dComparison hkVector4dComparison::horizontalAnd()
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

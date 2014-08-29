@@ -16,8 +16,9 @@ using CSharpFramework.Shapes;
 using System.IO;
 using ManagedFramework;
 using System.Collections.Specialized;
+using Editor;
 
-namespace Editor.Tests
+namespace EditorTests.Basic
 {
 #if _VR_DX9
   [TestFixture]
@@ -91,7 +92,7 @@ namespace Editor.Tests
       // get the currently set lighting tool (might be Beast or something)
       IStaticLightingTool lt = EditorManager.LightingTool;
       // set vLux as the current tool
-      EditorManager.LightingTool = new VLux.VLuxLightingTool ();
+      EditorManager.LightingTool = new Editor.VLux.VLuxLightingTool ();
 
       Assert.IsTrue(EditorApp.Scene.UpdateStaticLighting(false, null, true)); // without dialog
 
@@ -194,7 +195,7 @@ namespace Editor.Tests
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

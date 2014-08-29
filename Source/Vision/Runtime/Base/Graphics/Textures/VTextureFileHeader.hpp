@@ -80,42 +80,6 @@ union BMP_RGB_u
   BMP_RGBTriple_t rgbtriple[256];
 };
 
-/*
-** PCX
-*/
-
-#define PCXHEADERMAGIC  '\x0A'
-#define PCXPALETTEMAGIC '\x0C'
-#define PCXLOWESTVER    5
-
-struct PCX_RGBTriple
-{
-  unsigned char b, g, r;
-};
-
-struct PCXHeader_t
-{
-  char           magic;
-  char           version;
-  char           encoding;
-  char           bpp;
-  unsigned short xmin, ymin, xmax, ymax;
-  unsigned short hres, vres;
-  char           obsoletecolormap[48];
-  char           reserved;
-  char           nplanes;
-  unsigned short bytesperline;
-  unsigned short paletteinfo;
-  char           unused[58];
-};
-
-struct PCXPalette_t
-{
-  char          magic;
-  PCX_RGBTriple rgb[256];
-};
-
-
 
 /*
 ** TGA
@@ -190,27 +154,6 @@ struct TIFFDirEntry_t
 };
 
 
-
-#define TEXMAGIC 21590
-
-struct TexHeader_t
-{
-  short          width;
-  short          height;
-  char           mip;
-  char           sprite;
-  char           maptypes;
-  char           numframes;
-  short          frametiming;
-  char           animtype;
-  char           colordepth;
-  char           morphing;
-  char           status;
-  char           mapanims;
-  char           reserved[2];
-  unsigned short magic;
-};
-
 //from dds.h to avoid ddraw.h (from the DirectX SDK)
 #define V_DDS_ALPHAPIXELS      0x00000001  // DDPF_ALPHAPIXELS
 #define V_DDS_ALPHA            0x00000002  // DDPF_ALPHA
@@ -278,7 +221,7 @@ typedef struct {
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

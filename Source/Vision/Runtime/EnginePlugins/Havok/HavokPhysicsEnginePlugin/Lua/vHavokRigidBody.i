@@ -116,8 +116,6 @@ public:
     {
       return ((vHavokPhysicsModule*)Vision::GetApplication()->GetPhysicsModule())->DropToFloor(self, fDistance);
     }
-
-	  VSWIG_CREATE_CAST(vHavokRigidBody)
   }
   
   void SetPosition(const hkvVec3& value);
@@ -149,16 +147,26 @@ public:
   void ApplyAngularImpulse(hkvVec3& value);
 
   void SetMass(float fMass);
+  float GetMass() const;
 
   void SetRestitution(float fRestitution);
+  float GetRestitution() const;
 
   void SetFriction(float fFriction);
+  float GetFriction() const;
+  
+  void SetGravityFactor(float fGravityFactor);
+  float GetGravityFactor() const;
 
   void SetActive(bool bStatus);
   bool GetActive() const;
 
+  void SetTightFit(bool bEnabled);
+  bool GetTightFit() const;
+
   void SetCollisionInfo(int iLayer, int iGroup, int iSubsystem, int iSubsystemDontCollideWith);
- 
+  
+  bool IsInitialized() const;
 };
 
 #else
@@ -365,15 +373,15 @@ public:
   
   /// \brief Gets the linear damping of this rigid body.
   /// \return The linear damping.
-  number GetLinearDamping() const;
+  number GetLinearDamping();
   
   /// \brief Sets the damage multiplier of this rigid body.
-  /// \param fMultiplier The new damage multiplier.
-  void SetDamageMultiplier(float fMultiplier);
+  /// \param multiplier The new damage multiplier.
+  void SetDamageMultiplier(number multiplier);
   
   /// \brief Gets the damage multiplier of this rigid body.
   /// \return The damage multiplier.
-  float GetDamageMultiplier() const;
+  number GetDamageMultiplier();
 
   /// \brief Sets the angular damping of this rigid body.
   /// \param damping The new angular damping.
@@ -381,7 +389,7 @@ public:
   
   /// \brief Gets the angular damping of this rigid body
   /// \return The angular damping.
-  number GetAngularDamping() const;
+  number GetAngularDamping();
 
   /// \brief Set the movement velocity of this rigid body.
   /// \param velocity Linear velocity vector.
@@ -412,7 +420,7 @@ public:
   /// it is recommended to use ApplyLinearImpulse. To apply a continuous force to a rigid body (e.g. a changing
   /// gravity which is evaluated every frame), ApplyForce should be used. The time interval passed should
   /// be the time difference between each application of the force.
-  void ApplyForce(hkvVec3 force, float deltaT);
+  void ApplyForce(hkvVec3 force, number deltaT);
 
   /// \brief
   ///   Apply a force to this rigid body for a given time interval. The force is applied to the point p.
@@ -420,7 +428,7 @@ public:
   /// \param value
   ///   Force vector.
   ///
-  /// \param p
+  /// \param point
   ///   Point where the force is applied.
   ///
   /// \param deltaT
@@ -430,7 +438,7 @@ public:
   /// it is recommended to use ApplyLinearImpulse. To apply a continuous force to a rigid body (e.g. a changing
   /// gravity which is evaluated every frame), ApplyForce should be used. The time interval passed should
   /// be the time difference between each application of the force.  
-  void ApplyForce(hkvVec3& value, hkvVec3& p, float deltaT);
+  void ApplyForce(hkvVec3 value, hkvVec3 point, number deltaT);
 
   /// \brief
   ///   Apply the specified torque to the rigid body for the given time interval. The torque is applied around the center of mass.
@@ -448,7 +456,7 @@ public:
   /// To instantaneously accelerate the rotation of a rigid body upon a single event (e.g. when struck
   /// by an explosion), it is recommended to use ApplyAngularImpulse. To apply a continuous torque to a
   /// rigid body, ApplyTorque should be used.
-  void ApplyTorque(hkvVec3& value, float deltaT);
+  void ApplyTorque(hkvVec3 value, number deltaT);
 
   /// \brief
   ///   Apply a linear impulse to this rigid body. The impulse is applied to the center of mass.
@@ -467,13 +475,13 @@ public:
   /// \param value
   ///   Impulse vector.
   ///
-  /// \param p
+  /// \param point
   ///   Point where the impulse is applied.
   ///
   /// To instantaneously accelerate a rigid body upon a single event (e.g. when struck by an explosion),
   /// it is recommended to use ApplyLinearImpulse. To apply a continuous force to a rigid body (e.g. a changing
   /// gravity which is evaluated every frame), ApplyForce should be used.
-  void ApplyLinearImpulse(hkvVec3& value, hkvVec3& p);
+  void ApplyLinearImpulse(hkvVec3 value, hkvVec3 point);
 
   /// \brief
   ///   Apply an instantaneous change in angular velocity to this rigid body. The angular impulse is applied around the center of mass.
@@ -486,7 +494,7 @@ public:
   /// To instantaneously accelerate the rotation of a rigid body upon a single event (e.g. when struck
   /// by an explosion), it is recommended to use ApplyAngularImpulse. To apply a continuous torque to a
   /// rigid body, ApplyTorque should be used.
-  void ApplyAngularImpulse(hkvVec3& value);
+  void ApplyAngularImpulse(hkvVec3 value);
   
   /// \brief Set the mass of this rigid body.
   /// \param mass The mass specified in kilo.
@@ -499,13 +507,41 @@ public:
   ///   \endcode
   void SetMass(number mass);
 
+  /// \brief Returns the mass of the rigid body
+  ///
+  /// \return
+  ///   Indicates the mass of the rigid body
+  number GetMass();
+
   /// \brief Sets the restitution of this rigid body.
   /// \param restitution The new restitution; should be between 0.0 and 1.0.
   void SetRestitution(number restitution);
 
+  /// \brief Returns the restitution of the rigid body
+  ///
+  /// \return
+  ///   Indicates the restitution of the rigid body
+  number GetRestitution();
+
   /// \brief Sets the friction of this rigid body.
   /// \param friction The new friction; should be between 0.0 and 1.0.
   void SetFriction(number friction);
+
+  /// \brief Returns the friction of the rigid body
+  ///
+  /// \return
+  ///   Indicates the friction of the rigid body
+  number GetFriction();
+
+  /// \brief Sets the gravity factor of this rigid body.
+  /// \param gravityFactor The new gravity factor
+  void SetGravityFactor(number gravityFactor);
+
+  /// \brief Returns the gravity factor of the rigid body
+  ///
+  /// \return
+  ///   Indicates the gravity factor of the rigid body
+  number GetGravityFactor();
 
   /// \brief
   ///   Sets the activation status of this object.
@@ -523,7 +559,23 @@ public:
   ///
   /// \return
   ///   Indicates the rigid body is active.
-  boolean GetActive() const;
+  boolean GetActive();
+  
+  /// \brief
+  ///   Sets whether or not tight shape is set
+  ///
+  /// If it's enabled then when the rigid body shape is created it'll be created as a tight shape.
+  ///
+  /// \param status
+  ///   Indicates whether the shape should be created tight.
+  void SetTightFit(boolean status);
+  
+  /// \brief
+  ///   Returns whether or not the rigid body shape fits tightly around the object.
+  ///
+  /// \return
+  ///   Indicates whether or not the rigid body shape fits tightly around the object.
+  boolean GetTightFit();
 
   /// \brief Sets the collision parameters of this rigid body.
   /// \param layer The collision layer as integer number.
@@ -534,6 +586,13 @@ public:
   ///   See the Havok documentation on rigid body collisions for more 
   ///   information about what values to specify for these parameters.
   void SetCollisionInfo(number layer, number group, number subsystem, number subsystemDontCollideWith);
+
+  /// \brief
+  ///   Returns whether or not the rigid body is initialized/valid.
+  ///
+  /// \return
+  ///   Indicates the rigid body is initialized/valid.
+  boolean IsInitialized();
 
   /// @}
   /// @name Debug Rendering
@@ -570,7 +629,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

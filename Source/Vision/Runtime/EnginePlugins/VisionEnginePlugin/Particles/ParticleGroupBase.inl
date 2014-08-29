@@ -73,15 +73,60 @@ inline void ParticleGroupBase_cl::RemoveAllConstraints()
     m_spOnDestroyCreateGroup->RemoveAllConstraints();
 }
 
+inline void ParticleGroupBase_cl::SetSizeMultiplier(const hkvVec4& vSizeMultiplier)
+{
+  m_vSizeMultiplier = vSizeMultiplier;
+}
+
+inline hkvVec4 ParticleGroupBase_cl::GetSizeMultiplier()
+{
+  return m_vSizeMultiplier;
+}
+
+inline void ParticleGroupBase_cl::SetTopology(VIS_PARTICLE_TOPOLOGY_e eTopology)
+{
+  m_eTopology = eTopology;
+
+  SetUseDistortion(m_eTopology != PARTICLE_TOPOLOGY_MESH && m_eTopology != PARTICLE_TOPOLOGY_BILLBOARDS);
+
+  if (m_eTopology == PARTICLE_TOPOLOGY_TRAIL)
+  {
+    SetParticleCenter(0.0f, 0.5f);
+  }
+  else if (m_eTopology == PARTICLE_TOPOLOGY_RINGWAVE)
+  {
+    SetUseNormals(true);
+  }
+}
+
+inline VIS_PARTICLE_TOPOLOGY_e ParticleGroupBase_cl::GetTopology() const
+{
+  return m_eTopology;
+}
+
 inline void ParticleGroupBase_cl::SetScaling(float fScale)
 {
   if (m_fScaling != fScale)
   {
     m_fScaling = fScale;
-    m_bBBoxValid = false;
-    m_bVisibilityUpdate = true;
     SetInitialTransformation(); // local space update
+    UpdateBoundingBoxes();
   }
+}
+
+inline const hkvVec4* ParticleGroupBase_cl::GetDynamicLightingShaderConstants()
+{
+  return m_pParentEffect ? m_pParentEffect->GetDynamicLightingShaderConstants() : NULL;
+}
+
+inline VTextureObject* ParticleGroupBase_cl::GetShadowReceiveShadowMap()
+{
+  return (m_pParentEffect && GetShadowReceive()) ? m_pParentEffect->GetShadowReceiveShadowMap() : NULL;
+}
+
+inline hkvVec3 ParticleGroupBase_cl::GetLightSamplingOffset() const
+{
+  return m_pParentEffect ? m_pParentEffect->GetLightSamplingOffset() : hkvVec3::ZeroVector();
 }
 
 inline float ParticleGroupBase_cl::GetScaling() const
@@ -159,39 +204,6 @@ inline bool ParticleGroupBase_cl::CreateParticleFromSource(const ParticleExt_t *
   return true;
 }
 
- 
-inline void ParticleGroupBase_cl::SetPerFrameConstants(float dtime)
-{
-  if (m_spDescriptor->m_fFriction>0.f)
-    m_fFrameFriction = hkvMath::pow (1.f-m_spDescriptor->m_fFriction, dtime);
-  else 
-    m_fFrameFriction = 1.f;
-
-  m_vFrameWind = m_vWindSpeed*dtime;
-  if (m_bWindInLocalSpace)
-  {
-    const hkvMat3 &mRot = GetRotationMatrix();
-    m_vFrameWind = mRot.transformDirection (m_vFrameWind);
-  }
-
-  if (m_bInertiaAffectsGravity)
-  {
-    m_vFrameWind += m_spDescriptor->m_vGravity * dtime;
-    m_vFrameWindNoInertia.setZero();
-  }
-  else
-    m_vFrameWindNoInertia = m_spDescriptor->m_vGravity * dtime;
-
-  // transform per-frame speeds back into local space
-  if (GetUseLocalSpaceMatrix())
-  {
-    hkvMat3 transposedRot = GetRotationMatrix();
-    transposedRot.transpose();
-    m_vFrameWind = transposedRot.transformDirection (m_vFrameWind);
-    m_vFrameWindNoInertia = transposedRot.transformDirection (m_vFrameWindNoInertia);
-  }
-}
-
 
 inline void ParticleGroupBase_cl::SetParticleAnimFrame(ParticleExt_t *pParticle, float fFrame, bool bWrapAround)
 {
@@ -234,24 +246,8 @@ inline bool ParticleGroupBase_cl::HandleSingleParticle(ParticleExt_t *pParticle,
 
     pParticle->color = m_InstanceColor * pParticle->m_ModColor * 
      m_pColorLookup[(int)(pParticle->m_fLifeTimeCounter*m_fColorBitmapSizeX)];
-
-#ifdef PARTICLE_LIGHTGRID_LIGHTING
-    VLightGrid_cl *pGrid = Vision::RenderLoopHelper.GetLightGrid();
-    if (pGrid)
-    {
-      hkvVec3 vLGColor(false);
-      pGrid->GetMaximumColorAtPosition((hkvVec3& )pParticle->pos,vLGColor);
-      vLGColor *= 2.0f;
-      int r = (int)((float)pParticle->color.r * vLGColor.x);
-      int g = (int)((float)pParticle->color.g * vLGColor.y);
-      int b = (int)((float)pParticle->color.b * vLGColor.z);
-
-      pParticle->color.r = hkvMath::Min(r,255);
-      pParticle->color.g = hkvMath::Min(g,255);
-      pParticle->color.b = hkvMath::Min(b,255);
-    }
-#endif
-  } else
+  }
+  else
   {
     pParticle->color = m_InstanceColor * pParticle->m_ModColor;
   }
@@ -271,21 +267,15 @@ inline bool ParticleGroupBase_cl::HandleSingleParticle(ParticleExt_t *pParticle,
     }
   }
 
-  pParticle->pos[0] += pParticle->velocity[0]*fDeltaTime;
-  pParticle->pos[1] += pParticle->velocity[1]*fDeltaTime;
-  pParticle->pos[2] += pParticle->velocity[2]*fDeltaTime;
+  pParticle->m_vPosition += pParticle->m_vVelocity*fDeltaTime;
 
   if (m_bMovesWithEmitter)
   {
     float fWeight = m_fLocalFactorStart + m_fLocalFactorDiff * pParticle->m_fLifeTimeCounter;
-    pParticle->pos[0] += m_vGroupMoveDelta.x * fWeight;
-    pParticle->pos[1] += m_vGroupMoveDelta.y * fWeight;
-    pParticle->pos[2] += m_vGroupMoveDelta.z * fWeight;
+    pParticle->m_vPosition += m_vGroupMoveDelta * fWeight;
   }
 
-  pParticle->velocity[0] = (pParticle->velocity[0] + m_vFrameWind.x*pParticle->m_fInertiaFactor + m_vFrameWindNoInertia.x)*m_fFrameFriction;
-  pParticle->velocity[1] = (pParticle->velocity[1] + m_vFrameWind.y*pParticle->m_fInertiaFactor + m_vFrameWindNoInertia.y)*m_fFrameFriction;
-  pParticle->velocity[2] = (pParticle->velocity[2] + m_vFrameWind.z*pParticle->m_fInertiaFactor + m_vFrameWindNoInertia.z)*m_fFrameFriction;
+  pParticle->m_vVelocity = (pParticle->m_vVelocity + m_vFrameWind * pParticle->m_fInertiaFactor + m_vFrameWindNoInertia) * m_fFrameFriction;
 
   float fAnimFrame;
   // animation
@@ -314,75 +304,80 @@ inline bool ParticleGroupBase_cl::HandleSingleParticle(ParticleExt_t *pParticle,
   } else
   {
     // constant angle speed
-    if (*((int*)&(pParticle->m_fRotationParam0)))
+    if (pParticle->m_fRotationParam0 != 0.0f)
       pParticle->angle = hkvMath::mod (pParticle->angle+pParticle->m_fRotationParam0*fDeltaTime, (hkvMath::pi () * 2.0f));
   }
 
-  if (!m_cUseDistortion)
+  if (!GetUseDistortion())
     return true;
 
+
   // particle distortion
-  if (m_cUseDistortion==DISTORTION_TYPE_SIZEMODE)
+  switch (m_eTopology)
   {
-    hkvVec3& distort = (hkvVec3&) pParticle->distortion;
-
-    distort.x = m_vSizeMultiplier.x * pParticle->size;
-    distort.y = m_vSizeMultiplier.y * pParticle->size;
-    distort.z = m_vSizeMultiplier.z * pParticle->size;
-
-    // still unrotated, so rotate vector:
-    distort = m_cachedRotMatrix.transformDirection (distort);
-
-  }
-  else if (m_cUseDistortion==DISTORTION_TYPE_VELOCITY) // speed multiplier
-  {
-    pParticle->distortion[0] = pParticle->m_fDistortionMult * pParticle->velocity[0];
-    pParticle->distortion[1] = pParticle->m_fDistortionMult * pParticle->velocity[1];
-    pParticle->distortion[2] = pParticle->m_fDistortionMult * pParticle->velocity[2];
-  } 
-  else if (m_cUseDistortion==DISTORTION_TYPE_FIXLEN)
-  {
-    hkvVec3 dist(pParticle->velocity[0],pParticle->velocity[1],pParticle->velocity[2]);
-    if (!dist.isZero ())
+  case PARTICLE_TOPOLOGY_RINGWAVE:
     {
-      dist.setLength (pParticle->m_fDistortionMult);
-      pParticle->distortion[0] = dist.x;
-      pParticle->distortion[1] = dist.y;
-      pParticle->distortion[2] = dist.z;
-    } else
-    {
-      // do not change distortion
+      hkvVec3& distort = (hkvVec3&)pParticle->distortion;
+
+      distort.x = m_vSizeMultiplier.x * pParticle->size;
+      distort.y = m_vSizeMultiplier.y * pParticle->size;
+      distort.z = m_vSizeMultiplier.z * pParticle->size;
+
+      // still unrotated, so rotate vector:
+      distort = m_cachedRotMatrix.transformDirection(distort);
     }
-  }
-  else if (m_cUseDistortion==DISTORTION_TYPE_TRAIL)
-  {
-    // handled outside this loop
+    break;
 
-  }
-  else if (m_cUseDistortion==DISTORTION_TYPE_CUSTOM)
-  {
-    // nothing to do
+  case PARTICLE_TOPOLOGY_STRETCH_VELOCITY: // speed multiplier
+    {
+      pParticle->distortion[0] = pParticle->m_fDistortionMult * pParticle->m_vVelocity[0];
+      pParticle->distortion[1] = pParticle->m_fDistortionMult * pParticle->m_vVelocity[1];
+      pParticle->distortion[2] = pParticle->m_fDistortionMult * pParticle->m_vVelocity[2];
+    }
+    break;
 
-  }
-  else 
-  {
-    VASSERT_MSG(FALSE, "Unsupported distortion mode")
+  case PARTICLE_TOPOLOGY_STRETCH_FIXLENGTH:
+    {
+      hkvVec3 dist = pParticle->m_vVelocity;
+
+      if (!dist.isZero())
+      {
+        dist.setLength(pParticle->m_fDistortionMult);
+        pParticle->distortion[0] = dist.x;
+        pParticle->distortion[1] = dist.y;
+        pParticle->distortion[2] = dist.z;
+      }
+    }
+    break;
+
+  case PARTICLE_TOPOLOGY_TRAIL:
+    {
+      // handled outside this loop
+      pParticle->angle = 0.f;
+    }
+    break;
+
+  case PARTICLE_TOPOLOGY_CUSTOM:
+    break;
+
+  default:
+    VASSERT_MSG(FALSE, "Unsupported distortion mode");
   }
 
-  if (m_bDistortionPlaneAligned) // plane align the particle to always point up
+  if (m_spDescriptor->m_bDistortionPlaneAligned) // plane align the particle to always point up
   {
     hkvVec3 vRight(hkvNoInitialization);
-    if (hkvMath::Abs (pParticle->velocity[0])>hkvMath::Abs (pParticle->velocity[1]))
-      vRight.set(0,1,0);
-    else
-      vRight.set(1,0,0);
 
-    vRight = vRight.cross ((hkvVec3&) pParticle->distortion[0]);
+    if (hkvMath::Abs(pParticle->m_vVelocity[0]) > hkvMath::Abs(pParticle->m_vVelocity[1]))
+      vRight.set(0, 1, 0);
+    else
+      vRight.set(1, 0, 0);
+
+    vRight = vRight.cross((hkvVec3&)pParticle->distortion[0]);
     vRight.normalize();
-    pParticle->normal[0] = vRight.x;
-    pParticle->normal[1] = vRight.y;
-    pParticle->normal[2] = vRight.z;
+    pParticle->m_vNormal = vRight;
   }
+
   return true;
 }
 
@@ -393,7 +388,7 @@ inline void ParticleGroupBase_cl::SetVisible(bool bStatus)
   else 
     SetVisibleBitmask(0);
 
-  // also activate/deactivate the visibiliy object.
+  // also activate/deactivate the visibility object.
   // Make sure this only happens when visible status changes, because SetActivate resets the test counters
   // currently the particle effect takes care for this
   VisVisibilityObject_cl *pVisObj = GetVisibilityObject();
@@ -404,78 +399,38 @@ inline void ParticleGroupBase_cl::SetVisible(bool bStatus)
     m_spOnDestroyCreateGroup->SetVisible(bStatus);
 }
 
-
-inline void ParticleGroupBase_cl::SetDistortionType(unsigned char eDistortionType)
+inline const hkvAlignedBBox& ParticleGroupBase_cl::BoundingBox() const
 {
-  m_cUseDistortion = eDistortionType;
+  return GetUseLocalSpaceMatrix() ? GetLocalSpaceBoundingBox() : GetWorldSpaceBoundingBox();
 }
 
-
-inline unsigned char ParticleGroupBase_cl::GetDistortionType() const
+inline const hkvAlignedBBox& ParticleGroupBase_cl::GetLocalSpaceBoundingBox() const
 {
-  return m_cUseDistortion;
+	return m_LocalSpaceBoundingBox;
 }
 
+inline const hkvAlignedBBox& ParticleGroupBase_cl::GetWorldSpaceBoundingBox() const
+{
+	return m_WorldSpaceBoundingBox;
+}
 
 inline void ParticleGroupBase_cl::RenderBoundingBox(VColorRef iColor)
 {
-  const hkvAlignedBBox *pBBox = CalcCurrentBoundingBox();
-  if (pBBox)
-    Vision::Game.DrawBoundingBox(*pBBox,iColor,1.f);
+	UpdateBoundingBoxes();
+	if (GetUseLocalSpaceMatrix())
+		Vision::Game.DrawBoundingBox(GetLocalSpaceBoundingBox(), iColor, 1.f);
+	else
+		Vision::Game.DrawBoundingBox(GetWorldSpaceBoundingBox(), iColor, 1.f);
 }
-
 
 inline const hkvAlignedBBox *ParticleGroupBase_cl::CalcCurrentBoundingBox()
 {
-  if (!m_bBBoxValid)
-  {
-    // create an oriented bounding box
-    m_bBBoxValid = true;
-    m_BoundingBox.setInvalid();
-    if (m_spDescriptor->m_fDynamicInflateInterval>=0.f) // create bbox from all particles
-    {
-      InflateBoundingBox(true); //this always happens in local space
-      return &m_BoundingBox;
-    }
-      
-    // transform descriptor's local bounding box to global world space
-    if (!m_spDescriptor->m_BoundingBox.isValid())
-      return NULL;
-    if (GetUseLocalSpaceMatrix())
-    {
-      m_BoundingBox = m_spDescriptor->m_BoundingBox; //local bounding box
-      m_BoundingBox.scaleFromCenter( hkvVec3( GetScaling() ) ); //because the particle effects do not use Object3D scaling
-    }
-    else
-    {
-      if(m_spEmitter->GetType()==EMITTER_TYPE_MESH && m_pEmitterMeshEntity!=NULL)
-      {
-        //get world space bbox from model
-        m_BoundingBox.expandToInclude( m_pEmitterMeshEntity->GetBoundingBox());
-
-        //add boundary of the initial (local) bounding box
-        hkvVec3 vBoundary( m_spDescriptor->m_BoundingBox.getSizeX()*0.5f*GetScaling() , m_spDescriptor->m_BoundingBox.getSizeY()*0.5f*GetScaling() , m_spDescriptor->m_BoundingBox.getSizeZ()*0.5f*GetScaling());
-        m_BoundingBox.addBoundary( vBoundary );
-      }
-      else
-      {
-        hkvMat3 rotMat = (m_pParentEffect!=NULL) ? m_pParentEffect->GetRotationMatrix() : GetRotationMatrix();
-        hkvAlignedBBox orientedBBox = m_spDescriptor->m_BoundingBox;
-        hkvMat4 transform(rotMat, (m_pParentEffect!=NULL) ? m_pParentEffect->GetPosition() : GetPosition() );
-        transform.setScalingFactors( hkvVec3( GetScaling() ) );
-        orientedBBox.transformFromOrigin( transform );
-        m_BoundingBox.expandToInclude (orientedBBox);
-      }
-    }
-    
-  }
-  if (VISION_LIKELY(m_BoundingBox.isValid()))
-    return &m_BoundingBox;
-  return NULL;
+	UpdateBoundingBoxes();
+	return GetUseLocalSpaceMatrix() ? &GetLocalSpaceBoundingBox() : &GetWorldSpaceBoundingBox();
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

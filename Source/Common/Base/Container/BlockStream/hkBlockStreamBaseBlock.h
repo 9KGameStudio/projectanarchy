@@ -17,7 +17,7 @@ namespace hkBlockStreamBase
 	/// The basic storage container for the hkBlockStream::Stream. A stream consists of an arbitrary number of blocks.
 	/// Each block can be filled with values/objects of a shared size (maximum allowed size is BLOCK_DATA_SIZE).
 	/// Blocks should be aligned to 'BLOCK_ALIGNMENT' bytes.
-	struct Block
+	struct HK_EXPORT_COMMON Block
 	{
 	public:
 		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_BASE, Block );
@@ -97,7 +97,7 @@ namespace hkBlockStreamBase
 #endif // HK_BLOCKSTREAM_BLOCK_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

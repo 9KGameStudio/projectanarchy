@@ -25,82 +25,6 @@ public:
     {
       return self->ReloadShaderAssignmentFile(szFilename)==TRUE;
     }
-    
-    bool SetTechnique(VisSurface_cl *pSurface, const char * szShaderLib, const char * szTechnique, const char * szParamString = "")
-    {
-      return VScriptRenderer_wrapper::SetTechniqueForSurface(NULL, self, pSurface, szShaderLib, szTechnique, szParamString, true);
-    }
-
-    bool SetTechnique(int iSurfaceIndex, const char * szShaderLib, const char * szTechnique, const char * szParamString = "")
-    {
-      if(iSurfaceIndex>=self->GetSurfaceCount() || iSurfaceIndex<0) return false;
-      
-      VisSurface_cl *pSurface = self->GetSurface(iSurfaceIndex);
-      return VScriptRenderer_wrapper::SetTechniqueForSurface(NULL, self, pSurface, szShaderLib, szTechnique, szParamString, true);
-    }
-
-    bool SetTechnique(const char * szSurfaceName, const char * szShaderLib, const char * szTechnique, const char * szParamString = "")
-    {
-      VisSurface_cl *pSurface = self->GetSurfaceByName(szSurfaceName);
-      return VScriptRenderer_wrapper::SetTechniqueForSurface(NULL, self, pSurface, szShaderLib, szTechnique, szParamString, true);
-    }
-
-    bool AddTechnique(VisSurface_cl *pSurface, const char * szShaderLib, const char * szTechnique, const char * szParamString = "")
-    {
-      return VScriptRenderer_wrapper::SetTechniqueForSurface(NULL, self, pSurface, szShaderLib, szTechnique, szParamString, false);
-    }
-
-    bool AddTechnique(int iSurfaceIndex, const char * szShaderLib, const char * szTechnique, const char * szParamString = "")
-    {
-      if(iSurfaceIndex>=self->GetSurfaceCount() || iSurfaceIndex<0) return false;
-      
-      VisSurface_cl *pSurface = self->GetSurface(iSurfaceIndex);
-      return VScriptRenderer_wrapper::SetTechniqueForSurface(NULL, self, pSurface, szShaderLib, szTechnique, szParamString, false);
-    }
-
-    bool AddTechnique(const char * szSurfaceName, const char * szShaderLib, const char * szTechnique, const char * szParamString = "")
-    {
-      VisSurface_cl *pSurface = self->GetSurfaceByName(szSurfaceName);
-      return VScriptRenderer_wrapper::SetTechniqueForSurface(NULL, self, pSurface, szShaderLib, szTechnique, szParamString, false);
-    }
-
-    bool SetEffect(VisSurface_cl *pSurface, const char * szShaderLib, const char * szEffect, const char * szParamString = "")
-    {
-      return VScriptRenderer_wrapper::SetEffectForSurface(NULL, self, pSurface, szShaderLib, szEffect, szParamString, true);
-    }
-
-    bool SetEffect(int iSurfaceIndex, const char * szShaderLib, const char * szEffect, const char * szParamString = "")
-    {
-      if(iSurfaceIndex>=self->GetSurfaceCount() || iSurfaceIndex<0) return false;
-      
-      VisSurface_cl *pSurface = self->GetSurface(iSurfaceIndex);
-      return VScriptRenderer_wrapper::SetEffectForSurface(NULL, self, pSurface, szShaderLib, szEffect, szParamString, true);
-    }
-
-    bool SetEffect(const char * szSurfaceName, const char * szShaderLib, const char * szEffect, const char * szParamString = "")
-    {
-      VisSurface_cl *pSurface = self->GetSurfaceByName(szSurfaceName);
-      return VScriptRenderer_wrapper::SetEffectForSurface(NULL, self, pSurface, szShaderLib, szEffect, szParamString, true);
-    }
-
-    bool AddEffect(VisSurface_cl *pSurface, const char * szShaderLib, const char * szEffect, const char * szParamString = "")
-    {
-      return VScriptRenderer_wrapper::SetEffectForSurface(NULL, self, pSurface, szShaderLib, szEffect, szParamString, false);
-    }
-
-    bool AddEffect(int iSurfaceIndex, const char * szShaderLib, const char * szEffect, const char * szParamString = "")
-    {
-      if(iSurfaceIndex>=self->GetSurfaceCount() || iSurfaceIndex<0) return false;
-      
-      VisSurface_cl *pSurface = self->GetSurface(iSurfaceIndex);
-      return VScriptRenderer_wrapper::SetEffectForSurface(NULL, self, pSurface, szShaderLib, szEffect, szParamString, false);
-    }
-
-    bool AddEffect(const char * szSurfaceName, const char * szShaderLib, const char * szEffect, const char * szParamString = "")
-    {
-      VisSurface_cl *pSurface = self->GetSurfaceByName(szSurfaceName);
-      return VScriptRenderer_wrapper::SetEffectForSurface(NULL, self, pSurface, szShaderLib, szEffect, szParamString, false);
-    }
   }
   
   %rename(GetSurface) GetSurfaceByName(const char* szSurfaceName) const;
@@ -212,98 +136,29 @@ public:
   /// \param filename Path and file name of the XML file.
   /// \return Returns true if the assignment was successful, otherwise false.
   boolean ReloadShaderAssignment(string filename);
-    
-  /// \brief Apply a technique to a specified surface of the entity
-  /// \details Will remove the current assignment from the specified surface and add your specified technique.
-  /// \note If wou would like to apply the shader to a specific entity use VisBaseEntity_cl::SetTechnique
-  /// \param surface The surface to assign the technique specified by one of the following types:
-  ///   - \b VisSurface_cl instance (of the mesh)
-  ///   - \b number indicating the index of the surface
-  ///   - \b string containing the name of the surface.
-  /// \param shaderLib The shader lib, where the techinque is defined (the file).
-  /// \param technique The name of the technique to be used.
-  /// \param paramString (\b optional) The parameter string for the used shader.
-  /// \return true if the assignment was successful, otherwise false (invalid surface, technique not found).
-  /// \par Example
-  ///   \code
-  ///     ...
-  ///     local success = self:GetMesh():SetTechnique("SurfaceTexture", "Scripting/LuaDemo", "Color", "Color=0,1,0,0")
-  ///     ...
-  ///   \endcode
-  /// \see vForge Sampe "Scripting/LuaShader.scene".
-  /// \see VisBaseEntity_cl::SetTechnique
-  boolean SetTechnique(mixed surface, string shaderLib, string technique, string paramString = "");
   
-  /// \brief Add a technique to a specified surface of the entity
-  /// \details Will add the technique in addition to the current assignment.
-  /// \note If wou would like to add the shader to a specific entity use VisBaseEntity_cl::AddTechnique
-  /// \param surface The surface to add the technique specified by one of the following types:
-  ///   - \b VisSurface_cl instance (of the mesh)
-  ///   - \b number indicating the index of the surface
-  ///   - \b string containing the name of the surface.
-  /// \param shaderLib The shader lib, where the techinque is defined (the file).
-  /// \param technique The name of the technique to be used.
-  /// \param paramString (\b optional) The parameter string for the used shader.
-  /// \return true if the assignment was successful, otherwise false (invalid surface, technique not found).
-  /// \par Example
-  ///   \code
-  ///     ...
-  ///     local success = self:GetMesh():AddTechnique(0, "Scripting/LuaDemo", "Color", "Color=0,1,0,0")
-  ///     ...
-  ///   \endcode
-  /// \see vForge Sampe "Scripting/LuaShader.scene".
-  /// \see VisBaseEntity_cl::AddTechnique
-  boolean AddTechnique(mixed surface, string shaderLib, string technique, string paramString = "");
-  
-  /// \brief Apply an effect to a specified surface of the entity (the default technique will be applied)
-  /// \details Will remove the current assignment from the specified surface and add your effect.
-  /// \note If wou would like to apply the shader to a specific entity use VisBaseEntity_cl::SetEffect
-  /// \param surface The surface to assign the effect specified by one of the following types:
-  ///   - \b VisSurface_cl instance (of the mesh)
-  ///   - \b number indicating the index of the surface
-  ///   - \b string containing the name of the surface.
-  /// \param shaderLib The shader lib, where the effect is defined (the file).
-  /// \param effect The name of the effect to be used.
-  /// \param paramString (\b optional) The parameter string for the used shader.
-  /// \return true if the assignment was successful, otherwise false (invalid surface, effect not found).
-  /// \par Example
-  ///   \code
-  ///     ...
-  ///     local success = self:GetMesh():SetEffect("SurfaceTexture", "Scripting/LuaDemo", "Color", "Color=0,1,0,0")
-  ///     ...
-  ///   \endcode
-  /// \see vForge Sampe "Scripting/LuaShader.scene".
-  /// \see VisBaseEntity_cl::SetEffect
-  boolean SetEffect(mixed surface, string shaderLib, string effect, string paramString = "");
-
-  /// \brief Add an effect to a specified surface of the entity (the default technique will be applied)
-  /// \details Will add the effect in addition to the current assignment.
-  /// \note If wou would like to add the shader to a specific entity use VisBaseEntity_cl::AddEffect
+  /// \brief Returns the param string of a given surface.
   /// \param surface The surface to add the effect specified by one of the following types:
   ///   - \b VisSurface_cl instance (of the mesh)
   ///   - \b number indicating the index of the surface
   ///   - \b string containing the name of the surface.
-  /// \param shaderLib The shader lib, where the effect is defined (the file).
-  /// \param effect The name of the effect to be used.
-  /// \param paramString (\b optional) The parameter string for the used shader.
-  /// \return true if the assignment was successful, otherwise false (invalid surface, effect not found).
+  /// \return Key/value dictionary of all parameters of the surface's effect.
   /// \par Example
   ///   \code
   ///     ...
-  ///     local success = self:GetMesh():AddEffect(surfaceInstance, "Scripting/LuaDemo", "Color", "Color=0,1,0,0")
+  ///     local effectParams = self:GetEffectParams(0)
   ///     ...
   ///   \endcode
-  /// \see vForge Sampe "Scripting/LuaShader.scene".
-  /// \see VisBaseEntity_cl::AddEffect
-  boolean AddEffect(mixed surface, string shaderLib, string effect, string paramString = "");
-  
+  /// \see VisBaseEntity_cl::SetEffect
+  table GetEffectParams(mixed surface);
+
   /// @}
 };
 
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

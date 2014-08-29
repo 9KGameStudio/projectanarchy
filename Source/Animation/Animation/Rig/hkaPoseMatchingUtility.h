@@ -14,7 +14,7 @@ class hkaAnimationBinding;
 /// This utility class acts as a database of poses.
 /// It can be searched efficiently to find as close a match as possible to any given pose.
 /// This is particularly useful when trying to find an appropriate get up pose for a ragdoll.
-class hkaPoseMatchingUtility
+class HK_EXPORT_ANIMATION hkaPoseMatchingUtility
 {
 
 public:
@@ -71,7 +71,7 @@ private:
 #endif // HK_POSE_MATCHING_UTILITY_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

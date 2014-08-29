@@ -134,9 +134,13 @@ public:
   /// 
   /// \param command
   ///   Available commands are:
-  ///   \li VIS_MODSYSCMD_RECOMPUTEVISIBILITY: Child has to recompute the visibility
+  ///   \li VIS_MODSYSCMD_RECOMPUTEVISIBILITY: Children have to recompute the visibility
   ///     (ReComputeVisibility function)
-  VISION_APIFUNC void ModSysNotifyFunctionCommand(int command);
+  ///   \li VIS_MODSYSCMD_FINISHPLAYBACKONDISPOSE: Children set their VObjectFlag_FinishPlaybackOnDispose flag
+  ///     to true or false depending on the value stored in param. Each class has to handle it in its own
+  ///     implementation of ModSysNotifyFunctionCommand if it is relevant for the (ie. VisParticleEffect_cl).
+  /// \param param Any parameter or parameters used by the specific command. NULL by default. 
+  VISION_APIFUNC void ModSysNotifyFunctionCommand(int command, void *param=NULL);
 
 
   /// \brief
@@ -168,7 +172,7 @@ private:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

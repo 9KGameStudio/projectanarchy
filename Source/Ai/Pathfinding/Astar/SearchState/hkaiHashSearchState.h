@@ -8,6 +8,7 @@
 
 #ifndef HKASTAR_HASH_SEARCHSTATE_H
 #define HKASTAR_HASH_SEARCHSTATE_H
+#include <Ai/Pathfinding/hkaiBaseTypes.h>
 #include <Ai/Pathfinding/Astar/SearchState/hkaiSearchState.h>
 
 /// Search state implementation that uses a hash table.
@@ -16,7 +17,7 @@ struct hkaiHashSearchState
 	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_AI_ASTAR, hkaiHashSearchState);
 
 	typedef hkReal PathCost;
-	typedef hkUint32 SearchIndex;
+	typedef hkaiPackedKey SearchIndex;
 	typedef hkaiSearchStateNode Node;
 
 	enum
@@ -65,7 +66,6 @@ struct hkaiHashSearchState
 
 	// Estimate
 
-	HK_FORCE_INLINE hkBool32 estimatedCostLess( SearchIndex a, SearchIndex b ) const;
 	HK_FORCE_INLINE PathCost estimatedCost( SearchIndex i ) const;
 	HK_FORCE_INLINE PathCost estimatedCostCurrent( SearchIndex i ) const;
 
@@ -86,6 +86,7 @@ struct hkaiHashSearchState
 	HK_FORCE_INLINE void nextNode(SearchIndex sid);
 	HK_FORCE_INLINE void nextEdge(SearchIndex sid);
 	HK_FORCE_INLINE static hkUint32 hash(hkUint32 x);
+	HK_FORCE_INLINE static hkUint64 hash(hkUint64 x);
 
 
 	HK_FORCE_INLINE void copyCosts( SearchIndex fromId, SearchIndex toId);
@@ -110,7 +111,7 @@ struct hkaiHashSearchState
 
 	// Keep track of the best node we've found, and its cost.
 	// This lets us get a good path even if we have to break out of the search early.
-	HK_PAD_ON_SPU( SearchIndex ) m_bestNode;
+	HK_PAD_ON_SPU( hkaiPackedKey ) m_bestNode;
 	HK_PAD_ON_SPU( PathCost )    m_bestNodeCost;
 	HK_PAD_ON_SPU( PathCost )    m_maxPathCost;
 
@@ -132,8 +133,8 @@ struct hkaiHashSearchState
 	//
 	// Debug info
 	//
-	HK_ON_DEBUG(SearchIndex m_currentSearchIndex);
-	HK_ON_DEBUG(SearchIndex m_searchIndexToClose);
+	HK_DEBUG_ONLY_MEMBER(SearchIndex, m_currentSearchIndex);
+	HK_DEBUG_ONLY_MEMBER(SearchIndex, m_searchIndexToClose);
 };
 
 #include <Ai/Pathfinding/Astar/SearchState/hkaiHashSearchState.inl>
@@ -141,7 +142,7 @@ struct hkaiHashSearchState
 #endif // HKASTAR_SPUSEARCHSTATE_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

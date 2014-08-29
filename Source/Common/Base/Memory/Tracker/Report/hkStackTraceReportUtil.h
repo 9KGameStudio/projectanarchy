@@ -23,7 +23,7 @@
 	/// should consider the memory reported as the cumulative amount of memory from all code executed from the specified
 	/// function address. Thus for a single threaded application 'main' will include all of the allocated memory of the system -
 	/// as all memory must have been allocated underneath main.
-class hkStackTraceReportUtil
+class HK_EXPORT_COMMON hkStackTraceReportUtil
 {
     public:
 		HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE, hkStackTraceReportUtil);
@@ -66,7 +66,7 @@ class hkStackTraceReportUtil
 #endif // HKBASE_STACK_TRACE_REPORT_UTIL_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

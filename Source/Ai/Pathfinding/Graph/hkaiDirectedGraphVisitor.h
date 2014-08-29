@@ -100,7 +100,7 @@ struct hkaiDirectedGraphVisitor
 	HK_FORCE_INLINE void setGoals( const hkaiPackedKey* goalKeys, const hkReal* finalCosts, int numGoals);
 
 	// Streaming collection
-	HK_PAD_ON_SPU( const struct hkaiStreamingCollection::InstanceInfo* ) m_streamingInfo;
+	HK_PAD_ON_SPU( const hkaiStreamingCollection::InstanceInfo* ) m_streamingInfo;
 
 	HK_FORCE_INLINE const hkaiDirectedGraphAccessor* getIncomingAccessor() const;
 	HK_FORCE_INLINE const hkaiDirectedGraphAccessor* getOutgoingAccessor() const;
@@ -153,7 +153,7 @@ struct hkaiDirectedGraphVisitor
 	HK_ALIGN16( hkaiDirectedGraphExplicitCost::Edge m_localEdges[2*MAX_VERTEX_DEGREE + 2] );
 
 	// Debug info for asserts
-	HK_ON_DEBUG( hkaiDirectedGraphExplicitCost::Edge* m_localEdgeStart; )
+	HK_DEBUG_ONLY_MEMBER(hkaiDirectedGraphExplicitCost::Edge*, m_localEdgeStart);
 };
 
 #include <Ai/Pathfinding/Graph/hkaiDirectedGraphVisitor.inl>
@@ -161,7 +161,7 @@ struct hkaiDirectedGraphVisitor
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

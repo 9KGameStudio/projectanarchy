@@ -15,13 +15,14 @@
 #include <Common/Base/Config/hkConfigThread.h>
 
 
-#if defined(HK_COMPILER_MWERKS) && (HAVOK_BUILD_NUMBER != 0)
-	
+#if defined(HK_COMPILER_MWERKS)
+
 	typedef hkBool (HK_CALL *hkTestReportFunctionType)(hkBool32 cond, const char* desc, const char* file, int line);
 
 	// Test macros are defined to nothing in Wii external builds to avoid unit tests being linked in
 	#define HK_TEST(CONDITION) true
 	#define HK_TEST_EQ(A,B) /* nothing */
+	#define HK_TEST1(CONDITION,DESCRIPTION) /* nothing */
 	#define HK_TEST2(CONDITION,DESCRIPTION) /* nothing */
 	#define HK_TEST_REGISTER(func, category, menu, path) /* nothing */
 	#define HK_TEST_MESSAGE(MSG_TYPE, ID, STATEMENT, DESCRIPTION)  /* nothing */
@@ -36,22 +37,23 @@
 
 
 #elif defined(HK_PLATFORM_SPU)
-	
+
 	typedef hkBool (HK_CALL *hkTestReportFunctionType)(hkBool32 cond, int line);
 
 	// Only a reduced set of test macros is supported in SPU
 	#define HK_TEST(CONDITION)  (*hkTestReportFunction)( (CONDITION), __LINE__)
 	#define HK_TEST_EQ(A,B) hkTestReportEq((A), (B), __LINE__);
+	#define HK_TEST1(CONDITION,DESCRIPTION) HK_TEST(CONDITION)
 	#define HK_TEST2(CONDITION,DESCRIPTION) HK_TEST(CONDITION)
-	#define HK_TEST_REGISTER(func, category, menu, path) 
-	#define HK_TEST_MESSAGE(MSG_TYPE, ID, STATEMENT, DESCRIPTION) 
-	#define HK_TEST_MESSAGE_AND_CONTINUE(MSG_TYPE, ID, STATEMENT, DESCRIPTION) 
-	#define HK_TEST_ERROR(ID, STATEMENT, DESCRIPTION) 
-	#define HK_TEST_ASSERT(ID, STATEMENT) 
-	#define HK_TEST_ASSERT2(ID, STATEMENT, DESCRIPTION) 
+	#define HK_TEST_REGISTER(func, category, menu, path)
+	#define HK_TEST_MESSAGE(MSG_TYPE, ID, STATEMENT, DESCRIPTION)
+	#define HK_TEST_MESSAGE_AND_CONTINUE(MSG_TYPE, ID, STATEMENT, DESCRIPTION)
+	#define HK_TEST_ERROR(ID, STATEMENT, DESCRIPTION)
+	#define HK_TEST_ASSERT(ID, STATEMENT)
+	#define HK_TEST_ASSERT2(ID, STATEMENT, DESCRIPTION)
 	#define HK_TEST_ASSERT_AND_CONTINUE(ID, STATEMENT)
 	#define HK_TEST_ASSERT_AND_CONTINUE2(ID, STATEMENT, DESCRIPTION)
-	#define HK_ON_TEST_ASSERT_ENABLED(STATEMENT) 
+	#define HK_ON_TEST_ASSERT_ENABLED(STATEMENT)
 
 #else
 
@@ -62,7 +64,10 @@ typedef hkBool (HK_CALL *hkTestReportFunctionType)(hkBool32 cond, const char* de
 
 /************* PUBLIC *******************/
 #define HK_TEST(CONDITION)  (*hkTestReportFunction)( static_cast<bool>(CONDITION), #CONDITION, __FILE__, __LINE__)
+
 #define HK_TEST_EQ(A,B) hkTestReportEq((A), (B), #A, #B, __FILE__, __LINE__);
+
+#define HK_TEST1(CONDITION,DESCRIPTION)  (*hkTestReportFunction)( static_cast<bool>(CONDITION), DESCRIPTION, __FILE__, __LINE__)
 
 #define HK_TEST2(CONDITION,DESCRIPTION)  do {	\
 	char msgBuf[512];								\
@@ -120,7 +125,7 @@ typedef hkBool (HK_CALL *hkTestReportFunctionType)(hkBool32 cond, const char* de
 #else	// no asserts in debug
 #	define HK_TEST_ASSERT(ID, STATEMENT)
 #	define HK_ON_TEST_ASSERT_ENABLED(STATEMENT)
-#	define HK_TEST_ASSERT2(ID, STATEMENT, DESCRIPTION)	
+#	define HK_TEST_ASSERT2(ID, STATEMENT, DESCRIPTION)
 #	define HK_TEST_ASSERT_AND_CONTINUE(ID, STATEMENT)
 #	define HK_TEST_ASSERT_AND_CONTINUE2(ID, STATEMENT, DESCRIPTION)
 #endif
@@ -131,7 +136,7 @@ typedef hkBool (HK_CALL *hkTestReportFunctionType)(hkBool32 cond, const char* de
 //
 //	Test report function pointer
 
-extern hkTestReportFunctionType hkTestReportFunction;
+extern HK_EXPORT_COMMON hkTestReportFunctionType hkTestReportFunction;
 
 #if defined(HK_PLATFORM_SPU)
 
@@ -165,7 +170,7 @@ extern hkTestReportFunctionType hkTestReportFunction;
 
 #ifndef HK_PLATFORM_SPU
 
-struct hkTestEntry
+struct HK_EXPORT_COMMON hkTestEntry
 {
 	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_BASE_CLASS, hkTestEntry );
 	typedef int (HK_CALL *hkTestFunction)();
@@ -203,7 +208,7 @@ class TestDemo;
 
 #endif // !SPU
 
-class hkUnitTest
+class HK_EXPORT_COMMON hkUnitTest
 {
 public:
 	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_DEMO, hkUnitTest);
@@ -219,15 +224,108 @@ public:
 
 #if (HK_CONFIG_THREAD == HK_CONFIG_MULTI_THREADED)
 	static class hkJobQueue* s_jobQueue;
-	static class hkJobThreadPool* s_jobThreadPool ;
+	static class hkTaskQueue* s_taskQueue;
+	static class hkThreadPool* s_threadPool ;
 #endif
+
+	/// KISS Based PRNG (http://www.cs.ucl.ac.uk/staff/d.jones/GoodPracticeRNG.pdf)
+	/// The period about 2^121
+	/// This means a current SandyBridge CPU can safely use it continuously for about a month
+	struct Prng
+	{
+		/// Ctor.
+		Prng(hkUint32 seed = 123456789);
+
+		/// Return the next unsigned int, range: [0,4294967295]
+		hkUint32	nextUint32();
+
+		/// Return the next signed int, range: [0,2147483647]
+		hkInt32		nextInt32();
+
+		/// Return the next single precision floating point number, range: [0,1]
+		hkFloat32	nextFloat();
+
+		/// Return the next double precision floating point number, range: [0,1]
+		hkDouble64	nextDouble();
+
+		/// Return the next hkReal, range: [0,1]
+		hkReal		nextReal();
+
+		/// Return the next single precision scalar, range: [0,1]
+		void		nextSimdScalar(hkSimdFloat32& r);
+
+		/// Return the next double precision scalar, range: [0,1]
+		void		nextSimdScalar(hkSimdDouble64& r);
+
+		/// Return the next single precision scalar, range: [-1,1]
+		void		nextSimdScalar11(hkSimdFloat32& r);
+
+		/// Return the next double precision scalar, range: [-1,1]
+		void		nextSimdScalar11(hkSimdDouble64& r);
+
+		/// Return the next single precision vector, range: [0,1] x 4
+		void		nextVector(hkVector4f& v);
+
+		/// Return the next double precision vector, range: [0,1] x 4
+		void		nextVector(hkVector4d& v);
+
+		/// Return the next single precision vector, range: [-1,1] x 4
+		void		nextVector11(hkVector4f& v);
+
+		/// Return the next double precision vector, range: [-1,1] x 4
+		void		nextVector11(hkVector4d& v);
+
+		/// Return the next single precision vector of unit length.
+		void		nextUnitVector3(hkVector4f& v);
+
+		/// Return the next double precision vector of unit length.
+		void		nextUnitVector3(hkVector4d& v);
+
+		/// Return the next single precision vector of unit length, pointing in opposite hemisphere as \a normal.
+		void		nextUnitVector3(hkVector4f& v, hkVector4fParameter normal);
+
+		/// Return the next double precision vector of unit length, pointing in opposite hemisphere as \a normal.
+		void		nextUnitVector3(hkVector4d& v, hkVector4dParameter normal);
+
+		/// Return the next single precision quaternion
+		void		nextQuaternion(hkQuaternionf& v);
+
+		/// Return the next double precision quaternion
+		void		nextQuaternion(hkQuaterniond& v);
+
+		/// Return the next single precision rotation matrix
+		void		nextRotation(hkRotationf& r);
+
+		/// Return the next double precision rotation matrix
+		void		nextRotation(hkRotationd& r);
+
+		/// Return the next 3d bary-center in single precision
+		void		nextBaryCenter3D(hkVector4f& bc);
+
+		/// Return the next 3d bary-center in double precision
+		void		nextBaryCenter3D(hkVector4d& bc);
+
+		/// Return the next single precision value as Gaussian deviate (ie. with mean 0 and standard deviation 1)
+		hkFloat32	nextFloatGauss();
+
+		/// Return the next double precision value as Gaussian deviate (ie. with mean 0 and standard deviation 1)
+		hkDouble64	nextDoubleGauss();
+
+		/// Return the next hkReal value as Gaussian deviate (ie. with mean 0 and standard deviation 1)
+		hkReal		nextRealGauss();
+
+		/// Returns a new PRNG.
+		Prng		nextPrng();
+
+		hkUint32	m_x, m_y, m_z, m_w, m_c;
+	};
 };
 
 
 #endif // HK_TEST_UNITTEST_REGISTERTEST_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

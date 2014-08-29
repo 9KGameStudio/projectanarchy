@@ -26,6 +26,14 @@ HK_FORCE_INLINE void hkIntVector::setZero()
 	q[3] = 0;
 }
 
+template <int I> 
+HK_FORCE_INLINE void hkIntVector::zeroComponent32()
+{
+	HK_INT_VECTOR_SUBINDEX_CHECK;
+	hkUint32* HK_RESTRICT q = m_quad.u32;
+	q[I] = 0;
+}
+
 HK_FORCE_INLINE void hkIntVector::setAll(const int& i)
 {
 	hkInt32* HK_RESTRICT q = reinterpret_cast<hkInt32*>(m_quad.u32);
@@ -212,7 +220,6 @@ HK_FORCE_INLINE const hkVector4Comparison hkIntVector::greaterEqualS32(hkIntVect
 	return cmp;
 }
 
-
 HK_FORCE_INLINE const hkVector4fComparison hkIntVector::equalS32(hkIntVectorParameter b) const
 {
 	const hkInt32* HK_RESTRICT sa = reinterpret_cast<const hkInt32*>(m_quad.u32);
@@ -224,6 +231,23 @@ HK_FORCE_INLINE const hkVector4fComparison hkIntVector::equalS32(hkIntVectorPara
 				(sa[3] == sb[3] ? hkVector4ComparisonMask::MASK_W : hkVector4ComparisonMask::MASK_NONE);
 	return cmp;
 }
+
+HK_FORCE_INLINE void hkIntVector::setCompareGreaterS16(hkIntVectorParameter a, hkIntVectorParameter b)
+{
+	const hkInt16* HK_RESTRICT sa = reinterpret_cast<const hkInt16*>(a.m_quad.u32);
+	const hkInt16* HK_RESTRICT sb = reinterpret_cast<const hkInt16*>(b.m_quad.u32);
+	hkUint16* HK_RESTRICT q  = reinterpret_cast<hkUint16*>(m_quad.u32);
+
+	q[0] = (sa[0] > sb[0]) ? 0xffff : 0;
+	q[1] = (sa[1] > sb[1]) ? 0xffff : 0;
+	q[2] = (sa[2] > sb[2]) ? 0xffff : 0;
+	q[3] = (sa[3] > sb[3]) ? 0xffff : 0;
+	q[4] = (sa[4] > sb[4]) ? 0xffff : 0;
+	q[5] = (sa[5] > sb[5]) ? 0xffff : 0;
+	q[6] = (sa[6] > sb[6]) ? 0xffff : 0;
+	q[7] = (sa[7] > sb[7]) ? 0xffff : 0;
+}
+
 
 HK_FORCE_INLINE void hkIntVector::setOr(hkIntVectorParameter a, hkIntVectorParameter b)
 {
@@ -863,6 +887,30 @@ HK_FORCE_INLINE void hkIntVector::setPermutation(hkIntVectorParameter v)
 	m_quad = u;
 }
 
+#define HK_INTVECTOR_PERM_MASK \
+	hkVectorPermutation::Permutation( \
+	((i & 0x3) << 12) \
+	| ((j & 0x3) << 8) \
+	| ((k & 0x3) << 4) \
+	| ((l & 0x3) << 0))
+
+#define HK_INTVECTOR_SELECT_MASK \
+	hkVector4ComparisonMask::Mask( \
+	((i & 0x4) ? 0 : hkVector4ComparisonMask::MASK_X) \
+	| ((j & 0x4) ? 0 : hkVector4ComparisonMask::MASK_Y) \
+	| ((k & 0x4) ? 0 : hkVector4ComparisonMask::MASK_Z) \
+	| ((l & 0x4) ? 0 : hkVector4ComparisonMask::MASK_W))
+
+template<unsigned int i, unsigned int j, unsigned int k, unsigned int l>
+HK_FORCE_INLINE void hkIntVector::setPermutation2(hkIntVectorParameter a, hkIntVectorParameter b)
+{
+	HK_COMPILE_TIME_ASSERT(i<8 && j<8 && k<8 && l<8);
+
+	hkIntVector aPerm; aPerm.setPermutation<HK_INTVECTOR_PERM_MASK>(a);
+	hkIntVector bPerm; bPerm.setPermutation<HK_INTVECTOR_PERM_MASK>(b);
+	setSelect<HK_INTVECTOR_SELECT_MASK>(aPerm, bPerm);
+}
+
 HK_FORCE_INLINE void hkIntVector::setPermuteU8(hkIntVectorParameter aIn, hkIntVectorParameter mask)
 {
 	const hkUint8* HK_RESTRICT m = reinterpret_cast<const hkUint8*>(mask.m_quad.u32);
@@ -1104,6 +1152,38 @@ template <> HK_FORCE_INLINE int hkIntVector::horizontalXorS32<4>() const
 }
 
 template <int N> HK_FORCE_INLINE int hkIntVector::horizontalXorS32() const
+{
+	HK_INT_VECTOR_NOT_IMPLEMENTED;
+	return 0;
+}
+
+//
+//	Returns the or of the first N components
+
+template <> HK_FORCE_INLINE int hkIntVector::horizontalOrS32<1>() const
+{
+	return getComponent<0>();
+}
+
+template <> HK_FORCE_INLINE int hkIntVector::horizontalOrS32<2>() const
+{
+	const hkInt32* HK_RESTRICT qa = m_quad.i32;
+	return (qa[0] | qa[1]);
+}
+
+template <> HK_FORCE_INLINE int hkIntVector::horizontalOrS32<3>() const
+{
+	const hkInt32* HK_RESTRICT qa = m_quad.i32;
+	return (qa[0] | qa[1] | qa[2]);
+}
+
+template <> HK_FORCE_INLINE int hkIntVector::horizontalOrS32<4>() const
+{
+	const hkInt32* HK_RESTRICT qa = m_quad.i32;
+	return (qa[0] | qa[1] | qa[2] | qa[3]);
+}
+
+template <int N> HK_FORCE_INLINE int hkIntVector::horizontalOrS32() const
 {
 	HK_INT_VECTOR_NOT_IMPLEMENTED;
 	return 0;
@@ -1530,12 +1610,14 @@ HK_FORCE_INLINE void hkIntVector::setSelect( hkIntVectorParameter trueValue, hkI
 template <hkIntVectorConstant vectorConstant>
 HK_FORCE_INLINE /*static*/ const hkIntVector& HK_CALL hkIntVector::getConstant()
 {
+	HK_INT_VECTOR_CONSTANT_CHECK;
 	return *(const hkIntVector*) (g_intVectorConstants + vectorConstant);
 }
 
-HK_FORCE_INLINE /*static*/ const hkIntVector& HK_CALL hkIntVector::getConstant(hkIntVectorConstant constant)
+HK_FORCE_INLINE /*static*/ const hkIntVector& HK_CALL hkIntVector::getConstant(hkIntVectorConstant vectorConstant)
 {
-	return *(const hkIntVector*) (g_intVectorConstants + constant);
+	HK_MATH_ASSERT(0x2771faa1,((vectorConstant>HK_QUADINT_BEGIN)&&(vectorConstant<HK_QUADINT_END)),"unknown vector constant");
+	return *(const hkIntVector*) (g_intVectorConstants + vectorConstant);
 }
 
 // result.u32[i] = highshorts.u16[i]<<16 + lowShorts.u16[i]. highShorts.u16/lowShorts.u16[4..7] are ignored
@@ -1830,12 +1912,12 @@ HK_FORCE_INLINE void hkIntVector::storeInto24LowerBitsOfReal(hkVector4d& vOut)
 	HK_MATH_ASSERT(0xf0781100, (getU32(1) & 0xff000000) == 0, "can only store 24 bit integer");
 	HK_MATH_ASSERT(0xf0781100, (getU32(2) & 0xff000000) == 0, "can only store 24 bit integer");
 	HK_MATH_ASSERT(0xf0781100, (getU32(3) & 0xff000000) == 0, "can only store 24 bit integer");
-	HK_ALIGN_DOUBLE(hkInt64 v[4]);
-	v[0] = hkInt64(getU32<0>()) | 0x3ff0000000000000ull;
-	v[1] = hkInt64(getU32<1>()) | 0x3ff0000000000000ull;
-	v[2] = hkInt64(getU32<2>()) | 0x3ff0000000000000ull;
-	v[3] = hkInt64(getU32<3>()) | 0x3ff0000000000000ull;
-	vOut.load<4>( (hkDouble64*)&v[0] );
+	HK_ALIGN_DOUBLE(union { hkInt64 c[4]; hkDouble64 d[4]; } v);
+	v.c[0] = hkInt64(getU32<0>()) | 0x3ff0000000000000ull;
+	v.c[1] = hkInt64(getU32<1>()) | 0x3ff0000000000000ull;
+	v.c[2] = hkInt64(getU32<2>()) | 0x3ff0000000000000ull;
+	v.c[3] = hkInt64(getU32<3>()) | 0x3ff0000000000000ull;
+	vOut.load<4>( v.d );
 }
 
 //
@@ -1854,11 +1936,51 @@ HK_FORCE_INLINE void hkIntVector::setAbsS32(hkIntVectorParameter v)
 //
 //	Sets this = sign * v
 
+#ifndef HK_INT_VECTOR_setFlipSignS32
+#	define HK_INT_VECTOR_setFlipSignS32
+
 HK_FORCE_INLINE void hkIntVector::setFlipSignS32(hkIntVectorParameter v, hkVector4ComparisonParameter mask)
 {
 	hkIntVector vNeg;	vNeg.setNegS32<4>(v);
 	setSelect(mask, vNeg, v);
 }
+
+#endif
+
+#if !defined(HK_INT_VECTOR_NATIVE_HORIZONTAL_MAX)
+
+/// Sets every component to the maximum value occurring in N components. ( return x,y,z,w = max(x,y,z,w) )
+template <int N> HK_FORCE_INLINE void hkIntVector::setHorizontalMaxS32(hkIntVectorParameter v) 
+{
+	//HK_COMPILE_TIME_ASSERT( N > 0 );
+	hkInt32 n = (int)(getU32<0>());
+	if ( N >= 1) n = hkMath::max2<int>(n, (int)(getU32<1>()) );
+	if ( N >= 2) n = hkMath::max2<int>(n, (int)(getU32<2>()) );
+	if ( N >= 3) n = hkMath::max2<int>(n, (int)(getU32<3>()) );
+	this->set( n,n,n,n);
+}
+
+#endif
+
+#if !defined(HK_INT_VECTOR_NATIVE_ADD64)
+HK_FORCE_INLINE void hkIntVector::setAddU64( hkIntVectorParameter a, hkIntVectorParameter b )
+{
+	const hkUint64* HK_RESTRICT a2 = reinterpret_cast<const hkUint64*>(&a);
+	const hkUint64* HK_RESTRICT b2 = reinterpret_cast<const hkUint64*>(&b);
+	hkUint64* HK_RESTRICT t2 = reinterpret_cast<hkUint64*>(this);
+	t2[0] = a2[0] + b2[0];
+	t2[1] = a2[1] + b2[1];
+}
+
+HK_FORCE_INLINE void hkIntVector::setSubU64( hkIntVectorParameter a, hkIntVectorParameter b )
+{
+	const hkUint64* HK_RESTRICT a2 = reinterpret_cast<const hkUint64*>(&a);
+	const hkUint64* HK_RESTRICT b2 = reinterpret_cast<const hkUint64*>(&b);
+	hkUint64* HK_RESTRICT t2 = reinterpret_cast<hkUint64*>(this);
+	t2[0] = a2[0] - b2[0];
+	t2[1] = a2[1] - b2[1];
+}
+#endif
 
 //
 // Sets this = first N components of v sorted ascending
@@ -1871,7 +1993,7 @@ template <> HK_FORCE_INLINE void hkIntVector::setSortS32<2, HK_SORT_ASCENDING>(h
 	hkIntVector vyx;	vyx.setPermutation<hkVectorPermutation::YXZW>(v);	//[y, x, z, w]
 	hkIntVector vmin;	vmin.setMinS32(vyx, v);		// [min(x, y), min(x, y), z, w]
 	hkIntVector vmax;	vmax.setMaxS32(vyx, v);		// [max(x, y), max(x, y), z, w]
-	setSelect<hkVector4Comparison::MASK_X>(vmin, vmax);
+	setSelect<hkVector4ComparisonMask::MASK_X>(vmin, vmax);
 }
 
 template <> HK_FORCE_INLINE void hkIntVector::setSortS32<2, HK_SORT_DESCENDING>(hkIntVectorParameter v)
@@ -1879,7 +2001,7 @@ template <> HK_FORCE_INLINE void hkIntVector::setSortS32<2, HK_SORT_DESCENDING>(
 	hkIntVector vyx;	vyx.setPermutation<hkVectorPermutation::YXZW>(v);	//[y, x, z, w]
 	hkIntVector vmin;	vmin.setMinS32(vyx, v);		// [min(x, y), min(x, y), z, w]
 	hkIntVector vmax;	vmax.setMaxS32(vyx, v);		// [max(x, y), max(x, y), z, w]
-	setSelect<hkVector4Comparison::MASK_X>(vmax, vmin);
+	setSelect<hkVector4ComparisonMask::MASK_X>(vmax, vmin);
 }
 
 
@@ -1966,7 +2088,7 @@ template <> HK_FORCE_INLINE int hkIntVector::getIndexOfMinComponent<4>() const
 	HK_MATH_ASSERT(0x2842fb1, mask > 0, "inconsistent min value of self");
 	return isMin.getIndexOfFirstComponentSet();
 #else
-	const hkInt32* HK_RESTRICT tmp = (const hkInt32* HK_RESTRICT)this;
+	const hkInt32* HK_RESTRICT tmp = (const hkInt32*)this;
 
 	int		xyIndex = 0;
 	hkInt32	xyValue = tmp[0];
@@ -2005,7 +2127,7 @@ HK_FORCE_INLINE int hkIntVector::getIndexOfMinComponent<3>() const
 	HK_MATH_ASSERT(0x2842fb2, (mask & hkVector4ComparisonMask::MASK_W) == 0, "selective compare failed");
 	return isMin.getIndexOfFirstComponentSet();
 #else
-	const hkInt32* HK_RESTRICT tmp = (const hkInt32* HK_RESTRICT)this;
+	const hkInt32* HK_RESTRICT tmp = (const hkInt32*)this;
 
 	int		xyIndex = 0;
 	hkInt32	xyValue = tmp[0];
@@ -2040,7 +2162,7 @@ template <int N> HK_FORCE_INLINE int hkIntVector::getIndexOfMinComponent() const
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

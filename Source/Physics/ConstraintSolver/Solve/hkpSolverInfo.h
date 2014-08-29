@@ -9,9 +9,10 @@
 #ifndef HKP_SOLVER_INFO_H
 #define HKP_SOLVER_INFO_H
 
+#include <Physics/Constraint/hkpConstraintExport.h>
 
 /// Parameters for the solver.
-struct hkpSolverInfo
+struct HK_EXPORT_PHYSICS hkpSolverInfo
 {
 	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_CONSTRAINT_SOLVER, hkpSolverInfo );
 
@@ -220,7 +221,7 @@ struct hkp3dAngularMotorSolverInfo
 /// A small helper class to collect violated constraints (including SPU).
 /// Note that this has a unchangeable maximum capacity.
 /// Check out hkpWorldCinfo::m_maxConstraintViolation
-struct hkpViolatedConstraintArray
+struct HK_EXPORT_PHYSICS hkpViolatedConstraintArray
 {
 	public:
 
@@ -242,7 +243,7 @@ struct hkpViolatedConstraintArray
 #endif // HKP_SOLVER_INFO_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

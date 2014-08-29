@@ -11,6 +11,7 @@
 
 #include <Vision/Editor/vForge/AssetManagement/AssetFramework/hkvAssetStructs.hpp>
 
+#include <Vision/Editor/vForge/AssetManagement/VisionAssets/ImageFile/hkvImageFile.hpp>
 #include <Vision/Editor/vForge/AssetManagement/VisionAssets/ImageFile/hkvImageFileProperties.hpp>
 #include <Vision/Editor/vForge/AssetManagement/VisionAssets/hkvTextureDefinitions.hpp>
 
@@ -25,7 +26,7 @@ public:
 
   void setSourceProperties(bool srgb, bool hasAlpha, hkUint32 width, hkUint32 height);
 
-  void setTargetFormat(hkvTextureDataFormat dataFormat, hkvTextureFileFormat fileFormat);
+  void setTargetFormat(hkvImageDataFormat dataFormat, hkvImageFileFormat fileFormat);
   void setUsage(hkvTextureUsage usage);
   void setDiscardAlpha(bool discard);
   void setCreateMipMaps(bool create);
@@ -44,8 +45,8 @@ public:
   hkUint32 getSourceWidth() const { return m_sourceWidth; }
   hkUint32 getSourceHeight() const { return m_sourceHeight; }
 
-  hkvTextureDataFormat getTargetDataFormat() const { return m_targetDataFormat; }
-  hkvTextureFileFormat getTargetFileFormat() const { return m_targetFileFormat; }
+  hkvImageDataFormat getTargetDataFormat() const { return m_targetDataFormat; }
+  hkvImageFileFormat getTargetFileFormat() const { return m_targetFileFormat; }
 
   bool getCreateMipMaps() const { return m_createMipMaps; }
 
@@ -76,8 +77,8 @@ private:
   hkBool m_sourceSrgb;
 
   hkvTextureUsage m_usage;
-  hkvTextureDataFormat m_targetDataFormat;
-  hkvTextureFileFormat m_targetFileFormat;
+  hkvImageDataFormat m_targetDataFormat;
+  hkvImageFileFormat m_targetFileFormat;
   hkBool m_discardAlpha;
   hkBool m_createMipMaps;
   hkUint32 m_downscaleLevel;
@@ -107,7 +108,7 @@ private:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

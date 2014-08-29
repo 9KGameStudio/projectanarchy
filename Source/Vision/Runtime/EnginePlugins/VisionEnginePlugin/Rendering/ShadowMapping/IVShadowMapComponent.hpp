@@ -11,6 +11,7 @@
 
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/RendererNode/VRendererNodeCommon.hpp>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/ShadowMapping/VShadowMapGenerator.hpp>
+#include <Vision/Runtime/Base/Container/VMaps.hpp>
 
 #define SHOW_SHADOW_MAP
 #undef SHOW_SHADOW_MAP
@@ -26,7 +27,8 @@
 #define SHADOWMAP_COMPONENT_VERSION_5                                   5     // Version 5 : Unsupported members removed
 #define SHADOWMAP_COMPONENT_VERSION_6                                   6     // Version 6 : SampleRadiusScaleWithDistance
 #define SHADOWMAP_COMPONENT_VERSION_7                                   7     // Version 7 : MaxDistanceToBlocker
-#define SHADOWMAP_COMPONENT_CURRENT_VERSION SHADOWMAP_COMPONENT_VERSION_7     // Current version
+#define SHADOWMAP_COMPONENT_VERSION_8                                   8     // Version 8 : Removed CameraUpdateInterval and CameraUpdateAngle
+#define SHADOWMAP_COMPONENT_CURRENT_VERSION SHADOWMAP_COMPONENT_VERSION_8     // Current version
 
 
 /// \brief
@@ -109,6 +111,14 @@ public:
     return m_bIsInitialized; 
   }
 
+  /// \brief
+  ///   Enables the component for a concrete renderer. Same as Enable with a '0' parameter value.
+  EFFECTS_IMPEXP void EnableForRendererNode(int iRendererNodeIndex);
+
+  /// \brief
+  ///   Disables the component for a concrete renderer. Same as Disable with a '0' parameter value.
+  EFFECTS_IMPEXP void DisableForRendererNode(int iRendererNodeIndex);
+
   ///
   /// @}
   ///
@@ -148,6 +158,22 @@ public:
   inline int GetRendererNodeIndex() const
   { 
     return m_iRendererNodeIndex; 
+  }
+
+  /// \brief
+  ///   Reassigns this component to a different renderer node. See GetRendererNodeIndex
+  inline void SetRendererNodeIndex(int iIndex)
+  { 
+    if (m_iRendererNodeIndex==iIndex)
+      return;
+    bool bReInit = this->m_bIsInitialized;
+    if (bReInit)
+      DeInitializeRenderer();
+    m_iRendererNodeIndex=iIndex;
+    m_pRendererNode = vdynamic_cast<VRendererNodeCommon*>(Vision::Renderer.GetRendererNode(m_iRendererNodeIndex));
+
+    if (bReInit)
+      InitializeRenderer();
   }
 
   /// \brief
@@ -211,7 +237,7 @@ public:
   EFFECTS_IMPEXP virtual bool SetVariable(const char *szName, const char *szValue);
 
 
-#if defined(WIN32) || defined(_VISION_DOC)
+#if defined(_VISION_WIN32) || defined(_VISION_DOC)
 
   /// \brief
   ///   Overridden component function
@@ -249,6 +275,13 @@ public:
   /// @name Shadow Properties
   /// @{
   ///
+
+  /// \brief
+  ///   Returns the number of cascades use by this component
+  EFFECTS_IMPEXP virtual unsigned int GetCascadeCount() const
+  { 
+    return 1; 
+  }
 
   /// \brief
   ///   Indicates whether a quarter sized shadow mask texture is used
@@ -596,6 +629,9 @@ protected:
 
   EFFECTS_IMPEXP virtual bool InitializeRenderer();
   EFFECTS_IMPEXP virtual void DeInitializeRenderer();
+  
+  // Clones properties to the target shadow map component. Used by EnableForRendererNode.
+  EFFECTS_IMPEXP virtual void CloneProperties(IVShadowMapComponent* pTargetComponent);
 
   IVShadowMapFormat* GetShadowMapFormat() const;
 
@@ -630,14 +666,15 @@ protected:
   VShadowMapGeneratorBasePtr m_spShadowMapGenerator;
 
   VisMeshBuffer_cl* m_pLightVolumeMeshBuffer;
-
+  VMapIntToPtr m_componentMap;
+  VArray<IVShadowMapComponent*> m_componentCopyList;
   bool m_bIsInitialized;
 };
 
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140624)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

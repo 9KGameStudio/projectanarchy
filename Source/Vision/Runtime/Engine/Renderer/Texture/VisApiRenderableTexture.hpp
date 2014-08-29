@@ -193,7 +193,26 @@ public:
 
   VISION_APIFUNC unsigned int GetRenderTarget() const;
 
+  /// \brief
+  ///   En-/disables optimization that gives OpenGL the hint that we do not need anymore the contents of the depth and stencil buffer from the currently set 
+  ///   render context, i.e. they can be discarded. In this way redundant stores/ loads from buffer contents can be avoided. We only discard those buffers 
+  ///   when a color attachment is present.
+  /// 
+  ///   Currently this feature is only available on Android, where it is per default enabled. 
+  inline void EnableDepthStencilBufferDiscard(bool bEnable) 
+  {
+    m_bDepthStencilBufferDiscard = bEnable;
+  }
+
+  /// \brief
+  ///   Returns whether contents of the depth and stencil buffer from the currently set render context can be discarded.
+  inline bool IsDepthStencilBufferDiscardEnabled() const
+  {
+    return m_bDepthStencilBufferDiscard;
+  }
+
   unsigned int m_GLTargetHandle;
+  bool m_bDepthStencilBufferDiscard;
   
 #elif defined(_VR_GCM)
 
@@ -321,7 +340,7 @@ protected:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

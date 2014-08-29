@@ -9,15 +9,16 @@
 #define HK_SERIALIZE_PATCH_MANAGER_H
 
 #include <Common/Base/Types/hkTypedUnion.h>
+#include <Common/Base/Thread/CriticalSection/hkCriticalSection.h>
 #include <Common/Base/Container/StringMap/hkStringMap.h>
 #include <Common/Serialize/Data/hkDataObject.h>
+#include <Common/Base/Reflection/Registry/hkClassNameRegistry.h>
 
-class hkClassNameRegistry;
 
 	/// Class defining and managing versions of classes using patches.
 	/// You should hkVersionPatchManager::getInstance() to access instance
 	/// of the manager.
-class hkVersionPatchManager : public hkReferencedObject, public hkSingleton<hkVersionPatchManager>
+class HK_EXPORT_COMMON hkVersionPatchManager : public hkReferencedObject, public hkSingleton<hkVersionPatchManager>
 {
 	public:
 	HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE);
@@ -43,11 +44,11 @@ class hkVersionPatchManager : public hkReferencedObject, public hkSingleton<hkVe
 		};
 
 			/// Class defining a versioning patch for reflected class.
-		struct PatchInfo
+		struct HK_EXPORT_COMMON PatchInfo
 		{
 				/// Class defining a component of the versioning patch, e.g., add and/or remove class member.
 			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE,PatchInfo);
-			struct Component
+			struct HK_EXPORT_COMMON Component
 			{
 				HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE,Component);
 				PatchType type;
@@ -72,7 +73,7 @@ class hkVersionPatchManager : public hkReferencedObject, public hkSingleton<hkVe
 		~hkVersionPatchManager();
 
 			/// Set class version dependency in patch.
-		struct DependsPatch
+		struct HK_EXPORT_COMMON DependsPatch
 		{
 			enum { PATCH_TYPE=PATCH_DEPENDS };
 			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_SERIALIZE, DependsPatch);
@@ -81,7 +82,7 @@ class hkVersionPatchManager : public hkReferencedObject, public hkSingleton<hkVe
 		};
 
 			/// Define class member renamed in patch.
-		struct MemberRenamedPatch
+		struct HK_EXPORT_COMMON MemberRenamedPatch
 		{
 			enum { PATCH_TYPE=PATCH_MEMBER_RENAMED};
 			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE,hkVersionPatchManager::MemberRenamedPatch);
@@ -90,7 +91,7 @@ class hkVersionPatchManager : public hkReferencedObject, public hkSingleton<hkVe
 		};
 
 			/// Define class member added in patch.
-		struct MemberAddedPatch
+		struct HK_EXPORT_COMMON MemberAddedPatch
 		{
 			enum { PATCH_TYPE=PATCH_MEMBER_ADDED};
 			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE,hkVersionPatchManager::MemberAddedPatch);
@@ -102,7 +103,7 @@ class hkVersionPatchManager : public hkReferencedObject, public hkSingleton<hkVe
 		};
 
 			/// Define class member removed in patch.
-		struct MemberRemovedPatch
+		struct HK_EXPORT_COMMON MemberRemovedPatch
 		{
 			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_SERIALIZE, MemberRemovedPatch);
 			enum { PATCH_TYPE=PATCH_MEMBER_REMOVED};
@@ -113,7 +114,7 @@ class hkVersionPatchManager : public hkReferencedObject, public hkSingleton<hkVe
 		};
 
 			/// Set class parent in patch.
- 		struct SetParentPatch
+ 		struct HK_EXPORT_COMMON SetParentPatch
 		{
 			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_SERIALIZE, SetParentPatch);
 			enum { PATCH_TYPE=PATCH_PARENT_SET };
@@ -122,7 +123,7 @@ class hkVersionPatchManager : public hkReferencedObject, public hkSingleton<hkVe
 		};
 
 			/// Set function to be called in patch.
-		struct FunctionPatch
+		struct HK_EXPORT_COMMON FunctionPatch
 		{
 			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_SERIALIZE, FunctionPatch);
 			enum { PATCH_TYPE=PATCH_FUNCTION };
@@ -131,7 +132,7 @@ class hkVersionPatchManager : public hkReferencedObject, public hkSingleton<hkVe
 		};
 
 			/// Set cast to class in patch.
-		struct CastPatch
+		struct HK_EXPORT_COMMON CastPatch
 		{
 			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_SERIALIZE, CastPatch);
 			enum { PATCH_TYPE=PATCH_CAST };
@@ -139,7 +140,7 @@ class hkVersionPatchManager : public hkReferencedObject, public hkSingleton<hkVe
 		};
 
 		/// Default changed for class member in patch.
-		struct DefaultChangedPatch
+		struct HK_EXPORT_COMMON DefaultChangedPatch
 		{
 			enum { PATCH_TYPE=PATCH_MEMBER_DEFAULT_SET };
 			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE,hkVersionPatchManager::MemberAddedPatch);
@@ -147,7 +148,7 @@ class hkVersionPatchManager : public hkReferencedObject, public hkSingleton<hkVe
 			const void* defaultPtr; ///< Pointer to new default value
 		};
 
-		class ClassWrapper: public hkReferencedObject
+		class HK_EXPORT_COMMON ClassWrapper: public hkReferencedObject
 		{
 		public:
 			HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE);
@@ -223,7 +224,7 @@ class hkVersionPatchManager : public hkReferencedObject, public hkSingleton<hkVe
 		// (like UidFromClassVersion) need to have a proper layout and to 
 		// obtain that we need to reflect this class in the tracker reflection
 		// using LLVM (the class must therefore be visible in the header)
-		class UidFromClassVersion
+		class HK_EXPORT_COMMON UidFromClassVersion
 		{
 		public:
 			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_SERIALIZE, UidFromClassVersion);
@@ -244,12 +245,14 @@ class hkVersionPatchManager : public hkReferencedObject, public hkSingleton<hkVe
 		mutable hkArray<const PatchInfo*> m_patchInfos;
 		mutable hkPointerMap<hkUint64, hkInt32> m_patchIndexFromUid;
 
+		mutable hkCriticalSection m_section;
+
 	private:
 
 		hkResult preparePatches(hkDataWorld& worldToUpdate, ClassWrapper* wrapper, hkArray<const PatchInfo*>& patchInfosOut) const;
 };
 
-class hkDefaultClassWrapper: public hkVersionPatchManager::ClassWrapper
+class HK_EXPORT_COMMON hkDefaultClassWrapper: public hkVersionPatchManager::ClassWrapper
 {
 public:
 	HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE);
@@ -272,7 +275,7 @@ HK_SINGLETON_SPECIALIZATION_DECL(hkVersionPatchManager);
 #endif // HK_SERIALIZE_PATCH_MANAGER_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

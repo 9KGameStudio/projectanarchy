@@ -8,7 +8,7 @@
 
 /// \file VScaleformImpExp.hpp
 
-#if defined (WIN32) || defined(_VISION_XENON)
+#if defined(_VISION_WIN32) || defined(_VISION_XENON)
 
   #ifdef SCALEFORMPLUGIN_EXPORTS
     #define SCALEFORM_IMPEXP __declspec(dllexport)
@@ -24,7 +24,7 @@
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

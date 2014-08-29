@@ -13,7 +13,7 @@
 class hkBitField;
 
 	/// Callback from hkaiNavMeshCutter::cutSilhouettesIncremental to query which original faces need to be cut and by what shapes.
-class hkaiNavMeshSilhouetteSelector
+class HK_EXPORT_AI hkaiNavMeshSilhouetteSelector
 {
 public:
 	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE,hkaiNavMeshSilhouetteSelector);
@@ -24,10 +24,10 @@ public:
 	virtual void getUpdatedFaces( const class hkaiNavMeshCutter* cutter, hkArray<hkaiPackedKey>::Temp& cutFaceKeysOut, hkArray<hkaiPackedKey>::Temp& uncutFaceKeysOut, const hkBitField* sectionsToUpdate ) = 0;
 
 	/// For a given face, return a list of silhouettes which are relevant to this face.
-	virtual void gatherSilhouettesForFace( hkaiPackedKey faceKey, const struct hkaiSilhouetteGenerationParameters& genParams, hkArray< hkaiCompoundSilhouette >::Temp& silsOut, hkArray< int >::Temp& silMaterialIds ) = 0;
+	virtual void gatherSilhouettesForFace( const class hkaiNavMeshCutter* cutter, hkaiPackedKey faceKey, const struct hkaiSilhouetteGenerationParameters& genParams, hkArray< hkaiCompoundSilhouette >::Temp& silsOut, hkArray< int >::Temp& silMaterialIds ) = 0;
 
-	/// Setup a multithreaded cutting job for the face
-	virtual void setupJobForFace( hkaiPackedKey faceKey, struct hkaiNavMeshCutFaceJob& job )
+	/// Setup a multithreaded cutting task for the face
+	virtual void setupTaskForFace( const class hkaiNavMeshCutter* cutter, hkaiPackedKey faceKey, class hkaiNavMeshCutFaceTask& task )
 	{
 		HK_ASSERT2(0x629988e7, false, "Multithreaded setup not supported for this selector.");
 	}
@@ -36,7 +36,7 @@ public:
 #endif // HK_NAVMESH_SILHOUETTE_SELECTOR_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

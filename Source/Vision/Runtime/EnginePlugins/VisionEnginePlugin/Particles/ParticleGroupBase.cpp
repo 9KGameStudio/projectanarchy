@@ -9,11 +9,10 @@
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/VisionEnginePluginPCH.h>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Particles/ParticleGroupBase.hpp>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Particles/ParticleGroupManager.hpp>
-#include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/Postprocessing/VPostProcessTranslucencies.hpp>
+#include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Particles/ParticleDescriptor.hpp>
 #include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/RendererNode/VRendererNodeCommon.hpp>
-#include <Vision/Runtime/Base/ThirdParty/tinyXML/TinyXMLHelper.hpp>
-#include <Vision/Runtime/Engine/System/VisApiSerialization.hpp>
-
+#include <Vision/Runtime/EnginePlugins/VisionEnginePlugin/Rendering/Postprocessing/VPostProcessTranslucencies.hpp>
+#include <Vision/Runtime/Base/Types/VType.hpp>
 
 #if defined(__SNC__)
 #pragma diag_push
@@ -32,8 +31,10 @@ static const int PARTICLEGROUPBASE_VERSION_004      = 4;      // individual wind
 static const int PARTICLEGROUPBASE_VERSION_005      = 5;      // wind speed in local space
 static const int PARTICLEGROUPBASE_VERSION_006      = 6;      // Time-Of-Day Light state
 static const int PARTICLEGROUPBASE_VERSION_007      = 7;      // Emitter mesh entity
-static const int PARTICLEGROUPBASE_VERSION_008      = 8;      // Emitter intesity
-#define PARTICLEGROUPBASE_VERSION_CURRENT   PARTICLEGROUPBASE_VERSION_008
+static const int PARTICLEGROUPBASE_VERSION_008      = 8;      // Emitter intensity
+static const int PARTICLEGROUPBASE_VERSION_009      = 9;      // Visibility object flag serialization
+static const int PARTICLEGROUPBASE_VERSION_010      = 10;     // Added "alwaysVisible" property
+#define PARTICLEGROUPBASE_VERSION_CURRENT   PARTICLEGROUPBASE_VERSION_010
 
 #if defined(__SNC__)
 #pragma diag_pop
@@ -96,32 +97,6 @@ void HandleParticlesTask_cl::Run(VManagedThread *pThread)
 
   // setup per frame variables
   m_pParticleGroup->SetPerFrameConstants(fScaledTime); // called after emitter handling (which might change it)
-  m_pParticleGroup->m_vFrameWind = m_pParticleGroup->m_vWindSpeed*fScaledTime;
-  if (m_pParticleGroup->m_bWindInLocalSpace)
-  {
-    const hkvMat3 &mRot = m_pParticleGroup->GetRotationMatrix();
-    m_pParticleGroup->m_vFrameWind = mRot * m_pParticleGroup->m_vFrameWind;
-  }
-
-  hkvVec3& vNoInertia = (hkvVec3&) m_pParticleGroup->m_vFrameWindNoInertia;
-  if (m_pParticleGroup->m_bInertiaAffectsGravity)
-  {
-    m_pParticleGroup->m_vFrameWind += m_pParticleGroup->m_spDescriptor->m_vGravity * fScaledTime;
-    vNoInertia.setZero();
-  }
-  else
-  {
-    vNoInertia = m_pParticleGroup->m_spDescriptor->m_vGravity * fScaledTime;
-  }
-
-  // transform per-frame speeds back into local space
-  if (m_pParticleGroup->GetUseLocalSpaceMatrix())
-  {
-    hkvMat3 transposedRot = m_pParticleGroup->GetRotationMatrix();
-    transposedRot.transpose();
-    m_pParticleGroup->m_vFrameWind = transposedRot * m_pParticleGroup->m_vFrameWind;
-    vNoInertia = transposedRot * vNoInertia;
-  }
 
   // now move all particles
   const int iCount = iHighWaterMark; // m_pParticleGroup->GetNumOfParticles();
@@ -145,10 +120,10 @@ void HandleParticlesTask_cl::Run(VManagedThread *pThread)
 
   // handle constraints
   if (m_pParticleGroup->m_bHandleConstraints)
-    m_pParticleGroup->HandleAllConstraints(m_fTimeDelta);
+    m_pParticleGroup->HandleAllConstraints(fScaledTime);
 
   // sort the particles according to camera distance if requested
-  if (m_pParticleGroup->m_bSortParticles)
+  if (m_pParticleGroup->GetSortParticles())
   {
     const VisContextCamera_cl *pCam = VisRenderContext_cl::GetMainRenderContext()->GetCamera();
     const hkvVec3& vCamPos = pCam->GetPosition();
@@ -169,9 +144,7 @@ void HandleParticlesTask_cl::Run(VManagedThread *pThread)
       p = particles + pSort->index;
       if (p->valid)
       {
-        vTemp.x = p->pos[0] - vCamPos.x;
-        vTemp.y = p->pos[1] - vCamPos.y;
-        vTemp.z = p->pos[2] - vCamPos.z;
+        vTemp = p->m_vPosition - vCamPos;
         fDist = vTemp.dot (vCamDir);
         if (fDist>65535.f) fDist=65535.f;
         pSort->sortkey = (unsigned short)fDist;
@@ -186,7 +159,7 @@ void HandleParticlesTask_cl::Run(VManagedThread *pThread)
   }
 
   // trail particles -> connect all (needs to be performed after all constraints etc. that might modify position)
-  if (m_pParticleGroup->m_cUseDistortion==DISTORTION_TYPE_TRAIL)
+  if (m_pParticleGroup->m_eTopology == PARTICLE_TOPOLOGY_TRAIL)
   {
     p = m_pParticleGroup->GetParticlesExt();
     const float fOverlap = m_pParticleGroup->m_spDescriptor->m_fTrailOverlap;
@@ -197,9 +170,9 @@ void HandleParticlesTask_cl::Run(VManagedThread *pThread)
       const ParticleExt_t *pOther = &p[iPrevIndex];
       if (pOther->valid) // the chain might be interrupted when particles have different lifetimes
       {
-        p[i].distortion[0] = (pOther->pos[0] - p[i].pos[0]) * fOverlap;
-        p[i].distortion[1] = (pOther->pos[1] - p[i].pos[1]) * fOverlap;
-        p[i].distortion[2] = (pOther->pos[2] - p[i].pos[2]) * fOverlap;
+        p[i].distortion[0] = (pOther->m_vPosition[0] - p[i].m_vPosition[0]) * fOverlap;
+        p[i].distortion[1] = (pOther->m_vPosition[1] - p[i].m_vPosition[1]) * fOverlap;
+        p[i].distortion[2] = (pOther->m_vPosition[2] - p[i].m_vPosition[2]) * fOverlap;
 
         iPrevIndex = (int)pOther->m_fDistortionMult; // stores the index to the previous...
         VASSERT(iPrevIndex>=0 && iPrevIndex<m_pParticleGroup->GetNumOfParticles());
@@ -207,9 +180,7 @@ void HandleParticlesTask_cl::Run(VManagedThread *pThread)
         // in order to be able make a continuous trail we need information about the next particle as well
         if (pOther2->valid)
         {
-          p[i].normal[0] = (pOther2->pos[0] - pOther->pos[0]) * fOverlap;
-          p[i].normal[1] = (pOther2->pos[1] - pOther->pos[1]) * fOverlap;
-          p[i].normal[2] = (pOther2->pos[2] - pOther->pos[2]) * fOverlap;
+          p[i].m_vNormal = (pOther2->m_vPosition - pOther->m_vPosition) * fOverlap;
         }
 
       }
@@ -217,22 +188,8 @@ void HandleParticlesTask_cl::Run(VManagedThread *pThread)
   }
 
   // update internal bounding box:
-  float fInterval = m_pParticleGroup->m_spDescriptor->m_fDynamicInflateInterval;
-  if (fInterval>=0.f)
-  {
-    m_pParticleGroup->m_fBBoxUpdateTimePos += m_fTimeDelta;
-    if (m_pParticleGroup->m_fBBoxUpdateTimePos>=fInterval)
-    {
-      if (fInterval>=0.f)
-        m_pParticleGroup->m_fBBoxUpdateTimePos = hkvMath::mod (m_pParticleGroup->m_fBBoxUpdateTimePos,fInterval);
-      m_pParticleGroup->m_BoundingBox.setInvalid();
-      m_pParticleGroup->InflateBoundingBox(true);
-      m_pParticleGroup->m_bVisibilityUpdate |= m_pParticleGroup->m_bBBoxValid; // set new bbox in main thread
-    }
-  }
-
-  // make sure the bounding box is up-to-date
-  const hkvAlignedBBox *pBBox = m_pParticleGroup->CalcCurrentBoundingBox();
+  m_pParticleGroup->m_fParticleBoundingBoxUpdateTimePos += m_fTimeDelta;
+  m_pParticleGroup->UpdateBoundingBoxes(false);
 }
 
 
@@ -242,50 +199,74 @@ void HandleParticlesTask_cl::Run(VManagedThread *pThread)
 ///////////////////////////////////////////////////////////////////////////////////
 
 
-void ParticleGroupBase_cl::InitGroup(bool bSpawnParticles, int iGeneration)
+void ParticleGroupBase_cl::InitGroup(VisParticleGroupDescriptor_cl *pDescr, VisParticleEmitter_cl *pEmitter, const hkvVec3& vSpawnPos, const hkvVec3& vOrientation, float fScaling, bool bSpawnParticles, int iGeneration)
 {
+  VASSERT(pDescr);
+
   UpdateSeed(); // For Initializing random values using seed when particle created
 
+  // Set various default values
   m_iChildIndex = 0;
   m_bInertiaAffectsGravity = true;
   m_pColorLookup = NULL;
   m_iGeneration = iGeneration;
   m_bPaused = m_bHalted = m_bIsDead = false;
   m_bUpdateLifetimeIfInvisible = false;
-  m_fColorBitmapSizeX  = m_fColorBitmapSizeY = 0.f;
+  m_fColorBitmapSizeX = m_fColorBitmapSizeY = 0.f;
   m_bHandleConstraints = true;
   m_bRenderConstraints = false;
-  m_bDistortionPlaneAligned = false;
-  m_bBBoxValid = false;
-  m_bVisibilityUpdate = true;
-  m_bAttachedToCam = false;
   m_bRepeatLifetime = false;
+
   m_fInitialDelay = 0.f;
   m_fTransformationCurveTime = m_fTransformationCurveSpeed = 0.f;
-  m_MeshBoundingBox.setZero();
-  m_eTopology = PARTICLE_TOPOLOGY_BILLBOARDS;
   m_iTrailIndex = 0;
   m_fLastTimeOfDayUpdate = -1.0f;
   m_bApplyTimeOfDayLight = true;
 
+  m_ParticleBoundingBox.setInvalid();
+  m_WorldSpaceBoundingBox.setInvalid();
+  m_LocalSpaceBoundingBox.setInvalid();
+  m_bScheduleVisibilityUpdate = true;
+
   m_iCachedParticleCount = 0;
   m_iMaxAnimFrame = 0;
   m_iMaxCachedParticleCount = PARTICLECACHESIZE_NOALLOC;
-  if (m_iCachedParticleNoAlloc!=m_piCachedParticle)
-      V_SAFE_DELETE_ARRAY(m_piCachedParticle);
+  if (m_iCachedParticleNoAlloc != m_piCachedParticle)
+    V_SAFE_DELETE_ARRAY(m_piCachedParticle);
   m_piCachedParticle = m_iCachedParticleNoAlloc;
-  SetLocalFactors(0.f,0.f); // not at all in local space
-
-  m_fBBoxUpdateTimePos = 0.f;
+  SetLocalFactors(0.f, 0.f); // not at all in local space
+  m_fParticleBoundingBoxUpdateTimePos = 0.f;
   m_bHandleWhenVisible = false; // always handle
   m_iValidCount = 0;
   m_iConstraintAffectBitMask = 0xffffffff;
   m_bHasTransformationCurves = m_bHasEvents = false;
 
+  m_vGroupMoveDeltaAccum.setZero();
+  m_pParentEffect = NULL;
+  m_pEmitterMeshEntity = NULL;
+  m_AmbientColor.SetRGBA(0, 0, 0, 0);
+  SetWindSpeed(hkvVec3::ZeroVector(), false);
+
+  m_vFrameWind.setZero();
+  m_vFrameWindNoInertia.setZero();
+  m_vSizeMultiplier.setZero();
+  m_vGroupMoveDelta.setZero();
+  m_spDescriptor = pDescr;
+
+  // Emitter will be overridden by default emitter in OnDescriptorChanged if no emitter was set.
+  SetEmitter(pEmitter);
+
+  // Set basic orientation, position and scale options before OnDescriptorChanged so that potential child effects can read valid values.
+  m_vOldPos = vSpawnPos;
+  m_vPosition = vSpawnPos;
+  m_fScaling = fScaling; // Do not use setter because descriptor is not yet initialized.
+  SetOrientation(vOrientation.x, vOrientation.y, vOrientation.z);
+
   // modify properties from descriptor
   OnDescriptorChanged();
 
-  VisParticleEmitter_cl *pEmitter = GetEmitter();
+  // Could be overridden by default emitter in OnDescriptorChanged
+  pEmitter = GetEmitter();
   VASSERT(pEmitter || m_pParentGroup);
 
   m_iRemainingParticleCount = -1;
@@ -318,10 +299,10 @@ void ParticleGroupBase_cl::InitGroup(bool bSpawnParticles, int iGeneration)
   VASSERT(iParticleCount>0);
   SetParticleStride(sizeof(ParticleExt_t));
   Init( 0, iParticleCount);
-  InitParticleIndexList(m_bSortParticles);
+  InitParticleIndexList(GetSortParticles());
 
   // init cache and estimate how much we need
-  // there is no reason to scale it with the overall number particles, as long as we have aenough particles per frame
+  // there is no reason to scale it with the overall number particles, as long as we have enough particles per frame
   int iWantedCacheSize = (int)(fPps*0.08f); // (fPps*0.08f) is number of spawned p at low fps
   if (iWantedCacheSize<PARTICLECACHESIZE_NOALLOC)
     iWantedCacheSize = PARTICLECACHESIZE_NOALLOC;
@@ -368,6 +349,7 @@ void ParticleGroupBase_cl::InitGroup(bool bSpawnParticles, int iGeneration)
   SetUseSmoothAnimationFading(m_spDescriptor->m_bUseSmoothAnimation);
   SetParticleSizeAspectRatio(m_spDescriptor->m_fSizeAspect);
   SetAlwaysInForeGround(m_spDescriptor->m_bAlwaysInForeground);
+  SetUseOcclusionCulling(m_spDescriptor->m_bUseOcclusionCulling);
   SetObjectFlag(VObjectFlag_AutoDispose); // so the particle effect layer gets deleted automatically
 
   ////////////////////////////////////////////////////////
@@ -379,100 +361,51 @@ void ParticleGroupBase_cl::InitGroup(bool bSpawnParticles, int iGeneration)
   if (!m_pHandlingTask)
     m_pHandlingTask = new HandleParticlesTask_cl(this);
 
-  #ifdef WIN32
+  #ifdef _VISION_WIN32
     m_pParticleDesaturationGroup = NULL;
   #endif
   //VASSERT(GetVisibilityObject());
 }
 
+ParticleGroupBase_cl::ParticleGroupBase_cl(VisParticleGroupDescriptor_cl *pDescr, VisParticleEmitter_cl *pEmitter, const hkvVec3& vSpawnPos, unsigned int uiRandomSeed)
+  : IVPhysicsParticleCollection_cl(uiRandomSeed)
+  , m_pParentGroup(NULL)
+  , m_piCachedParticle(NULL)
+  , m_pHandlingTask(NULL)
 
-ParticleGroupBase_cl::ParticleGroupBase_cl(VisParticleGroupDescriptor_cl *pDescr, VisParticleEmitter_cl *pEmitter, const hkvVec3& vSpawnPos, unsigned int uiRandomSeed) :
-  IVPhysicsParticleCollection_cl(uiRandomSeed)
 {
-  VASSERT(pDescr);
-  m_fTransformationCurveTime = 0.f; // need to be set before SetScaling
-  m_fScaling = -1.f; // force update in SetScaling
-  m_pHandlingTask = NULL;
-  m_vOldPos = vSpawnPos;
-  m_pParentGroup = NULL;
-  m_pParentEffect = NULL;
-  m_spDescriptor = pDescr;
-  m_piCachedParticle = NULL;
-  SetPosition(vSpawnPos);
-  SetOrientation(0.f,0.f,0.f);
-  SetScaling(1.f);
-  SetEmitter(pEmitter);
-  m_pEmitterMeshEntity = NULL;
-  m_AmbientColor.SetRGBA(0,0,0,0);
-  SetWindSpeed(hkvVec3::ZeroVector (), false);
-  InitGroup(true);
+  InitGroup(pDescr, pEmitter, vSpawnPos, hkvVec3(0.f, 0.f, 0.f), 1.0f, true);
 }
 
-ParticleGroupBase_cl::ParticleGroupBase_cl(VisParticleGroupDescriptor_cl *pDescr, VisParticleEmitter_cl *pEmitter, const hkvVec3& vSpawnPos, const hkvVec3& vOrientation, bool bSpawnParticles, unsigned int uiRandomSeed) :
-  IVPhysicsParticleCollection_cl(uiRandomSeed)
+ParticleGroupBase_cl::ParticleGroupBase_cl(VisParticleGroupDescriptor_cl *pDescr, VisParticleEmitter_cl *pEmitter, const hkvVec3& vSpawnPos, const hkvVec3& vOrientation, bool bSpawnParticles, unsigned int uiRandomSeed)
+  : IVPhysicsParticleCollection_cl(uiRandomSeed)
+  , m_pParentGroup(NULL)
+  , m_piCachedParticle(NULL)
+  , m_pHandlingTask(NULL)
 {
-  VASSERT(pDescr);
-  m_fTransformationCurveTime = 0.f; // need to be set before SetScaling
-  m_fScaling = -1.f; // force update in SetScaling
-  m_pHandlingTask = NULL;
-  m_vOldPos = vSpawnPos;
-  m_pParentGroup = NULL;
-  m_pParentEffect = NULL;
-  m_spDescriptor = pDescr;
-  m_piCachedParticle = NULL;
-  m_AmbientColor.SetRGBA(0,0,0,0);
-  SetPosition(vSpawnPos);
-  SetOrientation(vOrientation.x,vOrientation.y,vOrientation.z);
-  SetScaling(1.f);
-  SetEmitter(pEmitter);
-  m_pEmitterMeshEntity = NULL;
-  SetWindSpeed(hkvVec3::ZeroVector (), false);
-  InitGroup(bSpawnParticles);
+  InitGroup(pDescr, pEmitter, vSpawnPos, vOrientation, 1.0f, bSpawnParticles);
 }
 
-ParticleGroupBase_cl::ParticleGroupBase_cl(VisParticleGroupDescriptor_cl *pDescr, VisParticleEmitter_cl *pEmitter, const hkvVec3& vSpawnPos, const hkvVec3& vOrientation, float fScaling, bool bSpawnParticles, unsigned int uiRandomSeed) :
-  IVPhysicsParticleCollection_cl(uiRandomSeed)
+ParticleGroupBase_cl::ParticleGroupBase_cl(VisParticleGroupDescriptor_cl *pDescr, VisParticleEmitter_cl *pEmitter, const hkvVec3& vSpawnPos, const hkvVec3& vOrientation, float fScaling, bool bSpawnParticles, unsigned int uiRandomSeed)
+  : IVPhysicsParticleCollection_cl(uiRandomSeed)
+  , m_pParentGroup(NULL)
+  , m_piCachedParticle(NULL)
+  , m_pHandlingTask(NULL)
 {
-  VASSERT(pDescr);
-  m_fTransformationCurveTime = 0.f; // need to be set before SetScaling
-  m_fScaling = -1.f; // force update in SetScaling
-  m_pHandlingTask = NULL;
-  m_vOldPos = vSpawnPos;
-  m_pParentGroup = NULL;
-  m_pParentEffect = NULL;
-  m_spDescriptor = pDescr;
-  m_AmbientColor.SetRGBA(0,0,0,0);
-  m_piCachedParticle = NULL;
-  SetPosition(vSpawnPos);
-  SetOrientation(vOrientation.x,vOrientation.y,vOrientation.z);
-  SetScaling(fScaling);
-  SetEmitter(pEmitter);
-  m_pEmitterMeshEntity = NULL;
-  SetWindSpeed(hkvVec3::ZeroVector (), false);
-  InitGroup(bSpawnParticles);
+  InitGroup(pDescr, pEmitter, vSpawnPos, vOrientation, fScaling, bSpawnParticles);
 }
 
-
-
-ParticleGroupBase_cl::ParticleGroupBase_cl(VisParticleGroupDescriptor_cl *pDescr, ParticleGroupBase_cl *pParent, int iGeneration, unsigned int uiRandomSeed) :
-  IVPhysicsParticleCollection_cl(uiRandomSeed)
+ParticleGroupBase_cl::ParticleGroupBase_cl(VisParticleGroupDescriptor_cl *pDescr, ParticleGroupBase_cl *pParent, int iGeneration, unsigned int uiRandomSeed)
+  : IVPhysicsParticleCollection_cl(uiRandomSeed)
+  , m_pParentGroup(pParent)
+  , m_piCachedParticle(NULL)
+  , m_pHandlingTask(NULL)
 {
-  VASSERT(pDescr);
-  VASSERT(pParent);
-  m_fTransformationCurveTime = 0.f; // need to be set before SetScaling
-  m_fScaling = -1.f; // force update in SetScaling
-  m_AmbientColor.SetRGBA(0,0,0,0);
-  m_pHandlingTask = NULL;
-  m_pParentEffect = NULL;
-  m_pParentGroup = pParent;
-  m_spDescriptor = pDescr;
-  m_piCachedParticle = NULL;
-  SetScaling(pParent->GetScaling());
-  SetWindSpeed(hkvVec3::ZeroVector (), false);
-  m_pEmitterMeshEntity = NULL;
-  InitGroup(false,iGeneration);
+  VASSERT(m_pParentGroup);
+  
+  // Constructor used for OnDestroy particles, emitter is intentionally left empty, it will automatically use the default descriptor emitter.
+  InitGroup(pDescr, NULL, pParent->GetPosition(), pParent->GetOrientation(), pParent->GetScaling(), false, iGeneration);
 }
-
 
 void ParticleGroupBase_cl::RemoveUpdaterTaskRecursive(ParticleGroupBase_cl *pGroup)
 {
@@ -483,6 +416,11 @@ void ParticleGroupBase_cl::RemoveUpdaterTaskRecursive(ParticleGroupBase_cl *pGro
   RemoveUpdaterTaskRecursive(pGroup->m_spOnDestroyCreateGroup);
 }
 
+void ParticleGroupBase_cl::UpdateDefaultShaderFlags()
+{
+  VisParticleGroup_cl::UpdateDefaultShaderFlags();
+  ReassignShader(false);
+}
 
 ParticleGroupBase_cl::~ParticleGroupBase_cl()
 {
@@ -495,91 +433,73 @@ ParticleGroupBase_cl::~ParticleGroupBase_cl()
 
 void ParticleGroupBase_cl::ReassignShader(bool bRecreateFX)
 {
-  bool bTrackLightGrid = false;
   VisEffectConfig_cl &fxConfig = m_spDescriptor->m_CustomEffectConfig;
   if (bRecreateFX)
     fxConfig.ReAssignEffect();
 
-  VCompiledEffect *pFX = fxConfig.GetEffect();
+  // Get particle shading flags
+  VisParticleGroup_cl::ParticleShaderFlags_e iParticleShaderFlags = GetDefaultShaderFlags();
+  bool bTrackLightGrid = (iParticleShaderFlags & PARTICLESHADERFLAGS_LIGHTING_STATIC) != 0;
+
+  // Warn if soft particles enabled but not usable depth buffer can't be read.
+  if (iParticleShaderFlags & PARTICLESHADERFLAGS_SOFTPARTICLES)
+  {
+    VRendererNodeCommon* pRenderer = vdynamic_cast<VRendererNodeCommon*>(Vision::Renderer.GetRendererNode(0));
+    if (pRenderer == NULL || (pRenderer->GetSupportedBufferFlags() & VBUFFERFLAG_DEPTH) == 0)
+    {
+      hkvLog::Info("Particle layer \"%s\": Soft particles aren't supported by the current renderer node. Option will be deactivated.", m_spDescriptor->GetName());
+    }
+  }
+
+  // Get Effect from config.
+  VCompiledEffect* pFX = fxConfig.GetEffect();
+
+  // No user defined effect
 #if !defined(_VISION_MOBILE)
-  // assign default effect for geometry particles here
-  if (GetGeometry()!=NULL && pFX==NULL)
+  if (pFX == NULL && m_eTopology == PARTICLE_TOPOLOGY_TRAIL)
   {
-    VShaderEffectLib *pLib = Vision::Shaders.LoadShaderLibrary("\\Shaders\\GeometryParticles.ShaderLib",SHADERLIBFLAG_HIDDEN);
-    // choose depth write automatically when the transparency type suggests this
-    bool bOpaque = GetTransparencyType()==VIS_TRANSP_NONE || GetTransparencyType()==VIS_TRANSP_ALPHATEST;
-    char szParams[128];
-    sprintf(szParams,"DepthWrite=%s",bOpaque ? "true":"false");
-    pFX = Vision::Shaders.CreateEffect("GeometryParticles",szParams,EFFECTCREATEFLAG_NONE,pLib);
-  } 
-  else if (m_eTopology==PARTICLE_TOPOLOGY_TRAIL && pFX==NULL)
-  {
-    VShaderEffectLib *pLib = Vision::Shaders.LoadShaderLibrary("\\Shaders\\TrailParticles.ShaderLib",SHADERLIBFLAG_HIDDEN);
-    pFX = Vision::Shaders.CreateEffect("TrailParticles",NULL,EFFECTCREATEFLAG_NONE,pLib);
-  }
-  else if (m_spDescriptor->m_bSoftParticles && pFX==NULL)
-  {
-    // soft particles only work when a renderer node is set
-    VRendererNodeCommon* pRenderer = NULL;
-    if ((pRenderer = vdynamic_cast<VRendererNodeCommon*>(Vision::Renderer.GetRendererNode(0))) &&
-        (pRenderer->GetSupportedBufferFlags() & VBUFFERFLAG_DEPTH) != 0)
-    {
-      VShaderEffectLib *pLib = Vision::Shaders.LoadShaderLibrary("\\Shaders\\SoftParticles.ShaderLib",SHADERLIBFLAG_HIDDEN);
-      pFX = Vision::Shaders.CreateEffect("SoftParticles",NULL,EFFECTCREATEFLAG_NONE,pLib);
-    }
-    else
-    {
-      hkvLog::Info("Warning: Particle layer \"%s\": Soft particles aren't supported by the current renderer node.", m_spDescriptor->GetName());
-    }
+    VShaderEffectLib *pLib = Vision::Shaders.LoadShaderLibrary("\\Shaders\\TrailParticles.ShaderLib", SHADERLIBFLAG_HIDDEN);
+    pFX = Vision::Shaders.CreateEffect("TrailParticles", NULL, EFFECTCREATEFLAG_NONE, pLib);
   }
 #endif
 
-  // get technique
-  if (pFX!=NULL)
+  // No effect means use default technique.
+  if (pFX == NULL)
   {
-    // select the right sub-technique from the effect - smooth animation and hardware spanning flag
-    int iFlags = GetHardwareSpanning() ? PARTICLESHADERFLAGS_HARDWARESPANNING : PARTICLESHADERFLAGS_NONE;
-    if (GetUseSmoothAnimationFading())
-      iFlags |= PARTICLESHADERFLAGS_SMOOTHANIMATION;
-#ifndef SUPPORTS_ALPHATEST_BLENDSTATE
-    if (GetTransparencyType() == VIS_TRANSP_ALPHATEST)
-      iFlags |= PARTICLESHADERFLAGS_ALPHATESTINSHADER;
-#endif
-
+    SetTechnique(NULL);
+  }
+  else
+  {
     // create effect config
     VTechniqueConfig config;
-    Vision::RenderLoopHelper.GetParticleEffectConfig((ParticleShaderFlags_e)iFlags, config);
+    Vision::GetApplication()->GetShaderProvider()->GetParticleEffectConfig(iParticleShaderFlags, config);
 
-    // find and set technique
-    VCompiledTechnique *pTech = pFX->FindCompatibleTechnique(&config);
-    if (pTech==NULL) 
-      pTech = pFX->GetDefaultTechnique();
-    SetTechnique(pTech);
-    bTrackLightGrid = VisParticleGroupDescriptor_cl::TechniqueUsesLightGrid(pTech);
-  }
-  else
-  {
-    // select the default particles shader
-    SetTechnique(NULL);
-    VCompiledShaderPass *pShader = GetDefaultShader();
-    if (pShader)
+    // find technique
+    VCompiledTechnique* pTechnique = pFX->FindCompatibleTechnique(&config);
+    if (pTechnique == NULL)
+      pTechnique = pFX->GetDefaultTechnique();
+    if (pTechnique == NULL)
+      hkvLog::Error("Could not create technique from user defined particle shader. Will fall back to built-in default shader.");
+    SetTechnique(pTechnique);
+
+    // Get lightgrid settings.
+    if (pTechnique)
     {
-      int iTrackingMask = pShader->GetRenderState()->GetTrackingMask();
-      bTrackLightGrid = (iTrackingMask & 
-        (VSHADER_TRACKING_LIGHTGRID_PS | VSHADER_TRACKING_LIGHTGRID_VS | VSHADER_TRACKING_LIGHTGRID_GS)) > 0;
+      VCompiledShaderPass* pShader = pTechnique->GetShader(0);
+      if (pShader)
+      {
+        unsigned int iTrackingMask = pShader->GetRenderState()->GetTrackingMask();
+        bTrackLightGrid |= (iTrackingMask & (VSHADER_TRACKING_LIGHTGRID_PS | VSHADER_TRACKING_LIGHTGRID_VS | VSHADER_TRACKING_LIGHTGRID_GS)) != 0;
+      }
     }
   }
 
-  if (bTrackLightGrid)
+  // Update light color and light tracking settings.
+  if (m_pParentEffect)
   {
-    SetLightGridColorPtr(m_pParentEffect->m_OwnLGColors);
-    m_pParentEffect->m_bUseLightgrid = true;
+    SetLightGridColorPtr(bTrackLightGrid ? m_pParentEffect->m_OwnLGColors : NULL);
+    m_pParentEffect->UpdateLightTrackingSettings();
   }
-  else
-  {
-    SetLightGridColorPtr(NULL);
-  }
-
 }
 
 void ParticleGroupBase_cl::Finalize()
@@ -597,8 +517,6 @@ float ParticleGroupBase_cl::GetSortingDistance(const VisObject3D_cl *pCamera)
   fDist -= (float)m_iChildIndex*Vision::World.GetGlobalUnitScaling(); // there should be a well defined order between particle layers
   return fDist;
 }
-
-
 
 void ParticleGroupBase_cl::SetInitialTransformation()
 {
@@ -640,9 +558,8 @@ void ParticleGroupBase_cl::OnDescriptorChanged()
   //////////////////////////////////////////////
   // geometry
   //////////////////////////////////////////////
-  m_eTopology = m_spDescriptor->m_eTopology;
+  SetTopology(static_cast<VIS_PARTICLE_TOPOLOGY_e>(m_spDescriptor->m_eTopology));
   SetGeometry(m_spDescriptor->m_spGeometry);
-  m_MeshBoundingBox = m_spDescriptor->m_MeshBoundingBox;
 
   //////////////////////////////////////////////
   // rotation
@@ -693,29 +610,23 @@ void ParticleGroupBase_cl::OnDescriptorChanged()
   FadeDistancesFromDesc();
 
   // start at random time position past m_fDynamicInflateInterval to invoke the first update of the bounding box immediately.
-  m_fBBoxUpdateTimePos = (1.0f + GetRandom().GetFloat()) * m_spDescriptor->m_fDynamicInflateInterval;
-  m_bBBoxValid = m_spDescriptor->m_BoundingBox.isValid();
-  if (m_bBBoxValid)
-  {
-    if (m_spDescriptor->m_bLocalSpace)
-    {
-      m_BoundingBox = m_spDescriptor->m_BoundingBox;
-    } else
-    {
-      m_BoundingBox.setInvalid();
-
-      hkvAlignedBBox temp = m_spDescriptor->m_BoundingBox;
-      temp.transformFromOrigin (hkvMat4 (m_cachedRotMatrix,m_vPosition));
-      m_BoundingBox.expandToInclude (temp);
-    }
-    VisParticleGroup_cl::SetBoundingBox(m_BoundingBox);
-  }
+  m_fParticleBoundingBoxUpdateTimePos = (1.0f + GetRandom().GetFloat()) * m_spDescriptor->m_fDynamicInflateInterval;
 
   m_bIsDead = false;
-  m_bVisibilityUpdate = true;
   m_bHandleWhenVisible = m_spDescriptor->m_bHandleWhenVisible;
 
+  // soft particles
+  SetRenderSoftParticles(m_spDescriptor->m_bSoftParticles);
 
+  // lighting options
+  SetLightingStatic(m_spDescriptor->m_bLightingStatic);
+  SetLightingDynamic(m_spDescriptor->m_bLightingDynamic);
+  SetTessellationEnabled(m_spDescriptor->m_bDomainFreqSamplingEnabled);
+  SetTessellationFactorPixelPerVertex(m_spDescriptor->m_fDomainFreqSamplingPixelPerVertex);
+  SetShadowReceive(m_spDescriptor->m_bShadowReceive);
+  SetBacklightingScale(m_spDescriptor->m_fBacklightingScale);
+  SetUseNormalFromDiffAlpha(m_spDescriptor->m_bUseNormalFromDiffAlpha);
+  
   // local positioning:
   // 0% : no local space at all
   // 50% : in local space at particle lifetime start but none at end
@@ -725,50 +636,26 @@ void ParticleGroupBase_cl::OnDescriptorChanged()
   SetLocalFactors(fAtStart,fAtEnd);
   SetUseLocalSpaceMatrix(m_spDescriptor->m_bLocalSpace); // real local space?
 
-  // distortion & normal
-  m_bDistortionPlaneAligned = m_spDescriptor->m_bDistortionPlaneAligned;
-
-  if (m_spDescriptor->m_bDistorted)
-  {
-    if (m_spDescriptor->m_bDistortionSizeMode)
-    {
-      m_cUseDistortion = DISTORTION_TYPE_SIZEMODE;
-      m_vSizeMultiplier = m_spDescriptor->m_vSizeMultiplier;
-    }
-    else if (m_spDescriptor->m_FixDistortionLength.IsDefined())
-    {
-      m_cUseDistortion = DISTORTION_TYPE_FIXLEN;
-    }
-    else
-    {
-      m_cUseDistortion = DISTORTION_TYPE_VELOCITY;
-    }
-  }
-  else
-  {
-    m_cUseDistortion = 0;
-  }
-  if (m_eTopology==PARTICLE_TOPOLOGY_TRAIL)
-  {
-    m_cUseDistortion = DISTORTION_TYPE_TRAIL;
-    SetParticleCenter(0.f,0.5f);
-  }else
+  // center
+  if (m_eTopology != PARTICLE_TOPOLOGY_TRAIL)
   {
     const hkvVec2 &vCenter(m_spDescriptor->m_vParticleCenter);
     SetParticleCenter(vCenter.x,vCenter.y);
   }
+
   SetDepthOffset(m_spDescriptor->m_fDepthOffset);
 
   // normal
-  m_bUseNormals = m_spDescriptor->m_bUseNormal || m_bDistortionPlaneAligned;
+  SetUseNormals(m_spDescriptor->m_bDistortionPlaneAligned || m_eTopology == PARTICLE_TOPOLOGY_RINGWAVE);
 
+  SetSizeMultiplier(m_spDescriptor->m_vSizeMultiplier);
 
-  // sorting (upon initilization, the index list for sorting is initialized in the InitGroup function)
-  m_bSortParticles = m_spDescriptor->m_bSortParticles;
-  InitParticleIndexList(m_bSortParticles);
+  // sorting (upon initialization, the index list for sorting is initialized in the InitGroup function)
+  SetSortParticles(m_spDescriptor->m_bSortParticles);
+  InitParticleIndexList(GetSortParticles());
 
   // render order - under certain circumstances, force a specific order constant
-  #if defined(WIN32) || defined(_VR_GLES2)
+  #if defined(_VISION_WIN32) || defined(_VR_GLES2)
     const bool bQuarterSizeParticles = false;
 
   #else
@@ -802,12 +689,12 @@ void ParticleGroupBase_cl::OnDescriptorChanged()
   // create a new group for destroying particles
   ////////////////////////////////////////////////
 
-  if (m_spDescriptor->m_OnDestroyCreateCount.IsDefined() && m_iGeneration<MAX_ONDESTROY_GROUPDEPTH)
+  if (m_spDescriptor->m_OnDestroyCreateCount.IsDefined() && m_iGeneration < MAX_ONDESTROY_GROUPDEPTH)
   {
     VisParticleGroupDescriptor_cl *pDestroyDesc = m_spDescriptor->m_spDestroyCreateDesc;
     if (pDestroyDesc)
     {
-      m_spOnDestroyCreateGroup = new ParticleGroupBase_cl(pDestroyDesc,this,m_iGeneration+1, GetBaseSeed());
+      m_spOnDestroyCreateGroup = new ParticleGroupBase_cl(pDestroyDesc, this, m_iGeneration + 1, GetBaseSeed());
       m_spOnDestroyCreateGroup->ReassignShader(false);
     }
   }
@@ -827,6 +714,10 @@ void ParticleGroupBase_cl::OnDescriptorChanged()
 
   // events
   m_bHasEvents = m_spDescriptor->m_EventList.GetEventCount()>0;
+
+  m_bUseVisibility = !m_spDescriptor->m_bAlwaysVisible;
+
+  UpdateBoundingBoxes();
 }
 
 void ParticleGroupBase_cl::FadeDistancesFromDesc()
@@ -846,7 +737,7 @@ void ParticleGroupBase_cl::GetDependencies(VResourceSnapshot &snapshot)
 
 #endif
 
-void ParticleGroupBase_cl::ModSysNotifyFunctionCommand(int command)
+void ParticleGroupBase_cl::ModSysNotifyFunctionCommand(int command, void *param)
 {
   if (command==VIS_MODSYSCMD_RECOMPUTEVISIBILITY)
   {
@@ -917,6 +808,7 @@ void ParticleGroupBase_cl::RespawnAllParticles(bool bUseOldCount)
   {
     VASSERT(!pParticle->valid);
     InitSingleParticle(pParticle); // asserts when index>=m_iHighWaterMark 
+
     float fLifeTimeInc = pParticle->m_fLifeTimeInc;
     if (i>0 && fLifeTimeInc>0.f)
     {
@@ -926,7 +818,8 @@ void ParticleGroupBase_cl::RespawnAllParticles(bool bUseOldCount)
       SetPerFrameConstants(dtime);
       for (int j=0;j<iIterations;j++)
         HandleSingleParticle(pParticle,dtime);
-    } else
+    }
+    else
     {
       SetPerFrameConstants(0.f);
       HandleSingleParticle(pParticle,0.f);
@@ -935,28 +828,28 @@ void ParticleGroupBase_cl::RespawnAllParticles(bool bUseOldCount)
   
   HandleAllConstraints(0.f);
 
-  if (m_cUseDistortion==DISTORTION_TYPE_TRAIL)
+  if (m_eTopology == PARTICLE_TOPOLOGY_TRAIL)
   {
     pParticle = pArray;
     for (int i=0;i<iStartupCount;i++,pParticle++)
     {
       int iPrevIndex = hkvMath::Max(i-1,0);
-      pParticle->m_fDistortionMult = (float)iPrevIndex +0.1f; // stores the index to the previous...
+      pParticle->m_fDistortionMult = (float)iPrevIndex + 0.5f; // stores the index to the previous...
       const ParticleExt_t *pOther = &pArray[iPrevIndex];
-      pParticle->distortion[0] = pOther->pos[0] - pParticle->pos[0];
-      pParticle->distortion[1] = pOther->pos[1] - pParticle->pos[1];
-      pParticle->distortion[2] = pOther->pos[2] - pParticle->pos[2];
+      pParticle->distortion[0] = pOther->m_vPosition[0] - pParticle->m_vPosition[0];
+      pParticle->distortion[1] = pOther->m_vPosition[1] - pParticle->m_vPosition[1];
+      pParticle->distortion[2] = pOther->m_vPosition[2] - pParticle->m_vPosition[2];
       // in order to be able make a continuous trail we need information about the next particle as well
       iPrevIndex = hkvMath::Max(i-2,0);
       const ParticleExt_t *pOther2 = &pArray[iPrevIndex];
-      pParticle->normal[0] = pOther2->pos[0] - pOther->pos[0];
-      pParticle->normal[1] = pOther2->pos[1] - pOther->pos[1];
-      pParticle->normal[2] = pOther2->pos[2] - pOther->pos[2];
+      pParticle->m_vNormal = pOther2->m_vPosition - pOther->m_vPosition;
 
     }
     m_iTrailIndex = iStartupCount-1;
   }
 
+  m_fParticleBoundingBoxUpdateTimePos = m_spDescriptor->m_fDynamicInflateInterval; // Force inflate.
+  UpdateBoundingBoxes();
 }
 
 
@@ -978,12 +871,9 @@ void ParticleGroupBase_cl::MoveParticles(const hkvVec3& vDelta)
   const int iParticleCount = m_iHighWaterMark;
   int i;
   ParticleExt_t *p = GetParticlesExt();
+
   for (i=0;i<iParticleCount;i++,p++) if (p->valid)
-  {
-    p->pos[0] += vDelta.x;
-    p->pos[1] += vDelta.y;
-    p->pos[2] += vDelta.z;
-  }
+    p->m_vPosition += vDelta;
 
   if (m_spEmitter!=NULL)
     m_spEmitter->m_vLastEmitterPos += vDelta;
@@ -997,23 +887,48 @@ void ParticleGroupBase_cl::SetLocalFactors(float fAtLifetimeStart, float fAtLife
   m_bMovesWithEmitter = fAtLifetimeStart>0.f || fAtLifetimeEnd>0.f;
 }
 
+
+ 
+void ParticleGroupBase_cl::SetPerFrameConstants(float dtime)
+{
+  if (m_spDescriptor->m_fFriction>0.f)
+    m_fFrameFriction = hkvMath::pow(1.f-m_spDescriptor->m_fFriction, dtime);
+  else 
+    m_fFrameFriction = 1.f;
+
+  m_vFrameWind = m_vWindSpeed*dtime;
+  if (m_bWindInLocalSpace)
+  {
+    const hkvMat3 &mRot = GetRotationMatrix();
+    m_vFrameWind = mRot.transformDirection(m_vFrameWind);
+  }
+
+  if (g_ParticleGroupManager.m_pWindHandler!=NULL)
+    m_vFrameWind += g_ParticleGroupManager.m_pWindHandler->GetWindVelocityAtPosition(GetPosition()) * dtime;
+
+  if (m_bInertiaAffectsGravity)
+  {
+    m_vFrameWind += m_spDescriptor->m_vGravity * dtime;
+    m_vFrameWindNoInertia.setZero();
+  }
+  else
+    m_vFrameWindNoInertia = m_spDescriptor->m_vGravity * dtime;
+
+  // transform per-frame speeds back into local space
+  if (GetUseLocalSpaceMatrix())
+  {
+    hkvMat3 transposedRot = GetRotationMatrix();
+    transposedRot.transpose();
+    m_vFrameWind = transposedRot.transformDirection(m_vFrameWind);
+    m_vFrameWindNoInertia = transposedRot.transformDirection(m_vFrameWindNoInertia);
+  }
+}
+
+
  
 void ParticleGroupBase_cl::UpdateVisibilityObject()
 {
-  m_bVisibilityUpdate = false;
-  const hkvAlignedBBox *pBBox = CalcCurrentBoundingBox(); 
-
-  if (!pBBox) // no valid visibility box
-  {
-    //VisParticleGroup_cl::SetCheckVisibility(FALSE); // this destroys it...
-    VisVisibilityObject_cl *pVisObj = GetVisibilityObject();
-    if (pVisObj)
-      pVisObj->SetActivate(FALSE);
-    return;
-  }
-  VASSERT(pBBox->isValid());
-  VisParticleGroup_cl::SetBoundingBox(*pBBox); // enables visibility
-  GetVisibilityObject()->SetActivate(TRUE);
+  UpdateBoundingBoxes();
 }
 
 
@@ -1027,18 +942,13 @@ void ParticleGroupBase_cl::CopyParentPosition()
 
 void ParticleGroupBase_cl::SetAmbientColor(VColorRef iColor)
 {
-  // clamp to white
-  iColor.r = (UBYTE) (hkvMath::Min (iColor.r, 255));
-  iColor.g = (UBYTE) (hkvMath::Min (iColor.g, 255));
-  iColor.b = (UBYTE) (hkvMath::Min (iColor.b, 255));
-
   if (m_spOnDestroyCreateGroup) 
     m_spOnDestroyCreateGroup->SetAmbientColor(iColor);
 
   m_AmbientColor = iColor;
 
   // update the final color
-  EvaluateSceneBrightness ();
+  EvaluateSceneBrightness();
 }
 
 
@@ -1047,83 +957,48 @@ void ParticleGroupBase_cl::EvaluateSceneBrightness()
   // reset this state
   m_bEvaluateBrightnessNextFrame = false;
 
-  if (m_spDescriptor->m_fApplySceneBrightness <= 0.0f)
+  if (m_spDescriptor->m_fApplySceneBrightness <= 0.0f || GetLightingStatic())
   {
-    // if scene brightness should not be used, just pass through the ambient color
-    m_InstanceColor.SetRGB (255, 255, 255);;
+    m_InstanceColor.SetRGB(255, 255, 255);
   }
-  else
+  else if (GetParentEffect() != NULL)
   {
-    VColorRef SceneBrightnessColor;
+    VColorRef sceneBrightnessColor;
 
-    // init scene color with the default lighting color
-    SceneBrightnessColor = Vision::Renderer.GetDefaultLightingColor();
-
+    // Use lightgrid for scene brightness if available
     VLightGrid_cl* pLightGrid = GetParentEffect()->GetRelevantLightGrid();
     if (pLightGrid)
     {
-      const hkvVec3 evalPos = GetPosition();
-      const hkvVec3 vLGPos (evalPos.x, evalPos.y, evalPos.z);
-
       hkvVec3 destColor;
+      pLightGrid->GetAverageColorAtPositionI(GetPosition() + GetLightSamplingOffset(), destColor);
+      if (pLightGrid->GetLightGridType() == VLIGHTGRIDTYPE_AMBIENTDIRECTIONAL)
+        destColor *= 2.0f;
 
-      // get the light grid color, depending on the type of lightgrid
-      if (pLightGrid->GetLightGridType() == VLIGHTGRIDTYPE_6COLORS)
+      sceneBrightnessColor.FromFloat(destColor);
+    }
+    else
+    {
+      // Otherwise use time of day if available.
+      IVTimeOfDay* pTimeOfDay = Vision::Renderer.GetTimeOfDayHandler();
+      if (m_bApplyTimeOfDayLight && pTimeOfDay != NULL)
       {
-        pLightGrid->GetMaximumColorAtPositionI(vLGPos, destColor, 0xFF);
+        // store when we last updated the time-of-day stuff
+        m_fLastTimeOfDayUpdate = pTimeOfDay->GetDayTime();
+        sceneBrightnessColor = pTimeOfDay->GetAmbientColor() + pTimeOfDay->GetSunColor(); // heuristic to determine ToD contribution
       }
       else
       {
-        hkvVec3 tmpColor[3];
-        pLightGrid->GetColorsAtPositionI(vLGPos, tmpColor, 0xFF);
-        destColor = tmpColor[0];
+        sceneBrightnessColor = Vision::Renderer.GetDefaultLightingColor();
       }
-
-      destColor *= 255.0f;
-
-      // clamp color to white
-      {
-        destColor.x = hkvMath::Min (255.0f, destColor.x);
-        destColor.y = hkvMath::Min (255.0f, destColor.y);
-        destColor.z = hkvMath::Min (255.0f, destColor.z);
-      }
-
-      // set the light-grid color as the basic light color
-      SceneBrightnessColor.SetRGBA ((UBYTE) destColor.x, (UBYTE) destColor.y, (UBYTE) destColor.z, 255);
     }
 
-    IVTimeOfDay* ToD = Vision::Renderer.GetTimeOfDayHandler();
+    // Add instance ambient color on top of that.
+    sceneBrightnessColor += m_AmbientColor;
 
-    // init the current ambient with black
-    VColorRef CurrentAmbient (0, 0, 0);
-
-    // Time-of-Day Brightness
-    if ((m_bApplyTimeOfDayLight) && (ToD != NULL))
-    {
-      // store when we last updated the time-of-day stuff
-      m_fLastTimeOfDayUpdate = ToD->GetDayTime ();
-      CurrentAmbient = ToD->GetAmbientColor() + ToD->GetSunColor(); // heuristic to determine ToD contribution
-    }
-
-    // take the maximum of the current own light value (light-grid) and the current ambient light (time-of-day OR scene-ambient)
-    {
-      SceneBrightnessColor.r = hkvMath::Max (SceneBrightnessColor.r, CurrentAmbient.r);
-      SceneBrightnessColor.g = hkvMath::Max (SceneBrightnessColor.g, CurrentAmbient.g);
-      SceneBrightnessColor.b = hkvMath::Max (SceneBrightnessColor.b, CurrentAmbient.b);
-    }
-
-    // add the entities ambient color to the final scene brightness
-    {
-      SceneBrightnessColor.r = hkvMath::Min ((int) SceneBrightnessColor.r + (int) m_AmbientColor.r, 255);
-      SceneBrightnessColor.g = hkvMath::Min ((int) SceneBrightnessColor.g + (int) m_AmbientColor.g, 255);
-      SceneBrightnessColor.b = hkvMath::Min ((int) SceneBrightnessColor.b + (int) m_AmbientColor.b, 255);
-    }
-
-    // interpolate the final color between the own ambient and the scene brightness, depending on how much scene brightness should be used
-    m_InstanceColor = VColorRef (255, 255, 255) * (1.0f - m_spDescriptor->m_fApplySceneBrightness) + 
-                      SceneBrightnessColor * m_spDescriptor->m_fApplySceneBrightness;
-
-    // no need to clamp the instance color, m_AmbientColor and SceneBrightnessColor are already clamped
+    // Interpolate between white (= no influence) and scene brightness
+    VColorRef newInstanceColor = VColorRef(255, 255, 255) * (1.0f - m_spDescriptor->m_fApplySceneBrightness) +
+                                     sceneBrightnessColor * m_spDescriptor->m_fApplySceneBrightness;
+    m_InstanceColor.SetRGB(newInstanceColor.r, newInstanceColor.g, newInstanceColor.b);
   }
 }
 
@@ -1216,25 +1091,33 @@ void ParticleGroupBase_cl::DestroyParticle(Particle_t *pParticle,float fTimeDelt
   AddParticleToCache((ParticleExt_t *)pParticle);
 }
 
-
-
-
 void ParticleGroupBase_cl::RenderParticleBoundingBoxes()
 {
   ParticleExt_t *p = GetParticlesExt();
-  const int iCount = m_iHighWaterMark;
-  for (int i=0;i<iCount;i++,p++) if (p->valid)
-    Vision::Game.DrawCube(hkvVec3(p->pos[0],p->pos[1],p->pos[2]), p->size, p->color);
+  for (int i = 0; i < m_iHighWaterMark; ++i, ++p)
+  {
+    if (p->valid)
+    {
+    Vision::Game.DrawCube(p->m_vPosition, p->size, p->color);
+}
+  }
 }
 
 void ParticleGroupBase_cl::HandleParticles(float dtime)
 {
   EnsureUpdaterTaskFinished();
 
-  if (m_bVisibilityUpdate)
-    UpdateVisibilityObject();
-
   VISION_PROFILE_FUNCTION(VIS_PROFILE_PARTICLES_HANDLE);
+
+  if (m_bScheduleVisibilityUpdate)
+  {
+    if (GetUseLocalSpaceMatrix())
+      SetVisibilityBoundingBox(true, m_LocalSpaceBoundingBox);
+    else
+      SetVisibilityBoundingBox(false, m_WorldSpaceBoundingBox);
+  
+    m_bScheduleVisibilityUpdate = false;
+  }
 
   bool bNeedLifetimeUpdateOnly = false;
 
@@ -1255,13 +1138,6 @@ void ParticleGroupBase_cl::HandleParticles(float dtime)
     float fScaledTime = dtime * m_fTimeScale;
     m_fInitialDelay -= fScaledTime;
     return;
-  }
-
-  if (m_bAttachedToCam)
-  {
-    hkvVec3 vCamPos;
-    Vision::Camera.GetCurrentCameraPosition(vCamPos);
-    SetPosition(vCamPos+m_vCamRelPos);
   }
 
   // also handle child particle group
@@ -1331,89 +1207,75 @@ void ParticleGroupBase_cl::HandleParticles(float dtime)
 }
 
 
-void ParticleGroupBase_cl::InflateBoundingBox(bool bForceValid)
+void ParticleGroupBase_cl::InflateBoundingBox()
 {
-  const int iCount = m_iHighWaterMark;
+  m_ParticleBoundingBox.setInvalid();
+
   ParticleExt_t *p = GetParticlesExt();
-  int i;
-  bool bAnyValid = false;
   
-  for (i=0;i<iCount;i++,p++) if (p->valid)
+  for (int i = 0; i < m_iHighWaterMark; i++, p++)
   {
-    hkvVec3 pos(p->pos[0],p->pos[1],p->pos[2]);
+    if (!p->valid)
+      continue;
+
+    hkvVec3 pos = p->m_vPosition;
     hkvVec3 rad(p->size,p->size,p->size);
 
-    hkvAlignedBBox transformedMeshBoundingBox = m_MeshBoundingBox;
+    hkvAlignedBBox transformedMeshBoundingBox = m_spDescriptor->m_MeshBoundingBox;
     transformedMeshBoundingBox.scaleFromOrigin(rad);
     transformedMeshBoundingBox.translate(pos);
 
-    m_BoundingBox.expandToInclude(transformedMeshBoundingBox);
+    m_ParticleBoundingBox.expandToInclude(transformedMeshBoundingBox);
 
 	  rad *= 0.5f;
 
-    m_BoundingBox.expandToInclude(pos+rad);
-    m_BoundingBox.expandToInclude(pos-rad);
+    m_ParticleBoundingBox.expandToInclude(pos + rad);
+    m_ParticleBoundingBox.expandToInclude(pos - rad);
 
     // make sure that this box remains valid until the next update
     float dt = m_spDescriptor->m_fDynamicInflateInterval;
-    hkvVec3 lastPos(pos.x + p->velocity[0] * dt, pos.y + p->velocity[1] * dt, pos.z + p->velocity[2] * dt);
-    m_BoundingBox.expandToInclude(lastPos+rad);
-    m_BoundingBox.expandToInclude(lastPos-rad);
+    hkvVec3 lastPos = pos + p->m_vVelocity * dt;
+    m_ParticleBoundingBox.expandToInclude(lastPos + rad);
+    m_ParticleBoundingBox.expandToInclude(lastPos - rad);
 
-    // Makes no sense for DISTORTION_TYPE_SIZEMODE and DISTORTION_TYPE_NONE
-    if (m_cUseDistortion != DISTORTION_TYPE_SIZEMODE && m_cUseDistortion != DISTORTION_TYPE_NONE)
+    // Makes no sense for ringwaves and distortion off.
+    if (GetUseDistortion() && m_eTopology != PARTICLE_TOPOLOGY_RINGWAVE)
     {
       pos.x += p->distortion[0];
       pos.y += p->distortion[1];
       pos.z += p->distortion[2];
-      m_BoundingBox.expandToInclude(pos+rad);
-      m_BoundingBox.expandToInclude(pos-rad);
+      m_ParticleBoundingBox.expandToInclude(pos + rad);
+      m_ParticleBoundingBox.expandToInclude(pos - rad);
     }
-    bAnyValid = true;
+    }
   }
-
-  if (!bAnyValid && bForceValid)
-  {
-    if(m_spEmitter->GetType()==EMITTER_TYPE_MESH && m_pEmitterMeshEntity!=NULL)
-    {
-      m_BoundingBox.expandToInclude( m_pEmitterMeshEntity->GetBoundingBox());
-      //add boundary of the initial bounding box
-      hkvVec3 boundary(m_spDescriptor->m_BoundingBox.getSizeX()*0.5f,m_spDescriptor->m_BoundingBox.getSizeY()*0.5f,m_spDescriptor->m_BoundingBox.getSizeZ()*0.5f);
-      m_BoundingBox.addBoundary(boundary);
-    }
-    else
-    {
-      hkvVec3 vCenter;
-      if (!GetUseLocalSpaceMatrix()) //this should always happen in local space...
-        vCenter = GetPosition();
-
-      // create a default box around the origin
-      m_BoundingBox.expandToInclude(vCenter);
-      m_BoundingBox.addBoundary(hkvVec3 (Vision::World.GetGlobalUnitScaling()*10.f)); // need enough pixels for HOQ    
-    }
-    bAnyValid = true;
-  }
-
-  m_bBBoxValid |= bAnyValid;
-}
 
 
 int ParticleGroupBase_cl::AddRelevantConstraints(const VisParticleConstraintList_cl *pSrcList, bool bCheckInfluence)
-{
+  {
+  // Constraints don't work with local space particles.
+  if (m_spDescriptor->m_bLocalSpace)
+    {
+    hkvLog::Warning("Constraints won't work with local space particles! (Occured in %s)", m_spDescriptor->GetName());
+    return 0;
+  }
+
   EnsureUpdaterTaskFinished();
   VASSERT(pSrcList);
   int i;
   const int iCount = pSrcList->GetConstraintCount();
   int iFound = 0;
-  if (!m_BoundingBox.isValid())
-    bCheckInfluence = false;
 
   for (i=0;i<iCount;i++)
   {
     VisParticleConstraint_cl *pConstraint = pSrcList->GetConstraint(i);
-    if (!pConstraint) continue;
-    if (bCheckInfluence && !pConstraint->Influences(m_BoundingBox)) continue;
-    if (!AddConstraint(pConstraint,false)) continue; // influence already checked
+    if (!pConstraint)
+      continue;
+    if (bCheckInfluence && !pConstraint->Influences(GetWorldSpaceBoundingBox()))
+      continue;
+    if (!AddConstraint(pConstraint, false))
+      continue; // influence already checked
+    
     iFound++;
   }
   return iFound;
@@ -1422,10 +1284,19 @@ int ParticleGroupBase_cl::AddRelevantConstraints(const VisParticleConstraintList
 
 bool ParticleGroupBase_cl::AddConstraint(VisParticleConstraint_cl *pConstraint, bool bCheckInfluence)
 {
+  // Constraints don't work with local space particles.
+  if (m_spDescriptor->m_bLocalSpace)
+  {
+    hkvLog::Warning("Constraints won't work with local space particles! (Occured in %s)", m_spDescriptor->GetName());
+    return 0;
+  }
+
+
   EnsureUpdaterTaskFinished();
   VASSERT(pConstraint);
-  if (bCheckInfluence && m_BoundingBox.isValid() && !pConstraint->Influences(m_BoundingBox))
+  if (bCheckInfluence && !pConstraint->Influences(GetWorldSpaceBoundingBox()))
     return false;
+
   m_Constraints.AddConstraint(pConstraint);
 
   // add also to the child group (without checking)
@@ -1442,8 +1313,7 @@ void ParticleGroupBase_cl::HandleAllConstraints(float dtime)
   m_Constraints.HandleParticles(this,dtime,m_iConstraintAffectBitMask);
 
   // handle global list. Note that HandleParticles causes problems in multithreaded mode. Removing dead constraints is not necessary here
-  VisParticleGroupManager_cl &manager( VisParticleGroupManager_cl::GlobalManager());
-  manager.GlobalConstraints().HandleParticlesNoRemove(this,dtime,m_iConstraintAffectBitMask);
+  VisParticleGroupManager_cl::GlobalManager().GlobalConstraints().HandleParticlesNoRemove(this, dtime, m_iConstraintAffectBitMask);
 }
 
 
@@ -1487,6 +1357,28 @@ void ParticleGroupBase_cl::SerializeX( VArchive &ar )
     if (iVersion>=PARTICLEGROUPBASE_VERSION_007)
       ar >> m_pEmitterMeshEntity;
 
+    if (iVersion>=PARTICLEGROUPBASE_VERSION_009)
+    {
+      int iVisFlags;
+      ar >> iVisFlags;
+      VisVisibilityObject_cl *pVisObj = GetVisibilityObject();
+      if (pVisObj!=NULL)
+      {
+        pVisObj->SetVisibilityTestFlags(iVisFlags);
+        if (pVisObj->GetVisData()!=NULL)
+        {
+          pVisObj->GetVisData()->SetAutomaticUpdate((iVisFlags&VIS_NO_VISZONE_ASSIGNMENT)==0);
+        }
+      }
+    }
+
+    if (iVersion>=PARTICLEGROUPBASE_VERSION_010)
+    {
+      BOOL checkVis = FALSE;
+      ar >> checkVis;
+      SetCheckVisibility(checkVis);
+    }
+
     // constraints
     m_Constraints.SerializeX(ar);
 
@@ -1522,6 +1414,9 @@ void ParticleGroupBase_cl::SerializeX( VArchive &ar )
     if (GetEmitter()->m_wpEntityMeshEmitter!=NULL)
       pEmitterMesh = GetEmitter()->m_wpEntityMeshEmitter.GetPtr();
     ar << pEmitterMesh; // version 7
+    int iVisFlags = (this->GetVisibilityObject() != NULL)? this->GetVisibilityObject()->GetVisibilityTestFlags() : 0;
+    ar << iVisFlags; // version 9
+    ar << GetCheckVisibility(); // version 10
 
     // constraints
     m_Constraints.SerializeX(ar);
@@ -1540,7 +1435,7 @@ void ParticleGroupBase_cl::OnDeserializationCallback(const VSerializationContext
 
 bool ParticleGroupBase_cl::SetMeshEmitterEntity(VisBaseEntity_cl* pEntity)
 {
-	// allows chaning the mesh emitter before 
+	// allows changing the mesh emitter before 
 	m_pEmitterMeshEntity = pEntity;
 	VisParticleEmitter_cl *pEmitter = GetEmitter();
 	if (pEmitter->GetType()==EMITTER_TYPE_MESH)
@@ -1562,21 +1457,13 @@ void ParticleGroupBase_cl::OnObject3DChanged(int iO3DFlags)
 
   if ( iO3DFlags & VIS_OBJECT3D_POSCHANGED )
   {
-    EnsureUpdaterTaskFinished(); // whenever bounding boxes are tested, this is necessary
-    if (VisParticleGroup_cl::GetVisibilityObject() && m_BoundingBox.isValid())
-    {
-      // make sure the emitter is inside the bounding box
-      m_BoundingBox.expandToInclude(GetPosition()); // this is the emitter's position
-      VisParticleGroup_cl::SetBoundingBox(m_BoundingBox);
-    }
+    EnsureUpdaterTaskFinished();
 
-    m_bBBoxValid = false;
-    m_bVisibilityUpdate = true;
     m_bEvaluateBrightnessNextFrame |= m_spDescriptor->m_fApplySceneBrightness > 0.0f;
 
     hkvVec3 vDelta = GetPosition() - m_vOldPos;
 
-  #ifdef WIN32
+  #ifdef _VISION_WIN32
     if ( Vision::Editor.IsInEditor() && !Vision::Editor.IsAnimatingOrPlaying() && !GetUseLocalSpaceMatrix())
     {
       MoveParticles( vDelta );
@@ -1588,17 +1475,21 @@ void ParticleGroupBase_cl::OnObject3DChanged(int iO3DFlags)
     }
   #endif
     m_vGroupMoveDeltaAccum += vDelta;
+
+    UpdateBoundingBoxes();
   }
   if ( iO3DFlags & VIS_OBJECT3D_ORICHANGED )
   {
-    m_bBBoxValid = false;
-    m_bVisibilityUpdate = true;
+    EnsureUpdaterTaskFinished();
+
     hkvMat3 rotMat = GetRotationMatrix();
     hkvVec3 t1, t2, t3;
     rotMat.getAxisXYZ(&t1, &t2, &t3);
     m_vDirection = t1; 
     m_vRightDir = t2; 
-    m_vUpDir = t3;;
+    m_vUpDir = t3;
+
+    UpdateBoundingBoxes();
   }
 
   m_vOldPos = GetPosition();
@@ -1624,917 +1515,105 @@ void ParticleGroupBase_cl::SetVisibleBitmask(unsigned int iMask)
     m_spOnDestroyCreateGroup->SetVisibleBitmask(iMask);
 }
 
-
-
-////////////////////////////////////////////////////////////////////////////
-// handle the particle effect instance
-////////////////////////////////////////////////////////////////////////////
-
-
-// macro to iterate through all valid groups
-#define FOR_ALL_GROUPS \
-  for (int i=0;i<m_iGroupCount;i++)\
-  {\
-    ParticleGroupBase_cl *pGroup = m_spGroups[i];\
-    if (!pGroup) continue;
-
-VisParticleEffect_cl::VisParticleEffect_cl(VisParticleEffectFile_cl *pEffect, const hkvVec3& vPos, const hkvVec3& vOri, unsigned int uiRandomSeed) :
-  m_uiRandomBaseSeed(uiRandomSeed)
+void ParticleGroupBase_cl::UpdateBoundingBoxes(bool bImmediateVisibilityBoundingBoxUpdate)
 {
-  VASSERT(pEffect);
-  m_bUseLightgrid = false;
-  m_spGroups = NULL;
-  m_iGroupCount = 0;
-  m_bPaused = m_bHalted = false;
-  m_bVisible = true;
-  m_bRemoveDeadLayers = true;
-  m_vPosition = vPos;
-  m_vOrientation = vOri;
-  m_bAnyMeshEmitter = false;
-
-  pEffect->InitParticleEffectInstance(this,vPos,vOri, 1.0f);
-  //SetPosition( vPos );
-  //SetOrientation( vOri );
-//  m_fSpeedMeasurePos = 0.f;
- // m_vOldPos = vPos;
-}
-
-VisParticleEffect_cl::VisParticleEffect_cl(VisParticleEffectFile_cl *pEffect, const hkvVec3& vPos, const hkvVec3& vOri, float fScaling, unsigned int uiRandomSeed) :
-  m_uiRandomBaseSeed(uiRandomSeed)
-{
-  VASSERT(pEffect);
-  m_bUseLightgrid = false;
-  m_spGroups = NULL;
-  m_iGroupCount = 0;
-  m_bPaused = m_bHalted = false;
-  m_bVisible = true;
-  m_bRemoveDeadLayers = true;
-  m_vPosition = vPos;
-  m_vOrientation = vOri;
-  m_bAnyMeshEmitter = false;
-
-  pEffect->InitParticleEffectInstance(this,vPos,vOri, fScaling);
-  //SetPosition( vPos );
-  //SetOrientation( vOri );
-  //m_fSpeedMeasurePos = 0.f;
-  //m_vOldPos = vPos;
-}
-
-VisParticleEffect_cl::VisParticleEffect_cl() :
-  m_uiRandomBaseSeed(0)
-{
-  m_bRemoveDeadLayers = true;
-  m_bUseLightgrid = false;
-  m_spGroups = NULL;
-  m_iGroupCount = 0;
-  m_bPaused = m_bHalted = false;
-  m_bVisible = true;
-  m_bAnyMeshEmitter = false;
-//  m_fSpeedMeasurePos = 0.f;
-}
-
-
-void VisParticleEffect_cl::CreateFromDescriptors(VisParticleGroupDescriptor_cl **pDescList,int iDescCount)
-{
-  V_SAFE_DELETE_ARRAY(m_spGroups);
-  m_iGroupCount = iDescCount;
-  m_spSourceFXFile = NULL;
-
-  if (!iDescCount)
-    return;
-  
-  // allocate the particle group pointers and fill them
-  m_spGroups = new ParticleGroupBasePtr[iDescCount];
-  for (int i=0;i<m_iGroupCount;i++)
-  {
-    ParticleGroupBase_cl *pLayer = new ParticleGroupBase_cl(pDescList[i],NULL, GetPosition(), GetOrientation(), true, GetRandomBaseSeed());
-    m_spGroups[i] = pLayer;
-    pLayer->m_pParentEffect = this;
-    pLayer->m_iChildIndex = i;
-    pLayer->AttachToParent(this);
-    pLayer->Finalize();
-  }
-}
-
-
-VisParticleEffect_cl::~VisParticleEffect_cl()
-{
-  V_SAFE_DELETE_ARRAY(m_spGroups);
-}
-
-
-void VisParticleEffect_cl::Tick(float fTimeDiff)
-{
-  FOR_ALL_GROUPS
-    if (pGroup->m_bHasTransformationCurves || pGroup->m_bHasEvents)
-    {
-      float &x(pGroup->m_fTransformationCurveTime);
-      const float fDelta = pGroup->m_fTransformationCurveSpeed*fTimeDiff*pGroup->m_fTimeScale;
-      if (pGroup->m_spDescriptor->m_spPositionCurve!=NULL)
-      {
-        hkvVec3 vPos = pGroup->m_spDescriptor->m_spPositionCurve->GetValueFast(x) * pGroup->m_fScaling;
-        pGroup->SetLocalPosition(vPos);
-      }
-      if (pGroup->m_spDescriptor->m_spOrientationCurve!=NULL)
-      {
-        hkvVec3 vOri = pGroup->m_spDescriptor->m_spOrientationCurve->GetValueFast(x);
-        vOri *= 360.f;
-        pGroup->SetLocalOrientation(vOri);
-      }
-      if (pGroup->m_bHasEvents)
-      {
-        VisAnimEventList_cl &list(pGroup->m_spDescriptor->m_EventList);
-        list.PrepareCurrentEventSet(x,x+fDelta,true); // no fmod here. note this method is not thread safe
-        VisAnimEvent_cl *pEvent = list.GetNextEvent();
-        while (pEvent!=NULL)
-        {
-          VisParticleLayerEventData_cl data(pGroup,pEvent);
-          data.Trigger();
-          pEvent = list.GetNextEvent();
-        }
-      }
-      x = hkvMath::mod (x + fDelta,1.f);
-    }
-    if (m_bAnyMeshEmitter)
-    {
-      pGroup->GetEmitter()->UpdateMeshEmitterEntity(); // must be called from the main thread
-
-      //Use this line to debug the bounding box of the emitter
-      //Vision::Game.DrawBoundingBox(pGroup->m_BoundingBox, V_RGBA_CYAN);    
-    }
-
-    pGroup->HandleParticles(fTimeDiff);
-  }
-}
-
-// Virtual function that gets called whenever the position or orientation of the Object3D is changed
-void VisParticleEffect_cl::OnObject3DChanged(int iO3DFlags)
-{
-  // the binding takes care of moving the child emitter (with local space positions)
-  VisObject3D_cl::OnObject3DChanged(iO3DFlags);
-
-  if ( iO3DFlags & VIS_OBJECT3D_POSCHANGED )
-  {
-    UpdateLightGrid();
-  }
-
-  // remove only the "change" flags
-  ClearO3DChangeFlags();
-}
-
-
-static int PARTICLETRIGGER_ID_PAUSE = -1;
-static int PARTICLETRIGGER_ID_RESUME = -1;
-static int PARTICLETRIGGER_ID_RESTART = -1;
-
-void VisParticleEffect_cl::MessageFunction(int iID, INT_PTR iParamA, INT_PTR iParamB)
-{
-  VisObject3D_cl::MessageFunction(iID,iParamA,iParamB);
-  if (iID==VIS_MSG_TRIGGER)
-  {
-    EnsureComponentIDsRegistered();
-
-    // the trigger components are added by vForge and serialized if used
-    // See EngineInstanceParticleGroup::c'tor
-    VisTriggerTargetComponent_cl *pTarget = (VisTriggerTargetComponent_cl *)iParamB;
-    if (pTarget->m_iComponentID==PARTICLETRIGGER_ID_PAUSE)
-      SetPause(true);
-    else if (pTarget->m_iComponentID==PARTICLETRIGGER_ID_RESUME)
-      SetPause(false);
-    else if (pTarget->m_iComponentID==PARTICLETRIGGER_ID_RESTART)
-      if (!GetRemoveWhenFinished())
-        Restart();
-    
-    return;
-  }
-}
-
-void VisParticleEffect_cl::CheckForRestartComponent()
-{
-  // check whether any trigger component is of type trigger->restart. In that case the effect won't be removed automatically
-  for (int i=0;i<Components().Count();i++)
-  {
-    IVObjectComponent *pComponent = Components().GetAt(i);
-    if (pComponent==NULL || !pComponent->IsOfType(V_RUNTIME_CLASS(VisTriggerTargetComponent_cl)))
-      continue;
-    EnsureComponentIDsRegistered();
-    if (pComponent->m_iComponentID==PARTICLETRIGGER_ID_RESTART)
-      SetRemoveWhenFinished(false);
-  }
-}
-
-void VisParticleEffect_cl::EnsureComponentIDsRegistered()
-{
-  // cache IDs to avoid string comparisons
-  if (VISION_UNLIKELY(PARTICLETRIGGER_ID_PAUSE==-1))
-  {
-    PARTICLETRIGGER_ID_PAUSE = IVObjectComponent::RegisterStringID(PARTICLETRIGGER_PAUSE);
-    PARTICLETRIGGER_ID_RESUME = IVObjectComponent::RegisterStringID(PARTICLETRIGGER_RESUME);
-    PARTICLETRIGGER_ID_RESTART = IVObjectComponent::RegisterStringID(PARTICLETRIGGER_RESTART);
-  }
-}
-
-
-BOOL VisParticleEffect_cl::AddComponent(IVObjectComponent *pComponent)
-{
-  if (!VisObject3D_cl::AddComponent(pComponent))
-    return FALSE;
-  CheckForRestartComponent();
-  return TRUE;
-}
-
-void VisParticleEffect_cl::IncPosition(const hkvVec3& vDelta, bool bMoveParticles)
-{
-  VisObject3D_cl::IncPosition(vDelta);
-
-  if ( bMoveParticles)
-  {
-    // do not manually update particles in vForge edit mode
-    // (happens automatically in OnObject3DChanged function)
-    if ( Vision::Editor.IsInEditor() && !Vision::Editor.IsAnimatingOrPlaying() )
-      return;
-
-//    m_vOldPos = GetPosition();
-    FOR_ALL_GROUPS
-      if (!pGroup->GetUseLocalSpaceMatrix())
-        pGroup->MoveParticles( vDelta );
-    }
-  }
-}
-
-
-
-void VisParticleEffect_cl::SetScaling(float fScale)
-{
-  FOR_ALL_GROUPS
-    pGroup->SetScaling(fScale);
-  }
-}
-
-void VisParticleEffect_cl::SetVisible(bool bStatus)
-{
-  if (m_bVisible==bStatus) return;
-  m_bVisible = bStatus;
-  FOR_ALL_GROUPS
-    pGroup->SetVisible(bStatus);
-  }
-}
-
-void VisParticleEffect_cl::SetAmbientColor(VColorRef iColor)
-{
-  FOR_ALL_GROUPS
-    pGroup->SetAmbientColor(iColor);
-  }
-}
-
-void VisParticleEffect_cl::EvaluateSceneBrightness()
-{
-  FOR_ALL_GROUPS
-    pGroup->EvaluateSceneBrightness();
-    pGroup->HandleParticles(0.f);
-  }
-}
-
-void VisParticleEffect_cl::SetVisibleBitmask(unsigned int iMask)
-{
-  FOR_ALL_GROUPS
-    pGroup->SetVisibleBitmask(iMask & pGroup->m_spDescriptor->m_iVisibleBitmask);
-  }
-}
-
-void VisParticleEffect_cl::UpdateVisibilityBoundingBox()
-{
-  FOR_ALL_GROUPS
-    //(1) current implementation:
-    pGroup->UpdateVisibilityBoundingBox(); // halts the updater task
-    //(2) consider just doing:
-    //pGroup->EnsureUpdaterTaskFinished();
-
-    pGroup->UpdateVisibilityObject();
-  }
-}
-
-void VisParticleEffect_cl::SetPause(bool bStatus)
-{
-  m_bPaused = bStatus;
-  FOR_ALL_GROUPS
-    pGroup->SetPause(bStatus);
-  }
-}
-
-void VisParticleEffect_cl::SetHalted(bool bStatus)
-{
-  m_bHalted = bStatus;
-  FOR_ALL_GROUPS
-    pGroup->SetHalted(bStatus);
-  }
-}
-
-void VisParticleEffect_cl::SetApplyTimeOfDayLight(bool bApply)
-{
-  FOR_ALL_GROUPS
-    pGroup->SetApplyTimeOfDayLight(bApply);
-  }
-}
-
-bool VisParticleEffect_cl::GetApplyTimeOfDayLight(void) const
-{
-  FOR_ALL_GROUPS
-    if (pGroup->GetApplyTimeOfDayLight ())
-      return (true);
-  }
-
-  return (false);
-}
-
-void VisParticleEffect_cl::SetFinished()
-{
-  FOR_ALL_GROUPS
-    pGroup->SetFinished();
-  }
-}
-
-void VisParticleEffect_cl::SetHandleWhenVisible(bool bStatus)
-{
-  FOR_ALL_GROUPS
-    pGroup->SetHandleWhenVisible(bStatus);
-  }
-}
-
-bool VisParticleEffect_cl::IsUpdatedOnlyWhenVisible()
-{
-  FOR_ALL_GROUPS
-    if (!pGroup->GetHandleWhenVisible() || pGroup->m_bUpdateLifetimeIfInvisible) return false;
-  }
-  return true;
-}
-
-bool VisParticleEffect_cl::WasRecentlyRendered()
-{ 
-  FOR_ALL_GROUPS
-    if (pGroup->WasRecentlyRendered()) return true;
-  }
-  return false;
-}
-
-void VisParticleEffect_cl::Restart()
-{
-#ifdef WIN32
-  VASSERT((!m_bRemoveDeadLayers || VisParticleGroupManager_cl::g_bLoopAllEffects) && "When calling Restart, this instance must be flagged as SetRemoveWhenFinished(false)");
-#else
-  VASSERT(!m_bRemoveDeadLayers && "When calling Restart, this instance must be flagged as SetRemoveWhenFinished(false)");
-#endif
-  FOR_ALL_GROUPS
-    pGroup->m_bIsDead = false;
-    pGroup->InitGroup(true);
-    pGroup->m_iChildIndex = i;
-  }
-}
-
-
-void VisParticleEffect_cl::DisposeObject()
-{
-  // dispose all layers as well
-  FOR_ALL_GROUPS
-    pGroup->DisposeObject();
-  }
-  V_SAFE_DELETE_ARRAY(m_spGroups);
-  m_iGroupCount = 0;
-
-  VisObject3D_cl::DisposeObject();
-  if (!m_spSourceFXFile || !m_spSourceFXFile->GetParentManager())
-    return;
-  m_spSourceFXFile->GetParentManager()->Instances().SafeRemove(this);
-}
-
-void VisParticleEffect_cl::AddRelevantConstraints(const VisParticleConstraintList_cl *pSrcList, bool bCheckInfluence)
-{
-  FOR_ALL_GROUPS
-    pGroup->AddRelevantConstraints(pSrcList,bCheckInfluence);
-  }
-}
-
-void VisParticleEffect_cl::AddConstraint(VisParticleConstraint_cl *pConstraint, bool bCheckInfluence)
-{
-  FOR_ALL_GROUPS
-    pGroup->AddConstraint(pConstraint,bCheckInfluence);
-  }
-}
-
-void VisParticleEffect_cl::SetWindSpeed(const hkvVec3& vWind, bool bApplyInLocalSpace)
-{
-  FOR_ALL_GROUPS
-    pGroup->SetWindSpeed(vWind, bApplyInLocalSpace);
-  }
-}
-
-void VisParticleEffect_cl::SetMeshEmitterEntity(VisBaseEntity_cl *pEntity)
-{
-  m_bAnyMeshEmitter = false;
-  FOR_ALL_GROUPS
-	  m_bAnyMeshEmitter |= pGroup->SetMeshEmitterEntity(pEntity);
-  }
-}
-
-
-void VisParticleEffect_cl::RemoveConstraint(VisParticleConstraint_cl *pConstraint)
-{
-  FOR_ALL_GROUPS
-    pGroup->RemoveConstraint(pConstraint);
-  }
-}
-
-void VisParticleEffect_cl::RemoveAllConstraints()
-{
-  FOR_ALL_GROUPS
-    pGroup->RemoveAllConstraints();
-  }
-}
-
-void VisParticleEffect_cl::SetIntensity(float fIntensity)
-{
-  FOR_ALL_GROUPS
-    pGroup->GetEmitter()->SetIntensity(fIntensity);
-  }
-}
-
-
-void VisParticleEffect_cl::RespawnAllParticles(bool bUseOldCount)
-{
-  FOR_ALL_GROUPS
-    pGroup->RespawnAllParticles(bUseOldCount);
-  }
-}
-
-void VisParticleEffect_cl::TeleportSpawnPosition()
-{
-  FOR_ALL_GROUPS
-    pGroup->TeleportSpawnPosition();
-  }
-}
-
-void VisParticleEffect_cl::RenderParticleBoundingBoxes()
-{
-  FOR_ALL_GROUPS
-    pGroup->RenderParticleBoundingBoxes();
-  }
-}
-
-bool VisParticleEffect_cl::GetLocalBoundingBox(hkvAlignedBBox &destBox) const
-{
-  hkvAlignedBBox tempBox;
-  destBox.setInvalid();
-  FOR_ALL_GROUPS
-    if (!pGroup->GetDescriptor()->GetBoundingBox(tempBox)) continue;
-    destBox.expandToInclude(tempBox);
-  }
-  return destBox.isValid();
-}
-
-
-bool VisParticleEffect_cl::GetCurrentBoundingBox(hkvAlignedBBox &destBox) const
-{
-  destBox.setInvalid();
-  FOR_ALL_GROUPS
-    destBox.expandToInclude(*pGroup->CalcCurrentBoundingBox());
-  }
-  return destBox.isValid();
-}
-
-
-void VisParticleEffect_cl::OnSingleGroupFinished(ParticleGroupBase_cl *pFinishedGroup)
-{
-
-#ifdef WIN32
-  if (VisParticleGroupManager_cl::g_bLoopAllEffects) // this feature is only relevant inside the editor
-  {
-
-    bool bAllDead = true;
-    FOR_ALL_GROUPS
-      if (!pGroup->m_bIsDead)
-      {
-        bAllDead = false;
-        break;
-      }
-    }
-    if (bAllDead)
-    {
-      Restart();
-    }
-    return;
-  }
-#endif
-
-  if (!m_bRemoveDeadLayers)
+  if (!m_spEmitter || !m_bUseVisibility)
     return;
 
-  int iMaxValid = 0;
-  FOR_ALL_GROUPS
-    if (pGroup==pFinishedGroup)
-    {
-      pGroup->AttachToParent(NULL);
-      m_spGroups[i] = NULL; // remove from list, pFinishedGroup might not be valid anymore afterwards
-      continue;
-    }
-    iMaxValid = i+1;
+  // Update ParticleBoundingBox only if necessary.
+  float fParticleBoundingBoxUpdateInterval = m_spDescriptor->m_fDynamicInflateInterval;
+  if (!m_ParticleBoundingBox.isValid() ||
+      (fParticleBoundingBoxUpdateInterval >= 0.0f && m_fParticleBoundingBoxUpdateTimePos >= fParticleBoundingBoxUpdateInterval) ||
+      !Vision::Editor.IsAnimatingOrPlaying())
+  {
+    m_fParticleBoundingBoxUpdateTimePos = hkvMath::mod(m_fParticleBoundingBoxUpdateTimePos, fParticleBoundingBoxUpdateInterval);
+    InflateBoundingBox();
   }
-  m_iGroupCount = iMaxValid; // new upper limit. If 0, group is "dead"
-}
+
+  m_WorldSpaceBoundingBox.setInvalid();
+  m_LocalSpaceBoundingBox.setInvalid();
+
+  hkvMat4 transform;
+  if (m_pParentEffect != NULL)
+    transform.set(m_pParentEffect->GetRotationMatrix(), m_pParentEffect->GetPosition());
+  else
+    transform.set(GetRotationMatrix(), GetPosition());
+  transform.setScalingFactors(hkvVec3(GetScaling()));
 
 
-const char SERIALMODE_FILENAME = 0; // serializes the file name of the effect file and goes through the manager (XML parsing)
-const char SERIALMODE_FULL     = 1; // binary serializes the effects into the file
+  // Determines if the m_WorldSpaceBoundingBox box is computed from m_LocalSpaceBoundingBox (true) or the other way round (false). 
+  bool worldBoundingBoxFromLocal = false;
 
-#if defined(__SNC__)
-#pragma diag_push
-#pragma diag_suppress=178
-#endif
-
-#if defined(__ghs__)
-#pragma ghs nowarning 177
-#endif
-
-const int PARTICLEEFFECT_VERSION_0  = 0;
-const int PARTICLEEFFECT_VERSION_1  = 1; // effect key, serialize mode
-const int PARTICLEEFFECT_VERSION_2  = 2; // group count bugfix
-const int PARTICLEEFFECT_VERSION_3  = 3; // serialize paused & halted
-const int PARTICLEEFFECT_VERSION_4  = 4; // add m_uiRandomBaseSeed
-#define PARTICLEEFFECT_CURRENTVERSION  PARTICLEEFFECT_VERSION_4
-
-#if defined(__SNC__)
-#pragma diag_pop
-#endif
-
-#if defined(__ghs__)
-#pragma ghs endnowarning
-#endif
-
-
-V_IMPLEMENT_SERIAL( VisParticleEffect_cl, VisObject3D_cl, 0, &g_VisionEngineModule );
-void VisParticleEffect_cl::Serialize( VArchive &ar )
-{
-  VisObject3D_cl::Serialize(ar);
-  char iSerializeMode = SERIALMODE_FILENAME;
-  int iVersion = PARTICLEEFFECT_CURRENTVERSION;
-
-  if (ar.IsLoading())
+  if (fParticleBoundingBoxUpdateInterval >= 0.0f && m_ParticleBoundingBox.isValid())
   {
-    ar >> iVersion; VASSERT(iVersion>=0 && iVersion<=PARTICLEEFFECT_CURRENTVERSION);
-    if (iVersion>=PARTICLEEFFECT_VERSION_1)
-    {
-      ar >> iSerializeMode;
-      VASSERT(iSerializeMode==SERIALMODE_FILENAME || iSerializeMode==SERIALMODE_FULL);
-    }
+    // The space of m_ParticleBoundingBox depends on GetUseLocalSpaceMatrix()
+    // Either way world or local bounding box must be computed from it.
+    // Note that it is also possible that m_ParticleBoundingBox is invalid!
 
-    if (iVersion>=PARTICLEEFFECT_VERSION_4)
-      ar >> m_uiRandomBaseSeed;
-
-    if (iSerializeMode==SERIALMODE_FILENAME)
+    if (GetUseLocalSpaceMatrix())
     {
-      // read effect filename
-      char szFXFilename[FS_MAX_PATH+1];
-      ar.ReadStringBinary(szFXFilename,FS_MAX_PATH);
-      m_spSourceFXFile = VisParticleGroupManager_cl::GlobalManager().LoadFromFile(szFXFilename);
-      VASSERT(m_spSourceFXFile);
-    }
-    else 
-    if (iSerializeMode==SERIALMODE_FULL)
-    {
-      VASSERT(!"Not supported yet");
-      VisParticleEffectFile_cl *pFX = NULL;
-      ar >> pFX;
-      m_spSourceFXFile = pFX;
-    }
-    m_spSourceFXFile->InitParticleEffectInstance(this);
-
-    if (iVersion>=PARTICLEEFFECT_VERSION_1)
-    {
-      // OLD key, now in object3d
-      if (ar.GetLoadingVersion()<VISION_ARCHIVE_VERSION_025)
-        ar >> m_sObjectKey;
-    }
-
-    if (iVersion>=PARTICLEEFFECT_VERSION_3)
-    {
-      ar >> m_bPaused >> m_bHalted;
-    }
-
-    // read properties for each particle group. Read count must match actual count from the effect!
-    int iGroupCount;
-    ar >> iGroupCount;
-
-    m_bAnyMeshEmitter = false;
-    VASSERT(iGroupCount<=m_iGroupCount);
-    for (int i=0;i<iGroupCount;i++)
-    {
-      bool bPresent = true;
-      if (iVersion>=PARTICLEEFFECT_VERSION_2)
-        ar >> bPresent;
-      if (bPresent)
-      {
-        m_spGroups[i]->SerializeX(ar);
-        m_bAnyMeshEmitter |= m_spGroups[i]->GetEmitter()->m_spEmitterMesh!=NULL;
-      }
-      else
-        m_spGroups[i] = NULL;
-    }
-//    m_vOldPos = GetPosition();
-  } else
-  {
-    ar << iVersion;
-    ar << iSerializeMode;
-    ar << m_uiRandomBaseSeed;
-    VASSERT(m_spSourceFXFile);
-    if (iSerializeMode==SERIALMODE_FILENAME)
-    {
-      ar << m_spSourceFXFile->GetFilename();
+      m_LocalSpaceBoundingBox = m_ParticleBoundingBox;
+      worldBoundingBoxFromLocal = true;
     }
     else
-    if (iSerializeMode==SERIALMODE_FULL)
     {
-      ar << m_spSourceFXFile;
+      m_WorldSpaceBoundingBox = m_ParticleBoundingBox;
+      worldBoundingBoxFromLocal = false;
     }
-
-    //ar << m_sEffectKey; now in object 3d
-    ar << m_bPaused << m_bHalted;
-
-    // save the properties (position, constraints,..) of each particle group separately
-    ar << m_iGroupCount;
-    for (int i=0;i<m_iGroupCount;i++)
-    {
-      if (m_spGroups[i])
-      {
-        ar << (bool)true;
-        m_spGroups[i]->SerializeX(ar);
-      }
-      else
-        ar << (bool)false;
-    }
-  }
-}
-
-
-void VisParticleEffect_cl::OnDeserializationCallback(const VSerializationContext &context)
-{
-  VisObject3D_cl::OnDeserializationCallback(context);
-
-  for (int i=0;i<m_iGroupCount;i++)
-  {
-    if (m_spGroups[i] != NULL )
-    {
-      m_spGroups[i]->OnDeserializationCallback(context);
-      m_bAnyMeshEmitter |= m_spGroups[i]->GetEmitter()->m_spEmitterMesh!=NULL;
-    }
-  }
-  UpdateLightGrid();
-  SetPause(m_bPaused);
-  SetHalted(m_bHalted);
-}
-
-
-
-void VisParticleEffect_cl::OnSerialized(VArchive &ar)
-{
-  VisObject3D_cl::OnSerialized(ar);
-  CheckForRestartComponent();
-}
-
-
-#ifdef SUPPORTS_SNAPSHOT_CREATION
-
-void VisParticleEffect_cl::GetDependencies(VResourceSnapshot &snapshot)
-{
-  VisObject3D_cl::GetDependencies(snapshot);
-
-  if (m_spSourceFXFile)
-    m_spSourceFXFile->GetDependencies(snapshot);
-
-  FOR_ALL_GROUPS
-    pGroup->GetDependencies(snapshot);
-  }
-}
-#endif
-
-
-int VisParticleEffect_cl::GetSynchronizationGroupList(const VNetworkViewContext &context, VNetworkSynchronizationGroupInstanceInfo_t *pDestList)
-{
-  int iCount = VisObject3D_cl::GetSynchronizationGroupList(context, pDestList);
-  if (context.m_bSupportsInterpolation)
-    pDestList[iCount++].Set(this, &VNetworkParticleEffectGroup::g_Instance);
-  else
-    pDestList[iCount++].Set(this, &VNetworkParticleEffectGroup::g_Instance);
-  return iCount;
-}
-
-void VisParticleEffect_cl::OnReposition(const VisZoneRepositionInfo_t &info, const hkvVec3 &vLocalPos)
-{
-  // don't call base implementation here
-  hkvVec3 vAbsPos(hkvNoInitialization);
-  info.Helper_MakeAbsolute(vAbsPos, vLocalPos, GetParentZone());
-  IncPosition(vAbsPos - GetPosition(), true);
-}
-
-
-
-////////////////////////////////////////////////////////////////////////////
-// handle the particle effect instance collection
-////////////////////////////////////////////////////////////////////////////
-
-#define FOR_ALL_INSTANCES \
-  int iCount = Count();\
-  for (int i=0;i<iCount;i++)\
-  {\
-    VisParticleEffect_cl *pInstance = GetAt(i);\
-    VASSERT(pInstance!=NULL);
-
-#define FOR_ALL_INSTANCES_REVERSE \
-  int iCount = Count();\
-  for (int i=iCount-1;i>=0;i--)\
-  {\
-  VisParticleEffect_cl *pInstance = GetAt(i);\
-  VASSERT(pInstance!=NULL);
-
-void VisParticleEffectCollection_cl::Tick(float fTimeDelta, bool bPurgeDead)
-{
-  FOR_ALL_INSTANCES_REVERSE
-    if (pInstance->IsUpdatedOnlyWhenVisible() && !pInstance->WasRecentlyRendered()) continue;
-    pInstance->Tick(fTimeDelta);
-    if (bPurgeDead && pInstance->IsDead())
-    {
-      pInstance->DisposeObject(); // this removes it from this collection
-    }
-  }
-}
-
-void VisParticleEffectCollection_cl::EvaluateSceneBrightness()
-{
-  FOR_ALL_INSTANCES
-    pInstance->EvaluateSceneBrightness();
-  }
-}
-
-void VisParticleEffectCollection_cl::Purge(bool bDeadOnly)
-{
-  FOR_ALL_INSTANCES_REVERSE
-    if ((!bDeadOnly && pInstance->GetRefCount()==1) || pInstance->IsDead()) 
-      RemoveAt(i);
-  }
-}
-
-void VisParticleEffectCollection_cl::ReassignShader(bool bRecreateFX)
-{
-  FOR_ALL_INSTANCES
-    const int iGroupCount = pInstance->GetParticleGroupCount();
-    for(int group=0;group<iGroupCount;++group)
-    {
-      ParticleGroupBase_cl *pGroup = pInstance->GetParticleGroup(group);
-      if (pGroup)
-        pGroup->ReassignShader(bRecreateFX);
-    }
-  }
-}
-
-VisParticleEffect_cl *VisParticleEffectCollection_cl::FindByKey(const char *szKey, DynArray_cl<VisParticleEffect_cl *> *pStoreArray) const
-{
-  VisParticleEffect_cl *pFound = NULL;
-  int iFound = 0;
-  FOR_ALL_INSTANCES
-    const char *szOtherKey = pInstance->GetEffectKey();
-    if (szKey==szOtherKey || (szKey != NULL && szOtherKey != NULL && !_stricmp(szKey,szOtherKey))) // szKey can be NULL to find all without a key
-    {
-      if (!pStoreArray)
-        return pInstance;
-      if (!pFound) pFound = pInstance;
-      (*pStoreArray)[iFound++] = pInstance;
-    }
-  }
-  return pFound;
-}
-
-
-
-////////////////////////////////////////////////////////////////////////////////////
-// class VNetworkParticleEffectGroupI
-////////////////////////////////////////////////////////////////////////////////////
-
-VNetworkParticleEffectGroupI VNetworkParticleEffectGroupI::g_Instance;
-
-bool VNetworkParticleEffectGroupI::QuerySynchronize(const VNetworkViewContext& context, VNetworkSynchronizationGroupInstanceInfo_t &instanceInfo, VMessageSettings& out_paketSettings)
-{
-  VisParticleEffect_cl *pParticleEffect = (VisParticleEffect_cl *)instanceInfo.m_pInstance;
-  VHistoryDataParticleEffect* pData = (VHistoryDataParticleEffect*) instanceInfo.m_pCustomData;
-  
-  BYTE iMask = 0;
-  iMask |= pParticleEffect->IsPaused() * VCF_PAUSED;
-  iMask |= pParticleEffect->IsHalted() * VCF_HALTED;
-
-  BYTE iInterpolatedMask;
-  pData->m_particleFlagHistory.Interpolate (&iInterpolatedMask, context.m_iCurrentServerTimeMS);
-  // Every change in the flags is reliably transmitted
-  if (iInterpolatedMask != iMask)
-  {
-    out_paketSettings.SetReliability (VMR_Reliable_Ordered);
-    out_paketSettings.SetPriority (VMP_HighPriority);
-    out_paketSettings.SetOrderingChannel (0);
-    return true;
-  }
-  return false;
-}
-
-void VNetworkParticleEffectGroupI::Synchronize(const VNetworkViewContext& context, VNetworkSynchronizationGroupInstanceInfo_t &instanceInfo, VArchive &ar)
-{
-  VisParticleEffect_cl *pParticleEffect = (VisParticleEffect_cl *)instanceInfo.m_pInstance;
-  VHistoryDataParticleEffect* pData = (VHistoryDataParticleEffect*) instanceInfo.m_pCustomData;
-  BYTE iMask = 0;
-
-  if (ar.IsLoading())
-  {
-    __int64 iTimeMS;
-    ar >> iTimeMS;
-    ar >> iMask;
-    pData->m_particleFlagHistory.Write (iMask, iTimeMS);
   }
   else
   {
-    __int64 iTimeMS = context.m_iCurrentServerTimeMS;
-    ar << iTimeMS;
-    iMask |= pParticleEffect->IsPaused() * VCF_PAUSED;
-    iMask |= pParticleEffect->IsHalted() * VCF_HALTED;
-    ar << iMask;
-    pData->m_particleFlagHistory.Write (iMask, iTimeMS);
-  }
-}
-
-void VNetworkParticleEffectGroupI::TickFunction(const VNetworkViewContext &context, VNetworkSynchronizationGroupInstanceInfo_t &instanceInfo, float fTimeDelta)
-{
-  // The server does not use the tick function, calling the base implementation will disable the tick function altogether.
-  if (context.m_eNetType == VNT_Server)
-  {
-    IVNetworkSynchronizationGroup::TickFunction (context, instanceInfo, fTimeDelta);
-    return;
-  }
-
-  VSystemGUID iOwnerID = instanceInfo.m_pComponent->GetNetworkOwnerID();
-  // For clients and peers the group should only interpolate and set the values, if the owner is not set to themselves.
-  if (iOwnerID != context.m_iUserID)
-  {
-    VisParticleEffect_cl *pParticleEffect = (VisParticleEffect_cl *)instanceInfo.m_pInstance;
-    VHistoryDataParticleEffect* pData = (VHistoryDataParticleEffect*) instanceInfo.m_pCustomData;
-
-    BYTE iMask = 0;
-    VReadResult_e res = pData->m_particleFlagHistory.Interpolate (&iMask, context.m_iCurrentServerTimeMS - context.m_iInterpolationDelayMS);
-    if (res != VRR_None)
+    // For mesh emitters use the mesh world bounding box and apply the descriptor bounding box as offset.
+    if (m_spEmitter->GetType() == EMITTER_TYPE_MESH && m_pEmitterMeshEntity != NULL)
     {
-      pParticleEffect->SetPause  ((iMask & VCF_PAUSED) != 0);
-      pParticleEffect->SetHalted ((iMask & VCF_HALTED) != 0);
+      m_WorldSpaceBoundingBox.expandToInclude(m_pEmitterMeshEntity->GetBoundingBox());
+
+      hkvVec3 vBoundary((m_spDescriptor->m_BoundingBox.m_vMax - m_spDescriptor->m_BoundingBox.m_vMin) * 0.5f * GetScaling());
+      m_WorldSpaceBoundingBox.addBoundary(vBoundary);
     }
+    // For all other emitter type use the rotated descriptor bounding box.
+    else
+    {
+      hkvAlignedBBox orientedBBox = m_spDescriptor->m_BoundingBox;
+      orientedBBox.transformFromOrigin(transform);
+
+      m_WorldSpaceBoundingBox.expandToInclude(orientedBBox);
+    }
+
+    worldBoundingBoxFromLocal = false;
   }
-}
 
-
-
-////////////////////////////////////////////////////////////////////////////////////
-// class VNetworkParticleEffectGroup
-////////////////////////////////////////////////////////////////////////////////////
-
-VNetworkParticleEffectGroup VNetworkParticleEffectGroup::g_Instance;
-
-bool VNetworkParticleEffectGroup::QuerySynchronize(const VNetworkViewContext& context, VNetworkSynchronizationGroupInstanceInfo_t &instanceInfo, VMessageSettings& out_paketSettings)
-{
-  VisParticleEffect_cl *pParticleEffect = (VisParticleEffect_cl *)instanceInfo.m_pInstance;
-  __int64 iNewHash = (__int64(1) << 32);
-  if (pParticleEffect->IsPaused()) iNewHash |= VCF_PAUSED;
-  if (pParticleEffect->IsHalted()) iNewHash |= VCF_HALTED;
-
-  // same transformation as last frame?
-  if (iNewHash==instanceInfo.m_iLastUpdateDataHash)
-    return false;
-
-  instanceInfo.m_iLastUpdateDataHash = iNewHash;
-  return true;
-}
-
-void VNetworkParticleEffectGroup::Synchronize(const VNetworkViewContext& context, VNetworkSynchronizationGroupInstanceInfo_t &instanceInfo, VArchive &ar)
-{
-  VisParticleEffect_cl *pParticleEffect = (VisParticleEffect_cl *)instanceInfo.m_pInstance;
-  BYTE iMask = 0;
-
-  if (ar.IsLoading())
+  // Depending on which box is "native" compute the other (local/world) box.
+  if (worldBoundingBoxFromLocal)
   {
-    ar >> iMask;
-    pParticleEffect->SetPause  ((iMask & VCF_PAUSED) != 0);
-    pParticleEffect->SetHalted ((iMask & VCF_HALTED) != 0);
+    // Ensure that emitter position is included - important for fast moving particle effects with low fParticleBoundingBoxUpdateInterval!
+    m_LocalSpaceBoundingBox.expandToInclude(m_spDescriptor->m_vRelativePosition);
+
+    if (bImmediateVisibilityBoundingBoxUpdate)
+      SetVisibilityBoundingBox(true, m_LocalSpaceBoundingBox);
+
+    // Compute world space bounding box from local space.
+    m_WorldSpaceBoundingBox = m_LocalSpaceBoundingBox;
+    m_WorldSpaceBoundingBox.transformFromOrigin(transform);
   }
   else
   {
-    if (pParticleEffect->IsPaused()) iMask |= VCF_PAUSED;
-    if (pParticleEffect->IsHalted()) iMask |= VCF_HALTED;
-    ar << iMask;
+    // Ensure that emitter position is included - important for fast moving particle effects with low fParticleBoundingBoxUpdateInterval!
+    m_WorldSpaceBoundingBox.expandToInclude(GetPosition());
+
+    if (bImmediateVisibilityBoundingBoxUpdate)
+      SetVisibilityBoundingBox(false, m_WorldSpaceBoundingBox);
+
+    // Compute local space bounding box from world space.
+    m_LocalSpaceBoundingBox = m_WorldSpaceBoundingBox;
+    m_LocalSpaceBoundingBox.transformFromOrigin(transform.getInverse());
   }
+
+  m_bScheduleVisibilityUpdate = !bImmediateVisibilityBoundingBoxUpdate;
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140621)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

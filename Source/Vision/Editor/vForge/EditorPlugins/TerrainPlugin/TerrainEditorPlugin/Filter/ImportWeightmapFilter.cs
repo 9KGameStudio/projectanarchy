@@ -30,7 +30,8 @@ namespace TerrainEditorPlugin.Filter
     }
 
     [SortedCategory("Input", 1), PropertyOrder(1)]
-    [EditorAttribute(typeof(AssetEditor), typeof(UITypeEditor)), AssetDialogFilter(new string[] { "Texture" })]
+    [RefreshProperties(System.ComponentModel.RefreshProperties.All)]
+    [EditorAttribute(typeof(AssetEditor), typeof(UITypeEditor)), AssetDialogFilter(new string[] { "Texture | 2D" })]
     [Description("Select which texture should be used as a weightmap source.")]
     public string WeightmapFilename
     {
@@ -190,7 +191,7 @@ namespace TerrainEditorPlugin.Filter
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

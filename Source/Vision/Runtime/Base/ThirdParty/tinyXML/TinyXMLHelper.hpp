@@ -51,6 +51,8 @@ namespace XMLHelper
   VBASE_IMPEXP bool Exchange_Bitmask(TiXmlElement *pParent,const char *szAttribName, int &eVar, int iEnumCount, const char* pszEnumNames[], const int pEnumValues[], bool bWrite);
 }
 
+static const char *pszClampModeNames[4] = {"none","u","v","uv"};
+static const int piClampModeValues[4] = {0,1,2,3};
 
 class VModelInfoXMLDocument : public TiXmlDocument
 {
@@ -88,6 +90,12 @@ public:
   inline static int GetUserFlags(TiXmlElement *pMaterialNode, int iAlternative) {XMLHelper::Exchange_Int(pMaterialNode, "userflags", iAlternative, false); return iAlternative;}
   inline static bool GetDoublesidednessFlag(TiXmlElement *pMaterialNode, bool bAlternative) {XMLHelper::Exchange_Bool(pMaterialNode,"doublesided",bAlternative,false);return bAlternative;}
   inline static bool GetDepthWriteFlag(TiXmlElement *pMaterialNode, bool bAlternative) {XMLHelper::Exchange_Bool(pMaterialNode,"depthwrite",bAlternative,false);return bAlternative;}
+  inline static UBYTE GetClampMode(TiXmlElement *pMaterialNode, UBYTE iAlternative) 
+  {
+    int iVal = iAlternative;
+    XMLHelper::Exchange_Enum(pMaterialNode,"clamp",iVal,4,pszClampModeNames,piClampModeValues,false);
+    return iVal;
+  }
   inline static bool GetSavePathsDataDirectoryRelative(TiXmlElement *pMaterialNode, bool bAlternative) {XMLHelper::Exchange_Bool(pMaterialNode, "datadirectoryrelative", bAlternative ,false); return bAlternative;}
   inline static void GetDepthBiasParams(TiXmlElement *pMaterialNode, float &fBias, float &fBiasClamp, float &fSlopeScale)
   {
@@ -144,6 +152,11 @@ public:
   inline static void SetUserFlags(TiXmlElement *pMaterialNode, int iFlags) {XMLHelper::Exchange_Int(pMaterialNode, "userflags", iFlags, true);}
   inline static void SetDoublesidednessFlag(TiXmlElement *pMaterialNode, bool bAlternative) {XMLHelper::Exchange_Bool(pMaterialNode,"doublesided",bAlternative,true);}
   inline static void SetDepthWriteFlag(TiXmlElement *pMaterialNode, bool bAlternative) {XMLHelper::Exchange_Bool(pMaterialNode,"depthwrite",bAlternative,true);}
+  inline static void SetClampMode(TiXmlElement *pMaterialNode, UBYTE iValue) 
+  {
+    int iVal = iValue;
+    XMLHelper::Exchange_Enum(pMaterialNode, "clamp", iVal, 4, pszClampModeNames, piClampModeValues, true);
+  }
   inline static void SetSavePathsDataDirectoryRelativeFlag(TiXmlElement *pMaterialNode, bool bAlternative) {XMLHelper::Exchange_Bool(pMaterialNode, "datadirectoryrelative", bAlternative, true);}
 
   inline static void SetDepthBiasParams(TiXmlElement *pMaterialNode, float fBias, float fBiasClamp, float fSlopeScale)
@@ -209,7 +222,7 @@ private:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140710)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

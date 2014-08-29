@@ -27,7 +27,8 @@ extern const hkClass hkpGroupFilterClass;
 /// tested), and passes these values to a common filtering mechanism.
 ///
 /// We split the 32 bit value into a system group (16 bits), a layer (5 bits), and a subsystem id (5 bits),
-/// and the id of another subsystem that we do not want to collide with (5 bits). 
+/// and the id of another subsystem that we do not want to collide with (5 bits), as follows:
+/// [ (systemGroup<<16) | (subSystemDontCollideWith<<10) | (subSystemId<<5) | layer ].
 ///
 /// The filter allows the user to specify whether collisions are enabled or disabled between every pair of layers
 /// and between members of the same system.
@@ -193,7 +194,7 @@ class hkpGroupFilter : public hkpCollisionFilter
 #endif // HK_DYNAMICS2_GROUP_FILTER_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -14,20 +14,25 @@
 // - The corresponding reflection database (reflection.db) is deleted
 // - The --force-output or --force-rebuild option is added to the pre-build generateReflection.py execution
 
-HK_ABSTRACT_CLASS(hkaiTraversalAnalyzer)
-HK_CLASS(hkaiClimbUpAnalyzer)
-HK_CLASS(hkaiDropDownAnalyzer)
-HK_CLASS(hkaiDuckUnderAnalyzer)
-HK_CLASS(hkaiJumpAnalyzer)
-HK_CLASS(hkaiTraversalAnalysisSettings)
-HK_CLASS(hkaiTraversalAnnotationLibrary)
-HK_CLASS(hkaiVaultAnalyzer)
-HK_STRUCT(hkaiIntervalPartitionLibrary)
-HK_STRUCT(hkaiIntervalPartitionLibraryPartitionRecord)
-HK_STRUCT(hkaiTraversalAnnotationLibraryAnnotation)
+HK_ABSTRACT_CLASS(HK_EXPORT_AI,hkaiTraversalAnalyzer)
+HK_CLASS(HK_EXPORT_AI,hkaiClimbUpAnalyzer)
+HK_CLASS(HK_EXPORT_AI,hkaiDropDownAnalyzer)
+HK_CLASS(HK_EXPORT_AI,hkaiDuckUnderAnalyzer)
+HK_CLASS(HK_EXPORT_AI,hkaiJumpAnalyzer)
+HK_CLASS(HK_EXPORT_AI,hkaiTraversalAnalysis)
+HK_CLASS(HK_EXPORT_AI,hkaiTraversalAnalysisInput)
+HK_CLASS(HK_EXPORT_AI,hkaiTraversalAnalysisOutput)
+HK_CLASS(HK_EXPORT_AI,hkaiTraversalAnalysisSettings)
+HK_CLASS(HK_EXPORT_AI,hkaiTraversalAnnotationLibrary)
+HK_CLASS(HK_EXPORT_AI,hkaiVaultAnalyzer)
+HK_STRUCT(HK_EXPORT_AI,hkaiIntervalPartitionLibrary)
+HK_STRUCT(HK_EXPORT_AI,hkaiIntervalPartitionLibraryPartitionRecord)
+HK_STRUCT(HK_EXPORT_AI,hkaiTraversalAnalysisInputSection)
+HK_STRUCT(HK_EXPORT_AI,hkaiTraversalAnalysisOutputSection)
+HK_STRUCT(HK_EXPORT_AI,hkaiTraversalAnnotationLibraryAnnotation)
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

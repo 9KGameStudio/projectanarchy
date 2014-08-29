@@ -20,6 +20,10 @@ namespace	hkgpSimplexNoise
 	// - If SECOND_DER (Laplacian) is true, 'der2' must be non-null and large enough to accomodate the (N*(1+N))/2 elements of the second derivative lower diagonal matrix (row major).
 	template <int N, bool FIRST_DER, bool SECOND_DER>
 	inline hkReal	evaluate(const hkReal* positions, hkReal* der1 = HK_NULL, hkReal* der2 = HK_NULL);
+
+	// fBm simplex noise.
+	template <int N>
+	inline hkReal	fBm(const hkVector4& x, int octaves, hkReal offset, hkReal persistence);
 };
 
 #include <Common/Internal/GeometryProcessing/SimplexNoise/hkgpSimplexNoise.inl>
@@ -27,7 +31,7 @@ namespace	hkgpSimplexNoise
 #endif // HK_GEOMETRY_PROCESSING_SIMPLEX_NOISE_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

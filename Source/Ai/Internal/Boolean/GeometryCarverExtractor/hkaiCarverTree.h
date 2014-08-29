@@ -11,13 +11,14 @@
 
 #include <Common/Base/Object/hkReferencedObject.h>
 #include <Ai/Pathfinding/Common/hkaiMaterialPainter.h>
+#include <Geometry/Internal/DataStructures/DynamicTree/hkcdDynamicAabbTree.h>
 
 class hkaiVolume;
-class hkcdDynamicAabbTree;
+class hkaiCarver;
 class hkAabb;
 
 	/// A wrapper to build a bounding-volume tree around carvers and painters for faster queries.
-class hkaiCarverTree : public hkReferencedObject
+class HK_EXPORT_AI hkaiCarverTree : public hkReferencedObject
 {
 	public:
 
@@ -26,13 +27,19 @@ class hkaiCarverTree : public hkReferencedObject
 		hkaiCarverTree();
 		~hkaiCarverTree();
 
-		typedef const hkArrayBase< hkRefPtr<const hkaiVolume> > CarverArray;
+		typedef const hkArrayBase< hkRefPtr<const hkaiCarver> > CarverArray;
 		typedef const hkArrayBase< hkRefPtr<const hkaiMaterialPainter> > PainterArray;
 
 		hkResult init( CarverArray& carvers, PainterArray& painters );
 
+		const hkaiCarver* getCarverAt( int idx ) const;
+		const hkaiMaterialPainter* getPainterAt( int idx ) const;
+
 			/// Returns a list of all carver volumes that might intersect the specified AABB.
-		hkResult queryAabbCarvers( const hkAabb& aabb, hkArray< hkRefPtr<const hkaiVolume> >& carverHits ) const;
+		hkResult queryAabbCarvers( const hkAabb& aabb, hkArray< hkRefPtr<const hkaiCarver> >& carverHits ) const;
+
+			/// Returns a list of the indices of carvers that might intersect the specified AABB.
+		hkResult queryAabbCarvers( const hkAabb& aabb, hkArray< int >& carverIndexHits ) const;
 
 			/// Returns a list of all material painter volumes that might intersect the specified AABB.
 		hkResult queryAabbPainters( const hkAabb& aabb, hkArray< hkRefPtr<const hkaiMaterialPainter> >& painterHits ) const;
@@ -62,7 +69,7 @@ class hkaiCarverTree : public hkReferencedObject
 #endif // HKAI_CARVER_TREE_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

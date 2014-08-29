@@ -11,13 +11,13 @@
 #include <Common/SceneData/Attributes/hkxAttributeHolder.h>
 #include <Common/SceneData/Mesh/hkxMeshSection.h>
 
-extern const class hkClass hkxMeshUserChannelInfoClass;
+extern HK_EXPORT_COMMON const class hkClass hkxMeshUserChannelInfoClass;
 
 /// hkxMesh meta information
-extern const class hkClass hkxMeshClass;
+extern HK_EXPORT_COMMON const class hkClass hkxMeshClass;
 
 /// The information needed to construct a mesh.
-class hkxMesh : public hkReferencedObject
+class HK_EXPORT_COMMON hkxMesh : public hkReferencedObject
 {
 	//+vtable(true)
 	//+version(1)
@@ -80,7 +80,7 @@ class hkxMesh : public hkReferencedObject
 #endif // HKSCENEDATA_MESH_HKXMESH_HKCLASS_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

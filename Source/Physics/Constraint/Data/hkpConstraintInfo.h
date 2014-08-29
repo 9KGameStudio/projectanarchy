@@ -9,6 +9,7 @@
 #ifndef HKP_CONSTRAINT_INFO_H
 #define HKP_CONSTRAINT_INFO_H
 
+#include <Physics/Constraint/hkpConstraintExport.h>
 
 // Descriptions of the layout of each type of Jacobian schema.
 namespace hkpJacobianSchemaInfo
@@ -308,7 +309,7 @@ namespace hkpJacobianSchemaInfo
 /// Contains information about the memory size required for Jacobians (m_sizeOfSchemas) and the number of solver results (m_numSolverResults)
 /// and temporal elements (m_numSolverElemTemps) for an associated constraint (hkpConstraintData).
 
-struct hkpConstraintInfo
+struct HK_EXPORT_PHYSICS hkpConstraintInfo
 {
 	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_DYNAMICS, hkpConstraintInfo );
 
@@ -420,7 +421,7 @@ inline hkpConstraintInfo& hkpConstraintInfo::operator= (const struct hkpConstrai
 #endif // HKP_CONSTRAINT_INFO_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

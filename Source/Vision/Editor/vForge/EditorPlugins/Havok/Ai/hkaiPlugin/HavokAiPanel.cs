@@ -24,7 +24,6 @@ using VisionEditorPlugin.Shapes;
 using TerrainEditorPlugin.Shapes;
 using HavokAiEditorPlugin.Shapes;
 #if USE_SPEEDTREE
-using Speedtree5EditorPlugin;
 using Speedtree6EditorPlugin;
 #endif
 
@@ -413,7 +412,6 @@ namespace HavokAiPanelDialogs
             || shape is DecorationGroupShape
 #endif
 #if USE_SPEEDTREE
-            || shape is SpeedTree5GroupShape
             || shape is Speedtree6GroupShape
 #endif
         )
@@ -654,7 +652,7 @@ namespace HavokAiPanelDialogs
       HavokNavMeshGlobalSettings loadedSettings = null;
       try
       {
-        BinaryFormatter fmt = SerializationHelper.BINARY_FORMATTER;
+        var fmt = SerializationHelper.AUTO_FORMATTER;
         FileStream fs = new FileStream(filename, FileMode.Open, FileAccess.Read);
         loadedSettings = (HavokNavMeshGlobalSettings)fmt.Deserialize(fs);
         fs.Close();
@@ -699,7 +697,7 @@ namespace HavokAiPanelDialogs
 
         try
         {
-          BinaryFormatter fmt = SerializationHelper.BINARY_FORMATTER;
+          var fmt = SerializationHelper.AUTO_FORMATTER;
           FileStream fs = new FileStream(filename, FileMode.Create);
           fmt.Serialize(fs, settingsToExported);
           fs.Close();
@@ -972,7 +970,7 @@ namespace HavokAiPanelDialogs
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140728)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

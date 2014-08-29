@@ -676,6 +676,28 @@ public:
   /// \sa VisObject3D_cl::GetLocalOrientation  
   VISION_APIFUNC void GetRotationMatrix( hkvMat3& matrix) const;
   
+
+  /// \brief
+  ///   Combines calls of SetPosition and SetRotationMatrix
+  /// 
+  /// It is more efficient than those individual calls because necessary updates and callbacks (e.g. notification of children) are only performed once 
+  /// This function should be used if both position and rotation should be updated.
+  /// This function converts the rotation matrix to Euler angles if the object is in Euler angle mode.
+  ///
+  /// \param vPos
+  ///   new object position
+  ///
+  /// \param matrix
+  ///   new rotation matrix
+  /// 
+  /// \sa VisObject3D_cl::SetPosition
+  /// \sa VisObject3D_cl::SetRotationMatrix
+  VISION_APIFUNC void SetPositionAndRotation( const hkvVec3& vPos, const hkvMat3& matrix);
+
+  /// \brief
+  ///   Combines calls of SetPosition and SetOrientation. See SetPositionAndRotation for detailed information
+  VISION_APIFUNC void SetPositionAndOrientation( const hkvVec3& vPos, const hkvVec3& vYPR);
+
   /// \brief
   ///   Internal function to ensure that the protected m_cachedRotMatrix member is up-to-date afterwards
   VISION_APIFUNC void EnsureCachedRotationMatrixValid() const;
@@ -921,6 +943,10 @@ public:
   VISION_APIFUNC void SetLocalOrientationMatrix(const hkvMat3& matrix);  
 
   /// \brief
+  ///   A combination of SetLocalPosition and SetLocalOrientationMatrix. Relevant binding updates are only performed once, so this function should be used in case local position and orientation should be set at the same time
+  VISION_APIFUNC void SetLocalTransform(const hkvVec3& pos, const hkvMat3& matrix);
+
+  /// \brief
   ///   Gets the local space orientation matrix of the object.
   /// 
   /// The returned orientation is only valid if the object is attached to a parent.
@@ -942,6 +968,34 @@ public:
   /// 
   /// \sa VisObject3D_cl::SetLocalPosition
   VISION_APIFUNC void ResetLocalTransformation();
+
+  /// \brief
+  ///   Traverses the parent/child hierarchy including this root object and returns the first occurrence of an object that matches the given key string
+  VISION_APIFUNC VisObject3D_cl* FindObjectByKey(const char *szObjectKey, bool bIgnoreCase=true);
+
+  /// \brief
+  ///   Traverses the parent/child hierarchy including this root object and returns the first occurrence of an object that matches the given key string and (base-)type
+  VISION_APIFUNC VisObject3D_cl* FindObjectByKeyAndType(const char *szObjectKey, VType *pType, bool bIgnoreCase=true, bool bAllowDerived=true);
+
+  /// \brief
+  ///   Traverses the parent/child hierarchy including this root object and returns the first occurrence of an object that matches the given (base-)type
+  VISION_APIFUNC VisObject3D_cl* FindObjectByType(VType *pType, bool bAllowDerived=true);
+
+  /// \brief
+  ///   templated/typesafe version of FindObjectByType
+  template<typename T>
+  T* FindObjectByType(bool bAllowDerived=true)
+  {
+    return static_cast<T*>(FindObjectByType(T::GetClassTypeId(), bAllowDerived));
+  }
+
+  /// \brief
+  ///   templated/typesafe version of FindObjectByKeyAndType
+  template<typename T>
+  T* FindObjectByKeyAndType(const char *szObjectKey, bool bIgnoreCase=true, bool bAllowDerived=true)
+  {
+    return static_cast<T*>(FindObjectByKeyAndType(szObjectKey,T::GetClassTypeId(), bIgnoreCase, bAllowDerived));
+  }
 
   ///
   /// @}
@@ -1327,7 +1381,7 @@ public:
   VISION_APIFUNC virtual void OnDeserializationCallback(const VSerializationContext &context) HKV_OVERRIDE;
   VISION_APIFUNC virtual VBool WantsDeserializationCallback(const VSerializationContext &context) HKV_OVERRIDE { return TRUE; }
 
-#ifdef WIN32
+#ifdef _VISION_WIN32
 
   /// \brief
   ///   Internal function used by vForge
@@ -1454,7 +1508,7 @@ public:
   inline void ForcePortalTrace() { if (m_pVisData != NULL) m_pVisData->HandleNodeTransition(); }
    
   V_DECLARE_SERIAL_DLLEXP( VisObject3D_cl, VISION_APIDATA )
-  IMPLEMENT_OBJ_CLASS(VisObject3D_cl);
+  IMPLEMENT_OBJ_CLASS_IMPEXP(VISION_APIDATA, VisObject3D_cl);
 
   /// \brief
   ///   Recomputes the visibility.
@@ -1575,19 +1629,19 @@ protected:
   /// \brief
   ///   Listens to parent modifications in order to update the world space transformation
   ///   accordingly.
-  VISION_APIFUNC VOVERRIDE void ModSysNotifyFunctionParentAltered( int iFlags );
+  VISION_APIFUNC virtual void ModSysNotifyFunctionParentAltered( int iFlags ) HKV_OVERRIDE;
 
   /// \brief
-  ///   Implements VisModuleSystemChild_cl::GetOwnerTypeId() and returns RTTI type for VisObject3D_cl  
-  VISION_APIFUNC VOVERRIDE VType* GetOwnerTypeId();
-
-  /// \brief
-  ///   Overridden module system function
-  VISION_APIFUNC VOVERRIDE void ModSysNotifyFunctionParentDestroyed();
+  ///   Implements VisModuleSystemChild_cl::GetOwnerTypeObject() and returns this typed object
+  VISION_APIFUNC virtual VTypedObject* GetOwnerTypedObject() HKV_OVERRIDE;
 
   /// \brief
   ///   Overridden module system function
-  VISION_APIFUNC VOVERRIDE void ModSysNotifyFunctionOnDisconnect(BOOL bDestroy);
+  VISION_APIFUNC virtual void ModSysNotifyFunctionParentDestroyed() HKV_OVERRIDE;
+
+  /// \brief
+  ///   Overridden module system function
+  VISION_APIFUNC virtual void ModSysNotifyFunctionOnDisconnect(BOOL bDestroy) HKV_OVERRIDE;
 
 
   hkvVec3 m_vPosition;                        ///< x,y,z position
@@ -1634,14 +1688,21 @@ public:
   ///   Constructor for an object creation template
   VisObject3DTemplate_cl(const char *pszClassName = NULL)
   {
+    m_pClassType = NULL;
     m_pszClassName = pszClassName;
     m_pszObjectKey = NULL;
+    m_vPosition.setZero();
     m_vScale.set(1.f, 1.f, 1.f);
+    m_vRotation.setZero();
   }
   
   /// \brief
-  ///   The class name of the new entity, e.g. "VisBaseEntity_cl"
+  ///   The class name of the new object, e.g. "VisBaseEntity_cl". Mutually exclusive with m_pClassType.
   const char *m_pszClassName;
+    
+  /// \brief
+  ///   The class type of the new object, e.g. VisBaseEntity_cl::GetClassTypeId(). Mutually exclusive with m_pszClassName.
+  VType* m_pClassType;
     
   /// \brief
   ///   The position of the new entity
@@ -1665,7 +1726,7 @@ public:
 #endif  // FR_DEFINE_VISAPIOBJECT3D
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

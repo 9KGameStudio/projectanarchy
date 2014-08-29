@@ -531,7 +531,7 @@ public:
   ///
 
   /// \brief
-  ///   Returns the number of resource entries, i.e. the highest index of a used resource minus
+  ///   Returns the number of resource entries, i.e. the highest index of a used resource plus
   ///   one.
   /// 
   /// This value can be used to iterate through the list of resources, but note that there might
@@ -1118,7 +1118,7 @@ public:
 #ifdef SUPPORTS_RESOURCEVIEWER
   /// \brief
   ///   Update any possible listening resource viewers.
-#if defined(WIN32) && !defined(_VISION_WINRT)
+#if defined(_VISION_WIN32) && !defined(_VISION_WINRT)
   static BOOL UpdateResourceViewer(HWND hWnd, HWND hWndSender, const VResourceManager **pManagerList, int iListCount, VConnection* pRemoteConnection = NULL);
 #else
   static BOOL UpdateResourceViewer(const VResourceManager **pManagerList, int iListCount, VConnection* pRemoteConnection);
@@ -1219,7 +1219,7 @@ public:
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

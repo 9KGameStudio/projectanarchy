@@ -19,6 +19,7 @@ using CSharpFramework.View;
 using CSharpFramework;
 using CSharpFramework.Helper;
 using System.IO;
+using System.Linq;
 
 namespace TerrainEditorPlugin.Controls
 {
@@ -57,7 +58,8 @@ namespace TerrainEditorPlugin.Controls
         string ext = System.IO.Path.GetExtension(filename);
         if (ext == null)
           continue;
-        if (string.Compare(ext, ".bmp", true) == 0/* || string.Compare(ext, ".tga", true) == 0*/)
+
+        if(ManagedBase.ImageLoader.GetSupportedFileExtensions().Contains(ext, StringComparer.InvariantCultureIgnoreCase))
           arr.Add(filename);
       }
       if (arr.Count == 0)
@@ -223,7 +225,7 @@ namespace TerrainEditorPlugin.Controls
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

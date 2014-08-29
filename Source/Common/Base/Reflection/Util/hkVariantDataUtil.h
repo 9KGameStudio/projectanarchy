@@ -11,7 +11,7 @@
 #include <Common/Serialize/Data/hkDataObject.h>
 #include <Common/Base/Reflection/hkClassMember.h>
 
-struct hkStridedBasicArray
+struct HK_EXPORT_COMMON hkStridedBasicArray
 {
 	hkClassMember::Type m_type;	///< The type of the member (can only be a basic type: integer, bool, half, float, double)
 	int m_tupleSize;			///< The tuple size (1 if not a tuple)
@@ -45,7 +45,7 @@ class hkTypeInfoRegistry;
 /// invoke some other construction. It is worth noting though that 'finishing' assumes that serialized data members
 /// are set and valid; trying to 'finish' a raw piece of memory to construct an object of some type could cause 
 /// undefined behavior.
-struct hkVariantDataUtil
+struct HK_EXPORT_COMMON hkVariantDataUtil
 {
 
 		/// Get the value of type stored at 'data' as a hkReal
@@ -159,7 +159,7 @@ struct hkVariantDataUtil
 #endif // HK_VARIANT_DATA_UTIL_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -28,7 +28,7 @@
 // TODO: correct AI header for ray query
 #include <Ai/Pathfinding/Character/Behavior/hkaiPathFollowingBehavior.h>
 
-#include <Vision/Runtime/Base/System/Memory/VMemDbg.hpp>
+
 
 namespace
 {
@@ -88,7 +88,7 @@ bool RPG_ClosestAttackableRaycastResult::onHit( VisPhysicsHit_t &hit )
   if(hit.pHitObject->IsFrom(RPG_DamageableEntity))
   {
     RPG_DamageableEntity* hitEntity = static_cast<RPG_DamageableEntity*>(hit.pHitObject);
-    RPG_AttackableComponent* attackableComponent = static_cast<RPG_AttackableComponent*>(hitEntity->Components().GetComponentOfType(V_RUNTIME_CLASS(RPG_AttackableComponent)));
+    RPG_AttackableComponent* attackableComponent = hitEntity->Components().GetComponentOfType<RPG_AttackableComponent>();
     if (attackableComponent)
     {
       // hit an attackable entity
@@ -124,7 +124,9 @@ PlayerUIDialog::PlayerUIDialog(RPG_PlayerControllerComponent *playerController)
   , m_selectDestinationVFXInterval(0.1f)
   , m_lastSelectDestinationVFXTime(0.0f)
   , m_cursorTextureFilename("GUI/Textures/Mouse.dds")
+#if defined(SUPPORTS_MULTITOUCH)
   , m_touchInput(NULL)
+#endif
 {
 }
 
@@ -434,7 +436,7 @@ hkvVec2 PlayerUIDialog::GetCursorPosition(IVGUIContext const *context) const
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

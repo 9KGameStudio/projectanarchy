@@ -19,7 +19,7 @@
 /// It is assumed that deforming will be done most commonly by your graphics engine, usually in hardware on GPUs or VUs.
 /// That hardware deformation is usually performed at the same time as per vertex lighting operations, so Havok cannot
 /// provide optimized deformers for all such game specific usage.
-class hkaFPUSkinningDeformer
+class HK_EXPORT_ANIMATION hkaFPUSkinningDeformer
 {
 	public:
 			/// Static version of the virtual deform, takes an explicit binding
@@ -31,7 +31,7 @@ class hkaFPUSkinningDeformer
 #endif // HK_FPU_SKINNING_DEFORMER_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

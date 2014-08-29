@@ -10,7 +10,7 @@
 #define HK_DYNAMICS2_MULTI_THREADING_TYPES_H
 
 
-extern const class hkClass hkMultiThreadCheckClass;
+extern HK_EXPORT_COMMON const class hkClass hkMultiThreadCheckClass;
 
 #if defined (HK_DEBUG) && !defined(HK_PLATFORM_SPU)
 	/// Enabling multi threading debugging. This is currently only done in debug mode.
@@ -28,7 +28,7 @@ extern const class hkClass hkMultiThreadCheckClass;
 #include <Common/Base/System/StackTracer/hkStackTracer.h>
 
 	/// A structure used in hkpWorld to provide debug access checking.
-class hkMultiThreadCheck
+class HK_EXPORT_COMMON hkMultiThreadCheck
 {
 	public:
 
@@ -213,7 +213,7 @@ class hkMultiThreadCheck
 #endif // HK_DYNAMICS2_MULTI_THREADING_TYPES_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -10,12 +10,12 @@
 #define HKSCENEDATA_HKX_ATTRIBUTE__H
 
 /// hkxAttribute meta information
-extern const class hkClass hkxAttributeClass;
+extern HK_EXPORT_COMMON const class hkClass hkxAttributeClass;
 class hkReferencedObject;
 	/// An attribute is nothing more than a named variant, i.e., a variant (type+value) with a name.
 	/// Only some specific types are expected though : hkxAnimatedFloat, hkxAnimatedMatrix, hkxAnimatedQuaternion,
 	/// hkxAnimatedVector, hkxSparselyAnimatedBool, hkxSparselyAnimatedEnum, hkxSparselyAnimatedInt and hkxSparselyAnimatedString.
-struct hkxAttribute
+struct HK_EXPORT_COMMON hkxAttribute
 {
 	//+version(1)
 	HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR( HK_MEMORY_CLASS_SCENE_DATA, hkxAttribute );
@@ -55,7 +55,7 @@ struct hkxAttribute
 #endif // HKSCENEDATA_HKX_ATTRIBUTE__H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -27,7 +27,7 @@
 	///
 	/// In the report the size of the allocation is shown by the size of the block or more specifically the volume of the block.
 	/// I.e., an allocation of 64 bytes will be shown by a cube 4 by 4 by 4.
-class hkTulipReportUtil
+class HK_EXPORT_COMMON hkTulipReportUtil
 {
     public:
 		typedef hkScanReportUtil::Block Block;
@@ -50,7 +50,7 @@ class hkTulipReportUtil
 #endif // HKBASE_TULIP_REPORT_UTIL_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

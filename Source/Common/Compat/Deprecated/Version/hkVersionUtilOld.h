@@ -24,12 +24,12 @@ namespace hkVersionUtil
 
 		/// Copies the old named member to the new named member.
 		/// The members must have identical sizes.
-	void HK_CALL renameMember( hkVariant& oldObj, const char* oldName, hkVariant& newObj, const char* newName );
+//	void HK_CALL renameMember( hkVariant& oldObj, const char* oldName, hkVariant& newObj, const char* newName );
 
 		/// Copy defaults for new members.
 		/// For each member in newClass which is not in oldClass and which
 		/// has a specified default, copy it in into obj.
-	void HK_CALL copyDefaults( void* obj, const hkClass& oldClass, const hkClass& newClass );
+//	void HK_CALL copyDefaults( void* obj, const hkClass& oldClass, const hkClass& newClass );
 
 		/// Copy object from 'objectsIn' to preallocated 'objectsOut'.
 		/// The 'tracker' stores information about all shared and new allocations
@@ -118,7 +118,7 @@ private:
 #endif // HK_SERIALIZE_VERSIONUTIL_OLD_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

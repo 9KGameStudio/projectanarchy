@@ -19,7 +19,7 @@ class hkaiViewerContext;
 class hkaiNavMesh;
 
 /// Base class for nav mesh viewers.
-class hkaiNavMeshBaseViewer : 	public hkaiViewerBase,
+class HK_EXPORT_AI hkaiNavMeshBaseViewer : 	public hkaiViewerBase,
 								public hkaiWorld::Listener
 {
 	public:
@@ -59,7 +59,7 @@ class hkaiNavMeshBaseViewer : 	public hkaiViewerBase,
 };
 
 /// Viewer to display the edges and faces of hkaiNavMesh objects associated with AI worlds.
-class hkaiNavMeshGeometryViewer : public hkaiNavMeshBaseViewer
+class HK_EXPORT_AI hkaiNavMeshGeometryViewer : public hkaiNavMeshBaseViewer
 {
 	public:
 	
@@ -136,7 +136,7 @@ class hkaiNavMeshGeometryViewer : public hkaiNavMeshBaseViewer
 		int indexOfInstance( const hkaiNavMeshInstance* instance ) const;
 		
 			/// A block of original faces, and the hash of their flags.
-		struct OriginalFaceBlock
+		struct HK_EXPORT_AI OriginalFaceBlock
 		{
 				/// The start face index of the block
 			hkaiNavMesh::FaceIndex m_blockStart;
@@ -156,16 +156,21 @@ class hkaiNavMeshGeometryViewer : public hkaiNavMeshBaseViewer
 
 
 			/// Internal bookkeeping information
-		struct NavMeshInfo
+		struct HK_EXPORT_AI NavMeshInfo
 		{
 			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE,hkaiNavMeshGeometryViewer::NavMeshInfo);
+			NavMeshInfo() { resetCachedTransform(); }
+			void resetCachedTransform();
+
 			const hkaiNavMeshInstance*	m_navMeshInstance;
 			const hkaiWorld*			m_world;
 
-			hkArray<OriginalFaceBlock> m_originalFaceBlocks;
+			hkArray<OriginalFaceBlock>	m_originalFaceBlocks;
 			
 				/// See OriginalFaceBlock::m_idBase
-			hkUlong m_ownedFaceIdBase;
+			hkUlong						m_ownedFaceIdBase;
+
+			hkTransform					m_lastTransform;
 		};
 
 			/// Information pertaining to nav meshes for which display geometries have been added.
@@ -175,7 +180,7 @@ class hkaiNavMeshGeometryViewer : public hkaiNavMeshBaseViewer
 };
 
 /// Viewer to display the vertex normals of hkaiNavMesh objects associated with AI worlds.
-class hkaiNavMeshVertexNormalsViewer : public hkaiNavMeshBaseViewer
+class HK_EXPORT_AI hkaiNavMeshVertexNormalsViewer : public hkaiNavMeshBaseViewer
 {
 	public:
 		HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE);
@@ -196,7 +201,7 @@ class hkaiNavMeshVertexNormalsViewer : public hkaiNavMeshBaseViewer
 };
 
 /// Viewer to display the edge normals of hkaiNavMesh objects associated with AI worlds.
-class hkaiNavMeshEdgeNormalsViewer : public hkaiNavMeshBaseViewer
+class HK_EXPORT_AI hkaiNavMeshEdgeNormalsViewer : public hkaiNavMeshBaseViewer
 {
 	public:
 		HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE);
@@ -217,7 +222,7 @@ class hkaiNavMeshEdgeNormalsViewer : public hkaiNavMeshBaseViewer
 };
 
 /// Viewer to display the face normals of hkaiNavMesh objects associated with AI worlds.
-class hkaiNavMeshFaceNormalsViewer : public hkaiNavMeshBaseViewer
+class HK_EXPORT_AI hkaiNavMeshFaceNormalsViewer : public hkaiNavMeshBaseViewer
 {
 	public:
 		HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE);
@@ -238,7 +243,7 @@ class hkaiNavMeshFaceNormalsViewer : public hkaiNavMeshBaseViewer
 };
 
 /// Viewer to display the vertex labels of hkaiNavMesh objects associated with AI worlds.
-class hkaiNavMeshVertexLabelsViewer : public hkaiNavMeshBaseViewer
+class HK_EXPORT_AI hkaiNavMeshVertexLabelsViewer : public hkaiNavMeshBaseViewer
 {
 	public:
 		HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE);
@@ -259,7 +264,7 @@ class hkaiNavMeshVertexLabelsViewer : public hkaiNavMeshBaseViewer
 };
 
 /// Viewer to display the edge labels of hkaiNavMesh objects associated with AI worlds.
-class hkaiNavMeshEdgeLabelsViewer : public hkaiNavMeshBaseViewer
+class HK_EXPORT_AI hkaiNavMeshEdgeLabelsViewer : public hkaiNavMeshBaseViewer
 {
 	public:
 		HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE);
@@ -280,7 +285,7 @@ class hkaiNavMeshEdgeLabelsViewer : public hkaiNavMeshBaseViewer
 };
 
 /// Viewer to display the face labels of hkaiNavMesh objects associated with AI worlds.
-class hkaiNavMeshFaceLabelsViewer : public hkaiNavMeshBaseViewer
+class HK_EXPORT_AI hkaiNavMeshFaceLabelsViewer : public hkaiNavMeshBaseViewer
 {
 	public:
 		HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE);
@@ -303,7 +308,7 @@ class hkaiNavMeshFaceLabelsViewer : public hkaiNavMeshBaseViewer
 #endif  // HKAI_NAV_MESH_VIEWER_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

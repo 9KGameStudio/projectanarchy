@@ -10,17 +10,17 @@
 #define HKAI_MATERIAL_PAINTER_H
 
 #include <Common/Base/Types/hkRefPtr.h>
+#include <Ai/Pathfinding/Common/hkaiVolume.h>
 
-extern const class hkClass hkaiMaterialPainterClass;
+extern HK_EXPORT_AI const class hkClass hkaiMaterialPainterClass;
 
-class hkaiVolume;
 
 	/// A material painter is an hkaiVolume which can be used at navmesh generation
 	/// time to mark all the geometry contained in it with a given material.
 	/// Faces partially contained inside the painter volume are cut along the volume
 	/// boundary, and only those resulting pieces which are completely contained in
 	/// the volume are affected.
-class hkaiMaterialPainter : public hkReferencedObject
+class HK_EXPORT_AI hkaiMaterialPainter : public hkReferencedObject
 {
 		//+version(0)
 	public:
@@ -69,7 +69,7 @@ class hkaiMaterialPainter : public hkReferencedObject
 #endif // HKAI_MATERIAL_PAINTER_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

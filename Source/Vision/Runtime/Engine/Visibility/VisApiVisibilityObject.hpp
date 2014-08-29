@@ -380,6 +380,7 @@ private:
   friend inline int DoesLightAffectVisObject(VisVisibilityObject_cl *pVisObject, int iLight);
 
 protected:
+  V_DECLARE_SERIAL_DLLEXP(VisVisibilityObject_cl, VISION_APIDATA);
   VISION_APIFUNC VOVERRIDE void Serialize( VArchive &ar );
   void CreateHWHandle();
 
@@ -457,7 +458,7 @@ VISION_ELEMENTMANAGER_TEMPLATE_DECL(VisVisibilityObject_cl)
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

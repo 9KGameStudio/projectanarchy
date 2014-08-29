@@ -34,6 +34,8 @@ struct MeshMergeInfo_t
     m_eMaterialMergeMode = Merge_SameReference;
     m_eBoneMergeMode = Merge_SameName;
     iFinalBoneIndex = -1;
+    m_RelativeRotation.setIdentity();
+    m_vRelativeOffset.setZero();
   }
 
   VDynamicMesh *m_pMesh;                ///< pointer to the dynamic mesh to merge. Must be !=NULL
@@ -56,7 +58,7 @@ private:
 #endif // VIS_MODEL_HPP_INCLUDED
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

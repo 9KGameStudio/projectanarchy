@@ -178,6 +178,9 @@ class hkSimdInt<128>
 		/// Sets this = a | b
 		inline void setOr(const hkSimdInt<128>& a, const hkSimdInt<128>& b);
 
+		/// Sets this = a ^ b
+		inline void setXor(const hkSimdInt<128>& a, const hkSimdInt<128>& b);
+
 		/// Sets this = a << I
 		template <int I>
 		inline void setShiftLeft(const hkSimdInt<128>& a);
@@ -223,7 +226,7 @@ class hkSimdInt<128>
 #endif	//	HK_MATH_SIMD_INT_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

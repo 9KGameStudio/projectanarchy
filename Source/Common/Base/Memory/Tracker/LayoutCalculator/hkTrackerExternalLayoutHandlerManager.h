@@ -18,7 +18,7 @@ class hkTrackerLayoutCalculator;
 /// for specific class types. The manager will simply store those handlers and when a new
 /// hkTrackerLayoutCalculator is created we will register those as additional handlers in the
 /// calculator. The Havok demo framework uses this to register handlers for external classes.
-class hkTrackerExternalLayoutHandlerManager : public hkReferencedObject, public hkSingleton<hkTrackerExternalLayoutHandlerManager>
+class HK_EXPORT_COMMON hkTrackerExternalLayoutHandlerManager : public hkReferencedObject, public hkSingleton<hkTrackerExternalLayoutHandlerManager>
 {
 public:
 	HK_DECLARE_CLASS_ALLOCATOR(ExtHandlerManager);
@@ -53,7 +53,7 @@ HK_SINGLETON_SPECIALIZATION_DECL(hkTrackerExternalLayoutHandlerManager);
 #endif // HKBASE_EXTERNAL_LAYOUT_HANDLER_MANAGER_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

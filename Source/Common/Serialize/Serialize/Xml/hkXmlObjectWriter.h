@@ -15,19 +15,19 @@ class hkStreamWriter;
 class hkClass;
 
 /// Writes a single object to an XML stream.
-class hkXmlObjectWriter : public hkObjectWriter
+class HK_EXPORT_COMMON hkXmlObjectWriter : public hkObjectWriter
 {
 	public:
 	HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE);
 			/// Callback for naming pointers.
-		struct NameFromAddress
+		struct HK_EXPORT_COMMON NameFromAddress
 		{
 			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE,hkXmlObjectWriter::NameFromAddress);
 			virtual ~NameFromAddress() { }
 			virtual int nameFromAddress( const void* addr, char* buf, int bufSize ) = 0;
 		};
 			/// Numbers each pointer sequentially from 1.
-		struct SequentialNameFromAddress : public NameFromAddress
+		struct HK_EXPORT_COMMON SequentialNameFromAddress : public NameFromAddress
 		{
 			HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(HK_MEMORY_CLASS_BASE,hkXmlObjectWriter::SequentialNameFromAddress);
 			virtual int nameFromAddress( const void* addr, char* buf, int bufSize );
@@ -81,7 +81,7 @@ class hkXmlObjectWriter : public hkObjectWriter
 #endif //HK_SERIALIZE_XML_OBJECT_WRITER_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

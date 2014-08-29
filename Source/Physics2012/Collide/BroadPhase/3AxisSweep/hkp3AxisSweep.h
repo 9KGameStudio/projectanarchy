@@ -200,8 +200,8 @@ class hkp3AxisSweep : public hkpBroadPhase
 					return max_z;
 				}
 
-
-				HK_FORCE_INLINE void setElem( int axis, int minmax, int value )
+				template <int axis>
+				HK_FORCE_INLINE void setElem( int minmax, int value )
 				{
 #ifndef HK_BROADPHASE_32BIT
 					HK_ASSERT(0x5887d49e,  value < 0x10000);
@@ -210,9 +210,14 @@ class hkp3AxisSweep : public hkpBroadPhase
 					p[0] = BpInt(value);
 				}
 
-				HK_FORCE_INLINE int isMarker() const
+				HK_FORCE_INLINE bool isMarker() const
 				{
-					return int(hkUlong(m_handle))& 1;
+					return ((hkUlong(m_handle)) & 1) != 0;
+				}
+
+				HK_FORCE_INLINE bool isNotMarker() const
+				{
+					return ((hkUlong(m_handle)) & 1) == 0;
 				}
 
 				HK_FORCE_INLINE hkpBpMarker& getMarker( hkpBpMarker* markers) const
@@ -223,9 +228,9 @@ class hkp3AxisSweep : public hkpBroadPhase
 
 
 				// check whether the objects are disjoint
-				HK_FORCE_INLINE hkInt32 xyDisjoint( const hkpBpNode& other ) const;
-				HK_FORCE_INLINE hkInt32 xzDisjoint( const hkpBpNode& other ) const;
-				HK_FORCE_INLINE hkUint32 yzDisjoint( const hkpBpNode& other ) const;
+				HK_FORCE_INLINE hkBool32 xyDisjoint( const hkpBpNode& other ) const;
+				HK_FORCE_INLINE hkBool32 xzDisjoint( const hkpBpNode& other ) const;
+				HK_FORCE_INLINE hkBool32 yzDisjoint( const hkpBpNode& other ) const;
 		};
 
 	public:
@@ -257,8 +262,7 @@ class hkp3AxisSweep : public hkpBroadPhase
 	enum { AABB_MIN_VALUE = 0, AABB_MAX_VALUE = 0x7ffffffe, AABB_MAX_FVALUE = 0x7ffe0000, HK_BP_NUM_VALUE_BITS = 31 };
 #endif
 
-	static HK_ALIGN16( hkUint32 OneMask[4] );
-	static hkQuadReal MaxVal;
+	static hkQuadReal s_MaxVal;
 
 	public:
 		class hkpBpAxis
@@ -271,7 +275,8 @@ class hkp3AxisSweep : public hkpBroadPhase
 			public:
 				hkArray<hkpBpEndPoint> m_endPoints;
 
-				void mergeBatch( hkpBpNode *nodes, int newIdx, int newNum, int axis, hkpBpEndPoint* scratch );
+				template <int axis>
+				void mergeBatch( hkpBpNode *nodes, int newIdx, int newNum, hkpBpEndPoint* scratch );
 
 				template<int axis>
 				inline void removeBatch( hkpBpNode *nodes, const hkArrayBase<int>& nodeRelocations );
@@ -279,7 +284,8 @@ class hkp3AxisSweep : public hkpBroadPhase
 
 					// for batch add 
 				void remove( int minPosition, int maxPosition);
-				int  insertTail( hkpBpNode *nodes, int axis, hkpBpEndPoint* newNodes, int numNewNodes );
+				template <int axis>
+				int  insertTail( hkpBpNode *nodes, hkpBpEndPoint* newNodes, int numNewNodes );
 
 				template< int axis > HK_FORCE_INLINE void mergeRest( hkpBpNode *nodes, int startOfTail, hkpBpEndPoint* newEndPoints, int numNewEndPoints );
 
@@ -301,11 +307,11 @@ class hkp3AxisSweep : public hkpBroadPhase
 		static void HK_FAST_CALL beginOverlap( hkpBpNode& a, hkpBpNode& b, hkArray<hkpBroadPhaseHandlePair>& m_newPairsOut);
 		static void HK_FAST_CALL endOverlap(   hkpBpNode& a, hkpBpNode& b, hkArray<hkpBroadPhaseHandlePair>& m_deletedPairsOut);
 
-		HK_FORCE_INLINE static void HK_CALL _convertAabbToInt( const hkAabb& aabb, const hkVector4& offsetLow, const hkVector4& offsetHigh, const hkVector4& scale, hkAabbUint32& aabbOut );
-		HK_FORCE_INLINE void _convertAabbToInt( const hkAabb& aabb, hkAabbUint32& aabbOut ) const;
-		HK_FORCE_INLINE void convertVectorToInt( const hkVector4& vec, hkUint32* intsOut) const;
+		static HK_FORCE_INLINE void HK_CALL _convertAabbToInt( const hkAabb& aabb, hkVector4Parameter offsetLow, hkVector4Parameter offsetHigh, hkVector4Parameter scale, hkAabbUint32& aabbOut );
+		HK_FORCE_INLINE void convertAabbToInt( const hkAabb& aabb, hkAabbUint32& aabbOut ) const;
+		HK_FORCE_INLINE void convertVectorToInt( hkVector4Parameter vec, hkUint32* intsOut) const;
 
-		HK_FORCE_INLINE void convertAabbToBroadPhaseResolution(const hkAabbUint32& aabbIn, hkAabbUint32& aabbOut);
+		HK_FORCE_INLINE void convertAabbToBroadPhaseResolution(const hkAabbUint32& aabbIn, hkAabbUint32& aabbOut) const;
 
 		HK_FORCE_INLINE int getNumMarkers() const;
 
@@ -319,24 +325,26 @@ class hkp3AxisSweep : public hkpBroadPhase
 		enum hkpBpMarkerUse { HK_BP_NO_MARKER, HK_BP_USE_MARKER };
 		//HK_FORCE_INLINE	void updateAxis( int axisIndex, hkpBpNode* nodes, hkpBpNode& node, hkUint32 nodeIndex, hkUint32 new_min, hkUint32 new_max, hkpBpMarkerUse marker, hkArray<hkpBroadPhaseHandlePair>& m_newPairsOut, hkArray<hkpBroadPhaseHandlePair>& m_deletedPairsOut);
 			/// ###ACCESS_CHECKS###( [this,HK_ACCESS_RW] );
-		HK_FORCE_INLINE void updateAabb( hkpBroadPhaseHandle* object, const hkAabbUint32& aabb, hkArray<hkpBroadPhaseHandlePair>& m_newPairsOut, hkArray<hkpBroadPhaseHandlePair>& m_deletedPairsOut);
+		void updateAabb( hkpBroadPhaseHandle* object, const hkAabbUint32& aabb, hkArray<hkpBroadPhaseHandlePair>& m_newPairsOut, hkArray<hkpBroadPhaseHandlePair>& m_deletedPairsOut);
 	protected:
 		void updateNodesAfterInsert( hkpBpNode *nodes, int numNodes, hkpBpNode& newNode );
 		void updateNodesAfterDelete( hkpBpNode *nodes, int numNodes, hkpBpNode& oldNode );
 		void updateNodesAfterBatchTailInsert( hkpBpNode *nodes, int numNodes, int numNewNodes, int* offsets );
 
 
-		HK_FORCE_INLINE void querySingleAabbAddObject( hkpBroadPhaseHandle* object, int newNodeIndex, const hkUint32 *bitfield, hkpBpNode& refNode, hkArray<hkpBroadPhaseHandlePair>& pairs_out) const;
-		HK_FORCE_INLINE void querySingleAabbRemoveObject( hkpBroadPhaseHandle* object, int newNodeIndex, const hkUint32 *bitfield, hkpBpNode& refNode, hkArray<hkpBroadPhaseHandlePair>& pairs_out) const;
-		                void setBitsBasedOnXInterval( int numNodes, int x_value, const hkpBpNode& queryNode, BpInt queryNodeIndex, hkUint32* bitField) const;
+		void querySingleAabbAddObject( hkpBroadPhaseHandle* object, int newNodeIndex, const hkUint32 *bitfield, hkpBpNode& refNode, hkArray<hkpBroadPhaseHandlePair>& pairs_out) const;
+		void querySingleAabbRemoveObject( hkpBroadPhaseHandle* object, int newNodeIndex, const hkUint32 *bitfield, hkpBpNode& refNode, hkArray<hkpBroadPhaseHandlePair>& pairs_out) const;
+		void setBitsBasedOnXInterval( int numNodes, int x_value, const hkpBpNode& queryNode, BpInt queryNodeIndex, hkUint32* bitField) const;
 
 		enum hkpBpQuerySingleType { HK_BP_REPORT_HANDLES, HK_BP_REPORT_NODES, HK_BP_COLLECTOR };
-		HK_FORCE_INLINE void querySingleAabbSub( hkpBroadPhaseHandle* object, const hkUint32 *bitfield, hkpBpNode& refNode, hkpBpQuerySingleType type, hkArray<hkpBroadPhaseHandlePair>* pairs_out, hkArrayBase<const hkpBpNode*>* nodesOut, hkpBroadPhaseCastCollector* collector) const;
-		HK_FORCE_INLINE void _querySingleAabb( const hkAabb& aabb, hkpBpQuerySingleType type, hkArray<hkpBroadPhaseHandlePair>* pairs_out, hkArrayBase<const hkpBpNode*>* nodesOut, hkpBroadPhaseCastCollector* collector) const;
-		HK_FORCE_INLINE void addNodePair( const hkpBpNode* n0, const hkpBpNode* n1, hkArray<hkpBroadPhaseHandlePair>& pairsOut, hkBool addMode) const;
+		void querySingleAabbSub( hkpBroadPhaseHandle* object, const hkUint32 *bitfield, hkpBpNode& refNode, hkpBpQuerySingleType type, hkArray<hkpBroadPhaseHandlePair>* pairs_out, hkArrayBase<const hkpBpNode*>* nodesOut, hkpBroadPhaseCastCollector* collector) const;
+		void _querySingleAabb( const hkAabb& aabb, hkpBpQuerySingleType type, hkArray<hkpBroadPhaseHandlePair>* pairs_out, hkArrayBase<const hkpBpNode*>* nodesOut, hkpBroadPhaseCastCollector* collector) const;
+		template <bool addMode>
+		void addNodePair( const hkpBpNode* n0, const hkpBpNode* n1, hkArray<hkpBroadPhaseHandlePair>& pairsOut) const;
 			// expects these nodes endpoints to be sorted into the axes already
 			// for every node we want to query, a bit with the node index in the bitFieldOfQueryNodes has to be set. (see staticFlipBit)
-		void queryBatchAabbSub( const hkUint32* bitFieldOfQueryNodes, hkArray<hkpBroadPhaseHandlePair>& pairsOut, hkBool addMode ) const;
+		template <bool addMode>
+		void queryBatchAabbSub( const hkUint32* bitFieldOfQueryNodes, hkArray<hkpBroadPhaseHandlePair>& pairsOut ) const;
 
 			/// ###ACCESS_CHECKS###( [this,HK_ACCESS_RO] );
 		void	getAabbFromNode(const hkpBpNode& node, hkAabb & aabb) const;
@@ -368,7 +376,7 @@ class hkp3AxisSweep : public hkpBroadPhase
 		// We currently do not know the rounding mode of our float to int conversion
 		// if you use convertAabbToInt( x + m_intToFloatFloorCorrection) you will be sure that
 		// the result will be identical to int( floor( x ) )
-		hkReal    m_intToFloatFloorCorrection;
+		hkSimdReal    m_intToFloatFloorCorrection;
 };
 
 
@@ -378,7 +386,7 @@ class hkp3AxisSweep : public hkpBroadPhase
 #endif // HK_COLLIDE_3_AXIS_SWEEP_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

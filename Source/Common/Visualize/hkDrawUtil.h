@@ -16,7 +16,7 @@ class hkLocalFrame;
 struct hkGeometry;
 
 /// This class facilitates drawing cones, arrows, planes representing ragdoll limits.
-class hkDrawUtil: public hkReferencedObject
+class HK_EXPORT_COMMON hkDrawUtil: public hkReferencedObject
 {
 	public:
 		HK_DECLARE_CLASS_ALLOCATOR(HK_MEMORY_CLASS_TOOLS);
@@ -74,48 +74,58 @@ class hkDrawUtil: public hkReferencedObject
 		static void HK_CALL displayLocalFrame( const hkLocalFrame& localFrame, const hkTransform& worldFromModel, hkReal size, bool drawChildren = true, hkColor::Argb color = hkColor::WHITE, const char* annotation = HK_NULL);
 
 		/// Input for debugDisplayGeometry
-		struct DebugDisplayGeometrySettings
+		struct HK_EXPORT_COMMON DebugDisplayGeometrySettings
 		{
 			DebugDisplayGeometrySettings()
 			{
 				m_vertexColor = hkColor::WHITE;
 				m_edgeColor = hkColor::BLACK;
-				m_faceColor = hkColor::RED;
+				m_triangleColor = hkColor::RED;
+				m_triangleLabelColor = hkColor::BLACK;
 
 				m_showVertices = true;
+				m_onlyShowTriangleVertices = true;
 				m_showEdges = true;
-				m_showFaces = true;
+				m_showTriangles = true;
 
 				m_labelTriangles = false;
 				m_labelVertices = false;
 
-				m_forceColorFacesByMaterial = false;
-				m_lightFaces = false;
+				m_showTriangleNormals = false;
+
+				m_forceColorTrianglesByMaterial = false;
+				m_lightTriangles = false;
 				m_lightDirection.set(0.0f, 0.0f, 1.0f );
 
-				m_skipFaces = 1;
+				m_skipTriangles = 1;
 
 				m_cullingAabb.setEmpty();
 			}
 
-			hkColor::Argb m_faceColor;
+			hkColor::Argb m_triangleColor;
 			hkColor::Argb m_edgeColor;
 			hkColor::Argb m_vertexColor;
+			hkColor::Argb m_triangleLabelColor;
 
+				/// Whether or not to display crosses for the geometry vertices.
 			hkBool m_showVertices;
+				/// If true, only vertices that belong to a triangle will be shown.
+			hkBool m_onlyShowTriangleVertices;
 			hkBool m_showEdges;
-			hkBool m_showFaces;
+			hkBool m_showTriangles;
 
 			hkBool m_labelTriangles;
 			hkBool m_labelVertices;
 
-			// Ignore m_faceColor and use material index to access hkColor::s_colorTable
-			hkBool m_forceColorFacesByMaterial;
-			hkBool m_lightFaces;
+			hkBool m_showTriangleNormals;
+
+			// Ignore m_triangleColor and use material index to access hkColor::s_colorTable
+			hkBool m_forceColorTrianglesByMaterial;
+			hkBool m_lightTriangles;
 			hkVector4 m_lightDirection;
 
-			// For very large geometries, rendering may be slow. Set skipface to n > 1 to render every nth face
-			int m_skipFaces;
+			// For very large geometries, rendering may be slow. Set skipTriangles to n > 1 to render every nth triangle
+			int m_skipTriangles;
 			// Cull triangles displayed to only those whose aabb overlaps this aabb
 			hkAabb m_cullingAabb;
 		};
@@ -130,7 +140,7 @@ class hkDrawUtil: public hkReferencedObject
 #endif // HK_VISUALIZE_DRAWUTIL_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok
