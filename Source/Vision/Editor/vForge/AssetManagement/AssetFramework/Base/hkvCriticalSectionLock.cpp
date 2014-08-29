@@ -172,7 +172,7 @@ LockRef_Win32CriticalSection::~LockRef_Win32CriticalSection()
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

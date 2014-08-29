@@ -19,7 +19,7 @@ hkJobQueue::JobStatus HK_CALL hkaCpuQuantizedSampleAndCombineJob( hkJobQueue& jo
 #endif // HK_CPU_ANIMATION_SAMPLE_AND_COMBINE_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

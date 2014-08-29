@@ -1,0 +1,46 @@
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "GameApplication", "Source\GameApplication\GameApplication_tizen_vs2010_anarchy.vcxproj", "{D98E8B3F-985A-40CF-99D1-140E56C1F0B0}"
+	ProjectSection(ProjectDependencies) = postProject
+		{754E509C-F5D1-4B26-9844-CB090FFCE67A} = {754E509C-F5D1-4B26-9844-CB090FFCE67A}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "GamePlugin", "Source\GamePlugin\GamePlugin_tizen_vs2010_anarchy.vcxproj", "{754E509C-F5D1-4B26-9844-CB090FFCE67A}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Vision", "Vision", "{EEF72C62-0FCE-4EE6-9B38-75693EEB4C74}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Samples", "Samples", "{ADC67FFC-1E33-4AB4-9215-B907061D121D}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Templates", "Templates", "{E9991908-5FB5-4CDB-B42A-1FBA9908A75B}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|hkTizen = Debug|hkTizen
+		Dev|hkTizen = Dev|hkTizen
+		Release|hkTizen = Release|hkTizen
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{D98E8B3F-985A-40CF-99D1-140E56C1F0B0}.Debug|hkTizen.ActiveCfg = Debug|hkTizen
+		{D98E8B3F-985A-40CF-99D1-140E56C1F0B0}.Debug|hkTizen.Build.0 = Debug|hkTizen
+		{D98E8B3F-985A-40CF-99D1-140E56C1F0B0}.Dev|hkTizen.ActiveCfg = Dev|hkTizen
+		{D98E8B3F-985A-40CF-99D1-140E56C1F0B0}.Dev|hkTizen.Build.0 = Dev|hkTizen
+		{D98E8B3F-985A-40CF-99D1-140E56C1F0B0}.Release|hkTizen.ActiveCfg = Release|hkTizen
+		{D98E8B3F-985A-40CF-99D1-140E56C1F0B0}.Release|hkTizen.Build.0 = Release|hkTizen
+		{754E509C-F5D1-4B26-9844-CB090FFCE67A}.Debug|hkTizen.ActiveCfg = Debug|hkTizen
+		{754E509C-F5D1-4B26-9844-CB090FFCE67A}.Debug|hkTizen.Build.0 = Debug|hkTizen
+		{754E509C-F5D1-4B26-9844-CB090FFCE67A}.Dev|hkTizen.ActiveCfg = Dev|hkTizen
+		{754E509C-F5D1-4B26-9844-CB090FFCE67A}.Dev|hkTizen.Build.0 = Dev|hkTizen
+		{754E509C-F5D1-4B26-9844-CB090FFCE67A}.Release|hkTizen.ActiveCfg = Release|hkTizen
+		{754E509C-F5D1-4B26-9844-CB090FFCE67A}.Release|hkTizen.Build.0 = Release|hkTizen
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{EEF72C62-0FCE-4EE6-9B38-75693EEB4C74} = {044A1DED-F213-478C-A25E-396C69D46988}
+		{ADC67FFC-1E33-4AB4-9215-B907061D121D} = {EEF72C62-0FCE-4EE6-9B38-75693EEB4C74}
+		{E9991908-5FB5-4CDB-B42A-1FBA9908A75B} = {ADC67FFC-1E33-4AB4-9215-B907061D121D}
+		{D98E8B3F-985A-40CF-99D1-140E56C1F0B0} = {E9991908-5FB5-4CDB-B42A-1FBA9908A75B}
+		{754E509C-F5D1-4B26-9844-CB090FFCE67A} = {E9991908-5FB5-4CDB-B42A-1FBA9908A75B}
+	EndGlobalSection
+EndGlobal

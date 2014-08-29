@@ -1,0 +1,41 @@
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "GameApplicationDX9", "Source\GameApplication\GameApplicationDX9_win32_vs2010_anarchy.vcxproj", "{D98E8B3F-985A-40CF-99D1-140E56C1F0B0}"
+	ProjectSection(ProjectDependencies) = postProject
+		{754E509C-F5D1-4B26-9844-CB090FFCE67A} = {754E509C-F5D1-4B26-9844-CB090FFCE67A}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "GamePluginDX9", "Source\GamePlugin\GamePluginDX9_win32_vs2010_anarchy.vcxproj", "{754E509C-F5D1-4B26-9844-CB090FFCE67A}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Vision", "Vision", "{460876BE-D980-48D9-81B2-24A35378E08B}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Samples", "Samples", "{D6663278-F4A5-48F1-8651-B3B7B29BB68C}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Templates", "Templates", "{2A873D9F-D589-45C6-B926-E76127CF5013}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|win32 = Debug|win32
+		Dev|win32 = Dev|win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{D98E8B3F-985A-40CF-99D1-140E56C1F0B0}.Debug|win32.ActiveCfg = Debug|win32
+		{D98E8B3F-985A-40CF-99D1-140E56C1F0B0}.Debug|win32.Build.0 = Debug|win32
+		{D98E8B3F-985A-40CF-99D1-140E56C1F0B0}.Dev|win32.ActiveCfg = Dev|win32
+		{D98E8B3F-985A-40CF-99D1-140E56C1F0B0}.Dev|win32.Build.0 = Dev|win32
+		{754E509C-F5D1-4B26-9844-CB090FFCE67A}.Debug|win32.ActiveCfg = Debug|win32
+		{754E509C-F5D1-4B26-9844-CB090FFCE67A}.Debug|win32.Build.0 = Debug|win32
+		{754E509C-F5D1-4B26-9844-CB090FFCE67A}.Dev|win32.ActiveCfg = Dev|win32
+		{754E509C-F5D1-4B26-9844-CB090FFCE67A}.Dev|win32.Build.0 = Dev|win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{460876BE-D980-48D9-81B2-24A35378E08B} = {A2AFBB9D-C357-4661-8FF1-EFF93CB1612B}
+		{D6663278-F4A5-48F1-8651-B3B7B29BB68C} = {460876BE-D980-48D9-81B2-24A35378E08B}
+		{2A873D9F-D589-45C6-B926-E76127CF5013} = {D6663278-F4A5-48F1-8651-B3B7B29BB68C}
+		{D98E8B3F-985A-40CF-99D1-140E56C1F0B0} = {2A873D9F-D589-45C6-B926-E76127CF5013}
+		{754E509C-F5D1-4B26-9844-CB090FFCE67A} = {2A873D9F-D589-45C6-B926-E76127CF5013}
+	EndGlobalSection
+EndGlobal

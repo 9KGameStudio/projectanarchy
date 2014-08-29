@@ -1,0 +1,440 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!--
+    VARIANT = "DX9"
+    
+    RUNTIME_DEPENDENCIES = "['FBXImporterDX9']"
+    SOURCE_LEVEL = "PUBLIC"
+    REQUIRED_HAVOK_PRODUCTS = "VISION"
+  -->
+        
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|win32">
+      <Configuration>Debug</Configuration>
+      <Platform>win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Dev|win32">
+      <Configuration>Dev</Configuration>
+      <Platform>win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{AE97407F-3CD0-4E49-83DA-96937DC414C1}</ProjectGuid>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <Keyword>DynamicLibrary</Keyword>
+    <RootNamespace></RootNamespace>
+    <ProjectName>VisionAssetsDX9</ProjectName>
+    
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|win32'" Label="Configuration">
+    <CharacterSet>MultiByte</CharacterSet>
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <CLRSupport>false</CLRSupport>
+    <UseOfMfc>false</UseOfMfc>
+  </PropertyGroup>
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Dev|win32'" Label="Configuration">
+    <CharacterSet>MultiByte</CharacterSet>
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <CLRSupport>false</CLRSupport>
+    <UseOfMfc>false</UseOfMfc>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  <PropertyGroup>
+<TargetExt  Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">.abplugin</TargetExt>
+<TargetExt  Condition="'$(Configuration)|$(Platform)'=='Dev|win32'">.abplugin</TargetExt>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">..\..\..\..\..\..\Obj\win32_vs2010_anarchy\debug\VisionAssetsDX9\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">..\..\..\..\..\..\Bin\win32_vs2010_anarchy\debug\DX9\</OutDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">VisionAssets</TargetName>
+    <OutputFile Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Dev|win32'">..\..\..\..\..\..\Obj\win32_vs2010_anarchy\dev\VisionAssetsDX9\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Dev|win32'">..\..\..\..\..\..\Bin\win32_vs2010_anarchy\dev\DX9\</OutDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Dev|win32'">VisionAssets</TargetName>
+    <OutputFile Condition="'$(Configuration)|$(Platform)'=='Dev|win32'">$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">true</LinkIncremental>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Dev|win32'">true</LinkIncremental>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">
+    
+    
+    <PostBuildEvent>
+      <Command>
+        xcopy /Y /D /C "$(HAVOK_THIRDPARTY_DIR)\redistsdks\DirectXTex\2013-03-22\Texconv\Release\texconv.exe" "$(TargetDir)"
+        IF NOT EXIST "$(TargetDir)texconv.exe" SET ERRORLEVEL=1
+        </Command>
+    </PostBuildEvent>
+    
+    <ClCompile>
+      <AdditionalIncludeDirectories>..\..\..\..\..;$(DXSDK_DIR)/Include;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Qt/4.8.3/include;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Qt/4.8.3/include/QtGui;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Qt/4.8.3/include/QtCore;$(HAVOK_THIRDPARTY_DIR)/redistsdks/yajl/Source;</AdditionalIncludeDirectories>
+      <AdditionalOptions> /analyze:stacksize270000</AdditionalOptions>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <BufferSecurityCheck>true</BufferSecurityCheck>
+      <SDLCheck></SDLCheck>
+      <CallingConvention>Cdecl</CallingConvention>
+      <CompileAs>Default</CompileAs>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <DisableSpecificWarnings>6031</DisableSpecificWarnings>
+      <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
+      <EnablePREfast></EnablePREfast>
+      <ExceptionHandling>false</ExceptionHandling>
+      <FavorSizeOrSpeed>Neither</FavorSizeOrSpeed>
+      <FloatingPointExceptions>false</FloatingPointExceptions>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <FunctionLevelLinking>false</FunctionLevelLinking>
+      <InlineFunctionExpansion>Default</InlineFunctionExpansion>
+      <IntrinsicFunctions>false</IntrinsicFunctions>
+      <MinimalRebuild>false</MinimalRebuild>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <OmitFramePointers></OmitFramePointers>
+      <Optimization>Disabled</Optimization>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>Vision/Editor/vForge/AssetManagement/VisionAssets/VisionAssetsPCH.h</PrecompiledHeaderFile>
+      <PrecompiledHeaderOutputFile>$(IntDir)VisionAssets.pch</PrecompiledHeaderOutputFile>
+      <PreprocessorDefinitions>_WINDOWS;WIN32;_WIN32;_DEBUG;HK_DEBUG;HK_DEBUG_SLOW;_CONSOLE;_ALLOW_ITERATOR_DEBUG_LEVEL_MISMATCH;HK_ANARCHY;__LITTLE_ENDIAN__;PROFILING;_VISION_WIN32;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_VR_DX9;CODE_ANALYSIS;QT_NO_CAST_FROM_ASCII;QT_CORE_LIB;QT_DLL;QT_GUI_LIB;QT_STATICPLUGIN;QT_QTPROPERTYBROWSER_IMPORT;WIN32;_ITERATOR_DEBUG_LEVEL=0;PROFILING;_CHECKFORGLERRORS;HK_CONFIG_SIMD=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <UndefinePreprocessorDefinitions></UndefinePreprocessorDefinitions>
+      <ProgramDataBaseFileName>$(OutDir)$(TargetName).pdb</ProgramDataBaseFileName>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <StringPooling>true</StringPooling>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <TreatWarningAsError>false</TreatWarningAsError>
+      <WarningLevel>Level3</WarningLevel>
+      <CompileAsManaged>false</CompileAsManaged>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      
+    </ClCompile>
+    <ResourceCompile>
+      <ResourceOutputFileName></ResourceOutputFileName>
+      <AdditionalIncludeDirectories>$(IntDir);</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Lib>
+      <IgnoreAllDefaultLibraries></IgnoreAllDefaultLibraries>
+      <AdditionalDependencies>ws2_32.lib;QtCored4.lib;qtmaind.lib;QtGuid4.lib;yajld.lib;yajl_wrapperd.lib;BaseD.lib;AssetFramework.lib;AssetBrowserQt.lib;hkBase.lib;hkCompat.lib;hkSceneData.lib;hkSerialize.lib;hkVisualize.lib;hkInternal.lib;hkGeometryUtilities.lib;hkcdInternal.lib;hkcdCollide.lib;hkImageUtilities.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\..\..\..\..\..\Lib\win32_vs2010_anarchy\debug;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Qt/4.8.3/lib/$(PlatformName)_vs2010;$(HAVOK_THIRDPARTY_DIR)/redistsdks/yajl/lib/$(PlatformName)_vs2010</AdditionalLibraryDirectories>
+      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <UseUnicodeResponseFiles>true</UseUnicodeResponseFiles>
+      <AdditionalOptions> /ignore:4221</AdditionalOptions>
+    </Lib>
+    <Link>
+      <AdditionalDependencies>ws2_32.lib;QtCored4.lib;qtmaind.lib;QtGuid4.lib;yajld.lib;yajl_wrapperd.lib;BaseD.lib;AssetFramework.lib;AssetBrowserQt.lib;hkBase.lib;hkCompat.lib;hkSceneData.lib;hkSerialize.lib;hkVisualize.lib;hkInternal.lib;hkGeometryUtilities.lib;hkcdInternal.lib;hkcdCollide.lib;hkImageUtilities.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\..\..\..\..\..\Lib\win32_vs2010_anarchy\debug;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Qt/4.8.3/lib/$(PlatformName)_vs2010;$(HAVOK_THIRDPARTY_DIR)/redistsdks/yajl/lib/$(PlatformName)_vs2010</AdditionalLibraryDirectories>
+      <AdditionalOptions> /ignore:4221</AdditionalOptions>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <ImportLibrary>..\..\..\..\..\..\Lib\win32_vs2010_anarchy\debug\$(TargetName).lib</ImportLibrary>
+      <AssemblyDebug></AssemblyDebug>
+      <SubSystem>Console</SubSystem>
+      <ManifestFile>$(IntDir)Manifest$(TargetExt).intermediate.manifest</ManifestFile>
+      <OptimizeReferences></OptimizeReferences>
+      <EnableCOMDATFolding></EnableCOMDATFolding>
+      <ProgramDatabaseFile>$(TargetDir)$(TargetName).pdb</ProgramDatabaseFile>
+     <IgnoreSpecificDefaultLibraries>libcmtd.lib;</IgnoreSpecificDefaultLibraries>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Dev|win32'">
+    
+    
+    <PostBuildEvent>
+      <Command>
+        xcopy /Y /D /C "$(HAVOK_THIRDPARTY_DIR)\redistsdks\DirectXTex\2013-03-22\Texconv\Release\texconv.exe" "$(TargetDir)"
+        IF NOT EXIST "$(TargetDir)texconv.exe" SET ERRORLEVEL=1
+        </Command>
+    </PostBuildEvent>
+    
+    <ClCompile>
+      <AdditionalIncludeDirectories>..\..\..\..\..;$(DXSDK_DIR)/Include;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Qt/4.8.3/include;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Qt/4.8.3/include/QtGui;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Qt/4.8.3/include/QtCore;$(HAVOK_THIRDPARTY_DIR)/redistsdks/yajl/Source;</AdditionalIncludeDirectories>
+      <AdditionalOptions> /analyze:stacksize270000</AdditionalOptions>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <BufferSecurityCheck>true</BufferSecurityCheck>
+      <SDLCheck></SDLCheck>
+      <CallingConvention>Cdecl</CallingConvention>
+      <CompileAs>Default</CompileAs>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <DisableSpecificWarnings>6031</DisableSpecificWarnings>
+      <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
+      <EnablePREfast></EnablePREfast>
+      <ExceptionHandling>false</ExceptionHandling>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <FloatingPointExceptions>false</FloatingPointExceptions>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <FunctionLevelLinking>false</FunctionLevelLinking>
+      <InlineFunctionExpansion>Default</InlineFunctionExpansion>
+      <IntrinsicFunctions>false</IntrinsicFunctions>
+      <MinimalRebuild>false</MinimalRebuild>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <OmitFramePointers></OmitFramePointers>
+      <Optimization>Full</Optimization>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>Vision/Editor/vForge/AssetManagement/VisionAssets/VisionAssetsPCH.h</PrecompiledHeaderFile>
+      <PrecompiledHeaderOutputFile>$(IntDir)VisionAssets.pch</PrecompiledHeaderOutputFile>
+      <PreprocessorDefinitions>_WINDOWS;WIN32;_WIN32;HK_DEBUG;_CONSOLE;_ALLOW_ITERATOR_DEBUG_LEVEL_MISMATCH;HK_ANARCHY;__LITTLE_ENDIAN__;PROFILING;_VISION_WIN32;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_VR_DX9;CODE_ANALYSIS;QT_NO_CAST_FROM_ASCII;QT_CORE_LIB;QT_DLL;QT_GUI_LIB;QT_STATICPLUGIN;QT_QTPROPERTYBROWSER_IMPORT;WIN32;_ITERATOR_DEBUG_LEVEL=0;HK_CONFIG_SIMD=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <UndefinePreprocessorDefinitions></UndefinePreprocessorDefinitions>
+      <ProgramDataBaseFileName>$(OutDir)$(TargetName).pdb</ProgramDataBaseFileName>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <StringPooling>true</StringPooling>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <TreatWarningAsError>false</TreatWarningAsError>
+      <WarningLevel>Level3</WarningLevel>
+      <CompileAsManaged>false</CompileAsManaged>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      
+    </ClCompile>
+    <ResourceCompile>
+      <ResourceOutputFileName></ResourceOutputFileName>
+      <AdditionalIncludeDirectories>$(IntDir);</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Lib>
+      <IgnoreAllDefaultLibraries></IgnoreAllDefaultLibraries>
+      <AdditionalDependencies>ws2_32.lib;QtCore4.lib;qtmain.lib;QtGui4.lib;yajl.lib;yajl_wrapper.lib;Base.lib;AssetFramework.lib;AssetBrowserQt.lib;hkBase.lib;hkCompat.lib;hkSceneData.lib;hkSerialize.lib;hkVisualize.lib;hkInternal.lib;hkGeometryUtilities.lib;hkcdInternal.lib;hkcdCollide.lib;hkImageUtilities.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\..\..\..\..\..\Lib\win32_vs2010_anarchy\dev;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Qt/4.8.3/lib/$(PlatformName)_vs2010;$(HAVOK_THIRDPARTY_DIR)/redistsdks/yajl/lib/$(PlatformName)_vs2010</AdditionalLibraryDirectories>
+      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <UseUnicodeResponseFiles>true</UseUnicodeResponseFiles>
+      <AdditionalOptions> /ignore:4221</AdditionalOptions>
+    </Lib>
+    <Link>
+      <AdditionalDependencies>ws2_32.lib;QtCore4.lib;qtmain.lib;QtGui4.lib;yajl.lib;yajl_wrapper.lib;Base.lib;AssetFramework.lib;AssetBrowserQt.lib;hkBase.lib;hkCompat.lib;hkSceneData.lib;hkSerialize.lib;hkVisualize.lib;hkInternal.lib;hkGeometryUtilities.lib;hkcdInternal.lib;hkcdCollide.lib;hkImageUtilities.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\..\..\..\..\..\Lib\win32_vs2010_anarchy\dev;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Qt/4.8.3/lib/$(PlatformName)_vs2010;$(HAVOK_THIRDPARTY_DIR)/redistsdks/yajl/lib/$(PlatformName)_vs2010</AdditionalLibraryDirectories>
+      <AdditionalOptions> /ignore:4221</AdditionalOptions>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <ImportLibrary>..\..\..\..\..\..\Lib\win32_vs2010_anarchy\dev\$(TargetName).lib</ImportLibrary>
+      <AssemblyDebug></AssemblyDebug>
+      <SubSystem>Console</SubSystem>
+      <ManifestFile>$(IntDir)Manifest$(TargetExt).intermediate.manifest</ManifestFile>
+      <OptimizeReferences></OptimizeReferences>
+      <EnableCOMDATFolding></EnableCOMDATFolding>
+      <ProgramDatabaseFile>$(TargetDir)$(TargetName).pdb</ProgramDatabaseFile>
+     <IgnoreSpecificDefaultLibraries>libcmt.lib;</IgnoreSpecificDefaultLibraries>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="TransformationRules\hkvCollectionTransformationRule.hpp">
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClInclude Include="TransformationRules\hkvTransformationStepImageToDds.hpp">
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClCompile Include="PropertyEditors\hkvVisionPropertyEditingSupport.cpp">
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClInclude Include="Assets\hkvFilterManagerTransformableAsset.hpp">
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClCompile Include="ImageFile\hkvImageFileProperties.cpp">
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClCompile Include="GeneratedFiles\Debug\moc_hkvVisionPropertyEditingSupport.cpp">
+        <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dev|win32'">true</ExcludedFromBuild>
+        <PrecompiledHeader>NotUsing</PrecompiledHeader>
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClCompile Include="VisionAssets.cpp">
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClInclude Include="ImageFile\hkvImageFile.hpp">
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClCompile Include="ExternalTools\hkvExternalToolFbxImporter.cpp">
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClCompile Include="ExternalTools\hkvExternalToolTexConv.cpp">
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClInclude Include="Assets\hkvParticleAsset.hpp">
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClInclude Include="TransformationRules\hkvTextureTransformationRule.hpp">
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClInclude Include="Assets\hkvTagfileAsset.hpp">
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClCompile Include="Assets\hkvAnimationAsset.cpp">
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClCompile Include="Assets\hkvStaticMeshAsset.cpp">
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClInclude Include="ExternalTools\hkvExternalToolFbxImporter.hpp">
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClCompile Include="GeneratedFiles\Dev\moc_hkvVisionPropertyEditingSupport.cpp">
+        <PrecompiledHeader>NotUsing</PrecompiledHeader>
+        <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">true</ExcludedFromBuild>
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClInclude Include="GeneratedFiles\ui_hkvLODDistancesDlg.h">
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClCompile Include="Assets\hkvCollectionAsset.cpp">
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClInclude Include="Assets\hkvFbxAsset.hpp">
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClInclude Include="Assets\hkvScriptAsset.hpp">
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <CustomBuild Include="resources.qrc">
+        <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">%(FullPath);Icons/UnknownAsset.png;Icons/CollectionAsset.png;Icons/CollisionMeshAsset.png;Icons/ModelAsset.png;Icons/AnimationAsset.png;Icons/ParticleEffectAsset.png;Icons/PrefabAsset.png;Icons/SoundAsset.png;Icons/StaticMeshAsset.png;Icons/TextureAsset.png;Icons/LODDistances32.png;Icons/AnimatedTextureAsset.png;Icons/scroll.png;Icons/FBX.png;Icons/HKT.png;%(AdditionalInputs)</AdditionalInputs>
+        <Command Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">"$(HAVOK_THIRDPARTY_DIR)\redistsdks\qt\4.8.3\bin\win32_vs2010\rcc.exe" -name "%(Filename)" -no-compress "%(FullPath)" -o .\GeneratedFiles\qrc_%(Filename).cpp</Command>
+        <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">.\GeneratedFiles\qrc_%(Filename).cpp;%(Outputs)</Outputs>
+        <FileType>Document</FileType>
+        <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Dev|win32'">%(FullPath);Icons/UnknownAsset.png;Icons/CollectionAsset.png;Icons/CollisionMeshAsset.png;Icons/ModelAsset.png;Icons/AnimationAsset.png;Icons/ParticleEffectAsset.png;Icons/PrefabAsset.png;Icons/SoundAsset.png;Icons/StaticMeshAsset.png;Icons/TextureAsset.png;Icons/LODDistances32.png;Icons/AnimatedTextureAsset.png;Icons/scroll.png;Icons/FBX.png;Icons/HKT.png;%(AdditionalInputs)</AdditionalInputs>
+        <Message Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">Rcc%27ing %(Identity)...</Message>
+        <Command Condition="'$(Configuration)|$(Platform)'=='Dev|win32'">"$(HAVOK_THIRDPARTY_DIR)\redistsdks\qt\4.8.3\bin\win32_vs2010\rcc.exe" -name "%(Filename)" -no-compress "%(FullPath)" -o .\GeneratedFiles\qrc_%(Filename).cpp</Command>
+        <Message Condition="'$(Configuration)|$(Platform)'=='Dev|win32'">Rcc%27ing %(Identity)...</Message>
+        <Outputs Condition="'$(Configuration)|$(Platform)'=='Dev|win32'">.\GeneratedFiles\qrc_%(Filename).cpp;%(Outputs)</Outputs>
+        <DeploymentContent>False</DeploymentContent></CustomBuild>
+    <ClCompile Include="TransformationRules\hkvTextureTransformationSettings.cpp">
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClInclude Include="TransformationRules\hkvTextureTransformationSettings.hpp">
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClCompile Include="TransformationRules\hkvFilterManagerTransformationRule.cpp">
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClCompile Include="ExternalTools\hkvExternalToolFilterManager.cpp">
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClCompile Include="Assets\hkvCollisionMeshAsset.cpp">
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClInclude Include="ExternalTools\hkvExternalToolFilterManager.hpp">
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClCompile Include="Assets\hkvParticleAsset.cpp">
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClInclude Include="Assets\hkvCollectionAsset.hpp">
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClCompile Include="Assets\hkvAnimatedTextureAsset.cpp">
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClCompile Include="Assets\hkvScriptAsset.cpp">
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <CustomBuild Include="PropertyEditors\hkvVisionPropertyEditingSupport.hpp">
+        <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">$(HAVOK_THIRDPARTY_DIR)\redistsdks\qt\4.8.3\bin\win32_vs2010\moc.exe;%(FullPath)</AdditionalInputs>
+        <Command Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">"$(HAVOK_THIRDPARTY_DIR)\redistsdks\qt\4.8.3\bin\win32_vs2010\moc.exe" -DHK_ANARCHY -D__LITTLE_ENDIAN__ -DPROFILING -D_VISION_WIN32 -D_CRT_SECURE_NO_DEPRECATE -D_CRT_NONSTDC_NO_DEPRECATE -D_VR_DX9 -DCODE_ANALYSIS -DQT_NO_CAST_FROM_ASCII -DQT_CORE_LIB -DQT_DLL -DQT_GUI_LIB -DQT_STATICPLUGIN -DQT_QTPROPERTYBROWSER_IMPORT -DWIN32 -D_ITERATOR_DEBUG_LEVEL=0 "-I..\..\..\..\.." "-I$(DXSDK_DIR)/Include" "-I$(HAVOK_THIRDPARTY_DIR)/redistsdks/Qt/4.8.3/include" "-I$(HAVOK_THIRDPARTY_DIR)/redistsdks/Qt/4.8.3/include/QtGui" "-I$(HAVOK_THIRDPARTY_DIR)/redistsdks/Qt/4.8.3/include/QtCore" "-I$(HAVOK_THIRDPARTY_DIR)/redistsdks/yajl/Source" %(FullPath) -o ".\GeneratedFiles\$(ConfigurationName)\moc_%(Filename).cpp"</Command>
+        <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">.\GeneratedFiles\$(ConfigurationName)\moc_%(Filename).cpp</Outputs>
+        <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Dev|win32'">$(HAVOK_THIRDPARTY_DIR)\redistsdks\qt\4.8.3\bin\win32_vs2010\moc.exe;%(FullPath)</AdditionalInputs>
+        <Message Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">Moc%27ing %(Identity)...</Message>
+        <Command Condition="'$(Configuration)|$(Platform)'=='Dev|win32'">"$(HAVOK_THIRDPARTY_DIR)\redistsdks\qt\4.8.3\bin\win32_vs2010\moc.exe" -DHK_ANARCHY -D__LITTLE_ENDIAN__ -DPROFILING -D_VISION_WIN32 -D_CRT_SECURE_NO_DEPRECATE -D_CRT_NONSTDC_NO_DEPRECATE -D_VR_DX9 -DCODE_ANALYSIS -DQT_NO_CAST_FROM_ASCII -DQT_CORE_LIB -DQT_DLL -DQT_GUI_LIB -DQT_STATICPLUGIN -DQT_QTPROPERTYBROWSER_IMPORT -DWIN32 -D_ITERATOR_DEBUG_LEVEL=0 "-I..\..\..\..\.." "-I$(DXSDK_DIR)/Include" "-I$(HAVOK_THIRDPARTY_DIR)/redistsdks/Qt/4.8.3/include" "-I$(HAVOK_THIRDPARTY_DIR)/redistsdks/Qt/4.8.3/include/QtGui" "-I$(HAVOK_THIRDPARTY_DIR)/redistsdks/Qt/4.8.3/include/QtCore" "-I$(HAVOK_THIRDPARTY_DIR)/redistsdks/yajl/Source" %(FullPath) -o ".\GeneratedFiles\$(ConfigurationName)\moc_%(Filename).cpp"</Command>
+        <Message Condition="'$(Configuration)|$(Platform)'=='Dev|win32'">Moc%27ing %(Identity)...</Message>
+        <Outputs Condition="'$(Configuration)|$(Platform)'=='Dev|win32'">.\GeneratedFiles\$(ConfigurationName)\moc_%(Filename).cpp</Outputs>
+        <DeploymentContent>False</DeploymentContent></CustomBuild>
+    <ClInclude Include="ExternalTools\hkvExternalToolWiiUTexConv2.hpp">
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClCompile Include="ExternalTools\hkvExternalToolPvrTexTool.cpp">
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClCompile Include="ImageFile\hkvImageFile.cpp">
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClCompile Include="GeneratedFiles\Dev\moc_hkvLODDistancesDlg.cpp">
+        <PrecompiledHeader>NotUsing</PrecompiledHeader>
+        <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">true</ExcludedFromBuild>
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClCompile Include="Assets\hkvTextureAsset.cpp">
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClCompile Include="ExternalTools\hkvExternalToolWiiUTexConv2.cpp">
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClInclude Include="Assets\hkvCollisionMeshAsset.hpp">
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClCompile Include="TransformationRules\hkvTransformationStepImageToDds.cpp">
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClInclude Include="ImageFile\hkvImageFileProperties.hpp">
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClInclude Include="VisionAssetsPCH.h">
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClInclude Include="Assets\hkvAnimationAsset.hpp">
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClCompile Include="TransformationRules\hkvFbxTransformationRule.cpp">
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClCompile Include="VisionAssetsPCH.cpp">
+        <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">Create</PrecompiledHeader>
+        <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Dev|win32'">Create</PrecompiledHeader>
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClInclude Include="ImageFile\hkvDds.hpp">
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClInclude Include="TransformationRules\hkvTagfileTransformationRule.hpp">
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClCompile Include="Assets\hkvTagfileAsset.cpp">
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClInclude Include="ExternalTools\hkvExternalToolPvrTexTool.hpp">
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClCompile Include="hkvTextureDefinitions.cpp">
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClInclude Include="Assets\hkvStaticMeshAsset.hpp">
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <CustomBuild Include="PropertyEditors\hkvLODDistancesDlg.hpp">
+        <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">$(HAVOK_THIRDPARTY_DIR)\redistsdks\qt\4.8.3\bin\win32_vs2010\moc.exe;%(FullPath)</AdditionalInputs>
+        <Command Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">"$(HAVOK_THIRDPARTY_DIR)\redistsdks\qt\4.8.3\bin\win32_vs2010\moc.exe" -DHK_ANARCHY -D__LITTLE_ENDIAN__ -DPROFILING -D_VISION_WIN32 -D_CRT_SECURE_NO_DEPRECATE -D_CRT_NONSTDC_NO_DEPRECATE -D_VR_DX9 -DCODE_ANALYSIS -DQT_NO_CAST_FROM_ASCII -DQT_CORE_LIB -DQT_DLL -DQT_GUI_LIB -DQT_STATICPLUGIN -DQT_QTPROPERTYBROWSER_IMPORT -DWIN32 -D_ITERATOR_DEBUG_LEVEL=0 "-I..\..\..\..\.." "-I$(DXSDK_DIR)/Include" "-I$(HAVOK_THIRDPARTY_DIR)/redistsdks/Qt/4.8.3/include" "-I$(HAVOK_THIRDPARTY_DIR)/redistsdks/Qt/4.8.3/include/QtGui" "-I$(HAVOK_THIRDPARTY_DIR)/redistsdks/Qt/4.8.3/include/QtCore" "-I$(HAVOK_THIRDPARTY_DIR)/redistsdks/yajl/Source" %(FullPath) -o ".\GeneratedFiles\$(ConfigurationName)\moc_%(Filename).cpp"</Command>
+        <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">.\GeneratedFiles\$(ConfigurationName)\moc_%(Filename).cpp</Outputs>
+        <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Dev|win32'">$(HAVOK_THIRDPARTY_DIR)\redistsdks\qt\4.8.3\bin\win32_vs2010\moc.exe;%(FullPath)</AdditionalInputs>
+        <Message Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">Moc%27ing %(Identity)...</Message>
+        <Command Condition="'$(Configuration)|$(Platform)'=='Dev|win32'">"$(HAVOK_THIRDPARTY_DIR)\redistsdks\qt\4.8.3\bin\win32_vs2010\moc.exe" -DHK_ANARCHY -D__LITTLE_ENDIAN__ -DPROFILING -D_VISION_WIN32 -D_CRT_SECURE_NO_DEPRECATE -D_CRT_NONSTDC_NO_DEPRECATE -D_VR_DX9 -DCODE_ANALYSIS -DQT_NO_CAST_FROM_ASCII -DQT_CORE_LIB -DQT_DLL -DQT_GUI_LIB -DQT_STATICPLUGIN -DQT_QTPROPERTYBROWSER_IMPORT -DWIN32 -D_ITERATOR_DEBUG_LEVEL=0 "-I..\..\..\..\.." "-I$(DXSDK_DIR)/Include" "-I$(HAVOK_THIRDPARTY_DIR)/redistsdks/Qt/4.8.3/include" "-I$(HAVOK_THIRDPARTY_DIR)/redistsdks/Qt/4.8.3/include/QtGui" "-I$(HAVOK_THIRDPARTY_DIR)/redistsdks/Qt/4.8.3/include/QtCore" "-I$(HAVOK_THIRDPARTY_DIR)/redistsdks/yajl/Source" %(FullPath) -o ".\GeneratedFiles\$(ConfigurationName)\moc_%(Filename).cpp"</Command>
+        <Message Condition="'$(Configuration)|$(Platform)'=='Dev|win32'">Moc%27ing %(Identity)...</Message>
+        <Outputs Condition="'$(Configuration)|$(Platform)'=='Dev|win32'">.\GeneratedFiles\$(ConfigurationName)\moc_%(Filename).cpp</Outputs>
+        <DeploymentContent>False</DeploymentContent></CustomBuild>
+    <ClInclude Include="Assets\hkvTextureAsset.hpp">
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClInclude Include="Assets\hkvAnimatedTextureAsset.hpp">
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClCompile Include="Assets\hkvPrefabAsset.cpp">
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClInclude Include="TransformationRules\hkvFbxTransformationRule.hpp">
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClCompile Include="Assets\hkvFbxAsset.cpp">
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClCompile Include="Assets\hkvModelAsset.cpp">
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClInclude Include="Assets\hkvPrefabAsset.hpp">
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClInclude Include="TransformationRules\hkvFilterManagerTransformationRule.hpp">
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClCompile Include="PropertyEditors\hkvLODDistancesDlg.cpp">
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClCompile Include="GeneratedFiles\qrc_resources.cpp">
+        <PrecompiledHeader>NotUsing</PrecompiledHeader>
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClCompile Include="TransformationRules\hkvTextureTransformationRule.cpp">
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClCompile Include="Assets\hkvFilterManagerTransformableAsset.cpp">
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClCompile Include="GeneratedFiles\Debug\moc_hkvLODDistancesDlg.cpp">
+        <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dev|win32'">true</ExcludedFromBuild>
+        <PrecompiledHeader>NotUsing</PrecompiledHeader>
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClCompile Include="TransformationRules\hkvTagfileTransformationRule.cpp">
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClInclude Include="hkvTextureDefinitions.hpp">
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClInclude Include="Assets\hkvModelAsset.hpp">
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClCompile Include="TransformationRules\hkvCollectionTransformationRule.cpp">
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <CustomBuild Include="PropertyEditors\hkvLODDistancesDlg.ui">
+        <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">$(HAVOK_THIRDPARTY_DIR)\redistsdks\qt\4.8.3\bin\win32_vs2010\uic.exe;%(AdditionalInputs)</AdditionalInputs>
+        <Command Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">"$(HAVOK_THIRDPARTY_DIR)\redistsdks\qt\4.8.3\bin\win32_vs2010\uic.exe" -o ".\GeneratedFiles\ui_%(Filename).h" "%(FullPath)"</Command>
+        <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">.\GeneratedFiles\ui_%(Filename).h;%(Outputs)</Outputs>
+        <FileType>Document</FileType>
+        <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Dev|win32'">$(HAVOK_THIRDPARTY_DIR)\redistsdks\qt\4.8.3\bin\win32_vs2010\uic.exe;%(AdditionalInputs)</AdditionalInputs>
+        <Message Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">Uic%27ing %(Identity)...</Message>
+        <Command Condition="'$(Configuration)|$(Platform)'=='Dev|win32'">"$(HAVOK_THIRDPARTY_DIR)\redistsdks\qt\4.8.3\bin\win32_vs2010\uic.exe" -o ".\GeneratedFiles\ui_%(Filename).h" "%(FullPath)"</Command>
+        <Message Condition="'$(Configuration)|$(Platform)'=='Dev|win32'">Uic%27ing %(Identity)...</Message>
+        <Outputs Condition="'$(Configuration)|$(Platform)'=='Dev|win32'">.\GeneratedFiles\ui_%(Filename).h;%(Outputs)</Outputs>
+        <DeploymentContent>False</DeploymentContent></CustomBuild>
+    <ClInclude Include="ExternalTools\hkvExternalToolTexConv.hpp">
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+  </ItemGroup>
+  <ItemGroup>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+<PropertyGroup>
+    <CleanDependsOn>VisionAssetsDX9_CleanReflections;$(CleanDependsOn)</CleanDependsOn>
+</PropertyGroup>
+<Target Name="VisionAssetsDX9_CleanReflections">
+    <Delete Files="$(MSBuildProjectDirectory)\reflectionSettings.cache;$(MSBuildProjectDirectory)\reflections.db" />
+</Target>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">
+    <RunCodeAnalysis>false</RunCodeAnalysis>
+    <CodeAnalysisInputAssembly>$(OutputFile)</CodeAnalysisInputAssembly>
+</PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Dev|win32'">
+    <RunCodeAnalysis>false</RunCodeAnalysis>
+    <CodeAnalysisInputAssembly>$(OutputFile)</CodeAnalysisInputAssembly>
+</PropertyGroup>
+          <ImportGroup Label="ExtensionSettings">
+          </ImportGroup>
+          <ImportGroup Label="ExtensionTargets">
+          </ImportGroup>
+          <ProjectExtensions>
+            <VisualStudio>
+              <UserProperties lreleaseOptions="" lupdateOnBuild="0" lupdateOptions=""
+                              MocDir=".\GeneratedFiles\$(ConfigurationName)"
+                              MocOptions="" QtVersion_x0020_win32="$(DefaultQtVersion)"
+                              RccDir=".\GeneratedFiles" UicDir=".\GeneratedFiles" />
+            </VisualStudio>
+          </ProjectExtensions>
+<PropertyGroup>
+</PropertyGroup>
+</Project>

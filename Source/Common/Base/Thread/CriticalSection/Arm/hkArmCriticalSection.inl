@@ -136,7 +136,7 @@ hkUint32 HK_CALL hkCriticalSection::atomicExchangeAdd(hkUint32* var, int value)
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140625)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

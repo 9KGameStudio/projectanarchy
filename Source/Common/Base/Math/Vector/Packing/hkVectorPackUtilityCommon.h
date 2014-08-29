@@ -37,7 +37,7 @@ HK_FORCE_INLINE hkUint32 filteredStoreToStream_calcOffset( hkUint32 n, const uns
 #endif // HKMATH_VECTOR_PACK_UTILITY_COMMON_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

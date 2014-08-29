@@ -27,6 +27,7 @@ class hkbCondition : public hkReferencedObject
 
 		hkbCondition() {}
 
+		
 			/// Evaluates the condition.  Conditions do not get cloned when a behavior graph
 			/// is shallow cloned, so you need to ensure that isTrue() is re-entrant and that your class
 			/// does not include any character-specific state.
@@ -34,6 +35,7 @@ class hkbCondition : public hkReferencedObject
 
 			/// Returns whether or not this condition requires a lua state
 		virtual bool requiresLua() const { return false; }
+		
 
 	public:
 
@@ -44,7 +46,7 @@ class hkbCondition : public hkReferencedObject
 #endif
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -363,7 +363,7 @@ extern void android_main(struct android_app* app);
 #endif /* _ANDROID_NATIVE_APP_GLUE_H */
 
 /*
- * Havok SDK - Base file, BUILD(#20140328)
+ * Havok SDK - Base file, BUILD(#20140625)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

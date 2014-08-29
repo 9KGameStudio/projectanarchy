@@ -240,7 +240,7 @@ inline BOOL VCVersionListCtrl::PreTranslateMessage(MSG* pMsg)
 #endif // !defined(AFX_VCVERSIONLISTCTRL_H__E7048C1F_9A0C_4C60_B47C_06211173457F__INCLUDED_)
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

@@ -61,7 +61,7 @@ HK_FORCE_INLINE hkBool32 HK_CALL hkcdIntersectPointTriangle(hkVector4Parameter v
 }
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok

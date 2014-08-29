@@ -1,0 +1,249 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="ImageFile">
+        <UniqueIdentifier>30581A70-0581-4030-81A7-30581A703058</UniqueIdentifier>
+        <DeploymentContent>False</DeploymentContent></Filter>
+    <Filter Include="Assets">
+        <UniqueIdentifier>1B4E0C45-B4E0-451B-E0C4-1B4E0C451B4E</UniqueIdentifier>
+        <DeploymentContent>False</DeploymentContent></Filter>
+    <Filter Include="GeneratedFiles">
+        <UniqueIdentifier>15615076-5615-4615-1507-156150761561</UniqueIdentifier>
+        <DeploymentContent>False</DeploymentContent></Filter>
+    <Filter Include="ExternalTools">
+        <UniqueIdentifier>6CBA09EF-CBA0-4F6C-A09E-6CBA09EF6CBA</UniqueIdentifier>
+        <DeploymentContent>False</DeploymentContent></Filter>
+    <Filter Include="PropertyEditors">
+        <UniqueIdentifier>4E7878D0-E787-404E-878D-4E7878D04E78</UniqueIdentifier>
+        <DeploymentContent>False</DeploymentContent></Filter>
+    <Filter Include="GeneratedFiles\Debug">
+        <UniqueIdentifier>5C6AF4B9-C6AF-495C-AF4B-5C6AF4B95C6A</UniqueIdentifier>
+        <DeploymentContent>False</DeploymentContent></Filter>
+    <Filter Include="GeneratedFiles\Dev">
+        <UniqueIdentifier>559F1AB1-59F1-4155-F1AB-559F1AB1559F</UniqueIdentifier>
+        <DeploymentContent>False</DeploymentContent></Filter>
+    <Filter Include="TransformationRules">
+        <UniqueIdentifier>44EA1F3F-4EA1-4F44-A1F3-44EA1F3F44EA</UniqueIdentifier>
+        <DeploymentContent>False</DeploymentContent></Filter>
+
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Assets\hkvFilterManagerTransformableAsset.hpp">
+        <Filter>Assets</Filter>
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClCompile Include="TransformationRules\hkvFbxTransformationRule.cpp">
+        <Filter>TransformationRules</Filter>
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClInclude Include="TransformationRules\hkvCollectionTransformationRule.hpp">
+        <Filter>TransformationRules</Filter>
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClInclude Include="TransformationRules\hkvTagfileTransformationRule.hpp">
+        <Filter>TransformationRules</Filter>
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClCompile Include="Assets\hkvTagfileAsset.cpp">
+        <Filter>Assets</Filter>
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClCompile Include="Assets\hkvModelAsset.cpp">
+        <Filter>Assets</Filter>
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClCompile Include="TransformationRules\hkvTextureTransformationSettings.cpp">
+        <Filter>TransformationRules</Filter>
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClInclude Include="ImageFile\hkvImageFileProperties.hpp">
+        <Filter>ImageFile</Filter>
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClInclude Include="Assets\hkvAnimatedTextureAsset.hpp">
+        <Filter>Assets</Filter>
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClCompile Include="Assets\hkvAnimationAsset.cpp">
+        <Filter>Assets</Filter>
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClInclude Include="Assets\hkvFbxAsset.hpp">
+        <Filter>Assets</Filter>
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClInclude Include="Assets\hkvTagfileAsset.hpp">
+        <Filter>Assets</Filter>
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClInclude Include="Assets\hkvPrefabAsset.hpp">
+        <Filter>Assets</Filter>
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClInclude Include="Assets\hkvParticleAsset.hpp">
+        <Filter>Assets</Filter>
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClCompile Include="TransformationRules\hkvCollectionTransformationRule.cpp">
+        <Filter>TransformationRules</Filter>
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClCompile Include="ImageFile\hkvImageFileProperties.cpp">
+        <Filter>ImageFile</Filter>
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClInclude Include="ExternalTools\hkvExternalToolWiiUTexConv2.hpp">
+        <Filter>ExternalTools</Filter>
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClInclude Include="VisionAssetsPCH.h">
+        <Filter></Filter>
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClInclude Include="Assets\hkvTextureAsset.hpp">
+        <Filter>Assets</Filter>
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClCompile Include="ExternalTools\hkvExternalToolFilterManager.cpp">
+        <Filter>ExternalTools</Filter>
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClCompile Include="Assets\hkvAnimatedTextureAsset.cpp">
+        <Filter>Assets</Filter>
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClInclude Include="TransformationRules\hkvFbxTransformationRule.hpp">
+        <Filter>TransformationRules</Filter>
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClCompile Include="TransformationRules\hkvTagfileTransformationRule.cpp">
+        <Filter>TransformationRules</Filter>
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClCompile Include="PropertyEditors\hkvVisionPropertyEditingSupport.cpp">
+        <Filter>PropertyEditors</Filter>
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClInclude Include="TransformationRules\hkvTextureTransformationSettings.hpp">
+        <Filter>TransformationRules</Filter>
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClInclude Include="Assets\hkvAnimationAsset.hpp">
+        <Filter>Assets</Filter>
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClCompile Include="Assets\hkvFbxAsset.cpp">
+        <Filter>Assets</Filter>
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClInclude Include="ExternalTools\hkvExternalToolFbxImporter.hpp">
+        <Filter>ExternalTools</Filter>
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClInclude Include="Assets\hkvScriptAsset.hpp">
+        <Filter>Assets</Filter>
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClCompile Include="VisionAssetsPCH.cpp">
+        <Filter></Filter>
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClInclude Include="ExternalTools\hkvExternalToolFilterManager.hpp">
+        <Filter>ExternalTools</Filter>
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClCompile Include="Assets\hkvStaticMeshAsset.cpp">
+        <Filter>Assets</Filter>
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClInclude Include="ExternalTools\hkvExternalToolTexConv.hpp">
+        <Filter>ExternalTools</Filter>
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClCompile Include="TransformationRules\hkvTransformationStepImageToDds.cpp">
+        <Filter>TransformationRules</Filter>
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClCompile Include="Assets\hkvParticleAsset.cpp">
+        <Filter>Assets</Filter>
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClCompile Include="Assets\hkvPrefabAsset.cpp">
+        <Filter>Assets</Filter>
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClCompile Include="ImageFile\hkvImageFile.cpp">
+        <Filter>ImageFile</Filter>
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClCompile Include="TransformationRules\hkvFilterManagerTransformationRule.cpp">
+        <Filter>TransformationRules</Filter>
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClInclude Include="Assets\hkvCollectionAsset.hpp">
+        <Filter>Assets</Filter>
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClInclude Include="ExternalTools\hkvExternalToolPvrTexTool.hpp">
+        <Filter>ExternalTools</Filter>
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClCompile Include="Assets\hkvScriptAsset.cpp">
+        <Filter>Assets</Filter>
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClCompile Include="Assets\hkvCollisionMeshAsset.cpp">
+        <Filter>Assets</Filter>
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClCompile Include="ExternalTools\hkvExternalToolTexConv.cpp">
+        <Filter>ExternalTools</Filter>
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClInclude Include="Assets\hkvModelAsset.hpp">
+        <Filter>Assets</Filter>
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClCompile Include="hkvTextureDefinitions.cpp">
+        <Filter></Filter>
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <CustomBuild Include="PropertyEditors\hkvLODDistancesDlg.hpp">
+        <Filter>PropertyEditors</Filter>
+        <DeploymentContent>False</DeploymentContent></CustomBuild>
+    <ClInclude Include="TransformationRules\hkvTextureTransformationRule.hpp">
+        <Filter>TransformationRules</Filter>
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClInclude Include="Assets\hkvStaticMeshAsset.hpp">
+        <Filter>Assets</Filter>
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClCompile Include="VisionAssets.cpp">
+        <Filter></Filter>
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClInclude Include="TransformationRules\hkvTransformationStepImageToDds.hpp">
+        <Filter>TransformationRules</Filter>
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClCompile Include="ExternalTools\hkvExternalToolFbxImporter.cpp">
+        <Filter>ExternalTools</Filter>
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClCompile Include="Assets\hkvCollectionAsset.cpp">
+        <Filter>Assets</Filter>
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClInclude Include="hkvTextureDefinitions.hpp">
+        <Filter></Filter>
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClCompile Include="PropertyEditors\hkvLODDistancesDlg.cpp">
+        <Filter>PropertyEditors</Filter>
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClInclude Include="ImageFile\hkvImageFile.hpp">
+        <Filter>ImageFile</Filter>
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClCompile Include="Assets\hkvTextureAsset.cpp">
+        <Filter>Assets</Filter>
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClCompile Include="ExternalTools\hkvExternalToolPvrTexTool.cpp">
+        <Filter>ExternalTools</Filter>
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClInclude Include="TransformationRules\hkvFilterManagerTransformationRule.hpp">
+        <Filter>TransformationRules</Filter>
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClCompile Include="TransformationRules\hkvTextureTransformationRule.cpp">
+        <Filter>TransformationRules</Filter>
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClInclude Include="Assets\hkvCollisionMeshAsset.hpp">
+        <Filter>Assets</Filter>
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClCompile Include="Assets\hkvFilterManagerTransformableAsset.cpp">
+        <Filter>Assets</Filter>
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClInclude Include="ImageFile\hkvDds.hpp">
+        <Filter>ImageFile</Filter>
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClCompile Include="ExternalTools\hkvExternalToolWiiUTexConv2.cpp">
+        <Filter>ExternalTools</Filter>
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <CustomBuild Include="PropertyEditors\hkvVisionPropertyEditingSupport.hpp">
+        <Filter>PropertyEditors</Filter>
+        <DeploymentContent>False</DeploymentContent></CustomBuild>
+    <ClCompile Include="GeneratedFiles\qrc_resources.cpp">
+        <Filter>GeneratedFiles</Filter>
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClInclude Include="GeneratedFiles\ui_hkvLODDistancesDlg.h">
+        <Filter>GeneratedFiles</Filter>
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClCompile Include="GeneratedFiles\Debug\moc_hkvLODDistancesDlg.cpp">
+        <Filter>GeneratedFiles\Debug</Filter>
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClCompile Include="GeneratedFiles\Debug\moc_hkvVisionPropertyEditingSupport.cpp">
+        <Filter>GeneratedFiles\Debug</Filter>
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClCompile Include="GeneratedFiles\Dev\moc_hkvLODDistancesDlg.cpp">
+        <Filter>GeneratedFiles\Dev</Filter>
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClCompile Include="GeneratedFiles\Dev\moc_hkvVisionPropertyEditingSupport.cpp">
+        <Filter>GeneratedFiles\Dev</Filter>
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <CustomBuild Include="resources.qrc">
+        <Filter></Filter>
+        <DeploymentContent>False</DeploymentContent></CustomBuild>
+    <CustomBuild Include="PropertyEditors\hkvLODDistancesDlg.ui">
+        <Filter>PropertyEditors</Filter>
+        <DeploymentContent>False</DeploymentContent></CustomBuild>
+
+  </ItemGroup>
+</Project>

@@ -21,7 +21,6 @@ enum hkpBufferSize
 
 /// A buffer type, allocated locally on the stack by calling functions,
 /// to be passed to getChildShape.
-
 struct hkpShapeBufferStorage
 {
     char m_storage[HK_SHAPE_BUFFER_SIZE];
@@ -39,7 +38,7 @@ typedef HK_ALIGN_REAL(hkpShapeBufferStorage) hkpShapeBuffer;
 #endif // HK_SHAPE_BUFFER_H
 
 /*
- * Havok SDK - Base file, BUILD(#20140327)
+ * Havok SDK - Base file, BUILD(#20140618)
  * 
  * Confidential Information of Havok.  (C) Copyright 1999-2014
  * Telekinesys Research Limited t/a Havok. All Rights Reserved. The Havok
