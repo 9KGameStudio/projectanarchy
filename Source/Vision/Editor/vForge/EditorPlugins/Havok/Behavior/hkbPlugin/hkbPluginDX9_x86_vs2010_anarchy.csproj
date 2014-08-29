@@ -26,32 +26,32 @@
   </PropertyGroup>
   <PropertyGroup>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug DLL|x86' ">
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
     <PlatformTarget>x86</PlatformTarget>
     <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
     
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>..\..\..\..\..\..\..\..\Bin\win32_vs2010_anarchy\debug_dll\DX9</OutputPath>
-    <OutDir>..\..\..\..\..\..\..\..\Bin\win32_vs2010_anarchy\debug_dll\DX9</OutDir>
-    <IntermediateOutputPath>Obj\win32_vs2010_anarchy\debug_dll</IntermediateOutputPath>
+    <OutputPath>..\..\..\..\..\..\..\..\Bin\win32_vs2010_anarchy\debug\DX9</OutputPath>
+    <OutDir>..\..\..\..\..\..\..\..\Bin\win32_vs2010_anarchy\debug\DX9</OutDir>
+    <IntermediateOutputPath>Obj\win32_vs2010_anarchy\debug</IntermediateOutputPath>
     <DefineConstants>_WINDOWS;WIN32;_WIN32;_DEBUG;HK_DEBUG;HK_DEBUG_SLOW;_CONSOLE;_ALLOW_ITERATOR_DEBUG_LEVEL_MISMATCH;HK_ANARCHY; TRACE; DEBUG</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
     <WarningLevel>4</WarningLevel>
     <NoWarn></NoWarn>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Dev DLL|x86' ">
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Dev|x86' ">
     <PlatformTarget>x86</PlatformTarget>
     <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
     
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>true</Optimize>
-    <OutputPath>..\..\..\..\..\..\..\..\Bin\win32_vs2010_anarchy\dev_dll\DX9</OutputPath>
-    <OutDir>..\..\..\..\..\..\..\..\Bin\win32_vs2010_anarchy\dev_dll\DX9</OutDir>
-    <IntermediateOutputPath>Obj\win32_vs2010_anarchy\dev_dll</IntermediateOutputPath>
+    <OutputPath>..\..\..\..\..\..\..\..\Bin\win32_vs2010_anarchy\dev\DX9</OutputPath>
+    <OutDir>..\..\..\..\..\..\..\..\Bin\win32_vs2010_anarchy\dev\DX9</OutDir>
+    <IntermediateOutputPath>Obj\win32_vs2010_anarchy\dev</IntermediateOutputPath>
     <DefineConstants>_WINDOWS;WIN32;_WIN32;HK_DEBUG;_CONSOLE;_ALLOW_ITERATOR_DEBUG_LEVEL_MISMATCH;HK_ANARCHY; TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
@@ -81,18 +81,18 @@
   </ItemGroup>
   <ItemGroup>
     
-            <Reference Include="CSharpFramework.dll"><HintPath>..\..\..\..\..\..\..\..\Bin\win32_vs2010_anarchy\dev_dll\DX9\CSharpFramework.dll</HintPath><Private>False</Private></Reference>
+            <Reference Include="CSharpFramework.dll"><HintPath>..\..\..\..\..\..\..\..\Bin\win32_vs2010_anarchy\dev\DX9\CSharpFramework.dll</HintPath><Private>False</Private></Reference>
     
-            <Reference Include="HavokBehaviorManaged.dll"><HintPath>..\..\..\..\..\..\..\..\Bin\win32_vs2010_anarchy\dev_dll\DX9\HavokBehaviorManaged.dll</HintPath><Private>False</Private></Reference>
+            <Reference Include="HavokBehaviorManaged.dll"><HintPath>..\..\..\..\..\..\..\..\Bin\win32_vs2010_anarchy\dev\DX9\HavokBehaviorManaged.dll</HintPath><Private>False</Private></Reference>
     
-            <Reference Include="ManagedFramework.dll"><HintPath>..\..\..\..\..\..\..\..\Bin\win32_vs2010_anarchy\dev_dll\DX9\ManagedFramework.dll</HintPath><Private>False</Private></Reference>
+            <Reference Include="ManagedFramework.dll"><HintPath>..\..\..\..\..\..\..\..\Bin\win32_vs2010_anarchy\dev\DX9\ManagedFramework.dll</HintPath><Private>False</Private></Reference>
     <ProjectReference Include="..\..\..\VisionPlugin\VisionEditorPlugin\VisionEditorPluginDX9_x86_vs2010_anarchy.csproj">
         <Project>{944C2E99-6C46-439E-8AD2-B4503C8A8574}</Project>
         <Name>VisionEditorPlugin.EditorPlugin</Name>
         <Private>False</Private>
     </ProjectReference>
     
-            <Reference Include="VisionManaged.dll"><HintPath>..\..\..\..\..\..\..\..\Bin\win32_vs2010_anarchy\dev_dll\DX9\VisionManaged.dll</HintPath><Private>False</Private></Reference>
+            <Reference Include="VisionManaged.dll"><HintPath>..\..\..\..\..\..\..\..\Bin\win32_vs2010_anarchy\dev\DX9\VisionManaged.dll</HintPath><Private>False</Private></Reference>
   </ItemGroup>
   <ItemGroup>
     <Content Include=" " />

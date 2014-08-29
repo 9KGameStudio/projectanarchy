@@ -9,33 +9,33 @@
   -->
         
   <ItemGroup Label="ProjectConfigurations">
-    <ProjectConfiguration Include="Debug DLL|win32">
-      <Configuration>Debug DLL</Configuration>
+    <ProjectConfiguration Include="Debug|win32">
+      <Configuration>Debug</Configuration>
       <Platform>win32</Platform>
     </ProjectConfiguration>
-    <ProjectConfiguration Include="Dev DLL|win32">
-      <Configuration>Dev DLL</Configuration>
+    <ProjectConfiguration Include="Dev|win32">
+      <Configuration>Dev</Configuration>
       <Platform>win32</Platform>
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{2CFB60EE-F0B5-4349-93D9-D9A854BA0D8F}</ProjectGuid>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
-    <Keyword>StaticLibrary</Keyword>
+    <Keyword>DynamicLibrary</Keyword>
     <RootNamespace></RootNamespace>
     <ProjectName>VisionAppDX9</ProjectName>
     
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
-    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug DLL|win32'" Label="Configuration">
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|win32'" Label="Configuration">
     <CharacterSet>MultiByte</CharacterSet>
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
     <CLRSupport>false</CLRSupport>
     <UseOfMfc>false</UseOfMfc>
   </PropertyGroup>
-    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Dev DLL|win32'" Label="Configuration">
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Dev|win32'" Label="Configuration">
     <CharacterSet>MultiByte</CharacterSet>
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
     <CLRSupport>false</CLRSupport>
     <UseOfMfc>false</UseOfMfc>
   </PropertyGroup>
@@ -44,20 +44,20 @@
   </ImportGroup>
   <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   <PropertyGroup>
-<TargetExt  Condition="'$(Configuration)|$(Platform)'=='Debug DLL|win32'">.lib</TargetExt>
-<TargetExt  Condition="'$(Configuration)|$(Platform)'=='Dev DLL|win32'">.lib</TargetExt>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug DLL|win32'">..\..\..\..\..\Obj\win32_vs2010_anarchy\debug_dll\VisionAppDX9\</IntDir>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug DLL|win32'">..\..\..\..\..\Lib\win32_vs2010_anarchy\debug_dll\</OutDir>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug DLL|win32'">VisionAppD</TargetName>
-    <OutputFile Condition="'$(Configuration)|$(Platform)'=='Debug DLL|win32'">..\..\..\..\..\Lib\win32_vs2010_anarchy\debug_dll\VisionAppD.lib</OutputFile>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Dev DLL|win32'">..\..\..\..\..\Obj\win32_vs2010_anarchy\dev_dll\VisionAppDX9\</IntDir>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Dev DLL|win32'">..\..\..\..\..\Lib\win32_vs2010_anarchy\dev_dll\</OutDir>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Dev DLL|win32'">VisionApp</TargetName>
-    <OutputFile Condition="'$(Configuration)|$(Platform)'=='Dev DLL|win32'">..\..\..\..\..\Lib\win32_vs2010_anarchy\dev_dll\VisionApp.lib</OutputFile>
-    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug DLL|win32'">true</LinkIncremental>
-    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Dev DLL|win32'">true</LinkIncremental>
+<TargetExt  Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">.dll</TargetExt>
+<TargetExt  Condition="'$(Configuration)|$(Platform)'=='Dev|win32'">.dll</TargetExt>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">..\..\..\..\..\Obj\win32_vs2010_anarchy\debug\VisionAppDX9\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">..\..\..\..\..\Bin\win32_vs2010_anarchy\debug\DX9\</OutDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">VisionAppD</TargetName>
+    <OutputFile Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Dev|win32'">..\..\..\..\..\Obj\win32_vs2010_anarchy\dev\VisionAppDX9\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Dev|win32'">..\..\..\..\..\Bin\win32_vs2010_anarchy\dev\DX9\</OutDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Dev|win32'">VisionApp</TargetName>
+    <OutputFile Condition="'$(Configuration)|$(Platform)'=='Dev|win32'">$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">true</LinkIncremental>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Dev|win32'">true</LinkIncremental>
   </PropertyGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug DLL|win32'">
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">
     
     
     
@@ -88,7 +88,7 @@
       <PrecompiledHeader></PrecompiledHeader>
       <PrecompiledHeaderFile></PrecompiledHeaderFile>
       <PrecompiledHeaderOutputFile>$(IntDir)VisionApp.pch</PrecompiledHeaderOutputFile>
-      <PreprocessorDefinitions>_WINDOWS;WIN32;_WIN32;_DEBUG;HK_DEBUG;HK_DEBUG_SLOW;_LIB;_ALLOW_ITERATOR_DEBUG_LEVEL_MISMATCH;HK_ANARCHY;PROFILING;_VISION_WIN32;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_VR_DX9;CODE_ANALYSIS;PARTICLEMODULE_IMPORTS;EFFECTSMODULE_IMPORTS;GUI_ENGINEPLUGIN_IMPORTS;SCRIPTMODULE_IMPORTS;VTERRAINPLUGIN_IMPORTS;ANIMATIONMODULE_IMPORTS;DEFERREDMODULE_IMPORTS;SCENEMODULE_IMPORTS;PATHRENDERINGMODULE_IMPORTS;HK_CONFIG_SIMD=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_WINDOWS;WIN32;_WIN32;_DEBUG;HK_DEBUG;HK_DEBUG_SLOW;_CONSOLE;_ALLOW_ITERATOR_DEBUG_LEVEL_MISMATCH;HK_ANARCHY;PROFILING;_VISION_WIN32;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_VR_DX9;CODE_ANALYSIS;VISIONAPP_EXPORTS;PARTICLEMODULE_IMPORTS;EFFECTSMODULE_IMPORTS;GUI_ENGINEPLUGIN_IMPORTS;SCRIPTMODULE_IMPORTS;VTERRAINPLUGIN_IMPORTS;ANIMATIONMODULE_IMPORTS;DEFERREDMODULE_IMPORTS;SCENEMODULE_IMPORTS;PATHRENDERINGMODULE_IMPORTS;HK_CONFIG_SIMD=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <UndefinePreprocessorDefinitions></UndefinePreprocessorDefinitions>
       <ProgramDataBaseFileName>$(OutDir)$(TargetName).pdb</ProgramDataBaseFileName>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -99,36 +99,37 @@
       <WarningLevel>Level3</WarningLevel>
       <CompileAsManaged>false</CompileAsManaged>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-	  
+      
     </ClCompile>
     <ResourceCompile>
       <ResourceOutputFileName></ResourceOutputFileName>
-      <AdditionalIncludeDirectories>$(IntDir)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(IntDir);</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Lib>
       <IgnoreAllDefaultLibraries></IgnoreAllDefaultLibraries>
-      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\..\..\..\Lib\win32_vs2010_anarchy\debug_dll</AdditionalLibraryDirectories>
+      <AdditionalDependencies>BaseD.lib;VisionD.lib;VisionEnginePluginD.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\..\..\..\..\Lib\win32_vs2010_anarchy\debug</AdditionalLibraryDirectories>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <UseUnicodeResponseFiles>true</UseUnicodeResponseFiles>
       <AdditionalOptions> /ignore:4221</AdditionalOptions>
     </Lib>
     <Link>
-      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\..\..\..\Lib\win32_vs2010_anarchy\debug_dll</AdditionalLibraryDirectories>
+      <AdditionalDependencies>BaseD.lib;VisionD.lib;VisionEnginePluginD.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\..\..\..\..\Lib\win32_vs2010_anarchy\debug</AdditionalLibraryDirectories>
       <AdditionalOptions> /ignore:4221</AdditionalOptions>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <ImportLibrary></ImportLibrary>
+      <ImportLibrary>..\..\..\..\..\Lib\win32_vs2010_anarchy\debug\$(TargetName).lib</ImportLibrary>
       <AssemblyDebug></AssemblyDebug>
       <SubSystem>Console</SubSystem>
       <ManifestFile>$(IntDir)Manifest$(TargetExt).intermediate.manifest</ManifestFile>
       <OptimizeReferences></OptimizeReferences>
       <EnableCOMDATFolding></EnableCOMDATFolding>
+      <ProgramDatabaseFile>$(TargetDir)$(TargetName).pdb</ProgramDatabaseFile>
      <IgnoreSpecificDefaultLibraries>libcmtd.lib;</IgnoreSpecificDefaultLibraries>
     </Link>
   </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Dev DLL|win32'">
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Dev|win32'">
     
     
     
@@ -159,7 +160,7 @@
       <PrecompiledHeader></PrecompiledHeader>
       <PrecompiledHeaderFile></PrecompiledHeaderFile>
       <PrecompiledHeaderOutputFile>$(IntDir)VisionApp.pch</PrecompiledHeaderOutputFile>
-      <PreprocessorDefinitions>_WINDOWS;WIN32;_WIN32;HK_DEBUG;_LIB;_ALLOW_ITERATOR_DEBUG_LEVEL_MISMATCH;HK_ANARCHY;PROFILING;_VISION_WIN32;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_VR_DX9;CODE_ANALYSIS;PARTICLEMODULE_IMPORTS;EFFECTSMODULE_IMPORTS;GUI_ENGINEPLUGIN_IMPORTS;SCRIPTMODULE_IMPORTS;VTERRAINPLUGIN_IMPORTS;ANIMATIONMODULE_IMPORTS;DEFERREDMODULE_IMPORTS;SCENEMODULE_IMPORTS;PATHRENDERINGMODULE_IMPORTS;HK_CONFIG_SIMD=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_WINDOWS;WIN32;_WIN32;HK_DEBUG;_CONSOLE;_ALLOW_ITERATOR_DEBUG_LEVEL_MISMATCH;HK_ANARCHY;PROFILING;_VISION_WIN32;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_VR_DX9;CODE_ANALYSIS;VISIONAPP_EXPORTS;PARTICLEMODULE_IMPORTS;EFFECTSMODULE_IMPORTS;GUI_ENGINEPLUGIN_IMPORTS;SCRIPTMODULE_IMPORTS;VTERRAINPLUGIN_IMPORTS;ANIMATIONMODULE_IMPORTS;DEFERREDMODULE_IMPORTS;SCENEMODULE_IMPORTS;PATHRENDERINGMODULE_IMPORTS;HK_CONFIG_SIMD=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <UndefinePreprocessorDefinitions></UndefinePreprocessorDefinitions>
       <ProgramDataBaseFileName>$(OutDir)$(TargetName).pdb</ProgramDataBaseFileName>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -170,38 +171,41 @@
       <WarningLevel>Level3</WarningLevel>
       <CompileAsManaged>false</CompileAsManaged>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-	  
+      
     </ClCompile>
     <ResourceCompile>
       <ResourceOutputFileName></ResourceOutputFileName>
-      <AdditionalIncludeDirectories>$(IntDir)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(IntDir);</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Lib>
       <IgnoreAllDefaultLibraries></IgnoreAllDefaultLibraries>
-      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\..\..\..\Lib\win32_vs2010_anarchy\dev_dll</AdditionalLibraryDirectories>
+      <AdditionalDependencies>Base.lib;Vision.lib;VisionEnginePlugin.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\..\..\..\..\Lib\win32_vs2010_anarchy\dev</AdditionalLibraryDirectories>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <UseUnicodeResponseFiles>true</UseUnicodeResponseFiles>
       <AdditionalOptions> /ignore:4221</AdditionalOptions>
     </Lib>
     <Link>
-      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\..\..\..\Lib\win32_vs2010_anarchy\dev_dll</AdditionalLibraryDirectories>
+      <AdditionalDependencies>Base.lib;Vision.lib;VisionEnginePlugin.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\..\..\..\..\Lib\win32_vs2010_anarchy\dev</AdditionalLibraryDirectories>
       <AdditionalOptions> /ignore:4221</AdditionalOptions>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <ImportLibrary></ImportLibrary>
+      <ImportLibrary>..\..\..\..\..\Lib\win32_vs2010_anarchy\dev\$(TargetName).lib</ImportLibrary>
       <AssemblyDebug></AssemblyDebug>
       <SubSystem>Console</SubSystem>
       <ManifestFile>$(IntDir)Manifest$(TargetExt).intermediate.manifest</ManifestFile>
       <OptimizeReferences></OptimizeReferences>
       <EnableCOMDATFolding></EnableCOMDATFolding>
+      <ProgramDatabaseFile>$(TargetDir)$(TargetName).pdb</ProgramDatabaseFile>
      <IgnoreSpecificDefaultLibraries>libcmt.lib;</IgnoreSpecificDefaultLibraries>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Win\VAppWin.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClInclude Include="VAppImportExport.hpp">
+        <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="Modules\VDebugOptions.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="Modules\VFileServe.hpp">
@@ -238,11 +242,11 @@
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClCompile Include="Modules\VLogoOverlay.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
-    <ClInclude Include="VAppImpl.hpp">
+    <ClInclude Include="VAppModule.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="Modules\VCameraHandling.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
-    <ClInclude Include="VAppModule.hpp">
+    <ClInclude Include="VAppImpl.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="Modules\VLogoOverlay.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
@@ -281,11 +285,17 @@
   <ItemGroup>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug DLL|win32'">
+<PropertyGroup>
+    <CleanDependsOn>VisionAppDX9_CleanReflections;$(CleanDependsOn)</CleanDependsOn>
+</PropertyGroup>
+<Target Name="VisionAppDX9_CleanReflections">
+    <Delete Files="$(MSBuildProjectDirectory)\reflectionSettings.cache;$(MSBuildProjectDirectory)\reflections.db" />
+</Target>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">
     <RunCodeAnalysis>false</RunCodeAnalysis>
     <CodeAnalysisInputAssembly>$(OutputFile)</CodeAnalysisInputAssembly>
 </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Dev DLL|win32'">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Dev|win32'">
     <RunCodeAnalysis>false</RunCodeAnalysis>
     <CodeAnalysisInputAssembly>$(OutputFile)</CodeAnalysisInputAssembly>
 </PropertyGroup>

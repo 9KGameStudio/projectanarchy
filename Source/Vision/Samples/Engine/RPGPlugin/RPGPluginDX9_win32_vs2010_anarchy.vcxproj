@@ -9,12 +9,12 @@
   -->
         
   <ItemGroup Label="ProjectConfigurations">
-    <ProjectConfiguration Include="Debug DLL|win32">
-      <Configuration>Debug DLL</Configuration>
+    <ProjectConfiguration Include="Debug|win32">
+      <Configuration>Debug</Configuration>
       <Platform>win32</Platform>
     </ProjectConfiguration>
-    <ProjectConfiguration Include="Dev DLL|win32">
-      <Configuration>Dev DLL</Configuration>
+    <ProjectConfiguration Include="Dev|win32">
+      <Configuration>Dev</Configuration>
       <Platform>win32</Platform>
     </ProjectConfiguration>
   </ItemGroup>
@@ -27,13 +27,13 @@
     
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
-    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug DLL|win32'" Label="Configuration">
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|win32'" Label="Configuration">
     <CharacterSet>MultiByte</CharacterSet>
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <CLRSupport>false</CLRSupport>
     <UseOfMfc>false</UseOfMfc>
   </PropertyGroup>
-    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Dev DLL|win32'" Label="Configuration">
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Dev|win32'" Label="Configuration">
     <CharacterSet>MultiByte</CharacterSet>
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <CLRSupport>false</CLRSupport>
@@ -44,20 +44,20 @@
   </ImportGroup>
   <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   <PropertyGroup>
-<TargetExt  Condition="'$(Configuration)|$(Platform)'=='Debug DLL|win32'">.vPluginD</TargetExt>
-<TargetExt  Condition="'$(Configuration)|$(Platform)'=='Dev DLL|win32'">.vPlugin</TargetExt>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug DLL|win32'">..\..\..\..\..\Obj\win32_vs2010_anarchy\debug_dll\RPGPluginDX9\</IntDir>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug DLL|win32'">..\..\..\..\..\Bin\win32_vs2010_anarchy\Debug_DLL\DX9\</OutDir>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug DLL|win32'">RPGPlugin</TargetName>
-    <OutputFile Condition="'$(Configuration)|$(Platform)'=='Debug DLL|win32'">..\..\..\..\..\Bin\win32_vs2010_anarchy\Debug_DLL\DX9\RPGPlugin.vPluginD</OutputFile>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Dev DLL|win32'">..\..\..\..\..\Obj\win32_vs2010_anarchy\dev_dll\RPGPluginDX9\</IntDir>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Dev DLL|win32'">..\..\..\..\..\Bin\win32_vs2010_anarchy\Dev_DLL\DX9\</OutDir>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Dev DLL|win32'">RPGPlugin</TargetName>
-    <OutputFile Condition="'$(Configuration)|$(Platform)'=='Dev DLL|win32'">..\..\..\..\..\Bin\win32_vs2010_anarchy\Dev_DLL\DX9\RPGPlugin.vPlugin</OutputFile>
-    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug DLL|win32'">true</LinkIncremental>
-    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Dev DLL|win32'">true</LinkIncremental>
+<TargetExt  Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">.vPluginD</TargetExt>
+<TargetExt  Condition="'$(Configuration)|$(Platform)'=='Dev|win32'">.vPlugin</TargetExt>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">..\..\..\..\..\Obj\win32_vs2010_anarchy\debug\RPGPluginDX9\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">..\..\..\..\../Bin/win32_vs2010_anarchy/Debug/DX9\</OutDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">RPGPlugin</TargetName>
+    <OutputFile Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Dev|win32'">..\..\..\..\..\Obj\win32_vs2010_anarchy\dev\RPGPluginDX9\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Dev|win32'">..\..\..\..\../Bin/win32_vs2010_anarchy/Dev/DX9\</OutDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Dev|win32'">RPGPlugin</TargetName>
+    <OutputFile Condition="'$(Configuration)|$(Platform)'=='Dev|win32'">$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">true</LinkIncremental>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Dev|win32'">true</LinkIncremental>
   </PropertyGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug DLL|win32'">
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">
     
     
     
@@ -99,36 +99,37 @@
       <WarningLevel>Level3</WarningLevel>
       <CompileAsManaged>false</CompileAsManaged>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-	  
+      
     </ClCompile>
     <ResourceCompile>
       <ResourceOutputFileName></ResourceOutputFileName>
-      <AdditionalIncludeDirectories>$(IntDir)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(IntDir);</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Lib>
       <IgnoreAllDefaultLibraries></IgnoreAllDefaultLibraries>
-      <AdditionalDependencies>lua100D.lib;fmodexL_vc.lib;fmod_event_netL.lib;d3d9.lib;d3dx9.lib;BaseD.lib;VisionD.lib;VisionEnginePluginD.lib;vHavokD.lib;vHavokAiD.lib;vHavokBehaviorD.lib;vFmodEnginePluginD.lib;hkBase.lib;hkCompat.lib;hkSceneData.lib;hkSerialize.lib;hkVisualize.lib;hkInternal.lib;hkGeometryUtilities.lib;hkcdInternal.lib;hkcdCollide.lib;hkpUtilities.lib;hkpVehicle.lib;hkpDynamics.lib;hkpCollide.lib;hkpInternal.lib;hkpConstraintSolver.lib;hkpConstraint.lib;hkaPhysics2012Bridge.lib;hkaInternal.lib;hkaAnimation.lib;hkbBehavior.lib;hkbInternal.lib;hkbUtilities.lib;hkbPhysics2012Bridge.lib;hkbAiBridge.lib;hkbScript.lib;hkaiPathfinding.lib;hkaiInternal.lib;hkaiVisualize.lib;hkaiSpatialAnalysis.lib;hkaiPhysics2012Bridge.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\..\..\..\Lib\win32_vs2010_anarchy\debug_dll;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(DXSDK_DIR)/Lib/x86;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/lib/win</AdditionalLibraryDirectories>
+      <AdditionalDependencies>lua100D.lib;fmodexL_vc.lib;fmod_event_netL.lib;d3d9.lib;d3dx9.lib;BaseD.lib;VisionD.lib;VisionEnginePluginD.lib;vHavokD.lib;vHavokAiD.lib;vHavokBehaviorD.lib;vFmodEnginePluginD.lib;hkBase.lib;hkCompat.lib;hkSceneData.lib;hkSerialize.lib;hkVisualize.lib;hkInternal.lib;hkGeometryUtilities.lib;hkcdInternal.lib;hkcdCollide.lib;hkImageUtilities.lib;hkpUtilities.lib;hkpVehicle.lib;hkpDynamics.lib;hkpCollide.lib;hkpInternal.lib;hkpConstraintSolver.lib;hkpConstraint.lib;hkaPhysics2012Bridge.lib;hkaInternal.lib;hkaAnimation.lib;hkbBehavior.lib;hkbInternal.lib;hkbUtilities.lib;hkbPhysics2012Bridge.lib;hkbAiBridge.lib;hkbScript.lib;hkaiPathfinding.lib;hkaiInternal.lib;hkaiVisualize.lib;hkaiSpatialAnalysis.lib;hkaiPhysics2012Bridge.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\..\..\..\..\Lib\win32_vs2010_anarchy\debug;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(DXSDK_DIR)/Lib/x86;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/lib/win</AdditionalLibraryDirectories>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <UseUnicodeResponseFiles>true</UseUnicodeResponseFiles>
       <AdditionalOptions> /ignore:4221</AdditionalOptions>
     </Lib>
     <Link>
-      <AdditionalDependencies>lua100D.lib;fmodexL_vc.lib;fmod_event_netL.lib;d3d9.lib;d3dx9.lib;BaseD.lib;VisionD.lib;VisionEnginePluginD.lib;vHavokD.lib;vHavokAiD.lib;vHavokBehaviorD.lib;vFmodEnginePluginD.lib;hkBase.lib;hkCompat.lib;hkSceneData.lib;hkSerialize.lib;hkVisualize.lib;hkInternal.lib;hkGeometryUtilities.lib;hkcdInternal.lib;hkcdCollide.lib;hkpUtilities.lib;hkpVehicle.lib;hkpDynamics.lib;hkpCollide.lib;hkpInternal.lib;hkpConstraintSolver.lib;hkpConstraint.lib;hkaPhysics2012Bridge.lib;hkaInternal.lib;hkaAnimation.lib;hkbBehavior.lib;hkbInternal.lib;hkbUtilities.lib;hkbPhysics2012Bridge.lib;hkbAiBridge.lib;hkbScript.lib;hkaiPathfinding.lib;hkaiInternal.lib;hkaiVisualize.lib;hkaiSpatialAnalysis.lib;hkaiPhysics2012Bridge.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\..\..\..\Lib\win32_vs2010_anarchy\debug_dll;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(DXSDK_DIR)/Lib/x86;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/lib/win</AdditionalLibraryDirectories>
+      <AdditionalDependencies>lua100D.lib;fmodexL_vc.lib;fmod_event_netL.lib;d3d9.lib;d3dx9.lib;BaseD.lib;VisionD.lib;VisionEnginePluginD.lib;vHavokD.lib;vHavokAiD.lib;vHavokBehaviorD.lib;vFmodEnginePluginD.lib;hkBase.lib;hkCompat.lib;hkSceneData.lib;hkSerialize.lib;hkVisualize.lib;hkInternal.lib;hkGeometryUtilities.lib;hkcdInternal.lib;hkcdCollide.lib;hkImageUtilities.lib;hkpUtilities.lib;hkpVehicle.lib;hkpDynamics.lib;hkpCollide.lib;hkpInternal.lib;hkpConstraintSolver.lib;hkpConstraint.lib;hkaPhysics2012Bridge.lib;hkaInternal.lib;hkaAnimation.lib;hkbBehavior.lib;hkbInternal.lib;hkbUtilities.lib;hkbPhysics2012Bridge.lib;hkbAiBridge.lib;hkbScript.lib;hkaiPathfinding.lib;hkaiInternal.lib;hkaiVisualize.lib;hkaiSpatialAnalysis.lib;hkaiPhysics2012Bridge.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\..\..\..\..\Lib\win32_vs2010_anarchy\debug;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(DXSDK_DIR)/Lib/x86;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/lib/win</AdditionalLibraryDirectories>
       <AdditionalOptions> /ignore:4221</AdditionalOptions>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <ImportLibrary>..\..\..\..\..\Lib\win32_vs2010_anarchy\debug_dll\$(TargetName)D.lib</ImportLibrary>
+      <ImportLibrary>..\..\..\..\..\Lib\win32_vs2010_anarchy\debug\$(TargetName)D.lib</ImportLibrary>
       <AssemblyDebug></AssemblyDebug>
       <SubSystem>Console</SubSystem>
       <ManifestFile>$(IntDir)Manifest$(TargetExt).intermediate.manifest</ManifestFile>
       <OptimizeReferences></OptimizeReferences>
       <EnableCOMDATFolding></EnableCOMDATFolding>
+      <ProgramDatabaseFile>$(TargetDir)$(TargetName).pdb</ProgramDatabaseFile>
      <IgnoreSpecificDefaultLibraries>libc.lib;libcmtd.lib;</IgnoreSpecificDefaultLibraries>
     </Link>
   </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Dev DLL|win32'">
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Dev|win32'">
     
     
     
@@ -170,32 +171,33 @@
       <WarningLevel>Level3</WarningLevel>
       <CompileAsManaged>false</CompileAsManaged>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-	  
+      
     </ClCompile>
     <ResourceCompile>
       <ResourceOutputFileName></ResourceOutputFileName>
-      <AdditionalIncludeDirectories>$(IntDir)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(IntDir);</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Lib>
       <IgnoreAllDefaultLibraries></IgnoreAllDefaultLibraries>
-      <AdditionalDependencies>lua100.lib;fmodex_vc.lib;fmod_event_net.lib;d3d9.lib;d3dx9.lib;Base.lib;Vision.lib;VisionEnginePlugin.lib;vHavok.lib;vHavokAi.lib;vHavokBehavior.lib;vFmodEnginePlugin.lib;hkBase.lib;hkCompat.lib;hkSceneData.lib;hkSerialize.lib;hkVisualize.lib;hkInternal.lib;hkGeometryUtilities.lib;hkcdInternal.lib;hkcdCollide.lib;hkpUtilities.lib;hkpVehicle.lib;hkpDynamics.lib;hkpCollide.lib;hkpInternal.lib;hkpConstraintSolver.lib;hkpConstraint.lib;hkaPhysics2012Bridge.lib;hkaInternal.lib;hkaAnimation.lib;hkbBehavior.lib;hkbInternal.lib;hkbUtilities.lib;hkbPhysics2012Bridge.lib;hkbAiBridge.lib;hkbScript.lib;hkaiPathfinding.lib;hkaiInternal.lib;hkaiVisualize.lib;hkaiSpatialAnalysis.lib;hkaiPhysics2012Bridge.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\..\..\..\Lib\win32_vs2010_anarchy\dev_dll;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(DXSDK_DIR)/Lib/x86;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/lib/win</AdditionalLibraryDirectories>
+      <AdditionalDependencies>lua100.lib;fmodex_vc.lib;fmod_event_net.lib;d3d9.lib;d3dx9.lib;Base.lib;Vision.lib;VisionEnginePlugin.lib;vHavok.lib;vHavokAi.lib;vHavokBehavior.lib;vFmodEnginePlugin.lib;hkBase.lib;hkCompat.lib;hkSceneData.lib;hkSerialize.lib;hkVisualize.lib;hkInternal.lib;hkGeometryUtilities.lib;hkcdInternal.lib;hkcdCollide.lib;hkImageUtilities.lib;hkpUtilities.lib;hkpVehicle.lib;hkpDynamics.lib;hkpCollide.lib;hkpInternal.lib;hkpConstraintSolver.lib;hkpConstraint.lib;hkaPhysics2012Bridge.lib;hkaInternal.lib;hkaAnimation.lib;hkbBehavior.lib;hkbInternal.lib;hkbUtilities.lib;hkbPhysics2012Bridge.lib;hkbAiBridge.lib;hkbScript.lib;hkaiPathfinding.lib;hkaiInternal.lib;hkaiVisualize.lib;hkaiSpatialAnalysis.lib;hkaiPhysics2012Bridge.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\..\..\..\..\Lib\win32_vs2010_anarchy\dev;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(DXSDK_DIR)/Lib/x86;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/lib/win</AdditionalLibraryDirectories>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <UseUnicodeResponseFiles>true</UseUnicodeResponseFiles>
       <AdditionalOptions> /ignore:4221</AdditionalOptions>
     </Lib>
     <Link>
-      <AdditionalDependencies>lua100.lib;fmodex_vc.lib;fmod_event_net.lib;d3d9.lib;d3dx9.lib;Base.lib;Vision.lib;VisionEnginePlugin.lib;vHavok.lib;vHavokAi.lib;vHavokBehavior.lib;vFmodEnginePlugin.lib;hkBase.lib;hkCompat.lib;hkSceneData.lib;hkSerialize.lib;hkVisualize.lib;hkInternal.lib;hkGeometryUtilities.lib;hkcdInternal.lib;hkcdCollide.lib;hkpUtilities.lib;hkpVehicle.lib;hkpDynamics.lib;hkpCollide.lib;hkpInternal.lib;hkpConstraintSolver.lib;hkpConstraint.lib;hkaPhysics2012Bridge.lib;hkaInternal.lib;hkaAnimation.lib;hkbBehavior.lib;hkbInternal.lib;hkbUtilities.lib;hkbPhysics2012Bridge.lib;hkbAiBridge.lib;hkbScript.lib;hkaiPathfinding.lib;hkaiInternal.lib;hkaiVisualize.lib;hkaiSpatialAnalysis.lib;hkaiPhysics2012Bridge.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\..\..\..\Lib\win32_vs2010_anarchy\dev_dll;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(DXSDK_DIR)/Lib/x86;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/lib/win</AdditionalLibraryDirectories>
+      <AdditionalDependencies>lua100.lib;fmodex_vc.lib;fmod_event_net.lib;d3d9.lib;d3dx9.lib;Base.lib;Vision.lib;VisionEnginePlugin.lib;vHavok.lib;vHavokAi.lib;vHavokBehavior.lib;vFmodEnginePlugin.lib;hkBase.lib;hkCompat.lib;hkSceneData.lib;hkSerialize.lib;hkVisualize.lib;hkInternal.lib;hkGeometryUtilities.lib;hkcdInternal.lib;hkcdCollide.lib;hkImageUtilities.lib;hkpUtilities.lib;hkpVehicle.lib;hkpDynamics.lib;hkpCollide.lib;hkpInternal.lib;hkpConstraintSolver.lib;hkpConstraint.lib;hkaPhysics2012Bridge.lib;hkaInternal.lib;hkaAnimation.lib;hkbBehavior.lib;hkbInternal.lib;hkbUtilities.lib;hkbPhysics2012Bridge.lib;hkbAiBridge.lib;hkbScript.lib;hkaiPathfinding.lib;hkaiInternal.lib;hkaiVisualize.lib;hkaiSpatialAnalysis.lib;hkaiPhysics2012Bridge.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\..\..\..\..\Lib\win32_vs2010_anarchy\dev;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(DXSDK_DIR)/Lib/x86;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/lib/win</AdditionalLibraryDirectories>
       <AdditionalOptions> /ignore:4221</AdditionalOptions>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <ImportLibrary>..\..\..\..\..\Lib\win32_vs2010_anarchy\dev_dll\$(TargetName).lib</ImportLibrary>
+      <ImportLibrary>..\..\..\..\..\Lib\win32_vs2010_anarchy\dev\$(TargetName).lib</ImportLibrary>
       <AssemblyDebug></AssemblyDebug>
       <SubSystem>Console</SubSystem>
       <ManifestFile>$(IntDir)Manifest$(TargetExt).intermediate.manifest</ManifestFile>
       <OptimizeReferences></OptimizeReferences>
       <EnableCOMDATFolding></EnableCOMDATFolding>
+      <ProgramDatabaseFile>$(TargetDir)$(TargetName).pdb</ProgramDatabaseFile>
      <IgnoreSpecificDefaultLibraries>libc.lib;libcmt.lib;</IgnoreSpecificDefaultLibraries>
     </Link>
   </ItemDefinitionGroup>
@@ -286,6 +288,10 @@
     <ClCompile Include="ProjectileHealing.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClCompile Include="HighlightableComponent.cpp">
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClCompile Include="Precompiled.cpp">
+        <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">Create</PrecompiledHeader>
+        <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Dev|win32'">Create</PrecompiledHeader>
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClCompile Include="AiCharacter.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
@@ -399,10 +405,6 @@
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="BaseComponent.h">
         <DeploymentContent>False</DeploymentContent></ClInclude>
-    <ClCompile Include="Precompiled.cpp">
-        <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug DLL|win32'">Create</PrecompiledHeader>
-        <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Dev DLL|win32'">Create</PrecompiledHeader>
-        <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="Boss.h">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="RangedGuardianAiControllerComponent.h">
@@ -453,11 +455,17 @@
   <ItemGroup>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug DLL|win32'">
+<PropertyGroup>
+    <CleanDependsOn>RPGPluginDX9_CleanReflections;$(CleanDependsOn)</CleanDependsOn>
+</PropertyGroup>
+<Target Name="RPGPluginDX9_CleanReflections">
+    <Delete Files="$(MSBuildProjectDirectory)\reflectionSettings.cache;$(MSBuildProjectDirectory)\reflections.db" />
+</Target>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">
     <RunCodeAnalysis>false</RunCodeAnalysis>
     <CodeAnalysisInputAssembly>$(OutputFile)</CodeAnalysisInputAssembly>
 </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Dev DLL|win32'">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Dev|win32'">
     <RunCodeAnalysis>false</RunCodeAnalysis>
     <CodeAnalysisInputAssembly>$(OutputFile)</CodeAnalysisInputAssembly>
 </PropertyGroup>

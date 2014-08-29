@@ -43,6 +43,9 @@
     <ClInclude Include="vHavokCableConstraintChainRenderer.hpp">
         <Filter></Filter>
         <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClInclude Include="IvHavokForcesQuerierComponent.hpp">
+        <Filter></Filter>
+        <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="vHavokDisplayHandler.hpp">
         <Filter></Filter>
         <DeploymentContent>False</DeploymentContent></ClInclude>
@@ -64,6 +67,9 @@
     <ClCompile Include="CharacterControlStates\vCharacterStateClimbing.cpp">
         <Filter>CharacterControlStates</Filter>
         <DeploymentContent>False</DeploymentContent></ClCompile>
+    <None Include="vHavokSync.inl">
+        <Filter></Filter>
+        <DeploymentContent>False</DeploymentContent></None>
     <ClInclude Include="HavokPhysicsEnginePluginPCH.h">
         <Filter></Filter>
         <DeploymentContent>False</DeploymentContent></ClInclude>
@@ -76,7 +82,7 @@
     <ClCompile Include="VThrowItemComponent.cpp">
         <Filter></Filter>
         <DeploymentContent>False</DeploymentContent></ClCompile>
-    <ClInclude Include="vHavokElementManager.hpp">
+    <ClInclude Include="vHavokProfiler.hpp">
         <Filter></Filter>
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="vHavokHingeConstraint.hpp">
@@ -88,12 +94,15 @@
     <ClInclude Include="vHavokConstraint.hpp">
         <Filter></Filter>
         <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClCompile Include="vHavokCpuThreadPool.cpp">
+        <Filter></Filter>
+        <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="vHavokRagdollConstraint.hpp">
         <Filter></Filter>
         <DeploymentContent>False</DeploymentContent></ClInclude>
-    <ClCompile Include="vHavokCpuJobThreadPool.cpp">
-        <Filter></Filter>
-        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClInclude Include="CharacterControlStates\vCharacterStateClimbing.h">
+        <Filter>CharacterControlStates</Filter>
+        <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="vHavokStiffSpringConstraint.hpp">
         <Filter></Filter>
         <DeploymentContent>False</DeploymentContent></ClInclude>
@@ -103,12 +112,12 @@
     <ClCompile Include="vHavokCableConstraintChainRenderer.cpp">
         <Filter></Filter>
         <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClCompile Include="vHavokResourceShape.cpp">
+        <Filter></Filter>
+        <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClCompile Include="CharacterControlStates\vCharacterStateJumping.cpp">
         <Filter>CharacterControlStates</Filter>
         <DeploymentContent>False</DeploymentContent></ClCompile>
-    <ClInclude Include="vHavokSync.hpp">
-        <Filter></Filter>
-        <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="vHavokVisualDebugger.hpp">
         <Filter></Filter>
         <DeploymentContent>False</DeploymentContent></ClInclude>
@@ -124,6 +133,12 @@
     <Compile Include="Lua\vHavokRagdoll.i">
         <Filter>Lua</Filter>
         <DeploymentContent>False</DeploymentContent></Compile>
+    <ClInclude Include="vHavokShapeCache.hpp">
+        <Filter></Filter>
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClInclude Include="vHavokResourceShape.hpp">
+        <Filter></Filter>
+        <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="vHavokConstraintChainRenderer.cpp">
         <Filter></Filter>
         <DeploymentContent>False</DeploymentContent></ClCompile>
@@ -141,6 +156,9 @@
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="Classes\HavokPhysicsEnginePluginTrackerClasses.cpp">
         <Filter>Classes</Filter>
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClCompile Include="vHavokShapeCache.cpp">
+        <Filter></Filter>
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="vHavokChainAnimation.hpp">
         <Filter></Filter>
@@ -178,9 +196,9 @@
     <ClCompile Include="vHavokConstraintListener.cpp">
         <Filter></Filter>
         <DeploymentContent>False</DeploymentContent></ClCompile>
-    <ClCompile Include="vHavokGenericConstraint.cpp">
+    <ClInclude Include="vHavokVisionShapes.h">
         <Filter></Filter>
-        <DeploymentContent>False</DeploymentContent></ClCompile>
+        <DeploymentContent>False</DeploymentContent></ClInclude>
     <Compile Include="Lua\vHavokCharacterController.i">
         <Filter>Lua</Filter>
         <DeploymentContent>False</DeploymentContent></Compile>
@@ -211,7 +229,7 @@
     <ClCompile Include="vHavokPhysicsModule.cpp">
         <Filter></Filter>
         <DeploymentContent>False</DeploymentContent></ClCompile>
-    <ClInclude Include="vHavokVisionShapes.h">
+    <ClInclude Include="VRigidBodyFollowPathComponent.hpp">
         <Filter></Filter>
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <CustomBuild Include="Lua\HavokPhysicsLuaModule.i">
@@ -250,9 +268,6 @@
     <ClCompile Include="vHavokShapeFactory.cpp">
         <Filter></Filter>
         <DeploymentContent>False</DeploymentContent></ClCompile>
-    <ClInclude Include="vHavokCpuJobThreadPool.hpp">
-        <Filter></Filter>
-        <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="vHavokRagdollConstraint.cpp">
         <Filter></Filter>
         <DeploymentContent>False</DeploymentContent></ClCompile>
@@ -262,10 +277,7 @@
     <ClCompile Include="vHavokStiffSpringConstraint.cpp">
         <Filter></Filter>
         <DeploymentContent>False</DeploymentContent></ClCompile>
-    <ClInclude Include="vHavokProfiler.hpp">
-        <Filter></Filter>
-        <DeploymentContent>False</DeploymentContent></ClInclude>
-    <ClInclude Include="vHavokCachedShape.hpp">
+    <ClInclude Include="vHavokElementManager.hpp">
         <Filter></Filter>
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="vHavokUserData.hpp">
@@ -283,6 +295,12 @@
     <ClCompile Include="vHavokRigidBody.cpp">
         <Filter></Filter>
         <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClInclude Include="vApplyForcesAction.hpp">
+        <Filter></Filter>
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClCompile Include="vHavokOpacityLookup.cpp">
+        <Filter></Filter>
+        <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="vHavokFileStreamAccess.hpp">
         <Filter></Filter>
         <DeploymentContent>False</DeploymentContent></ClInclude>
@@ -296,6 +314,9 @@
         <Filter>Lua</Filter>
         <DeploymentContent>False</DeploymentContent></Compile>
     <ClInclude Include="vHavokStaticMesh.hpp">
+        <Filter></Filter>
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClInclude Include="vHavokOpacityLookup.hpp">
         <Filter></Filter>
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="CharacterControlStates\vCharacterStateInAir.cpp">
@@ -313,12 +334,12 @@
     <ClInclude Include="CharacterControlStates\vCharacterStateInAir.h">
         <Filter>CharacterControlStates</Filter>
         <DeploymentContent>False</DeploymentContent></ClInclude>
-    <ClInclude Include="vHavokShapeFactory.hpp">
-        <Filter></Filter>
-        <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="vHavokConversionUtils.cpp">
         <Filter></Filter>
         <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClInclude Include="vHavokCpuThreadPool.hpp">
+        <Filter></Filter>
+        <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="vHavokBallAndSocketConstraintChain.cpp">
         <Filter></Filter>
         <DeploymentContent>False</DeploymentContent></ClCompile>
@@ -331,6 +352,9 @@
     <ClCompile Include="vHavokStiffSpringConstraintChain.cpp">
         <Filter></Filter>
         <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClCompile Include="vHavokGenericConstraint.cpp">
+        <Filter></Filter>
+        <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="VLineFollowerComponent.hpp">
         <Filter></Filter>
         <DeploymentContent>False</DeploymentContent></ClInclude>
@@ -340,9 +364,6 @@
     <ClCompile Include="vHavokCharacterControllerHelpers.cpp">
         <Filter></Filter>
         <DeploymentContent>False</DeploymentContent></ClCompile>
-    <ClInclude Include="CharacterControlStates\vCharacterStateClimbing.h">
-        <Filter>CharacterControlStates</Filter>
-        <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="Classes\Reflections\vHavokVisionShapesReflection.cpp">
         <Filter>Classes\Reflections</Filter>
         <DeploymentContent>False</DeploymentContent></ClCompile>
@@ -352,7 +373,13 @@
     <ClCompile Include="vHavokRagdoll.cpp">
         <Filter></Filter>
         <DeploymentContent>False</DeploymentContent></ClCompile>
-    <ClCompile Include="vHavokCachedShape.cpp">
+    <ClCompile Include="vApplyForcesAction.cpp">
+        <Filter></Filter>
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClInclude Include="vHavokShapeFactory.hpp">
+        <Filter></Filter>
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClCompile Include="VRigidBodyFollowPathComponent.cpp">
         <Filter></Filter>
         <DeploymentContent>False</DeploymentContent></ClCompile>
 

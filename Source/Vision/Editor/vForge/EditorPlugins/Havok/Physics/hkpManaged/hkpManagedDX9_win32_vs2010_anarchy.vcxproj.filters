@@ -94,6 +94,9 @@
     <ClCompile Include="HavokPhysicsManagedPCH.cpp">
         <Filter></Filter>
         <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClCompile Include="EngineInstances\EngineInstanceHavokResourceShape.cpp">
+        <Filter>EngineInstances</Filter>
+        <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClCompile Include="ConstraintProperties\BallAndSocketConstraintChainState.cpp">
         <Filter>ConstraintProperties</Filter>
         <DeploymentContent>False</DeploymentContent></ClCompile>
@@ -117,6 +120,9 @@
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="ConstraintProperties\PointToPathConstraintState.hpp">
         <Filter>ConstraintProperties</Filter>
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClInclude Include="EngineInstances\EngineInstanceHavokResourceShape.hpp">
+        <Filter>EngineInstances</Filter>
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="ConstraintProperties\RagdollConstraintState.hpp">
         <Filter>ConstraintProperties</Filter>

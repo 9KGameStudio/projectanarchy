@@ -9,12 +9,12 @@
   -->
         
   <ItemGroup Label="ProjectConfigurations">
-    <ProjectConfiguration Include="Debug DLL|win32">
-      <Configuration>Debug DLL</Configuration>
+    <ProjectConfiguration Include="Debug|win32">
+      <Configuration>Debug</Configuration>
       <Platform>win32</Platform>
     </ProjectConfiguration>
-    <ProjectConfiguration Include="Dev DLL|win32">
-      <Configuration>Dev DLL</Configuration>
+    <ProjectConfiguration Include="Dev|win32">
+      <Configuration>Dev</Configuration>
       <Platform>win32</Platform>
     </ProjectConfiguration>
   </ItemGroup>
@@ -27,13 +27,13 @@
     
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
-    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug DLL|win32'" Label="Configuration">
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|win32'" Label="Configuration">
     <CharacterSet>MultiByte</CharacterSet>
     <ConfigurationType>Application</ConfigurationType>
     <CLRSupport>false</CLRSupport>
     <UseOfMfc>false</UseOfMfc>
   </PropertyGroup>
-    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Dev DLL|win32'" Label="Configuration">
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Dev|win32'" Label="Configuration">
     <CharacterSet>MultiByte</CharacterSet>
     <ConfigurationType>Application</ConfigurationType>
     <CLRSupport>false</CLRSupport>
@@ -44,20 +44,20 @@
   </ImportGroup>
   <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   <PropertyGroup>
-<TargetExt  Condition="'$(Configuration)|$(Platform)'=='Debug DLL|win32'">.exe</TargetExt>
-<TargetExt  Condition="'$(Configuration)|$(Platform)'=='Dev DLL|win32'">.exe</TargetExt>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug DLL|win32'">..\..\..\..\..\Obj\win32_vs2010_anarchy\debug_dll\RPGDX9\</IntDir>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug DLL|win32'">..\..\..\..\..\Bin\win32_vs2010_anarchy\Debug_DLL\DX9\</OutDir>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug DLL|win32'">RPG</TargetName>
-    <OutputFile Condition="'$(Configuration)|$(Platform)'=='Debug DLL|win32'">..\..\..\..\..\Bin\win32_vs2010_anarchy\Debug_DLL\DX9\RPG.exe</OutputFile>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Dev DLL|win32'">..\..\..\..\..\Obj\win32_vs2010_anarchy\dev_dll\RPGDX9\</IntDir>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Dev DLL|win32'">..\..\..\..\..\Bin\win32_vs2010_anarchy\Dev_DLL\DX9\</OutDir>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Dev DLL|win32'">RPG</TargetName>
-    <OutputFile Condition="'$(Configuration)|$(Platform)'=='Dev DLL|win32'">..\..\..\..\..\Bin\win32_vs2010_anarchy\Dev_DLL\DX9\RPG.exe</OutputFile>
-    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug DLL|win32'">true</LinkIncremental>
-    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Dev DLL|win32'">true</LinkIncremental>
+<TargetExt  Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">.exe</TargetExt>
+<TargetExt  Condition="'$(Configuration)|$(Platform)'=='Dev|win32'">.exe</TargetExt>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">..\..\..\..\..\Obj\win32_vs2010_anarchy\debug\RPGDX9\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">..\..\..\..\../Bin/win32_vs2010_anarchy/Debug/DX9\</OutDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">RPG</TargetName>
+    <OutputFile Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Dev|win32'">..\..\..\..\..\Obj\win32_vs2010_anarchy\dev\RPGDX9\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Dev|win32'">..\..\..\..\../Bin/win32_vs2010_anarchy/Dev/DX9\</OutDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Dev|win32'">RPG</TargetName>
+    <OutputFile Condition="'$(Configuration)|$(Platform)'=='Dev|win32'">$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">true</LinkIncremental>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Dev|win32'">true</LinkIncremental>
   </PropertyGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug DLL|win32'">
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">
     
     
     
@@ -88,7 +88,7 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>Vision/Samples/Engine/RPG/RPGPCH.h</PrecompiledHeaderFile>
       <PrecompiledHeaderOutputFile>$(IntDir)RPG.pch</PrecompiledHeaderOutputFile>
-      <PreprocessorDefinitions>_WINDOWS;WIN32;_WIN32;_DEBUG;HK_DEBUG;HK_DEBUG_SLOW;_CONSOLE;_ALLOW_ITERATOR_DEBUG_LEVEL_MISMATCH;HK_ANARCHY;PROFILING;_VISION_WIN32;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_VR_DX9;PARTICLEMODULE_IMPORTS;EFFECTSMODULE_IMPORTS;GUI_ENGINEPLUGIN_IMPORTS;SCRIPTMODULE_IMPORTS;VTERRAINPLUGIN_IMPORTS;ANIMATIONMODULE_IMPORTS;DEFERREDMODULE_IMPORTS;SCENEMODULE_IMPORTS;PATHRENDERINGMODULE_IMPORTS;USE_HAVOK;VHAVOKMODULE_IMPORTS;RPG_PLUGIN_IMPORTS;FMODENGINEPLUGIN_IMPORTS;HK_CONFIG_SIMD=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_WINDOWS;WIN32;_WIN32;_DEBUG;HK_DEBUG;HK_DEBUG_SLOW;_CONSOLE;_ALLOW_ITERATOR_DEBUG_LEVEL_MISMATCH;HK_ANARCHY;PROFILING;_VISION_WIN32;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_VR_DX9;PARTICLEMODULE_IMPORTS;EFFECTSMODULE_IMPORTS;GUI_ENGINEPLUGIN_IMPORTS;SCRIPTMODULE_IMPORTS;VTERRAINPLUGIN_IMPORTS;ANIMATIONMODULE_IMPORTS;DEFERREDMODULE_IMPORTS;SCENEMODULE_IMPORTS;PATHRENDERINGMODULE_IMPORTS;VISIONAPP_IMPORTS;USE_HAVOK;VHAVOKMODULE_IMPORTS;RPG_PLUGIN_IMPORTS;FMODENGINEPLUGIN_IMPORTS;HK_CONFIG_SIMD=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <UndefinePreprocessorDefinitions></UndefinePreprocessorDefinitions>
       <ProgramDataBaseFileName>$(OutDir)$(TargetName).pdb</ProgramDataBaseFileName>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -99,16 +99,16 @@
       <WarningLevel>Level3</WarningLevel>
       <CompileAsManaged>false</CompileAsManaged>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-	  
+      
     </ClCompile>
     <ResourceCompile>
       <ResourceOutputFileName></ResourceOutputFileName>
-      <AdditionalIncludeDirectories>$(IntDir)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(IntDir);</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Lib>
       <IgnoreAllDefaultLibraries></IgnoreAllDefaultLibraries>
       <AdditionalDependencies>lua100D.lib;BaseD.lib;VisionD.lib;VisionEnginePluginD.lib;VisionAppD.lib;RPGPluginD.lib;vHavokAiD.lib;vHavokBehaviorD.lib;vHavokD.lib;vFmodEnginePluginD.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\..\..\..\Lib\win32_vs2010_anarchy\debug_dll;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(DXSDK_DIR)/Lib/x86</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\..\..\..\..\Lib\win32_vs2010_anarchy\debug;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(DXSDK_DIR)/Lib/x86</AdditionalLibraryDirectories>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <UseUnicodeResponseFiles>true</UseUnicodeResponseFiles>
@@ -116,19 +116,20 @@
     </Lib>
     <Link>
       <AdditionalDependencies>lua100D.lib;BaseD.lib;VisionD.lib;VisionEnginePluginD.lib;VisionAppD.lib;RPGPluginD.lib;vHavokAiD.lib;vHavokBehaviorD.lib;vHavokD.lib;vFmodEnginePluginD.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\..\..\..\Lib\win32_vs2010_anarchy\debug_dll;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(DXSDK_DIR)/Lib/x86</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\..\..\..\..\Lib\win32_vs2010_anarchy\debug;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(DXSDK_DIR)/Lib/x86</AdditionalLibraryDirectories>
       <AdditionalOptions> /ignore:4221</AdditionalOptions>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <ImportLibrary></ImportLibrary>
+      <ImportLibrary>..\..\..\..\..\Lib\win32_vs2010_anarchy\debug\$(TargetName).lib</ImportLibrary>
       <AssemblyDebug></AssemblyDebug>
       <SubSystem>Windows</SubSystem>
       <ManifestFile>$(IntDir)Manifest$(TargetExt).intermediate.manifest</ManifestFile>
       <OptimizeReferences></OptimizeReferences>
       <EnableCOMDATFolding></EnableCOMDATFolding>
+      <ProgramDatabaseFile>$(TargetDir)$(TargetName).pdb</ProgramDatabaseFile>
      <IgnoreSpecificDefaultLibraries>libc.lib;libcmtd.lib;</IgnoreSpecificDefaultLibraries>
     </Link>
   </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Dev DLL|win32'">
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Dev|win32'">
     
     
     
@@ -159,7 +160,7 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>Vision/Samples/Engine/RPG/RPGPCH.h</PrecompiledHeaderFile>
       <PrecompiledHeaderOutputFile>$(IntDir)RPG.pch</PrecompiledHeaderOutputFile>
-      <PreprocessorDefinitions>_WINDOWS;WIN32;_WIN32;HK_DEBUG;_CONSOLE;_ALLOW_ITERATOR_DEBUG_LEVEL_MISMATCH;HK_ANARCHY;PROFILING;_VISION_WIN32;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_VR_DX9;PARTICLEMODULE_IMPORTS;EFFECTSMODULE_IMPORTS;GUI_ENGINEPLUGIN_IMPORTS;SCRIPTMODULE_IMPORTS;VTERRAINPLUGIN_IMPORTS;ANIMATIONMODULE_IMPORTS;DEFERREDMODULE_IMPORTS;SCENEMODULE_IMPORTS;PATHRENDERINGMODULE_IMPORTS;USE_HAVOK;VHAVOKMODULE_IMPORTS;RPG_PLUGIN_IMPORTS;FMODENGINEPLUGIN_IMPORTS;HK_CONFIG_SIMD=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_WINDOWS;WIN32;_WIN32;HK_DEBUG;_CONSOLE;_ALLOW_ITERATOR_DEBUG_LEVEL_MISMATCH;HK_ANARCHY;PROFILING;_VISION_WIN32;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_VR_DX9;PARTICLEMODULE_IMPORTS;EFFECTSMODULE_IMPORTS;GUI_ENGINEPLUGIN_IMPORTS;SCRIPTMODULE_IMPORTS;VTERRAINPLUGIN_IMPORTS;ANIMATIONMODULE_IMPORTS;DEFERREDMODULE_IMPORTS;SCENEMODULE_IMPORTS;PATHRENDERINGMODULE_IMPORTS;VISIONAPP_IMPORTS;USE_HAVOK;VHAVOKMODULE_IMPORTS;RPG_PLUGIN_IMPORTS;FMODENGINEPLUGIN_IMPORTS;HK_CONFIG_SIMD=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <UndefinePreprocessorDefinitions></UndefinePreprocessorDefinitions>
       <ProgramDataBaseFileName>$(OutDir)$(TargetName).pdb</ProgramDataBaseFileName>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -170,16 +171,16 @@
       <WarningLevel>Level3</WarningLevel>
       <CompileAsManaged>false</CompileAsManaged>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-	  
+      
     </ClCompile>
     <ResourceCompile>
       <ResourceOutputFileName></ResourceOutputFileName>
-      <AdditionalIncludeDirectories>$(IntDir)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(IntDir);</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Lib>
       <IgnoreAllDefaultLibraries></IgnoreAllDefaultLibraries>
       <AdditionalDependencies>lua100.lib;Base.lib;Vision.lib;VisionEnginePlugin.lib;VisionApp.lib;RPGPlugin.lib;vHavokAi.lib;vHavokBehavior.lib;vHavok.lib;vFmodEnginePlugin.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\..\..\..\Lib\win32_vs2010_anarchy\dev_dll;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(DXSDK_DIR)/Lib/x86</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\..\..\..\..\Lib\win32_vs2010_anarchy\dev;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(DXSDK_DIR)/Lib/x86</AdditionalLibraryDirectories>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <UseUnicodeResponseFiles>true</UseUnicodeResponseFiles>
@@ -187,22 +188,23 @@
     </Lib>
     <Link>
       <AdditionalDependencies>lua100.lib;Base.lib;Vision.lib;VisionEnginePlugin.lib;VisionApp.lib;RPGPlugin.lib;vHavokAi.lib;vHavokBehavior.lib;vHavok.lib;vFmodEnginePlugin.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\..\..\..\Lib\win32_vs2010_anarchy\dev_dll;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(DXSDK_DIR)/Lib/x86</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\..\..\..\..\Lib\win32_vs2010_anarchy\dev;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(DXSDK_DIR)/Lib/x86</AdditionalLibraryDirectories>
       <AdditionalOptions> /ignore:4221</AdditionalOptions>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <ImportLibrary></ImportLibrary>
+      <ImportLibrary>..\..\..\..\..\Lib\win32_vs2010_anarchy\dev\$(TargetName).lib</ImportLibrary>
       <AssemblyDebug></AssemblyDebug>
       <SubSystem>Windows</SubSystem>
       <ManifestFile>$(IntDir)Manifest$(TargetExt).intermediate.manifest</ManifestFile>
       <OptimizeReferences></OptimizeReferences>
       <EnableCOMDATFolding></EnableCOMDATFolding>
+      <ProgramDatabaseFile>$(TargetDir)$(TargetName).pdb</ProgramDatabaseFile>
      <IgnoreSpecificDefaultLibraries>libc.lib;libcmt.lib;</IgnoreSpecificDefaultLibraries>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="RPGPCH.cpp">
-        <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug DLL|win32'">Create</PrecompiledHeader>
-        <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Dev DLL|win32'">Create</PrecompiledHeader>
+        <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">Create</PrecompiledHeader>
+        <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Dev|win32'">Create</PrecompiledHeader>
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="RPGPCH.h">
         <DeploymentContent>False</DeploymentContent></ClInclude>
@@ -214,11 +216,17 @@
   <ItemGroup>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug DLL|win32'">
+<PropertyGroup>
+    <CleanDependsOn>RPGDX9_CleanReflections;$(CleanDependsOn)</CleanDependsOn>
+</PropertyGroup>
+<Target Name="RPGDX9_CleanReflections">
+    <Delete Files="$(MSBuildProjectDirectory)\reflectionSettings.cache;$(MSBuildProjectDirectory)\reflections.db" />
+</Target>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">
     <RunCodeAnalysis>false</RunCodeAnalysis>
     <CodeAnalysisInputAssembly>$(OutputFile)</CodeAnalysisInputAssembly>
 </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Dev DLL|win32'">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Dev|win32'">
     <RunCodeAnalysis>false</RunCodeAnalysis>
     <CodeAnalysisInputAssembly>$(OutputFile)</CodeAnalysisInputAssembly>
 </PropertyGroup>

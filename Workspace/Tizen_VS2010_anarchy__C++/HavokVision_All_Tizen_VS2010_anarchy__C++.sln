@@ -41,6 +41,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vPlayer", "..\..\Source\Vis
 		{2CFB60EE-F0B5-4349-93D9-D9A854BA0D8F} = {2CFB60EE-F0B5-4349-93D9-D9A854BA0D8F}
 	EndProjectSection
 EndProject
+
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|hkTizen = Debug|hkTizen
@@ -100,4 +101,5 @@ Global
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
+	
 EndGlobal

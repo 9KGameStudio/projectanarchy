@@ -33,21 +33,21 @@
 <Import Project="..\..\..\..\..\..\Build\MSBuild\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|hkAndroid'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
-    <PlatformToolset>arm-linux-androideabi-4.6</PlatformToolset>
+    <PlatformToolset>arm-linux-androideabi-4.8</PlatformToolset>
     <AndroidAPILevel>android-10</AndroidAPILevel>
     <AndroidArch>armv7-a</AndroidArch>
     <AndroidStlType>gnustl_static</AndroidStlType>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Dev|hkAndroid'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
-    <PlatformToolset>arm-linux-androideabi-4.6</PlatformToolset>
+    <PlatformToolset>arm-linux-androideabi-4.8</PlatformToolset>
     <AndroidAPILevel>android-10</AndroidAPILevel>
     <AndroidArch>armv7-a</AndroidArch>
     <AndroidStlType>gnustl_static</AndroidStlType>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|hkAndroid'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
-    <PlatformToolset>arm-linux-androideabi-4.6</PlatformToolset>
+    <PlatformToolset>arm-linux-androideabi-4.8</PlatformToolset>
     <AndroidAPILevel>android-10</AndroidAPILevel>
     <AndroidArch>armv7-a</AndroidArch>
     <AndroidStlType>gnustl_static</AndroidStlType>
@@ -60,15 +60,15 @@
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|hkAndroid'">..\..\..\..\..\..\Obj\android_arm_vs2010_anarchy\debug\ScaleformEnginePlugin\</IntDir>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|hkAndroid'">..\..\..\..\..\..\Lib\android_arm_vs2010_anarchy\debug\</OutDir>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|hkAndroid'">libvScaleformPlugin</TargetName>
-    <OutputFile Condition="'$(Configuration)|$(Platform)'=='Debug|hkAndroid'">..\..\..\..\..\..\Lib\android_arm_vs2010_anarchy\debug\libvScaleformPlugin.a</OutputFile>
+    <OutputFile Condition="'$(Configuration)|$(Platform)'=='Debug|hkAndroid'">$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Dev|hkAndroid'">..\..\..\..\..\..\Obj\android_arm_vs2010_anarchy\dev\ScaleformEnginePlugin\</IntDir>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Dev|hkAndroid'">..\..\..\..\..\..\Lib\android_arm_vs2010_anarchy\dev\</OutDir>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Dev|hkAndroid'">libvScaleformPlugin</TargetName>
-    <OutputFile Condition="'$(Configuration)|$(Platform)'=='Dev|hkAndroid'">..\..\..\..\..\..\Lib\android_arm_vs2010_anarchy\dev\libvScaleformPlugin.a</OutputFile>
+    <OutputFile Condition="'$(Configuration)|$(Platform)'=='Dev|hkAndroid'">$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|hkAndroid'">..\..\..\..\..\..\Obj\android_arm_vs2010_anarchy\release\ScaleformEnginePlugin\</IntDir>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|hkAndroid'">..\..\..\..\..\..\Lib\android_arm_vs2010_anarchy\release\</OutDir>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|hkAndroid'">libvScaleformPlugin</TargetName>
-    <OutputFile Condition="'$(Configuration)|$(Platform)'=='Release|hkAndroid'">..\..\..\..\..\..\Lib\android_arm_vs2010_anarchy\release\libvScaleformPlugin.a</OutputFile>
+    <OutputFile Condition="'$(Configuration)|$(Platform)'=='Release|hkAndroid'">$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|hkAndroid'"></LinkIncremental>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Dev|hkAndroid'"></LinkIncremental>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|hkAndroid'"></LinkIncremental>
@@ -87,7 +87,7 @@
       <AdditionalOptions>-ffunction-sections -fno-inline %(AdditionalOptions) %(AdditionalOptions)</AdditionalOptions>
       <PreprocessorDefinitions>_DEBUG;HK_DEBUG;HK_DEBUG_SLOW;HK_ANARCHY;PROFILING;_VISION_POSIX;_VISION_ANDROID;_VISION_NO_WARNING_IMAGE_FORMAT;VBASE_LIB;LINK_WITH_VISION;VISIONDLL_LIB;PROFILING;_VISION_POSIX;_VISION_ANDROID;_VISION_NO_WARNING_IMAGE_FORMAT;GFX_ENABLE_SOUND;SF_BUILD_DEBUG;SF_USE_GLES2;SF_USE_EGL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <UndefinePreprocessorDefinitions>%(UndefinePreprocessorDefinitions)</UndefinePreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\..\..\..\..;$(NDKROOT)/sources;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/;$(NDKROOT)/sources;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/Include;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/Src;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/inc;$(HAVOK_THIRDPARTY_DIR)/redistsdks/curl/7.22.0/Android/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\..\..;$(NDKROOT)/sources;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/;..\..\..\..\..;$(NDKROOT)/sources;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/Include;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/Src;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/inc;$(HAVOK_THIRDPARTY_DIR)/redistsdks/curl/7.22.0/Android/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ProducesObjectFile>true</ProducesObjectFile>
       <OptimizationLevel>O0</OptimizationLevel>
       <CppInliningLevel></CppInliningLevel>
@@ -100,7 +100,7 @@
       <CLanguageDialect>ISO_C99</CLanguageDialect>
       <ImplicitSourceFileInclusion>Off</ImplicitSourceFileInclusion>
       <SupportImplicitTypenames></SupportImplicitTypenames>
-      <RunTimeTypeInformationSupport></RunTimeTypeInformationSupport>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <ObjectFileName>$(IntDir)%(FileName).o</ObjectFileName>
       <QuitAfterWarnings>Off</QuitAfterWarnings>
       <Warnings>AllWarnings</Warnings>
@@ -116,7 +116,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </ClCompile>
     <Lib>
-      <OutputFile>$(OutDir)\libvScaleformPlugin.a</OutputFile>
+      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
       <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
       <LibrarianCommand>-rmc</LibrarianCommand>
       <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
@@ -208,7 +208,7 @@
       <AdditionalOptions>-ffunction-sections %(AdditionalOptions) %(AdditionalOptions)</AdditionalOptions>
       <PreprocessorDefinitions>HK_DEBUG;HK_ANARCHY;PROFILING;_VISION_POSIX;_VISION_ANDROID;_VISION_NO_WARNING_IMAGE_FORMAT;VBASE_LIB;LINK_WITH_VISION;VISIONDLL_LIB;PROFILING;_VISION_POSIX;_VISION_ANDROID;_VISION_NO_WARNING_IMAGE_FORMAT;GFX_ENABLE_SOUND;SF_USE_GLES2;SF_USE_EGL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <UndefinePreprocessorDefinitions>%(UndefinePreprocessorDefinitions)</UndefinePreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\..\..\..\..;$(NDKROOT)/sources;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/;$(NDKROOT)/sources;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/Include;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/Src;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/inc;$(HAVOK_THIRDPARTY_DIR)/redistsdks/curl/7.22.0/Android/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\..\..;$(NDKROOT)/sources;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/;..\..\..\..\..;$(NDKROOT)/sources;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/Include;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/Src;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/inc;$(HAVOK_THIRDPARTY_DIR)/redistsdks/curl/7.22.0/Android/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ProducesObjectFile>true</ProducesObjectFile>
       <OptimizationLevel>O3</OptimizationLevel>
       <CppInliningLevel></CppInliningLevel>
@@ -221,7 +221,7 @@
       <CLanguageDialect>ISO_C99</CLanguageDialect>
       <ImplicitSourceFileInclusion>Off</ImplicitSourceFileInclusion>
       <SupportImplicitTypenames></SupportImplicitTypenames>
-      <RunTimeTypeInformationSupport></RunTimeTypeInformationSupport>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <ObjectFileName>$(IntDir)%(FileName).o</ObjectFileName>
       <QuitAfterWarnings>Off</QuitAfterWarnings>
       <Warnings>AllWarnings</Warnings>
@@ -237,7 +237,7 @@
       <GenerateDebugInformation>false</GenerateDebugInformation>
     </ClCompile>
     <Lib>
-      <OutputFile>$(OutDir)\libvScaleformPlugin.a</OutputFile>
+      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
       <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
       <LibrarianCommand>-rmc</LibrarianCommand>
       <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
@@ -329,7 +329,7 @@
       <AdditionalOptions>-ffunction-sections %(AdditionalOptions) %(AdditionalOptions)</AdditionalOptions>
       <PreprocessorDefinitions>;HK_ANARCHY;PROFILING;_VISION_POSIX;_VISION_ANDROID;_VISION_NO_WARNING_IMAGE_FORMAT;VBASE_LIB;LINK_WITH_VISION;VISIONDLL_LIB;PROFILING;_VISION_POSIX;_VISION_ANDROID;_VISION_NO_WARNING_IMAGE_FORMAT;GFX_ENABLE_SOUND;SF_USE_GLES2;SF_USE_EGL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <UndefinePreprocessorDefinitions>%(UndefinePreprocessorDefinitions)</UndefinePreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\..\..\..\..;$(NDKROOT)/sources;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/;$(NDKROOT)/sources;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/Include;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/Src;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/inc;$(HAVOK_THIRDPARTY_DIR)/redistsdks/curl/7.22.0/Android/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\..\..;$(NDKROOT)/sources;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/;..\..\..\..\..;$(NDKROOT)/sources;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/Include;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/Src;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/inc;$(HAVOK_THIRDPARTY_DIR)/redistsdks/curl/7.22.0/Android/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ProducesObjectFile>true</ProducesObjectFile>
       <OptimizationLevel>O3</OptimizationLevel>
       <CppInliningLevel></CppInliningLevel>
@@ -342,7 +342,7 @@
       <CLanguageDialect>ISO_C99</CLanguageDialect>
       <ImplicitSourceFileInclusion>Off</ImplicitSourceFileInclusion>
       <SupportImplicitTypenames></SupportImplicitTypenames>
-      <RunTimeTypeInformationSupport></RunTimeTypeInformationSupport>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <ObjectFileName>$(IntDir)%(FileName).o</ObjectFileName>
       <QuitAfterWarnings>Off</QuitAfterWarnings>
       <Warnings>AllWarnings</Warnings>
@@ -358,7 +358,7 @@
       <GenerateDebugInformation>false</GenerateDebugInformation>
     </ClCompile>
     <Lib>
-      <OutputFile>$(OutDir)\libvScaleformPlugin.a</OutputFile>
+      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
       <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
       <LibrarianCommand>-rmc</LibrarianCommand>
       <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
@@ -456,8 +456,6 @@
         <DeploymentContent>False</DeploymentContent></Compile>
     <ClInclude Include="vScaleformAlloc.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
-    <Compile Include="Lua\vScaleformManager.i">
-        <DeploymentContent>False</DeploymentContent></Compile>
     <ClInclude Include="vScaleformManager.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="VScaleformVariableManager.cpp">
@@ -470,6 +468,12 @@
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="VScaleformTexture.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
+    <CustomBuild Include="Lua\ScaleformLuaModule.i">
+        <AdditionalInputs>Lua\vScaleformManager.i;Lua\vScaleformMovie.i;Lua\VScaleformValue.i;Lua\VScaleformVariable.i</AdditionalInputs>
+        <Outputs>Lua/ScaleformLuaModule_wrapper.cpp</Outputs>
+        <FileType>Document</FileType>
+        <Command>&quot;$(HAVOK_THIRDPARTY_DIR)\redistsdks\swig\2.0.3_VisionRTTI\swig.exe&quot; -c++ -lua -verbose -o Lua/ScaleformLuaModule_wrapper.cpp -I..\..\..\..\.. Lua\ScaleformLuaModule.i&#x0D;&#x0A;&quot;..\..\..\..\..\..\Build\StandaloneTools\Iswig\Exe\iswig.exe&quot; --includePre &quot;Vision/Runtime/EnginePlugins/ThirdParty/ScaleformEnginePlugin/ScaleformEnginePlugin.hpp&quot; Lua/ScaleformLuaModule_wrapper.cpp</Command>
+        <DeploymentContent>False</DeploymentContent></CustomBuild>
     <ClCompile Include="ScaleformEnginePlugin.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="ScaleformEnginePlugin.hpp">
@@ -485,12 +489,8 @@
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <Compile Include="Lua\VScaleformValue.i">
         <DeploymentContent>False</DeploymentContent></Compile>
-    <CustomBuild Include="Lua\ScaleformLuaModule.i">
-        <AdditionalInputs>Lua\vScaleformManager.i;Lua\vScaleformMovie.i;Lua\VScaleformValue.i;Lua\VScaleformVariable.i</AdditionalInputs>
-        <Outputs>Lua/ScaleformLuaModule_wrapper.cpp</Outputs>
-        <FileType>Document</FileType>
-        <Command>&quot;$(HAVOK_THIRDPARTY_DIR)\redistsdks\swig\2.0.3\swig.exe&quot; -c++ -lua -verbose -o Lua/ScaleformLuaModule_wrapper.cpp -I..\..\..\..\.. Lua\ScaleformLuaModule.i&#x0D;&#x0A;&quot;..\..\..\..\..\..\Build\StandaloneTools\Iswig\Exe\iswig.exe&quot; --includePre &quot;Vision/Runtime/EnginePlugins/ThirdParty/ScaleformEnginePlugin/ScaleformEnginePlugin.hpp&quot; Lua/ScaleformLuaModule_wrapper.cpp</Command>
-        <DeploymentContent>False</DeploymentContent></CustomBuild>
+    <Compile Include="Lua\vScaleformManager.i">
+        <DeploymentContent>False</DeploymentContent></Compile>
     <ClInclude Include="VScaleformVariable.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="VScaleformInternal.hpp">
@@ -505,6 +505,12 @@
   <ItemGroup>
   </ItemGroup>
 <Import Project="..\..\..\..\..\..\Build\MSBuild\Microsoft.Cpp.targets" />
+<PropertyGroup>
+    <CleanDependsOn>ScaleformEnginePlugin_CleanReflections;$(CleanDependsOn)</CleanDependsOn>
+</PropertyGroup>
+<Target Name="ScaleformEnginePlugin_CleanReflections">
+    <Delete Files="$(MSBuildProjectDirectory)\reflectionSettings.cache;$(MSBuildProjectDirectory)\reflections.db" />
+</Target>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|hkAndroid'">
 </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Dev|hkAndroid'">

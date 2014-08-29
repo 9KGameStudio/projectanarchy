@@ -33,21 +33,21 @@
 <Import Project="..\..\..\..\Build\MSBuild\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|hkAndroid'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
-    <PlatformToolset>x86-4.6</PlatformToolset>
+    <PlatformToolset>x86-4.8</PlatformToolset>
     <AndroidAPILevel>android-10</AndroidAPILevel>
     <AndroidArch>x86</AndroidArch>
     <AndroidStlType>stlport_static</AndroidStlType>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Dev|hkAndroid'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
-    <PlatformToolset>x86-4.6</PlatformToolset>
+    <PlatformToolset>x86-4.8</PlatformToolset>
     <AndroidAPILevel>android-10</AndroidAPILevel>
     <AndroidArch>x86</AndroidArch>
     <AndroidStlType>stlport_static</AndroidStlType>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|hkAndroid'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
-    <PlatformToolset>x86-4.6</PlatformToolset>
+    <PlatformToolset>x86-4.8</PlatformToolset>
     <AndroidAPILevel>android-10</AndroidAPILevel>
     <AndroidArch>x86</AndroidArch>
     <AndroidStlType>stlport_static</AndroidStlType>
@@ -58,17 +58,17 @@
 <TargetExt  Condition="'$(Configuration)|$(Platform)'=='Dev|hkAndroid'">.so</TargetExt>
 <TargetExt  Condition="'$(Configuration)|$(Platform)'=='Release|hkAndroid'">.so</TargetExt>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|hkAndroid'">..\..\..\..\Obj\android_x86_vs2010_anarchy\debug\vPlayer\</IntDir>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|hkAndroid'">..\..\..\..\Bin\android_x86_vs2010_anarchy\Debug\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|hkAndroid'">..\..\..\../Bin/android_x86_vs2010_anarchy/Debug\</OutDir>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|hkAndroid'">libvPlayer_android_x86-vs2010_anarchy_debug</TargetName>
-    <OutputFile Condition="'$(Configuration)|$(Platform)'=='Debug|hkAndroid'">..\..\..\..\Bin\android_x86_vs2010_anarchy\Debug\libvPlayer_android_x86-vs2010_anarchy_debug.so</OutputFile>
+    <OutputFile Condition="'$(Configuration)|$(Platform)'=='Debug|hkAndroid'">$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Dev|hkAndroid'">..\..\..\..\Obj\android_x86_vs2010_anarchy\dev\vPlayer\</IntDir>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Dev|hkAndroid'">..\..\..\..\Bin\android_x86_vs2010_anarchy\Dev\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Dev|hkAndroid'">..\..\..\../Bin/android_x86_vs2010_anarchy/Dev\</OutDir>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Dev|hkAndroid'">libvPlayer_android_x86-vs2010_anarchy_dev</TargetName>
-    <OutputFile Condition="'$(Configuration)|$(Platform)'=='Dev|hkAndroid'">..\..\..\..\Bin\android_x86_vs2010_anarchy\Dev\libvPlayer_android_x86-vs2010_anarchy_dev.so</OutputFile>
+    <OutputFile Condition="'$(Configuration)|$(Platform)'=='Dev|hkAndroid'">$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|hkAndroid'">..\..\..\..\Obj\android_x86_vs2010_anarchy\release\vPlayer\</IntDir>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|hkAndroid'">..\..\..\..\Bin\android_x86_vs2010_anarchy\Release\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|hkAndroid'">..\..\..\../Bin/android_x86_vs2010_anarchy/Release\</OutDir>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|hkAndroid'">libvPlayer_android_x86-vs2010_anarchy_release</TargetName>
-    <OutputFile Condition="'$(Configuration)|$(Platform)'=='Release|hkAndroid'">..\..\..\..\Bin\android_x86_vs2010_anarchy\Release\libvPlayer_android_x86-vs2010_anarchy_release.so</OutputFile>
+    <OutputFile Condition="'$(Configuration)|$(Platform)'=='Release|hkAndroid'">$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|hkAndroid'"></LinkIncremental>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Dev|hkAndroid'"></LinkIncremental>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|hkAndroid'"></LinkIncremental>
@@ -81,11 +81,11 @@
       <CompileAs>Default</CompileAs>
       <ExceptionHandling></ExceptionHandling>
       <ProgramDataBaseFileName>$(OutDir)$(TargetName).pdb</ProgramDataBaseFileName>
-      <PrecompiledHeader>Yes</PrecompiledHeader>
+      <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>Vision/Tools/vPlayer/vPlayerPCH.h</PrecompiledHeaderFile>
       <PrecompiledHeaderOutputFile>$(IntDir)Vision/Tools/vPlayer/vPlayerPCH.h.gch</PrecompiledHeaderOutputFile>
       <AdditionalOptions>-ffunction-sections -fno-inline %(AdditionalOptions) %(AdditionalOptions)</AdditionalOptions>
-      <PreprocessorDefinitions>_DEBUG;HK_DEBUG;HK_DEBUG_SLOW;HK_ANARCHY;PROFILING;_VISION_POSIX;_VISION_ANDROID;_VISION_ANDROID_X86;_VISION_NO_WARNING_IMAGE_FORMAT;VBASE_LIB;LINK_WITH_VISION;VISIONDLL_LIB;CURL_STATICLIB;USE_FILESERVE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;HK_DEBUG;HK_DEBUG_SLOW;HK_ANARCHY;PROFILING;_VISION_POSIX;_VISION_ANDROID;_VISION_ANDROID_X86;_VISION_NO_WARNING_IMAGE_FORMAT;VBASE_LIB;LINK_WITH_VISION;VISIONDLL_LIB;USE_FILESERVE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <UndefinePreprocessorDefinitions>%(UndefinePreprocessorDefinitions)</UndefinePreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(IntDir);..\..\..;$(NDKROOT)/sources;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/inc;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ProducesObjectFile>true</ProducesObjectFile>
@@ -100,7 +100,7 @@
       <CLanguageDialect>ISO_C99</CLanguageDialect>
       <ImplicitSourceFileInclusion>Off</ImplicitSourceFileInclusion>
       <SupportImplicitTypenames></SupportImplicitTypenames>
-      <RunTimeTypeInformationSupport></RunTimeTypeInformationSupport>
+      <RuntimeTypeInfo></RuntimeTypeInfo>
       <ObjectFileName>$(IntDir)%(FileName).o</ObjectFileName>
       <QuitAfterWarnings>Off</QuitAfterWarnings>
       <Warnings>AllWarnings</Warnings>
@@ -116,16 +116,16 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </ClCompile>
     <Lib>
-      <OutputFile>$(OutDir)\libvPlayer_android_x86-vs2010_anarchy_debug.so</OutputFile>
+      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
       <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
       <LibrarianCommand>-rmc</LibrarianCommand>
-      <AdditionalDependencies>-lEGL;-lGLESv2;-lGLESv1_CM;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib\LuaAndroidx86_Debug.a;-lfmodexL;-lfmodeventL;-lgfx_air;-lgfx_as2;-lgfx_as3;-lgfx;-lgfxexpat;-lgfxplatform;-lgfxrender_gl;-lgfxsound_fmod;-lexpat;-ljpeg;-lpcre;-lpng;-lz;-lcurl;-lBaseD;-lVisionD;-lVisionEnginePlugin;-lvHavok;-lvFmodEnginePlugin;-lVisionAppD;-lvHavokAi;-lvHavokBehavior;-lvScaleformPlugin;-lvScaleformUtilsD;-lhkBase;-lhkCompat;-lhkSceneData;-lhkSerialize;-lhkVisualize;-lhkInternal;-lhkGeometryUtilities;-lhkcdInternal;-lhkcdCollide;-lhkpUtilities;-lhkpVehicle;-lhkpDynamics;-lhkpCollide;-lhkpInternal;-lhkpConstraintSolver;-lhkpConstraint;-lhkaPhysics2012Bridge;-lhkaInternal;-lhkaAnimation;-lhkbBehavior;-lhkbInternal;-lhkbUtilities;-lhkbPhysics2012Bridge;-lhkbAiBridge;-lhkbScript;-lhkaiPathfinding;-lhkaiInternal;-lhkaiVisualize;-lhkaiSpatialAnalysis;-lhkaiPhysics2012Bridge;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\..\..\Lib\android_x86_vs2010_anarchy\debug;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/lib/android/x86;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/Lib/Android/x86/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/Lib/Android/x86/Debug_NoRTTI/;$(HAVOK_THIRDPARTY_DIR)/redistsdks/curl/7.22.0/Android/x86/Debug;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib</AdditionalLibraryDirectories>
+      <AdditionalDependencies>-lEGL;-lGLESv2;-lGLESv1_CM;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib\LuaAndroidx86_Debug.a;-lfmodexL;-lfmodeventL;-lBaseD;-lVisionD;-lVisionEnginePlugin;-lVisionAppD;-lvHavok;-lvFmodEnginePlugin;-lvHavokAi;-lvHavokBehavior;-lhkBase;-lhkCompat;-lhkSceneData;-lhkSerialize;-lhkVisualize;-lhkInternal;-lhkGeometryUtilities;-lhkcdInternal;-lhkcdCollide;-lhkImageUtilities;-lhkpUtilities;-lhkpVehicle;-lhkpDynamics;-lhkpCollide;-lhkpInternal;-lhkpConstraintSolver;-lhkpConstraint;-lhkaPhysics2012Bridge;-lhkaInternal;-lhkaAnimation;-lhkbBehavior;-lhkbInternal;-lhkbUtilities;-lhkbPhysics2012Bridge;-lhkbAiBridge;-lhkbScript;-lhkaiPathfinding;-lhkaiInternal;-lhkaiVisualize;-lhkaiSpatialAnalysis;-lhkaiPhysics2012Bridge;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\..\..\..\Lib\android_x86_vs2010_anarchy\debug;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/lib/android/x86;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib</AdditionalLibraryDirectories>
     </Lib>
     <Link>
-      <AdditionalDependencies>-landroid;-lEGL;-lGLESv2;-lGLESv1_CM;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib\LuaAndroidx86_Debug.a;-lfmodexL;-lfmodeventL;-lgfx_air;-lgfx_as2;-lgfx_as3;-lgfx;-lgfxexpat;-lgfxplatform;-lgfxrender_gl;-lgfxsound_fmod;-lexpat;-ljpeg;-lpcre;-lpng;-lz;-lcurl;-lBaseD;-lVisionD;-lVisionEnginePlugin;-lvHavok;-lvFmodEnginePlugin;-lVisionAppD;-lvHavokAi;-lvHavokBehavior;-lvScaleformPlugin;-lvScaleformUtilsD;-lhkBase;-lhkCompat;-lhkSceneData;-lhkSerialize;-lhkVisualize;-lhkInternal;-lhkGeometryUtilities;-lhkcdInternal;-lhkcdCollide;-lhkpUtilities;-lhkpVehicle;-lhkpDynamics;-lhkpCollide;-lhkpInternal;-lhkpConstraintSolver;-lhkpConstraint;-lhkaPhysics2012Bridge;-lhkaInternal;-lhkaAnimation;-lhkbBehavior;-lhkbInternal;-lhkbUtilities;-lhkbPhysics2012Bridge;-lhkbAiBridge;-lhkbScript;-lhkaiPathfinding;-lhkaiInternal;-lhkaiVisualize;-lhkaiSpatialAnalysis;-lhkaiPhysics2012Bridge;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>-landroid;-lEGL;-lGLESv2;-lGLESv1_CM;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib\LuaAndroidx86_Debug.a;-lfmodexL;-lfmodeventL;-lBaseD;-lVisionD;-lVisionEnginePlugin;-lVisionAppD;-lvHavok;-lvFmodEnginePlugin;-lvHavokAi;-lvHavokBehavior;-lhkBase;-lhkCompat;-lhkSceneData;-lhkSerialize;-lhkVisualize;-lhkInternal;-lhkGeometryUtilities;-lhkcdInternal;-lhkcdCollide;-lhkImageUtilities;-lhkpUtilities;-lhkpVehicle;-lhkpDynamics;-lhkpCollide;-lhkpInternal;-lhkpConstraintSolver;-lhkpConstraint;-lhkaPhysics2012Bridge;-lhkaInternal;-lhkaAnimation;-lhkbBehavior;-lhkbInternal;-lhkbUtilities;-lhkbPhysics2012Bridge;-lhkbAiBridge;-lhkbScript;-lhkaiPathfinding;-lhkaiInternal;-lhkaiVisualize;-lhkaiSpatialAnalysis;-lhkaiPhysics2012Bridge;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
-      <AdditionalLibraryDirectories>..\..\..\..\Lib\android_x86_vs2010_anarchy\debug;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/lib/android/x86;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/Lib/Android/x86/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/Lib/Android/x86/Debug_NoRTTI/;$(HAVOK_THIRDPARTY_DIR)/redistsdks/curl/7.22.0/Android/x86/Debug;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\..\..\..\Lib\android_x86_vs2010_anarchy\debug;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/lib/android/x86;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib</AdditionalLibraryDirectories>
       <AdditionalLinkerOptions>-nosegments_always_executable</AdditionalLinkerOptions>
       <OptimizationStrategy>general</OptimizationStrategy>
       <SourceRoot>.</SourceRoot>
@@ -202,11 +202,11 @@
       <CompileAs>Default</CompileAs>
       <ExceptionHandling></ExceptionHandling>
       <ProgramDataBaseFileName>$(OutDir)$(TargetName).pdb</ProgramDataBaseFileName>
-      <PrecompiledHeader>Yes</PrecompiledHeader>
+      <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>Vision/Tools/vPlayer/vPlayerPCH.h</PrecompiledHeaderFile>
       <PrecompiledHeaderOutputFile>$(IntDir)Vision/Tools/vPlayer/vPlayerPCH.h.gch</PrecompiledHeaderOutputFile>
       <AdditionalOptions>-ffunction-sections %(AdditionalOptions) %(AdditionalOptions)</AdditionalOptions>
-      <PreprocessorDefinitions>HK_DEBUG;HK_ANARCHY;PROFILING;_VISION_POSIX;_VISION_ANDROID;_VISION_ANDROID_X86;_VISION_NO_WARNING_IMAGE_FORMAT;VBASE_LIB;LINK_WITH_VISION;VISIONDLL_LIB;CURL_STATICLIB;USE_FILESERVE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>HK_DEBUG;HK_ANARCHY;PROFILING;_VISION_POSIX;_VISION_ANDROID;_VISION_ANDROID_X86;_VISION_NO_WARNING_IMAGE_FORMAT;VBASE_LIB;LINK_WITH_VISION;VISIONDLL_LIB;USE_FILESERVE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <UndefinePreprocessorDefinitions>%(UndefinePreprocessorDefinitions)</UndefinePreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(IntDir);..\..\..;$(NDKROOT)/sources;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/inc;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ProducesObjectFile>true</ProducesObjectFile>
@@ -221,7 +221,7 @@
       <CLanguageDialect>ISO_C99</CLanguageDialect>
       <ImplicitSourceFileInclusion>Off</ImplicitSourceFileInclusion>
       <SupportImplicitTypenames></SupportImplicitTypenames>
-      <RunTimeTypeInformationSupport></RunTimeTypeInformationSupport>
+      <RuntimeTypeInfo></RuntimeTypeInfo>
       <ObjectFileName>$(IntDir)%(FileName).o</ObjectFileName>
       <QuitAfterWarnings>Off</QuitAfterWarnings>
       <Warnings>AllWarnings</Warnings>
@@ -237,16 +237,16 @@
       <GenerateDebugInformation>false</GenerateDebugInformation>
     </ClCompile>
     <Lib>
-      <OutputFile>$(OutDir)\libvPlayer_android_x86-vs2010_anarchy_dev.so</OutputFile>
+      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
       <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
       <LibrarianCommand>-rmc</LibrarianCommand>
-      <AdditionalDependencies>-lEGL;-lGLESv2;-lGLESv1_CM;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib\LuaAndroidx86_Release.a;-lfmodex;-lfmodevent;-lgfx_air;-lgfx_as2;-lgfx_as3;-lgfx;-lgfxexpat;-lgfxplatform;-lgfxrender_gl;-lgfxsound_fmod;-lexpat;-ljpeg;-lpcre;-lpng;-lz;-lcurl;-lBase;-lVision;-lVisionEnginePlugin;-lvHavok;-lvFmodEnginePlugin;-lVisionApp;-lvHavokAi;-lvHavokBehavior;-lvScaleformPlugin;-lvScaleformUtils;-lhkBase;-lhkCompat;-lhkSceneData;-lhkSerialize;-lhkVisualize;-lhkInternal;-lhkGeometryUtilities;-lhkcdInternal;-lhkcdCollide;-lhkpUtilities;-lhkpVehicle;-lhkpDynamics;-lhkpCollide;-lhkpInternal;-lhkpConstraintSolver;-lhkpConstraint;-lhkaPhysics2012Bridge;-lhkaInternal;-lhkaAnimation;-lhkbBehavior;-lhkbInternal;-lhkbUtilities;-lhkbPhysics2012Bridge;-lhkbAiBridge;-lhkbScript;-lhkaiPathfinding;-lhkaiInternal;-lhkaiVisualize;-lhkaiSpatialAnalysis;-lhkaiPhysics2012Bridge;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\..\..\Lib\android_x86_vs2010_anarchy\dev;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/lib/android/x86;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/Lib/Android/x86/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/Lib/Android/x86/Release_NoRTTI/;$(HAVOK_THIRDPARTY_DIR)/redistsdks/curl/7.22.0/Android/x86/Release;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib</AdditionalLibraryDirectories>
+      <AdditionalDependencies>-lEGL;-lGLESv2;-lGLESv1_CM;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib\LuaAndroidx86_Release.a;-lfmodex;-lfmodevent;-lBase;-lVision;-lVisionEnginePlugin;-lVisionApp;-lvHavok;-lvFmodEnginePlugin;-lvHavokAi;-lvHavokBehavior;-lhkBase;-lhkCompat;-lhkSceneData;-lhkSerialize;-lhkVisualize;-lhkInternal;-lhkGeometryUtilities;-lhkcdInternal;-lhkcdCollide;-lhkImageUtilities;-lhkpUtilities;-lhkpVehicle;-lhkpDynamics;-lhkpCollide;-lhkpInternal;-lhkpConstraintSolver;-lhkpConstraint;-lhkaPhysics2012Bridge;-lhkaInternal;-lhkaAnimation;-lhkbBehavior;-lhkbInternal;-lhkbUtilities;-lhkbPhysics2012Bridge;-lhkbAiBridge;-lhkbScript;-lhkaiPathfinding;-lhkaiInternal;-lhkaiVisualize;-lhkaiSpatialAnalysis;-lhkaiPhysics2012Bridge;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\..\..\..\Lib\android_x86_vs2010_anarchy\dev;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/lib/android/x86;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib</AdditionalLibraryDirectories>
     </Lib>
     <Link>
-      <AdditionalDependencies>-landroid;-lEGL;-lGLESv2;-lGLESv1_CM;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib\LuaAndroidx86_Release.a;-lfmodex;-lfmodevent;-lgfx_air;-lgfx_as2;-lgfx_as3;-lgfx;-lgfxexpat;-lgfxplatform;-lgfxrender_gl;-lgfxsound_fmod;-lexpat;-ljpeg;-lpcre;-lpng;-lz;-lcurl;-lBase;-lVision;-lVisionEnginePlugin;-lvHavok;-lvFmodEnginePlugin;-lVisionApp;-lvHavokAi;-lvHavokBehavior;-lvScaleformPlugin;-lvScaleformUtils;-lhkBase;-lhkCompat;-lhkSceneData;-lhkSerialize;-lhkVisualize;-lhkInternal;-lhkGeometryUtilities;-lhkcdInternal;-lhkcdCollide;-lhkpUtilities;-lhkpVehicle;-lhkpDynamics;-lhkpCollide;-lhkpInternal;-lhkpConstraintSolver;-lhkpConstraint;-lhkaPhysics2012Bridge;-lhkaInternal;-lhkaAnimation;-lhkbBehavior;-lhkbInternal;-lhkbUtilities;-lhkbPhysics2012Bridge;-lhkbAiBridge;-lhkbScript;-lhkaiPathfinding;-lhkaiInternal;-lhkaiVisualize;-lhkaiSpatialAnalysis;-lhkaiPhysics2012Bridge;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>-landroid;-lEGL;-lGLESv2;-lGLESv1_CM;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib\LuaAndroidx86_Release.a;-lfmodex;-lfmodevent;-lBase;-lVision;-lVisionEnginePlugin;-lVisionApp;-lvHavok;-lvFmodEnginePlugin;-lvHavokAi;-lvHavokBehavior;-lhkBase;-lhkCompat;-lhkSceneData;-lhkSerialize;-lhkVisualize;-lhkInternal;-lhkGeometryUtilities;-lhkcdInternal;-lhkcdCollide;-lhkImageUtilities;-lhkpUtilities;-lhkpVehicle;-lhkpDynamics;-lhkpCollide;-lhkpInternal;-lhkpConstraintSolver;-lhkpConstraint;-lhkaPhysics2012Bridge;-lhkaInternal;-lhkaAnimation;-lhkbBehavior;-lhkbInternal;-lhkbUtilities;-lhkbPhysics2012Bridge;-lhkbAiBridge;-lhkbScript;-lhkaiPathfinding;-lhkaiInternal;-lhkaiVisualize;-lhkaiSpatialAnalysis;-lhkaiPhysics2012Bridge;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
-      <AdditionalLibraryDirectories>..\..\..\..\Lib\android_x86_vs2010_anarchy\dev;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/lib/android/x86;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/Lib/Android/x86/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/Lib/Android/x86/Release_NoRTTI/;$(HAVOK_THIRDPARTY_DIR)/redistsdks/curl/7.22.0/Android/x86/Release;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\..\..\..\Lib\android_x86_vs2010_anarchy\dev;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/lib/android/x86;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib</AdditionalLibraryDirectories>
       <AdditionalLinkerOptions>-nosegments_always_executable</AdditionalLinkerOptions>
       <OptimizationStrategy>general</OptimizationStrategy>
       <SourceRoot>.</SourceRoot>
@@ -323,11 +323,11 @@
       <CompileAs>Default</CompileAs>
       <ExceptionHandling></ExceptionHandling>
       <ProgramDataBaseFileName>$(OutDir)$(TargetName).pdb</ProgramDataBaseFileName>
-      <PrecompiledHeader>Yes</PrecompiledHeader>
+      <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>Vision/Tools/vPlayer/vPlayerPCH.h</PrecompiledHeaderFile>
       <PrecompiledHeaderOutputFile>$(IntDir)Vision/Tools/vPlayer/vPlayerPCH.h.gch</PrecompiledHeaderOutputFile>
       <AdditionalOptions>-ffunction-sections %(AdditionalOptions) %(AdditionalOptions)</AdditionalOptions>
-      <PreprocessorDefinitions>;HK_ANARCHY;PROFILING;_VISION_POSIX;_VISION_ANDROID;_VISION_ANDROID_X86;_VISION_NO_WARNING_IMAGE_FORMAT;VBASE_LIB;LINK_WITH_VISION;VISIONDLL_LIB;CURL_STATICLIB;USE_FILESERVE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>;HK_ANARCHY;PROFILING;_VISION_POSIX;_VISION_ANDROID;_VISION_ANDROID_X86;_VISION_NO_WARNING_IMAGE_FORMAT;VBASE_LIB;LINK_WITH_VISION;VISIONDLL_LIB;USE_FILESERVE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <UndefinePreprocessorDefinitions>%(UndefinePreprocessorDefinitions)</UndefinePreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(IntDir);..\..\..;$(NDKROOT)/sources;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/inc;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ProducesObjectFile>true</ProducesObjectFile>
@@ -342,7 +342,7 @@
       <CLanguageDialect>ISO_C99</CLanguageDialect>
       <ImplicitSourceFileInclusion>Off</ImplicitSourceFileInclusion>
       <SupportImplicitTypenames></SupportImplicitTypenames>
-      <RunTimeTypeInformationSupport></RunTimeTypeInformationSupport>
+      <RuntimeTypeInfo></RuntimeTypeInfo>
       <ObjectFileName>$(IntDir)%(FileName).o</ObjectFileName>
       <QuitAfterWarnings>Off</QuitAfterWarnings>
       <Warnings>AllWarnings</Warnings>
@@ -358,16 +358,16 @@
       <GenerateDebugInformation>false</GenerateDebugInformation>
     </ClCompile>
     <Lib>
-      <OutputFile>$(OutDir)\libvPlayer_android_x86-vs2010_anarchy_release.so</OutputFile>
+      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
       <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
       <LibrarianCommand>-rmc</LibrarianCommand>
-      <AdditionalDependencies>-lEGL;-lGLESv2;-lGLESv1_CM;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib\LuaAndroidx86_Release.a;-lfmodex;-lfmodevent;-lgfx_air;-lgfx_as2;-lgfx_as3;-lgfx;-lgfxexpat;-lgfxplatform;-lgfxrender_gl;-lgfxsound_fmod;-lexpat;-ljpeg;-lpcre;-lpng;-lz;-lcurl;-lBase;-lVision;-lVisionEnginePlugin;-lvHavok;-lvFmodEnginePlugin;-lVisionApp;-lvHavokAi;-lvHavokBehavior;-lvScaleformPlugin;-lvScaleformUtils;-lhkBase;-lhkCompat;-lhkSceneData;-lhkSerialize;-lhkVisualize;-lhkInternal;-lhkGeometryUtilities;-lhkcdInternal;-lhkcdCollide;-lhkpUtilities;-lhkpVehicle;-lhkpDynamics;-lhkpCollide;-lhkpInternal;-lhkpConstraintSolver;-lhkpConstraint;-lhkaPhysics2012Bridge;-lhkaInternal;-lhkaAnimation;-lhkbBehavior;-lhkbInternal;-lhkbUtilities;-lhkbPhysics2012Bridge;-lhkbAiBridge;-lhkbScriptRelease;-lhkaiPathfinding;-lhkaiInternal;-lhkaiVisualize;-lhkaiSpatialAnalysis;-lhkaiPhysics2012Bridge;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\..\..\Lib\android_x86_vs2010_anarchy\release;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/lib/android/x86;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/Lib/Android/x86/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/Lib/Android/x86/Release_NoRTTI/;$(HAVOK_THIRDPARTY_DIR)/redistsdks/curl/7.22.0/Android/x86/Release;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib</AdditionalLibraryDirectories>
+      <AdditionalDependencies>-lEGL;-lGLESv2;-lGLESv1_CM;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib\LuaAndroidx86_Release.a;-lfmodex;-lfmodevent;-lBase;-lVision;-lVisionEnginePlugin;-lVisionApp;-lvHavok;-lvFmodEnginePlugin;-lvHavokAi;-lvHavokBehavior;-lhkBase;-lhkCompat;-lhkSceneData;-lhkSerialize;-lhkVisualize;-lhkInternal;-lhkGeometryUtilities;-lhkcdInternal;-lhkcdCollide;-lhkImageUtilities;-lhkpUtilities;-lhkpVehicle;-lhkpDynamics;-lhkpCollide;-lhkpInternal;-lhkpConstraintSolver;-lhkpConstraint;-lhkaPhysics2012Bridge;-lhkaInternal;-lhkaAnimation;-lhkbBehavior;-lhkbInternal;-lhkbUtilities;-lhkbPhysics2012Bridge;-lhkbAiBridge;-lhkbScriptRelease;-lhkaiPathfinding;-lhkaiInternal;-lhkaiVisualize;-lhkaiSpatialAnalysis;-lhkaiPhysics2012Bridge;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\..\..\..\Lib\android_x86_vs2010_anarchy\release;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/lib/android/x86;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib</AdditionalLibraryDirectories>
     </Lib>
     <Link>
-      <AdditionalDependencies>-landroid;-lEGL;-lGLESv2;-lGLESv1_CM;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib\LuaAndroidx86_Release.a;-lfmodex;-lfmodevent;-lgfx_air;-lgfx_as2;-lgfx_as3;-lgfx;-lgfxexpat;-lgfxplatform;-lgfxrender_gl;-lgfxsound_fmod;-lexpat;-ljpeg;-lpcre;-lpng;-lz;-lcurl;-lBase;-lVision;-lVisionEnginePlugin;-lvHavok;-lvFmodEnginePlugin;-lVisionApp;-lvHavokAi;-lvHavokBehavior;-lvScaleformPlugin;-lvScaleformUtils;-lhkBase;-lhkCompat;-lhkSceneData;-lhkSerialize;-lhkVisualize;-lhkInternal;-lhkGeometryUtilities;-lhkcdInternal;-lhkcdCollide;-lhkpUtilities;-lhkpVehicle;-lhkpDynamics;-lhkpCollide;-lhkpInternal;-lhkpConstraintSolver;-lhkpConstraint;-lhkaPhysics2012Bridge;-lhkaInternal;-lhkaAnimation;-lhkbBehavior;-lhkbInternal;-lhkbUtilities;-lhkbPhysics2012Bridge;-lhkbAiBridge;-lhkbScriptRelease;-lhkaiPathfinding;-lhkaiInternal;-lhkaiVisualize;-lhkaiSpatialAnalysis;-lhkaiPhysics2012Bridge;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>-landroid;-lEGL;-lGLESv2;-lGLESv1_CM;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib\LuaAndroidx86_Release.a;-lfmodex;-lfmodevent;-lBase;-lVision;-lVisionEnginePlugin;-lVisionApp;-lvHavok;-lvFmodEnginePlugin;-lvHavokAi;-lvHavokBehavior;-lhkBase;-lhkCompat;-lhkSceneData;-lhkSerialize;-lhkVisualize;-lhkInternal;-lhkGeometryUtilities;-lhkcdInternal;-lhkcdCollide;-lhkImageUtilities;-lhkpUtilities;-lhkpVehicle;-lhkpDynamics;-lhkpCollide;-lhkpInternal;-lhkpConstraintSolver;-lhkpConstraint;-lhkaPhysics2012Bridge;-lhkaInternal;-lhkaAnimation;-lhkbBehavior;-lhkbInternal;-lhkbUtilities;-lhkbPhysics2012Bridge;-lhkbAiBridge;-lhkbScriptRelease;-lhkaiPathfinding;-lhkaiInternal;-lhkaiVisualize;-lhkaiSpatialAnalysis;-lhkaiPhysics2012Bridge;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
-      <AdditionalLibraryDirectories>..\..\..\..\Lib\android_x86_vs2010_anarchy\release;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/lib/android/x86;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/Lib/Android/x86/;$(HAVOK_THIRDPARTY_DIR)/redistsdks\Scaleform\4.3.26/Lib/Android/x86/Release_NoRTTI/;$(HAVOK_THIRDPARTY_DIR)/redistsdks/curl/7.22.0/Android/x86/Release;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\..\..\..\Lib\android_x86_vs2010_anarchy\release;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/lib/android/x86;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib</AdditionalLibraryDirectories>
       <AdditionalLinkerOptions>-nosegments_always_executable</AdditionalLinkerOptions>
       <OptimizationStrategy>general</OptimizationStrategy>
       <SourceRoot>.</SourceRoot>
@@ -443,8 +443,6 @@
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="vLuaScript.h">
         <DeploymentContent>False</DeploymentContent></ClInclude>
-    <ClCompile Include="vPlayerPCH.cpp">
-        <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="vSceneList.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="vPlayerApp.hpp">
@@ -474,6 +472,11 @@
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClCompile Include="vPlayerApp.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClCompile Include="vPlayerPCH.cpp">
+        <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|hkAndroid'">Create</PrecompiledHeader>
+        <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|hkAndroid'">Create</PrecompiledHeader>
+        <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Dev|hkAndroid'">Create</PrecompiledHeader>
+        <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="vThumbnailManager.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="$(NDKROOT)\sources\android\native_app_glue\android_native_app_glue.c">
@@ -494,6 +497,12 @@
   <ItemGroup>
   </ItemGroup>
 <Import Project="..\..\..\..\Build\MSBuild\Microsoft.Cpp.targets" />
+<PropertyGroup>
+    <CleanDependsOn>vPlayer_CleanReflections;$(CleanDependsOn)</CleanDependsOn>
+</PropertyGroup>
+<Target Name="vPlayer_CleanReflections">
+    <Delete Files="$(MSBuildProjectDirectory)\reflectionSettings.cache;$(MSBuildProjectDirectory)\reflections.db" />
+</Target>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|hkAndroid'">
 </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Dev|hkAndroid'">

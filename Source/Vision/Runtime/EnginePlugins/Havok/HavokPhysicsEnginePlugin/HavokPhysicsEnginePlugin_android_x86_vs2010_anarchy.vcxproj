@@ -33,21 +33,21 @@
 <Import Project="..\..\..\..\..\..\Build\MSBuild\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|hkAndroid'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
-    <PlatformToolset>x86-4.6</PlatformToolset>
+    <PlatformToolset>x86-4.8</PlatformToolset>
     <AndroidAPILevel>android-10</AndroidAPILevel>
     <AndroidArch>x86</AndroidArch>
     <AndroidStlType>gnustl_static</AndroidStlType>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Dev|hkAndroid'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
-    <PlatformToolset>x86-4.6</PlatformToolset>
+    <PlatformToolset>x86-4.8</PlatformToolset>
     <AndroidAPILevel>android-10</AndroidAPILevel>
     <AndroidArch>x86</AndroidArch>
     <AndroidStlType>gnustl_static</AndroidStlType>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|hkAndroid'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
-    <PlatformToolset>x86-4.6</PlatformToolset>
+    <PlatformToolset>x86-4.8</PlatformToolset>
     <AndroidAPILevel>android-10</AndroidAPILevel>
     <AndroidArch>x86</AndroidArch>
     <AndroidStlType>gnustl_static</AndroidStlType>
@@ -60,15 +60,15 @@
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|hkAndroid'">..\..\..\..\..\..\Obj\android_x86_vs2010_anarchy\debug\HavokPhysicsEnginePlugin\</IntDir>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|hkAndroid'">..\..\..\..\..\..\Lib\android_x86_vs2010_anarchy\debug\</OutDir>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|hkAndroid'">libvHavok</TargetName>
-    <OutputFile Condition="'$(Configuration)|$(Platform)'=='Debug|hkAndroid'">..\..\..\..\..\..\Lib\android_x86_vs2010_anarchy\debug\libvHavok.a</OutputFile>
+    <OutputFile Condition="'$(Configuration)|$(Platform)'=='Debug|hkAndroid'">$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Dev|hkAndroid'">..\..\..\..\..\..\Obj\android_x86_vs2010_anarchy\dev\HavokPhysicsEnginePlugin\</IntDir>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Dev|hkAndroid'">..\..\..\..\..\..\Lib\android_x86_vs2010_anarchy\dev\</OutDir>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Dev|hkAndroid'">libvHavok</TargetName>
-    <OutputFile Condition="'$(Configuration)|$(Platform)'=='Dev|hkAndroid'">..\..\..\..\..\..\Lib\android_x86_vs2010_anarchy\dev\libvHavok.a</OutputFile>
+    <OutputFile Condition="'$(Configuration)|$(Platform)'=='Dev|hkAndroid'">$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|hkAndroid'">..\..\..\..\..\..\Obj\android_x86_vs2010_anarchy\release\HavokPhysicsEnginePlugin\</IntDir>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|hkAndroid'">..\..\..\..\..\..\Lib\android_x86_vs2010_anarchy\release\</OutDir>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|hkAndroid'">libvHavok</TargetName>
-    <OutputFile Condition="'$(Configuration)|$(Platform)'=='Release|hkAndroid'">..\..\..\..\..\..\Lib\android_x86_vs2010_anarchy\release\libvHavok.a</OutputFile>
+    <OutputFile Condition="'$(Configuration)|$(Platform)'=='Release|hkAndroid'">$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|hkAndroid'"></LinkIncremental>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Dev|hkAndroid'"></LinkIncremental>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|hkAndroid'"></LinkIncremental>
@@ -100,7 +100,7 @@
       <CLanguageDialect>ISO_C99</CLanguageDialect>
       <ImplicitSourceFileInclusion>Off</ImplicitSourceFileInclusion>
       <SupportImplicitTypenames></SupportImplicitTypenames>
-      <RunTimeTypeInformationSupport></RunTimeTypeInformationSupport>
+      <RuntimeTypeInfo></RuntimeTypeInfo>
       <ObjectFileName>$(IntDir)%(FileName).o</ObjectFileName>
       <QuitAfterWarnings>Off</QuitAfterWarnings>
       <Warnings>AllWarnings</Warnings>
@@ -116,7 +116,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </ClCompile>
     <Lib>
-      <OutputFile>$(OutDir)\libvHavok.a</OutputFile>
+      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
       <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
       <LibrarianCommand>-rmc</LibrarianCommand>
       <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
@@ -221,7 +221,7 @@
       <CLanguageDialect>ISO_C99</CLanguageDialect>
       <ImplicitSourceFileInclusion>Off</ImplicitSourceFileInclusion>
       <SupportImplicitTypenames></SupportImplicitTypenames>
-      <RunTimeTypeInformationSupport></RunTimeTypeInformationSupport>
+      <RuntimeTypeInfo></RuntimeTypeInfo>
       <ObjectFileName>$(IntDir)%(FileName).o</ObjectFileName>
       <QuitAfterWarnings>Off</QuitAfterWarnings>
       <Warnings>AllWarnings</Warnings>
@@ -237,7 +237,7 @@
       <GenerateDebugInformation>false</GenerateDebugInformation>
     </ClCompile>
     <Lib>
-      <OutputFile>$(OutDir)\libvHavok.a</OutputFile>
+      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
       <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
       <LibrarianCommand>-rmc</LibrarianCommand>
       <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
@@ -342,7 +342,7 @@
       <CLanguageDialect>ISO_C99</CLanguageDialect>
       <ImplicitSourceFileInclusion>Off</ImplicitSourceFileInclusion>
       <SupportImplicitTypenames></SupportImplicitTypenames>
-      <RunTimeTypeInformationSupport></RunTimeTypeInformationSupport>
+      <RuntimeTypeInfo></RuntimeTypeInfo>
       <ObjectFileName>$(IntDir)%(FileName).o</ObjectFileName>
       <QuitAfterWarnings>Off</QuitAfterWarnings>
       <Warnings>AllWarnings</Warnings>
@@ -358,7 +358,7 @@
       <GenerateDebugInformation>false</GenerateDebugInformation>
     </ClCompile>
     <Lib>
-      <OutputFile>$(OutDir)\libvHavok.a</OutputFile>
+      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
       <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
       <LibrarianCommand>-rmc</LibrarianCommand>
       <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
@@ -447,32 +447,37 @@
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClCompile Include="vHavokConstraintChainRenderingData.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClCompile Include="vHavokShapeCache.cpp">
+        <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="HavokPhysicsEnginePluginPCH.h">
         <DeploymentContent>False</DeploymentContent></ClInclude>
-    <ClCompile Include="vHavokShapeFactory.cpp">
-        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClInclude Include="vHavokResourceShape.hpp">
+        <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="vHavokStaticMesh.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClCompile Include="vHavokCableConstraintChainRenderer.cpp">
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClCompile Include="vHavokResourceShape.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClCompile Include="vHavokRagdoll.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="vHavokDisplayHandler.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClCompile Include="VRigidBodyFollowPathComponent.cpp">
+        <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClCompile Include="CharacterControlStates\vCharacterStateClimbing.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClCompile Include="vHavokVisionShapes.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
-    <ClCompile Include="vHavokPhysicsModule.cpp">
-        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <None Include="vHavokSync.inl"><DeploymentContent>False</DeploymentContent></None>
     <ClInclude Include="vHavokBallAndSocketConstraintChain.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="vHavokPhysicsImportExport.h">
         <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClInclude Include="IvHavokForcesQuerierComponent.hpp">
+        <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="vHavokCharacterControllerHelpers.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
-    <ClInclude Include="vHavokCachedShape.hpp">
-        <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="vHavokPrismaticConstraint.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="vHavokPointToPlaneConstraint.hpp">
@@ -480,6 +485,8 @@
     <ClInclude Include="vHavokHingeConstraint.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="VThrowItemComponent.hpp">
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClInclude Include="VRigidBodyFollowPathComponent.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="VLineFollowerComponent.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
@@ -493,6 +500,8 @@
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="vHavokConstraintChainRenderer.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClInclude Include="vHavokCpuThreadPool.hpp">
+        <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="vHavokGenericConstraint.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="vHavokStiffSpringConstraint.hpp">
@@ -503,7 +512,9 @@
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="vHavokRagdoll.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
-    <ClCompile Include="vHavokStiffSpringConstraint.cpp">
+    <ClCompile Include="vHavokChainAnimation.cpp">
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClCompile Include="vHavokShapeFactory.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="vHavokBlockerVolumeComponent.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
@@ -515,8 +526,8 @@
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="vHavokElementManager.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
-    <ClInclude Include="vHavokCpuJobThreadPool.hpp">
-        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClCompile Include="vHavokPhysicsModule.cpp">
+        <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClCompile Include="vHavokPointToPathConstraint.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <Compile Include="Lua\vHavokTriggerVolume.i">
@@ -529,7 +540,11 @@
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="vHavokFileStreamAccess.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClInclude Include="vHavokShapeCache.hpp">
+        <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="vHavokCharacterController.cpp">
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClCompile Include="vHavokCpuThreadPool.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="vHavokConstraint.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
@@ -541,16 +556,26 @@
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClCompile Include="vHavokDisplayHandler.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClCompile Include="vApplyForcesAction.cpp">
+        <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="CharacterControlStates\vCharacterStateOnGround.h">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="vHavokVisionShapes.h">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="vHavokPulleyConstraint.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClInclude Include="vHavokOpacityLookup.hpp">
+        <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="vHavokStiffSpringConstraintChain.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="vHavokPrismaticConstraint.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
+    <CustomBuild Include="Lua\HavokPhysicsLuaModule.i">
+        <AdditionalInputs>..\..\VisionEnginePlugin\Scripting\Lua\VColor.i;..\..\VisionEnginePlugin\Scripting\Lua\VTypedObject.i;..\..\VisionEnginePlugin\Scripting\Lua\VisApiTypedEngineObject.i;..\..\VisionEnginePlugin\Scripting\Lua\VisApiObjectComponent.i;Lua\vHavokCharacterController.i;Lua\vHavokRigidBody.i;Lua\vHavokRagdoll.i</AdditionalInputs>
+        <Outputs>Lua/PhysicsLuaModule_wrapper.cpp</Outputs>
+        <FileType>Document</FileType>
+        <Command>&quot;$(HAVOK_THIRDPARTY_DIR)\redistsdks\swig\2.0.3_VisionRTTI\swig.exe&quot; -c++ -lua -verbose -o Lua/PhysicsLuaModule_wrapper.cpp -I..\..\..\..\.. Lua\HavokPhysicsLuaModule.i&#x0D;&#x0A;&quot;..\..\..\..\..\..\Build\StandaloneTools\Iswig\Exe\iswig.exe&quot; --includePre &quot;Vision/Runtime/EnginePlugins/Havok/HavokPhysicsEnginePlugin/HavokPhysicsEnginePluginPCH.h Vision/Runtime/EnginePlugins/Havok/HavokPhysicsEnginePlugin/vHavokPhysicsModule.hpp Vision/Runtime/EnginePlugins/Havok/HavokPhysicsEnginePlugin/vHavokConstraint.hpp&quot; Lua/PhysicsLuaModule_wrapper.cpp</Command>
+        <DeploymentContent>False</DeploymentContent></CustomBuild>
     <ClCompile Include="vHavokChainConstraintChainRenderer.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="vHavokDebugConstraintChainRenderer.hpp">
@@ -559,21 +584,19 @@
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="vHavokPointToPathConstraint.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
-    <ClCompile Include="vHavokPulleyConstraint.cpp">
-        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClInclude Include="CharacterControlStates\vCharacterStateClimbing.h">
+        <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="vHavokProfiler.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="CharacterControlStates\vCharacterStateInAir.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
-    <ClInclude Include="vHavokSync.hpp">
-        <DeploymentContent>False</DeploymentContent></ClInclude>
-    <ClCompile Include="vHavokConstraintListener.cpp">
+    <ClCompile Include="vHavokPulleyConstraint.cpp">
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClCompile Include="vHavokBallAndSocketConstraint.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClCompile Include="vHavokSync.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="vHavokConstraintChainRenderingData.hpp">
-        <DeploymentContent>False</DeploymentContent></ClInclude>
-    <ClInclude Include="CharacterControlStates\vCharacterStateClimbing.h">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="vHavokConstraintListener.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
@@ -589,9 +612,9 @@
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="vHavokBallAndSocketConstraint.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
-    <ClCompile Include="vHavokCpuJobThreadPool.cpp">
+    <ClCompile Include="vHavokConstraintListener.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
-    <ClCompile Include="vHavokBallAndSocketConstraint.cpp">
+    <ClCompile Include="vHavokOpacityLookup.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClCompile Include="Classes\HavokPhysicsEnginePluginTrackerClasses.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
@@ -601,6 +624,8 @@
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="vHavokBlockerVolumeComponent.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClInclude Include="vApplyForcesAction.hpp">
+        <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="vHavokChainConstraintChainRenderer.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <None Include="vHavokElementManager.inl"><DeploymentContent>False</DeploymentContent></None>
@@ -608,7 +633,7 @@
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClCompile Include="vHavokConstraint.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
-    <ClCompile Include="vHavokChainAnimation.cpp">
+    <ClCompile Include="vHavokStiffSpringConstraint.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClCompile Include="Classes\Reflections\vHavokVisionShapesReflection.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
@@ -636,12 +661,6 @@
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="vHavokFileStreamAccess.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
-    <CustomBuild Include="Lua\HavokPhysicsLuaModule.i">
-        <AdditionalInputs>..\..\VisionEnginePlugin\Scripting\Lua\VColor.i;..\..\VisionEnginePlugin\Scripting\Lua\VTypedObject.i;..\..\VisionEnginePlugin\Scripting\Lua\VisApiTypedEngineObject.i;..\..\VisionEnginePlugin\Scripting\Lua\VisApiObjectComponent.i;Lua\vHavokCharacterController.i;Lua\vHavokRigidBody.i;Lua\vHavokRagdoll.i</AdditionalInputs>
-        <Outputs>Lua/PhysicsLuaModule_wrapper.cpp</Outputs>
-        <FileType>Document</FileType>
-        <Command>&quot;$(HAVOK_THIRDPARTY_DIR)\redistsdks\swig\2.0.3\swig.exe&quot; -c++ -lua -verbose -o Lua/PhysicsLuaModule_wrapper.cpp -I..\..\..\..\.. Lua\HavokPhysicsLuaModule.i&#x0D;&#x0A;&quot;..\..\..\..\..\..\Build\StandaloneTools\Iswig\Exe\iswig.exe&quot; --includePre &quot;Vision/Runtime/EnginePlugins/Havok/HavokPhysicsEnginePlugin/HavokPhysicsEnginePluginPCH.h Vision/Runtime/EnginePlugins/Havok/HavokPhysicsEnginePlugin/vHavokPhysicsModule.hpp Vision/Runtime/EnginePlugins/Havok/HavokPhysicsEnginePlugin/vHavokConstraint.hpp&quot; Lua/PhysicsLuaModule_wrapper.cpp</Command>
-        <DeploymentContent>False</DeploymentContent></CustomBuild>
     <Compile Include="Lua\vHavokRagdoll.i">
         <DeploymentContent>False</DeploymentContent></Compile>
     <ClCompile Include="vHavokTriggerVolume.cpp">
@@ -651,8 +670,6 @@
     <ClInclude Include="vHavokConversionUtils.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="vHavokStiffSpringConstraintChain.cpp">
-        <DeploymentContent>False</DeploymentContent></ClCompile>
-    <ClCompile Include="vHavokCachedShape.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="vHavokCharacterController.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
@@ -668,6 +685,12 @@
   <ItemGroup>
   </ItemGroup>
 <Import Project="..\..\..\..\..\..\Build\MSBuild\Microsoft.Cpp.targets" />
+<PropertyGroup>
+    <CleanDependsOn>HavokPhysicsEnginePlugin_CleanReflections;$(CleanDependsOn)</CleanDependsOn>
+</PropertyGroup>
+<Target Name="HavokPhysicsEnginePlugin_CleanReflections">
+    <Delete Files="$(MSBuildProjectDirectory)\reflectionSettings.cache;$(MSBuildProjectDirectory)\reflections.db" />
+</Target>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|hkAndroid'">
 </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Dev|hkAndroid'">

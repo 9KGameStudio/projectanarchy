@@ -58,7 +58,7 @@
     <ClCompile Include="VScaleformMovie.cpp">
         <Filter></Filter>
         <DeploymentContent>False</DeploymentContent></ClCompile>
-    <ClCompile Include="VScaleformMovieIME.cpp">
+    <ClCompile Include="VScaleformMovieWin32.cpp">
         <Filter></Filter>
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="VScaleformValue.hpp">

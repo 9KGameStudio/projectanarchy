@@ -22,6 +22,9 @@
     <ClInclude Include="Modules\VFileServe.hpp">
         <Filter>Modules</Filter>
         <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClInclude Include="VAppImportExport.hpp">
+        <Filter></Filter>
+        <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="VAppImpl.hpp">
         <Filter></Filter>
         <DeploymentContent>False</DeploymentContent></ClInclude>

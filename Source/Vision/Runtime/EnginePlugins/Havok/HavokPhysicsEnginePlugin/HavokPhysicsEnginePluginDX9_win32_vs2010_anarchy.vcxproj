@@ -9,12 +9,12 @@
   -->
         
   <ItemGroup Label="ProjectConfigurations">
-    <ProjectConfiguration Include="Debug DLL|win32">
-      <Configuration>Debug DLL</Configuration>
+    <ProjectConfiguration Include="Debug|win32">
+      <Configuration>Debug</Configuration>
       <Platform>win32</Platform>
     </ProjectConfiguration>
-    <ProjectConfiguration Include="Dev DLL|win32">
-      <Configuration>Dev DLL</Configuration>
+    <ProjectConfiguration Include="Dev|win32">
+      <Configuration>Dev</Configuration>
       <Platform>win32</Platform>
     </ProjectConfiguration>
   </ItemGroup>
@@ -27,13 +27,13 @@
     
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
-    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug DLL|win32'" Label="Configuration">
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|win32'" Label="Configuration">
     <CharacterSet>MultiByte</CharacterSet>
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <CLRSupport>false</CLRSupport>
     <UseOfMfc>false</UseOfMfc>
   </PropertyGroup>
-    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Dev DLL|win32'" Label="Configuration">
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Dev|win32'" Label="Configuration">
     <CharacterSet>MultiByte</CharacterSet>
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <CLRSupport>false</CLRSupport>
@@ -44,20 +44,20 @@
   </ImportGroup>
   <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   <PropertyGroup>
-<TargetExt  Condition="'$(Configuration)|$(Platform)'=='Debug DLL|win32'">.vPluginD</TargetExt>
-<TargetExt  Condition="'$(Configuration)|$(Platform)'=='Dev DLL|win32'">.vPlugin</TargetExt>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug DLL|win32'">..\..\..\..\..\..\Obj\win32_vs2010_anarchy\debug_dll\HavokPhysicsEnginePluginDX9\</IntDir>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug DLL|win32'">..\..\..\..\..\..\Bin\win32_vs2010_anarchy\Debug_DLL\DX9\</OutDir>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug DLL|win32'">vHavok</TargetName>
-    <OutputFile Condition="'$(Configuration)|$(Platform)'=='Debug DLL|win32'">..\..\..\..\..\..\Bin\win32_vs2010_anarchy\Debug_DLL\DX9\vHavok.vPluginD</OutputFile>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Dev DLL|win32'">..\..\..\..\..\..\Obj\win32_vs2010_anarchy\dev_dll\HavokPhysicsEnginePluginDX9\</IntDir>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Dev DLL|win32'">..\..\..\..\..\..\Bin\win32_vs2010_anarchy\Dev_DLL\DX9\</OutDir>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Dev DLL|win32'">vHavok</TargetName>
-    <OutputFile Condition="'$(Configuration)|$(Platform)'=='Dev DLL|win32'">..\..\..\..\..\..\Bin\win32_vs2010_anarchy\Dev_DLL\DX9\vHavok.vPlugin</OutputFile>
-    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug DLL|win32'">true</LinkIncremental>
-    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Dev DLL|win32'">true</LinkIncremental>
+<TargetExt  Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">.vPluginD</TargetExt>
+<TargetExt  Condition="'$(Configuration)|$(Platform)'=='Dev|win32'">.vPlugin</TargetExt>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">..\..\..\..\..\..\Obj\win32_vs2010_anarchy\debug\HavokPhysicsEnginePluginDX9\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">..\..\..\..\..\../Bin/win32_vs2010_anarchy/Debug/DX9\</OutDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">vHavok</TargetName>
+    <OutputFile Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Dev|win32'">..\..\..\..\..\..\Obj\win32_vs2010_anarchy\dev\HavokPhysicsEnginePluginDX9\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Dev|win32'">..\..\..\..\..\../Bin/win32_vs2010_anarchy/Dev/DX9\</OutDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Dev|win32'">vHavok</TargetName>
+    <OutputFile Condition="'$(Configuration)|$(Platform)'=='Dev|win32'">$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">true</LinkIncremental>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Dev|win32'">true</LinkIncremental>
   </PropertyGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug DLL|win32'">
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">
     
     
     
@@ -99,36 +99,37 @@
       <WarningLevel>Level3</WarningLevel>
       <CompileAsManaged>false</CompileAsManaged>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-	  
+      
     </ClCompile>
     <ResourceCompile>
       <ResourceOutputFileName></ResourceOutputFileName>
-      <AdditionalIncludeDirectories>$(IntDir)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(IntDir);</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Lib>
       <IgnoreAllDefaultLibraries></IgnoreAllDefaultLibraries>
-      <AdditionalDependencies>lua100D.lib;BaseD.lib;VisionD.lib;VisionEnginePluginD.lib;hkBase.lib;hkCompat.lib;hkSceneData.lib;hkSerialize.lib;hkVisualize.lib;hkInternal.lib;hkGeometryUtilities.lib;hkcdInternal.lib;hkcdCollide.lib;hkpUtilities.lib;hkpVehicle.lib;hkpDynamics.lib;hkpCollide.lib;hkpInternal.lib;hkpConstraintSolver.lib;hkpConstraint.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\..\..\..\..\Lib\win32_vs2010_anarchy\debug_dll;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(DXSDK_DIR)/Lib/x86</AdditionalLibraryDirectories>
+      <AdditionalDependencies>lua100D.lib;BaseD.lib;VisionD.lib;VisionEnginePluginD.lib;hkBase.lib;hkCompat.lib;hkSceneData.lib;hkSerialize.lib;hkVisualize.lib;hkInternal.lib;hkGeometryUtilities.lib;hkcdInternal.lib;hkcdCollide.lib;hkImageUtilities.lib;hkpUtilities.lib;hkpVehicle.lib;hkpDynamics.lib;hkpCollide.lib;hkpInternal.lib;hkpConstraintSolver.lib;hkpConstraint.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\..\..\..\..\..\Lib\win32_vs2010_anarchy\debug;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(DXSDK_DIR)/Lib/x86</AdditionalLibraryDirectories>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <UseUnicodeResponseFiles>true</UseUnicodeResponseFiles>
       <AdditionalOptions> /ignore:4221</AdditionalOptions>
     </Lib>
     <Link>
-      <AdditionalDependencies>lua100D.lib;BaseD.lib;VisionD.lib;VisionEnginePluginD.lib;hkBase.lib;hkCompat.lib;hkSceneData.lib;hkSerialize.lib;hkVisualize.lib;hkInternal.lib;hkGeometryUtilities.lib;hkcdInternal.lib;hkcdCollide.lib;hkpUtilities.lib;hkpVehicle.lib;hkpDynamics.lib;hkpCollide.lib;hkpInternal.lib;hkpConstraintSolver.lib;hkpConstraint.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\..\..\..\..\Lib\win32_vs2010_anarchy\debug_dll;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(DXSDK_DIR)/Lib/x86</AdditionalLibraryDirectories>
+      <AdditionalDependencies>lua100D.lib;BaseD.lib;VisionD.lib;VisionEnginePluginD.lib;hkBase.lib;hkCompat.lib;hkSceneData.lib;hkSerialize.lib;hkVisualize.lib;hkInternal.lib;hkGeometryUtilities.lib;hkcdInternal.lib;hkcdCollide.lib;hkImageUtilities.lib;hkpUtilities.lib;hkpVehicle.lib;hkpDynamics.lib;hkpCollide.lib;hkpInternal.lib;hkpConstraintSolver.lib;hkpConstraint.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\..\..\..\..\..\Lib\win32_vs2010_anarchy\debug;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(DXSDK_DIR)/Lib/x86</AdditionalLibraryDirectories>
       <AdditionalOptions> /ignore:4221</AdditionalOptions>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <ImportLibrary>..\..\..\..\..\..\Lib\win32_vs2010_anarchy\debug_dll\$(TargetName)D.lib</ImportLibrary>
+      <ImportLibrary>..\..\..\..\..\..\Lib\win32_vs2010_anarchy\debug\$(TargetName)D.lib</ImportLibrary>
       <AssemblyDebug></AssemblyDebug>
       <SubSystem>Console</SubSystem>
       <ManifestFile>$(IntDir)Manifest$(TargetExt).intermediate.manifest</ManifestFile>
       <OptimizeReferences></OptimizeReferences>
       <EnableCOMDATFolding></EnableCOMDATFolding>
+      <ProgramDatabaseFile>$(TargetDir)$(TargetName).pdb</ProgramDatabaseFile>
      <IgnoreSpecificDefaultLibraries>libc.lib;libcmtd.lib;</IgnoreSpecificDefaultLibraries>
     </Link>
   </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Dev DLL|win32'">
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Dev|win32'">
     
     
     
@@ -170,32 +171,33 @@
       <WarningLevel>Level3</WarningLevel>
       <CompileAsManaged>false</CompileAsManaged>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-	  
+      
     </ClCompile>
     <ResourceCompile>
       <ResourceOutputFileName></ResourceOutputFileName>
-      <AdditionalIncludeDirectories>$(IntDir)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(IntDir);</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Lib>
       <IgnoreAllDefaultLibraries></IgnoreAllDefaultLibraries>
-      <AdditionalDependencies>lua100.lib;Base.lib;Vision.lib;VisionEnginePlugin.lib;hkBase.lib;hkCompat.lib;hkSceneData.lib;hkSerialize.lib;hkVisualize.lib;hkInternal.lib;hkGeometryUtilities.lib;hkcdInternal.lib;hkcdCollide.lib;hkpUtilities.lib;hkpVehicle.lib;hkpDynamics.lib;hkpCollide.lib;hkpInternal.lib;hkpConstraintSolver.lib;hkpConstraint.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\..\..\..\..\Lib\win32_vs2010_anarchy\dev_dll;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(DXSDK_DIR)/Lib/x86</AdditionalLibraryDirectories>
+      <AdditionalDependencies>lua100.lib;Base.lib;Vision.lib;VisionEnginePlugin.lib;hkBase.lib;hkCompat.lib;hkSceneData.lib;hkSerialize.lib;hkVisualize.lib;hkInternal.lib;hkGeometryUtilities.lib;hkcdInternal.lib;hkcdCollide.lib;hkImageUtilities.lib;hkpUtilities.lib;hkpVehicle.lib;hkpDynamics.lib;hkpCollide.lib;hkpInternal.lib;hkpConstraintSolver.lib;hkpConstraint.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\..\..\..\..\..\Lib\win32_vs2010_anarchy\dev;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(DXSDK_DIR)/Lib/x86</AdditionalLibraryDirectories>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <UseUnicodeResponseFiles>true</UseUnicodeResponseFiles>
       <AdditionalOptions> /ignore:4221</AdditionalOptions>
     </Lib>
     <Link>
-      <AdditionalDependencies>lua100.lib;Base.lib;Vision.lib;VisionEnginePlugin.lib;hkBase.lib;hkCompat.lib;hkSceneData.lib;hkSerialize.lib;hkVisualize.lib;hkInternal.lib;hkGeometryUtilities.lib;hkcdInternal.lib;hkcdCollide.lib;hkpUtilities.lib;hkpVehicle.lib;hkpDynamics.lib;hkpCollide.lib;hkpInternal.lib;hkpConstraintSolver.lib;hkpConstraint.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\..\..\..\..\Lib\win32_vs2010_anarchy\dev_dll;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(DXSDK_DIR)/Lib/x86</AdditionalLibraryDirectories>
+      <AdditionalDependencies>lua100.lib;Base.lib;Vision.lib;VisionEnginePlugin.lib;hkBase.lib;hkCompat.lib;hkSceneData.lib;hkSerialize.lib;hkVisualize.lib;hkInternal.lib;hkGeometryUtilities.lib;hkcdInternal.lib;hkcdCollide.lib;hkImageUtilities.lib;hkpUtilities.lib;hkpVehicle.lib;hkpDynamics.lib;hkpCollide.lib;hkpInternal.lib;hkpConstraintSolver.lib;hkpConstraint.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\..\..\..\..\..\Lib\win32_vs2010_anarchy\dev;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(DXSDK_DIR)/Lib/x86</AdditionalLibraryDirectories>
       <AdditionalOptions> /ignore:4221</AdditionalOptions>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <ImportLibrary>..\..\..\..\..\..\Lib\win32_vs2010_anarchy\dev_dll\$(TargetName).lib</ImportLibrary>
+      <ImportLibrary>..\..\..\..\..\..\Lib\win32_vs2010_anarchy\dev\$(TargetName).lib</ImportLibrary>
       <AssemblyDebug></AssemblyDebug>
       <SubSystem>Console</SubSystem>
       <ManifestFile>$(IntDir)Manifest$(TargetExt).intermediate.manifest</ManifestFile>
       <OptimizeReferences></OptimizeReferences>
       <EnableCOMDATFolding></EnableCOMDATFolding>
+      <ProgramDatabaseFile>$(TargetDir)$(TargetName).pdb</ProgramDatabaseFile>
      <IgnoreSpecificDefaultLibraries>libc.lib;libcmt.lib;</IgnoreSpecificDefaultLibraries>
     </Link>
   </ItemDefinitionGroup>
@@ -210,15 +212,17 @@
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClCompile Include="vHavokConstraintChainRenderingData.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
-    <ClInclude Include="vHavokStaticMesh.hpp">
-        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClCompile Include="vHavokShapeCache.cpp">
+        <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="HavokPhysicsEnginePluginPCH.h">
         <DeploymentContent>False</DeploymentContent></ClInclude>
-    <ClCompile Include="vHavokShapeFactory.cpp">
-        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClInclude Include="vHavokResourceShape.hpp">
+        <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="vHavokStaticMesh.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClCompile Include="vHavokCableConstraintChainRenderer.cpp">
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClCompile Include="vHavokResourceShape.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClCompile Include="vHavokRagdoll.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
@@ -228,20 +232,21 @@
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="vHavokDisplayHandler.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClCompile Include="VRigidBodyFollowPathComponent.cpp">
+        <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClCompile Include="CharacterControlStates\vCharacterStateClimbing.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClCompile Include="vHavokVisionShapes.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
-    <ClCompile Include="vHavokPhysicsModule.cpp">
-        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <None Include="vHavokSync.inl"><DeploymentContent>False</DeploymentContent></None>
     <ClInclude Include="vHavokBallAndSocketConstraintChain.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="vHavokPhysicsImportExport.h">
         <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClInclude Include="IvHavokForcesQuerierComponent.hpp">
+        <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="vHavokCharacterControllerHelpers.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
-    <ClInclude Include="vHavokCachedShape.hpp">
-        <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="vHavokPrismaticConstraint.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="vHavokPointToPlaneConstraint.hpp">
@@ -250,10 +255,14 @@
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="VThrowItemComponent.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClInclude Include="VRigidBodyFollowPathComponent.hpp">
+        <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="VLineFollowerComponent.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
-    <ClInclude Include="vHavokChainAnimation.hpp">
-        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClCompile Include="HavokPhysicsEnginePluginPCH.cpp">
+        <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">Create</PrecompiledHeader>
+        <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Dev|win32'">Create</PrecompiledHeader>
+        <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClCompile Include="vHavokVisualDebugger.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <Compile Include="Lua\vHavokRigidBody.i">
@@ -261,6 +270,8 @@
     <ClInclude Include="vHavokCharacterControllerHelpers.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="vHavokConstraintChainRenderer.hpp">
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClInclude Include="vHavokCpuThreadPool.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="vHavokGenericConstraint.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
@@ -272,7 +283,9 @@
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="vHavokRagdoll.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
-    <ClCompile Include="vHavokStiffSpringConstraint.cpp">
+    <ClCompile Include="vHavokChainAnimation.cpp">
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClCompile Include="vHavokShapeFactory.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="vHavokBlockerVolumeComponent.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
@@ -284,12 +297,14 @@
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="vHavokElementManager.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
-    <ClInclude Include="vHavokCpuJobThreadPool.hpp">
-        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClCompile Include="vHavokPhysicsModule.cpp">
+        <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClCompile Include="vHavokPointToPathConstraint.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <Compile Include="Lua\vHavokTriggerVolume.i">
         <DeploymentContent>False</DeploymentContent></Compile>
+    <ClInclude Include="vHavokChainAnimation.hpp">
+        <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="VThrowItemComponent.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="vHavokVisualDebugger.hpp">
@@ -298,7 +313,11 @@
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="vHavokFileStreamAccess.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClInclude Include="vHavokShapeCache.hpp">
+        <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="vHavokCharacterController.cpp">
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClCompile Include="vHavokCpuThreadPool.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="vHavokConstraint.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
@@ -310,16 +329,26 @@
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClCompile Include="vHavokDisplayHandler.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClCompile Include="vApplyForcesAction.cpp">
+        <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="CharacterControlStates\vCharacterStateOnGround.h">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="vHavokVisionShapes.h">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="vHavokPulleyConstraint.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClInclude Include="vHavokOpacityLookup.hpp">
+        <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="vHavokStiffSpringConstraintChain.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="vHavokPrismaticConstraint.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
+    <CustomBuild Include="Lua\HavokPhysicsLuaModule.i">
+        <AdditionalInputs>..\..\VisionEnginePlugin\Scripting\Lua\VColor.i;..\..\VisionEnginePlugin\Scripting\Lua\VTypedObject.i;..\..\VisionEnginePlugin\Scripting\Lua\VisApiTypedEngineObject.i;..\..\VisionEnginePlugin\Scripting\Lua\VisApiObjectComponent.i;Lua\vHavokCharacterController.i;Lua\vHavokRigidBody.i;Lua\vHavokRagdoll.i</AdditionalInputs>
+        <Outputs>Lua/PhysicsLuaModule_wrapper.cpp</Outputs>
+        <FileType>Document</FileType>
+        <Command>&quot;$(HAVOK_THIRDPARTY_DIR)\redistsdks\swig\2.0.3_VisionRTTI\swig.exe&quot; -c++ -lua -verbose -o Lua/PhysicsLuaModule_wrapper.cpp -I..\..\..\..\.. Lua\HavokPhysicsLuaModule.i&#x0D;&#x0A;&quot;..\..\..\..\..\..\Build\StandaloneTools\Iswig\Exe\iswig.exe&quot; --includePre &quot;Vision/Runtime/EnginePlugins/Havok/HavokPhysicsEnginePlugin/HavokPhysicsEnginePluginPCH.h Vision/Runtime/EnginePlugins/Havok/HavokPhysicsEnginePlugin/vHavokPhysicsModule.hpp Vision/Runtime/EnginePlugins/Havok/HavokPhysicsEnginePlugin/vHavokConstraint.hpp&quot; Lua/PhysicsLuaModule_wrapper.cpp</Command>
+        <DeploymentContent>False</DeploymentContent></CustomBuild>
     <ClCompile Include="vHavokChainConstraintChainRenderer.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="vHavokDebugConstraintChainRenderer.hpp">
@@ -328,21 +357,19 @@
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="vHavokPointToPathConstraint.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
-    <ClCompile Include="vHavokPulleyConstraint.cpp">
-        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClInclude Include="CharacterControlStates\vCharacterStateClimbing.h">
+        <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="vHavokProfiler.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="CharacterControlStates\vCharacterStateInAir.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
-    <ClInclude Include="vHavokSync.hpp">
-        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClCompile Include="vHavokPulleyConstraint.cpp">
+        <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClCompile Include="vHavokConstraintListener.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClCompile Include="vHavokSync.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="vHavokConstraintChainRenderingData.hpp">
-        <DeploymentContent>False</DeploymentContent></ClInclude>
-    <ClInclude Include="CharacterControlStates\vCharacterStateClimbing.h">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="vHavokConstraintListener.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
@@ -358,9 +385,9 @@
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="vHavokBallAndSocketConstraint.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
-    <ClCompile Include="vHavokCpuJobThreadPool.cpp">
-        <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClCompile Include="vHavokBallAndSocketConstraint.cpp">
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClCompile Include="vHavokOpacityLookup.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClCompile Include="Classes\HavokPhysicsEnginePluginTrackerClasses.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
@@ -370,6 +397,8 @@
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="vHavokBlockerVolumeComponent.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClInclude Include="vApplyForcesAction.hpp">
+        <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="vHavokChainConstraintChainRenderer.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <None Include="vHavokElementManager.inl"><DeploymentContent>False</DeploymentContent></None>
@@ -377,7 +406,7 @@
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClCompile Include="vHavokConstraint.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
-    <ClCompile Include="vHavokChainAnimation.cpp">
+    <ClCompile Include="vHavokStiffSpringConstraint.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClCompile Include="Classes\Reflections\vHavokVisionShapesReflection.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
@@ -399,20 +428,12 @@
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="vHavokRigidBody.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
-    <ClCompile Include="HavokPhysicsEnginePluginPCH.cpp">
-        <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug DLL|win32'">Create</PrecompiledHeader>
-        <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Dev DLL|win32'">Create</PrecompiledHeader>
-        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClInclude Include="vHavokStaticMesh.hpp">
+        <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="vHavokConstraintChain.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="vHavokFileStreamAccess.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
-    <CustomBuild Include="Lua\HavokPhysicsLuaModule.i">
-        <AdditionalInputs>..\..\VisionEnginePlugin\Scripting\Lua\VColor.i;..\..\VisionEnginePlugin\Scripting\Lua\VTypedObject.i;..\..\VisionEnginePlugin\Scripting\Lua\VisApiTypedEngineObject.i;..\..\VisionEnginePlugin\Scripting\Lua\VisApiObjectComponent.i;Lua\vHavokCharacterController.i;Lua\vHavokRigidBody.i;Lua\vHavokRagdoll.i</AdditionalInputs>
-        <Outputs>Lua/PhysicsLuaModule_wrapper.cpp</Outputs>
-        <FileType>Document</FileType>
-        <Command>&quot;$(HAVOK_THIRDPARTY_DIR)\redistsdks\swig\2.0.3\swig.exe&quot; -c++ -lua -verbose -o Lua/PhysicsLuaModule_wrapper.cpp -I..\..\..\..\.. Lua\HavokPhysicsLuaModule.i&#x0D;&#x0A;&quot;..\..\..\..\..\..\Build\StandaloneTools\Iswig\Exe\iswig.exe&quot; --includePre &quot;Vision/Runtime/EnginePlugins/Havok/HavokPhysicsEnginePlugin/HavokPhysicsEnginePluginPCH.h Vision/Runtime/EnginePlugins/Havok/HavokPhysicsEnginePlugin/vHavokPhysicsModule.hpp Vision/Runtime/EnginePlugins/Havok/HavokPhysicsEnginePlugin/vHavokConstraint.hpp&quot; Lua/PhysicsLuaModule_wrapper.cpp</Command>
-        <DeploymentContent>False</DeploymentContent></CustomBuild>
     <Compile Include="Lua\vHavokRagdoll.i">
         <DeploymentContent>False</DeploymentContent></Compile>
     <ClCompile Include="vHavokTriggerVolume.cpp">
@@ -422,8 +443,6 @@
     <ClInclude Include="vHavokConversionUtils.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="vHavokStiffSpringConstraintChain.cpp">
-        <DeploymentContent>False</DeploymentContent></ClCompile>
-    <ClCompile Include="vHavokCachedShape.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="vHavokCharacterController.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
@@ -437,11 +456,17 @@
   <ItemGroup>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug DLL|win32'">
+<PropertyGroup>
+    <CleanDependsOn>HavokPhysicsEnginePluginDX9_CleanReflections;$(CleanDependsOn)</CleanDependsOn>
+</PropertyGroup>
+<Target Name="HavokPhysicsEnginePluginDX9_CleanReflections">
+    <Delete Files="$(MSBuildProjectDirectory)\reflectionSettings.cache;$(MSBuildProjectDirectory)\reflections.db" />
+</Target>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">
     <RunCodeAnalysis>false</RunCodeAnalysis>
     <CodeAnalysisInputAssembly>$(OutputFile)</CodeAnalysisInputAssembly>
 </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Dev DLL|win32'">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Dev|win32'">
     <RunCodeAnalysis>false</RunCodeAnalysis>
     <CodeAnalysisInputAssembly>$(OutputFile)</CodeAnalysisInputAssembly>
 </PropertyGroup>

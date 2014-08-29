@@ -33,21 +33,21 @@
 <Import Project="..\..\..\..\..\Build\MSBuild\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|hkAndroid'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
-    <PlatformToolset>arm-linux-androideabi-4.6</PlatformToolset>
+    <PlatformToolset>arm-linux-androideabi-4.8</PlatformToolset>
     <AndroidAPILevel>android-10</AndroidAPILevel>
     <AndroidArch>armv7-a</AndroidArch>
     <AndroidStlType>stlport_static</AndroidStlType>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Dev|hkAndroid'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
-    <PlatformToolset>arm-linux-androideabi-4.6</PlatformToolset>
+    <PlatformToolset>arm-linux-androideabi-4.8</PlatformToolset>
     <AndroidAPILevel>android-10</AndroidAPILevel>
     <AndroidArch>armv7-a</AndroidArch>
     <AndroidStlType>stlport_static</AndroidStlType>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|hkAndroid'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
-    <PlatformToolset>arm-linux-androideabi-4.6</PlatformToolset>
+    <PlatformToolset>arm-linux-androideabi-4.8</PlatformToolset>
     <AndroidAPILevel>android-10</AndroidAPILevel>
     <AndroidArch>armv7-a</AndroidArch>
     <AndroidStlType>stlport_static</AndroidStlType>
@@ -58,17 +58,17 @@
 <TargetExt  Condition="'$(Configuration)|$(Platform)'=='Dev|hkAndroid'">.so</TargetExt>
 <TargetExt  Condition="'$(Configuration)|$(Platform)'=='Release|hkAndroid'">.so</TargetExt>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|hkAndroid'">..\..\..\..\..\Obj\android_arm_vs2010_anarchy\debug\RPG\</IntDir>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|hkAndroid'">..\..\..\..\..\Bin\android_arm_vs2010_anarchy\Debug\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|hkAndroid'">..\..\..\..\../Bin/android_arm_vs2010_anarchy/Debug\</OutDir>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|hkAndroid'">libRPG</TargetName>
-    <OutputFile Condition="'$(Configuration)|$(Platform)'=='Debug|hkAndroid'">..\..\..\..\..\Bin\android_arm_vs2010_anarchy\Debug\libRPG.so</OutputFile>
+    <OutputFile Condition="'$(Configuration)|$(Platform)'=='Debug|hkAndroid'">$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Dev|hkAndroid'">..\..\..\..\..\Obj\android_arm_vs2010_anarchy\dev\RPG\</IntDir>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Dev|hkAndroid'">..\..\..\..\..\Bin\android_arm_vs2010_anarchy\Dev\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Dev|hkAndroid'">..\..\..\..\../Bin/android_arm_vs2010_anarchy/Dev\</OutDir>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Dev|hkAndroid'">libRPG</TargetName>
-    <OutputFile Condition="'$(Configuration)|$(Platform)'=='Dev|hkAndroid'">..\..\..\..\..\Bin\android_arm_vs2010_anarchy\Dev\libRPG.so</OutputFile>
+    <OutputFile Condition="'$(Configuration)|$(Platform)'=='Dev|hkAndroid'">$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|hkAndroid'">..\..\..\..\..\Obj\android_arm_vs2010_anarchy\release\RPG\</IntDir>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|hkAndroid'">..\..\..\..\..\Bin\android_arm_vs2010_anarchy\Release\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|hkAndroid'">..\..\..\..\../Bin/android_arm_vs2010_anarchy/Release\</OutDir>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|hkAndroid'">libRPG</TargetName>
-    <OutputFile Condition="'$(Configuration)|$(Platform)'=='Release|hkAndroid'">..\..\..\..\..\Bin\android_arm_vs2010_anarchy\Release\libRPG.so</OutputFile>
+    <OutputFile Condition="'$(Configuration)|$(Platform)'=='Release|hkAndroid'">$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|hkAndroid'"></LinkIncremental>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Dev|hkAndroid'"></LinkIncremental>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|hkAndroid'"></LinkIncremental>
@@ -81,7 +81,7 @@
       <CompileAs>Default</CompileAs>
       <ExceptionHandling></ExceptionHandling>
       <ProgramDataBaseFileName>$(OutDir)$(TargetName).pdb</ProgramDataBaseFileName>
-      <PrecompiledHeader>Yes</PrecompiledHeader>
+      <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>Vision/Samples/Engine/RPG/RPGPCH.h</PrecompiledHeaderFile>
       <PrecompiledHeaderOutputFile>$(IntDir)Vision/Samples/Engine/RPG/RPGPCH.h.gch</PrecompiledHeaderOutputFile>
       <AdditionalOptions>-ffunction-sections -fno-inline %(AdditionalOptions) %(AdditionalOptions)</AdditionalOptions>
@@ -100,7 +100,7 @@
       <CLanguageDialect>ISO_C99</CLanguageDialect>
       <ImplicitSourceFileInclusion>Off</ImplicitSourceFileInclusion>
       <SupportImplicitTypenames></SupportImplicitTypenames>
-      <RunTimeTypeInformationSupport></RunTimeTypeInformationSupport>
+      <RuntimeTypeInfo></RuntimeTypeInfo>
       <ObjectFileName>$(IntDir)%(FileName).o</ObjectFileName>
       <QuitAfterWarnings>Off</QuitAfterWarnings>
       <Warnings>AllWarnings</Warnings>
@@ -116,14 +116,14 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </ClCompile>
     <Lib>
-      <OutputFile>$(OutDir)\libRPG.so</OutputFile>
+      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
       <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
       <LibrarianCommand>-rmc</LibrarianCommand>
-      <AdditionalDependencies>-lEGL;-lGLESv2;-lGLESv1_CM;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib\LuaAndroid_Debug.a;-lfmodexL;-lfmodeventL;-lBaseD;-lVisionD;-lVisionEnginePlugin;-lVisionAppD;-lRPGPlugin;-lvHavokAi;-lvHavokBehavior;-lvHavok;-lhkBase;-lhkCompat;-lhkSceneData;-lhkSerialize;-lhkVisualize;-lhkInternal;-lhkGeometryUtilities;-lhkcdInternal;-lhkcdCollide;-lhkpUtilities;-lhkpVehicle;-lhkpDynamics;-lhkpCollide;-lhkpInternal;-lhkpConstraintSolver;-lhkpConstraint;-lhkaPhysics2012Bridge;-lhkaInternal;-lhkaAnimation;-lhkbBehavior;-lhkbInternal;-lhkbUtilities;-lhkbPhysics2012Bridge;-lhkbAiBridge;-lhkbScript;-lhkaiPathfinding;-lhkaiInternal;-lhkaiVisualize;-lhkaiSpatialAnalysis;-lhkaiPhysics2012Bridge;-lvFmodEnginePlugin;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>-lEGL;-lGLESv2;-lGLESv1_CM;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib\LuaAndroid_Debug.a;-lfmodexL;-lfmodeventL;-lBaseD;-lVisionD;-lVisionEnginePlugin;-lVisionAppD;-lRPGPlugin;-lvHavokAi;-lvHavokBehavior;-lvHavok;-lhkBase;-lhkCompat;-lhkSceneData;-lhkSerialize;-lhkVisualize;-lhkInternal;-lhkGeometryUtilities;-lhkcdInternal;-lhkcdCollide;-lhkImageUtilities;-lhkpUtilities;-lhkpVehicle;-lhkpDynamics;-lhkpCollide;-lhkpInternal;-lhkpConstraintSolver;-lhkpConstraint;-lhkaPhysics2012Bridge;-lhkaInternal;-lhkaAnimation;-lhkbBehavior;-lhkbInternal;-lhkbUtilities;-lhkbPhysics2012Bridge;-lhkbAiBridge;-lhkbScript;-lhkaiPathfinding;-lhkaiInternal;-lhkaiVisualize;-lhkaiSpatialAnalysis;-lhkaiPhysics2012Bridge;-lvFmodEnginePlugin;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>..\..\..\..\..\Lib\android_arm_vs2010_anarchy\debug;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/lib/android/armeabi-v7a</AdditionalLibraryDirectories>
     </Lib>
     <Link>
-      <AdditionalDependencies>-landroid;-lEGL;-lGLESv2;-lGLESv1_CM;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib\LuaAndroid_Debug.a;-lfmodexL;-lfmodeventL;-lBaseD;-lVisionD;-lVisionEnginePlugin;-lVisionAppD;-lRPGPlugin;-lvHavokAi;-lvHavokBehavior;-lvHavok;-lhkBase;-lhkCompat;-lhkSceneData;-lhkSerialize;-lhkVisualize;-lhkInternal;-lhkGeometryUtilities;-lhkcdInternal;-lhkcdCollide;-lhkpUtilities;-lhkpVehicle;-lhkpDynamics;-lhkpCollide;-lhkpInternal;-lhkpConstraintSolver;-lhkpConstraint;-lhkaPhysics2012Bridge;-lhkaInternal;-lhkaAnimation;-lhkbBehavior;-lhkbInternal;-lhkbUtilities;-lhkbPhysics2012Bridge;-lhkbAiBridge;-lhkbScript;-lhkaiPathfinding;-lhkaiInternal;-lhkaiVisualize;-lhkaiSpatialAnalysis;-lhkaiPhysics2012Bridge;-lvFmodEnginePlugin;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>-landroid;-lEGL;-lGLESv2;-lGLESv1_CM;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib\LuaAndroid_Debug.a;-lfmodexL;-lfmodeventL;-lBaseD;-lVisionD;-lVisionEnginePlugin;-lVisionAppD;-lRPGPlugin;-lvHavokAi;-lvHavokBehavior;-lvHavok;-lhkBase;-lhkCompat;-lhkSceneData;-lhkSerialize;-lhkVisualize;-lhkInternal;-lhkGeometryUtilities;-lhkcdInternal;-lhkcdCollide;-lhkImageUtilities;-lhkpUtilities;-lhkpVehicle;-lhkpDynamics;-lhkpCollide;-lhkpInternal;-lhkpConstraintSolver;-lhkpConstraint;-lhkaPhysics2012Bridge;-lhkaInternal;-lhkaAnimation;-lhkbBehavior;-lhkbInternal;-lhkbUtilities;-lhkbPhysics2012Bridge;-lhkbAiBridge;-lhkbScript;-lhkaiPathfinding;-lhkaiInternal;-lhkaiVisualize;-lhkaiSpatialAnalysis;-lhkaiPhysics2012Bridge;-lvFmodEnginePlugin;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
       <AdditionalLibraryDirectories>..\..\..\..\..\Lib\android_arm_vs2010_anarchy\debug;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/lib/android/armeabi-v7a</AdditionalLibraryDirectories>
       <AdditionalLinkerOptions>-nosegments_always_executable</AdditionalLinkerOptions>
@@ -202,7 +202,7 @@
       <CompileAs>Default</CompileAs>
       <ExceptionHandling></ExceptionHandling>
       <ProgramDataBaseFileName>$(OutDir)$(TargetName).pdb</ProgramDataBaseFileName>
-      <PrecompiledHeader>Yes</PrecompiledHeader>
+      <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>Vision/Samples/Engine/RPG/RPGPCH.h</PrecompiledHeaderFile>
       <PrecompiledHeaderOutputFile>$(IntDir)Vision/Samples/Engine/RPG/RPGPCH.h.gch</PrecompiledHeaderOutputFile>
       <AdditionalOptions>-ffunction-sections %(AdditionalOptions) %(AdditionalOptions)</AdditionalOptions>
@@ -210,7 +210,7 @@
       <UndefinePreprocessorDefinitions>%(UndefinePreprocessorDefinitions)</UndefinePreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(IntDir);..\..\..\..;$(NDKROOT)/sources;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ProducesObjectFile>true</ProducesObjectFile>
-      <OptimizationLevel>Ofast</OptimizationLevel>
+      <OptimizationLevel>O3</OptimizationLevel>
       <CppInliningLevel></CppInliningLevel>
       <SourceRoot>.</SourceRoot>
       <DebuggingLevel>MULTI</DebuggingLevel>
@@ -221,7 +221,7 @@
       <CLanguageDialect>ISO_C99</CLanguageDialect>
       <ImplicitSourceFileInclusion>Off</ImplicitSourceFileInclusion>
       <SupportImplicitTypenames></SupportImplicitTypenames>
-      <RunTimeTypeInformationSupport></RunTimeTypeInformationSupport>
+      <RuntimeTypeInfo></RuntimeTypeInfo>
       <ObjectFileName>$(IntDir)%(FileName).o</ObjectFileName>
       <QuitAfterWarnings>Off</QuitAfterWarnings>
       <Warnings>AllWarnings</Warnings>
@@ -237,14 +237,14 @@
       <GenerateDebugInformation>false</GenerateDebugInformation>
     </ClCompile>
     <Lib>
-      <OutputFile>$(OutDir)\libRPG.so</OutputFile>
+      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
       <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
       <LibrarianCommand>-rmc</LibrarianCommand>
-      <AdditionalDependencies>-lEGL;-lGLESv2;-lGLESv1_CM;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib\LuaAndroid_Release.a;-lfmodex;-lfmodevent;-lBase;-lVision;-lVisionEnginePlugin;-lVisionApp;-lRPGPlugin;-lvHavokAi;-lvHavokBehavior;-lvHavok;-lhkBase;-lhkCompat;-lhkSceneData;-lhkSerialize;-lhkVisualize;-lhkInternal;-lhkGeometryUtilities;-lhkcdInternal;-lhkcdCollide;-lhkpUtilities;-lhkpVehicle;-lhkpDynamics;-lhkpCollide;-lhkpInternal;-lhkpConstraintSolver;-lhkpConstraint;-lhkaPhysics2012Bridge;-lhkaInternal;-lhkaAnimation;-lhkbBehavior;-lhkbInternal;-lhkbUtilities;-lhkbPhysics2012Bridge;-lhkbAiBridge;-lhkbScript;-lhkaiPathfinding;-lhkaiInternal;-lhkaiVisualize;-lhkaiSpatialAnalysis;-lhkaiPhysics2012Bridge;-lvFmodEnginePlugin;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>-lEGL;-lGLESv2;-lGLESv1_CM;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib\LuaAndroid_Release.a;-lfmodex;-lfmodevent;-lBase;-lVision;-lVisionEnginePlugin;-lVisionApp;-lRPGPlugin;-lvHavokAi;-lvHavokBehavior;-lvHavok;-lhkBase;-lhkCompat;-lhkSceneData;-lhkSerialize;-lhkVisualize;-lhkInternal;-lhkGeometryUtilities;-lhkcdInternal;-lhkcdCollide;-lhkImageUtilities;-lhkpUtilities;-lhkpVehicle;-lhkpDynamics;-lhkpCollide;-lhkpInternal;-lhkpConstraintSolver;-lhkpConstraint;-lhkaPhysics2012Bridge;-lhkaInternal;-lhkaAnimation;-lhkbBehavior;-lhkbInternal;-lhkbUtilities;-lhkbPhysics2012Bridge;-lhkbAiBridge;-lhkbScript;-lhkaiPathfinding;-lhkaiInternal;-lhkaiVisualize;-lhkaiSpatialAnalysis;-lhkaiPhysics2012Bridge;-lvFmodEnginePlugin;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>..\..\..\..\..\Lib\android_arm_vs2010_anarchy\dev;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/lib/android/armeabi-v7a</AdditionalLibraryDirectories>
     </Lib>
     <Link>
-      <AdditionalDependencies>-landroid;-lEGL;-lGLESv2;-lGLESv1_CM;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib\LuaAndroid_Release.a;-lfmodex;-lfmodevent;-lBase;-lVision;-lVisionEnginePlugin;-lVisionApp;-lRPGPlugin;-lvHavokAi;-lvHavokBehavior;-lvHavok;-lhkBase;-lhkCompat;-lhkSceneData;-lhkSerialize;-lhkVisualize;-lhkInternal;-lhkGeometryUtilities;-lhkcdInternal;-lhkcdCollide;-lhkpUtilities;-lhkpVehicle;-lhkpDynamics;-lhkpCollide;-lhkpInternal;-lhkpConstraintSolver;-lhkpConstraint;-lhkaPhysics2012Bridge;-lhkaInternal;-lhkaAnimation;-lhkbBehavior;-lhkbInternal;-lhkbUtilities;-lhkbPhysics2012Bridge;-lhkbAiBridge;-lhkbScript;-lhkaiPathfinding;-lhkaiInternal;-lhkaiVisualize;-lhkaiSpatialAnalysis;-lhkaiPhysics2012Bridge;-lvFmodEnginePlugin;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>-landroid;-lEGL;-lGLESv2;-lGLESv1_CM;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib\LuaAndroid_Release.a;-lfmodex;-lfmodevent;-lBase;-lVision;-lVisionEnginePlugin;-lVisionApp;-lRPGPlugin;-lvHavokAi;-lvHavokBehavior;-lvHavok;-lhkBase;-lhkCompat;-lhkSceneData;-lhkSerialize;-lhkVisualize;-lhkInternal;-lhkGeometryUtilities;-lhkcdInternal;-lhkcdCollide;-lhkImageUtilities;-lhkpUtilities;-lhkpVehicle;-lhkpDynamics;-lhkpCollide;-lhkpInternal;-lhkpConstraintSolver;-lhkpConstraint;-lhkaPhysics2012Bridge;-lhkaInternal;-lhkaAnimation;-lhkbBehavior;-lhkbInternal;-lhkbUtilities;-lhkbPhysics2012Bridge;-lhkbAiBridge;-lhkbScript;-lhkaiPathfinding;-lhkaiInternal;-lhkaiVisualize;-lhkaiSpatialAnalysis;-lhkaiPhysics2012Bridge;-lvFmodEnginePlugin;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
       <AdditionalLibraryDirectories>..\..\..\..\..\Lib\android_arm_vs2010_anarchy\dev;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/lib/android/armeabi-v7a</AdditionalLibraryDirectories>
       <AdditionalLinkerOptions>-nosegments_always_executable</AdditionalLinkerOptions>
@@ -323,7 +323,7 @@
       <CompileAs>Default</CompileAs>
       <ExceptionHandling></ExceptionHandling>
       <ProgramDataBaseFileName>$(OutDir)$(TargetName).pdb</ProgramDataBaseFileName>
-      <PrecompiledHeader>Yes</PrecompiledHeader>
+      <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>Vision/Samples/Engine/RPG/RPGPCH.h</PrecompiledHeaderFile>
       <PrecompiledHeaderOutputFile>$(IntDir)Vision/Samples/Engine/RPG/RPGPCH.h.gch</PrecompiledHeaderOutputFile>
       <AdditionalOptions>-ffunction-sections %(AdditionalOptions) %(AdditionalOptions)</AdditionalOptions>
@@ -331,7 +331,7 @@
       <UndefinePreprocessorDefinitions>%(UndefinePreprocessorDefinitions)</UndefinePreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(IntDir);..\..\..\..;$(NDKROOT)/sources;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ProducesObjectFile>true</ProducesObjectFile>
-      <OptimizationLevel>Ofast</OptimizationLevel>
+      <OptimizationLevel>O3</OptimizationLevel>
       <CppInliningLevel></CppInliningLevel>
       <SourceRoot>.</SourceRoot>
       <DebuggingLevel>MULTI</DebuggingLevel>
@@ -342,7 +342,7 @@
       <CLanguageDialect>ISO_C99</CLanguageDialect>
       <ImplicitSourceFileInclusion>Off</ImplicitSourceFileInclusion>
       <SupportImplicitTypenames></SupportImplicitTypenames>
-      <RunTimeTypeInformationSupport></RunTimeTypeInformationSupport>
+      <RuntimeTypeInfo></RuntimeTypeInfo>
       <ObjectFileName>$(IntDir)%(FileName).o</ObjectFileName>
       <QuitAfterWarnings>Off</QuitAfterWarnings>
       <Warnings>AllWarnings</Warnings>
@@ -358,14 +358,14 @@
       <GenerateDebugInformation>false</GenerateDebugInformation>
     </ClCompile>
     <Lib>
-      <OutputFile>$(OutDir)\libRPG.so</OutputFile>
+      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
       <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
       <LibrarianCommand>-rmc</LibrarianCommand>
-      <AdditionalDependencies>-lEGL;-lGLESv2;-lGLESv1_CM;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib\LuaAndroid_Release.a;-lfmodex;-lfmodevent;-lBase;-lVision;-lVisionEnginePlugin;-lVisionApp;-lRPGPlugin;-lvHavokAi;-lvHavokBehavior;-lvHavok;-lhkBase;-lhkCompat;-lhkSceneData;-lhkSerialize;-lhkVisualize;-lhkInternal;-lhkGeometryUtilities;-lhkcdInternal;-lhkcdCollide;-lhkpUtilities;-lhkpVehicle;-lhkpDynamics;-lhkpCollide;-lhkpInternal;-lhkpConstraintSolver;-lhkpConstraint;-lhkaPhysics2012Bridge;-lhkaInternal;-lhkaAnimation;-lhkbBehavior;-lhkbInternal;-lhkbUtilities;-lhkbPhysics2012Bridge;-lhkbAiBridge;-lhkbScriptRelease;-lhkaiPathfinding;-lhkaiInternal;-lhkaiVisualize;-lhkaiSpatialAnalysis;-lhkaiPhysics2012Bridge;-lvFmodEnginePlugin;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>-lEGL;-lGLESv2;-lGLESv1_CM;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib\LuaAndroid_Release.a;-lfmodex;-lfmodevent;-lBase;-lVision;-lVisionEnginePlugin;-lVisionApp;-lRPGPlugin;-lvHavokAi;-lvHavokBehavior;-lvHavok;-lhkBase;-lhkCompat;-lhkSceneData;-lhkSerialize;-lhkVisualize;-lhkInternal;-lhkGeometryUtilities;-lhkcdInternal;-lhkcdCollide;-lhkImageUtilities;-lhkpUtilities;-lhkpVehicle;-lhkpDynamics;-lhkpCollide;-lhkpInternal;-lhkpConstraintSolver;-lhkpConstraint;-lhkaPhysics2012Bridge;-lhkaInternal;-lhkaAnimation;-lhkbBehavior;-lhkbInternal;-lhkbUtilities;-lhkbPhysics2012Bridge;-lhkbAiBridge;-lhkbScriptRelease;-lhkaiPathfinding;-lhkaiInternal;-lhkaiVisualize;-lhkaiSpatialAnalysis;-lhkaiPhysics2012Bridge;-lvFmodEnginePlugin;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>..\..\..\..\..\Lib\android_arm_vs2010_anarchy\release;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/lib/android/armeabi-v7a</AdditionalLibraryDirectories>
     </Lib>
     <Link>
-      <AdditionalDependencies>-landroid;-lEGL;-lGLESv2;-lGLESv1_CM;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib\LuaAndroid_Release.a;-lfmodex;-lfmodevent;-lBase;-lVision;-lVisionEnginePlugin;-lVisionApp;-lRPGPlugin;-lvHavokAi;-lvHavokBehavior;-lvHavok;-lhkBase;-lhkCompat;-lhkSceneData;-lhkSerialize;-lhkVisualize;-lhkInternal;-lhkGeometryUtilities;-lhkcdInternal;-lhkcdCollide;-lhkpUtilities;-lhkpVehicle;-lhkpDynamics;-lhkpCollide;-lhkpInternal;-lhkpConstraintSolver;-lhkpConstraint;-lhkaPhysics2012Bridge;-lhkaInternal;-lhkaAnimation;-lhkbBehavior;-lhkbInternal;-lhkbUtilities;-lhkbPhysics2012Bridge;-lhkbAiBridge;-lhkbScriptRelease;-lhkaiPathfinding;-lhkaiInternal;-lhkaiVisualize;-lhkaiSpatialAnalysis;-lhkaiPhysics2012Bridge;-lvFmodEnginePlugin;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>-landroid;-lEGL;-lGLESv2;-lGLESv1_CM;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib\LuaAndroid_Release.a;-lfmodex;-lfmodevent;-lBase;-lVision;-lVisionEnginePlugin;-lVisionApp;-lRPGPlugin;-lvHavokAi;-lvHavokBehavior;-lvHavok;-lhkBase;-lhkCompat;-lhkSceneData;-lhkSerialize;-lhkVisualize;-lhkInternal;-lhkGeometryUtilities;-lhkcdInternal;-lhkcdCollide;-lhkImageUtilities;-lhkpUtilities;-lhkpVehicle;-lhkpDynamics;-lhkpCollide;-lhkpInternal;-lhkpConstraintSolver;-lhkpConstraint;-lhkaPhysics2012Bridge;-lhkaInternal;-lhkaAnimation;-lhkbBehavior;-lhkbInternal;-lhkbUtilities;-lhkbPhysics2012Bridge;-lhkbAiBridge;-lhkbScriptRelease;-lhkaiPathfinding;-lhkaiInternal;-lhkaiVisualize;-lhkaiSpatialAnalysis;-lhkaiPhysics2012Bridge;-lvFmodEnginePlugin;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
       <AdditionalLibraryDirectories>..\..\..\..\..\Lib\android_arm_vs2010_anarchy\release;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(HAVOK_THIRDPARTY_DIR)/redistsdks/fmod/4.44.23/lib/android/armeabi-v7a</AdditionalLibraryDirectories>
       <AdditionalLinkerOptions>-nosegments_always_executable</AdditionalLinkerOptions>
@@ -438,15 +438,18 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <Java Include="..\..\..\..\..\Source\Vision\Runtime\Common\Android\VNativeDialogAndroid.java"><DeploymentContent>False</DeploymentContent></Java>
-    <ClCompile Include="RPG.cpp">
-        <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClCompile Include="$(NDKROOT)\sources\android\native_app_glue\android_native_app_glue.c">
         <CompileAsWinRT>false</CompileAsWinRT>
         <AdditionalOptions> </AdditionalOptions>
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="RPGPCH.h">
         <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClCompile Include="RPG.cpp">
+        <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClCompile Include="RPGPCH.cpp">
+        <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|hkAndroid'">Create</PrecompiledHeader>
+        <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|hkAndroid'">Create</PrecompiledHeader>
+        <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Dev|hkAndroid'">Create</PrecompiledHeader>
         <DeploymentContent>False</DeploymentContent></ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -454,6 +457,12 @@
   <ItemGroup>
   </ItemGroup>
 <Import Project="..\..\..\..\..\Build\MSBuild\Microsoft.Cpp.targets" />
+<PropertyGroup>
+    <CleanDependsOn>RPG_CleanReflections;$(CleanDependsOn)</CleanDependsOn>
+</PropertyGroup>
+<Target Name="RPG_CleanReflections">
+    <Delete Files="$(MSBuildProjectDirectory)\reflectionSettings.cache;$(MSBuildProjectDirectory)\reflections.db" />
+</Target>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|hkAndroid'">
 </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Dev|hkAndroid'">

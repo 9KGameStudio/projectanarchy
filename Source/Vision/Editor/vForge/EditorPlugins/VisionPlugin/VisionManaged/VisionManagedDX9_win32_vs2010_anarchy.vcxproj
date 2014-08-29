@@ -9,12 +9,12 @@
   -->
         
   <ItemGroup Label="ProjectConfigurations">
-    <ProjectConfiguration Include="Debug DLL|win32">
-      <Configuration>Debug DLL</Configuration>
+    <ProjectConfiguration Include="Debug|win32">
+      <Configuration>Debug</Configuration>
       <Platform>win32</Platform>
     </ProjectConfiguration>
-    <ProjectConfiguration Include="Dev DLL|win32">
-      <Configuration>Dev DLL</Configuration>
+    <ProjectConfiguration Include="Dev|win32">
+      <Configuration>Dev</Configuration>
       <Platform>win32</Platform>
     </ProjectConfiguration>
   </ItemGroup>
@@ -27,13 +27,13 @@
     
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
-    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug DLL|win32'" Label="Configuration">
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|win32'" Label="Configuration">
     <CharacterSet>MultiByte</CharacterSet>
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <CLRSupport>true</CLRSupport>
     <UseOfMfc>false</UseOfMfc>
   </PropertyGroup>
-    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Dev DLL|win32'" Label="Configuration">
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Dev|win32'" Label="Configuration">
     <CharacterSet>MultiByte</CharacterSet>
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <CLRSupport>true</CLRSupport>
@@ -44,20 +44,20 @@
   </ImportGroup>
   <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   <PropertyGroup>
-<TargetExt  Condition="'$(Configuration)|$(Platform)'=='Debug DLL|win32'">.dll</TargetExt>
-<TargetExt  Condition="'$(Configuration)|$(Platform)'=='Dev DLL|win32'">.dll</TargetExt>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug DLL|win32'">Obj\win32_vs2010_anarchy\debug_dll\</IntDir>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug DLL|win32'">..\..\..\..\..\..\..\Bin\win32_vs2010_anarchy\debug_dll\DX9\</OutDir>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug DLL|win32'">VisionManaged</TargetName>
-    <OutputFile Condition="'$(Configuration)|$(Platform)'=='Debug DLL|win32'">..\..\..\..\..\..\..\Bin\win32_vs2010_anarchy\debug_dll\DX9\VisionManaged.dll</OutputFile>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Dev DLL|win32'">Obj\win32_vs2010_anarchy\dev_dll\</IntDir>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Dev DLL|win32'">..\..\..\..\..\..\..\Bin\win32_vs2010_anarchy\dev_dll\DX9\</OutDir>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Dev DLL|win32'">VisionManaged</TargetName>
-    <OutputFile Condition="'$(Configuration)|$(Platform)'=='Dev DLL|win32'">..\..\..\..\..\..\..\Bin\win32_vs2010_anarchy\dev_dll\DX9\VisionManaged.dll</OutputFile>
-    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug DLL|win32'">true</LinkIncremental>
-    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Dev DLL|win32'">true</LinkIncremental>
+<TargetExt  Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">.dll</TargetExt>
+<TargetExt  Condition="'$(Configuration)|$(Platform)'=='Dev|win32'">.dll</TargetExt>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">Obj\win32_vs2010_anarchy\debug\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">..\..\..\..\..\..\../Bin/win32_vs2010_anarchy/Debug/DX9\</OutDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">VisionManaged</TargetName>
+    <OutputFile Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Dev|win32'">Obj\win32_vs2010_anarchy\dev\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Dev|win32'">..\..\..\..\..\..\../Bin/win32_vs2010_anarchy/Dev/DX9\</OutDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Dev|win32'">VisionManaged</TargetName>
+    <OutputFile Condition="'$(Configuration)|$(Platform)'=='Dev|win32'">$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">true</LinkIncremental>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Dev|win32'">true</LinkIncremental>
   </PropertyGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug DLL|win32'">
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">
     
     
     
@@ -74,7 +74,7 @@
       <DisableSpecificWarnings></DisableSpecificWarnings>
       <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
       <EnablePREfast></EnablePREfast>
-      <ExceptionHandling>false</ExceptionHandling>
+      <ExceptionHandling>Async</ExceptionHandling>
       <FavorSizeOrSpeed>Neither</FavorSizeOrSpeed>
       <FloatingPointExceptions>false</FloatingPointExceptions>
       <FloatingPointModel>Fast</FloatingPointModel>
@@ -88,7 +88,7 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>Vision/Editor/vForge/EditorPlugins/VisionPlugin/VisionManaged/VisionManagedPCH.h</PrecompiledHeaderFile>
       <PrecompiledHeaderOutputFile>$(IntDir)VisionManaged.pch</PrecompiledHeaderOutputFile>
-      <PreprocessorDefinitions>_WINDOWS;WIN32;_WIN32;_DEBUG;HK_DEBUG;HK_DEBUG_SLOW;_CONSOLE;_ALLOW_ITERATOR_DEBUG_LEVEL_MISMATCH;HK_ANARCHY;VGEOM2_LIB;_VR_DX9;HK_CONFIG_SIMD=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_WINDOWS;WIN32;_WIN32;_DEBUG;HK_DEBUG;HK_DEBUG_SLOW;_CONSOLE;_ALLOW_ITERATOR_DEBUG_LEVEL_MISMATCH;HK_ANARCHY;PROFILING;_VISION_WIN32;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_VR_DX9;_VR_DX9;VGEOM2_LIB;_VR_DX9;HK_CONFIG_SIMD=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <UndefinePreprocessorDefinitions></UndefinePreprocessorDefinitions>
       <ProgramDataBaseFileName>$(OutDir)$(TargetName).pdb</ProgramDataBaseFileName>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -99,16 +99,16 @@
       <WarningLevel>Level3</WarningLevel>
       <CompileAsManaged>true</CompileAsManaged>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-	  
+      
     </ClCompile>
     <ResourceCompile>
       <ResourceOutputFileName></ResourceOutputFileName>
-      <AdditionalIncludeDirectories>$(IntDir)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(IntDir);</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Lib>
       <IgnoreAllDefaultLibraries></IgnoreAllDefaultLibraries>
       <AdditionalDependencies>xinput.lib;d3dx9d.lib;Geom2D.lib;VisionD.lib;BaseD.lib;VisionEnginePluginD.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\..\..\..\..\..\Lib\win32_vs2010_anarchy\debug_dll;$(DXSDK_DIR)/Lib/x86</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\..\..\..\..\..\..\Lib\win32_vs2010_anarchy\debug;$(DXSDK_DIR)/Lib/x86</AdditionalLibraryDirectories>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <UseUnicodeResponseFiles>true</UseUnicodeResponseFiles>
@@ -116,18 +116,19 @@
     </Lib>
     <Link>
       <AdditionalDependencies>xinput.lib;d3dx9d.lib;Geom2D.lib;VisionD.lib;BaseD.lib;VisionEnginePluginD.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\..\..\..\..\..\Lib\win32_vs2010_anarchy\debug_dll;$(DXSDK_DIR)/Lib/x86</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\..\..\..\..\..\..\Lib\win32_vs2010_anarchy\debug;$(DXSDK_DIR)/Lib/x86</AdditionalLibraryDirectories>
       <AdditionalOptions> /ignore:4221 /ignore:4248</AdditionalOptions>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <ImportLibrary>..\..\..\..\..\..\..\Lib\win32_vs2010_anarchy\debug_dll\$(TargetName).lib</ImportLibrary>
+      <ImportLibrary>..\..\..\..\..\..\..\Lib\win32_vs2010_anarchy\debug\$(TargetName).lib</ImportLibrary>
       <AssemblyDebug>true</AssemblyDebug>
       <SubSystem>Console</SubSystem>
       <ManifestFile>$(IntDir)Manifest$(TargetExt).intermediate.manifest</ManifestFile>
       <OptimizeReferences></OptimizeReferences>
       <EnableCOMDATFolding></EnableCOMDATFolding>
+      <ProgramDatabaseFile>$(TargetDir)$(TargetName).pdb</ProgramDatabaseFile>
     </Link>
   </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Dev DLL|win32'">
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Dev|win32'">
     
     
     
@@ -144,7 +145,7 @@
       <DisableSpecificWarnings></DisableSpecificWarnings>
       <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
       <EnablePREfast></EnablePREfast>
-      <ExceptionHandling>false</ExceptionHandling>
+      <ExceptionHandling>Async</ExceptionHandling>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <FloatingPointExceptions>false</FloatingPointExceptions>
       <FloatingPointModel>Fast</FloatingPointModel>
@@ -158,7 +159,7 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>Vision/Editor/vForge/EditorPlugins/VisionPlugin/VisionManaged/VisionManagedPCH.h</PrecompiledHeaderFile>
       <PrecompiledHeaderOutputFile>$(IntDir)VisionManaged.pch</PrecompiledHeaderOutputFile>
-      <PreprocessorDefinitions>_WINDOWS;WIN32;_WIN32;HK_DEBUG;_CONSOLE;_ALLOW_ITERATOR_DEBUG_LEVEL_MISMATCH;HK_ANARCHY;VGEOM2_LIB;_VR_DX9;HK_CONFIG_SIMD=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_WINDOWS;WIN32;_WIN32;HK_DEBUG;_CONSOLE;_ALLOW_ITERATOR_DEBUG_LEVEL_MISMATCH;HK_ANARCHY;PROFILING;_VISION_WIN32;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_VR_DX9;_VR_DX9;VGEOM2_LIB;_VR_DX9;HK_CONFIG_SIMD=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <UndefinePreprocessorDefinitions></UndefinePreprocessorDefinitions>
       <ProgramDataBaseFileName>$(OutDir)$(TargetName).pdb</ProgramDataBaseFileName>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -169,16 +170,16 @@
       <WarningLevel>Level3</WarningLevel>
       <CompileAsManaged>true</CompileAsManaged>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-	  
+      
     </ClCompile>
     <ResourceCompile>
       <ResourceOutputFileName></ResourceOutputFileName>
-      <AdditionalIncludeDirectories>$(IntDir)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(IntDir);</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Lib>
       <IgnoreAllDefaultLibraries></IgnoreAllDefaultLibraries>
       <AdditionalDependencies>xinput.lib;d3dx9.lib;Geom2.lib;Vision.lib;Base.lib;VisionEnginePlugin.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\..\..\..\..\..\Lib\win32_vs2010_anarchy\dev_dll;$(DXSDK_DIR)/Lib/x86</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\..\..\..\..\..\..\Lib\win32_vs2010_anarchy\dev;$(DXSDK_DIR)/Lib/x86</AdditionalLibraryDirectories>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <UseUnicodeResponseFiles>true</UseUnicodeResponseFiles>
@@ -186,15 +187,16 @@
     </Lib>
     <Link>
       <AdditionalDependencies>xinput.lib;d3dx9.lib;Geom2.lib;Vision.lib;Base.lib;VisionEnginePlugin.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\..\..\..\..\..\Lib\win32_vs2010_anarchy\dev_dll;$(DXSDK_DIR)/Lib/x86</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\..\..\..\..\..\..\Lib\win32_vs2010_anarchy\dev;$(DXSDK_DIR)/Lib/x86</AdditionalLibraryDirectories>
       <AdditionalOptions> /ignore:4221 /ignore:4248</AdditionalOptions>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <ImportLibrary>..\..\..\..\..\..\..\Lib\win32_vs2010_anarchy\dev_dll\$(TargetName).lib</ImportLibrary>
+      <ImportLibrary>..\..\..\..\..\..\..\Lib\win32_vs2010_anarchy\dev\$(TargetName).lib</ImportLibrary>
       <AssemblyDebug>true</AssemblyDebug>
       <SubSystem>Console</SubSystem>
       <ManifestFile>$(IntDir)Manifest$(TargetExt).intermediate.manifest</ManifestFile>
       <OptimizeReferences></OptimizeReferences>
       <EnableCOMDATFolding></EnableCOMDATFolding>
+      <ProgramDatabaseFile>$(TargetDir)$(TargetName).pdb</ProgramDatabaseFile>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -238,6 +240,8 @@
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClCompile Include="EngineInstances\EngineInstanceDynLight.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClCompile Include="EngineInstances\EngineInstanceMobileWater.cpp">
+        <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="EngineInstances\EngineInstanceProjector.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="EngineInstances\EngineInstancePathCamera.hpp">
@@ -254,13 +258,17 @@
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="EngineInstances\EngineInstanceDynLight.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClInclude Include="EngineInstances\EngineInstanceTriggerBox.hpp">
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClCompile Include="Tools\AutoPlacementTool.cpp">
+        <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClCompile Include="EngineInstances\EngineInstancePostprocessingEffect.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="LightmapTool\LightmapManager.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="EngineInstances\EngineInstanceEntity.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
-    <ClInclude Include="EngineInstances\EngineInstanceTriggerBox.hpp">
+    <ClInclude Include="Tools\AutoPlacementTool.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="EngineInstances\EngineInstanceLightGridDetailBox.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
@@ -280,10 +288,6 @@
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="VisionManagedPCH.h">
         <DeploymentContent>False</DeploymentContent></ClInclude>
-    <ClCompile Include="VisionManagedPCH.cpp">
-        <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug DLL|win32'">Create</PrecompiledHeader>
-        <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Dev DLL|win32'">Create</PrecompiledHeader>
-        <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClCompile Include="EngineInstances\EngineInstanceStaticMesh.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="EngineInstances\EngineInstanceRenderTarget.hpp">
@@ -298,7 +302,9 @@
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="EngineInstances\EngineInstanceParticleGroup.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
-    <ClCompile Include="EngineInstances\EngineInstanceMobileWater.cpp">
+    <ClCompile Include="VisionManagedPCH.cpp">
+        <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">Create</PrecompiledHeader>
+        <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Dev|win32'">Create</PrecompiledHeader>
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="EngineInstances\EngineInstanceVisibilityObject.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
@@ -311,24 +317,35 @@
   </ItemGroup>
   <ItemGroup>
             <Reference Include="System"><HintPath>$(OutputPath)</HintPath><Private>False</Private></Reference>
+            <Reference Include="System"><HintPath>$(OutputPath)</HintPath><Private>False</Private></Reference>
             <Reference Include="System.Data"><HintPath>$(OutputPath)</HintPath><Private>False</Private></Reference>
             <Reference Include="System.Drawing"><HintPath>$(OutputPath)</HintPath><Private>False</Private></Reference>
             <Reference Include="System.Windows.Forms"><HintPath>$(OutputPath)</HintPath><Private>False</Private></Reference>
   </ItemGroup>
   <ItemGroup>
     
-            <Reference Include="CSharpFramework.dll"><HintPath>..\..\..\..\..\..\..\Bin\win32_vs2010_anarchy\dev_dll\DX9\CSharpFramework.dll</HintPath><Private>False</Private></Reference>
+            <Reference Include="CSharpFramework.dll"><HintPath>..\..\..\..\..\..\../Bin/win32_vs2010_anarchy/dev/DX9\CSharpFramework.dll</HintPath><Private>False</Private></Reference>
     
-            <Reference Include="ManagedBase.dll"><HintPath>..\..\..\..\..\..\..\Bin\win32_vs2010_anarchy\dev_dll\DX9\ManagedBase.dll</HintPath><Private>False</Private></Reference>
+            <Reference Include="ManagedFramework.dll"><HintPath>..\..\..\..\..\..\../Bin/win32_vs2010_anarchy/dev/DX9\ManagedFramework.dll</HintPath><Private>False</Private></Reference>
     
-            <Reference Include="ManagedFramework.dll"><HintPath>..\..\..\..\..\..\..\Bin\win32_vs2010_anarchy\dev_dll\DX9\ManagedFramework.dll</HintPath><Private>False</Private></Reference>
+            <Reference Include="CSharpFramework.dll"><HintPath>..\..\..\..\..\..\../Bin/win32_vs2010_anarchy/dev/DX9\CSharpFramework.dll</HintPath><Private>False</Private></Reference>
+    
+            <Reference Include="ManagedBase.dll"><HintPath>..\..\..\..\..\..\../Bin/win32_vs2010_anarchy/dev/DX9\ManagedBase.dll</HintPath><Private>False</Private></Reference>
+    
+            <Reference Include="ManagedFramework.dll"><HintPath>..\..\..\..\..\..\../Bin/win32_vs2010_anarchy/dev/DX9\ManagedFramework.dll</HintPath><Private>False</Private></Reference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug DLL|win32'">
+<PropertyGroup>
+    <CleanDependsOn>VisionManagedDX9_CleanReflections;$(CleanDependsOn)</CleanDependsOn>
+</PropertyGroup>
+<Target Name="VisionManagedDX9_CleanReflections">
+    <Delete Files="$(MSBuildProjectDirectory)\reflectionSettings.cache;$(MSBuildProjectDirectory)\reflections.db" />
+</Target>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">
     <RunCodeAnalysis>false</RunCodeAnalysis>
     <CodeAnalysisInputAssembly>$(OutputFile)</CodeAnalysisInputAssembly>
 </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Dev DLL|win32'">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Dev|win32'">
     <RunCodeAnalysis>false</RunCodeAnalysis>
     <CodeAnalysisInputAssembly>$(OutputFile)</CodeAnalysisInputAssembly>
 </PropertyGroup>

@@ -16,6 +16,9 @@
     <Compile Include="Properties\Resources.Designer.cs">
         <Filter>Properties</Filter>
         <DeploymentContent>False</DeploymentContent></Compile>
+    <Compile Include="Shapes\HavokResourceShape.cs">
+        <Filter>Shapes</Filter>
+        <DeploymentContent>False</DeploymentContent></Compile>
     <Compile Include="Shapes\HavokConstraintChainShape.cs">
         <Filter>Shapes</Filter>
         <DeploymentContent>False</DeploymentContent></Compile>

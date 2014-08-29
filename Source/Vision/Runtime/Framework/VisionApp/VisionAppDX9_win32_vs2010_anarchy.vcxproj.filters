@@ -22,6 +22,12 @@
     <ClInclude Include="Modules\VFileServe.hpp">
         <Filter>Modules</Filter>
         <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClInclude Include="VAppImportExport.hpp">
+        <Filter></Filter>
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClInclude Include="VAppImpl.hpp">
+        <Filter></Filter>
+        <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="Helper\VAppHelper.cpp">
         <Filter>Helper</Filter>
         <DeploymentContent>False</DeploymentContent></ClCompile>
@@ -58,9 +64,6 @@
     <ClInclude Include="Modules\VLogoOverlay.hpp">
         <Filter>Modules</Filter>
         <DeploymentContent>False</DeploymentContent></ClInclude>
-    <ClCompile Include="Modules\VDebugShadingModes.cpp">
-        <Filter>Modules</Filter>
-        <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClCompile Include="Modules\VRestoreScreen.cpp">
         <Filter>Modules</Filter>
         <DeploymentContent>False</DeploymentContent></ClCompile>
@@ -88,8 +91,8 @@
     <ClInclude Include="Modules\VCameraHandling.hpp">
         <Filter>Modules</Filter>
         <DeploymentContent>False</DeploymentContent></ClInclude>
-    <ClCompile Include="Win\VAppWin.cpp">
-        <Filter>Win</Filter>
+    <ClCompile Include="Modules\VDebugShadingModes.cpp">
+        <Filter>Modules</Filter>
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClCompile Include="Modules\VDefaultMenu.cpp">
         <Filter>Modules</Filter>
@@ -103,9 +106,9 @@
     <ClCompile Include="Modules\VDebugProfiling.cpp">
         <Filter>Modules</Filter>
         <DeploymentContent>False</DeploymentContent></ClCompile>
-    <ClInclude Include="VAppImpl.hpp">
-        <Filter></Filter>
-        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClCompile Include="Win\VAppWin.cpp">
+        <Filter>Win</Filter>
+        <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="Modules\VExitHandler.hpp">
         <Filter>Modules</Filter>
         <DeploymentContent>False</DeploymentContent></ClInclude>

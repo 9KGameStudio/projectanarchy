@@ -10,12 +10,12 @@
   -->
         
   <ItemGroup Label="ProjectConfigurations">
-    <ProjectConfiguration Include="Debug DLL|win32">
-      <Configuration>Debug DLL</Configuration>
+    <ProjectConfiguration Include="Debug|win32">
+      <Configuration>Debug</Configuration>
       <Platform>win32</Platform>
     </ProjectConfiguration>
-    <ProjectConfiguration Include="Dev DLL|win32">
-      <Configuration>Dev DLL</Configuration>
+    <ProjectConfiguration Include="Dev|win32">
+      <Configuration>Dev</Configuration>
       <Platform>win32</Platform>
     </ProjectConfiguration>
   </ItemGroup>
@@ -28,13 +28,13 @@
     
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
-    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug DLL|win32'" Label="Configuration">
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|win32'" Label="Configuration">
     <CharacterSet>MultiByte</CharacterSet>
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <CLRSupport>true</CLRSupport>
     <UseOfMfc>false</UseOfMfc>
   </PropertyGroup>
-    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Dev DLL|win32'" Label="Configuration">
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Dev|win32'" Label="Configuration">
     <CharacterSet>MultiByte</CharacterSet>
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <CLRSupport>true</CLRSupport>
@@ -45,25 +45,25 @@
   </ImportGroup>
   <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   <PropertyGroup>
-<TargetExt  Condition="'$(Configuration)|$(Platform)'=='Debug DLL|win32'">.dll</TargetExt>
-<TargetExt  Condition="'$(Configuration)|$(Platform)'=='Dev DLL|win32'">.dll</TargetExt>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug DLL|win32'">Obj\win32_vs2010_anarchy\debug_dll\</IntDir>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug DLL|win32'">..\..\..\..\..\..\..\Bin\win32_vs2010_anarchy\debug_dll\DX9\</OutDir>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug DLL|win32'">TerrainManaged</TargetName>
-    <OutputFile Condition="'$(Configuration)|$(Platform)'=='Debug DLL|win32'">..\..\..\..\..\..\..\Bin\win32_vs2010_anarchy\debug_dll\DX9\TerrainManaged.dll</OutputFile>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Dev DLL|win32'">Obj\win32_vs2010_anarchy\dev_dll\</IntDir>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Dev DLL|win32'">..\..\..\..\..\..\..\Bin\win32_vs2010_anarchy\dev_dll\DX9\</OutDir>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Dev DLL|win32'">TerrainManaged</TargetName>
-    <OutputFile Condition="'$(Configuration)|$(Platform)'=='Dev DLL|win32'">..\..\..\..\..\..\..\Bin\win32_vs2010_anarchy\dev_dll\DX9\TerrainManaged.dll</OutputFile>
-    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug DLL|win32'">true</LinkIncremental>
-    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Dev DLL|win32'">true</LinkIncremental>
+<TargetExt  Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">.dll</TargetExt>
+<TargetExt  Condition="'$(Configuration)|$(Platform)'=='Dev|win32'">.dll</TargetExt>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">Obj\win32_vs2010_anarchy\debug\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">..\..\..\..\..\..\../Bin/win32_vs2010_anarchy/Debug/DX9\</OutDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">TerrainManaged</TargetName>
+    <OutputFile Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Dev|win32'">Obj\win32_vs2010_anarchy\dev\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Dev|win32'">..\..\..\..\..\..\../Bin/win32_vs2010_anarchy/Dev/DX9\</OutDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Dev|win32'">TerrainManaged</TargetName>
+    <OutputFile Condition="'$(Configuration)|$(Platform)'=='Dev|win32'">$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">true</LinkIncremental>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Dev|win32'">true</LinkIncremental>
   </PropertyGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug DLL|win32'">
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">
     
     
     
     <ClCompile>
-      <AdditionalIncludeDirectories>..\..\..\..\..\..;$(DXSDK_DIR)/Include;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Oniguruma/5.9.2;$(HAVOK_THIRDPARTY_DIR)/redistsdks;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\..\..\..;..\..\..\..\..\..;$(DXSDK_DIR)/Include;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Oniguruma/5.9.2;$(HAVOK_THIRDPARTY_DIR)/redistsdks;</AdditionalIncludeDirectories>
       <AdditionalOptions></AdditionalOptions>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
@@ -100,16 +100,16 @@
       <WarningLevel>Level3</WarningLevel>
       <CompileAsManaged>true</CompileAsManaged>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-	  
+      
     </ClCompile>
     <ResourceCompile>
       <ResourceOutputFileName></ResourceOutputFileName>
-      <AdditionalIncludeDirectories>$(IntDir)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(IntDir);</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Lib>
       <IgnoreAllDefaultLibraries></IgnoreAllDefaultLibraries>
       <AdditionalDependencies>xinput.lib;Geom2D.lib;BaseD.lib;VisionD.lib;TerrainUtil.lib;VisionEnginePluginD.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\..\..\..\..\..\Lib\win32_vs2010_anarchy\debug_dll;$(DXSDK_DIR)/Lib/x86</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\..\..\..\..\..\..\Lib\win32_vs2010_anarchy\debug;$(DXSDK_DIR)/Lib/x86</AdditionalLibraryDirectories>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <UseUnicodeResponseFiles>true</UseUnicodeResponseFiles>
@@ -117,7 +117,7 @@
     </Lib>
     <Link>
       <AdditionalDependencies>xinput.lib;Geom2D.lib;BaseD.lib;VisionD.lib;TerrainUtil.lib;VisionEnginePluginD.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\..\..\..\..\..\Lib\win32_vs2010_anarchy\debug_dll;$(DXSDK_DIR)/Lib/x86</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\..\..\..\..\..\..\Lib\win32_vs2010_anarchy\debug;$(DXSDK_DIR)/Lib/x86</AdditionalLibraryDirectories>
       <AdditionalOptions> /ignore:4221</AdditionalOptions>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ImportLibrary></ImportLibrary>
@@ -126,14 +126,15 @@
       <ManifestFile>$(IntDir)Manifest$(TargetExt).intermediate.manifest</ManifestFile>
       <OptimizeReferences></OptimizeReferences>
       <EnableCOMDATFolding></EnableCOMDATFolding>
+      <ProgramDatabaseFile>$(TargetDir)$(TargetName).pdb</ProgramDatabaseFile>
     </Link>
   </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Dev DLL|win32'">
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Dev|win32'">
     
     
     
     <ClCompile>
-      <AdditionalIncludeDirectories>..\..\..\..\..\..;$(DXSDK_DIR)/Include;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Oniguruma/5.9.2;$(HAVOK_THIRDPARTY_DIR)/redistsdks;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\..\..\..;..\..\..\..\..\..;$(DXSDK_DIR)/Include;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Oniguruma/5.9.2;$(HAVOK_THIRDPARTY_DIR)/redistsdks;</AdditionalIncludeDirectories>
       <AdditionalOptions></AdditionalOptions>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
@@ -170,16 +171,16 @@
       <WarningLevel>Level3</WarningLevel>
       <CompileAsManaged>true</CompileAsManaged>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-	  
+      
     </ClCompile>
     <ResourceCompile>
       <ResourceOutputFileName></ResourceOutputFileName>
-      <AdditionalIncludeDirectories>$(IntDir)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(IntDir);</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Lib>
       <IgnoreAllDefaultLibraries></IgnoreAllDefaultLibraries>
       <AdditionalDependencies>xinput.lib;Geom2.lib;Base.lib;Vision.lib;TerrainUtil.lib;VisionEnginePlugin.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\..\..\..\..\..\Lib\win32_vs2010_anarchy\dev_dll;$(DXSDK_DIR)/Lib/x86</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\..\..\..\..\..\..\Lib\win32_vs2010_anarchy\dev;$(DXSDK_DIR)/Lib/x86</AdditionalLibraryDirectories>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <UseUnicodeResponseFiles>true</UseUnicodeResponseFiles>
@@ -187,7 +188,7 @@
     </Lib>
     <Link>
       <AdditionalDependencies>xinput.lib;Geom2.lib;Base.lib;Vision.lib;TerrainUtil.lib;VisionEnginePlugin.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\..\..\..\..\..\Lib\win32_vs2010_anarchy\dev_dll;$(DXSDK_DIR)/Lib/x86</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\..\..\..\..\..\..\Lib\win32_vs2010_anarchy\dev;$(DXSDK_DIR)/Lib/x86</AdditionalLibraryDirectories>
       <AdditionalOptions> /ignore:4221</AdditionalOptions>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ImportLibrary></ImportLibrary>
@@ -196,6 +197,7 @@
       <ManifestFile>$(IntDir)Manifest$(TargetExt).intermediate.manifest</ManifestFile>
       <OptimizeReferences></OptimizeReferences>
       <EnableCOMDATFolding></EnableCOMDATFolding>
+      <ProgramDatabaseFile>$(TargetDir)$(TargetName).pdb</ProgramDatabaseFile>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -205,9 +207,7 @@
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="TerrainDecorationBillboardMesh.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
-    <ClCompile Include="TerrainManagedPCH.cpp">
-        <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug DLL|win32'">Create</PrecompiledHeader>
-        <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Dev DLL|win32'">Create</PrecompiledHeader>
+    <ClCompile Include="TerrainConversionHelpers.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="TerrainChangedAction.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
@@ -215,14 +215,16 @@
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="TerrainManagedPCH.h">
         <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClCompile Include="TerrainManagedPCH.cpp">
+        <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">Create</PrecompiledHeader>
+        <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Dev|win32'">Create</PrecompiledHeader>
+        <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="TerrainEngineManager.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="TerrainConversionHelpers.h">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="TerrainDecorationBillboardMesh.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
-    <ClCompile Include="TerrainConversionHelpers.cpp">
-        <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClCompile Include="HeightmapImporters.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="HeightmapImporters.hpp">
@@ -241,22 +243,28 @@
   </ItemGroup>
   <ItemGroup>
     
-            <Reference Include="CSharpFramework.dll"><HintPath>..\..\..\..\..\..\..\Bin\win32_vs2010_anarchy\dev_dll\DX9\CSharpFramework.dll</HintPath><Private>False</Private></Reference>
+            <Reference Include="CSharpFramework.dll"><HintPath>..\..\..\..\..\..\../Bin/win32_vs2010_anarchy/dev/DX9\CSharpFramework.dll</HintPath><Private>False</Private></Reference>
     
-            <Reference Include="ManagedFramework.dll"><HintPath>..\..\..\..\..\..\..\Bin\win32_vs2010_anarchy\dev_dll\DX9\ManagedFramework.dll</HintPath><Private>False</Private></Reference>
+            <Reference Include="ManagedFramework.dll"><HintPath>..\..\..\..\..\..\../Bin/win32_vs2010_anarchy/dev/DX9\ManagedFramework.dll</HintPath><Private>False</Private></Reference>
     
-            <Reference Include="ManagedBase.dll"><HintPath>..\..\..\..\..\..\..\Bin\win32_vs2010_anarchy\dev_dll\DX9\ManagedBase.dll</HintPath><Private>False</Private></Reference>
+            <Reference Include="ManagedBase.dll"><HintPath>..\..\..\..\..\..\../Bin/win32_vs2010_anarchy/dev/DX9\ManagedBase.dll</HintPath><Private>False</Private></Reference>
     
-            <Reference Include="TerrainBase.dll"><HintPath>..\..\..\..\..\..\..\Bin\win32_vs2010_anarchy\dev_dll\DX9\TerrainBase.dll</HintPath><Private>False</Private></Reference>
+            <Reference Include="TerrainBase.dll"><HintPath>..\..\..\..\..\..\../Bin/win32_vs2010_anarchy/dev/DX9\TerrainBase.dll</HintPath><Private>False</Private></Reference>
     
-            <Reference Include="VisionEditorPlugin.EditorPlugin.dll"><HintPath>..\..\..\..\..\..\..\Bin\win32_vs2010_anarchy\dev_dll\DX9\VisionEditorPlugin.EditorPlugin.dll</HintPath><Private>False</Private></Reference>
+            <Reference Include="VisionEditorPlugin.EditorPlugin.dll"><HintPath>..\..\..\..\..\..\../Bin/win32_vs2010_anarchy/dev/DX9\VisionEditorPlugin.EditorPlugin.dll</HintPath><Private>False</Private></Reference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug DLL|win32'">
+<PropertyGroup>
+    <CleanDependsOn>TerrainManagedDX9_CleanReflections;$(CleanDependsOn)</CleanDependsOn>
+</PropertyGroup>
+<Target Name="TerrainManagedDX9_CleanReflections">
+    <Delete Files="$(MSBuildProjectDirectory)\reflectionSettings.cache;$(MSBuildProjectDirectory)\reflections.db" />
+</Target>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">
     <RunCodeAnalysis>false</RunCodeAnalysis>
     <CodeAnalysisInputAssembly>$(OutputFile)</CodeAnalysisInputAssembly>
 </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Dev DLL|win32'">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Dev|win32'">
     <RunCodeAnalysis>false</RunCodeAnalysis>
     <CodeAnalysisInputAssembly>$(OutputFile)</CodeAnalysisInputAssembly>
 </PropertyGroup>

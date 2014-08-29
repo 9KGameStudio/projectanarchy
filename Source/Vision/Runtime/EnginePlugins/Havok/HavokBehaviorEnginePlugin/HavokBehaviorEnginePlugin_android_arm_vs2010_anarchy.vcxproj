@@ -33,21 +33,21 @@
 <Import Project="..\..\..\..\..\..\Build\MSBuild\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|hkAndroid'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
-    <PlatformToolset>arm-linux-androideabi-4.6</PlatformToolset>
+    <PlatformToolset>arm-linux-androideabi-4.8</PlatformToolset>
     <AndroidAPILevel>android-10</AndroidAPILevel>
     <AndroidArch>armv7-a</AndroidArch>
     <AndroidStlType>gnustl_static</AndroidStlType>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Dev|hkAndroid'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
-    <PlatformToolset>arm-linux-androideabi-4.6</PlatformToolset>
+    <PlatformToolset>arm-linux-androideabi-4.8</PlatformToolset>
     <AndroidAPILevel>android-10</AndroidAPILevel>
     <AndroidArch>armv7-a</AndroidArch>
     <AndroidStlType>gnustl_static</AndroidStlType>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|hkAndroid'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
-    <PlatformToolset>arm-linux-androideabi-4.6</PlatformToolset>
+    <PlatformToolset>arm-linux-androideabi-4.8</PlatformToolset>
     <AndroidAPILevel>android-10</AndroidAPILevel>
     <AndroidArch>armv7-a</AndroidArch>
     <AndroidStlType>gnustl_static</AndroidStlType>
@@ -60,15 +60,15 @@
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|hkAndroid'">..\..\..\..\..\..\Obj\android_arm_vs2010_anarchy\debug\HavokBehaviorEnginePlugin\</IntDir>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|hkAndroid'">..\..\..\..\..\..\Lib\android_arm_vs2010_anarchy\debug\</OutDir>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|hkAndroid'">libvHavokBehavior</TargetName>
-    <OutputFile Condition="'$(Configuration)|$(Platform)'=='Debug|hkAndroid'">..\..\..\..\..\..\Lib\android_arm_vs2010_anarchy\debug\libvHavokBehavior.a</OutputFile>
+    <OutputFile Condition="'$(Configuration)|$(Platform)'=='Debug|hkAndroid'">$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Dev|hkAndroid'">..\..\..\..\..\..\Obj\android_arm_vs2010_anarchy\dev\HavokBehaviorEnginePlugin\</IntDir>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Dev|hkAndroid'">..\..\..\..\..\..\Lib\android_arm_vs2010_anarchy\dev\</OutDir>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Dev|hkAndroid'">libvHavokBehavior</TargetName>
-    <OutputFile Condition="'$(Configuration)|$(Platform)'=='Dev|hkAndroid'">..\..\..\..\..\..\Lib\android_arm_vs2010_anarchy\dev\libvHavokBehavior.a</OutputFile>
+    <OutputFile Condition="'$(Configuration)|$(Platform)'=='Dev|hkAndroid'">$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|hkAndroid'">..\..\..\..\..\..\Obj\android_arm_vs2010_anarchy\release\HavokBehaviorEnginePlugin\</IntDir>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|hkAndroid'">..\..\..\..\..\..\Lib\android_arm_vs2010_anarchy\release\</OutDir>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|hkAndroid'">libvHavokBehavior</TargetName>
-    <OutputFile Condition="'$(Configuration)|$(Platform)'=='Release|hkAndroid'">..\..\..\..\..\..\Lib\android_arm_vs2010_anarchy\release\libvHavokBehavior.a</OutputFile>
+    <OutputFile Condition="'$(Configuration)|$(Platform)'=='Release|hkAndroid'">$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|hkAndroid'"></LinkIncremental>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Dev|hkAndroid'"></LinkIncremental>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|hkAndroid'"></LinkIncremental>
@@ -85,7 +85,7 @@
       <PrecompiledHeaderFile></PrecompiledHeaderFile>
       <PrecompiledHeaderOutputFile>HavokBehaviorEnginePlugin.pch</PrecompiledHeaderOutputFile>
       <AdditionalOptions>-ffunction-sections -fno-inline %(AdditionalOptions) %(AdditionalOptions)</AdditionalOptions>
-      <PreprocessorDefinitions>_DEBUG;HK_DEBUG;HK_DEBUG_SLOW;HK_ANARCHY;PROFILING;_VISION_POSIX;_VISION_ANDROID;_VISION_NO_WARNING_IMAGE_FORMAT;VBASE_LIB;LINK_WITH_VISION;VISIONDLL_LIB;USE_HAVOK;VLUA_USE_SWIG_BINDING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;HK_DEBUG;HK_DEBUG_SLOW;HK_ANARCHY;PROFILING;_VISION_POSIX;_VISION_ANDROID;_VISION_NO_WARNING_IMAGE_FORMAT;VBASE_LIB;LINK_WITH_VISION;VISIONDLL_LIB;USE_HAVOK;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <UndefinePreprocessorDefinitions>%(UndefinePreprocessorDefinitions)</UndefinePreprocessorDefinitions>
       <AdditionalIncludeDirectories>..\..\..\..\..;$(NDKROOT)/sources;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ProducesObjectFile>true</ProducesObjectFile>
@@ -100,7 +100,7 @@
       <CLanguageDialect>ISO_C99</CLanguageDialect>
       <ImplicitSourceFileInclusion>Off</ImplicitSourceFileInclusion>
       <SupportImplicitTypenames></SupportImplicitTypenames>
-      <RunTimeTypeInformationSupport></RunTimeTypeInformationSupport>
+      <RuntimeTypeInfo></RuntimeTypeInfo>
       <ObjectFileName>$(IntDir)%(FileName).o</ObjectFileName>
       <QuitAfterWarnings>Off</QuitAfterWarnings>
       <Warnings>AllWarnings</Warnings>
@@ -116,7 +116,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </ClCompile>
     <Lib>
-      <OutputFile>$(OutDir)\libvHavokBehavior.a</OutputFile>
+      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
       <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
       <LibrarianCommand>-rmc</LibrarianCommand>
       <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
@@ -206,11 +206,11 @@
       <PrecompiledHeaderFile></PrecompiledHeaderFile>
       <PrecompiledHeaderOutputFile>HavokBehaviorEnginePlugin.pch</PrecompiledHeaderOutputFile>
       <AdditionalOptions>-ffunction-sections %(AdditionalOptions) %(AdditionalOptions)</AdditionalOptions>
-      <PreprocessorDefinitions>HK_DEBUG;HK_ANARCHY;PROFILING;_VISION_POSIX;_VISION_ANDROID;_VISION_NO_WARNING_IMAGE_FORMAT;VBASE_LIB;LINK_WITH_VISION;VISIONDLL_LIB;USE_HAVOK;VLUA_USE_SWIG_BINDING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>HK_DEBUG;HK_ANARCHY;PROFILING;_VISION_POSIX;_VISION_ANDROID;_VISION_NO_WARNING_IMAGE_FORMAT;VBASE_LIB;LINK_WITH_VISION;VISIONDLL_LIB;USE_HAVOK;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <UndefinePreprocessorDefinitions>%(UndefinePreprocessorDefinitions)</UndefinePreprocessorDefinitions>
       <AdditionalIncludeDirectories>..\..\..\..\..;$(NDKROOT)/sources;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ProducesObjectFile>true</ProducesObjectFile>
-      <OptimizationLevel>Ofast</OptimizationLevel>
+      <OptimizationLevel>O3</OptimizationLevel>
       <CppInliningLevel></CppInliningLevel>
       <SourceRoot>.</SourceRoot>
       <DebuggingLevel>MULTI</DebuggingLevel>
@@ -221,7 +221,7 @@
       <CLanguageDialect>ISO_C99</CLanguageDialect>
       <ImplicitSourceFileInclusion>Off</ImplicitSourceFileInclusion>
       <SupportImplicitTypenames></SupportImplicitTypenames>
-      <RunTimeTypeInformationSupport></RunTimeTypeInformationSupport>
+      <RuntimeTypeInfo></RuntimeTypeInfo>
       <ObjectFileName>$(IntDir)%(FileName).o</ObjectFileName>
       <QuitAfterWarnings>Off</QuitAfterWarnings>
       <Warnings>AllWarnings</Warnings>
@@ -237,7 +237,7 @@
       <GenerateDebugInformation>false</GenerateDebugInformation>
     </ClCompile>
     <Lib>
-      <OutputFile>$(OutDir)\libvHavokBehavior.a</OutputFile>
+      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
       <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
       <LibrarianCommand>-rmc</LibrarianCommand>
       <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
@@ -327,11 +327,11 @@
       <PrecompiledHeaderFile></PrecompiledHeaderFile>
       <PrecompiledHeaderOutputFile>HavokBehaviorEnginePlugin.pch</PrecompiledHeaderOutputFile>
       <AdditionalOptions>-ffunction-sections %(AdditionalOptions) %(AdditionalOptions)</AdditionalOptions>
-      <PreprocessorDefinitions>;HK_ANARCHY;PROFILING;_VISION_POSIX;_VISION_ANDROID;_VISION_NO_WARNING_IMAGE_FORMAT;VBASE_LIB;LINK_WITH_VISION;VISIONDLL_LIB;USE_HAVOK;VLUA_USE_SWIG_BINDING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>;HK_ANARCHY;PROFILING;_VISION_POSIX;_VISION_ANDROID;_VISION_NO_WARNING_IMAGE_FORMAT;VBASE_LIB;LINK_WITH_VISION;VISIONDLL_LIB;USE_HAVOK;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <UndefinePreprocessorDefinitions>%(UndefinePreprocessorDefinitions)</UndefinePreprocessorDefinitions>
       <AdditionalIncludeDirectories>..\..\..\..\..;$(NDKROOT)/sources;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ProducesObjectFile>true</ProducesObjectFile>
-      <OptimizationLevel>Ofast</OptimizationLevel>
+      <OptimizationLevel>O3</OptimizationLevel>
       <CppInliningLevel></CppInliningLevel>
       <SourceRoot>.</SourceRoot>
       <DebuggingLevel>MULTI</DebuggingLevel>
@@ -342,7 +342,7 @@
       <CLanguageDialect>ISO_C99</CLanguageDialect>
       <ImplicitSourceFileInclusion>Off</ImplicitSourceFileInclusion>
       <SupportImplicitTypenames></SupportImplicitTypenames>
-      <RunTimeTypeInformationSupport></RunTimeTypeInformationSupport>
+      <RuntimeTypeInfo></RuntimeTypeInfo>
       <ObjectFileName>$(IntDir)%(FileName).o</ObjectFileName>
       <QuitAfterWarnings>Off</QuitAfterWarnings>
       <Warnings>AllWarnings</Warnings>
@@ -358,7 +358,7 @@
       <GenerateDebugInformation>false</GenerateDebugInformation>
     </ClCompile>
     <Lib>
-      <OutputFile>$(OutDir)\libvHavokBehavior.a</OutputFile>
+      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
       <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
       <LibrarianCommand>-rmc</LibrarianCommand>
       <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
@@ -443,12 +443,6 @@
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClCompile Include="vHavokBehaviorModule.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
-    <CustomBuild Include="Lua\HavokBehaviorLuaModule.i">
-        <AdditionalInputs>..\..\VisionEnginePlugin\Scripting\Lua\VColor.i;..\..\VisionEnginePlugin\Scripting\Lua\VTypedObject.i;..\..\VisionEnginePlugin\Scripting\Lua\VisApiTypedEngineObject.i;..\..\VisionEnginePlugin\Scripting\Lua\VisApiObjectComponent.i;..\..\VisionEnginePlugin\Scripting\Lua\VisApiObject3D.i;..\..\VisionEnginePlugin\Scripting\Lua\VisApiBaseEntity.i;Lua\vHavokBehaviorComponent.i</AdditionalInputs>
-        <Outputs>Lua/BehaviorLuaModule_wrapper.cpp</Outputs>
-        <FileType>Document</FileType>
-        <Command>&quot;$(HAVOK_THIRDPARTY_DIR)\redistsdks\swig\2.0.3\swig.exe&quot; -c++ -lua -verbose -o Lua/BehaviorLuaModule_wrapper.cpp -I..\..\..\..\.. Lua\HavokBehaviorLuaModule.i&#x0D;&#x0A;&quot;..\..\..\..\..\..\Build\StandaloneTools\Iswig\Exe\iswig.exe&quot; --includePre &quot;Vision/Runtime/EnginePlugins/Havok/HavokBehaviorEnginePlugin/HavokBehaviorEnginePlugin.hpp Vision/Runtime/EnginePlugins/Havok/HavokBehaviorEnginePlugin/vHavokBehaviorModule.hpp Vision/Runtime/EnginePlugins/Havok/HavokBehaviorEnginePlugin/vHavokBehaviorComponent.hpp&quot; Lua/BehaviorLuaModule_wrapper.cpp</Command>
-        <DeploymentContent>False</DeploymentContent></CustomBuild>
     <Compile Include="Lua\vHavokBehaviorComponent.i">
         <DeploymentContent>False</DeploymentContent></Compile>
     <ClInclude Include="vHavokBehaviorClassReg.h">
@@ -457,6 +451,12 @@
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="HavokBehaviorEnginePlugin.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
+    <CustomBuild Include="Lua\HavokBehaviorLuaModule.i">
+        <AdditionalInputs>..\..\VisionEnginePlugin\Scripting\Lua\VColor.i;..\..\VisionEnginePlugin\Scripting\Lua\VTypedObject.i;..\..\VisionEnginePlugin\Scripting\Lua\VisApiTypedEngineObject.i;..\..\VisionEnginePlugin\Scripting\Lua\VisApiObjectComponent.i;..\..\VisionEnginePlugin\Scripting\Lua\VisApiObject3D.i;..\..\VisionEnginePlugin\Scripting\Lua\VisApiBaseEntity.i;Lua\vHavokBehaviorComponent.i</AdditionalInputs>
+        <Outputs>Lua/BehaviorLuaModule_wrapper.cpp</Outputs>
+        <FileType>Document</FileType>
+        <Command>&quot;$(HAVOK_THIRDPARTY_DIR)\redistsdks\swig\2.0.3_VisionRTTI\swig.exe&quot; -c++ -lua -verbose -o Lua/BehaviorLuaModule_wrapper.cpp -I..\..\..\..\.. Lua\HavokBehaviorLuaModule.i&#x0D;&#x0A;&quot;..\..\..\..\..\..\Build\StandaloneTools\Iswig\Exe\iswig.exe&quot; --includePre &quot;Vision/Runtime/EnginePlugins/Havok/HavokBehaviorEnginePlugin/HavokBehaviorEnginePlugin.hpp Vision/Runtime/EnginePlugins/Havok/HavokBehaviorEnginePlugin/vHavokBehaviorModule.hpp Vision/Runtime/EnginePlugins/Havok/HavokBehaviorEnginePlugin/vHavokBehaviorComponent.hpp&quot; Lua/BehaviorLuaModule_wrapper.cpp</Command>
+        <DeploymentContent>False</DeploymentContent></CustomBuild>
     <ClInclude Include="vHavokBehaviorResourceManager.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="vHavokBehaviorComponent.cpp">
@@ -480,6 +480,12 @@
   <ItemGroup>
   </ItemGroup>
 <Import Project="..\..\..\..\..\..\Build\MSBuild\Microsoft.Cpp.targets" />
+<PropertyGroup>
+    <CleanDependsOn>HavokBehaviorEnginePlugin_CleanReflections;$(CleanDependsOn)</CleanDependsOn>
+</PropertyGroup>
+<Target Name="HavokBehaviorEnginePlugin_CleanReflections">
+    <Delete Files="$(MSBuildProjectDirectory)\reflectionSettings.cache;$(MSBuildProjectDirectory)\reflections.db" />
+</Target>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|hkAndroid'">
 </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Dev|hkAndroid'">

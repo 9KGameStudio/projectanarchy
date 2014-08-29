@@ -133,6 +133,9 @@
     <ClInclude Include="EngineInstances\EngineInstancePathCamera.hpp">
         <Filter>EngineInstances</Filter>
         <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClInclude Include="Tools\AutoPlacementTool.hpp">
+        <Filter>Tools</Filter>
+        <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="EngineInstances\EngineInstanceParticleGroup.cpp">
         <Filter>EngineInstances</Filter>
         <DeploymentContent>False</DeploymentContent></ClCompile>
@@ -174,6 +177,9 @@
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="EngineInstances\EngineInstanceMobileWater.cpp">
         <Filter>EngineInstances</Filter>
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClCompile Include="Tools\AutoPlacementTool.cpp">
+        <Filter>Tools</Filter>
         <DeploymentContent>False</DeploymentContent></ClCompile>
 
   </ItemGroup>

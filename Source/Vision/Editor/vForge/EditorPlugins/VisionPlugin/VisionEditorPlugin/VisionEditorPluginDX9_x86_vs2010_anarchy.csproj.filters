@@ -34,13 +34,10 @@
     <Compile Include="Tests\CustomVolumeShapeTest.cs">
         <Filter>Tests</Filter>
         <DeploymentContent>False</DeploymentContent></Compile>
-    <Compile Include="Shapes\RenderTargetShape.cs">
-        <Filter>Shapes</Filter>
+    <Compile Include="Tests\StaticMeshTest.cs">
+        <Filter>Tests</Filter>
         <DeploymentContent>False</DeploymentContent></Compile>
     <Compile Include="Shapes\PrefabShape.cs">
-        <Filter>Shapes</Filter>
-        <DeploymentContent>False</DeploymentContent></Compile>
-    <Compile Include="Shapes\PostProcessingShape.cs">
         <Filter>Shapes</Filter>
         <DeploymentContent>False</DeploymentContent></Compile>
     <Compile Include="Shapes\CubemapShape.cs">
@@ -95,9 +92,6 @@
         <Filter>Shapes</Filter>
         <DeploymentContent>False</DeploymentContent></Compile>
     <Compile Include="Tests\ProjectorShapeTest.cs">
-        <Filter>Tests</Filter>
-        <DeploymentContent>False</DeploymentContent></Compile>
-    <Compile Include="Tests\StaticMeshTest.cs">
         <Filter>Tests</Filter>
         <DeploymentContent>False</DeploymentContent></Compile>
     <Compile Include="Dialogs\DecorationInstanceContextDlg.Designer.cs">

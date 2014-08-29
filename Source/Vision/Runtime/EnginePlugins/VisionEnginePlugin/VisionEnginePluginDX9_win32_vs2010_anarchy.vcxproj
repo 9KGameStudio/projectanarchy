@@ -9,12 +9,12 @@
   -->
         
   <ItemGroup Label="ProjectConfigurations">
-    <ProjectConfiguration Include="Debug DLL|win32">
-      <Configuration>Debug DLL</Configuration>
+    <ProjectConfiguration Include="Debug|win32">
+      <Configuration>Debug</Configuration>
       <Platform>win32</Platform>
     </ProjectConfiguration>
-    <ProjectConfiguration Include="Dev DLL|win32">
-      <Configuration>Dev DLL</Configuration>
+    <ProjectConfiguration Include="Dev|win32">
+      <Configuration>Dev</Configuration>
       <Platform>win32</Platform>
     </ProjectConfiguration>
   </ItemGroup>
@@ -27,13 +27,13 @@
     
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
-    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug DLL|win32'" Label="Configuration">
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|win32'" Label="Configuration">
     <CharacterSet>MultiByte</CharacterSet>
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <CLRSupport>false</CLRSupport>
     <UseOfMfc>false</UseOfMfc>
   </PropertyGroup>
-    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Dev DLL|win32'" Label="Configuration">
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Dev|win32'" Label="Configuration">
     <CharacterSet>MultiByte</CharacterSet>
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <CLRSupport>false</CLRSupport>
@@ -44,20 +44,20 @@
   </ImportGroup>
   <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   <PropertyGroup>
-<TargetExt  Condition="'$(Configuration)|$(Platform)'=='Debug DLL|win32'">.vPluginD</TargetExt>
-<TargetExt  Condition="'$(Configuration)|$(Platform)'=='Dev DLL|win32'">.vPlugin</TargetExt>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug DLL|win32'">..\..\..\..\..\Obj\win32_vs2010_anarchy\debug_dll\VisionEnginePluginDX9\</IntDir>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug DLL|win32'">..\..\..\..\..\Bin\win32_vs2010_anarchy\Debug_DLL\DX9\</OutDir>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug DLL|win32'">VisionEnginePlugin</TargetName>
-    <OutputFile Condition="'$(Configuration)|$(Platform)'=='Debug DLL|win32'">..\..\..\..\..\Bin\win32_vs2010_anarchy\Debug_DLL\DX9\VisionEnginePlugin.vPluginD</OutputFile>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Dev DLL|win32'">..\..\..\..\..\Obj\win32_vs2010_anarchy\dev_dll\VisionEnginePluginDX9\</IntDir>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Dev DLL|win32'">..\..\..\..\..\Bin\win32_vs2010_anarchy\Dev_DLL\DX9\</OutDir>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Dev DLL|win32'">VisionEnginePlugin</TargetName>
-    <OutputFile Condition="'$(Configuration)|$(Platform)'=='Dev DLL|win32'">..\..\..\..\..\Bin\win32_vs2010_anarchy\Dev_DLL\DX9\VisionEnginePlugin.vPlugin</OutputFile>
-    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug DLL|win32'">true</LinkIncremental>
-    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Dev DLL|win32'">true</LinkIncremental>
+<TargetExt  Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">.vPluginD</TargetExt>
+<TargetExt  Condition="'$(Configuration)|$(Platform)'=='Dev|win32'">.vPlugin</TargetExt>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">..\..\..\..\..\Obj\win32_vs2010_anarchy\debug\VisionEnginePluginDX9\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">..\..\..\..\../Bin/win32_vs2010_anarchy/Debug/DX9\</OutDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">VisionEnginePlugin</TargetName>
+    <OutputFile Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Dev|win32'">..\..\..\..\..\Obj\win32_vs2010_anarchy\dev\VisionEnginePluginDX9\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Dev|win32'">..\..\..\..\../Bin/win32_vs2010_anarchy/Dev/DX9\</OutDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Dev|win32'">VisionEnginePlugin</TargetName>
+    <OutputFile Condition="'$(Configuration)|$(Platform)'=='Dev|win32'">$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">true</LinkIncremental>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Dev|win32'">true</LinkIncremental>
   </PropertyGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug DLL|win32'">
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">
     
     
     <PostBuildEvent>
@@ -65,7 +65,7 @@
     </PostBuildEvent>
     
     <ClCompile>
-      <AdditionalIncludeDirectories>..\..\..\..;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/;$(DXSDK_DIR)/Include;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\..;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/;$(DXSDK_DIR)/Include;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/;..\..\..\..;</AdditionalIncludeDirectories>
       <AdditionalOptions></AdditionalOptions>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
@@ -102,16 +102,16 @@
       <WarningLevel>Level3</WarningLevel>
       <CompileAsManaged>false</CompileAsManaged>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-	  
+      
     </ClCompile>
     <ResourceCompile>
       <ResourceOutputFileName></ResourceOutputFileName>
-      <AdditionalIncludeDirectories>$(IntDir)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(IntDir);</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Lib>
       <IgnoreAllDefaultLibraries></IgnoreAllDefaultLibraries>
       <AdditionalDependencies>lua100D.lib;BaseD.lib;VisionD.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\..\..\..\Lib\win32_vs2010_anarchy\debug_dll;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(DXSDK_DIR)/Lib/x86</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\..\..\..\..\Lib\win32_vs2010_anarchy\debug;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(DXSDK_DIR)/Lib/x86</AdditionalLibraryDirectories>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <UseUnicodeResponseFiles>true</UseUnicodeResponseFiles>
@@ -119,19 +119,20 @@
     </Lib>
     <Link>
       <AdditionalDependencies>lua100D.lib;BaseD.lib;VisionD.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\..\..\..\Lib\win32_vs2010_anarchy\debug_dll;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(DXSDK_DIR)/Lib/x86</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\..\..\..\..\Lib\win32_vs2010_anarchy\debug;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(DXSDK_DIR)/Lib/x86</AdditionalLibraryDirectories>
       <AdditionalOptions> /ignore:4221</AdditionalOptions>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <ImportLibrary>..\..\..\..\..\Lib\win32_vs2010_anarchy\debug_dll\$(TargetName)D.lib</ImportLibrary>
+      <ImportLibrary>..\..\..\..\..\Lib\win32_vs2010_anarchy\debug\$(TargetName)D.lib</ImportLibrary>
       <AssemblyDebug></AssemblyDebug>
       <SubSystem>Console</SubSystem>
       <ManifestFile>$(IntDir)Manifest$(TargetExt).intermediate.manifest</ManifestFile>
       <OptimizeReferences></OptimizeReferences>
       <EnableCOMDATFolding></EnableCOMDATFolding>
+      <ProgramDatabaseFile>$(TargetDir)$(TargetName).pdb</ProgramDatabaseFile>
      <IgnoreSpecificDefaultLibraries>libc.lib;libcmtd.lib;</IgnoreSpecificDefaultLibraries>
     </Link>
   </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Dev DLL|win32'">
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Dev|win32'">
     
     
     <PostBuildEvent>
@@ -139,7 +140,7 @@
     </PostBuildEvent>
     
     <ClCompile>
-      <AdditionalIncludeDirectories>..\..\..\..;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/;$(DXSDK_DIR)/Include;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\..;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/;$(DXSDK_DIR)/Include;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/;..\..\..\..;</AdditionalIncludeDirectories>
       <AdditionalOptions></AdditionalOptions>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
@@ -176,16 +177,16 @@
       <WarningLevel>Level3</WarningLevel>
       <CompileAsManaged>false</CompileAsManaged>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-	  
+      
     </ClCompile>
     <ResourceCompile>
       <ResourceOutputFileName></ResourceOutputFileName>
-      <AdditionalIncludeDirectories>$(IntDir)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(IntDir);</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Lib>
       <IgnoreAllDefaultLibraries></IgnoreAllDefaultLibraries>
       <AdditionalDependencies>lua100.lib;Base.lib;Vision.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\..\..\..\Lib\win32_vs2010_anarchy\dev_dll;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(DXSDK_DIR)/Lib/x86</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\..\..\..\..\Lib\win32_vs2010_anarchy\dev;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(DXSDK_DIR)/Lib/x86</AdditionalLibraryDirectories>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <UseUnicodeResponseFiles>true</UseUnicodeResponseFiles>
@@ -193,15 +194,16 @@
     </Lib>
     <Link>
       <AdditionalDependencies>lua100.lib;Base.lib;Vision.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\..\..\..\Lib\win32_vs2010_anarchy\dev_dll;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(DXSDK_DIR)/Lib/x86</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\..\..\..\..\Lib\win32_vs2010_anarchy\dev;$(HAVOK_THIRDPARTY_DIR)/redistsdks/Lua/5.1.4/lib;$(DXSDK_DIR)/Lib/x86</AdditionalLibraryDirectories>
       <AdditionalOptions> /ignore:4221</AdditionalOptions>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <ImportLibrary>..\..\..\..\..\Lib\win32_vs2010_anarchy\dev_dll\$(TargetName).lib</ImportLibrary>
+      <ImportLibrary>..\..\..\..\..\Lib\win32_vs2010_anarchy\dev\$(TargetName).lib</ImportLibrary>
       <AssemblyDebug></AssemblyDebug>
       <SubSystem>Console</SubSystem>
       <ManifestFile>$(IntDir)Manifest$(TargetExt).intermediate.manifest</ManifestFile>
       <OptimizeReferences></OptimizeReferences>
       <EnableCOMDATFolding></EnableCOMDATFolding>
+      <ProgramDatabaseFile>$(TargetDir)$(TargetName).pdb</ProgramDatabaseFile>
      <IgnoreSpecificDefaultLibraries>libc.lib;libcmt.lib;</IgnoreSpecificDefaultLibraries>
     </Link>
   </ItemDefinitionGroup>
@@ -216,8 +218,8 @@
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="Rendering\Effects\Cloth\ClothMesh.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
-    <ClCompile Include="Terrain\Math\LargePosition.cpp">
-        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <Compile Include="Scripting\Lua\VAnimationComponent.i">
+        <DeploymentContent>False</DeploymentContent></Compile>
     <ClInclude Include="GUI\Controls\VItemContainer.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="Rendering\ShadowMapping\VMobileShadowMapComponentSpotDirectional.hpp">
@@ -263,13 +265,13 @@
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <Compile Include="Scripting\Lua\VisApiObject3D.i">
         <DeploymentContent>False</DeploymentContent></Compile>
-    <Compile Include="Scripting\Lua\hkvVec3.i">
-        <DeploymentContent>False</DeploymentContent></Compile>
+    <ClInclude Include="Rendering\RenderingHelpers\TimeOfDay.hpp">
+        <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="Input\VVirtualThumbStick.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <Compile Include="Scripting\Lua\VTypedObject.i">
         <DeploymentContent>False</DeploymentContent></Compile>
-    <ClInclude Include="Resources\VResourcePreview.hpp">
+    <ClInclude Include="Rendering\Postprocessing\VPostProcessUpscale.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="Scene\progresswrapper.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
@@ -278,6 +280,8 @@
     <ClCompile Include="Rendering\Postprocessing\SimpleCopyPostprocess.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="Rendering\Effects\BillboardGroup.hpp">
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClInclude Include="Rendering\Postprocessing\FXAA.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="Animation\Transition\VTransitionStateMachine.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
@@ -309,8 +313,8 @@
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="Animation\Transition\VTransitionBase.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
-    <Compile Include="Scripting\Lua\VAnimationComponent.i">
-        <DeploymentContent>False</DeploymentContent></Compile>
+    <ClInclude Include="GUI\VGUICommandBuffer.hpp">
+        <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="Terrain\Editing\ITerrainFilter.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="Rendering\MobileForwardRenderer\VMobileForwardRenderer.hpp">
@@ -339,6 +343,8 @@
         <DeploymentContent>False</DeploymentContent></Compile>
     <ClInclude Include="Components\VOrbitCamera.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClCompile Include="Rendering\Effects\VLightShafts.cpp">
+        <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClCompile Include="Components\VOrbitCamera.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="Terrain\Editing\UndoableSectorActions.hpp">
@@ -381,6 +387,8 @@
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <Compile Include="Scripting\Lua\IVRendererNode.i">
         <DeploymentContent>False</DeploymentContent></Compile>
+    <ClCompile Include="Terrain\Geometry\TerrainVisibilityCollector.cpp">
+        <DeploymentContent>False</DeploymentContent></ClCompile>
     <Compile Include="Scripting\Lua\VisApiBaseEntity.i">
         <DeploymentContent>False</DeploymentContent></Compile>
     <ClCompile Include="Animation\Transition\VTransitionManager.cpp">
@@ -403,6 +411,8 @@
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="Particles\StochasticalParam.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClCompile Include="Rendering\Postprocessing\FXAA.cpp">
+        <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="Terrain\Geometry\TerrainCollisionMesh.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="Rendering\Postprocessing\PostProcessBase.cpp">
@@ -423,6 +433,8 @@
         <DeploymentContent>False</DeploymentContent></Compile>
     <ClInclude Include="Rendering\PathRendering\VDebugPathRenderer.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClCompile Include="Particles\ParticleEffect.cpp">
+        <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClCompile Include="Terrain\Editing\EditableTerrainSector.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="Scene\VPrefab.hpp">
@@ -473,8 +485,6 @@
         <DeploymentContent>False</DeploymentContent></Compile>
     <Compile Include="Scripting\Lua\VScriptUtil_wrapper.i">
         <DeploymentContent>False</DeploymentContent></Compile>
-    <ClInclude Include="Rendering\RenderingHelpers\TimeOfDay.hpp">
-        <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="Terrain\Geometry\TerrainSectorMesh.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="Rendering\Effects\VLensFlareComponent.hpp">
@@ -490,6 +500,10 @@
     <ClCompile Include="Rendering\ShadowMapping\VShadowMapGenerator.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <Compile Include="Scripting\Lua\VisApiContextCamera.i">
+        <DeploymentContent>False</DeploymentContent></Compile>
+    <ClInclude Include="Rendering\Postprocessing\VPostProcessNoiseAndVignette.hpp">
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <Compile Include="Scripting\Lua\VScriptRenderer_wrapper.i">
         <DeploymentContent>False</DeploymentContent></Compile>
     <ClCompile Include="Rendering\Effects\VLightClippingVolumeRenderer.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
@@ -521,7 +535,7 @@
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <Compile Include="VisionEnginePlugin.rc2">
         <DeploymentContent>False</DeploymentContent></Compile>
-    <Compile Include="Scripting\Lua\VScriptRenderer_wrapper.i">
+    <Compile Include="Scripting\Lua\hkvVec3.i">
         <DeploymentContent>False</DeploymentContent></Compile>
     <ClInclude Include="Input\VZoomDetector.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
@@ -529,12 +543,16 @@
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClCompile Include="Components\VAnimationEventEffectTrigger.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
-    <Compile Include="Scripting\Lua\VBitmask.i">
-        <DeploymentContent>False</DeploymentContent></Compile>
+    <ClInclude Include="Rendering\Effects\VLightShafts.hpp">
+        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClCompile Include="GUI\VDialogResource.cpp">
+        <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="Terrain\Geometry\TerrainDecorationInstance.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="Terrain\Geometry\SectorTile.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClInclude Include="Rendering\ForwardRenderer\VSimpleShaderProvider.hpp">
+        <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="GUI\Controls\VControlHelperObjects.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClCompile Include="Rendering\MobileForwardRenderer\VFakeSpecularGenerator.cpp">
@@ -549,6 +567,8 @@
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="Terrain\Geometry\TerrainCollisionMesh.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClInclude Include="Resources\VResourcePreview.hpp">
+        <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="Entities\TriggerBoxEntity.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="GUI\Controls\VSliderControl.cpp">
@@ -602,6 +622,7 @@
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClCompile Include="Terrain\Geometry\TerrainDecorationInstance.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
+    <None Include="Particles\ParticleEffect.inl"><DeploymentContent>False</DeploymentContent></None>
     <Compile Include="Scripting\Lua\hkvQuat.i">
         <DeploymentContent>False</DeploymentContent></Compile>
     <ClCompile Include="Scripting\Lua\VisionLuaModule_wrapper.cpp">
@@ -616,7 +637,7 @@
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="Components\VSkeletalBoneProxy.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
-    <ClInclude Include="Rendering\ForwardRenderer\VSimpleShaderProvider.hpp">
+    <ClInclude Include="Particles\ParticleEffect.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <Compile Include="Scripting\Lua\VScriptFileSystem_wrapper.i">
         <DeploymentContent>False</DeploymentContent></Compile>
@@ -626,10 +647,14 @@
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="Scripting\VLuaHelpers.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClInclude Include="GUI\Controls\VTreeControl.hpp">
+        <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="Scripting\VLuaLib.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="Rendering\PathRendering\IVPathRenderingData\VPathRenderingData.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClInclude Include="Input\VStringInputMapManager.hpp">
+        <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="Terrain\Editing\DecorationDensityChannel.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="GUI\Controls\VListControls.hpp">
@@ -736,8 +761,8 @@
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClCompile Include="Terrain\Editing\TerrainSectorRenderer.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
-    <ClInclude Include="GUI\VGUICommandBuffer.hpp">
-        <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClCompile Include="GUI\Controls\VTreeControl.cpp">
+        <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="Terrain\Application\EditableTerrain.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="Scripting\VScriptComponent.cpp">
@@ -746,10 +771,6 @@
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="Terrain\Editing\EditableTerrainSector.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
-    <ClCompile Include="VisionEnginePluginPCH.cpp">
-        <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug DLL|win32'">Create</PrecompiledHeader>
-        <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Dev DLL|win32'">Create</PrecompiledHeader>
-        <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="GUI\Controls\VControlHelperObjects.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="Rendering\ShadowMapping\VMobileShadowMapComponentSpotDirectional.cpp">
@@ -762,12 +783,14 @@
         <DeploymentContent>False</DeploymentContent></Compile>
     <ClInclude Include="Rendering\NullRenderer\VNullVisibilityCollector.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClCompile Include="Rendering\Postprocessing\VPostProcessUpscale.cpp">
+        <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="Scripting\RSDClient\VRSDClient.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <Compile Include="Scripting\Lua\VisApiScreenMask.i">
         <DeploymentContent>False</DeploymentContent></Compile>
-    <ClCompile Include="Terrain\Geometry\TerrainVisibilityCollector.cpp">
-        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <Compile Include="Scripting\Lua\VBitmask.i">
+        <DeploymentContent>False</DeploymentContent></Compile>
     <ClInclude Include="Rendering\RendererNode\VRendererNodeCommon.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="Components\VPlayableCharacterComponent.hpp">
@@ -790,31 +813,29 @@
         <DeploymentContent>False</DeploymentContent></Compile>
     <Compile Include="Scripting\Lua\VisPathNode_cl.i">
         <DeploymentContent>False</DeploymentContent></Compile>
-    <None Include="Particles\ParticleDescriptor.inl"><DeploymentContent>False</DeploymentContent></None>
+    <ClCompile Include="Rendering\RendererNode\VRendererNodeCommon.cpp">
+        <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="Terrain\Application\TerrainConfig.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClInclude Include="Particles\ParticleGroupBase.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
-    <CustomBuild Include="Scripting\Lua\VisionLuaModule.i">
-        <AdditionalInputs>Scripting\Lua\VScriptConstants.hpp;Scripting\Lua\hkvVec2.i;Scripting\Lua\hkvVec3.i;Scripting\Lua\hkvVec4.i;Scripting\Lua\hkvMat3.i;Scripting\Lua\hkvMat4.i;Scripting\Lua\hkvPlane.i;Scripting\Lua\hkvQuat.i;Scripting\Lua\hkvAlignedBBox.i;Scripting\Lua\hkvBoundingSphere.i;Scripting\Lua\VColor.i;Scripting\Lua\VBitmask.i;Scripting\Lua\VTypedObject.i;Scripting\Lua\VisApiTypedEngineObject.i;Scripting\Lua\VisApiObject3D.i;Scripting\Lua\VisApiObjectComponent.i;Scripting\Lua\VisApiBaseEntity.i;Scripting\Lua\ParticleGroupBase.i;Scripting\Lua\VisApiDynamicMesh.i;Scripting\Lua\VisApiLightSource.i;Scripting\Lua\VisApiStaticMeshInstance.i;Scripting\Lua\VisApiSurface.i;Scripting\Lua\VTextureObject.i;Scripting\Lua\VisApiContextCamera.i;Scripting\Lua\VisApiRenderer.i;Scripting\Lua\TriggerBoxEntity.i;Scripting\Lua\VisApiScreenMask.i;Scripting\Lua\IVRendererNode.i;Scripting\Lua\PostProcessBase.i;Scripting\Lua\CubeMapHandle.i;Scripting\Lua\PathCameraEntity.i;Scripting\Lua\VisApiTriggerComponent.i;Scripting\Lua\VTransitionStateMachine.i;Scripting\Lua\VAnimationComponent.i;Scripting\Lua\VTimedValueComponent.i;Scripting\Lua\VGUIManager.i;Scripting\Lua\VWindowBase.i;Scripting\Lua\VDialog.i;Scripting\Lua\VStringInputMap.i;Scripting\Lua\VisApiGame.i;Scripting\Lua\VisionTimer.i;Scripting\Lua\VisionConsoleManager.i;Scripting\Lua\VisApiPersistentData.i</AdditionalInputs>
-        <Outputs>Scripting/Lua/VisionLuaModule_wrapper.cpp</Outputs>
-        <FileType>Document</FileType>
-        <Command>&quot;$(HAVOK_THIRDPARTY_DIR)\redistsdks\swig\2.0.3\swig.exe&quot; -c++ -lua -verbose -o Scripting/Lua/VisionLuaModule_wrapper.cpp -I..\..\..\.. Scripting\Lua\VisionLuaModule.i&#x0D;&#x0A;&quot;..\..\..\..\..\Build\StandaloneTools\Iswig\Exe\iswig.exe&quot; --includePre &quot;Vision/Runtime/EnginePlugins/VisionEnginePlugin/VisionEnginePluginPCH.h&quot; --includePost &quot;Vision/Runtime/Base/System/DisableStaticAnalysis.hpp&quot; --header &quot;VisionLuaModule_wrapper.hpp&quot; Scripting/Lua/VisionLuaModule_wrapper.cpp</Command>
-        <DeploymentContent>False</DeploymentContent></CustomBuild>
-    <ClCompile Include="Terrain\Editing\ITerrainFilter.cpp">
-        <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClCompile Include="Entities\TriggerBoxEntity.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="Terrain\Editing\MeshPaintingComponent.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="Terrain\Editing\TerrainLockObject.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
-    <ClCompile Include="Rendering\RendererNode\VRendererNodeCommon.cpp">
-        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <None Include="Particles\ParticleDescriptor.inl"><DeploymentContent>False</DeploymentContent></None>
     <ClCompile Include="Rendering\RenderingHelpers\ScratchTexturePool.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClCompile Include="Rendering\Effects\VCoronaManager.cpp">
         <DeploymentContent>False</DeploymentContent></ClCompile>
+    <CustomBuild Include="Scripting\Lua\VisionLuaModule.i">
+        <AdditionalInputs>Scripting\Lua\VScriptConstants.hpp;Scripting\Lua\hkvVec2.i;Scripting\Lua\hkvVec3.i;Scripting\Lua\hkvVec4.i;Scripting\Lua\hkvMat3.i;Scripting\Lua\hkvMat4.i;Scripting\Lua\hkvPlane.i;Scripting\Lua\hkvQuat.i;Scripting\Lua\hkvAlignedBBox.i;Scripting\Lua\hkvBoundingSphere.i;Scripting\Lua\VColor.i;Scripting\Lua\VBitmask.i;Scripting\Lua\VTypedObject.i;Scripting\Lua\VisApiTypedEngineObject.i;Scripting\Lua\VisApiObject3D.i;Scripting\Lua\VisApiObjectComponent.i;Scripting\Lua\VisApiBaseEntity.i;Scripting\Lua\ParticleGroupBase.i;Scripting\Lua\VisApiDynamicMesh.i;Scripting\Lua\VisApiLightSource.i;Scripting\Lua\VisApiStaticMeshInstance.i;Scripting\Lua\VisApiSurface.i;Scripting\Lua\VTextureObject.i;Scripting\Lua\VisApiContextCamera.i;Scripting\Lua\VisApiRenderer.i;Scripting\Lua\TriggerBoxEntity.i;Scripting\Lua\VisApiScreenMask.i;Scripting\Lua\IVRendererNode.i;Scripting\Lua\PostProcessBase.i;Scripting\Lua\CubeMapHandle.i;Scripting\Lua\PathCameraEntity.i;Scripting\Lua\VisApiTriggerComponent.i;Scripting\Lua\VTransitionStateMachine.i;Scripting\Lua\VAnimationComponent.i;Scripting\Lua\VTimedValueComponent.i;Scripting\Lua\VGUIManager.i;Scripting\Lua\VWindowBase.i;Scripting\Lua\VDialog.i;Scripting\Lua\VStringInputMap.i;Scripting\Lua\VisApiGame.i;Scripting\Lua\VisionTimer.i;Scripting\Lua\VisionConsoleManager.i;Scripting\Lua\VisApiPersistentData.i</AdditionalInputs>
+        <Outputs>Scripting/Lua/VisionLuaModule_wrapper.cpp</Outputs>
+        <FileType>Document</FileType>
+        <Command>&quot;$(HAVOK_THIRDPARTY_DIR)\redistsdks\swig\2.0.3_VisionRTTI\swig.exe&quot; -c++ -lua -verbose -o Scripting/Lua/VisionLuaModule_wrapper.cpp -I..\..\..\.. Scripting\Lua\VisionLuaModule.i&#x0D;&#x0A;&quot;..\..\..\..\..\Build\StandaloneTools\Iswig\Exe\iswig.exe&quot; --includePre &quot;Vision/Runtime/EnginePlugins/VisionEnginePlugin/VisionEnginePluginPCH.h&quot; --includePost &quot;Vision/Runtime/Base/System/DisableStaticAnalysis.hpp&quot; --header &quot;VisionLuaModule_wrapper.hpp&quot; Scripting/Lua/VisionLuaModule_wrapper.cpp</Command>
+        <DeploymentContent>False</DeploymentContent></CustomBuild>
     <ClInclude Include="GUI\VCursor.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <Compile Include="Scripting\Lua\VWindowBase.i">
@@ -875,7 +896,11 @@
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="Rendering\Effects\MobileWater.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
-    <ClCompile Include="GUI\VDialogResource.cpp">
+    <ClCompile Include="Rendering\Postprocessing\VPostProcessNoiseAndVignette.cpp">
+        <DeploymentContent>False</DeploymentContent></ClCompile>
+    <ClCompile Include="VisionEnginePluginPCH.cpp">
+        <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">Create</PrecompiledHeader>
+        <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Dev|win32'">Create</PrecompiledHeader>
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="Animation\Transition\IVTransitionEventTrigger.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
@@ -902,6 +927,8 @@
         <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="Rendering\NullRenderer\VNullTextureProvider.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
+    <ClCompile Include="Input\VStringInputMapManager.cpp">
+        <DeploymentContent>False</DeploymentContent></ClCompile>
     <ClInclude Include="Particles\ParticleModule.hpp">
         <DeploymentContent>False</DeploymentContent></ClInclude>
     <ClCompile Include="Rendering\Postprocessing\ToneMapping.cpp">
@@ -954,11 +981,17 @@
   <ItemGroup>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug DLL|win32'">
+<PropertyGroup>
+    <CleanDependsOn>VisionEnginePluginDX9_CleanReflections;$(CleanDependsOn)</CleanDependsOn>
+</PropertyGroup>
+<Target Name="VisionEnginePluginDX9_CleanReflections">
+    <Delete Files="$(MSBuildProjectDirectory)\reflectionSettings.cache;$(MSBuildProjectDirectory)\reflections.db" />
+</Target>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|win32'">
     <RunCodeAnalysis>false</RunCodeAnalysis>
     <CodeAnalysisInputAssembly>$(OutputFile)</CodeAnalysisInputAssembly>
 </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Dev DLL|win32'">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Dev|win32'">
     <RunCodeAnalysis>false</RunCodeAnalysis>
     <CodeAnalysisInputAssembly>$(OutputFile)</CodeAnalysisInputAssembly>
 </PropertyGroup>
